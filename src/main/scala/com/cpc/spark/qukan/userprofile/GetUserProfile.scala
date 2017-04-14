@@ -32,17 +32,18 @@ object GetUserProfile {
         (devid, profile)
     }.reduceByKey {
       case (x, y) => y
+    }.map {
+      case row =>
+        val devid = row._1
+        val profile = row._2
+        redis.set(devid, profile.toByteArray)
     }
 
     data.take(1).foreach {
       row =>
-        val devid = row._1
-        val profile = row._2
         println("---", row)
 
-        redis.set(devid, profile.toByteArray)
     }
-
     sc.stop()
   }
 }
