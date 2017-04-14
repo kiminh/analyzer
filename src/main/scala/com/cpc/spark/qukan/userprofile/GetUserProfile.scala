@@ -29,7 +29,6 @@ object GetUserProfile {
         path = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s/0000%d_0".format(day, n)
       }
 
-
       val ctx = sc.textFile(path)
       val data = ctx.map {
         case row =>
