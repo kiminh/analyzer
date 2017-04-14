@@ -30,12 +30,17 @@ object GetUserProfile {
     }.map {
       case (ok, devid, profile) =>
         (devid, profile)
+    }.reduceByKey {
+      case (x, y) => y
     }
 
     data.take(1).foreach {
       row =>
-
+        val devid = row._1
+        val profile = row._2
         println("---", row)
+
+        redis.set(devid, profile.toByteArray)
     }
 
     sc.stop()
