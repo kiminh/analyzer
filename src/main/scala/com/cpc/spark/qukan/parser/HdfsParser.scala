@@ -39,12 +39,13 @@ object HdfsParser {
       val cal = Calendar.getInstance()
       try {
         cal.setTime(dateFormat.parse(birth))
+        val byear = new SimpleDateFormat("yyyy").format(cal.getTime)
+        val nyear = new SimpleDateFormat("yyyy").format(Calendar.getInstance().getTime)
+        year = nyear.toInt - byear.toInt
       } catch {
-        case e: Exception => 0
+        case e: Exception =>
+          year = 0
       }
-      val byear = new SimpleDateFormat("yyyy").format(cal.getTime)
-      val nyear = new SimpleDateFormat("yyyy").format(Calendar.getInstance().getTime)
-      year = nyear.toInt - byear.toInt
     }
 
     if (year < 1) {

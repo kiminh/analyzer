@@ -22,16 +22,10 @@ object GetUserProfile {
     val redis = new RedisClient("10.9.125.57", 6379)
 
     for (n <- 0 to 14) {
-      var path: String = ""
-      if (n < 10) {
-        path = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s/00000%d_0".format(day, n)
-      } else {
-        path = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s/0000%d_0".format(day, n)
-      }
-
+      val path = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s/%06d_0".format(day, n)
       val ctx = sc.textFile(path)
-      val data = ctx.map {
-        case row =>
+      ctx.map {
+        row =>
           HdfsParser.parseTextRow(row)
       }.filter {
         case (ok, devid, age, sex, coin) =>
@@ -44,9 +38,7 @@ object GetUserProfile {
       }.map {
         case (devid, (age, sex, coin)) =>
           (devid, age, sex, coin)
-      }
-
-      data.collect().foreach {
+      }.collect().foreach {
         row =>
           val devid = row._1
           val profile = Userprofile
@@ -60,6 +52,7 @@ object GetUserProfile {
           redis.set(devid, profile.toByteArray)
       }
     }
+
     sc.stop()
   }
 }

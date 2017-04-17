@@ -1,0 +1,209 @@
+syntax="proto2";
+
+package aslog;
+
+message AppInfo {
+	optional string packagename = 1;
+};
+
+message SiteInfo {
+	optional string domain = 1;
+	optional string urls = 2;
+};
+enum MediaType {
+	UNKNOWN = 0;
+	APP = 1;
+	WEB = 2;
+	WAP = 3;
+};
+
+message Size {
+	required uint32 height = 1;
+	required uint32 width  = 2;
+};
+message Media {
+	required MediaType 	type 	= 1;
+	required string		appsid 	= 2;
+	optional string		channelid = 3;
+	optional AppInfo	app =4;
+	optional SiteInfo	site = 5;
+	optional uint32		category = 6;
+	optional string     subaccountid = 7;
+};
+enum AdslotType {
+	LIST_FEED   = 1;
+	CONTENT_FEED = 2;
+};
+
+message  Adslot {
+	required string 	id 		= 1;
+	required AdslotType type 	= 2;
+	required Size 		size 	= 3;
+	required uint32 	capacity = 4; //广告位容量
+	optional uint64		inittime = 5; //js 加载时间
+	optional uint32		apseq    = 6; //轮播的第几次请求
+	optional string		apuid    = 7; //前端生成的uid
+	optional uint32     buildtype = 8;//渲染类型
+};
+
+enum NetworkType {
+	NET_UNKNOWN =	0;
+	NET_WIFI 	= 	1;
+	NET_2G		= 	2;
+	NET_3G		= 	3;
+	NET_4G		=	4;
+};
+message Network {
+	required NetworkType	type = 1;
+	required string			ip	 = 2;
+};
+enum OSType {
+	OS_UNKNOWN = 0;
+	OS_ANDROID = 1;
+	OS_IOS		= 2;
+	OS_WP 		= 3;
+};
+
+enum BrowserType {
+	UnknownBrowser = 0;
+	MQQBrowser = 1;
+	Chrome = 2;
+	UCBrowser = 3;
+	BaiduBrowser = 4;
+	MiuiBrowser = 5;
+	QvodBrowser = 6;
+	IEMobileBrowser = 7;
+	MicroMessenger = 8;
+	QQChat         = 9;
+};
+
+message Version {
+	required uint32 major = 1;
+	optional uint32 minor = 2;
+	optional uint32 micro = 3;
+	optional uint32 build = 4;
+};
+enum DeviceIdType {
+	DEVID_UNKNOWN = 0;
+	DEVID_IMEI = 1;
+	DEVID_MAC  = 2;
+	DEVID_IDFA = 3;
+	DEVID_AAID = 4;
+	DEVID_LSCOOKIE = 5;
+	DEVID_ANDROIDID = 6;
+	DEVID_IMSI = 7;
+};
+
+message DeviceId {
+	required DeviceIdType type = 1;
+	required string		  id   = 2;
+	optional bool		  original = 3; // 是否是原生的设备ID
+};
+
+message Device {
+	required OSType  os		 = 1;
+	required Version osversion = 2;
+	repeated DeviceId ids 	 = 3;
+	optional string  brand	 = 4;
+	optional string  model   = 5;
+	optional bytes useragent = 6;
+	optional bytes cookie	 = 7;
+	optional BrowserType browser = 8;
+	optional string matchimei = 9;
+	optional string uid = 10;
+	optional int32 screen_w = 11;
+	optional int32 screen_h = 12;
+	optional string matchidfa = 13;
+};
+
+enum AdType {
+	TEXT			= 1;
+	IMAGE			= 2;
+	ICON_TEXT 		= 3;
+	THREE_ICON_TEXT	= 4;
+};
+
+enum AdSrc {
+	CPC = 1;
+};
+enum InteractionType {
+	NO_INTERACT = 0;
+	SURFING		= 1;
+	DOWNLOAD	= 2;
+	DIALING		= 3;
+	MESSAGE 	= 4;
+	MAIL		= 5;
+	GP			= 6;
+};
+
+enum ClientType {
+	NATIVESDK 	= 1;
+	JSSDK 		= 2;
+	OPENAPI		= 3;
+};
+
+message Client {
+	required ClientType type = 1;
+	optional Version	version = 2;
+};
+
+message DspReqInfo {
+	required AdSrc	src = 1;
+	optional string	dspmediaid = 2;
+	optional int32	retAdsNum = 3;
+	optional int64  timecost = 4;
+};
+
+message AdInfo {
+	required AdType 			type = 1;
+	required AdSrc  			src  = 2;
+	required InteractionType 	interaction = 3;
+	optional uint32 adid 	= 4;
+	optional uint32 groupid = 5;
+	optional uint32 planid 	= 6;
+	optional uint32 userid 	= 7;
+	optional uint32 bid 	= 8;
+	optional uint32 price 	= 9;
+	optional uint64 ctr 	= 10;
+	optional uint64 cpm 	= 11;
+};
+
+message AdDspRet {
+	required AdSrc src = 1;
+	required uint32 adnum = 2;
+};
+
+message Location {
+	optional uint32 country = 1;
+	optional uint32 province = 2;
+	optional uint32 city = 3;
+	optional uint32 isp = 4;
+}
+
+message UserProfile {
+	repeated InterestItem interests = 1; // 兴趣点
+}
+
+message InterestItem {
+	optional uint64 interestid = 1; // 兴趣id
+}
+
+message NoticeLogBody {
+	required string	searchid = 1;
+	required uint32 timestamp = 2;
+	optional Media 	media = 3;
+	repeated Adslot adslot = 4;
+	optional Device device = 5;
+	repeated AdInfo ads = 6;
+	repeated AdDspRet dspret = 7;
+	optional bool debug = 8;
+	optional Client client = 9;
+	optional Network network = 10;
+	repeated string exptags = 11;
+	optional Location location = 12;
+	optional string sourceip = 13;
+	optional uint32 intertype = 14; // 检索接入类型 1 json , 2 proto
+	optional UserProfile userprofile = 15; // 用户信息
+	repeated DspReqInfo dspReqInfo = 22; // 请求DSP的信息
+	optional uint64 timecost = 23;
+};
