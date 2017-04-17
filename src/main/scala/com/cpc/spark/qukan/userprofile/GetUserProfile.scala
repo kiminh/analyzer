@@ -17,12 +17,12 @@ object GetUserProfile {
     val conf = new SparkConf().setAppName("cpc get qukan user profile")
     val sc = new SparkContext(conf)
     val cal = Calendar.getInstance()
-    cal.add(Calendar.DATE, -2)
+    cal.add(Calendar.DATE, -1)
     val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val redis = new RedisClient("10.9.125.57", 6379)
 
     for (n <- 0 to 14) {
-      val path = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s/%06d_0".format(day, n)
+      val path = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s/%06d*".format(day, n)
       val ctx = sc.textFile(path)
       ctx.map {
         row =>
