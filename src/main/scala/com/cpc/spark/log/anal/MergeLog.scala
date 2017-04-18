@@ -55,10 +55,10 @@ object MergeLog {
     val searchData = searchRDD.map(x => LogParser.parseSearchLog(x.getString(0)))
 
     val showRDD = spark.sql("select field['cpc_show'].string_type from show_data").rdd
-    val showData = showRDD.map(x => LogParser.parseEventLog(x.getString(0)))
+    val showData = showRDD.map(x => LogParser.parseShowLog(x.getString(0)))
 
     val clickRDD = spark.sql("select field['cpc_click'].string_type from click_data").rdd
-    val clickData = clickRDD.map(x => LogParser.parseEventLog(x.getString(0)))
+    val clickData = clickRDD.map(x => LogParser.parseClickLog(x.getString(0)))
 
     val result = searchData
       .union(showData)

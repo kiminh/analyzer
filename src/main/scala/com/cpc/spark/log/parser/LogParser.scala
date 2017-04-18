@@ -3,6 +3,7 @@ package com.cpc.spark.log.parser
 import aslog.Aslog
 import com.cpc.spark.streaming.tools.Encoding
 import eventprotocol.Protocol
+import com.cpc.spark.common.Event
 
 
 /**
@@ -102,27 +103,31 @@ object LogParser {
     log
   }
 
-  def parseEventLog(txt: String): UnionLog = {
+  def parseShowLog(txt: String): UnionLog = {
+    var log = NoneUnionLog
+    val data = Event.parse_show_log(txt)
+    if (data != null) {
+      val body = data.event
+      log = log.copy(
+        isshow = 1,
+        showtime = body.getEventTimestamp
+      )
+    }
+    log
+  }
+
+  def parseClickLog(txt: String): UnionLog = {
     var log = NoneUnionLog
     val event = Protocol.Event.parseFrom(decodeLog(txt).toArray)
     if (event.getBody.getSearchId.length > 0) {
       val body = event.getBody
-      log = log.copy(searchid = body.getSearchId)
-
-      if (body.getType == Protocol.Event.Body.EventType.IMPRESSION) {
-        log = log.copy(
-          isshow = 1,
-          showtime = body.getEventTimestamp
-        )
-      } else if (body.getType == Protocol.Event.Body.EventType.CLICK) {
-        val rules = body.getAntispam.getRulesList.toArray.toString
-        log = log.copy(
-          isclick = 1,
-          clicktime = body.getEventTimestamp,
-          antispamScore = body.getAntispam.getScore,
-          antispamRules = rules
-        )
-      }
+      log = log.copy(
+        searchid = body.getSearchId,
+        isclick = 1,
+        clicktime = body.getEventTimestamp,
+        antispamScore = body.getAntispam.getScore,
+        antispamRules = body.getAntispam.getRulesList.toArray.toString
+      )
     }
     log
   }
