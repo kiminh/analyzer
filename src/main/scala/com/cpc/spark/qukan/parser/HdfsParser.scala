@@ -11,24 +11,19 @@ object HdfsParser {
 
   val columnSep = '\001'
 
-  val None = (false, "", 0, 0, 0)
-
-  def parseTextRow(row: String): (Boolean, String, Int, Int, Int) = {
-    val data = row.split(columnSep)
-
+  def parseTextRow(txt: String): UserProfile = {
+    val data = txt.split(columnSep)
+    var profile = new UserProfile(false, "", 0, 0, 0)
     if (data.length == 6) {
-      val devid = data(0).trim
-      if (devid.length > 0) {
-        val coin = toInt(data(2))
-        val sex = toInt(data(3))
-        val age = getAge(data(4))
-        (true, devid + "_UPDATA", age, sex, coin)
-      } else {
-        None
+      profile.devid = data(0).trim
+      if (profile.devid.length > 0) {
+        profile.ok = true
+        profile.coin = toInt(data(2))
+        profile.sex = toInt(data(3))
+        profile.age = getAge(data(4))
       }
-    } else {
-      None
     }
+    profile
   }
 
   //年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: >50
@@ -73,4 +68,12 @@ object HdfsParser {
     }
   }
 }
+
+case class UserProfile (
+  var ok: Boolean,
+  var devid: String,
+  var age: Int,
+  var sex: Int,
+  var coin: Int
+)
 

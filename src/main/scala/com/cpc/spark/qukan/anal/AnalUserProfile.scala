@@ -26,31 +26,22 @@ object AnalUserProfile {
 
     var total = 0
 
+
     for (n <- 0 to 14) {
       val path = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s/%06d*".format(day, n)
       val ctx = sc.textFile(path)
-      val result = ctx.map {
-        row =>
-          HdfsParser.parseTextRow(row)
-      }.filter {
-        case (ok, devid, age, sex, coin) =>
-          ok
-      }.map {
-        case (ok, devid, age, sex, coin) =>
-          (devid, (age, sex, coin))
-      }.reduceByKey {
-        case (x, y) => y
-      }.map {
-        case (devid, (age, sex, coin)) =>
-          (devid, age, sex, coin)
-      }
+      val result = ctx.map(row => HdfsParser.parseTextRow(row))
+        .filter(x => x.ok)
+        .map(x => (x.devid, x))
+        .reduceByKey((x, y) => y)
+        .map(x => x._2)
 
       result.collect().foreach {
         x =>
-          age(x._2) = age(x._2) + 1
-          sex(x._3) = sex(x._3) + 1
+          age(x.age) = age(x.age) + 1
+          sex(x.sex) = sex(x.sex) + 1
 
-          val l = x._4.toString.length
+          val l = x.coin.toString.length
           if (l < coin.length) {
             coin(l - 1) = coin(l - 1) + 1
           }
@@ -80,5 +71,4 @@ object AnalUserProfile {
 
     sc.stop()
   }
-
 }

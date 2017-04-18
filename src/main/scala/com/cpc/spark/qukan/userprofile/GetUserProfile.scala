@@ -24,31 +24,22 @@ object GetUserProfile {
     for (n <- 0 to 14) {
       val path = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s/%06d*".format(day, n)
       val ctx = sc.textFile(path)
-      ctx.map {
+      val result = ctx.map(row => HdfsParser.parseTextRow(row))
+        .filter(x => x.ok)
+        .map(x => (x.devid, x))
+        .reduceByKey((x, y) => y)
+        .map(x => x._2)
+
+      result.collect().foreach {
         row =>
-          HdfsParser.parseTextRow(row)
-      }.filter {
-        case (ok, devid, age, sex, coin) =>
-          ok
-      }.map {
-        case (ok, devid, age, sex, coin) =>
-          (devid, (age, sex, coin))
-      }.reduceByKey {
-        case (x, y) => y
-      }.map {
-        case (devid, (age, sex, coin)) =>
-          (devid, age, sex, coin)
-      }.collect().foreach {
-        row =>
-          val devid = row._1
+          val devid = row.devid
           val profile = Userprofile
             .UserProfile
             .newBuilder()
-            .setAge(row._2)
-            .setSex(row._3)
-            .setCoin(row._4)
+            .setAge(row.age)
+            .setSex(row.sex)
+            .setCoin(row.coin)
             .build()
-
           redis.set(devid, profile.toByteArray)
       }
     }
