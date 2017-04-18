@@ -3,6 +3,7 @@ package com.cpc.spark.qukan.parser
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
+case class UserProfile(ok: Boolean, devid: String, age: Int, sex: Int, coin: Int)
 
 /**
   * Created by Roy on 2017/4/14.
@@ -13,14 +14,17 @@ object HdfsParser {
 
   def parseTextRow(txt: String): UserProfile = {
     val data = txt.split(columnSep)
-    var profile = new UserProfile(false, "", 0, 0, 0)
+    var profile = UserProfile(false, "", 0, 0, 0)
     if (data.length == 6) {
-      profile.devid = data(0).trim
-      if (profile.devid.length > 0) {
-        profile.ok = true
-        profile.coin = toInt(data(2))
-        profile.sex = toInt(data(3))
-        profile.age = getAge(data(4))
+      val devid = data(0).trim
+      if (devid.length > 0) {
+        profile = UserProfile(
+          ok = true,
+          devid = devid,
+          coin = toInt(data(2)),
+          sex = toInt(data(3)),
+          age = getAge(data(4))
+        )
       }
     }
     profile
@@ -69,11 +73,4 @@ object HdfsParser {
   }
 }
 
-case class UserProfile (
-  var ok: Boolean,
-  var devid: String,
-  var age: Int,
-  var sex: Int,
-  var coin: Int
-)
 

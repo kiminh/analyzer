@@ -31,6 +31,7 @@ object CpcStatsAnal {
     val click_input = input + "/cpc_click/" + date + "/" + hour
     val charge_input = input + "/cpc_charge/" + date + "/" + hour
 
+
     val fields = Array(
         StructField("log_timestamp",LongType,true),
         StructField("ip",StringType,true),
@@ -179,45 +180,45 @@ object CpcStatsAnal {
     media_geo_hourly_store.saveAsTextFile(output + "/media_geo_hourly")
     media_uv_hourly_store.saveAsTextFile(output + "/media_uv_hourly")
     
-    //    clickRDD.saveAsTextFile(output + "/clickRDD")
-    //    click_data.saveAsTextFile(output + "/click_data")
-    //    val chargeRDD = spark.sql("select field['media_id'].int_type,field['adslot_id'].int_type,field['idea_id'].int_type,field['unit_id'].int_type,field['plan_id'].int_type,field['click'].int_type,field['balance'].int_type,field['coupon'].int_type,field['sql_status'].int_type from charge_data").rdd
-    //    val charge_data = chargeRDD.map { x =>
-    //      try {
-    //        val media_id = x.getInt(0)
-    //        val adslot_id = x.getInt(1)
-    //        val idea_id = x.getInt(2)
-    //        val unit_id = x.getInt(3)
-    //        val plan_id = x.getInt(4)
-    //        val charge_click = x.getInt(5)
-    //        val balance = x.getInt(6)
-    //        val coupon = x.getInt(7)
-    //        val sql_status = x.getInt(8)
-    //        if (sql_status == 0) {
-    //          ((media_id, adslot_id, idea_id, unit_id, plan_id, date, hour), (0, 0, 0, 0, charge_click, 0, balance, coupon))
-    //        } else {
-    //          ((media_id, adslot_id, idea_id, unit_id, plan_id, date, hour), (0, 0, 0, 0, 0, 0, 0, 0))
-    //        }
-    //      } catch {
-    //        case ex: Exception =>
-    //          None
-    //      }
-    //    }
-    //    charge_data.saveAsTextFile(output + "/charge_data")
-    //
-    //    val union_data = search_data.union(show_data).union(click_data)
-    //    val media_charge_data = union_data.reduceByKey {
-    //      case (x, y) =>
-    //        (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5, x._6 + y._6, x._7 + y._7, x._8 + y._8)
-    //    }.filter {
-    //      case ((media_id, adslot_id, idea_id, unit_id, plan_id, date, hour), (req, fill, imp, click, charge_click, spam_click, balance, coupon)) =>
-    //        media_id != 0
-    //    }.map {
-    //      case ((media_id, adslot_id, idea_id, unit_id, plan_id, date, hour), (req, fill, imp, click, charge_click, spam_click, balance, coupon)) =>
-    //        media_id + "|" + adslot_id + "|" + idea_id + "|" + unit_id + "|" + plan_id + "|" + date + "|" + hour + "|" + req + "|" + fill + "|" + imp + "|" + click + "|" + charge_click + "|" + spam_click + "|" + balance + "|" + coupon
-    //    }
-    //    //    val d_data = w_data.rdd.map { x => x.getString(0)}
-    //    //    union_data.saveAsTextFile(output + "/union_data")
-    //    media_charge_data.saveAsTextFile(output)
+//        clickRDD.saveAsTextFile(output + "/clickRDD")
+//        click_data.saveAsTextFile(output + "/click_data")
+//        val chargeRDD = spark.sql("select field['media_id'].int_type,field['adslot_id'].int_type,field['idea_id'].int_type,field['unit_id'].int_type,field['plan_id'].int_type,field['click'].int_type,field['balance'].int_type,field['coupon'].int_type,field['sql_status'].int_type from charge_data").rdd
+//        val charge_data = chargeRDD.map { x =>
+//          try {
+//            val media_id = x.getInt(0)
+//            val adslot_id = x.getInt(1)
+//            val idea_id = x.getInt(2)
+//            val unit_id = x.getInt(3)
+//            val plan_id = x.getInt(4)
+//            val charge_click = x.getInt(5)
+//            val balance = x.getInt(6)
+//            val coupon = x.getInt(7)
+//            val sql_status = x.getInt(8)
+//            if (sql_status == 0) {
+//              ((media_id, adslot_id, idea_id, unit_id, plan_id, date, hour), (0, 0, 0, 0, charge_click, 0, balance, coupon))
+//            } else {
+//              ((media_id, adslot_id, idea_id, unit_id, plan_id, date, hour), (0, 0, 0, 0, 0, 0, 0, 0))
+//            }
+//          } catch {
+//            case ex: Exception =>
+//              None
+//          }
+//        }
+//        charge_data.saveAsTextFile(output + "/charge_data")
+//
+//        val union_data = search_data.union(show_data).union(click_data)
+//        val media_charge_data = union_data.reduceByKey {
+//          case (x, y) =>
+//            (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5, x._6 + y._6, x._7 + y._7, x._8 + y._8)
+//        }.filter {
+//          case ((media_id, adslot_id, idea_id, unit_id, plan_id, date, hour), (req, fill, imp, click, charge_click, spam_click, balance, coupon)) =>
+//            media_id != 0
+//        }.map {
+//          case ((media_id, adslot_id, idea_id, unit_id, plan_id, date, hour), (req, fill, imp, click, charge_click, spam_click, balance, coupon)) =>
+//            media_id + "|" + adslot_id + "|" + idea_id + "|" + unit_id + "|" + plan_id + "|" + date + "|" + hour + "|" + req + "|" + fill + "|" + imp + "|" + click + "|" + charge_click + "|" + spam_click + "|" + balance + "|" + coupon
+//        }
+//        //    val d_data = w_data.rdd.map { x => x.getString(0)}
+//        //    union_data.saveAsTextFile(output + "/union_data")
+//        media_charge_data.saveAsTextFile(output)
   }
 }
