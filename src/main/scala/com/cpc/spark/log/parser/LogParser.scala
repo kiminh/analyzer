@@ -1,5 +1,8 @@
 package com.cpc.spark.log.parser
 
+import java.text.SimpleDateFormat
+import java.util.Date
+
 import aslog.Aslog
 import com.cpc.spark.streaming.tools.Encoding
 import eventprotocol.Protocol
@@ -127,6 +130,9 @@ object LogParser {
     hour = ""
   )
 
+  val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
+  val hourFormat = new SimpleDateFormat("HH")
+
   def parseSearchLog(txt: String): UnionLog = {
     var log = EmptyUnionLog
     val notice = Aslog.NoticeLogBody.parseFrom(decodeLog(txt).toArray)
@@ -193,7 +199,8 @@ object LogParser {
         coin = user.getCoin
       )
     }
-    log
+    val (date, hour) = getDateHourFromTime(log.timestamp)
+    log.copy(date = date,hour = hour)
   }
 
   def parseShowLog(txt: String): UnionLog = {
@@ -207,7 +214,8 @@ object LogParser {
         show_timestamp = body.getEventTimestamp
       )
     }
-    log
+    val (date, hour) = getDateHourFromTime(log.timestamp)
+    log.copy(date = date,hour = hour)
   }
 
   def parseClickLog(txt: String): UnionLog = {
@@ -223,7 +231,13 @@ object LogParser {
         antispam_rules = body.getAntispam.getRulesList.toArray.mkString(",")
       )
     }
-    log
+    val (date, hour) = getDateHourFromTime(log.timestamp)
+    log.copy(date = date,hour = hour)
+  }
+
+  def getDateHourFromTime(t: Long): (String, String) = {
+    val time = new Date(t)
+    (dateFormat.format(time), hourFormat.format(t))
   }
 
   def decodeLog(log: String): Seq[Byte] = {
@@ -238,3 +252,4 @@ object LogParser {
     }
   }
 }
+

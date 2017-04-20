@@ -33,7 +33,6 @@ object MergeLog {
       //.config("spark.some.config.option", "some-value")
       .getOrCreate()
 
-
     import spark.implicits._
     val search_input = input + "/cpc_search/" + date + "/" + hour
     val show_input = input + "/cpc_show/" + date + "/" + hour
@@ -80,14 +79,9 @@ object MergeLog {
           } else {
             merge(x, y)
           }
-      }.map{
-        x =>
-          x._2.copy(
-            date = date,
-            hour = hour
-          )
+      }.map {
+        x => x._2
       }
-
 
     spark.createDataFrame(unionData).select("*")
       .write
