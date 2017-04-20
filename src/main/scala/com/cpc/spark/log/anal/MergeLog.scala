@@ -14,17 +14,17 @@ import org.apache.spark.sql.types._
 object MergeLog {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 2) {
+    if (args.length < 3) {
       System.err.println(s"""
-        |Usage: MergeLog <hdfs_input> <hdfs_output>
+        |Usage: MergeLog <hdfs_input> <hdfs_ouput> <hour_before>
         |
         """.stripMargin)
       System.exit(1)
     }
 
-    val Array(input, output) = args
+    val Array(input, output, hourBefore) = args
     val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR_OF_DAY, -2)
+    cal.add(Calendar.HOUR, -hourBefore.toInt)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val hour = new SimpleDateFormat("HH").format(cal.getTime)
     val spark = SparkSession.builder()
@@ -87,15 +87,14 @@ object MergeLog {
           )
       }
 
-    println("-------", unionData.count())
+    println(date + "/" + hour, unionData.count())
     val df = spark.createDataFrame(unionData)
-    df.createTempView("union_log_temp")
-    createTable(spark)
     df.select("*")
       .write
+      .mode(SaveMode.Append)
+      .format("parquet")
       .partitionBy("date", "hour")
-      .mode(SaveMode.Overwrite)
-      .parquet("%s/%s/%s".format(output, date, hour))
+      .saveAsTable("dl_cpc." + output)
 
     /*
     spark.sql("create TABLE if not exists dl_cpc.cpc_union_log_tmp like union_log_temp")
@@ -133,12 +132,12 @@ object MergeLog {
 
   def createTable(ctx: SparkSession): Unit = {
     val colsRdd = ctx.sql("describe union_log_temp").queryExecution.toRdd
-    var cols = new Array[String](colsRdd.count().toInt)
+    var cols = new Array[String](colsRdd.count().toInt - 2)
     var n = 0
     colsRdd.collect().foreach {
       col =>
         val v = col.toString.stripPrefix("[").stripSuffix("]").split(",")
-        if (v(0) != "date" || v(0) != "hour") {
+        if (v(0) != "date" && v(0) != "hour") {
           cols(n) = "`%s` %s".format(v(0), v(1).toUpperCase)
         }
         n += 1
@@ -146,7 +145,7 @@ object MergeLog {
 
     ctx.sql(s"""
        |CREATE TABLE IF NOT EXISTS dl_cpc.cpc_union_log (%s)
-       |PARTITIONED BY (`date` STRING, `hour` STRING)
+       |PARTITIONED BY (`date` STRING, `hour` STRING) LOCATION
        """.stripMargin.format(cols.mkString(",")))
   }
 }
