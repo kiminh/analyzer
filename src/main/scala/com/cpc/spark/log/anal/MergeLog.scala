@@ -1,8 +1,10 @@
 package com.cpc.spark.log.anal
 
-import com.cpc.spark.common.Ui
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.types._
 
 
@@ -12,19 +14,26 @@ import org.apache.spark.sql.types._
 object MergeLog {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 4) {
+    if (args.length < 2) {
       System.err.println(s"""
-        |Usage: MergeLog <hdfs_input> <hdfs_output> <date> <hour>
+        |Usage: MergeLog <hdfs_input> <hdfs_output>
         |
         """.stripMargin)
       System.exit(1)
     }
 
-    val Array(input, output, date, hour) = args
+    val Array(input, output) = args
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.HOUR_OF_DAY, -2)
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val hour = new SimpleDateFormat("HH").format(cal.getTime)
     val spark = SparkSession.builder()
-      .appName("SparkSQL Anal date=" + date + "/" + hour)
-      //      .config("spark.some.config.option", "some-value")
+      .appName("cpc merge union log /" + date + "/" + hour)
+      .enableHiveSupport()
+      //.config("spark.some.config.option", "some-value")
       .getOrCreate()
+
+    import spark.implicits._
     val search_input = input + "/cpc_search/" + date + "/" + hour
     val show_input = input + "/cpc_show/" + date + "/" + hour
     val click_input = input + "/cpc_click/" + date + "/" + hour
@@ -51,67 +60,96 @@ object MergeLog {
     clickBaseData.createTempView("click_data")
     //chargeBaseData.createTempView("charge_data")
 
-    val searchRDD = spark.sql("select field['cpc_search'].string_type from search_data").rdd
-    val searchData = searchRDD.map(x => LogParser.parseSearchLog(x.getString(0)))
+    val searchData = spark.sql("select field['cpc_search'].string_type from search_data")
+      .rdd.map(x => LogParser.parseSearchLog(x.getString(0)))
+    val showData = spark.sql("select field['cpc_show'].string_type from show_data")
+      .rdd.map(x => LogParser.parseShowLog(x.getString(0)))
+    val clickData = spark.sql("select field['cpc_click'].string_type from click_data")
+      .rdd.map(x => LogParser.parseClickLog(x.getString(0)))
 
-    val showRDD = spark.sql("select field['cpc_show'].string_type from show_data").rdd
-    val showData = showRDD.map(x => LogParser.parseShowLog(x.getString(0)))
-
-    val clickRDD = spark.sql("select field['cpc_click'].string_type from click_data").rdd
-    val clickData = clickRDD.map(x => LogParser.parseClickLog(x.getString(0)))
-
-    val result = searchData
+    val unionData = searchData
       .union(showData)
       .union(clickData)
       .filter(x => x.searchid.length > 0)
       .map(x => (x.searchid, x))
       .reduceByKey{
         (x, y) =>
-          var log = x
           if (y.timestamp > 0) {
-            log = log.copy(
-              mediaType = y.mediaType,
-              mediaAppsid = y.mediaAppsid,
-              adslotid = y.adslotid,
-              adslotType = y.adslotType,
-              adnum = y.adnum,
-              isfill = y.isfill,
-              ideaid = y.ideaid,
-              unitid = y.unitid,
-              planid = y.planid,
-              country = y.country,
-              province = y.province,
-              city = y.city,
-              locisp = y.locisp,
-              uid = y.uid,
-              ua = y.ua,
-              os = y.os,
-              screenw = y.screenw,
-              screenh = y.screenh
-            )
+            merge(y, x)
+          } else {
+            merge(x, y)
           }
-          if (y.showtime > 0 && y.showtime < log.showtime) {
-            log = log.copy(
-              isshow = y.isshow,
-              showtime = y.showtime
-            )
-          }
-          if (y.clicktime > 0 && y.clicktime < log.showtime) {
-            log = log.copy(
-              isclick = y.isclick,
-              clicktime = y.clicktime,
-              antispamScore = y.antispamScore,
-              antispamRules = y.antispamRules
-            )
-          }
-          log
-      }.map(x => x._2)
-      .filter(x => x.timestamp > 0)
+      }.map {
+        x =>
+          x._2.copy(
+            date = date,
+            hour = hour
+          )
+      }
 
-    println("---------------------", result.count())
-    result.collect().take(100).foreach {
-      x =>
-        print("| " + x.toString)
+    println("-------", unionData.count())
+    val df = spark.createDataFrame(unionData)
+    df.createTempView("union_log_temp")
+    createTable(spark)
+    df.select("*")
+      .write
+      .partitionBy("date", "hour")
+      .mode(SaveMode.Overwrite)
+      .parquet("%s/%s/%s".format(output, date, hour))
+
+    /*
+    spark.sql("create TABLE if not exists dl_cpc.cpc_union_log_tmp like union_log_temp")
+    spark.sql("INSERT INTO TABLE dl_cpc.cpc_union_log_tmp select * from union_log_temp")
+    createTable(spark)
+    spark.sql(s"""
+      |INSERT INTO TABLE dl_cpc.cpc_union_log PARTITION(`date` = "%s", `hour` = "%s")
+      |SELECT * FROM union_log_temp
+       """.stripMargin.format(date, hour))
+       */
+  }
+
+  def merge(as: UnionLog, event: UnionLog): UnionLog = {
+    var log = as
+    if (event.isshow == 1) {
+      log = log.copy(
+        isshow = event.isshow,
+        show_timestamp = event.show_timestamp,
+        show_network = event.show_network,
+        show_ip = event.show_ip
+      )
     }
+    if (event.isclick == 1) {
+      log = log.copy(
+        isclick = event.isclick,
+        click_timestamp = event.click_timestamp,
+        antispam_score = event.antispam_score,
+        antispam_rules = event.antispam_rules,
+        click_network = event.click_network,
+        click_ip = event.click_ip
+      )
+    }
+    log
+  }
+
+  def createTable(ctx: SparkSession): Unit = {
+    val colsRdd = ctx.sql("describe union_log_temp").queryExecution.toRdd
+    var cols = new Array[String](colsRdd.count().toInt)
+    var n = 0
+    colsRdd.collect().foreach {
+      col =>
+        val v = col.toString.stripPrefix("[").stripSuffix("]").split(",")
+        if (v(0) != "date" || v(0) != "hour") {
+          cols(n) = "`%s` %s".format(v(0), v(1).toUpperCase)
+        }
+        n += 1
+    }
+
+    ctx.sql(s"""
+       |CREATE TABLE IF NOT EXISTS dl_cpc.cpc_union_log (%s)
+       |PARTITIONED BY (`date` STRING, `hour` STRING)
+       """.stripMargin.format(cols.mkString(",")))
   }
 }
+
+
+
