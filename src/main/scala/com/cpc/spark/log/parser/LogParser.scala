@@ -67,13 +67,10 @@ case class UnionLog(
   click_ip: String,
   antispam_score: Int,
   antispam_rules: String,
+  duration: Int,
   date: String,
   hour: String)
 
-
-case class ShowLog()
-
-case class ClickLog()
 
 object LogParser {
 
@@ -125,6 +122,7 @@ object LogParser {
     click_ip = "",
     antispam_score = 0,
     antispam_rules = "",
+    duration = 0,
     date = "",
     hour = ""
   )

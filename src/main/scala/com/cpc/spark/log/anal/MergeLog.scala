@@ -28,10 +28,11 @@ object MergeLog {
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val hour = new SimpleDateFormat("HH").format(cal.getTime)
     val spark = SparkSession.builder()
-      .appName("cpc merge union log /" + date + "/" + hour)
+      .appName("cpc union log merge to %s %s %s".format(output, date, hour))
       .enableHiveSupport()
       //.config("spark.some.config.option", "some-value")
       .getOrCreate()
+
 
     import spark.implicits._
     val search_input = input + "/cpc_search/" + date + "/" + hour
@@ -79,7 +80,7 @@ object MergeLog {
           } else {
             merge(x, y)
           }
-      }.map {
+      }.map{
         x =>
           x._2.copy(
             date = date,
@@ -87,9 +88,8 @@ object MergeLog {
           )
       }
 
-    println(date + "/" + hour, unionData.count())
-    val df = spark.createDataFrame(unionData)
-    df.select("*")
+
+    spark.createDataFrame(unionData).select("*")
       .write
       .mode(SaveMode.Append)
       .format("parquet")
