@@ -14,9 +14,10 @@ object MergeLog {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
-      System.err.println(s"""
-        |Usage: MergeLog <hdfs_input> <hdfs_ouput> <hour_before>
-        |
+      System.err.println(
+        s"""
+           |Usage: MergeLog <hdfs_input> <hdfs_ouput> <hour_before>
+           |
         """.stripMargin)
       System.exit(1)
     }
@@ -59,7 +60,7 @@ object MergeLog {
 
     unionData = unionData.filter(x => x.searchid.length > 0)
       .map(x => (x.searchid, x))
-      .reduceByKey{
+      .reduceByKey {
         (x, y) =>
           if (y.timestamp > 0) {
             merge(y, x)
@@ -89,14 +90,14 @@ object MergeLog {
   }
 
   val schema = StructType(Array(
-    StructField("log_timestamp",LongType,true),
-    StructField("ip",StringType,true),
-    StructField("field",MapType(StringType,
+    StructField("log_timestamp", LongType, true),
+    StructField("ip", StringType, true),
+    StructField("field", MapType(StringType,
       StructType(Array(
-        StructField("int_type",IntegerType,true),
-        StructField("long_type",LongType,true),
-        StructField("float_type",FloatType,true),
-        StructField("string_type",StringType,true))),true),true)))
+        StructField("int_type", IntegerType, true),
+        StructField("long_type", LongType, true),
+        StructField("float_type", FloatType, true),
+        StructField("string_type", StringType, true))), true), true)))
 
   var srcRoot = "/gobblin/source/cpc"
 
@@ -116,7 +117,7 @@ object MergeLog {
         case "cpc_trace" => rddData.map(x => LogParser.parseTraceLog(x.getString(0)))
         case _ => null
       }
-    }catch {
+    } catch {
       case e: Exception =>
         null
     }
@@ -174,9 +175,10 @@ object MergeLog {
         n += 1
     }
 
-    ctx.sql(s"""
-       |CREATE TABLE IF NOT EXISTS dl_cpc.cpc_union_log (%s)
-       |PARTITIONED BY (`date` STRING, `hour` STRING) LOCATION
+    ctx.sql(
+      s"""
+         |CREATE TABLE IF NOT EXISTS dl_cpc.cpc_union_log (%s)
+         |PARTITIONED BY (`date` STRING, `hour` STRING) LOCATION
        """.stripMargin.format(cols.mkString(",")))
   }
 }

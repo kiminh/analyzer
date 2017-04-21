@@ -6,69 +6,68 @@ import com.cpc.spark.common.{Event, Ui}
 
 
 /**
- * Created by Roy on 2017/4/18.
- */
+  * Created by Roy on 2017/4/18.
+  */
 
 case class UnionLog(
-  searchid: String,
-  timestamp: Int,
-  network: Int,
-  ip: String,
-  exptags: String,
+                     searchid: String,
+                     timestamp: Int,
+                     network: Int,
+                     ip: String,
+                     exptags: String,
 
-  media_type: Int,
-  media_appsid: String,
+                     media_type: Int,
+                     media_appsid: String,
 
-  adslotid: String,
-  adslot_type: Int,
+                     adslotid: String,
+                     adslot_type: Int,
 
-  adnum: Int,
-  isfill: Int,
-  adtype: Int,
-  adsrc: Int,
-  interaction: Int,
-  bid: Int,
-  floorbid: Float,
-  cpmbid: Float,
-  price: Int,
-  ctr: Long,
-  cpm: Long,
-  ideaid: Int,
-  unitid: Int,
-  planid: Int,
+                     adnum: Int,
+                     isfill: Int,
+                     adtype: Int,
+                     adsrc: Int,
+                     interaction: Int,
+                     bid: Int,
+                     floorbid: Float,
+                     cpmbid: Float,
+                     price: Int,
+                     ctr: Long,
+                     cpm: Long,
+                     ideaid: Int,
+                     unitid: Int,
+                     planid: Int,
 
-  country: Int,
-  province: Int,
-  city: Int,
-  isp: Int,
+                     country: Int,
+                     province: Int,
+                     city: Int,
+                     isp: Int,
 
-  uid: String,
-  ua: String,
-  os: Int,
-  screen_w: Int,
-  screen_h: Int,
-  brand: String,
-  model: String,
+                     uid: String,
+                     ua: String,
+                     os: Int,
+                     screen_w: Int,
+                     screen_h: Int,
+                     brand: String,
+                     model: String,
 
-  sex: Int,
-  age: Int,
-  coin: Int,
+                     sex: Int,
+                     age: Int,
+                     coin: Int,
 
-  isshow: Int,
-  show_timestamp: Int,
-  show_network: Int,
-  show_ip: String,
+                     isshow: Int,
+                     show_timestamp: Int,
+                     show_network: Int,
+                     show_ip: String,
 
-
-  isclick: Int,
-  click_timestamp: Int,
-  click_network: Int,
-  click_ip: String,
-  antispam_score: Int,
-  antispam_rules: String,
-  duration: Int,
-  date: String,
-  hour: String)
+                     isclick: Int,
+                     click_timestamp: Int,
+                     click_network: Int,
+                     click_ip: String,
+                     antispam_score: Int,
+                     antispam_rules: String,
+                     duration: Int,
+                     date: String,
+                     hour: String)
 
 
 object LogParser {
@@ -194,7 +193,7 @@ object LogParser {
       )
     }
     val (date, hour) = getDateHourFromTime(log.timestamp)
-    log.copy(date = date,hour = hour)
+    log.copy(date = date, hour = hour)
   }
 
   def parseShowLog(txt: String): UnionLog = {
@@ -209,7 +208,7 @@ object LogParser {
       )
     }
     val (date, hour) = getDateHourFromTime(log.timestamp)
-    log.copy(date = date,hour = hour)
+    log.copy(date = date, hour = hour)
   }
 
   def parseClickLog(txt: String): UnionLog = {
@@ -229,14 +228,14 @@ object LogParser {
       }
     }
     val (date, hour) = getDateHourFromTime(log.timestamp)
-    log.copy(date = date,hour = hour)
+    log.copy(date = date, hour = hour)
   }
 
   val traceRegex = """GET\s/trace\?iclicashsid=(\w+)&duration=(\d+)""".r
 
   def parseTraceLog(txt: String): UnionLog = {
     var log = EmptyUnionLog
-    val m = traceRegex.findFirstMatchIn(txt).foreach{
+    val m = traceRegex.findFirstMatchIn(txt).foreach {
       m =>
         val sub = m.subgroups
         if (sub.length == 2) {
