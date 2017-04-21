@@ -232,18 +232,22 @@ object LogParser {
     log.copy(date = date,hour = hour)
   }
 
-  def traceRegex1 = """GET\s/trace\?iclicashsid=(\d+)&duration=(\d+)""".r
-  def traceRegex2 = """\d+""".r
+  val traceRegex = """GET\s/trace\?iclicashsid=(\w+)&duration=(\d+)""".r
+  val sidRegex = """\w+""".r
+  val durRegex = """\d+""".r
 
   def parseTraceLog(txt: String): UnionLog = {
     var log = EmptyUnionLog
-    val part = traceRegex1.findAllMatchIn(txt).toList
-    val m = traceRegex2.findAllMatchIn(part.toString).toList
-    if (m.length == 2) {
-      log = log.copy(
-        searchid = m(0).toString(),
-        duration = m(1).toString().toInt
-      )
+    val part = traceRegex.findFirstIn(txt).toList
+    if (part.length == 1) {
+      val sid = sidRegex.findFirstIn(part.head.toString()).toList
+      val dur = durRegex.findFirstIn(part.head.toString()).toList
+      if (sid.length == 1 && dur.length == 1) {
+        log = log.copy(
+          searchid = sid.head.toString,
+          duration = dur.head.toInt
+        )
+      }
     }
     log
   }
