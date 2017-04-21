@@ -1,9 +1,6 @@
 package com.cpc.spark.log.anal
 
-import java.text.SimpleDateFormat
 import java.util.Calendar
-
-import aslog.Aslog
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
 import org.apache.spark.rdd
 import org.apache.spark.sql.{SaveMode, SparkSession}

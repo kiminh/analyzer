@@ -2,10 +2,6 @@ package com.cpc.spark.log.parser
 
 import java.text.SimpleDateFormat
 import java.util.Date
-
-import aslog.Aslog
-import com.cpc.spark.streaming.tools.Encoding
-import eventprotocol.Protocol
 import com.cpc.spark.common.{Event, Ui}
 
 
