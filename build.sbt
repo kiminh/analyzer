@@ -14,4 +14,8 @@ javacOptions ++= Seq(
   "-encoding", "UTF-8"
 )
 
+scalacOptions ++= Seq(
+  "-feature"
+)
+
 compileOrder := CompileOrder.JavaThenScala

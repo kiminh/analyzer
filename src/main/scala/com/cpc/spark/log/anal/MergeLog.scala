@@ -3,6 +3,7 @@ package com.cpc.spark.log.anal
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import aslog.Aslog
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
 import org.apache.spark.rdd
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -15,6 +16,7 @@ import org.apache.spark.sql.types._
 object MergeLog {
 
   def main(args: Array[String]): Unit = {
+    System.exit(1)
     if (args.length < 3) {
       System.err.println(s"""
         |Usage: MergeLog <hdfs_input> <hdfs_ouput> <hour_before>

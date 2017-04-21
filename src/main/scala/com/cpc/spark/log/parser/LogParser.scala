@@ -6,7 +6,7 @@ import java.util.Date
 import aslog.Aslog
 import com.cpc.spark.streaming.tools.Encoding
 import eventprotocol.Protocol
-import com.cpc.spark.common.Event
+import com.cpc.spark.common.{Event, Ui}
 
 
 /**
@@ -132,8 +132,9 @@ object LogParser {
 
   def parseSearchLog(txt: String): UnionLog = {
     var log = EmptyUnionLog
-    val notice = Aslog.NoticeLogBody.parseFrom(decodeLog(txt).toArray)
-    if (notice.getSearchid.length > 0) {
+    val data = Ui.parseData(txt)
+    if (data != null) {
+      val notice = data.ui
       log = log.copy(
         searchid = notice.getSearchid,
         timestamp = notice.getTimestamp,
@@ -217,16 +218,19 @@ object LogParser {
 
   def parseClickLog(txt: String): UnionLog = {
     var log = EmptyUnionLog
-    val event = Protocol.Event.parseFrom(decodeLog(txt).toArray)
-    if (event.getBody.getSearchId.length > 0) {
-      val body = event.getBody
-      log = log.copy(
-        searchid = body.getSearchId,
-        isclick = 1,
-        click_timestamp = body.getEventTimestamp,
-        antispam_score = body.getAntispam.getScore,
-        antispam_rules = body.getAntispam.getRulesList.toArray.mkString(",")
-      )
+    val data = Event.parse_click_log(txt)
+    if (data != null) {
+      val event = data.event
+      if (event.getBody.getSearchId.length > 0) {
+        val body = event.getBody
+        log = log.copy(
+          searchid = body.getSearchId,
+          isclick = 1,
+          click_timestamp = body.getEventTimestamp,
+          antispam_score = body.getAntispam.getScore,
+          antispam_rules = body.getAntispam.getRulesList.toArray.mkString(",")
+        )
+      }
     }
     val (date, hour) = getDateHourFromTime(log.timestamp)
     log.copy(date = date,hour = hour)
