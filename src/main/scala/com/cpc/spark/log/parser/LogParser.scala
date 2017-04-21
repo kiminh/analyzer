@@ -233,21 +233,18 @@ object LogParser {
   }
 
   val traceRegex = """GET\s/trace\?iclicashsid=(\w+)&duration=(\d+)""".r
-  val sidRegex = """\w+""".r
-  val durRegex = """\d+""".r
 
   def parseTraceLog(txt: String): UnionLog = {
     var log = EmptyUnionLog
-    val part = traceRegex.findFirstIn(txt).toList
-    if (part.length == 1) {
-      val sid = sidRegex.findFirstIn(part.head.toString()).toList
-      val dur = durRegex.findFirstIn(part.head.toString()).toList
-      if (sid.length == 1 && dur.length == 1) {
-        log = log.copy(
-          searchid = sid.head.toString,
-          duration = dur.head.toInt
-        )
-      }
+    val m = traceRegex.findFirstMatchIn(txt).foreach{
+      m =>
+        val sub = m.subgroups
+        if (sub.length == 2) {
+          log = log.copy(
+            searchid = sub(0),
+            duration = sub(1).toInt
+          )
+        }
     }
     log
   }
