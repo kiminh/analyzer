@@ -13,7 +13,6 @@ import org.apache.spark.sql.types._
 object MergeLog {
 
   def main(args: Array[String]): Unit = {
-    System.exit(1)
     if (args.length < 3) {
       System.err.println(s"""
         |Usage: MergeLog <hdfs_input> <hdfs_ouput> <hour_before>
@@ -21,13 +20,11 @@ object MergeLog {
         """.stripMargin)
       System.exit(1)
     }
-
     srcRoot = args(0)
     val table = args(1)
     val hourBefore = args(2).toInt
-
     val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -hourBefore.toInt)
+    cal.add(Calendar.HOUR, -hourBefore)
     val date = LogParser.dateFormat.format(cal.getTime)
     val hour = LogParser.hourFormat.format(cal.getTime)
     val spark = SparkSession.builder()
@@ -37,30 +34,30 @@ object MergeLog {
       .getOrCreate()
     import spark.implicits._
 
-    var unionData = prepareSource(spark, "cpc_search", hourBefore.toInt, 1)
+    var unionData = prepareSource(spark, "cpc_search", hourBefore, 1)
     if (unionData == null) {
       System.err.println("can not load search data")
       System.exit(1)
     }
 
-    val showData = prepareSource(spark, "cpc_show", hourBefore.toInt, 2)
+    val showData = prepareSource(spark, "cpc_show", hourBefore, 2)
     if (showData != null) {
       unionData = unionData.union(showData)
     }
 
-    val clickData = prepareSource(spark, "cpc_click", hourBefore.toInt, 2)
+    val clickData = prepareSource(spark, "cpc_click", hourBefore, 2)
     if (clickData != null) {
       unionData = unionData.union(clickData)
     }
 
-    val traceData = prepareSource(spark, "cpc_trace", hourBefore.toInt, 2)
+    val traceData = prepareSource(spark, "cpc_trace", hourBefore, 2)
     if (traceData != null) {
       unionData = unionData.union(clickData)
     }
 
     //val chargeData = prepareSource(spark, "cpc_charge", date, hour)
 
-    unionData.filter(x => x.searchid.length > 0)
+    unionData = unionData.filter(x => x.searchid.length > 0)
       .map(x => (x.searchid, x))
       .reduceByKey{
         (x, y) =>
