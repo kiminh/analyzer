@@ -25,13 +25,16 @@ object MergeLog {
       System.exit(1)
     }
 
-    val Array(input, output, hourBefore) = args
+    srcRoot = args(0)
+    val table = args(1)
+    val hourBefore = args(2).toInt
+
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore.toInt)
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val hour = new SimpleDateFormat("HH").format(cal.getTime)
+    val date = LogParser.dateFormat.format(cal.getTime)
+    val hour = LogParser.hourFormat.format(cal.getTime)
     val spark = SparkSession.builder()
-      .appName("cpc union log merge to %s topc = %s/%s".format(output, date, hour))
+      .appName("cpc union log merge to %s topc = %s/%s".format(table, date, hour))
       .enableHiveSupport()
       //.config("spark.some.config.option", "some-value")
       .getOrCreate()
@@ -78,7 +81,7 @@ object MergeLog {
       .mode(SaveMode.Append)
       .format("parquet")
       .partitionBy("date", "hour")
-      .saveAsTable("dl_cpc." + output)
+      .saveAsTable("dl_cpc." + table)
 
     /*
     spark.sql("create TABLE if not exists dl_cpc.cpc_union_log_tmp like union_log_temp")
@@ -101,7 +104,7 @@ object MergeLog {
         StructField("float_type",FloatType,true),
         StructField("string_type",StringType,true))),true),true)))
 
-  val srcRoot = "/gobblin/source/cpc"
+  var srcRoot = "/gobblin/source/cpc"
 
   /*
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
@@ -112,7 +115,6 @@ object MergeLog {
       val baseData = ctx.read.schema(schema).parquet(input)
       baseData.createTempView(src + "_data")
       val rddData = ctx.sql("select field['%s'].string_type from %s_data".format(src, src)).rdd
-
       src match {
         case "cpc_search" => rddData.map(x => LogParser.parseSearchLog(x.getString(0)))
         case "cpc_show" => rddData.map(x => LogParser.parseShowLog(x.getString(0)))

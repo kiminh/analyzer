@@ -266,17 +266,5 @@ object LogParser {
       ("", "")
     }
   }
-
-  def decodeLog(log: String): Seq[Byte] = {
-    try{
-      val tmps = log.split(" ")
-      Encoding.base64Decoder(tmps(tmps.length - 1))
-    }catch{
-      case e:Exception =>
-        e.printStackTrace()
-        println("decode log body error = " + log)
-        null
-    }
-  }
 }
 
