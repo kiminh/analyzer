@@ -130,9 +130,6 @@ object LogParser {
     hour = ""
   )
 
-  val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
-  val hourFormat = new SimpleDateFormat("HH")
-
   def parseSearchLog(txt: String): UnionLog = {
     var log = EmptyUnionLog
     val notice = Aslog.NoticeLogBody.parseFrom(decodeLog(txt).toArray)
@@ -235,9 +232,35 @@ object LogParser {
     log.copy(date = date,hour = hour)
   }
 
+  def traceRegex1 = """GET\s/trace\?iclicashsid=(\d+)&duration=(\d+)""".r
+  def traceRegex2 = """\d+""".r
+
+  def parseTraceLog(txt: String): UnionLog = {
+    var log = EmptyUnionLog
+    val part = traceRegex1.findAllMatchIn(txt).toList
+    val m = traceRegex2.findAllMatchIn(part.toString).toList
+    if (m.length == 2) {
+      log = log.copy(
+        searchid = m(0).toString(),
+        duration = m(1).toString().toInt
+      )
+    }
+    log
+  }
+
+  val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
+  val hourFormat = new SimpleDateFormat("HH")
+
+  /*
+  t: seconds
+   */
   def getDateHourFromTime(t: Long): (String, String) = {
-    val time = new Date(t)
-    (dateFormat.format(time), hourFormat.format(t))
+    if (t > 0) {
+      val time = new Date(t * 1000)
+      (dateFormat.format(time), hourFormat.format(t))
+    } else {
+      ("", "")
+    }
   }
 
   def decodeLog(log: String): Seq[Byte] = {
