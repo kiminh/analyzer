@@ -1,6 +1,8 @@
 package com.cpc.spark.log.anal
 
+import java.text.SimpleDateFormat
 import java.util.Calendar
+
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
 import org.apache.spark.rdd
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -11,6 +13,10 @@ import org.apache.spark.sql.types._
   * Created by Roy on 2017/4/18.
   */
 object MergeLog {
+
+  var srcRoot = "/gobblin/source/cpc"
+
+  val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
 
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
@@ -26,10 +32,8 @@ object MergeLog {
     val hourBefore = args(2).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
-    val date = LogParser.dateFormat.format(cal.getTime)
-    val hour = LogParser.hourFormat.format(cal.getTime)
     val spark = SparkSession.builder()
-      .appName("cpc union log merge to %s topc = %s/%s".format(table, date, hour))
+      .appName("cpc union log merge to %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
       //.config("spark.some.config.option", "some-value")
       .getOrCreate()
@@ -77,16 +81,6 @@ object MergeLog {
       .format("parquet")
       .partitionBy("date", "hour")
       .saveAsTable("dl_cpc." + table)
-
-    /*
-    spark.sql("create TABLE if not exists dl_cpc.cpc_union_log_tmp like union_log_temp")
-    spark.sql("INSERT INTO TABLE dl_cpc.cpc_union_log_tmp select * from union_log_temp")
-    createTable(spark)
-    spark.sql(s"""
-      |INSERT INTO TABLE dl_cpc.cpc_union_log PARTITION(`date` = "%s", `hour` = "%s")
-      |SELECT * FROM union_log_temp
-       """.stripMargin.format(date, hour))
-       */
   }
 
   val schema = StructType(Array(
@@ -98,8 +92,6 @@ object MergeLog {
         StructField("long_type", LongType, true),
         StructField("float_type", FloatType, true),
         StructField("string_type", StringType, true))), true), true)))
-
-  var srcRoot = "/gobblin/source/cpc"
 
   /*
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
@@ -129,13 +121,14 @@ object MergeLog {
     cal.add(Calendar.HOUR, -hourBefore)
     for (h <- 0 to hours - 1) {
       cal.add(Calendar.HOUR, h)
-      val date = LogParser.dateFormat.format(cal.getTime)
-      val hour = LogParser.hourFormat.format(cal.getTime)
-      parts(h) = date + "/" + hour
+      parts(h) = partitionPathFormat.format(cal.getTime)
     }
     "{" + parts.mkString(",") + "}"
   }
 
+  /*
+  as 并非一定是as的日志，有可能也是event
+   */
   def merge(as: UnionLog, event: UnionLog): UnionLog = {
     var log = as
     if (event.isshow == 1) {
@@ -164,7 +157,7 @@ object MergeLog {
 
   def createTable(ctx: SparkSession): Unit = {
     val colsRdd = ctx.sql("describe union_log_temp").queryExecution.toRdd
-    var cols = new Array[String](colsRdd.count().toInt - 2)
+    val cols = new Array[String](colsRdd.count().toInt - 2)
     var n = 0
     colsRdd.collect().foreach {
       col =>
