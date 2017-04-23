@@ -8,7 +8,6 @@ import org.apache.spark.rdd
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.types._
 
-
 /**
   * Created by Roy on 2017/4/18.
   */

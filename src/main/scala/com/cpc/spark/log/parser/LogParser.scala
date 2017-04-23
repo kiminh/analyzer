@@ -10,123 +10,62 @@ import com.cpc.spark.common.{Event, Ui}
   */
 
 case class UnionLog(
-                     searchid: String,
-                     timestamp: Int,
-                     network: Int,
-                     ip: String,
-                     exptags: String,
-
-                     media_type: Int,
-                     media_appsid: String,
-
-                     adslotid: String,
-                     adslot_type: Int,
-
-                     adnum: Int,
-                     isfill: Int,
-                     adtype: Int,
-                     adsrc: Int,
-                     interaction: Int,
-                     bid: Int,
-                     floorbid: Float,
-                     cpmbid: Float,
-                     price: Int,
-                     ctr: Long,
-                     cpm: Long,
-                     ideaid: Int,
-                     unitid: Int,
-                     planid: Int,
-
-                     country: Int,
-                     province: Int,
-                     city: Int,
-                     isp: Int,
-
-                     uid: String,
-                     ua: String,
-                     os: Int,
-                     screen_w: Int,
-                     screen_h: Int,
-                     brand: String,
-                     model: String,
-
-                     sex: Int,
-                     age: Int,
-                     coin: Int,
-
-                     isshow: Int,
-                     show_timestamp: Int,
-                     show_network: Int,
-                     show_ip: String,
-
-                     isclick: Int,
-                     click_timestamp: Int,
-                     click_network: Int,
-                     click_ip: String,
-                     antispam_score: Int,
-                     antispam_rules: String,
-                     duration: Int,
-                     date: String,
-                     hour: String)
-
+                     searchid: String = "",
+                     timestamp: Int = 0,
+                     network: Int = 0,
+                     ip: String = "",
+                     exptags: String = "",
+                     media_type: Int = 0,
+                     media_appsid: String = "",
+                     adslotid: String = "",
+                     adslot_type: Int = 0,
+                     adnum: Int = 0,
+                     isfill: Int = 0,
+                     adtype: Int = 0,
+                     adsrc: Int = 0,
+                     interaction: Int = 0,
+                     bid: Int = 0,
+                     floorbid: Float = 0,
+                     cpmbid: Float = 0,
+                     price: Int = 0,
+                     ctr: Long = 0,
+                     cpm: Long = 0,
+                     ideaid: Int = 0,
+                     unitid: Int = 0,
+                     planid: Int = 0,
+                     country: Int = 0,
+                     province: Int = 0,
+                     city: Int = 0,
+                     isp: Int = 0,
+                     brand: String = "",
+                     model: String = "",
+                     uid: String = "",
+                     ua: String = "",
+                     os: Int = 0,
+                     screen_w: Int = 0,
+                     screen_h: Int = 0,
+                     sex: Int = 0,
+                     age: Int = 0,
+                     coin: Int = 0,
+                     isshow: Int = 0,
+                     show_timestamp: Int = 0,
+                     show_network: Int = 0,
+                     show_ip: String = "",
+                     isclick: Int = 0,
+                     click_timestamp: Int = 0,
+                     click_network: Int = 0,
+                     click_ip: String = "",
+                     antispam_score: Int = 0,
+                     antispam_rules: String = "",
+                     duration: Int = 0,
+                     date: String = "",
+                     hour: String = ""
+                   )
 
 object LogParser {
 
-  val EmptyUnionLog = UnionLog(
-    searchid = "",
-    timestamp = 0,
-    network = 0,
-    ip = "",
-    exptags = "",
-    media_type = 0,
-    media_appsid = "",
-    adslotid = "",
-    adslot_type = 0,
-    adnum = 0,
-    isfill = 0,
-    adtype = 0,
-    adsrc = 0,
-    interaction = 0,
-    bid = 0,
-    floorbid = 0,
-    cpmbid = 0,
-    price = 0,
-    ctr = 0,
-    cpm = 0,
-    ideaid = 0,
-    unitid = 0,
-    planid = 0,
-    country = 0,
-    province = 0,
-    city = 0,
-    isp = 0,
-    brand = "",
-    model = "",
-    uid = "",
-    ua = "",
-    os = 0,
-    screen_w = 0,
-    screen_h = 0,
-    sex = 0,
-    age = 0,
-    coin = 0,
-    isshow = 0,
-    show_timestamp = 0,
-    show_network = 0,
-    show_ip = "",
-    isclick = 0,
-    click_timestamp = 0,
-    click_network = 0,
-    click_ip = "",
-    antispam_score = 0,
-    antispam_rules = "",
-    duration = 0,
-    date = "",
-    hour = ""
-  )
-
   def parseSearchLog(txt: String): UnionLog = {
-    var log = EmptyUnionLog
+    var log = UnionLog()
     val data = Ui.parseData(txt)
     if (data != null) {
       val notice = data.ui
@@ -197,7 +136,7 @@ object LogParser {
   }
 
   def parseShowLog(txt: String): UnionLog = {
-    var log = EmptyUnionLog
+    var log = UnionLog()
     val data = Event.parse_show_log(txt)
     if (data != null) {
       val body = data.event
@@ -212,7 +151,7 @@ object LogParser {
   }
 
   def parseClickLog(txt: String): UnionLog = {
-    var log = EmptyUnionLog
+    var log = UnionLog()
     val data = Event.parse_click_log(txt)
     if (data != null) {
       val event = data.event
@@ -234,7 +173,7 @@ object LogParser {
   val traceRegex = """GET\s/trace\?iclicashsid=(\w+)&duration=(\d+)""".r
 
   def parseTraceLog(txt: String): UnionLog = {
-    var log = EmptyUnionLog
+    var log = UnionLog()
     val m = traceRegex.findFirstMatchIn(txt).foreach {
       m =>
         val sub = m.subgroups
