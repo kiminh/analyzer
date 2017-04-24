@@ -2,6 +2,7 @@ package com.cpc.spark.log.parser
 
 import java.text.SimpleDateFormat
 import java.util.Date
+
 import com.cpc.spark.common.{Event, Ui}
 
 
@@ -11,7 +12,7 @@ import com.cpc.spark.common.{Event, Ui}
 
 case class UnionLog(
                      searchid: String = "",
-                     timestamp: Int = 0,
+                     timestamp: Long = 0,
                      network: Int = 0,
                      ip: String = "",
                      exptags: String = "",
@@ -48,11 +49,11 @@ case class UnionLog(
                      age: Int = 0,
                      coin: Int = 0,
                      isshow: Int = 0,
-                     show_timestamp: Int = 0,
+                     show_timestamp: Long = 0,
                      show_network: Int = 0,
                      show_ip: String = "",
                      isclick: Int = 0,
-                     click_timestamp: Int = 0,
+                     click_timestamp: Long = 0,
                      click_network: Int = 0,
                      click_ip: String = "",
                      antispam_score: Int = 0,
@@ -71,7 +72,7 @@ object LogParser {
       val notice = data.ui
       log = log.copy(
         searchid = notice.getSearchid,
-        timestamp = notice.getTimestamp,
+        timestamp = notice.getTimestamp.toLong,
         network = notice.getNetwork.getType.getNumber,
         ip = notice.getNetwork.getIp,
         exptags = notice.getExptagsList.toArray.mkString(","),
@@ -143,7 +144,7 @@ object LogParser {
       log = log.copy(
         searchid = body.getSearchId,
         isshow = 1,
-        show_timestamp = body.getEventTimestamp
+        show_timestamp = body.getEventTimestamp.toLong
       )
     }
     val (date, hour) = getDateHourFromTime(log.timestamp)
@@ -160,7 +161,7 @@ object LogParser {
         log = log.copy(
           searchid = body.getSearchId,
           isclick = 1,
-          click_timestamp = body.getEventTimestamp,
+          click_timestamp = body.getEventTimestamp.toLong,
           antispam_score = body.getAntispam.getScore,
           antispam_rules = body.getAntispam.getRulesList.toArray.mkString(",")
         )
@@ -195,8 +196,8 @@ object LogParser {
    */
   def getDateHourFromTime(t: Long): (String, String) = {
     if (t > 0) {
-      val time = new Date(t * 1000)
-      (dateFormat.format(time), hourFormat.format(t))
+      val dt = new Date(t * 1000)
+      (dateFormat.format(dt), hourFormat.format(dt))
     } else {
       ("", "")
     }

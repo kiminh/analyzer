@@ -11,17 +11,17 @@ import org.apache.spark.sql.types._
 /**
   * Created by Roy on 2017/4/18.
   */
-object MergeLog {
+object AnalUnionLog {
 
   var srcRoot = "/gobblin/source/cpc"
 
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 3) {
+    if (args.length < 0) {
       System.err.println(
         s"""
-           |Usage: MergeLog <hdfs_input> <hdfs_ouput> <hour_before>
+           |Usage: AnalUnionLog <hdfs_input> <hdfs_ouput> <hour_before>
            |
         """.stripMargin)
       System.exit(1)
@@ -32,7 +32,7 @@ object MergeLog {
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
     val spark = SparkSession.builder()
-      .appName("cpc union log merge to %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
+      .appName("cpc anal union log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
       //.config("spark.some.config.option", "some-value")
       .getOrCreate()
@@ -61,7 +61,10 @@ object MergeLog {
 
     //val chargeData = prepareSource(spark, "cpc_charge", date, hour)
 
-    unionData = unionData.filter(x => x.searchid.length > 0)
+    unionData.cache()
+
+    //write union log data
+    val unionLog = unionData.filter(x => x.searchid.length > 0)
       .map(x => (x.searchid, x))
       .reduceByKey {
         (x, y) =>
@@ -73,13 +76,19 @@ object MergeLog {
       }.map(x => x._2)
       .filter(x => x.timestamp > 0)
 
-    spark.createDataFrame(unionData)
+    spark.createDataFrame(unionLog)
       .select("*")
       .write
       .mode(SaveMode.Append)
       .format("parquet")
       .partitionBy("date", "hour")
       .saveAsTable("dl_cpc." + table)
+
+    //write mysql hourly data
+
+
+    unionData.unpersist()
+    spark.stop()
   }
 
   val schema = StructType(Array(
