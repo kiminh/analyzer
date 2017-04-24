@@ -144,7 +144,8 @@ object LogParser {
       log = log.copy(
         searchid = body.getSearchId,
         isshow = 1,
-        show_timestamp = body.getEventTimestamp
+        show_timestamp = body.getEventTimestamp,
+        show_ip = body.getEventIp.toString
       )
     }
     val (date, hour) = getDateHourFromTime(log.timestamp)
@@ -163,7 +164,8 @@ object LogParser {
           isclick = 1,
           click_timestamp = body.getEventTimestamp,
           antispam_score = body.getAntispam.getScore,
-          antispam_rules = body.getAntispam.getRulesList.toArray.mkString(",")
+          antispam_rules = body.getAntispam.getRulesList.toArray.mkString(","),
+          click_ip = body.getEventIp.toString
         )
       }
     }

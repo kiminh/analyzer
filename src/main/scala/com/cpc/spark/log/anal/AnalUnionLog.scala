@@ -54,18 +54,21 @@ object AnalUnionLog {
       unionData = unionData.union(clickData)
     }
 
-    val traceData = prepareSource(spark, "cpc_trace", hourBefore, 2)
-    if (traceData != null) {
-      unionData = unionData.union(clickData)
+    val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
+    if (traceData1 != null) {
+      unionData = unionData.union(traceData1)
+    }
+    val traceData2 = prepareSource(spark, "cpc_trace", hourBefore, 1)
+    if (traceData2 != null) {
+      unionData = unionData.union(traceData2)
     }
 
     //val chargeData = prepareSource(spark, "cpc_charge", date, hour)
 
-    unionData.cache()
+    unionData = unionData.filter(x => x.searchid.length > 0).cache()
 
     //write union log data
-    val unionLog = unionData.filter(x => x.searchid.length > 0)
-      .map(x => (x.searchid, x))
+    val unionLog = unionData.map(x => (x.searchid, x))
       .reduceByKey {
         (x, y) =>
           if (y.timestamp > 0) {
@@ -85,7 +88,6 @@ object AnalUnionLog {
       .saveAsTable("dl_cpc." + table)
 
     //write mysql hourly data
-
 
     unionData.unpersist()
     spark.stop()
