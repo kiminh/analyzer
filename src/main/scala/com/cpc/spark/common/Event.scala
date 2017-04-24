@@ -8,6 +8,7 @@ object Event {
     try {
       val log_map = NgLogParser.split_ng_log(data)
       val query = log_map("request")
+      val ip = log_map("remote_addr")
       val body = query.split(" ")(1)
       if (body.startsWith("/show")) {
         val query_body = body.split("\\?")(1)
@@ -17,7 +18,7 @@ object Event {
           val head_event = eventprotocol.Protocol.Event.Head.parseFrom(head_byte.toArray)
           if (head_event.getCryptoType == eventprotocol.Protocol.Event.Head.CryptoType.JESGOO_BASE64) {
             val meds = Encoding.base64Decoder(split_log_tmps(1), head_event.getCryptoParam)
-            new Show(meds)
+            new Show(meds, ip)
           } else {
             null
           }
@@ -48,8 +49,9 @@ object Event {
   }
 }
 
-class Show(data: Seq[Byte]) {
+class Show(data: Seq[Byte], ips: String) {
   val typed = 2
+  val ip = ips
   val event = eventprotocol.Protocol.Event.Body.parseFrom(data.toArray)
 }
 

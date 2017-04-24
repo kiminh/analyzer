@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
+import com.cpc.spark.streaming.tools.NgLogParser
 import org.apache.spark.rdd
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.types._
@@ -18,7 +19,7 @@ object AnalUnionLog {
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 0) {
+    if (args.length < 3) {
       System.err.println(
         s"""
            |Usage: AnalUnionLog <hdfs_input> <hdfs_ouput> <hour_before>

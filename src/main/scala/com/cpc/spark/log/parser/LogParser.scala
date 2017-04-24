@@ -146,7 +146,7 @@ object LogParser {
         searchid = body.getSearchId,
         isshow = 1,
         show_timestamp = body.getEventTimestamp,
-        show_ip = LongToIPv4(body.getEventIp.toLong)
+        show_ip = data.ip
       )
     }
     val (date, hour) = getDateHourFromTime(log.timestamp)
