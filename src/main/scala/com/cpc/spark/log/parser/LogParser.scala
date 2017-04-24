@@ -1,5 +1,6 @@
 package com.cpc.spark.log.parser
 
+import java.net.InetAddress
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -145,7 +146,7 @@ object LogParser {
         searchid = body.getSearchId,
         isshow = 1,
         show_timestamp = body.getEventTimestamp,
-        show_ip = body.getEventIp.toString
+        show_ip = LongToIPv4(body.getEventIp.toLong)
       )
     }
     val (date, hour) = getDateHourFromTime(log.timestamp)
@@ -165,7 +166,7 @@ object LogParser {
           click_timestamp = body.getEventTimestamp,
           antispam_score = body.getAntispam.getScore,
           antispam_rules = body.getAntispam.getRulesList.toArray.mkString(","),
-          click_ip = body.getEventIp.toString
+          click_ip = LongToIPv4(body.getEventIp.toLong)
         )
       }
     }
@@ -203,6 +204,27 @@ object LogParser {
     } else {
       ("", "")
     }
+  }
+
+  def IPv4ToLong(dottedIP: String): Long = {
+    val addrArray: Array[String] = dottedIP.split("\\.")
+    var num: Long = 0
+    var i: Int = 0
+    while (i < addrArray.length) {
+      val power: Int = 3 - i
+      num = num + ((addrArray(i).toInt % 256) * Math.pow(256, power)).toLong
+      i += 1
+    }
+    num
+  }
+
+  def LongToIPv4 (ip : Long) : String = {
+    val bytes: Array[Byte] = new Array[Byte](4)
+    bytes(0) = ((ip & 0xff000000) >> 24).toByte
+    bytes(1) = ((ip & 0x00ff0000) >> 16).toByte
+    bytes(2) = ((ip & 0x0000ff00) >> 8).toByte
+    bytes(3) = (ip & 0x000000ff).toByte
+    InetAddress.getByAddress(bytes).getHostAddress()
   }
 }
 
