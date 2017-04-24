@@ -12,7 +12,7 @@ import com.cpc.spark.common.{Event, Ui}
 
 case class UnionLog(
                      searchid: String = "",
-                     timestamp: Long = 0,
+                     timestamp: Int = 0,
                      network: Int = 0,
                      ip: String = "",
                      exptags: String = "",
@@ -49,11 +49,11 @@ case class UnionLog(
                      age: Int = 0,
                      coin: Int = 0,
                      isshow: Int = 0,
-                     show_timestamp: Long = 0,
+                     show_timestamp: Int = 0,
                      show_network: Int = 0,
                      show_ip: String = "",
                      isclick: Int = 0,
-                     click_timestamp: Long = 0,
+                     click_timestamp: Int = 0,
                      click_network: Int = 0,
                      click_ip: String = "",
                      antispam_score: Int = 0,
@@ -72,7 +72,7 @@ object LogParser {
       val notice = data.ui
       log = log.copy(
         searchid = notice.getSearchid,
-        timestamp = notice.getTimestamp.toLong,
+        timestamp = notice.getTimestamp,
         network = notice.getNetwork.getType.getNumber,
         ip = notice.getNetwork.getIp,
         exptags = notice.getExptagsList.toArray.mkString(","),
@@ -144,7 +144,7 @@ object LogParser {
       log = log.copy(
         searchid = body.getSearchId,
         isshow = 1,
-        show_timestamp = body.getEventTimestamp.toLong
+        show_timestamp = body.getEventTimestamp
       )
     }
     val (date, hour) = getDateHourFromTime(log.timestamp)
@@ -161,7 +161,7 @@ object LogParser {
         log = log.copy(
           searchid = body.getSearchId,
           isclick = 1,
-          click_timestamp = body.getEventTimestamp.toLong,
+          click_timestamp = body.getEventTimestamp,
           antispam_score = body.getAntispam.getScore,
           antispam_rules = body.getAntispam.getRulesList.toArray.mkString(",")
         )
@@ -194,9 +194,9 @@ object LogParser {
   /*
   t: seconds
    */
-  def getDateHourFromTime(t: Long): (String, String) = {
+  def getDateHourFromTime(t: Int): (String, String) = {
     if (t > 0) {
-      val dt = new Date(t * 1000)
+      val dt = new Date(t.toLong * 1000L)
       (dateFormat.format(dt), hourFormat.format(dt))
     } else {
       ("", "")
