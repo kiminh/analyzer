@@ -1,13 +1,13 @@
 package com.cpc.spark.log.anal
 
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Date, Properties}
 
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
-import com.cpc.spark.streaming.tools.NgLogParser
 import org.apache.spark.rdd
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.types._
+
 
 /**
   * Created by Roy on 2017/4/18.
@@ -17,6 +17,10 @@ object AnalUnionLog {
   var srcRoot = "/gobblin/source/cpc"
 
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
+
+  val mariadbUrl = "jdbc:mysql://139.224.232.57:3306/report"
+
+  val mariadbProp = new Properties()
 
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
@@ -32,6 +36,11 @@ object AnalUnionLog {
     val hourBefore = args(2).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
+
+    mariadbProp.put("user", "report")
+    mariadbProp.put("password", "report!@#")
+    mariadbProp.put("driver", "org.mariadb.jdbc.Driver")
+
     val spark = SparkSession.builder()
       .appName("cpc anal union log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
@@ -64,12 +73,8 @@ object AnalUnionLog {
       unionData = unionData.union(traceData2)
     }
 
-    //val chargeData = prepareSource(spark, "cpc_charge", date, hour)
-
-    unionData = unionData.filter(x => x.searchid.length > 0).cache()
-
-    //write union log data
-    val unionLog = unionData.map(x => (x.searchid, x))
+    unionData = unionData.filter(_.searchid.length > 0)
+      .map(x => (x.searchid, x))
       .reduceByKey {
         (x, y) =>
           if (y.timestamp > 0) {
@@ -77,10 +82,13 @@ object AnalUnionLog {
           } else {
             merge(x, y)
           }
-      }.map(x => x._2)
-      .filter(x => x.timestamp > 0)
+      }
+      .map(_._2)
+      .filter(_.timestamp > 0)
+      .cache()
 
-    spark.createDataFrame(unionLog)
+    //write union log data
+    spark.createDataFrame(unionData)
       .select("*")
       .write
       .mode(SaveMode.Append)
@@ -88,7 +96,99 @@ object AnalUnionLog {
       .partitionBy("date", "hour")
       .saveAsTable("dl_cpc." + table)
 
-    //write mysql hourly data
+    //write hourly data to mysql
+    val chargeData = unionData.map {
+        x =>
+          val charge = MediaChargeReport(
+            media_id = x.media_appsid.toInt,
+            adslot_id = x.adslotid.toInt,
+            unit_id = x.unitid,
+            idea_id = x.ideaid,
+            plan_id = x.planid,
+            request = 1,
+            served_request = x.isfill,
+            impression = x.isshow,
+            click = x.isclick,
+            charged_click = x.isCharged(),
+            spam_click = x.isSpamClick(),
+            cash_cost = x.price,
+            date = x.date,
+            hour = x.hour.toInt
+          )
+          (charge.key, charge)
+      }
+      .reduceByKey((x, y) => x.sum(y))
+      .map(_._2)
+
+    spark.createDataFrame(chargeData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_media_charge_hourly", mariadbProp)
+
+    val geoData = unionData.map {
+      x =>
+        val report = MediaGeoReport(
+          media_id = x.media_appsid.toInt,
+          adslot_id = x.adslotid.toInt,
+          unit_id = x.unitid,
+          idea_id = x.ideaid,
+          plan_id = x.planid,
+          country = x.country,
+          province = x.province,
+          city = x.city,
+          request = 1,
+          served_request = x.isfill,
+          impression = x.isshow,
+          click = x.isclick,
+          charged_click = x.isCharged(),
+          spam_click = x.isSpamClick(),
+          cash_cost = x.price,
+          date = x.date,
+          hour = x.hour.toInt
+        )
+        (report.key, report)
+      }
+      .reduceByKey((x, y) => x.sum(y))
+      .map(_._2)
+
+    spark.createDataFrame(geoData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_media_geo_hourly", mariadbProp)
+
+    val osData = unionData.map {
+      x =>
+        val report = MediaOsReport(
+          media_id = x.media_appsid.toInt,
+          adslot_id = x.adslotid.toInt,
+          unit_id = x.unitid,
+          idea_id = x.ideaid,
+          plan_id = x.planid,
+          os_type = x.os,
+          request = 1,
+          served_request = x.isfill,
+          impression = x.isshow,
+          click = x.isclick,
+          charged_click = x.isCharged(),
+          spam_click = x.isSpamClick(),
+          cash_cost = x.price,
+          date = x.date,
+          hour = x.hour.toInt
+        )
+        (report.key, report)
+      }
+      .reduceByKey((x, y) => x.sum(y))
+      .map(_._2)
+
+    spark.createDataFrame(osData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_media_os_hourly", mariadbProp)
+
+    spark.createDataFrame(osData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_media_os_hourly", mariadbProp)
 
     unionData.unpersist()
     spark.stop()
@@ -138,7 +238,7 @@ object AnalUnionLog {
   }
 
   /*
-  as 并非一定是as的日志，有可能也是event
+  reduce中as并非一定是as的日志，有可能也是event
    */
   def merge(as: UnionLog, event: UnionLog): UnionLog = {
     var log = as
@@ -186,6 +286,5 @@ object AnalUnionLog {
        """.stripMargin.format(cols.mkString(",")))
   }
 }
-
 
 
