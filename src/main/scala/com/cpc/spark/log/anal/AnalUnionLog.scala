@@ -89,7 +89,6 @@ object AnalUnionLog {
 
     //write union log data
     spark.createDataFrame(unionData)
-      .select("*")
       .write
       .mode(SaveMode.Append)
       .format("parquet")
@@ -179,11 +178,6 @@ object AnalUnionLog {
       }
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
-
-    spark.createDataFrame(osData)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_media_os_hourly", mariadbProp)
 
     spark.createDataFrame(osData)
       .write
