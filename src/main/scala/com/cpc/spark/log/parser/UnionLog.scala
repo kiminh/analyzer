@@ -52,12 +52,13 @@ case class UnionLog(
                      antispam_score: Int = 0,
                      antispam_rules: String = "",
                      duration: Int = 0,
+                     userid: Int = 0,
                      date: String = "",
                      hour: String = ""
                    ) {
 
   def isSpamClick(): Int = {
-    if (antispam_score > 0) {
+    if (antispam_score < 10000 && isclick > 0) {
       1
     } else {
       0
@@ -65,8 +66,16 @@ case class UnionLog(
   }
 
   def isCharged(): Int = {
-    if (price > 0) {
+    if (price > 0 && isclick > 0 && antispam_score == 10000) {
       1
+    } else {
+      0
+    }
+  }
+
+  def realCost(): Int = {
+    if (isclick > 0 && antispam_score == 10000) {
+      price
     } else {
       0
     }

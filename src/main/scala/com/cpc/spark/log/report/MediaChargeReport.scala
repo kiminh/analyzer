@@ -1,6 +1,4 @@
-package com.cpc.spark.log.anal
-
-
+package com.cpc.spark.log.report
 
 /**
   * Created by Roy on 2017/4/25.
@@ -8,10 +6,12 @@ package com.cpc.spark.log.anal
 
 case class MediaChargeReport(
                           media_id: Int = 0,
-                          adslot_id: Int= 0,
-                          idea_id: Int= 0,
-                          unit_id: Int= 0,
-                          plan_id: Int= 0,
+                          adslot_id: Int = 0,
+                          adslot_type: Int = 0,
+                          idea_id: Int = 0,
+                          unit_id: Int = 0,
+                          plan_id: Int = 0,
+                          user_id: Int = 0,
                           request: Int = 0,
                           served_request: Int = 0,
                           impression: Int = 0,
@@ -24,7 +24,7 @@ case class MediaChargeReport(
                           hour: Int = 0
                         ) {
 
-  val key = "%s-%d-%d-%d-%d".format(media_id, adslot_id, plan_id, unit_id, idea_id)
+  val key = "%d-%d-%d-%d-%d".format(media_id, adslot_id, plan_id, unit_id, idea_id)
 
   def sum(mc: MediaChargeReport): MediaChargeReport = {
     copy(

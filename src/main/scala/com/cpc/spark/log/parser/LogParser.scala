@@ -48,6 +48,7 @@ object LogParser {
           ideaid = ad.getAdid,
           unitid = ad.getGroupid,
           planid = ad.getPlanid,
+          userid = ad.getUserid,
           adtype = ad.getType.getNumber,
           adsrc = ad.getSrc.getNumber,
           interaction = ad.getInteraction.getNumber,

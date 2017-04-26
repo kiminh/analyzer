@@ -1,14 +1,16 @@
-package com.cpc.spark.log.anal
+package com.cpc.spark.log.report
 
 /**
   * Created by Roy on 2017/4/25.
   */
 case class MediaGeoReport (
                             media_id: Int = 0,
-                            adslot_id: Int= 0,
-                            idea_id: Int= 0,
-                            unit_id: Int= 0,
-                            plan_id: Int= 0,
+                            adslot_id: Int = 0,
+                            adslot_type: Int = 0,
+                            idea_id: Int = 0,
+                            unit_id: Int = 0,
+                            plan_id: Int = 0,
+                            user_id: Int = 0,
                             country: Int = 0,
                             province: Int = 0,
                             city: Int = 0,

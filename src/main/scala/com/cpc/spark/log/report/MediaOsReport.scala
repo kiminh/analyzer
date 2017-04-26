@@ -1,14 +1,17 @@
-package com.cpc.spark.log.anal
+package com.cpc.spark.log.report
 
 /**
   * Created by Roy on 2017/4/25.
   */
-case class MediaReport(
+case class MediaOsReport (
                       media_id: Int = 0,
-                      adslot_id: Int= 0,
-                      idea_id: Int= 0,
-                      unit_id: Int= 0,
-                      plan_id: Int= 0,
+                      adslot_id: Int = 0,
+                      adslot_type: Int = 0,
+                      idea_id: Int = 0,
+                      unit_id: Int = 0,
+                      plan_id: Int = 0,
+                      user_id: Int = 0,
+                      os_type: Int = 0,
                       request: Int = 0,
                       served_request: Int = 0,
                       impression: Int = 0,
@@ -21,9 +24,9 @@ case class MediaReport(
                       hour: Int = 0
                     ) {
 
-  val key = "%s-%d-%d-%d-%d".format(media_id, adslot_id, plan_id, unit_id, idea_id)
+  val key = "%s-%d-%d-%d-%d-%d".format(media_id, adslot_id, plan_id, unit_id, idea_id, os_type)
 
-  def sum(r: MediaReport): MediaReport = {
+  def sum(r: MediaOsReport): MediaOsReport = {
     copy(
       request = r.request + request,
       served_request = r.served_request + served_request,
@@ -36,3 +39,5 @@ case class MediaReport(
     )
   }
 }
+
+
