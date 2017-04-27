@@ -128,15 +128,17 @@ object LogParser {
 
   def parseTraceLog(txt: String): UnionLog = {
     var log = UnionLog()
-    val m = traceRegex.findFirstMatchIn(txt).foreach {
-      m =>
-        val sub = m.subgroups
-        if (sub.length == 2) {
-          log = log.copy(
-            searchid = sub(0),
-            duration = sub(1).toInt
-          )
-        }
+    if (txt != null) {
+      traceRegex.findFirstMatchIn(txt).foreach {
+        m =>
+          val sub = m.subgroups
+          if (sub.length == 2) {
+            log = log.copy(
+              searchid = sub(0),
+              duration = sub(1).toInt
+            )
+          }
+      }
     }
     log
   }
