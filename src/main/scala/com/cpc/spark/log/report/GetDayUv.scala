@@ -10,7 +10,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   */
 object GetDayUv {
 
-  val mariadbUrl = "jdbc:mysql://139.224.232.57:3306/report"
+  val mariadbUrl = "jdbc:mysql://10.9.180.16:3306/report"
 
   val mariadbProp = new Properties()
 
