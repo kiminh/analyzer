@@ -20,7 +20,7 @@ object HdfsParser {
       if (devid.length > 0) {
         profile = UserProfile(
           ok = true,
-          devid = devid,
+          devid = devid + "_UPDATA",
           coin = toInt(data(2)),
           sex = toInt(data(3)),
           age = getAge(data(4))
