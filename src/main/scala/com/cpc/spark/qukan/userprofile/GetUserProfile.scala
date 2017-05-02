@@ -5,8 +5,8 @@ import java.util.Calendar
 
 import com.cpc.spark.qukan.parser.HdfsParser
 import com.redis.RedisClient
-import org.apache.spark.{SparkConf, SparkContext}
-import userprofile.Userprofile
+import com.typesafe.config.ConfigFactory
+import org.apache.spark.sql.SparkSession
 
 /**
   * Created by Roy on 2017/4/14.
@@ -14,12 +14,46 @@ import userprofile.Userprofile
 object GetUserProfile {
 
   def main(args: Array[String]): Unit = {
-    val conf = new SparkConf().setAppName("cpc get qukan user profile")
-    val sc = new SparkContext(conf)
+    if (args.length < 0) {
+      System.err.println(
+        s"""
+           |Usage: GetUserProfile <hdfs_input> <hdfs_ouput> <hour_before>
+           |
+        """.stripMargin)
+      System.exit(1)
+    }
+
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -1)
     val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val redis = new RedisClient("10.9.125.57", 6379)
+    val conf = ConfigFactory.load()
+    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+
+    val ctx = SparkSession.builder()
+      .appName("cpc get user profile [%s]".format(day))
+      .getOrCreate()
+
+    //user app install info
+    val aiPath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(day)
+    val aiRdd = ctx.read.orc(aiPath).rdd
+    val aiData = aiRdd.take(10).foreach {
+      x =>
+        println(x.getString(0), x.getString(1), x.getString(2))
+    }
+
+    System.exit(1)
+
+    /*
+    val profilePath = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s".format(day)
+    val profileRdd = ctx.read.text(profilePath).rdd
+    val pData = profileRdd
+      .map(x => HdfsParser.parseTextRow(x.getString(0)))
+      .filter(x => x != null && x.getDevid.length > 0)
+
+
+      //.map(x => HdfsParser.parseAppInstall(x))
+      //.filter(x => x != null && x.getDevid.length > 0)
+
 
     for (n <- 0 to 14) {
       val path = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s/%06d*".format(day, n)
@@ -45,5 +79,9 @@ object GetUserProfile {
     }
 
     sc.stop()
+    */
+
+    ctx.stop()
   }
 }
+

@@ -4,18 +4,14 @@ version := "1.0"
 
 scalaVersion := "2.11.8"
 
-unmanagedBase := baseDirectory.value / "libs"
-
 libraryDependencies ++= Seq(
-  "org.scala-lang" % "scala-reflect" % scalaVersion.value
+  "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+  "com.typesafe" % "config" % "1.2.1"
 )
 
 javacOptions ++= Seq(
   "-encoding", "UTF-8"
 )
 
-scalacOptions ++= Seq(
-  "-feature"
-)
-
 compileOrder := CompileOrder.JavaThenScala
+

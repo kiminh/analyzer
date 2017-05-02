@@ -3,7 +3,9 @@ package com.cpc.spark.qukan.parser
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-case class UserProfile(ok: Boolean, devid: String, age: Int, sex: Int, coin: Int)
+import org.apache.spark.sql.Row
+import userprofile.Userprofile.UserProfile
+
 
 /**
   * Created by Roy on 2017/4/14.
@@ -14,32 +16,40 @@ object HdfsParser {
 
   def parseTextRow(txt: String): UserProfile = {
     val data = txt.split(columnSep)
-    var profile = UserProfile(false, "", 0, 0, 0)
+    var profile: UserProfile = null
     if (data.length == 6) {
       val devid = data(0).trim
       if (devid.length > 0) {
-        profile = UserProfile(
-          ok = true,
-          devid = devid + "_UPDATA",
-          coin = toInt(data(2)),
-          sex = toInt(data(3)),
-          age = getAge(data(4))
-        )
+        val profile = UserProfile
+          .newBuilder()
+          .setDevid(devid)
+          .setAge(getAge(data(4)))
+          .setSex(toInt(data(3)))
+          .setCoin(toInt(data(2)))
+          .build()
       }
     }
     profile
   }
 
+  def parseAppInstall(row: Row): UserProfile = {
+    var profile: UserProfile = null
+    val devid = row.getString(1)
+    profile
+  }
+
+  val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
+  val yearFormat = new SimpleDateFormat("yyyy")
+
   //年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: >50
   def getAge(birth: String): Int = {
     var year = 0
     if (birth.length == 10) {
-      val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
       val cal = Calendar.getInstance()
       try {
         cal.setTime(dateFormat.parse(birth))
-        val byear = new SimpleDateFormat("yyyy").format(cal.getTime)
-        val nyear = new SimpleDateFormat("yyyy").format(Calendar.getInstance().getTime)
+        val byear = yearFormat.format(cal.getTime)
+        val nyear = yearFormat.format(Calendar.getInstance().getTime)
         year = nyear.toInt - byear.toInt
       } catch {
         case e: Exception =>
