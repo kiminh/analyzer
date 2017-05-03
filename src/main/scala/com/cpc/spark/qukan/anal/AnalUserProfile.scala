@@ -31,17 +31,17 @@ object AnalUserProfile {
       val path = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s/%06d*".format(day, n)
       val ctx = sc.textFile(path)
       val result = ctx.map(row => HdfsParser.parseTextRow(row))
-        .filter(x => x != null && x.getDevid.length > 0)
-        .map(x => (x.getDevid, x))
+        .filter(x => x != null && x.devid.length > 0)
+        .map(x => (x.devid, x))
         .reduceByKey((x, y) => y)
         .map(x => x._2)
 
       result.collect().foreach {
         x =>
-          age(x.getAge) = age(x.getAge) + 1
-          sex(x.getSex) = sex(x.getSex) + 1
+          age(x.age) = age(x.age) + 1
+          sex(x.sex) = sex(x.sex) + 1
 
-          val l = x.getCoin.toString.length
+          val l = x.coin.toString.length
           if (l < coin.length) {
             coin(l - 1) = coin(l - 1) + 1
           }

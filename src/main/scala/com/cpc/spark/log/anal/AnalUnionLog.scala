@@ -123,8 +123,8 @@ object AnalUnionLog {
     val parts = new Array[String](hours)
     cal.add(Calendar.HOUR, -hourBefore)
     for (h <- 0 to hours - 1) {
-      cal.add(Calendar.HOUR, h)
       parts(h) = partitionPathFormat.format(cal.getTime)
+      cal.add(Calendar.HOUR, 1)
     }
     "{" + parts.mkString(",") + "}"
   }

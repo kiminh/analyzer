@@ -1,12 +1,12 @@
 package com.cpc.spark.qukan.userprofile
 
-import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.qukan.parser.HdfsParser
+import com.cpc.spark.qukan.parser.{HdfsParser, ProfileRow}
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.SparkSession
+import userprofile.Userprofile.{APPPackage, UserProfile}
 
 /**
   * Created by Roy on 2017/4/14.
@@ -14,74 +14,87 @@ import org.apache.spark.sql.SparkSession
 object GetUserProfile {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 0) {
+    if (args.length < 2) {
       System.err.println(
         s"""
-           |Usage: GetUserProfile <hdfs_input> <hdfs_ouput> <hour_before>
+           |Usage: GetUserProfile <day_before> <del_old>
            |
         """.stripMargin)
       System.exit(1)
     }
 
+    val dayBefore = args(0).toInt
+    val delOld = args(1).toBoolean
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -1)
-    val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val day = HdfsParser.dateFormat.format(cal.getTime)
     val conf = ConfigFactory.load()
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-
+    val allowedPkgs = conf.getStringList("userprofile.allowed_pkgs")
     val ctx = SparkSession.builder()
       .appName("cpc get user profile [%s]".format(day))
       .getOrCreate()
 
-    //user app install info
-    val aiPath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(day)
-    val aiRdd = ctx.read.orc(aiPath).rdd
-    val aiData = aiRdd.take(10).foreach {
-      x =>
-        println(x.getString(0), x.getString(1), x.getString(2))
-    }
-
-    System.exit(1)
-
-    /*
     val profilePath = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s".format(day)
-    val profileRdd = ctx.read.text(profilePath).rdd
-    val pData = profileRdd
+    var unionRdd = ctx.read.text(profilePath).rdd
       .map(x => HdfsParser.parseTextRow(x.getString(0)))
-      .filter(x => x != null && x.getDevid.length > 0)
+      .filter(x => x != null && x.devid.length > 0)
 
-
-      //.map(x => HdfsParser.parseAppInstall(x))
-      //.filter(x => x != null && x.getDevid.length > 0)
-
-
-    for (n <- 0 to 14) {
-      val path = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s/%06d*".format(day, n)
-      val ctx = sc.textFile(path)
-      val result = ctx.map(row => HdfsParser.parseTextRow(row))
-        .filter(x => x.ok)
-        .map(x => (x.devid, x))
-        .reduceByKey((x, y) => y)
-        .map(x => x._2)
-
-      result.collect().foreach {
-        row =>
-          val devid = row.devid
-          val profile = Userprofile
-            .UserProfile
-            .newBuilder()
-            .setAge(row.age)
-            .setSex(row.sex)
-            .setCoin(row.coin)
-            .build()
-          redis.set(devid, profile.toByteArray)
-      }
+    //user app install info
+    for (d <- 0 to dayBefore - 1) {
+      val day = HdfsParser.dateFormat.format(cal.getTime)
+      val aiPath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(day)
+      val aiRdd = ctx.read.orc(aiPath).rdd
+        .map(HdfsParser.parseInstallApp(_, x => allowedPkgs.contains(x)))
+        .filter(x => x != null && x.devid.length > 0)
+      unionRdd = unionRdd.union(aiRdd)
+      cal.add(Calendar.DATE, -1)
     }
 
-    sc.stop()
-    */
+    unionRdd.map(x => (x.devid, x))
+      .reduceByKey {
+        (x, y) =>
+          if (x.from == 0) {
+            merge(x, y)
+          } else {
+            merge(y, x)
+          }
+      }
+      .map(_._2)
+      .toLocalIterator
+      .foreach {
+        x =>
+          val devid = x.devid
+          val profile = UserProfile
+            .newBuilder()
+            .setAge(x.age)
+            .setSex(x.sex)
+            .setCoin(x.coin)
+
+          x.pkgs
+            .foreach {
+              p =>
+                val pkg = APPPackage
+                  .newBuilder()
+                  .setFirstInstallTime(p.firstInstallTime)
+                  .setLastUpdateTime(p.lastUpdateTime)
+                  .setPackagename(p.name)
+                  .build()
+                profile.addInstallpkg(pkg)
+          }
+
+          redis.setex(devid + "_UPDATA", 3600 * 24 * 7, profile.build().toByteArray)
+          if (delOld) {
+            redis.del(devid)
+          }
+      }
 
     ctx.stop()
   }
+
+  def merge(x: ProfileRow, y: ProfileRow): ProfileRow = {
+    x.copy(pkgs = x.pkgs ::: y.pkgs)
+  }
 }
+
 

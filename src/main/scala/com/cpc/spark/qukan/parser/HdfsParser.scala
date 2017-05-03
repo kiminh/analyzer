@@ -1,10 +1,11 @@
 package com.cpc.spark.qukan.parser
 
 import java.text.SimpleDateFormat
-import java.util.{Calendar, Date}
+import java.util.Calendar
 
 import org.apache.spark.sql.Row
-import userprofile.Userprofile.UserProfile
+import org.json4s._
+import org.json4s.native.JsonMethods._
 
 
 /**
@@ -14,27 +15,52 @@ object HdfsParser {
 
   val columnSep = '\001'
 
-  def parseTextRow(txt: String): UserProfile = {
+  def parseTextRow(txt: String): ProfileRow = {
     val data = txt.split(columnSep)
-    var profile: UserProfile = null
+    var profile: ProfileRow = null
     if (data.length == 6) {
       val devid = data(0).trim
       if (devid.length > 0) {
-        val profile = UserProfile
-          .newBuilder()
-          .setDevid(devid)
-          .setAge(getAge(data(4)))
-          .setSex(toInt(data(3)))
-          .setCoin(toInt(data(2)))
-          .build()
+        profile = ProfileRow(
+          devid = devid,
+          age = getAge(data(4)),
+          sex = toInt(data(3)),
+          coin = toInt(data(2)),
+          from = 0
+        )
       }
     }
     profile
   }
 
-  def parseAppInstall(row: Row): UserProfile = {
-    var profile: UserProfile = null
-    val devid = row.getString(1)
+  def parseInstallApp(x: Row, f: (String) => Boolean): ProfileRow = {
+    var profile: ProfileRow = null
+    val devid = x.getString(1)
+    if (devid != null && devid.length > 0) {
+      try {
+        val pkgs: List[AppPkg] = for {
+          JArray(pkgs) <- parse(x.getString(2))
+          JObject(pkg) <- pkgs
+          JField("firstInstallTime", JInt(ftime)) <- pkg
+          JField("lastUpdateTime", JInt(ltime)) <- pkg
+          JField("packageName", JString(pname)) <- pkg
+          p = AppPkg(
+            name = pname,
+            firstInstallTime = ftime.toLong,
+            lastUpdateTime = ltime.toLong
+          )
+        } yield p
+        if (pkgs.length > 0) {
+          profile = ProfileRow(
+            devid = devid,
+            from = 1,
+            pkgs = pkgs.filter(x => f(x.name))
+          )
+        }
+      } catch {
+        case e: Exception => null
+      }
+    }
     profile
   }
 
@@ -82,5 +108,22 @@ object HdfsParser {
     }
   }
 }
+
+
+case class ProfileRow (
+                      devid: String = "",
+                      age: Int = 0,
+                      sex: Int = 0,
+                      coin: Int = 0,
+                      from: Int = 0,
+                      pkgs: List[AppPkg] = List[AppPkg]()
+                      )
+
+case class AppPkg (
+                  name: String = "",
+                  firstInstallTime: Long = 0,
+                  lastUpdateTime: Long = 0
+                  )
+
 
 
