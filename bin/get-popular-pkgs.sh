@@ -12,8 +12,6 @@ jars=(
     "$cur/lib/json4s-ast_2.11-3.5.1.jar"
 )
 
-jars=${jars[*]} | tr ' ' ,
-
 $SPARK_HOME/bin/spark-submit --master yarn \
     --executor-memory 4G --executor-cores 2 --total-executor-cores 10 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
