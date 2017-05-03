@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cur=/home/cpc/`$1`analyzer
+cur=/home/cpc/$1
 SPARK_HOME=/home/spark/spark-2.1.0
 jars=(
     "$cur/lib/scala-redis_2.11-1.0.jar"

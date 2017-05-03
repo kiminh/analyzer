@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cur=/home/cpc/$1analyzer
+cur=/home/cpc/$1
 SPARK_HOME=/home/spark/spark-2.1.0
 
 jars=(
@@ -17,7 +17,7 @@ jars=${jars[*]} | tr ' ' ,
 
 $SPARK_HOME/bin/spark-submit --master yarn \
     --executor-memory 4G --executor-cores 2 --total-executor-cores 10 \
-    --jars $jars
+    --jars $jars \
     --class com.cpc.spark.qukan.userprofile.GetUserProfile \
     $cur/lib/cpc-anal_2.11-1.0.jar 1 true
 
