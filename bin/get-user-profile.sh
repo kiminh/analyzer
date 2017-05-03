@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cur=/home/cpc/analyzer$1
+cur=/home/cpc/$1analyzer
 SPARK_HOME=/home/spark/spark-2.1.0
 
 $SPARK_HOME/bin/spark-submit --master yarn \
