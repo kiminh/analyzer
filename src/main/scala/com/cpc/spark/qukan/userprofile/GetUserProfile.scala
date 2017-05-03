@@ -64,9 +64,9 @@ object GetUserProfile {
       .toLocalIterator
       .foreach {
         x =>
-          val devid = x.devid
           val profile = UserProfile
             .newBuilder()
+            .setDevid(x.devid)
             .setAge(x.age)
             .setSex(x.sex)
             .setCoin(x.coin)
@@ -83,9 +83,9 @@ object GetUserProfile {
                 profile.addInstallpkg(pkg)
           }
 
-          redis.setex(devid + "_UPDATA", 3600 * 24 * 7, profile.build().toByteArray)
+          redis.setex(x.devid + "_UPDATA", 3600 * 24 * 7, profile.build().toByteArray)
           if (delOld) {
-            redis.del(devid)
+            redis.del(x.devid)
           }
       }
 
