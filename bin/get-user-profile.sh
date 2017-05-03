@@ -13,11 +13,9 @@ jars=(
     "$cur/lib/json4s-ast_2.11-3.5.1.jar"
 )
 
-jars=${jars[*]} | tr ' ' ,
-
 $SPARK_HOME/bin/spark-submit --master yarn \
     --executor-memory 4G --executor-cores 2 --total-executor-cores 10 \
-    --jars $jars \
+    --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.qukan.userprofile.GetUserProfile \
     $cur/lib/cpc-anal_2.11-1.0.jar 1 true
 
