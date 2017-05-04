@@ -62,7 +62,8 @@ object AnalUnionLog {
       unionData = unionData.union(traceData2)
     }
 
-    unionData = unionData.filter(_.searchid.length > 0)
+    unionData = unionData
+      .filter(x => x != null && x.searchid.length > 0)
       .map(x => (x.searchid, x))
       .reduceByKey {
         (x, y) =>

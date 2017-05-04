@@ -15,10 +15,11 @@ import com.cpc.spark.common.{Event, Ui}
 object LogParser {
 
   def parseSearchLog(txt: String): UnionLog = {
-    var log = UnionLog()
+    var log: UnionLog = null
     val data = Ui.parseData(txt)
     if (data != null) {
       val notice = data.ui
+      val (date, hour) = getDateHourFromTime(notice.getTimestamp)
       log = log.copy(
         searchid = notice.getSearchid,
         timestamp = notice.getTimestamp,
@@ -26,7 +27,9 @@ object LogParser {
         ip = notice.getNetwork.getIp,
         exptags = notice.getExptagsList.toArray.mkString(","),
         media_type = notice.getMedia.getType.getNumber,
-        media_appsid = notice.getMedia.getAppsid
+        media_appsid = notice.getMedia.getAppsid,
+        date = date,
+        hour = hour
       )
       if (notice.getAdslotCount > 0) {
         val slot = notice.getAdslot(0)
@@ -82,12 +85,11 @@ object LogParser {
         coin = user.getCoin
       )
     }
-    val (date, hour) = getDateHourFromTime(log.timestamp)
-    log.copy(date = date, hour = hour)
+    log
   }
 
   def parseShowLog(txt: String): UnionLog = {
-    var log = UnionLog()
+    var log: UnionLog = null
     val data = Event.parse_show_log(txt)
     if (data != null) {
       val body = data.event
@@ -98,12 +100,11 @@ object LogParser {
         show_ip = data.ip
       )
     }
-    val (date, hour) = getDateHourFromTime(log.timestamp)
-    log.copy(date = date, hour = hour)
+    log
   }
 
   def parseClickLog(txt: String): UnionLog = {
-    var log = UnionLog()
+    var log: UnionLog = null
     val data = Event.parse_click_log(txt)
     if (data != null) {
       val event = data.event
@@ -120,14 +121,13 @@ object LogParser {
         )
       }
     }
-    val (date, hour) = getDateHourFromTime(log.timestamp)
-    log.copy(date = date, hour = hour)
+    log
   }
 
   val traceRegex = """GET\s/trace\?iclicashsid=(\w+)&duration=(\d+)""".r
 
   def parseTraceLog(txt: String): UnionLog = {
-    var log = UnionLog()
+    var log: UnionLog = null
     if (txt != null) {
       traceRegex.findFirstMatchIn(txt).foreach {
         m =>
