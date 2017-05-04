@@ -20,7 +20,7 @@ object LogParser {
     if (data != null) {
       val notice = data.ui
       val (date, hour) = getDateHourFromTime(notice.getTimestamp)
-      log = log.copy(
+      log = UnionLog(
         searchid = notice.getSearchid,
         timestamp = notice.getTimestamp,
         network = notice.getNetwork.getType.getNumber,
@@ -93,7 +93,7 @@ object LogParser {
     val data = Event.parse_show_log(txt)
     if (data != null) {
       val body = data.event
-      log = log.copy(
+      log = UnionLog(
         searchid = body.getSearchId,
         isshow = 1,
         show_timestamp = body.getEventTimestamp,
@@ -111,7 +111,7 @@ object LogParser {
       if (event.getBody.getSearchId.length > 0) {
         val body = event.getBody
         val charge = body.getCharge
-        log = log.copy(
+        log = UnionLog(
           searchid = body.getSearchId,
           isclick = 1,
           click_timestamp = body.getEventTimestamp,
@@ -133,7 +133,7 @@ object LogParser {
         m =>
           val sub = m.subgroups
           if (sub.length == 2) {
-            log = log.copy(
+            log = UnionLog(
               searchid = sub(0),
               duration = sub(1).toInt
             )
