@@ -145,6 +145,7 @@ object LogParser {
 
   val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
   val hourFormat = new SimpleDateFormat("HH")
+  val partitionFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
 
   /*
   t: seconds
@@ -152,7 +153,12 @@ object LogParser {
   def getDateHourFromTime(t: Int): (String, String) = {
     if (t > 0) {
       val dt = new Date(t.toLong * 1000L)
-      (dateFormat.format(dt), hourFormat.format(dt))
+      val parts = partitionFormat.format(dt).split("/")
+      if (parts.length == 2) {
+        (parts(0), parts(1))
+      } else {
+        ("", "")
+      }
     } else {
       ("", "")
     }
