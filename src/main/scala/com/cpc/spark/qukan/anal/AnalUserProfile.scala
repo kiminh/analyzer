@@ -20,12 +20,13 @@ object AnalUserProfile {
       .appName("cpc anal user profile [%s]".format(day))
       .enableHiveSupport()
       .getOrCreate()
+    import ctx.implicits._
 
     //年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: >50
     val age = new Array[Int](7)
     //性别 0: 未知 1: 男 2: 女
     val sex = new Array[Int](3)
-    val coin = new Array[Int](20)
+    val coin = new Array[Int](15)
     var total = 0
     val profilePath = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s".format(day)
     ctx.read.text(profilePath).rdd
@@ -46,25 +47,20 @@ object AnalUserProfile {
           total = total + 1
       }
 
-    var stats = List[(String, Int)]()
-    for (i <- 0 to sex.length - 1) {
-      stats :+= ("sex_" + i.toString, sex(i))
-    }
-    for (i <- 0 to age.length - 1) {
-      stats :+= ("age_" + i.toString, age(i))
-    }
-    for (i <- 0 to coin.length - 1) {
-      stats :+= ("coin_" + i.toString, coin(i))
-    }
-    stats :+= ("total", total)
-    stats :+= ("date", date.toInt)
+    val stats = UserProfileStats(
+      sex = sex.mkString(","),
+      age = age.mkString(","),
+      coin = coin.mkString(","),
+      total = total,
+      date = day
+    )
 
-    ctx.createDataFrame(stats)
+    Seq(stats)
+      .toDF()
       .write
-      .mode(SaveMode.Append)
-      .saveAsTable("dl_cpc.user_profile_stats")
+      .mode(SaveMode.Overwrite)
+      .saveAsTable("dl_cpc." + args(0))
 
-    /*
     println("年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: >50")
     for (i <- 0 to age.length - 1) {
       println("age %d: %d %.4f".format(i, age(i), age(i).toFloat / total.toFloat))
@@ -83,8 +79,16 @@ object AnalUserProfile {
     }
 
     println("\ntotal %d".format(total))
-    */
 
     ctx.stop()
   }
 }
+
+
+case class UserProfileStats (
+                            sex: String = "",
+                            age: String = "",
+                            coin: String = "",
+                            total: Int = 0,
+                            date: String = ""
+                            )

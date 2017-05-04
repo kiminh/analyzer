@@ -13,4 +13,4 @@ $SPARK_HOME/bin/spark-submit --master yarn \
     --executor-memory 4G --executor-cores 2 --total-executor-cores 10 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.qukan.anal.AnalUserProfile \
-    $cur/lib/cpc-anal_2.11-1.0.jar
+    $cur/lib/cpc-anal_2.11-1.0.jar "user_profile_stats"
