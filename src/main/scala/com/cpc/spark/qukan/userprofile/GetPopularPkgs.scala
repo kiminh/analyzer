@@ -30,7 +30,7 @@ object GetPopularPkgs {
     //user app install info
     val aiPath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(day)
     val aiRdd = ctx.read.orc(aiPath).rdd
-      .map(HdfsParser.parseInstallApp(_, x => true))
+      .map(HdfsParser.parseInstallApp(_, x => true, null))
       .filter(x => x != null && x.pkgs.length > 0)
       .flatMap(_.pkgs)
       .map(x => (x.name, 1))

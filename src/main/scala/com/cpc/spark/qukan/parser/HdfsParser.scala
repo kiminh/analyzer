@@ -3,9 +3,12 @@ package com.cpc.spark.qukan.parser
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.typesafe.config.Config
 import org.apache.spark.sql.Row
 import org.json4s._
 import org.json4s.native.JsonMethods._
+
+import scala.collection.mutable
 
 
 /**
@@ -33,7 +36,7 @@ object HdfsParser {
     profile
   }
 
-  def parseInstallApp(x: Row, f: (String) => Boolean): ProfileRow = {
+  def parseInstallApp(x: Row, f: (String) => Boolean, pkgCates: Config): ProfileRow = {
     var profile: ProfileRow = null
     val devid = x.getString(1)
     if (devid != null && devid.length > 0) {
@@ -50,11 +53,32 @@ object HdfsParser {
             lastUpdateTime = ltime.toLong
           )
         } yield p
+
         if (pkgs.length > 0) {
+          var utags = mutable.Map[Int, Int]()
+          pkgs.foreach {
+            p =>
+              val key = p.name.replace('.', '|')
+              if (pkgCates.hasPath(key)) {
+                val tags = pkgCates.getIntList(key)
+                for (i <- 0 to tags.size() - 1) {
+                  val tag = tags.get(i).toInt
+                  val v = utags.getOrElseUpdate(tag, 0)
+                  utags.update(tag, v + 1)
+                }
+              }
+          }
+
+          var uis = List[UserInterest]()
+          for ((k, v) <- utags) {
+            uis = uis :+ UserInterest(tag = k, score = v)
+          }
+
           profile = ProfileRow(
             devid = devid,
             from = 1,
-            pkgs = pkgs.filter(x => f(x.name))
+            pkgs = pkgs.filter(x => f(x.name)),
+            uis = uis
           )
         }
       } catch {
@@ -116,7 +140,8 @@ case class ProfileRow (
                       sex: Int = 0,
                       coin: Int = 0,
                       from: Int = 0,
-                      pkgs: List[AppPkg] = List[AppPkg]()
+                      pkgs: List[AppPkg] = List[AppPkg](),
+                      uis: List[UserInterest] = List[UserInterest]()
                       )
 
 case class AppPkg (
@@ -125,5 +150,10 @@ case class AppPkg (
                   lastUpdateTime: Long = 0
                   )
 
+
+case class UserInterest (
+                        tag: Int = 0,
+                        score: Int = 0
+                        )
 
 

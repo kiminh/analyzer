@@ -6,7 +6,7 @@ import com.cpc.spark.qukan.parser.{HdfsParser, ProfileRow}
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.SparkSession
-import userprofile.Userprofile.{APPPackage, UserProfile}
+import userprofile.Userprofile.{APPPackage, InterestItem, UserProfile}
 
 /**
   * Created by Roy on 2017/4/14.
@@ -25,12 +25,16 @@ object GetUserProfile {
 
     val dayBefore = args(0).toInt
     val delOld = args(1).toBoolean
+
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -1)
     val day = HdfsParser.dateFormat.format(cal.getTime)
+
     val conf = ConfigFactory.load()
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     val allowedPkgs = conf.getStringList("userprofile.allowed_pkgs")
+    val pkgCates = conf.getConfig("userprofile.pkg_cates")
+
     val ctx = SparkSession.builder()
       .appName("cpc get user profile [%s]".format(day))
       .getOrCreate()
@@ -45,7 +49,7 @@ object GetUserProfile {
       val day = HdfsParser.dateFormat.format(cal.getTime)
       val aiPath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(day)
       val aiRdd = ctx.read.orc(aiPath).rdd
-        .map(HdfsParser.parseInstallApp(_, x => allowedPkgs.contains(x)))
+        .map(HdfsParser.parseInstallApp(_, x => allowedPkgs.contains(x), pkgCates))
         .filter(x => x != null && x.devid.length > 0)
       unionRdd = unionRdd.union(aiRdd)
       cal.add(Calendar.DATE, -1)
@@ -71,16 +75,25 @@ object GetUserProfile {
             .setSex(x.sex)
             .setCoin(x.coin)
 
-          x.pkgs
-            .foreach {
-              p =>
-                val pkg = APPPackage
-                  .newBuilder()
-                  .setFirstInstallTime(p.firstInstallTime)
-                  .setLastUpdateTime(p.lastUpdateTime)
-                  .setPackagename(p.name)
-                  .build()
-                profile.addInstallpkg(pkg)
+          x.pkgs.foreach {
+            p =>
+              val pkg = APPPackage
+                .newBuilder()
+                .setFirstInstallTime(p.firstInstallTime)
+                .setLastUpdateTime(p.lastUpdateTime)
+                .setPackagename(p.name)
+                .build()
+              profile.addInstallpkg(pkg)
+          }
+
+          x.uis.foreach {
+            ui =>
+              val i = InterestItem
+                .newBuilder()
+                .setTag(ui.tag)
+                .setScore(ui.score)
+                .build()
+              profile.addInterests(i)
           }
 
           redis.setex(x.devid + "_UPDATA", 3600 * 24 * 7, profile.build().toByteArray)
