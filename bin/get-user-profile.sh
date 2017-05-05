@@ -17,6 +17,7 @@ $SPARK_HOME/bin/spark-submit --master yarn \
     --executor-memory 4G --executor-cores 2 --total-executor-cores 10 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.qukan.userprofile.GetUserProfile \
-    $cur/lib/cpc-anal_2.11-1.0.jar 1 true
+    $cur/lib/cpc-anal_2.11-1.0.jar 1 true && \
+    echo "`date +%Y-%m-%d:%H:%M:%S` done" >> $cur/log/get-user-profile.log
 
 
