@@ -9,13 +9,7 @@ libraryDependencies ++= Seq(
 )
 
 javacOptions ++= Seq(
-  "-encoding", "UTF-8",
-  "-Dfile.encoding", "UTF-8"
-)
-
-scalacOptions ++= Seq(
-  "-encoding", "UTF-8",
-  "-Dfile.encoding", "UTF-8"
+  "-encoding", "UTF-8"
 )
 
 compileOrder := CompileOrder.JavaThenScala

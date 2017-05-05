@@ -20,22 +20,6 @@ object AnalAppCategory {
         """.stripMargin)
       System.exit(1)
     }
-    var m = mutable.Map[Int, Int](1 -> 3,  2 -> 4)
-
-    m.update(2,3)
-
-    println(m,m(1), m.get(5),m.getOrElseUpdate(5, 1))
-
-
-    val conf = ConfigFactory.load()
-    val c = conf.getConfig("userprofile.pkg_cates")
-
-    val t = c.getIntList("com.wepie.snake.nearme.gamecenter".replace('.', '|'))
-
-    println(t, c.hasPath("com.wepie.snake.nearme.gamecenter".replace('.', '|')), t.get(0).toInt, t.size())
-
-    System.exit(1)
-
     var n = 0
     for (line <- Source.fromFile(args(0), "UTF8").getLines()) {
       val nodes = line.split(",")

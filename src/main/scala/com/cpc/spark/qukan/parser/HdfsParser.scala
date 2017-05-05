@@ -36,7 +36,7 @@ object HdfsParser {
     profile
   }
 
-  def parseInstallApp(x: Row, f: (String) => Boolean, pkgCates: Config): ProfileRow = {
+  def parseInstallApp(x: Row, f: String => Boolean, pkgCates: Config): ProfileRow = {
     var profile: ProfileRow = null
     val devid = x.getString(1)
     if (devid != null && devid.length > 0) {
@@ -55,23 +55,25 @@ object HdfsParser {
         } yield p
 
         if (pkgs.length > 0) {
-          var utags = mutable.Map[Int, Int]()
-          pkgs.foreach {
-            p =>
-              val key = p.name.replace('.', '|')
-              if (pkgCates.hasPath(key)) {
-                val tags = pkgCates.getIntList(key)
-                for (i <- 0 to tags.size() - 1) {
-                  val tag = tags.get(i).toInt
-                  val v = utags.getOrElseUpdate(tag, 0)
-                  utags.update(tag, v + 1)
-                }
-              }
-          }
-
           var uis = List[UserInterest]()
-          for ((k, v) <- utags) {
-            uis = uis :+ UserInterest(tag = k, score = v)
+          if (pkgCates != null) {
+            val utags = mutable.Map[Int, Int]()
+            pkgs.foreach {
+              p =>
+                val key = p.name.replace('.', '|')
+                if (pkgCates.hasPath(key)) {
+                  val tags = pkgCates.getIntList(key)
+                  for (i <- 0 to tags.size() - 1) {
+                    val tag = tags.get(i).toInt
+                    val v = utags.getOrElseUpdate(tag, 0)
+                    utags.update(tag, v + 1)
+                  }
+                }
+            }
+
+            for ((k, v) <- utags) {
+              uis = uis :+ UserInterest(tag = k, score = v)
+            }
           }
 
           profile = ProfileRow(
