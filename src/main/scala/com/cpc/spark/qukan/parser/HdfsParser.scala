@@ -36,7 +36,7 @@ object HdfsParser {
     profile
   }
 
-  def parseInstallApp(x: Row, f: String => Boolean, pkgCates: Config): ProfileRow = {
+  def parseInstallApp(x: Row, f: String => Boolean, pkgTags: Config): ProfileRow = {
     var profile: ProfileRow = null
     val devid = x.getString(1)
     if (devid != null && devid.length > 0) {
@@ -56,13 +56,13 @@ object HdfsParser {
 
         if (pkgs.length > 0) {
           var uis = List[UserInterest]()
-          if (pkgCates != null) {
+          if (pkgTags != null) {
             val utags = mutable.Map[Int, Int]()
             pkgs.foreach {
               p =>
                 val key = p.name.replace('.', '|')
-                if (pkgCates.hasPath(key)) {
-                  val tags = pkgCates.getIntList(key)
+                if (pkgTags.hasPath(key)) {
+                  val tags = pkgTags.getIntList(key)
                   for (i <- 0 to tags.size() - 1) {
                     val tag = tags.get(i).toInt
                     val v = utags.getOrElseUpdate(tag, 0)

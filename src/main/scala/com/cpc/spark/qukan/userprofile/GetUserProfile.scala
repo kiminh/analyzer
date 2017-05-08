@@ -14,17 +14,16 @@ import userprofile.Userprofile.{APPPackage, InterestItem, UserProfile}
 object GetUserProfile {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 2) {
+    if (args.length < 1) {
       System.err.println(
         s"""
-           |Usage: GetUserProfile <day_before> <del_old>
+           |Usage: GetUserProfile <day_before>
            |
         """.stripMargin)
       System.exit(1)
     }
 
     val dayBefore = args(0).toInt
-    val delOld = args(1).toBoolean
 
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -1)
@@ -33,7 +32,7 @@ object GetUserProfile {
     val conf = ConfigFactory.load()
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     val allowedPkgs = conf.getStringList("userprofile.allowed_pkgs")
-    val pkgCates = conf.getConfig("userprofile.pkg_cates")
+    val pkgTags = conf.getConfig("userprofile.pkg_tags")
 
     val ctx = SparkSession.builder()
       .appName("cpc get user profile [%s]".format(day))
@@ -49,7 +48,7 @@ object GetUserProfile {
       val day = HdfsParser.dateFormat.format(cal.getTime)
       val aiPath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(day)
       val aiRdd = ctx.read.orc(aiPath).rdd
-        .map(HdfsParser.parseInstallApp(_, x => allowedPkgs.contains(x), pkgCates))
+        .map(HdfsParser.parseInstallApp(_, x => allowedPkgs.contains(x), pkgTags))
         .filter(x => x != null && x.devid.length > 0)
       unionRdd = unionRdd.union(aiRdd)
       cal.add(Calendar.DATE, -1)
@@ -97,9 +96,6 @@ object GetUserProfile {
           }
 
           redis.setex(x.devid + "_UPDATA", 3600 * 24 * 7, profile.build().toByteArray)
-          if (delOld) {
-            redis.del(x.devid)
-          }
       }
 
     ctx.stop()

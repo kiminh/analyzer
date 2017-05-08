@@ -1,8 +1,9 @@
 package com.cpc.spark.qukan.anal
 
+import java.io.{File, FileWriter}
+
 import com.typesafe.config.{Config, ConfigFactory}
 
-import scala.collection.mutable
 import scala.io.Source
 
 /**
@@ -20,6 +21,14 @@ object AnalAppCategory {
         """.stripMargin)
       System.exit(1)
     }
+    val conf = ConfigFactory.load()
+    val cates = conf.getStringList("userprofile.category").iterator()
+
+    while (cates.hasNext) {
+      val n = cates.next()
+      println(n)
+    }
+
     var n = 0
     for (line <- Source.fromFile(args(0), "UTF8").getLines()) {
       val nodes = line.split(",")

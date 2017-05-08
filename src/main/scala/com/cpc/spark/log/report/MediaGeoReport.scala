@@ -26,15 +26,15 @@ case class MediaGeoReport (
                             hour: Int = 0
                           ) {
 
-  val key = "%s-%d-%d-%d-%d-%d-%d-%d".format(
+  //暂时统计到省份
+  val key = "%s-%d-%d-%d-%d-%d-%d".format(
     media_id,
     adslot_id,
     plan_id,
     unit_id,
     idea_id,
     country,
-    province,
-    city
+    province
   )
 
   def sum(r: MediaGeoReport): MediaGeoReport = {
