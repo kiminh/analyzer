@@ -53,6 +53,7 @@ case class UnionLog(
                      antispam_rules: String = "",
                      duration: Int = 0,
                      userid: Int = 0,
+                     interests: String = "",
                      date: String = "",
                      hour: String = ""
                    ) {

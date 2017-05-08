@@ -79,10 +79,19 @@ object LogParser {
         model = device.getModel
       )
       val user = notice.getUserprofile
+      val interests = user.getInterestsList.iterator()
+      var interRows = Seq[String]()
+      while (interests.hasNext) {
+        val in = interests.next()
+        if (in.getInterestid > 0) {
+          interRows = interRows :+ "%d=%d".format(in.getInterestid, in.getScore)
+        }
+      }
       log = log.copy(
         sex = user.getSex,
         age = user.getAge,
-        coin = user.getCoin
+        coin = user.getCoin,
+        interests = interRows.mkString(",")
       )
     }
     log
