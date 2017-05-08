@@ -2,9 +2,10 @@ package com.cpc.spark.log.anal
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import com.cpc.spark.log.parser.{LogParser, UnionLog}
+
+import com.cpc.spark.log.parser.{LogParser, TraceLog, UnionLog}
 import org.apache.spark.rdd
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types._
 
 
@@ -38,29 +39,15 @@ object AnalUnionLog {
     import spark.implicits._
 
     var unionData = prepareSource(spark, "cpc_search", hourBefore, 1)
-    if (unionData == null) {
-      System.err.println("can not load search data")
-      System.exit(1)
-    }
+      .map(x => LogParser.parseSearchLog(x.getString(0)))
 
     val showData = prepareSource(spark, "cpc_show", hourBefore, 2)
-    if (showData != null) {
-      unionData = unionData.union(showData)
-    }
+      .map(x => LogParser.parseShowLog(x.getString(0)))
+    unionData = unionData.union(showData)
 
     val clickData = prepareSource(spark, "cpc_click", hourBefore, 2)
-    if (clickData != null) {
-      unionData = unionData.union(clickData)
-    }
-
-    val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
-    if (traceData1 != null) {
-      unionData = unionData.union(traceData1)
-    }
-    val traceData2 = prepareSource(spark, "cpc_trace", hourBefore, 1)
-    if (traceData2 != null) {
-      unionData = unionData.union(traceData2)
-    }
+      .map(x => LogParser.parseClickLog(x.getString(0)))
+    unionData = unionData.union(clickData)
 
     unionData = unionData
       .filter(x => x != null && x.searchid.length > 0)
@@ -75,6 +62,7 @@ object AnalUnionLog {
       }
       .map(_._2)
       .filter(_.timestamp > 0)
+      .cache()
 
     //write union log data
     spark.createDataFrame(unionData)
@@ -83,6 +71,38 @@ object AnalUnionLog {
       .format("parquet")
       .partitionBy("date", "hour")
       .saveAsTable("dl_cpc." + table)
+
+    val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
+    val traceData2 = prepareSource(spark, "cpc_trace", hourBefore, 1)
+    val traceData = traceData1.union(traceData2)
+      .map(x => LogParser.parseTraceLog(x.getString(0)))
+      .filter(x => x != null && x.searchid.length > 0)
+      .map {
+        x =>
+          val u: UnionLog = null
+          (u, x)
+      }
+
+    unionData
+      .map {
+        x =>
+          val t: TraceLog = null
+          (x, t)
+      }
+      .union(traceData)
+      .map {
+        x =>
+          if (x._1 != null) {
+            (x._1.searchid, x)
+          } else {
+            (x._2.searchid, x)
+          }
+      }
+      .reduceByKey {
+        (x, y) =>
+          x
+      }
+
 
     spark.stop()
   }
@@ -100,23 +120,11 @@ object AnalUnionLog {
   /*
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
    */
-  def prepareSource(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): rdd.RDD[UnionLog] = {
-    try {
-      val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours))
-      val baseData = ctx.read.schema(schema).parquet(input)
-      baseData.createTempView(src + "_data")
-      val rddData = ctx.sql("select field['%s'].string_type from %s_data".format(src, src)).rdd
-      src match {
-        case "cpc_search" => rddData.map(x => LogParser.parseSearchLog(x.getString(0)))
-        case "cpc_show" => rddData.map(x => LogParser.parseShowLog(x.getString(0)))
-        case "cpc_click" => rddData.map(x => LogParser.parseClickLog(x.getString(0)))
-        case "cpc_trace" => rddData.map(x => LogParser.parseTraceLog(x.getString(0)))
-        case _ => null
-      }
-    } catch {
-      case e: Exception =>
-        null
-    }
+  def prepareSource(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
+    val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours))
+    val baseData = ctx.read.schema(schema).parquet(input)
+    baseData.createTempView(src + "_data")
+    ctx.sql("select field['%s'].string_type from %s_data".format(src, src)).rdd
   }
 
   def getDateHourPath(hourBefore: Int, hours: Int): String = {

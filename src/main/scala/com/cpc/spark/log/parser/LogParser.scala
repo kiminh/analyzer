@@ -40,9 +40,9 @@ object LogParser {
           cpmbid = slot.getCpmbid
         )
       }
-      if (notice.getDspretCount > 0) {
-        val dsp = notice.getDspret(0)
-        log = log.copy(adnum = dsp.getAdnum)
+      if (notice.getDspReqInfoCount > 0) {
+        val dsp = notice.getDspReqInfo(0)
+        log = log.copy(adnum = dsp.getRetAdsNum)
       }
       if (notice.getAdsCount > 0) {
         val ad = notice.getAds(0)
@@ -135,14 +135,14 @@ object LogParser {
 
   val traceRegex = """GET\s/trace\?iclicashsid=(\w+)&duration=(\d+)""".r
 
-  def parseTraceLog(txt: String): UnionLog = {
-    var log: UnionLog = null
+  def parseTraceLog(txt: String): TraceLog = {
+    var log: TraceLog = null
     if (txt != null) {
       traceRegex.findFirstMatchIn(txt).foreach {
         m =>
           val sub = m.subgroups
           if (sub.length == 2) {
-            log = UnionLog(
+            log = TraceLog(
               searchid = sub(0),
               duration = sub(1).toInt
             )
