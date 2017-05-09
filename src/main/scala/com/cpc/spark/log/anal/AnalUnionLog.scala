@@ -80,32 +80,24 @@ object AnalUnionLog {
       .partitionBy("date", "hour")
       .saveAsTable("dl_cpc." + table)
 
-    var traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
-    val traceData2 = prepareSource(spark, "cpc_trace", hourBefore - 1, 1)
-    if (traceData1 == null) {
-      traceData1 = traceData2
-    } else if (traceData2 != null) {
-      traceData1 = traceData1.union(traceData2)
-    }
-
+    var traceData = unionData
+      .map {
+        x =>
+          val t = Seq[TraceLog]()
+          (x.searchid, (x, t))
+      }
+    unionData.unpersist()
+    val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
     if (traceData1 != null) {
-      val traceData = traceData1
-        .map(x => LogParser.parseTraceLog(x.getString(0)))
-        .filter(x => x != null && x.searchid.length > 0)
-        .map {
-          x =>
-            val u: UnionLog = null
-            (x.searchid, (u, Seq(x)))
-        }
-
-      unionData
-        .map {
-          x =>
-            val t = Seq[TraceLog]()
-            (x.searchid, (x, t))
-        }
-        .union(traceData)
-        .reduceByKey {
+      traceData = traceData.union(prepareTraceSource(traceData1))
+    }
+    val traceData2 = prepareSource(spark, "cpc_trace", hourBefore - 1, 1)
+    if (traceData2 != null) {
+      traceData = traceData.union(prepareTraceSource(traceData2))
+    }
+    if (traceData1 != null || traceData2 != null) {
+        traceData
+          .reduceByKey {
           (x, y) =>
             var u: UnionLog = null
             if (x._1 != null) {
@@ -137,7 +129,6 @@ object AnalUnionLog {
         .saveAsTable("dl_cpc.cpc_union_trace_log")
     }
 
-    unionData.unpersist()
     spark.stop()
   }
 
@@ -164,6 +155,16 @@ object AnalUnionLog {
     } catch {
       case e: Exception => null
     }
+  }
+
+  def prepareTraceSource(src: rdd.RDD[Row]): rdd.RDD[(String, (UnionLog, Seq[TraceLog]))] = {
+    src.map(x => LogParser.parseTraceLog(x.getString(0)))
+      .filter(x => x != null && x.searchid.length > 0)
+      .map {
+        x =>
+          val u: UnionLog = null
+          (x.searchid, (u, Seq(x)))
+      }
   }
 
   def getDateHourPath(hourBefore: Int, hours: Int): String = {
