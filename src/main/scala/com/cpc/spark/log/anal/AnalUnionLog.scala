@@ -80,12 +80,7 @@ object AnalUnionLog {
       .partitionBy("date", "hour")
       .saveAsTable("dl_cpc." + table)
 
-    var traceData = unionData
-      .map {
-        x =>
-          val t = Seq[TraceLog]()
-          (x.searchid, (x, t))
-      }
+    var traceData = unionData.map(x => (x.searchid, (x, Seq[TraceLog]())))
     unionData.unpersist()
     val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
     if (traceData1 != null) {
