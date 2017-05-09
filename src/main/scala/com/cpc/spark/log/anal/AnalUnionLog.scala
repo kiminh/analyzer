@@ -73,37 +73,55 @@ object AnalUnionLog {
       .saveAsTable("dl_cpc." + table)
 
     val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
-    val traceData2 = prepareSource(spark, "cpc_trace", hourBefore, 1)
+    val traceData2 = prepareSource(spark, "cpc_trace", hourBefore - 1, 1)
     val traceData = traceData1.union(traceData2)
       .map(x => LogParser.parseTraceLog(x.getString(0)))
       .filter(x => x != null && x.searchid.length > 0)
       .map {
         x =>
           val u: UnionLog = null
-          (u, x)
+          (x.searchid, (u, Seq(x)))
       }
 
     unionData
       .map {
         x =>
-          val t: TraceLog = null
-          (x, t)
+          val t = Seq[TraceLog]()
+          (x.searchid, (x, t))
       }
       .union(traceData)
-      .map {
-        x =>
-          if (x._1 != null) {
-            (x._1.searchid, x)
-          } else {
-            (x._2.searchid, x)
-          }
-      }
       .reduceByKey {
         (x, y) =>
-          x
+          var u: UnionLog = null
+          if (x._1 != null) {
+            u = x._1
+          }
+          if (y._1 != null) {
+            u = y._1
+          }
+          (u, x._2 ++ y._2)
       }
+      .flatMap {
+        x =>
+          val u = x._2._1
+          x._2._2.filter(x => u != null)
+            .map {
+              t =>
+                t.copy(
+                  search_timestamp = u.timestamp,
+                  date = u.date,
+                  hour = u.hour
+                )
+            }
+      }
+      .toDF()
+      .write
+      .mode(SaveMode.Append)
+      .format("parquet")
+      .partitionBy("date", "hour")
+      .saveAsTable("dl_cpc.cpc_union_trace_log")
 
-
+    unionData.unpersist()
     spark.stop()
   }
 
@@ -160,9 +178,6 @@ object AnalUnionLog {
         click_network = event.click_network,
         click_ip = event.click_ip
       )
-    }
-    if (event.duration > 0 && event.duration > log.duration) {
-      log = log.copy(duration = event.duration)
     }
     log
   }
