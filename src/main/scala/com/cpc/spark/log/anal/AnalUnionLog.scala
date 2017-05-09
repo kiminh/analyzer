@@ -141,8 +141,9 @@ object AnalUnionLog {
   def prepareSource(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
     val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours))
     val baseData = ctx.read.schema(schema).parquet(input)
-    baseData.createTempView(src + "_data")
-    ctx.sql("select field['%s'].string_type from %s_data".format(src, src)).rdd
+    val tbl = "%s_data_%d".format(src, hourBefore)
+    baseData.createTempView(tbl)
+    ctx.sql("select field['%s'].string_type from %s".format(src, tbl)).rdd
   }
 
   def getDateHourPath(hourBefore: Int, hours: Int): String = {

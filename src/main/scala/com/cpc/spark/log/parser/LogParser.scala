@@ -1,6 +1,6 @@
 package com.cpc.spark.log.parser
 
-import java.net.{InetAddress, URI}
+import java.net.{InetAddress, URLDecoder}
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -160,7 +160,7 @@ object LogParser {
                     case "sw" => log = log.copy(screen_w = toFloat(v))
                     case "sh" => log = log.copy(screen_h = toFloat(v))
                     case "os" => log = log.copy(trace_os = v)
-                    case "ref" => log = log.copy(trace_refer = v)
+                    case "ref" => log = log.copy(trace_refer = URLDecoder.decode(v, "UTF8"))
                     case "v" => log = log.copy(trace_version = v)
                     case "s" => log = log.copy(trace_click_count = toInt(v))
                     case "x" => log = log.copy(client_x = toFloat(v))
