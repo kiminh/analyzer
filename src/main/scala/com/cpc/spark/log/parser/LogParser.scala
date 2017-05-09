@@ -144,7 +144,7 @@ object LogParser {
         m =>
           val sub = m.subgroups
           if (sub.length == 1) {
-            val query = sub(0)
+            val query = URLDecoder.decode(sub(0), "UTF8")
             log = TraceLog()
             query.split('&').foreach {
               x =>
@@ -160,7 +160,7 @@ object LogParser {
                     case "sw" => log = log.copy(screen_w = toFloat(v))
                     case "sh" => log = log.copy(screen_h = toFloat(v))
                     case "os" => log = log.copy(trace_os = v)
-                    case "ref" => log = log.copy(trace_refer = URLDecoder.decode(v, "UTF8"))
+                    case "ref" => log = log.copy(trace_refer = v)
                     case "v" => log = log.copy(trace_version = v)
                     case "s" => log = log.copy(trace_click_count = toInt(v))
                     case "x" => log = log.copy(client_x = toFloat(v))

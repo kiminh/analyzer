@@ -40,14 +40,22 @@ object AnalUnionLog {
 
     var unionData = prepareSource(spark, "cpc_search", hourBefore, 1)
       .map(x => LogParser.parseSearchLog(x.getString(0)))
+    if (unionData == null) {
+      System.err.println("search data is empty")
+      System.exit(1)
+    }
 
     val showData = prepareSource(spark, "cpc_show", hourBefore, 2)
       .map(x => LogParser.parseShowLog(x.getString(0)))
-    unionData = unionData.union(showData)
+    if (showData != null) {
+      unionData = unionData.union(showData)
+    }
 
     val clickData = prepareSource(spark, "cpc_click", hourBefore, 2)
       .map(x => LogParser.parseClickLog(x.getString(0)))
-    unionData = unionData.union(clickData)
+    if (clickData != null) {
+      unionData = unionData.union(clickData)
+    }
 
     unionData = unionData
       .filter(x => x != null && x.searchid.length > 0)
@@ -72,54 +80,62 @@ object AnalUnionLog {
       .partitionBy("date", "hour")
       .saveAsTable("dl_cpc." + table)
 
-    val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
+    var traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
     val traceData2 = prepareSource(spark, "cpc_trace", hourBefore - 1, 1)
-    val traceData = traceData1.union(traceData2)
-      .map(x => LogParser.parseTraceLog(x.getString(0)))
-      .filter(x => x != null && x.searchid.length > 0)
-      .map {
-        x =>
-          val u: UnionLog = null
-          (x.searchid, (u, Seq(x)))
-      }
+    if (traceData1 == null) {
+      traceData1 = traceData2
+    } else if (traceData2 != null) {
+      traceData1 = traceData1.union(traceData2)
+    }
 
-    unionData
-      .map {
-        x =>
-          val t = Seq[TraceLog]()
-          (x.searchid, (x, t))
-      }
-      .union(traceData)
-      .reduceByKey {
-        (x, y) =>
-          var u: UnionLog = null
-          if (x._1 != null) {
-            u = x._1
-          }
-          if (y._1 != null) {
-            u = y._1
-          }
-          (u, x._2 ++ y._2)
-      }
-      .flatMap {
-        x =>
-          val u = x._2._1
-          x._2._2.filter(x => u != null)
-            .map {
-              t =>
-                t.copy(
-                  search_timestamp = u.timestamp,
-                  date = u.date,
-                  hour = u.hour
-                )
+    if (traceData1 != null) {
+      val traceData = traceData1
+        .map(x => LogParser.parseTraceLog(x.getString(0)))
+        .filter(x => x != null && x.searchid.length > 0)
+        .map {
+          x =>
+            val u: UnionLog = null
+            (x.searchid, (u, Seq(x)))
+        }
+
+      unionData
+        .map {
+          x =>
+            val t = Seq[TraceLog]()
+            (x.searchid, (x, t))
+        }
+        .union(traceData)
+        .reduceByKey {
+          (x, y) =>
+            var u: UnionLog = null
+            if (x._1 != null) {
+              u = x._1
             }
-      }
-      .toDF()
-      .write
-      .mode(SaveMode.Append)
-      .format("parquet")
-      .partitionBy("date", "hour")
-      .saveAsTable("dl_cpc.cpc_union_trace_log")
+            if (y._1 != null) {
+              u = y._1
+            }
+            (u, x._2 ++ y._2)
+        }
+        .flatMap {
+          x =>
+            val u = x._2._1
+            x._2._2.filter(x => u != null)
+              .map {
+                t =>
+                  t.copy(
+                    search_timestamp = u.timestamp,
+                    date = u.date,
+                    hour = u.hour
+                  )
+              }
+        }
+        .toDF()
+        .write
+        .mode(SaveMode.Append)
+        .format("parquet")
+        .partitionBy("date", "hour")
+        .saveAsTable("dl_cpc.cpc_union_trace_log")
+    }
 
     unionData.unpersist()
     spark.stop()
@@ -139,11 +155,15 @@ object AnalUnionLog {
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
    */
   def prepareSource(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
-    val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours))
-    val baseData = ctx.read.schema(schema).parquet(input)
-    val tbl = "%s_data_%d".format(src, hourBefore)
-    baseData.createTempView(tbl)
-    ctx.sql("select field['%s'].string_type from %s".format(src, tbl)).rdd
+    try {
+      val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours))
+      val baseData = ctx.read.schema(schema).parquet(input)
+      val tbl = "%s_data_%d".format(src, hourBefore)
+      baseData.createTempView(tbl)
+      ctx.sql("select field['%s'].string_type from %s".format(src, tbl)).rdd
+    } catch {
+      case e: Exception => null
+    }
   }
 
   def getDateHourPath(hourBefore: Int, hours: Int): String = {
