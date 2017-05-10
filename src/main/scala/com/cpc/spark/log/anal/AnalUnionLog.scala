@@ -38,23 +38,21 @@ object AnalUnionLog {
       .getOrCreate()
     import spark.implicits._
 
-    var unionData = prepareSource(spark, "cpc_search", hourBefore, 1)
-      .map(x => LogParser.parseSearchLog(x.getString(0)))
-    if (unionData == null) {
+    val searchData = prepareSource(spark, "cpc_search", hourBefore, 1)
+    if (searchData == null) {
       System.err.println("search data is empty")
       System.exit(1)
     }
+    var unionData = searchData.map(x => LogParser.parseSearchLog(x.getString(0)))
 
     val showData = prepareSource(spark, "cpc_show", hourBefore, 2)
-      .map(x => LogParser.parseShowLog(x.getString(0)))
     if (showData != null) {
-      unionData = unionData.union(showData)
+      unionData = unionData.union(showData.map(x => LogParser.parseShowLog(x.getString(0))))
     }
 
     val clickData = prepareSource(spark, "cpc_click", hourBefore, 2)
-      .map(x => LogParser.parseClickLog(x.getString(0)))
     if (clickData != null) {
-      unionData = unionData.union(clickData)
+      unionData = unionData.union(clickData.map(x => LogParser.parseClickLog(x.getString(0))))
     }
 
     unionData = unionData
