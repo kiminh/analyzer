@@ -1,6 +1,6 @@
 package com.cpc.spark.log.parser
 
-import java.net.InetAddress
+import java.net.{InetAddress, URLDecoder}
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -40,9 +40,9 @@ object LogParser {
           cpmbid = slot.getCpmbid
         )
       }
-      if (notice.getDspretCount > 0) {
-        val dsp = notice.getDspret(0)
-        log = log.copy(adnum = dsp.getAdnum)
+      if (notice.getDspReqInfoCount > 0) {
+        val dsp = notice.getDspReqInfo(0)
+        log = log.copy(adnum = dsp.getRetAdsNum)
       }
       if (notice.getAdsCount > 0) {
         val ad = notice.getAds(0)
@@ -133,19 +133,51 @@ object LogParser {
     log
   }
 
-  val traceRegex = """GET\s/trace\?iclicashsid=(\w+)&duration=(\d+)""".r
+  //val txt = "222.47.165.147 - - [09/May/2017:00:01:13 +0800] \"GET /trace?t=stay&duration=10&iclicashsid=23df11e7c20f841dfda7f277d2049b5ad0c98d18&w=414&h=672&sw=414&sh=716&os=iOS&ref=http%3A%2F%2Fg.fastapi.net%2Fqa%3Fslotid%3D1021642%26adid%3D795774%26index%3D0%26pvid%3D1021642.148-07.1pncscz.69qo.2.opn5tf.405e%26rn%3DC%3A1021642.148-07.1pncscz.69qo.2.opn5tf.405e_oc153%26mobile%3D1%26r%3D8dd&v=1.0&p=140&_t=10 HTTP/1.1\" 200 43 \"http://cj.juseyx.com/b2/?iclicashsid=23df11e7c20f841dfda7f277d2049b5ad0c98d18\" \"Mozilla/5.0 (iPhone; CPU iPhone OS 10_1_1 like Mac OS X) AppleWebKit/602.2.14 (KHTML, like Gecko) Mobile/14B100ua qukan_ios\" \"-\" \"-\" 0.000"
 
-  def parseTraceLog(txt: String): UnionLog = {
-    var log: UnionLog = null
+  val traceRegex = """GET\s/trace\?(.*)""".r
+
+  def parseTraceLog(txt: String): TraceLog = {
+    var log: TraceLog = null
     if (txt != null) {
       traceRegex.findFirstMatchIn(txt).foreach {
         m =>
           val sub = m.subgroups
-          if (sub.length == 2) {
-            log = UnionLog(
-              searchid = sub(0),
-              duration = sub(1).toInt
-            )
+          if (sub.length == 1) {
+            val query = URLDecoder.decode(sub(0), "UTF8")
+            log = TraceLog()
+            query.split('&').foreach {
+              x =>
+                try {
+                  val Array(k , vv) = x.trim.split("=", 2)
+                  val v = vv.trim
+                  k match {
+                    case "t" => log = log.copy(trace_type = v)
+                    case "iclicashsid" => log = log.copy(searchid = v)
+                    case "o" => log = log.copy(device_orientation = toInt(v))
+                    case "w" => log = log.copy(client_w = toFloat(v))
+                    case "h" => log = log.copy(client_h = toFloat(v))
+                    case "sw" => log = log.copy(screen_w = toFloat(v))
+                    case "sh" => log = log.copy(screen_h = toFloat(v))
+                    case "os" => log = log.copy(trace_os = v)
+                    case "ref" => log = log.copy(trace_refer = v)
+                    case "v" => log = log.copy(trace_version = v)
+                    case "s" => log = log.copy(trace_click_count = toInt(v))
+                    case "x" => log = log.copy(client_x = toFloat(v))
+                    case "y" => log = log.copy(client_y = toFloat(v))
+                    case "px" => log = log.copy(page_x = toFloat(v))
+                    case "py" => log = log.copy(page_y = toFloat(v))
+                    case "_t" => log = log.copy(trace_ttl = toInt(v))
+                    case "p" => log = log.copy(scroll_top = toFloat(v))
+                    case "op1" => log = log.copy(trace_op1 = v)
+                    case "op2" => log = log.copy(trace_op2 = v)
+                    case "op3" => log = log.copy(trace_op3 = v)
+                    case "duration" => log = log.copy(duration = toInt(v))
+                  }
+                } catch {
+                  case e: Exception => null
+                }
+            }
           }
       }
     }
@@ -192,6 +224,22 @@ object LogParser {
     bytes(2) = ((ip & 0x0000ff00) >> 8).toByte
     bytes(3) = (ip & 0x000000ff).toByte
     InetAddress.getByAddress(bytes).getHostAddress()
+  }
+
+  def toInt(s: String): Int = {
+    try {
+      s.trim.toInt
+    } catch {
+      case e : Exception => 0
+    }
+  }
+
+  def toFloat(s: String): Float = {
+    try {
+      s.trim.toFloat
+    } catch {
+      case e : Exception => 0
+    }
   }
 }
 

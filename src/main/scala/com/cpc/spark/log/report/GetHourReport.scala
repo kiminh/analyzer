@@ -92,7 +92,7 @@ object GetHourReport {
             user_id = x.userid,
             country = x.country,
             province = x.province,
-            city = x.city,
+            //city = x.city,
             request = 1,
             served_request = x.isfill,
             impression = x.isshow,

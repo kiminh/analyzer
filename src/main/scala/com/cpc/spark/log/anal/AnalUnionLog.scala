@@ -2,9 +2,10 @@ package com.cpc.spark.log.anal
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import com.cpc.spark.log.parser.{LogParser, UnionLog}
+
+import com.cpc.spark.log.parser.{LogParser, TraceLog, UnionLog}
 import org.apache.spark.rdd
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types._
 
 
@@ -37,29 +38,21 @@ object AnalUnionLog {
       .getOrCreate()
     import spark.implicits._
 
-    var unionData = prepareSource(spark, "cpc_search", hourBefore, 1)
-    if (unionData == null) {
-      System.err.println("can not load search data")
+    val searchData = prepareSource(spark, "cpc_search", hourBefore, 1)
+    if (searchData == null) {
+      System.err.println("search data is empty")
       System.exit(1)
     }
+    var unionData = searchData.map(x => LogParser.parseSearchLog(x.getString(0)))
 
     val showData = prepareSource(spark, "cpc_show", hourBefore, 2)
     if (showData != null) {
-      unionData = unionData.union(showData)
+      unionData = unionData.union(showData.map(x => LogParser.parseShowLog(x.getString(0))))
     }
 
     val clickData = prepareSource(spark, "cpc_click", hourBefore, 2)
     if (clickData != null) {
-      unionData = unionData.union(clickData)
-    }
-
-    val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
-    if (traceData1 != null) {
-      unionData = unionData.union(traceData1)
-    }
-    val traceData2 = prepareSource(spark, "cpc_trace", hourBefore, 1)
-    if (traceData2 != null) {
-      unionData = unionData.union(traceData2)
+      unionData = unionData.union(clickData.map(x => LogParser.parseClickLog(x.getString(0))))
     }
 
     unionData = unionData
@@ -75,6 +68,7 @@ object AnalUnionLog {
       }
       .map(_._2)
       .filter(_.timestamp > 0)
+      .cache()
 
     //write union log data
     spark.createDataFrame(unionData)
@@ -83,6 +77,50 @@ object AnalUnionLog {
       .format("parquet")
       .partitionBy("date", "hour")
       .saveAsTable("dl_cpc." + table)
+
+    var traceData = unionData.map(x => (x.searchid, (x, Seq[TraceLog]())))
+    unionData.unpersist()
+    val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
+    if (traceData1 != null) {
+      traceData = traceData.union(prepareTraceSource(traceData1))
+    }
+    val traceData2 = prepareSource(spark, "cpc_trace", hourBefore - 1, 1)
+    if (traceData2 != null) {
+      traceData = traceData.union(prepareTraceSource(traceData2))
+    }
+    if (traceData1 != null || traceData2 != null) {
+        traceData
+          .reduceByKey {
+          (x, y) =>
+            var u: UnionLog = null
+            if (x._1 != null) {
+              u = x._1
+            }
+            if (y._1 != null) {
+              u = y._1
+            }
+            (u, x._2 ++ y._2)
+        }
+        .flatMap {
+          x =>
+            val u = x._2._1
+            x._2._2.filter(x => u != null)
+              .map {
+                t =>
+                  t.copy(
+                    search_timestamp = u.timestamp,
+                    date = u.date,
+                    hour = u.hour
+                  )
+              }
+        }
+        .toDF()
+        .write
+        .mode(SaveMode.Append)
+        .format("parquet")
+        .partitionBy("date", "hour")
+        .saveAsTable("dl_cpc.cpc_union_trace_log")
+    }
 
     spark.stop()
   }
@@ -100,23 +138,26 @@ object AnalUnionLog {
   /*
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
    */
-  def prepareSource(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): rdd.RDD[UnionLog] = {
+  def prepareSource(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
     try {
       val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours))
       val baseData = ctx.read.schema(schema).parquet(input)
-      baseData.createTempView(src + "_data")
-      val rddData = ctx.sql("select field['%s'].string_type from %s_data".format(src, src)).rdd
-      src match {
-        case "cpc_search" => rddData.map(x => LogParser.parseSearchLog(x.getString(0)))
-        case "cpc_show" => rddData.map(x => LogParser.parseShowLog(x.getString(0)))
-        case "cpc_click" => rddData.map(x => LogParser.parseClickLog(x.getString(0)))
-        case "cpc_trace" => rddData.map(x => LogParser.parseTraceLog(x.getString(0)))
-        case _ => null
-      }
+      val tbl = "%s_data_%d".format(src, hourBefore)
+      baseData.createTempView(tbl)
+      ctx.sql("select field['%s'].string_type from %s".format(src, tbl)).rdd
     } catch {
-      case e: Exception =>
-        null
+      case e: Exception => null
     }
+  }
+
+  def prepareTraceSource(src: rdd.RDD[Row]): rdd.RDD[(String, (UnionLog, Seq[TraceLog]))] = {
+    src.map(x => LogParser.parseTraceLog(x.getString(0)))
+      .filter(x => x != null && x.searchid.length > 0)
+      .map {
+        x =>
+          val u: UnionLog = null
+          (x.searchid, (u, Seq(x)))
+      }
   }
 
   def getDateHourPath(hourBefore: Int, hours: Int): String = {
@@ -152,9 +193,6 @@ object AnalUnionLog {
         click_network = event.click_network,
         click_ip = event.click_ip
       )
-    }
-    if (event.duration > 0 && event.duration > log.duration) {
-      log = log.copy(duration = event.duration)
     }
     log
   }
