@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package mlserver;
+
+
+service Predictor {
+    rpc Predict (Request) returns (Response) {}
+}
+
+
+message AdInfo {
+    int32 network = 1;
+    string ip = 2;
+    int32 media_type = 3;
+    int32 media_appsid = 4;
+    int32 bid = 5;
+    int32 ideaid = 6;
+    int32 unitid = 7;
+    int32 planid = 8;
+    int32 userid = 9;
+    int32 country = 10;
+    int32 province = 11;
+    int32 city = 12;
+    int32 isp = 13;
+    string uid = 14;
+    int32 coin = 15;
+    string date = 16;
+    int32 hour = 17;
+    int32 adslotid = 18;
+    int32 adslot_type = 19;
+    int32 adtype = 20;
+    int32 interaction = 21;
+}
+
+message Request {
+    repeated AdInfo ads = 1; //ad params
+}
+
+
+message Prediction {
+    int32 adid = 1; //idaeid
+    float value = 2; //predict value
+}
+
+message Response {
+    int32 recode = 1;
+    repeated Prediction results = 2;
+}
+
+
+
