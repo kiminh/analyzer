@@ -6,6 +6,7 @@ scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+  "org.apache.spark" %% "spark-mllib" % "2.1.0",
   "io.grpc" % "grpc-netty" % "1.2.0",
   "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion
 )
@@ -16,8 +17,6 @@ javacOptions ++= Seq(
 
 compileOrder := CompileOrder.JavaThenScala
 
-
-
 PB.targets in Compile := Seq(
   scalapb.gen() -> (sourceManaged in Compile).value
 )
@@ -25,4 +24,3 @@ PB.targets in Compile := Seq(
 PB.protocVersion := "-v:com.google.protobuf:protoc:3.0.0"
 
 PB.pythonExe := "C:\\Python27\\Python.exe"
-
