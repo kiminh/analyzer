@@ -64,6 +64,7 @@ object MLServer {
       req.ads.foreach {
         x =>
           val v = Vectors.dense(Array(
+            1.0, //isclick
             x.network.toDouble,
             stringHash(x.ip).toDouble,
             x.mediaType.toDouble,
@@ -79,12 +80,12 @@ object MLServer {
             x.isp.toDouble,
             stringHash(x.uid).toDouble,
             x.coin.toDouble,
+            stringHash(x.date).toDouble,
+            x.hour.toDouble,
             x.adslotid.toDouble,
             x.adslotType.toDouble,
             x.adtype.toDouble,
-            x.interaction.toDouble,
-            stringHash(x.date).toDouble,
-            x.hour.toDouble
+            x.interaction.toDouble
           ))
           val pre = Prediction(
             adid = x.ideaid,
