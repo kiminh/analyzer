@@ -47,8 +47,9 @@ object AdvSvm {
         svmString += " 16:" + Math.abs(scala.util.hashing.MurmurHash3.stringHash(x.date))
         svmString += " 17:" + x.hour
         svmString += " 18:" + x.adslotid
-        svmString += " 19:" + x.adtype
-        svmString += " 20:" + x.interaction
+        svmString += " 19:" + x.adslot_type
+        svmString += " 20:" + x.adtype
+        svmString += " 21:" + x.interaction
         svmString
     }
     svmLine.rdd.saveAsTextFile("/user/cpc/svmdata/" + date)
