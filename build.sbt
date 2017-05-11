@@ -37,7 +37,9 @@ val app = (project in file("")).
     },
 
     assemblyShadeRules in assembly := Seq(
-      ShadeRule.rename("io.grpc.**" -> "shadeio.grpc.@1").inAll
+      ShadeRule.rename("io.grpc.**" -> "shadeio.grpc.@1")
+        .inLibrary("io.grpc" % "grpc-netty" % "1.2.0")
+        .inProject
     ),
 
     assemblyExcludedJars in assembly := {
