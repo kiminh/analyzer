@@ -32,18 +32,21 @@ val app = (project in file("")).
     ),
 
     assemblyMergeStrategy in assembly := {
-      case x if x.endsWith("io.netty.versions.properties") => MergeStrategy.first
+      case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.first
       case x => (assemblyMergeStrategy in assembly).value(x)
     },
 
     assemblyShadeRules in assembly := Seq(
-      ShadeRule.rename("io.grpc.**" -> "shadeio.grpc.@1")
-        .inLibrary("io.grpc" % "grpc-netty" % "1.2.0")
-        .inProject
+      ShadeRule.rename("io.netty.handler.**" -> "shade.io.netty.handler.@1").inAll,
+      ShadeRule.rename("io.netty.channel.**" -> "shade.io.netty.channel.@1").inAll,
+      ShadeRule.rename("io.netty.util.**" -> "shade.io.netty.util.@1").inAll,
+      ShadeRule.rename("io.netty.bootstrap.**" -> "shade.io.netty.bootstrap.@1").inAll,
+      ShadeRule.rename("io.netty.buffer.**" -> "shade.io.netty.buffer.@1").inAll,
+      ShadeRule.rename("com.google.common.**" -> "shade.com.google.common.@1").inAll,
+      ShadeRule.rename("com.google.protobuf.**" -> "shade.com.google.protobuf.@1").inAll
     ),
 
     assemblyExcludedJars in assembly := {
-      val cp = (fullClasspath in assembly).value
       val jars = Seq(
         "c3p0-0.9.5.2.jar",
         "commons-codec-1.10.jar",
@@ -70,7 +73,7 @@ val app = (project in file("")).
         "spark-streaming_2.11-2.1.0.jar",
         "spark-streaming-kafka-0-8-assembly_2.11-2.1.0.jar"
       )
-      cp.filter {
+      (fullClasspath in assembly).value.filter {
         x => jars.contains(x.data.getName)
       }
     }

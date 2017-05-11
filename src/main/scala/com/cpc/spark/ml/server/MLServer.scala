@@ -1,14 +1,14 @@
 package com.cpc.spark.ml.server
 
-import org.apache.spark.mllib.classification.LogisticRegressionModel
+import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.linalg.Vectors
 import com.typesafe.config.ConfigFactory
 import io.grpc.ServerBuilder
-import mlserver.server.{Prediction, PredictorGrpc, Request, Response}
+import mlserver.server._
 import mlserver.server.PredictorGrpc.Predictor
 import org.apache.spark.{SparkConf, SparkContext}
-import scala.util.hashing.MurmurHash3.stringHash
 
+import scala.util.hashing.MurmurHash3.stringHash
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 object MLServer {
 
-  //var model: LogisticRegressionModel = null
+  var model: LogisticRegressionModel = null
 
   var spark: SparkContext = null
 
@@ -29,12 +29,11 @@ object MLServer {
     System.setProperty("scala.concurrent.context.maxThreads", coreNum.toString)
     val conf = ConfigFactory.load()
 
-    /*
     val dataPath = conf.getString("mlserver.data_path")
     val spark = new SparkContext(new SparkConf().setAppName("cpc ml server ctr predictor"))
+    spark.setLogLevel("WARN")
     model = LogisticRegressionModel.load(spark, dataPath)
-
-    println("model data loaded")
+    println("model data loaded", model.numFeatures)
 
     val loadDataThread = new Thread(new Runnable {
       override def run(): Unit = {
@@ -44,7 +43,6 @@ object MLServer {
       }
     })
     loadDataThread.start()
-    */
 
     val server = ServerBuilder.forPort(conf.getInt("mlserver.port"))
       .addService(PredictorGrpc.bindService(new PredictorService, ExecutionContext.global))
@@ -60,12 +58,12 @@ object MLServer {
     }
 
     server.awaitTermination()
-    //loadDataThread.interrupt()
+    loadDataThread.interrupt()
   }
 
   private class PredictorService extends Predictor {
     override def predict(req: Request): Future[Response] = {
-      val resp = Response()
+      var resp = Response()
       req.ads.foreach {
         x =>
           val v = Vectors.dense(Array(
@@ -88,14 +86,14 @@ object MLServer {
             x.hour.toDouble,
             x.adslotid.toDouble,
             x.adslotType.toDouble,
-            x.adtype.toDouble,
-            x.interaction.toDouble
+            x.adtype.toDouble
+            //x.interaction.toDouble
           ))
-          val pre = Prediction(
+          val p = Prediction(
             adid = x.ideaid,
-            value = 1.0
+            value = model.predict(v)
           )
-          resp.addResults(pre)
+          resp = resp.addResults(p)
       }
       println("new predict", req.ads.length)
       Future.successful(resp)

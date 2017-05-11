@@ -6,10 +6,9 @@ SPARK_HOME=/home/spark/spark-2.1.0
 jars=(
     "$cur/lib/hadoop-lzo-0.4.20.jar"
     "$cur/lib/config-1.2.1.jar"
-
 )
 
-$SPARK_HOME/bin/spark-submit --master yarn \
+$SPARK_HOME/bin/spark-submit --master "spark://10.9.125.57:7077" \
     --executor-memory 2G --executor-cores 2 --total-executor-cores 6 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.server.MLServer \
