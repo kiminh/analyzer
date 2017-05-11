@@ -15,13 +15,6 @@ val app = (project in file("")).
     scalaVersion := "2.11.8",
     compileOrder := CompileOrder.JavaThenScala,
 
-    libraryDependencies ++= Seq(
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
-      "org.apache.spark" %% "spark-mllib" % "2.1.0" % "provided",
-      "io.grpc" % "grpc-netty" % "1.2.0",
-      "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion
-    ),
-
     javacOptions ++= Seq(
       "-encoding", "UTF-8"
     ),
@@ -33,6 +26,18 @@ val app = (project in file("")).
     PB.protocVersion := "-v:com.google.protobuf:protoc:3.0.0",
 
     PB.pythonExe := "C:\\Python27\\Python.exe",
+
+    libraryDependencies ++= Seq(
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
+      "org.apache.spark" %% "spark-mllib" % "2.1.0" % "provided",
+      "io.grpc" % "grpc-netty" % "1.2.0",
+      "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion
+    ),
+
+    mergeStrategy in assembly := {
+      case x if x.endsWith("io.netty.versions.properties") => MergeStrategy.first
+      case x => (mergeStrategy in assembly).value(x)
+    },
 
     excludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
@@ -62,7 +67,12 @@ val app = (project in file("")).
         "spark-streaming_2.11-2.1.0.jar",
         "spark-streaming-kafka-0-8-assembly_2.11-2.1.0.jar"
       )
-      cp.filter(x => !jars.contains(x.data.getName))
+      cp.filter {
+        x => jars.contains(x.data.getName)
+      }
     }
   )
+
+
+
 

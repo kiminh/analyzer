@@ -64,7 +64,6 @@ object MLServer {
       req.ads.foreach {
         x =>
           val v = Vectors.dense(Array(
-            1.0, //isclick
             x.network.toDouble,
             stringHash(x.ip).toDouble,
             x.mediaType.toDouble,
