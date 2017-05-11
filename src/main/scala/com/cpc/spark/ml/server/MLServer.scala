@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 object MLServer {
 
-  var model: LogisticRegressionModel = null
+  //var model: LogisticRegressionModel = null
 
   var spark: SparkContext = null
 
@@ -29,17 +29,22 @@ object MLServer {
     System.setProperty("scala.concurrent.context.maxThreads", coreNum.toString)
     val conf = ConfigFactory.load()
 
+    /*
     val dataPath = conf.getString("mlserver.data_path")
     val spark = new SparkContext(new SparkConf().setAppName("cpc ml server ctr predictor"))
     model = LogisticRegressionModel.load(spark, dataPath)
+
+    println("model data loaded")
 
     val loadDataThread = new Thread(new Runnable {
       override def run(): Unit = {
         Thread.sleep(1000 * 60 * 60 * 24)
         model = LogisticRegressionModel.load(spark, dataPath)
+        println("model data loaded in loop")
       }
     })
     loadDataThread.start()
+    */
 
     val server = ServerBuilder.forPort(conf.getInt("mlserver.port"))
       .addService(PredictorGrpc.bindService(new PredictorService, ExecutionContext.global))
@@ -55,7 +60,7 @@ object MLServer {
     }
 
     server.awaitTermination()
-    loadDataThread.interrupt()
+    //loadDataThread.interrupt()
   }
 
   private class PredictorService extends Predictor {
@@ -88,10 +93,11 @@ object MLServer {
           ))
           val pre = Prediction(
             adid = x.ideaid,
-            value = model.predict(v)
+            value = 1.0
           )
           resp.addResults(pre)
       }
+      println("new predict", req.ads.length)
       Future.successful(resp)
     }
   }

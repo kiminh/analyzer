@@ -1,5 +1,3 @@
-import AssemblyKeys._
-
 lazy val buildSettings = Seq(
   version := "1.0",
   organization := "com.cpc",
@@ -8,7 +6,6 @@ lazy val buildSettings = Seq(
 
 val app = (project in file("")).
   settings(buildSettings: _*).
-  settings(assemblySettings: _*).
   settings(
     name := "cpc-anal",
     version := "1.0",
@@ -34,12 +31,16 @@ val app = (project in file("")).
       "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion
     ),
 
-    mergeStrategy in assembly := {
+    assemblyMergeStrategy in assembly := {
       case x if x.endsWith("io.netty.versions.properties") => MergeStrategy.first
-      case x => (mergeStrategy in assembly).value(x)
+      case x => (assemblyMergeStrategy in assembly).value(x)
     },
 
-    excludedJars in assembly := {
+    assemblyShadeRules in assembly := Seq(
+      ShadeRule.rename("io.grpc.**" -> "shadeio.grpc.@1").inAll
+    ),
+
+    assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
       val jars = Seq(
         "c3p0-0.9.5.2.jar",
