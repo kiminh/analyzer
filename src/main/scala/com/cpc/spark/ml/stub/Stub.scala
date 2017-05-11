@@ -10,7 +10,6 @@ import mlserver.server.{PredictorGrpc, Request, Response}
 object Stub {
 
   def main(args: Array[String]): Unit = {
-
     val conf = ConfigFactory.load()
     val channel = ManagedChannelBuilder
       .forAddress("127.0.0.1", conf.getInt("mlserver.port"))
