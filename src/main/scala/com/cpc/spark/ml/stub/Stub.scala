@@ -16,7 +16,7 @@ object Stub {
       .usePlaintext(true)
       .build
 
-    val request = Request(ads = Seq(AdInfo(adslotid = 12), AdInfo(adslotid = 33)))
+    val request = Request(ads = Seq(AdInfo(ideaid = 1, adslotid = 12), AdInfo(ideaid = 3, adslotid = 33)))
     val blockingStub = PredictorGrpc.blockingStub(channel)
     val reply = blockingStub.predict(request)
     println(reply.toString)
