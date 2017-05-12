@@ -10,11 +10,9 @@ case class AdvTraceReport(
                            unit_id: Int = 0,
                            idea_id: Int = 0,
                            date: String = "",
-                           hour: Int = 0,
+                           hour: String = "",
                            trace_type: String = "",
-                           duration: Int = 0,
-                           count: Int = 0
-                         ) {
-
-  val key = "%d-%d-%d-%d-%d".format(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration)
+                           duration: Int = 0
+                         ){
+  var count :Int= 0
 }
