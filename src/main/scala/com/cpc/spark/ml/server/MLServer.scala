@@ -33,6 +33,7 @@ object MLServer {
     val spark = new SparkContext(new SparkConf().setAppName("cpc ml server ctr predictor"))
     spark.setLogLevel("WARN")
     model = LogisticRegressionModel.load(spark, dataPath)
+    model.clearThreshold()
     println("model data loaded", model.numFeatures)
 
     val loadDataThread = new Thread(new Runnable {
@@ -86,13 +87,14 @@ object MLServer {
             x.hour.toDouble,
             x.adslotid.toDouble,
             x.adslotType.toDouble,
-            x.adtype.toDouble
-            //x.interaction.toDouble
+            x.adtype.toDouble,
+            x.interaction.toDouble
           ))
           val p = Prediction(
             adid = x.ideaid,
             value = model.predict(v)
           )
+          println(p.value)
           resp = resp.addResults(p)
       }
       println("new predict", req.ads.length)

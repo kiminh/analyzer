@@ -4,7 +4,7 @@ lazy val buildSettings = Seq(
   scalaVersion := "2.11.8"
 )
 
-val app = (project in file("")).
+val app = (project in file("cpc")).
   settings(buildSettings: _*).
   settings(
     name := "cpc-anal",

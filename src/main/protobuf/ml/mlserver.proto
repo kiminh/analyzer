@@ -27,7 +27,7 @@ message AdInfo {
     int32 adslotid = 18;
     int32 adslot_type = 19;
     int32 adtype = 20;
-    //int32 interaction = 21;
+    int32 interaction = 21;
 }
 
 message Request {
