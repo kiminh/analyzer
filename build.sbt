@@ -1,82 +1,61 @@
-lazy val commonSettings = Seq(
-  version := "0.1",
-  organization := "com.cpc",
-  scalaVersion := "2.11.8",
-  compileOrder := CompileOrder.JavaThenScala,
+version := "0.1"
+name := "cpc-anal"
+organization := "com.cpc"
+scalaVersion := "2.11.8"
+assemblyJarName in assembly := "cpc-anal_2.11-0.1.jar"
+compileOrder := CompileOrder.JavaThenScala
 
-  javacOptions ++= Seq(
-    "-encoding", "UTF-8"
-  ),
-
-  PB.targets in Compile := Seq(
-    scalapb.gen() -> (sourceManaged in Compile).value
-  ),
-
-  PB.protocVersion := "-v:com.google.protobuf:protoc:3.0.0",
-
-  PB.pythonExe := "C:\\Python27\\Python.exe",
-  //PB.pythonExe := "/usr/bin/python",
-
-  libraryDependencies ++= Seq(
-    "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
-    "org.apache.spark" %% "spark-mllib" % "2.1.0" % "provided",
-    "io.grpc" % "grpc-netty" % "1.2.0",
-    "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion
-  ),
-
-  assemblyMergeStrategy in assembly := {
-    case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.first
-    case x => (assemblyMergeStrategy in assembly).value(x)
-  },
-
-  assemblyShadeRules in assembly := Seq(
-    ShadeRule.rename("io.netty.handler.**" -> "shade.io.netty.handler.@1").inAll,
-    ShadeRule.rename("io.netty.channel.**" -> "shade.io.netty.channel.@1").inAll,
-    ShadeRule.rename("io.netty.util.**" -> "shade.io.netty.util.@1").inAll,
-    ShadeRule.rename("io.netty.bootstrap.**" -> "shade.io.netty.bootstrap.@1").inAll,
-    ShadeRule.rename("io.netty.buffer.**" -> "shade.io.netty.buffer.@1").inAll,
-    ShadeRule.rename("com.google.common.**" -> "shade.com.google.common.@1").inAll,
-    ShadeRule.rename("com.google.protobuf.**" -> "shade.com.google.protobuf.@1").inAll
-  ),
-
-  assemblyExcludedJars in assembly := {
-    val jars = Seq(
-      "c3p0-0.9.5.2.jar",
-      "commons-codec-1.10.jar",
-      "config-1.2.1.jar",
-      "cpc-protocol_2.11-1.0.jar",
-      "hadoop-annotations-2.7.3.jar",
-      "hadoop-common-2.7.3.jar",
-      "hadoop-lzo-0.4.20.jar",
-      "hive-cli-1.2.1.spark2.jar",
-      "jackson-annotations-2.6.5.jar",
-      "jackson-core-2.6.5.jar",
-      "json4s-ast_2.11-3.5.1.jar",
-      "json4s-core_2.11-3.5.1.jar",
-      "json4s-native_2.11-3.5.1.jar",
-      "mariadb-java-client-1.5.9.jar",
-      "mchange-commons-java-0.2.11.jar",
-      "mysql-connector-java-5.1.41-bin.jar",
-      "parquet-encoding-1.8.1.jar",
-      "protobuf-java-3.0.2.jar",
-      "scala-redis_2.11-1.0.jar",
-      "spark-catalyst_2.11-2.1.0.jar",
-      "spark-sql_2.11-2.1.0.jar",
-      "spark-streaming_2.11-2.1.0.jar",
-      "spark-streaming-kafka-0-8-assembly_2.11-2.1.0.jar"
-    )
-    (fullClasspath in assembly).value.filter {
-      x => jars.contains(x.data.getName)
-    }
-  }
+javacOptions ++= Seq(
+  "-encoding", "UTF-8"
 )
 
-val anal = (project in file("cpc-anal")).
-  settings(commonSettings: _*).
-  settings(
-    name := "cpc-anal",
-    version := "0.1",
-    assemblyJarName in assembly := "cpc-anal_2.11-0.1.jar"
-  )
+PB.targets in Compile := Seq(
+  scalapb.gen() -> (sourceManaged in Compile).value
+)
 
+PB.protocVersion := "-v:com.google.protobuf:protoc:3.0.0"
+
+PB.pythonExe := "C:\\Python27\\Python.exe"
+//PB.pythonExe := "/usr/bin/python",
+
+libraryDependencies ++= Seq(
+  "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
+  "org.apache.spark" %% "spark-mllib" % "2.1.0" % "provided",
+  "org.json4s" %% "json4s-native" % "3.5.1",
+  "io.grpc" % "grpc-netty" % com.trueaccord.scalapb.compiler.Version.grpcJavaVersion,
+  "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion
+)
+
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.first
+  case x => (assemblyMergeStrategy in assembly).value(x)
+}
+
+assemblyShadeRules in assembly := Seq(
+  ShadeRule.rename("io.netty.handler.**" -> "shade.io.netty.handler.@1").inAll,
+  ShadeRule.rename("io.netty.channel.**" -> "shade.io.netty.channel.@1").inAll,
+  ShadeRule.rename("io.netty.util.**" -> "shade.io.netty.util.@1").inAll,
+  ShadeRule.rename("io.netty.bootstrap.**" -> "shade.io.netty.bootstrap.@1").inAll,
+  ShadeRule.rename("io.netty.buffer.**" -> "shade.io.netty.buffer.@1").inAll,
+  ShadeRule.rename("com.google.common.**" -> "shade.com.google.common.@1").inAll,
+  ShadeRule.rename("com.google.protobuf.**" -> "shade.com.google.protobuf.@1").inAll
+)
+
+assemblyExcludedJars in assembly := {
+  val jars = Seq(
+    "c3p0-0.9.5.2.jar",
+    "config-1.2.1.jar",
+    "cpc-protocol_2.11-1.0.jar",
+    "hadoop-lzo-0.4.20.jar",
+    "mariadb-java-client-1.5.9.jar",
+    "mchange-commons-java-0.2.11.jar",
+    "mysql-connector-java-5.1.41-bin.jar",
+    "protobuf-java-3.0.2.jar",
+    "scala-redis_2.11-1.0.jar",
+    "spark-streaming-kafka-0-8-assembly_2.11-2.1.0.jar"
+  )
+  (fullClasspath in assembly).value.filter {
+    x => jars.contains(x.data.getName)
+  }
+}
 

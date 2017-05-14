@@ -2,7 +2,7 @@ package com.cpc.spark.ml.stub
 
 import com.typesafe.config.ConfigFactory
 import io.grpc.ManagedChannelBuilder
-import mlserver.server._
+import mlserver.mlserver._
 
 /**
   * Created by roydong on 2017/5/11.

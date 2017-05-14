@@ -4,8 +4,8 @@ import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticR
 import org.apache.spark.mllib.linalg.Vectors
 import com.typesafe.config.ConfigFactory
 import io.grpc.ServerBuilder
-import mlserver.server._
-import mlserver.server.PredictorGrpc.Predictor
+import mlserver.mlserver._
+import mlserver.mlserver.PredictorGrpc.Predictor
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.util.hashing.MurmurHash3.stringHash
