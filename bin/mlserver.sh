@@ -8,8 +8,8 @@ jars=(
     "$cur/lib/config-1.2.1.jar"
 )
 
-$SPARK_HOME/bin/spark-submit --master "spark://10.9.125.57:7077" \
+$SPARK_HOME/bin/spark-submit --master yarn \
     --executor-memory 2G --executor-cores 2 --total-executor-cores 6 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.server.MLServer \
-    $cur/lib/cpc-anal-assembly-1.0.jar
+    $cur/lib/cpc-anal-assembly-1.0.jar "/user/cpc/model"

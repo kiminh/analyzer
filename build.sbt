@@ -4,19 +4,15 @@ organization := "com.cpc"
 scalaVersion := "2.11.8"
 assemblyJarName in assembly := "cpc-anal_2.11-0.1.jar"
 compileOrder := CompileOrder.JavaThenScala
-
 javacOptions ++= Seq(
   "-encoding", "UTF-8"
 )
 
+PB.protocVersion := "-v:com.google.protobuf:protoc:3.0.0"
+PB.pythonExe := "C:/Python27/Python.exe"
 PB.targets in Compile := Seq(
   scalapb.gen() -> (sourceManaged in Compile).value
 )
-
-PB.protocVersion := "-v:com.google.protobuf:protoc:3.0.0"
-
-PB.pythonExe := "C:\\Python27\\Python.exe"
-//PB.pythonExe := "/usr/bin/python",
 
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
