@@ -133,9 +133,10 @@ object LogParser {
     log
   }
 
-  //val txt = "222.47.165.147 - - [09/May/2017:00:01:13 +0800] \"GET /trace?t=stay&duration=10&iclicashsid=23df11e7c20f841dfda7f277d2049b5ad0c98d18&w=414&h=672&sw=414&sh=716&os=iOS&ref=http%3A%2F%2Fg.fastapi.net%2Fqa%3Fslotid%3D1021642%26adid%3D795774%26index%3D0%26pvid%3D1021642.148-07.1pncscz.69qo.2.opn5tf.405e%26rn%3DC%3A1021642.148-07.1pncscz.69qo.2.opn5tf.405e_oc153%26mobile%3D1%26r%3D8dd&v=1.0&p=140&_t=10 HTTP/1.1\" 200 43 \"http://cj.juseyx.com/b2/?iclicashsid=23df11e7c20f841dfda7f277d2049b5ad0c98d18\" \"Mozilla/5.0 (iPhone; CPU iPhone OS 10_1_1 like Mac OS X) AppleWebKit/602.2.14 (KHTML, like Gecko) Mobile/14B100ua qukan_ios\" \"-\" \"-\" 0.000"
 
-  val traceRegex = """GET\s/trace\?(.*)""".r
+  //val txt = "36.149.39.90 - - [15/May/2017:08:02:36 +0800] \"GET /trace?t=stay&duration=1&iclicashsid=90c60d5e0fc887090984f5589aaa157a62207613&w=980&h=1306&sw=360&sh=640&os=Android&ref=http%3A%2F%2Fcj.juseyx.com%2Fb2%2F%3Ficlicashsid%3D90c60d5e0fc887090984f5589aaa157a62207613&v=1.0&_t=0 HTTP/1.1\" 200 43 \"http://cj.juseyx.com/b2/?iclicashsid=90c60d5e0fc887090984f5589aaa157a62207613&t=1494806555248\" \"Mozilla/5.0 (Linux; Android 6.0; NEM-TL00 Build/HONORNEM-TL00; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/55.0.2883.91 Mobile Safari/537.36 qukan_android\" \"-\" \"-\" 0.000"
+
+  val traceRegex = """GET\s/trace\?([^\s]+)""".r
 
   def parseTraceLog(txt: String): TraceLog = {
     var log: TraceLog = null
