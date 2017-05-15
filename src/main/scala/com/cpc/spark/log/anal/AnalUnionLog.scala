@@ -32,13 +32,15 @@ object AnalUnionLog {
     val hourBefore = args(2).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
+    val date = LogParser.dateFormat.format(cal.getTime)
+    val hour = LogParser.hourFormat.format(cal.getTime)
     val spark = SparkSession.builder()
       .appName("cpc anal union log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
 
-    val searchData = prepareSource(spark, "cpc_search", hourBefore, 1)
+    val searchData = prepareSource(spark, "cpc_search", hourBefore, 2)
     if (searchData == null) {
       System.err.println("search data is empty")
       System.exit(1)
@@ -67,7 +69,7 @@ object AnalUnionLog {
           }
       }
       .map(_._2)
-      .filter(_.timestamp > 0)
+      .filter(x => x.date == date && x.hour == hour)
       .cache()
 
     //write union log data
@@ -89,8 +91,7 @@ object AnalUnionLog {
       traceData = traceData.union(prepareTraceSource(traceData2))
     }
     if (traceData1 != null || traceData2 != null) {
-        traceData
-          .reduceByKey {
+        traceData.reduceByKey {
           (x, y) =>
             var u: UnionLog = null
             if (x._1 != null) {
