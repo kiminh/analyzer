@@ -5,7 +5,6 @@ SPARK_HOME=/home/spark/spark-2.1.0
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
-    "$cur/lib/cpc-protocol_2.11-1.0.jar"
 )
 
 $SPARK_HOME/bin/spark-submit --master yarn \

@@ -42,6 +42,7 @@ object GetHourReport {
       .getOrCreate()
     import ctx.implicits._
 
+
     val unionLog = ctx.sql(
       s"""
          |select * from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and isfill = 1 and adslotid > 0
@@ -199,9 +200,9 @@ object GetHourReport {
         mariadbProp.getProperty("user"),
         mariadbProp.getProperty("password"));
       val stmt = conn.createStatement();
-      val sql: String =
+      val sql =
         """
-          |delete from %s dl_cpc.%s where `date` = "%s" and `hour` = "%d"
+          |delete from report.%s where `date` = "%s" and `hour` = %d
         """.stripMargin.format(tbl, date, hour.toInt);
       stmt.executeUpdate(sql);
     } catch {
