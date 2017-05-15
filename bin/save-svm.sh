@@ -11,4 +11,4 @@ $SPARK_HOME/bin/spark-submit --master yarn \
     --executor-memory 2G --executor-cores 2 --total-executor-cores 6 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.train.AdvSvm \
-    $cur/lib/cpc-anal-assembly-1.0.jar 3 3 4 19
+    $cur/lib/cpc-anal_2.11-0.1.jar 3 3
