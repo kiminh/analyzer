@@ -1,6 +1,8 @@
 package com.cpc.spark.log.report
 
+import java.sql.DriverManager
 import java.util.{Calendar, Properties}
+
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -74,6 +76,8 @@ object GetHourReport {
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
 
+
+    clearReportHourData("report_media_charge_hourly", date, hour)
     ctx.createDataFrame(chargeData)
       .write
       .mode(SaveMode.Append)
@@ -108,6 +112,7 @@ object GetHourReport {
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
 
+    clearReportHourData("report_media_geo_hourly", date, hour)
     ctx.createDataFrame(geoData)
       .write
       .mode(SaveMode.Append)
@@ -140,6 +145,7 @@ object GetHourReport {
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
 
+    clearReportHourData("report_media_os_hourly", date, hour)
     ctx.createDataFrame(osData)
       .write
       .mode(SaveMode.Append)
@@ -176,11 +182,30 @@ object GetHourReport {
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
 
+    clearReportHourData("report_media_fill_hourly", date, hour)
     ctx.createDataFrame(fillData)
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_fill_hourly", mariadbProp)
 
     ctx.stop()
+  }
+
+  def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
+    try {
+      Class.forName(mariadbProp.getProperty("driver"));
+      val conn = DriverManager.getConnection(
+        mariadbUrl,
+        mariadbProp.getProperty("user"),
+        mariadbProp.getProperty("password"));
+      val stmt = conn.createStatement();
+      val sql: String =
+        """
+          |delete from %s dl_cpc.%s where `date` = "%s" and `hour` = "%d"
+        """.stripMargin.format(tbl, date, hour.toInt);
+      stmt.executeUpdate(sql);
+    } catch {
+      case e: Exception => println("exception caught: " + e);
+    }
   }
 }
