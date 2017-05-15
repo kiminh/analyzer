@@ -54,18 +54,18 @@ object GetTraceReport {
       .as[TraceReportLog]
       .rdd.cache()
 
-    val traceData = traceReport.map{
-         x =>
-        ((x.user_id, x.plan_id, x.unit_id, x.idea_id, x.date, x.hour, x.trace_type, x.duration), 1)
-      }.filter{
-        case ((user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration), (count)) =>
-        plan_id > 0
-      }.reduceByKey{
-        case (x, y) => (x + y)
-      }.map{
-        case ((user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration), (count)) =>
-          AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration,count)
-      }
+    val traceData = traceReport.filter {
+      trace =>
+        trace.plan_id > 0 && trace.trace_type.length < 100
+    }.map {
+      trace =>
+        (trace, 1)
+    }.reduceByKey {
+      case (x, y) => (x + y)
+    }.map {
+      case (trace, count) =>
+        AdvTraceReport(trace.user_id, trace.plan_id, trace.unit_id, trace.idea_id, trace.date, trace.hour, trace.trace_type, trace.duration, count)
+    }
     println("*********traceDatatraceDatatraceData**********")
     traceData.collect().foreach(println)
     ctx.createDataFrame(traceData)
