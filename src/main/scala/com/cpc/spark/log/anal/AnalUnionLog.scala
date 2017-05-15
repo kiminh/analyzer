@@ -29,7 +29,8 @@ object AnalUnionLog {
     }
     srcRoot = args(0)
     val table = args(1)
-    val hourBefore = args(2).toInt
+    val traceTbl = args(2)
+    val hourBefore = args(3).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
     val date = LogParser.dateFormat.format(cal.getTime)
@@ -120,7 +121,7 @@ object AnalUnionLog {
         .mode(SaveMode.Append)
         .format("parquet")
         .partitionBy("date", "hour")
-        .saveAsTable("dl_cpc.cpc_union_trace_log")
+        .saveAsTable("dl_cpc." + traceTbl)
     }
 
     spark.stop()
