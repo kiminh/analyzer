@@ -57,7 +57,7 @@ object GetTraceReport {
 
     val traceData = traceReport.filter {
       trace =>
-        trace.plan_id > 0 && trace.trace_type.length < 100
+        trace.plan_id > 0 && trace.trace_type.length < 100 && trace.trace_type.length > 1
     }.map {
       trace =>
         ((trace.searchid, trace.trace_type,trace.duration), trace)
