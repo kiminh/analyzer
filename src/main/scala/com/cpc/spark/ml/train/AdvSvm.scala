@@ -8,7 +8,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 
 object AdvSvm {
   def main(args: Array[String]): Unit = {
-    if (args.length < 4) {
+    if (args.length < 2) {
       System.err.println(
         s"""
            |Usage: GenerateAdvSvm <hive_table> <date> <hour>
@@ -32,7 +32,7 @@ object AdvSvm {
       val log = sparkSession.sql(
         s"""
            |select * from dl_cpc.cpc_union_log where `date` = "%s" and isfill = 1 and adslotid > 0
-     """.stripMargin.format(date))
+        """.stripMargin.format(date))
         .as[UnionLog].rdd
 
       log.map(x => MLParser.unionLogToSvm(x))
