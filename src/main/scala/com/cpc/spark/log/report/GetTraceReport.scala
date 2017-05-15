@@ -2,7 +2,7 @@ package com.cpc.spark.log.report
 
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.log.parser.LogParser
+import com.cpc.spark.log.parser.{LogParser, TraceReportLog}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 
@@ -43,29 +43,31 @@ object GetTraceReport {
       .getOrCreate()
     import ctx.implicits._
 
-    val advTraceReport = ctx.sql(
+    val traceReport = ctx.sql(
       s"""
          |select un.userid as user_id,un.planid as plan_id ,un.unitid as unit_id ,
          |un.ideaid as idea_id, tr.date as date,tr.hour,
          |tr.trace_type as trace_type,tr.duration as duration
          |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
-         |where  tr.`date` = "%s" and tr.`hour` = "%s" limit 10
-       """.stripMargin.format(date, hour))
-      .as[AdvTraceReport]
+         |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s"
+       """.stripMargin.format(date, hour, date, hour))
+      .as[TraceReportLog]
       .rdd.cache()
 
-    val traceData = advTraceReport.map{
-      x =>
+    val traceData = traceReport.map{
+         x =>
         ((x.user_id, x.plan_id, x.unit_id, x.idea_id, x.date, x.hour, x.trace_type, x.duration), 1)
+      }.filter{
+        case ((user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration), (count)) =>
+        plan_id > 0
       }.reduceByKey{
-        (x, y) => x + y
+        case (x, y) => (x + y)
       }.map{
-        case ((user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration), count)
-        =>
-          val trace = AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration)
-          trace.count = count
-          trace
+        case ((user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration), (count)) =>
+          AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration,count)
       }
+    println("*********traceDatatraceDatatraceData**********")
+    traceData.collect().foreach(println)
     ctx.createDataFrame(traceData)
       .write
       .mode(SaveMode.Append)
