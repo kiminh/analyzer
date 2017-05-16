@@ -8,6 +8,7 @@ import com.typesafe.config.ConfigFactory
 import io.grpc.ServerBuilder
 import mlserver.mlserver._
 import mlserver.mlserver.PredictorGrpc.Predictor
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.util.hashing.MurmurHash3.stringHash
@@ -28,6 +29,7 @@ object MLServer {
         """.stripMargin)
       System.exit(1)
     }
+    Logger.getRootLogger().setLevel(Level.WARN)
     val coreNum = Runtime.getRuntime.availableProcessors()
     //System.setProperty("scala.concurrent.context.minThreads", coreNum.toString)
     System.setProperty("scala.concurrent.context.maxThreads", coreNum.toString)
@@ -39,6 +41,9 @@ object MLServer {
     model = LogisticRegressionModel.load(spark, dataPath)
     model.clearThreshold()
     println("model data loaded", model.numFeatures, model.getThreshold)
+
+    println(model.intercept, model.weights)
+
 
     val loadDataThread = new Thread(new Runnable {
       override def run(): Unit = {

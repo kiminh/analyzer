@@ -4,10 +4,12 @@ import java.util.Calendar
 
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
 import com.cpc.spark.ml.parser.MLParser
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 object AdvSvm {
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger().setLevel(Level.WARN)
     if (args.length < 2) {
       System.err.println(
         s"""
