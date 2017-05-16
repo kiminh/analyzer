@@ -11,7 +11,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   */
 object GetTraceReport {
 
-  val mariadbUrl = "jdbc:mysql://10.9.180.16:3306/adv"
+  val mariadbUrl = "jdbc:mysql://10.9.180.16:3306/report"
 
   val mariadbProp = new Properties()
 
@@ -33,8 +33,8 @@ object GetTraceReport {
     println("date:" + date)
     println("hour:" + hour)
 
-    mariadbProp.put("user", "adv")
-    mariadbProp.put("password", "advv587")
+    mariadbProp.put("user", "report")
+    mariadbProp.put("password", "report!@#")
     mariadbProp.put("driver", "org.mariadb.jdbc.Driver")
 
     val ctx = SparkSession.builder()
@@ -77,7 +77,7 @@ object GetTraceReport {
     ctx.createDataFrame(traceData)
       .write
       .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "adv.report_trace", mariadbProp)
+      .jdbc(mariadbUrl, "report.report_trace", mariadbProp)
     ctx.stop()
   }
 }
