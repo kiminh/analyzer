@@ -30,7 +30,8 @@ object MLParser {
     var n = 1
     var svm = x.isclick.toString
     for (col <- cols) {
-      svm = svm + " :%d %f".format(n, col)
+      svm = svm + " %d:%f".format(n, col)
+      n = n + 1
     }
     svm
   }
