@@ -13,8 +13,8 @@ message AdFreq {
 message APPPackage {
 	string packagename = 1; // 包名
 	string version = 2; // 版本
-	int64 firstInstallTime = 3;
-	int64 lastUpdateTime = 4;
+    int64 firstInstallTime = 3;
+    int64 lastUpdateTime = 4;
 }
 
 message InterestItem {
@@ -28,4 +28,5 @@ message UserProfile {
 	int32 coin = 4; // 金币数
 	repeated InterestItem interests = 5; // 人群标签
 	repeated APPPackage installpkg = 6; // 已安装列表
+	int32 pcategory = 7; //人群类型标签,趣头条用
 }

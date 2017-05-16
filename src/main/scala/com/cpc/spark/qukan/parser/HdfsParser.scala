@@ -141,6 +141,7 @@ case class ProfileRow (
                       age: Int = 0,
                       sex: Int = 0,
                       coin: Int = 0,
+                      pcate: Int = 0,
                       from: Int = 0,
                       pkgs: List[AppPkg] = List[AppPkg](),
                       uis: List[UserInterest] = List[UserInterest]()
