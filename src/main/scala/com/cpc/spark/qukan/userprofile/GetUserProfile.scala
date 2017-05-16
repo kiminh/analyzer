@@ -26,7 +26,7 @@ object GetUserProfile {
     Logger.getRootLogger.setLevel(Level.WARN)
     val dayBefore = args(0).toInt
     val cal = Calendar.getInstance()
-    cal.add(Calendar.DATE, -1)
+    cal.add(Calendar.DATE, -dayBefore)
     val day = HdfsParser.dateFormat.format(cal.getTime)
 
     val conf = ConfigFactory.load()
@@ -38,7 +38,6 @@ object GetUserProfile {
       .appName("cpc get user profile [%s]".format(day))
       .enableHiveSupport()
       .getOrCreate()
-    import ctx.implicits._
 
     //user preferred type
     val memberDeviceId = ctx.sql(
@@ -127,6 +126,8 @@ object GetUserProfile {
       cal.add(Calendar.DATE, -1)
     }
 
+    var caten = 0
+    var intrn = 0
     unionRdd.union(pcateRdd).map(x => (x.devid, x))
       .reduceByKey {
         (x, y) =>
@@ -147,6 +148,10 @@ object GetUserProfile {
             .setSex(x.sex)
             .setCoin(x.coin)
             .setPcategory(x.pcate)
+
+          if (x.pcate > 0) {
+            caten = caten + 1
+          }
 
           x.pkgs.foreach {
             p =>
@@ -169,9 +174,14 @@ object GetUserProfile {
               profile.addInterests(i)
           }
 
+          if (x.uis.length > 0) {
+             intrn = intrn + 1
+          }
+
           redis.setex(x.devid + "_UPDATA", 3600 * 24 * 7, profile.build().toByteArray)
       }
 
+    println(caten, intrn)
     ctx.stop()
   }
 

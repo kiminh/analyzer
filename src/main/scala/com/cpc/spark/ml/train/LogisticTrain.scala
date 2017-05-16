@@ -7,6 +7,8 @@ import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.{SparkConf, SparkContext}
 
+import scala.util.Random
+
 /**
   * Created by Roy on 2017/5/15.
   */
@@ -16,22 +18,17 @@ object LogisticTrain {
     Logger.getRootLogger().setLevel(Level.WARN)
     val sc = new SparkContext(new SparkConf().setAppName("logistic training"));
     val parsedData = MLUtils.loadLibSVMFile(sc, args(0))
-    val splits = parsedData.randomSplit(Array(0.99,0.01), seed = 10L)
+    val splits = parsedData
+      .filter(x => x.label > 0.01 || Random.nextInt(1000) > 990)
+      .randomSplit(Array(0.9,0.1), seed = 10L)
 
     val training = splits(0)
-      .filter {
-        x =>
-          val rnd = scala.util.Random
-          x.features.toArray(0) > 0.01 || rnd.nextInt(10) > 8
-      }
-      .cache()
-
     val test = splits(1)
+
     println("start training", training.count())
     val bfgs = new LogisticRegressionWithLBFGS()
     val model = bfgs.setNumClasses(2).run(training)
-
-
+    model.clearThreshold()
 
     println("save model")
     model.save(sc, "/user/cpc/model/v1/")
@@ -42,8 +39,9 @@ object LogisticTrain {
         (prediction, label)
     }
 
-    val metrics = new MulticlassMetrics(predictionAndLabels)
+    predictionAndLabels.take(1000).foreach(println)
 
+    val metrics = new MulticlassMetrics(predictionAndLabels)
     println(metrics.precision(1))
   }
 }
