@@ -1,13 +1,13 @@
 package com.cpc.spark.qukan.userprofile
 
 import java.util.Calendar
-
-import com.cpc.spark.qukan.parser.{HdfsParser, ProfileRow}
+import com.cpc.spark.qukan.parser.HdfsParser
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
-import userprofile.Userprofile.{APPPackage, InterestItem, UserProfile}
+import userprofile.Userprofile.UserProfile
+import com.redis.serialization.Parse.Implicits._
 
 /**
   * Created by Roy on 2017/4/14.
@@ -18,7 +18,7 @@ object GetUserProfile {
     if (args.length < 1) {
       System.err.println(
         s"""
-           |Usage: GetUserProfile <day_before>
+           |Usage: GetUserProfile <day_before> <v>
            |
         """.stripMargin)
       System.exit(1)
@@ -37,6 +37,7 @@ object GetUserProfile {
       .getOrCreate()
 
     val profilePath = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s".format(day)
+    var total = 0
     var n = 0
     ctx.read.text(profilePath).rdd
       .map(x => HdfsParser.parseTextRow(x.getString(0)))
@@ -44,17 +45,23 @@ object GetUserProfile {
       .toLocalIterator
       .foreach {
         x =>
-          val profile = UserProfile
-            .newBuilder()
-            .setDevid(x.devid)
-            .setAge(x.age)
+          val key = x.devid + "_UPDATA"
+          val buffer = redis.get[Array[Byte]](key).getOrElse(null)
+          var user: UserProfile.Builder = null
+          if (buffer == null) {
+            user = UserProfile.newBuilder().setDevid(x.devid)
+            n = n + 1
+          } else {
+            user = UserProfile.parseFrom(buffer).toBuilder
+          }
+          user = user.setAge(x.age)
             .setSex(x.sex)
             .setCoin(x.coin)
-          redis.setex(x.devid + "_UPDATA", 3600 * 24 * 7, profile.build().toByteArray)
-          n = n + 1
+          redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+          total = total + 1
       }
 
-    println("count", n)
+    println("total: %d new: %d".format(total, n))
     ctx.stop()
   }
 }

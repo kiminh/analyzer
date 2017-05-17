@@ -7,12 +7,15 @@ jars=(
     "$cur/lib/scala-redis_2.11-1.0.jar"
     "$cur/lib/hadoop-lzo-0.4.20.jar"
     "$cur/lib/config-1.2.1.jar"
+    "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
 )
+
+ 
 
 $SPARK_HOME/bin/spark-submit --master yarn \
     --executor-memory 4G --executor-cores 2 --total-executor-cores 10 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.qukan.userprofile.GetUserProfile \
+    --class com.cpc.spark.qukan.userprofile.GetPcategory \
     $cur/lib/cpc-anal_2.11-0.1.jar 1
 
 

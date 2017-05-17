@@ -18,6 +18,8 @@ object HdfsParser {
 
   val columnSep = '\001'
 
+  val columnSepTab = '\t'
+
   def parseTextRow(txt: String): ProfileRow = {
     val data = txt.split(columnSep)
     var profile: ProfileRow = null
@@ -30,6 +32,58 @@ object HdfsParser {
           sex = toInt(data(3)),
           coin = toInt(data(2)),
           from = 0
+        )
+      }
+    }
+    profile
+  }
+
+
+  def parseTextRowAgeSex(txt: String): ProfileRow = {
+    val data = txt.split(columnSepTab)
+    var profile: ProfileRow = null
+    if (data.length == 4) {
+      val devid = data(0).trim
+      if (devid.length > 0) {
+        val sex = data(2).trim match {
+          case "2500100010" => 1
+          case "2500100020" => 2
+          case "2500100030" => 0
+          case _ => 0
+        }
+
+        /*
+        0-13 2600100000
+        14-17 2600100001
+        18-19 2600100002
+        20-24 2600100003
+        25-29 2600100004
+        30-34 2600100005
+        35-39 2600100006
+        40-44 2600100007
+        45-49 2600100008
+        50+   2600100009
+        未知   260010001
+        */
+        val age = data(3).trim match {
+          case "2600100000" => 1
+          case "2600100001" => 1
+          case "2600100002" => 2
+          case "2600100003" => 2
+          case "2600100004" => 3
+          case "2600100005" => 4
+          case "2600100006" => 4
+          case "2600100007" => 5
+          case "2600100008" => 5
+          case "2600100009" => 6
+          case "260010001" => 0
+          case _ => 0
+        }
+
+        profile = ProfileRow(
+          devid = devid,
+          age = age,
+          sex = sex
         )
       }
     }
