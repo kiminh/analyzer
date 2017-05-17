@@ -5,8 +5,10 @@ import java.util.Calendar
 import com.cpc.spark.qukan.parser.{HdfsParser, ProfileRow}
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import userprofile.Userprofile.{APPPackage, InterestItem, UserProfile}
+import com.redis.serialization.Parse.Implicits._
 
 /**
   * Created by Roy on 2017/4/14.
@@ -17,18 +19,16 @@ object GetUserProfile {
     if (args.length < 1) {
       System.err.println(
         s"""
-           |Usage: GetUserProfile <day_before>
+           |Usage: GetUserProfile <day_before> <int>
            |
         """.stripMargin)
       System.exit(1)
     }
-
+    Logger.getRootLogger.setLevel(Level.WARN)
     val dayBefore = args(0).toInt
-
     val cal = Calendar.getInstance()
-    cal.add(Calendar.DATE, -1)
+    cal.add(Calendar.DATE, -dayBefore)
     val day = HdfsParser.dateFormat.format(cal.getTime)
-
     val conf = ConfigFactory.load()
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     val allowedPkgs = conf.getStringList("userprofile.allowed_pkgs")
@@ -36,7 +36,78 @@ object GetUserProfile {
 
     val ctx = SparkSession.builder()
       .appName("cpc get user profile [%s]".format(day))
+      .enableHiveSupport()
       .getOrCreate()
+
+    //user preferred type
+    val memberDeviceId = ctx.sql(
+      """
+        |select member_id,device_code from gobblin.qukan_p_member_info where day = "%s"
+      """.stripMargin.format(day))
+      .rdd
+      .map {
+        x =>
+          try {
+            val id = x.getLong(0)
+            val uid = x.getString(1)
+            if (id > 0 && uid.length > 0) {
+              (id, (uid, 0L))
+            } else {
+              null
+            }
+          } catch {
+            case e: Exception => null
+          }
+      }
+      .filter(_ != null)
+
+    val memberPcate = ctx.sql(
+      """
+        |select member_id,type from algo_lechuan.user_preferred_type
+      """.stripMargin)
+      .rdd
+      .map {
+        x =>
+          try {
+            val id = x.getInt(0).toLong
+            val cate = x.getLong(1)
+            if (id > 0 && cate > 0) {
+              (id, ("", cate))
+            } else {
+              null
+            }
+          } catch {
+            case e: Exception => null
+          }
+      }
+      .filter(_ != null)
+
+    val pcateRdd = memberDeviceId.union(memberPcate)
+      .reduceByKey {
+        (x, y) =>
+          var uid = ""
+          var cate = 0L
+          if (x._1.length > 0) {
+            uid = x._1
+          } else {
+            uid = y._1
+          }
+          if (x._2 > 0) {
+            cate = x._2
+          } else {
+            cate = y._2
+          }
+          (uid, cate)
+      }
+      .filter(_._2._1.length > 0)
+      .map {
+        x =>
+          ProfileRow(
+            devid = x._2._1,
+            pcate = x._2._2.toInt,
+            from = 2
+          )
+      }
 
     val profilePath = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s".format(day)
     var unionRdd = ctx.read.text(profilePath).rdd
@@ -50,11 +121,14 @@ object GetUserProfile {
       val aiRdd = ctx.read.orc(aiPath).rdd
         .map(HdfsParser.parseInstallApp(_, x => allowedPkgs.contains(x), pkgTags))
         .filter(x => x != null && x.devid.length > 0)
+
       unionRdd = unionRdd.union(aiRdd)
       cal.add(Calendar.DATE, -1)
     }
 
-    unionRdd.map(x => (x.devid, x))
+    var caten = 0
+    var intrn = 0
+    unionRdd.union(pcateRdd).map(x => (x.devid, x))
       .reduceByKey {
         (x, y) =>
           if (x.from == 0) {
@@ -73,6 +147,11 @@ object GetUserProfile {
             .setAge(x.age)
             .setSex(x.sex)
             .setCoin(x.coin)
+            .setPcategory(x.pcate)
+
+          if (x.pcate > 0) {
+            caten = caten + 1
+          }
 
           x.pkgs.foreach {
             p =>
@@ -95,14 +174,29 @@ object GetUserProfile {
               profile.addInterests(i)
           }
 
+          if (x.uis.length > 0) {
+            intrn = intrn + 1
+          }
+
           redis.setex(x.devid + "_UPDATA", 3600 * 24 * 7, profile.build().toByteArray)
       }
 
+    println(caten, intrn)
     ctx.stop()
   }
 
   def merge(x: ProfileRow, y: ProfileRow): ProfileRow = {
-    x.copy(pkgs = x.pkgs ::: y.pkgs)
+    var cate = 0
+    if (x.pcate > 0) {
+      cate = x.pcate
+    }
+    if (y.pcate > 0) {
+      cate = y.pcate
+    }
+    x.copy(
+      pcate = cate,
+      pkgs = x.pkgs ::: y.pkgs
+    )
   }
 }
 

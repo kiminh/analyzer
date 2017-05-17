@@ -36,8 +36,6 @@ object Stub {
 
     val splits = parsedData.randomSplit(Array(0.6,0.4), seed = 12L)
 
-
-
     val blockingStub = PredictorGrpc.blockingStub(channel)
     val reply = blockingStub.predict(req)
     println(req.toString, reply.toString)
