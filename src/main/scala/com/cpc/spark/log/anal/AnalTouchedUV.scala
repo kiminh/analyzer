@@ -3,6 +3,7 @@ package com.cpc.spark.log.anal
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
+import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -40,6 +41,7 @@ object AnalTouchedUV {
     cal.add(Calendar.DATE, -dayBefore)
     val date = LogParser.dateFormat.format(cal.getTime)
     val conf = ConfigFactory.load()
+    val redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
 
     val ctx = SparkSession.builder()
       .appName("anal ad touched query amount[%s]".format(date))
@@ -129,13 +131,24 @@ object AnalTouchedUV {
       .map(x => (x.key, x))
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
+      .cache()
 
+    ret.unpersist()
     println("ret1", ret1.count())
     ret1.toDF()
       .write
       .mode(SaveMode.Append)
       .partitionBy("date")
       .saveAsTable("dl_cpc.ad_touched_uv")
+
+    ret1.toLocalIterator
+      .foreach {
+        x =>
+          redis.set(x.key + "_TOUCHEDUV", x.sum)
+      }
+
+    ret1.unpersist()
+    ctx.stop()
   }
 }
 

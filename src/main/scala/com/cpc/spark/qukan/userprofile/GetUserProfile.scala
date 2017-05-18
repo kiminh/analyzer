@@ -35,23 +35,16 @@ object GetUserProfile {
       .getOrCreate()
 
     val profilePath = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s".format(day)
-    /*
     val urdd = ctx.read.text(profilePath).rdd
       .map(x => HdfsParser.parseTextRow(x.getString(0)))
       .filter(x => x != null && x.devid.length > 0)
-      */
-
-    val urdd = ctx.sql(
-      """
-        |select member_id,type from algo_lechuan.user_preferred_type
-      """.stripMargin).rdd
 
     val sum = urdd.mapPartitions {
       p =>
+        var n1 = 0
+        var n2 = 0
+        var n3 = 0
         val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-        var n1 = 1
-        var n2 = 2
-        /*
         p.foreach {
           x =>
             n1 = n1 + 1
@@ -64,32 +57,36 @@ object GetUserProfile {
             } else {
               user = UserProfile.parseFrom(buffer).toBuilder
             }
-            user = user.setAge(x.age)
-              .setSex(x.sex)
-              .setCoin(x.coin)
-            redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+            val u = user.build()
+            if (u.getAge != x.age || u.getSex != x.sex || u.getCoin != x.coin ) {
+              n3 = n3 + 1
+              user = user.setAge(x.age)
+                .setSex(x.sex)
+                .setCoin(x.coin)
+              redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+            }
         }
-        */
-        Seq((0, n2), (1, n1)).iterator
+        Seq((0, n1), (1, n2), (2, n3)).iterator
     }
 
-
-
     //统计新增数据
-    var total = 0
-    var n = 0
+    var n1 = 0
+    var n2 = 0
+    var n3 = 0
     sum.reduceByKey((x, y) => x + y)
       .take(2)
       .foreach {
         x =>
           if (x._1 == 0) {
-            total = x._2
+            n1 = x._2
+          } else if (x._1 == 1) {
+            n2 = x._2
           } else {
-            n = x._2
+            n3 = x._2
           }
       }
 
-    println("total: %d new: %d".format(total, n))
+    println("total: %d new: %d updated: %d".format(n1, n2, n3))
     ctx.stop()
   }
 }
