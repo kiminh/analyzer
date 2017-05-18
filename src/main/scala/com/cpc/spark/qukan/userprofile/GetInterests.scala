@@ -81,7 +81,6 @@ object GetInterests {
                   user.addInstallpkg(pkg)
               }
             }
-
             redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
           }
       }
