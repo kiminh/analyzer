@@ -37,7 +37,6 @@ object GetInterests {
 
     val ctx = SparkSession.builder()
       .appName("cpc get user interests [%s]".format(day))
-      .enableHiveSupport()
       .getOrCreate()
 
     val aiPath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(day)

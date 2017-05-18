@@ -33,7 +33,6 @@ object GetUserProfile {
 
     val ctx = SparkSession.builder()
       .appName("cpc get user profile [%s]".format(day))
-      .enableHiveSupport()
       .getOrCreate()
 
     val profilePath = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s".format(day)
