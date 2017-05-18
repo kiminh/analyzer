@@ -1,13 +1,12 @@
 package com.cpc.spark.qukan.userprofile
 
 import java.util.Calendar
-
-import com.cpc.spark.qukan.parser.{HdfsParser, ProfileRow}
+import com.cpc.spark.qukan.parser.HdfsParser
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
-import userprofile.Userprofile.{APPPackage, InterestItem, UserProfile}
+import userprofile.Userprofile.UserProfile
 import com.redis.serialization.Parse.Implicits._
 
 /**
@@ -19,7 +18,7 @@ object GetUserProfile {
     if (args.length < 1) {
       System.err.println(
         s"""
-           |Usage: GetUserProfile <day_before> <int>
+           |Usage: GetUserProfile <day_before> <v>
            |
         """.stripMargin)
       System.exit(1)
@@ -31,172 +30,39 @@ object GetUserProfile {
     val day = HdfsParser.dateFormat.format(cal.getTime)
     val conf = ConfigFactory.load()
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-    val allowedPkgs = conf.getStringList("userprofile.allowed_pkgs")
-    val pkgTags = conf.getConfig("userprofile.pkg_tags")
 
     val ctx = SparkSession.builder()
       .appName("cpc get user profile [%s]".format(day))
       .enableHiveSupport()
       .getOrCreate()
 
-    //user preferred type
-    val memberDeviceId = ctx.sql(
-      """
-        |select member_id,device_code from gobblin.qukan_p_member_info where day = "%s"
-      """.stripMargin.format(day))
-      .rdd
-      .map {
-        x =>
-          try {
-            val id = x.getLong(0)
-            val uid = x.getString(1)
-            if (id > 0 && uid.length > 0) {
-              (id, (uid, 0L))
-            } else {
-              null
-            }
-          } catch {
-            case e: Exception => null
-          }
-      }
-      .filter(_ != null)
-
-    val memberPcate = ctx.sql(
-      """
-        |select member_id,type from algo_lechuan.user_preferred_type
-      """.stripMargin)
-      .rdd
-      .map {
-        x =>
-          try {
-            val id = x.getInt(0).toLong
-            val cate = x.getLong(1)
-            if (id > 0 && cate > 0) {
-              (id, ("", cate))
-            } else {
-              null
-            }
-          } catch {
-            case e: Exception => null
-          }
-      }
-      .filter(_ != null)
-
-    val pcateRdd = memberDeviceId.union(memberPcate)
-      .reduceByKey {
-        (x, y) =>
-          var uid = ""
-          var cate = 0L
-          if (x._1.length > 0) {
-            uid = x._1
-          } else {
-            uid = y._1
-          }
-          if (x._2 > 0) {
-            cate = x._2
-          } else {
-            cate = y._2
-          }
-          (uid, cate)
-      }
-      .filter(_._2._1.length > 0)
-      .map {
-        x =>
-          ProfileRow(
-            devid = x._2._1,
-            pcate = x._2._2.toInt,
-            from = 2
-          )
-      }
-
     val profilePath = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s".format(day)
-    var unionRdd = ctx.read.text(profilePath).rdd
+    var total = 0
+    var n = 0
+    ctx.read.text(profilePath).rdd
       .map(x => HdfsParser.parseTextRow(x.getString(0)))
       .filter(x => x != null && x.devid.length > 0)
-
-    //user app install info
-    for (d <- 0 to dayBefore - 1) {
-      val day = HdfsParser.dateFormat.format(cal.getTime)
-      val aiPath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(day)
-      val aiRdd = ctx.read.orc(aiPath).rdd
-        .map(HdfsParser.parseInstallApp(_, x => allowedPkgs.contains(x), pkgTags))
-        .filter(x => x != null && x.devid.length > 0)
-
-      unionRdd = unionRdd.union(aiRdd)
-      cal.add(Calendar.DATE, -1)
-    }
-
-    var caten = 0
-    var intrn = 0
-    unionRdd.union(pcateRdd).map(x => (x.devid, x))
-      .reduceByKey {
-        (x, y) =>
-          if (x.from == 0) {
-            merge(x, y)
-          } else {
-            merge(y, x)
-          }
-      }
-      .map(_._2)
       .toLocalIterator
       .foreach {
         x =>
-          val profile = UserProfile
-            .newBuilder()
-            .setDevid(x.devid)
-            .setAge(x.age)
+          val key = x.devid + "_UPDATA"
+          val buffer = redis.get[Array[Byte]](key).getOrElse(null)
+          var user: UserProfile.Builder = null
+          if (buffer == null) {
+            user = UserProfile.newBuilder().setDevid(x.devid)
+            n = n + 1
+          } else {
+            user = UserProfile.parseFrom(buffer).toBuilder
+          }
+          user = user.setAge(x.age)
             .setSex(x.sex)
             .setCoin(x.coin)
-            .setPcategory(x.pcate)
-
-          if (x.pcate > 0) {
-            caten = caten + 1
-          }
-
-          x.pkgs.foreach {
-            p =>
-              val pkg = APPPackage
-                .newBuilder()
-                .setFirstInstallTime(p.firstInstallTime)
-                .setLastUpdateTime(p.lastUpdateTime)
-                .setPackagename(p.name)
-                .build()
-              profile.addInstallpkg(pkg)
-          }
-
-          x.uis.foreach {
-            ui =>
-              val i = InterestItem
-                .newBuilder()
-                .setTag(ui.tag)
-                .setScore(ui.score)
-                .build()
-              profile.addInterests(i)
-          }
-
-          if (x.uis.length > 0) {
-            intrn = intrn + 1
-          }
-
-          redis.setex(x.devid + "_UPDATA", 3600 * 24 * 7, profile.build().toByteArray)
+          redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+          total = total + 1
       }
 
-    println(caten, intrn)
+    println("total: %d new: %d".format(total, n))
     ctx.stop()
-  }
-
-  def merge(x: ProfileRow, y: ProfileRow): ProfileRow = {
-    var cate = 0
-    if (x.pcate > 0) {
-      cate = x.pcate
-    }
-    if (y.pcate > 0) {
-      cate = y.pcate
-    }
-    x.copy(
-      pcate = cate,
-      pkgs = x.pkgs ::: y.pkgs
-    )
   }
 }
 
