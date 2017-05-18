@@ -74,7 +74,7 @@ object GetUserProfile {
     var n2 = 0
     var n3 = 0
     sum.reduceByKey((x, y) => x + y)
-      .take(2)
+      .take(3)
       .foreach {
         x =>
           if (x._1 == 0) {
