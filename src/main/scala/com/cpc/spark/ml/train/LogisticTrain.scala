@@ -37,8 +37,8 @@ object LogisticTrain {
       .setNumClasses(2)
       .run(training)
 
-    model.clearThreshold()
 
+    model.clearThreshold()
     println("save model")
     model.save(sc, "/user/cpc/model/v1/")
 
@@ -46,9 +46,31 @@ object LogisticTrain {
       case LabeledPoint(label, features) =>
         val prediction = model.predict(features)
         (prediction, label)
-    }
+    }.cache()
 
+
+    var psum = 0D
+    var pcnt = 0
+
+    var nsum = 0D
+    var ncnt = 0
+    println("print 1000")
     predictionAndLabels.take(1000).foreach(println)
+    predictionAndLabels.toLocalIterator
+      .map {
+        x =>
+          if (x._2 > 0.01) {
+            psum += x._1
+            pcnt += 1
+          } else {
+            nsum += x._1
+            ncnt += 1
+          }
+      }
+
+    println("positive", psum, pcnt, psum / pcnt.toDouble)
+    println("negative", nsum, ncnt, nsum / pcnt.toDouble)
+
     val metrics = new MulticlassMetrics(predictionAndLabels)
     println(metrics.precision(1))
   }

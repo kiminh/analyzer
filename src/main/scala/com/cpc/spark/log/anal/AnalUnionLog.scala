@@ -84,7 +84,6 @@ object AnalUnionLog {
       .saveAsTable("dl_cpc." + table)
 
     var traceData = unionData.map(x => (x.searchid, (x, Seq[TraceLog]())))
-    unionData.unpersist()
     val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
     if (traceData1 != null) {
       traceData = traceData.union(prepareTraceSource(traceData1))
@@ -126,6 +125,8 @@ object AnalUnionLog {
         .saveAsTable("dl_cpc." + traceTbl)
     }
 
+    println(date, unionData.count())
+    unionData.unpersist()
     spark.stop()
   }
 
