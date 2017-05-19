@@ -57,7 +57,7 @@ object LogisticTrain {
     println("print 1000")
     predictionAndLabels.take(1000).foreach(println)
     predictionAndLabels.toLocalIterator
-      .map {
+      .foreach {
         x =>
           if (x._2 > 0.01) {
             psum += x._1
