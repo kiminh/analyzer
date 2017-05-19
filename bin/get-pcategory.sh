@@ -16,6 +16,6 @@ $SPARK_HOME/bin/spark-submit --master yarn \
     --executor-memory 4G --executor-cores 2 --total-executor-cores 10 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.qukan.userprofile.GetPcategory \
-    $cur/lib/cpc-anal_2.11-0.1.jar 1
+    $cur/lib/cpc-anal_2.11-0.1.jar 2
 
 

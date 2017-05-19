@@ -37,7 +37,6 @@ object GetInterests {
 
     val ctx = SparkSession.builder()
       .appName("cpc get user interests [%s]".format(day))
-      .enableHiveSupport()
       .getOrCreate()
 
     val aiPath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(day)
@@ -55,28 +54,33 @@ object GetInterests {
           val buffer = redis.get[Array[Byte]](key).getOrElse(null)
           if (buffer != null) {
             val user = UserProfile.parseFrom(buffer).toBuilder
-            row.uis.foreach {
-              ui =>
-                val i = InterestItem
-                  .newBuilder()
-                  .setTag(ui.tag)
-                  .setScore(ui.score)
-                  .build()
-                user.addInterests(i)
+            if (row.uis.length > 0) {
+              user.clearInterests()
+              row.uis.foreach {
+                ui =>
+                  val i = InterestItem
+                    .newBuilder()
+                    .setTag(ui.tag)
+                    .setScore(ui.score)
+                    .build()
+                  user.addInterests(i)
+              }
+              intrn = intrn + 1
             }
 
-            row.pkgs.foreach {
-              p =>
-                val pkg = APPPackage
-                  .newBuilder()
-                  .setFirstInstallTime(p.firstInstallTime)
-                  .setLastUpdateTime(p.lastUpdateTime)
-                  .setPackagename(p.name)
-                  .build()
-                user.addInstallpkg(pkg)
+            if (row.pkgs.length > 0) {
+              user.clearInstallpkg()
+              row.pkgs.foreach {
+                p =>
+                  val pkg = APPPackage
+                    .newBuilder()
+                    .setFirstInstallTime(p.firstInstallTime)
+                    .setLastUpdateTime(p.lastUpdateTime)
+                    .setPackagename(p.name)
+                    .build()
+                  user.addInstallpkg(pkg)
+              }
             }
-
-            intrn = intrn + 1
             redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
           }
       }
