@@ -36,10 +36,11 @@ object GetUserProfileV2 {
 
     val path = "/tmp/device_member_age_sex/"
 
-    val rdd = ctx.read.text(path).rdd
-      .map(x => HdfsParser.parseTextRowAgeSex(x.getString(0)))
+    val rdd = ctx.read.orc(path).rdd
+      .map(x => HdfsParser.parseTextRowAgeSex(x))
       .filter(_ != null)
       .cache()
+
 
     var n = rdd.count()
     println("c", n)
@@ -63,8 +64,8 @@ object GetUserProfileV2 {
           println("sex %d: %d %.3f".format(x._1, x._2, x._2.toFloat / n.toFloat))
       }
 
-    println("-----old----------")
     println("------------------")
+    println("-----old----------")
     val profilePath = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s".format(day)
     val rdd1 = ctx.read.text(profilePath).rdd
       .map(x => HdfsParser.parseTextRow(x.getString(0)))

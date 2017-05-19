@@ -144,7 +144,11 @@ object AnalTouchedUV {
     ret1.toLocalIterator
       .foreach {
         x =>
-          redis.set(x.key + "_TOUCHEDUV", x.sum)
+          /*
+          province-sex-age-coin_level-os-network_TOUCHEDUV
+          16-1-5-0-1-1_TOUCHEDUV  => 14674
+           */
+          redis.set(x.key + "_TOUCHEDUV", x.sum * 2) //所有结果提高2倍
       }
 
     ret1.unpersist()

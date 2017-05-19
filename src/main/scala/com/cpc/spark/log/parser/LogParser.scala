@@ -145,7 +145,6 @@ object LogParser {
         m =>
           val sub = m.subgroups
           if (sub.length == 1) {
-          //  val query = URLDecoder.decode(sub(0), "UTF8")
             log = TraceLog()
             sub(0).split('&').foreach {
               x =>

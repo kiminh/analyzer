@@ -39,13 +39,12 @@ object HdfsParser {
   }
 
 
-  def parseTextRowAgeSex(txt: String): ProfileRow = {
-    val data = txt.split(columnSepTab)
+  def parseTextRowAgeSex(row: Row): ProfileRow = {
     var profile: ProfileRow = null
-    if (data.length == 4) {
-      val devid = data(0).trim
+    if (row.length == 4) {
+      val devid = row.getString(0).trim
       if (devid.length > 0) {
-        val sex = data(2).trim match {
+        val sex = row.getString(2).trim match {
           case "2500100010" => 1
           case "2500100020" => 2
           case "2500100030" => 0
@@ -65,7 +64,7 @@ object HdfsParser {
         50+   2600100009
         未知   260010001
         */
-        val age = data(3).trim match {
+        val age = row.getString(3).trim match {
           case "2600100000" => 1
           case "2600100001" => 1
           case "2600100002" => 2
