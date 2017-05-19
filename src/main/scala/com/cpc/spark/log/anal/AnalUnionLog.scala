@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.{LogParser, TraceLog, UnionLog}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types._
@@ -27,6 +28,7 @@ object AnalUnionLog {
         """.stripMargin)
       System.exit(1)
     }
+    Logger.getRootLogger.setLevel(Level.WARN)
     srcRoot = args(0)
     val table = args(1)
     val traceTbl = args(2)

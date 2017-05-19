@@ -11,6 +11,5 @@ $SPARK_HOME/bin/spark-submit --master "spark://10.9.125.57:7077" \
     --executor-memory 2G --executor-cores 2 --total-executor-cores 6 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.log.anal.AnalUnionLog \
-    $cur/lib/cpc-anal_2.11-0.1.jar "/gobblin/source/cpc" "cpc_union_log" "cpc_union_trace_log" 1 && \
-    echo "`date +%Y-%m-%d:%H:%M:%S` done" >> $cur/log/merge-log.log
+    $cur/lib/cpc-anal_2.11-0.1.jar "/gobblin/source/cpc" "cpc_union_log" "cpc_union_trace_log" 1
 

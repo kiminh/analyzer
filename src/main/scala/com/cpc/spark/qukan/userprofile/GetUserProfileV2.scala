@@ -17,7 +17,7 @@ object GetUserProfileV2 {
     if (args.length < 1) {
       System.err.println(
         s"""
-           |Usage: GetUserProfile <path>
+           |Usage: GetUserProfile <day_before>
            |
         """.stripMargin)
       System.exit(1)
@@ -39,86 +39,53 @@ object GetUserProfileV2 {
     val rdd = ctx.read.orc(path).rdd
       .map(x => HdfsParser.parseTextRowAgeSex(x))
       .filter(_ != null)
-      .cache()
 
+    val sum = rdd.mapPartitions {
+      p =>
+        var n1 = 0
+        var n2 = 0
+        var n3 = 0
+        val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+        p.foreach {
+          x =>
+            n1 = n1 + 1
+            val key = x.devid + "_UPDATA"
+            val buffer = redis.get[Array[Byte]](key).getOrElse(null)
+            var user: UserProfile.Builder = null
+            if (buffer == null) {
+              user = UserProfile.newBuilder().setDevid(x.devid)
+              n2 = n2 + 1
+            } else {
+              user = UserProfile.parseFrom(buffer).toBuilder
+            }
+            val u = user.build()
+            if (u.getAge != x.age || u.getSex != x.sex) {
+              n3 = n3 + 1
+              user = user.setAge(x.age).setSex(x.sex)
+              redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+            }
+        }
+        Seq((0, n1), (1, n2), (2, n3)).iterator
+    }
 
-    var n = rdd.count()
-    println("c", n)
-    println("-------age:")
-    rdd.map(x => (x.age, 1))
-      .reduceByKey((x, y) => x + y)
-      .sortByKey(false)
-      .toLocalIterator
+    //统计新增数据
+    var n1 = 0
+    var n2 = 0
+    var n3 = 0
+    sum.reduceByKey((x, y) => x + y)
+      .take(3)
       .foreach {
         x =>
-          println("age %d: %d %.3f".format(x._1, x._2, x._2.toFloat / n.toFloat))
-      }
-
-    println("-------sex:")
-    rdd.map(x => (x.sex, 1))
-      .reduceByKey((x, y) => x + y)
-      .sortByKey(false)
-      .toLocalIterator
-      .foreach {
-        x =>
-          println("sex %d: %d %.3f".format(x._1, x._2, x._2.toFloat / n.toFloat))
-      }
-
-    println("------------------")
-    println("-----old----------")
-    val profilePath = "/warehouse/rpt_qukan.db/device_member_coin/thedate=%s".format(day)
-    val rdd1 = ctx.read.text(profilePath).rdd
-      .map(x => HdfsParser.parseTextRow(x.getString(0)))
-      .filter(_ != null)
-      .cache()
-
-    n = rdd1.count()
-    println("c", n)
-    println("-------age:")
-    rdd1.map(x => (x.age, 1))
-      .reduceByKey((x, y) => x + y)
-      .sortByKey(false)
-      .toLocalIterator
-      .foreach {
-        x =>
-          println("age %d: %d %.3f".format(x._1, x._2, x._2.toFloat / n.toFloat))
-      }
-
-    println("-------sex:")
-    rdd1.map(x => (x.sex, 1))
-      .reduceByKey((x, y) => x + y)
-      .sortByKey(false)
-      .toLocalIterator
-      .foreach {
-        x =>
-          println("sex %d: %d %.3f".format(x._1, x._2, x._2.toFloat / n.toFloat))
-      }
-
-    /*
-    rdd.toLocalIterator
-      .foreach {
-        x =>
-          /*
-          val key = x.devid + "_UPDATA"
-          val buffer = redis.get[Array[Byte]](key).getOrElse(null)
-          var user: UserProfile.Builder = null
-          if (buffer == null) {
-            user = UserProfile.newBuilder().setDevid(x.devid)
-            n = n + 1
+          if (x._1 == 0) {
+            n1 = x._2
+          } else if (x._1 == 1) {
+            n2 = x._2
           } else {
-            user = UserProfile.parseFrom(buffer).toBuilder
+            n3 = x._2
           }
-          user = user.setAge(x.age).setSex(x.sex)
-          redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-          total = total + 1
-          */
-
-          age(x.age) = age(x.age) + 1
-          sex(x.sex) = sex(x.sex) + 1
-          total = total + 1
       }
-      */
 
+    println("total: %d new: %d updated: %d".format(n1, n2, n3))
     ctx.stop()
   }
 }

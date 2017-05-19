@@ -3,11 +3,11 @@ package com.cpc.spark.qukan.userprofile
 import java.util.Calendar
 
 import com.cpc.spark.qukan.parser.HdfsParser
-import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import userprofile.Userprofile.{APPPackage, InterestItem, UserProfile}
+import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 
 /**
