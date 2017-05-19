@@ -145,13 +145,13 @@ object LogParser {
         m =>
           val sub = m.subgroups
           if (sub.length == 1) {
-            val query = URLDecoder.decode(sub(0), "UTF8")
+          //  val query = URLDecoder.decode(sub(0), "UTF8")
             log = TraceLog()
-            query.split('&').foreach {
+            sub(0).split('&').foreach {
               x =>
                 try {
                   val Array(k , vv) = x.trim.split("=", 2)
-                  val v = vv.trim
+                  val v = URLDecoder.decode(vv.trim, "UTF8")
                   k match {
                     case "t" => log = log.copy(trace_type = v)
                     case "iclicashsid" => log = log.copy(searchid = v)
