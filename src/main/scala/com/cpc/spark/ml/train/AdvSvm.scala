@@ -38,7 +38,7 @@ object AdvSvm {
         .as[UnionLog].rdd
 
       log.map(x => MLParser.unionLogToSvm(x))
-        .filter(_ != null)
+        .filter(_ != "")
         .toDF()
         .write
         .mode(SaveMode.Overwrite)
