@@ -1,9 +1,9 @@
 package com.cpc.spark.ml.train
 
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.ml.classification.LogisticRegression
 import org.apache.spark.mllib.feature.Normalizer
 import org.apache.spark.mllib.classification.LogisticRegressionWithLBFGS
-import org.apache.spark.mllib.evaluation.MulticlassMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.{SparkConf, SparkContext}
@@ -21,57 +21,70 @@ object LogisticTrain {
     val parsedData = MLUtils.loadLibSVMFile(sc, args(0))
     val nor = new Normalizer()
     val splits = parsedData
-      .filter(x => x.label > 0.01 || Random.nextInt(1000) > 990)
-      .map{
+      //random pick 1/20 negative sample
+      .filter(x => x.label > 0.01 || Random.nextInt(20) == 1)
+      .map {
         x =>
           new LabeledPoint(label = x.label, features = nor.transform(x.features))
       }
-      .randomSplit(Array(0.9,0.1), seed = 10L)
+      .randomSplit(Array(0.99,0.01), seed = 1314159L)
 
-    val training = splits(0)
+    val training = splits(0).cache()
     val test = splits(1)
 
-    println("start training", training.count())
+    println("sample ratio", training.count())
+    training
+      .map {
+        x =>
+          var label = 0
+          if (x.label > 0.01) {
+            label = 1
+          }
+          (label, 1)
+      }
+      .reduceByKey((x, y) => x + y)
+      .toLocalIterator
+      .foreach(println)
+
+    print("training ...")
     new LogisticRegressionWithLBFGS
     val model = new LogisticRegressionWithLBFGS()
       .setNumClasses(2)
       .run(training)
+    training.unpersist()
+    println("done")
 
-
+    print("testing...")
     model.clearThreshold()
-    println("save model")
-    model.save(sc, "/user/cpc/model/v1/")
-
     val predictionAndLabels = test.map {
       case LabeledPoint(label, features) =>
         val prediction = model.predict(features)
         (prediction, label)
     }.cache()
+    println("done")
 
-
-    var psum = 0D
-    var pcnt = 0
-
-    var nsum = 0D
-    var ncnt = 0
-    println("print 1000")
+    println("1000 results and predict avg")
     predictionAndLabels.take(1000).foreach(println)
-    predictionAndLabels.toLocalIterator
+    predictionAndLabels
+      .map {
+        x =>
+          var label = 0
+          if (x._2 > 0.01) {
+            label = 1
+          }
+          (label, (x._1, 1))
+      }
+      .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
+      .toLocalIterator
       .foreach {
         x =>
-          if (x._2 > 0.01) {
-            psum += x._1
-            pcnt += 1
-          } else {
-            nsum += x._1
-            ncnt += 1
-          }
+          val sum = x._2
+          println(x._1, sum._2, sum._1 / sum._2.toDouble)
       }
 
-    println("positive", psum, pcnt, psum / pcnt.toDouble)
-    println("negative", nsum, ncnt, nsum / pcnt.toDouble)
-
-    val metrics = new MulticlassMetrics(predictionAndLabels)
-    println(metrics.precision(1))
+    predictionAndLabels.unpersist()
+    println("save model")
+    model.save(sc, "/user/cpc/model/v1/")
+    sc.stop()
   }
 }

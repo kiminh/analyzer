@@ -93,7 +93,8 @@ object AnalUnionLog {
       traceData = traceData.union(prepareTraceSource(traceData2))
     }
     if (traceData1 != null || traceData2 != null) {
-        traceData.reduceByKey {
+      val traceRdd = traceData
+        .reduceByKey {
           (x, y) =>
             var u: UnionLog = null
             if (x._1 != null) {
@@ -105,27 +106,31 @@ object AnalUnionLog {
             (u, x._2 ++ y._2)
         }
         .flatMap {
-          x =>
-            val u = x._2._1
-            x._2._2.filter(x => u != null)
-              .map {
-                t =>
-                  t.copy(
-                    search_timestamp = u.timestamp,
-                    date = u.date,
-                    hour = u.hour
-                  )
-              }
+        x =>
+          val u = x._2._1
+          x._2._2.filter(x => u != null)
+            .map {
+              t =>
+                t.copy(
+                  search_timestamp = u.timestamp,
+                  date = u.date,
+                  hour = u.hour
+                )
+            }
         }
-        .toDF()
+        .cache()
+
+      traceRdd.toDF()
         .write
         .mode(SaveMode.Append)
         .format("parquet")
         .partitionBy("date", "hour")
         .saveAsTable("dl_cpc." + traceTbl)
-    }
 
-    println(date, unionData.count())
+      println("trace", traceRdd.count())
+      traceData.unpersist()
+    }
+    println("union", unionData.count())
     unionData.unpersist()
     spark.stop()
   }

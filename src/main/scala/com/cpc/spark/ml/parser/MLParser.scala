@@ -11,8 +11,9 @@ import scala.util.hashing.MurmurHash3.stringHash
 object MLParser {
 
   def unionLogToSvm(x: UnionLog): String = {
-    if (x.isclick == 1 || Random.nextInt(10) > 7) {
-      var cols = Seq[Double](
+    // 随机 1/5 的负样本
+    if (x.isclick == 1 || Random.nextInt(5) == 1) {
+      val cols = Seq[Double](
         x.network.toDouble,
         x.isp.toDouble,
         x.media_appsid.toDouble,
@@ -35,8 +36,9 @@ object MLParser {
         n = n + 1
       }
       svm
+    } else {
+      ""
     }
-    ""
   }
 }
 

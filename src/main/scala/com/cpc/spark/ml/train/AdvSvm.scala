@@ -30,6 +30,7 @@ object AdvSvm {
     cal.add(Calendar.DATE, -dayBefore)
     for (n <- 1 to days) {
       val date = LogParser.dateFormat.format(cal.getTime)
+      println("get data in " + date)
 
       val log = sparkSession.sql(
         s"""
@@ -42,9 +43,11 @@ object AdvSvm {
         .toDF()
         .write
         .mode(SaveMode.Overwrite)
+        .partitionBy("date")
         .text("/user/cpc/svmdata/v1/" + date)
 
       cal.add(Calendar.DATE, 1)
+      println("done")
     }
 
     sparkSession.stop()
