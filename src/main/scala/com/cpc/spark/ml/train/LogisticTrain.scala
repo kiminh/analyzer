@@ -3,6 +3,8 @@ package com.cpc.spark.ml.train
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.feature.Normalizer
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
+import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.optimization.{LogisticGradient, SquaredL2Updater}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -17,7 +19,7 @@ object LogisticTrain {
   def main(args: Array[String]): Unit = {
     if (args.length < 5) {
       System.err.println(s"""
-                            |Usage: Train <mode=train/test> <path> <model path> <sample rate> <p/n rate>
+        |Usage: Train <mode=train/test> <input path> <model path> <sample rate> <p/n rate>
         """.stripMargin)
       System.exit(1)
     }
@@ -34,9 +36,9 @@ object LogisticTrain {
     val parsedData = MLUtils.loadLibSVMFile(sc, inpath)
     val nor = new Normalizer()
     val splits = parsedData
-      //random pick 1/20 negative sample
-      .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 1)
-      .map(x => new LabeledPoint(x.label, nor.transform(x.features)))
+      //random pick 1/pnRate negative sample
+      .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
+      .map(x => new LabeledPoint(x.label, MLUtils.appendBias(x.features)))
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = 1314159L)
 
     val test = splits(1)
@@ -45,6 +47,18 @@ object LogisticTrain {
       model = LogisticRegressionModel.load(sc, modelPath)
     } else {
       val training = splits(0).cache()
+      val lbfgs = new LogisticRegressionWithLBFGS()
+        .setNumClasses(2)
+        .setIntercept(true)
+      /*
+      lbfgs.optimizer.setGradient(new LogisticGradient())
+      lbfgs.optimizer.setUpdater(new SquaredL2Updater())
+      lbfgs.optimizer.setNumCorrections(10)
+      lbfgs.optimizer.setNumIterations(100)
+      */
+      lbfgs.optimizer.setConvergenceTol(1e-4)
+      lbfgs.optimizer.setRegParam(0.1)
+
       println("sample count", training.count())
       training
         .map {
@@ -58,10 +72,9 @@ object LogisticTrain {
         .reduceByKey((x, y) => x + y)
         .toLocalIterator
         .foreach(println)
+
       println("training ...")
-      model = new LogisticRegressionWithLBFGS()
-        .setNumClasses(2)
-        .run(training)
+      model = lbfgs.run(training)
       println("done")
       training.unpersist()
     }
@@ -104,8 +117,8 @@ object LogisticTrain {
     if (modelPath.length == 0) {
       ctx.createDataFrame(predictionAndLabels)
         .write
-        .mode(SaveMode.Overwrite)
-        .text("/user/cpc/test_result/v1")
+        .mode(SaveMode.Append)
+        .text("/user/cpc/test_result")
 
       predictionAndLabels.unpersist()
       println("save model")
