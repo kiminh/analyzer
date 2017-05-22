@@ -32,7 +32,6 @@ object MLParser {
         stringHash(x.model).toDouble,
         //browser,
 
-
         x.media_appsid.toDouble,
         x.media_type.toDouble,
         //x.mediaclass,
@@ -41,7 +40,6 @@ object MLParser {
         x.adslot_type.toDouble,
         //adstlotsize,
         x.floorbid.toDouble,
-
 
         x.adtype.toDouble,
         x.interaction.toDouble,
