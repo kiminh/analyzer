@@ -19,7 +19,7 @@ object LogisticTrain {
   def main(args: Array[String]): Unit = {
     if (args.length < 5) {
       System.err.println(s"""
-        |Usage: Train <mode=train/test> <input path> <model path> <sample rate> <p/n rate>
+        |Usage: Train <mode train/test> <input path> <model path> <sample rate> <p/n rate>
         """.stripMargin)
       System.exit(1)
     }
@@ -38,7 +38,7 @@ object LogisticTrain {
     val splits = parsedData
       //random pick 1/pnRate negative sample
       .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
-      .map(x => new LabeledPoint(x.label, MLUtils.appendBias(x.features)))
+      .map(x => new LabeledPoint(x.label, x.features))
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = 1314159L)
 
     val test = splits(1)
@@ -56,7 +56,7 @@ object LogisticTrain {
       lbfgs.optimizer.setNumCorrections(10)
       lbfgs.optimizer.setNumIterations(100)
       */
-      lbfgs.optimizer.setConvergenceTol(1e-4)
+      lbfgs.optimizer.setConvergenceTol(0.001)
       lbfgs.optimizer.setRegParam(0.1)
 
       println("sample count", training.count())
