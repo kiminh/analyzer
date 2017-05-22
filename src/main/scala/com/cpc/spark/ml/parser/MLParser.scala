@@ -16,18 +16,44 @@ object MLParser {
     // 随机 1/5 的负样本
     if (x.isclick == 1 || Random.nextInt(5) == 1) {
       val cols = Seq[Double](
-        x.network.toDouble,
-        x.isp.toDouble,
-        x.media_appsid.toDouble,
-        x.bid.toDouble,
-        x.ideaid.toDouble,
-        x.unitid.toDouble,
-        x.planid.toDouble,
+        stringHash(x.uid).toDouble,
+        x.age.toDouble,
+        x.sex.toDouble,
+        x.coin.toDouble,
+        //pcategory
+        //interests
+        //x.country.toDouble,
+        x.province.toDouble,
         x.city.toDouble,
+        x.isp.toDouble,
+        x.network.toDouble,
+        x.os.toDouble,
+        //os version,
+        stringHash(x.model).toDouble,
+        //browser,
+
+
+        x.media_appsid.toDouble,
+        x.media_type.toDouble,
+        //x.mediaclass,
+        //x.channel,
         x.adslotid.toDouble,
+        x.adslot_type.toDouble,
+        //adstlotsize,
+        x.floorbid.toDouble,
+
+
         x.adtype.toDouble,
         x.interaction.toDouble,
-        Math.abs(stringHash(x.date)).toDouble,
+        x.userid.toDouble,
+        x.planid.toDouble,
+        x.unitid.toDouble,
+        x.ideaid.toDouble,
+        x.bid.toDouble,
+        //ad class,
+        //x.usertype,
+
+        x.date.replace("-", "").toDouble,
         x.hour.toDouble
       )
 
@@ -35,7 +61,7 @@ object MLParser {
       var svm = x.isclick.toString
       for (col <- cols) {
         svm = svm + " %d:%f".format(n, col)
-        n = n + 1
+        n += 1
       }
       svm
     } else {
@@ -61,5 +87,6 @@ object MLParser {
     )
     Vectors.sparse(vals.length, vals)
   }
+
 }
 

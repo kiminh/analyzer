@@ -21,7 +21,7 @@ object AdvSvm {
     val dayBefore = args(0).toInt
     val days = args(1).toInt
     val sparkSession = SparkSession.builder()
-      .appName("GenerateAdvSvm v1")
+      .appName("GenerateAdvSvm v2")
       .enableHiveSupport()
       .getOrCreate()
     import sparkSession.implicits._
@@ -30,22 +30,23 @@ object AdvSvm {
     cal.add(Calendar.DATE, -dayBefore)
     for (n <- 1 to days) {
       val date = LogParser.dateFormat.format(cal.getTime)
-      println("get data in " + date)
+      println("get data " + date)
 
       val log = sparkSession.sql(
         s"""
            |select * from dl_cpc.cpc_union_log where `date` = "%s" and isfill = 1 and adslotid > 0
         """.stripMargin.format(date))
         .as[UnionLog].rdd
-
-      log.map(x => MLParser.unionLogToSvm(x))
+        .map(x => MLParser.unionLogToSvm(x))
         .filter(_ != "")
-        .toDF()
+        .cache()
+
+      log.toDF()
         .write
         .mode(SaveMode.Overwrite)
-        .partitionBy("date")
-        .text("/user/cpc/svmdata/v1/" + date)
+        .text("/user/cpc/svmdata/v2/" + date)
 
+      log.unpersist()
       cal.add(Calendar.DATE, 1)
       println("done")
     }

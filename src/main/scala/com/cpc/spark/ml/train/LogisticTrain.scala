@@ -3,7 +3,8 @@ package com.cpc.spark.ml.train
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.feature.Normalizer
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
-import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.linalg.{Vectors, Vector}
+import org.apache.spark.mllib.linalg.distributed.RowMatrix
 import org.apache.spark.mllib.optimization.{LogisticGradient, SquaredL2Updater}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
@@ -33,30 +34,35 @@ object LogisticTrain {
     val modelPath = args(2).trim
     val sampleRate = args(3).toFloat
     val pnRate = args(4).toInt
-    val parsedData = MLUtils.loadLibSVMFile(sc, inpath)
-    val nor = new Normalizer()
-    val splits = parsedData
+
+    val parsedData = MLUtils.loadLibSVMFile(sc, inpath).cache()
+    val stats = new RowMatrix(parsedData.map(x => x.features)).computeColumnSummaryStatistics()
+    val min = stats.min
+    val max = stats.max
+    val sample = parsedData
       //random pick 1/pnRate negative sample
       .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
-      .map(x => new LabeledPoint(x.label, x.features))
+      .map(x => new LabeledPoint(x.label, normalize(min, max, x.features)))
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = 1314159L)
+    parsedData.unpersist()
 
-    val test = splits(1)
+    val test = sample(1)
     var model: LogisticRegressionModel = null
     if (mode == "test") {
       model = LogisticRegressionModel.load(sc, modelPath)
     } else {
-      val training = splits(0).cache()
+      val training = sample(0).cache()
       val lbfgs = new LogisticRegressionWithLBFGS()
         .setNumClasses(2)
-        .setIntercept(true)
+        //.setIntercept(true)
+
       /*
       lbfgs.optimizer.setGradient(new LogisticGradient())
       lbfgs.optimizer.setUpdater(new SquaredL2Updater())
       lbfgs.optimizer.setNumCorrections(10)
       lbfgs.optimizer.setNumIterations(100)
       */
-      lbfgs.optimizer.setConvergenceTol(0.001)
+      lbfgs.optimizer.setConvergenceTol(0.0001)
       lbfgs.optimizer.setRegParam(0.1)
 
       println("sample count", training.count())
@@ -114,16 +120,33 @@ object LogisticTrain {
           println("%s %d %d %.4f".format(x._1, sum._2, sum._1, sum._2.toDouble / (sum._1 + sum._2).toDouble))
       }
 
-    if (modelPath.length == 0) {
+    println(model.toString(), model.toPMML())
+    if (mode == "train") {
+      println("save model")
       ctx.createDataFrame(predictionAndLabels)
         .write
         .mode(SaveMode.Append)
         .text("/user/cpc/test_result")
 
       predictionAndLabels.unpersist()
-      println("save model")
       model.save(sc, modelPath)
       sc.stop()
     }
   }
+
+  def normalize(min: Vector, max: Vector, row: Vector): Vector = {
+    var els = Seq[(Int, Double)]()
+    row.foreachActive {
+      (i, v) =>
+        var rate = 0.5D
+        if (max(i) > min(i)) {
+          rate = (v - min(i)) / (max(i) - min(i))
+        }
+        els = els :+ (i, rate)
+    }
+    Vectors.sparse(row.size, els)
+  }
 }
+
+
+

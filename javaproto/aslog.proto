@@ -46,6 +46,7 @@ message  Adslot {
 	optional uint32     buildtype = 8;//渲染类型
 	optional float    floorbid  = 9; //竞价底价
 	optional float    cpmbid    = 10; //出价
+	optional string   channel = 11; //栏目名称
 };
 
 enum NetworkType {
@@ -168,6 +169,9 @@ message AdInfo {
 	optional uint32 price 	= 9;
 	optional uint64 ctr 	= 10;
 	optional uint64 cpm 	= 11;
+	optional uint32 class   = 12;
+	optional int32 usertype = 13; // 用户类型 0正常户 1黑五类
+	optional uint64 titlectr = 14; // 标题ctr值 
 };
 
 message AdDspRet {
@@ -192,6 +196,7 @@ message UserProfile {
 	optional uint32 age = 2; //年龄 0 不限 1 <18,2 18-23,3 24-30，4 31-40，5 41-49，6 50+
 	optional uint32 sex = 3; //性别 1男 2女 0未知
 	optional uint32 coin = 4; // 用户金币数
+	optional uint32 pcategory =5; // 趣头条用户类别
 }
 
 message NoticeLogBody {
@@ -210,6 +215,8 @@ message NoticeLogBody {
 	optional string sourceip = 13;
 	optional uint32 intertype = 14; // 检索接入类型 1 json , 2 proto
 	optional UserProfile userprofile = 15; // 用户信息
+	repeated uint32 dupplanfilter = 16; // 同一plan过滤
+	repeated uint32 lowcpmfilter = 17; // 低于最低cpm过滤
 	repeated DspReqInfo dspReqInfo = 22; // 请求DSP的信息
 	optional uint64 timecost = 23;
 };
