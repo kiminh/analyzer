@@ -55,9 +55,9 @@ object LogisticTrain {
       lbfgs.optimizer.setGradient(new LogisticGradient())
       lbfgs.optimizer.setUpdater(new SquaredL2Updater())
       lbfgs.optimizer.setRegParam(0.1)
-      */
       lbfgs.optimizer.setNumCorrections(10)
       lbfgs.optimizer.setNumIterations(100)
+      */
       lbfgs.optimizer.setConvergenceTol(0.01)
 
       val training = sample(0).cache()
@@ -121,10 +121,6 @@ object LogisticTrain {
     if (mode == "train") {
       println("save model")
       model.save(sc, modelPath)
-      ctx.createDataFrame(predictionAndLabels)
-        .write
-        .mode(SaveMode.Overwrite)
-        .text("/user/cpc/test_result")
       predictionAndLabels.unpersist()
     }
 
