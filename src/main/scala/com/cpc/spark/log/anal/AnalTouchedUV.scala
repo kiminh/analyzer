@@ -81,8 +81,7 @@ object AnalTouchedUV {
       .reduceByKey((x, y) => x)
       .map {
         x =>
-          val v = x._2
-          (v.key, v)
+          (x._2.key, x._2)
       }
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
@@ -97,7 +96,7 @@ object AnalTouchedUV {
           if (x.province > 0) {
             Seq(x, x.copy(province = 0))
           } else {
-            Seq()
+            Seq(x)
           }
       }
       .flatMap {
@@ -105,7 +104,7 @@ object AnalTouchedUV {
           if (x.os > 0) {
             Seq(x, x.copy(os = 0))
           } else {
-            Seq()
+            Seq(x)
           }
       }
       .flatMap {
@@ -113,7 +112,7 @@ object AnalTouchedUV {
           if (x.network > 0) {
             Seq(x, x.copy(network = 0))
           } else {
-            Seq()
+            Seq(x)
           }
       }
       .flatMap {
@@ -148,7 +147,7 @@ object AnalTouchedUV {
           province-sex-age-coin_level-os-network_TOUCHEDUV
           16-1-5-0-1-1_TOUCHEDUV  => 14674
            */
-          redis.set(x.key + "_TOUCHEDUV", x.sum * 2) //所有结果提高2倍
+          redis.set(x.key + "_TOUCHEDUV", (x.sum * 1.5).toInt) //所有结果提高2倍
       }
 
     ret1.unpersist()
