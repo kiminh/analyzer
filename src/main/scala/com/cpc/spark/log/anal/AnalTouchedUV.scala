@@ -18,8 +18,8 @@ object AnalTouchedUV {
 
   /*统计维度
   地域
-  性别   暂时通过百分比  1 => 50% 2 => 50%  0 => 100%
-  年龄   暂时通过百分比  0 => 100%   1 - 6  => 20%
+  性别   暂时通过评价随机
+  年龄   暂时通过平均随机
   人群分类
   操作系统
   网络环境
@@ -79,26 +79,12 @@ object AnalTouchedUV {
           (cond.keyuid, cond)
       }
       .reduceByKey((x, y) => x)
-      .map {
-        x =>
-          (x._2.key, x._2)
-      }
-      .reduceByKey((x, y) => x.sum(y))
-      .map(_._2)
-      .cache()
-
-    println("count", ret.count())
-    val ret1 = ret
-      .flatMap(x => Seq(x, x.copy(sex = 0)))
+      .flatMap(x => Seq(x._2, x._2.copy(sex = 0)))
       .flatMap(x => Seq(x, x.copy(age = 0)))
-      .flatMap {
-        x =>
-          if (x.province > 0) {
-            Seq(x, x.copy(province = 0))
-          } else {
-            Seq(x)
-          }
-      }
+      //防止flat过多 去重
+      .map(x => (x.keyuid, x))
+      .reduceByKey((x, y) => x)
+      .map(_._2)
       .flatMap {
         x =>
           if (x.os > 0) {
@@ -115,6 +101,22 @@ object AnalTouchedUV {
             Seq(x)
           }
       }
+      //防止flat过多 去重
+      .map(x => (x.keyuid, x))
+      .reduceByKey((x, y) => x)
+      .map(_._2)
+      .flatMap {
+        x =>
+          if (x.province > 0) {
+            Seq(x, x.copy(province = 0))
+          } else {
+            Seq(x)
+          }
+      }
+      //防止flat过多 去重
+      .map(x => (x.keyuid, x))
+      .reduceByKey((x, y) => x)
+      .map(_._2)
       .flatMap {
         x =>
           if (x.coin_level == 1) {
@@ -127,30 +129,32 @@ object AnalTouchedUV {
             Seq(x, x.copy(coin_level = 0))
           }
       }
-      .map(x => (x.key, x))
+      .map(x => (x.keyuid, x))
+      .reduceByKey((x, y) => x)
+      .map(x => (x._2.key, x._2))
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
       .cache()
 
     ret.unpersist()
-    println("ret1", ret1.count())
-    ret1.toDF()
+    println(ret.count())
+    ret.toDF()
       .write
       .mode(SaveMode.Append)
       .partitionBy("date")
       .saveAsTable("dl_cpc.ad_touched_uv")
 
-    ret1.toLocalIterator
+    ret.toLocalIterator
       .foreach {
         x =>
           /*
           province-sex-age-coin_level-os-network_TOUCHEDUV
           16-1-5-0-1-1_TOUCHEDUV  => 14674
            */
-          redis.set(x.key + "_TOUCHEDUV", (x.sum * 1.5).toInt) //所有结果提高2倍
+          redis.set(x.key + "_TOUCHEDUV", x.sum) //所有结果提高2倍
       }
 
-    ret1.unpersist()
+    ret.unpersist()
     ctx.stop()
   }
 }

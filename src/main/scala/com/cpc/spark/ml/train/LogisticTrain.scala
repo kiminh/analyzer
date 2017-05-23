@@ -54,11 +54,11 @@ object LogisticTrain {
       /*
       lbfgs.optimizer.setGradient(new LogisticGradient())
       lbfgs.optimizer.setUpdater(new SquaredL2Updater())
-      lbfgs.optimizer.setRegParam(0.1)
       lbfgs.optimizer.setNumCorrections(10)
       lbfgs.optimizer.setNumIterations(100)
       */
-      lbfgs.optimizer.setConvergenceTol(0.01)
+      lbfgs.optimizer.setRegParam(0.4)
+      lbfgs.optimizer.setConvergenceTol(0.04)
 
       val training = sample(0).cache()
       println("sample count", training.count())
