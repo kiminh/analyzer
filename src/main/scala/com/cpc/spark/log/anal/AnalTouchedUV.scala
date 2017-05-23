@@ -65,7 +65,7 @@ object AnalTouchedUV {
           } else {
             lvl = 4
           }
-          val cond = AnalCond(
+          AnalCond(
             province = x.province,
             sex = rndSex,
             age = rndAge,
@@ -76,19 +76,20 @@ object AnalTouchedUV {
             uid = x.uid,
             date = date
           )
-          (cond.keyuid, cond)
       }
+      .cache()
+
+    val uv = ret.map(x => (x.uid, x)).reduceByKey((x, y) => x).count()
+    val ret1 = ret.map(x => (x.keyuid, x))
       .reduceByKey((x, y) => x)
-      .flatMap(x => Seq(x._2, x._2.copy(sex = 0)))
-      .flatMap(x => Seq(x, x.copy(age = 0)))
-      //防止flat过多 去重
-      .map(x => (x.keyuid, x))
-      .reduceByKey((x, y) => x)
-      .map(_._2)
+      .map(x => (x._2.key, x._2))
+      .reduceByKey((x, y) => x.sum(y))
+      .flatMap(x => Seq(x._2, x._2.copy(sex = 0, sum = 0)))
+      .flatMap(x => Seq(x, x.copy(age = 0, sum = 0)))
       .flatMap {
         x =>
           if (x.os > 0) {
-            Seq(x, x.copy(os = 0))
+            Seq(x, x.copy(os = 0, sum = 0))
           } else {
             Seq(x)
           }
@@ -96,65 +97,49 @@ object AnalTouchedUV {
       .flatMap {
         x =>
           if (x.network > 0) {
-            Seq(x, x.copy(network = 0))
+            Seq(x, x.copy(network = 0, sum = 0))
           } else {
-            Seq(x)
+            Seq(x.copy(sum = 0))
           }
       }
-      //防止flat过多 去重
-      .map(x => (x.keyuid, x))
-      .reduceByKey((x, y) => x)
-      .map(_._2)
       .flatMap {
         x =>
           if (x.province > 0) {
-            Seq(x, x.copy(province = 0))
+            Seq(x, x.copy(province = 0, sum = 0))
           } else {
-            Seq(x)
+            Seq(x.copy(sum = 0))
           }
       }
-      //防止flat过多 去重
-      .map(x => (x.keyuid, x))
-      .reduceByKey((x, y) => x)
-      .map(_._2)
       .flatMap {
         x =>
-          if (x.coin_level == 1) {
-            Seq(x, x.copy(coin_level = 0), x.copy(coin_level = 2), x.copy(coin_level = 3), x.copy(coin_level = 4))
-          } else if (x.coin_level == 2) {
-            Seq(x, x.copy(coin_level = 0), x.copy(coin_level = 3), x.copy(coin_level = 4))
-          } else if (x.coin_level == 3) {
-            Seq(x, x.copy(coin_level = 0), x.copy(coin_level = 4))
+          if (x.coin_level > 0) {
+            Seq(x, x.copy(coin_level = 0, sum = 0))
           } else {
-            Seq(x, x.copy(coin_level = 0))
+            Seq(x.copy(sum = 0))
           }
       }
-      .map(x => (x.keyuid, x))
+      .map(x => (x.key, x))
       .reduceByKey((x, y) => x)
-      .map(x => (x._2.key, x._2))
-      .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
+      .union(ctx.sparkContext.parallelize(Seq(AnalCond(date = date, sum = uv.toInt))))
       .cache()
 
-    ret.unpersist()
-    println(ret.count())
-    ret.toDF()
+    ret1.toDF()
       .write
       .mode(SaveMode.Append)
       .partitionBy("date")
       .saveAsTable("dl_cpc.ad_touched_uv")
 
-    ret.toLocalIterator
+    ret1.toLocalIterator
       .foreach {
         x =>
           /*
           province-sex-age-coin_level-os-network_TOUCHEDUV
           16-1-5-0-1-1_TOUCHEDUV  => 14674
            */
-          redis.set(x.key + "_TOUCHEDUV", x.sum) //所有结果提高2倍
+          redis.set(x.key + "_TOUCHEDUV", x.sum * 2)
       }
-
-    ret.unpersist()
+    println(uv, ret.count(), ret1.count())
     ctx.stop()
   }
 }

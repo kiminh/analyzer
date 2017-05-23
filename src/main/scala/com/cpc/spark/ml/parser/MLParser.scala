@@ -1,7 +1,7 @@
 package com.cpc.spark.ml.parser
 
 import com.cpc.spark.log.parser.UnionLog
-import mlserver.mlserver.{AdInfo, MediaInfo}
+import mlserver.mlserver.{AdInfo, MediaInfo, UserInfo}
 
 import scala.util.Random
 import scala.util.hashing.MurmurHash3.stringHash
@@ -67,24 +67,63 @@ object MLParser {
     }
   }
 
-  def sparseVector(media: MediaInfo, ad: AdInfo): Vector = {
-    val vals = Seq(
-      (0, media.network.toDouble),
-      (1, media.isp.toDouble),
-      (2, media.mediaAppsid.toDouble),
-      (3, ad.bid.toDouble),
-      (4, ad.ideaid.toDouble),
-      (5, ad.unitid.toDouble),
-      (6, ad.planid.toDouble),
-      (7, media.city.toDouble),
-      (8, media.adslotid.toDouble),
-      (9, media.adslotType.toDouble),
-      (10, ad.interaction.toDouble),
-      (11, Math.abs(stringHash(media.date)).toDouble),
-      (12, media.hour.toDouble)
-    )
-    Vectors.sparse(vals.length, vals)
+  val min = Vectors.dense(Array(1.0))
+  val max = Vectors.dense(Array(1.0))
+
+  def sparseVector(m: MediaInfo, u: UserInfo, ad: AdInfo): Vector = {
+    val v =Vectors.dense(Array(
+      stringHash(m.uid).toDouble,
+      u.age.toDouble,
+      u.sex.toDouble,
+      u.coin.toDouble,
+      //pcategory
+      //interests
+      //x.country.toDouble,
+      m.province.toDouble,
+      m.city.toDouble,
+      m.isp.toDouble,
+      m.network.toDouble,
+      m.os.toDouble,
+      //os version,
+      stringHash(m.model).toDouble,
+      //browser,
+
+      m.mediaAppsid.toDouble,
+      m.mediaType.toDouble,
+      //x.mediaclass,
+      //x.channel,
+      m.adslotid.toDouble,
+      m.adslotType.toDouble,
+      //adstlotsize,
+      m.floorbid.toDouble,
+
+      ad.adtype.toDouble,
+      ad.interaction.toDouble,
+      ad.userid.toDouble,
+      ad.planid.toDouble,
+      ad.unitid.toDouble,
+      ad.ideaid.toDouble,
+      ad.bid.toDouble,
+      //ad class,
+      //x.usertype,
+
+      m.date.replace("-", "").toDouble,
+      m.hour.toDouble
+    ))
+    normalize(min, max, v.toSparse)
   }
 
+  def normalize(min: Vector, max: Vector, row: Vector): Vector = {
+    var els = Seq[(Int, Double)]()
+    row.foreachActive {
+      (i, v) =>
+        var rate = 0.5D
+        if (max(i) > min(i)) {
+          rate = (v - min(i)) / (max(i) - min(i))
+        }
+        els = els :+ (i, rate)
+    }
+    Vectors.sparse(row.size, els)
+  }
 }
 

@@ -1,8 +1,9 @@
 package com.cpc.spark.ml.train
 
+import com.cpc.spark.ml.parser.MLParser
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
-import org.apache.spark.mllib.linalg.{Vectors, Vector}
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.linalg.distributed.RowMatrix
 import org.apache.spark.mllib.optimization.{LogisticGradient, SquaredL2Updater}
 import org.apache.spark.mllib.regression.LabeledPoint
@@ -38,10 +39,11 @@ object LogisticTrain {
     val stats = new RowMatrix(parsedData.map(x => x.features)).computeColumnSummaryStatistics()
     val min = stats.min
     val max = stats.max
+    println("normalize:", min, max)
     val sample = parsedData
       //random pick 1/pnRate negative sample
       .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
-      .map(x => new LabeledPoint(x.label, normalize(min, max, x.features)))
+      .map(x => new LabeledPoint(x.label, MLParser.normalize(min, max, x.features)))
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = 1314159L)
     parsedData.unpersist()
 
@@ -57,8 +59,8 @@ object LogisticTrain {
       lbfgs.optimizer.setNumCorrections(10)
       lbfgs.optimizer.setNumIterations(100)
       */
-      lbfgs.optimizer.setRegParam(0.4)
-      lbfgs.optimizer.setConvergenceTol(0.04)
+      lbfgs.optimizer.setRegParam(0.2)
+      lbfgs.optimizer.setConvergenceTol(1e-4)
 
       val training = sample(0).cache()
       println("sample count", training.count())
@@ -127,18 +129,6 @@ object LogisticTrain {
     sc.stop()
   }
 
-  def normalize(min: Vector, max: Vector, row: Vector): Vector = {
-    var els = Seq[(Int, Double)]()
-    row.foreachActive {
-      (i, v) =>
-        var rate = 0.5D
-        if (max(i) > min(i)) {
-          rate = (v - min(i)) / (max(i) - min(i))
-        }
-        els = els :+ (i, rate)
-    }
-    Vectors.sparse(row.size, els)
-  }
 }
 
 

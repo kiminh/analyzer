@@ -22,11 +22,19 @@ message MediaInfo {
     int32 city = 7;
     int32 isp = 8;
     string uid = 9;
-    int32 coin = 10;
-    string date = 11;
-    int32 hour = 12;
-    int32 adslotid = 13;
-    int32 adslot_type = 14;
+    string date = 10;
+    int32 hour = 11;
+    int32 adslotid = 12;
+    int32 adslot_type = 13;
+    int32 os = 14;
+    string model = 15;
+    int32 floorbid = 16;
+}
+
+message UserInfo {
+    int32 sex = 1;
+    int32 age = 2;
+    int32 coin = 3;
 }
 
 message AdInfo {
@@ -42,6 +50,7 @@ message AdInfo {
 message Request {
 	MediaInfo media = 1;
     repeated AdInfo ads = 2; //ad params
+    UserInfo user = 3;
 }
 
 message Prediction {

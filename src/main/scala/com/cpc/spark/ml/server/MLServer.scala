@@ -22,8 +22,6 @@ import scala.concurrent.{ExecutionContext, Future}
   */
 object MLServer {
 
-  var model: LogisticRegressionModel = null
-
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       System.err.println(s"""
@@ -39,12 +37,12 @@ object MLServer {
 
     val dataPath = args(0)
     val spark = new SparkContext(new SparkConf().setAppName("cpc ml server ctr predictor"))
-    model = LogisticRegressionModel.load(spark, dataPath)
+    val model = LogisticRegressionModel.load(spark, dataPath)
     model.clearThreshold()
     println("model data loaded", model.toString())
 
     val server = ServerBuilder.forPort(conf.getInt("mlserver.port"))
-      .addService(PredictorGrpc.bindService(new PredictorService, ExecutionContext.global))
+      .addService(PredictorGrpc.bindService(new PredictorService(model), ExecutionContext.global))
       .build
       .start
 
@@ -60,15 +58,16 @@ object MLServer {
     spark.stop()
   }
 
-  private class PredictorService extends Predictor {
+  private class PredictorService(model: LogisticRegressionModel) extends Predictor {
+
     override def predict(req: Request): Future[Response] = {
       val st = new Date().getTime
       var resp = Response(recode = 0)
       val m = req.getMedia
-      val nr = new Normalizer()
+      val u = req.getUser
       req.ads.foreach {
         x =>
-          val v = nr.transform(MLParser.sparseVector(m, x))
+          val v = MLParser.sparseVector(m, u, x)
           val p = Prediction(
             adid = x.ideaid,
             value = model.predict(v)
