@@ -1,7 +1,6 @@
 package com.cpc.spark.ml.train
 
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.mllib.feature.Normalizer
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.linalg.{Vectors, Vector}
 import org.apache.spark.mllib.linalg.distributed.RowMatrix
@@ -26,7 +25,7 @@ object LogisticTrain {
     }
     Logger.getRootLogger().setLevel(Level.WARN)
     val ctx = SparkSession.builder()
-      .appName("cpc training logistic model")
+      .appName("cpc training LR model")
       .getOrCreate()
     val sc = ctx.sparkContext
     val mode = args(0).trim
@@ -51,20 +50,17 @@ object LogisticTrain {
     if (mode == "test") {
       model = LogisticRegressionModel.load(sc, modelPath)
     } else {
-      val training = sample(0).cache()
-      val lbfgs = new LogisticRegressionWithLBFGS()
-        .setNumClasses(2)
-        //.setIntercept(true)
-
+      val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
       /*
       lbfgs.optimizer.setGradient(new LogisticGradient())
       lbfgs.optimizer.setUpdater(new SquaredL2Updater())
+      lbfgs.optimizer.setRegParam(0.1)
       lbfgs.optimizer.setNumCorrections(10)
       lbfgs.optimizer.setNumIterations(100)
       */
-      lbfgs.optimizer.setConvergenceTol(0.0001)
-      lbfgs.optimizer.setRegParam(0.1)
+      lbfgs.optimizer.setConvergenceTol(0.01)
 
+      val training = sample(0).cache()
       println("sample count", training.count())
       training
         .map {
@@ -120,18 +116,15 @@ object LogisticTrain {
           println("%s %d %d %.4f".format(x._1, sum._2, sum._1, sum._2.toDouble / (sum._1 + sum._2).toDouble))
       }
 
-    println(model.toString(), model.toPMML())
+    predictionAndLabels.take(100).foreach(println)
+    println(model.toPMML())
     if (mode == "train") {
       println("save model")
-      ctx.createDataFrame(predictionAndLabels)
-        .write
-        .mode(SaveMode.Append)
-        .text("/user/cpc/test_result")
-
-      predictionAndLabels.unpersist()
       model.save(sc, modelPath)
-      sc.stop()
+      predictionAndLabels.unpersist()
     }
+
+    sc.stop()
   }
 
   def normalize(min: Vector, max: Vector, row: Vector): Vector = {
