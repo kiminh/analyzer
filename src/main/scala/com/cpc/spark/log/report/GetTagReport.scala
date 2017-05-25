@@ -100,13 +100,13 @@ object GetTagReport {
     val tagData3 = mergeData.map(tag => (tag.tag, tag)).reduceByKey{
       case (x, y) =>
         var log = x
-        if(x.device_num > 0){
-          x.copy(
+        if(log.device_num > 0){
+          log =log.copy(
             uv = y.uv,
             pv = y.pv
           )
         }else{
-          x.copy(
+          log = log.copy(
             device_num = y.device_num
           )
         }
