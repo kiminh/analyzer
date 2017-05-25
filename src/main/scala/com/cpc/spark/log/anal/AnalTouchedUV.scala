@@ -69,17 +69,13 @@ object AnalTouchedUV {
   var m = Seq[Seq[Int]]()
 
   def mapZeroCol(cols: mutable.Seq[Int], n: Int): Unit = {
-    if (cols(n) == 0) {
-      val rowCols = allCols(n)
-      for (v <- rowCols) {
-        val newCols = cols.updated(n, v)
-        if (newCols.contains(0)) {
-          mapZeroCol(newCols, n + 1)
-        } else {
-          m :+= newCols
-        }
+    if (n >= 6) {
+      m :+= cols
+    } else if (cols(n) == 0) {
+      for (v <- allCols(n)) {
+        mapZeroCol(cols.updated(n, v), n + 1)
       }
-    } else if (n < 6) {
+    } else {
       mapZeroCol(cols, n + 1)
     }
   }
