@@ -4,16 +4,12 @@ import java.util.Date
 
 import com.cpc.spark.ml.parser.MLParser
 import org.apache.spark.mllib.classification.LogisticRegressionModel
-import org.apache.spark.mllib.linalg.Vectors
 import com.typesafe.config.ConfigFactory
 import io.grpc.ServerBuilder
 import mlserver.mlserver._
 import mlserver.mlserver.PredictorGrpc.Predictor
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.mllib.feature.Normalizer
-import org.apache.spark.{SparkConf, SparkContext}
-
-import scala.util.hashing.MurmurHash3.stringHash
+import org.apache.spark.sql.SparkSession
 import scala.concurrent.{ExecutionContext, Future}
 
 
@@ -36,7 +32,10 @@ object MLServer {
     val conf = ConfigFactory.load()
 
     val dataPath = args(0)
-    val spark = new SparkContext(new SparkConf().setAppName("cpc ml server ctr predictor"))
+    val ctx = SparkSession.builder()
+      .appName("cpc ml server ctr predictor")
+      .getOrCreate()
+    val spark = ctx.sparkContext
     val model = LogisticRegressionModel.load(spark, dataPath)
     model.clearThreshold()
     println("model data loaded", model.toString())
@@ -54,8 +53,8 @@ object MLServer {
       System.err.println("*** server shut down")
     }
 
-    server.awaitTermination()
     spark.stop()
+    server.awaitTermination()
   }
 
   private class PredictorService(model: LogisticRegressionModel) extends Predictor {
@@ -73,10 +72,9 @@ object MLServer {
             value = model.predict(v)
           )
           resp = resp.addResults(p)
-          println(v.toArray.mkString(" "), p.value)
       }
       val et = new Date().getTime
-      println("new predict %d %dms".format(req.ads.length, et - st))
+      println("new predict %dms".format(et - st), req)
       Future.successful(resp)
     }
 

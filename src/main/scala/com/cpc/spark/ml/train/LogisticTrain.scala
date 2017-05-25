@@ -128,7 +128,6 @@ object LogisticTrain {
 
     sc.stop()
   }
-
 }
 
 

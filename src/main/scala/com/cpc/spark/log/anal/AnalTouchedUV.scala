@@ -4,10 +4,12 @@ import java.util.Calendar
 
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
 import com.redis.RedisClient
+import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
+import scala.collection.mutable
 import scala.util.Random
 
 /**
@@ -15,6 +17,44 @@ import scala.util.Random
   *
   */
 object AnalTouchedUV {
+
+  var redis: RedisClient = null
+
+  val provinces = Seq(
+    0, 4, 8, 18, 12, 3, 29,
+    6, 34, 1, 16, 20, 10, 26,
+    17, 11, 19, 22, 23, 13, 14,
+    21, 30, 7, 28, 2, 27, 31, 25,
+    32, 9, 15, 5, 33, 24)
+
+  val sex = Seq(1, 2)
+
+  val age = Seq(1, 2, 3, 4, 5, 6)
+
+  val coin = Seq(1, 2, 3, 4)
+
+  val os = Seq(1, 2, 3)
+
+  val net = Seq(1, 2, 3, 4)
+
+  val provinces1 = Seq(
+    4, 8, 18, 12, 3, 29,
+    6, 34, 1, 16, 20, 10, 26,
+    17, 11, 19, 22, 23, 13, 14,
+    21, 30, 7, 28, 2, 27, 31, 25,
+    32, 9, 15, 5, 33, 24)
+
+  val sex1 = Seq(1, 2)
+
+  val age1 = Seq(1, 2, 3, 4, 5, 6)
+
+  val coin1 = Seq(1, 2, 3, 4)
+
+  val os1 = Seq(1, 2, 3)
+
+  val net1 = Seq(1, 2, 3, 4)
+
+  val allCols = Seq(provinces1, sex1, age1, coin1, os1, net1)
 
   /*统计维度
   地域
@@ -25,6 +65,59 @@ object AnalTouchedUV {
   网络环境
   投放时间
    */
+
+  var m = Seq[Seq[Int]]()
+
+  def mapZeroCol(cols: mutable.Seq[Int], n: Int): Unit = {
+    if (cols(n) == 0) {
+      val rowCols = allCols(n)
+      for (v <- rowCols) {
+        val newCols = cols.updated(n, v)
+        if (newCols.contains(0)) {
+          mapZeroCol(newCols, n + 1)
+        } else {
+          m :+= newCols
+        }
+      }
+    } else if (n < 6) {
+      mapZeroCol(cols, n + 1)
+    }
+  }
+
+  def sumZeroValues(m: Seq[Seq[Int]]): Int = {
+    var sum = 0
+    for (cols <- m) {
+      val key = cols.mkString("-") + "_TOUCHEDUV"
+      val v = redis.get[Int](key).getOrElse(0)
+      if (v > 0) {
+        sum += v
+      }
+    }
+    sum
+  }
+
+  def sumColsWithZero(upv: Float): Unit = {
+    for (p <- provinces) {
+      for (s <- sex) {
+        for (a <- age) {
+          for (c <- coin) {
+            for (o <- os) {
+              for (n <- net) {
+                val cols = mutable.Seq(p, s, a, c, o, n)
+                if (cols.contains(0)) {
+                  m = Seq[Seq[Int]]()
+                  mapZeroCol(cols, 0)
+                  val v = sumZeroValues(m)
+                  redis.set(cols.mkString("-") + "_TOUCHEDUV", v)
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       System.err.println(
@@ -41,7 +134,7 @@ object AnalTouchedUV {
     cal.add(Calendar.DATE, -dayBefore)
     val date = LogParser.dateFormat.format(cal.getTime)
     val conf = ConfigFactory.load()
-    val redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
+    redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
 
     val ctx = SparkSession.builder()
       .appName("anal ad touched query amount[%s]".format(date))
@@ -49,7 +142,7 @@ object AnalTouchedUV {
       .getOrCreate()
     import ctx.implicits._
 
-    val log = ctx.sql("select * from dl_cpc.cpc_union_log where `date` = \"%s\"".format(date)).as[UnionLog]
+    val log = ctx.sql("select * from dl_cpc.cpc_union_log where `date` = \"%s\" ".format(date)).as[UnionLog]
     val ret = log.rdd
       .map {
         x =>
@@ -79,56 +172,13 @@ object AnalTouchedUV {
       }
       .cache()
 
+    val pv = ret.count()
     val uv = ret.map(x => (x.uid, x)).reduceByKey((x, y) => x).count()
-    val ret1 = ret.map(x => (x.keyuid, x))
-      .reduceByKey((x, y) => x)
-      .map(x => (x._2.key, x._2))
+    val upv = uv.toFloat / pv.toFloat
+    val ret1 = ret.map(x => (x.key, x))
       .reduceByKey((x, y) => x.sum(y))
-      .flatMap(x => Seq(x._2, x._2.copy(sex = 0, sum = 0)))
-      .flatMap(x => Seq(x, x.copy(age = 0, sum = 0)))
-      .flatMap {
-        x =>
-          if (x.os > 0) {
-            Seq(x, x.copy(os = 0, sum = 0))
-          } else {
-            Seq(x)
-          }
-      }
-      .flatMap {
-        x =>
-          if (x.network > 0) {
-            Seq(x, x.copy(network = 0, sum = 0))
-          } else {
-            Seq(x.copy(sum = 0))
-          }
-      }
-      .flatMap {
-        x =>
-          if (x.province > 0) {
-            Seq(x, x.copy(province = 0, sum = 0))
-          } else {
-            Seq(x.copy(sum = 0))
-          }
-      }
-      .flatMap {
-        x =>
-          if (x.coin_level > 0) {
-            Seq(x, x.copy(coin_level = 0, sum = 0))
-          } else {
-            Seq(x.copy(sum = 0))
-          }
-      }
-      .map(x => (x.key, x))
-      .reduceByKey((x, y) => x)
       .map(_._2)
-      .union(ctx.sparkContext.parallelize(Seq(AnalCond(date = date, sum = uv.toInt))))
       .cache()
-
-    ret1.toDF()
-      .write
-      .mode(SaveMode.Append)
-      .partitionBy("date")
-      .saveAsTable("dl_cpc.ad_touched_uv")
 
     ret1.toLocalIterator
       .foreach {
@@ -137,9 +187,13 @@ object AnalTouchedUV {
           province-sex-age-coin_level-os-network_TOUCHEDUV
           16-1-5-0-1-1_TOUCHEDUV  => 14674
            */
-          redis.set(x.key + "_TOUCHEDUV", x.sum * 2)
+          val sum = x.sum * upv * 1.5
+          redis.set(x.key + "_TOUCHEDUV", sum.toInt)
       }
-    println(uv, ret.count(), ret1.count())
+
+    sumColsWithZero(upv)
+    //redis.set("0-0-0-0-0-0_TOUCHEDUV", uv)
+    println(uv, pv, ret1.count())
     ctx.stop()
   }
 }
@@ -171,6 +225,5 @@ case class AnalCond(
     copy(sum = sum + k.sum)
   }
 }
-
 
 
