@@ -27,15 +27,15 @@ object AnalTouchedUV {
     21, 30, 7, 28, 2, 27, 31, 25,
     32, 9, 15, 5, 33, 24)
 
-  val sex = Seq(1, 2)
+  val sex = Seq(0, 1, 2)
 
-  val age = Seq(1, 2, 3, 4, 5, 6)
+  val age = Seq(0, 1, 2, 3, 4, 5, 6)
 
-  val coin = Seq(1, 2, 3, 4)
+  val coin = Seq(0, 1, 2, 3, 4)
 
-  val os = Seq(1, 2, 3)
+  val os = Seq(0, 1, 2, 3)
 
-  val net = Seq(1, 2, 3, 4)
+  val net = Seq(0, 1, 2, 3, 4)
 
   val provinces1 = Seq(
     4, 8, 18, 12, 3, 29,
@@ -50,9 +50,11 @@ object AnalTouchedUV {
 
   val coin1 = Seq(1, 2, 3, 4)
 
-  val os1 = Seq(1, 2, 3)
+  //4 为映射原始0的数据
+  val os1 = Seq(1, 2, 3, 4)
 
-  val net1 = Seq(1, 2, 3, 4)
+  //5 为映射原始0的数据
+  val net1 = Seq(1, 2, 3, 4, 5)
 
   val allCols = Seq(provinces1, sex1, age1, coin1, os1, net1)
 
@@ -92,7 +94,7 @@ object AnalTouchedUV {
     sum
   }
 
-  def sumColsWithZero(upv: Float): Unit = {
+  def sumColsWithZero(): Unit = {
     for (p <- provinces) {
       for (s <- sex) {
         for (a <- age) {
@@ -104,7 +106,9 @@ object AnalTouchedUV {
                   m = Seq[Seq[Int]]()
                   mapZeroCol(cols, 0)
                   val v = sumZeroValues(m)
-                  redis.set(cols.mkString("-") + "_TOUCHEDUV", v)
+                  if (v > 0) {
+                    redis.set(cols.mkString("-") + "_TOUCHEDUV", v)
+                  }
                 }
               }
             }
@@ -118,7 +122,7 @@ object AnalTouchedUV {
     if (args.length < 1) {
       System.err.println(
         s"""
-           |Usage: GetUserProfile <day_before> <int>
+           |Usage: GetUserProfile <
            |
         """.stripMargin)
       System.exit(1)
@@ -133,63 +137,76 @@ object AnalTouchedUV {
     redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
 
     val ctx = SparkSession.builder()
-      .appName("anal ad touched query amount[%s]".format(date))
+      .appName("anal ad touched uv[%s]".format(date))
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
 
-    val log = ctx.sql("select * from dl_cpc.cpc_union_log where `date` = \"%s\" ".format(date)).as[UnionLog]
-    val ret = log.rdd
-      .map {
-        x =>
-          val rndSex = Random.nextInt(2) + 1  //随机性别
+    if (args(1).toBoolean) {
+      val log = ctx.sql("select * from dl_cpc.cpc_union_log where `date` = \"%s\" ".format(date)).as[UnionLog]
+      val ret = log.rdd
+        .map {
+          x =>
+            val rndSex = Random.nextInt(2) + 1  //随机性别
           val rndAge = Random.nextInt(6) + 1 //随机年龄
           var lvl = 0
-          if (x.coin < 10) {
-            lvl = 1
-          } else if (x.coin < 1000) {
-            lvl = 2
-          } else if (x.coin < 10000) {
-            lvl = 3
-          } else {
-            lvl = 4
-          }
-          AnalCond(
-            province = x.province,
-            sex = rndSex,
-            age = rndAge,
-            coin_level = lvl,
-            os = x.os,
-            network = x.network,
-            sum = 1,
-            uid = x.uid,
-            date = date
-          )
-      }
-      .cache()
+            if (x.coin < 10) {
+              lvl = 1
+            } else if (x.coin < 1000) {
+              lvl = 2
+            } else if (x.coin < 10000) {
+              lvl = 3
+            } else {
+              lvl = 4
+            }
 
-    val pv = ret.count()
-    val uv = ret.map(x => (x.uid, x)).reduceByKey((x, y) => x).count()
-    val upv = uv.toFloat / pv.toFloat
-    val ret1 = ret.map(x => (x.key, x))
-      .reduceByKey((x, y) => x.sum(y))
-      .map(_._2)
-      .cache()
+            //先把为0的数据映射到其他数字，最后在统一统计0
+            var os = x.os
+            if (x.os == 0) {
+              os = 4
+            }
+            var net = x.network
+            if (x.network == 0) {
+              net = 5
+            }
 
-    ret1.toLocalIterator
-      .foreach {
-        x =>
-          /*
-          province-sex-age-coin_level-os-network_TOUCHEDUV
-          16-1-5-0-1-1_TOUCHEDUV  => 14674
-           */
-          val sum = x.sum * upv * 1.5
-          redis.set(x.key + "_TOUCHEDUV", sum.toInt)
-      }
+            AnalCond(
+              province = x.province,
+              sex = rndSex,
+              age = rndAge,
+              coin_level = lvl,
+              os = os,
+              network = x.network,
+              sum = 1,
+              uid = x.uid,
+              date = date
+            )
+        }
+        .cache()
 
-    sumColsWithZero(upv)
-    //redis.set("0-0-0-0-0-0_TOUCHEDUV", uv)
-    println(uv, pv, ret1.count())
+      val pv = ret.count()
+      val uv = ret.map(x => (x.uid, x)).reduceByKey((x, y) => x).count()
+      val upv = uv.toFloat / pv.toFloat
+      val ret1 = ret.map(x => (x.key, x))
+        .reduceByKey((x, y) => x.sum(y))
+        .map(_._2)
+        .cache()
+
+      ret1.toLocalIterator
+        .foreach {
+          x =>
+            /*
+            province-sex-age-coin_level-os-network_TOUCHEDUV
+            16-1-5-0-1-1_TOUCHEDUV  => 14674
+             */
+            val sum = x.sum * upv * 1.5
+            redis.set(x.key + "_TOUCHEDUV", sum.toInt)
+        }
+
+      println(uv, pv, ret1.count())
+    }
+
+    sumColsWithZero()
     ctx.stop()
   }
 }
