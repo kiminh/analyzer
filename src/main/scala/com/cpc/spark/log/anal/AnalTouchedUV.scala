@@ -108,6 +108,7 @@ object AnalTouchedUV {
                   val v = sumZeroValues(m)
                   if (v > 0) {
                     redis.set(cols.mkString("-") + "_TOUCHEDUV", v)
+                    println(cols.mkString("-") + "_TOUCHEDUV", v)
                   }
                 }
               }
@@ -176,7 +177,7 @@ object AnalTouchedUV {
               age = rndAge,
               coin_level = lvl,
               os = os,
-              network = x.network,
+              network = net,
               sum = 1,
               uid = x.uid,
               date = date
