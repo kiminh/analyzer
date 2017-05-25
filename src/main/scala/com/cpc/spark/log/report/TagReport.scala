@@ -8,5 +8,6 @@ case class TagReport(
                       date: String = "",
                       device_num: Int = 0,
                       uv: Int = 0,
-                      pv: Int = 0
+                      pv: Int = 0,
+                      click: Int = 0
                     )

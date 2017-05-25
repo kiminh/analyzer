@@ -53,7 +53,7 @@ object GetTagReport {
          |select * from dl_cpc.cpc_union_log where `date` = "%s"  and isfill = 1 and uid != ""
        """.stripMargin.format(day))
       .as[UnionLog]
-      .rdd.cache()
+      .rdd
 
     val tagData1 = aiRdd.map{
       profile =>
@@ -71,43 +71,67 @@ object GetTagReport {
     }
     val tagData2 =  unionLog.map{
       log =>
-        var data = List[(Int, Int, Int, String)]()
+        var data = List[(Int, Int, Int, String, String)]()
         log.interests.split(",").foreach(
           row =>
             try {
               val Array(tag , score) = row.trim.split("=", 2)
-              data = data :+ (tag.toInt, log.isclick, log.isshow,log.searchid)
+              data = data :+ (tag.toInt, log.isclick, log.isshow,log.searchid, log.uid)
             } catch {
                 case e: Exception => null
             }
         )
         data
     }.filter(x => x != null).flatMap(x => x).map{
-      case (x, y, z, s) =>
-        (s,(x, y, z))
-    }.reduceByKey((x, y) => x).map{
-      case (s,(x, y, z)) =>
-        (x,(y,z))
+      case (tag, isclick, isshow, searchid, uid) =>
+        (searchid,(tag, isclick, isshow, uid))
+    }.reduceByKey((x, y) => x).cache()
+
+    val tagUvData = tagData2.filter(x => x._2._4 != "").map{
+      case (searchid,(tag, isclick, isshow, uid)) =>
+        ((tag, uid), 1)
+    }.reduceByKey((x,y) => x).map{
+      case ((tag, uid), count) =>
+        (tag, 1)
+    }.reduceByKey((x, y) => x + y).map{
+      case (tag, uv) =>
+        TagReport(tag, day, 0, uv)
+    }
+
+    val tagPvData = tagData2.map{
+      case (searchid, (tag, isclick, isshow, uid)) =>
+        (tag, (isclick, isshow))
     }.reduceByKey{
       case (x,y) =>
         (x._1 + y._1, x._2 + y._2)
     }.map{
-      case (x,(y,z)) =>
-       TagReport(x, day, 0,y, z)
+      case (tag, (isclick, isshow)) =>
+       TagReport(tag, day, 0, 0, isshow, isclick)
     }
 
-    val mergeData = tagData1.union(tagData2)
-    val tagData3 = mergeData.map(tag => (tag.tag, tag)).reduceByKey{
+    val mergeData = tagData1.union(tagUvData)
+    val mergeData2 = mergeData.union(tagPvData)
+    val tagData3 = mergeData2.map(tag => (tag.tag, tag)).reduceByKey{
       case (x, y) =>
         var log = x
-        if(log.device_num > 0){
-          log =log.copy(
-            uv = y.uv,
-            pv = y.pv
-          )
-        }else{
+        if(y.device_num > 0){
           log = log.copy(
             device_num = y.device_num
+          )
+        }
+        if(y.uv > 0){
+          log = log.copy(
+            uv = y.uv
+          )
+        }
+        if(y.pv > 0){
+          log = log.copy(
+            pv = y.pv
+          )
+        }
+        if(y.click > 0){
+          log = log.copy(
+            click = y.click
           )
         }
         log
