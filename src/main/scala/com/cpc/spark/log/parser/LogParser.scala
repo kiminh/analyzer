@@ -5,6 +5,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.cpc.spark.common.{Event, Ui}
+import org.apache.spark.sql.types._
+
+import scala.collection.mutable
 
 
 /**
@@ -14,12 +17,21 @@ import com.cpc.spark.common.{Event, Ui}
 
 object LogParser {
 
+  val dataSchema = MapType(StringType,
+      StructType(
+        StructField("int_value", IntegerType, true) ::
+        StructField("long_value", LongType, true) ::
+        StructField("float_value", FloatType, true) ::
+        StructField("string_value", StringType, true) :: Nil
+      ), true)
+
   def parseSearchLog(txt: String): UnionLog = {
     var log: UnionLog = null
-    val data = Ui.parseData(txt)
-    if (data != null) {
-      val notice = data.ui
+    val srcData = Ui.parseData(txt)
+    if (srcData != null) {
+      val notice = srcData.ui
       val (date, hour) = getDateHourFromTime(notice.getTimestamp)
+      val data = mutable.Map[String, DataValue]()
       log = UnionLog(
         searchid = notice.getSearchid,
         timestamp = notice.getTimestamp,
@@ -60,6 +72,8 @@ object LogParser {
           ctr = ad.getCtr,
           cpm = ad.getCpm
         )
+        data.update("media_class", DataValue(int_value = ad.getClass_))
+        data.update("usertype", DataValue(int_value = ad.getUsertype))
       }
       val loc = notice.getLocation
       log = log.copy(
@@ -87,11 +101,13 @@ object LogParser {
           interRows = interRows :+ "%d=%d".format(in.getInterestid, in.getScore)
         }
       }
+      data.update("userpcate", DataValue(int_value = user.getPcategory))
       log = log.copy(
         sex = user.getSex,
         age = user.getAge,
         coin = user.getCoin,
-        interests = interRows.mkString(",")
+        interests = interRows.mkString(","),
+        data = data.toMap
       )
     }
     log
@@ -242,4 +258,5 @@ object LogParser {
     }
   }
 }
+
 

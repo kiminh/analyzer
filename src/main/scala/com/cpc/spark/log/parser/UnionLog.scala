@@ -1,5 +1,7 @@
 package com.cpc.spark.log.parser
 
+import org.apache.spark.sql.types.StructField
+
 /**
   * Created by Roy on 2017/4/25.
   */
@@ -54,9 +56,11 @@ case class UnionLog(
                      duration: Int = 0,
                      userid: Int = 0,
                      interests: String = "",
+                     data: Map[String, DataValue] = null,
                      date: String = "",
                      hour: String = ""
                    ) {
+
 
   def isSpamClick(): Int = {
     if (antispam_score < 10000 && isclick > 0) {
@@ -83,3 +87,9 @@ case class UnionLog(
   }
 }
 
+case class DataValue(
+                      int_value: Int = 0,
+                      long_value: Long = 0,
+                      float_value: Float = 0,
+                      string_value: String = ""
+                    )

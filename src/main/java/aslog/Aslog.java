@@ -4623,6 +4623,32 @@ public final class Aslog {
      * <code>optional float cpmbid = 10;</code>
      */
     float getCpmbid();
+
+    /**
+     * <pre>
+     *栏目名称
+     * </pre>
+     *
+     * <code>optional string channel = 11;</code>
+     */
+    boolean hasChannel();
+    /**
+     * <pre>
+     *栏目名称
+     * </pre>
+     *
+     * <code>optional string channel = 11;</code>
+     */
+    java.lang.String getChannel();
+    /**
+     * <pre>
+     *栏目名称
+     * </pre>
+     *
+     * <code>optional string channel = 11;</code>
+     */
+    com.google.protobuf.ByteString
+        getChannelBytes();
   }
   /**
    * Protobuf type {@code aslog.Adslot}
@@ -4645,6 +4671,7 @@ public final class Aslog {
       buildtype_ = 0;
       floorbid_ = 0F;
       cpmbid_ = 0F;
+      channel_ = "";
     }
 
     @java.lang.Override
@@ -4739,6 +4766,12 @@ public final class Aslog {
             case 85: {
               bitField0_ |= 0x00000200;
               cpmbid_ = input.readFloat();
+              break;
+            }
+            case 90: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000400;
+              channel_ = bs;
               break;
             }
           }
@@ -5037,6 +5070,60 @@ public final class Aslog {
       return cpmbid_;
     }
 
+    public static final int CHANNEL_FIELD_NUMBER = 11;
+    private volatile java.lang.Object channel_;
+    /**
+     * <pre>
+     *栏目名称
+     * </pre>
+     *
+     * <code>optional string channel = 11;</code>
+     */
+    public boolean hasChannel() {
+      return ((bitField0_ & 0x00000400) == 0x00000400);
+    }
+    /**
+     * <pre>
+     *栏目名称
+     * </pre>
+     *
+     * <code>optional string channel = 11;</code>
+     */
+    public java.lang.String getChannel() {
+      java.lang.Object ref = channel_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          channel_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     *栏目名称
+     * </pre>
+     *
+     * <code>optional string channel = 11;</code>
+     */
+    public com.google.protobuf.ByteString
+        getChannelBytes() {
+      java.lang.Object ref = channel_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        channel_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -5099,6 +5186,9 @@ public final class Aslog {
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         output.writeFloat(10, cpmbid_);
       }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 11, channel_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -5144,6 +5234,9 @@ public final class Aslog {
       if (((bitField0_ & 0x00000200) == 0x00000200)) {
         size += com.google.protobuf.CodedOutputStream
           .computeFloatSize(10, cpmbid_);
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(11, channel_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -5215,6 +5308,11 @@ public final class Aslog {
             == java.lang.Float.floatToIntBits(
                 other.getCpmbid()));
       }
+      result = result && (hasChannel() == other.hasChannel());
+      if (hasChannel()) {
+        result = result && getChannel()
+            .equals(other.getChannel());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -5268,6 +5366,10 @@ public final class Aslog {
         hash = (37 * hash) + CPMBID_FIELD_NUMBER;
         hash = (53 * hash) + java.lang.Float.floatToIntBits(
             getCpmbid());
+      }
+      if (hasChannel()) {
+        hash = (37 * hash) + CHANNEL_FIELD_NUMBER;
+        hash = (53 * hash) + getChannel().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -5412,6 +5514,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00000100);
         cpmbid_ = 0F;
         bitField0_ = (bitField0_ & ~0x00000200);
+        channel_ = "";
+        bitField0_ = (bitField0_ & ~0x00000400);
         return this;
       }
 
@@ -5480,6 +5584,10 @@ public final class Aslog {
           to_bitField0_ |= 0x00000200;
         }
         result.cpmbid_ = cpmbid_;
+        if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
+          to_bitField0_ |= 0x00000400;
+        }
+        result.channel_ = channel_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -5555,6 +5663,11 @@ public final class Aslog {
         }
         if (other.hasCpmbid()) {
           setCpmbid(other.getCpmbid());
+        }
+        if (other.hasChannel()) {
+          bitField0_ |= 0x00000400;
+          channel_ = other.channel_;
+          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -6213,6 +6326,106 @@ public final class Aslog {
       public Builder clearCpmbid() {
         bitField0_ = (bitField0_ & ~0x00000200);
         cpmbid_ = 0F;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object channel_ = "";
+      /**
+       * <pre>
+       *栏目名称
+       * </pre>
+       *
+       * <code>optional string channel = 11;</code>
+       */
+      public boolean hasChannel() {
+        return ((bitField0_ & 0x00000400) == 0x00000400);
+      }
+      /**
+       * <pre>
+       *栏目名称
+       * </pre>
+       *
+       * <code>optional string channel = 11;</code>
+       */
+      public java.lang.String getChannel() {
+        java.lang.Object ref = channel_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            channel_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       *栏目名称
+       * </pre>
+       *
+       * <code>optional string channel = 11;</code>
+       */
+      public com.google.protobuf.ByteString
+          getChannelBytes() {
+        java.lang.Object ref = channel_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          channel_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       *栏目名称
+       * </pre>
+       *
+       * <code>optional string channel = 11;</code>
+       */
+      public Builder setChannel(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000400;
+        channel_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *栏目名称
+       * </pre>
+       *
+       * <code>optional string channel = 11;</code>
+       */
+      public Builder clearChannel() {
+        bitField0_ = (bitField0_ & ~0x00000400);
+        channel_ = getDefaultInstance().getChannel();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *栏目名称
+       * </pre>
+       *
+       * <code>optional string channel = 11;</code>
+       */
+      public Builder setChannelBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000400;
+        channel_ = value;
         onChanged();
         return this;
       }
@@ -12397,6 +12610,49 @@ public final class Aslog {
      * <code>optional uint64 cpm = 11;</code>
      */
     long getCpm();
+
+    /**
+     * <code>optional uint32 class = 12;</code>
+     */
+    boolean hasClass_();
+    /**
+     * <code>optional uint32 class = 12;</code>
+     */
+    int getClass_();
+
+    /**
+     * <pre>
+     * 用户类型 0正常户 1黑五类
+     * </pre>
+     *
+     * <code>optional int32 usertype = 13;</code>
+     */
+    boolean hasUsertype();
+    /**
+     * <pre>
+     * 用户类型 0正常户 1黑五类
+     * </pre>
+     *
+     * <code>optional int32 usertype = 13;</code>
+     */
+    int getUsertype();
+
+    /**
+     * <pre>
+     * 标题ctr值 
+     * </pre>
+     *
+     * <code>optional uint64 titlectr = 14;</code>
+     */
+    boolean hasTitlectr();
+    /**
+     * <pre>
+     * 标题ctr值 
+     * </pre>
+     *
+     * <code>optional uint64 titlectr = 14;</code>
+     */
+    long getTitlectr();
   }
   /**
    * Protobuf type {@code aslog.AdInfo}
@@ -12421,6 +12677,9 @@ public final class Aslog {
       price_ = 0;
       ctr_ = 0L;
       cpm_ = 0L;
+      class__ = 0;
+      usertype_ = 0;
+      titlectr_ = 0L;
     }
 
     @java.lang.Override
@@ -12522,6 +12781,21 @@ public final class Aslog {
             case 88: {
               bitField0_ |= 0x00000400;
               cpm_ = input.readUInt64();
+              break;
+            }
+            case 96: {
+              bitField0_ |= 0x00000800;
+              class__ = input.readUInt32();
+              break;
+            }
+            case 104: {
+              bitField0_ |= 0x00001000;
+              usertype_ = input.readInt32();
+              break;
+            }
+            case 112: {
+              bitField0_ |= 0x00002000;
+              titlectr_ = input.readUInt64();
               break;
             }
           }
@@ -12717,6 +12991,67 @@ public final class Aslog {
       return cpm_;
     }
 
+    public static final int CLASS_FIELD_NUMBER = 12;
+    private int class__;
+    /**
+     * <code>optional uint32 class = 12;</code>
+     */
+    public boolean hasClass_() {
+      return ((bitField0_ & 0x00000800) == 0x00000800);
+    }
+    /**
+     * <code>optional uint32 class = 12;</code>
+     */
+    public int getClass_() {
+      return class__;
+    }
+
+    public static final int USERTYPE_FIELD_NUMBER = 13;
+    private int usertype_;
+    /**
+     * <pre>
+     * 用户类型 0正常户 1黑五类
+     * </pre>
+     *
+     * <code>optional int32 usertype = 13;</code>
+     */
+    public boolean hasUsertype() {
+      return ((bitField0_ & 0x00001000) == 0x00001000);
+    }
+    /**
+     * <pre>
+     * 用户类型 0正常户 1黑五类
+     * </pre>
+     *
+     * <code>optional int32 usertype = 13;</code>
+     */
+    public int getUsertype() {
+      return usertype_;
+    }
+
+    public static final int TITLECTR_FIELD_NUMBER = 14;
+    private long titlectr_;
+    /**
+     * <pre>
+     * 标题ctr值 
+     * </pre>
+     *
+     * <code>optional uint64 titlectr = 14;</code>
+     */
+    public boolean hasTitlectr() {
+      return ((bitField0_ & 0x00002000) == 0x00002000);
+    }
+    /**
+     * <pre>
+     * 标题ctr值 
+     * </pre>
+     *
+     * <code>optional uint64 titlectr = 14;</code>
+     */
+    public long getTitlectr() {
+      return titlectr_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -12774,6 +13109,15 @@ public final class Aslog {
       if (((bitField0_ & 0x00000400) == 0x00000400)) {
         output.writeUInt64(11, cpm_);
       }
+      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+        output.writeUInt32(12, class__);
+      }
+      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+        output.writeInt32(13, usertype_);
+      }
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+        output.writeUInt64(14, titlectr_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -12825,6 +13169,18 @@ public final class Aslog {
       if (((bitField0_ & 0x00000400) == 0x00000400)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt64Size(11, cpm_);
+      }
+      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(12, class__);
+      }
+      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(13, usertype_);
+      }
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(14, titlectr_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -12895,6 +13251,21 @@ public final class Aslog {
         result = result && (getCpm()
             == other.getCpm());
       }
+      result = result && (hasClass_() == other.hasClass_());
+      if (hasClass_()) {
+        result = result && (getClass_()
+            == other.getClass_());
+      }
+      result = result && (hasUsertype() == other.hasUsertype());
+      if (hasUsertype()) {
+        result = result && (getUsertype()
+            == other.getUsertype());
+      }
+      result = result && (hasTitlectr() == other.hasTitlectr());
+      if (hasTitlectr()) {
+        result = result && (getTitlectr()
+            == other.getTitlectr());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -12951,6 +13322,19 @@ public final class Aslog {
         hash = (37 * hash) + CPM_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
             getCpm());
+      }
+      if (hasClass_()) {
+        hash = (37 * hash) + CLASS_FIELD_NUMBER;
+        hash = (53 * hash) + getClass_();
+      }
+      if (hasUsertype()) {
+        hash = (37 * hash) + USERTYPE_FIELD_NUMBER;
+        hash = (53 * hash) + getUsertype();
+      }
+      if (hasTitlectr()) {
+        hash = (37 * hash) + TITLECTR_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getTitlectr());
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -13092,6 +13476,12 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00000200);
         cpm_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000400);
+        class__ = 0;
+        bitField0_ = (bitField0_ & ~0x00000800);
+        usertype_ = 0;
+        bitField0_ = (bitField0_ & ~0x00001000);
+        titlectr_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00002000);
         return this;
       }
 
@@ -13160,6 +13550,18 @@ public final class Aslog {
           to_bitField0_ |= 0x00000400;
         }
         result.cpm_ = cpm_;
+        if (((from_bitField0_ & 0x00000800) == 0x00000800)) {
+          to_bitField0_ |= 0x00000800;
+        }
+        result.class__ = class__;
+        if (((from_bitField0_ & 0x00001000) == 0x00001000)) {
+          to_bitField0_ |= 0x00001000;
+        }
+        result.usertype_ = usertype_;
+        if (((from_bitField0_ & 0x00002000) == 0x00002000)) {
+          to_bitField0_ |= 0x00002000;
+        }
+        result.titlectr_ = titlectr_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -13234,6 +13636,15 @@ public final class Aslog {
         }
         if (other.hasCpm()) {
           setCpm(other.getCpm());
+        }
+        if (other.hasClass_()) {
+          setClass_(other.getClass_());
+        }
+        if (other.hasUsertype()) {
+          setUsertype(other.getUsertype());
+        }
+        if (other.hasTitlectr()) {
+          setTitlectr(other.getTitlectr());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -13632,6 +14043,134 @@ public final class Aslog {
       public Builder clearCpm() {
         bitField0_ = (bitField0_ & ~0x00000400);
         cpm_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private int class__ ;
+      /**
+       * <code>optional uint32 class = 12;</code>
+       */
+      public boolean hasClass_() {
+        return ((bitField0_ & 0x00000800) == 0x00000800);
+      }
+      /**
+       * <code>optional uint32 class = 12;</code>
+       */
+      public int getClass_() {
+        return class__;
+      }
+      /**
+       * <code>optional uint32 class = 12;</code>
+       */
+      public Builder setClass_(int value) {
+        bitField0_ |= 0x00000800;
+        class__ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint32 class = 12;</code>
+       */
+      public Builder clearClass_() {
+        bitField0_ = (bitField0_ & ~0x00000800);
+        class__ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int usertype_ ;
+      /**
+       * <pre>
+       * 用户类型 0正常户 1黑五类
+       * </pre>
+       *
+       * <code>optional int32 usertype = 13;</code>
+       */
+      public boolean hasUsertype() {
+        return ((bitField0_ & 0x00001000) == 0x00001000);
+      }
+      /**
+       * <pre>
+       * 用户类型 0正常户 1黑五类
+       * </pre>
+       *
+       * <code>optional int32 usertype = 13;</code>
+       */
+      public int getUsertype() {
+        return usertype_;
+      }
+      /**
+       * <pre>
+       * 用户类型 0正常户 1黑五类
+       * </pre>
+       *
+       * <code>optional int32 usertype = 13;</code>
+       */
+      public Builder setUsertype(int value) {
+        bitField0_ |= 0x00001000;
+        usertype_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 用户类型 0正常户 1黑五类
+       * </pre>
+       *
+       * <code>optional int32 usertype = 13;</code>
+       */
+      public Builder clearUsertype() {
+        bitField0_ = (bitField0_ & ~0x00001000);
+        usertype_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private long titlectr_ ;
+      /**
+       * <pre>
+       * 标题ctr值 
+       * </pre>
+       *
+       * <code>optional uint64 titlectr = 14;</code>
+       */
+      public boolean hasTitlectr() {
+        return ((bitField0_ & 0x00002000) == 0x00002000);
+      }
+      /**
+       * <pre>
+       * 标题ctr值 
+       * </pre>
+       *
+       * <code>optional uint64 titlectr = 14;</code>
+       */
+      public long getTitlectr() {
+        return titlectr_;
+      }
+      /**
+       * <pre>
+       * 标题ctr值 
+       * </pre>
+       *
+       * <code>optional uint64 titlectr = 14;</code>
+       */
+      public Builder setTitlectr(long value) {
+        bitField0_ |= 0x00002000;
+        titlectr_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 标题ctr值 
+       * </pre>
+       *
+       * <code>optional uint64 titlectr = 14;</code>
+       */
+      public Builder clearTitlectr() {
+        bitField0_ = (bitField0_ & ~0x00002000);
+        titlectr_ = 0L;
         onChanged();
         return this;
       }
@@ -15705,6 +16244,23 @@ public final class Aslog {
      * <code>optional uint32 coin = 4;</code>
      */
     int getCoin();
+
+    /**
+     * <pre>
+     * 趣头条用户类别
+     * </pre>
+     *
+     * <code>optional uint32 pcategory = 5;</code>
+     */
+    boolean hasPcategory();
+    /**
+     * <pre>
+     * 趣头条用户类别
+     * </pre>
+     *
+     * <code>optional uint32 pcategory = 5;</code>
+     */
+    int getPcategory();
   }
   /**
    * Protobuf type {@code aslog.UserProfile}
@@ -15722,6 +16278,7 @@ public final class Aslog {
       age_ = 0;
       sex_ = 0;
       coin_ = 0;
+      pcategory_ = 0;
     }
 
     @java.lang.Override
@@ -15774,6 +16331,11 @@ public final class Aslog {
             case 32: {
               bitField0_ |= 0x00000004;
               coin_ = input.readUInt32();
+              break;
+            }
+            case 40: {
+              bitField0_ |= 0x00000008;
+              pcategory_ = input.readUInt32();
               break;
             }
           }
@@ -15928,6 +16490,29 @@ public final class Aslog {
       return coin_;
     }
 
+    public static final int PCATEGORY_FIELD_NUMBER = 5;
+    private int pcategory_;
+    /**
+     * <pre>
+     * 趣头条用户类别
+     * </pre>
+     *
+     * <code>optional uint32 pcategory = 5;</code>
+     */
+    public boolean hasPcategory() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <pre>
+     * 趣头条用户类别
+     * </pre>
+     *
+     * <code>optional uint32 pcategory = 5;</code>
+     */
+    public int getPcategory() {
+      return pcategory_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -15952,6 +16537,9 @@ public final class Aslog {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         output.writeUInt32(4, coin_);
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeUInt32(5, pcategory_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -15975,6 +16563,10 @@ public final class Aslog {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(4, coin_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(5, pcategory_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -16010,6 +16602,11 @@ public final class Aslog {
         result = result && (getCoin()
             == other.getCoin());
       }
+      result = result && (hasPcategory() == other.hasPcategory());
+      if (hasPcategory()) {
+        result = result && (getPcategory()
+            == other.getPcategory());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -16036,6 +16633,10 @@ public final class Aslog {
       if (hasCoin()) {
         hash = (37 * hash) + COIN_FIELD_NUMBER;
         hash = (53 * hash) + getCoin();
+      }
+      if (hasPcategory()) {
+        hash = (37 * hash) + PCATEGORY_FIELD_NUMBER;
+        hash = (53 * hash) + getPcategory();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -16168,6 +16769,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00000004);
         coin_ = 0;
         bitField0_ = (bitField0_ & ~0x00000008);
+        pcategory_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
 
@@ -16213,6 +16816,10 @@ public final class Aslog {
           to_bitField0_ |= 0x00000004;
         }
         result.coin_ = coin_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.pcategory_ = pcategory_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -16289,6 +16896,9 @@ public final class Aslog {
         }
         if (other.hasCoin()) {
           setCoin(other.getCoin());
+        }
+        if (other.hasPcategory()) {
+          setPcategory(other.getPcategory());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -16773,6 +17383,54 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private int pcategory_ ;
+      /**
+       * <pre>
+       * 趣头条用户类别
+       * </pre>
+       *
+       * <code>optional uint32 pcategory = 5;</code>
+       */
+      public boolean hasPcategory() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <pre>
+       * 趣头条用户类别
+       * </pre>
+       *
+       * <code>optional uint32 pcategory = 5;</code>
+       */
+      public int getPcategory() {
+        return pcategory_;
+      }
+      /**
+       * <pre>
+       * 趣头条用户类别
+       * </pre>
+       *
+       * <code>optional uint32 pcategory = 5;</code>
+       */
+      public Builder setPcategory(int value) {
+        bitField0_ |= 0x00000010;
+        pcategory_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 趣头条用户类别
+       * </pre>
+       *
+       * <code>optional uint32 pcategory = 5;</code>
+       */
+      public Builder clearPcategory() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        pcategory_ = 0;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -17072,6 +17730,56 @@ public final class Aslog {
 
     /**
      * <pre>
+     * 同一plan过滤
+     * </pre>
+     *
+     * <code>repeated uint32 dupplanfilter = 16;</code>
+     */
+    java.util.List<java.lang.Integer> getDupplanfilterList();
+    /**
+     * <pre>
+     * 同一plan过滤
+     * </pre>
+     *
+     * <code>repeated uint32 dupplanfilter = 16;</code>
+     */
+    int getDupplanfilterCount();
+    /**
+     * <pre>
+     * 同一plan过滤
+     * </pre>
+     *
+     * <code>repeated uint32 dupplanfilter = 16;</code>
+     */
+    int getDupplanfilter(int index);
+
+    /**
+     * <pre>
+     * 低于最低cpm过滤
+     * </pre>
+     *
+     * <code>repeated uint32 lowcpmfilter = 17;</code>
+     */
+    java.util.List<java.lang.Integer> getLowcpmfilterList();
+    /**
+     * <pre>
+     * 低于最低cpm过滤
+     * </pre>
+     *
+     * <code>repeated uint32 lowcpmfilter = 17;</code>
+     */
+    int getLowcpmfilterCount();
+    /**
+     * <pre>
+     * 低于最低cpm过滤
+     * </pre>
+     *
+     * <code>repeated uint32 lowcpmfilter = 17;</code>
+     */
+    int getLowcpmfilter(int index);
+
+    /**
+     * <pre>
      * 请求DSP的信息
      * </pre>
      *
@@ -17144,6 +17852,8 @@ public final class Aslog {
       exptags_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       sourceip_ = "";
       intertype_ = 0;
+      dupplanfilter_ = java.util.Collections.emptyList();
+      lowcpmfilter_ = java.util.Collections.emptyList();
       dspReqInfo_ = java.util.Collections.emptyList();
       timecost_ = 0L;
     }
@@ -17317,10 +18027,52 @@ public final class Aslog {
               bitField0_ |= 0x00000400;
               break;
             }
-            case 178: {
+            case 128: {
               if (!((mutable_bitField0_ & 0x00008000) == 0x00008000)) {
-                dspReqInfo_ = new java.util.ArrayList<aslog.Aslog.DspReqInfo>();
+                dupplanfilter_ = new java.util.ArrayList<java.lang.Integer>();
                 mutable_bitField0_ |= 0x00008000;
+              }
+              dupplanfilter_.add(input.readUInt32());
+              break;
+            }
+            case 130: {
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              if (!((mutable_bitField0_ & 0x00008000) == 0x00008000) && input.getBytesUntilLimit() > 0) {
+                dupplanfilter_ = new java.util.ArrayList<java.lang.Integer>();
+                mutable_bitField0_ |= 0x00008000;
+              }
+              while (input.getBytesUntilLimit() > 0) {
+                dupplanfilter_.add(input.readUInt32());
+              }
+              input.popLimit(limit);
+              break;
+            }
+            case 136: {
+              if (!((mutable_bitField0_ & 0x00010000) == 0x00010000)) {
+                lowcpmfilter_ = new java.util.ArrayList<java.lang.Integer>();
+                mutable_bitField0_ |= 0x00010000;
+              }
+              lowcpmfilter_.add(input.readUInt32());
+              break;
+            }
+            case 138: {
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              if (!((mutable_bitField0_ & 0x00010000) == 0x00010000) && input.getBytesUntilLimit() > 0) {
+                lowcpmfilter_ = new java.util.ArrayList<java.lang.Integer>();
+                mutable_bitField0_ |= 0x00010000;
+              }
+              while (input.getBytesUntilLimit() > 0) {
+                lowcpmfilter_.add(input.readUInt32());
+              }
+              input.popLimit(limit);
+              break;
+            }
+            case 178: {
+              if (!((mutable_bitField0_ & 0x00020000) == 0x00020000)) {
+                dspReqInfo_ = new java.util.ArrayList<aslog.Aslog.DspReqInfo>();
+                mutable_bitField0_ |= 0x00020000;
               }
               dspReqInfo_.add(
                   input.readMessage(aslog.Aslog.DspReqInfo.PARSER, extensionRegistry));
@@ -17352,6 +18104,12 @@ public final class Aslog {
           exptags_ = exptags_.getUnmodifiableView();
         }
         if (((mutable_bitField0_ & 0x00008000) == 0x00008000)) {
+          dupplanfilter_ = java.util.Collections.unmodifiableList(dupplanfilter_);
+        }
+        if (((mutable_bitField0_ & 0x00010000) == 0x00010000)) {
+          lowcpmfilter_ = java.util.Collections.unmodifiableList(lowcpmfilter_);
+        }
+        if (((mutable_bitField0_ & 0x00020000) == 0x00020000)) {
           dspReqInfo_ = java.util.Collections.unmodifiableList(dspReqInfo_);
         }
         this.unknownFields = unknownFields.build();
@@ -17780,6 +18538,74 @@ public final class Aslog {
       return userprofile_ == null ? aslog.Aslog.UserProfile.getDefaultInstance() : userprofile_;
     }
 
+    public static final int DUPPLANFILTER_FIELD_NUMBER = 16;
+    private java.util.List<java.lang.Integer> dupplanfilter_;
+    /**
+     * <pre>
+     * 同一plan过滤
+     * </pre>
+     *
+     * <code>repeated uint32 dupplanfilter = 16;</code>
+     */
+    public java.util.List<java.lang.Integer>
+        getDupplanfilterList() {
+      return dupplanfilter_;
+    }
+    /**
+     * <pre>
+     * 同一plan过滤
+     * </pre>
+     *
+     * <code>repeated uint32 dupplanfilter = 16;</code>
+     */
+    public int getDupplanfilterCount() {
+      return dupplanfilter_.size();
+    }
+    /**
+     * <pre>
+     * 同一plan过滤
+     * </pre>
+     *
+     * <code>repeated uint32 dupplanfilter = 16;</code>
+     */
+    public int getDupplanfilter(int index) {
+      return dupplanfilter_.get(index);
+    }
+
+    public static final int LOWCPMFILTER_FIELD_NUMBER = 17;
+    private java.util.List<java.lang.Integer> lowcpmfilter_;
+    /**
+     * <pre>
+     * 低于最低cpm过滤
+     * </pre>
+     *
+     * <code>repeated uint32 lowcpmfilter = 17;</code>
+     */
+    public java.util.List<java.lang.Integer>
+        getLowcpmfilterList() {
+      return lowcpmfilter_;
+    }
+    /**
+     * <pre>
+     * 低于最低cpm过滤
+     * </pre>
+     *
+     * <code>repeated uint32 lowcpmfilter = 17;</code>
+     */
+    public int getLowcpmfilterCount() {
+      return lowcpmfilter_.size();
+    }
+    /**
+     * <pre>
+     * 低于最低cpm过滤
+     * </pre>
+     *
+     * <code>repeated uint32 lowcpmfilter = 17;</code>
+     */
+    public int getLowcpmfilter(int index) {
+      return lowcpmfilter_.get(index);
+    }
+
     public static final int DSPREQINFO_FIELD_NUMBER = 22;
     private java.util.List<aslog.Aslog.DspReqInfo> dspReqInfo_;
     /**
@@ -17963,6 +18789,12 @@ public final class Aslog {
       if (((bitField0_ & 0x00000400) == 0x00000400)) {
         output.writeMessage(15, getUserprofile());
       }
+      for (int i = 0; i < dupplanfilter_.size(); i++) {
+        output.writeUInt32(16, dupplanfilter_.get(i));
+      }
+      for (int i = 0; i < lowcpmfilter_.size(); i++) {
+        output.writeUInt32(17, lowcpmfilter_.get(i));
+      }
       for (int i = 0; i < dspReqInfo_.size(); i++) {
         output.writeMessage(22, dspReqInfo_.get(i));
       }
@@ -18038,6 +18870,24 @@ public final class Aslog {
       if (((bitField0_ & 0x00000400) == 0x00000400)) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(15, getUserprofile());
+      }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < dupplanfilter_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeUInt32SizeNoTag(dupplanfilter_.get(i));
+        }
+        size += dataSize;
+        size += 2 * getDupplanfilterList().size();
+      }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < lowcpmfilter_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeUInt32SizeNoTag(lowcpmfilter_.get(i));
+        }
+        size += dataSize;
+        size += 2 * getLowcpmfilterList().size();
       }
       for (int i = 0; i < dspReqInfo_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
@@ -18127,6 +18977,10 @@ public final class Aslog {
         result = result && getUserprofile()
             .equals(other.getUserprofile());
       }
+      result = result && getDupplanfilterList()
+          .equals(other.getDupplanfilterList());
+      result = result && getLowcpmfilterList()
+          .equals(other.getLowcpmfilterList());
       result = result && getDspReqInfoList()
           .equals(other.getDspReqInfoList());
       result = result && (hasTimecost() == other.hasTimecost());
@@ -18205,6 +19059,14 @@ public final class Aslog {
       if (hasUserprofile()) {
         hash = (37 * hash) + USERPROFILE_FIELD_NUMBER;
         hash = (53 * hash) + getUserprofile().hashCode();
+      }
+      if (getDupplanfilterCount() > 0) {
+        hash = (37 * hash) + DUPPLANFILTER_FIELD_NUMBER;
+        hash = (53 * hash) + getDupplanfilterList().hashCode();
+      }
+      if (getLowcpmfilterCount() > 0) {
+        hash = (37 * hash) + LOWCPMFILTER_FIELD_NUMBER;
+        hash = (53 * hash) + getLowcpmfilterList().hashCode();
       }
       if (getDspReqInfoCount() > 0) {
         hash = (37 * hash) + DSPREQINFO_FIELD_NUMBER;
@@ -18409,14 +19271,18 @@ public final class Aslog {
           userprofileBuilder_.clear();
         }
         bitField0_ = (bitField0_ & ~0x00004000);
+        dupplanfilter_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x00008000);
+        lowcpmfilter_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x00010000);
         if (dspReqInfoBuilder_ == null) {
           dspReqInfo_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00008000);
+          bitField0_ = (bitField0_ & ~0x00020000);
         } else {
           dspReqInfoBuilder_.clear();
         }
         timecost_ = 0L;
-        bitField0_ = (bitField0_ & ~0x00010000);
+        bitField0_ = (bitField0_ & ~0x00040000);
         return this;
       }
 
@@ -18541,16 +19407,26 @@ public final class Aslog {
         } else {
           result.userprofile_ = userprofileBuilder_.build();
         }
+        if (((bitField0_ & 0x00008000) == 0x00008000)) {
+          dupplanfilter_ = java.util.Collections.unmodifiableList(dupplanfilter_);
+          bitField0_ = (bitField0_ & ~0x00008000);
+        }
+        result.dupplanfilter_ = dupplanfilter_;
+        if (((bitField0_ & 0x00010000) == 0x00010000)) {
+          lowcpmfilter_ = java.util.Collections.unmodifiableList(lowcpmfilter_);
+          bitField0_ = (bitField0_ & ~0x00010000);
+        }
+        result.lowcpmfilter_ = lowcpmfilter_;
         if (dspReqInfoBuilder_ == null) {
-          if (((bitField0_ & 0x00008000) == 0x00008000)) {
+          if (((bitField0_ & 0x00020000) == 0x00020000)) {
             dspReqInfo_ = java.util.Collections.unmodifiableList(dspReqInfo_);
-            bitField0_ = (bitField0_ & ~0x00008000);
+            bitField0_ = (bitField0_ & ~0x00020000);
           }
           result.dspReqInfo_ = dspReqInfo_;
         } else {
           result.dspReqInfo_ = dspReqInfoBuilder_.build();
         }
-        if (((from_bitField0_ & 0x00010000) == 0x00010000)) {
+        if (((from_bitField0_ & 0x00040000) == 0x00040000)) {
           to_bitField0_ |= 0x00000800;
         }
         result.timecost_ = timecost_;
@@ -18721,11 +19597,31 @@ public final class Aslog {
         if (other.hasUserprofile()) {
           mergeUserprofile(other.getUserprofile());
         }
+        if (!other.dupplanfilter_.isEmpty()) {
+          if (dupplanfilter_.isEmpty()) {
+            dupplanfilter_ = other.dupplanfilter_;
+            bitField0_ = (bitField0_ & ~0x00008000);
+          } else {
+            ensureDupplanfilterIsMutable();
+            dupplanfilter_.addAll(other.dupplanfilter_);
+          }
+          onChanged();
+        }
+        if (!other.lowcpmfilter_.isEmpty()) {
+          if (lowcpmfilter_.isEmpty()) {
+            lowcpmfilter_ = other.lowcpmfilter_;
+            bitField0_ = (bitField0_ & ~0x00010000);
+          } else {
+            ensureLowcpmfilterIsMutable();
+            lowcpmfilter_.addAll(other.lowcpmfilter_);
+          }
+          onChanged();
+        }
         if (dspReqInfoBuilder_ == null) {
           if (!other.dspReqInfo_.isEmpty()) {
             if (dspReqInfo_.isEmpty()) {
               dspReqInfo_ = other.dspReqInfo_;
-              bitField0_ = (bitField0_ & ~0x00008000);
+              bitField0_ = (bitField0_ & ~0x00020000);
             } else {
               ensureDspReqInfoIsMutable();
               dspReqInfo_.addAll(other.dspReqInfo_);
@@ -18738,7 +19634,7 @@ public final class Aslog {
               dspReqInfoBuilder_.dispose();
               dspReqInfoBuilder_ = null;
               dspReqInfo_ = other.dspReqInfo_;
-              bitField0_ = (bitField0_ & ~0x00008000);
+              bitField0_ = (bitField0_ & ~0x00020000);
               dspReqInfoBuilder_ = 
                 com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
                    getDspReqInfoFieldBuilder() : null;
@@ -20645,12 +21541,200 @@ public final class Aslog {
         return userprofileBuilder_;
       }
 
+      private java.util.List<java.lang.Integer> dupplanfilter_ = java.util.Collections.emptyList();
+      private void ensureDupplanfilterIsMutable() {
+        if (!((bitField0_ & 0x00008000) == 0x00008000)) {
+          dupplanfilter_ = new java.util.ArrayList<java.lang.Integer>(dupplanfilter_);
+          bitField0_ |= 0x00008000;
+         }
+      }
+      /**
+       * <pre>
+       * 同一plan过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupplanfilter = 16;</code>
+       */
+      public java.util.List<java.lang.Integer>
+          getDupplanfilterList() {
+        return java.util.Collections.unmodifiableList(dupplanfilter_);
+      }
+      /**
+       * <pre>
+       * 同一plan过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupplanfilter = 16;</code>
+       */
+      public int getDupplanfilterCount() {
+        return dupplanfilter_.size();
+      }
+      /**
+       * <pre>
+       * 同一plan过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupplanfilter = 16;</code>
+       */
+      public int getDupplanfilter(int index) {
+        return dupplanfilter_.get(index);
+      }
+      /**
+       * <pre>
+       * 同一plan过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupplanfilter = 16;</code>
+       */
+      public Builder setDupplanfilter(
+          int index, int value) {
+        ensureDupplanfilterIsMutable();
+        dupplanfilter_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 同一plan过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupplanfilter = 16;</code>
+       */
+      public Builder addDupplanfilter(int value) {
+        ensureDupplanfilterIsMutable();
+        dupplanfilter_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 同一plan过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupplanfilter = 16;</code>
+       */
+      public Builder addAllDupplanfilter(
+          java.lang.Iterable<? extends java.lang.Integer> values) {
+        ensureDupplanfilterIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, dupplanfilter_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 同一plan过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupplanfilter = 16;</code>
+       */
+      public Builder clearDupplanfilter() {
+        dupplanfilter_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x00008000);
+        onChanged();
+        return this;
+      }
+
+      private java.util.List<java.lang.Integer> lowcpmfilter_ = java.util.Collections.emptyList();
+      private void ensureLowcpmfilterIsMutable() {
+        if (!((bitField0_ & 0x00010000) == 0x00010000)) {
+          lowcpmfilter_ = new java.util.ArrayList<java.lang.Integer>(lowcpmfilter_);
+          bitField0_ |= 0x00010000;
+         }
+      }
+      /**
+       * <pre>
+       * 低于最低cpm过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowcpmfilter = 17;</code>
+       */
+      public java.util.List<java.lang.Integer>
+          getLowcpmfilterList() {
+        return java.util.Collections.unmodifiableList(lowcpmfilter_);
+      }
+      /**
+       * <pre>
+       * 低于最低cpm过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowcpmfilter = 17;</code>
+       */
+      public int getLowcpmfilterCount() {
+        return lowcpmfilter_.size();
+      }
+      /**
+       * <pre>
+       * 低于最低cpm过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowcpmfilter = 17;</code>
+       */
+      public int getLowcpmfilter(int index) {
+        return lowcpmfilter_.get(index);
+      }
+      /**
+       * <pre>
+       * 低于最低cpm过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowcpmfilter = 17;</code>
+       */
+      public Builder setLowcpmfilter(
+          int index, int value) {
+        ensureLowcpmfilterIsMutable();
+        lowcpmfilter_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 低于最低cpm过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowcpmfilter = 17;</code>
+       */
+      public Builder addLowcpmfilter(int value) {
+        ensureLowcpmfilterIsMutable();
+        lowcpmfilter_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 低于最低cpm过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowcpmfilter = 17;</code>
+       */
+      public Builder addAllLowcpmfilter(
+          java.lang.Iterable<? extends java.lang.Integer> values) {
+        ensureLowcpmfilterIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, lowcpmfilter_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 低于最低cpm过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowcpmfilter = 17;</code>
+       */
+      public Builder clearLowcpmfilter() {
+        lowcpmfilter_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x00010000);
+        onChanged();
+        return this;
+      }
+
       private java.util.List<aslog.Aslog.DspReqInfo> dspReqInfo_ =
         java.util.Collections.emptyList();
       private void ensureDspReqInfoIsMutable() {
-        if (!((bitField0_ & 0x00008000) == 0x00008000)) {
+        if (!((bitField0_ & 0x00020000) == 0x00020000)) {
           dspReqInfo_ = new java.util.ArrayList<aslog.Aslog.DspReqInfo>(dspReqInfo_);
-          bitField0_ |= 0x00008000;
+          bitField0_ |= 0x00020000;
          }
       }
 
@@ -20844,7 +21928,7 @@ public final class Aslog {
       public Builder clearDspReqInfo() {
         if (dspReqInfoBuilder_ == null) {
           dspReqInfo_ = java.util.Collections.emptyList();
-          bitField0_ = (bitField0_ & ~0x00008000);
+          bitField0_ = (bitField0_ & ~0x00020000);
           onChanged();
         } else {
           dspReqInfoBuilder_.clear();
@@ -20949,7 +22033,7 @@ public final class Aslog {
           dspReqInfoBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
               aslog.Aslog.DspReqInfo, aslog.Aslog.DspReqInfo.Builder, aslog.Aslog.DspReqInfoOrBuilder>(
                   dspReqInfo_,
-                  ((bitField0_ & 0x00008000) == 0x00008000),
+                  ((bitField0_ & 0x00020000) == 0x00020000),
                   getParentForChildren(),
                   isClean());
           dspReqInfo_ = null;
@@ -20962,7 +22046,7 @@ public final class Aslog {
        * <code>optional uint64 timecost = 23;</code>
        */
       public boolean hasTimecost() {
-        return ((bitField0_ & 0x00010000) == 0x00010000);
+        return ((bitField0_ & 0x00040000) == 0x00040000);
       }
       /**
        * <code>optional uint64 timecost = 23;</code>
@@ -20974,7 +22058,7 @@ public final class Aslog {
        * <code>optional uint64 timecost = 23;</code>
        */
       public Builder setTimecost(long value) {
-        bitField0_ |= 0x00010000;
+        bitField0_ |= 0x00040000;
         timecost_ = value;
         onChanged();
         return this;
@@ -20983,7 +22067,7 @@ public final class Aslog {
        * <code>optional uint64 timecost = 23;</code>
        */
       public Builder clearTimecost() {
-        bitField0_ = (bitField0_ & ~0x00010000);
+        bitField0_ = (bitField0_ & ~0x00040000);
         timecost_ = 0L;
         onChanged();
         return this;
@@ -21139,74 +22223,77 @@ public final class Aslog {
       "\t\022\021\n\tchannelid\030\003 \001(\t\022\033\n\003app\030\004 \001(\0132\016.aslo" +
       "g.AppInfo\022\035\n\004site\030\005 \001(\0132\017.aslog.SiteInfo" +
       "\022\020\n\010category\030\006 \001(\r\022\024\n\014subaccountid\030\007 \001(\t" +
-      "\"\307\001\n\006Adslot\022\n\n\002id\030\001 \002(\t\022\037\n\004type\030\002 \002(\0162\021." +
+      "\"\330\001\n\006Adslot\022\n\n\002id\030\001 \002(\t\022\037\n\004type\030\002 \002(\0162\021." +
       "aslog.AdslotType\022\031\n\004size\030\003 \002(\0132\013.aslog.S",
       "ize\022\020\n\010capacity\030\004 \002(\r\022\020\n\010inittime\030\005 \001(\004\022" +
       "\r\n\005apseq\030\006 \001(\r\022\r\n\005apuid\030\007 \001(\t\022\021\n\tbuildty" +
       "pe\030\010 \001(\r\022\020\n\010floorbid\030\t \001(\002\022\016\n\006cpmbid\030\n \001" +
-      "(\002\"7\n\007Network\022 \n\004type\030\001 \002(\0162\022.aslog.Netw" +
-      "orkType\022\n\n\002ip\030\002 \002(\t\"E\n\007Version\022\r\n\005major\030" +
-      "\001 \002(\r\022\r\n\005minor\030\002 \001(\r\022\r\n\005micro\030\003 \001(\r\022\r\n\005b" +
-      "uild\030\004 \001(\r\"K\n\010DeviceId\022!\n\004type\030\001 \002(\0162\023.a" +
-      "slog.DeviceIdType\022\n\n\002id\030\002 \002(\t\022\020\n\010origina" +
-      "l\030\003 \001(\010\"\241\002\n\006Device\022\031\n\002os\030\001 \002(\0162\r.aslog.O" +
-      "SType\022!\n\tosversion\030\002 \002(\0132\016.aslog.Version",
-      "\022\034\n\003ids\030\003 \003(\0132\017.aslog.DeviceId\022\r\n\005brand\030" +
-      "\004 \001(\t\022\r\n\005model\030\005 \001(\t\022\021\n\tuseragent\030\006 \001(\014\022" +
-      "\016\n\006cookie\030\007 \001(\014\022#\n\007browser\030\010 \001(\0162\022.aslog" +
-      ".BrowserType\022\021\n\tmatchimei\030\t \001(\t\022\013\n\003uid\030\n" +
-      " \001(\t\022\020\n\010screen_w\030\013 \001(\005\022\020\n\010screen_h\030\014 \001(\005" +
-      "\022\021\n\tmatchidfa\030\r \001(\t\"J\n\006Client\022\037\n\004type\030\001 " +
-      "\002(\0162\021.aslog.ClientType\022\037\n\007version\030\002 \001(\0132" +
-      "\016.aslog.Version\"`\n\nDspReqInfo\022\031\n\003src\030\001 \002" +
-      "(\0162\014.aslog.AdSrc\022\022\n\ndspmediaid\030\002 \001(\t\022\021\n\t" +
-      "retAdsNum\030\003 \001(\005\022\020\n\010timecost\030\004 \001(\003\"\342\001\n\006Ad",
-      "Info\022\033\n\004type\030\001 \002(\0162\r.aslog.AdType\022\031\n\003src" +
-      "\030\002 \002(\0162\014.aslog.AdSrc\022+\n\013interaction\030\003 \002(" +
-      "\0162\026.aslog.InteractionType\022\014\n\004adid\030\004 \001(\r\022" +
-      "\017\n\007groupid\030\005 \001(\r\022\016\n\006planid\030\006 \001(\r\022\016\n\006user" +
-      "id\030\007 \001(\r\022\013\n\003bid\030\010 \001(\r\022\r\n\005price\030\t \001(\r\022\013\n\003" +
-      "ctr\030\n \001(\004\022\013\n\003cpm\030\013 \001(\004\"4\n\010AdDspRet\022\031\n\003sr" +
-      "c\030\001 \002(\0162\014.aslog.AdSrc\022\r\n\005adnum\030\002 \002(\r\"H\n\010" +
-      "Location\022\017\n\007country\030\001 \001(\r\022\020\n\010province\030\002 " +
-      "\001(\r\022\014\n\004city\030\003 \001(\r\022\013\n\003isp\030\004 \001(\r\"1\n\014Intere" +
-      "stItem\022\022\n\ninterestid\030\001 \001(\004\022\r\n\005score\030\002 \001(",
-      "\004\"]\n\013UserProfile\022&\n\tinterests\030\001 \003(\0132\023.as" +
-      "log.InterestItem\022\013\n\003age\030\002 \001(\r\022\013\n\003sex\030\003 \001" +
-      "(\r\022\014\n\004coin\030\004 \001(\r\"\326\003\n\rNoticeLogBody\022\020\n\010se" +
-      "archid\030\001 \002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033\n\005media" +
-      "\030\003 \001(\0132\014.aslog.Media\022\035\n\006adslot\030\004 \003(\0132\r.a" +
-      "slog.Adslot\022\035\n\006device\030\005 \001(\0132\r.aslog.Devi" +
-      "ce\022\032\n\003ads\030\006 \003(\0132\r.aslog.AdInfo\022\037\n\006dspret" +
-      "\030\007 \003(\0132\017.aslog.AdDspRet\022\r\n\005debug\030\010 \001(\010\022\035" +
-      "\n\006client\030\t \001(\0132\r.aslog.Client\022\037\n\007network" +
-      "\030\n \001(\0132\016.aslog.Network\022\017\n\007exptags\030\013 \003(\t\022",
-      "!\n\010location\030\014 \001(\0132\017.aslog.Location\022\020\n\010so" +
-      "urceip\030\r \001(\t\022\021\n\tintertype\030\016 \001(\r\022\'\n\013userp" +
-      "rofile\030\017 \001(\0132\022.aslog.UserProfile\022%\n\ndspR" +
-      "eqInfo\030\026 \003(\0132\021.aslog.DspReqInfo\022\020\n\010timec" +
-      "ost\030\027 \001(\004*3\n\tMediaType\022\013\n\007UNKNOWN\020\000\022\007\n\003A" +
-      "PP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*-\n\nAdslotType\022\r\n\t" +
-      "LIST_FEED\020\001\022\020\n\014CONTENT_FEED\020\002*P\n\013Network" +
-      "Type\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI\020\001\022\n\n\006N" +
-      "ET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?\n\006OSTyp" +
-      "e\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020\001\022\n\n\006OS_",
-      "IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType\022\022\n\016Unkn" +
-      "ownBrowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Chrome\020\002" +
-      "\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013Miu" +
-      "iBrowser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEMobileB" +
-      "rowser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQChat\020\t" +
-      "*\231\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\n" +
-      "DEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_IDF" +
-      "A\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCOOKIE\020\005\022" +
-      "\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVID_IMSI\020\007*A\n\006" +
-      "AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_TEXT",
-      "\020\003\022\023\n\017THREE_ICON_TEXT\020\004*\020\n\005AdSrc\022\007\n\003CPC\020" +
-      "\001*i\n\017InteractionType\022\017\n\013NO_INTERACT\020\000\022\013\n" +
-      "\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n" +
-      "\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006*3\n\nClientTy" +
-      "pe\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020" +
-      "\003"
+      "(\002\022\017\n\007channel\030\013 \001(\t\"7\n\007Network\022 \n\004type\030\001" +
+      " \002(\0162\022.aslog.NetworkType\022\n\n\002ip\030\002 \002(\t\"E\n\007" +
+      "Version\022\r\n\005major\030\001 \002(\r\022\r\n\005minor\030\002 \001(\r\022\r\n" +
+      "\005micro\030\003 \001(\r\022\r\n\005build\030\004 \001(\r\"K\n\010DeviceId\022" +
+      "!\n\004type\030\001 \002(\0162\023.aslog.DeviceIdType\022\n\n\002id" +
+      "\030\002 \002(\t\022\020\n\010original\030\003 \001(\010\"\241\002\n\006Device\022\031\n\002o" +
+      "s\030\001 \002(\0162\r.aslog.OSType\022!\n\tosversion\030\002 \002(",
+      "\0132\016.aslog.Version\022\034\n\003ids\030\003 \003(\0132\017.aslog.D" +
+      "eviceId\022\r\n\005brand\030\004 \001(\t\022\r\n\005model\030\005 \001(\t\022\021\n" +
+      "\tuseragent\030\006 \001(\014\022\016\n\006cookie\030\007 \001(\014\022#\n\007brow" +
+      "ser\030\010 \001(\0162\022.aslog.BrowserType\022\021\n\tmatchim" +
+      "ei\030\t \001(\t\022\013\n\003uid\030\n \001(\t\022\020\n\010screen_w\030\013 \001(\005\022" +
+      "\020\n\010screen_h\030\014 \001(\005\022\021\n\tmatchidfa\030\r \001(\t\"J\n\006" +
+      "Client\022\037\n\004type\030\001 \002(\0162\021.aslog.ClientType\022" +
+      "\037\n\007version\030\002 \001(\0132\016.aslog.Version\"`\n\nDspR" +
+      "eqInfo\022\031\n\003src\030\001 \002(\0162\014.aslog.AdSrc\022\022\n\ndsp" +
+      "mediaid\030\002 \001(\t\022\021\n\tretAdsNum\030\003 \001(\005\022\020\n\010time",
+      "cost\030\004 \001(\003\"\225\002\n\006AdInfo\022\033\n\004type\030\001 \002(\0162\r.as" +
+      "log.AdType\022\031\n\003src\030\002 \002(\0162\014.aslog.AdSrc\022+\n" +
+      "\013interaction\030\003 \002(\0162\026.aslog.InteractionTy" +
+      "pe\022\014\n\004adid\030\004 \001(\r\022\017\n\007groupid\030\005 \001(\r\022\016\n\006pla" +
+      "nid\030\006 \001(\r\022\016\n\006userid\030\007 \001(\r\022\013\n\003bid\030\010 \001(\r\022\r" +
+      "\n\005price\030\t \001(\r\022\013\n\003ctr\030\n \001(\004\022\013\n\003cpm\030\013 \001(\004\022" +
+      "\r\n\005class\030\014 \001(\r\022\020\n\010usertype\030\r \001(\005\022\020\n\010titl" +
+      "ectr\030\016 \001(\004\"4\n\010AdDspRet\022\031\n\003src\030\001 \002(\0162\014.as" +
+      "log.AdSrc\022\r\n\005adnum\030\002 \002(\r\"H\n\010Location\022\017\n\007" +
+      "country\030\001 \001(\r\022\020\n\010province\030\002 \001(\r\022\014\n\004city\030",
+      "\003 \001(\r\022\013\n\003isp\030\004 \001(\r\"1\n\014InterestItem\022\022\n\nin" +
+      "terestid\030\001 \001(\004\022\r\n\005score\030\002 \001(\004\"p\n\013UserPro" +
+      "file\022&\n\tinterests\030\001 \003(\0132\023.aslog.Interest" +
+      "Item\022\013\n\003age\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004" +
+      " \001(\r\022\021\n\tpcategory\030\005 \001(\r\"\203\004\n\rNoticeLogBod" +
+      "y\022\020\n\010searchid\030\001 \002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033" +
+      "\n\005media\030\003 \001(\0132\014.aslog.Media\022\035\n\006adslot\030\004 " +
+      "\003(\0132\r.aslog.Adslot\022\035\n\006device\030\005 \001(\0132\r.asl" +
+      "og.Device\022\032\n\003ads\030\006 \003(\0132\r.aslog.AdInfo\022\037\n" +
+      "\006dspret\030\007 \003(\0132\017.aslog.AdDspRet\022\r\n\005debug\030",
+      "\010 \001(\010\022\035\n\006client\030\t \001(\0132\r.aslog.Client\022\037\n\007" +
+      "network\030\n \001(\0132\016.aslog.Network\022\017\n\007exptags" +
+      "\030\013 \003(\t\022!\n\010location\030\014 \001(\0132\017.aslog.Locatio" +
+      "n\022\020\n\010sourceip\030\r \001(\t\022\021\n\tintertype\030\016 \001(\r\022\'" +
+      "\n\013userprofile\030\017 \001(\0132\022.aslog.UserProfile\022" +
+      "\025\n\rdupplanfilter\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021" +
+      " \003(\r\022%\n\ndspReqInfo\030\026 \003(\0132\021.aslog.DspReqI" +
+      "nfo\022\020\n\010timecost\030\027 \001(\004*3\n\tMediaType\022\013\n\007UN" +
+      "KNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*-\n\nAd" +
+      "slotType\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_FEED\020",
+      "\002*P\n\013NetworkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET" +
+      "_WIFI\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4" +
+      "G\020\004*?\n\006OSType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDR" +
+      "OID\020\001\022\n\n\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013Browser" +
+      "Type\022\022\n\016UnknownBrowser\020\000\022\016\n\nMQQBrowser\020\001" +
+      "\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrow" +
+      "ser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBrowser\020\006\022" +
+      "\023\n\017IEMobileBrowser\020\007\022\022\n\016MicroMessenger\020\010" +
+      "\022\n\n\006QQChat\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVID_U" +
+      "NKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022",
+      "\016\n\nDEVID_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID" +
+      "_LSCOOKIE\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVI" +
+      "D_IMSI\020\007*A\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022" +
+      "\r\n\tICON_TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004*\020\n\005A" +
+      "dSrc\022\007\n\003CPC\020\001*i\n\017InteractionType\022\017\n\013NO_I" +
+      "NTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002\022\013\n\007" +
+      "DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006" +
+      "*3\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002" +
+      "\022\013\n\007OPENAPI\020\003"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -21249,7 +22336,7 @@ public final class Aslog {
     internal_static_aslog_Adslot_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_Adslot_descriptor,
-        new java.lang.String[] { "Id", "Type", "Size", "Capacity", "Inittime", "Apseq", "Apuid", "Buildtype", "Floorbid", "Cpmbid", });
+        new java.lang.String[] { "Id", "Type", "Size", "Capacity", "Inittime", "Apseq", "Apuid", "Buildtype", "Floorbid", "Cpmbid", "Channel", });
     internal_static_aslog_Network_descriptor =
       getDescriptor().getMessageTypes().get(5);
     internal_static_aslog_Network_fieldAccessorTable = new
@@ -21291,7 +22378,7 @@ public final class Aslog {
     internal_static_aslog_AdInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_AdInfo_descriptor,
-        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", });
+        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", "Class_", "Usertype", "Titlectr", });
     internal_static_aslog_AdDspRet_descriptor =
       getDescriptor().getMessageTypes().get(12);
     internal_static_aslog_AdDspRet_fieldAccessorTable = new
@@ -21315,13 +22402,13 @@ public final class Aslog {
     internal_static_aslog_UserProfile_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_UserProfile_descriptor,
-        new java.lang.String[] { "Interests", "Age", "Sex", "Coin", });
+        new java.lang.String[] { "Interests", "Age", "Sex", "Coin", "Pcategory", });
     internal_static_aslog_NoticeLogBody_descriptor =
       getDescriptor().getMessageTypes().get(16);
     internal_static_aslog_NoticeLogBody_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_NoticeLogBody_descriptor,
-        new java.lang.String[] { "Searchid", "Timestamp", "Media", "Adslot", "Device", "Ads", "Dspret", "Debug", "Client", "Network", "Exptags", "Location", "Sourceip", "Intertype", "Userprofile", "DspReqInfo", "Timecost", });
+        new java.lang.String[] { "Searchid", "Timestamp", "Media", "Adslot", "Device", "Ads", "Dspret", "Debug", "Client", "Network", "Exptags", "Location", "Sourceip", "Intertype", "Userprofile", "Dupplanfilter", "Lowcpmfilter", "DspReqInfo", "Timecost", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
