@@ -51,10 +51,10 @@ object AnalTouchedUV {
   val coin1 = Seq(1, 2, 3, 4)
 
   //4 为映射原始0的数据
-  val os1 = Seq(1, 2, 3, 4)
+  val os1 = Seq(1, 2, 3)
 
   //5 为映射原始0的数据
-  val net1 = Seq(1, 2, 3, 4, 5)
+  val net1 = Seq(1, 2, 3, 4)
 
   val allCols = Seq(provinces1, sex1, age1, coin1, os1, net1)
 
@@ -148,9 +148,28 @@ object AnalTouchedUV {
       val ret = log.rdd
         .map {
           x =>
-            val rndSex = Random.nextInt(2) + 1  //随机性别
-          val rndAge = Random.nextInt(6) + 1 //随机年龄
-          var lvl = 0
+            var rndSex = x.sex
+            if (rndSex == 0) {
+              rndSex = Random.nextInt(2) + 1  //随机性别
+            }
+
+            val rnd = Random.nextInt(100)
+            var rndAge = 0
+            if (rnd < 8) {
+              rndAge = 1
+            } else if (rnd < 20) {
+              rndAge = 2
+            } else if (rnd < 39) {
+              rndAge = 3
+            } else if (rnd < 63) {
+              rndAge = 4
+            } else if (rnd < 84) {
+              rndAge = 5
+            } else {
+              rndAge = 6
+            }
+
+            var lvl = 0
             if (x.coin < 10) {
               lvl = 1
             } else if (x.coin < 1000) {
@@ -161,14 +180,26 @@ object AnalTouchedUV {
               lvl = 4
             }
 
-            //先把为0的数据映射到其他数字，最后在统一统计0
+
+            //未知数据随机到其他数据
             var os = x.os
             if (x.os == 0) {
-              os = 4
+              os = Random.nextInt(2) + 1
             }
+
+            //未知数据随机到其他数据   50(wifi) 5(2g) 15(3g) 30(4g)
             var net = x.network
             if (x.network == 0) {
-              net = 5
+              val r = Random.nextInt(100)
+              if (r < 50) {
+                net = 1
+              } else if (r < 55) {
+                net = 2
+              } else if (r < 70) {
+                net = 3
+              } else {
+                net = 4
+              }
             }
 
             AnalCond(
