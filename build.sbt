@@ -5,7 +5,9 @@ scalaVersion := "2.11.8"
 assemblyJarName in assembly := "cpc-anal_2.11-0.1.jar"
 compileOrder := CompileOrder.JavaThenScala
 javacOptions ++= Seq(
-  "-encoding", "UTF-8"
+  "-encoding", "UTF-8",
+  "-source", "1.7",
+  "-target", "1.7"
 )
 
 PB.protocVersion := "-v:com.google.protobuf:protoc:3.0.0"
