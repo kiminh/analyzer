@@ -28,7 +28,7 @@ message MediaInfo {
     int32 adslot_type = 13;
     int32 os = 14;
     string model = 15;
-    int32 floorbid = 16;
+    float floorbid = 16;
 }
 
 message UserInfo {

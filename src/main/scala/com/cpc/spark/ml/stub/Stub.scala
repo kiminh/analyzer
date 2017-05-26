@@ -15,19 +15,6 @@ import org.apache.spark.sql.SparkSession
 object Stub {
 
   def main(args: Array[String]): Unit = {
-    Logger.getRootLogger().setLevel(Level.WARN)
-    val sparkSession = SparkSession.builder()
-      .appName("GenerateAdvSvm v1")
-      .enableHiveSupport()
-      .getOrCreate()
-    import sparkSession.implicits._
-
-    val date = LogParser.dateFormat.format(new Date())
-    val log = sparkSession.sql(
-      s"""
-         |select * from dl_cpc.cpc_union_log where `date` = "%s" and isfill = 1 and adslotid > 0 limit 100
-        """.stripMargin.format(date))
-      .as[UnionLog].rdd
 
     val conf = ConfigFactory.load()
     val channel = ManagedChannelBuilder
@@ -35,32 +22,18 @@ object Stub {
       .usePlaintext(true)
       .build
 
-    log.take(100)
-      .foreach {
-        x =>
-          val ad = AdInfo(
-            ideaid = x.ideaid,
-            unitid = x.unitid,
-            planid = x.planid,
-            userid = x.userid,
-            adtype = x.adtype,
-            interaction = x.interaction
-          )
-          val m = MediaInfo(
-            network = x.network,
-            mediaAppsid = x.media_appsid.toInt,
-            mediaType = x.media_type,
-            city = x.city,
-            adslotid = x.adslotid.toInt,
-            adslotType = x.adslot_type,
-            date = x.date,
-            hour = x.hour.toInt
-          )
-          val req = Request(media = Option(m), ads = Seq(ad))
-          val blockingStub = PredictorGrpc.blockingStub(channel)
-          val reply = blockingStub.predict(req)
-          println(req.toString, reply.toString)
-      }
+      val ad = AdInfo(
+        ideaid = 100
+      )
+      val m = MediaInfo(
+        network = 1,
+        date = "2017-02-01",
+        hour = 12
+      )
+      val req = Request(media = Option(m), ads = Seq(ad))
+      val blockingStub = PredictorGrpc.blockingStub(channel)
+      val reply = blockingStub.predict(req)
+      println(req.toString, reply.toString)
   }
 
 }
