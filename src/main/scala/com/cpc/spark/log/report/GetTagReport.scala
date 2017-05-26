@@ -50,7 +50,7 @@ object GetTagReport {
     import ctx.implicits._
     val unionLog = ctx.sql(
       s"""
-         |select * from dl_cpc.cpc_union_log where `date` = "%s"  and isfill = 1 and uid != ""
+         |select * from dl_cpc.cpc_union_log where `date` = "%s" and uid != ""
        """.stripMargin.format(day))
       .as[UnionLog]
       .rdd
