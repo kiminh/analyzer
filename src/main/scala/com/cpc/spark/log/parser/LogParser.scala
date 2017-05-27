@@ -31,13 +31,13 @@ object LogParser {
     if (srcData != null) {
       val notice = srcData.ui
       val (date, hour) = getDateHourFromTime(notice.getTimestamp)
-      val data = mutable.Map[String, DataValue]()
+      val ext = mutable.Map[String, ExtValue]()
       log = UnionLog(
         searchid = notice.getSearchid,
         timestamp = notice.getTimestamp,
         network = notice.getNetwork.getType.getNumber,
         ip = notice.getNetwork.getIp,
-        exptags = notice.getExptagsList.toArray.mkString(","),
+        exptags = notice.getExptagsList.toArray.filter(_ != "").mkString(","),
         media_type = notice.getMedia.getType.getNumber,
         media_appsid = notice.getMedia.getAppsid,
         date = date,
@@ -51,6 +51,7 @@ object LogParser {
           floorbid = slot.getFloorbid,
           cpmbid = slot.getCpmbid
         )
+        ext.update("channel", ExtValue(string_value = slot.getChannel))
       }
       if (notice.getDspReqInfoCount > 0) {
         val dsp = notice.getDspReqInfo(0)
@@ -72,8 +73,8 @@ object LogParser {
           ctr = ad.getCtr,
           cpm = ad.getCpm
         )
-        data.update("media_class", DataValue(int_value = ad.getClass_))
-        data.update("usertype", DataValue(int_value = ad.getUsertype))
+        ext.update("media_class", ExtValue(int_value = ad.getClass_))
+        ext.update("usertype", ExtValue(int_value = ad.getUsertype))
       }
       val loc = notice.getLocation
       log = log.copy(
@@ -101,13 +102,13 @@ object LogParser {
           interRows = interRows :+ "%d=%d".format(in.getInterestid, in.getScore)
         }
       }
-      data.update("userpcate", DataValue(int_value = user.getPcategory))
+      ext.update("userpcate", ExtValue(int_value = user.getPcategory))
       log = log.copy(
         sex = user.getSex,
         age = user.getAge,
         coin = user.getCoin,
         interests = interRows.mkString(","),
-        data = data.toMap
+        ext = ext.toMap
       )
     }
     log

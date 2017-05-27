@@ -56,7 +56,7 @@ case class UnionLog(
                      duration: Int = 0,
                      userid: Int = 0,
                      interests: String = "",
-                     data: Map[String, DataValue] = null,
+                     ext: Map[String, ExtValue] = null,
                      date: String = "",
                      hour: String = ""
                    ) {
@@ -87,9 +87,4 @@ case class UnionLog(
   }
 }
 
-case class DataValue(
-                      int_value: Int = 0,
-                      long_value: Long = 0,
-                      float_value: Float = 0,
-                      string_value: String = ""
-                    )
+case class ExtValue(int_value: Int = 0, long_value: Long = 0, float_value: Float = 0, string_value: String = "")

@@ -78,11 +78,10 @@ object AnalUnionLog {
     //write union log data
     spark.createDataFrame(unionData)
       .write
-      .mode(SaveMode.Overwrite)
-      .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
-      //.format("parquet")
-      //.partitionBy("date", "hour")
-      //.saveAsTable("dl_cpc." + table)
+      .mode(SaveMode.Append)
+      .format("parquet")
+      .partitionBy("date", "hour")
+      .saveAsTable("dl_cpc." + table)
 
     var traceData = unionData.map(x => (x.searchid, (x, Seq[TraceLog]())))
     val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
