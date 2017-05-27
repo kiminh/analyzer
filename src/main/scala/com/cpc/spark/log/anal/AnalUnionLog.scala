@@ -60,7 +60,7 @@ object AnalUnionLog {
       unionData = unionData.union(clickData.map(x => LogParser.parseClickLog(x.getString(0))))
     }
 
-    unionData = unionData
+    val r = unionData
       .filter(x => x != null && x.searchid.length > 0)
       .map(x => (x.searchid, x))
       .reduceByKey {
@@ -73,11 +73,18 @@ object AnalUnionLog {
       }
       .map(_._2)
       .filter(x => x.date == date && x.hour == hour)
+      .map(x => x.to)
       .cache()
 
+    val extColUDF = udf {
+      (x: UnionLog) => x.ext
+    }
+
     //write union log data
-    spark.createDataFrame(unionData)
-      .write
+    val df = spark.createDataFrame(unionData)
+      .withColumn("ext", extColUDF())
+
+    df.write
       .mode(SaveMode.Append)
       .format("parquet")
       .partitionBy("date", "hour")

@@ -18,7 +18,7 @@ object MLParser {
 
   def unionLogToSvm(x: UnionLog): String = {
     // 随机 1/5 的负样本
-    if (x.isclick == 1 || Random.nextInt(5) == 1) {
+    if (x.isclick == 1 || Random.nextInt(5) == 0) {
       val cols = Seq[Double](
         stringHash(x.uid).toDouble,
         x.age.toDouble,
@@ -60,6 +60,7 @@ object MLParser {
 
 
         //组合
+
 
 
       )

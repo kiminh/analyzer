@@ -34,13 +34,14 @@ object AdvSvm {
 
       val log = sparkSession.sql(
         s"""
-           |select * from dl_cpc.cpc_union_log where `date` = "%s" and isfill = 1 and adslotid > 0
+           |select * from dl_cpc.cpc_union_log where `date` = "%s" and isfill = 1 and adslotid > 0 limit 10
         """.stripMargin.format(date))
         .as[UnionLog].rdd
-        .map(x => MLParser.unionLogToSvm(x))
-        .filter(_ != "")
-        .cache()
 
+
+      log.take(10).foreach(println)
+
+      System.exit(1)
       log.toDF()
         .write
         .mode(SaveMode.Overwrite)

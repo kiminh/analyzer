@@ -107,9 +107,9 @@ object LogParser {
         sex = user.getSex,
         age = user.getAge,
         coin = user.getCoin,
-        interests = interRows.mkString(","),
-        ext = ext.toMap
+        interests = interRows.mkString(",")
       )
+      log.ext = ext.toMap
     }
     log
   }
