@@ -55,11 +55,11 @@ case class UnionLog(
                      duration: Int = 0,
                      userid: Int = 0,
                      interests: String = "",
+                     ext: collection.Map[String, ExtValue] = null,
                      date: String = "",
                      hour: String = ""
                    ) {
 
-  var ext: Map[String, ExtValue] = null
 
   def isSpamClick(): Int = {
     if (antispam_score < 10000 && isclick > 0) {

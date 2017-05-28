@@ -1,6 +1,8 @@
 package com.cpc.spark.qukan.userprofile
 
+import java.text.SimpleDateFormat
 import java.util.Calendar
+
 import com.cpc.spark.qukan.parser.HdfsParser
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
@@ -27,7 +29,7 @@ object GetUserProfile {
     val dayBefore = args(0).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
-    val day = HdfsParser.dateFormat.format(cal.getTime)
+    val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
 
     val ctx = SparkSession.builder()

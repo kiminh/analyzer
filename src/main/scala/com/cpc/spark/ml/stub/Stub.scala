@@ -22,18 +22,16 @@ object Stub {
       .usePlaintext(true)
       .build
 
-      val ad = AdInfo(
-        ideaid = 100
-      )
-      val m = MediaInfo(
-        network = 1,
-        date = "2017-02-01",
-        hour = 12
-      )
-      val req = Request(media = Option(m), ads = Seq(ad))
-      val blockingStub = PredictorGrpc.blockingStub(channel)
-      val reply = blockingStub.predict(req)
-      println(req.toString, reply.toString)
+    val ad = AdInfo(
+      ideaid = 100
+    )
+    val m = Media (
+    )
+
+    val req = Request(media = Option(m), ads = Seq(ad))
+    val blockingStub = PredictorGrpc.blockingStub(channel)
+    val reply = blockingStub.predict(req)
+    println(req.toString, reply.toString)
   }
 
 }

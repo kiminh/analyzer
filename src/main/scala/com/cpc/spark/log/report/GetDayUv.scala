@@ -1,5 +1,6 @@
 package com.cpc.spark.log.report
 
+import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
@@ -27,7 +28,7 @@ object GetDayUv {
     val dayBefore = args(1).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
-    val date = LogParser.dateFormat.format(cal.getTime)
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     mariadbProp.put("user", "report")
     mariadbProp.put("password", "report!@#")
     mariadbProp.put("driver", "org.mariadb.jdbc.Driver")

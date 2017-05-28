@@ -35,8 +35,8 @@ object AnalUnionLog {
     val hourBefore = args(3).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
-    val date = LogParser.dateFormat.format(cal.getTime)
-    val hour = LogParser.hourFormat.format(cal.getTime)
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val hour = new SimpleDateFormat("HH").format(cal.getTime)
     val spark = SparkSession.builder()
       .appName("cpc anal union log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
@@ -73,18 +73,11 @@ object AnalUnionLog {
       }
       .map(_._2)
       .filter(x => x.date == date && x.hour == hour)
-      .map(x => x.to)
       .cache()
 
-    val extColUDF = udf {
-      (x: UnionLog) => x.ext
-    }
-
     //write union log data
-    val df = spark.createDataFrame(unionData)
-      .withColumn("ext", extColUDF())
-
-    df.write
+    spark.createDataFrame(unionData)
+      .write
       .mode(SaveMode.Append)
       .format("parquet")
       .partitionBy("date", "hour")

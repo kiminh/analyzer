@@ -1,6 +1,7 @@
 package com.cpc.spark.log.report
 
 import java.sql.DriverManager
+import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
 import com.cpc.spark.log.parser.UnionLog
@@ -33,7 +34,7 @@ object GetTagReport {
     val dayBefore = args(0).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
-    val day = HdfsParser.dateFormat.format(cal.getTime)
+    val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
     val allowedPkgs = conf.getStringList("userprofile.allowed_pkgs")
     val pkgTags = conf.getConfig("userprofile.pkg_tags")

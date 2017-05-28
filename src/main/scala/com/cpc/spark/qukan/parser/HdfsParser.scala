@@ -143,16 +143,14 @@ object HdfsParser {
     profile
   }
 
-  val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
-  val yearFormat = new SimpleDateFormat("yyyy")
-
   //年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: >50
   def getAge(birth: String): Int = {
     var year = 0
     if (birth.length == 10) {
       val cal = Calendar.getInstance()
       try {
-        cal.setTime(dateFormat.parse(birth))
+        cal.setTime(new SimpleDateFormat("yyyy-MM-dd").parse(birth))
+        val yearFormat = new SimpleDateFormat("yyyy")
         val byear = yearFormat.format(cal.getTime)
         val nyear = yearFormat.format(Calendar.getInstance().getTime)
         year = nyear.toInt - byear.toInt

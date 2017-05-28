@@ -1,6 +1,8 @@
 package com.cpc.spark.qukan.userprofile
 
+import java.text.SimpleDateFormat
 import java.util.Calendar
+
 import com.cpc.spark.qukan.parser.HdfsParser
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
@@ -26,7 +28,7 @@ object GetUserProfileV2 {
     val dayBefore = args(0).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
-    val day = HdfsParser.dateFormat.format(cal.getTime)
+    val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
 

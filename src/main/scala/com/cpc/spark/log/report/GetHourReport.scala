@@ -1,6 +1,7 @@
 package com.cpc.spark.log.report
 
 import java.sql.DriverManager
+import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
@@ -29,8 +30,8 @@ object GetHourReport {
     val hourBefore = args(1).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
-    val date = LogParser.dateFormat.format(cal.getTime)
-    val hour = LogParser.hourFormat.format(cal.getTime)
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val hour = new SimpleDateFormat("HH").format(cal.getTime)
 
     mariadbProp.put("user", "report")
     mariadbProp.put("password", "report!@#")

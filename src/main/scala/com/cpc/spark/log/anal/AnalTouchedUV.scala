@@ -1,5 +1,6 @@
 package com.cpc.spark.log.anal
 
+import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
@@ -133,7 +134,7 @@ object AnalTouchedUV {
     val dayBefore = args(0).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
-    val date = LogParser.dateFormat.format(cal.getTime)
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
     redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
 

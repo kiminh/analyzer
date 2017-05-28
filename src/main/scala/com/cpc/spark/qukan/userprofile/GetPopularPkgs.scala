@@ -1,5 +1,6 @@
 package com.cpc.spark.qukan.userprofile
 
+import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.qukan.parser.HdfsParser
@@ -24,7 +25,7 @@ object GetPopularPkgs {
     }
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -1)
-    val day = HdfsParser.dateFormat.format(cal.getTime)
+    val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
     val ctx = SparkSession.builder()
       .appName("cpc get popular pkgs [%s]".format(day))

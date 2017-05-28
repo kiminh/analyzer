@@ -107,9 +107,9 @@ object LogParser {
         sex = user.getSex,
         age = user.getAge,
         coin = user.getCoin,
-        interests = interRows.mkString(",")
+        interests = interRows.mkString(","),
+        ext = ext.toMap
       )
-      log.ext = ext.toMap
     }
     log
   }
@@ -201,17 +201,13 @@ object LogParser {
     log
   }
 
-  val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
-  val hourFormat = new SimpleDateFormat("HH")
-  val partitionFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
-
   /*
   t: seconds
    */
   def getDateHourFromTime(t: Int): (String, String) = {
     if (t > 0) {
       val dt = new Date(t.toLong * 1000L)
-      val parts = partitionFormat.format(dt).split("/")
+      val parts = new SimpleDateFormat("yyyy-MM-dd/HH").format(dt).split("/")
       if (parts.length == 2) {
         (parts(0), parts(1))
       } else {

@@ -2,7 +2,7 @@ package com.cpc.spark.ml.server
 
 import java.util.Date
 
-import com.cpc.spark.ml.parser.MLParser
+import com.cpc.spark.ml.parser.FeatureParser
 import org.apache.spark.mllib.classification.LogisticRegressionModel
 import com.typesafe.config.ConfigFactory
 import io.grpc.ServerBuilder
@@ -64,17 +64,21 @@ object MLServer {
       var resp = Response(recode = 0)
       val m = req.getMedia
       val u = req.getUser
+      val loc = req.getLoc
+      val n = req.getNetwork
+      val d = req.getDevice
       req.ads.foreach {
         x =>
-          val v = MLParser.sparseVector(m, u, x)
+          val features = FeatureParser.parse(x, m, u, loc, n, d, req.date, req.hour)
+          val normalized = FeatureParser.normalize(FeatureParser.min, FeatureParser.max, features.toSparse)
           val p = Prediction(
             adid = x.ideaid,
-            value = model.predict(v)
+            value = model.predict(normalized)
           )
           resp = resp.addResults(p)
       }
       val et = new Date().getTime
-      println("new predict %dms".format(et - st), req)
+      Logger.getRootLogger.info("new predict %dms".format(et - st))
       Future.successful(resp)
     }
 
