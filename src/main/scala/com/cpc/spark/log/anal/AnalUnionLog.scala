@@ -60,7 +60,7 @@ object AnalUnionLog {
       unionData = unionData.union(clickData.map(x => LogParser.parseClickLog(x.getString(0))))
     }
 
-    val r = unionData
+    unionData = unionData
       .filter(x => x != null && x.searchid.length > 0)
       .map(x => (x.searchid, x))
       .reduceByKey {

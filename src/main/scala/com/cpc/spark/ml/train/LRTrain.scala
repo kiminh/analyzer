@@ -23,7 +23,7 @@ object LRTrain {
     }
     Logger.getRootLogger().setLevel(Level.WARN)
     val ctx = SparkSession.builder()
-      .appName("cpc training LR model")
+      .appName("cpc training LR model v3")
       .getOrCreate()
     val sc = ctx.sparkContext
     val mode = args(0).trim
@@ -36,7 +36,6 @@ object LRTrain {
     val stats = new RowMatrix(parsedData.map(x => x.features)).computeColumnSummaryStatistics()
     val min = stats.min
     val max = stats.max
-    println("normalize min/max:", min, max)
     val sample = parsedData
       //random pick 1/pnRate negative sample
       .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)

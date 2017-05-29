@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.parser
 
-import java.text.{ParseException, SimpleDateFormat}
+import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.log.parser.UnionLog
