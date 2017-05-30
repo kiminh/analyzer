@@ -49,7 +49,7 @@ object AnalTouchedUV {
 
   val age1 = Seq(1, 2, 3, 4, 5, 6)
 
-  val coin1 = Seq(1, 2, 3, 4)
+  val coin1 = Seq(4)
 
   //4 为映射原始0的数据
   val os1 = Seq(1, 2, 3)
@@ -154,20 +154,22 @@ object AnalTouchedUV {
               rndSex = Random.nextInt(2) + 1  //随机性别
             }
 
-            val rnd = Random.nextInt(100)
-            var rndAge = 0
-            if (rnd < 8) {
-              rndAge = 1
-            } else if (rnd < 20) {
-              rndAge = 2
-            } else if (rnd < 39) {
-              rndAge = 3
-            } else if (rnd < 63) {
-              rndAge = 4
-            } else if (rnd < 84) {
-              rndAge = 5
-            } else {
-              rndAge = 6
+            var rndAge = x.age
+            if (rndAge == 0) {
+              val rnd = Random.nextInt(100)
+              if (rnd < 8) {
+                rndAge = 1
+              } else if (rnd < 20) {
+                rndAge = 2
+              } else if (rnd < 39) {
+                rndAge = 3
+              } else if (rnd < 63) {
+                rndAge = 4
+              } else if (rnd < 84) {
+                rndAge = 5
+              } else {
+                rndAge = 6
+              }
             }
 
             var lvl = 0
@@ -180,7 +182,6 @@ object AnalTouchedUV {
             } else {
               lvl = 4
             }
-
 
             //未知数据随机到其他数据
             var os = x.os
@@ -214,6 +215,18 @@ object AnalTouchedUV {
               uid = x.uid,
               date = date
             )
+        }
+        .flatMap {
+          x =>
+            var flats = Seq(x)
+            if (x.coin_level == 1) {
+              flats ++= Seq(x.copy(coin_level = 2), x.copy(coin_level = 3), x.copy(coin_level = 4))
+            } else if (x.coin_level == 2) {
+              flats ++= Seq(x.copy(coin_level = 3), x.copy(coin_level = 4))
+            } else if (x.coin_level == 3) {
+              flats ++= Seq(x.copy(coin_level = 4))
+            }
+            flats
         }
         .cache()
 
