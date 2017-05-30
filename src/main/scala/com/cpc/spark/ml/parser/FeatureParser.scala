@@ -129,9 +129,10 @@ object FeatureParser {
   }
 
   //得到所有排列组合 C(n, m)
-  def getCombination(all: Seq[String], m: Int): Seq[Array[String]] = {
-    var combs = mutable.Seq[Array[String]]()
-    def mapCombination(all: Seq[String], m: Int, start: Int, idx: Int, comb: Array[String]): Unit = {
+  def getCombination[T: Manifest](all: Seq[T], m: Int): Seq[Array[T]] = {
+    var combs = mutable.Seq[Array[T]]()
+    val comb = new Array[T](m)
+    def mapCombination(all: Seq[T], m: Int, start: Int, idx: Int, comb: Array[T]): Unit = {
       if (m > 0) {
         for (i <- start to all.length - 1) {
           comb(idx) = all(i)
@@ -141,7 +142,6 @@ object FeatureParser {
         combs :+= comb
       }
     }
-    val comb = new Array[String](m)
     mapCombination(all, m, 0, 0, comb)
     combs
   }
@@ -162,13 +162,6 @@ object FeatureParser {
     }
     cal.get(Calendar.DAY_OF_WEEK).toDouble
   }
-
-
-  //model v2
-  val min = Vectors.dense(Array(-2.14748336E9,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,-2.147047769E9,
-    8.0000001E7,0.0,1018976.0,1.0,1.0,3.0,1.0,18.0,50.0,52.0,91.0,15.0,2.0170512E7,0.0))
-  val max = Vectors.dense(Array(2.147482965E9,6.0,2.0,1.111188234E9,34.0,131100.0,18.0,4.0,2.0,2.147228562E9,
-    8.0000005E7,0.0,1026459.0,2.0,500.0,4.0,1.0,316.0,694.0,1335.0,3216.0,300.0,2.0170522E7,23.0))
 
   def normalize(min: Vector, max: Vector, row: Vector): Vector = {
     var els = Seq[(Int, Double)]()

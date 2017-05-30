@@ -3,7 +3,7 @@ package com.cpc.spark.ml.train
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.log.parser.{LogParser, UnionLog}
+import com.cpc.spark.log.parser.UnionLog
 import com.cpc.spark.ml.parser.FeatureParser
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}

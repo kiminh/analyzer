@@ -34,7 +34,7 @@ object MLServer {
 
     val v = args(0).trim
     val ctx = SparkSession.builder()
-      .appName("cpc ml server ctr predictor")
+      .appName("cpc ml server ctr predictor " + v)
       .getOrCreate()
     val spark = ctx.sparkContext
 
