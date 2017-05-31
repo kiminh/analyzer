@@ -3,7 +3,7 @@ package com.cpc.spark.log.anal
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.log.parser.{LogParser, UnionLog}
+import com.cpc.spark.log.parser.UnionLog
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
