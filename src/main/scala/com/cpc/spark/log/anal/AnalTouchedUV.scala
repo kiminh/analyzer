@@ -38,7 +38,6 @@ object AnalTouchedUV {
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
     redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
-    redis.select(10)
 
     val ctx = SparkSession.builder()
       .appName("anal ad touched uv[%s]".format(date))

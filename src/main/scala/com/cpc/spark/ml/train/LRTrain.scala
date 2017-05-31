@@ -1,5 +1,7 @@
 package com.cpc.spark.ml.train
 
+import java.util.Date
+
 import com.cpc.spark.ml.parser.FeatureParser
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
@@ -7,6 +9,7 @@ import org.apache.spark.mllib.linalg.distributed.RowMatrix
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.{SaveMode, SparkSession}
+
 import scala.util.Random
 
 /**
@@ -40,7 +43,7 @@ object LRTrain {
       //random pick 1/pnRate negative sample
       .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
       .map(x => new LabeledPoint(x.label, FeatureParser.normalize(min, max, x.features)))
-      .randomSplit(Array(sampleRate, 1 - sampleRate), seed = 1314159L)
+      .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
     parsedData.unpersist()
 
     val test = sample(1)
