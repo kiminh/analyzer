@@ -54,7 +54,8 @@ object FeatureParser {
         model = x.model
       )
 
-      val vector = parse(ad, m, u, loc, n, d, x.date, x.hour.toInt)
+      val dt = new SimpleDateFormat("yyyy-MM-dd:HH").parse(x.date + ":" + x.hour)
+      val vector = parse(ad, m, u, loc, n, d, dt.getTime)
       var i = 1
       var svm = x.isclick.toString
       for (v <- vector.toArray) {
@@ -67,7 +68,10 @@ object FeatureParser {
     }
   }
 
-  def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, date: String, hour: Int): Vector = {
+  def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(timeMills)
+
     //属性展开
     val props = Seq[Double](
       u.age,
@@ -104,9 +108,9 @@ object FeatureParser {
       ad.bid,
       //ad class,
       //x.usertype,
-      dateToDouble(date),
-      dateToWeek(date),
-      hour
+      new SimpleDateFormat("yyyyMMdd").format(cal.getTime).toDouble,
+      cal.get(Calendar.DAY_OF_WEEK).toDouble,
+      cal.get(Calendar.HOUR_OF_DAY).toDouble
     )
 
     //以对象作为特征
@@ -144,23 +148,6 @@ object FeatureParser {
     }
     mapCombination(all, m, 0, 0, comb)
     combs
-  }
-
-  def dateToDouble(date: String): Double = {
-    try {
-      date.replace("-", "").toDouble
-    } catch {
-      case e: Exception =>
-        new SimpleDateFormat("yyyyMMdd").format(new Date().getTime).toDouble
-    }
-  }
-
-  def dateToWeek(date: String): Double = {
-    val cal = Calendar.getInstance()
-    if (date.length > 0) {
-      new SimpleDateFormat("yyyy-MM-dd").parse(date)
-    }
-    cal.get(Calendar.DAY_OF_WEEK).toDouble
   }
 
   def normalize(min: Vector, max: Vector, row: Vector): Vector = {

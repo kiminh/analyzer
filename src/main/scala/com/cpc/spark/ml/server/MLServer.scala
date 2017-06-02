@@ -77,7 +77,7 @@ object MLServer {
       val d = req.getDevice
       req.ads.foreach {
         x =>
-          val features = FeatureParser.parse(x, m, u, loc, n, d, req.date, req.hour)
+          val features = FeatureParser.parse(x, m, u, loc, n, d, req.time * 1000L)
           val normalized = FeatureParser.normalize(min, max, features.toSparse)
           val p = Prediction(
             adid = x.ideaid,
