@@ -86,7 +86,7 @@ object MLServer {
           resp = resp.addResults(p)
       }
       val et = new Date().getTime
-      Logger.getRootLogger.info("new predict %dms".format(et - st))
+      println("new predict %dms".format(et - st))
       Future.successful(resp)
     }
 
