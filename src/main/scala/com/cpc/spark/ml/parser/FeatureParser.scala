@@ -17,8 +17,8 @@ import scala.collection.mutable
 object FeatureParser {
 
   def parseUnionLog(x: UnionLog): String = {
-    // 随机 1/5 的负样本
-    if (x.isclick == 1 || Random.nextInt(5) == 0) {
+    // 随机 1/20 的负样本
+    if (x.isclick == 1 || Random.nextInt(20) == 0) {
       val ad = AdInfo(
         bid = x.bid,
         ideaid = x.ideaid,

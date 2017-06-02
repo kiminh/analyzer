@@ -14,5 +14,5 @@ $SPARK_HOME/bin/spark-submit --master yarn \
     --executor-memory 2G --executor-cores 2 --total-executor-cores 6 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.log.anal.AnalTouchedUV \
-    $cur/lib/cpc-anal_2.11-0.1.jar 1
+    $cur/lib/cpc-anal_2.11-0.1.jar 1 true
 

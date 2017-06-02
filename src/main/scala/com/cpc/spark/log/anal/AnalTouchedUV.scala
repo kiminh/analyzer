@@ -151,12 +151,14 @@ object AnalTouchedUV {
             redis.set(x.key + "_TOUCHEDUV", sum.toInt)
         }
 
+      /*
       ctx.createDataFrame(ret1)
         .write
         .mode(SaveMode.Append)
         .format("text")
         .partitionBy("date")
         .saveAsTable("ad_touched_uv")
+      */
 
       println(uv, pv, ret1.count())
       ret1.unpersist()

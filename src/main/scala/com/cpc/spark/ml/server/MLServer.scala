@@ -10,7 +10,9 @@ import io.grpc.ServerBuilder
 import mlserver.mlserver._
 import mlserver.mlserver.PredictorGrpc.Predictor
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.collection.JavaConversions._
 
@@ -79,7 +81,7 @@ object MLServer {
           val normalized = FeatureParser.normalize(min, max, features.toSparse)
           val p = Prediction(
             adid = x.ideaid,
-            value = model.predict(normalized)
+            value = model.predict(MLUtils.appendBias(normalized))
           )
           resp = resp.addResults(p)
       }

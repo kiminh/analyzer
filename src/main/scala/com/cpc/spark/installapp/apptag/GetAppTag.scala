@@ -5,7 +5,6 @@ import java.io.{File, PrintWriter}
 import com.typesafe.config.ConfigFactory
 
 import scala.io.Source
-import scala.reflect.io.Path
 
 /**
   * Created by roydong on 31/05/2017.

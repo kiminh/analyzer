@@ -42,7 +42,11 @@ object LRTrain {
     val sample = parsedData
       //random pick 1/pnRate negative sample
       .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
-      .map(x => new LabeledPoint(x.label, FeatureParser.normalize(min, max, x.features)))
+      .map{
+        x =>
+          val v = FeatureParser.normalize(min, max, x.features)
+          new LabeledPoint(x.label, MLUtils.appendBias(v))
+      }
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
     parsedData.unpersist()
 
