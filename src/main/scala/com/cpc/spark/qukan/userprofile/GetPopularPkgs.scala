@@ -52,7 +52,7 @@ object GetPopularPkgs {
 
     println("-----tag usage-----")
     val conf = ConfigFactory.load()
-    val pkgConf = conf.getConfig("userprofile.pkg_tags")
+    val pkgConf = conf.getConfig("app_tag.v2.app_has_tag")
     aiRdd
       .flatMap {
         x =>

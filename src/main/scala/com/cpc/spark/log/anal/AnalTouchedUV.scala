@@ -117,30 +117,31 @@ object AnalTouchedUV {
               date = date
             )
         }
-        .flatMap {
-          x =>
-            var flats = Seq(x)
-            if (x.coin_level == 1) {
-              flats ++= Seq(x.copy(coin_level = 2), x.copy(coin_level = 3), x.copy(coin_level = 4))
-            } else if (x.coin_level == 2) {
-              flats ++= Seq(x.copy(coin_level = 3), x.copy(coin_level = 4))
-            } else if (x.coin_level == 3) {
-              flats ++= Seq(x.copy(coin_level = 4))
-            }
-            flats
-        }
         .cache()
 
       val pv = ret.count()
       val uv = ret.map(x => (x.uid, x)).reduceByKey((x, y) => x).count()
       val upv = uv.toFloat / pv.toFloat
-      val ret1 = ret.map(x => (x.key, x))
+      val retSum = ret
+        .flatMap {
+          x =>
+            if (x.coin_level == 1) {
+              Seq(x, x.copy(coin_level = 2), x.copy(coin_level = 3), x.copy(coin_level = 4))
+            } else if (x.coin_level == 2) {
+              Seq(x, x.copy(coin_level = 3), x.copy(coin_level = 4))
+            } else if (x.coin_level == 3) {
+              Seq(x, x.copy(coin_level = 4))
+            } else {
+              Seq(x)
+            }
+        }
+        .map(x => (x.key, x))
         .reduceByKey((x, y) => x.sum(y))
         .map(_._2)
         .cache()
 
       ret.unpersist()
-      ret1.toLocalIterator
+      retSum.toLocalIterator
         .foreach {
           x =>
             /*
@@ -160,8 +161,8 @@ object AnalTouchedUV {
         .saveAsTable("ad_touched_uv")
       */
 
-      println(uv, pv, ret1.count())
-      ret1.unpersist()
+      println(uv, pv, retSum.count())
+      retSum.unpersist()
     }
 
     sumColsWithZero()
@@ -198,10 +199,8 @@ object AnalTouchedUV {
 
   val coin1 = Seq(4)
 
-  //4 为映射原始0的数据
   val os1 = Seq(1, 2, 3)
 
-  //5 为映射原始0的数据
   val net1 = Seq(1, 2, 3, 4)
 
   val allCols = Seq(provinces1, sex1, age1, coin1, os1, net1)

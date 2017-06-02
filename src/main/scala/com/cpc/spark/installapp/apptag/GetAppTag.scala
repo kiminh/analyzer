@@ -21,8 +21,6 @@ object GetAppTag {
       System.exit(1)
     }
 
-    val conf = ConfigFactory.load()
-
     val titleReg = """<span\sclass="title"\sitemprop="name">([^<]+)</span>""".r
     val reg1 = """<dt>分类</dt>([\s\S]*)<dt>TAG</dt>""".r
     val reg2 = """<dt>TAG</dt>([\s\S]*)<dt>更新</dt>""".r

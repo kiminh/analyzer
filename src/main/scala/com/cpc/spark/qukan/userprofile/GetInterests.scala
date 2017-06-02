@@ -33,7 +33,7 @@ object GetInterests {
     val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
     val allowedPkgs = conf.getStringList("userprofile.allowed_pkgs")
-    val pkgTags = conf.getConfig("userprofile.pkg_tags")
+    val pkgTags = conf.getConfig("app_tag.v2.app_has_tag")
 
     val ctx = SparkSession.builder()
       .appName("cpc get user interests [%s]".format(day))
