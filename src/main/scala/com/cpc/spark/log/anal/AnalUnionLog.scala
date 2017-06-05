@@ -35,8 +35,8 @@ object AnalUnionLog {
     val hourBefore = args(3).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
-    val date = LogParser.dateFormat.format(cal.getTime)
-    val hour = LogParser.hourFormat.format(cal.getTime)
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val hour = new SimpleDateFormat("HH").format(cal.getTime)
     val spark = SparkSession.builder()
       .appName("cpc anal union log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()

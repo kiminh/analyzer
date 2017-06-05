@@ -1,5 +1,6 @@
 package com.cpc.spark.qukan.userprofile
 
+import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.qukan.parser.HdfsParser
@@ -29,10 +30,10 @@ object GetInterests {
     val dayBefore = args(0).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
-    val day = HdfsParser.dateFormat.format(cal.getTime)
+    val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
     val allowedPkgs = conf.getStringList("userprofile.allowed_pkgs")
-    val pkgTags = conf.getConfig("userprofile.pkg_tags")
+    val pkgTags = conf.getConfig("app_tag.v2.app_has_tag")
 
     val ctx = SparkSession.builder()
       .appName("cpc get user interests [%s]".format(day))

@@ -1,5 +1,6 @@
 package com.cpc.spark.log.parser
 
+
 /**
   * Created by Roy on 2017/4/25.
   */
@@ -54,9 +55,11 @@ case class UnionLog(
                      duration: Int = 0,
                      userid: Int = 0,
                      interests: String = "",
+                     ext: collection.Map[String, ExtValue] = null,
                      date: String = "",
                      hour: String = ""
                    ) {
+
 
   def isSpamClick(): Int = {
     if (antispam_score < 10000 && isclick > 0) {
@@ -83,3 +86,4 @@ case class UnionLog(
   }
 }
 
+case class ExtValue(int_value: Int = 0, long_value: Long = 0, float_value: Float = 0, string_value: String = "")

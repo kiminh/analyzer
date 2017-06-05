@@ -5,6 +5,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.cpc.spark.common.{Event, Ui}
+import org.apache.spark.sql.types._
+
+import scala.collection.mutable
 
 
 /**
@@ -14,18 +17,27 @@ import com.cpc.spark.common.{Event, Ui}
 
 object LogParser {
 
+  val dataSchema = MapType(StringType,
+      StructType(
+        StructField("int_value", IntegerType, true) ::
+        StructField("long_value", LongType, true) ::
+        StructField("float_value", FloatType, true) ::
+        StructField("string_value", StringType, true) :: Nil
+      ), true)
+
   def parseSearchLog(txt: String): UnionLog = {
     var log: UnionLog = null
-    val data = Ui.parseData(txt)
-    if (data != null) {
-      val notice = data.ui
+    val srcData = Ui.parseData(txt)
+    if (srcData != null) {
+      val notice = srcData.ui
       val (date, hour) = getDateHourFromTime(notice.getTimestamp)
+      val ext = mutable.Map[String, ExtValue]()
       log = UnionLog(
         searchid = notice.getSearchid,
         timestamp = notice.getTimestamp,
         network = notice.getNetwork.getType.getNumber,
         ip = notice.getNetwork.getIp,
-        exptags = notice.getExptagsList.toArray.mkString(","),
+        exptags = notice.getExptagsList.toArray.filter(_ != "").mkString(","),
         media_type = notice.getMedia.getType.getNumber,
         media_appsid = notice.getMedia.getAppsid,
         date = date,
@@ -39,6 +51,7 @@ object LogParser {
           floorbid = slot.getFloorbid,
           cpmbid = slot.getCpmbid
         )
+        ext.update("channel", ExtValue(string_value = slot.getChannel))
       }
       if (notice.getDspReqInfoCount > 0) {
         val dsp = notice.getDspReqInfo(0)
@@ -60,6 +73,8 @@ object LogParser {
           ctr = ad.getCtr,
           cpm = ad.getCpm
         )
+        ext.update("media_class", ExtValue(int_value = ad.getClass_))
+        ext.update("usertype", ExtValue(int_value = ad.getUsertype))
       }
       val loc = notice.getLocation
       log = log.copy(
@@ -87,11 +102,13 @@ object LogParser {
           interRows = interRows :+ "%d=%d".format(in.getInterestid, in.getScore)
         }
       }
+      ext.update("userpcate", ExtValue(int_value = user.getPcategory))
       log = log.copy(
         sex = user.getSex,
         age = user.getAge,
         coin = user.getCoin,
-        interests = interRows.mkString(",")
+        interests = interRows.mkString(","),
+        ext = ext.toMap
       )
     }
     log
@@ -184,17 +201,13 @@ object LogParser {
     log
   }
 
-  val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
-  val hourFormat = new SimpleDateFormat("HH")
-  val partitionFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
-
   /*
   t: seconds
    */
   def getDateHourFromTime(t: Int): (String, String) = {
     if (t > 0) {
       val dt = new Date(t.toLong * 1000L)
-      val parts = partitionFormat.format(dt).split("/")
+      val parts = new SimpleDateFormat("yyyy-MM-dd/HH").format(dt).split("/")
       if (parts.length == 2) {
         (parts(0), parts(1))
       } else {
@@ -242,4 +255,5 @@ object LogParser {
     }
   }
 }
+
 

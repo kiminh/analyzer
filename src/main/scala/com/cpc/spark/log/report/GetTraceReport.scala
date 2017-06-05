@@ -1,5 +1,6 @@
 package com.cpc.spark.log.report
 
+import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
 import com.cpc.spark.log.parser.{LogParser, TraceReportLog}
@@ -27,8 +28,8 @@ object GetTraceReport {
     val hourBefore = args(0).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
-    val date = LogParser.dateFormat.format(cal.getTime)
-    val hour = LogParser.hourFormat.format(cal.getTime)
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val hour = new SimpleDateFormat("HH").format(cal.getTime)
     println("*******************")
     println("date:" + date)
     println("hour:" + hour)

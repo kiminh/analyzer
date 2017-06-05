@@ -1,11 +1,11 @@
 package com.cpc.spark.ml.train
 
-import com.cpc.spark.ml.parser.MLParser
+import java.util.Date
+
+import com.cpc.spark.ml.parser.FeatureParser
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
-import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.linalg.distributed.RowMatrix
-import org.apache.spark.mllib.optimization.{LogisticGradient, SquaredL2Updater}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -15,7 +15,7 @@ import scala.util.Random
 /**
   * Created by Roy on 2017/5/15.
   */
-object LogisticTrain {
+object LRTrain {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 5) {
@@ -26,7 +26,7 @@ object LogisticTrain {
     }
     Logger.getRootLogger().setLevel(Level.WARN)
     val ctx = SparkSession.builder()
-      .appName("cpc training LR model")
+      .appName("cpc training LR model v3")
       .getOrCreate()
     val sc = ctx.sparkContext
     val mode = args(0).trim
@@ -39,12 +39,15 @@ object LogisticTrain {
     val stats = new RowMatrix(parsedData.map(x => x.features)).computeColumnSummaryStatistics()
     val min = stats.min
     val max = stats.max
-    println("normalize:", min, max)
     val sample = parsedData
       //random pick 1/pnRate negative sample
       .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
-      .map(x => new LabeledPoint(x.label, MLParser.normalize(min, max, x.features)))
-      .randomSplit(Array(sampleRate, 1 - sampleRate), seed = 1314159L)
+      .map{
+        x =>
+          val v = FeatureParser.normalize(min, max, x.features)
+          new LabeledPoint(x.label, MLUtils.appendBias(v))
+      }
+      .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
     parsedData.unpersist()
 
     val test = sample(1)
@@ -118,17 +121,19 @@ object LogisticTrain {
           println("%s %d %d %.4f".format(x._1, sum._2, sum._1, sum._2.toDouble / (sum._1 + sum._2).toDouble))
       }
 
-    predictionAndLabels.take(100).foreach(println)
+    println("normalize min/max:", min, max)
     println(model.toPMML())
     if (mode == "train") {
       println("save model")
       model.save(sc, modelPath)
+      ctx.createDataFrame(predictionAndLabels)
+        .write
+        .mode(SaveMode.Overwrite)
+        .text("/user/cpc/trainresults")
       predictionAndLabels.unpersist()
     }
 
     sc.stop()
   }
 }
-
-
 

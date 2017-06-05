@@ -25,7 +25,7 @@ message Media {
 	required MediaType 	type 	= 1;
 	required string		appsid 	= 2;
 	optional string		channelid = 3;
-	optional AppInfo	app =4;
+	optional AppInfo	app = 4;
 	optional SiteInfo	site = 5;
 	optional uint32		category = 6;
 	optional string     subaccountid = 7;
