@@ -50,9 +50,9 @@ object LRTrain {
       lbfgs.optimizer.setUpdater(new SquaredL2Updater())
       lbfgs.optimizer.setNumCorrections(10)
       lbfgs.optimizer.setNumIterations(100)
-      lbfgs.optimizer.setConvergenceTol(1e-6)
-      */
       lbfgs.optimizer.setRegParam(0.2)
+      */
+      lbfgs.optimizer.setConvergenceTol(1e-5)
 
       val training = sample(0).cache()
       println("sample count", training.count())
