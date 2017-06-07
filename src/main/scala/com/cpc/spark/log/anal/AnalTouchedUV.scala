@@ -48,6 +48,7 @@ object AnalTouchedUV {
     if (args(1).toBoolean) {
       val log = ctx.sql("select * from dl_cpc.cpc_union_log where `date` = \"%s\" ".format(date)).as[UnionLog]
       val ret = log.rdd
+        .filter(x => x.media_appsid == "80000001" || x.media_appsid == "80000002")
         .map {
           x =>
             var rndSex = x.sex

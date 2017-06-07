@@ -1,14 +1,11 @@
 package com.cpc.spark.ml.train
 
 import java.util.Date
-
-import com.cpc.spark.ml.parser.FeatureParser
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
-import org.apache.spark.mllib.linalg.distributed.RowMatrix
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.SparkSession
 
 import scala.util.Random
 
@@ -24,9 +21,11 @@ object LRTrain {
         """.stripMargin)
       System.exit(1)
     }
+
     Logger.getRootLogger().setLevel(Level.WARN)
     val ctx = SparkSession.builder()
-      .appName("cpc training LR model v3")
+      .config("spark.driver.maxResultSize", "2G")
+      .appName("cpc training LR model v5")
       .getOrCreate()
     val sc = ctx.sparkContext
     val mode = args(0).trim
@@ -35,20 +34,10 @@ object LRTrain {
     val sampleRate = args(3).toFloat
     val pnRate = args(4).toInt
 
-    val parsedData = MLUtils.loadLibSVMFile(sc, inpath).cache()
-    val stats = new RowMatrix(parsedData.map(x => x.features)).computeColumnSummaryStatistics()
-    val min = stats.min
-    val max = stats.max
-    val sample = parsedData
+    val sample = MLUtils.loadLibSVMFile(sc, inpath)
       //random pick 1/pnRate negative sample
       .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
-      .map{
-        x =>
-          val v = FeatureParser.normalize(min, max, x.features)
-          new LabeledPoint(x.label, MLUtils.appendBias(v))
-      }
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
-    parsedData.unpersist()
 
     val test = sample(1)
     var model: LogisticRegressionModel = null
@@ -61,9 +50,9 @@ object LRTrain {
       lbfgs.optimizer.setUpdater(new SquaredL2Updater())
       lbfgs.optimizer.setNumCorrections(10)
       lbfgs.optimizer.setNumIterations(100)
-      */
       lbfgs.optimizer.setRegParam(0.2)
-      lbfgs.optimizer.setConvergenceTol(1e-4)
+      lbfgs.optimizer.setConvergenceTol(1e-5)
+      */
 
       val training = sample(0).cache()
       println("sample count", training.count())
@@ -99,7 +88,7 @@ object LRTrain {
     predictionAndLabels
       .map {
         x =>
-          (("%.1f".format(x._1), x._2.toInt), 1)
+          (("%.1f".format(Math.abs(x._1 - 0.05)), x._2.toInt), 1)
       }
       .reduceByKey((x, y) => x + y)
       .map {
@@ -121,15 +110,9 @@ object LRTrain {
           println("%s %d %d %.4f".format(x._1, sum._2, sum._1, sum._2.toDouble / (sum._1 + sum._2).toDouble))
       }
 
-    println("normalize min/max:", min, max)
-    println(model.toPMML())
     if (mode == "train") {
       println("save model")
       model.save(sc, modelPath)
-      ctx.createDataFrame(predictionAndLabels)
-        .write
-        .mode(SaveMode.Overwrite)
-        .text("/user/cpc/trainresults")
       predictionAndLabels.unpersist()
     }
 
