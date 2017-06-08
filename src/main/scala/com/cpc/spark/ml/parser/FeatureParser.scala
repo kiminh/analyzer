@@ -7,6 +7,7 @@ import com.redis.RedisClient
 import mlserver.mlserver._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import com.redis.serialization.Parse.Implicits._
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.mllib.util.MLUtils
 
 import scala.collection.mutable
@@ -16,7 +17,49 @@ import scala.collection.mutable
   */
 object FeatureParser {
 
-  def parseUnionLog(x: UnionLog, redis: RedisClient): String = {
+  val userClk = mutable.Map[String, Int]()
+
+  val userPV = mutable.Map[String, Int]()
+
+  def loadUserClk(): Unit = {
+    val conf = ConfigFactory.load()
+    val redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
+    redis.select(5)
+    redis.keys[String]("MLFeatureCtr-uid-clk-*").foreach {
+      rs =>
+        rs.foreach {
+          x =>
+            val key = x.getOrElse("")
+            if (key.length > 0) {
+              val v = redis.get[Int](key).getOrElse(0)
+              if (v > 0) {
+                userClk.update(key, v)
+              }
+            }
+        }
+    }
+  }
+
+  def loadUserPv(): Unit = {
+    val conf = ConfigFactory.load()
+    val redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
+    redis.select(5)
+    redis.keys[String]("MLFeatureCtr-uid-pv-*").foreach {
+      rs =>
+        rs.foreach {
+          x =>
+            val key = x.getOrElse("")
+            if (key.length > 0) {
+              val v = redis.get[Int](key).getOrElse(0)
+              if (v > 0) {
+                userPV.update(key, v)
+              }
+            }
+        }
+    }
+  }
+
+  def parseUnionLog(x: UnionLog): String = {
     val ad = AdInfo(
       bid = x.bid,
       ideaid = x.ideaid,
@@ -55,10 +98,10 @@ object FeatureParser {
     )
 
     var svm = ""
-    val vector = parse(ad, m, u, loc, n, d, x.timestamp * 1000L, redis)
+    val vector = parse(ad, m, u, loc, n, d, x.timestamp * 1000L)
     if (vector != null) {
       svm = x.isclick.toString
-      vector.foreachActive {
+      MLUtils.appendBias(vector).foreachActive {
         (i, v) =>
           svm = svm + " %d:%f".format(i, v)
       }
@@ -66,9 +109,7 @@ object FeatureParser {
     svm
   }
 
-  def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device,
-            timeMills: Long, redis: RedisClient): Vector = {
-
+  def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
     val week = cal.get(Calendar.DAY_OF_WEEK)
@@ -131,7 +172,7 @@ object FeatureParser {
     i += 10
 
     //city 0 - 1000
-    els = els :+ (loc.city + i, 1D)
+    els = els :+ (loc.city % 1000 + i, 1D)
     i += 1000
 
     //media id
@@ -164,14 +205,8 @@ object FeatureParser {
     }
     i += 2000
 
-    els = els :+ (i, m.floorbid.toDouble)
-    i += 1
-
-    els = els :+ (i, ad.bid.toDouble)
-    i += 1
-
     if (u.uid.length > 0) {
-      var clk = redis.get[Int]("MLFeatureCtr-uid-clk-" + u.uid).getOrElse(0)
+      var clk = userClk.get("MLFeatureCtr-uid-clk-" + u.uid).getOrElse(0)
       if (clk > 5) {
         clk = 5
       }
@@ -180,7 +215,7 @@ object FeatureParser {
     i += 6
 
     if (u.uid.length > 0) {
-      var pv = redis.get[Int]("MLFeatureCtr-uid-pv-" + u.uid).getOrElse(0)
+      var pv = userPV.get("MLFeatureCtr-uid-pv-" + u.uid).getOrElse(0)
       if (pv <= 0) {
         pv = 0
       } else if (pv < 10) {
@@ -197,10 +232,10 @@ object FeatureParser {
     i += 5
 
     try {
-      MLUtils.appendBias(Vectors.sparse(i, els))
+      Vectors.sparse(i, els)
     } catch {
       case e: Exception =>
-        println(els)
+        println(e.getMessage, els)
         null
     }
   }

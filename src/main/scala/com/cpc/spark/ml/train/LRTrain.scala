@@ -1,8 +1,10 @@
 package com.cpc.spark.ml.train
 
 import java.util.Date
+
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
+import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
@@ -37,6 +39,17 @@ object LRTrain {
     val sample = MLUtils.loadLibSVMFile(sc, inpath)
       //random pick 1/pnRate negative sample
       .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
+      .map {
+        x =>
+          var els = Seq[(Int, Double)]()
+          x.features.foreachActive {
+            (i, v) =>
+              if (i != 43256 && i != 43257) {
+                els = els :+ (i, v)
+              }
+          }
+          new LabeledPoint(x.label, Vectors.sparse(432689, els))
+      }
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
 
     val test = sample(1)

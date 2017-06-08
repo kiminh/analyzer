@@ -70,9 +70,9 @@ object AdvSvm {
 
       val svm = rawlog.mapPartitions {
         p =>
-          val redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
-          redis.select(5)
-          p.map(u => FeatureParser.parseUnionLog(u, redis))
+          FeatureParser.loadUserClk()
+          FeatureParser.loadUserPv()
+          p.map(u => FeatureParser.parseUnionLog(u))
       }
 
       svm.toDF()
