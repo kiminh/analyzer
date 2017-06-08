@@ -37,7 +37,7 @@ object GetTagReport {
     val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
     val allowedPkgs = conf.getStringList("userprofile.allowed_pkgs")
-    val pkgTags = conf.getConfig("userprofile.pkg_tags")
+    val pkgTags = conf.getConfig("app_tag.v2.app_has_tag")
     val ctx = SparkSession.builder()
       .appName("cpc get tag report [%s]".format(day))
       .enableHiveSupport()
@@ -51,10 +51,10 @@ object GetTagReport {
     import ctx.implicits._
     val unionLog = ctx.sql(
       s"""
-         |select * from dl_cpc.cpc_union_log where `date` = "%s"  and isfill = 1 and uid != ""
+         |select * from dl_cpc.cpc_union_log where `date` = "%s" and uid != "" and interests !=""
        """.stripMargin.format(day))
       .as[UnionLog]
-      .rdd
+      .rdd.distinct()
 
     val tagData1 = aiRdd.map{
       profile =>
@@ -64,8 +64,8 @@ object GetTagReport {
             data = data :+ (row.tag, profile.devid)
         )
         data
-    }.flatMap(x => x).map(x => ((x._1,x._2), 1)).reduceByKey((x,y) => x).map{
-      case((x, y),num) => (x, 1)
+    }.flatMap(x => x).distinct().map{
+      case(x, y) => (x, 1)
     }.reduceByKey((x,y) => x +y).map{
       case (x,count) =>
         TagReport(x, day, count)
@@ -86,7 +86,7 @@ object GetTagReport {
     }.filter(x => x != null).flatMap(x => x).map{
       case (tag, isclick, isshow, searchid, uid) =>
         (searchid,(tag, isclick, isshow, uid))
-    }.reduceByKey((x, y) => x).cache()
+    }.cache()
 
     val tagUvData = tagData2.filter(x => x._2._4 != "").map{
       case (searchid,(tag, isclick, isshow, uid)) =>
