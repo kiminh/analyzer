@@ -8,12 +8,12 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 
-import scala.reflect.io.Path
 
 /**
   * Created by roydong on 07/06/2017.
+  * get qukan recommend material
   */
-object GetTopContent {
+object GetRM {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
@@ -37,8 +37,9 @@ object GetTopContent {
       .enableHiveSupport()
       .getOrCreate()
 
-    val w = new PrintWriter(new File(conf.getString("qukan.top_content.dump_file").format(day)))
+    val w = new PrintWriter(new File(conf.getString("qukan.material.dump_file").format(day)))
     val topRdd = ctx.sql("select * from rpt_qukan.qukan_log_cpc_top_yhf").rdd
+    var n = 0
     topRdd.toLocalIterator
       .foreach {
         x =>
@@ -52,7 +53,10 @@ object GetTopContent {
             val clk = x.getDouble(7)
             w.write("%s\t%s\t%s\t%s\t%d\t%d\t%f\n".format(title, img1, img2, img3, show, pv, clk))
           }
+          n += 1
       }
     w.close()
+    println("done", day, n)
+    ctx.stop()
   }
 }

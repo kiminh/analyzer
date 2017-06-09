@@ -4,7 +4,8 @@ import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.log.parser.{LogParser, UnionLog}
+import com.cpc.spark.log.parser.UnionLog
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 
@@ -26,6 +27,7 @@ object GetHourReport {
         """.stripMargin)
       System.exit(1)
     }
+    Logger.getRootLogger.setLevel(Level.WARN)
     val table = args(0)
     val hourBefore = args(1).toInt
     val cal = Calendar.getInstance()

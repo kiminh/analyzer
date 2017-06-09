@@ -68,10 +68,12 @@ object AdvSvm {
         }
         .cache()
 
+      FeatureParser.loadUserClk()
+
+      FeatureParser.loadUserPv()
+
       val svm = rawlog.mapPartitions {
         p =>
-          FeatureParser.loadUserClk()
-          FeatureParser.loadUserPv()
           p.map(u => FeatureParser.parseUnionLog(u))
       }
 

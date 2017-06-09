@@ -3,11 +3,13 @@ package com.cpc.spark.log.anal
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.log.parser.{LogParser, TraceLog, UnionLog}
+import com.cpc.spark.log.parser.{ExtValue, LogParser, TraceLog, UnionLog}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types._
+
+import scala.collection.mutable
 
 
 /**
@@ -62,17 +64,52 @@ object AnalUnionLog {
 
     unionData = unionData
       .filter(x => x != null && x.searchid.length > 0)
-      .map(x => (x.searchid, x))
+      .map(x => (x.searchid, Seq(x)))
       .reduceByKey {
         (x, y) =>
-          if (y.timestamp > 0) {
-            merge(y, x)
-          } else {
-            merge(x, y)
-          }
+          x ++ y
       }
-      .map(_._2)
-      .filter(x => x.date == date && x.hour == hour)
+      .map {
+        x =>
+          var log = x._2.filter(_.timestamp > 0).headOption.getOrElse(null)
+          if (log != null) {
+            x._2.foreach {
+              u =>
+                if (u.isshow == 1) {
+                  log = log.copy(
+                    isshow = u.isshow,
+                    show_timestamp = u.show_timestamp,
+                    show_network = u.show_network,
+                    show_ip = u.show_ip
+                  )
+                }
+                if (u.isclick == 1) {
+                  if (u.isSpamClick() == 1) {
+                    var ext = mutable.Map[String, ExtValue]()
+                    if (log.ext != null) {
+                      ext = ext ++ log.ext
+                    }
+                    val spam = ext.getOrElse("spam_click", ExtValue())
+                    ext.update("spam_click", ExtValue(int_value = spam.int_value + 1))
+                    log = log.copy(
+                      ext = ext
+                    )
+                  } else {
+                    log = log.copy(
+                      isclick = u.isclick,
+                      click_timestamp = u.click_timestamp,
+                      antispam_score = u.antispam_score,
+                      antispam_rules = u.antispam_rules,
+                      click_network = u.click_network,
+                      click_ip = u.click_ip
+                    )
+                  }
+                }
+            }
+          }
+          log
+      }
+      .filter(x => x != null && x.date == date && x.hour == hour)
       .cache()
 
     //write union log data
@@ -106,17 +143,17 @@ object AnalUnionLog {
             (u, x._2 ++ y._2)
         }
         .flatMap {
-        x =>
-          val u = x._2._1
-          x._2._2.filter(x => u != null)
-            .map {
-              t =>
-                t.copy(
-                  search_timestamp = u.timestamp,
-                  date = u.date,
-                  hour = u.hour
-                )
-            }
+          x =>
+            val u = x._2._1
+            x._2._2.filter(x => u != null)
+              .map {
+                t =>
+                  t.copy(
+                    search_timestamp = u.timestamp,
+                    date = u.date,
+                    hour = u.hour
+                  )
+              }
         }
         .cache()
 
@@ -179,32 +216,6 @@ object AnalUnionLog {
       cal.add(Calendar.HOUR, 1)
     }
     "{" + parts.mkString(",") + "}"
-  }
-
-  /*
-  reduce中as并非一定是as的日志，有可能也是event
-   */
-  def merge(as: UnionLog, event: UnionLog): UnionLog = {
-    var log = as
-    if (event.isshow == 1) {
-      log = log.copy(
-        isshow = event.isshow,
-        show_timestamp = event.show_timestamp,
-        show_network = event.show_network,
-        show_ip = event.show_ip
-      )
-    }
-    if (event.isclick == 1) {
-      log = log.copy(
-        isclick = event.isclick,
-        click_timestamp = event.click_timestamp,
-        antispam_score = event.antispam_score,
-        antispam_rules = event.antispam_rules,
-        click_network = event.click_network,
-        click_ip = event.click_ip
-      )
-    }
-    log
   }
 }
 
