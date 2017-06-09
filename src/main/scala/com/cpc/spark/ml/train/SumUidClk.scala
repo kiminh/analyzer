@@ -1,5 +1,6 @@
 package com.cpc.spark.ml.train
 
+import java.io.{File, PrintWriter}
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
@@ -66,30 +67,20 @@ object SumUidClk {
         .filter(_._2._1 > 0)
         .cache()
 
-      var n = 0
+      val w = new PrintWriter("./uidclk_%s.txt".format(date))
+      var c = 0
       rawlog.toLocalIterator
         .foreach {
           x =>
             val sum = x._2
-
-            val key1 = "MLFeatureCtr-uid-clk-" + x._1
-            val clk = redis.get[Int](key1).getOrElse(0)
-            if (sum._1 > clk) {
-              redis.setex(key1, 3600 * 24 * 30, sum._1)
-            }
-
-            val key2 = "MLFeatureCtr-uid-pv-" + x._1
-            val pv = redis.get[Int](key2).getOrElse(0)
-            if (sum._2 > pv) {
-              redis.setex(key2, 3600 * 24 * 30, sum._2)
-            }
-
-            n += 1
+            c += 1
+            w.write("%s\t%d\t%d\n".format(x._1, sum._1, sum._2))
         }
 
-      println("done", n)
+      w.close()
       rawlog.unpersist()
       cal.add(Calendar.DATE, 1)
+      println("done", date, c)
     }
     ctx.stop()
   }
