@@ -21,10 +21,10 @@ object AdvSvm {
   var redis: RedisClient = _
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 2) {
+    if (args.length < 3) {
       System.err.println(
         s"""
-           |Usage: GenerateAdvSvm <hive_table> <date> <hour>
+           |Usage: GenerateAdvSvm <daybefore > <days> <user click>
            |
         """.stripMargin)
       System.exit(1)
@@ -40,6 +40,13 @@ object AdvSvm {
     val conf = ConfigFactory.load()
     redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
     redis.select(5)
+
+    println("read user info")
+    FeatureParser.loadUserInfo(args(2))
+    println("done", FeatureParser.userClk.size, FeatureParser.userPV.size)
+
+    val userClk = FeatureParser.userClk
+    val userPV = FeatureParser.userPV
 
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
@@ -68,16 +75,15 @@ object AdvSvm {
         }
         .cache()
 
-      FeatureParser.loadUserClk()
+      val svm = rawlog.toLocalIterator
+        .map {
+          u =>
+            FeatureParser.parseUnionLog(u)
+        }
+        .filter(_.length > 0)
 
-      FeatureParser.loadUserPv()
-
-      val svm = rawlog.mapPartitions {
-        p =>
-          p.map(u => FeatureParser.parseUnionLog(u))
-      }
-
-      svm.toDF()
+      ctx.sparkContext.parallelize(svm.toSeq)
+        .toDF()
         .write
         .mode(SaveMode.Overwrite)
         .text("/user/cpc/svmdata/v5/" + date)
@@ -90,5 +96,4 @@ object AdvSvm {
     ctx.stop()
   }
 }
-
 

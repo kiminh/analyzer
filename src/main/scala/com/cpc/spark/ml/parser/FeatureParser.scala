@@ -11,51 +11,24 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.mllib.util.MLUtils
 
 import scala.collection.mutable
+import scala.io.Source
 
 /**
   * Created by Roy on 2017/5/15.
   */
 object FeatureParser {
 
-  val userClk = mutable.Map[String, Int]()
+  var userClk = mutable.Map[String, Int]()
 
-  val userPV = mutable.Map[String, Int]()
+  var userPV = mutable.Map[String, Int]()
 
-  def loadUserClk(): Unit = {
-    val conf = ConfigFactory.load()
-    val redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
-    redis.select(5)
-    redis.keys[String]("MLFeatureCtr-uid-clk-*").foreach {
-      rs =>
-        rs.foreach {
-          x =>
-            val key = x.getOrElse("")
-            if (key.length > 0) {
-              val v = redis.get[Int](key).getOrElse(0)
-              if (v > 0) {
-                userClk.update(key, v)
-              }
-            }
-        }
-    }
-  }
-
-  def loadUserPv(): Unit = {
-    val conf = ConfigFactory.load()
-    val redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
-    redis.select(5)
-    redis.keys[String]("MLFeatureCtr-uid-pv-*").foreach {
-      rs =>
-        rs.foreach {
-          x =>
-            val key = x.getOrElse("")
-            if (key.length > 0) {
-              val v = redis.get[Int](key).getOrElse(0)
-              if (v > 0) {
-                userPV.update(key, v)
-              }
-            }
-        }
+  def loadUserInfo(path: String): Unit = {
+    for (line <- Source.fromFile(path, "UTF8").getLines()) {
+      val row = line.split("\t")
+      if (row.length == 3) {
+        userClk.update(row(0), row(1).toInt)
+        userPV.update(row(0), row(2).toInt)
+      }
     }
   }
 
@@ -110,6 +83,15 @@ object FeatureParser {
   }
 
   def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
+
+    if (userClk.size <= 100) {
+      throw new Exception("user click = 0")
+    }
+
+    if (userPV.size <= 100) {
+      throw new Exception("user pv = 0")
+    }
+
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
     val week = cal.get(Calendar.DAY_OF_WEEK)
@@ -206,7 +188,7 @@ object FeatureParser {
     i += 2000
 
     if (u.uid.length > 0) {
-      var clk = userClk.get("MLFeatureCtr-uid-clk-" + u.uid).getOrElse(0)
+      var clk = userClk.get(u.uid).getOrElse(0)
       if (clk > 5) {
         clk = 5
       }
@@ -215,7 +197,7 @@ object FeatureParser {
     i += 6
 
     if (u.uid.length > 0) {
-      var pv = userPV.get("MLFeatureCtr-uid-pv-" + u.uid).getOrElse(0)
+      var pv = userPV.get(u.uid).getOrElse(0)
       if (pv <= 0) {
         pv = 0
       } else if (pv < 10) {

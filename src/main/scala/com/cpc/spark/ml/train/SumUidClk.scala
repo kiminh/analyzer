@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.train
 
-import java.io.{File, PrintWriter}
+import java.io.PrintWriter
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
@@ -9,7 +9,6 @@ import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
-import com.redis.serialization.Parse.Implicits._
 
 /**
   * Created by roydong on 06/06/2017.

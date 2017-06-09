@@ -9,6 +9,7 @@ import io.grpc.ServerBuilder
 import mlserver.mlserver._
 import mlserver.mlserver.PredictorGrpc.Predictor
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -19,9 +20,9 @@ import scala.concurrent.{ExecutionContext, Future}
 object MLServer {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 1) {
+    if (args.length < 2) {
       System.err.println(s"""
-        |Usage: MLServer <model_data_path>
+        |Usage: MLServer <model_data_path> <user clk >
         """.stripMargin)
       System.exit(1)
     }
@@ -41,16 +42,8 @@ object MLServer {
     model.clearThreshold()
     println("model data loaded", model.toString())
 
-    new Thread(new Runnable {
-      override def run(): Unit = {
-        FeatureParser.loadUserClk()
-      }
-    }).start()
-    new Thread(new Runnable {
-      override def run(): Unit = {
-        FeatureParser.loadUserPv()
-      }
-    }).start()
+    FeatureParser.loadUserInfo(args(1))
+    println("read user info done", FeatureParser.userClk.size, FeatureParser.userPV.size)
 
     val service = new PredictorService(model)
     val server = ServerBuilder.forPort(conf.getInt("mlserver.port"))
