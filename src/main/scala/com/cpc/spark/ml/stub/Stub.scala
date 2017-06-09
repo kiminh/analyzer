@@ -28,10 +28,10 @@ object Stub {
     val m = Media (
     )
     val u = User(
-      uid = "aaaaa"
+      uid = args(1)
     )
     val d = Device(
-      model = "mi"
+      model = args(0)
     )
 
     val req = Request(media = Option(m), ads = Seq(ad), user = Option(u), device = Option(d))

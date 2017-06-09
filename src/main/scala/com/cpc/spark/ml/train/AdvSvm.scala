@@ -75,15 +75,18 @@ object AdvSvm {
         }
         .cache()
 
-      val svm = rawlog.toLocalIterator
-        .map {
-          u =>
-            FeatureParser.parseUnionLog(u)
-        }
-        .filter(_.length > 0)
+      val svm = rawlog.mapPartitions {
+        p =>
+          FeatureParser.userClk = userClk
+          FeatureParser.userPV = userPV
 
-      ctx.sparkContext.parallelize(svm.toSeq)
-        .toDF()
+          p.map {
+            u =>
+              FeatureParser.parseUnionLog(u)
+          }
+      }
+
+      svm.toDF()
         .write
         .mode(SaveMode.Overwrite)
         .text("/user/cpc/svmdata/v5/" + date)
