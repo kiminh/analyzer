@@ -2,7 +2,7 @@ package com.cpc.spark.ml.server
 
 import java.util.Date
 
-import com.cpc.spark.ml.parser.FeatureParser
+import com.cpc.spark.ml.parser.{FeatureParser, UserClickPV}
 import org.apache.spark.mllib.classification.LogisticRegressionModel
 import com.typesafe.config.ConfigFactory
 import io.grpc.ServerBuilder
@@ -12,12 +12,14 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
 
+import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
+import scala.io.Source
 
 /**
   * Created by Roy on 2017/5/10.
   */
-object MLServer {
+object MLServer extends UserClickPV {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 2) {
@@ -42,8 +44,8 @@ object MLServer {
     model.clearThreshold()
     println("model data loaded", model.toString())
 
-    FeatureParser.loadUserInfo(args(1))
-    println("read user info done", FeatureParser.userClk.size, FeatureParser.userPV.size)
+    loadUserInfo(args(1))
+    println("read user info done", userClk.size, userPV.size)
 
     val service = new PredictorService(model)
     val server = ServerBuilder.forPort(conf.getInt("mlserver.port"))
@@ -75,7 +77,9 @@ object MLServer {
       val d = req.getDevice
       req.ads.foreach {
         x =>
-          val features = FeatureParser.parse(x, m, u, loc, n, d, req.time * 1000L)
+          val clk = userClk.getOrElse(u.uid, 0)
+          val pv = userPV.getOrElse(u.uid, 0)
+          val features = FeatureParser.parse(x, m, u, loc, n, d, req.time * 1000L, clk, pv)
           var value = 0D
           if (features != null) {
             value = model.predict(features)
@@ -87,7 +91,7 @@ object MLServer {
           resp = resp.addResults(p)
       }
       val et = new Date().getTime
-      println("new predict %dms".format(et - st), FeatureParser.userClk.size, FeatureParser.userPV.size)
+      println("new predict %dms".format(et - st))
       Future.successful(resp)
     }
 

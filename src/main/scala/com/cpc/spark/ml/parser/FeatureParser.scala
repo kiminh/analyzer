@@ -3,36 +3,18 @@ package com.cpc.spark.ml.parser
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.UnionLog
-import com.redis.RedisClient
 import mlserver.mlserver._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
-import com.redis.serialization.Parse.Implicits._
-import com.typesafe.config.ConfigFactory
 import org.apache.spark.mllib.util.MLUtils
 
 import scala.collection.mutable
-import scala.io.Source
 
 /**
   * Created by Roy on 2017/5/15.
   */
 object FeatureParser {
 
-  var userClk = mutable.Map[String, Int]()
-
-  var userPV = mutable.Map[String, Int]()
-
-  def loadUserInfo(path: String): Unit = {
-    for (line <- Source.fromFile(path, "UTF8").getLines()) {
-      val row = line.split("\t")
-      if (row.length == 3) {
-        userClk.update(row(0), row(1).toInt)
-        userPV.update(row(0), row(2).toInt)
-      }
-    }
-  }
-
-  def parseUnionLog(x: UnionLog): String = {
+  def parseUnionLog(x: UnionLog, clk: Int, pv: Int): String = {
     val ad = AdInfo(
       bid = x.bid,
       ideaid = x.ideaid,
@@ -71,7 +53,7 @@ object FeatureParser {
     )
 
     var svm = ""
-    val vector = parse(ad, m, u, loc, n, d, x.timestamp * 1000L)
+    val vector = parse(ad, m, u, loc, n, d, x.timestamp * 1000L, clk, pv)
     if (vector != null) {
       svm = x.isclick.toString
       MLUtils.appendBias(vector).foreachActive {
@@ -82,16 +64,7 @@ object FeatureParser {
     svm
   }
 
-  def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
-
-    if (userClk.size <= 100) {
-      throw new Exception("user click = 0")
-    }
-
-    if (userPV.size <= 100) {
-      throw new Exception("user pv = 0")
-    }
-
+  def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long, clk: Int, pv: Int): Vector = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
     val week = cal.get(Calendar.DAY_OF_WEEK)
@@ -114,6 +87,7 @@ object FeatureParser {
     els = els :+ (u.age + i, 1D)
     i += 10
 
+    //coin
     var lvl = 0
     if (u.coin < 10) {
       lvl = 1
@@ -124,8 +98,6 @@ object FeatureParser {
     } else {
       lvl = 4
     }
-
-    //coin
     els = els :+ (lvl + i, 1D)
     i += 10
 
@@ -187,30 +159,26 @@ object FeatureParser {
     }
     i += 2000
 
-    if (u.uid.length > 0) {
-      var clk = userClk.get(u.uid).getOrElse(0)
-      if (clk > 5) {
-        clk = 5
-      }
+    if (clk > 5) {
+      els = els :+ (5 + i, 1D)
+    } else {
       els = els :+ (clk + i, 1D)
     }
     i += 6
 
-    if (u.uid.length > 0) {
-      var pv = userPV.get(u.uid).getOrElse(0)
-      if (pv <= 0) {
-        pv = 0
-      } else if (pv < 10) {
-        pv = 1
-      } else if (pv < 100) {
-        pv = 2
-      } else if (pv < 500) {
-        pv = 3
-      } else {
-        pv = 4
-      }
-      els = els :+ (pv + i, 1D)
+    var pvv = pv
+    if (pvv <= 0) {
+      pvv = 0
+    } else if (pv < 10) {
+      pvv = 1
+    } else if (pv < 100) {
+      pvv = 2
+    } else if (pv < 500) {
+      pvv = 3
+    } else {
+      pvv = 4
     }
+    els = els :+ (pvv + i, 1D)
     i += 5
 
     try {

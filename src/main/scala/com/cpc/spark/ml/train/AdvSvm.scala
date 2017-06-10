@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.UnionLog
-import com.cpc.spark.ml.parser.FeatureParser
+import com.cpc.spark.ml.parser.{FeatureParser, UserClickPV}
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
@@ -16,7 +16,7 @@ import scala.util.Random
 /*
 样本
  */
-object AdvSvm {
+object AdvSvm extends UserClickPV {
 
   var redis: RedisClient = _
 
@@ -42,11 +42,14 @@ object AdvSvm {
     redis.select(5)
 
     println("read user info")
-    FeatureParser.loadUserInfo(args(2))
-    println("done", FeatureParser.userClk.size, FeatureParser.userPV.size)
-
-    val userClk = FeatureParser.userClk
-    val userPV = FeatureParser.userPV
+    loadUserInfo(args(2))
+    val clkRdd = ctx.sparkContext.parallelize(userClk.toSeq, 13)
+    val pvRdd = ctx.sparkContext.parallelize(userPV.toSeq, 13)
+    val clkpv = clkRdd.map(x => (x._1, (x._2, 0, Seq[UnionLog]())))
+      .union(pvRdd.map(x => (x._1, (0, x._2, Seq[UnionLog]()))))
+      .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2, Seq[UnionLog]()))
+      .cache()
+    println("done", userClk.size, userPV.size)
 
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
@@ -75,18 +78,21 @@ object AdvSvm {
         }
         .cache()
 
-      val svm = rawlog.mapPartitions {
-        p =>
-          FeatureParser.userClk = userClk
-          FeatureParser.userPV = userPV
-
-          p.map {
-            u =>
-              FeatureParser.parseUnionLog(u)
-          }
-      }
-
-      svm.toDF()
+      clkpv.union(rawlog.filter(_.uid.length > 0).map(u => (u.uid, (0, 0, Seq(u)))))
+        .reduceByKey {
+          (x, y) =>
+            (x._1 + y._1, x._2 + y._2, x._3 ++ y._3)
+        }
+        .flatMap {
+          x =>
+            val clk = x._2._1
+            val pv = x._2._2
+            x._2._3.map {
+              u =>
+                FeatureParser.parseUnionLog(u, clk, pv)
+            }
+        }
+        .toDF()
         .write
         .mode(SaveMode.Overwrite)
         .text("/user/cpc/svmdata/v5/" + date)
