@@ -14,6 +14,43 @@ import scala.collection.mutable
   */
 object FeatureParser {
 
+  val adslotids = Map(
+          0 -> 0,
+    1010244 -> 1,
+    1012765 -> 2,
+    1012947 -> 3,
+    1018976 -> 4,
+    1020714 -> 5,
+    1020995 -> 6,
+    1021639 -> 7,
+    1021642 -> 8,
+    1022064 -> 9,
+    1022280 -> 10,
+    1022704 -> 11,
+    1022709 -> 12,
+    1022710 -> 13,
+    1022798 -> 14,
+    1023933 -> 15,
+    1023934 -> 16,
+    1023935 -> 17,
+    1024360 -> 18,
+    1024852 -> 19,
+    1024902 -> 20,
+    1025099 -> 21,
+    1025156 -> 22,
+    1025164 -> 23,
+    1025493 -> 24,
+    1026231 -> 25,
+    1026459 -> 26,
+    1026558 -> 27,
+    1026890 -> 28,
+    1026966 -> 29,
+    1026975 -> 30,
+    1027091 -> 31,
+    1027156 -> 32,
+    1008946 -> 33
+  )
+
   def parseUnionLog(x: UnionLog, clk: Int, pv: Int): String = {
     val ad = AdInfo(
       bid = x.bid,
@@ -150,8 +187,9 @@ object FeatureParser {
     i += 20000
 
     //ad slot id
-    els = els :+ (m.adslotid % 10000 + i, 1D)
-    i += 10000
+    val slotid = adslotids.getOrElse(m.adslotid, 0)
+    els = els :+ (slotid + i, 1D)
+    i += adslotids.size
 
     //model
     if (d.model.length > 0) {
@@ -181,6 +219,11 @@ object FeatureParser {
     els = els :+ (pvv + i, 1D)
     i += 5
 
+    //adslotid + ideaid
+    val v = combineIntFeature(0, adslotids.size, adslotids.getOrElse(m.adslotid, 0), 0, 20000, ad.ideaid)
+    els = els :+ (i + v, 1D)
+    i += adslotids.size * 20000
+
     try {
       Vectors.sparse(i, els)
     } catch {
@@ -189,6 +232,8 @@ object FeatureParser {
         null
     }
   }
+
+
 
   //得到所有排列组合 C(n, m)
   def getCombination[T: Manifest](all: Seq[T], m: Int): Seq[Array[T]] = {
@@ -227,8 +272,11 @@ object FeatureParser {
     Vectors.sparse(row.size, els)
   }
 
-  def vectorizeIntRange(max: Int, v: Int): Vector = {
-    Vectors.sparse(max, Seq((v, 1D)))
+  def combineIntFeature(min1: Int, max1: Int, v1: Int, min2: Int, max2: Int, v2: Int): Int = {
+    val range1 = max1 - min1
+    val range2 = max2 - min2
+
+    v1 * (range2 - 1) + v2
   }
 }
 

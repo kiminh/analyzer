@@ -33,7 +33,7 @@ object AdvSvm extends UserClickPV {
     val dayBefore = args(0).toInt
     val days = args(1).toInt
     val ctx = SparkSession.builder()
-      .appName("GenerateAdvSvm v5")
+      .appName("GenerateAdvSvm v6")
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
@@ -95,7 +95,7 @@ object AdvSvm extends UserClickPV {
         .toDF()
         .write
         .mode(SaveMode.Overwrite)
-        .text("/user/cpc/svmdata/v5/" + date)
+        .text("/user/cpc/svmdata/v6/" + date)
 
       println("done", rawlog.count())
       rawlog.unpersist()

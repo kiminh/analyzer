@@ -49,12 +49,12 @@ object LRTrain {
       /*
       lbfgs.optimizer.setGradient(new LogisticGradient())
       lbfgs.optimizer.setUpdater(new SquaredL2Updater())
-      lbfgs.optimizer.setRegParam(0.2)
-      */
-      lbfgs.optimizer.setConvergenceTol(1e-4)
       lbfgs.optimizer.setNumIterations(100)
-
+      lbfgs.optimizer.setRegParam(0.2)
       lbfgs.optimizer.setNumCorrections(10)
+      lbfgs.optimizer.setConvergenceTol(1e-4)
+      */
+
       val training = sample(0).cache()
       println("sample count", training.count())
       training
@@ -109,7 +109,7 @@ object LRTrain {
           }
       }
 
-    println("predict distribution total %s %d(0) %d(1)".format(testSum, test1, test0))
+    println("predict distribution total %s %d(1) %d(0)".format(testSum, test1, test0))
     predictionAndLabels
       .map {
         x =>

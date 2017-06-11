@@ -9,12 +9,9 @@ import io.grpc.ServerBuilder
 import mlserver.mlserver._
 import mlserver.mlserver.PredictorGrpc.Predictor
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
 
-import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
-import scala.io.Source
 
 /**
   * Created by Roy on 2017/5/10.
