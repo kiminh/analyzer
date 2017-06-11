@@ -30,7 +30,7 @@ object MLServer extends UserClickPV {
     //System.setProperty("scala.concurrent.context.minThreads", coreNum.toString)
     System.setProperty("scala.concurrent.context.maxThreads", coreNum.toString)
 
-    val dataPath = args(0).trim
+    val dataPath = args(1).trim
     val ctx = SparkSession.builder()
       .appName("cpc ml server ctr predictor")
       .getOrCreate()
@@ -41,11 +41,11 @@ object MLServer extends UserClickPV {
     model.clearThreshold()
     println("model data loaded", model.toString())
 
-    loadUserInfo(args(1))
+    loadUserInfo(args(2))
     println("read user info done", userClk.size, userPV.size)
 
     val service = new PredictorService(model)
-    val server = ServerBuilder.forPort(conf.getInt("mlserver.port"))
+    val server = ServerBuilder.forPort(args(0).toInt)
       .addService(PredictorGrpc.bindService(service, ExecutionContext.global))
       .build
       .start

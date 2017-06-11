@@ -52,8 +52,8 @@ object LRTrain {
       lbfgs.optimizer.setNumIterations(100)
       lbfgs.optimizer.setRegParam(0.2)
       lbfgs.optimizer.setNumCorrections(10)
-      lbfgs.optimizer.setConvergenceTol(1e-4)
       */
+      lbfgs.optimizer.setConvergenceTol(1e-4)
 
       val training = sample(0).cache()
       println("sample count", training.count())

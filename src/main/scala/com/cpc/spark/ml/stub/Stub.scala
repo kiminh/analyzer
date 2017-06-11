@@ -18,7 +18,7 @@ object Stub {
 
     val conf = ConfigFactory.load()
     val channel = ManagedChannelBuilder
-      .forAddress("0.0.0.0", conf.getInt("mlserver.port"))
+      .forAddress("0.0.0.0", args(0).toInt)
       .usePlaintext(true)
       .build
 
@@ -28,10 +28,10 @@ object Stub {
     val m = Media (
     )
     val u = User(
-      uid = args(1)
+      uid = args(2)
     )
     val d = Device(
-      model = args(0)
+      model = args(1)
     )
 
     val req = Request(media = Option(m), ads = Seq(ad), user = Option(u), device = Option(d))
