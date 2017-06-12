@@ -24,17 +24,17 @@ object LRTrain {
     }
 
     Logger.getRootLogger().setLevel(Level.WARN)
-    val ctx = SparkSession.builder()
-      .config("spark.driver.maxResultSize", "2G")
-      .appName("cpc training LR model v5")
-      .getOrCreate()
-    val sc = ctx.sparkContext
     val mode = args(0).trim
     val inpath = args(1).trim
     val modelPath = args(2).trim
     val sampleRate = args(3).toFloat
     val pnRate = args(4).toInt
+    val ctx = SparkSession.builder()
+      .config("spark.driver.maxResultSize", "2G")
+      .appName("cpc LR model %s[%s]".format(mode, modelPath))
+      .getOrCreate()
 
+    val sc = ctx.sparkContext
     val sample = MLUtils.loadLibSVMFile(sc, inpath)
       //random pick 1/pnRate negative sample
       .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
@@ -113,7 +113,7 @@ object LRTrain {
     predictionAndLabels
       .map {
         x =>
-          (("%.1f".format(Math.abs(x._1 - 0.05)), x._2.toInt), 1)
+          (("%.1f".format(x._1), x._2.toInt), 1)
       }
       .reduceByKey((x, y) => x + y)
       .map {

@@ -50,7 +50,7 @@ object MLServer extends UserClickPV {
       .build
       .start
 
-    println("server started listen " + conf.getString("mlserver.port"))
+    println("server started listen " + args(0))
 
     sys.addShutdownHook {
       System.err.println("*** shutting down gRPC server since JVM is shutting down")
