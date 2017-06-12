@@ -4,6 +4,7 @@ import java.util.Date
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
+import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
@@ -17,8 +18,9 @@ object LRTrain {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 5) {
-      System.err.println(s"""
-        |Usage: Train <mode train/test> <input path> <model path> <sample rate> <p/n rate>
+      System.err.println(
+        s"""
+           |Usage: Train <mode train/test> <input path> <model path> <sample rate> <p/n rate>
         """.stripMargin)
       System.exit(1)
     }
@@ -52,8 +54,8 @@ object LRTrain {
       lbfgs.optimizer.setNumIterations(100)
       lbfgs.optimizer.setRegParam(0.2)
       lbfgs.optimizer.setNumCorrections(10)
-      */
       lbfgs.optimizer.setConvergenceTol(1e-4)
+      */
 
       val training = sample(0).cache()
       println("sample count", training.count())
@@ -70,7 +72,7 @@ object LRTrain {
         .toLocalIterator
         .foreach(println)
 
-      println("training ...", training.take(1).foreach(x=>println(x.features)))
+      println("training ...", training.take(1).foreach(x => println(x.features)))
       model = lbfgs.run(training)
       println("done")
       training.unpersist()
@@ -83,7 +85,6 @@ object LRTrain {
         val prediction = model.predict(features)
         (prediction, label)
     }.cache()
-    println("done")
 
 
     val testSum = predictionAndLabels.count()
@@ -109,7 +110,7 @@ object LRTrain {
           }
       }
 
-    println("predict distribution total %s %d(1) %d(0)".format(testSum, test1, test0))
+    println("predict distribution %s %d(1) %d(0)".format(testSum, test1, test0))
     predictionAndLabels
       .map {
         x =>
@@ -132,11 +133,59 @@ object LRTrain {
       .foreach {
         x =>
           val sum = x._2
-          println("%s %d %.4f %.4f %d %.4f %.4f %.4f".format( x._1,
+          println("%s %d %.4f %.4f %d %.4f %.4f %.4f".format(x._1,
             sum._2, sum._2.toDouble / test1.toDouble, sum._2.toDouble / testSum.toDouble,
             sum._1, sum._1.toDouble / test0.toDouble, sum._1.toDouble / testSum.toDouble,
             sum._2.toDouble / (sum._1 + sum._2).toDouble))
       }
+
+
+    // Instantiate metrics object
+    val metrics = new BinaryClassificationMetrics(predictionAndLabels)
+
+    // Precision by threshold
+    val precision = metrics.precisionByThreshold
+    precision.foreach { case (t, p) =>
+      println(s"Threshold: $t, Precision: $p")
+    }
+
+    // Recall by threshold
+    val recall = metrics.recallByThreshold
+    recall.foreach { case (t, r) =>
+      println(s"Threshold: $t, Recall: $r")
+    }
+
+    // Precision-Recall Curve
+    val PRC = metrics.pr
+
+    // F-measure
+    val f1Score = metrics.fMeasureByThreshold
+    f1Score.foreach { case (t, f) =>
+      println(s"Threshold: $t, F-score: $f, Beta = 1")
+    }
+
+    val beta = 0.5
+    val fScore = metrics.fMeasureByThreshold(beta)
+    f1Score.foreach { case (t, f) =>
+      println(s"Threshold: $t, F-score: $f, Beta = 0.5")
+    }
+
+    // AUPRC
+    val auPRC = metrics.areaUnderPR
+    println("Area under precision-recall curve = " + auPRC)
+
+    // Compute thresholds used in ROC and PR curves
+    val thresholds = precision.map(_._1)
+
+    // ROC Curve
+    val roc = metrics.roc
+
+    // AUROC
+    val auROC = metrics.areaUnderROC
+    println("Area under ROC = " + auROC)
+
+
+    println("done")
 
     if (mode == "train") {
       println("save model")
@@ -146,6 +195,7 @@ object LRTrain {
 
     sc.stop()
   }
+
 }
 
 
