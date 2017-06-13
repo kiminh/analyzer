@@ -21,19 +21,20 @@ object AdvSvm extends UserClickPV {
   var redis: RedisClient = _
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 3) {
+    if (args.length < 4) {
       System.err.println(
         s"""
-           |Usage: GenerateAdvSvm <daybefore > <days> <user click>
+           |Usage: GenerateAdvSvm <version> <daybefore > <days> <user click>
            |
         """.stripMargin)
       System.exit(1)
     }
     Logger.getRootLogger().setLevel(Level.WARN)
-    val dayBefore = args(0).toInt
-    val days = args(1).toInt
+    val version = args(0)
+    val dayBefore = args(1).toInt
+    val days = args(2).toInt
     val ctx = SparkSession.builder()
-      .appName("GenerateAdvSvm v6")
+      .appName("GenerateAdvSvm " + version)
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
@@ -42,7 +43,7 @@ object AdvSvm extends UserClickPV {
     redis.select(5)
 
     println("read user info")
-    loadUserInfo(args(2))
+    loadUserInfo(args(3))
     val clkRdd = ctx.sparkContext.parallelize(userClk.toSeq, 13)
     val pvRdd = ctx.sparkContext.parallelize(userPV.toSeq, 13)
     val clkpv = clkRdd.map(x => (x._1, (x._2, 0, Seq[UnionLog]())))
@@ -95,7 +96,7 @@ object AdvSvm extends UserClickPV {
         .toDF()
         .write
         .mode(SaveMode.Overwrite)
-        .text("/user/cpc/svmdata/v6/" + date)
+        .text("/user/cpc/svmdata/" + version + "/" + date)
 
       println("done", rawlog.count())
       rawlog.unpersist()

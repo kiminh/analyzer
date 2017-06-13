@@ -220,9 +220,14 @@ object FeatureParser {
     i += 5
 
     //adslotid + ideaid
-    val v = combineIntFeature(0, adslotids.size, adslotids.getOrElse(m.adslotid, 0), 0, 20000, ad.ideaid)
+    val (v, max) = combineIntFeature(0, adslotids.size, adslotids.getOrElse(m.adslotid, 0), 0, 20000, ad.ideaid)
     els = els :+ (i + v, 1D)
-    i += adslotids.size * 20000
+    i += max
+
+    //adtype + ideaid
+    val (v1, max1) = combineIntFeature(0, 2, m.adslotType, 0, 20000, ad.ideaid)
+    els = els :+ (i + v1, 1D)
+    i += max1
 
     try {
       Vectors.sparse(i, els)
@@ -272,11 +277,11 @@ object FeatureParser {
     Vectors.sparse(row.size, els)
   }
 
-  def combineIntFeature(min1: Int, max1: Int, v1: Int, min2: Int, max2: Int, v2: Int): Int = {
-    val range1 = max1 - min1
-    val range2 = max2 - min2
+  def combineIntFeature(min1: Int, max1: Int, v1: Int, min2: Int, max2: Int, v2: Int): (Int, Int) = {
+    val range1 = max1 - min1 + 1
+    val range2 = max2 - min2 + 1
 
-    v1 * (range2 - 1) + v2
+    (v1 * (range2 - 1) + v2, range1 * range2)
   }
 }
 
