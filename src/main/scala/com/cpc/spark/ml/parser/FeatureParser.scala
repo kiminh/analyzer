@@ -15,7 +15,6 @@ import scala.collection.mutable
 object FeatureParser {
 
   val adslotids = Map(
-          0 -> 0,
     1010244 -> 1,
     1012765 -> 2,
     1012947 -> 3,
@@ -277,11 +276,15 @@ object FeatureParser {
     Vectors.sparse(row.size, els)
   }
 
+  /*
+  返回组合特征的位置，和最大位置号
+   */
   def combineIntFeature(min1: Int, max1: Int, v1: Int, min2: Int, max2: Int, v2: Int): (Int, Int) = {
     val range1 = max1 - min1 + 1
     val range2 = max2 - min2 + 1
-
-    (v1 * (range2 - 1) + v2, range1 * range2)
+    val idx1 = v1 - min1 + 1
+    val idx2 = v2 - min2 + 1
+    (range2 * (idx1 - 1) + idx2, range1 * range2)
   }
 }
 
