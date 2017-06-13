@@ -1,5 +1,6 @@
 package com.cpc.spark.ml.server
 
+import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.cpc.spark.ml.parser.{FeatureParser, UserClickPV}
@@ -80,6 +81,9 @@ object MLServer extends UserClickPV {
           var value = 0D
           if (features != null) {
             value = model.predict(features)
+            if (req.version == "v2" && value < 0.7) {
+              value = value / 2
+            }
           }
           val p = Prediction(
             adid = x.ideaid,
@@ -88,7 +92,8 @@ object MLServer extends UserClickPV {
           resp = resp.addResults(p)
       }
       val et = new Date().getTime
-      println("new predict %dms".format(et - st))
+      val rs = resp.results.map(x => "%d=%f".format(x.adid, x.value)).mkString(",")
+      println("%s %d %s [%s]".format(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(et), et - st, req.version, rs))
       Future.successful(resp)
     }
 

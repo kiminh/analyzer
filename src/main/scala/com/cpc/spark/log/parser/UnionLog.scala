@@ -60,6 +60,13 @@ case class UnionLog(
                      hour: String = ""
                    ) {
 
+  def spamClick(): Int = {
+    if (ext != null) {
+      ext.getOrElse("spam_click", ExtValue()).int_value
+    } else {
+      0
+    }
+  }
 
   def isSpamClick(): Int = {
     if (antispam_score < 10000 && isclick > 0) {
