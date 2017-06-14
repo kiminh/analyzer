@@ -32,7 +32,7 @@ object LRTrain {
     val sampleRate = args(3).toFloat
     val pnRate = args(4).toInt
     val ctx = SparkSession.builder()
-      .config("spark.driver.maxResultSize", "2G")
+      .config("spark.driver.maxResultSize", "4G")
       .appName("cpc LR model %s[%s]".format(mode, modelPath))
       .getOrCreate()
 
@@ -138,7 +138,6 @@ object LRTrain {
             sum._1, sum._1.toDouble / test0.toDouble, sum._1.toDouble / testSum.toDouble,
             sum._2.toDouble / (sum._1 + sum._2).toDouble))
       }
-
 
     // Instantiate metrics object
     val metrics = new BinaryClassificationMetrics(predictionAndLabels)

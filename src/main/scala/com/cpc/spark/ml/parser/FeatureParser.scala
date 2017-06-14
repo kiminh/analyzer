@@ -227,6 +227,15 @@ object FeatureParser {
     val (v2, max2) = combineIntFeature(0, adslotids.size, adslotids.getOrElse(m.adslotid, 0), 0, 3000, ad.planid)
     els = els :+ (i + v2, 1D)
     i += max2
+    //adslottype + ideaid
+    val (v3, max3) = combineIntFeature(0, 2, m.adslotType, 0, 20000, ad.ideaid)
+    els = els :+ (i + v3, 1D)
+    i += max3
+
+    //adslottype + ideaid
+    val (v4, max4) = combineIntFeature(0, 2, m.adslotType, 0, 3000, ad.planid)
+    els = els :+ (i + v4, 1D)
+    i += max4
 
     try {
       Vectors.sparse(i, els)
