@@ -69,8 +69,8 @@ object AdvSvm extends UserClickPV {
             if (u != null && u.searchid.length > 0) {
               //TODO network数据不准确暂时忽略
               if (u.sex > 0 && u.coin > 0 && u.age > 0 && u.os > 0) {
-                //1 / 20 负样本
-                if (u.isclick == 1 || Random.nextInt(20) == 0) {
+                //1 / 10 负样本
+                if (u.isclick == 1 || Random.nextInt(10) == 0) {
                   ret = true
                 }
               }

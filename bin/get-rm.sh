@@ -13,5 +13,6 @@ $SPARK_HOME/bin/spark-submit --master "spark://cpc-bj03:7077" \
     --executor-memory 2G --executor-cores 2 --total-executor-cores 6 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.qukan.featured.GetRM \
-    $cur/lib/dev.jar 1
+    $cur/lib/test.jar 1
+
 

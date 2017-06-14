@@ -9,12 +9,13 @@ jars=(
 )
 
 $SPARK_HOME/bin/spark-submit --master yarn \
-    --executor-memory 5G --executor-cores 5 --total-executor-cores 50 \
+    --executor-memory 4G --driver-memory 4G \
+    --executor-cores 4 --total-executor-cores 21 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.ml.train.LogisticTrain \
-    $cur/lib/cpc-anal_2.11-0.1.jar "test" \
-          "/user/cpc/svmdata/v3/2017-05-22" \
-          "/user/cpc/model/v3" \
-          0.1 1
+    --class com.cpc.spark.ml.train.LRTrain \
+    $cur/lib/dev.jar "test" \
+          "/user/cpc/svmdata/v8/2017-06-12" \
+          "/user/cpc/model/v8_3d" \
+          0.8 1
 
 

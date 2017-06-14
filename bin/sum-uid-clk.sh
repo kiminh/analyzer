@@ -9,9 +9,9 @@ jars=(
     "$cur/lib/config-1.2.1.jar"
 )
 
-$SPARK_HOME/bin/spark-submit --master "spark://cpc-bj03:7077" \
+$SPARK_HOME/bin/spark-submit --master yarn \
     --executor-memory 2G --executor-cores 2 --total-executor-cores 6 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.train.SumUidClk \
-    $cur/lib/test.jar 1 1
+    $cur/lib/dev.jar 1 1
 

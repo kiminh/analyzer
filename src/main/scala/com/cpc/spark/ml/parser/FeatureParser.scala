@@ -223,10 +223,10 @@ object FeatureParser {
     els = els :+ (i + v, 1D)
     i += max
 
-    //adtype + ideaid
-    val (v1, max1) = combineIntFeature(0, 2, m.adslotType, 0, 20000, ad.ideaid)
-    els = els :+ (i + v1, 1D)
-    i += max1
+    //adslotid + planid
+    val (v2, max2) = combineIntFeature(0, adslotids.size, adslotids.getOrElse(m.adslotid, 0), 0, 3000, ad.planid)
+    els = els :+ (i + v2, 1D)
+    i += max2
 
     try {
       Vectors.sparse(i, els)

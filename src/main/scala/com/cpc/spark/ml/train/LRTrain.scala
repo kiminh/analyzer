@@ -32,7 +32,7 @@ object LRTrain {
     val sampleRate = args(3).toFloat
     val pnRate = args(4).toInt
     val ctx = SparkSession.builder()
-      .config("spark.driver.maxResultSize", "4G")
+      .config("spark.driver.maxResultSize", "2G")
       .appName("cpc LR model %s[%s]".format(mode, modelPath))
       .getOrCreate()
 
