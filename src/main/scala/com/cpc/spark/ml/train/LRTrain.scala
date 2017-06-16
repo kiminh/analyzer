@@ -142,6 +142,7 @@ object LRTrain {
     // Instantiate metrics object
     val metrics = new BinaryClassificationMetrics(predictionAndLabels)
 
+
     // Precision by threshold
     val precision = metrics.precisionByThreshold
     precision.foreach { case (t, p) =>

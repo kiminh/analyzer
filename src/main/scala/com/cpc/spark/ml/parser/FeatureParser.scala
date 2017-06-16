@@ -100,7 +100,9 @@ object FeatureParser {
     svm
   }
 
-  def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long, clk: Int, pv: Int): Vector = {
+  def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long,
+            clk: Int, pv: Int): Vector = {
+
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
     val week = cal.get(Calendar.DAY_OF_WEEK)

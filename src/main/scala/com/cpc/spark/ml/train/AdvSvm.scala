@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.UnionLog
-import com.cpc.spark.ml.parser.{FeatureParser, UserClickPV}
+import com.cpc.spark.ml.parser.{FeatureParser, FeatureParserV2, UserClickPV}
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
@@ -69,8 +69,8 @@ object AdvSvm extends UserClickPV {
             if (u != null && u.searchid.length > 0) {
               //TODO network数据不准确暂时忽略
               if (u.sex > 0 && u.coin > 0 && u.age > 0 && u.os > 0) {
-                //1 / 10 负样本
-                if (u.isclick == 1 || Random.nextInt(10) == 0) {
+                //1 / 20 负样本
+                if (u.isclick == 1 || Random.nextInt(20) == 0) {
                   ret = true
                 }
               }
@@ -78,7 +78,7 @@ object AdvSvm extends UserClickPV {
             ret
         }
         .cache()
-
+      /*
       clkpv.union(rawlog.filter(_.uid.length > 0).map(u => (u.uid, (0, 0, Seq(u)))))
         .reduceByKey {
           (x, y) =>
@@ -93,6 +93,8 @@ object AdvSvm extends UserClickPV {
                 FeatureParser.parseUnionLog(u, clk, pv)
             }
         }
+        */
+        rawlog.map(x => FeatureParserV2.parseUnionLog(x, 0, 0))
         .toDF()
         .write
         .mode(SaveMode.Overwrite)
