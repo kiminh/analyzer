@@ -3,7 +3,7 @@ package com.cpc.spark.ml.server
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.cpc.spark.ml.parser.{FeatureParser, UserClickPV}
+import com.cpc.spark.ml.parser.{FeatureParser, UserClick}
 import org.apache.spark.mllib.classification.LogisticRegressionModel
 import com.typesafe.config.ConfigFactory
 import io.grpc.ServerBuilder
@@ -17,12 +17,12 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
   * Created by Roy on 2017/5/10.
   */
-object MLServer extends UserClickPV {
+object MLServer extends UserClick {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 2) {
       System.err.println(s"""
-        |Usage: MLServer <model_data_path> <user clk >
+        |Usage: MLServer <port:int> <model_data_path:string>
         """.stripMargin)
       System.exit(1)
     }
@@ -42,8 +42,8 @@ object MLServer extends UserClickPV {
     model.clearThreshold()
     println("model data loaded", model.toString())
 
-    loadUserInfo(args(2))
-    println("read user info done", userClk.size, userPV.size)
+    loadUserClickFromFile()
+    println("done", userClk.size, userPV.size, userAdClick.size, userSlotClick.size, userSlotAdClick.size)
 
     val service = new PredictorService(model)
     val server = ServerBuilder.forPort(args(0).toInt)
@@ -77,11 +77,15 @@ object MLServer extends UserClickPV {
         x =>
           val clk = userClk.getOrElse(u.uid, 0)
           val pv = userPV.getOrElse(u.uid, 0)
-          val features = FeatureParser.parse(x, m, u, loc, n, d, req.time * 1000L, clk, pv)
+          val ad = userAdClick.getOrElse("%s-%d".format(u.uid, x.ideaid), 0)
+          val slot = userSlotClick.getOrElse("%s-%s".format(u.uid, m.adslotid), 0)
+          val slotAd = userSlotAdClick.getOrElse("%s-%s-%d".format(u.uid, m.adslotid, x.ideaid), 0)
+          val features = FeatureParser.parse(x, m, u, loc, n, d, req.time * 1000L, clk, pv, ad, slot, slotAd)
+
           var value = 0D
           if (features != null) {
             value = model.predict(features)
-            if (req.version == "v2" && value < 0.7) {
+            if (req.version == "v2" && value < 0.6) {
               value = value / 2
             }
           }

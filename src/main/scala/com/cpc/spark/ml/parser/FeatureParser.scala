@@ -50,7 +50,7 @@ object FeatureParser {
     1008946 -> 33
   )
 
-  def parseUnionLog(x: UnionLog, clk: Int, pv: Int): String = {
+  def parseUnionLog(x: UnionLog, clk: Int, pv: Int, adClick: Int, slotClick: Int, slotAdClick: Int): String = {
     val ad = AdInfo(
       bid = x.bid,
       ideaid = x.ideaid,
@@ -89,7 +89,7 @@ object FeatureParser {
     )
 
     var svm = ""
-    val vector = parse(ad, m, u, loc, n, d, x.timestamp * 1000L, clk, pv)
+    val vector = parse(ad, m, u, loc, n, d, x.timestamp * 1000L, clk, pv, adClick, slotClick, slotAdClick)
     if (vector != null) {
       svm = x.isclick.toString
       MLUtils.appendBias(vector).foreachActive {
@@ -101,7 +101,7 @@ object FeatureParser {
   }
 
   def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long,
-            clk: Int, pv: Int): Vector = {
+            clk: Int, pv: Int, adClick: Int, slotClick: Int, slotAdClick: Int): Vector = {
 
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
@@ -238,6 +238,30 @@ object FeatureParser {
     val (v4, max4) = combineIntFeature(0, 2, m.adslotType, 0, 3000, ad.planid)
     els = els :+ (i + v4, 1D)
     i += max4
+
+    //uid ad click
+    if (adClick > 5) {
+      els = els :+ (5 + i, 1D)
+    } else {
+      els = els :+ (adClick + i, 1D)
+    }
+    i += 6
+
+    //uid slot click
+    if (slotClick > 5) {
+      els = els :+ (5 + i, 1D)
+    } else {
+      els = els :+ (slotClick + i, 1D)
+    }
+    i += 6
+
+    //uid slot ad click
+    if (slotAdClick > 5) {
+      els = els :+ (5 + i, 1D)
+    } else {
+      els = els :+ (slotAdClick + i, 1D)
+    }
+    i += 6
 
     try {
       Vectors.sparse(i, els)

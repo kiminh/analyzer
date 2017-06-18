@@ -4,8 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.UnionLog
-import com.cpc.spark.ml.parser.{FeatureParser, FeatureParserV2, UserClickPV}
-import com.redis.RedisClient
+import com.cpc.spark.ml.parser.{FeatureParser, FeatureParserV2, UserClick}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -16,15 +15,13 @@ import scala.util.Random
 /*
 样本
  */
-object AdvSvm extends UserClickPV {
-
-  var redis: RedisClient = _
+object AdvSvm extends UserClick {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 4) {
       System.err.println(
         s"""
-           |Usage: GenerateAdvSvm <version> <daybefore > <days> <user click>
+           |Usage: GenerateAdvSvm <version:string> <daybefore:int> <days:int> <rate:int>
            |
         """.stripMargin)
       System.exit(1)
@@ -33,24 +30,17 @@ object AdvSvm extends UserClickPV {
     val version = args(0)
     val dayBefore = args(1).toInt
     val days = args(2).toInt
+    val rate = args(3).toInt
     val ctx = SparkSession.builder()
       .appName("GenerateAdvSvm " + version)
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
     val conf = ConfigFactory.load()
-    redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
-    redis.select(5)
 
     println("read user info")
-    loadUserInfo(args(3))
-    val clkRdd = ctx.sparkContext.parallelize(userClk.toSeq, 13)
-    val pvRdd = ctx.sparkContext.parallelize(userPV.toSeq, 13)
-    val clkpv = clkRdd.map(x => (x._1, (x._2, 0, Seq[UnionLog]())))
-      .union(pvRdd.map(x => (x._1, (0, x._2, Seq[UnionLog]()))))
-      .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2, Seq[UnionLog]()))
-      .cache()
-    println("done", userClk.size, userPV.size)
+    loadUserClickFromFile()
+    println("done", userClk.size, userPV.size, userAdClick.size, userSlotClick.size, userSlotAdClick.size)
 
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
@@ -66,11 +56,11 @@ object AdvSvm extends UserClickPV {
         .filter {
           u =>
             var ret = false
-            if (u != null && u.searchid.length > 0) {
+            if (u != null && u.searchid.length > 0 && u.uid.length > 0) {
               //TODO network数据不准确暂时忽略
               if (u.sex > 0 && u.coin > 0 && u.age > 0 && u.os > 0) {
                 //1 / 20 负样本
-                if (u.isclick == 1 || Random.nextInt(20) == 0) {
+                if (u.isclick == 1 || Random.nextInt(rate) == 0) {
                   ret = true
                 }
               }
@@ -78,23 +68,18 @@ object AdvSvm extends UserClickPV {
             ret
         }
         .cache()
-      /*
-      clkpv.union(rawlog.filter(_.uid.length > 0).map(u => (u.uid, (0, 0, Seq(u)))))
-        .reduceByKey {
-          (x, y) =>
-            (x._1 + y._1, x._2 + y._2, x._3 ++ y._3)
-        }
-        .flatMap {
-          x =>
-            val clk = x._2._1
-            val pv = x._2._2
-            x._2._3.map {
+
+      rawlog
+        .mapPartitions {
+          p =>
+            p.map {
               u =>
-                FeatureParser.parseUnionLog(u, clk, pv)
+                val ad = userAdClick.getOrElse("%s-%d".format(u.uid, u.ideaid), 0)
+                val slot = userSlotClick.getOrElse("%s-%s".format(u.uid, u.adslotid), 0)
+                val slotAd = userSlotAdClick.getOrElse("%s-%s-%d".format(u.uid, u.adslotid, u.ideaid), 0)
+                FeatureParser.parseUnionLog(u, userClk.getOrElse(u.uid, 0), userPV.getOrElse(u.uid, 0), ad, slot, slotAd)
             }
         }
-        */
-        rawlog.map(x => FeatureParserV2.parseUnionLog(x, 0, 0))
         .toDF()
         .write
         .mode(SaveMode.Overwrite)
