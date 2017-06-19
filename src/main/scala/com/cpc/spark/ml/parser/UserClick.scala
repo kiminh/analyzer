@@ -28,7 +28,7 @@ trait UserClick {
   def loadUserClickPV(path: String): Unit = {
     for (line <- Source.fromFile(path, "UTF8").getLines()) {
       val row = line.split("\t")
-      if (row.length == 3) {
+      if (row.length == 3 && row(0).length > 0) {
         userClk.update(row(0), row(1).toInt)
         userPV.update(row(0), row(2).toInt)
       }
@@ -38,7 +38,7 @@ trait UserClick {
   def loadUserAdClick(path: String): Unit = {
     for (line <- Source.fromFile(path, "UTF8").getLines()) {
       val row = line.split("\t")
-      if (row.length == 4) {
+      if (row.length == 4 && row(0).length > 0) {
         userAdClick.update("%s-%s".format(row(0), row(1)), row(2).toInt)
       }
     }
@@ -47,7 +47,7 @@ trait UserClick {
   def loadUserSlotClick(path: String): Unit = {
     for (line <- Source.fromFile(path, "UTF8").getLines()) {
       val row = line.split("\t")
-      if (row.length == 4) {
+      if (row.length == 4 && row(0).length > 0) {
         userSlotClick.update("%s-%s".format(row(0), row(1)), row(2).toInt)
       }
     }
@@ -56,7 +56,7 @@ trait UserClick {
   def loadUserSlotAdClick(path: String): Unit = {
     for (line <- Source.fromFile(path, "UTF8").getLines()) {
       val row = line.split("\t")
-      if (row.length == 5) {
+      if (row.length == 5 && row(0).length > 0) {
         userSlotAdClick.update("%s-%s-%s".format(row(0), row(1), row(2)), row(3).toInt)
       }
     }

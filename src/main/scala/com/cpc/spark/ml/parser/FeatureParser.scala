@@ -272,8 +272,6 @@ object FeatureParser {
     }
   }
 
-
-
   //得到所有排列组合 C(n, m)
   def getCombination[T: Manifest](all: Seq[T], m: Int): Seq[Array[T]] = {
     var combs = mutable.Seq[Array[T]]()

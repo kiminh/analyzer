@@ -5,7 +5,6 @@ import java.util.Calendar
 
 import com.cpc.spark.log.parser.UnionLog
 import com.cpc.spark.ml.parser.{FeatureParser, FeatureParserV2, UserClick}
-import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -36,10 +35,23 @@ object AdvSvm extends UserClick {
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
-    val conf = ConfigFactory.load()
 
     println("read user info")
     loadUserClickFromFile()
+
+    val u: UnionLog = null
+    val clickSum = (u, 0, 0, 0, 0, 0)
+    val ucRdd = ctx.sparkContext.parallelize(userClk.toSeq)
+      .map(x => (x._1, (Seq(clickSum), x._2, 0))).cache()
+    val upRdd = ctx.sparkContext.parallelize(userPV.toSeq)
+      .map(x => (x._1, (Seq(clickSum), 0, x._2))).cache()
+    val uacRdd = ctx.sparkContext.parallelize(userAdClick.toSeq)
+      .map(x => (x._1, (Seq(clickSum), x._2))).cache()
+    val uscRdd = ctx.sparkContext.parallelize(userSlotClick.toSeq)
+      .map(x => (x._1, (Seq(clickSum), x._2))).cache()
+    val usacRdd = ctx.sparkContext.parallelize(userSlotAdClick.toSeq)
+      .map(x => (x._1, (Seq(clickSum), x._2))).cache()
+
     println("done", userClk.size, userPV.size, userAdClick.size, userSlotClick.size, userSlotAdClick.size)
 
     val cal = Calendar.getInstance()
@@ -57,8 +69,10 @@ object AdvSvm extends UserClick {
           u =>
             var ret = false
             if (u != null && u.searchid.length > 0 && u.uid.length > 0) {
-              //TODO network数据不准确暂时忽略
-              if (u.sex > 0 && u.coin > 0 && u.age > 0 && u.os > 0) {
+              //rate = 0表示不做过滤取全样本
+              if (rate == 0) {
+                ret = true
+              } else if (u.media_appsid == "80000001" || u.media_appsid == "80000002") {
                 //1 / 20 负样本
                 if (u.isclick == 1 || Random.nextInt(rate) == 0) {
                   ret = true
@@ -69,16 +83,67 @@ object AdvSvm extends UserClick {
         }
         .cache()
 
-      rawlog
-        .mapPartitions {
-          p =>
-            p.map {
+      println("merge click")
+      val clickRdd = rawlog.map(u => (u.uid, (Seq((u, 0, 0, 0, 0, 0)), 0, 0)))
+        //click pv
+        .union(ucRdd)
+        .union(upRdd)
+        .reduceByKey((x, y) => (x._1 ++ y._1, x._2 + y._2, x._3 + y._3))
+        .flatMap {
+          x =>
+            val v = x._2
+            v._1.filter(_._1 != null).map {
               u =>
-                val ad = userAdClick.getOrElse("%s-%d".format(u.uid, u.ideaid), 0)
-                val slot = userSlotClick.getOrElse("%s-%s".format(u.uid, u.adslotid), 0)
-                val slotAd = userSlotAdClick.getOrElse("%s-%s-%d".format(u.uid, u.adslotid, u.ideaid), 0)
-                FeatureParser.parseUnionLog(u, userClk.getOrElse(u.uid, 0), userPV.getOrElse(u.uid, 0), ad, slot, slotAd)
+                (u._1, v._2, v._3)
             }
+        }
+        //ad click
+        .map(x => ("%s-%d".format(x._1.uid, x._1.ideaid), (Seq((x._1, x._2, x._3, 0, 0, 0)), 0)))
+        .union(uacRdd)
+        .reduceByKey((x, y) => (x._1 ++ y._1, x._2 + y._2))
+        .flatMap {
+          x =>
+            val v = x._2
+            v._1.filter(_._1 != null).map {
+              u =>
+                (u._1, u._2, u._3, v._2)
+            }
+        }
+        //slot click
+        .map(x => ("%s-%s".format(x._1.uid, x._1.adslotid), (Seq((x._1, x._2, x._3, x._4, 0, 0)), 0)))
+        .union(uscRdd)
+        .reduceByKey((x, y) => (x._1 ++ y._1, x._2 + y._2))
+        .flatMap {
+          x =>
+            val v = x._2
+            v._1.filter(_._1 != null).map {
+              u =>
+                (u._1, u._2, u._3, u._4, v._2)
+            }
+        }
+        //slot ad click
+        .map(x => ("%s-%s-%d".format(x._1.uid, x._1.adslotid, x._1.ideaid), (Seq((x._1, x._2, x._3, x._4, x._5, 0)), 0)))
+        .union(usacRdd)
+        .reduceByKey((x, y) => (x._1 ++ y._1, x._2 + y._2))
+        .flatMap {
+          x =>
+            val v = x._2
+            v._1.filter(_._1 != null).map {
+              u =>
+                (u._1, u._2, u._3, u._4, u._5, v._2)
+            }
+        }
+        .cache()
+
+      if (n == 1) {
+        clickRdd.filter(_._6 > 0).take(20).foreach(x => println(x._1.uid, x._2, x._3, x._4, x._5, x._6))
+      }
+      println("done")
+
+      clickRdd
+        .map{
+          x =>
+            FeatureParser.parseUnionLog(x._1, x._2, x._3, x._4, x._5, x._6)
         }
         .toDF()
         .write
@@ -87,6 +152,7 @@ object AdvSvm extends UserClick {
 
       println("done", rawlog.count())
       rawlog.unpersist()
+      clickRdd.unpersist()
       cal.add(Calendar.DATE, 1)
     }
 
