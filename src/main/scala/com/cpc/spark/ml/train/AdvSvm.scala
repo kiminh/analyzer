@@ -1,3 +1,4 @@
+
 package com.cpc.spark.ml.train
 
 import java.text.SimpleDateFormat
@@ -14,7 +15,7 @@ import scala.util.Random
 /*
 样本
  */
-object AdvSvm extends UserClick {
+object AdvSvm {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 4) {
@@ -30,6 +31,7 @@ object AdvSvm extends UserClick {
     val dayBefore = args(1).toInt
     val days = args(2).toInt
     val rate = args(3).toInt
+    val hour = args(4)
     val ctx = SparkSession.builder()
       .appName("GenerateAdvSvm " + version)
       .enableHiveSupport()
@@ -37,22 +39,23 @@ object AdvSvm extends UserClick {
     import ctx.implicits._
 
     println("read user info")
-    loadUserClickFromFile()
+    val uc = new UserClick("cpc-bj05", 6381, 5)
+    uc.loadUserClickFromFile()
 
     val u: UnionLog = null
     val clickSum = (u, 0, 0, 0, 0, 0)
-    val ucRdd = ctx.sparkContext.parallelize(userClk.toSeq)
+    val ucRdd = ctx.sparkContext.parallelize(uc.userClk.toSeq)
       .map(x => (x._1, (Seq(clickSum), x._2, 0))).cache()
-    val upRdd = ctx.sparkContext.parallelize(userPV.toSeq)
+    val upRdd = ctx.sparkContext.parallelize(uc.userPV.toSeq)
       .map(x => (x._1, (Seq(clickSum), 0, x._2))).cache()
-    val uacRdd = ctx.sparkContext.parallelize(userAdClick.toSeq)
+    val uacRdd = ctx.sparkContext.parallelize(uc.userAdClick.toSeq)
       .map(x => (x._1, (Seq(clickSum), x._2))).cache()
-    val uscRdd = ctx.sparkContext.parallelize(userSlotClick.toSeq)
+    val uscRdd = ctx.sparkContext.parallelize(uc.userSlotClick.toSeq)
       .map(x => (x._1, (Seq(clickSum), x._2))).cache()
-    val usacRdd = ctx.sparkContext.parallelize(userSlotAdClick.toSeq)
+    val usacRdd = ctx.sparkContext.parallelize(uc.userSlotAdClick.toSeq)
       .map(x => (x._1, (Seq(clickSum), x._2))).cache()
 
-    println("done", userClk.size, userPV.size, userAdClick.size, userSlotClick.size, userSlotAdClick.size)
+    println("done", uc.userClk.size, uc.userSlotAdClick.size)
 
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
@@ -60,19 +63,21 @@ object AdvSvm extends UserClick {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       println("get data " + date)
 
+      var hourSql = ""
+      if (hour.length > 0) {
+        hourSql = "and `hour` in (\"%s\")".format(hour.split(",").mkString("\",\""))
+      }
+
       val rawlog = ctx.sql(
         s"""
-           |select * from dl_cpc.cpc_union_log where `date` = "%s" and isfill = 1 and adslotid > 0
-        """.stripMargin.format(date))
+           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and isfill = 1 and adslotid > 0
+        """.stripMargin.format(date, hourSql))
         .as[UnionLog].rdd
         .filter {
           u =>
             var ret = false
             if (u != null && u.searchid.length > 0 && u.uid.length > 0) {
-              //rate = 0表示不做过滤取全样本
-              if (rate == 0) {
-                ret = true
-              } else if (u.media_appsid == "80000001" || u.media_appsid == "80000002") {
+              if (u.media_appsid == "80000001" || u.media_appsid == "80000002") {
                 //1 / 20 负样本
                 if (u.isclick == 1 || Random.nextInt(rate) == 0) {
                   ret = true
@@ -143,7 +148,12 @@ object AdvSvm extends UserClick {
       clickRdd
         .map{
           x =>
-            FeatureParser.parseUnionLog(x._1, x._2, x._3, x._4, x._5, x._6)
+            val pv = 1
+            FeatureParser.parseUnionLog(x._1,
+              x._2.toDouble / pv, x._3,
+              x._4.toDouble / pv,
+              x._5.toDouble / pv,
+              x._6.toDouble / pv)
         }
         .toDF()
         .write

@@ -50,7 +50,7 @@ object FeatureParser {
     1008946 -> 33
   )
 
-  def parseUnionLog(x: UnionLog, clk: Int, pv: Int, adClick: Int, slotClick: Int, slotAdClick: Int): String = {
+  def parseUnionLog(x: UnionLog, clk: Double, pv: Int, adClick: Double, slotClick: Double, slotAdClick: Double): String = {
     val ad = AdInfo(
       bid = x.bid,
       ideaid = x.ideaid,
@@ -101,7 +101,7 @@ object FeatureParser {
   }
 
   def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long,
-            clk: Int, pv: Int, adClick: Int, slotClick: Int, slotAdClick: Int): Vector = {
+            clk: Double, pv: Int, adClick: Double, slotClick: Double, slotAdClick: Double): Vector = {
 
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
@@ -198,28 +198,6 @@ object FeatureParser {
     }
     i += 2000
 
-    if (clk > 5) {
-      els = els :+ (5 + i, 1D)
-    } else {
-      els = els :+ (clk + i, 1D)
-    }
-    i += 6
-
-    var pvv = pv
-    if (pvv <= 0) {
-      pvv = 0
-    } else if (pv < 10) {
-      pvv = 1
-    } else if (pv < 100) {
-      pvv = 2
-    } else if (pv < 500) {
-      pvv = 3
-    } else {
-      pvv = 4
-    }
-    els = els :+ (pvv + i, 1D)
-    i += 5
-
     //adslotid + ideaid
     val (v, max) = combineIntFeature(0, adslotids.size, adslotids.getOrElse(m.adslotid, 0), 0, 20000, ad.ideaid)
     els = els :+ (i + v, 1D)
@@ -239,29 +217,34 @@ object FeatureParser {
     els = els :+ (i + v4, 1D)
     i += max4
 
+
+    var pvv = pv
+    if (pvv <= 0) {
+      pvv = 0
+    } else if (pv < 10) {
+      pvv = 1
+    } else if (pv < 100) {
+      pvv = 2
+    } else if (pv < 500) {
+      pvv = 3
+    } else {
+      pvv = 4
+    }
+    els = els :+ (pvv + i, 1D)
+    i += 5
+
+    //uid click
+    els = els :+ (i, clk)
+    i += 1
     //uid ad click
-    if (adClick > 5) {
-      els = els :+ (5 + i, 1D)
-    } else {
-      els = els :+ (adClick + i, 1D)
-    }
-    i += 6
-
+    els = els :+ (i, adClick)
+    i += 1
     //uid slot click
-    if (slotClick > 5) {
-      els = els :+ (5 + i, 1D)
-    } else {
-      els = els :+ (slotClick + i, 1D)
-    }
-    i += 6
-
+    els = els :+ (i, slotClick)
+    i += 1
     //uid slot ad click
-    if (slotAdClick > 5) {
-      els = els :+ (5 + i, 1D)
-    } else {
-      els = els :+ (slotAdClick + i, 1D)
-    }
-    i += 6
+    els = els :+ (i, slotAdClick)
+    i += 1
 
     try {
       Vectors.sparse(i, els)

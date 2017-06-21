@@ -5,8 +5,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.UnionLog
-import com.redis.RedisClient
-import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 
@@ -32,9 +30,6 @@ object SumUidClk {
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
-    val conf = ConfigFactory.load()
-    val redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
-    redis.select(5)
 
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
@@ -47,17 +42,7 @@ object SumUidClk {
            |select * from dl_cpc.cpc_union_log where `date` = "%s" and isfill = 1 and adslotid > 0
         """.stripMargin.format(date))
         .as[UnionLog].rdd
-        .filter {
-          u =>
-            var ret = false
-            if (u != null && u.searchid.length > 0 && u.uid.length > 0) {
-              //TODO network数据不准确暂时忽略
-              if (u.sex > 0 && u.coin > 0 && u.age > 0 && u.os > 0) {
-                ret = true
-              }
-            }
-            ret
-        }
+        .filter(u => u != null && u.searchid.length > 0 && u.uid.length > 5)
         .cache()
 
       //uid click

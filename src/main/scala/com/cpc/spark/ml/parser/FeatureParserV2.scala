@@ -161,10 +161,6 @@ object FeatureParserV2 {
     els = els :+ (i + v4, 1D)
     i += max4
 
-    val uid = u.uid.hashCode % 5000000 + 10000000
-    els = els :+ (uid + i, 1D)
-    i += 10000000
-
     try {
       Vectors.sparse(i, els)
     } catch {
