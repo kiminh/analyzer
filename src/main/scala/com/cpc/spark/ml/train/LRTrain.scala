@@ -41,21 +41,6 @@ object LRTrain {
     val sample = MLUtils.loadLibSVMFile(sc, inpath)
       //random pick 1/pnRate negative sample
       .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
-      .map {
-        x =>
-          val label = x.label
-          val point = x.features
-          var els = Seq[(Int, Double)]()
-          point.foreachActive {
-            case (i ,v) =>
-              if (i < 884362) {
-                els = els :+ (i, v)
-              } else {
-                els = els :+ (i, 0D)
-              }
-          }
-          new LabeledPoint(label = x.label, features = Vectors.sparse(point.size, els))
-      }
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
 
     val test = sample(1)
