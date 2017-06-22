@@ -5,13 +5,13 @@ import java.util.{Calendar, Properties}
 
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
 import org.apache.spark.sql.{SaveMode, SparkSession}
-
+import com.typesafe.config.ConfigFactory
 /**
   * Created by Roy on 2017/4/26.
   */
 object GetDayUv {
 
-  val mariadbUrl = "jdbc:mysql://10.9.180.16:3306/report"
+  var mariadbUrl = ""
 
   val mariadbProp = new Properties()
 
@@ -29,9 +29,12 @@ object GetDayUv {
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    mariadbProp.put("user", "report")
-    mariadbProp.put("password", "report!@#")
-    mariadbProp.put("driver", "org.mariadb.jdbc.Driver")
+
+    val conf = ConfigFactory.load()
+    mariadbUrl = conf.getString("mariadb.url")
+    mariadbProp.put("user", conf.getString("mariadb.user"))
+    mariadbProp.put("password",conf.getString("mariadb.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     val ctx = SparkSession.builder()
       .appName("cpc get uv report from %s %s".format(table, date))

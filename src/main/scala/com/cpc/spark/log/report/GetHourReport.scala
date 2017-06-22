@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
 import com.cpc.spark.log.parser.UnionLog
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -14,7 +15,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   */
 object GetHourReport {
 
-  val mariadbUrl = "jdbc:mysql://10.9.180.16:3306/report"
+  var mariadbUrl = ""
 
   val mariadbProp = new Properties()
 
@@ -35,10 +36,11 @@ object GetHourReport {
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val hour = new SimpleDateFormat("HH").format(cal.getTime)
 
-    mariadbProp.put("user", "report")
-    mariadbProp.put("password", "report!@#")
-    mariadbProp.put("driver", "org.mariadb.jdbc.Driver")
-
+    val conf = ConfigFactory.load()
+    mariadbUrl = conf.getString("mariadb.url")
+    mariadbProp.put("user", conf.getString("mariadb.user"))
+    mariadbProp.put("password",conf.getString("mariadb.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.driver"))
     val ctx = SparkSession.builder()
       .appName("cpc get hour report from %s %s/%s".format(table, date, hour))
       .enableHiveSupport()
