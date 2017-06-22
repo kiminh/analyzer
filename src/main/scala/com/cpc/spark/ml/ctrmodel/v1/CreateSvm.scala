@@ -49,16 +49,14 @@ object CreateSvm {
       ctx.sql(
         s"""
            |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and isfill = 1 and adslotid > 0
-           |and media_appsid in ("80000001", "80000002")
+           |and media_appsid in ("80000001", "80000002") and age > 0 and sex > 0
         """.stripMargin.format(date, hourSql))
         .as[UnionLog].rdd
         .filter {
           u =>
             var ret = false
-            if (u != null && u.searchid.length > 0 && u.uid.length > 0) {
-              if (u.isclick == 1 || Random.nextInt(rate) == 0) {
-                ret = true
-              }
+            if (u.isclick == 1 || Random.nextInt(rate) == 0) {
+              ret = true
             }
             ret
         }

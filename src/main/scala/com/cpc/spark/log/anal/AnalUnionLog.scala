@@ -25,7 +25,7 @@ object AnalUnionLog {
     if (args.length < 3) {
       System.err.println(
         s"""
-           |Usage: AnalUnionLog <hdfs_input> <hdfs_ouput> <hour_before>
+           |usage: analunionlog <hdfs_input> <hdfs_ouput> <hour_before>
            |
         """.stripMargin)
       System.exit(1)

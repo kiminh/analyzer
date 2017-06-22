@@ -2,7 +2,8 @@ package com.cpc.spark.ml.ctrmodel.v1
 
 import java.util.Calendar
 
-import com.cpc.spark.log.parser.UnionLog
+import com.cpc.spark.log.parser.{ExtValue, UnionLog}
+import com.cpc.spark.ml.common.FeatureDict
 import mlserver.mlserver._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.util.MLUtils
@@ -11,45 +12,17 @@ import org.apache.spark.mllib.util.MLUtils
 /**
   * Created by Roy on 2017/5/15.
   */
-object FeatureParser {
+object FeatureParser extends FeatureDict {
 
-  val adslotids = Map(
-    1010244 -> 1,
-    1012765 -> 2,
-    1012947 -> 3,
-    1018976 -> 4,
-    1020714 -> 5,
-    1020995 -> 6,
-    1021639 -> 7,
-    1021642 -> 8,
-    1022064 -> 9,
-    1022280 -> 10,
-    1022704 -> 11,
-    1022709 -> 12,
-    1022710 -> 13,
-    1022798 -> 14,
-    1023933 -> 15,
-    1023934 -> 16,
-    1023935 -> 17,
-    1024360 -> 18,
-    1024852 -> 19,
-    1024902 -> 20,
-    1025099 -> 21,
-    1025156 -> 22,
-    1025164 -> 23,
-    1025493 -> 24,
-    1026231 -> 25,
-    1026459 -> 26,
-    1026558 -> 27,
-    1026890 -> 28,
-    1026966 -> 29,
-    1026975 -> 30,
-    1027091 -> 31,
-    1027156 -> 32,
-    1008946 -> 33
-  )
 
   def parseUnionLog(x: UnionLog): String = {
+    var cls = 0
+    if (x.ext != null) {
+      val v = x.ext.getOrElse("media_class", null)
+      if (v != null) {
+        cls = v.int_value
+      }
+    }
     val ad = AdInfo(
       bid = x.bid,
       ideaid = x.ideaid,
@@ -57,7 +30,8 @@ object FeatureParser {
       planid = x.planid,
       userid = x.userid,
       adtype = x.adtype,
-      interaction = x.interaction
+      interaction = x.interaction,
+      _class = cls
     )
     val m = Media(
       mediaAppsid = x.media_appsid.toInt,
@@ -66,11 +40,27 @@ object FeatureParser {
       adslotType = x.adslot_type,
       floorbid = x.floorbid
     )
+    val interests = x.interests.split(",")
+      .map{
+        x =>
+          val v = x.split("=")
+          if (v.length == 2) {
+            (v(0).toInt, v(1).toInt)
+          } else {
+            (0, 0)
+          }
+      }
+      .filter(_._1 > 0)
+      .sortWith((x, y) => x._2 > y._2)
+      .filter(_._2.toInt >= 4)
+      .map(_._1)
+      .toSeq
     val u = User(
       sex = x.sex,
       age = x.age,
       coin = x.coin,
-      uid = x.uid
+      uid = x.uid,
+      interests = interests
     )
     val n = Network(
       network = x.network,
@@ -115,12 +105,18 @@ object FeatureParser {
     i += 24
 
     //sex
-    els = els :+ (u.sex + i, 1D)
-    i += 5
+    if (u.sex > 0) {
+      els = els :+ (u.sex + i, 1D)
+    }
+    i += 2
 
-    //age
-    els = els :+ (u.age + i, 1D)
-    i += 10
+    //interests
+    val mostInterest = 0
+    u.interests.foreach {
+      intr =>
+        els = els :+ (interests.getOrElse(intr, 0) + i, 1D)
+    }
+    i += interests.size
 
     //coin
     var lvl = 0
@@ -152,6 +148,13 @@ object FeatureParser {
     els = els :+ (ad.interaction + i, 1D)
     i += 10
 
+    //ad class
+    val adcls = adClass.getOrElse(ad._class, 0)
+    if (adcls > 0) {
+      els = els :+ (adcls + i, 1D)
+    }
+    i += adClass.size
+
     //isp
     els = els :+ (n.isp + i, 1D)
     i += 50
@@ -179,7 +182,7 @@ object FeatureParser {
 
     //unitid
     els = els :+ (ad.unitid + i, 1D)
-    i += 5000
+    i += 10000
 
     //ideaid
     els = els :+ (ad.ideaid + i, 1D)
@@ -187,7 +190,9 @@ object FeatureParser {
 
     //ad slot id
     val slotid = adslotids.getOrElse(m.adslotid, 0)
-    els = els :+ (slotid + i, 1D)
+    if (slotid > 0) {
+      els = els :+ (slotid + i, 1D)
+    }
     i += adslotids.size
 
     //model
@@ -197,14 +202,36 @@ object FeatureParser {
     i += 2000
 
     //adslotid + ideaid
-    val (v, max) = combineIntFeature(0, adslotids.size, adslotids.getOrElse(m.adslotid, 0), 0, 20000, ad.ideaid)
+    val (v, max) = combineIntFeature(0, adslotids.size, slotid, 0, 20000, ad.ideaid)
     els = els :+ (i + v, 1D)
     i += max
 
-    //adslotid + planid
-    val (v2, max2) = combineIntFeature(0, adslotids.size, adslotids.getOrElse(m.adslotid, 0), 0, 3000, ad.planid)
-    els = els :+ (i + v2, 1D)
+    //sex adclass slot
+    val max1 = 2 * adClass.size * adslotids.size
+    if (u.sex > 0 && adcls > 0 && slotid > 0) {
+      val v = (u.sex - 1) + (adcls - 1) * u.sex + (slotid - 1) * adcls * u.sex
+      els = els :+ (i + v, 1D)
+    }
+    i += max1
+
+    //sex interest adclass slot
+    val interest = interests.getOrElse(u.interests.headOption.getOrElse(0), 0)
+    val max2 = 2 * interests.size * adClass.size * adslotids.size
+    if (u.sex > 0 && interest > 0 && adcls > 0 && slotid > 0) {
+      val v = (u.sex - 1) + (adcls - 1) * u.sex + (slotid - 1) * adcls * u.sex +
+        (interest - 1) * adcls * u.sex * adcls * u.sex
+      els = els :+ (i + v, 1D)
+    }
     i += max2
+
+    //sex net adclass slot
+    val max3 = 2 * 4 * adClass.size * adslotids.size
+    if (u.sex > 0 && n.network > 0 && adcls > 0 && slotid > 0) {
+      val v = (u.sex - 1) + (adcls - 1) * u.sex + (slotid - 1) * adcls * u.sex +
+        (n.network - 1) * adcls * u.sex * adcls * u.sex
+      els = els :+ (i + v, 1D)
+    }
+    i += max3
 
     try {
       Vectors.sparse(i, els)
