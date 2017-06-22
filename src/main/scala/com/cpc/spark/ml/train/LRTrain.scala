@@ -9,7 +9,6 @@ import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
-
 import scala.util.Random
 
 /**
@@ -33,7 +32,17 @@ object LRTrain {
     val sampleRate = args(3).toFloat
     val pnRate = args(4).toInt
     val ctx = SparkSession.builder()
-      .config("spark.driver.maxResultSize", "4G")
+      .config("spark.driver.maxResultSize", "10G")
+      .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+      .config("spark.kryo.registrator", "com.cpc.spark.ml.train.LRRegistrator")
+      .config("spark.rpc.message.maxSize", "400")
+      .config("spark.speculation", "true")
+      .config("spark.storage.blockManagerHeartBeatMs", "300000")
+      .config("spark.scheduler.maxRegisteredResourcesWaitingTime", "100")
+      .config("spark.core.connection.auth.wait.timeout", "100")
+      //conf.set("spark.executor.memory", "64g")
+      //conf.set("spark.cores.max", "64")
+
       .appName("cpc LR model %s[%s]".format(mode, modelPath))
       .getOrCreate()
 
@@ -52,11 +61,11 @@ object LRTrain {
       /*
       lbfgs.optimizer.setGradient(new LogisticGradient())
       lbfgs.optimizer.setUpdater(new SquaredL2Updater())
-      lbfgs.optimizer.setNumIterations(100)
       lbfgs.optimizer.setRegParam(0.2)
       lbfgs.optimizer.setNumCorrections(10)
       lbfgs.optimizer.setConvergenceTol(1e-4)
       */
+      lbfgs.optimizer.setNumIterations(200)
 
       val training = sample(0).cache()
       println("sample count", training.count())
@@ -186,12 +195,8 @@ object LRTrain {
     val auROC = metrics.areaUnderROC
     println("Area under ROC = " + auROC)
 
-
-    println("done")
-
+    println("all done")
     predictionAndLabels.unpersist()
     sc.stop()
   }
 }
-
-
