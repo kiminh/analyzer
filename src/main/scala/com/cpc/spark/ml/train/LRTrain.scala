@@ -75,6 +75,7 @@ object LRTrain {
 
       println("training ...", training.take(1).foreach(x => println(x.features)))
       model = lbfgs.run(training)
+      model.save(sc, modelPath)
       println("done")
       training.unpersist()
     }
@@ -188,12 +189,7 @@ object LRTrain {
 
     println("done")
 
-    if (mode == "train") {
-      println("save model")
-      model.save(sc, modelPath)
-      predictionAndLabels.unpersist()
-    }
-
+    predictionAndLabels.unpersist()
     sc.stop()
   }
 }
