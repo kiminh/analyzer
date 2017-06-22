@@ -35,6 +35,7 @@ object LRTrain {
       .config("spark.driver.maxResultSize", "10G")
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .config("spark.kryo.registrator", "com.cpc.spark.ml.train.LRRegistrator")
+      .config("spark.kryoserializer.buffer.max", "2047MB")
       .config("spark.rpc.message.maxSize", "400")
       .config("spark.speculation", "true")
       .config("spark.storage.blockManagerHeartBeatMs", "300000")

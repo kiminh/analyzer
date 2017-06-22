@@ -201,11 +201,6 @@ object FeatureParser extends FeatureDict {
     }
     i += 2000
 
-    //adslotid + ideaid
-    val (v, max) = combineIntFeature(0, adslotids.size, slotid, 0, 20000, ad.ideaid)
-    els = els :+ (i + v, 1D)
-    i += max
-
     //sex adclass slot
     val max1 = 2 * adClass.size * adslotids.size
     if (u.sex > 0 && adcls > 0 && slotid > 0) {
