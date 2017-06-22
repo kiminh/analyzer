@@ -14,7 +14,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   */
 object GetTagReport {
 
-  val mariadbUrl = "jdbc:mysql://10.9.180.16:3306/report"
+  var mariadbUrl  = ""
   val mariadbProp = new Properties()
 
   def main(args: Array[String]): Unit = {
@@ -26,16 +26,17 @@ object GetTagReport {
         """.stripMargin)
       System.exit(1)
     }
-    mariadbProp.put("user", "report")
-    mariadbProp.put("password", "report!@#")
-    mariadbProp.put("driver", "org.mariadb.jdbc.Driver")
+    val conf = ConfigFactory.load()
+    mariadbUrl = conf.getString("mariadb.url")
+    mariadbProp.put("user", conf.getString("mariadb.user"))
+    mariadbProp.put("password",conf.getString("mariadb.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.driver"))
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val dayBefore = args(0).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
     val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val conf = ConfigFactory.load()
     val allowedPkgs = conf.getStringList("userprofile.allowed_pkgs")
     val pkgTags = conf.getConfig("app_tag.v2.app_has_tag")
     val ctx = SparkSession.builder()

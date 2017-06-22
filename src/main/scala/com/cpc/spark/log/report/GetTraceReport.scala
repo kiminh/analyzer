@@ -3,7 +3,8 @@ package com.cpc.spark.log.report
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.log.parser.{LogParser, TraceReportLog}
+import com.cpc.spark.log.parser.TraceReportLog
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 
@@ -12,7 +13,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   */
 object GetTraceReport {
 
-  val mariadbUrl = "jdbc:mysql://10.9.180.16:3306/report"
+  var mariadbUrl  = ""
 
   val mariadbProp = new Properties()
 
@@ -34,9 +35,11 @@ object GetTraceReport {
     println("date:" + date)
     println("hour:" + hour)
 
-    mariadbProp.put("user", "report")
-    mariadbProp.put("password", "report!@#")
-    mariadbProp.put("driver", "org.mariadb.jdbc.Driver")
+    val conf = ConfigFactory.load()
+    mariadbUrl = conf.getString("mariadb.url")
+    mariadbProp.put("user", conf.getString("mariadb.user"))
+    mariadbProp.put("password",conf.getString("mariadb.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     val ctx = SparkSession.builder()
       .appName("cpc get trace hour report from %s/%s".format(date, hour))
