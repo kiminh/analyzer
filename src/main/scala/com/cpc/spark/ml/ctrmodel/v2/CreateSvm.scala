@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.ctrmodel.v1
+package com.cpc.spark.ml.ctrmodel.v2
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -30,7 +30,7 @@ object CreateSvm {
     val rate = args(3).toInt
     val hour = args(4)
     val ctx = SparkSession.builder()
-      .appName("create svm data code:v1 data:" + version)
+      .appName("create svm data code:v2 data:" + version)
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
@@ -46,10 +46,10 @@ object CreateSvm {
         hourSql = "and `hour` in (\"%s\")".format(hour.split(",").mkString("\",\""))
       }
 
-      ctx.sql(
+      val svm = ctx.sql(
         s"""
            |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and isfill = 1 and adslotid > 0
-           |and media_appsid in ("80000001", "80000002") and sex > 0
+           |and media_appsid in ("80000001", "80000002")
         """.stripMargin.format(date, hourSql))
         .as[UnionLog].rdd
         .filter {
@@ -61,12 +61,18 @@ object CreateSvm {
             ret
         }
         .map{x => FeatureParser.parseUnionLog(x)}
-        .toDF()
+        .cache()
+
+      svm.toDF()
         .write
         .mode(SaveMode.Overwrite)
         .text("/user/cpc/svmdata/" + version + "/" + date)
 
+      if (n == 1) {
+        svm.take(1).foreach(println)
+      }
       println("done")
+      svm.unpersist()
       cal.add(Calendar.DATE, 1)
     }
 

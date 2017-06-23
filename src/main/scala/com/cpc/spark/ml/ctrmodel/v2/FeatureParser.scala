@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.ctrmodel.v1
+package com.cpc.spark.ml.ctrmodel.v2
 
 import java.util.Calendar
 
@@ -52,7 +52,7 @@ object FeatureParser extends FeatureDict {
       }
       .filter(_._1 > 0)
       .sortWith((x, y) => x._2 > y._2)
-      .filter(_._2.toInt >= 3)
+      .filter(_._2.toInt >= 4)
       .map(_._1)
       .toSeq
     val u = User(
@@ -98,18 +98,6 @@ object FeatureParser extends FeatureDict {
     var els = Seq[(Int, Double)]()
     var i = 0
 
-    els = els :+ (week, 1D)
-    i += 7
-
-    els = els :+ (hour + i, 1D)
-    i += 24
-
-    //sex
-    if (u.sex > 0) {
-      els = els :+ (u.sex + i, 1D)
-    }
-    i += 2
-
     //interests
     u.interests.foreach {
       intr =>
@@ -117,93 +105,22 @@ object FeatureParser extends FeatureDict {
     }
     i += interests.size
 
-    //os
-    var os = 0
-    if (d.os > 0 && d.os < 3) {
-      os = d.os
-      els = els :+ (os + i, 1D)
-    }
-    i += 2
-
-    //adslot type
-    if (m.adslotType > 0) {
-      els = els :+ (m.adslotType + i, 1D)
-    }
-    i += 2
-
-    //ad type
-    if (ad.adtype > 0) {
-      els = els :+ (ad.adtype + i, 1D)
-    }
-    i += 6
-
-    //ad class
-    val adcls = adClass.getOrElse(ad._class, 0)
-    if (adcls > 0) {
-      els = els :+ (adcls + i, 1D)
-    }
-    i += adClass.size
-
     //isp
     if (n.isp > 0) {
       els = els :+ (n.isp + i, 1D)
     }
-    i += 20
-
-    //net
-    if (n.network > 0) {
-      els = els :+ (n.network + i, 1D)
-    }
-    i += 5
-
-    val city = cityDict.getOrElse(loc.city, 0)
-    if (city > 0) {
-      els = els :+ (city + i, 1D)
-    }
-    i += cityDict.size
-
-    //userid
-    els = els :+ (ad.userid + i, 1D)
-    i += 2000
-
-    //planid
-    els = els :+ (ad.planid + i, 1D)
-    i += 3000
-
-    //unitid
-    els = els :+ (ad.unitid + i, 1D)
-    i += 10000
-
-    //ideaid
-    els = els :+ (ad.ideaid + i, 1D)
-    i += 20000
+    i += 18
 
     //ad slot id
+    val os = osDict.getOrElse(d.os, 0)
+    val adcls = adClass.getOrElse(ad._class, 0)
+    val city = cityDict.getOrElse(loc.city, 0)
     val slotid = adslotids.getOrElse(m.adslotid, 0)
-    if (slotid > 0) {
-      els = els :+ (slotid + i, 1D)
-    }
-    i += adslotids.size
 
-    //adslotid + ideaid
-    if (slotid > 0 && ad.ideaid > 0) {
-      val v = Utils.combineIntFeatureIdx(slotid, ad.ideaid)
-      els = els :+ (i + v, 1D)
-    }
-    i += adslotids.size * 20000
-
-    //net adclass slot
-    if (u.sex > 0 && os > 0 && n.network > 0 && adcls > 0 && ad.adtype > 0) {
-      val v = Utils.combineIntFeatureIdx(u.sex, os, n.network, adcls, ad.adtype)
-      els = els :+ (i + v, 1D)
-    }
-    i += 2 * 2 * 4 * adClass.size * 6
-
-    if (u.sex > 0 && city > 0 && adcls > 0 && ad.adtype > 0) {
-      val v = Utils.combineIntFeatureIdx(u.sex, city, adcls, ad.adtype)
-      els = els :+ (i + v, 1D)
-    }
-    i += 2 * cityDict.size * adClass.size * 6
+    //sex 3 os 3 net 5 city 433 adclass 294 adtype 7 slotid 48
+    val v = Utils.combineIntFeatureIdx(u.sex + 1, os + 1, n.network + 1, city + 1, adcls + 1, ad.adtype + 1, slotid + 1)
+    els = els :+ (i + v, 1D)
+    i += 3 * 3 * 5 * 433 * 294 * 7 * 48
 
     try {
       Vectors.sparse(i, els)

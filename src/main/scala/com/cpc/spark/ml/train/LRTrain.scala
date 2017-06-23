@@ -126,7 +126,8 @@ object LRTrain {
     predictionAndLabels
       .map {
         x =>
-          (("%.1f".format(x._1), x._2.toInt), 1)
+          val v = (x._1 * 100).toInt / 5
+          ((v, x._2.toInt), 1)
       }
       .reduceByKey((x, y) => x + y)
       .map {
@@ -145,7 +146,7 @@ object LRTrain {
       .foreach {
         x =>
           val sum = x._2
-          println("%s %d %.4f %.4f %d %.4f %.4f %.4f".format(x._1,
+          println("%.2f %d %.4f %.4f %d %.4f %.4f %.4f".format(x._1.toDouble * 0.05,
             sum._2, sum._2.toDouble / test1.toDouble, sum._2.toDouble / testSum.toDouble,
             sum._1, sum._1.toDouble / test0.toDouble, sum._1.toDouble / testSum.toDouble,
             sum._2.toDouble / (sum._1 + sum._2).toDouble))
