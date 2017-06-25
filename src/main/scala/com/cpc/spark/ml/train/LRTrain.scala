@@ -188,7 +188,7 @@ object LRTrain {
     println("Area under precision-recall curve = " + auPRC)
 
     // Compute thresholds used in ROC and PR curves
-    val thresholds = precision.map(_._1)
+    val thresholds = precision.map(_._1).foreach(println)
 
     // ROC Curve
     val roc = metrics.roc

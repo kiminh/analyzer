@@ -1,7 +1,7 @@
 package com.cpc.spark.ml.ctrmodel.v1
 
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Date}
 
 import com.cpc.spark.log.parser.UnionLog
 import org.apache.log4j.{Level, Logger}
@@ -46,10 +46,10 @@ object CreateSvm {
         hourSql = "and `hour` in (\"%s\")".format(hour.split(",").mkString("\",\""))
       }
 
-      ctx.sql(
+      val svm = ctx.sql(
         s"""
            |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and isfill = 1 and adslotid > 0
-           |and media_appsid in ("80000001", "80000002") and sex > 0
+           |and media_appsid in ("80000001", "80000002")
         """.stripMargin.format(date, hourSql))
         .as[UnionLog].rdd
         .filter {
@@ -60,13 +60,21 @@ object CreateSvm {
             }
             ret
         }
+        .randomSplit(Array(0.5, 0.5), seed = new Date().getTime)(0)
         .map{x => FeatureParser.parseUnionLog(x)}
-        .toDF()
+        .cache()
+
+        if (n == 1) {
+          svm.take(1).foreach(println)
+        }
+
+      svm.toDF()
         .write
         .mode(SaveMode.Overwrite)
         .text("/user/cpc/svmdata/" + version + "/" + date)
 
       println("done")
+      svm.unpersist()
       cal.add(Calendar.DATE, 1)
     }
 

@@ -52,7 +52,7 @@ object FeatureParser extends FeatureDict {
       }
       .filter(_._1 > 0)
       .sortWith((x, y) => x._2 > y._2)
-      .filter(_._2.toInt >= 3)
+      .filter(_._2.toInt >= 2)
       .map(_._1)
       .toSeq
     val u = User(
@@ -80,10 +80,15 @@ object FeatureParser extends FeatureDict {
     var svm = ""
     val vector = parse(ad, m, u, loc, n, d, x.timestamp * 1000L)
     if (vector != null) {
+      var p = -1;
       svm = x.isclick.toString
       MLUtils.appendBias(vector).foreachActive {
         (i, v) =>
-          svm = svm + " %d:%f".format(i, v)
+          if (i <= p) {
+            throw new Exception("svm error:" + vector.toString())
+          }
+          p = i
+          svm = svm + " %d:%f".format(i + 1, v)
       }
     }
     svm
@@ -98,23 +103,20 @@ object FeatureParser extends FeatureDict {
     var els = Seq[(Int, Double)]()
     var i = 0
 
-    els = els :+ (week, 1D)
+    els = els :+ (week - 1 + i, 1D)
     i += 7
 
     els = els :+ (hour + i, 1D)
     i += 24
 
-    //sex
-    if (u.sex > 0) {
-      els = els :+ (u.sex + i, 1D)
-    }
-    i += 2
-
     //interests
-    u.interests.foreach {
-      intr =>
-        els = els :+ (interests.getOrElse(intr, 0) + i, 1D)
-    }
+    u.interests.map(interests.getOrElse(_, 0))
+      .filter(_ > 0)
+      .sortWith(_ < _)
+      .foreach {
+        intr =>
+          els = els :+ (intr + i, 1D)
+      }
     i += interests.size
 
     //os
@@ -143,18 +145,6 @@ object FeatureParser extends FeatureDict {
       els = els :+ (adcls + i, 1D)
     }
     i += adClass.size
-
-    //isp
-    if (n.isp > 0) {
-      els = els :+ (n.isp + i, 1D)
-    }
-    i += 20
-
-    //net
-    if (n.network > 0) {
-      els = els :+ (n.network + i, 1D)
-    }
-    i += 5
 
     val city = cityDict.getOrElse(loc.city, 0)
     if (city > 0) {
@@ -192,24 +182,32 @@ object FeatureParser extends FeatureDict {
     }
     i += adslotids.size * 20000
 
-    //net adclass slot
-    if (u.sex > 0 && os > 0 && n.network > 0 && adcls > 0 && ad.adtype > 0) {
-      val v = Utils.combineIntFeatureIdx(u.sex, os, n.network, adcls, ad.adtype)
+    //age
+    var age = 0
+    if (u.age <= 1) {
+      age = 0
+    } else if (age <= 4) {
+      age = 1
+    } else {
+      age = 2
+    }
+    if (adcls > 0 && slotid > 0) {
+      val v = Utils.combineIntFeatureIdx(u.sex + 1, age + 1, n.network + 1, adcls, slotid)
       els = els :+ (i + v, 1D)
     }
-    i += 2 * 2 * 4 * adClass.size * 6
+    i += 3 * 3 * 5 * adClass.size * adslotids.size
 
-    if (u.sex > 0 && city > 0 && adcls > 0 && ad.adtype > 0) {
-      val v = Utils.combineIntFeatureIdx(u.sex, city, adcls, ad.adtype)
+    if (u.sex > 0 && age > 0 && n.isp > 0 && adcls > 0 && slotid > 0) {
+      val v = Utils.combineIntFeatureIdx(u.sex, age, n.isp, adcls, slotid)
       els = els :+ (i + v, 1D)
     }
-    i += 2 * cityDict.size * adClass.size * 6
+    i += 2 * 2 * 18 * adClass.size * adslotids.size
 
     try {
-      Vectors.sparse(i, els)
+      Vectors.sparse(i + 1, els)
     } catch {
       case e: Exception =>
-        println(e.getMessage, els)
+        throw new Exception(e.getMessage + els.toString())
         null
     }
   }
