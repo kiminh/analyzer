@@ -10,9 +10,9 @@ object Utils {
    */
   def combineIntFeatureIdx(ids: Int*): Int = {
     var idx = 0
-    for (i <- 0 to ids.length - 1) {
+    for (i <- 0 until ids.length) {
       var v = 1
-      for (j <- i + 1 to ids.length - 1) {
+      for (j <- i + 1 until ids.length) {
         v = v * ids(i)
       }
       idx = idx + (ids(i) - 1) * v
@@ -22,7 +22,7 @@ object Utils {
 
   def combineIntFeatureMax(m: Int*): Int = {
     var max = 1
-    for (i <- 0 to m.length - 1) {
+    for (i <- 0 until m.length) {
       max = max * m(i)
     }
     max
