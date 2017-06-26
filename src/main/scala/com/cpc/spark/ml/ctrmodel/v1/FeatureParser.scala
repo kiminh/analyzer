@@ -102,82 +102,70 @@ object FeatureParser extends FeatureDict {
     var els = Seq[(Int, Double)]()
     var i = 0
 
+    //0 - 6
     els = els :+ (week - 1 + i, 1d)
     i += 7
 
+    //7 - 30 (24)
     els = els :+ (hour + i, 1d)
     i += 24
 
-    //interests
+    //interests  31 - 95 (65)
     u.interests.map(interests.getOrElse(_, 0))
       .filter(_ > 0)
       .sortWith(_ < _)
       .foreach {
         intr =>
-          els = els :+ (intr + i, 1d)
+          els = els :+ (intr + i - 1, 1d)
       }
     i += interests.size
 
-    //os
-    var os = 0
-    if (d.os > 0 && d.os < 3) {
-      os = d.os
-      els = els :+ (os + i, 1d)
+    //os 96 - 97 (2)
+    val os = osDict.getOrElse(d.os, 0)
+    if (d.os > 0) {
+      els = els :+ (os + i - 1, 1d)
     }
-    i += 2
+    i += osDict.size
 
-    //adslot type
+    //adslot type 98 - 99 (2)
     if (m.adslotType > 0) {
-      els = els :+ (m.adslotType + i, 1d)
+      els = els :+ (m.adslotType + i - 1, 1d)
     }
     i += 2
 
-    //ad type
+    //ad type  100 - 105 (6)
     if (ad.adtype > 0) {
-      els = els :+ (ad.adtype + i, 1d)
+      els = els :+ (ad.adtype + i - 1, 1d)
     }
     i += 6
 
-    //ad class
-    val adcls = adClass.getOrElse(ad._class, 0)
-    if (adcls > 0) {
-      els = els :+ (adcls + i, 1d)
-    }
-    i += adClass.size
-
-    val city = cityDict.getOrElse(loc.city, 0)
-    if (city > 0) {
-      els = els :+ (city + i, 1d)
-    }
-    i += cityDict.size
-
-    //userid
-    els = els :+ (ad.userid + i, 1d)
+    //userid  106 - 2105 (2000)
+    els = els :+ (ad.userid + i - 1, 1d)
     i += 2000
 
-    //planid
-    els = els :+ (ad.planid + i, 1d)
+    //planid  2106 - 5105 (3000)
+    els = els :+ (ad.planid + i - 1, 1d)
     i += 3000
 
-    //unitid
-    els = els :+ (ad.unitid + i, 1d)
+    //unitid  5106 - 15105 (10000)
+    els = els :+ (ad.unitid + i - 1, 1d)
     i += 10000
 
-    //ideaid
-    els = els :+ (ad.ideaid + i, 1d)
+    //ideaid  15106 - 35105 (20000)
+    els = els :+ (ad.ideaid + i - 1, 1d)
     i += 20000
 
-    //ad slot id
+    //ad slot id 35106 - 35152 (47)
     val slotid = adslotids.getOrElse(m.adslotid, 0)
     if (slotid > 0) {
-      els = els :+ (slotid + i, 1d)
+      els = els :+ (slotid + i - 1, 1d)
     }
     i += adslotids.size
 
-    //adslotid + ideaid
+    //adslotid + ideaid  35153 - 975152 (940000)
     if (slotid > 0 && ad.ideaid > 0) {
       val v = Utils.combineIntFeatureIdx(slotid, ad.ideaid)
-      els = els :+ (i + v, 1d)
+      els = els :+ (i + v - 1, 1d)
     }
     i += adslotids.size * 20000
 
@@ -185,30 +173,29 @@ object FeatureParser extends FeatureDict {
     var age = 0
     if (u.age <= 1) {
       age = 0
-    } else if (age <= 4) {
+    } else if (u.age <= 4) {
       age = 1
     } else {
       age = 2
     }
+    //ad class
+    val adcls = adClass.getOrElse(ad._class, 0)
+
+    //975153 - 1594847 (619695)
     if (adcls > 0 && slotid > 0) {
       val v = Utils.combineIntFeatureIdx(u.sex + 1, age + 1, n.network + 1, adcls, slotid)
-      els = els :+ (i + v, 1d)
+      els = els :+ (i + v - 1, 1d)
     }
     i += 3 * 3 * 5 * adClass.size * adslotids.size
 
+    //1594848 - 2586359(991512)
     if (u.sex > 0 && age > 0 && n.isp > 0 && adcls > 0 && slotid > 0) {
       val v = Utils.combineIntFeatureIdx(u.sex, age, n.isp, adcls, slotid)
-      els = els :+ (i + v, 1d)
+      els = els :+ (i + v - 1, 1d)
     }
     i += 2 * 2 * 18 * adClass.size * adslotids.size
 
-    try {
-      Vectors.sparse(i + 1, els)
-    } catch {
-      case e: Exception =>
-        throw new Exception(e.getMessage + els.toString())
-        null
-    }
+    Vectors.sparse(i, els)
   }
 }
 

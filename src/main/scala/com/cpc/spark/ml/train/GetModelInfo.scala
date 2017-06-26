@@ -29,14 +29,14 @@ object GetModelInfo {
     val model = LogisticRegressionModel.load(spark, dataPath)
     model.clearThreshold()
 
-    val w = new PrintWriter("hdfs:///wearhouse/home/cpc/model.txt")
+    val w = new PrintWriter("/home/cpc/t/bin/model.txt")
     w.write("version 0.1\n")
     w.write("model_path %s\n".format(dataPath))
-    w.write("num_features %d\n".format(model.numFeatures))
+    w.write("num_features %d\n".format(model.numFeatures - 1))
     w.write("num_classes %d\n".format(model.numClasses))
     model.weights.toSparse.foreachActive {
       (i, v) =>
-        w.write("%d %f\n".format(i, v))
+        w.write("%d %.10f\n".format(i, v))
     }
     w.close()
     println("done")

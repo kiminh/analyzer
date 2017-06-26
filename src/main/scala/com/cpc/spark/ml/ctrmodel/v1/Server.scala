@@ -8,6 +8,7 @@ import mlserver.mlserver.PredictorGrpc.Predictor
 import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.classification.LogisticRegressionModel
+import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -72,10 +73,7 @@ object Server {
           val features = FeatureParser.parse(x, m, u, loc, n, d, req.time * 1000L)
           var value = 0d
           if (features != null) {
-            value = model.predict(features)
-            if (req.version == "v2" && value < 0.8) {
-              value = value / 2
-            }
+            value = model.predict(MLUtils.appendBias(features))
           }
           val p = Prediction(
             adid = x.ideaid,

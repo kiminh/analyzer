@@ -114,11 +114,10 @@ object FeatureParser extends FeatureDict {
     //ad slot id
     val os = osDict.getOrElse(d.os, 0)
     val adcls = adClass.getOrElse(ad._class, 0)
-    val city = cityDict.getOrElse(loc.city, 0)
     val slotid = adslotids.getOrElse(m.adslotid, 0)
 
     //sex 3 os 3 net 5 city 433 adclass 294 adtype 7 slotid 48
-    val v = Utils.combineIntFeatureIdx(u.sex + 1, os + 1, n.network + 1, city + 1, adcls + 1, ad.adtype + 1, slotid + 1)
+    val v = Utils.combineIntFeatureIdx(u.sex + 1, os + 1, n.network + 1, adcls + 1, ad.adtype + 1, slotid + 1)
     els = els :+ (i + v, 1D)
     i += 3 * 3 * 5 * 433 * 294 * 7 * 48
 
