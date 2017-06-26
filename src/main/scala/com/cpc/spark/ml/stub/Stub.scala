@@ -23,18 +23,29 @@ object Stub {
       .build
 
     val ad = AdInfo(
-      ideaid = 100
+      ideaid = 1010
+    )
+    val ad1 = AdInfo(
+      ideaid = 1010
+    )
+    val ad2 = AdInfo(
+      ideaid = 1010
+    )
+    val ad3 = AdInfo(
+      ideaid = 1010
     )
     val m = Media (
     )
     val u = User(
-      uid = args(2)
+      uid = args(2),
+      sex = 1,
+      age = 2
     )
     val d = Device(
       model = args(1)
     )
 
-    val req = Request(media = Option(m), ads = Seq(ad), user = Option(u), device = Option(d))
+    val req = Request(media = Option(m), ads = Seq(ad, ad1, ad2, ad3), user = Option(u), device = Option(d))
     val blockingStub = PredictorGrpc.blockingStub(channel)
     val reply = blockingStub.predict(req)
     println(req.toString, reply.toString)

@@ -157,6 +157,10 @@ object FeatureParser extends FeatureDict {
 
     //planid
     els = els :+ (ad.planid + i, 1d)
+    i += 3000
+
+    //unitid
+    els = els :+ (ad.unitid + i, 1d)
     i += 10000
 
     //ideaid

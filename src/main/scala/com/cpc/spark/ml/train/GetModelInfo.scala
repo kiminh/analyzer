@@ -1,5 +1,7 @@
 package com.cpc.spark.ml.train
 
+import java.io.PrintWriter
+
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.classification.LogisticRegressionModel
 import org.apache.spark.sql.SparkSession
@@ -26,12 +28,17 @@ object GetModelInfo {
 
     val model = LogisticRegressionModel.load(spark, dataPath)
     model.clearThreshold()
-    println("model data loaded", model.toString())
 
+    val w = new PrintWriter("hdfs:///wearhouse/home/cpc/model.txt")
+    w.write("version 0.1\n")
+    w.write("model_path %s\n".format(dataPath))
+    w.write("num_features %d\n".format(model.numFeatures))
+    w.write("num_classes %d\n".format(model.numClasses))
     model.weights.toSparse.foreachActive {
       (i, v) =>
-        println("%d %f".format(i, v))
+        w.write("%d %f\n".format(i, v))
     }
-
+    w.close()
+    println("done")
   }
 }

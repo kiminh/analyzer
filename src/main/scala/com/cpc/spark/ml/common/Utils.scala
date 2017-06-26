@@ -13,7 +13,7 @@ object Utils {
     for (i <- 0 until ids.length) {
       var v = 1
       for (j <- i + 1 until ids.length) {
-        v = v * ids(i)
+        v = v * ids(j)
       }
       idx = idx + (ids(i) - 1) * v
     }

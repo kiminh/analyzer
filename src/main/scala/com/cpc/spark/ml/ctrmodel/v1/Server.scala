@@ -37,7 +37,7 @@ object Server {
 
     val model = LogisticRegressionModel.load(spark, dataPath)
     model.clearThreshold()
-    println("model data loaded", model.toString())
+    println("model data loaded", model.toString(), model.intercept)
 
     val service = new PredictorService(model)
     val server = ServerBuilder.forPort(args(0).toInt)
@@ -70,8 +70,7 @@ object Server {
       req.ads.foreach {
         x =>
           val features = FeatureParser.parse(x, m, u, loc, n, d, req.time * 1000L)
-
-          var value = 0D
+          var value = 0d
           if (features != null) {
             value = model.predict(features)
             if (req.version == "v2" && value < 0.8) {
