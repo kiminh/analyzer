@@ -5,9 +5,10 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.SparkContext
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
-import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.mllib.regression.{IsotonicRegression, LabeledPoint}
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
 
@@ -53,6 +54,8 @@ object LRTrain {
 
     val sc = ctx.sparkContext
 
+
+
     val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime)
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -daybefore)
@@ -62,6 +65,11 @@ object LRTrain {
       pathSep = pathSep :+ date
       cal.add(Calendar.DATE, 1)
     }
+
+    val m = LogisticRegressionModel.load(sc, modelPath)
+    trainCalibration(sc, m, inpath)
+    println("done")
+    System.exit(1)
 
     println("%s/{%s}".format(inpath, pathSep.mkString(",")))
     val sample = MLUtils.loadLibSVMFile(sc, "%s/{%s}".format(inpath, pathSep.mkString(",")))
@@ -171,48 +179,16 @@ object LRTrain {
     // Instantiate metrics object
     val metrics = new BinaryClassificationMetrics(predictionAndLabels)
 
-
-    // Precision by threshold
-    val precision = metrics.precisionByThreshold
-    precision.foreach { case (t, p) =>
-      println(s"Threshold: $t, Precision: $p")
-    }
-
-    // Recall by threshold
-    val recall = metrics.recallByThreshold
-    recall.foreach { case (t, r) =>
-      println(s"Threshold: $t, Recall: $r")
-    }
-
-    // Precision-Recall Curve
-    val PRC = metrics.pr
-
-    // F-measure
-    val f1Score = metrics.fMeasureByThreshold
-    f1Score.foreach { case (t, f) =>
-      println(s"Threshold: $t, F-score: $f, Beta = 1")
-    }
-
-    val beta = 0.5
-    val fScore = metrics.fMeasureByThreshold(beta)
-    f1Score.foreach { case (t, f) =>
-      println(s"Threshold: $t, F-score: $f, Beta = 0.5")
-    }
-
     // AUPRC
     val auPRC = metrics.areaUnderPR
     println("Area under precision-recall curve = " + auPRC)
 
-    // Compute thresholds used in ROC and PR curves
-    val thresholds = precision.map(_._1).foreach(println)
-
     // ROC Curve
-    val roc = metrics.roc
+    //val roc = metrics.roc
 
     // AUROC
     val auROC = metrics.areaUnderROC
     println("Area under ROC = " + auROC)
-
 
     val w = new PrintWriter("/home/work/ml/model/model_%s.txt".format(date))
     w.write("version 0.1\n")
@@ -231,5 +207,55 @@ object LRTrain {
     println("all done")
     predictionAndLabels.unpersist()
     sc.stop()
+  }
+
+  def trainCalibration(sc: SparkContext, model: LogisticRegressionModel, inpath: String): Unit = {
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime - 3600L * 24000L)
+    val sample = MLUtils.loadLibSVMFile(sc, "%s_full/%s".format(inpath, date))
+      .randomSplit(Array(0.5, 0.5), seed = new Date().getTime)(0)
+    val binNum = 1e6
+    val irdata = sample
+      .map {
+        case LabeledPoint(label, features) =>
+          val prediction = model.predict(features)
+          val bin = (prediction * binNum).toInt
+          var click = 0
+          if (label > 0.1) {
+            click = 1
+          }
+          (bin, (Seq((click, prediction)), click))
+      }
+      .reduceByKey {
+        (x, y) =>
+          (x._1 ++ y._1, x._2 + y._2)
+      }
+      .flatMap {
+        x =>
+          val points = x._2._1
+          val ctr = x._2._2.toDouble / points.length.toDouble
+          points.map {
+            p =>
+              //ctr prediction weight
+              (ctr, p._2, 1.0)
+          }
+      }
+      .randomSplit(Array(0.95, 0.05), seed = new Date().getTime)
+
+    val irmodel = new IsotonicRegression()
+      .setIsotonic(true)
+      .run(irdata(0))
+
+    val predictionAndLabel = irdata(1).map { point =>
+      val predictedLabel = irmodel.predict(point._2)
+      (predictedLabel, point._1)
+    }
+
+    // Calculate mean squared error between predicted and real labels.
+    val meanSquaredError = predictionAndLabel.map { case (p, l) => math.pow((p - l), 2) }.mean()
+    println("Mean Squared Error = " + meanSquaredError)
+
+    // Save and load model
+    model.save(sc, "/user/cpc/irmodel/v1")
+    println(irmodel.toString)
   }
 }

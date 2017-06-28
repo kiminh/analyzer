@@ -17,14 +17,6 @@ import scala.collection.mutable
 
 object LogParser {
 
-  val dataSchema = MapType(StringType,
-      StructType(
-        StructField("int_value", IntegerType, true) ::
-        StructField("long_value", LongType, true) ::
-        StructField("float_value", FloatType, true) ::
-        StructField("string_value", StringType, true) :: Nil
-      ), true)
-
   def parseSearchLog(txt: String): UnionLog = {
     var log: UnionLog = null
     val srcData = Ui.parseData(txt)
@@ -73,6 +65,7 @@ object LogParser {
           ctr = ad.getCtr,
           cpm = ad.getCpm
         )
+        ext.update("exp_ctr", ExtValue(int_value = ad.getTitlectr.toInt))
         ext.update("media_class", ExtValue(int_value = ad.getClass_))
         ext.update("usertype", ExtValue(int_value = ad.getUsertype))
       }

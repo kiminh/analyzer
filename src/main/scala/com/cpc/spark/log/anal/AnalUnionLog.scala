@@ -71,7 +71,7 @@ object AnalUnionLog {
       }
       .map {
         x =>
-          var log = x._2.filter(_.timestamp > 0).headOption.getOrElse(null)
+          var log = x._2.find(_.timestamp > 0).get
           if (log != null) {
             x._2.foreach {
               u =>
@@ -211,7 +211,7 @@ object AnalUnionLog {
     val cal = Calendar.getInstance()
     val parts = new Array[String](hours)
     cal.add(Calendar.HOUR, -hourBefore)
-    for (h <- 0 to hours - 1) {
+    for (h <- 0 until hours) {
       parts(h) = partitionPathFormat.format(cal.getTime)
       cal.add(Calendar.HOUR, 1)
     }

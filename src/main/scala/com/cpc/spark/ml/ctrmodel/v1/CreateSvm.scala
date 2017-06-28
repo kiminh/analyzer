@@ -15,6 +15,8 @@ import scala.util.Random
 object CreateSvm {
 
   def main(args: Array[String]): Unit = {
+    println((0.12354546346 * 1e3).toInt)
+    println((0.999).toInt)
     if (args.length < 5) {
       System.err.println(
         s"""
