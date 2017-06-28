@@ -140,19 +140,27 @@ object FeatureParser extends FeatureDict {
     i += 6
 
     //userid  106 - 2105 (2000)
-    els = els :+ (ad.userid + i - 1, 1d)
+    if (ad.userid <= 2000) {
+      els = els :+ (ad.userid + i - 1, 1d)
+    }
     i += 2000
 
     //planid  2106 - 5105 (3000)
-    els = els :+ (ad.planid + i - 1, 1d)
+    if (ad.planid <= 3000) {
+      els = els :+ (ad.planid + i - 1, 1d)
+    }
     i += 3000
 
     //unitid  5106 - 15105 (10000)
-    els = els :+ (ad.unitid + i - 1, 1d)
+    if (ad.unitid <= 10000) {
+      els = els :+ (ad.unitid + i - 1, 1d)
+    }
     i += 10000
 
     //ideaid  15106 - 35105 (20000)
-    els = els :+ (ad.ideaid + i - 1, 1d)
+    if (ad.ideaid <= 20000) {
+      els = els :+ (ad.ideaid + i - 1, 1d)
+    }
     i += 20000
 
     //ad slot id 35106 - 35152 (47)
@@ -163,7 +171,7 @@ object FeatureParser extends FeatureDict {
     i += adslotids.size
 
     //adslotid + ideaid  35153 - 975152 (940000)
-    if (slotid > 0 && ad.ideaid > 0) {
+    if (slotid > 0 && ad.ideaid > 0 && ad.ideaid <= 20000) {
       val v = Utils.combineIntFeatureIdx(slotid, ad.ideaid)
       els = els :+ (i + v - 1, 1d)
     }

@@ -18,7 +18,7 @@ object Stub {
 
     val conf = ConfigFactory.load()
     val channel = ManagedChannelBuilder
-      .forAddress("0.0.0.0", args(0).toInt)
+      .forAddress(args(0), args(1).toInt)
       .usePlaintext(true)
       .build
 
@@ -37,12 +37,10 @@ object Stub {
     val m = Media (
     )
     val u = User(
-      uid = args(2),
       sex = 1,
       age = 2
     )
     val d = Device(
-      model = args(1)
     )
 
     val req = Request(media = Option(m), ads = Seq(ad, ad1, ad2, ad3), user = Option(u), device = Option(d))

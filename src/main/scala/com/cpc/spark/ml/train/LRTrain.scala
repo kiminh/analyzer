@@ -1,14 +1,16 @@
 package com.cpc.spark.ml.train
 
-import java.util.Date
+import java.io.PrintWriter
+import java.text.SimpleDateFormat
+import java.util.{Calendar, Date}
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
-import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
+
 import scala.util.Random
 
 /**
@@ -28,9 +30,13 @@ object LRTrain {
     Logger.getRootLogger().setLevel(Level.WARN)
     val mode = args(0).trim
     val inpath = args(1).trim
-    val modelPath = args(2).trim
-    val sampleRate = args(3).toFloat
-    val pnRate = args(4).toInt
+    val daybefore = args(2).toInt
+    val days = args(3).toInt
+
+    val modelPath = args(4).trim
+    val sampleRate = args(5).toFloat
+    val pnRate = args(6).toInt
+
     val ctx = SparkSession.builder()
       .config("spark.driver.maxResultSize", "10G")
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -41,14 +47,24 @@ object LRTrain {
       .config("spark.storage.blockManagerHeartBeatMs", "300000")
       .config("spark.scheduler.maxRegisteredResourcesWaitingTime", "100")
       .config("spark.core.connection.auth.wait.timeout", "100")
-      //conf.set("spark.executor.memory", "64g")
-      //conf.set("spark.cores.max", "64")
 
       .appName("cpc LR model %s[%s]".format(mode, modelPath))
       .getOrCreate()
 
     val sc = ctx.sparkContext
-    val sample = MLUtils.loadLibSVMFile(sc, inpath)
+
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime)
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.DATE, -daybefore)
+    var pathSep = Seq[String]()
+    for (n <- 1 to days) {
+      val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      pathSep = pathSep :+ date
+      cal.add(Calendar.DATE, 1)
+    }
+
+    println("%s/{%s}".format(inpath, pathSep.mkString(",")))
+    val sample = MLUtils.loadLibSVMFile(sc, "%s/{%s}".format(inpath, pathSep.mkString(",")))
       //random pick 1/pnRate negative sample
       .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
@@ -85,7 +101,7 @@ object LRTrain {
 
       println("training ...", training.take(1).foreach(x => println(x.features)))
       model = lbfgs.run(training)
-      model.save(sc, modelPath)
+      model.save(sc, modelPath + "/" + date)
       println("done")
       training.unpersist()
     }
@@ -196,6 +212,21 @@ object LRTrain {
     // AUROC
     val auROC = metrics.areaUnderROC
     println("Area under ROC = " + auROC)
+
+
+    val w = new PrintWriter("/home/work/ml/model/model_%s.txt".format(date))
+    w.write("version 0.1\n")
+    w.write("model_path %s\n".format(modelPath))
+    w.write("num_features %d\n".format(model.numFeatures - 1))
+    w.write("num_classes %d\n".format(model.numClasses))
+    w.write("date %s\n".format(date))
+    w.write("auprc %.18f\n".format(auPRC))
+    w.write("aur %.18f\n".format(auROC))
+    model.weights.toSparse.foreachActive {
+      (i, v) =>
+        w.write("%d %.18f\n".format(i, v))
+    }
+    w.close()
 
     println("all done")
     predictionAndLabels.unpersist()

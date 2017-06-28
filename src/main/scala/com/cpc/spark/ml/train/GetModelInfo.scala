@@ -36,7 +36,7 @@ object GetModelInfo {
     w.write("num_classes %d\n".format(model.numClasses))
     model.weights.toSparse.foreachActive {
       (i, v) =>
-        w.write("%d %.10f\n".format(i, v))
+        w.write("%d %.18f\n".format(i, v))
     }
     w.close()
     println("done")
