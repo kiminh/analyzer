@@ -8,7 +8,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
-import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel, LabeledPoint}
+import org.apache.spark.mllib.regression.{IsotonicRegression, LabeledPoint}
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
 
@@ -213,12 +213,10 @@ object LRTrain {
     val fmt = new SimpleDateFormat("yyyy-MM-dd")
     val date = fmt.format(new Date().getTime)
     val date1 = fmt.format(new Date().getTime - 3600L * 24000L)
-    val sample = MLUtils.loadLibSVMFile(sc, "%s_full/%s".format(inpath, date1))
-      //.randomSplit(Array(0.1, 0.9), seed = new Date().getTime)(0)
-    val binNum = 1e6
     model.clearThreshold()
-    println("prepare data", sample.count(), model.toString())
-    val irdata = sample
+    println("prepare data", model.toString())
+    val binNum = 1e6
+    val sample = MLUtils.loadLibSVMFile(sc, "%s_full/%s".format(inpath, date1))
       .map {
         case LabeledPoint(label, features) =>
           val prediction = model.predict(features)
@@ -229,6 +227,8 @@ object LRTrain {
           }
           (bin, (click, 1))
       }
+      .randomSplit(Array(0.9, 0.1), seed = new Date().getTime)
+    val trainData = sample(0)
       .reduceByKey {
         (x, y) =>
           (x._1 + y._1, x._2 + y._2)
@@ -239,7 +239,17 @@ object LRTrain {
           val ctr = v._1.toDouble / v._2.toDouble
           (ctr, x._1.toDouble / binNum.toDouble, 1.0)
       }
-      .randomSplit(Array(0.9, 0.1), seed = new Date().getTime)
+    val testData = sample(1)
+      .reduceByKey {
+        (x, y) =>
+          (x._1 + y._1, x._2 + y._2)
+      }
+      .map {
+        x =>
+          val v = x._2
+          val ctr = v._1.toDouble / v._2.toDouble
+          (ctr, x._1.toDouble / binNum.toDouble, 1.0)
+      }
     println("done")
 
     /*
@@ -248,13 +258,13 @@ object LRTrain {
       .foreach(println)
     */
 
-    println("IR training...", irdata(0).count(), irdata(1).count())
+    println("IR training...", trainData.count(), testData.count())
     val irmodel = new IsotonicRegression()
       .setIsotonic(true)
-      .run(irdata(0))
+      .run(trainData)
     println("done")
 
-    val predictionAndLabel = irdata(1).map { point =>
+    val predictionAndLabel = testData.map { point =>
       val predictedLabel = irmodel.predict(point._2)
       (predictedLabel, point._1)
     }
