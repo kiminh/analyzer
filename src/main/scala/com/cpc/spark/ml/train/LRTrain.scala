@@ -8,7 +8,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
-import org.apache.spark.mllib.regression.{IsotonicRegression, LabeledPoint}
+import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel, LabeledPoint}
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
 
@@ -33,11 +33,9 @@ object LRTrain {
     val inpath = args(1).trim
     val daybefore = args(2).toInt
     val days = args(3).toInt
-
     val modelPath = args(4).trim
     val sampleRate = args(5).toFloat
     val pnRate = args(6).toInt
-
     val ctx = SparkSession.builder()
       .config("spark.driver.maxResultSize", "10G")
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -53,9 +51,6 @@ object LRTrain {
       .getOrCreate()
 
     val sc = ctx.sparkContext
-
-
-
     val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime)
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -daybefore)
@@ -67,6 +62,7 @@ object LRTrain {
     }
 
     val m = LogisticRegressionModel.load(sc, modelPath)
+
     trainCalibration(sc, m, inpath)
     println("done")
     System.exit(1)
@@ -190,19 +186,23 @@ object LRTrain {
     val auROC = metrics.areaUnderROC
     println("Area under ROC = " + auROC)
 
-    val w = new PrintWriter("/home/work/ml/model/model_%s.txt".format(date))
-    w.write("version 0.1\n")
-    w.write("model_path %s\n".format(modelPath))
-    w.write("num_features %d\n".format(model.numFeatures - 1))
-    w.write("num_classes %d\n".format(model.numClasses))
-    w.write("date %s\n".format(date))
-    w.write("auprc %.18f\n".format(auPRC))
-    w.write("aur %.18f\n".format(auROC))
-    model.weights.toSparse.foreachActive {
-      (i, v) =>
-        w.write("%d %.18f\n".format(i, v))
+    if (mode == "train") {
+      val w = new PrintWriter("/home/work/ml/model/model_%s.txt".format(date))
+      w.write("version 0.1\n")
+      w.write("model_path %s\n".format(modelPath))
+      w.write("num_features %d\n".format(model.numFeatures - 1))
+      w.write("num_classes %d\n".format(model.numClasses))
+      w.write("date %s\n".format(date))
+      w.write("auprc %.18f\n".format(auPRC))
+      w.write("aur %.18f\n".format(auROC))
+      model.weights.toSparse.foreachActive {
+        (i, v) =>
+          w.write("%d %.18f\n".format(i, v))
+      }
+      w.close()
+      println("IR train calibration")
+      trainCalibration(sc, model, inpath)
     }
-    w.close()
 
     println("all done")
     predictionAndLabels.unpersist()
@@ -210,52 +210,82 @@ object LRTrain {
   }
 
   def trainCalibration(sc: SparkContext, model: LogisticRegressionModel, inpath: String): Unit = {
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime - 3600L * 24000L)
-    val sample = MLUtils.loadLibSVMFile(sc, "%s_full/%s".format(inpath, date))
-      .randomSplit(Array(0.5, 0.5), seed = new Date().getTime)(0)
+    val fmt = new SimpleDateFormat("yyyy-MM-dd")
+    val date = fmt.format(new Date().getTime)
+    val date1 = fmt.format(new Date().getTime - 3600L * 24000L)
+    val sample = MLUtils.loadLibSVMFile(sc, "%s_full/%s".format(inpath, date1))
+      //.randomSplit(Array(0.1, 0.9), seed = new Date().getTime)(0)
     val binNum = 1e6
+    model.clearThreshold()
+    println("prepare data", sample.count(), model.toString())
     val irdata = sample
       .map {
         case LabeledPoint(label, features) =>
           val prediction = model.predict(features)
-          val bin = (prediction * binNum).toInt
+          val bin = math.round(prediction * binNum)
           var click = 0
           if (label > 0.1) {
             click = 1
           }
-          (bin, (Seq((click, prediction)), click))
+          (bin, (click, 1))
       }
       .reduceByKey {
         (x, y) =>
-          (x._1 ++ y._1, x._2 + y._2)
+          (x._1 + y._1, x._2 + y._2)
       }
-      .flatMap {
+      .map {
         x =>
-          val points = x._2._1
-          val ctr = x._2._2.toDouble / points.length.toDouble
-          points.map {
-            p =>
-              //ctr prediction weight
-              (ctr, p._2, 1.0)
-          }
+          val v = x._2
+          val ctr = v._1.toDouble / v._2.toDouble
+          (ctr, x._1.toDouble / binNum.toDouble, 1.0)
       }
-      .randomSplit(Array(0.95, 0.05), seed = new Date().getTime)
+      .randomSplit(Array(0.9, 0.1), seed = new Date().getTime)
+    println("done")
 
+    /*
+    irdata(0).sortBy(x => x._2)
+      .toLocalIterator
+      .foreach(println)
+    */
+
+    println("IR training...", irdata(0).count(), irdata(1).count())
     val irmodel = new IsotonicRegression()
       .setIsotonic(true)
       .run(irdata(0))
+    println("done")
 
     val predictionAndLabel = irdata(1).map { point =>
       val predictedLabel = irmodel.predict(point._2)
       (predictedLabel, point._1)
     }
 
+    /*
+    println("results")
+    predictionAndLabel
+      //.randomSplit(Array(0.1, 0.9), seed = new Date().getTime)(0)
+      .take(2000)
+      .foreach(println)
+    */
+    println("predictions", irmodel.predictions.length)
+    println("boundaries", irmodel.boundaries.length)
+
     // Calculate mean squared error between predicted and real labels.
     val meanSquaredError = predictionAndLabel.map { case (p, l) => math.pow((p - l), 2) }.mean()
     println("Mean Squared Error = " + meanSquaredError)
 
     // Save and load model
-    model.save(sc, "/user/cpc/irmodel/v1")
-    println(irmodel.toString)
+    val modelPath = "/user/cpc/irmodel/v1/" + date
+    val w = new PrintWriter("/home/work/ml/model/irmodel_%s.txt".format(date))
+    w.write("version 0.1\n")
+    w.write("num_data %d\n".format(irmodel.boundaries.length))
+    w.write("date %s\n".format(date))
+    w.write("model_path %s\n".format(modelPath))
+    w.write("mean_squared_error %.10f\n".format(meanSquaredError))
+    irmodel.boundaries.indices.foreach {
+      i =>
+        w.write("%.6f %.6f\n".format(irmodel.boundaries(i), irmodel.predictions(i)))
+    }
+    w.close()
+    irmodel.save(sc, modelPath)
   }
 }
