@@ -227,7 +227,7 @@ object LRTrain {
           }
           (bin, (click, 1))
       }
-      .randomSplit(Array(0.9, 0.1), seed = new Date().getTime)
+      .randomSplit(Array(0.95, 0.05), seed = new Date().getTime)
     val trainData = sample(0)
       .reduceByKey {
         (x, y) =>
@@ -238,7 +238,7 @@ object LRTrain {
           val v = x._2
           val ctr = v._1.toDouble / v._2.toDouble
           (ctr, x._1.toDouble / binNum.toDouble, 1.0)
-      }
+      }.cache()
     val testData = sample(1)
       .reduceByKey {
         (x, y) =>
@@ -249,7 +249,7 @@ object LRTrain {
           val v = x._2
           val ctr = v._1.toDouble / v._2.toDouble
           (ctr, x._1.toDouble / binNum.toDouble, 1.0)
-      }
+      }.cache()
     println("done")
 
     /*
@@ -267,7 +267,7 @@ object LRTrain {
     val predictionAndLabel = testData.map { point =>
       val predictedLabel = irmodel.predict(point._2)
       (predictedLabel, point._1)
-    }
+    }.cache()
 
     /*
     println("results")
