@@ -23,7 +23,7 @@ object CreateSvm {
         """.stripMargin)
       System.exit(1)
     }
-    Logger.getRootLogger().setLevel(Level.WARN)
+    Logger.getRootLogger.setLevel(Level.WARN)
     val version = args(0)
     val dayBefore = args(1).toInt
     val days = args(2).toInt

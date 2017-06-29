@@ -10,6 +10,7 @@ import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticR
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.regression.{IsotonicRegression, LabeledPoint}
 import org.apache.spark.mllib.util.MLUtils
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
 import scala.util.Random
@@ -23,12 +24,12 @@ object LRTrain {
     if (args.length < 5) {
       System.err.println(
         s"""
-           |Usage: Train <mode train/test> <input path> <model path> <sample rate> <p/n rate>
+           |Usage: Train <mode train/test[+ir]> <svmPath:string> <modelPath:string> <sample rate:float> <p/n rate:int>
         """.stripMargin)
       System.exit(1)
     }
 
-    Logger.getRootLogger().setLevel(Level.WARN)
+    Logger.getRootLogger.setLevel(Level.WARN)
     val mode = args(0).trim
     val inpath = args(1).trim
     val daybefore = args(2).toInt
@@ -51,31 +52,14 @@ object LRTrain {
       .getOrCreate()
 
     val sc = ctx.sparkContext
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime)
+    val fmt = new SimpleDateFormat("yyyy-MM-dd")
+    val date = fmt.format(new Date().getTime)
+    val yesterday = fmt.format(new Date().getTime - 3600L * 24000L)
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -daybefore)
-    var pathSep = Seq[String]()
-    for (n <- 1 to days) {
-      val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-      pathSep = pathSep :+ date
-      cal.add(Calendar.DATE, 1)
-    }
 
-    val m = LogisticRegressionModel.load(sc, modelPath)
-
-    trainCalibration(sc, m, inpath)
-    println("done")
-    System.exit(1)
-
-    println("%s/{%s}".format(inpath, pathSep.mkString(",")))
-    val sample = MLUtils.loadLibSVMFile(sc, "%s/{%s}".format(inpath, pathSep.mkString(",")))
-      //random pick 1/pnRate negative sample
-      .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
-      .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
-
-    val test = sample(1)
     var model: LogisticRegressionModel = null
-    if (mode == "test") {
+    if (mode.startsWith("test")) {
       model = LogisticRegressionModel.load(sc, modelPath)
     } else {
       val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
@@ -88,9 +72,21 @@ object LRTrain {
       */
       lbfgs.optimizer.setNumIterations(200)
 
-      val training = sample(0).cache()
-      println("sample count", training.count())
-      training
+      var pathSep = Seq[String]()
+      for (n <- 1 to days) {
+        val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+        pathSep = pathSep :+ date
+        cal.add(Calendar.DATE, 1)
+      }
+      println("%s/{%s}".format(inpath, pathSep.mkString(",")))
+      val sample = MLUtils.loadLibSVMFile(sc, "%s/{%s}".format(inpath, pathSep.mkString(",")))
+        //random pick 1/pnRate negative sample
+        .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
+        .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)(0)
+        .cache()
+
+      println("sample count", sample.count())
+      sample
         .map {
           x =>
             var label = 0
@@ -103,21 +99,22 @@ object LRTrain {
         .toLocalIterator
         .foreach(println)
 
-      println("training ...", training.take(1).foreach(x => println(x.features)))
-      model = lbfgs.run(training)
+      println("training ...", sample.take(1).foreach(x => println(x.features)))
+      model = lbfgs.run(sample)
       model.save(sc, modelPath + "/" + date)
+      sample.unpersist()
       println("done")
-      training.unpersist()
     }
 
     println("testing...")
     model.clearThreshold()
-    val predictionAndLabels = test.map {
-      case LabeledPoint(label, features) =>
-        val prediction = model.predict(features)
-        (prediction, label)
-    }.cache()
-
+    val predictionAndLabels = MLUtils.loadLibSVMFile(sc, "%s_full/%s".format(inpath, yesterday))
+      .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)(0)
+      .map {
+        case LabeledPoint(label, features) =>
+          (model.predict(features), label)
+      }
+      .cache()
 
     val testSum = predictionAndLabels.count()
     var test0 = 0
@@ -186,7 +183,7 @@ object LRTrain {
     val auROC = metrics.areaUnderROC
     println("Area under ROC = " + auROC)
 
-    if (mode == "train") {
+    if (mode.startsWith("train")) {
       val w = new PrintWriter("/home/work/ml/model/model_%s.txt".format(date))
       w.write("version 0.1\n")
       w.write("model_path %s\n".format(modelPath))
@@ -200,8 +197,11 @@ object LRTrain {
           w.write("%d %.18f\n".format(i, v))
       }
       w.close()
+    }
+
+    if (mode.endsWith("+ir")) {
       println("IR train calibration")
-      trainCalibration(sc, model, inpath)
+      trainCalibration(sc, predictionAndLabels, date)
     }
 
     println("all done")
@@ -209,22 +209,17 @@ object LRTrain {
     sc.stop()
   }
 
-  def trainCalibration(sc: SparkContext, model: LogisticRegressionModel, inpath: String): Unit = {
-    val fmt = new SimpleDateFormat("yyyy-MM-dd")
-    val date = fmt.format(new Date().getTime)
-    val date1 = fmt.format(new Date().getTime - 3600L * 24000L)
-    model.clearThreshold()
-    println("prepare data", model.toString())
-    val binNum = 1e6
-    val sample = MLUtils.loadLibSVMFile(sc, "%s_full/%s".format(inpath, date1))
+  def trainCalibration(sc: SparkContext, predictions: RDD[(Double, Double)], date: String): Unit = {
+    val binNum = 1e5
+    println("prepare ir model data...")
+    val sample = predictions
       .map {
-        case LabeledPoint(label, features) =>
-          val prediction = model.predict(features)
-          val bin = math.round(prediction * binNum)
+        case (prediction, label) =>
           var click = 0
-          if (label > 0.1) {
+          if (label > 0.01) {
             click = 1
           }
+          val bin = math.round(prediction * binNum)
           (bin, (click, 1))
       }
       .randomSplit(Array(0.95, 0.05), seed = new Date().getTime)
@@ -238,7 +233,8 @@ object LRTrain {
           val v = x._2
           val ctr = v._1.toDouble / v._2.toDouble
           (ctr, x._1.toDouble / binNum.toDouble, 1.0)
-      }.cache()
+      }
+      .cache()
     val testData = sample(1)
       .reduceByKey {
         (x, y) =>
@@ -249,14 +245,9 @@ object LRTrain {
           val v = x._2
           val ctr = v._1.toDouble / v._2.toDouble
           (ctr, x._1.toDouble / binNum.toDouble, 1.0)
-      }.cache()
+      }
+      .cache()
     println("done")
-
-    /*
-    irdata(0).sortBy(x => x._2)
-      .toLocalIterator
-      .foreach(println)
-    */
 
     println("IR training...", trainData.count(), testData.count())
     val irmodel = new IsotonicRegression()
@@ -269,13 +260,6 @@ object LRTrain {
       (predictedLabel, point._1)
     }.cache()
 
-    /*
-    println("results")
-    predictionAndLabel
-      //.randomSplit(Array(0.1, 0.9), seed = new Date().getTime)(0)
-      .take(2000)
-      .foreach(println)
-    */
     println("predictions", irmodel.predictions.length)
     println("boundaries", irmodel.boundaries.length)
 
@@ -284,18 +268,17 @@ object LRTrain {
     println("Mean Squared Error = " + meanSquaredError)
 
     // Save and load model
-    val modelPath = "/user/cpc/irmodel/v1/" + date
     val w = new PrintWriter("/home/work/ml/model/irmodel_%s.txt".format(date))
     w.write("version 0.1\n")
     w.write("num_data %d\n".format(irmodel.boundaries.length))
     w.write("date %s\n".format(date))
-    w.write("model_path %s\n".format(modelPath))
+    w.write("bin_num %s\n".format(binNum))
     w.write("mean_squared_error %.10f\n".format(meanSquaredError))
     irmodel.boundaries.indices.foreach {
       i =>
         w.write("%.6f %.6f\n".format(irmodel.boundaries(i), irmodel.predictions(i)))
     }
     w.close()
-    irmodel.save(sc, modelPath)
+    //irmodel.save(sc, modelPath)
   }
 }
