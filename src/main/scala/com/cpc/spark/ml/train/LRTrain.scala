@@ -276,7 +276,7 @@ object LRTrain {
     w.write("mean_squared_error %.10f\n".format(meanSquaredError))
     irmodel.boundaries.indices.foreach {
       i =>
-        w.write("%.6f %.6f\n".format(irmodel.boundaries(i), irmodel.predictions(i)))
+        w.write("%.10f %.10f\n".format(irmodel.boundaries(i), irmodel.predictions(i)))
     }
     w.close()
     //irmodel.save(sc, modelPath)
