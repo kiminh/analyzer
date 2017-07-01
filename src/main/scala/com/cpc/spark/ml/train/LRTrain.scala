@@ -12,6 +12,7 @@ import org.apache.spark.mllib.regression.{IsotonicRegression, LabeledPoint}
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
+import sys.process._
 
 import scala.util.Random
 
@@ -24,7 +25,10 @@ object LRTrain {
     if (args.length < 5) {
       System.err.println(
         s"""
-           |Usage: Train <mode train/test[+ir]> <svmPath:string> <modelPath:string> <sample rate:float> <p/n rate:int>
+           |Usage: Train <mode:train/test[+ir]>
+           |  <svmPath:string> <dayBefore:int> <day:int>
+           |  <modelPath:string> <sampleRate:float> <PNRate:int>
+           |  <IRBinNum:int>
         """.stripMargin)
       System.exit(1)
     }
@@ -37,6 +41,7 @@ object LRTrain {
     val modelPath = args(4).trim
     val sampleRate = args(5).toFloat
     val pnRate = args(6).toInt
+    val binNum = args(7).toInt
     val ctx = SparkSession.builder()
       .config("spark.driver.maxResultSize", "10G")
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -184,7 +189,8 @@ object LRTrain {
     println("Area under ROC = " + auROC)
 
     if (mode.startsWith("train")) {
-      val w = new PrintWriter("/home/work/ml/model/model_%s.txt".format(date))
+      val filepath = "/home/cpc/anal/ctrmodel/logistic_%s.txt".format(date)
+      val w = new PrintWriter(filepath)
       w.write("version 0.1\n")
       w.write("model_path %s\n".format(modelPath))
       w.write("num_features %d\n".format(model.numFeatures - 1))
@@ -197,11 +203,17 @@ object LRTrain {
           w.write("%d %.18f\n".format(i, v))
       }
       w.close()
+
+      //满足条件的模型直接替换线上数据
+      if (auPRC > 0.05 && auROC > 0.8) {
+        val ret = s"cp $filepath /home/work/ml/model/logistic.txt" !
+        val ret1 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/logistic.txt" !
+      }
     }
 
     if (mode.endsWith("+ir")) {
       println("IR train calibration")
-      trainCalibration(sc, predictionAndLabels, date)
+      trainCalibration(sc, predictionAndLabels, binNum, date)
     }
 
     println("all done")
@@ -209,8 +221,7 @@ object LRTrain {
     sc.stop()
   }
 
-  def trainCalibration(sc: SparkContext, predictions: RDD[(Double, Double)], date: String): Unit = {
-    val binNum = 1e5
+  def trainCalibration(sc: SparkContext, predictions: RDD[(Double, Double)], binNum: Int, date: String): Unit = {
     println("prepare ir model data...")
     val sample = predictions
       .map {
@@ -267,18 +278,24 @@ object LRTrain {
     val meanSquaredError = predictionAndLabel.map { case (p, l) => math.pow((p - l), 2) }.mean()
     println("Mean Squared Error = " + meanSquaredError)
 
-    // Save and load model
-    val w = new PrintWriter("/home/work/ml/model/irmodel_%s.txt".format(date))
+    val filepath = "/home/cpc/anal/ctrmodel/isotonic_%s.txt".format(date)
+    val w = new PrintWriter(filepath)
     w.write("version 0.1\n")
     w.write("num_data %d\n".format(irmodel.boundaries.length))
     w.write("date %s\n".format(date))
-    w.write("bin_num %s\n".format(binNum))
+    w.write("bin_num %d\n".format(binNum))
     w.write("mean_squared_error %.10f\n".format(meanSquaredError))
     irmodel.boundaries.indices.foreach {
       i =>
         w.write("%.10f %.10f\n".format(irmodel.boundaries(i), irmodel.predictions(i)))
     }
     w.close()
+
+    if (meanSquaredError < 0.05) {
+      val ret = s"cp $filepath /home/work/ml/model/isotonic.txt" !
+      val ret1 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/isotonic.txt" !
+    }
+
     //irmodel.save(sc, modelPath)
   }
 }
