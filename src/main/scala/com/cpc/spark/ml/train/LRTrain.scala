@@ -12,6 +12,7 @@ import org.apache.spark.mllib.regression.{IsotonicRegression, LabeledPoint}
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
+import java.util.Arrays.binarySearch
 import sys.process._
 
 import scala.util.Random
@@ -211,6 +212,7 @@ object LRTrain {
       }
     }
 
+
     if (mode.endsWith("+ir")) {
       println("IR train calibration")
       trainCalibration(sc, predictionAndLabels, binNum, date)
@@ -223,79 +225,103 @@ object LRTrain {
 
   def trainCalibration(sc: SparkContext, predictions: RDD[(Double, Double)], binNum: Int, date: String): Unit = {
     println("prepare ir model data...")
-    val sample = predictions
-      .map {
-        case (prediction, label) =>
-          var click = 0
-          if (label > 0.01) {
-            click = 1
-          }
-          val bin = math.round(prediction * binNum)
-          (bin, (click, 1))
-      }
-      .randomSplit(Array(0.95, 0.05), seed = new Date().getTime)
-    val trainData = sample(0)
-      .reduceByKey {
-        (x, y) =>
-          (x._1 + y._1, x._2 + y._2)
-      }
-      .map {
-        x =>
-          val v = x._2
-          val ctr = v._1.toDouble / v._2.toDouble
-          (ctr, x._1.toDouble / binNum.toDouble, 1.0)
-      }
-      .cache()
-    val testData = sample(1)
-      .reduceByKey {
-        (x, y) =>
-          (x._1 + y._1, x._2 + y._2)
-      }
-      .map {
-        x =>
-          val v = x._2
-          val ctr = v._1.toDouble / v._2.toDouble
-          (ctr, x._1.toDouble / binNum.toDouble, 1.0)
-      }
-      .cache()
+    val rate = 0.9
+    val sample = predictions.randomSplit(Array(rate, 1 - rate), seed = new Date().getTime)
+
+    println("binning data")
+    val bins = binData(sample(0), binNum)
+    val testBins = binData(sample(1), binNum)
     println("done")
 
-    println("IR training...", trainData.count(), testData.count())
-    val irmodel = new IsotonicRegression()
-      .setIsotonic(true)
-      .run(trainData)
-    println("done")
-
-    val predictionAndLabel = testData.map { point =>
-      val predictedLabel = irmodel.predict(point._2)
+    println("IR start...", bins.length, testBins.length)
+    val ir = new IsotonicRegression().setIsotonic(true).run(sc.parallelize(bins))
+    val predictionAndLabel = sc.parallelize(testBins).map { point =>
+      val predictedLabel = ir.predict(point._2)
       (predictedLabel, point._1)
-    }.cache()
-
-    println("predictions", irmodel.predictions.length)
-    println("boundaries", irmodel.boundaries.length)
+    }
+    println("done")
 
     // Calculate mean squared error between predicted and real labels.
+    println("testing")
     val meanSquaredError = predictionAndLabel.map { case (p, l) => math.pow((p - l), 2) }.mean()
-    println("Mean Squared Error = " + meanSquaredError)
+    println("Mean Squared Error = %.10f".format(meanSquaredError))
 
     val filepath = "/home/cpc/anal/ctrmodel/isotonic_%s.txt".format(date)
     val w = new PrintWriter(filepath)
     w.write("version 0.1\n")
-    w.write("num_data %d\n".format(irmodel.boundaries.length))
+    w.write("num_data %d\n".format(ir.boundaries.length))
     w.write("date %s\n".format(date))
     w.write("bin_num %d\n".format(binNum))
     w.write("mean_squared_error %.10f\n".format(meanSquaredError))
-    irmodel.boundaries.indices.foreach {
+    ir.boundaries.indices.foreach {
       i =>
-        w.write("%.10f %.10f\n".format(irmodel.boundaries(i), irmodel.predictions(i)))
+        w.write("%.10f %.10f\n".format(ir.boundaries(i), ir.predictions(i)))
     }
     w.close()
 
-    if (meanSquaredError < 0.05) {
+    if (meanSquaredError < 0.001) {
       val ret = s"cp $filepath /home/work/ml/model/isotonic.txt" !
       val ret1 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/isotonic.txt" !
     }
+  }
 
-    //irmodel.save(sc, modelPath)
+  def binData(sample: RDD[(Double, Double)], binNum: Int): Seq[(Double, Double, Double)] = {
+    val binSize = sample.count().toInt / binNum
+    var bins = Seq[(Double, Double, Double)]()
+    var click = 0d
+    var pv = 0d
+    var prediction = 0d
+    var n = 0
+    sample.sortByKey(false)
+      .toLocalIterator
+      .foreach {
+        x =>
+          if (x._1 > prediction) {
+            prediction = x._1
+          }
+          pv = pv + 1
+          if (x._2 > 0.01) {
+            click = click + 1
+          }
+          if (pv >= binSize) {
+            val ctr = click / pv
+            bins = bins :+ (ctr, prediction, 1.0)
+            n = n + 1
+            if (n <= 200) {
+              println("  bin %d: %.6f(%d/%d) %.6f".format(n, ctr, click.toInt, pv.toInt, prediction))
+            }
+
+            click = 0d
+            pv = 0d
+            prediction = 0d
+          }
+      }
+    bins
+  }
+
+  def getCalibrate(boundaries: Array[Double], predictions: Array[Double], v: Double): Double = {
+    def linearInterpolation(x1: Double, y1: Double, x2: Double, y2: Double, x: Double): Double = {
+      y1 + (y2 - y1) * (x - x1) / (x2 - x1)
+    }
+
+    val foundIndex = binarySearch(boundaries, v)
+    val insertIndex = -foundIndex - 1
+
+    // Find if the index was lower than all values,
+    // higher than all values, in between two values or exact match.
+    if (insertIndex == 0) {
+      predictions.head
+    } else if (insertIndex == boundaries.length) {
+      predictions.last
+    } else if (foundIndex < 0) {
+      linearInterpolation(
+        boundaries(insertIndex - 1),
+        predictions(insertIndex - 1),
+        boundaries(insertIndex),
+        predictions(insertIndex),
+        v)
+    } else {
+      predictions(foundIndex)
+    }
   }
 }

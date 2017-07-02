@@ -72,7 +72,7 @@ object CreateSvm {
         .mode(SaveMode.Overwrite)
         .text("/user/cpc/svmdata/" + version + "/" + date)
 
-      println("done")
+      println("done", svm.count())
       svm.unpersist()
       cal.add(Calendar.DATE, 1)
     }
