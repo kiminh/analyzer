@@ -86,6 +86,8 @@ object LogParser {
         brand = device.getBrand,
         model = device.getModel
       )
+      ext.update("phone_price", ExtValue(int_value = device.getPhoneprice))
+      ext.update("phone_level", ExtValue(int_value = device.getPhonelevel))
       val user = notice.getUserprofile
       val interests = user.getInterestsList.iterator()
       var interRows = Seq[String]()
@@ -229,7 +231,7 @@ object LogParser {
     bytes(1) = ((ip & 0x00ff0000) >> 16).toByte
     bytes(2) = ((ip & 0x0000ff00) >> 8).toByte
     bytes(3) = (ip & 0x000000ff).toByte
-    InetAddress.getByAddress(bytes).getHostAddress()
+    InetAddress.getByAddress(bytes).getHostAddress
   }
 
   def toInt(s: String): Int = {

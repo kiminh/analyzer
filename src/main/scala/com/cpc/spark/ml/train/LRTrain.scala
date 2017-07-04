@@ -270,30 +270,33 @@ object LRTrain {
     var bins = Seq[(Double, Double, Double)]()
     var click = 0d
     var pv = 0d
-    var prediction = 0d
+    var pSum = 0d
+    var pMin = 1d
     var n = 0
-    sample.sortByKey(false)
+    sample.sortByKey()
       .toLocalIterator
       .foreach {
         x =>
-          if (x._1 > prediction) {
-            prediction = x._1
+          pSum = pSum + x._1
+          if (x._1 < pMin) {
+            pMin = x._1
           }
-          pv = pv + 1
           if (x._2 > 0.01) {
             click = click + 1
           }
+          pv = pv + 1
           if (pv >= binSize) {
             val ctr = click / pv
-            bins = bins :+ (ctr, prediction, 1.0)
+            bins = bins :+ (ctr, pMin, 1.0)
             n = n + 1
             if (n <= 200) {
-              println("  bin %d: %.6f(%d/%d) %.6f".format(n, ctr, click.toInt, pv.toInt, prediction))
+              println("  bin %d: %.6f(%d/%d) %.6f %.6f".format(n, ctr, click.toInt, pv.toInt, pMin, pSum / pv))
             }
 
             click = 0d
             pv = 0d
-            prediction = 0d
+            pSum = 0d
+            pMin = 1d
           }
       }
     bins

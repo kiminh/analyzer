@@ -25,7 +25,7 @@ message Media {
 	required MediaType 	type 	= 1;
 	required string		appsid 	= 2;
 	optional string		channelid = 3;
-	optional AppInfo	app = 4;
+	optional AppInfo	app =4;
 	optional SiteInfo	site = 5;
 	optional uint32		category = 6;
 	optional string     subaccountid = 7;
@@ -117,6 +117,8 @@ message Device {
 	optional int32 screen_w = 11;
 	optional int32 screen_h = 12;
 	optional string matchidfa = 13;
+	optional uint32 phoneprice = 14;
+	optional uint32 phonelevel = 15; // 1 高端 2 中高 3中低 4低端
 };
 
 enum AdType {
@@ -155,6 +157,7 @@ message DspReqInfo {
 	optional string	dspmediaid = 2;
 	optional int32	retAdsNum = 3;
 	optional int64  timecost = 4;
+	optional string targetHost = 5;
 };
 
 message AdInfo {
@@ -172,6 +175,7 @@ message AdInfo {
 	optional uint32 class   = 12;
 	optional int32 usertype = 13; // 用户类型 0正常户 1黑五类
 	optional uint64 titlectr = 14; // 标题ctr值 
+	optional uint64 expcpm = 15; // 试验cpm
 };
 
 message AdDspRet {
@@ -219,4 +223,5 @@ message NoticeLogBody {
 	repeated uint32 lowcpmfilter = 17; // 低于最低cpm过滤
 	repeated DspReqInfo dspReqInfo = 22; // 请求DSP的信息
 	optional uint64 timecost = 23;
+	optional bool https = 24; //是否https请求
 };
