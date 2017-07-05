@@ -17,14 +17,6 @@ import scala.collection.mutable
 
 object LogParser {
 
-  val dataSchema = MapType(StringType,
-      StructType(
-        StructField("int_value", IntegerType, true) ::
-        StructField("long_value", LongType, true) ::
-        StructField("float_value", FloatType, true) ::
-        StructField("string_value", StringType, true) :: Nil
-      ), true)
-
   def parseSearchLog(txt: String): UnionLog = {
     var log: UnionLog = null
     val srcData = Ui.parseData(txt)
@@ -73,6 +65,7 @@ object LogParser {
           ctr = ad.getCtr,
           cpm = ad.getCpm
         )
+        ext.update("exp_ctr", ExtValue(int_value = ad.getTitlectr.toInt))
         ext.update("media_class", ExtValue(int_value = ad.getClass_))
         ext.update("usertype", ExtValue(int_value = ad.getUsertype))
       }
@@ -93,6 +86,8 @@ object LogParser {
         brand = device.getBrand,
         model = device.getModel
       )
+      ext.update("phone_price", ExtValue(int_value = device.getPhoneprice))
+      ext.update("phone_level", ExtValue(int_value = device.getPhonelevel))
       val user = notice.getUserprofile
       val interests = user.getInterestsList.iterator()
       var interRows = Seq[String]()
@@ -236,7 +231,7 @@ object LogParser {
     bytes(1) = ((ip & 0x00ff0000) >> 16).toByte
     bytes(2) = ((ip & 0x0000ff00) >> 8).toByte
     bytes(3) = (ip & 0x000000ff).toByte
-    InetAddress.getByAddress(bytes).getHostAddress()
+    InetAddress.getByAddress(bytes).getHostAddress
   }
 
   def toInt(s: String): Int = {

@@ -2,7 +2,8 @@ package com.cpc.spark.ml.ctrmodel.v1
 
 import java.util.Calendar
 
-import com.cpc.spark.log.parser.UnionLog
+import com.cpc.spark.log.parser.{ExtValue, UnionLog}
+import com.cpc.spark.ml.common.{FeatureDict, Utils}
 import mlserver.mlserver._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.util.MLUtils
@@ -11,45 +12,17 @@ import org.apache.spark.mllib.util.MLUtils
 /**
   * Created by Roy on 2017/5/15.
   */
-object FeatureParser {
+object FeatureParser extends FeatureDict {
 
-  val adslotids = Map(
-    1010244 -> 1,
-    1012765 -> 2,
-    1012947 -> 3,
-    1018976 -> 4,
-    1020714 -> 5,
-    1020995 -> 6,
-    1021639 -> 7,
-    1021642 -> 8,
-    1022064 -> 9,
-    1022280 -> 10,
-    1022704 -> 11,
-    1022709 -> 12,
-    1022710 -> 13,
-    1022798 -> 14,
-    1023933 -> 15,
-    1023934 -> 16,
-    1023935 -> 17,
-    1024360 -> 18,
-    1024852 -> 19,
-    1024902 -> 20,
-    1025099 -> 21,
-    1025156 -> 22,
-    1025164 -> 23,
-    1025493 -> 24,
-    1026231 -> 25,
-    1026459 -> 26,
-    1026558 -> 27,
-    1026890 -> 28,
-    1026966 -> 29,
-    1026975 -> 30,
-    1027091 -> 31,
-    1027156 -> 32,
-    1008946 -> 33
-  )
 
   def parseUnionLog(x: UnionLog): String = {
+    var cls = 0
+    if (x.ext != null) {
+      val v = x.ext.getOrElse("media_class", null)
+      if (v != null) {
+        cls = v.int_value
+      }
+    }
     val ad = AdInfo(
       bid = x.bid,
       ideaid = x.ideaid,
@@ -57,7 +30,8 @@ object FeatureParser {
       planid = x.planid,
       userid = x.userid,
       adtype = x.adtype,
-      interaction = x.interaction
+      interaction = x.interaction,
+      _class = cls
     )
     val m = Media(
       mediaAppsid = x.media_appsid.toInt,
@@ -66,11 +40,26 @@ object FeatureParser {
       adslotType = x.adslot_type,
       floorbid = x.floorbid
     )
+    val interests = x.interests.split(",")
+      .map{
+        x =>
+          val v = x.split("=")
+          if (v.length == 2) {
+            (v(0).toInt, v(1).toInt)
+          } else {
+            (0, 0)
+          }
+      }
+      .filter(x => x._1 > 0 && x._2 >= 2)
+      .sortWith((x, y) => x._2 > y._2)
+      .map(_._1)
+      .toSeq
     val u = User(
       sex = x.sex,
       age = x.age,
       coin = x.coin,
-      uid = x.uid
+      uid = x.uid,
+      interests = interests
     )
     val n = Network(
       network = x.network,
@@ -90,10 +79,15 @@ object FeatureParser {
     var svm = ""
     val vector = parse(ad, m, u, loc, n, d, x.timestamp * 1000L)
     if (vector != null) {
+      var p = -1
       svm = x.isclick.toString
       MLUtils.appendBias(vector).foreachActive {
         (i, v) =>
-          svm = svm + " %d:%f".format(i, v)
+          if (i <= p) {
+            throw new Exception("svm error:" + vector)
+          }
+          p = i
+          svm = svm + " %d:%f".format(i + 1, v)
       }
     }
     svm
@@ -108,122 +102,108 @@ object FeatureParser {
     var els = Seq[(Int, Double)]()
     var i = 0
 
-    els = els :+ (week, 1D)
+    //0 - 6
+    els = els :+ (week - 1 + i, 1d)
     i += 7
 
-    els = els :+ (hour + i, 1D)
+    //7 - 30 (24)
+    els = els :+ (hour + i, 1d)
     i += 24
 
-    //sex
-    els = els :+ (u.sex + i, 1D)
-    i += 5
+    //interests  31 - 95 (65)
+    u.interests.map(interests.getOrElse(_, 0))
+      .filter(_ > 0)
+      .sortWith(_ < _)
+      .foreach {
+        intr =>
+          els = els :+ (intr + i - 1, 1d)
+      }
+    i += interests.size
 
-    //age
-    els = els :+ (u.age + i, 1D)
-    i += 10
-
-    //coin
-    var lvl = 0
-    if (u.coin < 10) {
-      lvl = 1
-    } else if (u.coin < 1000) {
-      lvl = 2
-    } else if (u.coin < 10000) {
-      lvl = 3
-    } else {
-      lvl = 4
+    //os 96 - 97 (2)
+    val os = osDict.getOrElse(d.os, 0)
+    if (d.os > 0) {
+      els = els :+ (os + i - 1, 1d)
     }
-    els = els :+ (lvl + i, 1D)
-    i += 10
+    i += osDict.size
 
-    //os
-    els = els :+ (d.os + i, 1D)
-    i += 10
+    //adslot type 98 - 99 (2)
+    if (m.adslotType > 0) {
+      els = els :+ (m.adslotType + i - 1, 1d)
+    }
+    i += 2
 
-    //adslot type
-    els = els :+ (m.adslotType + i, 1D)
-    i += 10
+    //ad type  100 - 105 (6)
+    if (ad.adtype > 0) {
+      els = els :+ (ad.adtype + i - 1, 1d)
+    }
+    i += 6
 
-    //ad type
-    els = els :+ (ad.adtype + i, 1D)
-    i += 10
-
-    //interaction
-    els = els :+ (ad.interaction + i, 1D)
-    i += 10
-
-    //isp
-    els = els :+ (n.isp + i, 1D)
-    i += 50
-
-    //net
-    els = els :+ (n.network + i, 1D)
-    i += 10
-
-    //city 0 - 1000
-    val city = loc.city % 1000
-    els = els :+ (city + i, 1D)
-    i += 1000
-
-    //media id
-    els = els :+ (m.mediaAppsid % 100 + i, 1D)
-    i += 100
-
-    //userid
-    els = els :+ (ad.userid + i, 1D)
+    //userid  106 - 2105 (2000)
+    if (ad.userid <= 2000) {
+      els = els :+ (ad.userid + i - 1, 1d)
+    }
     i += 2000
 
-    //planid
-    els = els :+ (ad.planid + i, 1D)
+    //planid  2106 - 5105 (3000)
+    if (ad.planid <= 3000) {
+      els = els :+ (ad.planid + i - 1, 1d)
+    }
     i += 3000
 
-    //unitid
-    els = els :+ (ad.unitid + i, 1D)
-    i += 5000
+    //unitid  5106 - 15105 (10000)
+    if (ad.unitid <= 10000) {
+      els = els :+ (ad.unitid + i - 1, 1d)
+    }
+    i += 10000
 
-    //ideaid
-    els = els :+ (ad.ideaid + i, 1D)
+    //ideaid  15106 - 35105 (20000)
+    if (ad.ideaid <= 20000) {
+      els = els :+ (ad.ideaid + i - 1, 1d)
+    }
     i += 20000
 
-    //ad slot id
+    //ad slot id 35106 - 35152 (47)
     val slotid = adslotids.getOrElse(m.adslotid, 0)
-    els = els :+ (slotid + i, 1D)
+    if (slotid > 0) {
+      els = els :+ (slotid + i - 1, 1d)
+    }
     i += adslotids.size
 
-    //model
-    if (d.model.length > 0) {
-      els = els :+ (d.model.hashCode % 1000 + 1000 + i, 1D)
+    //adslotid + ideaid  35153 - 975152 (940000)
+    if (slotid > 0 && ad.ideaid > 0 && ad.ideaid <= 20000) {
+      val v = Utils.combineIntFeatureIdx(slotid, ad.ideaid)
+      els = els :+ (i + v - 1, 1d)
     }
-    i += 2000
+    i += adslotids.size * 20000
 
-    //adslotid + ideaid
-    val (v, max) = combineIntFeature(0, adslotids.size, adslotids.getOrElse(m.adslotid, 0), 0, 20000, ad.ideaid)
-    els = els :+ (i + v, 1D)
-    i += max
-
-    //adslotid + planid
-    val (v2, max2) = combineIntFeature(0, adslotids.size, adslotids.getOrElse(m.adslotid, 0), 0, 3000, ad.planid)
-    els = els :+ (i + v2, 1D)
-    i += max2
-
-    try {
-      Vectors.sparse(i, els)
-    } catch {
-      case e: Exception =>
-        println(e.getMessage, els)
-        null
+    //age
+    var age = 0
+    if (u.age <= 1) {
+      age = 0
+    } else if (u.age <= 4) {
+      age = 1
+    } else {
+      age = 2
     }
-  }
+    //ad class
+    val adcls = adClass.getOrElse(ad._class, 0)
 
-  /*
-  返回组合特征的位置，和最大位置号
-   */
-  def combineIntFeature(min1: Int, max1: Int, v1: Int, min2: Int, max2: Int, v2: Int): (Int, Int) = {
-    val range1 = max1 - min1 + 1
-    val range2 = max2 - min2 + 1
-    val idx1 = v1 - min1 + 1
-    val idx2 = v2 - min2 + 1
-    (range2 * (idx1 - 1) + idx2, range1 * range2)
+    //975153 - 1594847 (619695)
+    if (adcls > 0 && slotid > 0) {
+      val v = Utils.combineIntFeatureIdx(u.sex + 1, age + 1, n.network + 1, adcls, slotid)
+      els = els :+ (i + v - 1, 1d)
+    }
+    i += 3 * 3 * 5 * adClass.size * adslotids.size
+
+    //1594848 - 2586359(991512)
+    if (u.sex > 0 && age > 0 && n.isp > 0 && adcls > 0 && slotid > 0) {
+      val v = Utils.combineIntFeatureIdx(u.sex, age, n.isp, adcls, slotid)
+      els = els :+ (i + v - 1, 1d)
+    }
+    i += 2 * 2 * 18 * adClass.size * adslotids.size
+
+    Vectors.sparse(i, els)
   }
 }
 

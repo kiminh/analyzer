@@ -42,6 +42,7 @@ message User {
     int32 age = 3;
     int32 coin = 4;
 	string uid = 5; // 用户标示
+    repeated int32 interests = 6;
 }
 
 message AdInfo {
@@ -52,6 +53,7 @@ message AdInfo {
     int32 userid = 5;
     int32 adtype = 6;
     int32 interaction = 7;
+    int32 class = 8;
 }
 
 message Request {
