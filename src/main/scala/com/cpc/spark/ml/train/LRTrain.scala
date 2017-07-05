@@ -207,11 +207,11 @@ object LRTrain {
 
       //满足条件的模型直接替换线上数据
       if (auPRC > 0.05 && auROC > 0.8) {
-        val ret = s"cp $filepath /home/work/ml/model/logistic.txt" !
-        val ret1 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/logistic.txt" !
+        val ret  = s"cp $filepath /home/work/ml/model/logistic.txt" !
+        val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/logistic.txt" !
+        val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/logistic.txt" !
       }
     }
-
 
     if (mode.endsWith("+ir")) {
       println("IR train calibration")
@@ -230,21 +230,26 @@ object LRTrain {
 
     println("binning data")
     val bins = binData(sample(0), binNum)
-    val testBins = binData(sample(1), binNum)
     println("done")
 
-    println("IR start...", bins.length, testBins.length)
+    println("IR training...", bins.length)
     val ir = new IsotonicRegression().setIsotonic(true).run(sc.parallelize(bins))
-    val predictionAndLabel = sc.parallelize(testBins).map { point =>
-      val predictedLabel = ir.predict(point._2)
-      (predictedLabel, point._1)
-    }
     println("done")
 
-    // Calculate mean squared error between predicted and real labels.
-    println("testing")
-    val meanSquaredError = predictionAndLabel.map { case (p, l) => math.pow((p - l), 2) }.mean()
-    println("Mean Squared Error = %.10f".format(meanSquaredError))
+    //test
+    println("testing...")
+    val sum = sample(1).map { x =>
+      val cali = ir.predict(x._1)
+      (x._2, cali, 1)
+    }
+    .reduce { (x, y) =>
+      (x._1 + y._1, x._2 + y._2, x._3 + y._3)
+    }
+    val ctr = sum._1 / sum._3
+    val caliCtr = sum._2 / sum._3
+    val errorPercent = (sum._2 - sum._1) / sum._1
+    val error = caliCtr - ctr
+    println("done", sum, errorPercent, ctr, caliCtr)
 
     val filepath = "/home/cpc/anal/ctrmodel/isotonic_%s.txt".format(date)
     val w = new PrintWriter(filepath)
@@ -252,16 +257,17 @@ object LRTrain {
     w.write("num_data %d\n".format(ir.boundaries.length))
     w.write("date %s\n".format(date))
     w.write("bin_num %d\n".format(binNum))
-    w.write("mean_squared_error %.10f\n".format(meanSquaredError))
+    w.write("mean_squared_error %.10f\n".format(error))
     ir.boundaries.indices.foreach {
       i =>
         w.write("%.10f %.10f\n".format(ir.boundaries(i), ir.predictions(i)))
     }
     w.close()
 
-    if (meanSquaredError < 0.001) {
+    if (error < 0.0001) {
       val ret = s"cp $filepath /home/work/ml/model/isotonic.txt" !
-      val ret1 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/isotonic.txt" !
+      val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/isotonic.txt" !
+      val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/isotonic.txt" !
     }
   }
 
@@ -287,9 +293,9 @@ object LRTrain {
           pv = pv + 1
           if (pv >= binSize) {
             val ctr = click / pv
-            bins = bins :+ (ctr, pMin, 1.0)
+            bins = bins :+ (ctr, pSum / pv, 1.0)
             n = n + 1
-            if (n <= 200) {
+            if (n >= binNum - 150) {
               println("  bin %d: %.6f(%d/%d) %.6f %.6f".format(n, ctr, click.toInt, pv.toInt, pMin, pSum / pv))
             }
 
