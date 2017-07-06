@@ -22,7 +22,7 @@ object GetRecommendMaterial {
     if (args.length < 1) {
       System.err.println(
         s"""
-           |Usage: GetUserProfile <day_before> <int>
+           |Usage: GetRM <day_before> <int>
            |
         """.stripMargin)
       System.exit(1)
@@ -51,7 +51,7 @@ object GetRecommendMaterial {
       .map {
         x =>
           if (x.size > 8) {
-            val title = x.getString(1)
+            val title = x.getString(1).trim
             val img1 = x.getString(2)
             val img2 = x.getString(3)
             val img3 = x.getString(4)
@@ -59,7 +59,7 @@ object GetRecommendMaterial {
             val pv = x.getLong(6)
             val clk = x.getDouble(7)
 
-            val hash = MessageDigest.getInstance("SHA1").digest(title.getBytes())
+            val hash = MessageDigest.getInstance("SHA-1").digest(title.getBytes())
             val hid = hash.map("%02x".format(_)).mkString
 
             "%s\t%s\t%s\t%s\t%s\t%d\t%d\t%f".format(hid, title, img1, img2, img3, show, pv, clk)

@@ -249,7 +249,7 @@ object LRTrain {
     val caliCtr = sum._2 / sum._3
     val errorPercent = (sum._2 - sum._1) / sum._1
     val error = caliCtr - ctr
-    println("done", sum, errorPercent, ctr, caliCtr)
+    println("done", sum, errorPercent, error, ctr, caliCtr)
 
     val filepath = "/home/cpc/anal/ctrmodel/isotonic_%s.txt".format(date)
     val w = new PrintWriter(filepath)
