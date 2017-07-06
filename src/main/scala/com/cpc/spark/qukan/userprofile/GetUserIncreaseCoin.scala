@@ -74,11 +74,45 @@ object GetUserIncreaseCoin {
       x =>
         val incr = x._2._2 - x._2._1
         (x._1, incr)
-    }.filter(x=> x._2 >0).cache()
-
-    result3.take(100).foreach(println)
-
-    val sum = result3.mapPartitions{
+    }.cache()
+    println("****************device*****************")
+    result3.take(30).foreach(println)
+    println("****************rate*****************")
+    result3.map {
+      x => val y= x._2
+        if(y<0){
+          (0,1)
+        }else if (y<10){
+          (10,1)
+        }else if (y<50){
+          (50,1)
+        }else if (y< 100) {
+          (100,1)
+        }else if (y< 200) {
+          (200,1)
+        } else if (y< 300) {
+          (300,1)
+        } else if (y< 400) {
+          (400,1)
+        }  else if (y < 500){
+          (500,1)
+        } else if (y<1000) {
+          (1000,1)
+        } else if (y<2000) {
+          (2000,1)
+        } else if (y<5000) {
+          (5000,1)
+        } else if (y<10000) {
+          (10000,1)
+        }else {
+          (10001,1)
+        }
+    }.reduceByKey {
+      (x,y) =>
+        x + y
+    }.repartition(1).collect().foreach(println)
+    val count = result3.count()
+    val sum = result3.filter(x => x._2 > 0).mapPartitions{
       p =>
         var n1 = 0
         var n2 = 0
@@ -112,7 +146,7 @@ object GetUserIncreaseCoin {
             n2 = x._2
           }
       }
-    println("total: %d updated: %d".format(n1, n2))
+    println("total:%d no-zero-total: %d updated: %d".format(count, n1, n2))
     ctx.stop()
   }
 }
