@@ -100,6 +100,8 @@ object FeatureParser extends FeatureDict {
               if (t.duration > stay) {
                 stay = t.duration
               }
+
+            case _ =>
           }
       }
 

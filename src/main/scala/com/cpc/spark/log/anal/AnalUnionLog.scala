@@ -71,7 +71,7 @@ object AnalUnionLog {
       }
       .map {
         x =>
-          var log = x._2.find(_.timestamp > 0).get
+          var log = x._2.find(_.timestamp > 0).getOrElse(null)
           if (log != null) {
             x._2.foreach {
               u =>

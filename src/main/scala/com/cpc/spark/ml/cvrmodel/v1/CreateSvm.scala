@@ -57,7 +57,7 @@ object CreateSvm {
 
       val tracelog = ctx.sql(
         s"""
-           |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" %s and isclick > 0
+           |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" %s
         """.stripMargin.format(date, hourSql))
         .as[TraceLog].rdd
         .map {
@@ -87,10 +87,7 @@ object CreateSvm {
         .map(_._2)
         .filter(x => x._1 != null && x._2.nonEmpty)
         .map(x => FeatureParser.parseUnionLog(x._1, x._2:_*))
-
-      svm.take(100).foreach(println)
-
-      System.exit(1)
+        .cache()
 
       svm.toDF()
         .write
