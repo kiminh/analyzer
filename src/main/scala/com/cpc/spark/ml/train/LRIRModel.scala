@@ -5,6 +5,7 @@ import java.util.{Calendar, Date}
 
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
+import org.apache.spark.mllib.optimization.{L1Updater, LBFGS, LogisticGradient, SquaredL2Updater}
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel, LabeledPoint}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
@@ -51,19 +52,17 @@ class LRIRModel {
     val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
     /*
     lbfgs.optimizer.setGradient(new LogisticGradient())
-    lbfgs.optimizer.setUpdater(new SquaredL2Updater())
     lbfgs.optimizer.setRegParam(0.2)
     lbfgs.optimizer.setNumCorrections(10)
-    lbfgs.optimizer.setConvergenceTol(1e-4)
     */
+    lbfgs.optimizer.setUpdater(new L1Updater())
     if (iterNum > 0) {
       lbfgs.optimizer.setNumIterations(iterNum)
-    } else {
-      lbfgs.optimizer.setNumIterations(200)
     }
     if (tol > 0) {
       lbfgs.optimizer.setConvergenceTol(tol)
     }
+
     lrmodel = lbfgs.run(sample)
     lrmodel.clearThreshold()
   }

@@ -16,6 +16,8 @@ import scala.util.Random
   */
 object CvrModel {
 
+  val autoUpdate = false
+
   def main(args: Array[String]): Unit = {
     if (args.length < 8) {
       System.err.println(
@@ -80,7 +82,7 @@ object CvrModel {
 
       sample.take(1).foreach(x => println(x.features))
       println("training...")
-      model.run(sample, 100, 0)
+      model.run(sample, 0, 0)
       model.saveHdfs(modelPath + "/" + date)
       sample.unpersist()
       println("done")
@@ -95,7 +97,7 @@ object CvrModel {
       model.saveText(filepath)
 
       //满足条件的模型直接替换线上数据
-      if (model.getAuPRC() > 1 && model.getAuROC() > 1) {
+      if (autoUpdate && model.getAuPRC() > 1 && model.getAuROC() > 1) {
         println("replace lr online data")
         val ret  = s"cp $filepath                /home/work/ml/model/cvr_logistic.txt" !
         val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/cvr_logistic.txt" !
@@ -108,7 +110,7 @@ object CvrModel {
       val meanError = model.runIr(binNum)
       val filepath = "/home/cpc/anal/model/cvr_isotonic_%s.txt".format(date)
       model.saveIrText(filepath)
-      if (math.abs(meanError) < 0) {
+      if (autoUpdate && math.abs(meanError) < 0) {
         println("replace ir online data")
         val ret = s"cp $filepath                 /home/work/ml/model/cvr_isotonic.txt" !
         val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/cvr_isotonic.txt" !

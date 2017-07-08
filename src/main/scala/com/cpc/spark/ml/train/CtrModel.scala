@@ -15,6 +15,8 @@ import scala.util.Random
   */
 object CtrModel {
 
+  val autoUpdate = false
+
   def main(args: Array[String]): Unit = {
     if (args.length < 8) {
       System.err.println(
@@ -90,11 +92,11 @@ object CtrModel {
     model.printLrTestLog()
     println("done")
     if (mode.startsWith("train")) {
-      val filepath = "/home/cpc/anal/model/logistic_%s.txt".format(date)
+      val filepath = "/home/cpc/anal/model/dev-logistic_%s.txt".format(date)
       model.saveText(filepath)
 
       //满足条件的模型直接替换线上数据
-      if (model.getAuPRC() > 0.05 && model.getAuROC() > 0.8) {
+      if (autoUpdate && model.getAuPRC() > 0.05 && model.getAuROC() > 0.8) {
         println("replace lr online data")
         val ret  = s"cp $filepath /home/work/ml/model/logistic.txt" !
         val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/logistic.txt" !
@@ -105,9 +107,9 @@ object CtrModel {
     if (mode.endsWith("+ir")) {
       println("start isotonic regression")
       val meanError = model.runIr(binNum)
-      val filepath = "/home/cpc/anal/model/isotonic_%s.txt".format(date)
+      val filepath = "/home/cpc/anal/model/dev-isotonic_%s.txt".format(date)
       model.saveIrText(filepath)
-      if (math.abs(meanError) < 0.0001) {
+      if (autoUpdate && math.abs(meanError) < 0.0001) {
         println("replace ir online data")
         val ret = s"cp $filepath /home/work/ml/model/isotonic.txt" !
         val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/isotonic.txt" !

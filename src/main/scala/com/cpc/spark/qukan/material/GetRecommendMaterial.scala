@@ -58,11 +58,9 @@ object GetRecommendMaterial {
             val show = x.getLong(5)
             val pv = x.getLong(6)
             val clk = x.getDouble(7)
+            val tag = "-"
 
-            val hash = MessageDigest.getInstance("SHA-1").digest(title.getBytes())
-            val hid = hash.map("%02x".format(_)).mkString
-
-            "%s\t%s\t%s\t%s\t%s\t%d\t%d\t%f".format(hid, title, img1, img2, img3, show, pv, clk)
+            "%s\t%s\t%s\t%s\t%s\t%d\t%d\t%f\t%s".format("-", title, img1, img2, img3, show, pv, clk, tag)
           } else {
             ""
           }
@@ -76,10 +74,13 @@ object GetRecommendMaterial {
     lazy val w = new PrintWriter(new File("/home/work/mr/qukan/recommend_material.txt"))
     var n = 0
     newRdd.map(_.split("\t"))
-      .filter(_.length == 8)
+      .filter(_.length == 9)
       .map {
         x =>
-          (x(0), x)
+          val hash = MessageDigest.getInstance("SHA-1").digest(x(1).getBytes())
+          val hid = hash.map("%02x".format(_)).mkString
+          x(0) = hid
+          (hid, x)
       }
       .reduceByKey {
         (x, y) =>
