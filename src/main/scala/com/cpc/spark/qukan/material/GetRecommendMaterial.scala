@@ -58,7 +58,7 @@ object GetRecommendMaterial {
             val show = x.getLong(5)
             val pv = x.getLong(6)
             val clk = x.getDouble(7)
-            val tag = "-"
+            val tag = ""
 
             "%s\t%s\t%s\t%s\t%s\t%d\t%d\t%f\t%s".format("-", title, img1, img2, img3, show, pv, clk, tag)
           } else {

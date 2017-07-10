@@ -31,7 +31,7 @@ class LRIRModel {
       .config("spark.core.connection.auth.wait.timeout", "100")
       .appName(appName)
       .getOrCreate()
-    return ctx
+    ctx
   }
 
   def stopSpark(): Unit = {
@@ -45,7 +45,7 @@ class LRIRModel {
   }
 
   def getLRmodel(): LogisticRegressionModel = {
-    return lrmodel
+    lrmodel
   }
 
   def run(sample: RDD[LabeledPoint], iterNum: Int, tol: Double): Unit = {
@@ -94,19 +94,19 @@ class LRIRModel {
   private var lrTestResults: RDD[(Double, Double)] = null
 
   def getLrTestResults(): RDD[(Double, Double)] = {
-    return lrTestResults
+    lrTestResults
   }
 
   private var auPRC = 0d
 
   def getAuPRC(): Double = {
-    return auPRC
+    auPRC
   }
 
   private var auROC = 0d
 
   def getAuROC(): Double = {
-    return auROC
+    auROC
   }
 
   def test(sample: RDD[LabeledPoint]): Unit = {
@@ -193,7 +193,7 @@ class LRIRModel {
   private var irmodel: IsotonicRegressionModel = null
 
   def getIRmodel(): IsotonicRegressionModel = {
-    return irmodel
+    irmodel
   }
 
   private var irBinNum = 0
@@ -220,7 +220,7 @@ class LRIRModel {
     val caliCtr = sum._2 / sum._3
     irError = caliCtr - ctr
     irmodel = ir
-    return irError
+    irError
   }
 
   def saveIrText(path: String): Unit = {

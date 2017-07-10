@@ -19,7 +19,6 @@ object CreateSvm {
       System.err.println(
         s"""
            |Usage: create cvr svm <version:string> <daybefore:int> <days:int> <hour:string>
-           |
         """.stripMargin)
       System.exit(1)
     }
