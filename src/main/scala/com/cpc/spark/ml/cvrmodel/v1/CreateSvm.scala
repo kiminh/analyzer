@@ -47,6 +47,7 @@ object CreateSvm {
       val clicklog = ctx.sql(
         s"""
            |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and isclick > 0
+           |and media_appsid in ("80000001", "80000002")
         """.stripMargin.format(date, hourSql))
         .as[UnionLog].rdd
         .map {

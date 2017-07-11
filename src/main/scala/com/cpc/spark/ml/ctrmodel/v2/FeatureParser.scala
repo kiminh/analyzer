@@ -50,9 +50,8 @@ object FeatureParser extends FeatureDict {
             (0, 0)
           }
       }
-      .filter(_._1 > 0)
+      .filter(x => x._1 > 0 && x._2 >= 2)
       .sortWith((x, y) => x._2 > y._2)
-      .filter(_._2.toInt >= 4)
       .map(_._1)
       .toSeq
     val u = User(
@@ -80,54 +79,73 @@ object FeatureParser extends FeatureDict {
     var svm = ""
     val vector = parse(ad, m, u, loc, n, d, x.timestamp * 1000L)
     if (vector != null) {
+      var p = -1
       svm = x.isclick.toString
       MLUtils.appendBias(vector).foreachActive {
         (i, v) =>
-          svm = svm + " %d:%f".format(i, v)
+          if (i <= p) {
+            throw new Exception("svm error:" + vector)
+          }
+          p = i
+          svm = svm + " %d:%f".format(i + 1, v)
       }
     }
     svm
   }
 
   def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
-    val cal = Calendar.getInstance()
-    cal.setTimeInMillis(timeMills)
-    val week = cal.get(Calendar.DAY_OF_WEEK)
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
-
     var els = Seq[(Int, Double)]()
     var i = 0
 
-    //interests
-    u.interests.foreach {
-      intr =>
-        els = els :+ (interests.getOrElse(intr, 0) + i, 1D)
-    }
+    //interests   (65)
+    u.interests.map(interests.getOrElse(_, 0))
+      .filter(_ > 0)
+      .sortWith(_ < _)
+      .foreach {
+        intr =>
+          els = els :+ (intr + i - 1, 1d)
+      }
     i += interests.size
 
-    //isp
-    if (n.isp > 0) {
-      els = els :+ (n.isp + i, 1D)
-    }
-    i += 18
-
-    //ad slot id
-    val os = osDict.getOrElse(d.os, 0)
-    val adcls = adClass.getOrElse(ad._class, 0)
     val slotid = adslotids.getOrElse(m.adslotid, 0)
-
-    //sex 3 os 3 net 5 city 433 adclass 294 adtype 7 slotid 48
-    val v = Utils.combineIntFeatureIdx(u.sex + 1, os + 1, n.network + 1, adcls + 1, ad.adtype + 1, slotid + 1)
-    els = els :+ (i + v, 1D)
-    i += 3 * 3 * 5 * 433 * 294 * 7 * 48
-
-    try {
-      Vectors.sparse(i, els)
-    } catch {
-      case e: Exception =>
-        println(e.getMessage, els)
-        null
+    //adslotid + ideaid   (940000)
+    if (slotid > 0 && ad.ideaid > 0 && ad.ideaid <= 20000) {
+      val v = Utils.combineIntFeatureIdx(slotid, ad.ideaid)
+      els = els :+ (i + v - 1, 1d)
     }
+    i += adslotids.size * 20000
+
+    //age
+    var age = 0
+    if (u.age <= 1) {
+      age = 0
+    } else if (u.age <= 4) {
+      age = 1
+    } else {
+      age = 2
+    }
+    //ad class
+    val adcls = adClass.getOrElse(ad._class, 0)
+    var isp = 0
+    if (n.isp > 0 && n.isp < 4) {
+      isp = n.isp
+    } else if (isp == 9) {
+      isp = 4
+    } else {
+      isp = 5
+    }
+    /*
+    组合特征
+    sex age network isp adcls slotid
+     3   3    5      5   293   47    3098475
+     */
+    if (adcls > 0 && slotid > 0) {
+      val v = Utils.combineIntFeatureIdx(u.sex, age, n.network, isp, adcls, slotid)
+      els = els :+ (i + v - 1, 1d)
+    }
+    i += 3 * 3 * 5 * 5 * adClass.size * adslotids.size
+
+    Vectors.sparse(i, els)
   }
 }
 

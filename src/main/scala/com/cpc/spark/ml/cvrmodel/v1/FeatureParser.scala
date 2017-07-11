@@ -127,21 +127,11 @@ object FeatureParser extends FeatureDict {
   def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
-    val week = cal.get(Calendar.DAY_OF_WEEK)
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
 
     var els = Seq[(Int, Double)]()
     var i = 0
 
-    //0 - 6
-    els = els :+ (week - 1 + i, 1d)
-    i += 7
-
-    //7 - 30 (24)
-    els = els :+ (hour + i, 1d)
-    i += 24
-
-    //interests  31 - 95 (65)
+    //interests   (65)
     u.interests.map(interests.getOrElse(_, 0))
       .filter(_ > 0)
       .sortWith(_ < _)
@@ -151,57 +141,8 @@ object FeatureParser extends FeatureDict {
       }
     i += interests.size
 
-    //os 96 - 97 (2)
-    val os = osDict.getOrElse(d.os, 0)
-    if (d.os > 0) {
-      els = els :+ (os + i - 1, 1d)
-    }
-    i += osDict.size
-
-    //adslot type 98 - 99 (2)
-    if (m.adslotType > 0) {
-      els = els :+ (m.adslotType + i - 1, 1d)
-    }
-    i += 2
-
-    //ad type  100 - 105 (6)
-    if (ad.adtype > 0) {
-      els = els :+ (ad.adtype + i - 1, 1d)
-    }
-    i += 6
-
-    //userid  106 - 2105 (2000)
-    if (ad.userid <= 2000) {
-      els = els :+ (ad.userid + i - 1, 1d)
-    }
-    i += 2000
-
-    //planid  2106 - 5105 (3000)
-    if (ad.planid <= 3000) {
-      els = els :+ (ad.planid + i - 1, 1d)
-    }
-    i += 3000
-
-    //unitid  5106 - 15105 (10000)
-    if (ad.unitid <= 10000) {
-      els = els :+ (ad.unitid + i - 1, 1d)
-    }
-    i += 10000
-
-    //ideaid  15106 - 35105 (20000)
-    if (ad.ideaid <= 20000) {
-      els = els :+ (ad.ideaid + i - 1, 1d)
-    }
-    i += 20000
-
-    //ad slot id 35106 - 35152 (47)
     val slotid = adslotids.getOrElse(m.adslotid, 0)
-    if (slotid > 0) {
-      els = els :+ (slotid + i - 1, 1d)
-    }
-    i += adslotids.size
-
-    //adslotid + ideaid  35153 - 975152 (940000)
+    //adslotid + ideaid   (940000)
     if (slotid > 0 && ad.ideaid > 0 && ad.ideaid <= 20000) {
       val v = Utils.combineIntFeatureIdx(slotid, ad.ideaid)
       els = els :+ (i + v - 1, 1d)
@@ -219,20 +160,24 @@ object FeatureParser extends FeatureDict {
     }
     //ad class
     val adcls = adClass.getOrElse(ad._class, 0)
-
-    //975153 - 1594847 (619695)
+    var isp = 0
+    if (n.isp > 0 && n.isp < 4) {
+      isp = n.isp
+    } else if (isp == 9) {
+      isp = 4
+    } else {
+      isp = 5
+    }
+    /*
+    组合特征
+    sex age network isp adcls slotid
+     3   3    5      5   293   47    3098475
+     */
     if (adcls > 0 && slotid > 0) {
-      val v = Utils.combineIntFeatureIdx(u.sex + 1, age + 1, n.network + 1, adcls, slotid)
+      val v = Utils.combineIntFeatureIdx(u.sex, age, n.network, isp, adcls, slotid)
       els = els :+ (i + v - 1, 1d)
     }
-    i += 3 * 3 * 5 * adClass.size * adslotids.size
-
-    //1594848 - 2586359(991512)
-    if (u.sex > 0 && age > 0 && n.isp > 0 && adcls > 0 && slotid > 0) {
-      val v = Utils.combineIntFeatureIdx(u.sex, age, n.isp, adcls, slotid)
-      els = els :+ (i + v - 1, 1d)
-    }
-    i += 2 * 2 * 18 * adClass.size * adslotids.size
+    i += 3 * 3 * 5 * 5 * adClass.size * adslotids.size
 
     Vectors.sparse(i, els)
   }
