@@ -285,8 +285,8 @@ class LRIRModel {
     bins
   }
 
-  val boundaries = Array[Double]()
-  val predictions = Array[Double]()
+  var boundaries = Array[Double]()
+  var predictions = Array[Double]()
   var caliBinNum = 0
   var caliError = 0d
 
@@ -298,10 +298,13 @@ class LRIRModel {
     val sample = lrTestResults.randomSplit(Array(rate, 1 - rate), seed = new Date().getTime)
     val bins = binData(sample(0), caliBinNum)
     var n = 0
+    boundaries = new Array[Double](bins.length)
+    predictions = new Array[Double](bins.length)
     bins.foreach {
       x =>
         boundaries(n) = x._2
         predictions(n) = x._1
+        n = n + 1
     }
     val sum = sample(1).toLocalIterator
       .map {
