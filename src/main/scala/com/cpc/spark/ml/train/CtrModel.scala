@@ -106,7 +106,7 @@ object CtrModel {
 
     if (mode.endsWith("+ir")) {
       println("start isotonic regression")
-      val meanError = model.runCalibrateData(binNum, 0.6)
+      val meanError = model.runCalibrateData(binNum, 0.6, 0.01)
       val filepath = "/home/cpc/anal/model/isotonic_%s.txt".format(date)
       model.saveCaliText(filepath)
       if (autoUpdate && math.abs(meanError) < 0.0001) {

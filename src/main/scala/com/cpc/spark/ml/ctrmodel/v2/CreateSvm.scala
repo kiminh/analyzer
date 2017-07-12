@@ -1,7 +1,7 @@
 package com.cpc.spark.ml.ctrmodel.v2
 
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Date}
 
 import com.cpc.spark.log.parser.UnionLog
 import org.apache.log4j.{Level, Logger}
@@ -46,12 +46,15 @@ object CreateSvm {
         hourSql = "and `hour` in (\"%s\")".format(hour.split(",").mkString("\",\""))
       }
 
-      val svm = ctx.sql(
+      val ulog = ctx.sql(
         s"""
            |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and isfill = 1 and adslotid > 0
            |and media_appsid in ("80000001", "80000002")
         """.stripMargin.format(date, hourSql))
         .as[UnionLog].rdd
+        .randomSplit(Array(0.6, 0.4), seed = new Date().getTime)
+
+      val train = ulog(0)
         .filter {
           u =>
             var ret = false
@@ -63,14 +66,19 @@ object CreateSvm {
         .map{x => FeatureParser.parseUnionLog(x)}
         .cache()
 
-      svm.toDF()
+      train.toDF()
         .write
         .mode(SaveMode.Overwrite)
         .text("/user/cpc/svmdata/" + version + "/" + date)
 
-      svm.take(1).foreach(println)
-      println("done", svm.count())
-      svm.unpersist()
+      val test = ulog(1)
+        .map{x => FeatureParser.parseUnionLog(x)}
+        .toDF()
+        .write
+        .mode(SaveMode.Overwrite)
+        .text("/user/cpc/svmdata/" + version + "_full/" + date)
+
+      println("done", train.count())
       cal.add(Calendar.DATE, 1)
     }
 

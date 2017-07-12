@@ -290,12 +290,12 @@ class LRIRModel {
   var caliBinNum = 0
   var caliError = 0d
 
-  def runCalibrateData(binNum: Int, rate: Double): Double = {
+  def runCalibrateData(binNum: Int, rate: Double, rateTest: Double): Double = {
     if (lrTestResults == null) {
       throw new Exception("must run lr and test first")
     }
     caliBinNum = binNum
-    val sample = lrTestResults.randomSplit(Array(rate, 1 - rate), seed = new Date().getTime)
+    val sample = lrTestResults.randomSplit(Array(rate, rateTest, 1 - rate - rateTest), seed = new Date().getTime)
     val bins = binData(sample(0), caliBinNum)
     var n = 0
     boundaries = new Array[Double](bins.length)
@@ -319,7 +319,7 @@ class LRIRModel {
 
     val ctr = sum._1 / sum._3
     val caliCtr = sum._2 / sum._3
-    caliError = caliCtr - ctr
+    caliError = caliCtr / ctr
     caliError
   }
 
