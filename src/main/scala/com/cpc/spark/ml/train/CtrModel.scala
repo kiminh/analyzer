@@ -43,7 +43,7 @@ object CtrModel {
     val ctx = model.initSpark("cpc ctr model %s [%s]".format(mode, modelPath))
 
     val fmt = new SimpleDateFormat("yyyy-MM-dd")
-    val date = fmt.format(new Date().getTime)
+    val date = new SimpleDateFormat("yyyy-MM-dd-HH").format(new Date().getTime)
     val yesterday = fmt.format(new Date().getTime - 3600L * 24000L)
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -daybefore)
@@ -78,7 +78,7 @@ object CtrModel {
         .toLocalIterator
         .foreach(println)
 
-      sample.take(1).foreach(x => println(x.features))
+      //sample.take(1).foreach(x => println(x.features))
       println("training...")
       model.run(sample, 0, 0)
       model.saveHdfs(modelPath + "/" + date)
@@ -92,7 +92,7 @@ object CtrModel {
     model.printLrTestLog()
     println("done")
     if (mode.startsWith("train")) {
-      val filepath = "/home/cpc/anal/model/dev-logistic_%s.txt".format(date)
+      val filepath = "/home/cpc/anal/model/logistic_%s.txt".format(date)
       model.saveText(filepath)
 
       //满足条件的模型直接替换线上数据
@@ -106,9 +106,9 @@ object CtrModel {
 
     if (mode.endsWith("+ir")) {
       println("start isotonic regression")
-      val meanError = model.runIr(binNum)
-      val filepath = "/home/cpc/anal/model/dev-isotonic_%s.txt".format(date)
-      model.saveIrText(filepath)
+      val meanError = model.runCalibrateData(binNum, 0.6)
+      val filepath = "/home/cpc/anal/model/isotonic_%s.txt".format(date)
+      model.saveCaliText(filepath)
       if (autoUpdate && math.abs(meanError) < 0.0001) {
         println("replace ir online data")
         val ret = s"cp $filepath /home/work/ml/model/isotonic.txt" !

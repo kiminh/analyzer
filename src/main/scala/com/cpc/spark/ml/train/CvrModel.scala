@@ -44,7 +44,7 @@ object CvrModel {
     val ctx = model.initSpark("cpc cvr model %s [%s]".format(mode, modelPath))
 
     val fmt = new SimpleDateFormat("yyyy-MM-dd")
-    val date = fmt.format(new Date().getTime)
+    val date = new SimpleDateFormat("yyyy-MM-dd-HH").format(new Date().getTime)
     val yesterday = fmt.format(new Date().getTime - 3600L * 24000L)
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -daybefore)
@@ -80,7 +80,7 @@ object CvrModel {
         .toLocalIterator
         .foreach(println)
 
-      sample.take(1).foreach(x => println(x.features))
+      //sample.take(1).foreach(x => println(x.features))
       println("training...")
       model.run(sample, 0, 0)
       model.saveHdfs(modelPath + "/" + date)
@@ -107,7 +107,7 @@ object CvrModel {
 
     if (mode.endsWith("+ir")) {
       println("start isotonic regression")
-      val meanError = model.runIr(binNum)
+      val meanError = model.runIr(binNum, 0.9)
       val filepath = "/home/cpc/anal/model/cvr_isotonic_%s.txt".format(date)
       model.saveIrText(filepath)
       if (autoUpdate && math.abs(meanError) < 0) {

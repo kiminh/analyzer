@@ -118,18 +118,18 @@ object FeatureParser extends FeatureDict {
     //age
     var age = 0
     if (u.age <= 1) {
-      age = 0
-    } else if (u.age <= 4) {
       age = 1
-    } else {
+    } else if (u.age <= 4) {
       age = 2
+    } else {
+      age = 3
     }
     //ad class
     val adcls = adClass.getOrElse(ad._class, 0)
     var isp = 0
     if (n.isp > 0 && n.isp < 4) {
       isp = n.isp
-    } else if (isp == 9) {
+    } else if (n.isp == 9) {
       isp = 4
     } else {
       isp = 5
@@ -140,7 +140,7 @@ object FeatureParser extends FeatureDict {
      3   3    5      5   293   47    3098475
      */
     if (adcls > 0 && slotid > 0) {
-      val v = Utils.combineIntFeatureIdx(u.sex, age, n.network, isp, adcls, slotid)
+      val v = Utils.combineIntFeatureIdx(u.sex + 1, age, n.network + 1, isp, adcls, slotid)
       els = els :+ (i + v - 1, 1d)
     }
     i += 3 * 3 * 5 * 5 * adClass.size * adslotids.size

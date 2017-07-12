@@ -9,6 +9,7 @@ import org.apache.spark.mllib.optimization.{L1Updater, LBFGS, LogisticGradient, 
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel, LabeledPoint}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
+import java.util.Arrays.binarySearch
 
 /**
   * Created by Roy on 2017/5/15.
@@ -25,6 +26,7 @@ class LRIRModel {
       .config("spark.kryo.registrator", "com.cpc.spark.ml.train.LRRegistrator")
       .config("spark.kryoserializer.buffer.max", "2047MB")
       .config("spark.rpc.message.maxSize", "400")
+      .config("spark.network.timeout", "240s")
       //.config("spark.speculation", "true")
       .config("spark.storage.blockManagerHeartBeatMs", "300000")
       .config("spark.scheduler.maxRegisteredResourcesWaitingTime", "100")
@@ -81,6 +83,7 @@ class LRIRModel {
     w.write("num_classes %d\n".format(lrmodel.numClasses))
     w.write("auprc %.18f\n".format(auPRC))
     w.write("aur %.18f\n".format(auROC))
+    w.write("\r\n")
     lrmodel.weights.toSparse.foreachActive {
       (i, v) =>
         w.write("%d %.18f\n".format(i, v))
@@ -199,12 +202,11 @@ class LRIRModel {
   private var irBinNum = 0
   private var irError = 0d
 
-  def runIr(binNum: Int): Double = {
+  def runIr(binNum: Int, rate: Double): Double = {
     if (lrTestResults == null) {
       throw new Exception("must run lr and test first")
     }
     irBinNum = binNum
-    val rate = 0.9
     val sample = lrTestResults.randomSplit(Array(rate, 1 - rate), seed = new Date().getTime)
     val bins = binData(sample(0), irBinNum)
     val sc = ctx.sparkContext
@@ -232,6 +234,7 @@ class LRIRModel {
     w.write("num_data %d\n".format(irmodel.boundaries.length))
     w.write("bin_num %d\n".format(irBinNum))
     w.write("mean_squared_error %.10f\n".format(irError))
+    w.write("\r\n")
     irmodel.boundaries.indices.foreach {
       i =>
         w.write("%.10f %.10f\n".format(irmodel.boundaries(i), irmodel.predictions(i)))
@@ -246,6 +249,7 @@ class LRIRModel {
     var pv = 0d
     var pSum = 0d
     var pMin = 1d
+    var pMax = 0d
     var n = 0
     sample.sortByKey()
       .toLocalIterator
@@ -255,24 +259,105 @@ class LRIRModel {
           if (x._1 < pMin) {
             pMin = x._1
           }
+          if (x._1 > pMax) {
+            pMax = x._1
+          }
           if (x._2 > 0.01) {
             click = click + 1
           }
           pv = pv + 1
           if (pv >= binSize) {
             val ctr = click / pv
-            bins = bins :+ (ctr, pSum / pv, 1.0)
+            bins = bins :+ (ctr, pMax, 1.0)
             n = n + 1
             if (n >= binNum - 150) {
-              //println("  bin %d: %.6f(%d/%d) %.6f %.6f".format(n, ctr, click.toInt, pv.toInt, pMin, pSum / pv))
+              println("  bin %d: %.6f(%d/%d) %.6f %.6f %.6f".format(
+                n, ctr, click.toInt, pv.toInt, pMin, pSum / pv, pMax))
             }
 
             click = 0d
             pv = 0d
             pSum = 0d
             pMin = 1d
+            pMax = 0d
           }
       }
     bins
+  }
+
+  val boundaries = Array[Double]()
+  val predictions = Array[Double]()
+  var caliBinNum = 0
+  var caliError = 0d
+
+  def runCalibrateData(binNum: Int, rate: Double): Double = {
+    if (lrTestResults == null) {
+      throw new Exception("must run lr and test first")
+    }
+    caliBinNum = binNum
+    val sample = lrTestResults.randomSplit(Array(rate, 1 - rate), seed = new Date().getTime)
+    val bins = binData(sample(0), caliBinNum)
+    var n = 0
+    bins.foreach {
+      x =>
+        boundaries(n) = x._2
+        predictions(n) = x._1
+    }
+    val sum = sample(1).toLocalIterator
+      .map {
+        x =>
+          val cali = calibrate(x._1)
+          (x._2, cali, 1)
+      }
+      .reduce {
+        (x, y) =>
+          (x._1 + y._1, x._2 + y._2, x._3 + y._3)
+      }
+
+    val ctr = sum._1 / sum._3
+    val caliCtr = sum._2 / sum._3
+    caliError = caliCtr - ctr
+    caliError
+  }
+
+  def saveCaliText(path: String): Unit = {
+    val w = new PrintWriter(path)
+    w.write("version 0.1\n")
+    w.write("num_data %d\n".format(boundaries.length))
+    w.write("bin_num %d\n".format(caliBinNum))
+    w.write("mean_squared_error %.10f\n".format(irError))
+    w.write("\r\n")
+    irmodel.boundaries.indices.foreach {
+      i =>
+        w.write("%.10f %.10f\n".format(boundaries(i), predictions(i)))
+    }
+    w.close()
+  }
+
+  def calibrate(testData: Double): Double = {
+
+    def linearInterpolation(x1: Double, y1: Double, x2: Double, y2: Double, x: Double): Double = {
+      y1 + (y2 - y1) * (x - x1) / (x2 - x1)
+    }
+
+    val foundIndex = binarySearch(boundaries, testData)
+    val insertIndex = -foundIndex - 1
+
+    // Find if the index was lower than all values,
+    // higher than all values, in between two values or exact match.
+    if (insertIndex == 0) {
+      predictions.head
+    } else if (insertIndex == boundaries.length) {
+      predictions.last
+    } else if (foundIndex < 0) {
+      linearInterpolation(
+        boundaries(insertIndex - 1),
+        predictions(insertIndex - 1),
+        boundaries(insertIndex),
+        predictions(insertIndex),
+        testData)
+    } else {
+      predictions(foundIndex)
+    }
   }
 }
