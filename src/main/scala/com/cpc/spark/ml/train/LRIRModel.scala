@@ -210,17 +210,12 @@ class LRIRModel {
     val sample = lrTestResults.randomSplit(Array(rate, 1 - rate), seed = new Date().getTime)
     val bins = binData(sample(0), irBinNum)
     val sc = ctx.sparkContext
-    val ir = new IsotonicRegression().setIsotonic(true).run(sc.parallelize(bins))
-    val sum = sample(1).map { x =>
-      val cali = ir.predict(x._1)
-      (x._2, cali, 1)
-    }
-    .reduce { (x, y) =>
-      (x._1 + y._1, x._2 + y._2, x._3 + y._3)
-    }
-    val ctr = sum._1 / sum._3
-    val caliCtr = sum._2 / sum._3
-    irError = caliCtr - ctr
+    val ir = new IsotonicRegression().setIsotonic(true).run(sc.parallelize(bins.map(x => (x._1, x._3, 1d))))
+    val sum = sample(1)
+      .map(x => (x._2, ir.predict(x._1)))   //(ctr, calibrate ctr)
+      .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
+
+    irError = (sum._2 - sum._1) / sum._1  //误差比
     irmodel = ir
     irError
   }
@@ -233,7 +228,7 @@ class LRIRModel {
     w.write("version 0.1\n")
     w.write("num_data %d\n".format(irmodel.boundaries.length))
     w.write("bin_num %d\n".format(irBinNum))
-    w.write("mean_squared_error %.10f\n".format(irError))
+    w.write("mean_error %.10f\n".format(irError))
     w.write("\r\n")
     irmodel.boundaries.indices.foreach {
       i =>
@@ -242,9 +237,12 @@ class LRIRModel {
     w.close()
   }
 
-  private def binData(sample: RDD[(Double, Double)], binNum: Int): Seq[(Double, Double, Double)] = {
+  /*
+  @return ctr minPrediction avgPrediction maxPrediction
+   */
+  private def binData(sample: RDD[(Double, Double)], binNum: Int): Seq[(Double, Double, Double, Double)] = {
     val binSize = sample.count().toInt / binNum
-    var bins = Seq[(Double, Double, Double)]()
+    var bins = Seq[(Double, Double, Double, Double)]()
     var click = 0d
     var pv = 0d
     var pSum = 0d
@@ -268,7 +266,7 @@ class LRIRModel {
           pv = pv + 1
           if (pv >= binSize) {
             val ctr = click / pv
-            bins = bins :+ (ctr, pMax, 1.0)
+            bins = bins :+ (ctr, pMin, pSum / pv, pMax)
             n = n + 1
             if (n >= binNum - 150) {
               println("  bin %d: %.6f(%d/%d) %.6f %.6f %.6f".format(
@@ -302,8 +300,8 @@ class LRIRModel {
     predictions = new Array[Double](bins.length)
     bins.foreach {
       x =>
-        boundaries(n) = x._2
-        predictions(n) = x._1
+        boundaries(n) = x._4  //prediction max
+        predictions(n) = x._1   //ctr
         n = n + 1
     }
     val sum = sample(1).toLocalIterator
@@ -330,7 +328,7 @@ class LRIRModel {
     w.write("bin_num %d\n".format(caliBinNum))
     w.write("mean_squared_error %.10f\n".format(irError))
     w.write("\r\n")
-    irmodel.boundaries.indices.foreach {
+    boundaries.indices.foreach {
       i =>
         w.write("%.10f %.10f\n".format(boundaries(i), predictions(i)))
     }

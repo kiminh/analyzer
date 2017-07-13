@@ -94,8 +94,17 @@ object FeatureParser extends FeatureDict {
   }
 
   def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(timeMills)
+    val week = cal.get(Calendar.DAY_OF_WEEK)
+    val hour = cal.get(Calendar.HOUR_OF_DAY)
+
     var els = Seq[(Int, Double)]()
     var i = 0
+
+    //(24)
+    els = els :+ (hour + i, 1d)
+    i += 24
 
     //interests   (65)
     u.interests.map(interests.getOrElse(_, 0))
@@ -107,14 +116,6 @@ object FeatureParser extends FeatureDict {
       }
     i += interests.size
 
-    val slotid = adslotids.getOrElse(m.adslotid, 0)
-    //adslotid + ideaid   (940000)
-    if (slotid > 0 && ad.ideaid > 0 && ad.ideaid <= 20000) {
-      val v = Utils.combineIntFeatureIdx(slotid, ad.ideaid)
-      els = els :+ (i + v - 1, 1d)
-    }
-    i += adslotids.size * 20000
-
     //age
     var age = 0
     if (u.age <= 1) {
@@ -124,8 +125,16 @@ object FeatureParser extends FeatureDict {
     } else {
       age = 3
     }
-    //ad class
-    val adcls = adClass.getOrElse(ad._class, 0)
+    els = els :+ (age + i - 1, 1d)
+    i += 3
+
+    //os 96 - 97 (2)
+    val os = osDict.getOrElse(d.os, 0)
+    if (d.os > 0) {
+      els = els :+ (os + i - 1, 1d)
+    }
+    i += osDict.size
+
     var isp = 0
     if (n.isp > 0 && n.isp < 4) {
       isp = n.isp
@@ -134,6 +143,34 @@ object FeatureParser extends FeatureDict {
     } else {
       isp = 5
     }
+    els = els :+ (isp + i - 1, 1d)
+    i += 5
+
+    els = els :+ (n.network + i, 1d)
+    i += 5
+
+    //ideaid  15106 - 35105 (20000)
+    if (ad.ideaid <= 20000) {
+      els = els :+ (ad.ideaid + i - 1, 1d)
+    }
+    i += 20000
+
+    //ad slot id 35106 - 35152 (47)
+    val slotid = adslotids.getOrElse(m.adslotid, 0)
+    if (slotid > 0) {
+      els = els :+ (slotid + i - 1, 1d)
+    }
+    i += adslotids.size
+
+    //adslotid + ideaid   (940000)
+    if (slotid > 0 && ad.ideaid <= 20000) {
+      val v = Utils.combineIntFeatureIdx(slotid, ad.ideaid)
+      els = els :+ (i + v - 1, 1d)
+    }
+    i += adslotids.size * 20000
+
+    //ad class
+    val adcls = adClass.getOrElse(ad._class, 0)
     /*
     组合特征
     sex age network isp adcls slotid

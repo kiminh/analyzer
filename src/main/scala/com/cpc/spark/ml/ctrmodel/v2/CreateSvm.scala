@@ -15,10 +15,12 @@ import scala.util.Random
 object CreateSvm {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 5) {
+    if (args.length < 7) {
       System.err.println(
         s"""
-           |Usage: create svm <version:string> <daybefore:int> <days:int> <rate:int> <hour:string>
+           |Usage: create svm <version:string> <daybefore:int> <days:int>
+           | <rate:int> <ttRate:float> <saveFull:int>
+           | <hour:string>
            |
         """.stripMargin)
       System.exit(1)
@@ -28,7 +30,9 @@ object CreateSvm {
     val dayBefore = args(1).toInt
     val days = args(2).toInt
     val rate = args(3).toInt
-    val hour = args(4)
+    val ttRate = args(4).toFloat
+    val saveFull = args(5).toInt
+    val hour = args(6)
     val ctx = SparkSession.builder()
       .appName("create svm data code:v2 data:" + version)
       .enableHiveSupport()
@@ -52,7 +56,7 @@ object CreateSvm {
            |and media_appsid in ("80000001", "80000002")
         """.stripMargin.format(date, hourSql))
         .as[UnionLog].rdd
-        .randomSplit(Array(0.6, 0.4), seed = new Date().getTime)
+        .randomSplit(Array(ttRate, 1 - ttRate), seed = new Date().getTime)
 
       val train = ulog(0)
         .filter {
@@ -70,15 +74,18 @@ object CreateSvm {
         .write
         .mode(SaveMode.Overwrite)
         .text("/user/cpc/svmdata/" + version + "/" + date)
-
-      val test = ulog(1)
-        .map{x => FeatureParser.parseUnionLog(x)}
-        .toDF()
-        .write
-        .mode(SaveMode.Overwrite)
-        .text("/user/cpc/svmdata/" + version + "_full/" + date)
-
       println("done", train.count())
+
+      if (saveFull > 0) {
+        println("save full data")
+        ulog(1).map{x => FeatureParser.parseUnionLog(x)}
+          .toDF()
+          .write
+          .mode(SaveMode.Overwrite)
+          .text("/user/cpc/svmdata/" + version + "_full/" + date)
+        println("done", ulog(1).count())
+      }
+
       cal.add(Calendar.DATE, 1)
     }
 

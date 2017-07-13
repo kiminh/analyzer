@@ -4,9 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
-import org.apache.spark.rdd.RDD
 import sys.process._
 
 import scala.util.Random
@@ -15,16 +13,14 @@ import scala.util.Random
   */
 object CtrModel {
 
-  val autoUpdate = false
-
   def main(args: Array[String]): Unit = {
-    if (args.length < 8) {
+    if (args.length < 9) {
       System.err.println(
         s"""
            |Usage: CtrModel <mode:train/test[+ir]>
            |  <svmPath:string> <dayBefore:int> <day:int>
            |  <modelPath:string> <sampleRate:float> <PNRate:int>
-           |  <IRBinNum:int>
+           |  <IRBinNum:int> <autoUpdate:bool>
         """.stripMargin)
       System.exit(1)
     }
@@ -38,6 +34,7 @@ object CtrModel {
     val sampleRate = args(5).toFloat
     val pnRate = args(6).toInt
     val binNum = args(7).toInt
+    val autoUpdate = args(8).toBoolean
 
     val model = new LRIRModel
     val ctx = model.initSpark("cpc ctr model %s [%s]".format(mode, modelPath))
@@ -106,10 +103,10 @@ object CtrModel {
 
     if (mode.endsWith("+ir")) {
       println("start isotonic regression")
-      val meanError = model.runCalibrateData(binNum, 0.6, 0.01)
+      val meanError = model.runIr(binNum, 0.9)
       val filepath = "/home/cpc/anal/model/isotonic_%s.txt".format(date)
-      model.saveCaliText(filepath)
-      if (autoUpdate && math.abs(meanError) < 0.0001) {
+      model.saveIrText(filepath)
+      if (autoUpdate && math.abs(meanError) < 0.01) {
         println("replace ir online data")
         val ret = s"cp $filepath /home/work/ml/model/isotonic.txt" !
         val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/isotonic.txt" !
