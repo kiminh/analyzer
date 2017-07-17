@@ -16,16 +16,14 @@ import scala.util.Random
   */
 object CvrModel {
 
-  val autoUpdate = false
-
   def main(args: Array[String]): Unit = {
-    if (args.length < 8) {
+    if (args.length < 9) {
       System.err.println(
         s"""
            |Usage: CtrModel <mode:train/test[+ir]>
            |  <svmPath:string> <dayBefore:int> <day:int>
            |  <modelPath:string> <sampleRate:float> <PNRate:int>
-           |  <IRBinNum:int>
+           |  <IRBinNum:int> <lrfile:string> <irfile:string>
         """.stripMargin)
       System.exit(1)
     }
@@ -39,6 +37,8 @@ object CvrModel {
     val sampleRate = args(5).toFloat
     val pnRate = args(6).toInt
     val binNum = args(7).toInt
+    val lrfile = args(8)
+    val irfile = args(8)
 
     val model = new LRIRModel
     val ctx = model.initSpark("cpc cvr model %s [%s]".format(mode, modelPath))
@@ -97,11 +97,11 @@ object CvrModel {
       model.saveText(filepath)
 
       //满足条件的模型直接替换线上数据
-      if (autoUpdate && model.getAuPRC() > 1 && model.getAuROC() > 1) {
+      if (lrfile.length > 0 && model.getAuPRC() > 1 && model.getAuROC() > 1) {
         println("replace lr online data")
-        val ret  = s"cp $filepath                /home/work/ml/model/cvr_logistic.txt" !
-        val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/cvr_logistic.txt" !
-        val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/cvr_logistic.txt" !
+        val ret  = s"cp $filepath                /home/work/ml/model/$lrfile" !
+        val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/$lrfile" !
+        val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/$lrfile" !
       }
     }
 
@@ -110,11 +110,11 @@ object CvrModel {
       val meanError = model.runIr(binNum, 0.9)
       val filepath = "/home/cpc/anal/model/cvr_isotonic_%s.txt".format(date)
       model.saveIrText(filepath)
-      if (autoUpdate && math.abs(meanError) < 0) {
+      if (irfile.length > 0 && math.abs(meanError) < 0) {
         println("replace ir online data")
-        val ret = s"cp $filepath                 /home/work/ml/model/cvr_isotonic.txt" !
-        val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/cvr_isotonic.txt" !
-        val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/cvr_isotonic.txt" !
+        val ret = s"cp $filepath                 /home/work/ml/model/$irfile" !
+        val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/$irfile" !
+        val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/$irfile" !
       }
     }
 
