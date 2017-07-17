@@ -4,9 +4,11 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
-import sys.process._
+import org.apache.spark.rdd.RDD
 
+import sys.process._
 import scala.util.Random
 /**
   * Created by roydong on 06/07/2017.
@@ -45,16 +47,19 @@ object CtrModel {
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -daybefore)
 
+    var pathSep = Seq[String]()
+    for (n <- 1 to days) {
+      val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      pathSep = pathSep :+ date
+      cal.add(Calendar.DATE, 1)
+    }
+    println("%s/{%s}".format(inpath, pathSep.mkString(",")))
+
+    var testSample: RDD[LabeledPoint] = null
     if (mode.startsWith("test")) {
+      testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
       model.loadLRmodel(modelPath)
     } else {
-      var pathSep = Seq[String]()
-      for (n <- 1 to days) {
-        val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-        pathSep = pathSep :+ date
-        cal.add(Calendar.DATE, 1)
-      }
-      println("%s/{%s}".format(inpath, pathSep.mkString(",")))
       val svm = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
         //random pick 1/pnRate negative sample
         .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
@@ -83,7 +88,9 @@ object CtrModel {
       println("done")
     }
 
-    val testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s_full/%s".format(inpath, yesterday))
+    if (testSample == null) {
+      testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s_full/%s".format(inpath, yesterday))
+    }
     println("testing...")
     model.test(testSample)
     model.printLrTestLog()

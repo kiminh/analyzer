@@ -18,6 +18,7 @@ message Media {
     int32 adslotid = 3;
     int32 adslot_type = 4;
     float floorbid = 5;
+    int32 channel = 6;
 }
 
 message Network {
@@ -35,6 +36,8 @@ message Location {
 message Device {
     int32 os = 1;
     string model = 2;
+    int32 phone_price = 3;
+    int32 phone_level = 4;
 }
 
 message User {

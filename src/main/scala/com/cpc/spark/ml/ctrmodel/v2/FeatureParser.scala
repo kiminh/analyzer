@@ -33,12 +33,21 @@ object FeatureParser extends FeatureDict {
       interaction = x.interaction,
       _class = cls
     )
+
+    var chnl = 0
+    if (x.ext != null) {
+      val v = x.ext.getOrElse("channel", null)
+      if (v != null) {
+        chnl = v.string_value.toInt
+      }
+    }
     val m = Media(
       mediaAppsid = x.media_appsid.toInt,
       mediaType = x.media_type,
       adslotid = x.adslotid.toInt,
       adslotType = x.adslot_type,
-      floorbid = x.floorbid
+      floorbid = x.floorbid,
+      channel = chnl
     )
     val interests = x.interests.split(",")
       .map{
@@ -93,14 +102,18 @@ object FeatureParser extends FeatureDict {
     svm
   }
 
-  def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
+  def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network,
+            d: Device, timeMills: Long): Vector = {
+
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
-    val week = cal.get(Calendar.DAY_OF_WEEK)
+    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
-
     var els = Seq[(Int, Double)]()
     var i = 0
+
+    els = els :+ (week + i - 1, 1d)
+    i += 7
 
     //(24)
     els = els :+ (hour + i, 1d)
@@ -115,6 +128,9 @@ object FeatureParser extends FeatureDict {
           els = els :+ (intr + i - 1, 1d)
       }
     i += interests.size
+
+    els = els :+ (u.sex + i, 1d)
+    i += 3
 
     //age
     var age = 0
@@ -135,19 +151,15 @@ object FeatureParser extends FeatureDict {
     }
     i += osDict.size
 
-    var isp = 0
-    if (n.isp > 0 && n.isp < 4) {
-      isp = n.isp
-    } else if (n.isp == 9) {
-      isp = 4
-    } else {
-      isp = 5
-    }
-    els = els :+ (isp + i - 1, 1d)
-    i += 5
+    els = els :+ (n.isp + i, 1d)
+    i += 19
 
     els = els :+ (n.network + i, 1d)
     i += 5
+
+    val city = cityDict.getOrElse(loc.city, 0)
+    els = els :+ (city + i, 1d)
+    i += cityDict.size + 1
 
     //ideaid  15106 - 35105 (20000)
     if (ad.ideaid <= 20000) {
@@ -157,30 +169,50 @@ object FeatureParser extends FeatureDict {
 
     //ad slot id 35106 - 35152 (47)
     val slotid = adslotids.getOrElse(m.adslotid, 0)
-    if (slotid > 0) {
-      els = els :+ (slotid + i - 1, 1d)
-    }
-    i += adslotids.size
-
-    //adslotid + ideaid   (940000)
-    if (slotid > 0 && ad.ideaid <= 20000) {
-      val v = Utils.combineIntFeatureIdx(slotid, ad.ideaid)
-      els = els :+ (i + v - 1, 1d)
-    }
-    i += adslotids.size * 20000
+    els = els :+ (slotid + i, 1d)
+    i += adslotids.size + 1
 
     //ad class
     val adcls = adClass.getOrElse(ad._class, 0)
-    /*
-    组合特征
-    sex age network isp adcls slotid
-     3   3    5      5   293   47    3098475
-     */
-    if (adcls > 0 && slotid > 0) {
-      val v = Utils.combineIntFeatureIdx(u.sex + 1, age, n.network + 1, isp, adcls, slotid)
-      els = els :+ (i + v - 1, 1d)
+    els = els :+ (adcls + i, 1d)
+    i += adClass.size + 1
+
+    val mchannel = MediaChannelDict.getOrElse(m.channel, 0)
+    els = els :+ (mchannel + i, 1d)
+    i += MediaChannelDict.size + 1
+
+    //0 to 4
+    els = els :+ (d.phoneLevel + i, 1d)
+    i += 5
+
+    //slotid city adcls channel network sex isp  phone level
+    if (slotid > 0 && city > 0 && adcls > 0 && mchannel > 0 && n.network > 0
+      && n.isp > 0 && u.sex > 0 && d.phoneLevel > 0) {
+
+      val comFeatures = Seq[(Int, Int)](
+        (slotid, adslotids.size),
+        (city, cityDict.size),
+        (adcls, adClass.size),
+        (mchannel, MediaChannelDict.size),
+        (n.network, 4),
+        (n.isp, 18),
+        (u.sex, 2),
+        (d.phoneLevel, 4)
+      )
+
+      //所有2个特征组合
+      Utils.getCombination(comFeatures, 2)
+        .filter(_.length == 2)
+        .foreach {
+          combine =>
+            val x = combine(0)
+            val y = combine(1)
+            val v = Utils.combineIntFeatureIdx(x._1, y._1)
+
+            els = els :+ (v + i - 1, 1d)
+            i += x._2 * x._2
+        }
     }
-    i += 3 * 3 * 5 * 5 * adClass.size * adslotids.size
 
     Vectors.sparse(i, els)
   }
