@@ -220,7 +220,7 @@ object FeatureParser extends FeatureDict {
           els = els :+ (v + i, 1d)
           i += x._2 * y._2
       }
-     */
+      */
 
     try {
       Vectors.sparse(i, els)
