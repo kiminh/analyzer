@@ -38,7 +38,7 @@ object CvrModel {
     val pnRate = args(6).toInt
     val binNum = args(7).toInt
     val lrfile = args(8)
-    val irfile = args(8)
+    val irfile = args(9)
 
     val model = new LRIRModel
     val ctx = model.initSpark("cpc cvr model %s [%s]".format(mode, modelPath))
