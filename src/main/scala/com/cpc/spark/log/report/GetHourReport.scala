@@ -61,13 +61,12 @@ object GetHourReport {
         u =>
           val exptag = u.exptags.split(",").find(_.startsWith("ctrmodel")).getOrElse("")
           var expctr = 0
-          if (u.ext != null) {
+          if (u.isshow > 0 && u.ext != null) {
             val v = u.ext.getOrElse("exp_ctr", null)
             if (v != null) {
               expctr = v.int_value
             }
           }
-
           val ctr = CtrReport(
             media_id = u.media_appsid.toInt,
             adslot_id = u.adslotid.toInt,
