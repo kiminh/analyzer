@@ -268,7 +268,7 @@ class LRIRModel {
             val ctr = click / pv
             bins = bins :+ (ctr, pMin, pSum / pv, pMax)
             n = n + 1
-            if (n >= binNum - 150) {
+            if (n >= binNum - 100) {
               println("  bin %d: %.6f(%d/%d) %.6f %.6f %.6f".format(
                 n, ctr, click.toInt, pv.toInt, pMin, pSum / pv, pMax))
             }
@@ -293,7 +293,8 @@ class LRIRModel {
       throw new Exception("must run lr and test first")
     }
     caliBinNum = binNum
-    val sample = lrTestResults.randomSplit(Array(rate, rateTest, 1 - rate - rateTest), seed = new Date().getTime)
+    val sample = lrTestResults.randomSplit(
+      Array(rate, rateTest, 1 - rate - rateTest), seed = new Date().getTime)
     val bins = binData(sample(0), caliBinNum)
     var n = 0
     boundaries = new Array[Double](bins.length)
