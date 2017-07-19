@@ -56,6 +56,73 @@ object GetHourReport {
       .rdd.cache()
 
     //write hourly data to mysql
+    val ctrData = unionLog
+      .map{
+        u =>
+          val exptag = u.exptags.split(",").find(_.startsWith("ctrmodel")).getOrElse("")
+          var expctr = 0
+          if (u.ext != null) {
+            val v = u.ext.getOrElse("exp_ctr", null)
+            if (v != null) {
+              expctr = v.int_value
+            }
+          }
+
+          val ctr = CtrReport(
+            media_id = u.media_appsid.toInt,
+            adslot_id = u.adslotid.toInt,
+            adslot_type = u.adslot_type,
+            unit_id = u.unitid,
+            idea_id = u.ideaid,
+            plan_id = u.planid,
+            user_id = u.userid,
+            exp_tag = exptag,
+            request = 1,
+            served_request = u.isfill,
+            impression = u.isshow,
+            cash_cost = u.realCost(),
+            click = u.isclick,
+            exp_click = expctr,
+            date = "%s %s:00:00".format(u.date, u.hour)
+          )
+
+          val key = (ctr.media_id, ctr.adslot_id, ctr.plan_id, ctr.unit_id, ctr.idea_id, exptag)
+          (key, ctr)
+      }
+      .reduceByKey {
+        (x, y) =>
+          x.copy(
+            request = x.request + y.request,
+            served_request = x.served_request + y.served_request,
+            impression = x.impression + y.impression,
+            cash_cost = x.cash_cost + y.cash_cost,
+            click = x.click + y.click,
+            exp_click = x.exp_click + y.exp_click
+          )
+      }
+      .map {
+        x =>
+          val ctr = x._2.copy(
+            exp_click = x._2.exp_click / 1000000
+          )
+          if (ctr.impression > 0) {
+            ctr.copy(
+              ctr = ctr.click.toFloat / ctr.impression.toFloat,
+              exp_ctr = ctr.exp_click / ctr.impression.toFloat,
+              cpm = ctr.cash_cost.toFloat / ctr.impression.toFloat * 10
+            )
+          } else {
+            ctr
+          }
+      }
+
+    clearReportHourData("report_ctr_prediction_hourly", "%s %s:00:00".format(date, hour), "0")
+    ctx.createDataFrame(ctrData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_ctr_prediction_hourly", mariadbProp)
+    println("ctr", ctrData.count())
+
     val chargeData = unionLog
       .map {
         x =>
@@ -161,66 +228,6 @@ object GetHourReport {
       .jdbc(mariadbUrl, "report.report_media_os_hourly", mariadbProp)
     println("os", osData.count())
 
-    val ctrData = unionLog
-      .map{
-        u =>
-          val exptag = u.exptags.split(",").find(_.startsWith("ctrmodel")).getOrElse("")
-          var expctr = 0
-          if (u.ext != null) {
-            val v = u.ext.getOrElse("exp_ctr", null)
-            if (v != null) {
-              expctr = v.int_value
-            }
-          }
-
-          val ctr = CtrReport(
-            media_id = u.media_appsid.toInt,
-            adslot_id = u.adslotid.toInt,
-            adslot_type = u.adslot_type,
-            unit_id = u.unitid,
-            idea_id = u.ideaid,
-            plan_id = u.planid,
-            user_id = u.userid,
-            exp_tag = exptag,
-            request = 1,
-            served_request = u.isfill,
-            impression = u.isshow,
-            cash_cost = u.realCost(),
-            click = u.isclick,
-            exp_click = expctr.toFloat / 100000,
-            date = "%s %s:00:00".format(u.date, u.hour)
-          )
-
-          val key = (ctr.media_id, ctr.adslot_id, ctr.plan_id, ctr.unit_id, ctr.idea_id, exptag)
-          (key, ctr)
-      }
-      .reduceByKey {
-        (x, y) =>
-          x.copy(
-            request = x.request + y.request,
-            served_request = x.served_request + y.served_request,
-            impression = x.impression + y.impression,
-            cash_cost = x.cash_cost + y.cash_cost,
-            click = x.click + y.click,
-            exp_click = x.exp_click + y.exp_click
-          )
-      }
-      .map {
-        x =>
-          val ctr = x._2
-          ctr.copy(
-            ctr = ctr.click.toFloat / ctr.impression.toFloat,
-            exp_ctr = ctr.exp_click / ctr.impression.toFloat,
-            cpm = ctr.cash_cost.toFloat / ctr.impression.toFloat * 10
-          )
-      }
-
-    clearReportHourData("report_ctr_prediction_hourly", "%s %s:00:00".format(date, hour), "0")
-    ctx.createDataFrame(ctrData)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_ctr_prediction_hourly", mariadbProp)
-    println("ctr", ctrData.count())
     unionLog.unpersist()
 
     val fillLog = ctx.sql(
