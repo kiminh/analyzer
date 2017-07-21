@@ -29,4 +29,5 @@ message UserProfile {
 	repeated InterestItem interests = 5; // 人群标签
 	repeated APPPackage installpkg = 6; // 已安装列表
 	int32 pcategory = 7; //人群类型标签,趣头条用
+	int32 incr_coin = 8; // 新增金币数
 }

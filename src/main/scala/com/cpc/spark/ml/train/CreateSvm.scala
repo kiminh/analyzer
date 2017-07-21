@@ -7,6 +7,7 @@ import com.cpc.spark.log.parser.UnionLog
 import com.cpc.spark.ml.parser.{FeatureParser, UserClick, UserClickTrait}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.mllib.linalg.{DenseMatrix, Vectors}
 import org.apache.spark.rdd
 import org.apache.spark.sql.{SaveMode, SparkSession}
 

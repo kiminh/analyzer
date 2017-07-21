@@ -59,7 +59,7 @@ object GetHourReport {
     val ctrData = unionLog
       .map{
         u =>
-          val exptag = u.exptags.split(",").find(_.startsWith("ctrmodel")).getOrElse("")
+          val exptag = u.exptags.split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
           var expctr = 0
           if (u.isshow > 0 && u.ext != null) {
             val v = u.ext.getOrElse("exp_ctr", null)
@@ -71,10 +71,10 @@ object GetHourReport {
             media_id = u.media_appsid.toInt,
             adslot_id = u.adslotid.toInt,
             adslot_type = u.adslot_type,
-            unit_id = u.unitid,
-            idea_id = u.ideaid,
-            plan_id = u.planid,
-            user_id = u.userid,
+            //unit_id = u.unitid,
+            //idea_id = u.ideaid,
+            //plan_id = u.planid,
+            //user_id = u.userid,
             exp_tag = exptag,
             request = 1,
             served_request = u.isfill,
