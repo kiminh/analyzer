@@ -177,23 +177,6 @@ object FeatureParser extends FeatureDict {
     }
     i += 20000
 
-    /*
-    //ideaid  (60000)
-    var adid = 0
-    if (ad.ideaid >= 1500000) {
-      adid = ad.ideaid - 1500000 + 40000
-    } else if (ad.ideaid >= 1000000) {
-      adid = ad.ideaid - 1000000 + 20000
-    } else {
-      adid = ad.ideaid
-    }
-    if (adid >= 60000) {
-      adid = 0
-    }
-    els = els :+ (adid + i, 1d)
-    i += 60000
-    */
-
     //ad slot id 35106 - 35152 (47)
     val slotid = adslotids.getOrElse(m.adslotid, 0)
     els = els :+ (slotid + i, 1d)

@@ -68,10 +68,7 @@ object CreateSvm {
         .map{x => FeatureParser.parseUnionLog(x)}
         .cache()
 
-      if (n == 1) {
-        train.take(1).foreach(println)
-      }
-
+      train.take(1).foreach(println)
       train.toDF()
         .write
         .mode(SaveMode.Overwrite)

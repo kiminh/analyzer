@@ -96,21 +96,19 @@ object FeatureParser extends FeatureDict {
   def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
-    val week = cal.get(Calendar.DAY_OF_WEEK)
+    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
-
     var els = Seq[(Int, Double)]()
     var i = 0
 
-    //0 - 6
-    els = els :+ (week - 1 + i, 1d)
+    els = els :+ (week + i - 1, 1d)
     i += 7
 
-    //7 - 30 (24)
+    //(24)
     els = els :+ (hour + i, 1d)
     i += 24
 
-    //interests  31 - 95 (65)
+    //interests   (65)
     u.interests.map(interests.getOrElse(_, 0))
       .filter(_ > 0)
       .sortWith(_ < _)
@@ -120,6 +118,21 @@ object FeatureParser extends FeatureDict {
       }
     i += interests.size
 
+    els = els :+ (u.sex + i, 1d)
+    i += 3
+
+    //age
+    var age = 0
+    if (u.age <= 1) {
+      age = 1
+    } else if (u.age <= 4) {
+      age = 2
+    } else {
+      age = 3
+    }
+    els = els :+ (age + i - 1, 1d)
+    i += 3
+
     //os 96 - 97 (2)
     val os = osDict.getOrElse(d.os, 0)
     if (d.os > 0) {
@@ -127,83 +140,57 @@ object FeatureParser extends FeatureDict {
     }
     i += osDict.size
 
-    //adslot type 98 - 99 (2)
-    if (m.adslotType > 0) {
-      els = els :+ (m.adslotType + i - 1, 1d)
-    }
-    i += 2
+    els = els :+ (n.isp + i, 1d)
+    i += 19
 
-    //ad type  100 - 105 (6)
-    if (ad.adtype > 0) {
-      els = els :+ (ad.adtype + i - 1, 1d)
-    }
-    i += 6
+    els = els :+ (n.network + i, 1d)
+    i += 5
 
-    //userid  106 - 2105 (2000)
-    if (ad.userid <= 2000) {
-      els = els :+ (ad.userid + i - 1, 1d)
-    }
-    i += 2000
+    val city = cityDict.getOrElse(loc.city, 0)
+    els = els :+ (city + i, 1d)
+    i += cityDict.size + 1
 
-    //planid  2106 - 5105 (3000)
-    if (ad.planid <= 3000) {
-      els = els :+ (ad.planid + i - 1, 1d)
-    }
-    i += 3000
-
-    //unitid  5106 - 15105 (10000)
-    if (ad.unitid <= 10000) {
-      els = els :+ (ad.unitid + i - 1, 1d)
-    }
-    i += 10000
-
-    //ideaid  15106 - 35105 (20000)
-    if (ad.ideaid <= 20000) {
-      els = els :+ (ad.ideaid + i - 1, 1d)
-    }
-    i += 20000
 
     //ad slot id 35106 - 35152 (47)
     val slotid = adslotids.getOrElse(m.adslotid, 0)
-    if (slotid > 0) {
-      els = els :+ (slotid + i - 1, 1d)
-    }
-    i += adslotids.size
+    els = els :+ (slotid + i, 1d)
+    i += adslotids.size + 1
 
-    //adslotid + ideaid  35153 - 975152 (940000)
-    if (slotid > 0 && ad.ideaid > 0 && ad.ideaid <= 20000) {
-      val v = Utils.combineIntFeatureIdx(slotid, ad.ideaid)
-      els = els :+ (i + v - 1, 1d)
-    }
-    i += adslotids.size * 20000
-
-    //age
-    var age = 0
-    if (u.age <= 1) {
-      age = 0
-    } else if (u.age <= 4) {
-      age = 1
-    } else {
-      age = 2
-    }
     //ad class
     val adcls = adClass.getOrElse(ad._class, 0)
+    els = els :+ (adcls + i, 1d)
+    i += adClass.size + 1
 
-    //975153 - 1594847 (619695)
-    if (adcls > 0 && slotid > 0) {
-      val v = Utils.combineIntFeatureIdx(u.sex + 1, age + 1, n.network + 1, adcls, slotid)
-      els = els :+ (i + v - 1, 1d)
+    val mchannel = MediaChannelDict.getOrElse(m.channel, 0)
+    els = els :+ (mchannel + i, 1d)
+    i += MediaChannelDict.size + 1
+
+    //0 to 4
+    els = els :+ (d.phoneLevel + i, 1d)
+    i += 5
+
+    //ideaid  (200000)
+    var adid = 0
+    if (ad.ideaid >= 1500000) {
+      adid = ad.ideaid - 1500000 + 60000   //新平台
+    } else if (ad.ideaid >= 1000000) {
+      adid = ad.ideaid - 1000000 + 30000   //迁移到新平台
+    } else if (ad.ideaid < 30000) {
+      adid = ad.ideaid  //老平台
     }
-    i += 3 * 3 * 5 * adClass.size * adslotids.size
-
-    //1594848 - 2586359(991512)
-    if (u.sex > 0 && age > 0 && n.isp > 0 && adcls > 0 && slotid > 0) {
-      val v = Utils.combineIntFeatureIdx(u.sex, age, n.isp, adcls, slotid)
-      els = els :+ (i + v - 1, 1d)
+    if (adid >= 200000) {
+      adid = 0
     }
-    i += 2 * 2 * 18 * adClass.size * adslotids.size
+    els = els :+ (adid + i, 1d)
+    i += 200000
 
-    Vectors.sparse(i, els)
+    try {
+      Vectors.sparse(i, els)
+    } catch {
+      case e: Exception =>
+        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        null
+    }
   }
 }
 
