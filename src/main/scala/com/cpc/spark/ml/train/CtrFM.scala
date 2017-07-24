@@ -3,7 +3,6 @@ package com.cpc.spark.ml.train
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import com.cpc.spark.ml.regression.{FMModel, FMWithLBFGS, FMWithSGD}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
@@ -167,10 +166,7 @@ object CtrFM {
             val w2 = w2b.value
             var lossSum = 0d
             var num = 0
-            for (lp <- p) {
-              val label = lp.label
-              val features = lp.features
-
+            for (LabeledPoint(label, features) <- p) {
               val w22 = new Array[SparseVector](w2.length)
               var y2 = 0d
               if (k > 0) {
