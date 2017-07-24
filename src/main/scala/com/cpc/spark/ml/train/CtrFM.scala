@@ -64,7 +64,7 @@ object CtrFM {
       */
 
     val svm = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
-    val w = stocGradAscent(ctx.sparkContext, svm, 0, 300)
+    val w = stocGradAscent(ctx.sparkContext, svm, 2, 200)
 
     println("testing...")
     val test = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s_full/2017-07-18".format(inpath))
@@ -140,7 +140,7 @@ object CtrFM {
   }
 
   def stocGradAscent(sc: SparkContext, sample: RDD[LabeledPoint], k: Int, iterNum: Int): Vector = {
-    val tolerance = 1e-8
+    val tolerance = 1e-6
     val train = sample.cache()
     val m = train.count()
     val n = train.first().features.size
@@ -212,7 +212,7 @@ object CtrFM {
         stopNum += 1
       }
       if (stopNum >= 5) {
-        //alpha = alpha + 0.1
+        alpha = alpha + 0.1
         stopNum = 0
       }
       loss = newloss

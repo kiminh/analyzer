@@ -2,6 +2,7 @@ package com.cpc.spark.small.tool
 
 import java.util.Properties
 
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
@@ -16,6 +17,7 @@ object InsertAdvUser {
 
 
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger().setLevel(Level.WARN)
 
     println("cpc small tool InsertAdvUser running ... ")
 

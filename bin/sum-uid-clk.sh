@@ -14,5 +14,5 @@ $SPARK_HOME/bin/spark-submit --master yarn \
     --executor-cores 2 --total-executor-cores 16 --num-executors 8 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.train.SumUidClk \
-    $cur/lib/cpc-ml_2.11-0.1.jar 1 1
+    $cur/lib/dev.jar 1 2
 

@@ -11,10 +11,10 @@ jars=(
     "$cur/lib/hadoop-lzo-0.4.20.jar"
 )
 
-$SPARK_HOME/bin/spark-submit --master yarn \
+$SPARK_HOME/bin/spark-submit --master $host \
     --executor-memory 4G --driver-memory 4G \
-    --executor-cores 4 --num-executors 10 \
+    --executor-cores 4 --num-executors 5 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.ml.ctrmodel.v1.CreateSvm \
-    $cur/lib/dev.jar v3 1 1 15 0.5 1 ""
+    --class com.cpc.spark.ml.cvrmodel.v1.CreateSvm \
+    $cur/lib/dev.jar v2 60 10 ""
 

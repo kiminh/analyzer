@@ -13,4 +13,4 @@ $SPARK_HOME/bin/spark-submit --master "spark://cpc-bj03:7077" \
     --executor-memory 2G --executor-cores 1 --total-executor-cores 1 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.train.GetModelInfo \
-    $cur/lib/dev.jar /user/cpc/model/v15_2d 1
+    $cur/lib/dev.jar /user/cpc/model/v19_10d
