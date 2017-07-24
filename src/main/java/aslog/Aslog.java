@@ -16872,6 +16872,23 @@ public final class Aslog {
      * <code>optional uint32 pcategory = 5;</code>
      */
     int getPcategory();
+
+    /**
+     * <pre>
+     * 是否是antispam用户
+     * </pre>
+     *
+     * <code>optional uint32 antispam = 6;</code>
+     */
+    boolean hasAntispam();
+    /**
+     * <pre>
+     * 是否是antispam用户
+     * </pre>
+     *
+     * <code>optional uint32 antispam = 6;</code>
+     */
+    int getAntispam();
   }
   /**
    * Protobuf type {@code aslog.UserProfile}
@@ -16890,6 +16907,7 @@ public final class Aslog {
       sex_ = 0;
       coin_ = 0;
       pcategory_ = 0;
+      antispam_ = 0;
     }
 
     @java.lang.Override
@@ -16947,6 +16965,11 @@ public final class Aslog {
             case 40: {
               bitField0_ |= 0x00000008;
               pcategory_ = input.readUInt32();
+              break;
+            }
+            case 48: {
+              bitField0_ |= 0x00000010;
+              antispam_ = input.readUInt32();
               break;
             }
           }
@@ -17124,6 +17147,29 @@ public final class Aslog {
       return pcategory_;
     }
 
+    public static final int ANTISPAM_FIELD_NUMBER = 6;
+    private int antispam_;
+    /**
+     * <pre>
+     * 是否是antispam用户
+     * </pre>
+     *
+     * <code>optional uint32 antispam = 6;</code>
+     */
+    public boolean hasAntispam() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <pre>
+     * 是否是antispam用户
+     * </pre>
+     *
+     * <code>optional uint32 antispam = 6;</code>
+     */
+    public int getAntispam() {
+      return antispam_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -17150,6 +17196,9 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         output.writeUInt32(5, pcategory_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeUInt32(6, antispam_);
       }
       unknownFields.writeTo(output);
     }
@@ -17178,6 +17227,10 @@ public final class Aslog {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(5, pcategory_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(6, antispam_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -17218,6 +17271,11 @@ public final class Aslog {
         result = result && (getPcategory()
             == other.getPcategory());
       }
+      result = result && (hasAntispam() == other.hasAntispam());
+      if (hasAntispam()) {
+        result = result && (getAntispam()
+            == other.getAntispam());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -17248,6 +17306,10 @@ public final class Aslog {
       if (hasPcategory()) {
         hash = (37 * hash) + PCATEGORY_FIELD_NUMBER;
         hash = (53 * hash) + getPcategory();
+      }
+      if (hasAntispam()) {
+        hash = (37 * hash) + ANTISPAM_FIELD_NUMBER;
+        hash = (53 * hash) + getAntispam();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -17382,6 +17444,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00000008);
         pcategory_ = 0;
         bitField0_ = (bitField0_ & ~0x00000010);
+        antispam_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000020);
         return this;
       }
 
@@ -17431,6 +17495,10 @@ public final class Aslog {
           to_bitField0_ |= 0x00000008;
         }
         result.pcategory_ = pcategory_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.antispam_ = antispam_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -17510,6 +17578,9 @@ public final class Aslog {
         }
         if (other.hasPcategory()) {
           setPcategory(other.getPcategory());
+        }
+        if (other.hasAntispam()) {
+          setAntispam(other.getAntispam());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -18039,6 +18110,54 @@ public final class Aslog {
       public Builder clearPcategory() {
         bitField0_ = (bitField0_ & ~0x00000010);
         pcategory_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int antispam_ ;
+      /**
+       * <pre>
+       * 是否是antispam用户
+       * </pre>
+       *
+       * <code>optional uint32 antispam = 6;</code>
+       */
+      public boolean hasAntispam() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <pre>
+       * 是否是antispam用户
+       * </pre>
+       *
+       * <code>optional uint32 antispam = 6;</code>
+       */
+      public int getAntispam() {
+        return antispam_;
+      }
+      /**
+       * <pre>
+       * 是否是antispam用户
+       * </pre>
+       *
+       * <code>optional uint32 antispam = 6;</code>
+       */
+      public Builder setAntispam(int value) {
+        bitField0_ |= 0x00000020;
+        antispam_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 是否是antispam用户
+       * </pre>
+       *
+       * <code>optional uint32 antispam = 6;</code>
+       */
+      public Builder clearAntispam() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        antispam_ = 0;
         onChanged();
         return this;
       }
@@ -22989,44 +23108,45 @@ public final class Aslog {
       " \002(\0162\014.aslog.AdSrc\022\r\n\005adnum\030\002 \002(\r\"H\n\010Loc" +
       "ation\022\017\n\007country\030\001 \001(\r\022\020\n\010province\030\002 \001(\r" +
       "\022\014\n\004city\030\003 \001(\r\022\013\n\003isp\030\004 \001(\r\"1\n\014InterestI" +
-      "tem\022\022\n\ninterestid\030\001 \001(\004\022\r\n\005score\030\002 \001(\004\"p" +
-      "\n\013UserProfile\022&\n\tinterests\030\001 \003(\0132\023.aslog" +
-      ".InterestItem\022\013\n\003age\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022" +
-      "\014\n\004coin\030\004 \001(\r\022\021\n\tpcategory\030\005 \001(\r\"\222\004\n\rNot" +
-      "iceLogBody\022\020\n\010searchid\030\001 \002(\t\022\021\n\ttimestam" +
-      "p\030\002 \002(\r\022\033\n\005media\030\003 \001(\0132\014.aslog.Media\022\035\n\006" +
-      "adslot\030\004 \003(\0132\r.aslog.Adslot\022\035\n\006device\030\005 ",
-      "\001(\0132\r.aslog.Device\022\032\n\003ads\030\006 \003(\0132\r.aslog." +
-      "AdInfo\022\037\n\006dspret\030\007 \003(\0132\017.aslog.AdDspRet\022" +
-      "\r\n\005debug\030\010 \001(\010\022\035\n\006client\030\t \001(\0132\r.aslog.C" +
-      "lient\022\037\n\007network\030\n \001(\0132\016.aslog.Network\022\017" +
-      "\n\007exptags\030\013 \003(\t\022!\n\010location\030\014 \001(\0132\017.aslo" +
-      "g.Location\022\020\n\010sourceip\030\r \001(\t\022\021\n\tintertyp" +
-      "e\030\016 \001(\r\022\'\n\013userprofile\030\017 \001(\0132\022.aslog.Use" +
-      "rProfile\022\025\n\rdupplanfilter\030\020 \003(\r\022\024\n\014lowcp" +
-      "mfilter\030\021 \003(\r\022%\n\ndspReqInfo\030\026 \003(\0132\021.aslo" +
-      "g.DspReqInfo\022\020\n\010timecost\030\027 \001(\004\022\r\n\005https\030",
-      "\030 \001(\010*3\n\tMediaType\022\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001" +
-      "\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*-\n\nAdslotType\022\r\n\tLIST" +
-      "_FEED\020\001\022\020\n\014CONTENT_FEED\020\002*P\n\013NetworkType" +
-      "\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI\020\001\022\n\n\006NET_2" +
-      "G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?\n\006OSType\022\016\n" +
-      "\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020\001\022\n\n\006OS_IOS\020" +
-      "\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType\022\022\n\016UnknownB" +
-      "rowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Chrome\020\002\022\r\n\t" +
-      "UCBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013MiuiBro" +
-      "wser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEMobileBrows",
-      "er\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQChat\020\t*\231\001\n" +
-      "\014DeviceIdType\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVI" +
-      "D_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\022" +
-      "\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCOOKIE\020\005\022\023\n\017D" +
-      "EVID_ANDROIDID\020\006\022\016\n\nDEVID_IMSI\020\007*A\n\006AdTy" +
-      "pe\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_TEXT\020\003\022\023" +
-      "\n\017THREE_ICON_TEXT\020\004*\020\n\005AdSrc\022\007\n\003CPC\020\001*i\n" +
-      "\017InteractionType\022\017\n\013NO_INTERACT\020\000\022\013\n\007SUR" +
-      "FING\020\001\022\014\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MES" +
-      "SAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006*3\n\nClientType\022\r",
-      "\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003"
+      "tem\022\022\n\ninterestid\030\001 \001(\004\022\r\n\005score\030\002 \001(\004\"\202" +
+      "\001\n\013UserProfile\022&\n\tinterests\030\001 \003(\0132\023.aslo" +
+      "g.InterestItem\022\013\n\003age\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r" +
+      "\022\014\n\004coin\030\004 \001(\r\022\021\n\tpcategory\030\005 \001(\r\022\020\n\010ant" +
+      "ispam\030\006 \001(\r\"\222\004\n\rNoticeLogBody\022\020\n\010searchi" +
+      "d\030\001 \002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033\n\005media\030\003 \001(" +
+      "\0132\014.aslog.Media\022\035\n\006adslot\030\004 \003(\0132\r.aslog.",
+      "Adslot\022\035\n\006device\030\005 \001(\0132\r.aslog.Device\022\032\n" +
+      "\003ads\030\006 \003(\0132\r.aslog.AdInfo\022\037\n\006dspret\030\007 \003(" +
+      "\0132\017.aslog.AdDspRet\022\r\n\005debug\030\010 \001(\010\022\035\n\006cli" +
+      "ent\030\t \001(\0132\r.aslog.Client\022\037\n\007network\030\n \001(" +
+      "\0132\016.aslog.Network\022\017\n\007exptags\030\013 \003(\t\022!\n\010lo" +
+      "cation\030\014 \001(\0132\017.aslog.Location\022\020\n\010sourcei" +
+      "p\030\r \001(\t\022\021\n\tintertype\030\016 \001(\r\022\'\n\013userprofil" +
+      "e\030\017 \001(\0132\022.aslog.UserProfile\022\025\n\rdupplanfi" +
+      "lter\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021 \003(\r\022%\n\ndspR" +
+      "eqInfo\030\026 \003(\0132\021.aslog.DspReqInfo\022\020\n\010timec",
+      "ost\030\027 \001(\004\022\r\n\005https\030\030 \001(\010*3\n\tMediaType\022\013\n" +
+      "\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*-\n" +
+      "\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_FE" +
+      "ED\020\002*P\n\013NetworkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010" +
+      "NET_WIFI\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NE" +
+      "T_4G\020\004*?\n\006OSType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_A" +
+      "NDROID\020\001\022\n\n\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013Brow" +
+      "serType\022\022\n\016UnknownBrowser\020\000\022\016\n\nMQQBrowse" +
+      "r\020\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduB" +
+      "rowser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBrowser",
+      "\020\006\022\023\n\017IEMobileBrowser\020\007\022\022\n\016MicroMessenge" +
+      "r\020\010\022\n\n\006QQChat\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVI" +
+      "D_UNKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC" +
+      "\020\002\022\016\n\nDEVID_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DE" +
+      "VID_LSCOOKIE\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nD" +
+      "EVID_IMSI\020\007*A\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE" +
+      "\020\002\022\r\n\tICON_TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004*\020" +
+      "\n\005AdSrc\022\007\n\003CPC\020\001*i\n\017InteractionType\022\017\n\013N" +
+      "O_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002\022" +
+      "\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002G",
+      "P\020\006*3\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSD" +
+      "K\020\002\022\013\n\007OPENAPI\020\003"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -23135,7 +23255,7 @@ public final class Aslog {
     internal_static_aslog_UserProfile_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_UserProfile_descriptor,
-        new java.lang.String[] { "Interests", "Age", "Sex", "Coin", "Pcategory", });
+        new java.lang.String[] { "Interests", "Age", "Sex", "Coin", "Pcategory", "Antispam", });
     internal_static_aslog_NoticeLogBody_descriptor =
       getDescriptor().getMessageTypes().get(16);
     internal_static_aslog_NoticeLogBody_fieldAccessorTable = new
