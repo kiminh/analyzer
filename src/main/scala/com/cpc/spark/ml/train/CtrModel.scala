@@ -107,6 +107,8 @@ object CtrModel {
         val ret  = s"cp $filepath /home/work/ml/model/$lrfile" !
         val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/$lrfile" !
         val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/$lrfile" !
+        val ret3 = s"scp $filepath work@cpc-bj08:/home/work/ml/model/$lrfile" !
+        val ret4 = s"scp $filepath work@cpc-bj09:/home/work/ml/model/$lrfile" !
       }
     }
 
@@ -120,6 +122,8 @@ object CtrModel {
         val ret = s"cp $filepath /home/work/ml/model/$irfile" !
         val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/$irfile" !
         val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/$irfile" !
+        val ret3 = s"scp $filepath work@cpc-bj08:/home/work/ml/model/$irfile" !
+        val ret4 = s"scp $filepath work@cpc-bj09:/home/work/ml/model/$irfile" !
       }
     }
 
