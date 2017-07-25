@@ -38,6 +38,7 @@ object AnalTouchedUV {
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
     redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
+    redis.select(3)
 
     val ctx = SparkSession.builder()
       .appName("anal ad touched uv[%s]".format(date))
@@ -106,6 +107,14 @@ object AnalTouchedUV {
               }
             }
 
+            var pl = 0
+            if (x.ext != null) {
+              val v = x.ext.getOrElse("phone_level", null)
+              if (v != null) {
+                pl = v.int_value
+              }
+            }
+
             AnalCond(
               province = x.province,
               sex = rndSex,
@@ -113,6 +122,8 @@ object AnalTouchedUV {
               coin_level = lvl,
               os = os,
               network = net,
+              phone_level = pl,
+              hour = x.hour.toInt + 1,
               sum = 1,
               uid = x.uid,
               date = date
@@ -187,6 +198,10 @@ object AnalTouchedUV {
 
   val net = Seq(0, 1, 2, 3, 4)
 
+  val phoneLevel = Seq(0, 1, 2, 3, 4)
+
+  val hour = (0 to 24).map(x => x)
+
   val provinces1 = Seq(
     4, 8, 18, 12, 3, 29,
     6, 34, 1, 16, 20, 10, 26,
@@ -204,7 +219,11 @@ object AnalTouchedUV {
 
   val net1 = Seq(1, 2, 3, 4)
 
-  val allCols = Seq(provinces1, sex1, age1, coin1, os1, net1)
+  val phoneLevel1 = Seq(1, 2, 3, 4)
+
+  val hour1 = (1 to 24).map(x => x)
+
+  val allCols = Seq(provinces1, sex1, age1, coin1, os1, net1, phoneLevel1, hour1)
 
   /*统计维度
   地域
@@ -215,7 +234,6 @@ object AnalTouchedUV {
   网络环境
   投放时间
    */
-
   var m = Seq[Seq[Int]]()
 
   def mapZeroCol(cols: mutable.Seq[Int], n: Int): Unit = {
@@ -249,13 +267,17 @@ object AnalTouchedUV {
           for (c <- coin) {
             for (o <- os) {
               for (n <- net) {
-                val cols = mutable.Seq(p, s, a, c, o, n)
-                if (cols.contains(0)) {
-                  m = Seq[Seq[Int]]()
-                  mapZeroCol(cols, 0)
-                  val v = sumZeroValues(m)
-                  if (v > 0) {
-                    redis.set(cols.mkString("-") + "_TOUCHEDUV", v)
+                for (l <- phoneLevel) {
+                  for (h <- hour) {
+                    val cols = mutable.Seq(p, s, a, c, o, n, l, h)
+                    if (cols.contains(0)) {
+                      m = Seq[Seq[Int]]()
+                      mapZeroCol(cols, 0)
+                      val v = sumZeroValues(m)
+                      if (v > 0) {
+                        redis.set(cols.mkString("-") + "_TOUCHEDUV", v)
+                      }
+                    }
                   }
                 }
               }
@@ -284,6 +306,8 @@ case class AnalCond(
                    coin_level: Int = 0,
                    os: Int = 0,
                    network: Int = 0,
+                   phone_level: Int = 0,
+                   hour: Int = 0,
                    sum: Int = 0,
                    uid: String = "",
                    date: String = ""
@@ -291,9 +315,9 @@ case class AnalCond(
                ) {
 
 
-  val key = "%d-%d-%d-%d-%d-%d".format(province, sex, age, coin_level, os, network)
+  val key = (province, sex, age, coin_level, os, network, phone_level, hour)
 
-  val keyuid = "%d-%d-%d-%d-%d-%d-%s".format(province, sex, age, coin_level, os, network, uid)
+  val keyuid = (province, sex, age, coin_level, os, network, phone_level, hour, uid)
 
   def sum(k: AnalCond): AnalCond = {
     copy(sum = sum + k.sum)
