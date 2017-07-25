@@ -170,7 +170,6 @@ object FeatureParser extends FeatureDict {
     i += 5
 
     //ideaid  (200000)
-    /*
     var adid = 0
     if (ad.ideaid >= 1500000) {
       adid = ad.ideaid - 1500000 + 60000   //新平台
@@ -184,7 +183,6 @@ object FeatureParser extends FeatureDict {
     }
     els = els :+ (adid + i, 1d)
     i += 200000
-    */
 
     try {
       Vectors.sparse(i, els)
