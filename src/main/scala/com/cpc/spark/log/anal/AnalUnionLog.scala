@@ -159,8 +159,10 @@ object AnalUnionLog {
 
       traceRdd.toDF()
         .write
-        .mode(SaveMode.Overwrite)
-        .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
+        .mode(SaveMode.Append)
+        .format("parquet")
+        .partitionBy("date", "hour")
+        .saveAsTable("dl_cpc." + traceTbl)
 
       println("trace", traceRdd.count())
       traceData.unpersist()
