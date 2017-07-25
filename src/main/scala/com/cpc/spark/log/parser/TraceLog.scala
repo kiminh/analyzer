@@ -27,7 +27,8 @@ case class TraceLog(
                    trace_op3: String = "",
                    duration: Int = 0,
                    date: String = "",
-                   hour: String = ""
+                   hour: String = "",
+                   auto: Int = 0
                    ) {
 
 }

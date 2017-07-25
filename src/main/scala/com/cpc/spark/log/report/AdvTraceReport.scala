@@ -13,5 +13,6 @@ case class AdvTraceReport(
                            hour: String = "",
                            trace_type: String = "",
                            duration: Int = 0,
+                           auto: Int = 0,
                            total_num:Int =0
                          )

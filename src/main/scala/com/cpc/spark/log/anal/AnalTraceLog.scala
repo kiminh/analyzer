@@ -6,8 +6,8 @@ import java.util.Calendar
 import com.cpc.spark.log.parser.{ExtValue, LogParser, TraceLog, UnionLog}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd
-import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
 import scala.collection.mutable
 
@@ -15,7 +15,7 @@ import scala.collection.mutable
 /**
   * Created by Roy on 2017/4/18.
   */
-object AnalUnionLog {
+object AnalTraceLog {
 
   var srcRoot = "/gobblin/source/cpc"
 
@@ -44,7 +44,6 @@ object AnalUnionLog {
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
-
     val searchData = prepareSource(spark, "cpc_search", hourBefore, 2)
     if (searchData == null) {
       System.err.println("search data is empty")
@@ -119,19 +118,38 @@ object AnalUnionLog {
       .format("parquet")
       .partitionBy("date", "hour")
       .saveAsTable("dl_cpc." + table)
-
+    var lastTraceCount = 0L
+    var middelTraceCount = 0L
+    var traceCount = 0L
     var traceData = unionData.map(x => (x.searchid, (x, Seq[TraceLog]())))
     val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
     if (traceData1 != null) {
-      traceData = traceData.union(prepareTraceSource(traceData1))
+      val traceData1Rdd = prepareTraceSource(traceData1)
+      traceCount += traceData1Rdd.count()
+      traceData = traceData.union(traceData1Rdd)
     }
     val traceData2 = prepareSource(spark, "cpc_trace", hourBefore - 1, 1)
     if (traceData2 != null) {
-      traceData = traceData.union(prepareTraceSource(traceData2))
+      val traceData2Rdd = prepareTraceSource(traceData2)
+      traceCount += traceData2Rdd.count()
+      traceData = traceData.union(traceData2Rdd)
     }
-    if (traceData1 != null || traceData2 != null) {
-      val traceRdd = traceData
-        .reduceByKey {
+    val traceData3 = prepareSource(spark, "cpc_trace", hourBefore - 2, 1)
+    if (traceData3 != null) {
+      val traceData3Rdd = prepareTraceSource(traceData3)
+      traceCount += traceData3Rdd.count()
+      traceData = traceData.union(traceData3Rdd)
+    }
+    val traceData4 = prepareSource(spark, "cpc_trace", hourBefore - 3, 1)
+    if (traceData4 != null) {
+      val traceData4Rdd = prepareTraceSource(traceData4)
+      traceCount += traceData4Rdd.count()
+      traceData = traceData.union(traceData4Rdd)
+
+    }
+    if (traceData1 != null || traceData2 != null|| traceData3 != null || traceData4 != null) {
+      val traceRdd1 = traceData
+        .reduceByKey {//(x.searchid, (x, Seq[TraceLog]()))
           (x, y) =>
             var u: UnionLog = null
             if (x._1 != null) {
@@ -142,7 +160,8 @@ object AnalUnionLog {
             }
             (u, x._2 ++ y._2)
         }
-        .flatMap {
+      middelTraceCount = traceRdd1.flatMap { x => x._2._2}.count()
+       val traceRdd = traceRdd1.flatMap {
           x =>
             val u = x._2._1
             x._2._2.filter(x => u != null)
@@ -154,15 +173,16 @@ object AnalUnionLog {
                     hour = u.hour
                   )
               }
-        }
-        .cache()
-
+        }.cache()
       traceRdd.toDF()
         .write
         .mode(SaveMode.Overwrite)
-        .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
+        .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl , date, hour))
 
-      println("trace", traceRdd.count())
+      lastTraceCount = traceRdd.count()
+      println("traceCount：", traceCount)
+      println("middelTraceCount：", middelTraceCount)
+      println("lastTraceCount：", lastTraceCount)
       traceData.unpersist()
     }
     println("union", unionData.count())
@@ -186,6 +206,7 @@ object AnalUnionLog {
   def prepareSource(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
     try {
       val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours))
+      println("input:" + input)
       val baseData = ctx.read.schema(schema).parquet(input)
       val tbl = "%s_data_%d".format(src, hourBefore)
       baseData.createTempView(tbl)

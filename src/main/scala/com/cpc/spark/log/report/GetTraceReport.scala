@@ -54,7 +54,7 @@ object GetTraceReport {
          |select tr.searchid, un.userid as user_id
          |,un.planid as plan_id ,un.unitid as unit_id ,
          |un.ideaid as idea_id, tr.date as date,tr.hour,
-         |tr.trace_type as trace_type,tr.duration as duration
+         |tr.trace_type as trace_type,tr.duration as duration, tr.auto
          |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
          |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s"
        """.stripMargin.format(date, hour, date, hour))
@@ -66,17 +66,17 @@ object GetTraceReport {
         trace.plan_id > 0 && trace.trace_type.length < 100 && trace.trace_type.length > 1
     }.map {
       trace =>
-        ((trace.searchid, trace.trace_type,trace.duration), trace)
+        ((trace.searchid, trace.trace_type,trace.duration, trace.auto), trace)
     }.reduceByKey {
       case (x, y) => x //去重
     }.map{
-      case ((searchid, trace_type, duration), trace) =>
-        ((trace.user_id, trace.plan_id, trace.unit_id, trace.idea_id, trace.date, trace.hour, trace.trace_type, trace.duration), 1)
+      case ((searchid, trace_type, duration, auto), trace) =>
+        ((trace.user_id, trace.plan_id, trace.unit_id, trace.idea_id, trace.date, trace.hour, trace.trace_type, trace.duration, trace.auto), 1)
     }.reduceByKey {
       case (x, y) => (x + y)
     }.map {
-      case ((user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration), count) =>
-        AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration, count)
+      case ((user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration, auto), count) =>
+        AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration,auto , count)
     }
     println("*********traceDatatraceDatatraceData**********")
     traceData.collect().foreach(println)

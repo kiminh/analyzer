@@ -187,6 +187,7 @@ object LogParser {
                     case "op2" => log = log.copy(trace_op2 = v)
                     case "op3" => log = log.copy(trace_op3 = v)
                     case "duration" => log = log.copy(duration = toInt(v))
+                    case "auto" => log = log.copy(auto = toInt(v))
                   }
                 } catch {
                   case e: Exception => null

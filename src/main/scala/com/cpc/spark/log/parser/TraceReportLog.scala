@@ -12,7 +12,8 @@ case class TraceReportLog(
                            date: String = "",
                            hour: String = "",
                            trace_type: String = "",
-                           duration: Int = 0
+                           duration: Int = 0,
+                           auto: Int = 0
                    ) {
 }
 

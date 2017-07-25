@@ -173,10 +173,10 @@ object LoseUnionLogStatis {
       traceData.unpersist()
     }
     unionData.unpersist()
-    println("searchCount: "+ searchCount + ";lastSearchCount:" + lastSearchCount + ";rate:" + lastSearchCount/searchCount)
-    println("showCount: "+ showCount + ";lastShowCount:" + lastShowCount + ";rate:" + lastShowCount/showCount)
-    println("clickCount: "+ clickCount + ";lastClickCount:" + lastClickCount + ";rate:" + lastClickCount/clickCount)
-    println("traceCount: "+ traceCount + ";lastTraceCount:" + lastTraceCount + ";rate:" + lastTraceCount/traceCount)
+    println("searchCount: "+ searchCount + ";lastSearchCount:" + lastSearchCount + ";rate:" + lastSearchCount.toFloat/searchCount.toFloat)
+    println("showCount: "+ showCount + ";lastShowCount:" + lastShowCount + ";rate:" + lastShowCount.toFloat/showCount.toFloat)
+    println("clickCount: "+ clickCount + ";lastClickCount:" + lastClickCount + ";rate:" + lastClickCount.toFloat/clickCount.toFloat)
+    println("traceCount: "+ traceCount + ";lastTraceCount:" + lastTraceCount + ";rate:" + lastTraceCount.toFloat/traceCount.toFloat)
     spark.stop()
   }
 
@@ -208,7 +208,7 @@ object LoseUnionLogStatis {
 
   def prepareTraceSource(src: rdd.RDD[Row]): rdd.RDD[(String, (UnionLog, Seq[TraceLog]))] = {
     src.map(x => LogParser.parseTraceLog(x.getString(0)))
-      .filter(x => x != null && x.searchid.length > 0)
+      .filter(x => x != null && x.searchid.length > 0 && x.searchid != "none")
       .map {
         x =>
           val u: UnionLog = null
