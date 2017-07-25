@@ -2,7 +2,6 @@
 
 cur=/home/cpc/$1
 SPARK_HOME=/home/spark/spark-2.1.0
-host=spark://cpc-bj03:7077
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -13,8 +12,8 @@ jars=(
 
 $SPARK_HOME/bin/spark-submit --master yarn \
     --executor-memory 4G --driver-memory 4G \
-    --executor-cores 4 --num-executors 10 \
+    --executor-cores 2 --total-executor-cores 12 --num-executors 6 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.ml.ctrmodel.v1.CreateSvm \
-    $cur/lib/dev.jar v3 1 1 15 0.5 1 ""
+    --class com.cpc.spark.ml.train.CheckSvm \
+    $cur/lib/dev.jar
 

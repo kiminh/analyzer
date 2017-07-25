@@ -30,7 +30,7 @@ object CreateSvm {
     val dayBefore = args(1).toInt
     val days = args(2).toInt
     val rate = args(3).toInt
-    val ttRate = args(4).toFloat
+    val ttRate = args(4).toFloat  //train/test rate
     val saveFull = args(5).toInt
     val hour = args(6)
     val ctx = SparkSession.builder()
@@ -68,10 +68,7 @@ object CreateSvm {
         .map{x => FeatureParser.parseUnionLog(x)}
         .cache()
 
-      if (n == 1) {
-        train.take(1).foreach(println)
-      }
-
+      train.take(1).foreach(println)
       train.toDF()
         .write
         .mode(SaveMode.Overwrite)

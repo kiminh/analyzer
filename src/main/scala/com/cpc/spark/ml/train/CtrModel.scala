@@ -3,6 +3,7 @@ package com.cpc.spark.ml.train
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
+import com.cpc.spark.ml.common.Utils
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
@@ -16,13 +17,13 @@ import scala.util.Random
 object CtrModel {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 9) {
+    if (args.length < 10) {
       System.err.println(
         s"""
            |Usage: CtrModel <mode:train/test[+ir]>
            |  <svmPath:string> <dayBefore:int> <day:int>
            |  <modelPath:string> <sampleRate:float> <PNRate:int>
-           |  <IRBinNum:int> <autoUpdate:bool>
+           |  <IRBinNum:int> <LRFile:string> <IRFile:string>
         """.stripMargin)
       System.exit(1)
     }
@@ -36,7 +37,8 @@ object CtrModel {
     val sampleRate = args(5).toFloat
     val pnRate = args(6).toInt
     val binNum = args(7).toInt
-    val autoUpdate = args(8).toBoolean
+    val lrfile = args(8)
+    val irfile = args(9)
 
     val model = new LRIRModel
     val ctx = model.initSpark("cpc ctr model %s [%s]".format(mode, modelPath))
@@ -100,11 +102,13 @@ object CtrModel {
       model.saveText(filepath)
 
       //满足条件的模型直接替换线上数据
-      if (autoUpdate && model.getAuPRC() > 0.05 && model.getAuROC() > 0.8) {
+      if (lrfile.length > 0 && model.getAuPRC() > 0.05 && model.getAuROC() > 0.8) {
         println("replace lr online data")
-        val ret  = s"cp $filepath /home/work/ml/model/logistic.txt" !
-        val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/logistic.txt" !
-        val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/logistic.txt" !
+        val ret  = s"cp $filepath /home/work/ml/model/$lrfile" !
+        val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/$lrfile" !
+        val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/$lrfile" !
+        val ret3 = s"scp $filepath work@cpc-bj08:/home/work/ml/model/$lrfile" !
+        val ret4 = s"scp $filepath work@cpc-bj09:/home/work/ml/model/$lrfile" !
       }
     }
 
@@ -113,11 +117,13 @@ object CtrModel {
       val meanError = model.runIr(binNum, 0.9)
       val filepath = "/home/cpc/anal/model/isotonic_%s.txt".format(date)
       model.saveIrText(filepath)
-      if (autoUpdate && math.abs(meanError) < 0.01) {
+      if (irfile.length > 0 && math.abs(meanError) < 0.01) {
         println("replace ir online data")
-        val ret = s"cp $filepath /home/work/ml/model/isotonic.txt" !
-        val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/isotonic.txt" !
-        val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/isotonic.txt" !
+        val ret = s"cp $filepath /home/work/ml/model/$irfile" !
+        val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/$irfile" !
+        val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/$irfile" !
+        val ret3 = s"scp $filepath work@cpc-bj08:/home/work/ml/model/$irfile" !
+        val ret4 = s"scp $filepath work@cpc-bj09:/home/work/ml/model/$irfile" !
       }
     }
 
@@ -125,3 +131,5 @@ object CtrModel {
     model.stopSpark()
   }
 }
+
+

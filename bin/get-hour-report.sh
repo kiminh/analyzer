@@ -10,9 +10,7 @@ jars=(
 )
 
 $SPARK_HOME/bin/spark-submit --master yarn \
-    --executor-memory 2G --driver-memory 2G \
-    --executor-cores 2 --total-executor-cores 8 --num-executors 4 \
+    --executor-memory 2G --executor-cores 2 --total-executor-cores 10 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.log.report.GetHourReport \
-    $cur/lib/cpc-anal_2.11-0.1.jar cpc_union_log 2
-
+    $cur/lib/dev.jar cpc_union_log 22

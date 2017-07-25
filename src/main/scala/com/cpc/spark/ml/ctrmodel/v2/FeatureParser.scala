@@ -38,7 +38,9 @@ object FeatureParser extends FeatureDict {
     if (x.ext != null) {
       val v = x.ext.getOrElse("channel", null)
       if (v != null) {
-        chnl = v.string_value.toInt
+        if (v.string_value.length > 0) {
+          chnl = v.string_value.toInt
+        }
       }
     }
     val m = Media(
@@ -80,9 +82,17 @@ object FeatureParser extends FeatureDict {
       province = x.province,
       city = x.city
     )
+    var pl = 0
+    if (x.ext != null) {
+      val v = x.ext.getOrElse("phone_level", null)
+      if (v != null) {
+        pl = v.int_value
+      }
+    }
     val d = Device(
       os = x.os,
-      model = x.model
+      model = x.model,
+      phoneLevel = pl
     )
 
     var svm = ""
@@ -185,36 +195,40 @@ object FeatureParser extends FeatureDict {
     els = els :+ (d.phoneLevel + i, 1d)
     i += 5
 
-    //slotid city adcls channel network sex isp  phone level
-    if (slotid > 0 && city > 0 && adcls > 0 && mchannel > 0 && n.network > 0
-      && n.isp > 0 && u.sex > 0 && d.phoneLevel > 0) {
+    /*
+    //slotid city adcls channel network isp sex phone_level
+    val comFeatures = Seq[(Int, Int)](
+      (slotid + 1, adslotids.size + 1),
+      (city + 1, cityDict.size + 1),
+      (adcls + 1, adClass.size + 1),
+      (mchannel + 1, MediaChannelDict.size + 1),
+      (n.network + 1, 5),
+      (n.isp + 1, 19),
+      (u.sex + 1, 3),
+      (d.phoneLevel + 1, 5)
+    )
 
-      val comFeatures = Seq[(Int, Int)](
-        (slotid, adslotids.size),
-        (city, cityDict.size),
-        (adcls, adClass.size),
-        (mchannel, MediaChannelDict.size),
-        (n.network, 4),
-        (n.isp, 18),
-        (u.sex, 2),
-        (d.phoneLevel, 4)
-      )
+    //所有2个特征组合
+    var maxSize = 0
+    Utils.getCombination(comFeatures, 2)
+      .foreach {
+        combine =>
+          val x = combine(0)
+          val y = combine(1)
+          val v = Utils.combineIntFeatureIdx(x._1, y._1)
 
-      //所有2个特征组合
-      Utils.getCombination(comFeatures, 2)
-        .filter(_.length == 2)
-        .foreach {
-          combine =>
-            val x = combine(0)
-            val y = combine(1)
-            val v = Utils.combineIntFeatureIdx(x._1, y._1)
+          els = els :+ (v + i, 1d)
+          i += x._2 * y._2
+      }
+      */
 
-            els = els :+ (v + i - 1, 1d)
-            i += x._2 * x._2
-        }
+    try {
+      Vectors.sparse(i, els)
+    } catch {
+      case e: Exception =>
+        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        null
     }
-
-    Vectors.sparse(i, els)
   }
 }
 

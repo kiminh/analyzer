@@ -176,6 +176,7 @@ message AdInfo {
 	optional int32 usertype = 13; // 用户类型 0正常户 1黑五类
 	optional uint64 titlectr = 14; // 标题ctr值 
 	optional uint64 expcpm = 15; // 试验cpm
+	optional uint64 cvr     = 16; // cvr * 10^6
 };
 
 message AdDspRet {
@@ -201,6 +202,7 @@ message UserProfile {
 	optional uint32 sex = 3; //性别 1男 2女 0未知
 	optional uint32 coin = 4; // 用户金币数
 	optional uint32 pcategory =5; // 趣头条用户类别
+	optional uint32 antispam = 6; // 是否是antispam用户
 }
 
 message NoticeLogBody {

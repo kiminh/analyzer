@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.log.parser.UnionLog
+import com.cpc.spark.ml.common.Utils
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -70,6 +71,7 @@ object CreateSvm {
         .map{x => FeatureParser.parseUnionLog(x)}
         .cache()
 
+      println(train.take(1).head)
       train.toDF()
         .write
         .mode(SaveMode.Overwrite)

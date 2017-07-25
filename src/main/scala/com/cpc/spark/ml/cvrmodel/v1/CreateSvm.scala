@@ -89,6 +89,7 @@ object CreateSvm {
         .map(x => FeatureParser.parseUnionLog(x._1, x._2:_*))
         .cache()
 
+      println(svm.take(1).head)
       svm.toDF()
         .write
         .mode(SaveMode.Overwrite)

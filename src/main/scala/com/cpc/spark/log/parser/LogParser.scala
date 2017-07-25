@@ -66,6 +66,7 @@ object LogParser {
           cpm = ad.getCpm
         )
         ext.update("exp_ctr", ExtValue(int_value = ad.getTitlectr.toInt))
+        ext.update("exp_cvr", ExtValue(int_value = ad.getCvr.toInt))
         ext.update("media_class", ExtValue(int_value = ad.getClass_))
         ext.update("usertype", ExtValue(int_value = ad.getUsertype))
       }
@@ -98,6 +99,7 @@ object LogParser {
         }
       }
       ext.update("userpcate", ExtValue(int_value = user.getPcategory))
+      ext.update("antispam", ExtValue(int_value = user.getAntispam))
       log = log.copy(
         sex = user.getSex,
         age = user.getAge,
