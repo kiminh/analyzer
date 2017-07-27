@@ -7,6 +7,7 @@ import com.cpc.spark.log.parser.{TraceLog, UnionLog}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
+import scala.reflect.internal.util.TableDef.Column
 import scala.util.Random
 
 /*
@@ -52,14 +53,14 @@ object CreateSvm {
         .as[UnionLog].rdd
         .map {
           x =>
-            (x.searchid, (x, Seq[TraceLog]()))
+            (x.searchid, (x, Seq[TLog]()))
         }
 
       val tracelog = ctx.sql(
         s"""
            |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" %s
         """.stripMargin.format(date, hourSql))
-        .as[TraceLog].rdd
+        .as[TLog].rdd
         .map {
           x =>
             val u: UnionLog = null
@@ -102,6 +103,35 @@ object CreateSvm {
     }
 
     ctx.stop()
+  }
+
+  case class TLog(
+                       searchid: String = "",
+                       search_timestamp: Int = 0,
+                       trace_type: String = "",
+                       trace_os: String = "",
+                       trace_refer: String = "",
+                       trace_version: String = "",
+                       trace_click_count: Int = 0,
+                       device_orientation: Int = 0,
+                       client_w: Float = 0,
+                       client_h: Float = 0,
+                       screen_w: Float = 0,
+                       screen_h: Float = 0,
+                       client_x: Float = 0,
+                       client_y: Float = 0,
+                       page_x: Float = 0,
+                       page_y: Float = 0,
+                       trace_ttl: Int = 0,
+                       scroll_top: Float = 0,
+                       trace_op1: String = "",
+                       trace_op2: String = "",
+                       trace_op3: String = "",
+                       duration: Int = 0,
+                       date: String = "",
+                       hour: String = ""
+                     ) {
+
   }
 }
 

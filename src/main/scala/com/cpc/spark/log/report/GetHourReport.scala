@@ -23,18 +23,20 @@ object GetHourReport {
     if (args.length < 2) {
       System.err.println(
         s"""
-           |Usage: GetHourReport <hive_table> <hour_before>
+           |Usage: GetHourReport <hive_table> <date:string> <hour:string>
            |
         """.stripMargin)
       System.exit(1)
     }
     Logger.getRootLogger.setLevel(Level.WARN)
     val table = args(0)
-    val hourBefore = args(1).toInt
-    val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -hourBefore)
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val hour = new SimpleDateFormat("HH").format(cal.getTime)
+    val date = args(1)
+    val hour = args(2)
+    //val hourBefore = args(1).toInt
+    //val cal = Calendar.getInstance()
+    //cal.add(Calendar.HOUR, -hourBefore)
+    //val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    //val hour = new SimpleDateFormat("HH").format(cal.getTime)
 
     val conf = ConfigFactory.load()
     mariadbUrl = conf.getString("mariadb.url")
@@ -270,16 +272,16 @@ object GetHourReport {
 
   def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
     try {
-      Class.forName(mariadbProp.getProperty("driver"));
+      Class.forName(mariadbProp.getProperty("driver"))
       val conn = DriverManager.getConnection(
         mariadbUrl,
         mariadbProp.getProperty("user"),
-        mariadbProp.getProperty("password"));
-      val stmt = conn.createStatement();
+        mariadbProp.getProperty("password"))
+      val stmt = conn.createStatement()
       val sql =
         """
           |delete from report.%s where `date` = "%s" and `hour` = %d
-        """.stripMargin.format(tbl, date, hour.toInt);
+        """.stripMargin.format(tbl, date, hour.toInt)
       stmt.executeUpdate(sql);
     } catch {
       case e: Exception => println("exception caught: " + e);

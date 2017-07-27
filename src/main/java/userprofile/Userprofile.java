@@ -23,7 +23,7 @@ public final class Userprofile {
      * 单元ID,单元级别生效
      * </pre>
      *
-     * <code>int32 adid = 1;</code>
+     * <code>optional int32 adid = 1;</code>
      */
     int getAdid();
 
@@ -32,7 +32,7 @@ public final class Userprofile {
      * 今天投放次数
      * </pre>
      *
-     * <code>int32 count = 2;</code>
+     * <code>optional int32 count = 2;</code>
      */
     int getCount();
   }
@@ -117,7 +117,7 @@ public final class Userprofile {
      * 单元ID,单元级别生效
      * </pre>
      *
-     * <code>int32 adid = 1;</code>
+     * <code>optional int32 adid = 1;</code>
      */
     public int getAdid() {
       return adid_;
@@ -130,7 +130,7 @@ public final class Userprofile {
      * 今天投放次数
      * </pre>
      *
-     * <code>int32 count = 2;</code>
+     * <code>optional int32 count = 2;</code>
      */
     public int getCount() {
       return count_;
@@ -198,7 +198,7 @@ public final class Userprofile {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       hash = (37 * hash) + ADID_FIELD_NUMBER;
       hash = (53 * hash) + getAdid();
       hash = (37 * hash) + COUNT_FIELD_NUMBER;
@@ -428,7 +428,7 @@ public final class Userprofile {
        * 单元ID,单元级别生效
        * </pre>
        *
-       * <code>int32 adid = 1;</code>
+       * <code>optional int32 adid = 1;</code>
        */
       public int getAdid() {
         return adid_;
@@ -438,7 +438,7 @@ public final class Userprofile {
        * 单元ID,单元级别生效
        * </pre>
        *
-       * <code>int32 adid = 1;</code>
+       * <code>optional int32 adid = 1;</code>
        */
       public Builder setAdid(int value) {
         
@@ -451,7 +451,7 @@ public final class Userprofile {
        * 单元ID,单元级别生效
        * </pre>
        *
-       * <code>int32 adid = 1;</code>
+       * <code>optional int32 adid = 1;</code>
        */
       public Builder clearAdid() {
         
@@ -466,7 +466,7 @@ public final class Userprofile {
        * 今天投放次数
        * </pre>
        *
-       * <code>int32 count = 2;</code>
+       * <code>optional int32 count = 2;</code>
        */
       public int getCount() {
         return count_;
@@ -476,7 +476,7 @@ public final class Userprofile {
        * 今天投放次数
        * </pre>
        *
-       * <code>int32 count = 2;</code>
+       * <code>optional int32 count = 2;</code>
        */
       public Builder setCount(int value) {
         
@@ -489,7 +489,7 @@ public final class Userprofile {
        * 今天投放次数
        * </pre>
        *
-       * <code>int32 count = 2;</code>
+       * <code>optional int32 count = 2;</code>
        */
       public Builder clearCount() {
         
@@ -737,7 +737,7 @@ public final class Userprofile {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (getAdsCount() > 0) {
         hash = (37 * hash) + ADS_FIELD_NUMBER;
         hash = (53 * hash) + getAdsList().hashCode();
@@ -1290,7 +1290,7 @@ public final class Userprofile {
      * 包名
      * </pre>
      *
-     * <code>string packagename = 1;</code>
+     * <code>optional string packagename = 1;</code>
      */
     java.lang.String getPackagename();
     /**
@@ -1298,7 +1298,7 @@ public final class Userprofile {
      * 包名
      * </pre>
      *
-     * <code>string packagename = 1;</code>
+     * <code>optional string packagename = 1;</code>
      */
     com.google.protobuf.ByteString
         getPackagenameBytes();
@@ -1308,7 +1308,7 @@ public final class Userprofile {
      * 版本
      * </pre>
      *
-     * <code>string version = 2;</code>
+     * <code>optional string version = 2;</code>
      */
     java.lang.String getVersion();
     /**
@@ -1316,18 +1316,18 @@ public final class Userprofile {
      * 版本
      * </pre>
      *
-     * <code>string version = 2;</code>
+     * <code>optional string version = 2;</code>
      */
     com.google.protobuf.ByteString
         getVersionBytes();
 
     /**
-     * <code>int64 firstInstallTime = 3;</code>
+     * <code>optional int64 firstInstallTime = 3;</code>
      */
     long getFirstInstallTime();
 
     /**
-     * <code>int64 lastUpdateTime = 4;</code>
+     * <code>optional int64 lastUpdateTime = 4;</code>
      */
     long getLastUpdateTime();
   }
@@ -1426,7 +1426,7 @@ public final class Userprofile {
      * 包名
      * </pre>
      *
-     * <code>string packagename = 1;</code>
+     * <code>optional string packagename = 1;</code>
      */
     public java.lang.String getPackagename() {
       java.lang.Object ref = packagename_;
@@ -1445,7 +1445,7 @@ public final class Userprofile {
      * 包名
      * </pre>
      *
-     * <code>string packagename = 1;</code>
+     * <code>optional string packagename = 1;</code>
      */
     public com.google.protobuf.ByteString
         getPackagenameBytes() {
@@ -1468,7 +1468,7 @@ public final class Userprofile {
      * 版本
      * </pre>
      *
-     * <code>string version = 2;</code>
+     * <code>optional string version = 2;</code>
      */
     public java.lang.String getVersion() {
       java.lang.Object ref = version_;
@@ -1487,7 +1487,7 @@ public final class Userprofile {
      * 版本
      * </pre>
      *
-     * <code>string version = 2;</code>
+     * <code>optional string version = 2;</code>
      */
     public com.google.protobuf.ByteString
         getVersionBytes() {
@@ -1506,7 +1506,7 @@ public final class Userprofile {
     public static final int FIRSTINSTALLTIME_FIELD_NUMBER = 3;
     private long firstInstallTime_;
     /**
-     * <code>int64 firstInstallTime = 3;</code>
+     * <code>optional int64 firstInstallTime = 3;</code>
      */
     public long getFirstInstallTime() {
       return firstInstallTime_;
@@ -1515,7 +1515,7 @@ public final class Userprofile {
     public static final int LASTUPDATETIME_FIELD_NUMBER = 4;
     private long lastUpdateTime_;
     /**
-     * <code>int64 lastUpdateTime = 4;</code>
+     * <code>optional int64 lastUpdateTime = 4;</code>
      */
     public long getLastUpdateTime() {
       return lastUpdateTime_;
@@ -1599,7 +1599,7 @@ public final class Userprofile {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       hash = (37 * hash) + PACKAGENAME_FIELD_NUMBER;
       hash = (53 * hash) + getPackagename().hashCode();
       hash = (37 * hash) + VERSION_FIELD_NUMBER;
@@ -1849,7 +1849,7 @@ public final class Userprofile {
        * 包名
        * </pre>
        *
-       * <code>string packagename = 1;</code>
+       * <code>optional string packagename = 1;</code>
        */
       public java.lang.String getPackagename() {
         java.lang.Object ref = packagename_;
@@ -1868,7 +1868,7 @@ public final class Userprofile {
        * 包名
        * </pre>
        *
-       * <code>string packagename = 1;</code>
+       * <code>optional string packagename = 1;</code>
        */
       public com.google.protobuf.ByteString
           getPackagenameBytes() {
@@ -1888,7 +1888,7 @@ public final class Userprofile {
        * 包名
        * </pre>
        *
-       * <code>string packagename = 1;</code>
+       * <code>optional string packagename = 1;</code>
        */
       public Builder setPackagename(
           java.lang.String value) {
@@ -1905,7 +1905,7 @@ public final class Userprofile {
        * 包名
        * </pre>
        *
-       * <code>string packagename = 1;</code>
+       * <code>optional string packagename = 1;</code>
        */
       public Builder clearPackagename() {
         
@@ -1918,7 +1918,7 @@ public final class Userprofile {
        * 包名
        * </pre>
        *
-       * <code>string packagename = 1;</code>
+       * <code>optional string packagename = 1;</code>
        */
       public Builder setPackagenameBytes(
           com.google.protobuf.ByteString value) {
@@ -1938,7 +1938,7 @@ public final class Userprofile {
        * 版本
        * </pre>
        *
-       * <code>string version = 2;</code>
+       * <code>optional string version = 2;</code>
        */
       public java.lang.String getVersion() {
         java.lang.Object ref = version_;
@@ -1957,7 +1957,7 @@ public final class Userprofile {
        * 版本
        * </pre>
        *
-       * <code>string version = 2;</code>
+       * <code>optional string version = 2;</code>
        */
       public com.google.protobuf.ByteString
           getVersionBytes() {
@@ -1977,7 +1977,7 @@ public final class Userprofile {
        * 版本
        * </pre>
        *
-       * <code>string version = 2;</code>
+       * <code>optional string version = 2;</code>
        */
       public Builder setVersion(
           java.lang.String value) {
@@ -1994,7 +1994,7 @@ public final class Userprofile {
        * 版本
        * </pre>
        *
-       * <code>string version = 2;</code>
+       * <code>optional string version = 2;</code>
        */
       public Builder clearVersion() {
         
@@ -2007,7 +2007,7 @@ public final class Userprofile {
        * 版本
        * </pre>
        *
-       * <code>string version = 2;</code>
+       * <code>optional string version = 2;</code>
        */
       public Builder setVersionBytes(
           com.google.protobuf.ByteString value) {
@@ -2023,13 +2023,13 @@ public final class Userprofile {
 
       private long firstInstallTime_ ;
       /**
-       * <code>int64 firstInstallTime = 3;</code>
+       * <code>optional int64 firstInstallTime = 3;</code>
        */
       public long getFirstInstallTime() {
         return firstInstallTime_;
       }
       /**
-       * <code>int64 firstInstallTime = 3;</code>
+       * <code>optional int64 firstInstallTime = 3;</code>
        */
       public Builder setFirstInstallTime(long value) {
         
@@ -2038,7 +2038,7 @@ public final class Userprofile {
         return this;
       }
       /**
-       * <code>int64 firstInstallTime = 3;</code>
+       * <code>optional int64 firstInstallTime = 3;</code>
        */
       public Builder clearFirstInstallTime() {
         
@@ -2049,13 +2049,13 @@ public final class Userprofile {
 
       private long lastUpdateTime_ ;
       /**
-       * <code>int64 lastUpdateTime = 4;</code>
+       * <code>optional int64 lastUpdateTime = 4;</code>
        */
       public long getLastUpdateTime() {
         return lastUpdateTime_;
       }
       /**
-       * <code>int64 lastUpdateTime = 4;</code>
+       * <code>optional int64 lastUpdateTime = 4;</code>
        */
       public Builder setLastUpdateTime(long value) {
         
@@ -2064,7 +2064,7 @@ public final class Userprofile {
         return this;
       }
       /**
-       * <code>int64 lastUpdateTime = 4;</code>
+       * <code>optional int64 lastUpdateTime = 4;</code>
        */
       public Builder clearLastUpdateTime() {
         
@@ -2130,7 +2130,7 @@ public final class Userprofile {
      *兴趣标签id
      * </pre>
      *
-     * <code>int32 tag = 1;</code>
+     * <code>optional int32 tag = 1;</code>
      */
     int getTag();
 
@@ -2139,7 +2139,7 @@ public final class Userprofile {
      * 兴趣权值
      * </pre>
      *
-     * <code>int32 score = 2;</code>
+     * <code>optional int32 score = 2;</code>
      */
     int getScore();
   }
@@ -2224,7 +2224,7 @@ public final class Userprofile {
      *兴趣标签id
      * </pre>
      *
-     * <code>int32 tag = 1;</code>
+     * <code>optional int32 tag = 1;</code>
      */
     public int getTag() {
       return tag_;
@@ -2237,7 +2237,7 @@ public final class Userprofile {
      * 兴趣权值
      * </pre>
      *
-     * <code>int32 score = 2;</code>
+     * <code>optional int32 score = 2;</code>
      */
     public int getScore() {
       return score_;
@@ -2305,7 +2305,7 @@ public final class Userprofile {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       hash = (37 * hash) + TAG_FIELD_NUMBER;
       hash = (53 * hash) + getTag();
       hash = (37 * hash) + SCORE_FIELD_NUMBER;
@@ -2535,7 +2535,7 @@ public final class Userprofile {
        *兴趣标签id
        * </pre>
        *
-       * <code>int32 tag = 1;</code>
+       * <code>optional int32 tag = 1;</code>
        */
       public int getTag() {
         return tag_;
@@ -2545,7 +2545,7 @@ public final class Userprofile {
        *兴趣标签id
        * </pre>
        *
-       * <code>int32 tag = 1;</code>
+       * <code>optional int32 tag = 1;</code>
        */
       public Builder setTag(int value) {
         
@@ -2558,7 +2558,7 @@ public final class Userprofile {
        *兴趣标签id
        * </pre>
        *
-       * <code>int32 tag = 1;</code>
+       * <code>optional int32 tag = 1;</code>
        */
       public Builder clearTag() {
         
@@ -2573,7 +2573,7 @@ public final class Userprofile {
        * 兴趣权值
        * </pre>
        *
-       * <code>int32 score = 2;</code>
+       * <code>optional int32 score = 2;</code>
        */
       public int getScore() {
         return score_;
@@ -2583,7 +2583,7 @@ public final class Userprofile {
        * 兴趣权值
        * </pre>
        *
-       * <code>int32 score = 2;</code>
+       * <code>optional int32 score = 2;</code>
        */
       public Builder setScore(int value) {
         
@@ -2596,7 +2596,7 @@ public final class Userprofile {
        * 兴趣权值
        * </pre>
        *
-       * <code>int32 score = 2;</code>
+       * <code>optional int32 score = 2;</code>
        */
       public Builder clearScore() {
         
@@ -2662,7 +2662,7 @@ public final class Userprofile {
      *设备号，没有后缀
      * </pre>
      *
-     * <code>string devid = 1;</code>
+     * <code>optional string devid = 1;</code>
      */
     java.lang.String getDevid();
     /**
@@ -2670,7 +2670,7 @@ public final class Userprofile {
      *设备号，没有后缀
      * </pre>
      *
-     * <code>string devid = 1;</code>
+     * <code>optional string devid = 1;</code>
      */
     com.google.protobuf.ByteString
         getDevidBytes();
@@ -2680,7 +2680,7 @@ public final class Userprofile {
      *年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: &gt;50
      * </pre>
      *
-     * <code>int32 age = 2;</code>
+     * <code>optional int32 age = 2;</code>
      */
     int getAge();
 
@@ -2689,7 +2689,7 @@ public final class Userprofile {
      *性别 0: 未知 1: 男 2: 女
      * </pre>
      *
-     * <code>int32 sex = 3;</code>
+     * <code>optional int32 sex = 3;</code>
      */
     int getSex();
 
@@ -2698,7 +2698,7 @@ public final class Userprofile {
      * 金币数
      * </pre>
      *
-     * <code>int32 coin = 4;</code>
+     * <code>optional int32 coin = 4;</code>
      */
     int getCoin();
 
@@ -2795,7 +2795,7 @@ public final class Userprofile {
      *人群类型标签,趣头条用
      * </pre>
      *
-     * <code>int32 pcategory = 7;</code>
+     * <code>optional int32 pcategory = 7;</code>
      */
     int getPcategory();
 
@@ -2804,7 +2804,7 @@ public final class Userprofile {
      * 新增金币数
      * </pre>
      *
-     * <code>int32 incr_coin = 8;</code>
+     * <code>optional int32 incr_coin = 8;</code>
      */
     int getIncrCoin();
 
@@ -2813,7 +2813,7 @@ public final class Userprofile {
      * 是否命中反作弊人群
      * </pre>
      *
-     * <code>int32 antispam = 9;</code>
+     * <code>optional int32 antispam = 9;</code>
      */
     int getAntispam();
   }
@@ -2956,7 +2956,7 @@ public final class Userprofile {
      *设备号，没有后缀
      * </pre>
      *
-     * <code>string devid = 1;</code>
+     * <code>optional string devid = 1;</code>
      */
     public java.lang.String getDevid() {
       java.lang.Object ref = devid_;
@@ -2975,7 +2975,7 @@ public final class Userprofile {
      *设备号，没有后缀
      * </pre>
      *
-     * <code>string devid = 1;</code>
+     * <code>optional string devid = 1;</code>
      */
     public com.google.protobuf.ByteString
         getDevidBytes() {
@@ -2998,7 +2998,7 @@ public final class Userprofile {
      *年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: &gt;50
      * </pre>
      *
-     * <code>int32 age = 2;</code>
+     * <code>optional int32 age = 2;</code>
      */
     public int getAge() {
       return age_;
@@ -3011,7 +3011,7 @@ public final class Userprofile {
      *性别 0: 未知 1: 男 2: 女
      * </pre>
      *
-     * <code>int32 sex = 3;</code>
+     * <code>optional int32 sex = 3;</code>
      */
     public int getSex() {
       return sex_;
@@ -3024,7 +3024,7 @@ public final class Userprofile {
      * 金币数
      * </pre>
      *
-     * <code>int32 coin = 4;</code>
+     * <code>optional int32 coin = 4;</code>
      */
     public int getCoin() {
       return coin_;
@@ -3147,7 +3147,7 @@ public final class Userprofile {
      *人群类型标签,趣头条用
      * </pre>
      *
-     * <code>int32 pcategory = 7;</code>
+     * <code>optional int32 pcategory = 7;</code>
      */
     public int getPcategory() {
       return pcategory_;
@@ -3160,7 +3160,7 @@ public final class Userprofile {
      * 新增金币数
      * </pre>
      *
-     * <code>int32 incr_coin = 8;</code>
+     * <code>optional int32 incr_coin = 8;</code>
      */
     public int getIncrCoin() {
       return incrCoin_;
@@ -3173,7 +3173,7 @@ public final class Userprofile {
      * 是否命中反作弊人群
      * </pre>
      *
-     * <code>int32 antispam = 9;</code>
+     * <code>optional int32 antispam = 9;</code>
      */
     public int getAntispam() {
       return antispam_;
@@ -3303,7 +3303,7 @@ public final class Userprofile {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       hash = (37 * hash) + DEVID_FIELD_NUMBER;
       hash = (53 * hash) + getDevid().hashCode();
       hash = (37 * hash) + AGE_FIELD_NUMBER;
@@ -3670,7 +3670,7 @@ public final class Userprofile {
        *设备号，没有后缀
        * </pre>
        *
-       * <code>string devid = 1;</code>
+       * <code>optional string devid = 1;</code>
        */
       public java.lang.String getDevid() {
         java.lang.Object ref = devid_;
@@ -3689,7 +3689,7 @@ public final class Userprofile {
        *设备号，没有后缀
        * </pre>
        *
-       * <code>string devid = 1;</code>
+       * <code>optional string devid = 1;</code>
        */
       public com.google.protobuf.ByteString
           getDevidBytes() {
@@ -3709,7 +3709,7 @@ public final class Userprofile {
        *设备号，没有后缀
        * </pre>
        *
-       * <code>string devid = 1;</code>
+       * <code>optional string devid = 1;</code>
        */
       public Builder setDevid(
           java.lang.String value) {
@@ -3726,7 +3726,7 @@ public final class Userprofile {
        *设备号，没有后缀
        * </pre>
        *
-       * <code>string devid = 1;</code>
+       * <code>optional string devid = 1;</code>
        */
       public Builder clearDevid() {
         
@@ -3739,7 +3739,7 @@ public final class Userprofile {
        *设备号，没有后缀
        * </pre>
        *
-       * <code>string devid = 1;</code>
+       * <code>optional string devid = 1;</code>
        */
       public Builder setDevidBytes(
           com.google.protobuf.ByteString value) {
@@ -3759,7 +3759,7 @@ public final class Userprofile {
        *年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: &gt;50
        * </pre>
        *
-       * <code>int32 age = 2;</code>
+       * <code>optional int32 age = 2;</code>
        */
       public int getAge() {
         return age_;
@@ -3769,7 +3769,7 @@ public final class Userprofile {
        *年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: &gt;50
        * </pre>
        *
-       * <code>int32 age = 2;</code>
+       * <code>optional int32 age = 2;</code>
        */
       public Builder setAge(int value) {
         
@@ -3782,7 +3782,7 @@ public final class Userprofile {
        *年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: &gt;50
        * </pre>
        *
-       * <code>int32 age = 2;</code>
+       * <code>optional int32 age = 2;</code>
        */
       public Builder clearAge() {
         
@@ -3797,7 +3797,7 @@ public final class Userprofile {
        *性别 0: 未知 1: 男 2: 女
        * </pre>
        *
-       * <code>int32 sex = 3;</code>
+       * <code>optional int32 sex = 3;</code>
        */
       public int getSex() {
         return sex_;
@@ -3807,7 +3807,7 @@ public final class Userprofile {
        *性别 0: 未知 1: 男 2: 女
        * </pre>
        *
-       * <code>int32 sex = 3;</code>
+       * <code>optional int32 sex = 3;</code>
        */
       public Builder setSex(int value) {
         
@@ -3820,7 +3820,7 @@ public final class Userprofile {
        *性别 0: 未知 1: 男 2: 女
        * </pre>
        *
-       * <code>int32 sex = 3;</code>
+       * <code>optional int32 sex = 3;</code>
        */
       public Builder clearSex() {
         
@@ -3835,7 +3835,7 @@ public final class Userprofile {
        * 金币数
        * </pre>
        *
-       * <code>int32 coin = 4;</code>
+       * <code>optional int32 coin = 4;</code>
        */
       public int getCoin() {
         return coin_;
@@ -3845,7 +3845,7 @@ public final class Userprofile {
        * 金币数
        * </pre>
        *
-       * <code>int32 coin = 4;</code>
+       * <code>optional int32 coin = 4;</code>
        */
       public Builder setCoin(int value) {
         
@@ -3858,7 +3858,7 @@ public final class Userprofile {
        * 金币数
        * </pre>
        *
-       * <code>int32 coin = 4;</code>
+       * <code>optional int32 coin = 4;</code>
        */
       public Builder clearCoin() {
         
@@ -4497,7 +4497,7 @@ public final class Userprofile {
        *人群类型标签,趣头条用
        * </pre>
        *
-       * <code>int32 pcategory = 7;</code>
+       * <code>optional int32 pcategory = 7;</code>
        */
       public int getPcategory() {
         return pcategory_;
@@ -4507,7 +4507,7 @@ public final class Userprofile {
        *人群类型标签,趣头条用
        * </pre>
        *
-       * <code>int32 pcategory = 7;</code>
+       * <code>optional int32 pcategory = 7;</code>
        */
       public Builder setPcategory(int value) {
         
@@ -4520,7 +4520,7 @@ public final class Userprofile {
        *人群类型标签,趣头条用
        * </pre>
        *
-       * <code>int32 pcategory = 7;</code>
+       * <code>optional int32 pcategory = 7;</code>
        */
       public Builder clearPcategory() {
         
@@ -4535,7 +4535,7 @@ public final class Userprofile {
        * 新增金币数
        * </pre>
        *
-       * <code>int32 incr_coin = 8;</code>
+       * <code>optional int32 incr_coin = 8;</code>
        */
       public int getIncrCoin() {
         return incrCoin_;
@@ -4545,7 +4545,7 @@ public final class Userprofile {
        * 新增金币数
        * </pre>
        *
-       * <code>int32 incr_coin = 8;</code>
+       * <code>optional int32 incr_coin = 8;</code>
        */
       public Builder setIncrCoin(int value) {
         
@@ -4558,7 +4558,7 @@ public final class Userprofile {
        * 新增金币数
        * </pre>
        *
-       * <code>int32 incr_coin = 8;</code>
+       * <code>optional int32 incr_coin = 8;</code>
        */
       public Builder clearIncrCoin() {
         
@@ -4573,7 +4573,7 @@ public final class Userprofile {
        * 是否命中反作弊人群
        * </pre>
        *
-       * <code>int32 antispam = 9;</code>
+       * <code>optional int32 antispam = 9;</code>
        */
       public int getAntispam() {
         return antispam_;
@@ -4583,7 +4583,7 @@ public final class Userprofile {
        * 是否命中反作弊人群
        * </pre>
        *
-       * <code>int32 antispam = 9;</code>
+       * <code>optional int32 antispam = 9;</code>
        */
       public Builder setAntispam(int value) {
         
@@ -4596,7 +4596,7 @@ public final class Userprofile {
        * 是否命中反作弊人群
        * </pre>
        *
-       * <code>int32 antispam = 9;</code>
+       * <code>optional int32 antispam = 9;</code>
        */
       public Builder clearAntispam() {
         

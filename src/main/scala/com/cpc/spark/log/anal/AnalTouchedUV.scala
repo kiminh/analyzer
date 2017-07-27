@@ -38,6 +38,7 @@ object AnalTouchedUV {
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
     redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
+    redis.select(3)
 
     val ctx = SparkSession.builder()
       .appName("anal ad touched uv[%s]".format(date))
@@ -106,6 +107,14 @@ object AnalTouchedUV {
               }
             }
 
+            var pl = 0
+            if (x.ext != null) {
+              val v = x.ext.getOrElse("phone_level", null)
+              if (v != null) {
+                pl = v.int_value
+              }
+            }
+
             AnalCond(
               province = x.province,
               sex = rndSex,
@@ -113,6 +122,8 @@ object AnalTouchedUV {
               coin_level = lvl,
               os = os,
               network = net,
+              phone_level = pl,
+              hour = x.hour.toInt + 1,
               sum = 1,
               uid = x.uid,
               date = date
@@ -146,7 +157,7 @@ object AnalTouchedUV {
         .foreach {
           x =>
             /*
-            province-sex-age-coin_level-os-network_TOUCHEDUV
+            province-sex-age-coin_level-os-network-phoneLevel_TOUCHEDUV
             16-1-5-0-1-1_TOUCHEDUV  => 14674
              */
             val sum = x.sum * upv * 1.5
@@ -167,6 +178,7 @@ object AnalTouchedUV {
     }
 
     sumColsWithZero()
+    println("done")
     ctx.stop()
   }
 
@@ -187,6 +199,12 @@ object AnalTouchedUV {
 
   val net = Seq(0, 1, 2, 3, 4)
 
+  val phoneLevel = Seq(0, 1, 2, 3, 4)
+
+  val hour = Seq(0,1,2,3,4,5,6,7,8,9,
+    10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
+  )
+
   val provinces1 = Seq(
     4, 8, 18, 12, 3, 29,
     6, 34, 1, 16, 20, 10, 26,
@@ -204,7 +222,13 @@ object AnalTouchedUV {
 
   val net1 = Seq(1, 2, 3, 4)
 
-  val allCols = Seq(provinces1, sex1, age1, coin1, os1, net1)
+  val phoneLevel1 = Seq(1, 2, 3, 4)
+
+  val hour1 = Seq(1,2,3,4,5,6,7,8,9,
+    10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
+  )
+
+  val allCols = Seq(provinces1, sex1, age1, coin1, os1, net1, phoneLevel1)
 
   /*统计维度
   地域
@@ -215,7 +239,6 @@ object AnalTouchedUV {
   网络环境
   投放时间
    */
-
   var m = Seq[Seq[Int]]()
 
   def mapZeroCol(cols: mutable.Seq[Int], n: Int): Unit = {
@@ -249,13 +272,15 @@ object AnalTouchedUV {
           for (c <- coin) {
             for (o <- os) {
               for (n <- net) {
-                val cols = mutable.Seq(p, s, a, c, o, n)
-                if (cols.contains(0)) {
-                  m = Seq[Seq[Int]]()
-                  mapZeroCol(cols, 0)
-                  val v = sumZeroValues(m)
-                  if (v > 0) {
-                    redis.set(cols.mkString("-") + "_TOUCHEDUV", v)
+                for (l <- phoneLevel) {
+                  val cols = mutable.Seq(p, s, a, c, o, n, l)
+                  if (cols.contains(0)) {
+                    m = Seq[Seq[Int]]()
+                    mapZeroCol(cols, 0)
+                    val v = sumZeroValues(m)
+                    if (v > 0) {
+                      redis.set(cols.mkString("-") + "_TOUCHEDUV", v)
+                    }
                   }
                 }
               }
@@ -265,39 +290,42 @@ object AnalTouchedUV {
       }
     }
   }
-}
 
-case class AnalCond(
-                   province: Int = 0,
+  private case class AnalCond(
+                       province: Int = 0,
 
-                   //暂时按照100分比例来算
-                   sex: Int = 0,
-                   age: Int = 0,
+                       //暂时按照100分比例来算
+                       sex: Int = 0,
+                       age: Int = 0,
 
-                   //coin_level 注意保证和bs一致
-                   //用户积分级别.
-                   // 0默认全选
-                   // 1第一档用户，积分在0-10分
-                   // 2第二档用户，积分在0-1000分
-                   // 3第三档用户，积分在0-10000分
-                   // 4全选
-                   coin_level: Int = 0,
-                   os: Int = 0,
-                   network: Int = 0,
-                   sum: Int = 0,
-                   uid: String = "",
-                   date: String = ""
+                       //coin_level 注意保证和bs一致
+                       //用户积分级别.
+                       // 0默认全选
+                       // 1第一档用户，积分在0-10分
+                       // 2第二档用户，积分在0-1000分
+                       // 3第三档用户，积分在0-10000分
+                       // 4全选
+                       coin_level: Int = 0,
+                       os: Int = 0,
+                       network: Int = 0,
+                       phone_level: Int = 0,
+                       hour: Int = 0,
+                       sum: Int = 0,
+                       uid: String = "",
+                       date: String = ""
 
-               ) {
+                     ) {
 
 
-  val key = "%d-%d-%d-%d-%d-%d".format(province, sex, age, coin_level, os, network)
+    val key = Seq(province, sex, age, coin_level, os, network, phone_level).mkString("-")
 
-  val keyuid = "%d-%d-%d-%d-%d-%d-%s".format(province, sex, age, coin_level, os, network, uid)
+    val keyuid = (province, sex, age, coin_level, os, network, phone_level, uid)
 
-  def sum(k: AnalCond): AnalCond = {
-    copy(sum = sum + k.sum)
+    def sum(k: AnalCond): AnalCond = {
+      copy(sum = sum + k.sum)
+    }
   }
 }
+
 
 

@@ -119,6 +119,7 @@ object AnalUnionLog {
       .format("parquet")
       .partitionBy("date", "hour")
       .saveAsTable("dl_cpc." + table)
+    println("union", unionData.count())
 
     var traceData = unionData.map(x => (x.searchid, (x, Seq[TraceLog]())))
     val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
@@ -167,7 +168,6 @@ object AnalUnionLog {
       println("trace", traceRdd.count())
       traceData.unpersist()
     }
-    println("union", unionData.count())
     unionData.unpersist()
     spark.stop()
   }

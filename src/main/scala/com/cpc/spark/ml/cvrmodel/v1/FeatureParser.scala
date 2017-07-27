@@ -4,6 +4,7 @@ import java.util.Calendar
 
 import com.cpc.spark.log.parser.{ExtValue, TraceLog, UnionLog}
 import com.cpc.spark.ml.common.{FeatureDict, Utils}
+import com.cpc.spark.ml.cvrmodel.v1.CreateSvm.TLog
 import mlserver.mlserver._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.util.MLUtils
@@ -15,7 +16,7 @@ import org.apache.spark.mllib.util.MLUtils
 object FeatureParser extends FeatureDict {
 
 
-  def parseUnionLog(x: UnionLog, traces: TraceLog*): String = {
+  def parseUnionLog(x: UnionLog, traces: TLog*): String = {
     var cls = 0
     if (x.ext != null) {
       val v = x.ext.getOrElse("media_class", null)
@@ -202,11 +203,6 @@ object FeatureParser extends FeatureDict {
     els = els :+ (city + i, 1d)
     i += cityDict.size + 1
 
-    //ideaid  15106 - 35105 (20000)
-    if (ad.ideaid <= 20000) {
-      els = els :+ (ad.ideaid + i - 1, 1d)
-    }
-    i += 20000
 
     //ad slot id 35106 - 35152 (47)
     val slotid = adslotids.getOrElse(m.adslotid, 0)
@@ -226,32 +222,20 @@ object FeatureParser extends FeatureDict {
     els = els :+ (d.phoneLevel + i, 1d)
     i += 5
 
-    /*
-    //slotid city adcls channel network isp sex phone_level
-    val comFeatures = Seq[(Int, Int)](
-      (slotid + 1, adslotids.size + 1),
-      (city + 1, cityDict.size + 1),
-      (adcls + 1, adClass.size + 1),
-      (mchannel + 1, MediaChannelDict.size + 1),
-      (n.network + 1, 5),
-      (n.isp + 1, 19),
-      (u.sex + 1, 3),
-      (d.phoneLevel + 1, 5)
-    )
-
-    //所有2个特征组合
-    var maxSize = 0
-    Utils.getCombination(comFeatures, 2)
-      .foreach {
-        combine =>
-          val x = combine(0)
-          val y = combine(1)
-          val v = Utils.combineIntFeatureIdx(x._1, y._1)
-
-          els = els :+ (v + i, 1d)
-          i += x._2 * y._2
-      }
-      */
+    //ideaid  (200000)
+    var adid = 0
+    if (ad.ideaid >= 1500000) {
+      adid = ad.ideaid - 1500000 + 60000   //新平台
+    } else if (ad.ideaid >= 1000000) {
+      adid = ad.ideaid - 1000000 + 30000   //迁移到新平台
+    } else if (ad.ideaid < 30000) {
+      adid = ad.ideaid  //老平台
+    }
+    if (adid >= 200000) {
+      adid = 0
+    }
+    els = els :+ (adid + i, 1d)
+    i += 200000
 
     try {
       Vectors.sparse(i, els)
