@@ -97,14 +97,27 @@ object ConditionTouchedUV {
       .reduceByKey(_ + _)
       .map(x => (x._1, x._2))
     val sum = cond.map(x => x._2).sum()
-    cond.toLocalIterator
-      .foreach {
-        x =>
-          val p = x._2 / sum
-          val key = "touched_uv_percent_%s_%d".format(name, x._1)
+    if (name == "coin") {
+      val coins = cond.toLocalIterator.toSeq.sortWith((x, y) => x._1 < y._1)
+      var n = 0d
+      coins.foreach {
+        case (i, v) =>
+          val key = "touched_uv_percent_%s_%d".format(name, i)
+          n = n + v
+          val p = n / sum
           redis.set(key, "%.8f".format(p))
-          println(name, x._1, x._2, "%.3f".format(p))
+          println(name, key, n, "%.3f".format(p))
       }
+    } else {
+      cond.toLocalIterator
+        .foreach {
+          x =>
+            val p = x._2 / sum
+            val key = "touched_uv_percent_%s_%d".format(name, x._1)
+            redis.set(key, "%.8f".format(p))
+            println(name, x._1, x._2, "%.3f".format(p))
+        }
+    }
   }
 }
 
