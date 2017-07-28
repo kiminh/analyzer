@@ -76,7 +76,7 @@ object GetTraceReport {
       case (x, y) => (x + y)
     }.map {
       case ((user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration, auto), count) =>
-        AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration,auto , count)
+        AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration, auto , count)
     }
     println("*********traceDatatraceDatatraceData**********")
     traceData.collect().foreach(println)

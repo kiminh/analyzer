@@ -26,96 +26,91 @@ object GetUserIncreaseCoin {
     Logger.getRootLogger.setLevel(Level.WARN)
     val dayBefore = args(0).toInt
 
-    val cal = Calendar.getInstance()
-    cal.add(Calendar.DATE, -dayBefore)
-    val date1 = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    cal.add(Calendar.DATE, -1)
-    val date2 = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-
-    println("Date1:" + date1)
-    println("Date2:" + date2)
-
     val conf = ConfigFactory.load()
-
     val ctx = SparkSession.builder()
       .appName("cpc get user profile increase coin ")
       .enableHiveSupport()
       .getOrCreate()
-    val sqltext =  "select uid, coin from dl_cpc.cpc_union_log where `date` = \"" + date1 + "\""
-    val sqltext2 =  "select uid, coin from dl_cpc.cpc_union_log where `date` = \"" + date2 + "\""
+    val dayStr = getDates(dayBefore,7)
+    val sqltext =  "select member_id as member,sum(coin) as coin from  gobblin.qukan_p_gift_v2 where type = 210 " +
+      "and day in( "+dayStr+ ")group by member_id "
+    val sqltext2 =  "SELECT member, device from rpt_qukan.device_member_coin where thedate in(" + dayStr + ")"
 
     println("sqltext:" + sqltext)
     println("sqltext2:" + sqltext2)
-
-    val result = ctx.sql(sqltext).rdd.map{
+    val result1 = ctx.sql(sqltext).rdd.map{
       x =>
-        val uid : String = x(0).toString()
-        val coin : Int = x(1).toString().toInt
-        (uid,(coin,0))
-    }
-    val result2 = ctx.sql(sqltext2).rdd.map {
-      x =>
-        val uid : String = x(0).toString()
-        val coin : Int = x(1).toString().toInt
-        (uid, (0, coin))
-    }
-    val result3 = result.union(result2).reduceByKey{
-      (x,y) =>
-        var xx = x._1
-        var yy = x._2
-        if (x._1 == 0 ) {
-          xx =  y._1
-        }
-        if (x._2 == 0 ) {
-          yy = y._2
-        }
-        (xx,yy)
-    }.filter(x => x._2._1 != 0 && x._2._2 != 0 ).map {
-      x =>
-        val incr = x._2._2 - x._2._1
-        (x._1, incr)
+        val member : String = x(0).toString()
+        val coin : Long = x(1).toString().toLong
+        (member,coin)
     }.cache()
-    println("****************device*****************")
-    result3.take(30).foreach(println)
-    println("****************rate*****************")
-    result3.map {
-      x => val y= x._2
+    val result2 = ctx.sql(sqltext2).rdd.map{
+      x =>
+        val member : String = x(0).toString()
+        val device : String = x(1).toString()
+        (device,member)
+    }.reduceByKey((x,y) => x).map(x => (x._2,x._1)).reduceByKey((x,y) => x).cache()
+
+    val toResult= result1.join(result2).map{
+      case (member,(coin,device)) =>
+        (device,coin)
+    }.reduceByKey((x,y) => x).cache()
+
+    result1.map {
+      x =>
+        val y = x._2
         if(y<0){
-          (0,1)
-        }else if (y<10){
-          (10,1)
-        }else if (y<50){
-          (50,1)
-        }else if (y< 100) {
-          (100,1)
-        }else if (y< 200) {
-          (200,1)
-        } else if (y< 300) {
-          (300,1)
-        } else if (y< 400) {
-          (400,1)
-        }  else if (y < 500){
-          (500,1)
-        } else if (y<1000) {
-          (1000,1)
-        } else if (y<2000) {
-          (2000,1)
-        } else if (y<5000) {
-          (5000,1)
-        } else if (y<10000) {
-          (10000,1)
+          ("<0",1)
+        }else if (y == 0){
+          ("0", 1)
+        }else if (y<=10){
+          ("0-10",1)
+        }else if (y <= 20){
+          ("11-20",1)
+        }else if (y <= 30){
+          ("21-30",1)
+        }else if (y <= 40){
+          ("31-40",1)
+        }else if (y <= 50){
+          ("41-50",1)
+        }else if (y <= 60){
+          ("51-60",1)
+        }else if (y <= 70){
+          ("61-70",1)
+        }else if (y <= 80){
+          ("71-80",1)
+        }else if (y <= 90){
+          ("81-90",1)
+        }else if (y<= 100) {
+          ("91-100",1)
+        } else if (y<= 200) {
+          ("101-200",1)
+        } else if (y<= 300) {
+          ("201-300",1)
+        } else if (y<= 400) {
+          ("301-400",1)
+        }else if (y <= 500){
+          ("401-500",1)
+        } else if (y<=1000) {
+          ("501-1000",1)
+        } else if (y<=2000) {
+          ("1001-2000",1)
+        } else if (y<=5000) {
+          ("2001-5000",1)
+        } else if (y<=10000) {
+          ("5001-10000",1)
         }else {
-          (10001,1)
+          (">10000",1)
         }
     }.reduceByKey {
-      (x,y) =>
-        x + y
-    }.repartition(1).collect().foreach(println)
-    val count = result3.count()
-    val sum = result3.filter(x => x._2 > 0).mapPartitions{
+      (x,y) =>x+y
+    }.collect().foreach(println)
+    toResult.take(10).foreach(x => println("result:"+x))
+    val sum = toResult.filter(x => x._2 > 0).mapPartitions{
       p =>
         var n1 = 0
         var n2 = 0
+        var n3 = 0
         val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
         p.foreach {
           x =>
@@ -124,30 +119,50 @@ object GetUserIncreaseCoin {
             val buffer = redis.get[Array[Byte]](key).getOrElse(null)
             if (buffer != null) {
               val userProfile = UserProfile.parseFrom(buffer)
-              if (userProfile.getIncrCoin != x._2 ) {
+              if (userProfile.getShareCoin != x._2 ) {
                 n2 = n2 + 1
-                val user = userProfile.toBuilder.setIncrCoin(x._2)
+                val user = userProfile.toBuilder.setShareCoin(x._2.toInt)
                 redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
+            }else{
+              n3 = n3 + 1
+              val user = UserProfile.newBuilder().setDevid(x._1).setShareCoin(x._2.toInt)
+              redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
             }
         }
-        Seq((0, n1), (1, n2)).iterator
+        Seq((0, n1), (1, n2),(2, n3)).iterator
     }
     //统计新增数据
     var n1 = 0
     var n2 = 0
+    var n3 = 0
     sum.reduceByKey((x, y) => x + y)
       .take(3)
       .foreach {
         x =>
           if (x._1 == 0) {
             n1 = x._2
-          } else {
+          } else if(x._1 == 1){
             n2 = x._2
+          }else {
+            n3 = x._2
           }
       }
-    println("total:%d no-zero-total: %d updated: %d".format(count, n1, n2))
+    val count = toResult.count()
+    println("total:%d no-zero-total: %d updated: %d  add: %d".format(count, n1, n2, n3))
     ctx.stop()
+  }
+
+  def getDates(dayBefore: Int, days: Int): String = {
+    val cal = Calendar.getInstance()
+    val parts = new Array[String](days)
+    cal.add(Calendar.DATE, -dayBefore)
+    val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd")
+    for (day <- 0 until days) {
+      parts(day) = partitionPathFormat.format(cal.getTime)
+      cal.add(Calendar.DATE, -1)
+    }
+    "'" + parts.mkString("','") + "'"
   }
 }
 
