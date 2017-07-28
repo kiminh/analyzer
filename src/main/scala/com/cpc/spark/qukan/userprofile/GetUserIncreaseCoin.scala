@@ -119,14 +119,14 @@ object GetUserIncreaseCoin {
             val buffer = redis.get[Array[Byte]](key).getOrElse(null)
             if (buffer != null) {
               val userProfile = UserProfile.parseFrom(buffer)
-              if (userProfile.getIncrCoin != x._2 ) {
+              if (userProfile.getShareCoin != x._2 ) {
                 n2 = n2 + 1
-                val user = userProfile.toBuilder.setIncrCoin(x._2.toInt)
+                val user = userProfile.toBuilder.setShareCoin(x._2.toInt)
                 redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
             }else{
               n3 = n3 + 1
-              val user = UserProfile.newBuilder().setDevid(x._1).setIncrCoin(x._2.toInt)
+              val user = UserProfile.newBuilder().setDevid(x._1).setShareCoin(x._2.toInt)
               redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
             }
         }
