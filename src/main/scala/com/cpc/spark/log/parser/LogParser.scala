@@ -100,6 +100,7 @@ object LogParser {
       }
       ext.update("userpcate", ExtValue(int_value = user.getPcategory))
       ext.update("antispam", ExtValue(int_value = user.getAntispam))
+      ext.update("share_coin", ExtValue(int_value = user.getShareCoin))
       log = log.copy(
         sex = user.getSex,
         age = user.getAge,

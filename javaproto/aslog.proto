@@ -203,6 +203,7 @@ message UserProfile {
 	optional uint32 coin = 4; // 用户金币数
 	optional uint32 pcategory =5; // 趣头条用户类别
 	optional uint32 antispam = 6; // 是否是antispam用户
+	optional uint32 share_coin = 7; // 金币增长数
 }
 
 message NoticeLogBody {
@@ -223,6 +224,7 @@ message NoticeLogBody {
 	optional UserProfile userprofile = 15; // 用户信息
 	repeated uint32 dupplanfilter = 16; // 同一plan过滤
 	repeated uint32 lowcpmfilter = 17; // 低于最低cpm过滤
+	repeated uint32 lowcvrfilter = 18; // 过滤低cvr广告
 	repeated DspReqInfo dspReqInfo = 22; // 请求DSP的信息
 	optional uint64 timecost = 23;
 	optional bool https = 24; //是否https请求
