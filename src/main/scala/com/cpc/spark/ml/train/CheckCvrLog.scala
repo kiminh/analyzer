@@ -51,12 +51,6 @@ object CheckCvrLog {
 
       val clicklog = ctx.sql(sql)
         .as[UnionLog].rdd.cache()
-
-      val cvrlog = clicklog.filter(x => x.exptags.contains("cvr_v1"))
-        .map {
-          x =>
-            (x.searchid, (x, Seq[TraceLog]()))
-        }
       val tracelog = ctx.sql(
         s"""
            |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" %s
@@ -69,16 +63,33 @@ object CheckCvrLog {
         }
         .cache()
 
-      val svm = sum(cvrlog.union(tracelog))
-      println("cvr:%.3f predict:%.3f sum:%f".format(svm._1 / svm._3, svm._2 / svm._3, svm._3))
+      println("cvr ctr")
+      val cvrctrlog = clicklog.filter(x => x.exptags.contains("cvr_v1") && x.exptags.contains("ctrmodel=v1"))
+        .map {
+          x =>
+            (x.searchid, (x, Seq[TraceLog]()))
+        }
+      val svmctr = sum(cvrctrlog.union(tracelog))
+      println("cvr:%.3f predict:%.3f ctr:%.3f sum:%.0f".format(
+        svmctr._1 / svmctr._3, svmctr._2 / svmctr._3, svmctr._4 / svmctr._3, svmctr._3))
 
+      println("cvr")
+      val cvrlog = clicklog.filter(x => x.exptags.contains("cvr_v1"))
+        .map {
+          x =>
+            (x.searchid, (x, Seq[TraceLog]()))
+        }
+      val svm = sum(cvrlog.union(tracelog))
+      println("cvr:%.3f predict:%.3f sum:%.0f".format(svm._1 / svm._3, svm._2 / svm._3, svm._3))
+
+      println("nocvr")
       val nocvrlog = clicklog.filter(x => !x.exptags.contains("cvr_v1"))
         .map {
           x =>
             (x.searchid, (x, Seq[TraceLog]()))
         }
       val svmall = sum(nocvrlog.union(tracelog))
-      println("cvr:%.3f predict:%.3f sum:%f".format(svmall._1 / svmall._3, svmall._2 / svmall._3, svmall._3))
+      println("cvr:%.3f predict:%.3f sum:%.0f".format(svmall._1 / svmall._3, svmall._2 / svmall._3, svmall._3))
 
       cal.add(Calendar.DATE, 1)
     }
@@ -86,7 +97,7 @@ object CheckCvrLog {
     ctx.stop()
   }
 
-  def sum(ulog: RDD[(String, (UnionLog, Seq[TraceLog]))]): (Double, Double, Double) = {
+  def sum(ulog: RDD[(String, (UnionLog, Seq[TraceLog]))]): (Double, Double, Double, Double) = {
     ulog
       .reduceByKey {
         (x, y) =>
@@ -134,15 +145,16 @@ object CheckCvrLog {
           if (u.ext != null) {
             expcvr = u.ext.getOrElse("exp_cvr", ExtValue()).int_value
           }
+          val expctr = u.ext.getOrElse("exp_ctr", ExtValue()).int_value
 
           var cvr = 0d
           if ((stay >= 30 && click > 0) || active > 0) {
             cvr = 1d
           }
 
-          (cvr, expcvr/1e6, 1d)
+          (cvr, expcvr/1e6, 1d, expctr/1e6)
       }
-      .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3))
+      .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4))
   }
 }
 

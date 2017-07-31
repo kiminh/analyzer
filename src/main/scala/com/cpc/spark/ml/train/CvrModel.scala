@@ -97,7 +97,7 @@ object CvrModel {
       model.saveText(filepath)
 
       //满足条件的模型直接替换线上数据
-      if (lrfile.length > 0 && model.getAuPRC() > 1 && model.getAuROC() > 1) {
+      if (lrfile.length > 0 && model.getAuPRC() > 0.3 && model.getAuROC() > 0.75) {
         println("replace lr online data")
         val ret  = s"cp $filepath                /home/work/ml/model/$lrfile" !
         val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/$lrfile" !
@@ -112,7 +112,7 @@ object CvrModel {
       val meanError = model.runIr(binNum, 0.9)
       val filepath = "/home/cpc/anal/model/cvr_isotonic_%s.txt".format(date)
       model.saveIrText(filepath)
-      if (irfile.length > 0 && math.abs(meanError) < 0) {
+      if (irfile.length > 0 && math.abs(meanError) < 0.001) {
         println("replace ir online data")
         val ret = s"cp $filepath                 /home/work/ml/model/$irfile" !
         val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/$irfile" !

@@ -60,12 +60,13 @@ object ConditionTouchedUV {
     calcCondPercent("coin", ulog.filter(_.coin > 0)
       .map {
         u =>
+          val coin = u.ext.getOrElse("share_coin", ExtValue()).int_value
           var lvl = 0
-          if (u.coin < 10) {
+          if (coin == 0) {
             lvl = 1
-          } else if (u.coin < 1000) {
+          } else if (coin <= 60) {
             lvl = 2
-          } else if (u.coin < 10000) {
+          } else if (coin <= 90) {
             lvl = 3
           } else {
             lvl = 4
