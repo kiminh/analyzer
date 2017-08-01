@@ -15,6 +15,36 @@ import org.apache.spark.mllib.util.MLUtils
   */
 object FeatureParser extends FeatureDict {
 
+  def cvrPositive(traces: TLog*): Boolean = {
+    var stay = 0
+    var click = 0
+    var active = 0
+    traces.foreach {
+      t =>
+        t.trace_type match {
+          case s if s.startsWith("active") => active += 1
+
+          case "buttonClick" => click += 1
+
+          case "clickMonitor" => click += 1
+
+          case "inputFocus" => click += 1
+
+          case "press" => click += 1
+
+          case "stay" =>
+            if (t.duration > stay) {
+              stay = t.duration
+            }
+
+          case _ =>
+        }
+
+    }
+
+    (stay >= 30 && click > 0) || active > 0
+  }
+
 
   def parseUnionLog(x: UnionLog, traces: TLog*): String = {
     var cls = 0
@@ -100,32 +130,7 @@ object FeatureParser extends FeatureDict {
     val vector = parse(ad, m, u, loc, n, d, x.timestamp * 1000L)
     if (vector != null) {
 
-      var stay = 0
-      var click = 0
-      var active = 0
-      traces.foreach {
-        t =>
-          t.trace_type match {
-            case s if s.startsWith("active") => active += 1
-
-            case "buttonClick" => click += 1
-
-            case "clickMonitor" => click += 1
-
-            case "inputFocus" => click += 1
-
-            case "press" => click += 1
-
-            case "stay" =>
-              if (t.duration > stay) {
-                stay = t.duration
-              }
-
-            case _ =>
-          }
-      }
-
-      if ((stay >= 30 && click > 0) || active > 0) {
+      if (cvrPositive(traces:_*)) {
         svm = "1"
       } else {
         svm = "0"
