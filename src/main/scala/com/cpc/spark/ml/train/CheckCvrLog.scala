@@ -72,7 +72,7 @@ object CheckCvrLog {
         }
       sum(cvrlog.union(tracelog))
 
-      val nocvrlog = clicklog.filter(x => !x.exptags.contains("cvr_v1"))
+      val nocvrlog = clicklog
         .map {
           x =>
             (x.searchid, (x, Seq[TraceLog]()))
@@ -132,7 +132,7 @@ object CheckCvrLog {
           }
 
           var expcvr = 0d
-          if (u.ext != null) {
+          if (u.ext != null && load == 1) {
             expcvr = u.ext.getOrElse("exp_cvr", ExtValue()).int_value
           }
           val expctr = u.ext.getOrElse("exp_ctr", ExtValue()).int_value

@@ -7,6 +7,7 @@ import java.util.{Calendar, Properties}
 import com.cpc.spark.log.parser.TraceReportLog
 import com.cpc.spark.log.report.GetHourReport.{clearReportHourData, mariadbProp, mariadbUrl}
 import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 
@@ -28,6 +29,8 @@ object GetTraceReport {
         """.stripMargin)
       System.exit(1)
     }
+    Logger.getRootLogger.setLevel(Level.WARN)
+
    /* val hourBefore = args(0).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
