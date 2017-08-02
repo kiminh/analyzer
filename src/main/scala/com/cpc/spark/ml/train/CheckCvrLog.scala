@@ -50,7 +50,9 @@ object CheckCvrLog {
         """.stripMargin.format(date, hourSql)
 
       val clicklog = ctx.sql(sql)
-        .as[UnionLog].rdd.cache()
+        .as[UnionLog].rdd
+        .filter(_.exptags.contains("ctrmodel=v1"))
+        .cache()
       val tracelog = ctx.sql(
         s"""
            |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" %s
@@ -63,33 +65,19 @@ object CheckCvrLog {
         }
         .cache()
 
-      println("cvr ctr")
-      val cvrctrlog = clicklog.filter(x => x.exptags.contains("cvr_v1") && x.exptags.contains("ctrmodel=v1"))
-        .map {
-          x =>
-            (x.searchid, (x, Seq[TraceLog]()))
-        }
-      val svmctr = sum(cvrctrlog.union(tracelog))
-      println("cvr:%.3f predict:%.3f ctr:%.3f sum:%.0f".format(
-        svmctr._1 / svmctr._3, svmctr._2 / svmctr._3, svmctr._4 / svmctr._3, svmctr._3))
-
-      println("cvr")
       val cvrlog = clicklog.filter(x => x.exptags.contains("cvr_v1"))
         .map {
           x =>
             (x.searchid, (x, Seq[TraceLog]()))
         }
-      val svm = sum(cvrlog.union(tracelog))
-      println("cvr:%.3f predict:%.3f sum:%.0f".format(svm._1 / svm._3, svm._2 / svm._3, svm._3))
+      sum(cvrlog.union(tracelog))
 
-      println("nocvr")
       val nocvrlog = clicklog.filter(x => !x.exptags.contains("cvr_v1"))
         .map {
           x =>
             (x.searchid, (x, Seq[TraceLog]()))
         }
-      val svmall = sum(nocvrlog.union(tracelog))
-      println("cvr:%.3f predict:%.3f sum:%.0f".format(svmall._1 / svmall._3, svmall._2 / svmall._3, svmall._3))
+      sum(nocvrlog.union(tracelog))
 
       cal.add(Calendar.DATE, 1)
     }
@@ -97,8 +85,8 @@ object CheckCvrLog {
     ctx.stop()
   }
 
-  def sum(ulog: RDD[(String, (UnionLog, Seq[TraceLog]))]): (Double, Double, Double, Double) = {
-    ulog
+  def sum(ulog: RDD[(String, (UnionLog, Seq[TraceLog]))]): LogSum = {
+    val sum = ulog
       .reduceByKey {
         (x, y) =>
           var u: UnionLog = null
@@ -111,18 +99,20 @@ object CheckCvrLog {
           (u, x._2 ++ y._2)
       }
       .map(_._2)
-      .filter(x => x._1 != null && x._2.nonEmpty)
+      .filter(x => x._1 != null)
       .map {
         x =>
           val u = x._1
-          val traces = x._2
           var stay = 0
           var click = 0
           var active = 0
-          traces.foreach {
+          var load = 0d
+          x._2.foreach {
             t =>
               t.trace_type match {
                 case s if s.startsWith("active") => active += 1
+
+                case "load" => load = 1
 
                 case "buttonClick" => click += 1
 
@@ -152,9 +142,55 @@ object CheckCvrLog {
             cvr = 1d
           }
 
-          (cvr, expcvr/1e6, 1d, expctr/1e6)
+          LogSum(
+            request = 1,
+            show = u.isshow,
+            click = u.isclick,
+            cvr = cvr,
+            load = load,
+            cost = u.price / 100,
+            expctr = expctr / 1e6,
+            expcvr = expcvr / 1e6
+          )
       }
-      .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4))
+      .reduce((x, y) => x.sum(y))
+
+    println("fill:%.3f ctr:%.3f ltr:%.3f cvr:%.3f ecvr:%.3f cpm:%.6f cpr:%.6f".format(
+      sum.show / sum.request,
+      sum.click / sum.show,
+      sum.load / sum.click,
+      sum.cvr / sum.load,
+      sum.expcvr /sum.load,
+      sum.cost / sum.show * 1000,
+      sum.cost / sum.request * 1000
+    ))
+
+    sum
+  }
+
+  case class LogSum(
+                   request: Double = 0,
+                   show: Double = 0,
+                   click: Double = 0,
+                   load: Double = 0,
+                   cvr: Double = 0,
+                   cost: Double = 0,
+                   expctr: Double = 0,
+                   expcvr: Double = 0
+                   ) {
+
+    def sum(s: LogSum): LogSum = {
+      copy(
+        request = request + s.request,
+        show = show + s.show,
+        click = click + s.click,
+        load = load + s.load,
+        cvr = cvr + s.cvr,
+        cost = cost + s.cost,
+        expctr = expctr + s.expctr,
+        expcvr = expcvr + s.expcvr
+      )
+    }
   }
 }
 

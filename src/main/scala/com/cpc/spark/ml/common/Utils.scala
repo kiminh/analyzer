@@ -1,6 +1,8 @@
 package com.cpc.spark.ml.common
 
+import com.typesafe.config.Config
 import scala.collection.mutable
+import sys.process._
 
 /**
   * Created by roydong on 23/06/2017.
@@ -31,7 +33,6 @@ object Utils {
     max
   }
 
-
   //得到所有排列组合 C(n, m)
   def getCombination[T: Manifest](all: Seq[T], n: Int): Seq[Seq[T]] = {
     var combs = mutable.Seq[Seq[T]]()
@@ -52,5 +53,13 @@ object Utils {
     }
     mapCombination(n, 0, 0, comb)
     combs
+  }
+
+  def updateOnlineData(srcfile: String, destfile: String, conf: Config): Unit = {
+    val nodes = conf.getStringList("mlserver.nodes")
+    for (i <- 0 until nodes.size()) {
+      val node = nodes.get(i)
+      val ret = s"scp $srcfile work@$node:/home/work/ml/model/$destfile" !
+    }
   }
 }

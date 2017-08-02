@@ -3,12 +3,13 @@ package com.cpc.spark.ml.train
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
+import com.cpc.spark.ml.common.Utils
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.rdd.RDD
 
-import scala.sys.process._
 import scala.util.Random
 
 /**
@@ -92,6 +93,7 @@ object CvrModel {
     model.test(testSample)
     model.printLrTestLog()
     println("done")
+    val conf = ConfigFactory.load()
     if (mode.startsWith("train")) {
       val filepath = "/home/cpc/anal/model/cvr_logistic_%s.txt".format(date)
       model.saveText(filepath)
@@ -99,11 +101,7 @@ object CvrModel {
       //满足条件的模型直接替换线上数据
       if (lrfile.length > 0 && model.getAuPRC() > 0.3 && model.getAuROC() > 0.75) {
         println("replace lr online data")
-        val ret  = s"cp $filepath                /home/work/ml/model/$lrfile" !
-        val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/$lrfile" !
-        val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/$lrfile" !
-        val ret3 = s"scp $filepath work@cpc-bj08:/home/work/ml/model/$lrfile" !
-        val ret4 = s"scp $filepath work@cpc-bj09:/home/work/ml/model/$lrfile" !
+        Utils.updateOnlineData(filepath, lrfile, conf)
       }
     }
 
@@ -114,11 +112,7 @@ object CvrModel {
       model.saveIrText(filepath)
       if (irfile.length > 0 && math.abs(meanError) < 0.001) {
         println("replace ir online data")
-        val ret = s"cp $filepath                 /home/work/ml/model/$irfile" !
-        val ret1 = s"scp $filepath work@cpc-bj01:/home/work/ml/model/$irfile" !
-        val ret2 = s"scp $filepath work@cpc-bj05:/home/work/ml/model/$irfile" !
-        val ret3 = s"scp $filepath work@cpc-bj08:/home/work/ml/model/$irfile" !
-        val ret4 = s"scp $filepath work@cpc-bj09:/home/work/ml/model/$irfile" !
+        Utils.updateOnlineData(filepath, irfile, conf)
       }
     }
 
