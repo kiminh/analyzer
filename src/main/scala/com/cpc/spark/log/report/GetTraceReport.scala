@@ -28,11 +28,13 @@ object GetTraceReport {
         """.stripMargin)
       System.exit(1)
     }
-    val hourBefore = args(0).toInt
+   /* val hourBefore = args(0).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val hour = new SimpleDateFormat("HH").format(cal.getTime)
+    val hour = new SimpleDateFormat("HH").format(cal.getTime)*/
+    val date = args(0)
+    val hour = args(1)
     println("*******************")
     println("date:" + date)
     println("hour:" + hour)
