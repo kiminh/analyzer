@@ -90,14 +90,16 @@ object CreateSvm {
         .map(x => FeatureParser.parseUnionLog(x._1, x._2:_*))
         .cache()
 
+
       println(svm.take(1).head)
       svm.toDF()
         .write
         .mode(SaveMode.Overwrite)
         .text("/user/cpc/cvr_svm/" + version + "/" + date)
 
-      svm.take(1).foreach(println)
-      println("done", svm.count())
+      val n = svm.filter(_.startsWith("1")).count()
+      val all = svm.count()
+      println("done", n, all - n, all)
       svm.unpersist()
       cal.add(Calendar.DATE, 1)
     }

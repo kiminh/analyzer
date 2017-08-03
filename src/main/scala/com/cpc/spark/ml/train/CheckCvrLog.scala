@@ -26,7 +26,8 @@ object CheckCvrLog {
     Logger.getRootLogger.setLevel(Level.WARN)
     val dayBefore = args(0).toInt
     val days = args(1).toInt
-    val hour = args(2).trim
+    val antispam = args(2).toInt
+    val hour = args(3).trim
     val ctx = SparkSession.builder()
       .appName("check cvr results")
       .enableHiveSupport()
@@ -46,13 +47,18 @@ object CheckCvrLog {
 
       val sql = s"""
            |select * from dl_cpc.cpc_union_log where `date` = "%s" %s
-           |and media_appsid in ("80000001", "80000002")
-        """.stripMargin.format(date, hourSql)
+           |and media_appsid in ("80000001") and ext['antispam'].int_value = %d
+        """.stripMargin.format(date, hourSql, antispam)
 
       val clicklog = ctx.sql(sql)
         .as[UnionLog].rdd
-        .filter(_.exptags.contains("ctrmodel=v1"))
-        .cache()
+        //.filter(x => x.exptags.contains("cvr_v1"))
+        .map {
+          x =>
+            (x.searchid, (x, Seq[TraceLog]()))
+        }
+
+
       val tracelog = ctx.sql(
         s"""
            |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" %s
@@ -63,21 +69,8 @@ object CheckCvrLog {
             val u: UnionLog = null
             (x.searchid, (u, Seq(x)))
         }
-        .cache()
 
-      val cvrlog = clicklog.filter(x => x.exptags.contains("cvr_v1"))
-        .map {
-          x =>
-            (x.searchid, (x, Seq[TraceLog]()))
-        }
-      sum(cvrlog.union(tracelog))
-
-      val nocvrlog = clicklog
-        .map {
-          x =>
-            (x.searchid, (x, Seq[TraceLog]()))
-        }
-      sum(nocvrlog.union(tracelog))
+      sum(clicklog.union(tracelog))
 
       cal.add(Calendar.DATE, 1)
     }
@@ -138,7 +131,7 @@ object CheckCvrLog {
           val expctr = u.ext.getOrElse("exp_ctr", ExtValue()).int_value
 
           var cvr = 0d
-          if ((stay >= 30 && click > 0) || active > 0) {
+          if (active > 0) {
             cvr = 1d
           }
 

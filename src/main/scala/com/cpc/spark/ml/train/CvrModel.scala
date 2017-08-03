@@ -95,7 +95,7 @@ object CvrModel {
     println("done")
     val conf = ConfigFactory.load()
     if (mode.startsWith("train")) {
-      val filepath = "/home/cpc/anal/model/cvr_logistic_%s.txt".format(date)
+      val filepath = "/data/cpc/anal/model/cvr_logistic_%s.txt".format(date)
       model.saveText(filepath)
 
       //满足条件的模型直接替换线上数据
@@ -108,7 +108,7 @@ object CvrModel {
     if (mode.endsWith("+ir")) {
       println("start isotonic regression")
       val meanError = model.runIr(binNum, 0.9)
-      val filepath = "/home/cpc/anal/model/cvr_isotonic_%s.txt".format(date)
+      val filepath = "/data/cpc/anal/model/cvr_isotonic_%s.txt".format(date)
       model.saveIrText(filepath)
       if (irfile.length > 0 && math.abs(meanError) < 0.001) {
         println("replace ir online data")

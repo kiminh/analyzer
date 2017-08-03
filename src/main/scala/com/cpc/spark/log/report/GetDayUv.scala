@@ -6,6 +6,7 @@ import java.util.{Calendar, Properties}
 import com.cpc.spark.log.parser.{LogParser, UnionLog}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
 /**
   * Created by Roy on 2017/4/26.
   */
@@ -16,6 +17,7 @@ object GetDayUv {
   val mariadbProp = new Properties()
 
   def main(args: Array[String]): Unit = {
+    Logger.getRootLogger.setLevel(Level.WARN)
     if (args.length < 2) {
       System.err.println(
         s"""
@@ -74,6 +76,7 @@ object GetDayUv {
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_uv_daily", mariadbProp)
 
+    println("done", uvData.count())
     ctx.stop()
   }
 }

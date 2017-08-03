@@ -42,7 +42,8 @@ object FeatureParser extends FeatureDict {
 
     }
 
-    (stay >= 30 && click > 0) || active > 0
+    active > 0
+    //(stay >= 30 && click > 0) || active > 0
   }
 
 

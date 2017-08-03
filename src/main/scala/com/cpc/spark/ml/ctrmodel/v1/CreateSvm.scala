@@ -85,6 +85,7 @@ object CreateSvm {
         println("done", ulog(1).count())
       }
 
+      train.unpersist()
       cal.add(Calendar.DATE, 1)
     }
 
