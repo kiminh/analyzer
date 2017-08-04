@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.log.parser.{TraceLog, UnionLog}
+import com.cpc.spark.ml.common.FeatureDict
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -67,6 +68,8 @@ object CreateSvm {
             (x.searchid, (u, Seq(x)))
         }
 
+      FeatureDict.loadData()
+      val bdict = ctx.sparkContext.broadcast(FeatureDict.dict)
 
       /*
       cvr正例条件:
@@ -87,7 +90,11 @@ object CreateSvm {
         }
         .map(_._2)
         .filter(x => x._1 != null && x._2.nonEmpty)
-        .map(x => FeatureParser.parseUnionLog(x._1, x._2:_*))
+        .map{
+          x =>
+            val dict = bdict.value
+            FeatureParser.parseUnionLog(dict, x._1, x._2:_*)
+        }
         .cache()
 
 

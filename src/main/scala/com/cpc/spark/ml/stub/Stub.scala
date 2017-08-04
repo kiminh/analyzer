@@ -44,7 +44,7 @@ object Stub {
     val d = Device(
     )
 
-    val req = Request(version = "v3", media = Option(m), ads = Seq(ad), user = Option(u), device = Option(d))
+    val req = Request(version = "v1", media = Option(m), ads = Seq(ad), user = Option(u), device = Option(d), cvrVersion = "v3")
     val blockingStub = PredictorGrpc.blockingStub(channel)
     val reply = blockingStub.predict(req)
     println(req.toString, reply.toString)

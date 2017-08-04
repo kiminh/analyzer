@@ -68,11 +68,13 @@ message Request {
     Network network = 6;
     Device device = 7;
     int64 time = 8;
+    string cvr_version = 9;
 }
 
 message Prediction {
     int32 adid = 1; //ideaid
     double value = 2; //predict value
+    double cvr = 3;
 }
 
 message Response {

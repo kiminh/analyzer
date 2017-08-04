@@ -3,7 +3,7 @@ package com.cpc.spark.ml.ctrmodel.v1
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.{ExtValue, UnionLog}
-import com.cpc.spark.ml.common.{FeatureDict, Utils}
+import com.cpc.spark.ml.common.{Dict, FeatureDict, Utils}
 import mlserver.mlserver._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.util.MLUtils
@@ -12,10 +12,10 @@ import org.apache.spark.mllib.util.MLUtils
 /**
   * Created by Roy on 2017/5/15.
   */
-object FeatureParser extends FeatureDict {
+object FeatureParser {
 
 
-  def parseUnionLog(x: UnionLog): String = {
+  def parseUnionLog(x: UnionLog, dict: Dict): String = {
     var cls = 0
     if (x.ext != null) {
       val v = x.ext.getOrElse("media_class", null)
@@ -77,7 +77,7 @@ object FeatureParser extends FeatureDict {
     )
 
     var svm = ""
-    val vector = parse(ad, m, u, loc, n, d, x.timestamp * 1000L)
+    val vector = parse(dict, ad, m, u, loc, n, d, x.timestamp * 1000L)
     if (vector != null) {
       var p = -1
       svm = x.isclick.toString
@@ -93,7 +93,8 @@ object FeatureParser extends FeatureDict {
     svm
   }
 
-  def parse(ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
+  def parse(dict: Dict, ad: AdInfo, m: Media, u: User,
+            loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
@@ -108,18 +109,18 @@ object FeatureParser extends FeatureDict {
     els = els :+ (hour + i, 1d)
     i += 24
 
-    //interests   (65)
-    u.interests.map(interests.getOrElse(_, 0))
+    //interests
+    u.interests.map(dict.interest.getOrElse(_, 0))
       .filter(_ > 0)
       .sortWith(_ < _)
       .foreach {
         intr =>
           els = els :+ (intr + i - 1, 1d)
       }
-    i += interests.size
+    i += 200
 
     els = els :+ (u.sex + i, 1d)
-    i += 3
+    i += 10
 
     //age
     var age = 0
@@ -131,14 +132,12 @@ object FeatureParser extends FeatureDict {
       age = 3
     }
     els = els :+ (age + i - 1, 1d)
-    i += 3
+    i += 100
 
     //os 96 - 97 (2)
-    val os = osDict.getOrElse(d.os, 0)
-    if (d.os > 0) {
-      els = els :+ (os + i - 1, 1d)
-    }
-    i += osDict.size
+    val os = d.os
+    els = els :+ (os + i - 1, 1d)
+    i += 10
 
     els = els :+ (n.isp + i, 1d)
     i += 19
@@ -146,28 +145,31 @@ object FeatureParser extends FeatureDict {
     els = els :+ (n.network + i, 1d)
     i += 5
 
-    val city = cityDict.getOrElse(loc.city, 0)
+    val city = dict.city.getOrElse(loc.city, 0)
     els = els :+ (city + i, 1d)
-    i += cityDict.size + 1
+    i += 1000
 
-
-    //ad slot id 35106 - 35152 (47)
-    val slotid = adslotids.getOrElse(m.adslotid, 0)
+    //ad slot id
+    val slotid = dict.adslot.getOrElse(m.adslotid, 0)
     els = els :+ (slotid + i, 1d)
-    i += adslotids.size + 1
+    i += 1000
 
     //ad class
-    val adcls = adClass.getOrElse(ad._class, 0)
+    val adcls = dict.adclass.getOrElse(ad._class, 0)
     els = els :+ (adcls + i, 1d)
-    i += adClass.size + 1
+    i += 1000
 
-    val mchannel = MediaChannelDict.getOrElse(m.channel, 0)
+    val adtype = ad.adtype
+    els = els :+ (adtype + i, 1d)
+    i += 10
+
+    val mchannel = dict.channel.getOrElse(m.channel, 0)
     els = els :+ (mchannel + i, 1d)
-    i += MediaChannelDict.size + 1
+    i += 200
 
     //0 to 4
     els = els :+ (d.phoneLevel + i, 1d)
-    i += 5
+    i += 10
 
     //ideaid  (200000)
     var adid = 0

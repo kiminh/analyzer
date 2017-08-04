@@ -4,6 +4,8 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.log.parser.UnionLog
+import com.cpc.spark.ml.common.FeatureDict
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -57,6 +59,11 @@ object CreateSvm {
         .as[UnionLog].rdd
         .randomSplit(Array(ttRate, 1 - ttRate), seed = new Date().getTime)
 
+      FeatureDict.updateDict(ulog(0).cache())
+      FeatureDict.loadData()
+      FeatureDict.updateServerData(ConfigFactory.load())
+      val bdict = ctx.sparkContext.broadcast(FeatureDict.dict)
+
       val train = ulog(0).filter {
           u =>
             var ret = false
@@ -65,10 +72,18 @@ object CreateSvm {
             }
             ret
         }
-        .map{x => FeatureParser.parseUnionLog(x)}
+        .mapPartitions {
+          p =>
+            val dict = bdict.value
+            p.map {
+              x =>
+                FeatureParser.parseUnionLog(x, dict)
+            }
+        }
         .cache()
 
       train.take(1).foreach(println)
+
       train.toDF()
         .write
         .mode(SaveMode.Overwrite)
@@ -77,7 +92,15 @@ object CreateSvm {
 
       if (saveFull > 0) {
         println("save full data")
-        ulog(1).map{x => FeatureParser.parseUnionLog(x)}
+        ulog(1)
+          .mapPartitions {
+            p =>
+              val dict = bdict.value
+              p.map {
+                x =>
+                  FeatureParser.parseUnionLog(x, dict)
+              }
+          }
           .toDF()
           .write
           .mode(SaveMode.Overwrite)
