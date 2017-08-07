@@ -220,6 +220,10 @@ class LRIRModel {
     irError
   }
 
+  def saveIrHdfs(path: String): Unit = {
+    irmodel.save(ctx.sparkContext, path)
+  }
+
   def saveIrText(path: String): Unit = {
     if (irmodel == null) {
       throw new Exception("must run ir first")

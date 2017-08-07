@@ -114,6 +114,7 @@ object CtrModel {
       println("start isotonic regression")
       val meanError = model.runIr(binNum, 0.9)
       val filepath = "/data/cpc/anal/model/isotonic_%s.txt".format(date)
+      model.saveIrHdfs(modelPath + "/" + date + "_ir")
       model.saveIrText(filepath)
       if (irfile.length > 0 && math.abs(meanError) < 0.01) {
         println("replace ir online data")

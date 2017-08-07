@@ -122,7 +122,7 @@ object FeatureDict {
     }
   }
 
-  def loadDictFile(filename: String): Seq[String] = {
+  private def loadDictFile(filename: String): Seq[String] = {
     val file = "/data/cpc/anal/conf/mldict/" + filename
     Source.fromFile(file, "UTF-8").getLines().filter(_.length > 0).toSeq
   }

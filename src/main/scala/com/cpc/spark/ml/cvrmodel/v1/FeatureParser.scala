@@ -26,7 +26,7 @@ object FeatureParser {
 
           case "buttonClick" => click += 1
 
-          case "clickMonitor" => click += 1
+          //case "clickMonitor" => click += 1
 
           case "inputFocus" => click += 1
 
@@ -42,8 +42,7 @@ object FeatureParser {
 
     }
 
-    active > 0
-    //(stay >= 30 && click > 0) || active > 0
+    (stay >= 30 && click > 0) || active > 0
   }
 
 

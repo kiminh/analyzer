@@ -14,8 +14,7 @@ import org.apache.spark.mllib.util.MLUtils
   */
 object FeatureParser {
 
-
-  def parseUnionLog(x: UnionLog, dict: Dict): String = {
+  def unionLogToObject(x: UnionLog): (AdInfo, Media, User, Location, Network, Device, Long) = {
     var cls = 0
     if (x.ext != null) {
       val v = x.ext.getOrElse("media_class", null)
@@ -75,9 +74,13 @@ object FeatureParser {
       os = x.os,
       model = x.model
     )
+    (ad, m, u, loc, n, d, x.timestamp * 1000L)
+  }
 
+  def parseUnionLog(x: UnionLog, dict: Dict): String = {
+    val (ad, m, u, loc, n, d, t) = unionLogToObject(x)
     var svm = ""
-    val vector = parse(dict, ad, m, u, loc, n, d, x.timestamp * 1000L)
+    val vector = getVector(dict, ad, m, u, loc, n, d, x.timestamp * 1000L)
     if (vector != null) {
       var p = -1
       svm = x.isclick.toString
@@ -93,7 +96,21 @@ object FeatureParser {
     svm
   }
 
-  def parse(dict: Dict, ad: AdInfo, m: Media, u: User,
+  def vectorToSvm(v: Vector): String = {
+    var p = -1
+    var svm = ""
+    MLUtils.appendBias(v).foreachActive {
+      (i, v) =>
+        if (i <= p) {
+          throw new Exception("svm error:" + v)
+        }
+        p = i
+        svm = svm + " %d:%f".format(i + 1, v)
+    }
+    svm
+  }
+
+  def getVector(dict: Dict, ad: AdInfo, m: Media, u: User,
             loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
