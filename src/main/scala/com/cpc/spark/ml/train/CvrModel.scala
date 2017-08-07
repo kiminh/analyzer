@@ -98,7 +98,7 @@ object CvrModel {
       val filepath = "/data/cpc/anal/model/cvr_logistic_%s.txt".format(date)
       model.saveText(filepath)
       //满足条件的模型直接替换线上数据
-      if (lrfile.length > 0 && model.getAuPRC() > 0.3 && model.getAuROC() > 0.75) {
+      if (lrfile.length > 0 && model.getAuPRC() > 0.01 && model.getAuROC() > 0.7) {
         println("replace lr online data")
         Utils.updateOnlineData(filepath, lrfile, conf)
       }
@@ -110,7 +110,7 @@ object CvrModel {
       val filepath = "/data/cpc/anal/model/cvr_isotonic_%s.txt".format(date)
       model.saveIrHdfs(modelPath + "/" + date + "_ir")
       model.saveIrText(filepath)
-      if (irfile.length > 0 && math.abs(meanError) < 0.001) {
+      if (irfile.length > 0 && math.abs(meanError) < 0.1) {
         println("replace ir online data")
         Utils.updateOnlineData(filepath, irfile, conf)
       }

@@ -59,7 +59,9 @@ object Utils {
     val nodes = conf.getStringList("mlserver.nodes")
     for (i <- 0 until nodes.size()) {
       val node = nodes.get(i)
-      val ret = s"scp $srcfile work@$node:/home/work/ml/model/$destfile" !
+      val cmd = s"scp $srcfile work@$node:/home/work/ml/model/$destfile"
+      println(cmd)
+      val ret = cmd !
     }
   }
 }
