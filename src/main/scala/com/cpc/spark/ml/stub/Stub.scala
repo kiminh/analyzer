@@ -42,8 +42,9 @@ object Stub {
       .build
 
     val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime)
-    val sql = "select * from dl_cpc.cpc_union_log where `date` = \"%s\" and isclick = 1 and interests != \"\" and hour > \"07\" limit %s"
-      .format(date, args(3).toInt)
+    val hour = new SimpleDateFormat("HH").format(new Date().getTime - 7200L * 1000L)
+    val sql = "select * from dl_cpc.cpc_union_log where `date` = \"%s\" and isclick = 1 and interests != \"\" and hour = \"%s\" limit %s"
+      .format(date, hour, args(3).toInt)
 
     val logs = ctx.sql(sql).as[UnionLog].rdd
       .filter(x => x.exptags.contains("ctrmodel=v1"))

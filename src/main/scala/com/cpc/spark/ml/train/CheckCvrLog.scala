@@ -46,13 +46,12 @@ object CheckCvrLog {
       }
 
       val sql = s"""
-           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s
-           |and media_appsid in ("80000001") and ext['antispam'].int_value = %d
-        """.stripMargin.format(date, hourSql, antispam)
+           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and ext['media_class'].int_value = 110110100 and userid = 1500249
+        """.stripMargin.format(date, hourSql)
 
       val clicklog = ctx.sql(sql)
         .as[UnionLog].rdd
-        //.filter(x => x.exptags.contains("cvr_v1"))
+        .filter(x => x.exptags.contains("cvrfilter"))
         .map {
           x =>
             (x.searchid, (x, Seq[TraceLog]()))
@@ -78,7 +77,7 @@ object CheckCvrLog {
     ctx.stop()
   }
 
-  def sum(ulog: RDD[(String, (UnionLog, Seq[TraceLog]))]): LogSum = {
+  def sum(ulog: RDD[(String, (UnionLog, Seq[TraceLog]))]): Unit = {
     val sum = ulog
       .reduceByKey {
         (x, y) =>
@@ -109,7 +108,7 @@ object CheckCvrLog {
 
                 case "buttonClick" => click += 1
 
-                case "clickMonitor" => click += 1
+                //case "clickMonitor" => click += 1
 
                 case "inputFocus" => click += 1
 
@@ -131,11 +130,12 @@ object CheckCvrLog {
           val expctr = u.ext.getOrElse("exp_ctr", ExtValue()).int_value
 
           var cvr = 0d
-          if (active > 0) {
+          if ((stay >= 30 && click > 0) || active > 0) {
             cvr = 1d
           }
 
           LogSum(
+            adclass = u.ext.getOrElse("media_class", ExtValue()).int_value,
             request = 1,
             show = u.isshow,
             click = u.isclick,
@@ -146,9 +146,34 @@ object CheckCvrLog {
             expcvr = expcvr / 1e6
           )
       }
+      /*
+      .map(x => (x.adclass, x))
+      .reduceByKey((x, y) => x.sum(y))
+      .map(_._2)
+      .filter(_.show > 0)
+      .toLocalIterator
+      .toSeq
+      .sortWith(_.show > _.show)
+      .foreach {
+        sum =>
+          println("adclass %s".format(sum.adclass))
+          println("show:%.0f click:%.0f fill:%.3f ctr:%.3f ltr:%.3f cvr:%.3f ecvr:%.3f cpm:%.6f cpr:%.6f".format(
+            sum.show, sum.click,
+            sum.show / sum.request,
+            sum.click / sum.show,
+            sum.load / sum.click,
+            sum.cvr / sum.load,
+            sum.expcvr /sum.load,
+            sum.cost / sum.show * 1000,
+            sum.cost / sum.request * 1000
+          ))
+
+      }
+      */
       .reduce((x, y) => x.sum(y))
 
-    println("fill:%.3f ctr:%.3f ltr:%.3f cvr:%.3f ecvr:%.3f cpm:%.6f cpr:%.6f".format(
+    println("req:%.0f show:%.0f click:%.0f fill:%.3f ctr:%.3f ltr:%.3f cvr:%.3f ecvr:%.3f cpm:%.6f cpr:%.6f".format(
+      sum.request, sum.show, sum.click,
       sum.show / sum.request,
       sum.click / sum.show,
       sum.load / sum.click,
@@ -157,11 +182,10 @@ object CheckCvrLog {
       sum.cost / sum.show * 1000,
       sum.cost / sum.request * 1000
     ))
-
-    sum
   }
 
   case class LogSum(
+                   adclass: Int = 0,
                    request: Double = 0,
                    show: Double = 0,
                    click: Double = 0,

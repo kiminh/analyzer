@@ -20,6 +20,7 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
   "org.apache.spark" %% "spark-mllib" % "2.1.0" % "provided",
   "org.json4s" %% "json4s-native" % "3.5.1",
+  "org.luaj" % "luaj-jse" % "3.0",
   "io.grpc" % "grpc-netty" % com.trueaccord.scalapb.compiler.Version.grpcJavaVersion,
   "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion
 )
@@ -29,6 +30,7 @@ assemblyMergeStrategy in assembly := {
   case x => (assemblyMergeStrategy in assembly).value(x)
 }
 
+/*
 assemblyShadeRules in assembly := Seq(
   ShadeRule.rename("io.netty.handler.**" -> "shade.io.netty.handler.@1").inAll,
   ShadeRule.rename("io.netty.channel.**" -> "shade.io.netty.channel.@1").inAll,
@@ -38,6 +40,7 @@ assemblyShadeRules in assembly := Seq(
   ShadeRule.rename("com.google.common.**" -> "shade.com.google.common.@1").inAll,
   ShadeRule.rename("com.google.protobuf.**" -> "shade.com.google.protobuf.@1").inAll
 )
+*/
 
 assemblyExcludedJars in assembly := {
   val jars = Seq(

@@ -3,6 +3,7 @@ package com.cpc.spark.log.anal
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.common.Utils
 import com.cpc.spark.log.parser.{ExtValue, LogParser, TraceLog, UnionLog}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd
@@ -10,6 +11,8 @@ import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types._
 
 import scala.collection.mutable
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
 
 
 /**
@@ -112,7 +115,8 @@ object AnalUnionLog {
       .filter(x => x != null && x.date == date && x.hour == hour)
       .cache()
 
-    //write union log data
+    //clear dir
+    Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
     spark.createDataFrame(unionData)
       .write
       .mode(SaveMode.Append)
@@ -158,6 +162,8 @@ object AnalUnionLog {
         }
         .cache()
 
+      //clear dir
+      Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
       traceRdd.toDF()
         .write
         .mode(SaveMode.Append)
