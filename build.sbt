@@ -25,6 +25,7 @@ libraryDependencies ++= Seq(
   "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion
 )
 
+libraryDependencies += "com.hankcs"  %  "hanlp"  %   "portable-1.3.4"
 assemblyMergeStrategy in assembly := {
   case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.first
   case x => (assemblyMergeStrategy in assembly).value(x)
