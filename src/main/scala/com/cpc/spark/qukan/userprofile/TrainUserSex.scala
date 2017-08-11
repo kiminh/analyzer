@@ -124,7 +124,7 @@ object TrainSex{
                 n2 = n2 + 1
               }
               user.setSex(x._2)
-            //  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+              redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
         }
         Seq((0, n1), (1, n2)).iterator
     }
