@@ -25,12 +25,12 @@ libraryDependencies ++= Seq(
   "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion
 )
 
+libraryDependencies += "com.hankcs"  %  "hanlp"  %   "portable-1.3.4"
 assemblyMergeStrategy in assembly := {
   case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.first
   case x => (assemblyMergeStrategy in assembly).value(x)
 }
 
-/*
 assemblyShadeRules in assembly := Seq(
   ShadeRule.rename("io.netty.handler.**" -> "shade.io.netty.handler.@1").inAll,
   ShadeRule.rename("io.netty.channel.**" -> "shade.io.netty.channel.@1").inAll,
@@ -40,7 +40,6 @@ assemblyShadeRules in assembly := Seq(
   ShadeRule.rename("com.google.common.**" -> "shade.com.google.common.@1").inAll,
   ShadeRule.rename("com.google.protobuf.**" -> "shade.com.google.protobuf.@1").inAll
 )
-*/
 
 assemblyExcludedJars in assembly := {
   val jars = Seq(
