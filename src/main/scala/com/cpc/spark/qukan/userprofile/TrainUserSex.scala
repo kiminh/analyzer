@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.sex.v2
+package com.cpc.spark.qukan.userprofile
 
 import scala.reflect.runtime.universe
 import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
@@ -99,9 +99,9 @@ object TrainSex{
       x =>
         val predata = lrmodel.predict(x._2)
         if (predata > 0.6 ) {
-          (x._1, 1)
-        } else if (predata < 0.4) {
           (x._1, 2)
+        } else if (predata < 0.4) {
+          (x._1, 1)
         } else {
           (x._1, 0)
         }
@@ -117,6 +117,7 @@ object TrainSex{
               var user: UserProfile.Builder = null
               val key = deviceid + "_UPDATA"
               val buffer = redis.get[Array[Byte]](key).getOrElse(null)
+		n1 = n1 + 1
               if (buffer == null) {
                 user = UserProfile.newBuilder().setDevid(deviceid)
               } else {
