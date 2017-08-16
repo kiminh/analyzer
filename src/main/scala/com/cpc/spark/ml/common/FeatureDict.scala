@@ -28,7 +28,6 @@ object FeatureDict {
 
   val dict = Dict()
 
-
   def updateDict(ulog: RDD[UnionLog]): Unit = {
     /*
     adslot adclass city channel interest
@@ -145,6 +144,24 @@ object FeatureDict {
         w.write(v + "\n")
     }
     w.close()
+  }
+
+  def saveLua(): Unit = {
+    val dir = "/data/cpc/anal/conf/mldict/"
+    val w = new PrintWriter(dir + "dict.lua")
+    var buffer = Seq[String]()
+    buffer = buffer :+ saveLuaDict("interest")
+    buffer = buffer :+ saveLuaDict("adclass")
+    buffer = buffer :+ saveLuaDict("adslot")
+    buffer = buffer :+ saveLuaDict("channel")
+    buffer = buffer :+ saveLuaDict("city")
+    w.write(buffer.mkString("\n\n"))
+    w.close()
+  }
+
+  private def saveLuaDict(name: String): String = {
+    val txt = loadDictFile(name + ".txt").mkString(",\n    ")
+    "%s = {\n    %s\n}".format(name, txt)
   }
 }
 

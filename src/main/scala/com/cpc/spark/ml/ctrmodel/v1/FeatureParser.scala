@@ -17,7 +17,7 @@ object FeatureParser {
   def unionLogToObject(x: UnionLog): (AdInfo, Media, User, Location, Network, Device, Long) = {
     var cls = 0
     if (x.ext != null) {
-      val v = x.ext.getOrElse("media_class", null)
+      val v = x.ext.getOrElse("adclass", null)
       if (v != null) {
         cls = v.int_value
       }

@@ -19,7 +19,6 @@ import scala.util.Random
 object CreateSvm {
 
   def main(args: Array[String]): Unit = {
-
     if (args.length < 7) {
       System.err.println(
         s"""
@@ -68,6 +67,7 @@ object CreateSvm {
         FeatureDict.updateDict(ulog(0).cache())
       }
       FeatureDict.loadData()
+      //FeatureDict.saveLua()
       FeatureDict.updateServerData(ConfigFactory.load())
       val bdict = ctx.sparkContext.broadcast(FeatureDict.dict)
 
