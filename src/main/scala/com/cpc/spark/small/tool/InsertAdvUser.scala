@@ -3,6 +3,7 @@ package com.cpc.spark.small.tool
 import java.util.Properties
 
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.types._
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
@@ -30,12 +31,18 @@ object InsertAdvUser {
       .enableHiveSupport()
       .getOrCreate()
 
+//    val schema = StructType(Array(
+//      StructField("id", IntegerType, false),
+//      StructField("display_name", StringType, false),
+//      StructField("company", StringType, false),
+//      StructField("account_type", IntegerType, false)
+//    ))
     val where = Array[String]("acc_type in (0,1)", "sale_admin=0")
-    var userAll = ctx.read.jdbc(mariadbUrl, "(SELECT id,display_name,company,belong FROM user WHERE acc_type in (0,1) AND sale_admin=0) as xuser", mariadbProp)
+    var userAll = ctx.read.jdbc(mariadbUrl, "(SELECT id,display_name,company,belong,CAST(account_type as SIGNED) account_type FROM user WHERE acc_type in (0,1) AND sale_admin=0) as xuser", mariadbProp)
 
     userAll.write.mode(SaveMode.Overwrite).saveAsTable("dl_cpc.adv_user")
 
-    var userAllNew = ctx.read.jdbc(mariadbUrlNew, "(SELECT id,display_name,company,belong FROM user WHERE acc_type in (0,1) AND sale_admin=0) as xuser", mariadbProp)
+    var userAllNew = ctx.read.jdbc(mariadbUrlNew, "(SELECT id,display_name,company,belong,CAST(account_type as SIGNED) account_type FROM user WHERE acc_type in (0,1) AND sale_admin=0) as xuser", mariadbProp)
     userAllNew.write.mode(SaveMode.Append).saveAsTable("dl_cpc.adv_user")
     ctx.stop()
   }
