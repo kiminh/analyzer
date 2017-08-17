@@ -52,10 +52,11 @@ object GetUserAntispamV2 {
         (uid,click, show, ctr.toInt)
     }
     println("rddOne-count:"+ rddOne.count())
-    rddOne.take(10).foreach(x => println("user:" + x))
+
 
     val  rddTwo = rddOne.filter(x => x._4 > num && x._3 > 10)
     println("rddTwo-count:"+ rddTwo.count())
+    rddTwo.take(10).foreach(x => println("user:" + x))
     val sum =  rddTwo.mapPartitions {
       p =>
         var n1 = 0
