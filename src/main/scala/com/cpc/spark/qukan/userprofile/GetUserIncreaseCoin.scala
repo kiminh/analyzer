@@ -31,10 +31,14 @@ object GetUserIncreaseCoin {
       .appName("cpc get user profile increase coin ")
       .enableHiveSupport()
       .getOrCreate()
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.DATE, -dayBefore)
+    val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val dayStr = getDates(dayBefore,7)
     val sqltext =  "select member_id as member,sum(coin) as coin from  gobblin.qukan_p_gift_v2 where type = 210 " +
       "and day in( "+dayStr+ ")group by member_id "
-    val sqltext2 =  "SELECT member, device from rpt_qukan.device_member_coin where thedate in(" + dayStr + ")"
+    //val sqltext2 =  "SELECT member, device from rpt_qukan.device_member_coin where thedate in(" + dayStr + ")"
+    val sqltext2 =  "SELECT member_id ,device_code from gobblin.qukan_p_member_info where day =\""+day+"\""
 
     println("sqltext:" + sqltext)
     println("sqltext2:" + sqltext2)
