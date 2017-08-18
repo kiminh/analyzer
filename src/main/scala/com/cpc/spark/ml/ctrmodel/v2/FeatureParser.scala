@@ -1,14 +1,14 @@
-package com.cpc.spark.ml.ctrmodel.v1
+package com.cpc.spark.ml.ctrmodel.v2
 
 import java.util.Calendar
 
-import com.cpc.spark.log.parser.{ExtValue, UnionLog}
-import com.cpc.spark.ml.common.{Dict, FeatureDict, Utils}
+import com.cpc.spark.log.parser.UnionLog
+import com.cpc.spark.ml.common.Dict
 import mlserver.mlserver._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.util.MLUtils
-import org.luaj.vm2.{Globals, LuaValue}
 import org.luaj.vm2.lib.jse.JsePlatform
+import org.luaj.vm2.{Globals, LuaValue}
 
 
 /**
@@ -19,7 +19,7 @@ object FeatureParser {
   def unionLogToObject(x: UnionLog): (AdInfo, Media, User, Location, Network, Device, Long) = {
     var cls = 0
     if (x.ext != null) {
-      val v = x.ext.getOrElse("adclass", null)
+      val v = x.ext.getOrElse("media_class", null)
       if (v != null) {
         cls = v.int_value
       }
@@ -216,95 +216,88 @@ object FeatureParser {
 
   }
 
-
   var luag: Globals = null
   var luaparser: LuaValue = null
 
-  def loadLua(): Unit = {
+  def loadLua(dir: String): Unit = {
     luag = JsePlatform.standardGlobals()
-    luag.loadfile("lua/ml/feature/dict.lua").call()
-    luaparser = luag.loadfile("lua/ml/feature/parser.lua")
+    luag.loadfile(dir + "dict.lua").call()
+    luag.loadfile(dir + "parser.lua").call()
   }
 
   def parseByLua(ulog: UnionLog): String = {
     val (ad, m, u, loc, n, d, t) = FeatureParser.unionLogToObject(ulog)
 
-    val inlua = LuaValue.tableOf()
-    var i = 0
-    u.interests.foreach {
-      v =>
-        inlua.set(i, LuaValue.valueOf(v))
-        i += 1
-    }
-
-    luag.set("interests", inlua)
-    luag.set("timesec", LuaValue.valueOf(t / 1000))
-
-    val userluastr =
+    var lua = Seq("local timesec = %d".format(t / 1000))
+    lua :+=
       """
-        |user = {
+        |local user = {
         |   sex = %d,
         |   age = %d
         |}
+        |
       """.stripMargin.format(u.sex, u.age)
-    luag.load(userluastr).call()
 
-    val devluastr =
+    val ins = u.interests.filter(_ > 0).toSet.mkString(",")
+    lua :+= "local interests = {%s}".format(ins)
+
+    lua :+=
       """
-        |device = {
+        |local device = {
         |   os = %d,
         |   phoneLevel = %d
         |}
+        |
       """.stripMargin.format(d.os, d.phoneLevel)
-    luag.load(devluastr).call()
 
-    val netluastr =
+    lua :+=
       """
-        |network = {
+        |local network = {
         |   isp = %d,
         |   nettype = %d
         |}
+        |
       """.stripMargin.format(n.isp, n.network)
-    luag.load(netluastr).call()
 
-    val locluastr =
+    lua :+=
       """
-        |loc = {
+        |local loc = {
         |   city = %d
         |}
+        |
       """.stripMargin.format(loc.city)
-    luag.load(locluastr).call()
 
-    val medialuastr =
+    lua :+=
       """
-        |media = {
+        |local media = {
         |   id = %d,
         |   slotid = %d,
         |   slottype = %d,
         |   channel = %d
         |}
+        |
       """.stripMargin.format(m.mediaAppsid, m.adslotid, m.adslotType, m.channel)
-    luag.load(medialuastr).call()
 
-    val adluastr =
+    lua :+=
       """
-        |ad = {
+        |local ad = {
         |   id = %d,
         |   adtype = %d,
         |   adclass = %d
         |}
+        |
       """.stripMargin.format(ad.ideaid, ad.adtype, ad._class)
-    luag.load(adluastr).call()
-    val ret = luaparser.call()
+
+    lua :+= "return parseV1(timesec, interests, user, device, network, loc, media, ad)\n"
+    val ret = luag.load(lua.mkString("\n")).call()
 
     val elements = ret.toString.split(" ").map(_.toInt).toSeq
-
     var svm = ulog.isclick.toString
     var p = -1
     elements.foreach {
       v =>
         if (v <= p) {
-          throw new Exception("svm error:" + v)
+          throw new Exception("svm error:" + elements.mkString(" ") + " " + v.toString)
         }
         p = v
         svm = svm + " %d:1".format(v + 1)

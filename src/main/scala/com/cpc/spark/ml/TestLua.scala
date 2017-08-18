@@ -1,7 +1,13 @@
 package com.cpc.spark.ml
 
+import java.util.Date
+
+import com.cpc.spark.log.parser.UnionLog
+import mlserver.mlserver._
 import org.apache.spark.sql.SparkSession
+import org.luaj.vm2.LuaValue
 import org.luaj.vm2.lib.jse.JsePlatform
+import com.cpc.spark.ml.ctrmodel.v2.FeatureParser
 
 import scala.io.Source
 
@@ -12,14 +18,11 @@ object TestLua {
 
   def main(args: Array[String]): Unit = {
 
-    //val luafiles = Source.fr
-    val g = JsePlatform.standardGlobals()
-
-    g.load("lua/ml/feature/parser.lua")
-    val ret = g.loadfile("lua/ml/feature/parser.lua")
-
+    FeatureParser.loadLua("lua/ml/feature/")
+    val ret = FeatureParser.parseByLua(UnionLog())
     println(ret)
-
   }
 }
+
+
 

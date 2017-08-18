@@ -212,7 +212,7 @@ class LRIRModel {
     val sc = ctx.sparkContext
     val ir = new IsotonicRegression().setIsotonic(true).run(sc.parallelize(bins.map(x => (x._1, x._3, 1d))))
     val sum = sample(1)
-      .map(x => (x._2, ir.predict(x._1)))   //(ctr, calibrate ctr)
+      .map(x => (x._2, ir.predict(x._1)))   //(click, calibrate ctr)
       .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
 
     irError = (sum._2 - sum._1) / sum._1  //误差比
@@ -287,6 +287,7 @@ class LRIRModel {
     bins
   }
 
+  /*
   var boundaries = Array[Double]()
   var predictions = Array[Double]()
   var caliBinNum = 0
@@ -366,4 +367,5 @@ class LRIRModel {
       predictions(foundIndex)
     }
   }
+  */
 }

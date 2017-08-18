@@ -160,8 +160,16 @@ object FeatureDict {
   }
 
   private def saveLuaDict(name: String): String = {
-    val txt = loadDictFile(name + ".txt").mkString(",\n    ")
-    "%s = {\n    %s\n}".format(name, txt)
+    var n = 0
+    val txt = loadDictFile(name + ".txt")
+      .map{
+        v =>
+          n = n + 1
+          val s = "%s[%s] = %d".format(name, v, n)
+          s
+      }
+      .mkString("\n")
+    "%s = {}\n%s".format(name, txt)
   }
 }
 
