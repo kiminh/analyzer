@@ -7,6 +7,8 @@ import com.cpc.spark.ml.common.{Dict, FeatureDict, Utils}
 import mlserver.mlserver._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.util.MLUtils
+import org.luaj.vm2.{Globals, LuaValue}
+import org.luaj.vm2.lib.jse.JsePlatform
 
 
 /**
@@ -17,7 +19,7 @@ object FeatureParser {
   def unionLogToObject(x: UnionLog): (AdInfo, Media, User, Location, Network, Device, Long) = {
     var cls = 0
     if (x.ext != null) {
-      val v = x.ext.getOrElse("media_class", null)
+      val v = x.ext.getOrElse("adclass", null)
       if (v != null) {
         cls = v.int_value
       }
@@ -210,6 +212,104 @@ object FeatureParser {
         throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
         null
     }
+
+
+  }
+
+
+  var luag: Globals = null
+  var luaparser: LuaValue = null
+
+  def loadLua(): Unit = {
+    luag = JsePlatform.standardGlobals()
+    luag.loadfile("lua/ml/feature/dict.lua").call()
+    luaparser = luag.loadfile("lua/ml/feature/parser.lua")
+  }
+
+  def parseByLua(ulog: UnionLog): String = {
+    val (ad, m, u, loc, n, d, t) = FeatureParser.unionLogToObject(ulog)
+
+    val inlua = LuaValue.tableOf()
+    var i = 0
+    u.interests.foreach {
+      v =>
+        inlua.set(i, LuaValue.valueOf(v))
+        i += 1
+    }
+
+    luag.set("interests", inlua)
+    luag.set("timesec", LuaValue.valueOf(t / 1000))
+
+    val userluastr =
+      """
+        |user = {
+        |   sex = %d,
+        |   age = %d
+        |}
+      """.stripMargin.format(u.sex, u.age)
+    luag.load(userluastr).call()
+
+    val devluastr =
+      """
+        |device = {
+        |   os = %d,
+        |   phoneLevel = %d
+        |}
+      """.stripMargin.format(d.os, d.phoneLevel)
+    luag.load(devluastr).call()
+
+    val netluastr =
+      """
+        |network = {
+        |   isp = %d,
+        |   nettype = %d
+        |}
+      """.stripMargin.format(n.isp, n.network)
+    luag.load(netluastr).call()
+
+    val locluastr =
+      """
+        |loc = {
+        |   city = %d
+        |}
+      """.stripMargin.format(loc.city)
+    luag.load(locluastr).call()
+
+    val medialuastr =
+      """
+        |media = {
+        |   id = %d,
+        |   slotid = %d,
+        |   slottype = %d,
+        |   channel = %d
+        |}
+      """.stripMargin.format(m.mediaAppsid, m.adslotid, m.adslotType, m.channel)
+    luag.load(medialuastr).call()
+
+    val adluastr =
+      """
+        |ad = {
+        |   id = %d,
+        |   adtype = %d,
+        |   adclass = %d
+        |}
+      """.stripMargin.format(ad.ideaid, ad.adtype, ad._class)
+    luag.load(adluastr).call()
+    val ret = luaparser.call()
+
+    val elements = ret.toString.split(" ").map(_.toInt).toSeq
+
+    var svm = ulog.isclick.toString
+    var p = -1
+    elements.foreach {
+      v =>
+        if (v <= p) {
+          throw new Exception("svm error:" + v)
+        }
+        p = v
+        svm = svm + " %d:1".format(v + 1)
+    }
+    svm
   }
 }
 

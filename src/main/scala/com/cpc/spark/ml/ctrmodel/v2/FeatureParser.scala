@@ -1,13 +1,14 @@
-package com.cpc.spark.ml.cvrmodel.v1
+package com.cpc.spark.ml.ctrmodel.v2
 
 import java.util.Calendar
 
-import com.cpc.spark.log.parser.{ExtValue, TraceLog, UnionLog}
-import com.cpc.spark.ml.common.{Dict, FeatureDict, Utils}
-import com.cpc.spark.ml.cvrmodel.v1.CreateSvm.TLog
+import com.cpc.spark.log.parser.UnionLog
+import com.cpc.spark.ml.common.Dict
 import mlserver.mlserver._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.util.MLUtils
+import org.luaj.vm2.lib.jse.JsePlatform
+import org.luaj.vm2.{Globals, LuaValue}
 
 
 /**
@@ -15,41 +16,10 @@ import org.apache.spark.mllib.util.MLUtils
   */
 object FeatureParser {
 
-  def cvrPositive(traces: TLog*): Boolean = {
-    var stay = 0
-    var click = 0
-    var active = 0
-    traces.foreach {
-      t =>
-        t.trace_type match {
-          case s if s.startsWith("active") => active += 1
-
-          case "buttonClick" => click += 1
-
-          //case "clickMonitor" => click += 1
-
-          case "inputFocus" => click += 1
-
-          case "press" => click += 1
-
-          case "stay" =>
-            if (t.duration > stay) {
-              stay = t.duration
-            }
-
-          case _ =>
-        }
-
-    }
-
-    (stay >= 30 && click > 0) || active > 0
-  }
-
-
-  def parseUnionLog(dict: Dict, x: UnionLog, traces: TLog*): String = {
+  def unionLogToObject(x: UnionLog): (AdInfo, Media, User, Location, Network, Device, Long) = {
     var cls = 0
     if (x.ext != null) {
-      val v = x.ext.getOrElse("adclass", null)
+      val v = x.ext.getOrElse("media_class", null)
       if (v != null) {
         cls = v.int_value
       }
@@ -64,23 +34,12 @@ object FeatureParser {
       interaction = x.interaction,
       _class = cls
     )
-
-    var chnl = 0
-    if (x.ext != null) {
-      val v = x.ext.getOrElse("channel", null)
-      if (v != null) {
-        if (v.string_value.length > 0) {
-          chnl = v.string_value.toInt
-        }
-      }
-    }
     val m = Media(
       mediaAppsid = x.media_appsid.toInt,
       mediaType = x.media_type,
       adslotid = x.adslotid.toInt,
       adslotType = x.adslot_type,
-      floorbid = x.floorbid,
-      channel = chnl
+      floorbid = x.floorbid
     )
     val interests = x.interests.split(",")
       .map{
@@ -113,30 +72,20 @@ object FeatureParser {
       province = x.province,
       city = x.city
     )
-    var pl = 0
-    if (x.ext != null) {
-      val v = x.ext.getOrElse("phone_level", null)
-      if (v != null) {
-        pl = v.int_value
-      }
-    }
     val d = Device(
       os = x.os,
-      model = x.model,
-      phoneLevel = pl
+      model = x.model
     )
+    (ad, m, u, loc, n, d, x.timestamp * 1000L)
+  }
 
+  def parseUnionLog(x: UnionLog, dict: Dict): String = {
+    val (ad, m, u, loc, n, d, t) = unionLogToObject(x)
     var svm = ""
-    val vector = parse(dict, ad, m, u, loc, n, d, x.timestamp * 1000L)
+    val vector = getVector(dict, ad, m, u, loc, n, d, x.timestamp * 1000L)
     if (vector != null) {
-
-      if (cvrPositive(traces:_*)) {
-        svm = "1"
-      } else {
-        svm = "0"
-      }
-
       var p = -1
+      svm = x.isclick.toString
       MLUtils.appendBias(vector).foreachActive {
         (i, v) =>
           if (i <= p) {
@@ -149,7 +98,22 @@ object FeatureParser {
     svm
   }
 
-  def parse(dict: Dict, ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
+  def vectorToSvm(v: Vector): String = {
+    var p = -1
+    var svm = ""
+    MLUtils.appendBias(v).foreachActive {
+      (i, v) =>
+        if (i <= p) {
+          throw new Exception("svm error:" + v)
+        }
+        p = i
+        svm = svm + " %d:%f".format(i + 1, v)
+    }
+    svm
+  }
+
+  def getVector(dict: Dict, ad: AdInfo, m: Media, u: User,
+            loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
@@ -248,6 +212,97 @@ object FeatureParser {
         throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
         null
     }
+
+
+  }
+
+  var luag: Globals = null
+  var luaparser: LuaValue = null
+
+  def loadLua(dir: String): Unit = {
+    luag = JsePlatform.standardGlobals()
+    luag.loadfile(dir + "dict.lua").call()
+    luag.loadfile(dir + "parser.lua").call()
+  }
+
+  def parseByLua(ulog: UnionLog): String = {
+    val (ad, m, u, loc, n, d, t) = FeatureParser.unionLogToObject(ulog)
+
+    var lua = Seq("local timesec = %d".format(t / 1000))
+    lua :+=
+      """
+        |local user = {
+        |   sex = %d,
+        |   age = %d
+        |}
+        |
+      """.stripMargin.format(u.sex, u.age)
+
+    val ins = u.interests.filter(_ > 0).toSet.mkString(",")
+    lua :+= "local interests = {%s}".format(ins)
+
+    lua :+=
+      """
+        |local device = {
+        |   os = %d,
+        |   phoneLevel = %d
+        |}
+        |
+      """.stripMargin.format(d.os, d.phoneLevel)
+
+    lua :+=
+      """
+        |local network = {
+        |   isp = %d,
+        |   nettype = %d
+        |}
+        |
+      """.stripMargin.format(n.isp, n.network)
+
+    lua :+=
+      """
+        |local loc = {
+        |   city = %d
+        |}
+        |
+      """.stripMargin.format(loc.city)
+
+    lua :+=
+      """
+        |local media = {
+        |   id = %d,
+        |   slotid = %d,
+        |   slottype = %d,
+        |   channel = %d
+        |}
+        |
+      """.stripMargin.format(m.mediaAppsid, m.adslotid, m.adslotType, m.channel)
+
+    lua :+=
+      """
+        |local ad = {
+        |   id = %d,
+        |   adtype = %d,
+        |   adclass = %d
+        |}
+        |
+      """.stripMargin.format(ad.ideaid, ad.adtype, ad._class)
+
+    lua :+= "return parseV1(timesec, interests, user, device, network, loc, media, ad)\n"
+    val ret = luag.load(lua.mkString("\n")).call()
+
+    val elements = ret.toString.split(" ").map(_.toInt).toSeq
+    var svm = ulog.isclick.toString
+    var p = -1
+    elements.foreach {
+      v =>
+        if (v <= p) {
+          throw new Exception("svm error:" + elements.mkString(" ") + " " + v.toString)
+        }
+        p = v
+        svm = svm + " %d:1".format(v + 1)
+    }
+    svm
   }
 }
 

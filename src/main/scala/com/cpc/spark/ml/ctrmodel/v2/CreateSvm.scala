@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.ctrmodel.v1
+package com.cpc.spark.ml.ctrmodel.v2
 
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
@@ -8,9 +8,7 @@ import com.cpc.spark.ml.common.FeatureDict
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
-import org.luaj.vm2.lib.jse.JsePlatform
 
-import scala.io.Source
 import scala.util.Random
 
 /*
@@ -39,6 +37,7 @@ object CreateSvm {
     val updateDict = args(6).toBoolean
     val hour = args(7)
     val ctx = SparkSession.builder()
+      .config("spark.files", "/home/cpc/roydong/lua/ml/feature/dict.lua,/home/cpc/roydong/lua/ml/feature/parser.lua")
       .appName("create svm data code:v1 data:" + version)
       .enableHiveSupport()
       .getOrCreate()
@@ -68,8 +67,16 @@ object CreateSvm {
       }
       FeatureDict.loadData()
       //FeatureDict.saveLua()
-      FeatureDict.updateServerData(ConfigFactory.load())
-      val bdict = ctx.sparkContext.broadcast(FeatureDict.dict)
+
+      FeatureParser.loadLua("/home/cpc/roydong/lua/ml/feature/")
+      ulog(0).take(50000)
+        .foreach {
+          x =>
+            println(FeatureParser.parseByLua(x))
+        }
+
+      System.exit(1)
+
       val train = ulog(0).filter {
           u =>
             var ret = false
@@ -80,10 +87,10 @@ object CreateSvm {
         }
         .mapPartitions {
           p =>
-            val dict = bdict.value
+            FeatureParser.loadLua("")
             p.map {
               x =>
-                FeatureParser.parseUnionLog(x, dict)
+                FeatureParser.parseByLua(x)
             }
         }
         .cache()
@@ -100,10 +107,10 @@ object CreateSvm {
         ulog(1)
           .mapPartitions {
             p =>
-              val dict = bdict.value
+              FeatureParser.loadLua("")
               p.map {
                 x =>
-                  FeatureParser.parseUnionLog(x, dict)
+                  FeatureParser.parseByLua(x)
               }
           }
           .toDF()

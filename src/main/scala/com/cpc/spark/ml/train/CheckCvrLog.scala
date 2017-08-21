@@ -26,8 +26,7 @@ object CheckCvrLog {
     Logger.getRootLogger.setLevel(Level.WARN)
     val dayBefore = args(0).toInt
     val days = args(1).toInt
-    val antispam = args(2).toInt
-    val hour = args(3).trim
+    val hour = args(2).trim
     val ctx = SparkSession.builder()
       .appName("check cvr results")
       .enableHiveSupport()
@@ -46,12 +45,13 @@ object CheckCvrLog {
       }
 
       val sql = s"""
-           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and ext['media_class'].int_value = 110110100 and userid = 1500249
+           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and userid = 1700
+           |
         """.stripMargin.format(date, hourSql)
 
       val clicklog = ctx.sql(sql)
         .as[UnionLog].rdd
-        .filter(x => x.exptags.contains("cvrfilter"))
+        //.filter(x => x.exptags.contains("cvrfilter"))
         .map {
           x =>
             (x.searchid, (x, Seq[TraceLog]()))
@@ -141,7 +141,7 @@ object CheckCvrLog {
             click = u.isclick,
             cvr = cvr,
             load = load,
-            cost = u.price / 100,
+            cost = u.realCost(),
             expctr = expctr / 1e6,
             expcvr = expcvr / 1e6
           )
@@ -179,8 +179,8 @@ object CheckCvrLog {
       sum.load / sum.click,
       sum.cvr / sum.load,
       sum.expcvr /sum.load,
-      sum.cost / sum.show * 1000,
-      sum.cost / sum.request * 1000
+      sum.cost / sum.show * 10,
+      sum.cost / sum.request * 10
     ))
   }
 
