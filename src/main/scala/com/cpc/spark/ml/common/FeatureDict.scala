@@ -56,7 +56,7 @@ object FeatureDict {
     updateDictFile("channel.txt", lastChannel)
     println("channel dict done")
 
-    val lastAdclass = ulog.map(x => (x.ext.getOrElse("media_class", ExtValue()).int_value, 1))
+    val lastAdclass = ulog.map(x => (x.ext.getOrElse("adclass", ExtValue()).int_value, 1))
       .reduceByKey((x, y) => x)
       .map(_._1.toString)
       .filter(_.length > 0)

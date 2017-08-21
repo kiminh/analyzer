@@ -143,13 +143,14 @@ object FeatureParser {
             throw new Exception("svm error:" + vector)
           }
           p = i
-          svm = svm + " %d:%f".format(i + 1, v)
+          svm = svm + " %d:%.0f".format(i + 1, v)
       }
     }
     svm
   }
 
-  def parse(dict: Dict, ad: AdInfo, m: Media, u: User, loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
+  def parse(dict: Dict, ad: AdInfo, m: Media, u: User, loc: Location, n: Network,
+            d: Device, timeMills: Long): Vector = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7

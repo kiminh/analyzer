@@ -98,28 +98,33 @@ object CtrModel {
     model.printLrTestLog()
     println("done")
 
-    val conf = ConfigFactory.load()
+    var updateOnlineData = 0
+    val lrfilepath = "/data/cpc/anal/model/logistic_%s.txt".format(date)
     if (mode.startsWith("train")) {
-      val filepath = "/data/cpc/anal/model/logistic_%s.txt".format(date)
-      model.saveText(filepath)
+      model.saveText(lrfilepath)
 
       //满足条件的模型直接替换线上数据
-      if (lrfile.length > 0 && model.getAuPRC() > 0.05 && model.getAuROC() > 0.8) {
-        println("replace lr online data")
-        Utils.updateOnlineData(filepath, lrfile, conf)
+      if (lrfile.length > 0 && model.getAuPRC() > 0.1 && model.getAuROC() > 0.8) {
+        updateOnlineData += 1
       }
     }
 
+    val irfilepath = "/data/cpc/anal/model/isotonic_%s.txt".format(date)
     if (mode.endsWith("+ir")) {
       println("start isotonic regression")
       val meanError = model.runIr(binNum, 0.9)
-      val filepath = "/data/cpc/anal/model/isotonic_%s.txt".format(date)
       model.saveIrHdfs(modelPath + "/" + date + "_ir")
-      model.saveIrText(filepath)
+      model.saveIrText(irfilepath)
       if (irfile.length > 0 && math.abs(meanError) < 0.01) {
-        println("replace ir online data")
-        Utils.updateOnlineData(filepath, irfile, conf)
+        updateOnlineData += 1
       }
+    }
+
+    val conf = ConfigFactory.load()
+    if (updateOnlineData == 2) {
+      println("replace online data")
+      Utils.updateOnlineData(lrfilepath, lrfile, conf)
+      Utils.updateOnlineData(irfilepath, irfile, conf)
     }
 
     println("all done")

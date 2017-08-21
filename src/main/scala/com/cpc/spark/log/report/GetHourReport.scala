@@ -58,7 +58,7 @@ object GetHourReport {
       .rdd.cache()
 
     //write hourly data to mysql
-    val ctrData = unionLog
+    val ctrData = unionLog.filter(_.isshow > 0)
       .map{
         u =>
           val exptag = u.exptags.split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
