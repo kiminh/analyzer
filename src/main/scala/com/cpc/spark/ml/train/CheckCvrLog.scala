@@ -27,6 +27,7 @@ object CheckCvrLog {
     val dayBefore = args(0).toInt
     val days = args(1).toInt
     val hour = args(2).trim
+    val unitid = args(3).toInt
     val ctx = SparkSession.builder()
       .appName("check cvr results")
       .enableHiveSupport()
@@ -45,9 +46,9 @@ object CheckCvrLog {
       }
 
       val sql = s"""
-           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and userid = 1700
+           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and unitid = %d
            |
-        """.stripMargin.format(date, hourSql)
+        """.stripMargin.format(date, hourSql, unitid)
 
       val clicklog = ctx.sql(sql)
         .as[UnionLog].rdd

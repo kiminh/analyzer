@@ -20,20 +20,13 @@ libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
   "org.apache.spark" %% "spark-mllib" % "2.1.0" % "provided",
   "org.json4s" %% "json4s-native" % "3.5.1",
-  "org.luaj" % "luaj-jse" % "3.0",
   "com.hankcs" % "hanlp" % "portable-1.3.4",
-  "org.deeplearning4j" % "deeplearning4j-core" % "0.6.0",
-  "org.nd4j" % "nd4j-native-platform" % "0.9.1",
-  "org.nd4j" % "nd4j" % "0.9.1",
-  //"org.datavec" %% "datavec-spark" % "0.4.0",
   "io.grpc" % "grpc-netty" % com.trueaccord.scalapb.compiler.Version.grpcJavaVersion,
   "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion
 )
 
 assemblyMergeStrategy in assembly := {
   case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.first
-  case x if x.startsWith("javax/annotation") => MergeStrategy.first
-  case x if x.startsWith("shade/io/netty") => MergeStrategy.first
   case x => (assemblyMergeStrategy in assembly).value(x)
 }
 
