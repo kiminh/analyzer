@@ -8,8 +8,6 @@ import com.cpc.spark.ml.common.FeatureDict
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
-import scala.reflect.internal.util.TableDef.Column
-import scala.util.Random
 
 /*
 样本

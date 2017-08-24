@@ -8,9 +8,7 @@ import com.cpc.spark.ml.common.FeatureDict
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
-import org.luaj.vm2.lib.jse.JsePlatform
 
-import scala.io.Source
 import scala.util.Random
 
 /*
