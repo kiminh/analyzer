@@ -65,9 +65,9 @@ object LogParser {
           ctr = ad.getCtr,
           cpm = ad.getCpm
         )
+        ext.update("cvr_threshold", ExtValue(int_value = ad.getCvrThres.toInt))
         ext.update("exp_ctr", ExtValue(int_value = ad.getTitlectr.toInt))
         ext.update("exp_cvr", ExtValue(int_value = ad.getCvr.toInt))
-        ext.update("media_class", ExtValue(int_value = ad.getClass_))
         ext.update("adclass", ExtValue(int_value = ad.getClass_))
         ext.update("usertype", ExtValue(int_value = ad.getUsertype))
       }

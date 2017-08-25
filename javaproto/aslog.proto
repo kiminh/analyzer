@@ -33,6 +33,7 @@ message Media {
 enum AdslotType {
 	LIST_FEED   = 1;
 	CONTENT_FEED = 2;
+	SLOT_INTERACT	= 3;
 };
 
 message  Adslot {
@@ -126,6 +127,7 @@ enum AdType {
 	IMAGE			= 2;
 	ICON_TEXT 		= 3;
 	THREE_ICON_TEXT	= 4;
+	AD_INTERACT		= 5;
 };
 
 enum AdSrc {
@@ -177,6 +179,8 @@ message AdInfo {
 	optional uint64 titlectr = 14; // 标题ctr值 
 	optional uint64 expcpm = 15; // 试验cpm
 	optional uint64 cvr     = 16; // cvr * 10^6
+	optional uint64 cvr_threshold = 17; //cvr_threshold 0-100 客户设置
+	optional uint64 cvr_thres = 18;// cvr_threshold 真实值*10^6
 };
 
 message AdDspRet {
