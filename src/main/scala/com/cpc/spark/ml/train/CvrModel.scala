@@ -11,6 +11,7 @@ import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.rdd.RDD
 
 import scala.util.Random
+import com.cpc.spark.common.{Utils => CUtils}
 
 /**
   * Created by roydong on 06/07/2017.
@@ -119,6 +120,16 @@ object CvrModel {
       println("replace online data")
       Utils.updateOnlineData(lrfilepath, lrfile, conf)
       Utils.updateOnlineData(irfilepath, irfile, conf)
+    } else {
+      val txt =
+        """
+          |train date %s
+          |LRfile = %s
+          |auPRC = %.6f  need = 0.1
+          |auROC = %.6f  need = 0.7
+          |
+        """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC())
+      CUtils.sendMail(txt, "CVR train failed", Seq("cpc-rd@innotechx.com"))
     }
 
     println("all done")

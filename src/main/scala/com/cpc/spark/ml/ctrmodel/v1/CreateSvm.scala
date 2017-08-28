@@ -3,6 +3,7 @@ package com.cpc.spark.ml.ctrmodel.v1
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
+import com.cpc.spark.common.Utils
 import com.cpc.spark.log.parser.UnionLog
 import com.cpc.spark.ml.common.FeatureDict
 import com.typesafe.config.ConfigFactory

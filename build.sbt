@@ -21,6 +21,7 @@ libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-mllib" % "2.1.0" % "provided",
   "org.json4s" %% "json4s-native" % "3.5.1",
   "com.hankcs" % "hanlp" % "portable-1.3.4",
+  "com.github.jurajburian" %% "mailer" % "1.2.1",
   "io.grpc" % "grpc-netty" % com.trueaccord.scalapb.compiler.Version.grpcJavaVersion,
   "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion
 )

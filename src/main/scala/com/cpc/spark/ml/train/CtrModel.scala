@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.ml.common.Utils
+import com.cpc.spark.common.{Utils => CUtils}
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.regression.LabeledPoint
@@ -104,7 +105,7 @@ object CtrModel {
       model.saveText(lrfilepath)
 
       //满足条件的模型直接替换线上数据
-      if (lrfile.length > 0 && model.getAuPRC() > 0.1 && model.getAuROC() > 0.8) {
+      if (lrfile.length > 0 && model.getAuPRC() > 0.08 && model.getAuROC() > 0.8) {
         updateOnlineData += 1
       }
     }
@@ -125,6 +126,16 @@ object CtrModel {
       println("replace online data")
       Utils.updateOnlineData(lrfilepath, lrfile, conf)
       Utils.updateOnlineData(irfilepath, irfile, conf)
+    } else {
+      val txt =
+        """
+          |train date %s
+          |LRfile = %s
+          |auPRC = %.6f  need = 0.09
+          |auROC = %.6f  need = 0.85
+          |
+        """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC())
+      CUtils.sendMail(txt, "CTR train failed", Seq("cpc-rd@innotechx.com"))
     }
 
     println("all done")
