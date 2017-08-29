@@ -84,7 +84,7 @@ object CvrModel {
 
       //sample.take(1).foreach(x => println(x.features))
       println("training...")
-      model.run(sample, 0, 0)
+      model.run(sample, 0, 1e-8)
       model.saveHdfs(modelPath + "/" + date)
       sample.unpersist()
       println("done")
@@ -104,33 +104,36 @@ object CvrModel {
       }
     }
 
+    var irError = 0d
     val irfilepath = "/data/cpc/anal/model/cvr_isotonic_%s.txt".format(date)
     if (mode.endsWith("+ir")) {
       println("start isotonic regression")
-      val meanError = model.runIr(binNum, 0.9)
+      irError = model.runIr(binNum, 0.9)
       model.saveIrHdfs(modelPath + "/" + date + "_ir")
       model.saveIrText(irfilepath)
-      if (irfile.length > 0 && math.abs(meanError) < 0.1) {
+      if (irfile.length > 0 && math.abs(irError) < 0.1) {
         updateOnlineData += 1
       }
     }
 
     val conf = ConfigFactory.load()
+    var result = "failed"
     if (updateOnlineData == 2) {
       println("replace online data")
       Utils.updateOnlineData(lrfilepath, lrfile, conf)
       Utils.updateOnlineData(irfilepath, irfile, conf)
-    } else {
-      val txt =
-        """
-          |train date %s
-          |LRfile = %s
-          |auPRC = %.6f  need = 0.1
-          |auROC = %.6f  need = 0.7
-          |
-        """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC())
-      CUtils.sendMail(txt, "CVR train failed", Seq("cpc-rd@innotechx.com"))
+      result = "success"
     }
+    val txt =
+      """
+        |train date %s
+        |LRfile: %s
+        |auPRC: %.6f  need > 0.1
+        |auROC: %.6f  need > 0.7
+        |IRError: %.6f need < |0.1|
+        |
+        """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC(), irError)
+    CUtils.sendMail(txt, "CVR model train " + result, Seq("cpc-rd@innotechx.com"))
 
     println("all done")
     model.stopSpark()
