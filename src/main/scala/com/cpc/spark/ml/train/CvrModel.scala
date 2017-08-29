@@ -126,7 +126,7 @@ object CvrModel {
     }
     val txt =
       """
-        |train date %s
+        |date: %s
         |LRfile: %s
         |auPRC: %.6f  need > 0.1
         |auROC: %.6f  need > 0.7

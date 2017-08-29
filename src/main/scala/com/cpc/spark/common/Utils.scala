@@ -20,7 +20,6 @@ object Utils {
   }
 
   def sendMail(txt: String, sub: String, to: Seq[String]): Boolean = {
-    val content: Content = new Content().text(txt)
     val conf = ConfigFactory.load()
     val session = (SmtpAddress(conf.getString("mail.host"), conf.getInt("mail.port")) :: SessionFactory())
       .session(Some(conf.getString("mail.username") -> conf.getString("mail.password")))
@@ -28,11 +27,10 @@ object Utils {
     val msg = Message(
       from = new InternetAddress(conf.getString("mail.sender")),
       subject = sub,
-      content = content,
+      content = Content().text(txt),
       to = toAdd)
-    val mailer = Mailer(session)
     try {
-      mailer.send(msg)
+      Mailer(session).send(msg)
       true
     } catch {
       case e: Exception =>

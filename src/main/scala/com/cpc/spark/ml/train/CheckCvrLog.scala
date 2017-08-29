@@ -46,8 +46,8 @@ object CheckCvrLog {
       }
 
       val sql = s"""
-           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and unitid = %d
-           |
+           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s
+           |and ext['cvr_threshold'].int_value >= 25000
         """.stripMargin.format(date, hourSql, unitid)
 
       val clicklog = ctx.sql(sql)
@@ -58,6 +58,8 @@ object CheckCvrLog {
             (x.searchid, (x, Seq[TraceLog]()))
         }
 
+
+      println("click", clicklog.count())
 
       val tracelog = ctx.sql(
         s"""
