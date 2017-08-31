@@ -37,7 +37,7 @@ object GetUserAntispam {
       .enableHiveSupport()
       .getOrCreate()
 
-    val hivesql = "select device from  rpt_ac.qukan_item_clk  where thedate=\"%s\"".format(date)
+    val hivesql = "select device from  rpt_ac.qukan_item_clk  where thedate=\"%s\" and rate > 0.7 and rate < 999 ".format(date)
 
     println("hive sql is [%s]".format(hivesql))
 
@@ -57,7 +57,9 @@ object GetUserAntispam {
               user = UserProfile.newBuilder().setDevid(deviceid)
             }else {
               user = UserProfile.parseFrom(buffer).toBuilder
-              n2 = n2 + 1
+              if(user.getAntispam != 1){
+                n2 = n2 + 1
+              }
             }
             user.setAntispam(1)
             redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)

@@ -19,7 +19,7 @@ object GetUserAntispamV2 {
     if (args.length < 1) {
       System.err.println(
         s"""
-           |Usage: GetUserAntispam <day>
+           |Usage: GetUserAntispam <dayBefore> <ctr> <show>
            |
         """.stripMargin)
       System.exit(1)
@@ -27,6 +27,7 @@ object GetUserAntispamV2 {
     Logger.getRootLogger.setLevel(Level.WARN)
     val conf = ConfigFactory.load()
     val num = args(1).toInt
+    val showNum = args(2).toInt
     val dayBefore = args(0).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
@@ -35,7 +36,7 @@ object GetUserAntispamV2 {
     val day2 = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
     val ctx = SparkSession.builder()
-      .appName("cpc get user antispam v2 from [%s] to [%s] and num [%s]".format(day1, day2, num))
+      .appName("cpc get user antispam v2 from [%s] to [%s] and ctr [%s] show[%s]".format(day1, day2, num, showNum))
       .enableHiveSupport()
       .getOrCreate()
     val sqltext =  "SELECT uid, sum(isclick) as click, sum(isshow) as show from dl_cpc.cpc_union_log where `date` in( '"+day1+"', '"+day2+"') and adslot_type =1 GROUP BY uid  "
@@ -54,7 +55,7 @@ object GetUserAntispamV2 {
     println("rddOne-count:"+ rddOne.count())
 
 
-    val  rddTwo = rddOne.filter(x => x._4 > num && x._3 > 10)
+    val  rddTwo = rddOne.filter(x => x._4 > num && x._3 > showNum)
     println("rddTwo-count:"+ rddTwo.count())
     rddTwo.take(10).foreach(x => println("user:" + x))
     val sum =  rddTwo.mapPartitions {
