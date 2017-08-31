@@ -46,7 +46,7 @@ object FeatureParser {
   }
 
 
-  def parseUnionLog(dict: Dict, x: UnionLog, traces: TLog*): String = {
+  def unionLogToObject(x: UnionLog, traces: TLog*): (AdInfo, Media, User, Location, Network, Device, Long) = {
     var cls = 0
     if (x.ext != null) {
       val v = x.ext.getOrElse("adclass", null)
@@ -126,30 +126,85 @@ object FeatureParser {
       phoneLevel = pl
     )
 
-    var svm = ""
-    val vector = parse(dict, ad, m, u, loc, n, d, x.timestamp * 1000L)
-    if (vector != null) {
+    (ad, m, u, loc, n, d, x.timestamp * 1000L)
+  }
 
+  def parseUnionLog(dict: Dict, x: UnionLog, traces: TLog*): String = {
+    val (ad, m, u, loc, n, d, t) = unionLogToObject(x, traces:_*)
+    var svm = ""
+    val vector = getVector(dict, ad, m, u, loc, n, d, x.timestamp * 1000L)
+    if (vector != null) {
+      var p = -1
       if (cvrPositive(traces:_*)) {
         svm = "1"
       } else {
         svm = "0"
       }
-
-      var p = -1
       MLUtils.appendBias(vector).foreachActive {
         (i, v) =>
           if (i <= p) {
             throw new Exception("svm error:" + vector)
           }
           p = i
-          svm = svm + " %d:%.0f".format(i + 1, v)
+          svm = svm + " %d:%f".format(i + 1, v)
       }
     }
     svm
   }
 
-  def parse(dict: Dict, ad: AdInfo, m: Media, u: User, loc: Location, n: Network,
+  def parseUnionLogDNN(dict: Dict, x: UnionLog, traces: TLog*): String = {
+    var svm = ""
+    val vector = unionLogToDNNFeatures(dict, x, traces:_*)
+    if (vector != null) {
+      var p = -1
+      if (cvrPositive(traces:_*)) {
+        svm = "1"
+      } else {
+        svm = "0"
+      }
+      MLUtils.appendBias(vector).foreachActive {
+        (i, v) =>
+          if (i <= p) {
+            throw new Exception("svm error:" + vector)
+          }
+          p = i
+          svm = svm + " %d:%f".format(i + 1, v)
+      }
+    }
+    svm
+  }
+
+  def unionLogToDNNFeatures(dict: Dict, x: UnionLog, traces: TLog*): Vector = {
+    val (ad, m, u, loc, n, d, t) = unionLogToObject(x, traces:_*)
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(t)
+    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
+    val hour = cal.get(Calendar.HOUR_OF_DAY)
+
+    //age
+    var age = 0
+    if (u.age <= 1) {
+      age = 1
+    } else if (u.age <= 4) {
+      age = 2
+    } else {
+      age = 3
+    }
+
+    val city = dict.city.getOrElse(loc.city, 0)
+    val slotid = dict.adslot.getOrElse(m.adslotid, 0)
+    val adcls = dict.adclass.getOrElse(ad._class, 0)
+    val adtype = ad.adtype
+    val mchannel = dict.channel.getOrElse(m.channel, 0)
+    //val adid = ad.ideaid % 9000
+
+    var values: Array[Double] = Array(week, hour, u.sex, age, d.os, n.isp,
+      n.network, city, slotid, adcls, adtype, mchannel, d.phoneLevel, adid)
+
+    Vectors.dense(values)
+  }
+
+  def getVector(dict: Dict, ad: AdInfo, m: Media, u: User, loc: Location, n: Network,
             d: Device, timeMills: Long): Vector = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
