@@ -96,7 +96,8 @@ object CtrModel {
     }
     println("testing...")
     model.test(testSample)
-    model.printLrTestLog()
+    //model.printLrTestLog()
+    val lrTestLog = model.getLrTestLog()
     println("done")
 
     var updateOnlineData = 0
@@ -122,6 +123,7 @@ object CtrModel {
       }
     }
 
+    val irBinsLog = model.binsLog
     val conf = ConfigFactory.load()
     var result = "failed"
     if (updateOnlineData == 2) {
@@ -139,7 +141,11 @@ object CtrModel {
         |auROC: %.6f need > 0.80
         |IRError: %.6f need < |0.01|
         |
-        """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC(), irError)
+        |===========================
+        |%s
+        |===========================
+        |%s
+        """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC(), irError, lrTestLog, irBinsLog)
     CUtils.sendMail(txt, "CTR model train " + result, Seq("cpc-rd@innotechx.com"))
 
     println("all done")

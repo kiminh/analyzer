@@ -12,6 +12,7 @@ import org.apache.spark.rdd.RDD
 
 import scala.util.Random
 import com.cpc.spark.common.{Utils => CUtils}
+import org.apache.spark.mllib.linalg.Vectors
 
 /**
   * Created by roydong on 06/07/2017.
@@ -41,6 +42,7 @@ object CvrModel {
     val binNum = args(7).toInt
     val lrfile = args(8)
     val irfile = args(9)
+    val adclass = args(10).toInt
 
     val model = new LRIRModel
     val ctx = model.initSpark("cpc cvr model %s [%s]".format(mode, modelPath))
@@ -59,6 +61,11 @@ object CvrModel {
     }
     println("%s/{%s}".format(inpath, pathSep.mkString(",")))
     val svm = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
+      .map{
+        x =>
+          val f = x.features.toArray.slice(0, 3596)
+          new LabeledPoint(x.label, Vectors.dense(f))
+      }
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
     val testSample = svm(1)
 
@@ -92,10 +99,11 @@ object CvrModel {
 
     println("testing...")
     model.test(testSample)
-    model.printLrTestLog()
+    //model.printLrTestLog()
+    val lrTestLog = model.getLrTestLog()
     println("done")
     var updateOnlineData = 0
-    val lrfilepath = "/data/cpc/anal/model/cvr_logistic_%s.txt".format(date)
+    val lrfilepath = "/data/cpc/anal/model/cvr_logistic_%d_%s.txt".format(adclass, date)
     if (mode.startsWith("train")) {
       model.saveText(lrfilepath)
       //满足条件的模型直接替换线上数据
@@ -105,7 +113,7 @@ object CvrModel {
     }
 
     var irError = 0d
-    val irfilepath = "/data/cpc/anal/model/cvr_isotonic_%s.txt".format(date)
+    val irfilepath = "/data/cpc/anal/model/cvr_isotonic_%d_%s.txt".format(adclass, date)
     if (mode.endsWith("+ir")) {
       println("start isotonic regression")
       irError = model.runIr(binNum, 0.9)
@@ -116,6 +124,7 @@ object CvrModel {
       }
     }
 
+    val irBinsLog = model.binsLog
     val conf = ConfigFactory.load()
     var result = "failed"
     if (updateOnlineData == 2) {
@@ -127,12 +136,20 @@ object CvrModel {
     val txt =
       """
         |date: %s
+        |adclass: %d
         |LRfile: %s
         |auPRC: %.6f  need > 0.1
         |auROC: %.6f  need > 0.7
         |IRError: %.6f need < |0.1|
         |
-        """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC(), irError)
+        |===========================
+        |%s
+        |
+        |===========================
+        |%s
+        |
+        """.stripMargin.format(date, adclass, lrfilepath, model.getAuPRC(), model.getAuROC(), irError, lrTestLog, irBinsLog)
+
     CUtils.sendMail(txt, "CVR model train " + result, Seq("cpc-rd@innotechx.com"))
 
     println("all done")

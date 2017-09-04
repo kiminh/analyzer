@@ -18,7 +18,7 @@ object CreateSvm {
     if (args.length < 4) {
       System.err.println(
         s"""
-           |Usage: create cvr svm <version:string> <daybefore:int> <days:int> <hour:string>
+           |Usage: create cvr svm <version:string> <daybefore:int> <days:int> <adclass:int> <hour:string>
         """.stripMargin)
       System.exit(1)
     }
@@ -26,7 +26,8 @@ object CreateSvm {
     val version = args(0)
     val dayBefore = args(1).toInt
     val days = args(2).toInt
-    val hour = args(3)
+    val adclass = args(3).toInt
+    val hour = args(4)
     val ctx = SparkSession.builder()
       .appName("create cvr svm data code:v1 data:" + version)
       .enableHiveSupport()
@@ -43,18 +44,24 @@ object CreateSvm {
       if (hour.length > 0) {
         hourSql = "and `hour` in (\"%s\")".format(hour.split(",").mkString("\",\""))
       }
-
-      val clicklog = ctx.sql(
+      var adclassSql = ""
+      if (adclass > 0) {
+        adclassSql = "and (ext['adclass'].int_value = %d or ext['media_class'].int_value = %d)".format(adclass, adclass)
+      }
+      val sqlStmt =
         s"""
-           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and isclick > 0
+           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s %s and isclick > 0
            |and media_appsid in ("80000001", "80000002") and adslot_type in (1, 2)
            |and ext['antispam'].int_value = 0
-        """.stripMargin.format(date, hourSql))
+        """.stripMargin.format(date, hourSql, adclassSql)
+      println(sqlStmt)
+      val clicklog = ctx.sql(sqlStmt)
         .as[UnionLog].rdd
         .map {
           x =>
             (x.searchid, (x, Seq[TLog]()))
         }
+      println("click log", clicklog.count())
 
       val tracelog = ctx.sql(
         s"""
@@ -69,6 +76,7 @@ object CreateSvm {
 
       FeatureDict.loadData()
       val bdict = ctx.sparkContext.broadcast(FeatureDict.dict)
+
 
       /*
       cvr正例条件:
@@ -101,7 +109,7 @@ object CreateSvm {
       svm.toDF()
         .write
         .mode(SaveMode.Overwrite)
-        .text("/user/cpc/cvr_svm/" + version + "/" + date)
+        .text("/user/cpc/cvr_" + adclass + "/" + version + "/" + date)
 
       val n = svm.filter(_.startsWith("1")).count()
       val all = svm.count()

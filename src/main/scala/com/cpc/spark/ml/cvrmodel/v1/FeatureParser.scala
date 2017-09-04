@@ -196,7 +196,7 @@ object FeatureParser {
     val adcls = dict.adclass.getOrElse(ad._class, 0)
     val adtype = ad.adtype
     val mchannel = dict.channel.getOrElse(m.channel, 0)
-    //val adid = ad.ideaid % 9000
+    val adid = ad.ideaid % 9000
 
     var values: Array[Double] = Array(week, hour, u.sex, age, d.os, n.isp,
       n.network, city, slotid, adcls, adtype, mchannel, d.phoneLevel, adid)
