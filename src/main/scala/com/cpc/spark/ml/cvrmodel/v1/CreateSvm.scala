@@ -18,7 +18,7 @@ object CreateSvm {
     if (args.length < 4) {
       System.err.println(
         s"""
-           |Usage: create cvr svm <version:string> <daybefore:int> <days:int> <adclass:int> <hour:string>
+           |Usage: create cvr svm <version:string> <daybefore:int> <days:int> <hour:string> <adclass:int>
         """.stripMargin)
       System.exit(1)
     }
@@ -26,8 +26,8 @@ object CreateSvm {
     val version = args(0)
     val dayBefore = args(1).toInt
     val days = args(2).toInt
-    val adclass = args(3).toInt
-    val hour = args(4)
+    val hour = args(3)
+    val adclass = 0 //args(4).toInt
     val ctx = SparkSession.builder()
       .appName("create cvr svm data code:v1 data:" + version)
       .enableHiveSupport()

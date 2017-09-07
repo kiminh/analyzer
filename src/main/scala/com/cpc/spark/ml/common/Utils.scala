@@ -55,13 +55,17 @@ object Utils {
     combs
   }
 
-  def updateOnlineData(srcfile: String, destfile: String, conf: Config): Unit = {
-    val nodes = conf.getStringList("mlserver.nodes")
+  def updateOnlineData(srcfile: String, destfile: String, conf: Config): String = {
+    val nodes = conf.getConfigList("mlserver.nodes")
+    var log = Seq[String]()
     for (i <- 0 until nodes.size()) {
       val node = nodes.get(i)
-      val cmd = s"scp $srcfile work@$node:/home/work/ml/model/$destfile"
-      println(cmd)
+      var name = node.getString("name")
+      val ip = node.getString("ip")
+      val cmd = s"scp $srcfile work@$ip:/home/work/ml/model/$destfile"
+      log = log :+ "%s %s".format(name, ip)
       val ret = cmd !
     }
+    log.mkString("\n")
   }
 }

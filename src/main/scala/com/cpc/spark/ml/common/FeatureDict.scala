@@ -127,10 +127,11 @@ object FeatureDict {
   }
 
   def updateServerData(conf: Config): Unit = {
-    val nodes = conf.getStringList("mlserver.nodes")
+    val nodes = conf.getConfigList("mlserver.nodes")
     for (i <- 0 until nodes.size()) {
       val node = nodes.get(i)
-      val ret = s"scp -r /data/cpc/anal/conf/mldict work@$node:/home/work/ml/conf/" !
+      val ip = node.getString("ip")
+      val ret = s"scp -r /data/cpc/anal/conf/mldict work@$ip:/home/work/ml/conf/" !
     }
   }
 

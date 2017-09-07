@@ -61,15 +61,18 @@ object CtrModel {
     var testSample: RDD[LabeledPoint] = null
     if (mode.startsWith("test")) {
       testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
+        .coalesce(2000)
       model.loadLRmodel(modelPath)
     } else {
-      val svm = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
+      val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
+      val totalNum = rawData.count()
+      val svm = rawData.coalesce(totalNum.toInt / 50000)
         //random pick 1/pnRate negative sample
         .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
         .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
 
       val sample = svm(0).cache()
-      println("sample count", sample.count())
+      println("sample count", sample.count(), sample.partitions.length)
       sample
         .map {
           x =>
@@ -92,11 +95,11 @@ object CtrModel {
     }
 
     if (testSample == null) {
-      testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s_full/%s".format(inpath, yesterday))
+      testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s_full/%s".format(inpath, yesterday)).coalesce(2000)
     }
     println("testing...")
     model.test(testSample)
-    //model.printLrTestLog()
+    model.printLrTestLog()
     val lrTestLog = model.getLrTestLog()
     println("done")
 
@@ -123,12 +126,13 @@ object CtrModel {
       }
     }
 
-    val irBinsLog = model.binsLog
+    val irBinsLog = model.binsLog.mkString("\n")
     val conf = ConfigFactory.load()
     var result = "failed"
+    var nodes = ""
     if (updateOnlineData == 2) {
       println("replace online data")
-      Utils.updateOnlineData(lrfilepath, lrfile, conf)
+      nodes = Utils.updateOnlineData(lrfilepath, lrfile, conf)
       Utils.updateOnlineData(irfilepath, irfile, conf)
       result = "success"
     }
@@ -143,9 +147,14 @@ object CtrModel {
         |
         |===========================
         |%s
+        |
         |===========================
         |%s
-        """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC(), irError, lrTestLog, irBinsLog)
+        |
+        |===========================
+        |%s
+        |
+        """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC(), irError, lrTestLog, irBinsLog, nodes)
     CUtils.sendMail(txt, "CTR model train " + result, Seq("cpc-rd@innotechx.com"))
 
     println("all done")

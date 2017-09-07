@@ -8,7 +8,6 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
-import org.apache.spark.rdd.RDD
 
 import scala.util.Random
 import com.cpc.spark.common.{Utils => CUtils}
@@ -42,7 +41,7 @@ object CvrModel {
     val binNum = args(7).toInt
     val lrfile = args(8)
     val irfile = args(9)
-    val adclass = args(10).toInt
+    val adclass = 0 //args(10).toInt
 
     val model = new LRIRModel
     val ctx = model.initSpark("cpc cvr model %s [%s]".format(mode, modelPath))
@@ -60,22 +59,19 @@ object CvrModel {
       cal.add(Calendar.DATE, 1)
     }
     println("%s/{%s}".format(inpath, pathSep.mkString(",")))
-    val svm = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
-      .map{
-        x =>
-          val f = x.features.toArray.slice(0, 3596)
-          new LabeledPoint(x.label, Vectors.dense(f))
-      }
+    val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
+    val totalNum = rawData.count()
+    val svm = rawData.coalesce(totalNum.toInt / 50000)
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
     val testSample = svm(1)
-
     if (mode.startsWith("test")) {
       model.loadLRmodel(modelPath)
     } else {
       val sample = svm(0)
         .filter(x => x.label > 0.01 || Random.nextInt(pnRate(1)) < pnRate(0))
         .cache()
-      println("sample count", sample.count())
+
+      println("sample count", sample.count(), sample.partitions.length)
       sample
         .map {
           x =>
@@ -89,7 +85,7 @@ object CvrModel {
         .toLocalIterator
         .foreach(println)
 
-      //sample.take(1).foreach(x => println(x.features))
+      sample.take(1).foreach(x => println(x.features))
       println("training...")
       model.run(sample, 0, 1e-8)
       model.saveHdfs(modelPath + "/" + date)
@@ -99,7 +95,7 @@ object CvrModel {
 
     println("testing...")
     model.test(testSample)
-    //model.printLrTestLog()
+    model.printLrTestLog()
     val lrTestLog = model.getLrTestLog()
     println("done")
     var updateOnlineData = 0
@@ -124,17 +120,19 @@ object CvrModel {
       }
     }
 
-    val irBinsLog = model.binsLog
+    val irBinsLog = model.binsLog.mkString("\n")
     val conf = ConfigFactory.load()
     var result = "failed"
+    var nodes = ""
     if (updateOnlineData == 2) {
       println("replace online data")
-      Utils.updateOnlineData(lrfilepath, lrfile, conf)
+      nodes = Utils.updateOnlineData(lrfilepath, lrfile, conf)
       Utils.updateOnlineData(irfilepath, irfile, conf)
       result = "success"
     }
     val txt =
       """
+        |
         |date: %s
         |adclass: %d
         |LRfile: %s
@@ -148,7 +146,11 @@ object CvrModel {
         |===========================
         |%s
         |
-        """.stripMargin.format(date, adclass, lrfilepath, model.getAuPRC(), model.getAuROC(), irError, lrTestLog, irBinsLog)
+        |===========================
+        |%s
+        |
+        """.stripMargin.format(date, adclass, lrfilepath, model.getAuPRC(), model.getAuROC(),
+        irError, lrTestLog, irBinsLog, nodes)
 
     CUtils.sendMail(txt, "CVR model train " + result, Seq("cpc-rd@innotechx.com"))
 
