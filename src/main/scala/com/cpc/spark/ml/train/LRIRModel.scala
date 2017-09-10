@@ -31,7 +31,6 @@ class LRIRModel {
       .config("spark.storage.blockManagerHeartBeatMs", "300000")
       .config("spark.scheduler.maxRegisteredResourcesWaitingTime", "100")
       .config("spark.core.connection.auth.wait.timeout", "100")
-      .config("spark.default.parallelism", "200")
       .appName(appName)
       .getOrCreate()
     ctx

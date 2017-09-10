@@ -1,8 +1,13 @@
 package com.cpc.spark.ml.train
 
 import java.text.SimpleDateFormat
+import java.util
 import java.util.{Calendar, Date}
 
+import com.intel.imllib.fm.regression.{FMModel, FMWithSGD}
+import org.apache.spark.sql.Dataset
+
+//import com.intel.imllib.fm.regression.{FMModel, FMWithSGD}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
@@ -11,7 +16,8 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.mllib.linalg.{DenseMatrix, SparseVector, Vector, Vectors}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
-import com.intel.imllib.fm.regression._
+
+import org.apache.spark.ml.classification.MultilayerPerceptronClassifier
 
 import scala.util.Random
 
@@ -63,18 +69,19 @@ object CvrFM {
       regParam = (0, 0, 0), initStd = 0.1)
       */
 
+
+
+
+
+
     val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
     val totalNum = rawData.count()
-    val svm = rawData.coalesce(totalNum.toInt / 50000)
+    val svm = rawData.coalesce(math.max(200, 50))
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
     val sample = svm(0)
       .filter(x => x.label > 0.01 || Random.nextInt(100) < 44)
       .cache()
-
-    val n = sample.first().features.size
-    val k = 8
-    val w = Vectors.dense(Array.fill(n)(0d)).toSparse
-    val w2 = Array.fill(k)(Vectors.dense(Array.fill(n)(0.1d)).toSparse)
+    val k = 20
 
     println("sample count", sample.count(), sample.partitions.length)
     sample
@@ -89,23 +96,44 @@ object CvrFM {
       .reduceByKey((x, y) => x + y)
       .toLocalIterator
       .foreach(println)
-    val fm1: FMModel = FMWithSGD.train(sample, task = 1, numIterations
-      = 100, stepSize = 0.1, dim = (false, true, k), regParam = (0, 0.0, 0.01), initStd = 0.01)
+
+    val fm1: FMModel = FMWithSGD.train(sample, task = 0, numIterations = 50,
+      stepSize = 0.1, dim = (false, true, k), regParam = (0, 0.1, 0.01), initStd = 0.01)
+
+    //stocGradAscent(svm.take(10000).toIterator, w.toArray, w2, k, 0.1)
+    val n = sample.first().features.size
+    //var w = Vectors.dense(Array.fill(n)(0d)).toSparse
+    //val w2 = Array.fill(k)(Vectors.dense(Array.fill(n)(0.01d)).toSparse)
+    //stocGradAscent(sample.take(1000).toIterator, w, w2, 0.1)
+    //val (w, w2) = sparkStocGradAscent(ctx.sparkContext, sample, k, 50)
+
+
+    val layers = Array[Int](n, 100, 1) // Note 2 neurons in the input layer
+    val trainer = new MultilayerPerceptronClassifier()
+      .setLayers(layers)
+      .setBlockSize(128)
+      .setSeed(1234L)
+      .setMaxIter(100)
+
+
+    ctx.createDataFrame(sample).w
+
+    trainer.fit(sample)
+
+
+
+
 
 
     println("testing...")
-
-    //stocGradAscent(svm.take(10000).toIterator, w.toArray, w2, k, 0.1)
-
-
-    //val w = sparkStocGradAscent(ctx.sparkContext, svm, 1, 200)
-
     val test = svm(1)
     val testResults = test.map{
       case LabeledPoint(label, features) =>
-        val p = fm1.predict(features)
+        val p = fm1.predict(features.toSparse)
         (p, label)
     }
+
+    testResults.take(200).foreach(println)
 
     var test0 = 0
     var test1 = 0
@@ -161,7 +189,7 @@ object CvrFM {
       }
 
     // Instantiate metrics object
-    val metrics = new BinaryClassificationMetrics(testResults)
+    val metrics = new BinaryClassificationMetrics(testResults.map(x => (x._1, x._2)))
     val auPRC = metrics.areaUnderPR
     //val roc = metrics.roc
     val auROC = metrics.areaUnderROC
@@ -172,7 +200,8 @@ object CvrFM {
     1d / (1d + math.exp(-m))
   }
 
-  def sparkStocGradAscent(sc: SparkContext, sample: RDD[LabeledPoint], k: Int, iterNum: Int): Vector = {
+  def sparkStocGradAscent(sc: SparkContext, sample: RDD[LabeledPoint],
+                          k: Int, iterNum: Int): (SparseVector, Array[SparseVector]) = {
     val tolerance = 1e-6
     val train = sample.cache()
     val m = train.count()
@@ -180,22 +209,18 @@ object CvrFM {
     var alpha = 0.1d
 
     var w = Vectors.dense(Array.fill(n)(0d)).toSparse
-    var w2 = Array.fill(k)(w)
+    val w2 = Array.fill(k)(Vectors.dense(Array.fill(n)(0.01d)).toSparse)
 
     var loss = 1d
-    var stopNum = 0
     val nump = train.getNumPartitions
-    val nodeNum = m / nump
-    println("partition num", nump, nodeNum)
+    println("partition num", nump)
     for (it <- 0 until iterNum) {
       val wb = sc.broadcast(w)
       val w2b = sc.broadcast(w2)
       val wrdd = train
         .mapPartitions {
           p =>
-            val w = wb.value.toArray
-            val w2 = w2b.value
-            Seq(stocGradAscent(p, w, w2, k, alpha)).iterator
+            Seq(stocGradAscent(p, wb.value, w2b.value, alpha)).iterator
         }
         .filter(_._1 > 0)
         .sortBy(_._1)
@@ -215,56 +240,78 @@ object CvrFM {
                 values(i) = values(i) + v
             }
         }
-
       w = Vectors.dense(values.map(_/nump)).toSparse
-      w2 = wrdd.take(1).map(_._3).head
-      wb.destroy()
+
+      val m = Array.fill(k)(Array.fill(n)(0d))
+      wrdd.map(_._3).foreach {
+        v =>
+          for (f <- 0 until k) {
+            for (i <- 0 until n) {
+              m(f)(i) = m(f)(i) + v(f)(i)
+            }
+          }
+      }
+      for (f <- 0 until k) {
+        w2(f) = Vectors.dense(m(f).map(_/nump)).toSparse
+      }
+
       println("iter: %d, loss: %.8f, stepRate: %.5f, %d".format(it, loss, stepRate, w.numActives))
     }
 
     train.unpersist()
-    println("w:", w.toSparse.numActives)
-    w
+    (w, w2)
   }
 
-  def stocGradAscent(train: Iterator[LabeledPoint], w: Array[Double], w2: Array[SparseVector],
-                     k: Int, alpha: Double): (Double, SparseVector, Array[SparseVector]) = {
+  def stocGradAscent(train: Iterator[LabeledPoint], w: SparseVector, w2: Array[SparseVector],
+                     alpha: Double): (Double, SparseVector, Array[SparseVector]) = {
     var minloss = 1d
+    val weights = w.toArray
     for (LabeledPoint(label, features) <- Random.shuffle(train)) {
-      val w22 = new Array[SparseVector](w2.length)
-      var y2 = 0d
-      if (k > 0) {
-        for (i <- w2.indices) {
-          w22(i) = multiply(w2(i), w2(i))
-        }
+      val hypothesis = predict(features.toSparse, weights, w2)
+      val loss = hypothesis - label
 
-        val inter1 = multiply(features.toSparse, w2)
-        val inter2 = multiply(multiply(features.toSparse, features), w22)
-        multiply(inter1, inter1).foreachActive {
-          (i, v) =>
-            y2 += v - inter2(i)
-            println(y2)
-        }
-      }
-      val y1 = dot(features.toSparse, w)
-      val hypothesis = sigmoid(y1 + y2 / 2)
-      val loss = label - hypothesis
       if (minloss > math.abs(loss)) {
         minloss = math.abs(loss)
       }
+
       features.foreachActive {
         (i, v) =>
-          w(i) = w(i) + alpha * loss * v
-          for (f <- 0 until k) {
-            val vec = w2(f).toArray
-            vec(i) = vec(i) + alpha * loss * v * (multiply(features.toSparse, vec).toArray.sum - vec(i) * v)
-            w2(f) = Vectors.dense(vec).toSparse
-          }
+          weights(i) = weights(i) - alpha * (loss * v + weights(i) * 0.2)
       }
 
-      println("--", minloss, loss, y2)
+      for (f <- w2.indices) {
+        features.foreachActive {
+          (i, v) =>
+            val vec = w2(f).toArray
+            vec(i) = vec(i) - alpha * loss * v * (multiply(features.toSparse, vec).toArray.sum - vec(i) * v)
+            w2(f) = Vectors.dense(vec).toSparse
+        }
+      }
     }
-    (minloss, Vectors.dense(w).toSparse, w2)
+    (minloss, Vectors.dense(weights).toSparse, w2)
+  }
+
+  def predict(features: SparseVector, w: SparseVector, w2: Array[SparseVector]): Double = {
+    predict(features, w.toArray, w2)
+  }
+
+  def predict(features: SparseVector, w: Array[Double], w2: Array[SparseVector]): Double = {
+    var pred = 0d
+    pred += dot(features, w)
+    if (w2.length > 0) {
+      val sum = Array.fill(w2.length)(0.0)
+      for (f <- w2.indices) {
+        var sumSqr = 0.0
+        features.foreachActive {
+          case (i, v) =>
+            val d = w2(f)(i)
+            sum(f) += d
+            sumSqr += d * d
+        }
+        pred += (sum(f) * sum(f) - sumSqr) * 0.5
+      }
+    }
+    pred
   }
 
   private def dot(v1: SparseVector, v2: Array[Double]): Double = {
