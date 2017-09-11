@@ -1,10 +1,11 @@
 package com.cpc.spark.ml.cvrmodel.v1
 
 import java.text.SimpleDateFormat
-import java.util.{Calendar, Date}
+import java.util.Calendar
 
-import com.cpc.spark.log.parser.{TraceLog, UnionLog}
+import com.cpc.spark.log.parser.UnionLog
 import com.cpc.spark.ml.common.FeatureDict
+import com.cpc.spark.ml.cvrmodel.v1.CreateSvm.TLog
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -12,13 +13,13 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 /*
 样本
  */
-object CreateSvm {
+object CreateDNNSvm {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 4) {
       System.err.println(
         s"""
-           |Usage: create cvr svm <version:string> <daybefore:int> <days:int> <hour:string> <adclass:int>
+           |Usage: create cvr svm <version:string> <daybefore:int> <days:int> <hour:string>
         """.stripMargin)
       System.exit(1)
     }
@@ -27,7 +28,6 @@ object CreateSvm {
     val dayBefore = args(1).toInt
     val days = args(2).toInt
     val hour = args(3)
-    val adclass = 0 //args(4).toInt
     val ctx = SparkSession.builder()
       .appName("create cvr svm data code:v1 data:" + version)
       .enableHiveSupport()
@@ -44,24 +44,18 @@ object CreateSvm {
       if (hour.length > 0) {
         hourSql = "and `hour` in (\"%s\")".format(hour.split(",").mkString("\",\""))
       }
-      var adclassSql = ""
-      if (adclass > 0) {
-        adclassSql = "and (ext['adclass'].int_value = %d or ext['media_class'].int_value = %d)".format(adclass, adclass)
-      }
-      val sqlStmt =
+
+      val clicklog = ctx.sql(
         s"""
-           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s %s and isclick > 0
+           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and isclick > 0
            |and media_appsid in ("80000001", "80000002") and adslot_type in (1, 2)
            |and ext['antispam'].int_value = 0
-        """.stripMargin.format(date, hourSql, adclassSql)
-      println(sqlStmt)
-      val clicklog = ctx.sql(sqlStmt)
+        """.stripMargin.format(date, hourSql))
         .as[UnionLog].rdd
         .map {
           x =>
             (x.searchid, (x, Seq[TLog]()))
         }
-      println("click log", clicklog.count())
 
       val tracelog = ctx.sql(
         s"""
@@ -76,7 +70,6 @@ object CreateSvm {
 
       FeatureDict.loadData()
       val bdict = ctx.sparkContext.broadcast(FeatureDict.dict)
-
 
       /*
       cvr正例条件:
@@ -100,7 +93,7 @@ object CreateSvm {
         .map{
           x =>
             val dict = bdict.value
-            FeatureParser.parseUnionLog(dict, x._1, x._2:_*)
+            FeatureParser.parseUnionLogDNN(dict, x._1, x._2:_*)
         }
         .cache()
 
@@ -109,7 +102,7 @@ object CreateSvm {
       svm.toDF()
         .write
         .mode(SaveMode.Overwrite)
-        .text("/user/cpc/cvr_" + adclass + "/" + version + "/" + date)
+        .text("/user/cpc/cvr_dnn/" + version + "/" + date)
 
       val n = svm.filter(_.startsWith("1")).count()
       val all = svm.count()
@@ -119,34 +112,6 @@ object CreateSvm {
     }
 
     ctx.stop()
-  }
-
-  case class TLog(
-                       searchid: String = "",
-                       search_timestamp: Int = 0,
-                       trace_type: String = "",
-                       trace_os: String = "",
-                       trace_refer: String = "",
-                       trace_version: String = "",
-                       trace_click_count: Int = 0,
-                       device_orientation: Int = 0,
-                       client_w: Float = 0,
-                       client_h: Float = 0,
-                       screen_w: Float = 0,
-                       screen_h: Float = 0,
-                       client_x: Float = 0,
-                       client_y: Float = 0,
-                       page_x: Float = 0,
-                       page_y: Float = 0,
-                       trace_ttl: Int = 0,
-                       scroll_top: Float = 0,
-                       trace_op1: String = "",
-                       trace_op2: String = "",
-                       trace_op3: String = "",
-                       duration: Int = 0,
-                       date: String = "",
-                       hour: String = ""
-                     ) {
 
   }
 }

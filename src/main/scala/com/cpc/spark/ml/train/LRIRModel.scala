@@ -134,6 +134,10 @@ class LRIRModel {
   }
 
   def printLrTestLog(): Unit = {
+    println(getLrTestLog())
+  }
+
+  def getLrTestLog(): String = {
     val testSum = lrTestResults.count()
     if (testSum < 0) {
       throw new Exception("must run lr test first or test results is empty")
@@ -160,7 +164,7 @@ class LRIRModel {
           }
       }
 
-    println("predict distribution %s %d(1) %d(0)".format(testSum, test1, test0))
+    var log = "predict distribution %s %d(1) %d(0)\n".format(testSum, test1, test0)
     lrTestResults
       .map {
         x =>
@@ -184,13 +188,12 @@ class LRIRModel {
       .foreach {
         x =>
           val sum = x._2
-          println("%.2f %d %.4f %.4f %d %.4f %.4f %.4f".format(x._1.toDouble * 0.05,
+          log = log + "%.2f %d %.4f %.4f %d %.4f %.4f %.4f\n".format(x._1.toDouble * 0.05,
             sum._2, sum._2.toDouble / test1.toDouble, sum._2.toDouble / testSum.toDouble,
             sum._1, sum._1.toDouble / test0.toDouble, sum._1.toDouble / testSum.toDouble,
-            sum._2.toDouble / (sum._1 + sum._2).toDouble))
+            sum._2.toDouble / (sum._1 + sum._2).toDouble)
       }
-
-    println("auPRC: %.10f, auROC: %.10f".format(auPRC, auROC))
+    log + "auPRC: %.10f, auROC: %.10f\n".format(auPRC, auROC)
   }
 
   private var irmodel: IsotonicRegressionModel = null
@@ -241,6 +244,8 @@ class LRIRModel {
     w.close()
   }
 
+  var binsLog = Seq[String]()
+
   /*
   @return ctr minPrediction avgPrediction maxPrediction
    */
@@ -272,9 +277,12 @@ class LRIRModel {
             val ctr = click / pv
             bins = bins :+ (ctr, pMin, pSum / pv, pMax)
             n = n + 1
-            if (n >= binNum - 100) {
-              println("  bin %d: %.6f(%d/%d) %.6f %.6f %.6f".format(
-                n, ctr, click.toInt, pv.toInt, pMin, pSum / pv, pMax))
+            if (n < 50 || n > binNum - 50) {
+              val logStr = "bin %d: %.6f(%d/%d) %.6f %.6f %.6f".format(
+                n, ctr, click.toInt, pv.toInt, pMin, pSum / pv, pMax)
+
+              binsLog = binsLog :+ logStr
+              println(logStr)
             }
 
             click = 0d

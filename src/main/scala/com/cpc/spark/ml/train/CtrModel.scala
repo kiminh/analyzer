@@ -61,15 +61,18 @@ object CtrModel {
     var testSample: RDD[LabeledPoint] = null
     if (mode.startsWith("test")) {
       testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
+        .coalesce(2000)
       model.loadLRmodel(modelPath)
     } else {
-      val svm = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
+      val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
+      val totalNum = rawData.count()
+      val svm = rawData.coalesce(totalNum.toInt / 50000)
         //random pick 1/pnRate negative sample
         .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
         .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
 
       val sample = svm(0).cache()
-      println("sample count", sample.count())
+      println("sample count", sample.count(), sample.partitions.length)
       sample
         .map {
           x =>
@@ -85,18 +88,19 @@ object CtrModel {
 
       sample.take(1).foreach(x => println(x.features))
       println("training...")
-      model.run(sample, 0, 0)
+      model.run(sample, 0, 1e-8)
       model.saveHdfs(modelPath + "/" + date)
       sample.unpersist()
       println("done")
     }
 
     if (testSample == null) {
-      testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s_full/%s".format(inpath, yesterday))
+      testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s_full/%s".format(inpath, yesterday)).coalesce(2000)
     }
     println("testing...")
     model.test(testSample)
     model.printLrTestLog()
+    val lrTestLog = model.getLrTestLog()
     println("done")
 
     var updateOnlineData = 0
@@ -105,38 +109,53 @@ object CtrModel {
       model.saveText(lrfilepath)
 
       //满足条件的模型直接替换线上数据
-      if (lrfile.length > 0 && model.getAuPRC() > 0.08 && model.getAuROC() > 0.8) {
+      if (lrfile.length > 0 && model.getAuPRC() > 0.07 && model.getAuROC() > 0.80) {
         updateOnlineData += 1
       }
     }
 
+    var irError = 0d
     val irfilepath = "/data/cpc/anal/model/isotonic_%s.txt".format(date)
     if (mode.endsWith("+ir")) {
       println("start isotonic regression")
-      val meanError = model.runIr(binNum, 0.9)
+      irError = model.runIr(binNum, 0.9)
       model.saveIrHdfs(modelPath + "/" + date + "_ir")
       model.saveIrText(irfilepath)
-      if (irfile.length > 0 && math.abs(meanError) < 0.01) {
+      if (irfile.length > 0 && math.abs(irError) < 0.01) {
         updateOnlineData += 1
       }
     }
 
+    val irBinsLog = model.binsLog.mkString("\n")
     val conf = ConfigFactory.load()
+    var result = "failed"
+    var nodes = ""
     if (updateOnlineData == 2) {
       println("replace online data")
-      Utils.updateOnlineData(lrfilepath, lrfile, conf)
+      nodes = Utils.updateOnlineData(lrfilepath, lrfile, conf)
       Utils.updateOnlineData(irfilepath, irfile, conf)
-    } else {
-      val txt =
-        """
-          |train date %s
-          |LRfile = %s
-          |auPRC = %.6f  need = 0.09
-          |auROC = %.6f  need = 0.85
-          |
-        """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC())
-      CUtils.sendMail(txt, "CTR train failed", Seq("cpc-rd@innotechx.com"))
+      result = "success"
     }
+
+    val txt =
+      """
+        |date: %s
+        |LRfile: %s
+        |auPRC: %.6f need > 0.07
+        |auROC: %.6f need > 0.80
+        |IRError: %.6f need < |0.01|
+        |
+        |===========================
+        |%s
+        |
+        |===========================
+        |%s
+        |
+        |===========================
+        |%s
+        |
+        """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC(), irError, lrTestLog, irBinsLog, nodes)
+    CUtils.sendMail(txt, "CTR model train " + result, Seq("cpc-rd@innotechx.com"))
 
     println("all done")
     model.stopSpark()

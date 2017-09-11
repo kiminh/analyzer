@@ -27,7 +27,7 @@ object CheckCvrLog {
     val dayBefore = args(0).toInt
     val days = args(1).toInt
     val hour = args(2).trim
-    val unitid = args(3).toInt
+    val cvr = args(3).toInt
     val ctx = SparkSession.builder()
       .appName("check cvr results")
       .enableHiveSupport()
@@ -46,9 +46,9 @@ object CheckCvrLog {
       }
 
       val sql = s"""
-           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and unitid = %d
-           |
-        """.stripMargin.format(date, hourSql, unitid)
+           |select * from dl_cpc.cpc_union_log where `date` = "%s" %s
+           |and ext['cvr_threshold'].int_value >= %d
+        """.stripMargin.format(date, hourSql, cvr)
 
       val clicklog = ctx.sql(sql)
         .as[UnionLog].rdd
@@ -58,6 +58,8 @@ object CheckCvrLog {
             (x.searchid, (x, Seq[TraceLog]()))
         }
 
+
+      println("click", clicklog.count())
 
       val tracelog = ctx.sql(
         s"""

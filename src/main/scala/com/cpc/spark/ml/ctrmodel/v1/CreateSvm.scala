@@ -57,7 +57,8 @@ object CreateSvm {
       val ulog = ctx.sql(
         s"""
            |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and isshow = 1
-           |and media_appsid in ("80000001", "80000002")
+           |and media_appsid in ("80000001", "80000002") and adslot_type in (1, 2)
+           |and ext['antispam'].int_value = 0
         """.stripMargin.format(date, hourSql))
         .as[UnionLog].rdd
         .randomSplit(Array(ttRate, 1 - ttRate), seed = new Date().getTime)
