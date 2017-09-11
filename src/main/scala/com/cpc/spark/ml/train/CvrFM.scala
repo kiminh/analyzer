@@ -81,7 +81,7 @@ object CvrFM {
     val sample = svm(0)
       .filter(x => x.label > 0.01 || Random.nextInt(100) < 44)
       .cache()
-    val k = 20
+    val k = 10
 
     println("sample count", sample.count(), sample.partitions.length)
     sample
@@ -108,6 +108,7 @@ object CvrFM {
     //val (w, w2) = sparkStocGradAscent(ctx.sparkContext, sample, k, 50)
 
 
+    /*
     val layers = Array[Int](n, 100, 1) // Note 2 neurons in the input layer
     val trainer = new MultilayerPerceptronClassifier()
       .setLayers(layers)
@@ -115,13 +116,10 @@ object CvrFM {
       .setSeed(1234L)
       .setMaxIter(100)
 
-
     ctx.createDataFrame(sample).w
 
     trainer.fit(sample)
-
-
-
+    */
 
 
 
