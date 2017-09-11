@@ -18,7 +18,7 @@ import scala.util.Random
 object AntispamModel {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 5) {
+    if (args.length < 4) {
       System.err.println(
         s"""
            |Usage: CtrModel <mode:train/test>
@@ -39,19 +39,23 @@ object AntispamModel {
     /*val daybefore = args(2).toInt
     val days = args(3).toInt*/
     val modelPath = args(2).trim
-    val sampleRate = args(3).toFloat
-    val pnRate = args(4).toInt
-    val toDate = args(5)
+   /* val sampleRate = args(3).toFloat
+    val pnRate = args(4).toInt*/
+    val daybefore = args(3).toInt
     /*val binNum = args(7).toInt
     val lrfile = args(8)
     val irfile = args(9)*/
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.DATE, -daybefore)
+
+    val toDate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
     val model = new LRIRModel
     val ctx = model.initSpark("cpc antispam model %s [%s]".format(mode, modelPath))
 
-    val fmt = new SimpleDateFormat("yyyy-MM-dd")
-    val date = new SimpleDateFormat("yyyy-MM-dd-HH").format(new Date().getTime)
-    val yesterday = fmt.format(new Date().getTime - 3600L * 24000L)
+    /* val fmt = new SimpleDateFormat("yyyy-MM-dd")
+     val date = new SimpleDateFormat("yyyy-MM-dd-HH").format(new Date().getTime)
+     val yesterday = fmt.format(new Date().getTime - 3600L * 24000L)*/
     /*val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -daybefore)
 
@@ -70,9 +74,8 @@ object AntispamModel {
     } else {
       val svm = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/%s".format(inpath, toDate))
         //random pick 1/pnRate negative sample
-        .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
-        .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
-
+        //.filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
+        .randomSplit(Array(1, 0), seed = new Date().getTime)
       val sample = svm(0).cache()
       println("sample count", sample.count())
       sample
@@ -91,7 +94,7 @@ object AntispamModel {
       sample.take(1).foreach(x => println(x.features))
       println("training...")
       model.run(sample, 0, 0)
-      model.saveHdfs(modelPath + "/" + date)
+      model.saveHdfs(modelPath + "/" + toDate)
       sample.unpersist()
       println("done")
     }

@@ -3,6 +3,7 @@ package com.cpc.spark.ml.antimodel.v1
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.{ExtValue, UnionLog}
+import com.cpc.spark.ml.antimodel.v1.CreateSvm.TLog
 import com.cpc.spark.ml.common.Dict
 import mlserver.mlserver._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
@@ -77,11 +78,11 @@ object FeatureParser {
     (ad, m, u, loc, n, d, x.timestamp * 1000L)
   }
 
-  def parseUnionLog(y:(String, (UnionLog, UserInfo)), dict: Dict): String = {
-    val x = y._2._1
+  def parseUnionLog(y:(String, ((UnionLog, Option[Iterable[TLog]]), UserInfo)), dict: Dict): String = {
+    val x = y._2._1._1
     val (ad, m, u, loc, n, d, t) = unionLogToObject(x)
     var svm = "0"
-    val vector = getVector(dict, ad, m, u, loc, n, d, x.timestamp * 1000L, y._2._2)
+    val vector = getVector(dict, ad, m, u, loc, n, d, x.timestamp * 1000L, y._2._2, y._2._1._2)
     if (vector != null) {
       var p = -1
       svm = x.ext.getOrElse("antispam", ExtValue()).int_value.toString
@@ -112,7 +113,7 @@ object FeatureParser {
   }
 
   def getVector(dict: Dict, ad: AdInfo, m: Media, u: User,
-            loc: Location, n: Network, d: Device, timeMills: Long, user:UserInfo): Vector = {
+            loc: Location, n: Network, d: Device, timeMills: Long, user:UserInfo, trace: Option[Iterable[TLog]]): Vector = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
@@ -241,6 +242,19 @@ object FeatureParser {
       }
       els = els :+ (contentNum + i, 1d)
       i += 1000
+      val traceSeq = trace.getOrElse(null)
+      var duration = 0
+      if(traceSeq != null){
+        traceSeq.foreach{
+          x =>
+            if(x.duration > duration){
+              duration = x.duration
+            }
+        }
+      }
+
+      els = els :+ (duration + i, 1d)
+      i += 200
       Vectors.sparse(i, els)
     } catch {
       case e: Exception =>

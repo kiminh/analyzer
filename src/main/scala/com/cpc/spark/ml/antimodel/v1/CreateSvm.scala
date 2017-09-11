@@ -59,21 +59,33 @@ object CreateSvm {
         (device, UserInfo("", 0, coin, 0, contentNum))
     }
     userInfoRDD.take(10).foreach(x => println("userInfo:" + x))
-    val union = ctx.sql(
-      s"""
-         |select * from dl_cpc.cpc_union_log where `date` = "%s" and isfill = 1 and adslotid > 0
-         |and media_appsid in ("80000001", "80000002")
-      """.stripMargin.format(date))
-      .as[UnionLog].rdd
 
-    val joinRdd = union.map(x => (x.uid, x)).join(userInfoRDD)
+    val sqlunion = s"""
+                   |select * from dl_cpc.cpc_union_log where `date` = "%s" and isfill = 1 and adslotid > 0
+                   |and media_appsid in ("80000001", "80000002")
+      """.stripMargin.format(date)
+    println("sqlunion:" + sqlunion)
+
+    val union = ctx.sql(sqlunion).as[UnionLog].rdd
+    val sqltrace = s""" |select * from dl_cpc.cpc_union_trace_log where `date` = "%s"
+      """.stripMargin.format(date)
+    println("sqltrace:" + sqltrace)
+
+    val trace = ctx.sql(sqltrace).as[TLog].rdd
+    val traceList = trace.map( x => (x.searchid,x)).groupByKey()
+
+    val unionTrace= union.map(x => (x.uid, x)).leftOuterJoin(traceList).map{
+      case (searchid,(union, traceSeq)) =>
+        (union.uid, (union, traceSeq))
+    }
+    val joinRdd = unionTrace.join(userInfoRDD)
     val ulog = joinRdd.randomSplit(Array(ttRate, 1 - ttRate), seed = new Date().getTime)
     FeatureDict.loadData()
     val bdict = ctx.sparkContext.broadcast(FeatureDict.dict)
     val train = ulog(0).filter {
         u =>
           var ret = false
-          if (u._2._1.isclick == 1 || Random.nextInt(rate(1)) < rate(0)) {
+          if (u._2._1._1.isclick == 1 || Random.nextInt(rate(1)) < rate(0)) {
             ret = true
           }
           ret
@@ -86,8 +98,6 @@ object CreateSvm {
               FeatureParser.parseUnionLog(x, dict)
           }
       }
-      .cache()
-
     train.take(1).foreach(println)
     train.toDF()
       .write
@@ -115,6 +125,35 @@ object CreateSvm {
     cal.add(Calendar.DATE, 1)
 
     ctx.stop()
+  }
+
+  case class TLog(
+                   searchid: String = "",
+                   search_timestamp: Int = 0,
+                   trace_type: String = "",
+                   trace_os: String = "",
+                   trace_refer: String = "",
+                   trace_version: String = "",
+                   trace_click_count: Int = 0,
+                   device_orientation: Int = 0,
+                   client_w: Float = 0,
+                   client_h: Float = 0,
+                   screen_w: Float = 0,
+                   screen_h: Float = 0,
+                   client_x: Float = 0,
+                   client_y: Float = 0,
+                   page_x: Float = 0,
+                   page_y: Float = 0,
+                   trace_ttl: Int = 0,
+                   scroll_top: Float = 0,
+                   trace_op1: String = "",
+                   trace_op2: String = "",
+                   trace_op3: String = "",
+                   duration: Int = 0,
+                   date: String = "",
+                   hour: String = ""
+                 ) {
+
   }
 }
 
