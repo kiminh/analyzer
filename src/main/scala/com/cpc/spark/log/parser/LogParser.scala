@@ -35,6 +35,8 @@ object LogParser {
         date = date,
         hour = hour
       )
+
+      ext.update("media_site_url", ExtValue(string_value = notice.getMedia.getSite.getUrls))
       if (notice.getAdslotCount > 0) {
         val slot = notice.getAdslot(0)
         log = log.copy(
@@ -80,6 +82,7 @@ object LogParser {
           ext.update("materialid", ExtValue(string_value = ids.mkString(" ")))
         }
       }
+
 
       val loc = notice.getLocation
       log = log.copy(
