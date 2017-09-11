@@ -160,6 +160,7 @@ message DspReqInfo {
 	optional int32	retAdsNum = 3;
 	optional int64  timecost = 4;
 	optional string targetHost = 5;
+	optional int64  ioTimeCost = 6;
 };
 
 message AdInfo {
@@ -181,6 +182,7 @@ message AdInfo {
 	optional uint64 cvr     = 16; // cvr * 10^6
 	optional uint64 cvr_threshold = 17; //cvr_threshold 0-100 客户设置
 	optional uint64 cvr_thres = 18;// cvr_threshold 真实值*10^6
+	repeated uint32 materialid = 19; //素材id
 };
 
 message AdDspRet {
