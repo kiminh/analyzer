@@ -78,7 +78,7 @@ object FeatureParser {
     (ad, m, u, loc, n, d, x.timestamp * 1000L)
   }
 
-  def parseUnionLog(y:(String, ((UnionLog, Option[Iterable[TLog]]), UserInfo)), dict: Dict): String = {
+  def parseUnionLog(y:(String, ((UnionLog, Option[Int]), UserInfo)), dict: Dict): String = {
     val x = y._2._1._1
     val (ad, m, u, loc, n, d, t) = unionLogToObject(x)
     var svm = "0"
@@ -113,7 +113,7 @@ object FeatureParser {
   }
 
   def getVector(dict: Dict, ad: AdInfo, m: Media, u: User,
-            loc: Location, n: Network, d: Device, timeMills: Long, user:UserInfo, trace: Option[Iterable[TLog]]): Vector = {
+            loc: Location, n: Network, d: Device, timeMills: Long, user:UserInfo, trace: Option[Int]): Vector = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
@@ -242,19 +242,13 @@ object FeatureParser {
       }
       els = els :+ (contentNum + i, 1d)
       i += 1000
-      val traceSeq = trace.getOrElse(null)
-      var duration = 0
-      if(traceSeq != null){
-        traceSeq.foreach{
-          x =>
-            if(x.duration > duration){
-              duration = x.duration
-            }
-        }
-      }
 
+      var duration = trace.getOrElse(0)
+      if(duration >= 100){
+        duration = 1
+      }
       els = els :+ (duration + i, 1d)
-      i += 200
+      i += 100
       Vectors.sparse(i, els)
     } catch {
       case e: Exception =>

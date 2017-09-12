@@ -67,16 +67,19 @@ object CreateSvm {
     println("sqlunion:" + sqlunion)
 
     val union = ctx.sql(sqlunion).as[UnionLog].rdd
-    val sqltrace = s""" |select * from dl_cpc.cpc_union_trace_log where `date` = "%s"
+    val sqltrace = s""" select searchid,max(duration) from dl_cpc.cpc_union_trace_log where `date` = "%s" group by searchid
       """.stripMargin.format(date)
     println("sqltrace:" + sqltrace)
 
-    val trace = ctx.sql(sqltrace).as[TLog].rdd
-    val traceList = trace.map( x => (x.searchid,x)).groupByKey()
-
-    val unionTrace= union.map(x => (x.uid, x)).leftOuterJoin(traceList).map{
-      case (searchid,(union, traceSeq)) =>
-        (union.uid, (union, traceSeq))
+    val trace = ctx.sql(sqltrace).rdd.map{
+      x =>
+        val searchid : String =  x(0).toString()
+        val duration : Int = x(1).toString().toInt
+        (searchid,duration)
+    }
+    val unionTrace= union.map(x => (x.searchid, x)).leftOuterJoin(trace).map{
+      case (searchid,(union, duration)) =>
+        (union.uid, (union, duration))
     }
     val joinRdd = unionTrace.join(userInfoRDD)
     val ulog = joinRdd.randomSplit(Array(ttRate, 1 - ttRate), seed = new Date().getTime)
