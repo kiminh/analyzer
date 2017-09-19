@@ -100,5 +100,15 @@ object GetAntispam {
       case ((hour,adslotType),(click, show)) =>
         (hour,adslotType,click, show, click.toDouble/show.toDouble * 100)
     }.collect().foreach(x => println(" list and info:"+ x))
+    rdd.map{
+      case (uid,click, show,adslotType,hour) =>
+        (uid,(click, show,adslotType,hour))
+    }.join(rdd4).map{
+      case (uid,((click, show,adslotType,hour),adslotType2)) =>
+        ((hour),(click, show))
+    }.reduceByKey((x, y) =>(x._1+ y._1, x._2 +y._2)).map{
+      case ((hour),(click, show)) =>
+        (hour,click, show, click.toDouble/show.toDouble * 100)
+    }.collect().foreach(x => println(" list and info2:"+ x))
   }
 }
