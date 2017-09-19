@@ -26,7 +26,7 @@ object FeatureDict {
 
   val interest = mutable.Map[Int, Int]()
 
-  val adid = mutable.Map[Int, Int]()
+  val adcvr = mutable.Map[Int, Double]()
 
   val dict = Dict()
 
@@ -65,14 +65,6 @@ object FeatureDict {
       .toLocalIterator.toSeq
     updateDictFile("adclass.txt", lastAdclass)
     println("adclass dict done")
-
-    val lastAd = ulog.map(x => (x.ideaid, 1))
-      .reduceByKey((x, y) => x)
-      .map(_._1.toString)
-      .filter(_.length > 0)
-      .toLocalIterator.toSeq
-    updateDictFile("adid.txt", lastAd)
-    println("adid dict done")
 
     /*
     val lastInterest = ulog
@@ -130,12 +122,11 @@ object FeatureDict {
         n = n + 1
     }
 
-    n = 0
-    loadDictFile("adid.txt").foreach {
+    loadDictFile("adcvr.txt").foreach {
       v =>
-        adid.update(v.toInt, n)
-        dict.adid = adid.toMap
-        n = n + 1
+        val row = v.split(" ")
+        adcvr.update(row(0).toInt, row(1).toDouble)
+        dict.adcvr = adcvr.toMap
     }
   }
 
@@ -197,7 +188,8 @@ case class Dict(var adslot: Map[Int, Int] = null,
                  var city: Map[Int, Int] = null,
                  var channel: Map[Int, Int] = null,
                  var interest: Map[Int, Int] = null,
-                 var adid: Map[Int, Int] = null
+                 var adid: Map[Int, Int] = null,
+                 var adcvr: Map[Int, Double] = null
                )
 
 

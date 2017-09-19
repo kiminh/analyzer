@@ -1,30 +1,32 @@
-package com.cpc.spark.ml.train
+package com.cpc.spark.ml.cvrmodel.v2
 
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import com.cpc.spark.ml.common.Utils
 import com.cpc.spark.common.{Utils => CUtils}
-import com.typesafe.config.{Config, ConfigFactory}
+import com.cpc.spark.ml.common.{FeatureDict, Utils}
+import com.cpc.spark.ml.train.LRIRModel
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
-import org.apache.spark.rdd.RDD
 
 import scala.util.Random
+
 /**
   * Created by roydong on 06/07/2017.
   */
-object CtrModel {
+object LRTrain {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 10) {
+    if (args.length < 9) {
       System.err.println(
         s"""
            |Usage: CtrModel <mode:train/test[+ir]>
            |  <svmPath:string> <dayBefore:int> <day:int>
            |  <modelPath:string> <sampleRate:float> <PNRate:int>
-           |  <IRBinNum:int> <LRFile:string> <IRFile:string>
+           |  <IRBinNum:int> <lrfile:string> <irfile:string>
         """.stripMargin)
       System.exit(1)
     }
@@ -36,13 +38,14 @@ object CtrModel {
     val days = args(3).toInt
     val modelPath = args(4).trim
     val sampleRate = args(5).toFloat
-    val pnRate = args(6).toInt
+    val pnRate = args(6).split("/").map(_.toInt)
     val binNum = args(7).toInt
     val lrfile = args(8)
     val irfile = args(9)
+    val adclass = 0 //args(10).toInt
 
     val model = new LRIRModel
-    val ctx = model.initSpark("cpc ctr model %s [%s]".format(mode, modelPath))
+    val ctx = model.initSpark("cpc cvr model %s [%s]".format(mode, modelPath))
 
     val fmt = new SimpleDateFormat("yyyy-MM-dd")
     val date = new SimpleDateFormat("yyyy-MM-dd-HH").format(new Date().getTime)
@@ -57,21 +60,38 @@ object CtrModel {
       cal.add(Calendar.DATE, 1)
     }
     println("%s/{%s}".format(inpath, pathSep.mkString(",")))
-
-    var testSample: RDD[LabeledPoint] = null
+    FeatureDict.loadData()
+    val badcvr = ctx.sparkContext.broadcast(FeatureDict.dict.adcvr)
+    val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
+    val totalNum = rawData.count()
+    val svm = rawData.coalesce(totalNum.toInt / 50000)
+      .mapPartitions {
+        p =>
+          p.map {
+            x =>
+              var els = Seq[(Int, Double)]()
+              val adcvr = badcvr.value
+              x.features.foreachActive {
+                (i, v) =>
+                  if (i == 3595) {
+                    els = els :+ (i, adcvr.getOrElse(v.toInt, 0d))
+                  } else {
+                    els = els :+ (i, v)
+                  }
+              }
+              val v = Vectors.sparse(x.features.size, els)
+              LabeledPoint(x.label, v)
+          }
+      }
+      .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
+    val testSample = svm(1)
     if (mode.startsWith("test")) {
-      testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
-        .coalesce(2000)
       model.loadLRmodel(modelPath)
     } else {
-      val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
-      val totalNum = rawData.count()
-      val svm = rawData.coalesce(totalNum.toInt / 20000)
-        //random pick 1/pnRate negative sample
-        .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
-        .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
+      val sample = svm(0)
+        .filter(x => x.label > 0.01 || Random.nextInt(pnRate(1)) < pnRate(0))
+        .cache()
 
-      val sample = svm(0).cache()
       println("sample count", sample.count(), sample.partitions.length)
       sample
         .map {
@@ -94,34 +114,29 @@ object CtrModel {
       println("done")
     }
 
-    if (testSample == null) {
-      testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s_full/%s".format(inpath, yesterday)).coalesce(2000)
-    }
     println("testing...")
     model.test(testSample)
     model.printLrTestLog()
     val lrTestLog = model.getLrTestLog()
     println("done")
-
     var updateOnlineData = 0
-    val lrfilepath = "/data/cpc/anal/model/logistic_%s.txt".format(date)
+    val lrfilepath = "/data/cpc/anal/model/cvr_logistic_%d_%s.txt".format(adclass, date)
     if (mode.startsWith("train")) {
       model.saveText(lrfilepath)
-
       //满足条件的模型直接替换线上数据
-      if (lrfile.length > 0 && model.getAuPRC() > 0.07 && model.getAuROC() > 0.80) {
+      if (lrfile.length > 0 && model.getAuPRC() > 0.1 && model.getAuROC() > 0.7) {
         updateOnlineData += 1
       }
     }
 
     var irError = 0d
-    val irfilepath = "/data/cpc/anal/model/isotonic_%s.txt".format(date)
+    val irfilepath = "/data/cpc/anal/model/cvr_isotonic_%d_%s.txt".format(adclass, date)
     if (mode.endsWith("+ir")) {
       println("start isotonic regression")
       irError = model.runIr(binNum, 0.9)
       model.saveIrHdfs(modelPath + "/" + date + "_ir")
       model.saveIrText(irfilepath)
-      if (irfile.length > 0 && math.abs(irError) < 0.01) {
+      if (irfile.length > 0 && math.abs(irError) < 0.1) {
         updateOnlineData += 1
       }
     }
@@ -136,14 +151,15 @@ object CtrModel {
       Utils.updateOnlineData(irfilepath, irfile, conf)
       result = "success"
     }
-
     val txt =
       """
+        |
         |date: %s
+        |adclass: %d
         |LRfile: %s
-        |auPRC: %.6f need > 0.07
-        |auROC: %.6f need > 0.80
-        |IRError: %.6f need < |0.01|
+        |auPRC: %.6f  need > 0.1
+        |auROC: %.6f  need > 0.7
+        |IRError: %.6f need < |0.1|
         |
         |===========================
         |%s
@@ -154,12 +170,12 @@ object CtrModel {
         |===========================
         |%s
         |
-        """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC(), irError, lrTestLog, irBinsLog, nodes)
-    CUtils.sendMail(txt, "CTR model train " + result, Seq("cpc-rd@innotechx.com"))
+        """.stripMargin.format(date, adclass, lrfilepath, model.getAuPRC(), model.getAuROC(),
+        irError, lrTestLog, irBinsLog, nodes)
+
+    CUtils.sendMail(txt, "CVR model train " + result, Seq("cpc-rd@innotechx.com"))
 
     println("all done")
     model.stopSpark()
   }
 }
-
-

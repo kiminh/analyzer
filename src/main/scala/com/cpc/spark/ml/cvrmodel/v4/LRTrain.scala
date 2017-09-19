@@ -1,22 +1,28 @@
-package com.cpc.spark.ml.train
+package com.cpc.spark.ml.cvrmodel.v4
 
+import java.sql.{DriverManager, ResultSet}
 import java.text.SimpleDateFormat
-import java.util.{Calendar, Date}
 
-import com.cpc.spark.ml.common.Utils
+import scala.collection.JavaConversions._
+import java.util.{Calendar, Date, Properties}
+
+import com.cpc.spark.common.{Utils => CUtils}
+import com.cpc.spark.ml.common.{FeatureDict, Utils}
+import com.cpc.spark.ml.train.LRIRModel
+import com.hankcs.hanlp.HanLP
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 
+import scala.collection.mutable
 import scala.util.Random
-import com.cpc.spark.common.{Utils => CUtils}
-import org.apache.spark.mllib.linalg.Vectors
 
 /**
   * Created by roydong on 06/07/2017.
   */
-object CvrModel {
+object LRTrain {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 9) {
@@ -59,9 +65,45 @@ object CvrModel {
       cal.add(Calendar.DATE, 1)
     }
     println("%s/{%s}".format(inpath, pathSep.mkString(",")))
+    val admap = getTitleDict()
+    println(admap.size)
+    admap.toSeq.take(10).foreach(println)
+
+    val badmap = ctx.sparkContext.broadcast(admap)
     val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
     val totalNum = rawData.count()
-    val svm = rawData.coalesce(totalNum.toInt / 20000)
+    val svm = rawData.coalesce(totalNum.toInt / 50000)
+      .mapPartitions {
+        p =>
+          p.map {
+            x =>
+              var els = Seq[(Int, Double)]()
+              val admap = badmap.value
+              var id = 0
+              x.features.foreachActive {
+                (i, v) =>
+                  if (i < 3595) {
+                    els = els :+ (i, v)
+                  } else if (i == 3595) {
+                    id = v.toInt
+                  }
+              }
+
+              //val idx = adidIndex(id, 3595)
+              //els = els :+ (idx, 1d)
+
+              val ad = admap.getOrElse(id, null)
+              if (ad != null) {
+                els = els :+ (3595 + ad.turl, 1d)
+
+                val v = Vectors.sparse(3595 + 15000, els)
+                LabeledPoint(x.label, v)
+              } else {
+                null
+              }
+          }
+          .filter(_ != null)
+      }
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
     val testSample = svm(1)
     if (mode.startsWith("test")) {
@@ -156,5 +198,105 @@ object CvrModel {
 
     println("all done")
     model.stopSpark()
+  }
+
+  def getAdDbResult(confKey: String): ResultSet = {
+    val conf = ConfigFactory.load()
+    val mariadbProp = new Properties()
+    mariadbProp.put("url", conf.getString(confKey + ".url"))
+    mariadbProp.put("user", conf.getString(confKey + ".user"))
+    mariadbProp.put("password", conf.getString(confKey + ".password"))
+    mariadbProp.put("driver", conf.getString(confKey + ".driver"))
+
+    Class.forName(mariadbProp.getProperty("driver"))
+    val conn = DriverManager.getConnection(
+      mariadbProp.getProperty("url"),
+      mariadbProp.getProperty("user"),
+      mariadbProp.getProperty("password"))
+    val stmt = conn.createStatement()
+    stmt.executeQuery("select id, user_id, plan_id, target_url from idea where action_type = 1")
+  }
+
+  def getTitleDict(): Map[Int, AdInfo] = {
+    var rows = Seq[(Int, Int, Int, String)]()
+    var adids = Seq[Int]()
+    var userids = Seq[Int]()
+    var planids = Seq[Int]()
+    var urls = Seq[String]()
+    var result = getAdDbResult("mariadb.adv")
+    while (result.next()) {
+      val row = (result.getInt("id"), result.getInt("user_id"), result.getInt("plan_id"), result.getString("target_url"))
+      rows = rows :+ row
+      adids :+= row._1
+      userids :+= row._2
+      planids :+= row._3
+      urls :+= row._4
+    }
+    result = getAdDbResult("mariadb.adv_old")
+    while (result.next()) {
+      val row = (result.getInt("id"), result.getInt("user_id"), result.getInt("plan_id"), result.getString("target_url"))
+      rows = rows :+ row
+      adids :+= row._1
+      userids :+= row._2
+      planids :+= row._3
+      urls :+= row._4
+    }
+
+    var n = 0
+    val adidmap = mutable.Map[Int, Int]()
+    adids.distinct.foreach{
+      x =>
+        n += 1
+        adidmap.update(x, n)
+    }
+
+    println("adid", adidmap.size, n)
+
+    n = 0
+    val useridmap = mutable.Map[Int, Int]()
+    userids.distinct.foreach{
+      x =>
+        n += 1
+        useridmap.update(x, n)
+    }
+    println("userid", useridmap.size, n)
+
+    n = 0
+    val planidmap = mutable.Map[Int, Int]()
+    planids.distinct.foreach{
+      x =>
+        n += 1
+        planidmap.update(x, n)
+    }
+    println("planid", planidmap.size, n)
+
+    n = 0
+    val urlmap = mutable.Map[String, Int]()
+    urls.distinct.foreach{
+      x =>
+        n += 1
+        urlmap.update(x, n)
+    }
+    println("url", urlmap.size, n)
+
+    val admap = mutable.Map[Int, AdInfo]()
+    rows
+      .foreach {
+        x =>
+          val ad = AdInfo(
+            adid = adidmap.getOrElse(x._1, 0),
+            userid = useridmap.getOrElse(x._2, 0),
+            planid = planidmap.getOrElse(x._3, 0),
+            turl = urlmap.getOrElse(x._4, 0)
+          )
+
+          admap.update(x._1, ad)
+      }
+
+    admap.toMap
+  }
+
+  case class AdInfo(adid: Int, userid: Int, planid: Int, turl: Int) {
+
   }
 }
