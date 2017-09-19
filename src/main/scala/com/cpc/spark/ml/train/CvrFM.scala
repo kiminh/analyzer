@@ -4,21 +4,23 @@ import java.text.SimpleDateFormat
 import java.util
 import java.util.{Calendar, Date}
 
+import com.cpc.spark.ml.common.FeatureDict
 import com.intel.imllib.fm.regression.{FMModel, FMWithSGD}
-import org.apache.spark.sql.Dataset
-
-//import com.intel.imllib.fm.regression.{FMModel, FMWithSGD}
+import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.SparkContext
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.util.MLUtils
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.mllib.linalg.{DenseMatrix, SparseVector, Vector, Vectors}
-import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
-
 import org.apache.spark.ml.classification.MultilayerPerceptronClassifier
+import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
+import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.ml.feature.{LabeledPoint => MLLabeledPoint}
+import org.apache.spark.ml.linalg.{Vector => MLVector, Vectors => MLVectors}
 
+import scala.collection.mutable
+import scala.io.Source
 import scala.util.Random
 
 /**
@@ -46,6 +48,7 @@ object CvrFM {
       .config("spark.core.connection.auth.wait.timeout", "100")
       .appName("ctr fm")
       .getOrCreate()
+    import ctx.implicits._
 
     val sampleRate = 0.9
     var pathSep = Seq[String]()
@@ -57,7 +60,6 @@ object CvrFM {
       cal.add(Calendar.DATE, 1)
     }
     println("%s/{%s}".format(inpath, pathSep.mkString(",")))
-
 
     /*
     val model = FMWithSGD.train(svm, task = 1, numIterations = 10,
@@ -72,12 +74,32 @@ object CvrFM {
 
 
 
-
+    FeatureDict.loadData()
+    val badcvr = ctx.sparkContext.broadcast(FeatureDict.dict.adcvr)
 
     val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
     val totalNum = rawData.count()
-    val svm = rawData.coalesce(math.max(200, 50))
+    val svm = rawData.coalesce(math.max(totalNum.toInt / 50000, 50))
+      .mapPartitions {
+        p =>
+          val adcvr = badcvr.value
+          p.map {
+            x =>
+              var els = Seq[(Int, Double)]()
+              x.features.foreachActive{
+                (i, v) =>
+                  if (i == 3595) {
+                    els = els :+ (i, adcvr.getOrElse(v.toInt, 0d))
+                  } else {
+                    els = els :+ (i, v)
+                  }
+              }
+              val v = MLVectors.sparse(x.features.size, els)
+              MLLabeledPoint(x.label, v)
+          }
+      }
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
+
     val sample = svm(0)
       .filter(x => x.label > 0.01 || Random.nextInt(100) < 44)
       .cache()
@@ -96,6 +118,7 @@ object CvrFM {
       .reduceByKey((x, y) => x + y)
       .toLocalIterator
       .foreach(println)
+    /*
 
     val fm1: FMModel = FMWithSGD.train(sample, task = 0, numIterations = 50,
       stepSize = 0.1, dim = (false, true, k), regParam = (0, 0.1, 0.01), initStd = 0.01)
@@ -106,30 +129,40 @@ object CvrFM {
     //val w2 = Array.fill(k)(Vectors.dense(Array.fill(n)(0.01d)).toSparse)
     //stocGradAscent(sample.take(1000).toIterator, w, w2, 0.1)
     //val (w, w2) = sparkStocGradAscent(ctx.sparkContext, sample, k, 50)
+    */
 
-
-    /*
-    val layers = Array[Int](n, 100, 1) // Note 2 neurons in the input layer
+    val first = sample.first()
+    println(first)
+    val n = first.features.size
+    val layers = Array[Int](n, 2)
     val trainer = new MultilayerPerceptronClassifier()
       .setLayers(layers)
       .setBlockSize(128)
       .setSeed(1234L)
       .setMaxIter(100)
 
-    ctx.createDataFrame(sample).w
-
-    trainer.fit(sample)
-    */
-
-
+    val sampleDs = sample.toDS()
+    val mpc = trainer.fit(sampleDs)
 
     println("testing...")
     val test = svm(1)
-    val testResults = test.map{
-      case LabeledPoint(label, features) =>
-        val p = fm1.predict(features.toSparse)
-        (p, label)
-    }
+    val testDs = test.toDS()
+    val result = mpc.transform(testDs)
+
+    val predictionAndLabels = result.select("prediction", "label")
+
+    val evaluator1 = new MulticlassClassificationEvaluator().setMetricName("accuracy")
+    val evaluator2 = new MulticlassClassificationEvaluator().setMetricName("weightedPrecision")
+    val evaluator3 = new MulticlassClassificationEvaluator().setMetricName("weightedRecall")
+    val evaluator4 = new MulticlassClassificationEvaluator().setMetricName("f1")
+    println("Accuracy = " + evaluator1.evaluate(predictionAndLabels))
+    println("Precision = " + evaluator2.evaluate(predictionAndLabels))
+    println("Recall = " + evaluator3.evaluate(predictionAndLabels))
+    println("F1 = " + evaluator4.evaluate(predictionAndLabels))
+
+
+    val testResults = result.select("prediction", "label")
+      .rdd.map(x => (x.getDouble(0), x.getDouble(1)))
 
     testResults.take(200).foreach(println)
 
@@ -364,6 +397,7 @@ object CvrFM {
     }
     Vectors.sparse(v1.size, els).toSparse
   }
+
 }
 
 
