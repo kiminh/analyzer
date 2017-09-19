@@ -1,47 +1,28 @@
-package com.cpc.spark.qukan.userprofile
+package com.cpc.spark.small.tool
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
-import com.cpc.spark.qukan.parser.HdfsParser
+import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import userprofile.Userprofile.UserProfile
-import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
-
 /**
-  * Created by
+  * Created by wanli on 2017/8/4.
   */
-object GetUserAntispam {
-
+object CleanAntispam {
   def main(args: Array[String]): Unit = {
-    if (args.length < 1) {
-      System.err.println(
-        s"""
-           |Usage: GetUserAntispam <day>
-           |
-        """.stripMargin)
-      System.exit(1)
-    }
-    Logger.getRootLogger.setLevel(Level.WARN)
-    val date = args(0)
-//    val cal = Calendar.getInstance()
-//    cal.add(Calendar.DATE, -dayBefore)
-//    val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val conf = ConfigFactory.load()
-
+    Logger.getRootLogger().setLevel(Level.WARN)
+    val dateDay = args(0)
     val ctx = SparkSession.builder()
-      .appName("cpc get user antispam [%s]".format(date))
+      .appName("clean antispam ")
       .enableHiveSupport()
       .getOrCreate()
-
-    val hivesql = "select device from  rpt_ac.qukan_item_clk  where thedate=\"%s\" and rate > 0.7 and rate < 999 ".format(date)
-
-    println("hive sql is [%s]".format(hivesql))
-
-    val sum = ctx.sql(hivesql).rdd.mapPartitions {
+   val sql =  """
+             SELECT uid from dl_cpc.cpc_union_log where `date` in(%s) and ext['antispam'].int_value = 1 GROUP BY uid
+           """.stripMargin.format(dateDay)
+    println("sql:"+sql)
+    val conf = ConfigFactory.load()
+    val sum = ctx.sql(sql).rdd.mapPartitions {
       p =>
         var n1 = 0
         var n2 = 0
@@ -53,16 +34,15 @@ object GetUserAntispam {
             var user : UserProfile.Builder = null
             val key = deviceid + "_UPDATA"
             val buffer = redis.get[Array[Byte]](key).getOrElse(null)
-            if (buffer == null) {
-              user = UserProfile.newBuilder().setDevid(deviceid)
-            }else {
+            if (buffer != null) {
               user = UserProfile.parseFrom(buffer).toBuilder
-              if(user.getAntispam != 1){
+              if(user.getAntispam == 1){
                 n2 = n2 + 1
+                user.setAntispam(0)
+             //   redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
             }
-            user.setAntispam(1)
-            redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+
         }
         Seq((0, n1), (1, n2)).iterator
     }
@@ -85,5 +65,3 @@ object GetUserAntispam {
     ctx.stop()
   }
 }
-
-

@@ -14,5 +14,7 @@ case class AdvTraceReport(
                            trace_type: String = "",
                            duration: Int = 0,
                            auto: Int = 0,
-                           total_num:Int =0
+                           total_num:Int =0,
+                           impression:Int =0,
+                           click:Int =0
                          )

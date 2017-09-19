@@ -54,6 +54,7 @@ object GetTraceReport {
       .getOrCreate()
     import ctx.implicits._
 
+
     val traceReport = ctx.sql(
       s"""
          |select tr.searchid, un.userid as user_id
@@ -65,6 +66,14 @@ object GetTraceReport {
        """.stripMargin.format(date, hour, date, hour))
       .as[TraceReportLog]
       .rdd.cache()
+    val sql1 = "select ideaid , sum(isshow) as show, sum(isclick) as click from dl_cpc.cpc_union_log where `date` = \"%s\" and `hour` =\"%s\" group by ideaid ".format(date, hour)
+    val unionRdd = ctx.sql(sql1).rdd.map{
+      x =>
+        val ideaid : Int =  x(0).toString().toInt
+        val click : Int = x(1).toString().toInt
+        val show : Int = x(2).toString().toInt
+        (ideaid,(click, show))
+    }
 
     val traceData = traceReport.filter {
       trace =>
@@ -79,14 +88,19 @@ object GetTraceReport {
         ((trace.user_id, trace.plan_id, trace.unit_id, trace.idea_id, trace.date, trace.hour, trace.trace_type, trace.duration, trace.auto), 1)
     }.reduceByKey {
       case (x, y) => (x + y)
-    }.map {
+    }.map{
       case ((user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration, auto), count) =>
-        AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration, auto , count)
+        (idea_id, (user_id, plan_id, unit_id, date, hour, trace_type, duration, auto, count))
     }
-    println("*********traceDatatraceDatatraceData**********")
-    traceData.collect().foreach(println)
+    val toResult = traceData.join(unionRdd).map {
+      case   (idea_id, ((user_id, plan_id, unit_id, date, hour, trace_type, duration, auto, count),(impression,click))) =>
+        AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration, auto , count, impression, click)
+    }
+
+
+    println("count:" + toResult.count())
     clearReportHourData("report_trace", date, hour)
-    ctx.createDataFrame(traceData)
+    ctx.createDataFrame(toResult)
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_trace", mariadbProp)
