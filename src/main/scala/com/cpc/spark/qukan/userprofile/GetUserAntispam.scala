@@ -37,11 +37,45 @@ object GetUserAntispam {
       .enableHiveSupport()
       .getOrCreate()
 
-    val hivesql = "select device from  rpt_ac.qukan_item_clk  where thedate=\"%s\" and rate > 0.7 and rate < 999 ".format(date)
+    val hivesql = "select device from  rpt_ac.qukan_item_clk  where thedate=\"%s\" and rate > 0.7 and rate < 999 group by device".format(date)
 
     println("hive sql is [%s]".format(hivesql))
+    val unionSql =  """
+             SELECT uid,isclick,isshow,adslot_type,hour
+             from dl_cpc.cpc_union_log where ext['antispam'].int_value =1
+             and `date`="%s"
+           """.stripMargin.format(date)
+    println("unionSql:"+unionSql)
+    val unionRdd = ctx.sql(unionSql).rdd
+      .map {
+        x =>
+          val uid : String =  x(0).toString()
+          val click : Int = x(1).toString().toInt
+          val show : Int = x(2).toString().toInt
+          val adslotType : Int = x(3).toString().toInt
+          val hour  = x(4).toString()
+          (uid,click, show,adslotType,hour)
+      }.cache()
 
-    val sum = ctx.sql(hivesql).rdd.mapPartitions {
+
+    val rddfilter = unionRdd.filter(x => x._2 == 1).map(x => (x._1, x._4)).distinct().reduceByKey((x,y) => x+y)
+
+    val rdd2  = rddfilter.filter(x => x._2 == 1).map(x => x._1)
+
+    println("union count" + rdd2.count())
+
+    val qukanRdd = ctx.sql(hivesql).rdd.map {
+      x =>
+        val uid : String =  x(0).toString()
+        uid
+    }.cache()
+    println("qukan count" + qukanRdd.count())
+
+    val toRdd = qukanRdd.subtract(rdd2)
+
+    println("filter count" + toRdd.count())
+
+    val sum = toRdd.mapPartitions {
       p =>
         var n1 = 0
         var n2 = 0
@@ -49,7 +83,7 @@ object GetUserAntispam {
         p.foreach {
           x =>
             n1 = n1 + 1
-            var deviceid : String = x(0).toString()
+            var deviceid : String = x
             var user : UserProfile.Builder = null
             val key = deviceid + "_UPDATA"
             val buffer = redis.get[Array[Byte]](key).getOrElse(null)

@@ -54,7 +54,6 @@ object GetAntispam {
       case (hour,(click, show)) =>
         (hour, click, show,click.toDouble/show.toDouble * 100)
     }.collect().foreach(x => println("all:"+ x))
-/*
 
     println("all list" + rddfilter2.filter(x => x._4 ==1).map(x => (x._1)).distinct().count())
 
@@ -65,9 +64,8 @@ object GetAntispam {
       case (hour,(click, show)) =>
         (hour, click, show,click.toDouble/show.toDouble * 100)
     }.collect().foreach(x => println("all list:"+ x))
-*/
 
-    /*println("only list" + rdd2.count())
+    println("only list" + rdd2.count())
     rdd.map{
       case (uid,click, show,adslotType,hour) =>
         (uid,(click, show,adslotType,hour))
@@ -101,6 +99,6 @@ object GetAntispam {
     }.reduceByKey((x, y) =>(x._1+ y._1, x._2 +y._2)).map{
       case ((hour,adslotType),(click, show)) =>
         (hour,adslotType,click, show, click.toDouble/show.toDouble * 100)
-    }.collect().foreach(x => println(" list and info:"+ x))*/
+    }.collect().foreach(x => println(" list and info:"+ x))
   }
 }
