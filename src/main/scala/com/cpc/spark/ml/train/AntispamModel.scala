@@ -74,7 +74,7 @@ object AntispamModel {
     } else {
       val svm = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/%s".format(inpath, toDate))
         //random pick 1/pnRate negative sample
-        //.filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
+        //.filter(x => x.label > 0.01 || Random.nextInt(100) < 100)
         .randomSplit(Array(1, 0), seed = new Date().getTime)
       val sample = svm(0).cache()
       println("sample count", sample.count())

@@ -5,6 +5,7 @@ import java.util
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.ml.common.FeatureDict
+import com.intel.imllib.ffm.classification.{FFMModel, FFMWithAdag}
 import com.intel.imllib.fm.regression.{FMModel, FMWithSGD}
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.log4j.{Level, Logger}
@@ -75,27 +76,24 @@ object CvrFM {
 
 
     FeatureDict.loadData()
-    val badcvr = ctx.sparkContext.broadcast(FeatureDict.dict.adcvr)
 
     val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
     val totalNum = rawData.count()
-    val svm = rawData.coalesce(math.max(totalNum.toInt / 50000, 50))
+    val svm = rawData.coalesce(math.max(totalNum.toInt / 20000, 50))
       .mapPartitions {
         p =>
-          val adcvr = badcvr.value
           p.map {
             x =>
               var els = Seq[(Int, Double)]()
               x.features.foreachActive{
                 (i, v) =>
                   if (i == 3595) {
-                    els = els :+ (i, adcvr.getOrElse(v.toInt, 0d))
                   } else {
                     els = els :+ (i, v)
                   }
               }
-              val v = MLVectors.sparse(x.features.size, els)
-              MLLabeledPoint(x.label, v)
+              val v = Vectors.sparse(x.features.size, els)
+              LabeledPoint(x.label, v)
           }
       }
       .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
@@ -118,10 +116,16 @@ object CvrFM {
       .reduceByKey((x, y) => x + y)
       .toLocalIterator
       .foreach(println)
-    /*
 
+    /*
     val fm1: FMModel = FMWithSGD.train(sample, task = 0, numIterations = 50,
       stepSize = 0.1, dim = (false, true, k), regParam = (0, 0.1, 0.01), initStd = 0.01)
+
+    val first = sample.first()
+    val n = first.features.size
+    val m = sample.count()
+    val ffm: FFMModel = FFMWithAdag.train(sample, m, n, dim = (false, true, k),
+      n_iters = 100, eta = args(3).toDouble, lambda = args(4).toDouble, normalization = false, false, "adagrad")
 
     //stocGradAscent(svm.take(10000).toIterator, w.toArray, w2, k, 0.1)
     val n = sample.first().features.size
@@ -129,41 +133,14 @@ object CvrFM {
     //val w2 = Array.fill(k)(Vectors.dense(Array.fill(n)(0.01d)).toSparse)
     //stocGradAscent(sample.take(1000).toIterator, w, w2, 0.1)
     //val (w, w2) = sparkStocGradAscent(ctx.sparkContext, sample, k, 50)
-    */
 
-    val first = sample.first()
     println(first)
-    val n = first.features.size
-    val layers = Array[Int](n, 2)
-    val trainer = new MultilayerPerceptronClassifier()
-      .setLayers(layers)
-      .setBlockSize(128)
-      .setSeed(1234L)
-      .setMaxIter(100)
 
-    val sampleDs = sample.toDS()
-    val mpc = trainer.fit(sampleDs)
-
-    println("testing...")
-    val test = svm(1)
-    val testDs = test.toDS()
-    val result = mpc.transform(testDs)
-
-    val predictionAndLabels = result.select("prediction", "label")
-
-    val evaluator1 = new MulticlassClassificationEvaluator().setMetricName("accuracy")
-    val evaluator2 = new MulticlassClassificationEvaluator().setMetricName("weightedPrecision")
-    val evaluator3 = new MulticlassClassificationEvaluator().setMetricName("weightedRecall")
-    val evaluator4 = new MulticlassClassificationEvaluator().setMetricName("f1")
-    println("Accuracy = " + evaluator1.evaluate(predictionAndLabels))
-    println("Precision = " + evaluator2.evaluate(predictionAndLabels))
-    println("Recall = " + evaluator3.evaluate(predictionAndLabels))
-    println("F1 = " + evaluator4.evaluate(predictionAndLabels))
-
-
-    val testResults = result.select("prediction", "label")
-      .rdd.map(x => (x.getDouble(0), x.getDouble(1)))
-
+    val testResults = svm(1)
+      .map {
+        x =>
+          (ffm.predict(x.features), x.label)
+      }
     testResults.take(200).foreach(println)
 
     var test0 = 0
@@ -225,6 +202,7 @@ object CvrFM {
     //val roc = metrics.roc
     val auROC = metrics.areaUnderROC
     println("auPRC: %.10f, auROC: %.10f".format(auPRC, auROC))
+    */
   }
 
   def sigmoid(m: Double): Double = {
