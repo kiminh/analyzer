@@ -26,8 +26,6 @@ object FeatureDict {
 
   val interest = mutable.Map[Int, Int]()
 
-  val adcvr = mutable.Map[Int, Double]()
-
   val dict = Dict()
 
   def updateDict(ulog: RDD[UnionLog]): Unit = {
@@ -121,13 +119,6 @@ object FeatureDict {
         dict.interest = interest.toMap
         n = n + 1
     }
-
-    loadDictFile("adcvr.txt").foreach {
-      v =>
-        val row = v.split(" ")
-        adcvr.update(row(0).toInt, row(1).toDouble)
-        dict.adcvr = adcvr.toMap
-    }
   }
 
   private def loadDictFile(filename: String): Seq[String] = {
@@ -187,9 +178,7 @@ case class Dict(var adslot: Map[Int, Int] = null,
                  var adclass: Map[Int, Int] = null,
                  var city: Map[Int, Int] = null,
                  var channel: Map[Int, Int] = null,
-                 var interest: Map[Int, Int] = null,
-                 var adid: Map[Int, Int] = null,
-                 var adcvr: Map[Int, Double] = null
+                 var interest: Map[Int, Int] = null
                )
 
 

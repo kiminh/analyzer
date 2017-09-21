@@ -61,7 +61,7 @@ object LRTrain {
     }
     println("%s/{%s}".format(inpath, pathSep.mkString(",")))
     FeatureDict.loadData()
-    val badcvr = ctx.sparkContext.broadcast(FeatureDict.dict.adcvr)
+    //val badcvr = ctx.sparkContext.broadcast(FeatureDict.dict.adcvr)
     val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
     val totalNum = rawData.count()
     val svm = rawData.coalesce(totalNum.toInt / 50000)
@@ -70,11 +70,11 @@ object LRTrain {
           p.map {
             x =>
               var els = Seq[(Int, Double)]()
-              val adcvr = badcvr.value
+              //val adcvr = badcvr.value
               x.features.foreachActive {
                 (i, v) =>
                   if (i == 3595) {
-                    els = els :+ (i, adcvr.getOrElse(v.toInt, 0d))
+                    //els = els :+ (i, adcvr.getOrElse(v.toInt, 0d))
                   } else {
                     els = els :+ (i, v)
                   }

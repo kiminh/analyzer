@@ -9,7 +9,6 @@ import java.util.{Calendar, Date, Properties}
 import com.cpc.spark.common.{Utils => CUtils}
 import com.cpc.spark.ml.common.{FeatureDict, Utils}
 import com.cpc.spark.ml.train.LRIRModel
-import com.hankcs.hanlp.HanLP
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.linalg.Vectors
@@ -95,8 +94,9 @@ object LRTrain {
               val ad = admap.getOrElse(id, null)
               if (ad != null) {
                 els = els :+ (3595 + ad.turl, 1d)
+                els = els :+ (3595 + 15000 + ad.adid, 1d)
 
-                val v = Vectors.sparse(3595 + 15000, els)
+                val v = Vectors.sparse(3595 + 15000 + 80000, els)
                 LabeledPoint(x.label, v)
               } else {
                 null
