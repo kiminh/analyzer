@@ -70,9 +70,10 @@ object GetTraceReport {
     val unionRdd = ctx.sql(sql1).rdd.map{
       x =>
         val ideaid : Int =  x(0).toString().toInt
-        val click : Int = x(1).toString().toInt
-        val show : Int = x(2).toString().toInt
-        (ideaid,(click, show))
+        val show : Int = x(1).toString().toInt
+        val click : Int = x(2).toString().toInt
+
+        (ideaid,(show, click))
     }
 
     val traceData = traceReport.filter {
@@ -93,7 +94,7 @@ object GetTraceReport {
         (idea_id, (user_id, plan_id, unit_id, date, hour, trace_type, duration, auto, count))
     }
     val toResult = traceData.join(unionRdd).map {
-      case   (idea_id, ((user_id, plan_id, unit_id, date, hour, trace_type, duration, auto, count),(impression,click))) =>
+      case   (idea_id, ((user_id, plan_id, unit_id, date, hour, trace_type, duration, auto, count),(impression, click))) =>
         AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration, auto , count, impression, click)
     }
 

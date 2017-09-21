@@ -1,0 +1,181 @@
+package com.cpc.spark.ml.antimodel.v2
+
+import java.util.Calendar
+
+import com.cpc.spark.log.parser.{ExtValue, UnionLog}
+import com.cpc.spark.ml.antimodel.v2.CreateSvm.Antispam
+import com.cpc.spark.ml.common.Dict
+import mlserver.mlserver._
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
+import org.apache.spark.mllib.util.MLUtils
+
+
+/**
+  * Created by Roy on 2017/5/15.
+  */
+object FeatureParser {
+
+  def unionLogToObject(x: UnionLog): (AdInfo, Media, User, Location, Network, Device, Long) = {
+    var cls = 0
+    if (x.ext != null) {
+      val v = x.ext.getOrElse("adclass", null)
+      if (v != null) {
+        cls = v.int_value
+      }
+    }
+    val ad = AdInfo(
+      bid = x.bid,
+      ideaid = x.ideaid,
+      unitid = x.unitid,
+      planid = x.planid,
+      userid = x.userid,
+      adtype = x.adtype,
+      interaction = x.interaction,
+      _class = cls
+    )
+    val m = Media(
+      mediaAppsid = x.media_appsid.toInt,
+      mediaType = x.media_type,
+      adslotid = x.adslotid.toInt,
+      adslotType = x.adslot_type,
+      floorbid = x.floorbid
+    )
+    val interests = x.interests.split(",")
+      .map{
+        x =>
+          val v = x.split("=")
+          if (v.length == 2) {
+            (v(0).toInt, v(1).toInt)
+          } else {
+            (0, 0)
+          }
+      }
+      .filter(x => x._1 > 0 && x._2 >= 2)
+      .sortWith((x, y) => x._2 > y._2)
+      .map(_._1)
+      .toSeq
+    val u = User(
+      sex = x.sex,
+      age = x.age,
+      coin = x.coin,
+      uid = x.uid,
+      interests = interests
+    )
+    val n = Network(
+      network = x.network,
+      isp = x.isp,
+      ip = x.ip
+    )
+    val loc = Location(
+      country = x.country,
+      province = x.province,
+      city = x.city
+    )
+    val d = Device(
+      os = x.os,
+      model = x.model
+    )
+    (ad, m, u, loc, n, d, x.timestamp * 1000L)
+  }
+// (uid,request,show,click,ip,ctr,isAtispam ,load, active, buttonClick, press, stay1, stay5, stay10, stay30, stay60, stay120)
+
+  def parseLog(log:Antispam): String = {
+    val x = log
+    var svm = "0"
+    val vector = getVector(log)
+    if (vector != null) {
+      var p = -1
+      svm =log.isAtispam.toString
+      MLUtils.appendBias(vector).foreachActive {
+        (i, v) =>
+          if (i <= p) {
+            throw new Exception("svm error:" + vector)
+          }
+          p = i
+          svm = svm + " %d:%f".format(i + 1, v)
+      }
+    }
+    svm
+  }
+
+  def vectorToSvm(v: Vector): String = {
+    var p = -1
+    var svm = ""
+    MLUtils.appendBias(v).foreachActive {
+      (i, v) =>
+        if (i <= p) {
+          throw new Exception("svm error:" + v)
+        }
+        p = i
+        svm = svm + " %d:%f".format(i + 1, v)
+    }
+    svm
+  }
+
+  def getVector(log:Antispam): Vector = {
+    var els = Seq[(Int, Double)]()
+    var i = 0
+    try {
+      var request = log.request%1000
+      els = els :+ (request + i, 1d)
+      i += 1000
+      var show = log.show % 1000
+      els = els :+ (show + i, 1d)
+      i += 1000
+      var click = log.click % 1000
+      els = els :+ (click + i, 1d)
+      i += 1000
+      Vectors.sparse(i, els)
+
+      var ctr = log.ctr % 100
+      els = els :+ (click + i, 1d)
+      i += 100
+
+      var ipNum = log.ipNum % 100
+      els = els :+ (ipNum + i, 1d)
+      i += 100
+
+      var load = log.load % 100
+      els = els :+ (load + i, 1d)
+      i += 100
+      var active = log.active % 100
+      els = els :+ (active + i, 1d)
+      i += 100
+      var stay1 = log.stay1 % 100
+      els = els :+ (stay1 + i, 1d)
+      i += 100
+
+      var stay5 = log.stay5 % 100
+      els = els :+ (stay5 + i, 1d)
+      i += 100
+      var stay10 = log.stay10 % 100
+      els = els :+ (stay10 + i, 1d)
+      i += 100
+      var stay30 = log.stay30 % 100
+      els = els :+ (stay30 + i, 1d)
+      i += 100
+      var stay60 = log.stay60 % 100
+      els = els :+ (stay60 + i, 1d)
+      i += 100
+
+      var stay120 = log.stay120 % 100
+      els = els :+ (stay120 + i, 1d)
+      i += 100
+
+      var coin = log.coin % 20000
+      els = els :+ (coin + i, 1d)
+      i += 20000
+
+      var contentNum = log.contentNum % 1000
+      els = els :+ (contentNum + i, 1d)
+      i += 1000
+      Vectors.sparse(i, els)
+    } catch {
+      case e: Exception =>
+        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        null
+    }
+  }
+
+}
+
