@@ -7,14 +7,14 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.rdd.RDD
-
+import scala.util.Random
 /**
   * Created by roydong on 06/07/2017.
   */
 object AntispamModelV2 {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 2) {
+    if (args.length < 3) {
       System.err.println(
         s"""
            |Usage: CtrModel <mode:train/test>
@@ -32,6 +32,8 @@ object AntispamModelV2 {
     Logger.getRootLogger.setLevel(Level.WARN)
     val mode = args(0).trim
     val daybefore = args(1).toInt
+    val pnRate = args(2).toInt
+
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -daybefore)
 
@@ -47,7 +49,7 @@ object AntispamModelV2 {
     } else {
       val svm = MLUtils.loadLibSVMFile(ctx.sparkContext, "/user/cpc/antispam/v2/svm/train/%s".format(toDate))
         //random pick 1/pnRate negative sample
-        //.filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
+      //  .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
         .randomSplit(Array(1, 0), seed = new Date().getTime)
       val sample = svm(0).cache()
       println("sample count", sample.count())
@@ -72,6 +74,7 @@ object AntispamModelV2 {
     }
     if (testSample == null) {
       testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "/user/cpc/antispam/v2/svm/test/%s".format( toDate))
+        .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
     }
     println("testing...")
     model.test(testSample)
