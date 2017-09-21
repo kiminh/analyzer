@@ -46,6 +46,8 @@ object LogParser {
           cpmbid = slot.getCpmbid
         )
         ext.update("channel", ExtValue(string_value = slot.getChannel))
+        ext.update("pagenum", ExtValue(int_value = slot.getPagenum))
+        ext.update("bookid", ExtValue(string_value = slot.getBookid))
       }
       if (notice.getDspReqInfoCount > 0) {
         val dsp = notice.getDspReqInfo(0)

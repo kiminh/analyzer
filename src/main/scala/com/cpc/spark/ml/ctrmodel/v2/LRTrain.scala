@@ -1,7 +1,10 @@
 package com.cpc.spark.ml.ctrmodel.v2
 
+
+
+
 import java.text.SimpleDateFormat
-import java.util.{Calendar, Date, Properties}
+import java.util.{Calendar, Date}
 
 import com.cpc.spark.common.{Utils => CUtils}
 import com.cpc.spark.ml.common.{DspData, Utils}
@@ -58,7 +61,7 @@ object LRTrain {
       cal.add(Calendar.DATE, 1)
     }
 
-    println("%s/{%s}".format(inpath, pathSep.mkString(",")))
+    println("loading sample data %s/{%s}".format(inpath, pathSep.mkString(",")))
     val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
     val totalNum = rawData.count()
     val svm = rawData.coalesce(totalNum.toInt / 20000)
@@ -112,7 +115,7 @@ object LRTrain {
       .toLocalIterator
       .foreach(println)
 
-    sample.take(1).foreach(x => println(x.features))
+    sample.take(5).foreach(x => println(x.features))
     println("training...")
     model.run(sample, 0, 1e-6)
     model.saveHdfs(modelPath + "/" + date)

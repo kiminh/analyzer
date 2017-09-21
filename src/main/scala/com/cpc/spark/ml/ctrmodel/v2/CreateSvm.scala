@@ -55,6 +55,7 @@ object CreateSvm {
            |and ext['antispam'].int_value = 0
         """.stripMargin.format(date, hourSql))
         .as[UnionLog].rdd
+        .repartition(4000)
 
       val logNum = ulog.count()
       //最多拿2亿的数据
@@ -66,7 +67,9 @@ object CreateSvm {
         FeatureDict.updateDict(sample)
       }
       FeatureDict.loadData()
-      FeatureDict.updateServerData(ConfigFactory.load())
+      if (updateDict) {
+        FeatureDict.updateServerData(ConfigFactory.load())
+      }
       val bdict = ctx.sparkContext.broadcast(FeatureDict.dict)
       val svm = sample
         .mapPartitions {
