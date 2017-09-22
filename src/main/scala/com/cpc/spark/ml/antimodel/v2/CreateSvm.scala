@@ -13,7 +13,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 object CreateSvm {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 5) {
+    if (args.length < 6) {
       System.err.println(
         s"""
            |Usage: create svm <version:string> <daybefore:int>
@@ -30,178 +30,161 @@ object CreateSvm {
     val rate = args(2).split("/").map(_.toInt)
     val ttRate = args(3).toFloat  //train/test rate
     val saveFull = args(4).toInt
+    val days = args(5).toInt
     val ctx = SparkSession.builder()
-      .appName("create antispam svm data code:v1 data:" + version)
+      .appName("create antispam svm data code:v2 data:" + version)
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
-
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    cal.add(Calendar.DATE, -1)
-    val date2 = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    println("get data " + date)
+    for (n <- 1 to days) {
+      val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      cal.add(Calendar.DATE, -1)
+      val date2 = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      println("get date1 " + date)
+      println("get date2 " + date2)
 
-    val sql1 = "SELECT device_code,member_id from gobblin.qukan_p_member_info where day  ='%s' group by device_code,member_id ".format(date)
-    val sql2 = "SELECT member_id,type, sum(coin) from gobblin.qukan_p_gift_v2 where  day  ='%s' group by member_id,type".format(date)
-    val sql3 = "SELECT member_id,cmd,count(content_id) from rpt_qukan.qukan_log_cmd where thedate ='%s' group by member_id,cmd".format(date)
-    val sql4 = "SELECT member_id,cmd,count(content_id) from rpt_qukan.qukan_log_cmd where thedate ='%s' group by member_id,cmd".format(date2)
-    println("sql1:" +sql1)
-    println("sql2:" +sql2)
-    println("sql3:" +sql3)
-    println("sql4:" +sql4)
-    val rdd1 = ctx.sql(sql1).rdd.map{
-      x =>
-        val device = x(0).toString()
-        val member = x(1).toString()
-        (member, device)
-    }.filter(x => x._2 !=  null && x._2.length >0 && x._1 !=  null && x._1.length > 0)
-    val rdd2 = ctx.sql(sql2).rdd.map{
-      x =>
-        val member = x(0).toString()
-        var coinType = 0
-        var coin = 0
-        try{
-          coin = x(2).toString().toInt
-          coinType = x(1).toString().toInt
-        } catch {
-          case t: Throwable =>
-        }
-        (member,(coinType , coin))
-    }.filter(x => x._2 !=  null && x._1 !=  null && x._1.length >0)
-    val rdd3 = ctx.sql(sql3).rdd.map{
-      x =>
-        var member = ""
-        var cmdType = 0
-        var contentNum = 0
-        try{
-          member = x(0).toString()
-          cmdType = x(1).toString().toInt
-          contentNum = x(2).toString().toInt
-        } catch {
-          case t: Throwable =>
-        }
-        (member, (cmdType, contentNum))
-    }.filter(x => x._2 !=  null && x._1 !=  null && x._1.length >0)
-    val rdd4 = ctx.sql(sql4).rdd.map{
-      x =>
-        var member = ""
-        var cmdType = 0
-        var contentNum = 0
-        try{
-          member = x(0).toString()
-          cmdType = x(1).toString().toInt
-          contentNum = x(2).toString().toInt
-        } catch {
-          case t: Throwable =>
-        }
-        (member, (cmdType, contentNum))
-    }.filter(x => x._2 !=  null && x._1 !=  null && x._1.length >0)
-    val rdd5 = rdd3.join(rdd4).map{
-      case (member, ((cmdType, contentNum),(cmdType2, contentNum2))) =>
-        (member, (cmdType - cmdType2, contentNum - contentNum2))
-    }.filter(x => x._2._1 >= 0 &&  x._2._2 >= 0 )
+      val sql1 = "SELECT device_code,member_id from gobblin.qukan_p_member_info where day  ='%s' group by device_code,member_id ".format(date)
+      val sql2 = "SELECT member_id,type, sum(coin) from gobblin.qukan_p_gift_v2 where  day  ='%s' group by member_id,type".format(date)
+      val sql3 = "SELECT member_id,cmd,count(content_id) from rpt_qukan.qukan_log_cmd where thedate ='%s' group by member_id,cmd".format(date)
+      val sql4 = "SELECT member_id,cmd,count(content_id) from rpt_qukan.qukan_log_cmd where thedate ='%s' group by member_id,cmd".format(date2)
+      println("sql1:" +sql1)
+      println("sql2:" +sql2)
+      println("sql3:" +sql3)
+      println("sql4:" +sql4)
+      val rdd1 = ctx.sql(sql1).rdd.map{
+        x =>
+          val device = x(0).toString()
+          val member = x(1).toString()
+          (member, device)
+      }.filter(x => x._2 !=  null && x._2.length >0 && x._1 !=  null && x._1.length > 0)
+      val rdd2 = ctx.sql(sql2).rdd.map{
+        x =>
+          val member = x(0).toString()
+          var coinType = 0
+          var coin = 0
+          try{
+            coin = x(2).toString().toInt
+            coinType = x(1).toString().toInt
+          } catch {
+            case t: Throwable =>
+          }
+          (member,(coinType , coin))
+      }.filter(x => x._2 !=  null && x._1 !=  null && x._1.length >0)
+      val rdd3 = ctx.sql(sql3).rdd.map{
+        x =>
+          var member = ""
+          var cmdType = 0
+          var contentNum = 0
+          try{
+            member = x(0).toString()
+            cmdType = x(1).toString().toInt
+            contentNum = x(2).toString().toInt
+          } catch {
+            case t: Throwable =>
+          }
+          (member, (cmdType, contentNum))
+      }.filter(x => x._2 !=  null && x._1 !=  null && x._1.length >0)
+      val rdd4 = ctx.sql(sql4).rdd.map{
+        x =>
+          var member = ""
+          var cmdType = 0
+          var contentNum = 0
+          try{
+            member = x(0).toString()
+            cmdType = x(1).toString().toInt
+            contentNum = x(2).toString().toInt
+          } catch {
+            case t: Throwable =>
+          }
+          (member, (cmdType, contentNum))
+      }.filter(x => x._2 !=  null && x._1 !=  null && x._1.length >0)
+      val rdd5 = rdd3.join(rdd4).map{
+        case (member, ((cmdType, contentNum),(cmdType2, contentNum2))) =>
+          (member, (cmdType - cmdType2, contentNum - contentNum2))
+      }.filter(x => x._2._1 >= 0 &&  x._2._2 >= 0 )
 
-    val qukanData = rdd2.join(rdd5).join(rdd1).map{
-      case (member,(((coinType,coin),(cmdType, contentNum)),device)) =>
-        (device, (coin,contentNum))
-    }.reduceByKey((x,y) => (x._1 + y._1, x._2 + y._2))
-
-
-
-
+      val qukanData = rdd2.join(rdd5).join(rdd1).map{
+        case (member,(((coinType,coin),(cmdType, contentNum)),device)) =>
+          (device, (coin,contentNum))
+      }.reduceByKey((x,y) => (x._1 + y._1, x._2 + y._2))
 
 
 
 
 
 
-    val unionSql = "SELECT uid,count(*),sum(isshow),sum(isclick),count(DISTINCT ip) ,sum(ext['antispam'].int_value) from " +
-      "dl_cpc.cpc_union_log where media_appsid in ('80000001', '80000002') and `date`='%s' GROUP BY uid".format(date)
-    val traceSql = s""" select un.uid,tr.trace_type,tr.duration
+
+
+
+
+      val unionSql = "SELECT uid,count(*),sum(isshow),sum(isclick),count(DISTINCT ip) ,sum(ext['antispam'].int_value) from " +
+        "dl_cpc.cpc_union_log where media_appsid in ('80000001', '80000002') and `date`='%s' GROUP BY uid".format(date)
+      val traceSql = s""" select un.uid,tr.trace_type,tr.duration
                    from dl_cpc.cpc_union_trace_log as tr
                    left join dl_cpc.cpc_union_log as un on
                    tr.searchid = un.searchid where
                    tr.`date` = "%s"   and un.`date` = "%s" """.stripMargin.format(date,date)
-    val trace = ctx.sql(traceSql).rdd.map{
-      x =>
-        val uid : String =  x(0).toString()
-        val traceType = x(1).toString()
-        val duration : Int = x(2).toString().toInt
-        var load, active, buttonClick, press, stay1, stay5, stay10, stay30, stay60, stay120 = 0
-        traceType match {
-          case "load" => load += 1
-          case s if s.startsWith("active") => active += 1
-          case "buttonClick" => buttonClick += 1
-          case "press" => press += 1
-          case "stay" => x.getInt(2) match {
-            case 1 => stay1 += 1
-            case 5 => stay5 += 1
-            case 10 => stay10 += 1
-            case 30 => stay30 += 1
-            case 60 => stay60 += 1
-            case 120 => stay120 += 1
+      val trace = ctx.sql(traceSql).rdd.map{
+        x =>
+          val uid : String =  x(0).toString()
+          val traceType = x(1).toString()
+          val duration : Int = x(2).toString().toInt
+          var load, active, buttonClick, press, stay1, stay5, stay10, stay30, stay60, stay120 = 0
+          traceType match {
+            case "load" => load += 1
+            case s if s.startsWith("active") => active += 1
+            case "buttonClick" => buttonClick += 1
+            case "press" => press += 1
+            case "stay" => x.getInt(2) match {
+              case 1 => stay1 += 1
+              case 5 => stay5 += 1
+              case 10 => stay10 += 1
+              case 30 => stay30 += 1
+              case 60 => stay60 += 1
+              case 120 => stay120 += 1
+              case _ =>
+            }
             case _ =>
           }
-          case _ =>
-        }
-        (uid,(load, active, buttonClick, press, stay1, stay5, stay10, stay30, stay60, stay120))
-    }.reduceByKey((x,y) => (x._1+y._1,x._2+y._2,x._3+y._3,x._4+y._4,x._5+y._5,x._6+y._6,x._7+y._7,x._8+y._8,x._9+y._9,x._10+y._10))
+          (uid,(load, active, buttonClick, press, stay1, stay5, stay10, stay30, stay60, stay120))
+      }.reduceByKey((x,y) => (x._1+y._1,x._2+y._2,x._3+y._3,x._4+y._4,x._5+y._5,x._6+y._6,x._7+y._7,x._8+y._8,x._9+y._9,x._10+y._10))
 
-    val union = ctx.sql(unionSql).rdd.map {
-      x =>
-        val uid: String = x(0).toString()
-        val request = x(1).toString().toInt
-        val show = x(2).toString().toInt
-        val click = x(3).toString().toInt
-        val ip = x(4).toString().toInt
-        val isAntispam1 = x(5).toString().toInt
-        val ctr = (click.toDouble/ show.toDouble *1000).toInt
-        var isAtispam = 0
-        if(isAntispam1 > 0){
-          isAtispam =1
-        }
-        (uid,(request,show,click,ip,ctr, isAtispam))
-    }
-
-    val traceUnion = union.leftOuterJoin(trace).map{
-      case  (uid, ((request, show, click, ip, ctr, isAtispam), x:Option[(Int, Int, Int, Int, Int, Int, Int, Int, Int, Int)]))
-      =>
-           val trace:(Int, Int, Int, Int, Int, Int, Int, Int, Int, Int) =  x.getOrElse((0,0,0,0,0,0,0,0,0,0))
-        (uid,(request,show,click,ip,ctr,isAtispam ,trace._1,trace._2,trace._3,trace._4,trace._5,trace._6,trace._7,trace._8,trace._9,trace._10))
-    }.leftOuterJoin(qukanData).map{
-      case  (uid,((request,show,click,ip,ctr,isAtispam ,load, active,
-      buttonClick, press, stay1, stay5, stay10, stay30, stay60, stay120), qukan:Option[(Int,Int)])) =>
-        var qukanData = qukan.getOrElse((0,0))
-        Antispam(uid,request,show,click,ip,ctr,isAtispam ,load, active,
-          buttonClick, press, stay1, stay5, stay10, stay30, stay60, stay120, qukanData._1,qukanData._2)
-    }
-      .cache()
-    traceUnion.take(10).foreach(println)
-
-    val ulog = traceUnion.randomSplit(Array(ttRate, 1 - ttRate), seed = new Date().getTime)
-
-    val train = ulog(0)
-      .mapPartitions {
-        p =>
-          p.map {
-            x =>
-              FeatureParser.parseLog(x)
+      val union = ctx.sql(unionSql).rdd.map {
+        x =>
+          val uid: String = x(0).toString()
+          val request = x(1).toString().toInt
+          val show = x(2).toString().toInt
+          val click = x(3).toString().toInt
+          val ip = x(4).toString().toInt
+          val isAntispam1 = x(5).toString().toInt
+          val ctr = (click.toDouble/ show.toDouble *1000).toInt
+          var isAtispam = 0
+          if(isAntispam1 > 0){
+            isAtispam =1
           }
+          (uid,(request,show,click,ip,ctr, isAtispam))
       }
-    train.take(10).foreach(println)
 
-    train.toDF()
-    .write
-    .mode(SaveMode.Overwrite)
-    .text("/user/cpc/antispam/v2/svm/train/" + date)
+      val traceUnion = union.leftOuterJoin(trace).map{
+        case  (uid, ((request, show, click, ip, ctr, isAtispam), x:Option[(Int, Int, Int, Int, Int, Int, Int, Int, Int, Int)]))
+        =>
+          val trace:(Int, Int, Int, Int, Int, Int, Int, Int, Int, Int) =  x.getOrElse((0,0,0,0,0,0,0,0,0,0))
+          (uid,(request,show,click,ip,ctr,isAtispam ,trace._1,trace._2,trace._3,trace._4,trace._5,trace._6,trace._7,trace._8,trace._9,trace._10))
+      }.leftOuterJoin(qukanData).map{
+        case  (uid,((request,show,click,ip,ctr,isAtispam ,load, active,
+        buttonClick, press, stay1, stay5, stay10, stay30, stay60, stay120), qukan:Option[(Int,Int)])) =>
+          var qukanData = qukan.getOrElse((0,0))
+          Antispam(uid,request,show,click,ip,ctr,isAtispam ,load, active,
+            buttonClick, press, stay1, stay5, stay10, stay30, stay60, stay120, qukanData._1,qukanData._2)
+      }
+        .cache()
+      traceUnion.take(10).foreach(println)
 
-    println("done", train.filter(_.startsWith("1")).count(), train.count())
+      val ulog = traceUnion.randomSplit(Array(ttRate, 1 - ttRate), seed = new Date().getTime)
 
-    if (saveFull > 0) {
-      println("save full data")
-      ulog(1)
+      val train = ulog(0)
         .mapPartitions {
           p =>
             p.map {
@@ -209,13 +192,36 @@ object CreateSvm {
                 FeatureParser.parseLog(x)
             }
         }
-        .toDF()
+      train.take(10).foreach(println)
+
+      train.toDF()
         .write
         .mode(SaveMode.Overwrite)
-        .text("/user/cpc/antispam/v2/svm/test/" + date)
-      println("done", ulog(1).count())
+        .text("/user/cpc/antispam/v2/svm/train/" + date)
+
+      println("done", train.filter(_.startsWith("1")).count(), train.count())
+
+      if (saveFull > 0) {
+        println("save full data")
+        ulog(1)
+          .mapPartitions {
+            p =>
+              p.map {
+                x =>
+                  FeatureParser.parseLog(x)
+              }
+          }
+          .toDF()
+          .write
+          .mode(SaveMode.Overwrite)
+          .text("/user/cpc/antispam/v2/svm/test/" + date)
+        println("done", ulog(1).count())
+      }
+      traceUnion.unpersist()
     }
-    cal.add(Calendar.DATE, 1)
+
+
+
     ctx.stop()
   }
   //uid,request,show,click,ip,ctr,isAtispam ,load, active, buttonClick, press, stay1, stay5, stay10, stay30, stay60, stay120)

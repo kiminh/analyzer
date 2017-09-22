@@ -33,6 +33,7 @@ object AntispamModelV2 {
     val mode = args(0).trim
     val daybefore = args(1).toInt
     val pnRate = args(2).toInt
+    val days = args(3).toInt
 
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -daybefore)
@@ -41,13 +42,20 @@ object AntispamModelV2 {
 
     val model = new LRIRModel
     val ctx = model.initSpark("cpc antispam model v2")
+    var pathSep = Seq[String]()
+    for (n <- 1 to days) {
+      val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      pathSep = pathSep :+ date
+      cal.add(Calendar.DATE, -1)
+    }
+    println("pathSep/user/cpc/antispam/v2/svm/train/{%s}".format( pathSep.mkString(",")))
 
     var testSample: RDD[LabeledPoint] = null
     if (mode.startsWith("test")) {
-      testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "/user/cpc/antispam/v2/svm/test/%s".format(toDate))
+      testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "/user/cpc/antispam/v2/svm/test/{%s}".format(pathSep.mkString(",")))
       model.loadLRmodel("/user/cpc/antispam/v2/model/%s".format(toDate))
     } else {
-      val svm = MLUtils.loadLibSVMFile(ctx.sparkContext, "/user/cpc/antispam/v2/svm/train/%s".format(toDate))
+      val svm = MLUtils.loadLibSVMFile(ctx.sparkContext, "/user/cpc/antispam/v2/svm/train/{%s}".format(pathSep.mkString(",")))
         //random pick 1/pnRate negative sample
       //  .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
         .randomSplit(Array(1, 0), seed = new Date().getTime)
@@ -74,7 +82,6 @@ object AntispamModelV2 {
     }
     if (testSample == null) {
       testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "/user/cpc/antispam/v2/svm/test/%s".format( toDate))
-        .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
     }
     println("testing...")
     model.test(testSample)

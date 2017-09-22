@@ -125,10 +125,9 @@ object FeatureParser {
       var click = log.click % 1000
       els = els :+ (click + i, 1d)
       i += 1000
-      Vectors.sparse(i, els)
 
       var ctr = log.ctr % 100
-      els = els :+ (click + i, 1d)
+      els = els :+ (ctr + i, 1d)
       i += 100
 
       var ipNum = log.ipNum % 100
@@ -157,15 +156,13 @@ object FeatureParser {
       var stay60 = log.stay60 % 100
       els = els :+ (stay60 + i, 1d)
       i += 100
-
       var stay120 = log.stay120 % 100
       els = els :+ (stay120 + i, 1d)
       i += 100
 
-      var coin = log.coin % 20000
+      var coin = getCoinTag(log.coin) % 22
       els = els :+ (coin + i, 1d)
-      i += 20000
-
+      i += 22
       var contentNum = log.contentNum % 1000
       els = els :+ (contentNum + i, 1d)
       i += 1000
@@ -176,6 +173,51 @@ object FeatureParser {
         null
     }
   }
-
+  def getCoinTag(y: Int):Int ={
+    var tag = 0
+    if(y<0){
+       1
+    }else if (y == 0){
+       2
+    }else if (y<=10){
+       3
+    }else if (y <= 20){
+       4
+    }else if (y <= 30){
+       5
+    }else if (y <= 40){
+       6
+    }else if (y <= 50){
+      7
+    }else if (y <= 60){
+       8
+    }else if (y <= 70){
+      9
+    }else if (y <= 80){
+      10
+    }else if (y <= 90){
+       11
+    }else if (y<= 100) {
+       12
+    } else if (y<= 200) {
+       13
+    } else if (y<= 300) {
+       14
+    } else if (y<= 400) {
+       15
+    }else if (y <= 500){
+       16
+    } else if (y<=1000) {
+       17
+    } else if (y<=2000) {
+       18
+    } else if (y<=5000) {
+       19
+    } else if (y<=10000) {
+       20
+    }else {
+       21
+    }
+  }
 }
 
