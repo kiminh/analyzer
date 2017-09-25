@@ -32,4 +32,5 @@ message UserProfile {
 	int32 incr_coin = 8; // 新增金币数
 	int32 antispam = 9; // 是否命中反作弊人群
 	int32 share_coin = 10; //分享朋友圈获得的积分
+	int32 newUser = 11; //是否是新用户，45天内是新用户，是1，不是0
 }
