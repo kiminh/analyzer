@@ -31,19 +31,23 @@ object InsertAdvUser {
       .enableHiveSupport()
       .getOrCreate()
 
-//    val schema = StructType(Array(
-//      StructField("id", IntegerType, false),
-//      StructField("display_name", StringType, false),
-//      StructField("company", StringType, false),
-//      StructField("account_type", IntegerType, false)
-//    ))
+    //    val schema = StructType(Array(
+    //      StructField("id", IntegerType, false),
+    //      StructField("display_name", StringType, false),
+    //      StructField("company", StringType, false),
+    //      StructField("account_type", IntegerType, false)
+    //    ))
     val where = Array[String]("acc_type in (0,1)", "sale_admin=0")
-    var userAll = ctx.read.jdbc(mariadbUrl, "(SELECT id,display_name,company,belong,CAST(account_type as SIGNED) account_type FROM user WHERE acc_type in (0,1) AND sale_admin=0) as xuser", mariadbProp)
+    var userAll = ctx.read.jdbc(mariadbUrlNew, "(SELECT CAST(id as SIGNED) id,display_name,company,CAST(belong as SIGNED) belong,CAST(account_type as SIGNED) account_type FROM user WHERE acc_type in (0,1) AND sale_admin=0) as xuser", mariadbProp)
+    //userAll.write.mode(SaveMode.Overwrite).saveAsTable("dl_cpc.adv_user")
 
-    userAll.write.mode(SaveMode.Overwrite).saveAsTable("dl_cpc.adv_user")
-
-    var userAllNew = ctx.read.jdbc(mariadbUrlNew, "(SELECT id,display_name,company,belong,CAST(account_type as SIGNED) account_type FROM user WHERE acc_type in (0,1) AND sale_admin=0) as xuser", mariadbProp)
-    userAllNew.write.mode(SaveMode.Append).saveAsTable("dl_cpc.adv_user")
+    var userAllNew = ctx.read.jdbc(mariadbUrl, "(SELECT CAST(id as SIGNED) id,display_name,company,CAST(belong as SIGNED) belong,CAST(account_type as SIGNED) account_type FROM user WHERE acc_type in (0,1) AND sale_admin=0) as xuser", mariadbProp)
+    userAllNew
+      .union(userAll)
+      //userAllNew
+      .write
+      .mode(SaveMode.Overwrite)
+      .saveAsTable("dl_cpc.adv_user")
     ctx.stop()
   }
 }
