@@ -81,11 +81,11 @@ object FeatureParser {
 
   def parseLog(log:Antispam): String = {
     val x = log
-    var svm = "0"
+    var svm = log.uid + ","
     val vector = getVector(log)
     if (vector != null) {
       var p = -1
-      svm =log.isAtispam.toString
+      svm = svm + log.isAtispam.toString
       MLUtils.appendBias(vector).foreachActive {
         (i, v) =>
           if (i <= p) {
@@ -94,6 +94,8 @@ object FeatureParser {
           p = i
           svm = svm + " %d:%f".format(i + 1, v)
       }
+    }else{
+      svm = ""
     }
     svm
   }
@@ -116,13 +118,17 @@ object FeatureParser {
     var els = Seq[(Int, Double)]()
     var i = 0
     try {
-      var request = log.request%1000
-      els = els :+ (request + i, 1d)
-      i += 1000
-      var show = log.show % 1000
-      els = els :+ (show + i, 1d)
-      i += 1000
+
+      els = els :+ ( getRequest(log.request) + i, 1d)
+      i += 30
+
+      els = els :+ ( getRequest(log.show) + i, 1d)
+      i += 30
+
       var click = log.click % 1000
+      if(log.click>= 1000){
+        click =1000
+      }
       els = els :+ (click + i, 1d)
       i += 1000
 
@@ -130,35 +136,35 @@ object FeatureParser {
       els = els :+ (ctr + i, 1d)
       i += 100
 
-      var ipNum = log.ipNum % 100
+      var ipNum = log.ipNum % 200
       els = els :+ (ipNum + i, 1d)
-      i += 100
+      i += 200
 
-      var load = log.load % 100
+      var load = log.load % 200
       els = els :+ (load + i, 1d)
-      i += 100
-      var active = log.active % 100
+      i += 200
+      var active = log.active % 200
       els = els :+ (active + i, 1d)
-      i += 100
-      var stay1 = log.stay1 % 100
+      i += 200
+      var stay1 = log.stay1 % 200
       els = els :+ (stay1 + i, 1d)
-      i += 100
+      i += 200
 
-      var stay5 = log.stay5 % 100
+      var stay5 = log.stay5 % 200
       els = els :+ (stay5 + i, 1d)
-      i += 100
-      var stay10 = log.stay10 % 100
+      i += 200
+      var stay10 = log.stay10 % 200
       els = els :+ (stay10 + i, 1d)
-      i += 100
-      var stay30 = log.stay30 % 100
+      i += 200
+      var stay30 = log.stay30 % 200
       els = els :+ (stay30 + i, 1d)
-      i += 100
-      var stay60 = log.stay60 % 100
+      i += 200
+      var stay60 = log.stay60 %200
       els = els :+ (stay60 + i, 1d)
-      i += 100
-      var stay120 = log.stay120 % 100
+      i += 200
+      var stay120 = log.stay120 % 200
       els = els :+ (stay120 + i, 1d)
-      i += 100
+      i += 200
 
       var coin = getCoinTag(log.coin) % 22
       els = els :+ (coin + i, 1d)
@@ -173,8 +179,70 @@ object FeatureParser {
         null
     }
   }
+  def getRequest(y:Int):Int ={
+    if(y<0){
+      1
+    }else if (y == 0){
+      2
+    }else if (y<=10){
+      3
+    }else if (y <= 20){
+      4
+    }else if (y <= 30){
+      5
+    }else if (y <= 40){
+      6
+    }else if (y <= 50){
+      7
+    }else if (y <= 60){
+      8
+    }else if (y <= 70){
+      9
+    }else if (y <= 80){
+      10
+    }else if (y <= 90){
+      11
+    }else if (y<= 100) {
+      12
+    } else if (y<= 200) {
+      13
+    } else if (y<= 300) {
+      14
+    } else if (y<= 400) {
+      15
+    }else if (y <= 500){
+      16
+    } else if (y<=600) {
+      17
+    } else if (y<=700) {
+      18
+    } else if (y<=800) {
+      19
+    } else if (y<=900) {
+      20
+    } else if (y <= 1000){
+      21
+    } else if (y <= 1500){
+      22
+    } else if (y <= 1700){
+      23
+    } else if (y <= 1900){
+      24
+    }else if (y <= 2000){
+      25
+    }else if (y <= 3000){
+      26
+    }else if (y <= 4000){
+      27
+    }else if (y <= 5000){
+      28
+    }else if (y <=6000){
+      29
+    }else{
+      30
+    }
+  }
   def getCoinTag(y: Int):Int ={
-    var tag = 0
     if(y<0){
        1
     }else if (y == 0){
