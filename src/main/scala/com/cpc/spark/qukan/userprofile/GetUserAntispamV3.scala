@@ -26,17 +26,16 @@ object GetUserAntispamV3 {
     Logger.getRootLogger.setLevel(Level.WARN)
     val conf = ConfigFactory.load()
     val dayBefore = args(0).toInt
-    val rate = args(1).toInt
+    val rate = args(1).toFloat
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
     val day1 = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-
-
+    println(day1, rate)
     val ctx = SparkSession.builder()
       .appName("cpc get user antispam v3  day [%s] rate [%s] ".format(day1, rate))
       .enableHiveSupport()
       .getOrCreate()
-
+    println("/user/cpc/antispam/v2/device/" + day1)
     var modelUser = ctx.sparkContext.textFile("/user/cpc/antispam/v2/device/" + day1).map{
       case x =>
         val lines = x.split(" ")
@@ -50,11 +49,12 @@ object GetUserAntispamV3 {
           null
         }
     }.filter(x => x != null && x._2 > rate).cache()
-    println("modelUser" + modelUser.count())
     val sum =  modelUser.mapPartitions {
       p =>
         var n1 = 0
         var n2 = 0
+        var n3 = 0
+        var n4 = 0
         val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
         p.foreach {
           case (uid, predict, label) =>
@@ -65,12 +65,16 @@ object GetUserAntispamV3 {
             val buffer = redis.get[Array[Byte]](key).getOrElse(null)
             if (buffer == null) {
               user = UserProfile.newBuilder().setDevid(uid)
+              n2 = n2 + 1
             }else {
               user = UserProfile.parseFrom(buffer).toBuilder
-              if(user.getAntispam != 1){
-                n2 = n2 + 1
-              }else{
+              if(user.getAntispam == 1){
                 flag = false
+                n3 = n3 + 1
+              }else if(user.getAntispam == 2){
+                n4 = n4 + 1
+              }else{
+                n2 = n2 + 1
               }
             }
             if(flag){
@@ -78,23 +82,29 @@ object GetUserAntispamV3 {
               redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
             }
         }
-        Seq((0, n1), (1, n2)).iterator
+        Seq((0, n1), (1, n2),(2, n3), (3, n4)).iterator
     }
 
     //统计新增数据
     var n1 = 0
     var n2 = 0
+    var n3 = 0
+    var n4 = 0
     sum.reduceByKey((x, y) => x + y)
-      .take(3)
-      .foreach {
-        x =>
-          if (x._1 == 0) {
-            n1 = x._2
-          } else {
-            n2 = x._2
-          }
-      }
-    println("total: %d updated: %d".format(n1, n2))
+    .collect()
+    .foreach {
+      x =>
+        if (x._1 == 0) {
+          n1 = x._2
+        } else if(x._1 == 1) {
+          n2 = x._2
+        }else if(x._1 == 2) {
+          n3 = x._2
+        }else if(x._1 == 3) {
+          n4 = x._2
+        }
+    }
+    println("total: %d updated: %d antispam1: %d hasmodelantispam: %d ".format(n1, n2, n3, n4))
     ctx.stop()
   }
 }
