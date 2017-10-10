@@ -17,10 +17,11 @@ import scala.util.Random
 object CreateSvm {
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 4) {
+    if (args.length < 7) {
       System.err.println(
         s"""
            |Usage: create svm <version:string> <daybefore:int> <days:int>
+           | <rate:int> <ttRate:float> <saveFull:int>
            | <hour:string> <updatedict>
            |
         """.stripMargin)
@@ -30,8 +31,11 @@ object CreateSvm {
     val version = args(0)
     val dayBefore = args(1).toInt
     val days = args(2).toInt
-    val updateDict = args(3).toBoolean
-    val hour = args(4)
+    val rate = args(3).split("/").map(_.toInt)
+    val ttRate = args(4).toFloat  //train/test rate
+    val saveFull = args(5).toInt
+    val updateDict = args(6).toBoolean
+    val hour = args(7)
     val ctx = SparkSession.builder()
       .appName("create svm data code:v1 data:" + version)
       .enableHiveSupport()
@@ -48,6 +52,7 @@ object CreateSvm {
       if (hour.length > 0) {
         hourSql = "and `hour` in (\"%s\")".format(hour.split(",").mkString("\",\""))
       }
+
       val ulog = ctx.sql(
         s"""
            |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and isshow = 1
@@ -55,23 +60,22 @@ object CreateSvm {
            |and ext['antispam'].int_value = 0
         """.stripMargin.format(date, hourSql))
         .as[UnionLog].rdd
-        .repartition(4000)
-
-      val logNum = ulog.count()
-      //最多拿2亿的数据
-      val rate = math.min(2e8 / logNum.toDouble, 1)
-      println("log num", logNum, rate)
-      val sample = ulog.randomSplit(Array(rate, 1 - rate))(0).cache()
+        .randomSplit(Array(ttRate, 1 - ttRate), seed = new Date().getTime)
 
       if (updateDict) {
-        FeatureDict.updateDict(sample)
+        FeatureDict.updateDict(ulog(0).cache())
       }
       FeatureDict.loadData()
-      if (updateDict) {
-        FeatureDict.updateServerData(ConfigFactory.load())
-      }
+      FeatureDict.updateServerData(ConfigFactory.load())
       val bdict = ctx.sparkContext.broadcast(FeatureDict.dict)
-      val svm = sample
+      val train = ulog(0).filter {
+          u =>
+            var ret = false
+            if (u.isclick == 1 || Random.nextInt(rate(1)) < rate(0)) {
+              ret = true
+            }
+            ret
+        }
         .mapPartitions {
           p =>
             val dict = bdict.value
@@ -82,17 +86,34 @@ object CreateSvm {
         }
         .cache()
 
-      svm.take(1).foreach(println)
-      val m = svm.count()
-      val pn = svm.filter(_.startsWith("1")).count()
-      svm.toDF()
+      train.take(1).foreach(println)
+      train.toDF()
         .write
         .mode(SaveMode.Overwrite)
-        .text("/user/cpc/ctr_svm/" + version + "/" + date)
-      println("done", pn, m - pn, m)
+        .text("/user/cpc/svmdata/" + version + "/" + date)
 
-      sample.unpersist()
-      svm.unpersist()
+      val n = train.filter(_.startsWith("1")).count()
+      println("done", n, train.count() - n)
+
+      if (saveFull > 0) {
+        println("save full data")
+        ulog(1)
+          .mapPartitions {
+            p =>
+              val dict = bdict.value
+              p.map {
+                x =>
+                  FeatureParser.parseUnionLog(x, dict)
+              }
+          }
+          .toDF()
+          .write
+          .mode(SaveMode.Overwrite)
+          .text("/user/cpc/svmdata/" + version + "_full/" + date)
+        println("done", ulog(1).count())
+      }
+
+      train.unpersist()
       cal.add(Calendar.DATE, 1)
     }
 
