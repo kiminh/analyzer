@@ -120,14 +120,6 @@ object CreateSvm {
     }.reduceByKey((x,y) => (x._1 + y._1, x._2 + y._2))
 
 
-
-
-
-
-
-
-
-
     val unionSql = "SELECT uid,count(*),sum(isshow),sum(isclick),count(DISTINCT ip) ,sum(ext['antispam'].int_value) from " +
       "dl_cpc.cpc_union_log where media_appsid in ('80000001', '80000002') and `date` in(%s) GROUP BY uid".format(dayStr)
     val traceSql = s""" select un.uid,tr.trace_type,tr.duration
