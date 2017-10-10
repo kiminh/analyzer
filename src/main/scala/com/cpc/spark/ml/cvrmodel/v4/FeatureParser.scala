@@ -139,7 +139,7 @@ object FeatureParser {
       } else {
         svm = "0"
       }
-      MLUtils.appendBias(vector).foreachActive {
+      vector.foreachActive {
         (i, v) =>
           if (i <= p) {
             throw new Exception("svm error:" + vector)
@@ -147,6 +147,7 @@ object FeatureParser {
           p = i
           svm = svm + " %d:%f".format(i + 1, v)
       }
+      svm = svm + " 3597:%f".format(x.ext.getOrElse("exp_cvr", ExtValue()).int_value.toDouble / 1e6)
     }
     svm
   }

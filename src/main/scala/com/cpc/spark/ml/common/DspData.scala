@@ -122,10 +122,10 @@ object DspData {
         x =>
           val titleidx = x._5.map(titlemap.getOrElse(_, 0))
           val ad = AdInfo(
-            adid = adidmap.getOrElse(x._1, 0),
-            userid = useridmap.getOrElse(x._2, 0),
-            planid = planidmap.getOrElse(x._3, 0),
-            turl = urlmap.getOrElse(x._4, 0),
+            adid = adidmap(x._1),
+            userid = useridmap(x._2),
+            planid = planidmap(x._3),
+            turl = urlmap(x._4),
             titles = titleidx
           )
           admap.update(x._1, ad)

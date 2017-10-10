@@ -29,13 +29,14 @@ object FeatureDict {
   val dict = Dict()
 
   def updateDict(ulog: RDD[UnionLog]): Unit = {
+    val numReg = """[0-9]+""".r
     /*
     adslot adclass city channel interest
      */
     val lastAdslot = ulog.map(x => (x.adslotid, 1))
       .reduceByKey((x, y) => x)
       .map(_._1.toString)
-      .filter(_.length > 0)
+      .filter(x => x.length > 0 && numReg.findAllMatchIn(x).length > 0)
       .toLocalIterator.toSeq
     updateDictFile("adslot.txt", lastAdslot)
     println("adslot dict done")
@@ -43,7 +44,7 @@ object FeatureDict {
     val lastCity = ulog.map(x => (x.city, 1))
       .reduceByKey((x, y) => x)
       .map(_._1.toString)
-      .filter(_.length > 0)
+      .filter(x => x.length > 0 && numReg.findAllMatchIn(x).length > 0)
       .toLocalIterator.toSeq
     updateDictFile("city.txt", lastCity)
     println("city dict done")
@@ -51,7 +52,7 @@ object FeatureDict {
     val lastChannel = ulog.map(x => (x.ext.getOrElse("channel", ExtValue()).string_value, 1))
       .reduceByKey((x, y) => x)
       .map(_._1)
-      .filter(_.length > 0)
+      .filter(x => x.length > 0 && numReg.findAllMatchIn(x).length > 0)
       .toLocalIterator.toSeq
     updateDictFile("channel.txt", lastChannel)
     println("channel dict done")
@@ -59,7 +60,7 @@ object FeatureDict {
     val lastAdclass = ulog.map(x => (x.ext.getOrElse("adclass", ExtValue()).int_value, 1))
       .reduceByKey((x, y) => x)
       .map(_._1.toString)
-      .filter(_.length > 0)
+      .filter(x => x.length > 0 && numReg.findAllMatchIn(x).length > 0)
       .toLocalIterator.toSeq
     updateDictFile("adclass.txt", lastAdclass)
     println("adclass dict done")

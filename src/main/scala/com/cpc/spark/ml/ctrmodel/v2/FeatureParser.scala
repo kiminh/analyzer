@@ -188,7 +188,10 @@ object FeatureParser {
     els = els :+ (d.phoneLevel + i, 1d)
     i += 10
 
+    //ideaid  (200000)
     els = els :+ (i, ad.ideaid.toDouble)
+    i += 1
+    els = els :+ (i, slotid.toDouble)
     i += 1
 
     try {
