@@ -516,7 +516,7 @@ object GetAddAge {
     //      }
     //      .filter(_._1 != "")
 
-    val mmodel = MultilayerPerceptronClassificationModel.load("/user/cpc/wl/test/GetTrainUserAgeModelZ-9000-%d".format(1))
+    val mmodel = MultilayerPerceptronClassificationModel.load("/user/cpc/wl/work/GetTrainUserAgeModelZ-9000-%d".format(1))
 
     val result = ydata.map {
       x =>
