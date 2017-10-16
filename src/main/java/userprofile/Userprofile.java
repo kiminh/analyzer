@@ -23,7 +23,7 @@ public final class Userprofile {
      * 单元ID,单元级别生效
      * </pre>
      *
-     * <code>int32 adid = 1;</code>
+     * <code>optional int32 adid = 1;</code>
      */
     int getAdid();
 
@@ -32,7 +32,7 @@ public final class Userprofile {
      * 今天投放次数
      * </pre>
      *
-     * <code>int32 count = 2;</code>
+     * <code>optional int32 count = 2;</code>
      */
     int getCount();
   }
@@ -117,7 +117,7 @@ public final class Userprofile {
      * 单元ID,单元级别生效
      * </pre>
      *
-     * <code>int32 adid = 1;</code>
+     * <code>optional int32 adid = 1;</code>
      */
     public int getAdid() {
       return adid_;
@@ -130,7 +130,7 @@ public final class Userprofile {
      * 今天投放次数
      * </pre>
      *
-     * <code>int32 count = 2;</code>
+     * <code>optional int32 count = 2;</code>
      */
     public int getCount() {
       return count_;
@@ -198,7 +198,7 @@ public final class Userprofile {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       hash = (37 * hash) + ADID_FIELD_NUMBER;
       hash = (53 * hash) + getAdid();
       hash = (37 * hash) + COUNT_FIELD_NUMBER;
@@ -428,7 +428,7 @@ public final class Userprofile {
        * 单元ID,单元级别生效
        * </pre>
        *
-       * <code>int32 adid = 1;</code>
+       * <code>optional int32 adid = 1;</code>
        */
       public int getAdid() {
         return adid_;
@@ -438,7 +438,7 @@ public final class Userprofile {
        * 单元ID,单元级别生效
        * </pre>
        *
-       * <code>int32 adid = 1;</code>
+       * <code>optional int32 adid = 1;</code>
        */
       public Builder setAdid(int value) {
         
@@ -451,7 +451,7 @@ public final class Userprofile {
        * 单元ID,单元级别生效
        * </pre>
        *
-       * <code>int32 adid = 1;</code>
+       * <code>optional int32 adid = 1;</code>
        */
       public Builder clearAdid() {
         
@@ -466,7 +466,7 @@ public final class Userprofile {
        * 今天投放次数
        * </pre>
        *
-       * <code>int32 count = 2;</code>
+       * <code>optional int32 count = 2;</code>
        */
       public int getCount() {
         return count_;
@@ -476,7 +476,7 @@ public final class Userprofile {
        * 今天投放次数
        * </pre>
        *
-       * <code>int32 count = 2;</code>
+       * <code>optional int32 count = 2;</code>
        */
       public Builder setCount(int value) {
         
@@ -489,7 +489,7 @@ public final class Userprofile {
        * 今天投放次数
        * </pre>
        *
-       * <code>int32 count = 2;</code>
+       * <code>optional int32 count = 2;</code>
        */
       public Builder clearCount() {
         
@@ -737,7 +737,7 @@ public final class Userprofile {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (getAdsCount() > 0) {
         hash = (37 * hash) + ADS_FIELD_NUMBER;
         hash = (53 * hash) + getAdsList().hashCode();
@@ -1290,7 +1290,7 @@ public final class Userprofile {
      * 包名
      * </pre>
      *
-     * <code>string packagename = 1;</code>
+     * <code>optional string packagename = 1;</code>
      */
     java.lang.String getPackagename();
     /**
@@ -1298,7 +1298,7 @@ public final class Userprofile {
      * 包名
      * </pre>
      *
-     * <code>string packagename = 1;</code>
+     * <code>optional string packagename = 1;</code>
      */
     com.google.protobuf.ByteString
         getPackagenameBytes();
@@ -1308,7 +1308,7 @@ public final class Userprofile {
      * 版本
      * </pre>
      *
-     * <code>string version = 2;</code>
+     * <code>optional string version = 2;</code>
      */
     java.lang.String getVersion();
     /**
@@ -1316,18 +1316,18 @@ public final class Userprofile {
      * 版本
      * </pre>
      *
-     * <code>string version = 2;</code>
+     * <code>optional string version = 2;</code>
      */
     com.google.protobuf.ByteString
         getVersionBytes();
 
     /**
-     * <code>int64 firstInstallTime = 3;</code>
+     * <code>optional int64 firstInstallTime = 3;</code>
      */
     long getFirstInstallTime();
 
     /**
-     * <code>int64 lastUpdateTime = 4;</code>
+     * <code>optional int64 lastUpdateTime = 4;</code>
      */
     long getLastUpdateTime();
   }
@@ -1426,7 +1426,7 @@ public final class Userprofile {
      * 包名
      * </pre>
      *
-     * <code>string packagename = 1;</code>
+     * <code>optional string packagename = 1;</code>
      */
     public java.lang.String getPackagename() {
       java.lang.Object ref = packagename_;
@@ -1445,7 +1445,7 @@ public final class Userprofile {
      * 包名
      * </pre>
      *
-     * <code>string packagename = 1;</code>
+     * <code>optional string packagename = 1;</code>
      */
     public com.google.protobuf.ByteString
         getPackagenameBytes() {
@@ -1468,7 +1468,7 @@ public final class Userprofile {
      * 版本
      * </pre>
      *
-     * <code>string version = 2;</code>
+     * <code>optional string version = 2;</code>
      */
     public java.lang.String getVersion() {
       java.lang.Object ref = version_;
@@ -1487,7 +1487,7 @@ public final class Userprofile {
      * 版本
      * </pre>
      *
-     * <code>string version = 2;</code>
+     * <code>optional string version = 2;</code>
      */
     public com.google.protobuf.ByteString
         getVersionBytes() {
@@ -1506,7 +1506,7 @@ public final class Userprofile {
     public static final int FIRSTINSTALLTIME_FIELD_NUMBER = 3;
     private long firstInstallTime_;
     /**
-     * <code>int64 firstInstallTime = 3;</code>
+     * <code>optional int64 firstInstallTime = 3;</code>
      */
     public long getFirstInstallTime() {
       return firstInstallTime_;
@@ -1515,7 +1515,7 @@ public final class Userprofile {
     public static final int LASTUPDATETIME_FIELD_NUMBER = 4;
     private long lastUpdateTime_;
     /**
-     * <code>int64 lastUpdateTime = 4;</code>
+     * <code>optional int64 lastUpdateTime = 4;</code>
      */
     public long getLastUpdateTime() {
       return lastUpdateTime_;
@@ -1599,7 +1599,7 @@ public final class Userprofile {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       hash = (37 * hash) + PACKAGENAME_FIELD_NUMBER;
       hash = (53 * hash) + getPackagename().hashCode();
       hash = (37 * hash) + VERSION_FIELD_NUMBER;
@@ -1849,7 +1849,7 @@ public final class Userprofile {
        * 包名
        * </pre>
        *
-       * <code>string packagename = 1;</code>
+       * <code>optional string packagename = 1;</code>
        */
       public java.lang.String getPackagename() {
         java.lang.Object ref = packagename_;
@@ -1868,7 +1868,7 @@ public final class Userprofile {
        * 包名
        * </pre>
        *
-       * <code>string packagename = 1;</code>
+       * <code>optional string packagename = 1;</code>
        */
       public com.google.protobuf.ByteString
           getPackagenameBytes() {
@@ -1888,7 +1888,7 @@ public final class Userprofile {
        * 包名
        * </pre>
        *
-       * <code>string packagename = 1;</code>
+       * <code>optional string packagename = 1;</code>
        */
       public Builder setPackagename(
           java.lang.String value) {
@@ -1905,7 +1905,7 @@ public final class Userprofile {
        * 包名
        * </pre>
        *
-       * <code>string packagename = 1;</code>
+       * <code>optional string packagename = 1;</code>
        */
       public Builder clearPackagename() {
         
@@ -1918,7 +1918,7 @@ public final class Userprofile {
        * 包名
        * </pre>
        *
-       * <code>string packagename = 1;</code>
+       * <code>optional string packagename = 1;</code>
        */
       public Builder setPackagenameBytes(
           com.google.protobuf.ByteString value) {
@@ -1938,7 +1938,7 @@ public final class Userprofile {
        * 版本
        * </pre>
        *
-       * <code>string version = 2;</code>
+       * <code>optional string version = 2;</code>
        */
       public java.lang.String getVersion() {
         java.lang.Object ref = version_;
@@ -1957,7 +1957,7 @@ public final class Userprofile {
        * 版本
        * </pre>
        *
-       * <code>string version = 2;</code>
+       * <code>optional string version = 2;</code>
        */
       public com.google.protobuf.ByteString
           getVersionBytes() {
@@ -1977,7 +1977,7 @@ public final class Userprofile {
        * 版本
        * </pre>
        *
-       * <code>string version = 2;</code>
+       * <code>optional string version = 2;</code>
        */
       public Builder setVersion(
           java.lang.String value) {
@@ -1994,7 +1994,7 @@ public final class Userprofile {
        * 版本
        * </pre>
        *
-       * <code>string version = 2;</code>
+       * <code>optional string version = 2;</code>
        */
       public Builder clearVersion() {
         
@@ -2007,7 +2007,7 @@ public final class Userprofile {
        * 版本
        * </pre>
        *
-       * <code>string version = 2;</code>
+       * <code>optional string version = 2;</code>
        */
       public Builder setVersionBytes(
           com.google.protobuf.ByteString value) {
@@ -2023,13 +2023,13 @@ public final class Userprofile {
 
       private long firstInstallTime_ ;
       /**
-       * <code>int64 firstInstallTime = 3;</code>
+       * <code>optional int64 firstInstallTime = 3;</code>
        */
       public long getFirstInstallTime() {
         return firstInstallTime_;
       }
       /**
-       * <code>int64 firstInstallTime = 3;</code>
+       * <code>optional int64 firstInstallTime = 3;</code>
        */
       public Builder setFirstInstallTime(long value) {
         
@@ -2038,7 +2038,7 @@ public final class Userprofile {
         return this;
       }
       /**
-       * <code>int64 firstInstallTime = 3;</code>
+       * <code>optional int64 firstInstallTime = 3;</code>
        */
       public Builder clearFirstInstallTime() {
         
@@ -2049,13 +2049,13 @@ public final class Userprofile {
 
       private long lastUpdateTime_ ;
       /**
-       * <code>int64 lastUpdateTime = 4;</code>
+       * <code>optional int64 lastUpdateTime = 4;</code>
        */
       public long getLastUpdateTime() {
         return lastUpdateTime_;
       }
       /**
-       * <code>int64 lastUpdateTime = 4;</code>
+       * <code>optional int64 lastUpdateTime = 4;</code>
        */
       public Builder setLastUpdateTime(long value) {
         
@@ -2064,7 +2064,7 @@ public final class Userprofile {
         return this;
       }
       /**
-       * <code>int64 lastUpdateTime = 4;</code>
+       * <code>optional int64 lastUpdateTime = 4;</code>
        */
       public Builder clearLastUpdateTime() {
         
@@ -2130,7 +2130,7 @@ public final class Userprofile {
      *兴趣标签id
      * </pre>
      *
-     * <code>int32 tag = 1;</code>
+     * <code>optional int32 tag = 1;</code>
      */
     int getTag();
 
@@ -2139,7 +2139,7 @@ public final class Userprofile {
      * 兴趣权值
      * </pre>
      *
-     * <code>int32 score = 2;</code>
+     * <code>optional int32 score = 2;</code>
      */
     int getScore();
   }
@@ -2224,7 +2224,7 @@ public final class Userprofile {
      *兴趣标签id
      * </pre>
      *
-     * <code>int32 tag = 1;</code>
+     * <code>optional int32 tag = 1;</code>
      */
     public int getTag() {
       return tag_;
@@ -2237,7 +2237,7 @@ public final class Userprofile {
      * 兴趣权值
      * </pre>
      *
-     * <code>int32 score = 2;</code>
+     * <code>optional int32 score = 2;</code>
      */
     public int getScore() {
       return score_;
@@ -2305,7 +2305,7 @@ public final class Userprofile {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       hash = (37 * hash) + TAG_FIELD_NUMBER;
       hash = (53 * hash) + getTag();
       hash = (37 * hash) + SCORE_FIELD_NUMBER;
@@ -2535,7 +2535,7 @@ public final class Userprofile {
        *兴趣标签id
        * </pre>
        *
-       * <code>int32 tag = 1;</code>
+       * <code>optional int32 tag = 1;</code>
        */
       public int getTag() {
         return tag_;
@@ -2545,7 +2545,7 @@ public final class Userprofile {
        *兴趣标签id
        * </pre>
        *
-       * <code>int32 tag = 1;</code>
+       * <code>optional int32 tag = 1;</code>
        */
       public Builder setTag(int value) {
         
@@ -2558,7 +2558,7 @@ public final class Userprofile {
        *兴趣标签id
        * </pre>
        *
-       * <code>int32 tag = 1;</code>
+       * <code>optional int32 tag = 1;</code>
        */
       public Builder clearTag() {
         
@@ -2573,7 +2573,7 @@ public final class Userprofile {
        * 兴趣权值
        * </pre>
        *
-       * <code>int32 score = 2;</code>
+       * <code>optional int32 score = 2;</code>
        */
       public int getScore() {
         return score_;
@@ -2583,7 +2583,7 @@ public final class Userprofile {
        * 兴趣权值
        * </pre>
        *
-       * <code>int32 score = 2;</code>
+       * <code>optional int32 score = 2;</code>
        */
       public Builder setScore(int value) {
         
@@ -2596,7 +2596,7 @@ public final class Userprofile {
        * 兴趣权值
        * </pre>
        *
-       * <code>int32 score = 2;</code>
+       * <code>optional int32 score = 2;</code>
        */
       public Builder clearScore() {
         
@@ -2662,7 +2662,7 @@ public final class Userprofile {
      *设备号，没有后缀
      * </pre>
      *
-     * <code>string devid = 1;</code>
+     * <code>optional string devid = 1;</code>
      */
     java.lang.String getDevid();
     /**
@@ -2670,7 +2670,7 @@ public final class Userprofile {
      *设备号，没有后缀
      * </pre>
      *
-     * <code>string devid = 1;</code>
+     * <code>optional string devid = 1;</code>
      */
     com.google.protobuf.ByteString
         getDevidBytes();
@@ -2680,7 +2680,7 @@ public final class Userprofile {
      *年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: &gt;50
      * </pre>
      *
-     * <code>int32 age = 2;</code>
+     * <code>optional int32 age = 2;</code>
      */
     int getAge();
 
@@ -2689,7 +2689,7 @@ public final class Userprofile {
      *性别 0: 未知 1: 男 2: 女
      * </pre>
      *
-     * <code>int32 sex = 3;</code>
+     * <code>optional int32 sex = 3;</code>
      */
     int getSex();
 
@@ -2698,7 +2698,7 @@ public final class Userprofile {
      * 金币数
      * </pre>
      *
-     * <code>int32 coin = 4;</code>
+     * <code>optional int32 coin = 4;</code>
      */
     int getCoin();
 
@@ -2795,7 +2795,7 @@ public final class Userprofile {
      *人群类型标签,趣头条用
      * </pre>
      *
-     * <code>int32 pcategory = 7;</code>
+     * <code>optional int32 pcategory = 7;</code>
      */
     int getPcategory();
 
@@ -2804,7 +2804,7 @@ public final class Userprofile {
      * 新增金币数
      * </pre>
      *
-     * <code>int32 incr_coin = 8;</code>
+     * <code>optional int32 incr_coin = 8;</code>
      */
     int getIncrCoin();
 
@@ -2813,7 +2813,7 @@ public final class Userprofile {
      * 是否命中反作弊人群
      * </pre>
      *
-     * <code>int32 antispam = 9;</code>
+     * <code>optional int32 antispam = 9;</code>
      */
     int getAntispam();
 
@@ -2822,7 +2822,7 @@ public final class Userprofile {
      *分享朋友圈获得的积分
      * </pre>
      *
-     * <code>int32 share_coin = 10;</code>
+     * <code>optional int32 share_coin = 10;</code>
      */
     int getShareCoin();
 
@@ -2831,9 +2831,53 @@ public final class Userprofile {
      *是否是新用户，45天内是新用户，是1，不是0
      * </pre>
      *
-     * <code>int32 newUser = 11;</code>
+     * <code>optional int32 newUser = 11;</code>
      */
     int getNewUser();
+
+    /**
+     * <pre>
+     *感兴趣的词汇分类
+     * </pre>
+     *
+     * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+     */
+    java.util.List<userprofile.Userprofile.InterestItem> 
+        getInterestedWordsList();
+    /**
+     * <pre>
+     *感兴趣的词汇分类
+     * </pre>
+     *
+     * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+     */
+    userprofile.Userprofile.InterestItem getInterestedWords(int index);
+    /**
+     * <pre>
+     *感兴趣的词汇分类
+     * </pre>
+     *
+     * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+     */
+    int getInterestedWordsCount();
+    /**
+     * <pre>
+     *感兴趣的词汇分类
+     * </pre>
+     *
+     * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+     */
+    java.util.List<? extends userprofile.Userprofile.InterestItemOrBuilder> 
+        getInterestedWordsOrBuilderList();
+    /**
+     * <pre>
+     *感兴趣的词汇分类
+     * </pre>
+     *
+     * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+     */
+    userprofile.Userprofile.InterestItemOrBuilder getInterestedWordsOrBuilder(
+        int index);
   }
   /**
    * Protobuf type {@code userprofile.UserProfile}
@@ -2858,6 +2902,7 @@ public final class Userprofile {
       antispam_ = 0;
       shareCoin_ = 0;
       newUser_ = 0;
+      interestedWords_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -2949,6 +2994,15 @@ public final class Userprofile {
               newUser_ = input.readInt32();
               break;
             }
+            case 98: {
+              if (!((mutable_bitField0_ & 0x00000800) == 0x00000800)) {
+                interestedWords_ = new java.util.ArrayList<userprofile.Userprofile.InterestItem>();
+                mutable_bitField0_ |= 0x00000800;
+              }
+              interestedWords_.add(
+                  input.readMessage(userprofile.Userprofile.InterestItem.parser(), extensionRegistry));
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -2962,6 +3016,9 @@ public final class Userprofile {
         }
         if (((mutable_bitField0_ & 0x00000020) == 0x00000020)) {
           installpkg_ = java.util.Collections.unmodifiableList(installpkg_);
+        }
+        if (((mutable_bitField0_ & 0x00000800) == 0x00000800)) {
+          interestedWords_ = java.util.Collections.unmodifiableList(interestedWords_);
         }
         makeExtensionsImmutable();
       }
@@ -2986,7 +3043,7 @@ public final class Userprofile {
      *设备号，没有后缀
      * </pre>
      *
-     * <code>string devid = 1;</code>
+     * <code>optional string devid = 1;</code>
      */
     public java.lang.String getDevid() {
       java.lang.Object ref = devid_;
@@ -3005,7 +3062,7 @@ public final class Userprofile {
      *设备号，没有后缀
      * </pre>
      *
-     * <code>string devid = 1;</code>
+     * <code>optional string devid = 1;</code>
      */
     public com.google.protobuf.ByteString
         getDevidBytes() {
@@ -3028,7 +3085,7 @@ public final class Userprofile {
      *年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: &gt;50
      * </pre>
      *
-     * <code>int32 age = 2;</code>
+     * <code>optional int32 age = 2;</code>
      */
     public int getAge() {
       return age_;
@@ -3041,7 +3098,7 @@ public final class Userprofile {
      *性别 0: 未知 1: 男 2: 女
      * </pre>
      *
-     * <code>int32 sex = 3;</code>
+     * <code>optional int32 sex = 3;</code>
      */
     public int getSex() {
       return sex_;
@@ -3054,7 +3111,7 @@ public final class Userprofile {
      * 金币数
      * </pre>
      *
-     * <code>int32 coin = 4;</code>
+     * <code>optional int32 coin = 4;</code>
      */
     public int getCoin() {
       return coin_;
@@ -3177,7 +3234,7 @@ public final class Userprofile {
      *人群类型标签,趣头条用
      * </pre>
      *
-     * <code>int32 pcategory = 7;</code>
+     * <code>optional int32 pcategory = 7;</code>
      */
     public int getPcategory() {
       return pcategory_;
@@ -3190,7 +3247,7 @@ public final class Userprofile {
      * 新增金币数
      * </pre>
      *
-     * <code>int32 incr_coin = 8;</code>
+     * <code>optional int32 incr_coin = 8;</code>
      */
     public int getIncrCoin() {
       return incrCoin_;
@@ -3203,7 +3260,7 @@ public final class Userprofile {
      * 是否命中反作弊人群
      * </pre>
      *
-     * <code>int32 antispam = 9;</code>
+     * <code>optional int32 antispam = 9;</code>
      */
     public int getAntispam() {
       return antispam_;
@@ -3216,7 +3273,7 @@ public final class Userprofile {
      *分享朋友圈获得的积分
      * </pre>
      *
-     * <code>int32 share_coin = 10;</code>
+     * <code>optional int32 share_coin = 10;</code>
      */
     public int getShareCoin() {
       return shareCoin_;
@@ -3229,10 +3286,65 @@ public final class Userprofile {
      *是否是新用户，45天内是新用户，是1，不是0
      * </pre>
      *
-     * <code>int32 newUser = 11;</code>
+     * <code>optional int32 newUser = 11;</code>
      */
     public int getNewUser() {
       return newUser_;
+    }
+
+    public static final int INTERESTEDWORDS_FIELD_NUMBER = 12;
+    private java.util.List<userprofile.Userprofile.InterestItem> interestedWords_;
+    /**
+     * <pre>
+     *感兴趣的词汇分类
+     * </pre>
+     *
+     * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+     */
+    public java.util.List<userprofile.Userprofile.InterestItem> getInterestedWordsList() {
+      return interestedWords_;
+    }
+    /**
+     * <pre>
+     *感兴趣的词汇分类
+     * </pre>
+     *
+     * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+     */
+    public java.util.List<? extends userprofile.Userprofile.InterestItemOrBuilder> 
+        getInterestedWordsOrBuilderList() {
+      return interestedWords_;
+    }
+    /**
+     * <pre>
+     *感兴趣的词汇分类
+     * </pre>
+     *
+     * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+     */
+    public int getInterestedWordsCount() {
+      return interestedWords_.size();
+    }
+    /**
+     * <pre>
+     *感兴趣的词汇分类
+     * </pre>
+     *
+     * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+     */
+    public userprofile.Userprofile.InterestItem getInterestedWords(int index) {
+      return interestedWords_.get(index);
+    }
+    /**
+     * <pre>
+     *感兴趣的词汇分类
+     * </pre>
+     *
+     * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+     */
+    public userprofile.Userprofile.InterestItemOrBuilder getInterestedWordsOrBuilder(
+        int index) {
+      return interestedWords_.get(index);
     }
 
     private byte memoizedIsInitialized = -1;
@@ -3279,6 +3391,9 @@ public final class Userprofile {
       }
       if (newUser_ != 0) {
         output.writeInt32(11, newUser_);
+      }
+      for (int i = 0; i < interestedWords_.size(); i++) {
+        output.writeMessage(12, interestedWords_.get(i));
       }
     }
 
@@ -3330,6 +3445,10 @@ public final class Userprofile {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(11, newUser_);
       }
+      for (int i = 0; i < interestedWords_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(12, interestedWords_.get(i));
+      }
       memoizedSize = size;
       return size;
     }
@@ -3368,6 +3487,8 @@ public final class Userprofile {
           == other.getShareCoin());
       result = result && (getNewUser()
           == other.getNewUser());
+      result = result && getInterestedWordsList()
+          .equals(other.getInterestedWordsList());
       return result;
     }
 
@@ -3377,7 +3498,7 @@ public final class Userprofile {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       hash = (37 * hash) + DEVID_FIELD_NUMBER;
       hash = (53 * hash) + getDevid().hashCode();
       hash = (37 * hash) + AGE_FIELD_NUMBER;
@@ -3404,6 +3525,10 @@ public final class Userprofile {
       hash = (53 * hash) + getShareCoin();
       hash = (37 * hash) + NEWUSER_FIELD_NUMBER;
       hash = (53 * hash) + getNewUser();
+      if (getInterestedWordsCount() > 0) {
+        hash = (37 * hash) + INTERESTEDWORDS_FIELD_NUMBER;
+        hash = (53 * hash) + getInterestedWordsList().hashCode();
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -3520,6 +3645,7 @@ public final class Userprofile {
                 .alwaysUseFieldBuilders) {
           getInterestsFieldBuilder();
           getInstallpkgFieldBuilder();
+          getInterestedWordsFieldBuilder();
         }
       }
       public Builder clear() {
@@ -3554,6 +3680,12 @@ public final class Userprofile {
 
         newUser_ = 0;
 
+        if (interestedWordsBuilder_ == null) {
+          interestedWords_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000800);
+        } else {
+          interestedWordsBuilder_.clear();
+        }
         return this;
       }
 
@@ -3605,6 +3737,15 @@ public final class Userprofile {
         result.antispam_ = antispam_;
         result.shareCoin_ = shareCoin_;
         result.newUser_ = newUser_;
+        if (interestedWordsBuilder_ == null) {
+          if (((bitField0_ & 0x00000800) == 0x00000800)) {
+            interestedWords_ = java.util.Collections.unmodifiableList(interestedWords_);
+            bitField0_ = (bitField0_ & ~0x00000800);
+          }
+          result.interestedWords_ = interestedWords_;
+        } else {
+          result.interestedWords_ = interestedWordsBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -3727,6 +3868,32 @@ public final class Userprofile {
         if (other.getNewUser() != 0) {
           setNewUser(other.getNewUser());
         }
+        if (interestedWordsBuilder_ == null) {
+          if (!other.interestedWords_.isEmpty()) {
+            if (interestedWords_.isEmpty()) {
+              interestedWords_ = other.interestedWords_;
+              bitField0_ = (bitField0_ & ~0x00000800);
+            } else {
+              ensureInterestedWordsIsMutable();
+              interestedWords_.addAll(other.interestedWords_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.interestedWords_.isEmpty()) {
+            if (interestedWordsBuilder_.isEmpty()) {
+              interestedWordsBuilder_.dispose();
+              interestedWordsBuilder_ = null;
+              interestedWords_ = other.interestedWords_;
+              bitField0_ = (bitField0_ & ~0x00000800);
+              interestedWordsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getInterestedWordsFieldBuilder() : null;
+            } else {
+              interestedWordsBuilder_.addAllMessages(other.interestedWords_);
+            }
+          }
+        }
         onChanged();
         return this;
       }
@@ -3760,7 +3927,7 @@ public final class Userprofile {
        *设备号，没有后缀
        * </pre>
        *
-       * <code>string devid = 1;</code>
+       * <code>optional string devid = 1;</code>
        */
       public java.lang.String getDevid() {
         java.lang.Object ref = devid_;
@@ -3779,7 +3946,7 @@ public final class Userprofile {
        *设备号，没有后缀
        * </pre>
        *
-       * <code>string devid = 1;</code>
+       * <code>optional string devid = 1;</code>
        */
       public com.google.protobuf.ByteString
           getDevidBytes() {
@@ -3799,7 +3966,7 @@ public final class Userprofile {
        *设备号，没有后缀
        * </pre>
        *
-       * <code>string devid = 1;</code>
+       * <code>optional string devid = 1;</code>
        */
       public Builder setDevid(
           java.lang.String value) {
@@ -3816,7 +3983,7 @@ public final class Userprofile {
        *设备号，没有后缀
        * </pre>
        *
-       * <code>string devid = 1;</code>
+       * <code>optional string devid = 1;</code>
        */
       public Builder clearDevid() {
         
@@ -3829,7 +3996,7 @@ public final class Userprofile {
        *设备号，没有后缀
        * </pre>
        *
-       * <code>string devid = 1;</code>
+       * <code>optional string devid = 1;</code>
        */
       public Builder setDevidBytes(
           com.google.protobuf.ByteString value) {
@@ -3849,7 +4016,7 @@ public final class Userprofile {
        *年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: &gt;50
        * </pre>
        *
-       * <code>int32 age = 2;</code>
+       * <code>optional int32 age = 2;</code>
        */
       public int getAge() {
         return age_;
@@ -3859,7 +4026,7 @@ public final class Userprofile {
        *年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: &gt;50
        * </pre>
        *
-       * <code>int32 age = 2;</code>
+       * <code>optional int32 age = 2;</code>
        */
       public Builder setAge(int value) {
         
@@ -3872,7 +4039,7 @@ public final class Userprofile {
        *年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: &gt;50
        * </pre>
        *
-       * <code>int32 age = 2;</code>
+       * <code>optional int32 age = 2;</code>
        */
       public Builder clearAge() {
         
@@ -3887,7 +4054,7 @@ public final class Userprofile {
        *性别 0: 未知 1: 男 2: 女
        * </pre>
        *
-       * <code>int32 sex = 3;</code>
+       * <code>optional int32 sex = 3;</code>
        */
       public int getSex() {
         return sex_;
@@ -3897,7 +4064,7 @@ public final class Userprofile {
        *性别 0: 未知 1: 男 2: 女
        * </pre>
        *
-       * <code>int32 sex = 3;</code>
+       * <code>optional int32 sex = 3;</code>
        */
       public Builder setSex(int value) {
         
@@ -3910,7 +4077,7 @@ public final class Userprofile {
        *性别 0: 未知 1: 男 2: 女
        * </pre>
        *
-       * <code>int32 sex = 3;</code>
+       * <code>optional int32 sex = 3;</code>
        */
       public Builder clearSex() {
         
@@ -3925,7 +4092,7 @@ public final class Userprofile {
        * 金币数
        * </pre>
        *
-       * <code>int32 coin = 4;</code>
+       * <code>optional int32 coin = 4;</code>
        */
       public int getCoin() {
         return coin_;
@@ -3935,7 +4102,7 @@ public final class Userprofile {
        * 金币数
        * </pre>
        *
-       * <code>int32 coin = 4;</code>
+       * <code>optional int32 coin = 4;</code>
        */
       public Builder setCoin(int value) {
         
@@ -3948,7 +4115,7 @@ public final class Userprofile {
        * 金币数
        * </pre>
        *
-       * <code>int32 coin = 4;</code>
+       * <code>optional int32 coin = 4;</code>
        */
       public Builder clearCoin() {
         
@@ -4587,7 +4754,7 @@ public final class Userprofile {
        *人群类型标签,趣头条用
        * </pre>
        *
-       * <code>int32 pcategory = 7;</code>
+       * <code>optional int32 pcategory = 7;</code>
        */
       public int getPcategory() {
         return pcategory_;
@@ -4597,7 +4764,7 @@ public final class Userprofile {
        *人群类型标签,趣头条用
        * </pre>
        *
-       * <code>int32 pcategory = 7;</code>
+       * <code>optional int32 pcategory = 7;</code>
        */
       public Builder setPcategory(int value) {
         
@@ -4610,7 +4777,7 @@ public final class Userprofile {
        *人群类型标签,趣头条用
        * </pre>
        *
-       * <code>int32 pcategory = 7;</code>
+       * <code>optional int32 pcategory = 7;</code>
        */
       public Builder clearPcategory() {
         
@@ -4625,7 +4792,7 @@ public final class Userprofile {
        * 新增金币数
        * </pre>
        *
-       * <code>int32 incr_coin = 8;</code>
+       * <code>optional int32 incr_coin = 8;</code>
        */
       public int getIncrCoin() {
         return incrCoin_;
@@ -4635,7 +4802,7 @@ public final class Userprofile {
        * 新增金币数
        * </pre>
        *
-       * <code>int32 incr_coin = 8;</code>
+       * <code>optional int32 incr_coin = 8;</code>
        */
       public Builder setIncrCoin(int value) {
         
@@ -4648,7 +4815,7 @@ public final class Userprofile {
        * 新增金币数
        * </pre>
        *
-       * <code>int32 incr_coin = 8;</code>
+       * <code>optional int32 incr_coin = 8;</code>
        */
       public Builder clearIncrCoin() {
         
@@ -4663,7 +4830,7 @@ public final class Userprofile {
        * 是否命中反作弊人群
        * </pre>
        *
-       * <code>int32 antispam = 9;</code>
+       * <code>optional int32 antispam = 9;</code>
        */
       public int getAntispam() {
         return antispam_;
@@ -4673,7 +4840,7 @@ public final class Userprofile {
        * 是否命中反作弊人群
        * </pre>
        *
-       * <code>int32 antispam = 9;</code>
+       * <code>optional int32 antispam = 9;</code>
        */
       public Builder setAntispam(int value) {
         
@@ -4686,7 +4853,7 @@ public final class Userprofile {
        * 是否命中反作弊人群
        * </pre>
        *
-       * <code>int32 antispam = 9;</code>
+       * <code>optional int32 antispam = 9;</code>
        */
       public Builder clearAntispam() {
         
@@ -4701,7 +4868,7 @@ public final class Userprofile {
        *分享朋友圈获得的积分
        * </pre>
        *
-       * <code>int32 share_coin = 10;</code>
+       * <code>optional int32 share_coin = 10;</code>
        */
       public int getShareCoin() {
         return shareCoin_;
@@ -4711,7 +4878,7 @@ public final class Userprofile {
        *分享朋友圈获得的积分
        * </pre>
        *
-       * <code>int32 share_coin = 10;</code>
+       * <code>optional int32 share_coin = 10;</code>
        */
       public Builder setShareCoin(int value) {
         
@@ -4724,7 +4891,7 @@ public final class Userprofile {
        *分享朋友圈获得的积分
        * </pre>
        *
-       * <code>int32 share_coin = 10;</code>
+       * <code>optional int32 share_coin = 10;</code>
        */
       public Builder clearShareCoin() {
         
@@ -4739,7 +4906,7 @@ public final class Userprofile {
        *是否是新用户，45天内是新用户，是1，不是0
        * </pre>
        *
-       * <code>int32 newUser = 11;</code>
+       * <code>optional int32 newUser = 11;</code>
        */
       public int getNewUser() {
         return newUser_;
@@ -4749,7 +4916,7 @@ public final class Userprofile {
        *是否是新用户，45天内是新用户，是1，不是0
        * </pre>
        *
-       * <code>int32 newUser = 11;</code>
+       * <code>optional int32 newUser = 11;</code>
        */
       public Builder setNewUser(int value) {
         
@@ -4762,13 +4929,325 @@ public final class Userprofile {
        *是否是新用户，45天内是新用户，是1，不是0
        * </pre>
        *
-       * <code>int32 newUser = 11;</code>
+       * <code>optional int32 newUser = 11;</code>
        */
       public Builder clearNewUser() {
         
         newUser_ = 0;
         onChanged();
         return this;
+      }
+
+      private java.util.List<userprofile.Userprofile.InterestItem> interestedWords_ =
+        java.util.Collections.emptyList();
+      private void ensureInterestedWordsIsMutable() {
+        if (!((bitField0_ & 0x00000800) == 0x00000800)) {
+          interestedWords_ = new java.util.ArrayList<userprofile.Userprofile.InterestItem>(interestedWords_);
+          bitField0_ |= 0x00000800;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          userprofile.Userprofile.InterestItem, userprofile.Userprofile.InterestItem.Builder, userprofile.Userprofile.InterestItemOrBuilder> interestedWordsBuilder_;
+
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public java.util.List<userprofile.Userprofile.InterestItem> getInterestedWordsList() {
+        if (interestedWordsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(interestedWords_);
+        } else {
+          return interestedWordsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public int getInterestedWordsCount() {
+        if (interestedWordsBuilder_ == null) {
+          return interestedWords_.size();
+        } else {
+          return interestedWordsBuilder_.getCount();
+        }
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public userprofile.Userprofile.InterestItem getInterestedWords(int index) {
+        if (interestedWordsBuilder_ == null) {
+          return interestedWords_.get(index);
+        } else {
+          return interestedWordsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public Builder setInterestedWords(
+          int index, userprofile.Userprofile.InterestItem value) {
+        if (interestedWordsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureInterestedWordsIsMutable();
+          interestedWords_.set(index, value);
+          onChanged();
+        } else {
+          interestedWordsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public Builder setInterestedWords(
+          int index, userprofile.Userprofile.InterestItem.Builder builderForValue) {
+        if (interestedWordsBuilder_ == null) {
+          ensureInterestedWordsIsMutable();
+          interestedWords_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          interestedWordsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public Builder addInterestedWords(userprofile.Userprofile.InterestItem value) {
+        if (interestedWordsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureInterestedWordsIsMutable();
+          interestedWords_.add(value);
+          onChanged();
+        } else {
+          interestedWordsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public Builder addInterestedWords(
+          int index, userprofile.Userprofile.InterestItem value) {
+        if (interestedWordsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureInterestedWordsIsMutable();
+          interestedWords_.add(index, value);
+          onChanged();
+        } else {
+          interestedWordsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public Builder addInterestedWords(
+          userprofile.Userprofile.InterestItem.Builder builderForValue) {
+        if (interestedWordsBuilder_ == null) {
+          ensureInterestedWordsIsMutable();
+          interestedWords_.add(builderForValue.build());
+          onChanged();
+        } else {
+          interestedWordsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public Builder addInterestedWords(
+          int index, userprofile.Userprofile.InterestItem.Builder builderForValue) {
+        if (interestedWordsBuilder_ == null) {
+          ensureInterestedWordsIsMutable();
+          interestedWords_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          interestedWordsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public Builder addAllInterestedWords(
+          java.lang.Iterable<? extends userprofile.Userprofile.InterestItem> values) {
+        if (interestedWordsBuilder_ == null) {
+          ensureInterestedWordsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, interestedWords_);
+          onChanged();
+        } else {
+          interestedWordsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public Builder clearInterestedWords() {
+        if (interestedWordsBuilder_ == null) {
+          interestedWords_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000800);
+          onChanged();
+        } else {
+          interestedWordsBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public Builder removeInterestedWords(int index) {
+        if (interestedWordsBuilder_ == null) {
+          ensureInterestedWordsIsMutable();
+          interestedWords_.remove(index);
+          onChanged();
+        } else {
+          interestedWordsBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public userprofile.Userprofile.InterestItem.Builder getInterestedWordsBuilder(
+          int index) {
+        return getInterestedWordsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public userprofile.Userprofile.InterestItemOrBuilder getInterestedWordsOrBuilder(
+          int index) {
+        if (interestedWordsBuilder_ == null) {
+          return interestedWords_.get(index);  } else {
+          return interestedWordsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public java.util.List<? extends userprofile.Userprofile.InterestItemOrBuilder> 
+           getInterestedWordsOrBuilderList() {
+        if (interestedWordsBuilder_ != null) {
+          return interestedWordsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(interestedWords_);
+        }
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public userprofile.Userprofile.InterestItem.Builder addInterestedWordsBuilder() {
+        return getInterestedWordsFieldBuilder().addBuilder(
+            userprofile.Userprofile.InterestItem.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public userprofile.Userprofile.InterestItem.Builder addInterestedWordsBuilder(
+          int index) {
+        return getInterestedWordsFieldBuilder().addBuilder(
+            index, userprofile.Userprofile.InterestItem.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       *感兴趣的词汇分类
+       * </pre>
+       *
+       * <code>repeated .userprofile.InterestItem interestedWords = 12;</code>
+       */
+      public java.util.List<userprofile.Userprofile.InterestItem.Builder> 
+           getInterestedWordsBuilderList() {
+        return getInterestedWordsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          userprofile.Userprofile.InterestItem, userprofile.Userprofile.InterestItem.Builder, userprofile.Userprofile.InterestItemOrBuilder> 
+          getInterestedWordsFieldBuilder() {
+        if (interestedWordsBuilder_ == null) {
+          interestedWordsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              userprofile.Userprofile.InterestItem, userprofile.Userprofile.InterestItem.Builder, userprofile.Userprofile.InterestItemOrBuilder>(
+                  interestedWords_,
+                  ((bitField0_ & 0x00000800) == 0x00000800),
+                  getParentForChildren(),
+                  isClean());
+          interestedWords_ = null;
+        }
+        return interestedWordsBuilder_;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -4859,14 +5338,15 @@ public final class Userprofile {
       "dShow\"d\n\nAPPPackage\022\023\n\013packagename\030\001 \001(\t" +
       "\022\017\n\007version\030\002 \001(\t\022\030\n\020firstInstallTime\030\003 " +
       "\001(\003\022\026\n\016lastUpdateTime\030\004 \001(\003\"*\n\014InterestI" +
-      "tem\022\013\n\003tag\030\001 \001(\005\022\r\n\005score\030\002 \001(\005\"\374\001\n\013User" +
+      "tem\022\013\n\003tag\030\001 \001(\005\022\r\n\005score\030\002 \001(\005\"\260\002\n\013User" +
       "Profile\022\r\n\005devid\030\001 \001(\t\022\013\n\003age\030\002 \001(\005\022\013\n\003s" +
       "ex\030\003 \001(\005\022\014\n\004coin\030\004 \001(\005\022,\n\tinterests\030\005 \003(" +
       "\0132\031.userprofile.InterestItem\022+\n\ninstallp",
       "kg\030\006 \003(\0132\027.userprofile.APPPackage\022\021\n\tpca" +
       "tegory\030\007 \001(\005\022\021\n\tincr_coin\030\010 \001(\005\022\020\n\010antis" +
       "pam\030\t \001(\005\022\022\n\nshare_coin\030\n \001(\005\022\017\n\007newUser" +
-      "\030\013 \001(\005b\006proto3"
+      "\030\013 \001(\005\0222\n\017interestedWords\030\014 \003(\0132\031.userpr" +
+      "ofile.InterestItemb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -4909,7 +5389,7 @@ public final class Userprofile {
     internal_static_userprofile_UserProfile_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_userprofile_UserProfile_descriptor,
-        new java.lang.String[] { "Devid", "Age", "Sex", "Coin", "Interests", "Installpkg", "Pcategory", "IncrCoin", "Antispam", "ShareCoin", "NewUser", });
+        new java.lang.String[] { "Devid", "Age", "Sex", "Coin", "Interests", "Installpkg", "Pcategory", "IncrCoin", "Antispam", "ShareCoin", "NewUser", "InterestedWords", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

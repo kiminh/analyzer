@@ -55,6 +55,7 @@ object ConditionTouchedUV {
 
     ulog.cache()
     calcCondPercent("province", ulog.filter(_.province > 0).map(u => ((u.province, u.uid), 1)))
+    calcCondPercent("city", ulog.filter(_.city > 0).map(u => ((u.city, u.uid), 1)))
     calcCondPercent("sex", ulog.filter(_.sex > 0).map(u => ((u.sex, u.uid), 1)))
     calcCondPercent("age", ulog.filter(_.age > 0).map(u => ((u.age, u.uid), 1)))
     calcCondPercent("coin", ulog.filter(_.coin > 0)

@@ -10,6 +10,7 @@ import org.apache.spark.sql.SparkSession
 import java.security.MessageDigest
 
 import scala.io.Source
+import sys.process._
 
 
 /**
@@ -41,7 +42,8 @@ object GetRecommendMaterial {
 
 
     var lines = Seq[String]()
-    for (line <- Source.fromFile("/home/work/mr/qukan/recommend_material.txt", "UTF8").getLines()) {
+    val datafile = "/data/cpc/anal/data/qukan/recommend_material.txt"
+    for (line <- Source.fromFile(datafile, "UTF8").getLines()) {
       lines = lines :+ line
     }
     var oldRdd = ctx.sparkContext.parallelize(lines)
@@ -51,16 +53,22 @@ object GetRecommendMaterial {
       .map {
         x =>
           if (x.size > 8) {
-            val title = x.getString(1).trim
-            val img1 = x.getString(2)
-            val img2 = x.getString(3)
-            val img3 = x.getString(4)
-            val show = x.getLong(5)
-            val pv = x.getLong(6)
-            val clk = x.getDouble(7)
-            val tag = ""
+            try {
+              val title = x.getString(1).trim
+              val img1 = x.getString(2)
+              val img2 = x.getString(3)
+              val img3 = x.getString(4)
+              val show = x.getLong(5)
+              val pv = x.getLong(6)
+              val clk = x.getDouble(7)
+              val tag = ""
 
-            "%s\t%s\t%s\t%s\t%s\t%d\t%d\t%f\t%s".format("-", title, img1, img2, img3, show, pv, clk, tag)
+              "%s\t%s\t%s\t%s\t%s\t%d\t%d\t%f\t%s".format("-", title, img1, img2, img3, show, pv, clk, tag)
+            } catch {
+              case e: Exception =>
+                ""
+            }
+
           } else {
             ""
           }
@@ -71,7 +79,7 @@ object GetRecommendMaterial {
       newRdd = newRdd.union(oldRdd)
     }
 
-    lazy val w = new PrintWriter(new File("/home/work/mr/qukan/recommend_material.txt"))
+    lazy val w = new PrintWriter(new File(datafile))
     var n = 0
     newRdd.map(_.split("\t"))
       .filter(_.length == 9)
@@ -103,7 +111,10 @@ object GetRecommendMaterial {
           n += 1
       }
     w.close()
+    val cmd = s"scp $datafile work@10.9.179.225:/home/work/mr/qukan"
+    println(cmd)
     println("done", day, n)
     ctx.stop()
+    val ret = cmd !
   }
 }
