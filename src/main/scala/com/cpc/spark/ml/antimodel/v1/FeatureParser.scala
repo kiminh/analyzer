@@ -3,8 +3,7 @@ package com.cpc.spark.ml.antimodel.v1
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.{ExtValue, UnionLog}
-import com.cpc.spark.ml.antimodel.v1.CreateSvm.TLog
-import com.cpc.spark.ml.common.Dict
+import com.cpc.spark.ml.antimodel.v1.CreateSvm.{TraceLog2}
 import mlserver.mlserver._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.util.MLUtils
@@ -78,14 +77,12 @@ object FeatureParser {
     (ad, m, u, loc, n, d, x.timestamp * 1000L)
   }
 
-  def parseUnionLog(y:(String, ((UnionLog, Option[Int]), UserInfo)), dict: Dict): String = {
-    val x = y._2._1._1
-    val (ad, m, u, loc, n, d, t) = unionLogToObject(x)
+  def parseUnionLog(unionLog:UnionLog): String = {
     var svm = "0"
-    val vector = getVector(dict, ad, m, u, loc, n, d, x.timestamp * 1000L, y._2._2, y._2._1._2)
+    val vector = getVector(unionLog)
     if (vector != null) {
       var p = -1
-      svm = x.ext.getOrElse("antispam", ExtValue()).int_value.toString
+      svm = unionLog.ext.getOrElse("antispam", ExtValue()).int_value.toString
       MLUtils.appendBias(vector).foreachActive {
         (i, v) =>
           if (i <= p) {
@@ -112,40 +109,29 @@ object FeatureParser {
     svm
   }
 
-  def getVector(dict: Dict, ad: AdInfo, m: Media, u: User,
-            loc: Location, n: Network, d: Device, timeMills: Long, user:UserInfo, trace: Option[Int]): Vector = {
+  def getVector(unionLog:UnionLog): Vector = {
     val cal = Calendar.getInstance()
-    cal.setTimeInMillis(timeMills)
+    cal.setTimeInMillis(unionLog.timestamp)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     var els = Seq[(Int, Double)]()
     var i = 0
     try {
+
       els = els :+ (week + i - 1, 1d)
       i += 7
-
       //(24)
       els = els :+ (hour + i, 1d)
       i += 24
 
-      //interests
-      /*u.interests.map(dict.interest.getOrElse(_, 0))
-        .filter(_ > 0)
-        .sortWith(_ < _)
-        .foreach {
-          intr =>
-            els = els :+ (intr + i - 1, 1d)
-        }
-      i += 200*/
-
-      els = els :+ (u.sex + i, 1d)
+      els = els :+ (unionLog.sex + i, 1d)
       i += 10
 
       //age
       var age = 0
-      if (u.age <= 1) {
+      if (unionLog.age <= 1) {
         age = 1
-      } else if (u.age <= 4) {
+      } else if (unionLog.age <= 4) {
         age = 2
       } else {
         age = 3
@@ -154,109 +140,175 @@ object FeatureParser {
       i += 100
 
       //os 96 - 97 (2)
-      val os = d.os
+      val os = unionLog.os
       els = els :+ (os + i - 1, 1d)
       i += 10
 
-      els = els :+ (n.isp + i, 1d)
+      els = els :+ (unionLog.isp + i, 1d)
       i += 19
 
-      els = els :+ (n.network + i, 1d)
+      els = els :+ (unionLog.network + i, 1d)
       i += 5
 
-      var city = dict.city.getOrElse(loc.city, 0)
-      city = city % 1000
+      var city = unionLog.city % 1000
       els = els :+ (city + i, 1d)
-      i += 1000
+      i += 1001
 
       //ad slot id
-      var slotid = dict.adslot.getOrElse(m.adslotid, 0)
-      slotid = slotid % 1000
+      var slotid = unionLog.adslotid.toInt % 1000
       els = els :+ (slotid + i, 1d)
-      i += 1000
+      i += 1001
 
       //ad class
-      var adcls = dict.adclass.getOrElse(ad._class, 0)
-      adcls = adcls % 1000
+      var adcls = unionLog.ext.getOrElse("adclass",ExtValue()).int_value % 1000
       els = els :+ (adcls + i, 1d)
-      i += 1000
+      i += 1001
 
-      val adtype = ad.adtype
-      els = els :+ (adtype + i, 1d)
-      i += 10
-
-      val mchannel = dict.channel.getOrElse(m.channel, 0)
-      els = els :+ (mchannel + i, 1d)
-      i += 200
-
-      //0 to 4
-      els = els :+ (d.phoneLevel + i, 1d)
-      i += 10
-
-      //ideaid  (200000)
-    /*  var adid = 0
-      if (ad.ideaid >= 1500000) {
-        adid = ad.ideaid - 1500000 + 60000   //新平台
-      } else if (ad.ideaid >= 1000000) {
-        adid = ad.ideaid - 1000000 + 30000   //迁移到新平台
-      } else if (ad.ideaid < 30000) {
-        adid = ad.ideaid  //老平台
-      }
-      if (adid >= 200000) {
-        adid = 0
-      }
-      els = els :+ (adid + i, 1d)
-      i += 200000*/
-     /* user.foreach{
-        x =>
-          var key = 0
-          key = x.coinType + x.coin
-          if(key >= 1000){
-            key = 0
-          }
-          els = els :+ (key + i, 1d)
-          i += 1000
-      }
-      user.foreach{
-        x =>
-          var key = 0
-          key = x.cmdType + x.contentNum
-          if(key >= 1000){
-            key = 0
-          }
-          els = els :+ (key + i, 1d)
-          i += 1000
-      }*/
-      var coin = 0
-      if(user.coin >= 20000){
-         coin = 0
+      var coin = unionLog.ext.getOrElse("share_coin",ExtValue()).int_value
+      if(coin >= 1000){
+         coin = 999
       }else{
-        coin =  user.coin
+        coin =  coin
       }
       els = els :+ (coin + i, 1d)
-      i += 20000
+      i += 1001
+      els = els :+ (getTag(unionLog.screen_h)+ i, 1d)
+      i += 34
+      els = els :+ (getTag(unionLog.screen_w)+ i, 1d)
+      i += 34
 
-     var  contentNum = user.contentNum
-      if(contentNum >= 1000){
-        contentNum = 1
-      }
-      els = els :+ (contentNum + i, 1d)
-      i += 1000
+      /*var load = if(trace.load > 0 ) 1 else 0
+      els = els :+ (load + i, 1d)
+      i += 2
+      var active = if(trace.active > 0 ) 1 else 0
+      els = els :+ (active + i, 1d)
+      i += 2
 
-      var duration = trace.getOrElse(0)
-      if(duration >= 100){
-        duration = 1
-      }
-      els = els :+ (duration + i, 1d)
-      i += 100
+      var buttonClick = if(trace.buttonClick > 20 ) 20 else trace.buttonClick
+      els = els :+ (buttonClick + i, 1d)
+      i += 21
+
+      var press = if(trace.press > 20 ) 20 else trace.press
+      els = els :+ (press + i, 1d)
+      i += 21
+      var stay1 = if(trace.stay1 > 0 ) 1 else 0
+      els = els :+ (stay1 + i, 1d)
+      i += 2
+
+      var stay5 = if(trace.stay5 > 0 ) 1 else 0
+      els = els :+ (stay5 + i, 1d)
+      i += 2
+
+      var stay10 = if(trace.stay10 > 0 ) 1 else 0
+      els = els :+ (stay10 + i, 1d)
+      i += 2
+      var stay30 = if(trace.stay30 > 0 ) 1 else 0
+      els = els :+ (stay30 + i, 1d)
+      i += 2
+
+      var stay60 = if(trace.stay60 > 0 ) 1 else 0
+      els = els :+ (stay60 + i, 1d)
+      i += 2
+
+      var stay120 = if(trace.stay120 > 0 ) 1 else 0
+      els = els :+ (stay120 + i, 1d)
+      i += 2
+
+      els = els :+ (getTag(trace.screen_h)+ i, 1d)
+      i += 34
+      els = els :+ (getTag(trace.screen_w)+ i, 1d)
+      i += 34
+      els = els :+ (getTag(trace.client_h)+ i, 1d)
+      i += 34
+      els = els :+ (getTag(trace.client_w)+ i, 1d)
+      i += 34
+      els = els :+ (getTag(trace.client_x)+ i, 1d)
+      i += 34
+      els = els :+ (getTag(trace.page_x)+ i, 1d)
+      i += 34
+      els = els :+ (getTag(trace.page_y)+ i, 1d)
+      i += 34
+      els = els :+ (getTag(trace.scroll_top)+ i, 1d)
+      i += 34
+*/
       Vectors.sparse(i, els)
     } catch {
       case e: Exception =>
-        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage + "unionLog:")
         null
     }
 
   }
-
+  def getTag(y:Int):Int ={
+    if(y<0){
+      1
+    }else if (y == 0){
+      2
+    }else if (y<=10){
+      3
+    }else if (y <= 20){
+      4
+    }else if (y <= 30){
+      5
+    }else if (y <= 40){
+      6
+    }else if (y <= 50){
+      7
+    }else if (y <= 60){
+      8
+    }else if (y <= 70){
+      9
+    }else if (y <= 80){
+      10
+    }else if (y <= 90){
+      11
+    }else if (y<= 100) {
+      12
+    } else if (y<= 200) {
+      13
+    } else if (y<= 300) {
+      14
+    } else if (y<= 400) {
+      15
+    }else if (y <= 500){
+      16
+    } else if (y<=600) {
+      17
+    } else if (y<=700) {
+      18
+    } else if (y<=800) {
+      19
+    } else if (y<=900) {
+      20
+    } else if (y <= 1000){
+      21
+    } else if (y <= 1500){
+      22
+    } else if (y <= 1700){
+      23
+    } else if (y <= 1900){
+      24
+    }else if (y <= 2000){
+      25
+    }else if (y <= 3000){
+      26
+    }else if (y <= 4000){
+      27
+    }else if (y <= 5000){
+      28
+    }else if (y <=6000){
+      29
+    }else if (y <=7000){
+      30
+    }else if (y <=8000){
+      31
+    }else if (y <=9000){
+      32
+    }else if (y <=10000){
+      32
+    }else{
+      33
+    }
+  }
 }
 
