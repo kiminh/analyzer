@@ -67,9 +67,23 @@ object InterestedWords {
               if (buffer != null) {
                 val user = UserProfile.parseFrom(buffer).toBuilder
                 val in = InterestItem.newBuilder()
-                  .setTag(1)
+                  .setTag(tag)
                   .setScore(row._2)
-                user.addInterestedWords(in)
+                var has = false
+                for (i <- 0 until user.getInterestedWordsCount) {
+                  val w = user.getInterestedWords(i)
+                  if (w.getTag == in.getTag) {
+                    if (!has) {
+                      user.setInterestedWords(i, in)
+                      has = true
+                    } else {
+                      user.removeInterestedWords(i)
+                    }
+                  }
+                }
+                if (!has) {
+                  user.addInterestedWords(in)
+                }
                 redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
