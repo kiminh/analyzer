@@ -183,8 +183,7 @@ object InterestedWords {
           (x._2._1, x._2._2)
       }
       .reduceByKey(_ + _)
-      .filter(_._2 >= 100)
-
+      .filter(_._2 >= 50)
     userPoints
   }
 
