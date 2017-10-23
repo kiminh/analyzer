@@ -20,7 +20,7 @@ object CheckWordsCtr {
     val ulog = spark.sql(
       """
         |select * from dl_cpc.cpc_union_log
-        |where unitid in ("1511025","1500585") and `date` = "2017-10-19"  and isshow = 1
+        |where unitid in ("1511434","1515497") and `date` = "2017-10-20"  and isshow = 1
       """.stripMargin).as[UnionLog].rdd
 
     ulog.map(x => (x.isclick, x.interests.split(",")))
@@ -38,8 +38,10 @@ object CheckWordsCtr {
           .find(_._1 == 1).orNull
 
           if (tag != null) {
-            if (tag._2 > 500) {
-              (500, (x._1, 1))
+            if (tag._2 > 1000) {
+              (1000, (x._1, 1))
+            } else if (tag._2 > 500) {
+              (400, (x._1, 1))
             } else {
               (100, (x._1, 1))
             }
@@ -48,6 +50,7 @@ object CheckWordsCtr {
           }
       }
       .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
+      .sortByKey()
       .map(x => (x._1, x._2._1, x._2._2))
       .toLocalIterator
       .foreach {

@@ -52,15 +52,13 @@ object CheckCvrLog {
 
       val clicklog = ctx.sql(sql)
         .as[UnionLog].rdd
-        //.filter(x => x.exptags.contains("cvrfilter"))
+        .randomSplit(Array(0.5, 0.5), 123L)(0)
         .map {
           x =>
             (x.searchid, (x, Seq[TraceLog]()))
         }
 
-
       println("click", clicklog.count())
-
       val tracelog = ctx.sql(
         s"""
            |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" %s

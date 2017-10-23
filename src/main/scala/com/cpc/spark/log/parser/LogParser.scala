@@ -139,6 +139,7 @@ object LogParser {
         show_timestamp = body.getEventTimestamp,
         show_ip = data.ip
       )
+
     }
     log
   }
@@ -151,13 +152,18 @@ object LogParser {
       if (event.getBody.getSearchId.length > 0) {
         val body = event.getBody
         val charge = body.getCharge
+        val extra = event.getExtra
+        val ext = mutable.Map[String, ExtValue]()
+        ext.update("touch_x", ExtValue(int_value = extra.getTouchX))
+        ext.update("touch_y", ExtValue(int_value = extra.getTouchY))
         log = UnionLog(
           searchid = body.getSearchId,
           isclick = 1,
           click_timestamp = body.getEventTimestamp,
           antispam_score = body.getAntispam.getScore,
           antispam_rules = body.getAntispam.getRulesList.toArray.mkString(","),
-          click_ip = LongToIPv4(body.getEventIp.toLong)
+          click_ip = LongToIPv4(body.getEventIp.toLong),
+          ext = ext.toMap
         )
       }
     }
