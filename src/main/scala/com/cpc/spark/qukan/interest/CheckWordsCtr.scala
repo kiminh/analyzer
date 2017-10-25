@@ -1,5 +1,8 @@
 package com.cpc.spark.qukan.interest
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import com.cpc.spark.log.parser.UnionLog
 import org.apache.spark.sql.SparkSession
 
@@ -17,11 +20,16 @@ object CheckWordsCtr {
     import spark.implicits._
 
 
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.DATE, -args(0).toInt)
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+
+
     val ulog = spark.sql(
       """
         |select * from dl_cpc.cpc_union_log
-        |where unitid in ("1511434","1515497") and `date` = "2017-10-20"  and isshow = 1
-      """.stripMargin).as[UnionLog].rdd
+        |where unitid in ("1511434","1515497") and `date` = "%s"  and isshow = 1
+      """.stripMargin.format(date)).as[UnionLog].rdd
 
     ulog.map(x => (x.isclick, x.interests.split(",")))
       .map {

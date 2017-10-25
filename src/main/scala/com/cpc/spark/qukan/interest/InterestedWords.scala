@@ -51,10 +51,12 @@ object InterestedWords {
     val wordsPack = conf.getConfigList("userprofile.words_pack")
     for (i <- 0 until wordsPack.size()) {
       val pack = wordsPack.get(i)
-      val userPoints = getUserPoints(ctx, pack.getString("file"), dataStart, dataEnd)
       val tag = pack.getInt("tag")
       println("start %s %d".format(pack.getString("name"), tag))
 
+      val userPoints = getUserPoints(ctx, pack.getString("file"), dataStart, dataEnd)
+      val n = userPoints.filter(_._2 > 50).count()
+      println(">50%", n)
       val sum = userPoints.mapPartitions {
         p =>
           var n = 0
@@ -108,8 +110,6 @@ object InterestedWords {
       }
 
     val bcWords = spark.sparkContext.broadcast(words)
-
-
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -10)
     val aStart = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
@@ -138,7 +138,7 @@ object InterestedWords {
                 .map {
                   w =>
                     if (words.contains(w.word)) {
-                      2
+                      5
                     } else {
                       0
                     }
@@ -183,8 +183,13 @@ object InterestedWords {
           (x._2._1, x._2._2)
       }
       .reduceByKey(_ + _)
-      .filter(_._2 >= 50)
-    userPoints
+      .filter(_._2 >= 5)
+
+    val sum = userPoints.map(_._2).sum()
+    val num = userPoints.count().toDouble
+    val avg = sum / num
+    println(sum, num, avg)
+    userPoints.map {x => (x._1, (x._2.toDouble * 100 / avg).toInt)}.filter(_._2 >= 10)
   }
 
   def getAdDbResult(confKey: String): Seq[(Int, String)] = {

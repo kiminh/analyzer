@@ -91,9 +91,6 @@ object AnalUnionLog {
                   if (log.ext != null) {
                     ext = ext ++ log.ext
                   }
-                  if (u.ext != null) {
-                    ext = ext ++ u.ext
-                  }
                   if (u.isSpamClick() == 1) {
                     val spam = ext.getOrElse("spam_click", ExtValue())
                     ext.update("spam_click", ExtValue(int_value = spam.int_value + 1))
@@ -101,6 +98,8 @@ object AnalUnionLog {
                       ext = ext
                     )
                   } else {
+                    ext.update("touch_x", u.ext("touch_x"))
+                    ext.update("touch_y", u.ext("touch_y"))
                     log = log.copy(
                       isclick = u.isclick,
                       click_timestamp = u.click_timestamp,
