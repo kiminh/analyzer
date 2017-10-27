@@ -87,24 +87,27 @@ object AnalUnionLog {
                   )
                 }
                 if (u.isclick == 1) {
+                  var ext = mutable.Map[String, ExtValue]()
+                  if (log.ext != null) {
+                    ext = ext ++ log.ext
+                  }
                   if (u.isSpamClick() == 1) {
-                    var ext = mutable.Map[String, ExtValue]()
-                    if (log.ext != null) {
-                      ext = ext ++ log.ext
-                    }
                     val spam = ext.getOrElse("spam_click", ExtValue())
                     ext.update("spam_click", ExtValue(int_value = spam.int_value + 1))
                     log = log.copy(
                       ext = ext
                     )
                   } else {
+                    ext.update("touch_x", u.ext("touch_x"))
+                    ext.update("touch_y", u.ext("touch_y"))
                     log = log.copy(
                       isclick = u.isclick,
                       click_timestamp = u.click_timestamp,
                       antispam_score = u.antispam_score,
                       antispam_rules = u.antispam_rules,
                       click_network = u.click_network,
-                      click_ip = u.click_ip
+                      click_ip = u.click_ip,
+                      ext = ext
                     )
                   }
                 }
