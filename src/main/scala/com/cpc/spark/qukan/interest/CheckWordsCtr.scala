@@ -28,7 +28,7 @@ object CheckWordsCtr {
     val ulog = spark.sql(
       """
         |select * from dl_cpc.cpc_union_log
-        |where unitid in ("1511434","1515497") and `date` = "%s"  and isshow = 1
+        |where `date` = "%s"  and isshow = 1
       """.stripMargin.format(date)).as[UnionLog].rdd
 
     ulog.map(x => (x.isclick, x.interests.split(",")))

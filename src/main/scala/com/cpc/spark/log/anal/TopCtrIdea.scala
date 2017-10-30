@@ -1,0 +1,265 @@
+package com.cpc.spark.log.anal
+
+import java.sql.{DriverManager, ResultSet}
+import java.text.SimpleDateFormat
+import java.util.{Calendar, Properties}
+
+import com.cpc.spark.log.parser.{ExtValue, UnionLog}
+import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{SaveMode, SparkSession}
+
+import scala.collection.mutable
+
+/**
+  * Created by roydong on 27/10/2017.
+  */
+object TopCtrIdea {
+
+
+  def main(args: Array[String]): Unit = {
+
+    if (args.length < 1) {
+      System.err.println(
+        s"""
+           |Usage: GetUserProfile <day_before> <int>
+           |
+        """.stripMargin)
+      System.exit(1)
+    }
+
+    Logger.getRootLogger.setLevel(Level.WARN)
+    val dayBefore = args(0).toInt
+
+    val spark = SparkSession.builder()
+      .appName("top ctr ideas")
+      .enableHiveSupport()
+      .getOrCreate()
+    import spark.implicits._
+
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.DATE, -dayBefore)
+    var adctr: RDD[((Int, Int), Adinfo)] = null
+    for (i <- 0 until dayBefore) {
+      cal.add(Calendar.DATE, i)
+      val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      val stmt = """
+          |select * from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
+          |and adslotid > 0 and adslot_type in (1,2)
+        """.stripMargin.format(date)
+      println(stmt)
+      val ulog = spark.sql(stmt)
+        .as[UnionLog].rdd
+        .map {
+          u =>
+            val key = (u.adslot_type, u.ideaid)
+            val cls = u.ext.getOrElse("adclass", ExtValue()).int_value
+            val v = Adinfo(
+              user_id = u.userid,
+              idea_id = u.ideaid,
+              adslot_type = u.adslot_type,
+              adclass = cls,
+              click = u.isclick,
+              show = u.isshow)
+
+            (key, v)
+        }
+        .reduceByKey {
+          (x, y) =>
+            x.copy(
+              click = x.click + y.click,
+              show = x.show + y.show
+            )
+        }
+      if (adctr == null) {
+        adctr = ulog
+      }
+      adctr = adctr.union(ulog)
+    }
+
+    val adinfo = adctr
+      .reduceByKey {
+        (x, y) =>
+          x.copy(
+            click = x.click + y.click,
+            show = x.show + y.show
+          )
+      }
+      .map {
+        x =>
+          val v = x._2
+          val ctr = (v.click.toDouble / v.show.toDouble * 1e6).toInt
+          v.copy(ctr = ctr)
+      }
+      .filter(x => x.click > 0 && x.show > 1000)
+
+    val max1 = adinfo.filter(_.adslot_type == 1).map(_.ctr).max()
+    val max2 = adinfo.filter(_.adslot_type == 2).map(_.ctr).max()
+    val rate = max1.toDouble / max2.toDouble
+
+    val ub = getUserBelong()
+    val titles = getIdeaTitle()
+    val imgs = getIdaeImg()
+
+    println(max1, max2, rate)
+    val top = adinfo.map(x => (x.idea_id, x))
+      .reduceByKey {
+        (x, y) =>
+          if (x.adslot_type == 1) {
+            x.copy(
+              ctr = (x.ctr + (y.ctr.toDouble * rate).toInt) / 2,
+              ctr_type = 1
+            )
+          } else {
+            y.copy(
+              ctr = (y.ctr + (x.ctr.toDouble * rate).toInt) / 2,
+              ctr_type = 1
+            )
+          }
+      }
+      .map {
+        x =>
+          val ad = x._2
+          if (ad.adslot_type == 2) {
+            ad.copy(
+              ctr = (ad.ctr.toDouble * rate).toInt
+            )
+          } else {
+            ad
+          }
+
+      }
+      .sortBy(x => x.ctr, false)
+      .take(10000)
+      .map {
+        x =>
+          x.copy(
+            agent_id = ub.getOrElse(x.user_id, 0)
+          )
+
+          val ad = titles.getOrElse(x.idea_id, null)
+          if (ad != null) {
+            val img = ad._2.map(x => imgs.getOrElse(x, "")).filter(_.length > 0).mkString(" ")
+
+            TopIdea (
+              user_id = x.user_id,
+              idea_id = x.idea_id,
+              agent_id = ub.getOrElse(x.user_id, 0),
+              adclass = x.adclass,
+              title = ad._1,
+              images = img,
+              ctr_score = x.ctr,
+              from = "cpc_adv"
+            )
+          } else {
+            null
+          }
+      }
+      .filter(_ != null)
+
+    top.foreach(println)
+
+    val conf = ConfigFactory.load()
+    val mariadbUrl = conf.getString("mariadb.url")
+    val mariadbProp = new Properties()
+    mariadbProp.put("user", conf.getString("mariadb.user"))
+    mariadbProp.put("password",conf.getString("mariadb.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.driver"))
+    spark.createDataFrame(top)
+      .write
+      .mode(SaveMode.Overwrite)
+      .jdbc(mariadbUrl, "report.top_ctr_idea", mariadbProp)
+
+  }
+
+  def getUserBelong(): Map[Int, Int] = {
+    val sql = "select id,belong from user"
+    val rs = getAdDbResult("mariadb.adv", sql)
+    val ub = mutable.Map[Int, Int]()
+    while (rs.next()) {
+      ub.update(rs.getInt("id"), rs.getInt("belong"))
+    }
+    val rsold = getAdDbResult("mariadb.adv_old", sql)
+    while (rsold.next()) {
+      ub.update(rsold.getInt("id"), rsold.getInt("belong"))
+    }
+    ub.toMap
+  }
+
+  def getIdeaTitle(): Map[Int, (String, Seq[Int])] = {
+    var sql = "select id, title, image from idea where action_type = 1"
+    val ideas = mutable.Map[Int, (String, Seq[Int])]()
+    var rs = getAdDbResult("mariadb.adv", sql)
+    while (rs.next()) {
+      val idea = (rs.getString("title"), rs.getString("image").split(",").map(_.toInt).toSeq)
+      val id = rs.getInt("id")
+      ideas.update(id, idea)
+    }
+    rs = getAdDbResult("mariadb.adv_old", sql)
+    while (rs.next()) {
+      val idea = (rs.getString("title"), rs.getString("image").split(",").map(_.toInt).toSeq)
+      val id = rs.getInt("id")
+      ideas.update(id, idea)
+    }
+    ideas.toMap
+  }
+
+  def getIdaeImg(): Map[Int, String] = {
+    val sql = "select id,remote_url from resource"
+    val images = mutable.Map[Int, String]()
+    var rs = getAdDbResult("mariadb.adv", sql)
+    while (rs.next()) {
+      images.update(rs.getInt("id"), rs.getString("remote_url"))
+    }
+    rs = getAdDbResult("mariadb.adv_old", sql)
+    while (rs.next()) {
+      images.update(rs.getInt("id"), rs.getString("remote_url"))
+    }
+    images.toMap
+  }
+
+  def getAdDbResult(confKey: String, sql: String): ResultSet = {
+    val conf = ConfigFactory.load()
+    val mariadbProp = new Properties()
+    mariadbProp.put("url", conf.getString(confKey + ".url"))
+    mariadbProp.put("user", conf.getString(confKey + ".user"))
+    mariadbProp.put("password", conf.getString(confKey + ".password"))
+    mariadbProp.put("driver", conf.getString(confKey + ".driver"))
+
+    Class.forName(mariadbProp.getProperty("driver"))
+    val conn = DriverManager.getConnection(
+      mariadbProp.getProperty("url"),
+      mariadbProp.getProperty("user"),
+      mariadbProp.getProperty("password"))
+    val stmt = conn.createStatement()
+    stmt.executeQuery(sql)
+  }
+
+  private case class Adinfo(
+                          agent_id: Int = 0,
+                          user_id: Int = 0,
+                          idea_id: Int = 0,
+                          adclass: Int = 0,
+                          adslot_type: Int = 0,
+                          click: Int = 0,
+                          show: Int = 0,
+                          ctr: Int = 0,
+                          ctr_type: Int = 0
+                          ) {
+
+  }
+
+  private case class TopIdea(
+                              agent_id: Int = 0,
+                              user_id: Int = 0,
+                              idea_id: Int = 0,
+                              adclass: Int = 0,
+                              title: String = "",
+                              images: String = "",
+                              ctr_score: Int = 0,
+                              from: String = ""
+                            )
+}
+
+
