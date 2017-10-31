@@ -13,22 +13,22 @@ object CheckWordsCtr {
 
   def main(args: Array[String]): Unit = {
 
+    val inid = args(1).toInt
+
     val spark = SparkSession.builder()
       .appName("check user interested words")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
 
-
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -args(0).toInt)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
-
     val ulog = spark.sql(
       """
         |select * from dl_cpc.cpc_union_log
-        |where `date` = "%s"  and isshow = 1
+        |where `date` = "%s"  and isshow = 1 and ext['trigger_type'] = 1
       """.stripMargin.format(date)).as[UnionLog].rdd
 
     ulog.map(x => (x.isclick, x.interests.split(",")))
@@ -43,15 +43,19 @@ object CheckWordsCtr {
                 (0, 0)
               }
           }
-          .find(_._1 == 1).orNull
+          .find(_._1 == inid).orNull
 
           if (tag != null) {
-            if (tag._2 > 1000) {
-              (1000, (x._1, 1))
-            } else if (tag._2 > 500) {
+            if (tag._2 > 400) {
               (400, (x._1, 1))
-            } else {
+            } else if (tag._2 > 200) {
+              (200, (x._1, 1))
+            } else if (tag._2 > 100) {
               (100, (x._1, 1))
+            } else if (tag._2 > 50) {
+              (50, (x._1, 1))
+            } else {
+              (10, (x._1, 1))
             }
           } else {
             (0, (x._1, 1))

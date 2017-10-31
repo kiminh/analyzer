@@ -42,7 +42,6 @@ object TopCtrIdea {
     cal.add(Calendar.DATE, -dayBefore)
     var adctr: RDD[((Int, Int), Adinfo)] = null
     for (i <- 0 until dayBefore) {
-      cal.add(Calendar.DATE, i)
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       val stmt = """
           |select * from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
@@ -76,6 +75,7 @@ object TopCtrIdea {
         adctr = ulog
       }
       adctr = adctr.union(ulog)
+      cal.add(Calendar.DATE, 1)
     }
 
     val adinfo = adctr
@@ -140,15 +140,26 @@ object TopCtrIdea {
 
           val ad = titles.getOrElse(x.idea_id, null)
           if (ad != null) {
-            val img = ad._2.map(x => imgs.getOrElse(x, "")).filter(_.length > 0).mkString(" ")
+            val img = ad._2.map(x => imgs.getOrElse(x, "")).filter(_.length > 0)
+
+            val mtype = img.length match {
+              case 0 => 0
+              case 1 => 1
+              case 3 => 3
+              case _ => 0
+            }
+
+            val adclass = (x.adclass / 1000000) * 1000000 + 100100
 
             TopIdea (
               user_id = x.user_id,
               idea_id = x.idea_id,
               agent_id = ub.getOrElse(x.user_id, 0),
               adclass = x.adclass,
+              adclass_1 = adclass,
               title = ad._1,
-              images = img,
+              mtype = mtype,
+              images = img.mkString(" "),
               ctr_score = x.ctr,
               from = "cpc_adv"
             )
@@ -255,7 +266,9 @@ object TopCtrIdea {
                               user_id: Int = 0,
                               idea_id: Int = 0,
                               adclass: Int = 0,
+                              adclass_1: Int = 0,
                               title: String = "",
+                              mtype: Int = 0,
                               images: String = "",
                               ctr_score: Int = 0,
                               from: String = ""
