@@ -8,6 +8,8 @@ import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SaveMode
 
+import scala.util.Random
+
 /**
   * Created by roydong on 06/07/2017.
   */
@@ -51,7 +53,7 @@ object AntispamModel {
     } else {
       val svm = MyMLUtils.loadLibSVMFile(ctx.sparkContext, "/user/cpc/antispam/v2/svm/train/%s".format(toDate))
         //random pick 1/pnRate negative sample
-      //  .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
+        .filter(x => x._2.label > 0.01 || Random.nextInt(pnRate) == 0)
         .randomSplit(Array(1, 0), seed = new Date().getTime)
       val sample = svm(0).cache()
       println("sample count", sample.count())
