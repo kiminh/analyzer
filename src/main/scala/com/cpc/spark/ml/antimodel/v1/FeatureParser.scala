@@ -3,8 +3,7 @@ package com.cpc.spark.ml.antimodel.v1
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.{ExtValue, UnionLog}
-import com.cpc.spark.ml.antimodel.v1.CreateSvm.{TraceLog2}
-import mlserver.mlserver._
+import com.cpc.spark.ml.common.Dict
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.util.MLUtils
 
@@ -14,75 +13,14 @@ import org.apache.spark.mllib.util.MLUtils
   */
 object FeatureParser {
 
-  def unionLogToObject(x: UnionLog): (AdInfo, Media, User, Location, Network, Device, Long) = {
-    var cls = 0
-    if (x.ext != null) {
-      val v = x.ext.getOrElse("adclass", null)
-      if (v != null) {
-        cls = v.int_value
-      }
-    }
-    val ad = AdInfo(
-      bid = x.bid,
-      ideaid = x.ideaid,
-      unitid = x.unitid,
-      planid = x.planid,
-      userid = x.userid,
-      adtype = x.adtype,
-      interaction = x.interaction,
-      _class = cls
-    )
-    val m = Media(
-      mediaAppsid = x.media_appsid.toInt,
-      mediaType = x.media_type,
-      adslotid = x.adslotid.toInt,
-      adslotType = x.adslot_type,
-      floorbid = x.floorbid
-    )
-    val interests = x.interests.split(",")
-      .map{
-        x =>
-          val v = x.split("=")
-          if (v.length == 2) {
-            (v(0).toInt, v(1).toInt)
-          } else {
-            (0, 0)
-          }
-      }
-      .filter(x => x._1 > 0 && x._2 >= 2)
-      .sortWith((x, y) => x._2 > y._2)
-      .map(_._1)
-      .toSeq
-    val u = User(
-      sex = x.sex,
-      age = x.age,
-      coin = x.coin,
-      uid = x.uid,
-      interests = interests
-    )
-    val n = Network(
-      network = x.network,
-      isp = x.isp,
-      ip = x.ip
-    )
-    val loc = Location(
-      country = x.country,
-      province = x.province,
-      city = x.city
-    )
-    val d = Device(
-      os = x.os,
-      model = x.model
-    )
-    (ad, m, u, loc, n, d, x.timestamp * 1000L)
-  }
-
-  def parseUnionLog(unionLog:UnionLog): String = {
+  def parseUnionLog(unionLog:UnionLog ,dict: Dict): String = {
     var svm = "0"
-    val vector = getVector(unionLog)
+    val vector = getVector(unionLog ,dict)
     if (vector != null) {
       var p = -1
-      svm = unionLog.ext.getOrElse("antispam", ExtValue()).int_value.toString
+      if(unionLog.ext.getOrElse("antispam", ExtValue()).int_value > 0){
+        svm = "1"
+      }
       MLUtils.appendBias(vector).foreachActive {
         (i, v) =>
           if (i <= p) {
@@ -109,7 +47,7 @@ object FeatureParser {
     svm
   }
 
-  def getVector(unionLog:UnionLog): Vector = {
+  def getVector(unionLog:UnionLog ,dict: Dict): Vector = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(unionLog.timestamp)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
@@ -117,16 +55,25 @@ object FeatureParser {
     var els = Seq[(Int, Double)]()
     var i = 0
     try {
-
       els = els :+ (week + i - 1, 1d)
       i += 7
       //(24)
+
       els = els :+ (hour + i, 1d)
       i += 24
+      //interests
+      unionLog.interests.map(dict.interest.getOrElse(_, 0))
+        .filter(_ > 0)
+        .sortWith(_ < _)
+        .foreach {
+          intr =>
+            els = els :+ (intr + i - 1, 1d)
+        }
+      i += 200
+
 
       els = els :+ (unionLog.sex + i, 1d)
       i += 10
-
       //age
       var age = 0
       if (unionLog.age <= 1) {
@@ -150,87 +97,48 @@ object FeatureParser {
       els = els :+ (unionLog.network + i, 1d)
       i += 5
 
-      var city = unionLog.city % 1000
+      val city = dict.city.getOrElse(unionLog.city, 0)
       els = els :+ (city + i, 1d)
-      i += 1001
+      i += 1000
 
       //ad slot id
-      var slotid = unionLog.adslotid.toInt % 1000
+      val slotid = dict.adslot.getOrElse(unionLog.adslotid.toInt, 0)
       els = els :+ (slotid + i, 1d)
-      i += 1001
+      i += 1000
 
       //ad class
-      var adcls = unionLog.ext.getOrElse("adclass",ExtValue()).int_value % 1000
+      var cls = 0
+      if (unionLog.ext != null) {
+        val v = unionLog.ext.getOrElse("adclass", null)
+        if (v != null) {
+          cls = v.int_value
+        }
+      }
+     /* val adcls = dict.adclass.getOrElse(cls, 0)
       els = els :+ (adcls + i, 1d)
-      i += 1001
+      i += 1000*/
+      //0 to 4
+      var phonelevel = unionLog.ext.getOrElse("phone_level",ExtValue()).int_value
+      els = els :+ (phonelevel + i, 1d)
+      i += 10
 
       var coin = unionLog.ext.getOrElse("share_coin",ExtValue()).int_value
-      if(coin >= 1000){
-         coin = 999
-      }else{
-        coin =  coin
-      }
-      els = els :+ (coin + i, 1d)
-      i += 1001
+      els = els :+ (getTag(coin)+ i, 1d)
+      i += 47
       els = els :+ (getTag(unionLog.screen_h)+ i, 1d)
-      i += 34
+      i += 47
       els = els :+ (getTag(unionLog.screen_w)+ i, 1d)
-      i += 34
-
-      /*var load = if(trace.load > 0 ) 1 else 0
-      els = els :+ (load + i, 1d)
-      i += 2
-      var active = if(trace.active > 0 ) 1 else 0
-      els = els :+ (active + i, 1d)
-      i += 2
-
-      var buttonClick = if(trace.buttonClick > 20 ) 20 else trace.buttonClick
-      els = els :+ (buttonClick + i, 1d)
-      i += 21
-
-      var press = if(trace.press > 20 ) 20 else trace.press
-      els = els :+ (press + i, 1d)
-      i += 21
-      var stay1 = if(trace.stay1 > 0 ) 1 else 0
-      els = els :+ (stay1 + i, 1d)
-      i += 2
-
-      var stay5 = if(trace.stay5 > 0 ) 1 else 0
-      els = els :+ (stay5 + i, 1d)
-      i += 2
-
-      var stay10 = if(trace.stay10 > 0 ) 1 else 0
-      els = els :+ (stay10 + i, 1d)
-      i += 2
-      var stay30 = if(trace.stay30 > 0 ) 1 else 0
-      els = els :+ (stay30 + i, 1d)
-      i += 2
-
-      var stay60 = if(trace.stay60 > 0 ) 1 else 0
-      els = els :+ (stay60 + i, 1d)
-      i += 2
-
-      var stay120 = if(trace.stay120 > 0 ) 1 else 0
-      els = els :+ (stay120 + i, 1d)
-      i += 2
-
-      els = els :+ (getTag(trace.screen_h)+ i, 1d)
-      i += 34
-      els = els :+ (getTag(trace.screen_w)+ i, 1d)
-      i += 34
-      els = els :+ (getTag(trace.client_h)+ i, 1d)
-      i += 34
-      els = els :+ (getTag(trace.client_w)+ i, 1d)
-      i += 34
-      els = els :+ (getTag(trace.client_x)+ i, 1d)
-      i += 34
-      els = els :+ (getTag(trace.page_x)+ i, 1d)
-      i += 34
-      els = els :+ (getTag(trace.page_y)+ i, 1d)
-      i += 34
-      els = els :+ (getTag(trace.scroll_top)+ i, 1d)
-      i += 34
-*/
+      i += 47
+      els = els :+ (getTag(unionLog.ext.getOrElse("touch_x",ExtValue()).int_value)+ i, 1d)
+      i += 47
+      els = els :+ (getTag(unionLog.ext.getOrElse("touch_y",ExtValue()).int_value)+ i, 1d)
+      i += 47
+      var betweenTime = 0
+      if(unionLog.click_timestamp > 0){
+        betweenTime = unionLog.click_timestamp - unionLog.timestamp
+      }
+      els = els :+ (getTag(betweenTime)+ i, 1d)
+      i += 47
       Vectors.sparse(i, els)
     } catch {
       case e: Exception =>
@@ -240,74 +148,82 @@ object FeatureParser {
 
   }
   def getTag(y:Int):Int ={
-    if(y<0){
-      1
-    }else if (y == 0){
-      2
+    if (y<0){
+      0
     }else if (y<=10){
-      3
+      y
     }else if (y <= 20){
-      4
-    }else if (y <= 30){
-      5
-    }else if (y <= 40){
-      6
-    }else if (y <= 50){
-      7
-    }else if (y <= 60){
-      8
-    }else if (y <= 70){
-      9
-    }else if (y <= 80){
-      10
-    }else if (y <= 90){
       11
-    }else if (y<= 100) {
+    }else if (y <= 30){
       12
-    } else if (y<= 200) {
+    }else if (y <= 40){
       13
-    } else if (y<= 300) {
+    }else if (y <= 50){
       14
-    } else if (y<= 400) {
+    }else if (y <= 60){
       15
-    }else if (y <= 500){
+    }else if (y <= 70){
       16
-    } else if (y<=600) {
+    }else if (y <= 80){
       17
-    } else if (y<=700) {
+    }else if (y <= 90){
       18
-    } else if (y<=800) {
+    }else if (y<= 100) {
       19
-    } else if (y<=900) {
+    } else if (y<= 200) {
       20
-    } else if (y <= 1000){
+    } else if (y<= 300) {
       21
-    } else if (y <= 1500){
+    } else if (y<= 400) {
       22
-    } else if (y <= 1700){
+    }else if (y <= 500){
       23
-    } else if (y <= 1900){
+    } else if (y<=600) {
       24
-    }else if (y <= 2000){
+    } else if (y<=700) {
       25
-    }else if (y <= 3000){
+    } else if (y<=800) {
       26
-    }else if (y <= 4000){
+    } else if (y<=900) {
       27
-    }else if (y <= 5000){
+    } else if (y <= 1000){
       28
-    }else if (y <=6000){
+    }  else if (y <= 1100){
       29
-    }else if (y <=7000){
+    } else if (y <= 1200){
       30
-    }else if (y <=8000){
+    }else if (y <= 1300){
       31
-    }else if (y <=9000){
+    } else if (y <= 1400){
       32
-    }else if (y <=10000){
-      32
-    }else{
+    } else if (y <= 1500){
       33
+    } else if (y <= 1600){
+      34
+    } else if (y <= 1700){
+      35
+    } else if (y <= 1900){
+      36
+    }else if (y <= 2000){
+      37
+    }else if (y <= 3000){
+      38
+    }else if (y <= 4000){
+      39
+    }else if (y <= 5000){
+      40
+    }else if (y <=6000){
+      41
+    }else if (y <=7000){
+      42
+    }else if (y <=8000){
+      43
+    }else if (y <=9000){
+      44
+    }else if (y <=10000){
+      45
+    }else{
+      46
     }
   }
 }
