@@ -94,8 +94,6 @@ object InterestedWords {
 
       println("%s updated: %.0f".format(pack.getString("name"), sum.sum()))
     }
-
-    ctx.stop()
   }
 
   def getUserPoints(spark: SparkSession, wordsFile: String, dataStart: String, dataEnd: String): RDD[(String, Int)] = {

@@ -74,6 +74,7 @@ object LogParser {
         ext.update("exp_cvr", ExtValue(int_value = ad.getCvr.toInt))
         ext.update("adclass", ExtValue(int_value = ad.getClass_))
         ext.update("usertype", ExtValue(int_value = ad.getUsertype))
+        ext.update("trigger_type", ExtValue(int_value = ad.getTriggerType))
 
         val mcount = ad.getMaterialidCount
         if (mcount > 0) {
