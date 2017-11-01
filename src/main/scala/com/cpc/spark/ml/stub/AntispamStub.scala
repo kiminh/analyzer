@@ -53,8 +53,9 @@ object AntispamStub {
     println(model.numFeatures)
     logs.foreach{
       x =>
+        var clickTime = new Date().getTime/1000
         val (ad, m, u, loc, n, d,ex , t) = FeatureParser.unionLogToObject(x)
-        val v = FeatureParser.getVector(x,FeatureDict.dict)
+        val v = FeatureParser.getVector(x,FeatureDict.dict, clickTime.toInt)
         println(x.date, x.hour, x.timestamp)
         println(FeatureParser.vectorToSvm(v))
         val p = model.predict(MLUtils.appendBias(v))

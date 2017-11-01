@@ -48,7 +48,7 @@ object FeatureParser {
     svm
   }
 
-  def getVector(unionLog:UnionLog ,dict: Dict): Vector = {
+  def getVector(unionLog:UnionLog ,dict: Dict, clickTime:Int = 0): Vector = {
     val cal = Calendar.getInstance()
     val searchTime :Long= unionLog.timestamp*1000
     cal.setTimeInMillis(searchTime)
@@ -136,8 +136,10 @@ object FeatureParser {
       els = els :+ (getTag(unionLog.ext.getOrElse("touch_y",ExtValue()).int_value)+ i, 1d)
       i += 47
       var betweenTime = 0
-      if(unionLog.click_timestamp > 0){
+      if(unionLog.click_timestamp > 0 && clickTime == 0){
         betweenTime = unionLog.click_timestamp - unionLog.timestamp
+      }else if(clickTime > 0){
+        betweenTime = clickTime - unionLog.timestamp
       }
       els = els :+ (getTag(betweenTime)+ i, 1d)
       i += 47
