@@ -119,11 +119,11 @@ object FeatureParser {
     var i = 0
     try {
 
-      els = els :+ ( getRequest(log.request) + i, 1d)
-      i += 30
+      els = els :+ (getRequest(log.request) + i, 1d)
+      i += 35
 
-      els = els :+ ( getRequest(log.show) + i, 1d)
-      i += 30
+      els = els :+ (getRequest(log.show) + i, 1d)
+      i += 35
 
       var click = log.click % 1000
       if(log.click>= 1000){
@@ -140,42 +140,32 @@ object FeatureParser {
       els = els :+ (ipNum + i, 1d)
       i += 200
 
-      var load = log.load % 200
-      els = els :+ (load + i, 1d)
-      i += 200
-      var active = log.active % 200
-      els = els :+ (active + i, 1d)
-      i += 200
-      var stay1 = log.stay1 % 200
-      els = els :+ (stay1 + i, 1d)
-      i += 200
+      els = els :+ (getTrace(log.load) + i, 1d)
+      i += 65
 
-      var stay5 = log.stay5 % 200
-      els = els :+ (stay5 + i, 1d)
-      i += 200
-      var stay10 = log.stay10 % 200
-      els = els :+ (stay10 + i, 1d)
-      i += 200
-      var stay30 = log.stay30 % 200
-      els = els :+ (stay30 + i, 1d)
-      i += 200
-      var stay60 = log.stay60 %200
-      els = els :+ (stay60 + i, 1d)
-      i += 200
-      var stay120 = log.stay120 % 200
-      els = els :+ (stay120 + i, 1d)
-      i += 200
-
+      els = els :+ (getTrace(log.active) + i, 1d)
+      i += 65
+      els = els :+ (getTrace(log.stay1) + i, 1d)
+      i += 65
+      els = els :+ (getTrace(log.stay5) + i, 1d)
+      i += 65
+      els = els :+ (getTrace(log.stay10) + i, 1d)
+      i += 65
+      els = els :+ (getTrace(log.stay30) + i, 1d)
+      i += 65
+      els = els :+ (getTrace(log.stay60) + i, 1d)
+      i += 65
+      els = els :+ (getTrace(log.stay120) + i, 1d)
+      i += 65
       var coin = getCoinTag(log.coin) % 22
       els = els :+ (coin + i, 1d)
       i += 22
-      var contentNum = log.contentNum % 1000
-      els = els :+ (contentNum + i, 1d)
-      i += 1000
+      els = els :+ (getContentNum(log.contentNum )+ i, 1d)
+      i += 65
       Vectors.sparse(i, els)
     } catch {
       case e: Exception =>
-        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        throw new Exception(els.toString + " " + i.toString + ";message:" + e.getMessage + ";log:"+ log.toString)
         null
     }
   }
@@ -238,8 +228,16 @@ object FeatureParser {
       28
     }else if (y <=6000){
       29
-    }else{
+    }else if (y <=7000){
       30
+    }else if (y <=8000){
+      31
+    }else if (y <=9000){
+      32
+    }else if (y <=10000){
+      32
+    }else{
+      33
     }
   }
   def getCoinTag(y: Int):Int ={
@@ -285,6 +283,76 @@ object FeatureParser {
        20
     }else {
        21
+    }
+  }
+  def getContentNum(y: Int):Int ={
+    if(y<0){
+      1
+    }else if (y <= 50){
+      y
+    }else if (y <= 60){
+      51
+    }else if (y <= 70){
+      52
+    }else if (y <= 80){
+      53
+    }else if (y <= 90){
+      54
+    }else if (y<= 100) {
+      55
+    } else if (y<= 200) {
+      56
+    } else if (y<= 300) {
+      57
+    } else if (y<= 400) {
+      58
+    }else if (y <= 500){
+      59
+    } else if (y<=1000) {
+      60
+    } else if (y<=2000) {
+      61
+    } else if (y<=5000) {
+      62
+    } else if (y<=10000) {
+      63
+    }else {
+      64
+    }
+  }
+  def getTrace(y: Int):Int ={
+    if(y<0){
+      1
+    }else if (y <= 50){
+      y
+    }else if (y <= 60){
+      51
+    }else if (y <= 70){
+      52
+    }else if (y <= 80){
+      53
+    }else if (y <= 90){
+      54
+    }else if (y<= 100) {
+      55
+    } else if (y<= 200) {
+      56
+    } else if (y<= 300) {
+      57
+    } else if (y<= 400) {
+      58
+    }else if (y <= 500){
+      59
+    } else if (y<=1000) {
+      60
+    } else if (y<=2000) {
+      61
+    } else if (y<=5000) {
+      62
+    } else if (y<=10000) {
+      63
+    }else {
+      64
     }
   }
 }
