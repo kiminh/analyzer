@@ -233,6 +233,7 @@ enum AntispamRule {
     MAX_CTR         = 22;  // CTR阈值
     DIFF_UA         = 23;  // UA不同
     MAX_CLICK       = 24;  // 每日最大点击数量
+    TRAIN_MODEL     = 25;  // 模型过滤
 }
 
 //// 基础数据区结束
@@ -249,8 +250,23 @@ message Event {
         enum CryptoType {
             JESGOO_BASE64 = 0;
         }
+        enum DecodingError {
+            NO_ERROR                  = 0;
+            FORMAT_ERROR              = 1;
+            PREFIX_ERROR              = 2;
+            HEAD_BASE64_ERROR         = 3;
+            HEAD_PROTOBUF_ERROR       = 4;
+            UNKNOWN_CRYPTO_TYPE       = 5;
+            BODY_BASE64_ERROR         = 6;
+            BODY_PROTOBUF_ERROR       = 7;
+            EXTRA_RSA_ERROR           = 8;
+            EXTRA_FORMAT_ERROR        = 9;
+            APPEND_TARGET_PARAM_ERROR = 10;
+        }
         required CryptoType    crypto_type    = 1;
         required uint32        crypto_param   = 2;
+        optional bool          decode_success = 3 [default=true];
+        repeated DecodingError decode_errors  = 4;
     }
     message Body {
         enum EventType {
@@ -277,6 +293,7 @@ message Event {
         enum AdslotType {
             LIST_FEED      = 1;  //列表页信息流
             CONTENT_FEED   = 2;  //详情页信息流
+            SLOT_INTERACT	= 3;
         }
         // 浏览器类型
         enum BrowserType {
@@ -296,6 +313,7 @@ message Event {
             required uint32 country  = 1;  // 国家
             required uint32 province = 2;  // 省份
             required uint32 city     = 3;  // 城市
+            optional uint32 isp = 4;
         }
         // 设备ID类型
         enum DeviceIdType {
@@ -321,6 +339,11 @@ message Event {
             optional BrowserType browser   = 7;  // 浏览器
             optional string      uid       = 8;  // app内用户id
             optional string      ua_sign   = 9;  // UserAgent签名，fmt.Sprintf("%x", md5.Sum([]byte(request.UserAgent())))
+            optional int32 screen_w = 10;
+            optional int32 screen_h = 11;
+            optional uint32 phoneprice = 12;
+            optional uint32 phonelevel = 13; // 1 高端 2 中高 3中低 4低端
+
         };
         // 媒体信息
         message Media {
@@ -338,6 +361,7 @@ message Event {
             IMAGE               = 2;  // 图片广告
             TEXT_ICON           = 3;  // 图文广告
             THREE_TEXT_ICON     = 4;  // 组图广告
+            AD_INTERACT		= 5;
         };
         // 交互类型
         enum InteractionType {
@@ -364,6 +388,20 @@ message Event {
             optional string          adidstr     = 11;  // 广告id,jesgoo签名
 
         }
+        message InterestItem {
+            optional uint64 interestid = 1; // 兴趣id
+            optional uint64 score = 2; // 兴趣评分
+        }
+        message UserProfile {
+            repeated InterestItem interests = 1; // 兴趣点
+            optional uint32 age = 2; //年龄 0 不限 1 <18,2 18-23,3 24-30，4 31-40，5 41-49，6 50+
+            optional uint32 sex = 3; //性别 1男 2女 0未知
+            optional uint32 coin = 4; // 用户金币数
+            optional uint32 pcategory =5; // 趣头条用户类别
+            optional uint32 antispam = 6; // 是否是antispam用户
+            optional uint32 share_coin = 7; // 金币增长数
+            optional uint32 newuser = 8; // 新老用户 1老用户 2新用户
+        }
         // 反作弊信息
         message Antispam {
             message Flags {
@@ -375,6 +413,7 @@ message Event {
             required uint32       score = 1;  // 得分
             repeated AntispamRule rules = 2;  // 触发规则
             optional Flags        flags = 3;  // 反作弊统计用标记
+            optional float      predict = 4;  // 反作弊预估的值
         }
         // 计费信息
         message Charge {
@@ -453,6 +492,8 @@ message Event {
         // 特殊标记位范围 100 ~ 999
         optional bool      debug            = 100;  // 调试标志，为True时所有统计与计费系统需要忽略此事件
         optional uint64    event_id         = 101;  // 事件ID
+        optional UserProfile   userprofile   = 102;  // 事件ID
+        optional Network network             =103;
     }
 
     message Extra {
@@ -478,7 +519,11 @@ message Event {
     optional Extra extra = 3;  // 时间补充字段
 }
 
-
+// 锁屏用户数据
+message LockerUProfile {
+    required uint32 timestamp = 1;  // 最后一次修改时间戳
+    optional uint32 count     = 2;  // 当日点击数
+}
 // 标准URL-Safe BASE64码表：ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijlmnopqrstuvwxyz0123456789-_
 // 自定义码表[0-63]：
 // 0Ge5Q6wnuBML3Wg-8s7kAjOr2xohRHif1CczEXDKq_VaUPJdYpy9TSNvIFmbZ4tl

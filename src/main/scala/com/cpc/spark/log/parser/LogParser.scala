@@ -157,6 +157,7 @@ object LogParser {
         val ext = mutable.Map[String, ExtValue]()
         ext.update("touch_x", ExtValue(int_value = extra.getTouchX))
         ext.update("touch_y", ExtValue(int_value = extra.getTouchY))
+        ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
         log = UnionLog(
           searchid = body.getSearchId,
           isclick = 1,

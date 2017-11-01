@@ -100,6 +100,7 @@ object AnalUnionLog {
                   } else {
                     ext.update("touch_x", u.ext("touch_x"))
                     ext.update("touch_y", u.ext("touch_y"))
+                    ext.update("antispam_predict", u.ext("antispam_predict"))
                     log = log.copy(
                       isclick = u.isclick,
                       click_timestamp = u.click_timestamp,
