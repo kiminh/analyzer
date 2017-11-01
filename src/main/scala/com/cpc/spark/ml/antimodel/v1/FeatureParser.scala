@@ -4,6 +4,7 @@ import java.util.Calendar
 
 import com.cpc.spark.log.parser.{ExtValue, UnionLog}
 import com.cpc.spark.ml.common.Dict
+import mlserver.mlserver._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.util.MLUtils
 
@@ -49,7 +50,8 @@ object FeatureParser {
 
   def getVector(unionLog:UnionLog ,dict: Dict): Vector = {
     val cal = Calendar.getInstance()
-    cal.setTimeInMillis(unionLog.timestamp)
+    val searchTime :Long= unionLog.timestamp*1000
+    cal.setTimeInMillis(searchTime)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     var els = Seq[(Int, Double)]()
@@ -147,6 +149,77 @@ object FeatureParser {
     }
 
   }
+  def unionLogToObject(x: UnionLog): (AdInfo, Media, User, Location, Network, Device, Extra, Long) = {
+    var cls = 0
+    if (x.ext != null) {
+      val v = x.ext.getOrElse("adclass", null)
+      if (v != null) {
+        cls = v.int_value
+      }
+    }
+    val ad = AdInfo(
+      bid = x.bid,
+      ideaid = x.ideaid,
+      unitid = x.unitid,
+      planid = x.planid,
+      userid = x.userid,
+      adtype = x.adtype,
+      interaction = x.interaction,
+      _class = cls
+    )
+    val m = Media(
+      mediaAppsid = x.media_appsid.toInt,
+      mediaType = x.media_type,
+      adslotid = x.adslotid.toInt,
+      adslotType = x.adslot_type,
+      floorbid = x.floorbid
+    )
+    val interests = x.interests.split(",")
+      .map{
+        x =>
+          val v = x.split("=")
+          if (v.length == 2) {
+            (v(0).toInt, v(1).toInt)
+          } else {
+            (0, 0)
+          }
+      }
+      .filter(x => x._1 > 0 && x._2 >= 2)
+      .sortWith((x, y) => x._2 > y._2)
+      .map(_._1)
+      .toSeq
+    val u = User(
+      sex = x.sex,
+      age = x.age,
+      coin = x.coin,
+      uid = x.uid,
+      interests = interests
+    )
+    val n = Network(
+      network = x.network,
+      isp = x.isp,
+      ip = x.ip
+    )
+    val loc = Location(
+      country = x.country,
+      province = x.province,
+      city = x.city
+    )
+    val d = Device(
+      os = x.os,
+      model = x.model,
+      phonePrice = x.ext.getOrElse("phone_price",ExtValue()).int_value ,
+      phoneLevel = x.ext.getOrElse("phone_level",ExtValue()).int_value ,
+      screenW = x.screen_w,
+      screenH = x.screen_h
+    )
+    val ex = Extra(
+      touchX = x.ext.getOrElse("touch_x",ExtValue()).int_value,
+      touchY = x.ext.getOrElse("touch_y",ExtValue()).int_value
+    )
+    (ad, m, u, loc, n, d, ex, x.timestamp)
+  }
+
   def getTag(y:Int):Int ={
     if (y<0){
       0
