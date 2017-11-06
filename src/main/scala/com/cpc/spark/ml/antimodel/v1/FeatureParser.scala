@@ -50,7 +50,7 @@ object FeatureParser {
 
   def getVector(unionLog:UnionLog ,dict: Dict, clickTime:Int = 0): Vector = {
     val cal = Calendar.getInstance()
-    val searchTime :Long= unionLog.timestamp*1000
+    val searchTime :Long= unionLog.timestamp*1000L
     cal.setTimeInMillis(searchTime)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
@@ -109,13 +109,13 @@ object FeatureParser {
       i += 1000
 
       //ad class
-      var cls = 0
+/*      var cls = 0
       if (unionLog.ext != null) {
         val v = unionLog.ext.getOrElse("adclass", null)
         if (v != null) {
           cls = v.int_value
         }
-      }
+      }*/
      /* val adcls = dict.adclass.getOrElse(cls, 0)
       els = els :+ (adcls + i, 1d)
       i += 1000*/

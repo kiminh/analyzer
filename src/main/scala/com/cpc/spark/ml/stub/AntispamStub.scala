@@ -43,7 +43,7 @@ object AntispamStub {
     val hour = new SimpleDateFormat("HH").format(new Date().getTime - 7200L * 1000L)
     val sql = ("select * from dl_cpc.cpc_union_log where `date` = \"%s\" and isclick = 1 and hour = \"%s\" and " +
       "ext['antispam_predict'].float_value > 0 limit %s")
-      .format("2017-11-01", "10", "100")
+      .format(args(3), args(4), "10")
     println("sql:" + sql)
     val logs = ctx.sql(sql).as[UnionLog].rdd
       .toLocalIterator.toSeq
@@ -55,12 +55,11 @@ object AntispamStub {
       x =>
         var clickTime = new Date().getTime/1000
         val (ad, m, u, loc, n, d,ex , t) = FeatureParser.unionLogToObject(x)
-        val v = FeatureParser.getVector(x,FeatureDict.dict, clickTime.toInt)
+        val v = FeatureParser.getVector(x, FeatureDict.dict)
         println(x.date, x.hour, x.timestamp)
         println(FeatureParser.vectorToSvm(v))
         val p = model.predict(MLUtils.appendBias(v))
         val req = Request(
-          version = "v1",
           media = Option(m),
           user = Option(u),
           loc = Option(loc),
@@ -68,10 +67,11 @@ object AntispamStub {
           device = Option(d),
           extra = Option(ex),
           time = x.timestamp,
-          searchTimestamp = x.click_timestamp,
-          antispamVersion = "antispam_v1"
+          searchTimestamp = x.timestamp,
+          antispamVersion = "antispam_v1",
+          clickTimestamp = x.click_timestamp
         )
-
+        println(req)
         val blockingStub = PredictorGrpc.blockingStub(channel)
         val reply = blockingStub.predict(req)
         val ctr = x.ext.getOrElse("antispam_predict", ExtValue()).float_value

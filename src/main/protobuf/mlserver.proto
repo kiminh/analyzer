@@ -77,7 +77,7 @@ message Request {
     uint32 search_timestamp = 10;   // 检索时间戳
     Extra extra = 11;
     string antispam_version = 12;
-
+    uint32 click_timestamp = 13;   // 点击时间戳
 }
 
 message Prediction {
