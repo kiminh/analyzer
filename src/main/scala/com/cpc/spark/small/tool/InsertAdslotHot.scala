@@ -40,9 +40,11 @@ object InsertAdslotHot {
     val hotData = ctx
       .sql(
         """
-          |SELECT media_appsid,adslotid,adslot_type,ext['touch_x'].int_value,ext['touch_y'].int_value
+          |SELECT media_appsid,adslotid,adslot_type,ext['touch_x'].int_value,ext['touch_y'].int_value,
+          |ext['slot_width'].int_value,ext['slot_height'].int_value
           |FROM dl_cpc.cpc_union_log
           |WHERE date="%s" AND hour="%s" AND (ext['touch_x'].int_value>0 OR ext['touch_y'].int_value>0)
+          |AND (ext['slot_width'].int_value>0 AND ext['slot_height'].int_value>0)
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
@@ -52,9 +54,13 @@ object InsertAdslotHot {
           val adslot_type = x.getInt(2)
           val touchx = x.getInt(3)
           val touchy = x.getInt(4)
+          val slot_width = x.getInt(5)
+          val slot_height = x.getInt(6)
+          val stxp = (touchx.toDouble / slot_width.toDouble * 100).toInt
+          val styp = (touchy.toDouble / slot_height.toDouble * 100).toInt
           val total = 1
-          val key = "%s-%d-%d".format(adslotid, touchx, touchy)
-          (key, (media_appsid, adslotid, adslot_type, touchx, touchy, total))
+          val key = "%s-%d-%d".format(adslotid, stxp, styp)
+          (key, (media_appsid, adslotid, adslot_type, stxp, styp, total))
       }
       .reduceByKey {
         (a, b) =>
