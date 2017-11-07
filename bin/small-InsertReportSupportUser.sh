@@ -12,15 +12,14 @@ jars=(
     "$cur/lib/mariadb-java-client-1.5.9.jar"
 )
 
-h=3
+h=24
 date=`date -d "now -$h hours" +%Y-%m-%d`
-hour=`date -d "now -$h hours" +%H`
-echo "start $date $hour"
+echo "start $date"
 
 
 $SPARK_HOME/bin/spark-submit --master yarn \
     --deploy-mode "client" \
     --executor-memory 10G --executor-cores 10 --total-executor-cores 10 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.small.tool.InsertAdslotHot \
-    $cur/lib/cpc-small.jar $date $hour
+    --class com.cpc.spark.small.tool.InsertReportSupportUser \
+    $cur/lib/cpc-small.jar $date
