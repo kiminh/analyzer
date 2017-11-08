@@ -65,22 +65,13 @@ object FeatureParser {
       _class = cls
     )
 
-    var chnl = 0
-    if (x.ext != null) {
-      val v = x.ext.getOrElse("channel", null)
-      if (v != null) {
-        if (v.string_value.length > 0) {
-          chnl = v.string_value.toInt
-        }
-      }
-    }
+
     val m = Media(
       mediaAppsid = x.media_appsid.toInt,
       mediaType = x.media_type,
       adslotid = x.adslotid.toInt,
       adslotType = x.adslot_type,
-      floorbid = x.floorbid,
-      channel = chnl
+      floorbid = x.floorbid
     )
     val interests = x.interests.split(",")
       .map{

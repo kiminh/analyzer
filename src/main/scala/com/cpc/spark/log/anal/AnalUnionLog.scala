@@ -100,6 +100,8 @@ object AnalUnionLog {
                   } else {
                     ext.update("touch_x", u.ext("touch_x"))
                     ext.update("touch_y", u.ext("touch_y"))
+                    ext.update("slot_width", u.ext("slot_width"))
+                    ext.update("slot_height", u.ext("slot_height"))
                     ext.update("antispam_predict", u.ext("antispam_predict"))
                     log = log.copy(
                       isclick = u.isclick,

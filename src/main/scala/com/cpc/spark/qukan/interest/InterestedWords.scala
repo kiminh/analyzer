@@ -52,9 +52,10 @@ object InterestedWords {
     for (i <- 0 until wordsPack.size()) {
       val pack = wordsPack.get(i)
       val tag = pack.getInt("tag")
-      println("start %s %d".format(pack.getString("name"), tag))
-
-      val userPoints = getUserPoints(ctx, pack.getString("file"), dataStart, dataEnd)
+      val thres = pack.getDouble("thres")
+      println("start %s %d %.2f".format(pack.getString("name"), tag, thres))
+      val articlePoints = getArticlePoints(ctx, pack.getString("file"), thres)
+      val userPoints = getUserPoints(ctx, articlePoints, dataStart, dataEnd)
       val n = userPoints.filter(_._2 > 50).count()
       println(">50%", n)
       val sum = userPoints.mapPartitions {
@@ -91,14 +92,12 @@ object InterestedWords {
           }
           Seq(n).iterator
       }
-
       println("%s updated: %.0f".format(pack.getString("name"), sum.sum()))
     }
   }
 
-  def getUserPoints(spark: SparkSession, wordsFile: String, dataStart: String, dataEnd: String): RDD[(String, Int)] = {
+  def getArticlePoints(spark: SparkSession, wordsFile: String, thres: Double): RDD[(String, Double)] = {
     var words = Seq[String]()
-    //Source.fromFile("/data/cpc/anal/conf/words/finance.txt")
     Source.fromFile(wordsFile, "utf8")
       .getLines()
       .filter(_.length > 0)
@@ -122,7 +121,7 @@ object InterestedWords {
                  |""".stripMargin.format(aStart, aEnd)
     println(stmt)
 
-    val articlePoints = spark.sql(stmt).rdd
+    val article = spark.sql(stmt).rdd
       .mapPartitions {
         partition =>
           val words = bcWords.value
@@ -131,23 +130,14 @@ object InterestedWords {
               val title = row.getString(0)
               val content = row.getString(1)
 
-              var sum = HanLP.segment(title)
+              val awords = HanLP.segment(title + content)
                 .filter(x => x.length() > 1)
-                .map {
-                  w =>
-                    if (words.contains(w.word)) {
-                      5
-                    } else {
-                      0
-                    }
-                }
-                .sum
+                .map(_.word)
 
-              sum += HanLP.segment(content)
-                .filter(x => x.length() > 1)
+              val sum = awords
                 .map {
                   w =>
-                    if (words.contains(w.word)) {
+                    if (words.contains(w)) {
                       1
                     } else {
                       0
@@ -155,11 +145,22 @@ object InterestedWords {
                 }
                 .sum
 
-              (title, sum)
+              val score = sum.toDouble / awords.length.toDouble
+              (title, score)
           }
       }
+      .filter(_._2 > thres)
+      .sortBy(x => x._2, false)
+      .take(20000)
 
-    stmt = """
+    article.foreach(println)
+
+    spark.sparkContext.parallelize(article)
+  }
+
+  def getUserPoints(spark: SparkSession, articlePoints: RDD[(String, Double)], dataStart: String, dataEnd: String): RDD[(String, Int)] = {
+
+    val stmt = """
              |SELECT DISTINCT qkc.device,qc.title
              |from rpt_qukan.qukan_log_cmd qkc
              |INNER JOIN gobblin.qukan_content qc ON qc.id=qkc.content_id
@@ -181,7 +182,7 @@ object InterestedWords {
           (x._2._1, x._2._2)
       }
       .reduceByKey(_ + _)
-      .filter(_._2 >= 5)
+      .filter(_._2 >= 0.05)
 
     val sum = userPoints.map(_._2).sum()
     val num = userPoints.count().toDouble

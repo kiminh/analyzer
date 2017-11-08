@@ -140,13 +140,18 @@ object TopCtrIdea {
 
           val ad = titles.getOrElse(x.idea_id, null)
           if (ad != null) {
-            val img = ad._2.map(x => imgs.getOrElse(x, "")).filter(_.length > 0)
+            val img = ad._2.map(x => imgs.getOrElse(x, null)).filter(_ != null)
 
-            val mtype = img.length match {
-              case 0 => 0
-              case 1 => 1
-              case 3 => 3
-              case _ => 0
+            var mtype = 0
+            if (img.length == 3) {
+              mtype = 3
+            } else if(img.length == 1) {
+              val i = img(0)
+              if (i._2 == 2) {
+                mtype = 2  //大图
+              } else {
+                mtype = 1   //小图
+              }
             }
 
             val adclass = (x.adclass / 1000000) * 1000000 + 100100
@@ -159,7 +164,7 @@ object TopCtrIdea {
               adclass_1 = adclass,
               title = ad._1,
               mtype = mtype,
-              images = img.mkString(" "),
+              images = img.map(_._1).mkString(" "),
               ctr_score = x.ctr,
               from = "cpc_adv"
             )
@@ -168,8 +173,6 @@ object TopCtrIdea {
           }
       }
       .filter(_ != null)
-
-    top.foreach(println)
 
     val conf = ConfigFactory.load()
     val mariadbUrl = conf.getString("mariadb.url")
@@ -181,6 +184,8 @@ object TopCtrIdea {
       .write
       .mode(SaveMode.Overwrite)
       .jdbc(mariadbUrl, "report.top_ctr_idea", mariadbProp)
+
+    println("num", top.length)
 
   }
 
@@ -216,16 +221,16 @@ object TopCtrIdea {
     ideas.toMap
   }
 
-  def getIdaeImg(): Map[Int, String] = {
-    val sql = "select id,remote_url from resource"
-    val images = mutable.Map[Int, String]()
+  def getIdaeImg(): Map[Int, (String, Int)] = {
+    val sql = "select id,`type`,remote_url from resource"
+    val images = mutable.Map[Int, (String, Int)]()
     var rs = getAdDbResult("mariadb.adv", sql)
     while (rs.next()) {
-      images.update(rs.getInt("id"), rs.getString("remote_url"))
+      images.update(rs.getInt("id"), (rs.getString("remote_url"), rs.getInt("type")))
     }
     rs = getAdDbResult("mariadb.adv_old", sql)
     while (rs.next()) {
-      images.update(rs.getInt("id"), rs.getString("remote_url"))
+      images.update(rs.getInt("id"), (rs.getString("remote_url"), rs.getInt("type")))
     }
     images.toMap
   }

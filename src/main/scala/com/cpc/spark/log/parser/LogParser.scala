@@ -115,7 +115,6 @@ object LogParser {
           interRows = interRows :+ "%d=%d".format(in.getInterestid, in.getScore)
         }
       }
-      ext.update("userpcate", ExtValue(int_value = user.getPcategory))
       ext.update("antispam", ExtValue(int_value = user.getAntispam))
       ext.update("share_coin", ExtValue(int_value = user.getShareCoin))
       log = log.copy(
@@ -157,6 +156,8 @@ object LogParser {
         val ext = mutable.Map[String, ExtValue]()
         ext.update("touch_x", ExtValue(int_value = extra.getTouchX))
         ext.update("touch_y", ExtValue(int_value = extra.getTouchY))
+        ext.update("slot_width", ExtValue(int_value = extra.getWidth))
+        ext.update("slot_height", ExtValue(int_value = extra.getHeight))
         ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
         log = UnionLog(
           searchid = body.getSearchId,
