@@ -344,7 +344,6 @@ object GetAddAge {
                 n2 += 1
               }
               user.setAge(age)
-              n1 += 1
               redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
           }
           Seq((0, n1), (1, n2), (2, age1), (3, age2), (4, age3), (5, age4), (6, age5), (7, age6)).iterator

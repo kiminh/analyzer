@@ -115,7 +115,7 @@ object AntispamModel {
       model.saveText(lrfilepath)
 
       //满足条件的模型直接替换线上数据
-      if (lrfile.length > 0 && model.getAuPRC() > 0.3 && model.getAuROC() > 0.70) {
+      if (lrfile.length > 0 && model.getAuPRC() > 0.4 && model.getAuROC() > 0.74) {
         updateOnlineData += 1
       }
     }
@@ -133,8 +133,8 @@ object AntispamModel {
       """
         |date: %s
         |LRfile: %s
-        |auPRC: %.6f need > 0.07
-        |auROC: %.6f need > 0.76
+        |auPRC: %.6f need > 0.4
+        |auROC: %.6f need > 0.74
         |===========================
         |%s
         |

@@ -173,7 +173,75 @@ object LogParser {
     log
   }
 
-
+  def parseClickLog2(txt: String): UnionLog = {
+    var log: UnionLog = null
+    val data = Event.parse_click_log(txt)
+    if (data != null) {
+      val event = data.event
+      val (date, hour) = getDateHourFromTime(event.getBody.getEventTimestamp)
+      if (event.getBody.getSearchId.length > 0) {
+        val body = event.getBody
+        val extra = event.getExtra
+        val ext = mutable.Map[String, ExtValue]()
+        ext.update("touch_x", ExtValue(int_value = extra.getTouchX))
+        ext.update("touch_y", ExtValue(int_value = extra.getTouchY))
+        ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
+        ext.update("phone_price", ExtValue(int_value = body.getDevice.getPhoneprice))
+        ext.update("phone_level", ExtValue(int_value = body.getDevice.getPhonelevel))
+        //ext.update("adclass", ExtValue(int_value = body.getAd.getClass_))
+        val interests = body.getUserprofile.getInterestsList.iterator()
+        var interRows = Seq[String]()
+        while (interests.hasNext) {
+          val in = interests.next()
+          if (in.getInterestid > 0) {
+            interRows = interRows :+ "%d=%d".format(in.getInterestid, in.getScore)
+          }
+        }
+        log = UnionLog(
+          searchid = body.getSearchId,
+          timestamp = body.getSearchTimestamp,
+          network = body.getNetwork.getType.getNumber,
+          ip = body.getNetwork.getIp,
+          exptags = body.getExptagsList.toArray.filter(_ != "").mkString(","),
+          media_appsid = body.getMedia.getMediaId,
+          date = date,
+          hour = hour,
+          adslotid = body.getMedia.getAdslotId,
+          adslot_type = body.getMedia.getAdslotType.getNumber,
+          isclick = 1,
+          click_timestamp = body.getEventTimestamp,
+          antispam_score = body.getAntispam.getScore,
+          antispam_rules = body.getAntispam.getRulesList.toArray.mkString(","),
+          click_ip = LongToIPv4(body.getEventIp.toLong) ,
+          isfill = 1,
+          ideaid = body.getAd.getProductId,
+          unitid = body.getAd.getGroupId,
+          planid = body.getAd.getPlanId,
+          userid = body.getAd.getUserId,
+          adtype = body.getAd.getType.getNumber,
+          interaction = body.getAd.getInteraction.getNumber,
+          price = body.getCharge.getPrice,
+          country = body.getRegion.getCountry,
+          province = body.getRegion.getProvince,
+          city = body.getRegion.getCity,
+          isp = body.getRegion.getIsp,
+          uid = body.getDevice.getUid,
+          ua = body.getDevice.getUseragent.toStringUtf8,
+          os = body.getDevice.getOs.getNumber,
+          screen_w = body.getDevice.getScreenW,
+          screen_h = body.getDevice.getScreenH,
+          brand = body.getDevice.getBrand,
+          model = body.getDevice.getModel,
+          sex = body.getUserprofile.getSex,
+          age = body.getUserprofile.getAge,
+          coin = body.getUserprofile.getCoin,
+          interests = interRows.mkString(","),
+          ext = ext.toMap
+        )
+      }
+    }
+    log
+  }
   //val txt = "36.149.39.90 - - [15/May/2017:08:02:36 +0800] \"GET /trace?t=stay&duration=1&iclicashsid=90c60d5e0fc887090984f5589aaa157a62207613&w=980&h=1306&sw=360&sh=640&os=Android&ref=http%3A%2F%2Fcj.juseyx.com%2Fb2%2F%3Ficlicashsid%3D90c60d5e0fc887090984f5589aaa157a62207613&v=1.0&_t=0 HTTP/1.1\" 200 43 \"http://cj.juseyx.com/b2/?iclicashsid=90c60d5e0fc887090984f5589aaa157a62207613&t=1494806555248\" \"Mozilla/5.0 (Linux; Android 6.0; NEM-TL00 Build/HONORNEM-TL00; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/55.0.2883.91 Mobile Safari/537.36 qukan_android\" \"-\" \"-\" 0.000"
 
   val traceRegex = """GET\s/trace\?([^\s]+)""".r
