@@ -229,6 +229,33 @@ object GetHourReport {
       .jdbc(mariadbUrl, "report.report_media_os_hourly", mariadbProp)
     println("os", osData.count())
 
+    val ipData = unionLog
+      .map {
+        x =>
+          ((x.media_appsid.toInt,x.adslotid.toInt,x.adslot_type,x.ip,x.date,x.hour.toInt), 1)
+      }.reduceByKey((x,y) => x+y).map{
+      case ((media_appsid, adslotid, adslot_type, ip, date2, hour2), count) =>
+        ((media_appsid, adslotid, adslot_type, count, date2, hour2), 1)
+    }.reduceByKey((x,y) => x+y).map{
+      case ((media_appsid, adslotid, adslot_type, ip_num, date2, hour2), count) =>
+        val report = MediaIpReport(
+          media_id = media_appsid,
+          adslot_id = adslotid,
+          adslot_type = adslot_type,
+          request_num = ip_num,
+          count= count,
+          date = date2,
+          hour = hour2
+        )
+        report
+    }
+    clearReportHourData("report_media_ip_hourly", date, hour)
+    ctx.createDataFrame(ipData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_media_ip_hourly", mariadbProp)
+    println("ip", ipData.count())
+
     unionLog.unpersist()
 
     val fillLog = ctx.sql(

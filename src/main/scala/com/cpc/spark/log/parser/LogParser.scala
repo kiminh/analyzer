@@ -213,7 +213,7 @@ object LogParser {
           antispam_rules = body.getAntispam.getRulesList.toArray.mkString(","),
           click_ip = LongToIPv4(body.getEventIp.toLong) ,
           isfill = 1,
-          ideaid = body.getAd.getProductId,
+          ideaid = body.getAd.getUnitId,
           unitid = body.getAd.getGroupId,
           planid = body.getAd.getPlanId,
           userid = body.getAd.getUserId,
