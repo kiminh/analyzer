@@ -282,20 +282,20 @@ object GetHourReport {
       .jdbc(mariadbUrl, "report.report_media_ip_click_hourly", mariadbProp)
     println("ip_click", ipClickData.count())
 
-    val uidRequestData = unionLog.filter(x => x.uid.length >0)
+    val uidRequestData = unionLog.filter(x => x.uid.length >0 && x.isshow >0)
       .map {
         x =>
-          ((x.media_appsid.toInt,x.adslotid.toInt,x.adslot_type,x.ip,x.date,x.hour.toInt), 1)
+          ((x.media_appsid.toInt,x.adslotid.toInt,x.adslot_type,x.uid,x.date,x.hour.toInt), 1)
       }.reduceByKey((x,y) => x+y).map{
-      case ((media_appsid, adslotid, adslot_type, ip, date2, hour2), count) =>
+      case ((media_appsid, adslotid, adslot_type, uid, date2, hour2), count) =>
         ((media_appsid, adslotid, adslot_type, count, date2, hour2), 1)
     }.reduceByKey((x,y) => x+y).map{
-      case ((media_appsid, adslotid, adslot_type, ip_num, date2, hour2), count) =>
+      case ((media_appsid, adslotid, adslot_type, uid_num, date2, hour2), count) =>
         val report = MediaIpReport(
           media_id = media_appsid,
           adslot_id = adslotid,
           adslot_type = adslot_type,
-          num = ip_num,
+          num = uid_num,
           count= count,
           date = date2,
           hour = hour2
@@ -312,17 +312,17 @@ object GetHourReport {
     val uidClickData = unionLog.filter(x => x.uid.length >0 && x.isclick > 0)
       .map {
         x =>
-          ((x.media_appsid.toInt,x.adslotid.toInt,x.adslot_type,x.ip,x.date,x.hour.toInt), 1)
+          ((x.media_appsid.toInt,x.adslotid.toInt,x.adslot_type,x.uid,x.date,x.hour.toInt), 1)
       }.reduceByKey((x,y) => x+y).map{
-      case ((media_appsid, adslotid, adslot_type, ip, date2, hour2), count) =>
+      case ((media_appsid, adslotid, adslot_type, uid, date2, hour2), count) =>
         ((media_appsid, adslotid, adslot_type, count, date2, hour2), 1)
     }.reduceByKey((x,y) => x+y).map{
-      case ((media_appsid, adslotid, adslot_type, ip_num, date2, hour2), count) =>
+      case ((media_appsid, adslotid, adslot_type, uid_num, date2, hour2), count) =>
         val report = MediaIpReport(
           media_id = media_appsid,
           adslot_id = adslotid,
           adslot_type = adslot_type,
-          num = ip_num,
+          num = uid_num,
           count= count,
           date = date2,
           hour = hour2
