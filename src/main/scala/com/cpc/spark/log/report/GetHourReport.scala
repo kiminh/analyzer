@@ -58,7 +58,7 @@ object GetHourReport {
       .rdd.cache()
 
     //write hourly data to mysql
-    val ctrData = unionLog
+   val ctrData = unionLog
       .map{
         u =>
           val exptag = u.exptags.split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
@@ -228,6 +228,113 @@ object GetHourReport {
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_os_hourly", mariadbProp)
     println("os", osData.count())
+    val ipRequestData = unionLog.filter(x => x.isshow >0)
+      .map {
+        x =>
+          ((x.media_appsid.toInt,x.adslotid.toInt,x.adslot_type,x.ip,x.date,x.hour.toInt), 1)
+      }.reduceByKey((x,y) => x+y).map{
+      case ((media_appsid, adslotid, adslot_type, ip, date2, hour2), count) =>
+        ((media_appsid, adslotid, adslot_type, count, date2, hour2), 1)
+    }.reduceByKey((x,y) => x+y).map{
+      case ((media_appsid, adslotid, adslot_type, ip_num, date2, hour2), count) =>
+        val report = MediaIpReport(
+          media_id = media_appsid,
+          adslot_id = adslotid,
+          adslot_type = adslot_type,
+          num = ip_num,
+          count= count,
+          date = date2,
+          hour = hour2
+        )
+        report
+    }
+    clearReportHourData("report_media_ip_request_hourly", date, hour)
+    ctx.createDataFrame(ipRequestData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_media_ip_request_hourly", mariadbProp)
+    println("ip_request", ipRequestData.count())
+
+    val ipClickData = unionLog.filter(x => x.isclick >0)
+      .map {
+        x =>
+          ((x.media_appsid.toInt,x.adslotid.toInt,x.adslot_type,x.ip,x.date,x.hour.toInt), 1)
+      }.reduceByKey((x,y) => x+y).map{
+      case ((media_appsid, adslotid, adslot_type, ip, date2, hour2), count) =>
+        ((media_appsid, adslotid, adslot_type, count, date2, hour2), 1)
+    }.reduceByKey((x,y) => x+y).map{
+      case ((media_appsid, adslotid, adslot_type, ip_num, date2, hour2), count) =>
+        val report = MediaIpReport(
+          media_id = media_appsid,
+          adslot_id = adslotid,
+          adslot_type = adslot_type,
+          num = ip_num,
+          count= count,
+          date = date2,
+          hour = hour2
+        )
+        report
+    }
+    clearReportHourData("report_media_ip_click_hourly", date, hour)
+    ctx.createDataFrame(ipClickData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_media_ip_click_hourly", mariadbProp)
+    println("ip_click", ipClickData.count())
+
+    val uidRequestData = unionLog.filter(x => x.uid.length >0 && x.isshow >0)
+      .map {
+        x =>
+          ((x.media_appsid.toInt,x.adslotid.toInt,x.adslot_type,x.uid,x.date,x.hour.toInt), 1)
+      }.reduceByKey((x,y) => x+y).map{
+      case ((media_appsid, adslotid, adslot_type, uid, date2, hour2), count) =>
+        ((media_appsid, adslotid, adslot_type, count, date2, hour2), 1)
+    }.reduceByKey((x,y) => x+y).map{
+      case ((media_appsid, adslotid, adslot_type, uid_num, date2, hour2), count) =>
+        val report = MediaIpReport(
+          media_id = media_appsid,
+          adslot_id = adslotid,
+          adslot_type = adslot_type,
+          num = uid_num,
+          count= count,
+          date = date2,
+          hour = hour2
+        )
+        report
+    }
+    clearReportHourData("report_media_uid_request_hourly", date, hour)
+    ctx.createDataFrame(uidRequestData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_media_uid_request_hourly", mariadbProp)
+    println("uid_request", uidRequestData.count())
+
+    val uidClickData = unionLog.filter(x => x.uid.length >0 && x.isclick > 0)
+      .map {
+        x =>
+          ((x.media_appsid.toInt,x.adslotid.toInt,x.adslot_type,x.uid,x.date,x.hour.toInt), 1)
+      }.reduceByKey((x,y) => x+y).map{
+      case ((media_appsid, adslotid, adslot_type, uid, date2, hour2), count) =>
+        ((media_appsid, adslotid, adslot_type, count, date2, hour2), 1)
+    }.reduceByKey((x,y) => x+y).map{
+      case ((media_appsid, adslotid, adslot_type, uid_num, date2, hour2), count) =>
+        val report = MediaIpReport(
+          media_id = media_appsid,
+          adslot_id = adslotid,
+          adslot_type = adslot_type,
+          num = uid_num,
+          count= count,
+          date = date2,
+          hour = hour2
+        )
+        report
+    }
+    clearReportHourData("report_media_uid_click_hourly", date, hour)
+    ctx.createDataFrame(uidClickData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_media_uid_click_hourly", mariadbProp)
+    println("uid_click", uidClickData.count())
 
     unionLog.unpersist()
 
@@ -266,7 +373,6 @@ object GetHourReport {
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_fill_hourly", mariadbProp)
     println("fill", fillData.count())
-
     ctx.stop()
   }
 
