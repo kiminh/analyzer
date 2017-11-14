@@ -4,7 +4,7 @@ import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.log.parser.UnionLog
+import com.cpc.spark.log.parser.{ExtValue, UnionLog}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -59,6 +59,7 @@ object GetHourReport {
 
     //write hourly data to mysql
    val ctrData = unionLog
+      //.filter(_.userid != 1501897)
       .map{
         u =>
           val exptag = u.exptags.split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
@@ -69,6 +70,13 @@ object GetHourReport {
               expctr = v.int_value
             }
           }
+
+          val discount = u.ext.getOrElse("rank_discount", ExtValue()).int_value
+          var cost = u.realCost().toFloat
+          if (discount > 0) {
+            cost = cost * discount.toFloat / 100
+          }
+
           val ctr = CtrReport(
             media_id = u.media_appsid.toInt,
             adslot_id = u.adslotid.toInt,
@@ -81,7 +89,7 @@ object GetHourReport {
             request = 1,
             served_request = u.isfill,
             impression = u.isshow,
-            cash_cost = u.realCost(),
+            cash_cost = cost,
             click = u.isclick,
             exp_click = expctr,
             date = "%s %s:00:00".format(u.date, u.hour)
@@ -110,10 +118,13 @@ object GetHourReport {
             ctr.copy(
               ctr = ctr.click.toFloat / ctr.impression.toFloat,
               exp_ctr = ctr.exp_click / ctr.impression.toFloat,
-              cpm = ctr.cash_cost.toFloat / ctr.impression.toFloat * 10
+              cpm = ctr.cash_cost / ctr.impression.toFloat * (1000 / 100),
+              cash_cost = ctr.cash_cost.toInt
             )
           } else {
-            ctr
+            ctr.copy(
+              cash_cost = ctr.cash_cost.toInt
+            )
           }
       }
 
@@ -406,7 +417,7 @@ object GetHourReport {
                                request: Int = 0,
                                served_request: Int = 0,
                                impression: Int = 0,
-                               cash_cost: Int = 0,
+                               cash_cost: Float = 0,
                                click: Int = 0,
                                exp_click: Float = 0,
                                ctr: Float = 0,

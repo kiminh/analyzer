@@ -12530,6 +12530,42 @@ public final class Aslog {
      * <code>optional int64 materialTime = 7;</code>
      */
     long getMaterialTime();
+
+    /**
+     * <code>optional int64 showFreqTime = 8;</code>
+     */
+    boolean hasShowFreqTime();
+    /**
+     * <code>optional int64 showFreqTime = 8;</code>
+     */
+    long getShowFreqTime();
+
+    /**
+     * <code>optional int64 reqBsAllTime = 9;</code>
+     */
+    boolean hasReqBsAllTime();
+    /**
+     * <code>optional int64 reqBsAllTime = 9;</code>
+     */
+    long getReqBsAllTime();
+
+    /**
+     * <code>optional int64 blackMediaFilterTime = 10;</code>
+     */
+    boolean hasBlackMediaFilterTime();
+    /**
+     * <code>optional int64 blackMediaFilterTime = 10;</code>
+     */
+    long getBlackMediaFilterTime();
+
+    /**
+     * <code>optional int64 fixClickTime = 11;</code>
+     */
+    boolean hasFixClickTime();
+    /**
+     * <code>optional int64 fixClickTime = 11;</code>
+     */
+    long getFixClickTime();
   }
   /**
    * Protobuf type {@code aslog.DspReqInfo}
@@ -12550,6 +12586,10 @@ public final class Aslog {
       targetHost_ = "";
       ioTimeCost_ = 0L;
       materialTime_ = 0L;
+      showFreqTime_ = 0L;
+      reqBsAllTime_ = 0L;
+      blackMediaFilterTime_ = 0L;
+      fixClickTime_ = 0L;
     }
 
     @java.lang.Override
@@ -12621,6 +12661,26 @@ public final class Aslog {
             case 56: {
               bitField0_ |= 0x00000040;
               materialTime_ = input.readInt64();
+              break;
+            }
+            case 64: {
+              bitField0_ |= 0x00000080;
+              showFreqTime_ = input.readInt64();
+              break;
+            }
+            case 72: {
+              bitField0_ |= 0x00000100;
+              reqBsAllTime_ = input.readInt64();
+              break;
+            }
+            case 80: {
+              bitField0_ |= 0x00000200;
+              blackMediaFilterTime_ = input.readInt64();
+              break;
+            }
+            case 88: {
+              bitField0_ |= 0x00000400;
+              fixClickTime_ = input.readInt64();
               break;
             }
           }
@@ -12808,6 +12868,66 @@ public final class Aslog {
       return materialTime_;
     }
 
+    public static final int SHOWFREQTIME_FIELD_NUMBER = 8;
+    private long showFreqTime_;
+    /**
+     * <code>optional int64 showFreqTime = 8;</code>
+     */
+    public boolean hasShowFreqTime() {
+      return ((bitField0_ & 0x00000080) == 0x00000080);
+    }
+    /**
+     * <code>optional int64 showFreqTime = 8;</code>
+     */
+    public long getShowFreqTime() {
+      return showFreqTime_;
+    }
+
+    public static final int REQBSALLTIME_FIELD_NUMBER = 9;
+    private long reqBsAllTime_;
+    /**
+     * <code>optional int64 reqBsAllTime = 9;</code>
+     */
+    public boolean hasReqBsAllTime() {
+      return ((bitField0_ & 0x00000100) == 0x00000100);
+    }
+    /**
+     * <code>optional int64 reqBsAllTime = 9;</code>
+     */
+    public long getReqBsAllTime() {
+      return reqBsAllTime_;
+    }
+
+    public static final int BLACKMEDIAFILTERTIME_FIELD_NUMBER = 10;
+    private long blackMediaFilterTime_;
+    /**
+     * <code>optional int64 blackMediaFilterTime = 10;</code>
+     */
+    public boolean hasBlackMediaFilterTime() {
+      return ((bitField0_ & 0x00000200) == 0x00000200);
+    }
+    /**
+     * <code>optional int64 blackMediaFilterTime = 10;</code>
+     */
+    public long getBlackMediaFilterTime() {
+      return blackMediaFilterTime_;
+    }
+
+    public static final int FIXCLICKTIME_FIELD_NUMBER = 11;
+    private long fixClickTime_;
+    /**
+     * <code>optional int64 fixClickTime = 11;</code>
+     */
+    public boolean hasFixClickTime() {
+      return ((bitField0_ & 0x00000400) == 0x00000400);
+    }
+    /**
+     * <code>optional int64 fixClickTime = 11;</code>
+     */
+    public long getFixClickTime() {
+      return fixClickTime_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -12845,6 +12965,18 @@ public final class Aslog {
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
         output.writeInt64(7, materialTime_);
       }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        output.writeInt64(8, showFreqTime_);
+      }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        output.writeInt64(9, reqBsAllTime_);
+      }
+      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+        output.writeInt64(10, blackMediaFilterTime_);
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        output.writeInt64(11, fixClickTime_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -12878,6 +13010,22 @@ public final class Aslog {
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(7, materialTime_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(8, showFreqTime_);
+      }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(9, reqBsAllTime_);
+      }
+      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(10, blackMediaFilterTime_);
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(11, fixClickTime_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -12930,6 +13078,26 @@ public final class Aslog {
         result = result && (getMaterialTime()
             == other.getMaterialTime());
       }
+      result = result && (hasShowFreqTime() == other.hasShowFreqTime());
+      if (hasShowFreqTime()) {
+        result = result && (getShowFreqTime()
+            == other.getShowFreqTime());
+      }
+      result = result && (hasReqBsAllTime() == other.hasReqBsAllTime());
+      if (hasReqBsAllTime()) {
+        result = result && (getReqBsAllTime()
+            == other.getReqBsAllTime());
+      }
+      result = result && (hasBlackMediaFilterTime() == other.hasBlackMediaFilterTime());
+      if (hasBlackMediaFilterTime()) {
+        result = result && (getBlackMediaFilterTime()
+            == other.getBlackMediaFilterTime());
+      }
+      result = result && (hasFixClickTime() == other.hasFixClickTime());
+      if (hasFixClickTime()) {
+        result = result && (getFixClickTime()
+            == other.getFixClickTime());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -12971,6 +13139,26 @@ public final class Aslog {
         hash = (37 * hash) + MATERIALTIME_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
             getMaterialTime());
+      }
+      if (hasShowFreqTime()) {
+        hash = (37 * hash) + SHOWFREQTIME_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getShowFreqTime());
+      }
+      if (hasReqBsAllTime()) {
+        hash = (37 * hash) + REQBSALLTIME_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getReqBsAllTime());
+      }
+      if (hasBlackMediaFilterTime()) {
+        hash = (37 * hash) + BLACKMEDIAFILTERTIME_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getBlackMediaFilterTime());
+      }
+      if (hasFixClickTime()) {
+        hash = (37 * hash) + FIXCLICKTIME_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getFixClickTime());
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -13104,6 +13292,14 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00000020);
         materialTime_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000040);
+        showFreqTime_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000080);
+        reqBsAllTime_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000100);
+        blackMediaFilterTime_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000200);
+        fixClickTime_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000400);
         return this;
       }
 
@@ -13156,6 +13352,22 @@ public final class Aslog {
           to_bitField0_ |= 0x00000040;
         }
         result.materialTime_ = materialTime_;
+        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          to_bitField0_ |= 0x00000080;
+        }
+        result.showFreqTime_ = showFreqTime_;
+        if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+          to_bitField0_ |= 0x00000100;
+        }
+        result.reqBsAllTime_ = reqBsAllTime_;
+        if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
+          to_bitField0_ |= 0x00000200;
+        }
+        result.blackMediaFilterTime_ = blackMediaFilterTime_;
+        if (((from_bitField0_ & 0x00000400) == 0x00000400)) {
+          to_bitField0_ |= 0x00000400;
+        }
+        result.fixClickTime_ = fixClickTime_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -13222,6 +13434,18 @@ public final class Aslog {
         }
         if (other.hasMaterialTime()) {
           setMaterialTime(other.getMaterialTime());
+        }
+        if (other.hasShowFreqTime()) {
+          setShowFreqTime(other.getShowFreqTime());
+        }
+        if (other.hasReqBsAllTime()) {
+          setReqBsAllTime(other.getReqBsAllTime());
+        }
+        if (other.hasBlackMediaFilterTime()) {
+          setBlackMediaFilterTime(other.getBlackMediaFilterTime());
+        }
+        if (other.hasFixClickTime()) {
+          setFixClickTime(other.getFixClickTime());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -13569,6 +13793,134 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private long showFreqTime_ ;
+      /**
+       * <code>optional int64 showFreqTime = 8;</code>
+       */
+      public boolean hasShowFreqTime() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      /**
+       * <code>optional int64 showFreqTime = 8;</code>
+       */
+      public long getShowFreqTime() {
+        return showFreqTime_;
+      }
+      /**
+       * <code>optional int64 showFreqTime = 8;</code>
+       */
+      public Builder setShowFreqTime(long value) {
+        bitField0_ |= 0x00000080;
+        showFreqTime_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int64 showFreqTime = 8;</code>
+       */
+      public Builder clearShowFreqTime() {
+        bitField0_ = (bitField0_ & ~0x00000080);
+        showFreqTime_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private long reqBsAllTime_ ;
+      /**
+       * <code>optional int64 reqBsAllTime = 9;</code>
+       */
+      public boolean hasReqBsAllTime() {
+        return ((bitField0_ & 0x00000100) == 0x00000100);
+      }
+      /**
+       * <code>optional int64 reqBsAllTime = 9;</code>
+       */
+      public long getReqBsAllTime() {
+        return reqBsAllTime_;
+      }
+      /**
+       * <code>optional int64 reqBsAllTime = 9;</code>
+       */
+      public Builder setReqBsAllTime(long value) {
+        bitField0_ |= 0x00000100;
+        reqBsAllTime_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int64 reqBsAllTime = 9;</code>
+       */
+      public Builder clearReqBsAllTime() {
+        bitField0_ = (bitField0_ & ~0x00000100);
+        reqBsAllTime_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private long blackMediaFilterTime_ ;
+      /**
+       * <code>optional int64 blackMediaFilterTime = 10;</code>
+       */
+      public boolean hasBlackMediaFilterTime() {
+        return ((bitField0_ & 0x00000200) == 0x00000200);
+      }
+      /**
+       * <code>optional int64 blackMediaFilterTime = 10;</code>
+       */
+      public long getBlackMediaFilterTime() {
+        return blackMediaFilterTime_;
+      }
+      /**
+       * <code>optional int64 blackMediaFilterTime = 10;</code>
+       */
+      public Builder setBlackMediaFilterTime(long value) {
+        bitField0_ |= 0x00000200;
+        blackMediaFilterTime_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int64 blackMediaFilterTime = 10;</code>
+       */
+      public Builder clearBlackMediaFilterTime() {
+        bitField0_ = (bitField0_ & ~0x00000200);
+        blackMediaFilterTime_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private long fixClickTime_ ;
+      /**
+       * <code>optional int64 fixClickTime = 11;</code>
+       */
+      public boolean hasFixClickTime() {
+        return ((bitField0_ & 0x00000400) == 0x00000400);
+      }
+      /**
+       * <code>optional int64 fixClickTime = 11;</code>
+       */
+      public long getFixClickTime() {
+        return fixClickTime_;
+      }
+      /**
+       * <code>optional int64 fixClickTime = 11;</code>
+       */
+      public Builder setFixClickTime(long value) {
+        bitField0_ |= 0x00000400;
+        fixClickTime_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int64 fixClickTime = 11;</code>
+       */
+      public Builder clearFixClickTime() {
+        bitField0_ = (bitField0_ & ~0x00000400);
+        fixClickTime_ = 0L;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -13873,6 +14225,23 @@ public final class Aslog {
      * <code>optional uint32 trigger_type = 20;</code>
      */
     int getTriggerType();
+
+    /**
+     * <pre>
+     *广告最终的提权值，单位%
+     * </pre>
+     *
+     * <code>required int32 discount = 21;</code>
+     */
+    boolean hasDiscount();
+    /**
+     * <pre>
+     *广告最终的提权值，单位%
+     * </pre>
+     *
+     * <code>required int32 discount = 21;</code>
+     */
+    int getDiscount();
   }
   /**
    * Protobuf type {@code aslog.AdInfo}
@@ -13906,6 +14275,7 @@ public final class Aslog {
       cvrThres_ = 0L;
       materialid_ = java.util.Collections.emptyList();
       triggerType_ = 0;
+      discount_ = 0;
     }
 
     @java.lang.Override
@@ -14068,6 +14438,11 @@ public final class Aslog {
             case 160: {
               bitField0_ |= 0x00040000;
               triggerType_ = input.readUInt32();
+              break;
+            }
+            case 168: {
+              bitField0_ |= 0x00080000;
+              discount_ = input.readInt32();
               break;
             }
           }
@@ -14476,6 +14851,29 @@ public final class Aslog {
       return triggerType_;
     }
 
+    public static final int DISCOUNT_FIELD_NUMBER = 21;
+    private int discount_;
+    /**
+     * <pre>
+     *广告最终的提权值，单位%
+     * </pre>
+     *
+     * <code>required int32 discount = 21;</code>
+     */
+    public boolean hasDiscount() {
+      return ((bitField0_ & 0x00080000) == 0x00080000);
+    }
+    /**
+     * <pre>
+     *广告最终的提权值，单位%
+     * </pre>
+     *
+     * <code>required int32 discount = 21;</code>
+     */
+    public int getDiscount() {
+      return discount_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -14491,6 +14889,10 @@ public final class Aslog {
         return false;
       }
       if (!hasInteraction()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasDiscount()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -14559,6 +14961,9 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x00040000) == 0x00040000)) {
         output.writeUInt32(20, triggerType_);
+      }
+      if (((bitField0_ & 0x00080000) == 0x00080000)) {
+        output.writeInt32(21, discount_);
       }
       unknownFields.writeTo(output);
     }
@@ -14652,6 +15057,10 @@ public final class Aslog {
       if (((bitField0_ & 0x00040000) == 0x00040000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(20, triggerType_);
+      }
+      if (((bitField0_ & 0x00080000) == 0x00080000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(21, discount_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -14764,6 +15173,11 @@ public final class Aslog {
         result = result && (getTriggerType()
             == other.getTriggerType());
       }
+      result = result && (hasDiscount() == other.hasDiscount());
+      if (hasDiscount()) {
+        result = result && (getDiscount()
+            == other.getDiscount());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -14861,6 +15275,10 @@ public final class Aslog {
       if (hasTriggerType()) {
         hash = (37 * hash) + TRIGGER_TYPE_FIELD_NUMBER;
         hash = (53 * hash) + getTriggerType();
+      }
+      if (hasDiscount()) {
+        hash = (37 * hash) + DISCOUNT_FIELD_NUMBER;
+        hash = (53 * hash) + getDiscount();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -15020,6 +15438,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00040000);
         triggerType_ = 0;
         bitField0_ = (bitField0_ & ~0x00080000);
+        discount_ = 0;
+        bitField0_ = (bitField0_ & ~0x00100000);
         return this;
       }
 
@@ -15125,6 +15545,10 @@ public final class Aslog {
           to_bitField0_ |= 0x00040000;
         }
         result.triggerType_ = triggerType_;
+        if (((from_bitField0_ & 0x00100000) == 0x00100000)) {
+          to_bitField0_ |= 0x00080000;
+        }
+        result.discount_ = discount_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -15234,6 +15658,9 @@ public final class Aslog {
         if (other.hasTriggerType()) {
           setTriggerType(other.getTriggerType());
         }
+        if (other.hasDiscount()) {
+          setDiscount(other.getDiscount());
+        }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
@@ -15247,6 +15674,9 @@ public final class Aslog {
           return false;
         }
         if (!hasInteraction()) {
+          return false;
+        }
+        if (!hasDiscount()) {
           return false;
         }
         return true;
@@ -16093,6 +16523,54 @@ public final class Aslog {
       public Builder clearTriggerType() {
         bitField0_ = (bitField0_ & ~0x00080000);
         triggerType_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int discount_ ;
+      /**
+       * <pre>
+       *广告最终的提权值，单位%
+       * </pre>
+       *
+       * <code>required int32 discount = 21;</code>
+       */
+      public boolean hasDiscount() {
+        return ((bitField0_ & 0x00100000) == 0x00100000);
+      }
+      /**
+       * <pre>
+       *广告最终的提权值，单位%
+       * </pre>
+       *
+       * <code>required int32 discount = 21;</code>
+       */
+      public int getDiscount() {
+        return discount_;
+      }
+      /**
+       * <pre>
+       *广告最终的提权值，单位%
+       * </pre>
+       *
+       * <code>required int32 discount = 21;</code>
+       */
+      public Builder setDiscount(int value) {
+        bitField0_ |= 0x00100000;
+        discount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *广告最终的提权值，单位%
+       * </pre>
+       *
+       * <code>required int32 discount = 21;</code>
+       */
+      public Builder clearDiscount() {
+        bitField0_ = (bitField0_ & ~0x00100000);
+        discount_ = 0;
         onChanged();
         return this;
       }
@@ -25070,65 +25548,68 @@ public final class Aslog {
       "ice\030\016 \001(\r\022\022\n\nphonelevel\030\017 \001(\r\022\023\n\013brand_t" +
       "itle\030\020 \001(\t\"J\n\006Client\022\037\n\004type\030\001 \002(\0162\021.asl" +
       "og.ClientType\022\037\n\007version\030\002 \001(\0132\016.aslog.V",
-      "ersion\"\236\001\n\nDspReqInfo\022\031\n\003src\030\001 \002(\0162\014.asl" +
+      "ersion\"\376\001\n\nDspReqInfo\022\031\n\003src\030\001 \002(\0162\014.asl" +
       "og.AdSrc\022\022\n\ndspmediaid\030\002 \001(\t\022\021\n\tretAdsNu" +
       "m\030\003 \001(\005\022\020\n\010timecost\030\004 \001(\003\022\022\n\ntargetHost\030" +
       "\005 \001(\t\022\022\n\nioTimeCost\030\006 \001(\003\022\024\n\014materialTim" +
-      "e\030\007 \001(\003\"\206\003\n\006AdInfo\022\033\n\004type\030\001 \002(\0162\r.aslog" +
-      ".AdType\022\031\n\003src\030\002 \002(\0162\014.aslog.AdSrc\022+\n\013in" +
-      "teraction\030\003 \002(\0162\026.aslog.InteractionType\022" +
-      "\014\n\004adid\030\004 \001(\r\022\017\n\007groupid\030\005 \001(\r\022\016\n\006planid" +
-      "\030\006 \001(\r\022\016\n\006userid\030\007 \001(\r\022\013\n\003bid\030\010 \001(\r\022\r\n\005p" +
-      "rice\030\t \001(\r\022\013\n\003ctr\030\n \001(\004\022\013\n\003cpm\030\013 \001(\004\022\r\n\005",
-      "class\030\014 \001(\r\022\020\n\010usertype\030\r \001(\005\022\020\n\010titlect" +
-      "r\030\016 \001(\004\022\016\n\006expcpm\030\017 \001(\004\022\013\n\003cvr\030\020 \001(\004\022\025\n\r" +
-      "cvr_threshold\030\021 \001(\004\022\021\n\tcvr_thres\030\022 \001(\004\022\022" +
-      "\n\nmaterialid\030\023 \003(\r\022\024\n\014trigger_type\030\024 \001(\r" +
-      "\"4\n\010AdDspRet\022\031\n\003src\030\001 \002(\0162\014.aslog.AdSrc\022" +
-      "\r\n\005adnum\030\002 \002(\r\"H\n\010Location\022\017\n\007country\030\001 " +
-      "\001(\r\022\020\n\010province\030\002 \001(\r\022\014\n\004city\030\003 \001(\r\022\013\n\003i" +
-      "sp\030\004 \001(\r\"1\n\014InterestItem\022\022\n\ninterestid\030\001" +
-      " \001(\004\022\r\n\005score\030\002 \001(\004\"\247\001\n\013UserProfile\022&\n\ti" +
-      "nterests\030\001 \003(\0132\023.aslog.InterestItem\022\013\n\003a",
-      "ge\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tp" +
-      "category\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshar" +
-      "e_coin\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\"\273\004\n\rNotice" +
-      "LogBody\022\020\n\010searchid\030\001 \002(\t\022\021\n\ttimestamp\030\002" +
-      " \002(\r\022\033\n\005media\030\003 \001(\0132\014.aslog.Media\022\035\n\006ads" +
-      "lot\030\004 \003(\0132\r.aslog.Adslot\022\035\n\006device\030\005 \001(\013" +
-      "2\r.aslog.Device\022\032\n\003ads\030\006 \003(\0132\r.aslog.AdI" +
-      "nfo\022\037\n\006dspret\030\007 \003(\0132\017.aslog.AdDspRet\022\r\n\005" +
-      "debug\030\010 \001(\010\022\035\n\006client\030\t \001(\0132\r.aslog.Clie" +
-      "nt\022\037\n\007network\030\n \001(\0132\016.aslog.Network\022\017\n\007e",
-      "xptags\030\013 \003(\t\022!\n\010location\030\014 \001(\0132\017.aslog.L" +
-      "ocation\022\020\n\010sourceip\030\r \001(\t\022\021\n\tintertype\030\016" +
-      " \001(\r\022\'\n\013userprofile\030\017 \001(\0132\022.aslog.UserPr" +
-      "ofile\022\025\n\rdupplanfilter\030\020 \003(\r\022\024\n\014lowcpmfi" +
-      "lter\030\021 \003(\r\022\024\n\014lowcvrfilter\030\022 \003(\r\022%\n\ndspR" +
-      "eqInfo\030\026 \003(\0132\021.aslog.DspReqInfo\022\020\n\010timec" +
-      "ost\030\027 \001(\004\022\r\n\005https\030\030 \001(\010\022\021\n\tctrtarget\030\031 " +
-      "\001(\t*3\n\tMediaType\022\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007" +
-      "\n\003WEB\020\002\022\007\n\003WAP\020\003*@\n\nAdslotType\022\r\n\tLIST_F" +
-      "EED\020\001\022\020\n\014CONTENT_FEED\020\002\022\021\n\rSLOT_INTERACT",
-      "\020\003*P\n\013NetworkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NE" +
-      "T_WIFI\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_" +
-      "4G\020\004*?\n\006OSType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_AND" +
-      "ROID\020\001\022\n\n\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013Browse" +
-      "rType\022\022\n\016UnknownBrowser\020\000\022\016\n\nMQQBrowser\020" +
-      "\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBro" +
-      "wser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBrowser\020\006" +
-      "\022\023\n\017IEMobileBrowser\020\007\022\022\n\016MicroMessenger\020" +
-      "\010\022\n\n\006QQChat\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVID_" +
-      "UNKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002",
-      "\022\016\n\nDEVID_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVI" +
-      "D_LSCOOKIE\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEV" +
-      "ID_IMSI\020\007*R\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002" +
-      "\022\r\n\tICON_TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013" +
-      "AD_INTERACT\020\005*\020\n\005AdSrc\022\007\n\003CPC\020\001*i\n\017Inter" +
-      "actionType\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001" +
-      "\022\014\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004" +
-      "\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006*3\n\nClientType\022\r\n\tNATI" +
-      "VESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003"
+      "e\030\007 \001(\003\022\024\n\014showFreqTime\030\010 \001(\003\022\024\n\014reqBsAl" +
+      "lTime\030\t \001(\003\022\034\n\024blackMediaFilterTime\030\n \001(" +
+      "\003\022\024\n\014fixClickTime\030\013 \001(\003\"\230\003\n\006AdInfo\022\033\n\004ty" +
+      "pe\030\001 \002(\0162\r.aslog.AdType\022\031\n\003src\030\002 \002(\0162\014.a" +
+      "slog.AdSrc\022+\n\013interaction\030\003 \002(\0162\026.aslog." +
+      "InteractionType\022\014\n\004adid\030\004 \001(\r\022\017\n\007groupid",
+      "\030\005 \001(\r\022\016\n\006planid\030\006 \001(\r\022\016\n\006userid\030\007 \001(\r\022\013" +
+      "\n\003bid\030\010 \001(\r\022\r\n\005price\030\t \001(\r\022\013\n\003ctr\030\n \001(\004\022" +
+      "\013\n\003cpm\030\013 \001(\004\022\r\n\005class\030\014 \001(\r\022\020\n\010usertype\030" +
+      "\r \001(\005\022\020\n\010titlectr\030\016 \001(\004\022\016\n\006expcpm\030\017 \001(\004\022" +
+      "\013\n\003cvr\030\020 \001(\004\022\025\n\rcvr_threshold\030\021 \001(\004\022\021\n\tc" +
+      "vr_thres\030\022 \001(\004\022\022\n\nmaterialid\030\023 \003(\r\022\024\n\014tr" +
+      "igger_type\030\024 \001(\r\022\020\n\010discount\030\025 \002(\005\"4\n\010Ad" +
+      "DspRet\022\031\n\003src\030\001 \002(\0162\014.aslog.AdSrc\022\r\n\005adn" +
+      "um\030\002 \002(\r\"H\n\010Location\022\017\n\007country\030\001 \001(\r\022\020\n" +
+      "\010province\030\002 \001(\r\022\014\n\004city\030\003 \001(\r\022\013\n\003isp\030\004 \001",
+      "(\r\"1\n\014InterestItem\022\022\n\ninterestid\030\001 \001(\004\022\r" +
+      "\n\005score\030\002 \001(\004\"\247\001\n\013UserProfile\022&\n\tinteres" +
+      "ts\030\001 \003(\0132\023.aslog.InterestItem\022\013\n\003age\030\002 \001" +
+      "(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpcatego" +
+      "ry\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshare_coin" +
+      "\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\"\273\004\n\rNoticeLogBod" +
+      "y\022\020\n\010searchid\030\001 \002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033" +
+      "\n\005media\030\003 \001(\0132\014.aslog.Media\022\035\n\006adslot\030\004 " +
+      "\003(\0132\r.aslog.Adslot\022\035\n\006device\030\005 \001(\0132\r.asl" +
+      "og.Device\022\032\n\003ads\030\006 \003(\0132\r.aslog.AdInfo\022\037\n",
+      "\006dspret\030\007 \003(\0132\017.aslog.AdDspRet\022\r\n\005debug\030" +
+      "\010 \001(\010\022\035\n\006client\030\t \001(\0132\r.aslog.Client\022\037\n\007" +
+      "network\030\n \001(\0132\016.aslog.Network\022\017\n\007exptags" +
+      "\030\013 \003(\t\022!\n\010location\030\014 \001(\0132\017.aslog.Locatio" +
+      "n\022\020\n\010sourceip\030\r \001(\t\022\021\n\tintertype\030\016 \001(\r\022\'" +
+      "\n\013userprofile\030\017 \001(\0132\022.aslog.UserProfile\022" +
+      "\025\n\rdupplanfilter\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021" +
+      " \003(\r\022\024\n\014lowcvrfilter\030\022 \003(\r\022%\n\ndspReqInfo" +
+      "\030\026 \003(\0132\021.aslog.DspReqInfo\022\020\n\010timecost\030\027 " +
+      "\001(\004\022\r\n\005https\030\030 \001(\010\022\021\n\tctrtarget\030\031 \001(\t*3\n",
+      "\tMediaType\022\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020" +
+      "\002\022\007\n\003WAP\020\003*@\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022" +
+      "\020\n\014CONTENT_FEED\020\002\022\021\n\rSLOT_INTERACT\020\003*P\n\013" +
+      "NetworkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI" +
+      "\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?" +
+      "\n\006OSType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020\001" +
+      "\022\n\n\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType\022" +
+      "\022\n\016UnknownBrowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006C" +
+      "hrome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020\004" +
+      "\022\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IE",
+      "MobileBrowser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006Q" +
+      "QChat\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNOW" +
+      "N\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDE" +
+      "VID_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCO" +
+      "OKIE\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVID_IMS" +
+      "I\020\007*R\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tIC" +
+      "ON_TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013AD_INT" +
+      "ERACT\020\005*\020\n\005AdSrc\022\007\n\003CPC\020\001*i\n\017Interaction" +
+      "Type\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DO" +
+      "WNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MA",
+      "IL\020\005\022\006\n\002GP\020\006*3\n\nClientType\022\r\n\tNATIVESDK\020" +
+      "\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -25207,13 +25688,13 @@ public final class Aslog {
     internal_static_aslog_DspReqInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_DspReqInfo_descriptor,
-        new java.lang.String[] { "Src", "Dspmediaid", "RetAdsNum", "Timecost", "TargetHost", "IoTimeCost", "MaterialTime", });
+        new java.lang.String[] { "Src", "Dspmediaid", "RetAdsNum", "Timecost", "TargetHost", "IoTimeCost", "MaterialTime", "ShowFreqTime", "ReqBsAllTime", "BlackMediaFilterTime", "FixClickTime", });
     internal_static_aslog_AdInfo_descriptor =
       getDescriptor().getMessageTypes().get(11);
     internal_static_aslog_AdInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_AdInfo_descriptor,
-        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", "Class_", "Usertype", "Titlectr", "Expcpm", "Cvr", "CvrThreshold", "CvrThres", "Materialid", "TriggerType", });
+        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", "Class_", "Usertype", "Titlectr", "Expcpm", "Cvr", "CvrThreshold", "CvrThres", "Materialid", "TriggerType", "Discount", });
     internal_static_aslog_AdDspRet_descriptor =
       getDescriptor().getMessageTypes().get(12);
     internal_static_aslog_AdDspRet_fieldAccessorTable = new

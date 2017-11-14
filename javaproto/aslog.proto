@@ -165,6 +165,10 @@ message DspReqInfo {
 	optional string targetHost = 5;
 	optional int64  ioTimeCost = 6;
 	optional int64	materialTime = 7;
+	optional int64	showFreqTime = 8;
+	optional int64	reqBsAllTime = 9;
+	optional int64	blackMediaFilterTime = 10;
+	optional int64	fixClickTime = 11;
 };
 
 message AdInfo {
@@ -188,6 +192,7 @@ message AdInfo {
 	optional uint64 cvr_thres = 18;// cvr_threshold 真实值*10^6
 	repeated uint32 materialid = 19; //素材id
 	optional uint32 trigger_type = 20; // 0 默认触发  1兴趣触发
+	required int32 discount = 21; //广告最终的提权值，单位%
 };
 
 message AdDspRet {
