@@ -147,7 +147,7 @@ object TopCtrIdea {
               mtype = 3
             } else if(img.length == 1) {
               val i = img(0)
-              if (i._2 == 2) {
+              if (i._2 == 5) {
                 mtype = 2  //大图
               } else {
                 mtype = 1   //小图
@@ -186,7 +186,6 @@ object TopCtrIdea {
       .jdbc(mariadbUrl, "report.top_ctr_idea", mariadbProp)
 
     println("num", top.length)
-
   }
 
   def getUserBelong(): Map[Int, Int] = {

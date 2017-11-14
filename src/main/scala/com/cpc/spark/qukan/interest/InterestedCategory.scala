@@ -4,9 +4,12 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.UnionLog
+import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
+import userprofile.Userprofile.{InterestItem, UserProfile}
+import com.redis.serialization.Parse.Implicits._
 
 /**
   * Created by roydong on 08/11/2017.
@@ -24,9 +27,8 @@ object InterestedCategory {
       .getOrCreate()
     import spark.implicits._
 
-
     val cal = Calendar.getInstance()
-    cal.add(Calendar.DATE, -3)
+    cal.add(Calendar.DATE, -2)
 
     var date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val day1 = spark.sql(
@@ -36,8 +38,15 @@ object InterestedCategory {
       """.stripMargin.format(date, adclass)).as[UnionLog].rdd
       .map {
         u =>
-          (u.uid, u.isclick)
+          (u.uid, (u.isclick, 1))
       }
+      .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
+      .cache()
+
+    val num1 = day1.count()
+    val ret1 = day1.map(_._2).reduce((x, y) => (x._1 + y._1, x._2 + y._2))
+    println("day1", num1, ret1._1, ret1._2, ret1._1.toDouble / ret1._2.toDouble)
+
 
     cal.add(Calendar.DATE, 1)
     date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
@@ -48,45 +57,60 @@ object InterestedCategory {
       """.stripMargin.format(date, adclass)).as[UnionLog].rdd
       .map {
         u =>
-          (u.uid, u.isclick)
+          (u.uid, (u.isclick, 1))
       }
+      .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
+      .cache
 
-    val user = day1.leftOuterJoin(day2)
-      .map {
-        x =>
-          val c1 = x._2._1
-          var c2 = 0
-          var s2 = 0
+    val num2 = day2.count()
+    val ret2 = day2.map(_._2).reduce((x, y) => (x._1 + y._1, x._2 + y._2))
+    println("day2", num2, ret2._1, ret2._2, ret2._1.toDouble / ret2._2.toDouble)
 
-          if (x._2._2.isDefined) {
-            c2 = x._2._2.get
-            s2 = 1
-          }
-
-          (x._1, (c1, 1, c2, s2))
-      }
-      .reduceByKey {
-        (x, y) =>
-          (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)
-      }
-      .filter(_._2._1 > 0)
-      .map {
-        x =>
-          x._2
-      }
-      .cache()
-
-    val ctr = user.reduce {
-        (x, y) =>
-          (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)
-      }
+    val click1 = day1.filter(_._2._1 > 0).cache()
+    println("click1", click1.count())
+    val day = click1.join(day2).cache()
+    val num = day.count()
+    val ret = day.map(_._2._2).reduce((x, y) => (x._1 + y._1, x._2 + y._2))
+    println("and", num, ret._1, ret._2, ret._1.toDouble / ret._2.toDouble)
 
 
-    println(user.count(), user.filter(_._4 > 0).count())
-    println(ctr._1.toDouble / ctr._2.toDouble)
-    println(ctr._3.toDouble / ctr._4.toDouble)
+    val conf = ConfigFactory.load()
+    val sum = day2.filter(_._2._1 > 0).mapPartitions {
+      p =>
+        var n = 0
+        val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+        p.foreach {
+          row =>
+            n = n + 1
+            val key = row._1 + "_UPDATA"
+            val buffer = redis.get[Array[Byte]](key).orNull
+            if (buffer != null) {
+              val user = UserProfile.parseFrom(buffer).toBuilder
+              val in = InterestItem.newBuilder()
+                .setTag(1)
+                .setScore(100)
+              var has = false
+              for (i <- 0 until user.getInterestedWordsCount) {
+                val w = user.getInterestedWords(i)
+                if (w.getTag == in.getTag) {
+                  if (!has) {
+                    user.setInterestedWords(i, in)
+                    has = true
+                  } else {
+                    user.removeInterestedWords(i)
+                  }
+                }
+              }
+              if (!has) {
+                user.addInterestedWords(in)
+              }
+              redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+            }
+        }
+        Seq(n).iterator
+    }
 
-
+    println("update", sum.sum())
 
     /*
     cal.add(Calendar.DATE, 1)
@@ -101,7 +125,5 @@ object InterestedCategory {
           (u.uid, u.isclick)
       }
       */
-
-
   }
 }
