@@ -3,7 +3,6 @@ package com.cpc.spark.small.tool
 import java.sql.DriverManager
 import java.util.Properties
 
-import com.cpc.spark.small.tool.InsertUserCvr.{mariadbProp, mariadbUrl}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -76,6 +75,7 @@ object InsertReportUnitTarget {
           trace_type match {
             case "load" => load += 1
             case s if s.startsWith("active") => active += 1
+            case "press" => active += 1
             case _ =>
           }
           (searchid, (-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, load, active))
