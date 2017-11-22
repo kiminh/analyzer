@@ -59,7 +59,7 @@ object GetHourReport {
 
     //write hourly data to mysql
    val ctrData = unionLog
-      //.filter(_.userid != 1501897)
+      .filter(_.ext.getOrElse("rank_discount", ExtValue()).int_value == 100)
       .map{
         u =>
           val exptag = u.exptags.split(",").find(_.startsWith("ctrmodel")).getOrElse("base")

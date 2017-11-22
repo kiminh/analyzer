@@ -87,7 +87,6 @@ object LogParser {
         }
       }
 
-
       val loc = notice.getLocation
       log = log.copy(
         country = loc.getCountry,
@@ -118,6 +117,7 @@ object LogParser {
       }
       ext.update("antispam", ExtValue(int_value = user.getAntispam))
       ext.update("share_coin", ExtValue(int_value = user.getShareCoin))
+      ext.update("qukan_new_user", ExtValue(int_value = user.getNewuser))
       log = log.copy(
         sex = user.getSex,
         age = user.getAge,
@@ -140,7 +140,6 @@ object LogParser {
         show_timestamp = body.getEventTimestamp,
         show_ip = data.ip
       )
-
     }
     log
   }

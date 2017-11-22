@@ -89,6 +89,15 @@ object ConditionTouchedUV {
             .map(i => ((i(0).toInt, x.uid), 1))
       })
 
+    calcCondPercent("user_type", ulog
+      .flatMap{
+        x =>
+          x.interests.split(",")
+            .map(i => i.split("="))
+            .filter(x => x.length == 2 && x(0).toInt > 0)
+            .map(i => ((i(0).toInt, x.uid), 1))
+      })
+
     println("done")
     ctx.stop()
   }

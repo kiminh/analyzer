@@ -1,11 +1,18 @@
 package com.cpc.spark.qukan.interest
 
+import java.io.{FileWriter, PrintWriter}
 import java.sql.{DriverManager, ResultSet}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
+import com.cpc.spark.common.Utils
 import com.hankcs.hanlp.HanLP
+import com.hankcs.hanlp.corpus.tag.Nature
 import com.typesafe.config.ConfigFactory
+import org.apache.spark.mllib.clustering.{KMeans, KMeansModel}
+import org.apache.spark.mllib.feature.{Word2Vec, Word2VecModel}
+import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
 import scala.io.Source
@@ -27,217 +34,80 @@ object TagArticle {
     cal.add(Calendar.DATE, days)
     val dataEnd = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
-    val ctx = SparkSession.builder()
-      .appName("user article ")
+    val spark = SparkSession.builder()
+      .appName("user article word2Vec")
       .enableHiveSupport()
       .getOrCreate()
-    import ctx.implicits._
 
-    var words = Seq[String]()
-    Source.fromFile("/data/cpc/anal/conf/words/finance.txt", "utf8")
-      .getLines()
-      .filter(_.length > 0)
-      .foreach {
-        line =>
-          words = words :+ line
+    val articleWords = getArticleWords(spark, days)
+    //val model = trainWord2Vec(spark, articleWords, "/user/cpc/article_word2vec")
+    val model = Word2VecModel.load(spark.sparkContext, "/user/cpc/article_word2vec")
+
+    /*
+    val twords = Seq("股票", "彩票", "棋牌", "麻将", "减肥", "投资", "理财")
+    for (w <- twords) {
+      println("find top synonyms for ", w, model.transform(w).size)
+      val synonyms = model.findSynonyms(w, 50)
+      for((synonym, cosineSimilarity) <- synonyms) {
+        println(s"$synonym $cosineSimilarity")
       }
+    }
+    */
 
-    val bcWords = ctx.sparkContext.broadcast(words)
-    var stmt = """
-                 |SELECT DISTINCT qc.title,qc.detail
-                 |from rpt_qukan.qukan_log_cmd qkc
-                 |INNER JOIN gobblin.qukan_content qc ON qc.id=qkc.content_id
-                 |WHERE qkc.cmd=301 AND qkc.thedate>="%s" AND qkc.thedate<"%s" AND qkc.member_id IS NOT NULL
-                 |AND qkc.device IS NOT NULL
-                 |""".stripMargin.format(dataStart, dataEnd)
-    println(stmt)
-
-    val articlePoints = ctx.sql(stmt).rdd
-      .mapPartitions {
-        partition =>
-          val words = bcWords.value
-          partition.map {
-            row =>
-              val title = row.getString(0)
-              val content = row.getString(1)
-
-              var sum = HanLP.segment(title)
-                .filter(x => x.length() > 1)
-                .map {
-                  w =>
-                    if (words.contains(w.word)) {
-                      1
-                    } else {
-                      0
-                    }
-                }
-                .sum
-
-              sum += HanLP.segment(content)
-                .filter(x => x.length() > 1)
-                .map {
-                  w =>
-                    if (words.contains(w.word)) {
-                      1
-                    } else {
-                      0
-                    }
-                }
-                .sum
-
-              (title, sum)
+    val sample = articleWords.flatMap(_._2)
+      .distinct()
+      .map {
+        w =>
+          try {
+            (w, model.transform(w))
+          } catch {
+            case e : Exception => null
           }
-      }.cache()
+      }
+      .filter(_ != null)
+      .randomSplit(Array(0.8, 0.2), 1356L)
 
-    stmt = """
+    val numClusters = 50
+    val numIterations = 50
+    println(sample(0).count(), sample(0).first()._2.size)
+    val clusters = KMeans.train(sample(0).map(_._2), numClusters, numIterations)
+    Utils.deleteHdfs("/user/cpc/kmeansmodel")
+    clusters.save(spark.sparkContext, "/user/cpc/kmeansmodel")
+    //val clusters = KMeansModel.load(spark.sparkContext, "/user/cpc/kmeansmodel")
+
+    //val WSSSE = clusters.computeCost(sample(1))
+    //println("Within Set Sum of Squared Errors = " + WSSSE)
+
+    val fw = new PrintWriter("kmeans.txt")
+    sample(1)
+      .map {
+        x =>
+          (clusters.predict(x._2), Seq(x._1))
+      }
+      .reduceByKey((x, y) => x ++ y)
+      .toLocalIterator
+      .foreach {
+        x =>
+          println("cluster", x._1)
+          x._2.take(20).foreach(println)
+
+          fw.write("\ncluster %d\n".format(x._1))
+          x._2.foreach {
+            w =>
+              fw.write("%s\n".format(w))
+          }
+      }
+    fw.close()
+
+
+    val stmt = """
                  |SELECT DISTINCT qkc.device,qc.title
                  |from rpt_qukan.qukan_log_cmd qkc
                  |INNER JOIN gobblin.qukan_content qc ON qc.id=qkc.content_id
                  |WHERE qkc.cmd=301 AND qkc.thedate>="%s" AND qkc.thedate<"%s" AND qkc.member_id IS NOT NULL
                  |AND qkc.device IS NOT NULL
                  |""".stripMargin.format(dataStart, dataEnd)
-    println(stmt)
-
-    val userPoints = ctx.sql(stmt).rdd
-      .map {
-        row =>
-          val did = row.getString(0)
-          val title = row.getString(1)
-          (title, did)
-      }
-      .join(articlePoints)
-      .map{
-         x =>
-           (x._2._1, x._2._2)
-      }
-      .reduceByKey(_ + _)
-
-    println("article sum")
-    articlePoints
-      .map {
-        x =>
-          (x._2, 1)
-      }
-      .reduceByKey(_ + _)
-      .sortByKey()
-      .toLocalIterator
-      .foreach {
-        x =>
-          println(x)
-      }
-
-
-    println("user sum")
-    var n = 0
-    userPoints
-      .map {
-        x =>
-          (x._2, 1)
-      }
-      .reduceByKey(_ + _)
-      .sortByKey()
-      .filter(_._1 < 1000)
-      .toLocalIterator
-      .foreach {
-        x =>
-          println(x)
-          n = n + x._1
-      }
-
-
-    articlePoints.unpersist()
-
-    val adtitle = getAdDbResult("mariadb.adv")
-      .map {
-        x =>
-          val sum = HanLP.segment(x._2)
-            .filter(x => x.length() > 1)
-            .map {
-              w =>
-                if (words.contains(w.word)) {
-                  1
-                } else {
-                  0
-                }
-            }
-            .sum
-
-          (x._1, sum)
-      }
-      .filter(_._2 > 0)
-      .toMap
-
-    val bcadtitle = ctx.sparkContext.broadcast(adtitle)
-
-
-    val ulog = ctx.sql(
-      """
-        |select uid,ideaid,isclick from dl_cpc.cpc_union_log
-        |where isclick = 1 and adslot_type = 2
-        |and `date` >= "%s" and `date` < "%s"
-      """.stripMargin.format(dataStart, dataEnd))
-      .rdd
-      .map {
-        row =>
-          val uid = row.getString(0)
-          val adid = row.getInt(1)
-          val click = row.getInt(2)
-          val adtitle = bcadtitle.value
-          val sum = adtitle.getOrElse(adid, 0)
-
-
-          if (sum > 0) {
-            (uid, (1, 1, 1))
-          } else {
-            (uid, (0, 1, 1))
-          }
-      }
-
-
-    val userCtr = ulog
-      //.filter(_._2._1 > 0)
-      .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3))
-
-
-    //var bins = Seq[(Double, Double, Double)]()
-    var binSize = 10000
-    var sum = 0d
-    var adsum = 0d
-    var click = 0d
-    var show = 0d
-    userCtr.join(userPoints)
-      .map {
-        x =>
-          val sum = x._2._2
-          val u = x._2._1
-          val adsum = u._1
-          val click = u._2
-          val show = u._3
-          (sum, u)
-      }
-      .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3))
-      .sortByKey()
-      .toLocalIterator
-      .foreach {
-        x =>
-          val u = x._2
-          adsum = adsum + u._1.toDouble
-          click = click + u._2.toDouble
-          show = show + u._3.toDouble
-
-          sum += x._1.toDouble * u._3.toDouble
-
-          if (show > binSize) {
-            val bin = (sum / show, adsum / show, click / show, show)
-            //bins = bins :+ bin
-            println("%.0f %.6f %.6f %.0f".format(bin._1, bin._2, bin._3, bin._4))
-
-            click = 0
-            show = 0
-            sum = 0
-            adsum = 0
-          }
-      }
+    //println(stmt)
   }
 
   def getAdDbResult(confKey: String): Seq[(Int, String)] = {
@@ -261,5 +131,52 @@ object TagArticle {
       rs = rs :+ (result.getInt("id"), result.getString("title"))
     }
     rs
+  }
+
+  def getArticleWords(spark: SparkSession, days: Int): RDD[(String, Seq[String])] = {
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.DATE, -days)
+    val dataStart = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    cal.add(Calendar.DATE, days)
+    val dataEnd = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+
+    var stmt = """
+                 |SELECT DISTINCT qc.title,qc.detail
+                 |from rpt_qukan.qukan_log_cmd qkc
+                 |INNER JOIN gobblin.qukan_content qc ON qc.id=qkc.content_id
+                 |WHERE qkc.cmd=301 AND qkc.thedate>="%s" AND qkc.thedate<"%s" AND qkc.member_id IS NOT NULL
+                 |AND qkc.device IS NOT NULL
+                 |""".stripMargin.format(dataStart, dataEnd)
+    println(stmt)
+
+    spark.sql(stmt).rdd
+      .map {
+        row =>
+          val title = row.getString(0)
+          val content = row.getString(1)
+          val words = HanLP.segment(title + " " + content)
+            .filter {
+              w =>
+                w.nature.startsWith("n") || w.nature.startsWith("v")
+            }
+            .map {
+              w =>
+                w.word
+            }
+            .slice(0, 50)
+          (title, words)
+      }
+  }
+
+  def trainWord2Vec(spark: SparkSession, articleWords: RDD[(String, Seq[String])], path: String): Word2VecModel = {
+    val words = articleWords.map(_._2)
+    val maxRowLen = words.map(_.length).max()
+    val minRowLen = words.map(_.length).min()
+    println("row count", words.count(), "max row words num", maxRowLen, minRowLen)
+    val w2v = new Word2Vec()
+    val model = w2v.fit(words)
+    Utils.deleteHdfs(path)
+    model.save(spark.sparkContext, path)
+    model
   }
 }

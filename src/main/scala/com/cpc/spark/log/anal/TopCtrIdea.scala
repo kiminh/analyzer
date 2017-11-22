@@ -128,16 +128,11 @@ object TopCtrIdea {
           } else {
             ad
           }
-
       }
       .sortBy(x => x.ctr, false)
-      .take(10000)
+      .take(40000)
       .map {
         x =>
-          x.copy(
-            agent_id = ub.getOrElse(x.user_id, 0)
-          )
-
           val ad = titles.getOrElse(x.idea_id, null)
           if (ad != null) {
             val img = ad._2.map(x => imgs.getOrElse(x, null)).filter(_ != null)
