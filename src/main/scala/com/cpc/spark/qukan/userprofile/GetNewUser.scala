@@ -3,6 +3,7 @@ package com.cpc.spark.qukan.userprofile
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.log.anal.ConditionTouchedUV.redis
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
@@ -124,6 +125,14 @@ object GetNewUser {
             n5 = x._2
           }
       }
+    redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
+    redis.select(3)
+
+    val key = "touched_uv_percent_old_or_new_user_1"
+    val key2 = "touched_uv_percent_old_or_new_user_2"
+
+    redis.set(key, "%.8f".format(n2.toDouble/n1.toDouble))
+    redis.set(key2, "%.8f".format(n3.toDouble/n1.toDouble))
     println("total: %d older: %d newUser: %d olderUpdateUser: %d newUpdateUser: %d".format(n1, n2, n3, n4, n5))
     ctx.stop()
   }

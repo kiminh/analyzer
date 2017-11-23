@@ -135,7 +135,14 @@ object FeatureDict {
       val ret = s"scp -r /data/cpc/anal/conf/mldict work@$ip:/home/work/ml/conf/" !
     }
   }
-
+  def updateAntispamServerData(conf: Config): Unit = {
+    val nodes = conf.getConfigList("mlserver.nodes")
+    for (i <- 0 until nodes.size()) {
+      val node = nodes.get(i)
+      val ip = node.getString("ip")
+      val ret = s"scp -r /data/cpc/anal/conf/mldict work@$ip:/home/work/antispamml/conf/" !
+    }
+  }
   private def updateDictFile(filename: String, last: Seq[String]): Unit = {
     val file = "/data/cpc/anal/conf/mldict/" + filename
     val old = Source.fromFile(file, "UTF-8").getLines().filter(_.length > 0).toSeq
