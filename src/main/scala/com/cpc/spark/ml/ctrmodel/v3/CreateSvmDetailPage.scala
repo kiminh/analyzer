@@ -3,7 +3,6 @@ package com.cpc.spark.ml.ctrmodel.v3
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import com.cpc.spark.common.Utils
 import com.cpc.spark.log.parser.UnionLog
 import com.cpc.spark.ml.common.FeatureDict
 import com.typesafe.config.ConfigFactory
@@ -13,9 +12,9 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import scala.util.Random
 
 /*
-样本: 全媒体模型
+样本:全媒体详情页数据
  */
-object CreateSvm {
+object CreateSvmDetailPage {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 7) {
@@ -38,7 +37,7 @@ object CreateSvm {
     val updateDict = args(6).toBoolean
     val hour = args(7)
     val ctx = SparkSession.builder()
-      .appName("create all media svm data code:v3 data:" + version)
+      .appName("create detail page svm data code:v3 data:" + version)
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
@@ -57,7 +56,7 @@ object CreateSvm {
       val ulog = ctx.sql(
         s"""
            |select * from dl_cpc.cpc_union_log where `date` = "%s" %s and isshow = 1
-           |and adslot_type in (1, 2)
+           |and adslot_type = 2
            |and ext['antispam'].int_value = 0
         """.stripMargin.format(date, hourSql))
         .as[UnionLog].rdd
@@ -71,13 +70,13 @@ object CreateSvm {
       FeatureDict.updateServerData(ConfigFactory.load())
       val bdict = ctx.sparkContext.broadcast(FeatureDict.dict)
       val train = ulog(0).filter {
-          u =>
-            var ret = false
-            if (u.isclick == 1 || Random.nextInt(rate(1)) < rate(0)) {
-              ret = true
-            }
-            ret
-        }
+        u =>
+          var ret = false
+          if (u.isclick == 1 || Random.nextInt(rate(1)) < rate(0)) {
+            ret = true
+          }
+          ret
+      }
         .mapPartitions {
           p =>
             val dict = bdict.value
