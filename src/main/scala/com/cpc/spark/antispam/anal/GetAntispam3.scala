@@ -1,4 +1,4 @@
-package com.cpc.spark.small.tool
+package com.cpc.spark.antispam.anal
 
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
