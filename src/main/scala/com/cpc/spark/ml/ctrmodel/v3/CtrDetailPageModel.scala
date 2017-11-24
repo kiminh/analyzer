@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.train
+package com.cpc.spark.ml.ctrmodel.v3
 
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
@@ -10,12 +10,13 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.rdd.RDD
-
+import com.cpc.spark.ml.train.LRIRModel
 import scala.util.Random
 /**
-  * Created by zhaolei on 06/11/2017.
+  * Created by zhaolei on 15/11/2017.
+  * All media and detail page model
   */
-object CtrAllMediaModel {
+object CtrDetailPageModel {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 10) {
@@ -42,7 +43,7 @@ object CtrAllMediaModel {
     val irfile = args(9)
 
     val model = new LRIRModel
-    val ctx = model.initSpark("cpc ctr model %s [%s]".format(mode, modelPath))
+    val ctx = model.initSpark("cpc ctr detail page model %s [%s]".format(mode, modelPath))
 
     val fmt = new SimpleDateFormat("yyyy-MM-dd")
     val date = new SimpleDateFormat("yyyy-MM-dd-HH").format(new Date().getTime)
@@ -64,55 +65,9 @@ object CtrAllMediaModel {
         .coalesce(2000)
       model.loadLRmodel(modelPath)
     } else {
-
-      var rawData : RDD[LabeledPoint] = null
-
-      //前3天-前1天,取全量数据
-      rawData = MLUtils.loadLibSVMFile(ctx.sparkContext,"%s/{%s}".format(inpath, pathSep.takeRight(3).mkString(",")))
-
-      val tmp = rawData.cache()
-      tmp.map {
-        x =>
-          var label = 0
-          if (x.label > 0.01) {
-            label = 1
-          }
-          (label, 1)
-      }
-        .reduceByKey((x, y) => x + y)
-        .toLocalIterator
-        .foreach( x => println(pathSep.takeRight(3).mkString(",") + " " + x))
-
-      tmp.unpersist()
-
-      //前10天-前7天,分别取1/10,2/10,...,7/10的训练数据
-      var num = 1
-      pathSep.take(7).foreach{
-        pathSeqDay =>
-          val dayData = MLUtils.loadLibSVMFile(ctx.sparkContext,"%s/{%s}".format(inpath, pathSeqDay))
-            .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
-            .randomSplit(Array( num/10.0, 1 - num/10.0 ), seed = new Date().getTime)
-          num += 1
-          rawData = rawData.union(dayData(0))
-
-          val tmp = dayData(0).cache()
-          tmp.map {
-            x =>
-              var label = 0
-              if (x.label > 0.01) {
-                label = 1
-              }
-              (label, 1)
-          }
-            .reduceByKey((x, y) => x + y)
-            .toLocalIterator
-            .foreach( x => println(pathSeqDay + " " + x))
-
-          tmp.unpersist()
-      }
-
+      val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
       val totalNum = rawData.count()
-      val svm = rawData.coalesce(totalNum.toInt / 10000)
+      val svm = rawData.coalesce(totalNum.toInt / 20000)
         //random pick 1/pnRate negative sample
         .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
         .randomSplit(Array(sampleRate, 1 - sampleRate), seed = new Date().getTime)
@@ -145,12 +100,12 @@ object CtrAllMediaModel {
     }
     println("testing...")
     model.test(testSample)
+    model.printLrTestLog()
     val lrTestLog = model.getLrTestLog()
-    println(lrTestLog)
     println("done")
 
     var updateOnlineData = 0
-    val lrfilepath = "/data/cpc/anal/model/logistic_all_media_%s.txt".format(date)
+    val lrfilepath = "/data/cpc/anal/model/logistic_detail_page_%s.txt".format(date)
     if (mode.startsWith("train")) {
       model.saveText(lrfilepath)
 
@@ -161,7 +116,7 @@ object CtrAllMediaModel {
     }
 
     var irError = 0d
-    val irfilepath = "/data/cpc/anal/model/isotonic_all_media_%s.txt".format(date)
+    val irfilepath = "/data/cpc/anal/model/isotonic_detail_page_%s.txt".format(date)
     if (mode.endsWith("+ir")) {
       println("start isotonic regression")
       irError = model.runIr(binNum, 0.9)
@@ -201,8 +156,8 @@ object CtrAllMediaModel {
         |%s
         |
         """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC(), irError, lrTestLog, irBinsLog, nodes)
-    CUtils.sendMail(txt, "CTR model train " + result, Seq("cpc-rd@innotechx.com","rd@aiclk.com"))
-    
+    CUtils.sendMail(txt, "CTR detail page model train " + result, Seq("cpc-rd@innotechx.com","rd@aiclk.com"))
+
     println("all done")
     model.stopSpark()
   }
