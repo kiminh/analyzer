@@ -68,4 +68,18 @@ object Utils {
     }
     log.mkString("\n")
   }
+  def updateAntispamOnlineData(srcfile: String, destfile: String, conf: Config): String = {
+    val nodes = conf.getConfigList("mlserver.nodes")
+    var log = Seq[String]()
+    for (i <- 0 until nodes.size()) {
+      val node = nodes.get(i)
+      var name = node.getString("name")
+      val ip = node.getString("ip")
+      val cmd = s"scp $srcfile work@$ip:/home/work/antispamml/model/$destfile"
+      log = log :+ "%s %s".format(name, ip)
+      val ret = cmd !
+    }
+    log.mkString("\n")
+  }
 }
+

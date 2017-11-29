@@ -124,7 +124,7 @@ object AntispamModel {
     var nodes = ""
     if (updateOnlineData == 1) {
       println("replace online data")
-      nodes = Utils.updateOnlineData(lrfilepath, lrfile, conf)
+      nodes = Utils.updateAntispamOnlineData(lrfilepath, lrfile, conf)
       //Utils.updateOnlineData(irfilepath, irfile, conf)
       result = "success"
     }
