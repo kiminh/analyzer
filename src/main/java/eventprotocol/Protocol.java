@@ -2443,7 +2443,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasMajor()) {
         hash = (37 * hash) + MAJOR_FIELD_NUMBER;
         hash = (53 * hash) + getMajor();
@@ -3201,7 +3201,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasWidth()) {
         hash = (37 * hash) + WIDTH_FIELD_NUMBER;
         hash = (53 * hash) + getWidth();
@@ -3917,7 +3917,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasPackageName()) {
         hash = (37 * hash) + PACKAGE_NAME_FIELD_NUMBER;
         hash = (53 * hash) + getPackageName().hashCode();
@@ -4757,7 +4757,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasDomain()) {
         hash = (37 * hash) + DOMAIN_FIELD_NUMBER;
         hash = (53 * hash) + getDomain().hashCode();
@@ -5489,7 +5489,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasUserAgent()) {
         hash = (37 * hash) + USER_AGENT_FIELD_NUMBER;
         hash = (53 * hash) + getUserAgent().hashCode();
@@ -6622,7 +6622,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasId()) {
         hash = (37 * hash) + ID_FIELD_NUMBER;
         hash = (53 * hash) + getId().hashCode();
@@ -8130,7 +8130,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasMac()) {
         hash = (37 * hash) + MAC_FIELD_NUMBER;
         hash = (53 * hash) + getMac().hashCode();
@@ -9144,7 +9144,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasIp()) {
         hash = (37 * hash) + IP_FIELD_NUMBER;
         hash = (53 * hash) + getIp().hashCode();
@@ -10497,7 +10497,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -11843,7 +11843,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -13702,7 +13702,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -14572,7 +14572,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -15531,7 +15531,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasDsp()) {
         hash = (37 * hash) + DSP_FIELD_NUMBER;
         hash = (53 * hash) + dsp_;
@@ -16943,7 +16943,7 @@ public final class Protocol {
           return memoizedHashCode;
         }
         int hash = 41;
-        hash = (19 * hash) + getDescriptorForType().hashCode();
+        hash = (19 * hash) + getDescriptor().hashCode();
         if (hasCryptoType()) {
           hash = (37 * hash) + CRYPTO_TYPE_FIELD_NUMBER;
           hash = (53 * hash) + cryptoType_;
@@ -18080,6 +18080,32 @@ public final class Protocol {
        * <code>optional .eventprotocol.Network network = 103;</code>
        */
       eventprotocol.Protocol.NetworkOrBuilder getNetworkOrBuilder();
+
+      /**
+       * <pre>
+       * 点击referer
+       * </pre>
+       *
+       * <code>optional string event_referer = 104;</code>
+       */
+      boolean hasEventReferer();
+      /**
+       * <pre>
+       * 点击referer
+       * </pre>
+       *
+       * <code>optional string event_referer = 104;</code>
+       */
+      java.lang.String getEventReferer();
+      /**
+       * <pre>
+       * 点击referer
+       * </pre>
+       *
+       * <code>optional string event_referer = 104;</code>
+       */
+      com.google.protobuf.ByteString
+          getEventRefererBytes();
     }
     /**
      * Protobuf type {@code eventprotocol.Event.Body}
@@ -18107,6 +18133,7 @@ public final class Protocol {
         eventMachine_ = "";
         debug_ = false;
         eventId_ = 0L;
+        eventReferer_ = "";
       }
 
       @java.lang.Override
@@ -18398,6 +18425,12 @@ public final class Protocol {
                   network_ = subBuilder.buildPartial();
                 }
                 bitField0_ |= 0x01000000;
+                break;
+              }
+              case 834: {
+                com.google.protobuf.ByteString bs = input.readBytes();
+                bitField0_ |= 0x02000000;
+                eventReferer_ = bs;
                 break;
               }
             }
@@ -20116,7 +20149,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasCountry()) {
             hash = (37 * hash) + COUNTRY_FIELD_NUMBER;
             hash = (53 * hash) + getCountry();
@@ -20968,7 +21001,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasType()) {
             hash = (37 * hash) + TYPE_FIELD_NUMBER;
             hash = (53 * hash) + type_;
@@ -22581,7 +22614,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasOs()) {
             hash = (37 * hash) + OS_FIELD_NUMBER;
             hash = (53 * hash) + os_;
@@ -25009,7 +25042,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasMediaId()) {
             hash = (37 * hash) + MEDIA_ID_FIELD_NUMBER;
             hash = (53 * hash) + getMediaId().hashCode();
@@ -26950,7 +26983,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasUserId()) {
             hash = (37 * hash) + USER_ID_FIELD_NUMBER;
             hash = (53 * hash) + getUserId();
@@ -28236,7 +28269,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasInterestid()) {
             hash = (37 * hash) + INTERESTID_FIELD_NUMBER;
             hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
@@ -29266,7 +29299,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (getInterestsCount() > 0) {
             hash = (37 * hash) + INTERESTS_FIELD_NUMBER;
             hash = (53 * hash) + getInterestsList().hashCode();
@@ -30818,7 +30851,7 @@ public final class Protocol {
               return memoizedHashCode;
             }
             int hash = 41;
-            hash = (19 * hash) + getDescriptorForType().hashCode();
+            hash = (19 * hash) + getDescriptor().hashCode();
             if (hasSearchClickCountHitCache()) {
               hash = (37 * hash) + SEARCH_CLICK_COUNT_HIT_CACHE_FIELD_NUMBER;
               hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
@@ -31486,7 +31519,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasScore()) {
             hash = (37 * hash) + SCORE_FIELD_NUMBER;
             hash = (53 * hash) + getScore();
@@ -32840,7 +32873,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasType()) {
             hash = (37 * hash) + TYPE_FIELD_NUMBER;
             hash = (53 * hash) + type_;
@@ -34570,7 +34603,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasTargetUrl()) {
             hash = (37 * hash) + TARGET_URL_FIELD_NUMBER;
             hash = (53 * hash) + getTargetUrl().hashCode();
@@ -36235,7 +36268,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasPackageName()) {
             hash = (37 * hash) + PACKAGE_NAME_FIELD_NUMBER;
             hash = (53 * hash) + getPackageName().hashCode();
@@ -37261,7 +37294,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasType()) {
             hash = (37 * hash) + TYPE_FIELD_NUMBER;
             hash = (53 * hash) + type_;
@@ -38169,7 +38202,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasCountry()) {
             hash = (37 * hash) + COUNTRY_FIELD_NUMBER;
             hash = (53 * hash) + getCountry();
@@ -39652,6 +39685,60 @@ public final class Protocol {
         return network_ == null ? eventprotocol.Protocol.Network.getDefaultInstance() : network_;
       }
 
+      public static final int EVENT_REFERER_FIELD_NUMBER = 104;
+      private volatile java.lang.Object eventReferer_;
+      /**
+       * <pre>
+       * 点击referer
+       * </pre>
+       *
+       * <code>optional string event_referer = 104;</code>
+       */
+      public boolean hasEventReferer() {
+        return ((bitField0_ & 0x02000000) == 0x02000000);
+      }
+      /**
+       * <pre>
+       * 点击referer
+       * </pre>
+       *
+       * <code>optional string event_referer = 104;</code>
+       */
+      public java.lang.String getEventReferer() {
+        java.lang.Object ref = eventReferer_;
+        if (ref instanceof java.lang.String) {
+          return (java.lang.String) ref;
+        } else {
+          com.google.protobuf.ByteString bs = 
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            eventReferer_ = s;
+          }
+          return s;
+        }
+      }
+      /**
+       * <pre>
+       * 点击referer
+       * </pre>
+       *
+       * <code>optional string event_referer = 104;</code>
+       */
+      public com.google.protobuf.ByteString
+          getEventRefererBytes() {
+        java.lang.Object ref = eventReferer_;
+        if (ref instanceof java.lang.String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          eventReferer_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+
       private byte memoizedIsInitialized = -1;
       public final boolean isInitialized() {
         byte isInitialized = memoizedIsInitialized;
@@ -39803,6 +39890,9 @@ public final class Protocol {
         if (((bitField0_ & 0x01000000) == 0x01000000)) {
           output.writeMessage(103, getNetwork());
         }
+        if (((bitField0_ & 0x02000000) == 0x02000000)) {
+          com.google.protobuf.GeneratedMessageV3.writeString(output, 104, eventReferer_);
+        }
         unknownFields.writeTo(output);
       }
 
@@ -39918,6 +40008,9 @@ public final class Protocol {
         if (((bitField0_ & 0x01000000) == 0x01000000)) {
           size += com.google.protobuf.CodedOutputStream
             .computeMessageSize(103, getNetwork());
+        }
+        if (((bitField0_ & 0x02000000) == 0x02000000)) {
+          size += com.google.protobuf.GeneratedMessageV3.computeStringSize(104, eventReferer_);
         }
         size += unknownFields.getSerializedSize();
         memoizedSize = size;
@@ -40063,6 +40156,11 @@ public final class Protocol {
           result = result && getNetwork()
               .equals(other.getNetwork());
         }
+        result = result && (hasEventReferer() == other.hasEventReferer());
+        if (hasEventReferer()) {
+          result = result && getEventReferer()
+              .equals(other.getEventReferer());
+        }
         result = result && unknownFields.equals(other.unknownFields);
         return result;
       }
@@ -40073,7 +40171,7 @@ public final class Protocol {
           return memoizedHashCode;
         }
         int hash = 41;
-        hash = (19 * hash) + getDescriptorForType().hashCode();
+        hash = (19 * hash) + getDescriptor().hashCode();
         if (hasType()) {
           hash = (37 * hash) + TYPE_FIELD_NUMBER;
           hash = (53 * hash) + type_;
@@ -40183,6 +40281,10 @@ public final class Protocol {
         if (hasNetwork()) {
           hash = (37 * hash) + NETWORK_FIELD_NUMBER;
           hash = (53 * hash) + getNetwork().hashCode();
+        }
+        if (hasEventReferer()) {
+          hash = (37 * hash) + EVENT_REFERER_FIELD_NUMBER;
+          hash = (53 * hash) + getEventReferer().hashCode();
         }
         hash = (29 * hash) + unknownFields.hashCode();
         memoizedHashCode = hash;
@@ -40426,6 +40528,8 @@ public final class Protocol {
             networkBuilder_.clear();
           }
           bitField0_ = (bitField0_ & ~0x04000000);
+          eventReferer_ = "";
+          bitField0_ = (bitField0_ & ~0x08000000);
           return this;
         }
 
@@ -40616,6 +40720,10 @@ public final class Protocol {
           } else {
             result.network_ = networkBuilder_.build();
           }
+          if (((from_bitField0_ & 0x08000000) == 0x08000000)) {
+            to_bitField0_ |= 0x02000000;
+          }
+          result.eventReferer_ = eventReferer_;
           result.bitField0_ = to_bitField0_;
           onBuilt();
           return result;
@@ -40776,6 +40884,11 @@ public final class Protocol {
           }
           if (other.hasNetwork()) {
             mergeNetwork(other.getNetwork());
+          }
+          if (other.hasEventReferer()) {
+            bitField0_ |= 0x08000000;
+            eventReferer_ = other.eventReferer_;
+            onChanged();
           }
           this.mergeUnknownFields(other.unknownFields);
           onChanged();
@@ -44051,6 +44164,106 @@ public final class Protocol {
           }
           return networkBuilder_;
         }
+
+        private java.lang.Object eventReferer_ = "";
+        /**
+         * <pre>
+         * 点击referer
+         * </pre>
+         *
+         * <code>optional string event_referer = 104;</code>
+         */
+        public boolean hasEventReferer() {
+          return ((bitField0_ & 0x08000000) == 0x08000000);
+        }
+        /**
+         * <pre>
+         * 点击referer
+         * </pre>
+         *
+         * <code>optional string event_referer = 104;</code>
+         */
+        public java.lang.String getEventReferer() {
+          java.lang.Object ref = eventReferer_;
+          if (!(ref instanceof java.lang.String)) {
+            com.google.protobuf.ByteString bs =
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              eventReferer_ = s;
+            }
+            return s;
+          } else {
+            return (java.lang.String) ref;
+          }
+        }
+        /**
+         * <pre>
+         * 点击referer
+         * </pre>
+         *
+         * <code>optional string event_referer = 104;</code>
+         */
+        public com.google.protobuf.ByteString
+            getEventRefererBytes() {
+          java.lang.Object ref = eventReferer_;
+          if (ref instanceof String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            eventReferer_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+        /**
+         * <pre>
+         * 点击referer
+         * </pre>
+         *
+         * <code>optional string event_referer = 104;</code>
+         */
+        public Builder setEventReferer(
+            java.lang.String value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x08000000;
+          eventReferer_ = value;
+          onChanged();
+          return this;
+        }
+        /**
+         * <pre>
+         * 点击referer
+         * </pre>
+         *
+         * <code>optional string event_referer = 104;</code>
+         */
+        public Builder clearEventReferer() {
+          bitField0_ = (bitField0_ & ~0x08000000);
+          eventReferer_ = getDefaultInstance().getEventReferer();
+          onChanged();
+          return this;
+        }
+        /**
+         * <pre>
+         * 点击referer
+         * </pre>
+         *
+         * <code>optional string event_referer = 104;</code>
+         */
+        public Builder setEventRefererBytes(
+            com.google.protobuf.ByteString value) {
+          if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x08000000;
+          eventReferer_ = value;
+          onChanged();
+          return this;
+        }
         public final Builder setUnknownFields(
             final com.google.protobuf.UnknownFieldSet unknownFields) {
           return super.setUnknownFields(unknownFields);
@@ -44739,7 +44952,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasId()) {
             hash = (37 * hash) + ID_FIELD_NUMBER;
             hash = (53 * hash) + getId();
@@ -45652,7 +45865,7 @@ public final class Protocol {
           return memoizedHashCode;
         }
         int hash = 41;
-        hash = (19 * hash) + getDescriptorForType().hashCode();
+        hash = (19 * hash) + getDescriptor().hashCode();
         if (getUnknownCount() > 0) {
           hash = (37 * hash) + UNKNOWN_FIELD_NUMBER;
           hash = (53 * hash) + getUnknownList().hashCode();
@@ -47093,7 +47306,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasHead()) {
         hash = (37 * hash) + HEAD_FIELD_NUMBER;
         hash = (53 * hash) + getHead().hashCode();
@@ -48141,7 +48354,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasTimestamp()) {
         hash = (37 * hash) + TIMESTAMP_FIELD_NUMBER;
         hash = (53 * hash) + getTimestamp();
@@ -48739,7 +48952,7 @@ public final class Protocol {
       ".ClientType\022\'\n\007version\030\002 \002(\0132\026.eventprot" +
       "ocol.Version\"b\n\007DspInfo\022\037\n\003dsp\030\001 \002(\0162\022.e" +
       "ventprotocol.Dsp\022\020\n\010media_id\030\002 \001(\t\022\022\n\nch" +
-      "annel_id\030\003 \001(\t\022\020\n\010timecost\030\004 \001(\005\"\336\'\n\005Eve" +
+      "annel_id\030\003 \001(\t\022\020\n\010timecost\030\004 \001(\005\"\365\'\n\005Eve" +
       "nt\022\'\n\004head\030\001 \002(\0132\031.eventprotocol.Event.H" +
       "ead\022\'\n\004body\030\002 \002(\0132\031.eventprotocol.Event." +
       "Body\022)\n\005extra\030\003 \001(\0132\032.eventprotocol.Even" +
@@ -48755,7 +48968,7 @@ public final class Protocol {
       "YPE\020\005\022\025\n\021BODY_BASE64_ERROR\020\006\022\027\n\023BODY_PRO" +
       "TOBUF_ERROR\020\007\022\023\n\017EXTRA_RSA_ERROR\020\010\022\026\n\022EX" +
       "TRA_FORMAT_ERROR\020\t\022\035\n\031APPEND_TARGET_PARA",
-      "M_ERROR\020\n\032\333 \n\004Body\0221\n\004type\030\001 \002(\0162#.event" +
+      "M_ERROR\020\n\032\362 \n\004Body\0221\n\004type\030\001 \002(\0162#.event" +
       "protocol.Event.Body.EventType\022\021\n\tsearch_" +
       "id\030\002 \001(\t\022\030\n\020search_timestamp\030\003 \001(\r\022\021\n\tse" +
       "arch_ip\030\004 \001(\r\022\027\n\017event_timestamp\030\005 \001(\r\022\020" +
@@ -48780,123 +48993,123 @@ public final class Protocol {
       "dy.Location\022\r\n\005debug\030d \001(\010\022\020\n\010event_id\030e" +
       " \001(\004\022:\n\013userprofile\030f \001(\0132%.eventprotoco" +
       "l.Event.Body.UserProfile\022\'\n\007network\030g \001(" +
-      "\0132\026.eventprotocol.Network\032F\n\006Region\022\017\n\007c" +
-      "ountry\030\001 \002(\r\022\020\n\010province\030\002 \002(\r\022\014\n\004city\030\003" +
-      " \002(\r\022\013\n\003isp\030\004 \001(\r\032^\n\010DeviceId\0224\n\004type\030\001 " +
-      "\002(\0162&.eventprotocol.Event.Body.DeviceIdT" +
-      "ype\022\n\n\002id\030\002 \002(\t\022\020\n\010original\030\003 \001(\010\032\332\002\n\006De",
-      "vice\022!\n\002os\030\001 \001(\0162\025.eventprotocol.OSType\022" +
-      ")\n\tosversion\030\002 \001(\0132\026.eventprotocol.Versi" +
-      "on\022/\n\003ids\030\003 \003(\0132\".eventprotocol.Event.Bo" +
-      "dy.DeviceId\022\r\n\005brand\030\004 \001(\t\022\r\n\005model\030\005 \001(" +
-      "\t\022\021\n\tuseragent\030\006 \001(\014\0226\n\007browser\030\007 \001(\0162%." +
-      "eventprotocol.Event.Body.BrowserType\022\013\n\003" +
-      "uid\030\010 \001(\t\022\017\n\007ua_sign\030\t \001(\t\022\020\n\010screen_w\030\n" +
-      " \001(\005\022\020\n\010screen_h\030\013 \001(\005\022\022\n\nphoneprice\030\014 \001" +
-      "(\r\022\022\n\nphonelevel\030\r \001(\r\032\322\001\n\005Media\022\020\n\010medi" +
-      "a_id\030\001 \002(\t\022\022\n\nchannel_id\030\002 \001(\t\022\024\n\014packag",
-      "e_name\030\003 \001(\t\022\'\n\007version\030\004 \001(\0132\026.eventpro" +
-      "tocol.Version\022\021\n\tadslot_id\030\005 \001(\t\0229\n\013adsl" +
-      "ot_type\030\006 \001(\0162$.eventprotocol.Event.Body" +
-      ".AdslotType\022\026\n\016sub_account_id\030\007 \001(\t\032\222\002\n\002" +
-      "Ad\022\017\n\007user_id\030\001 \001(\r\022\017\n\007plan_id\030\002 \001(\r\022\020\n\010" +
-      "group_id\030\003 \001(\r\022\022\n\nproduct_id\030\004 \001(\r\022\017\n\007un" +
-      "it_id\030\005 \001(\r\022\023\n\013template_id\030\006 \001(\r\022.\n\004type" +
-      "\030\007 \001(\0162 .eventprotocol.Event.Body.AdType" +
-      "\022>\n\013interaction\030\010 \001(\0162).eventprotocol.Ev" +
-      "ent.Body.InteractionType\022\r\n\005score\030\t \001(\r\022",
-      "\016\n\006domain\030\n \001(\t\022\017\n\007adidstr\030\013 \001(\t\0321\n\014Inte" +
-      "restItem\022\022\n\ninterestid\030\001 \001(\004\022\r\n\005score\030\002 " +
-      "\001(\004\032\272\001\n\013UserProfile\0229\n\tinterests\030\001 \003(\0132&" +
-      ".eventprotocol.Event.Body.InterestItem\022\013" +
-      "\n\003age\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021" +
-      "\n\tpcategory\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\ns" +
-      "hare_coin\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\032\235\002\n\010Ant" +
-      "ispam\022\r\n\005score\030\001 \002(\r\022*\n\005rules\030\002 \003(\0162\033.ev" +
-      "entprotocol.AntispamRule\0227\n\005flags\030\003 \001(\0132" +
-      "(.eventprotocol.Event.Body.Antispam.Flag",
-      "s\022\017\n\007predict\030\004 \001(\002\032\213\001\n\005Flags\022$\n\034search_c" +
-      "lick_count_hit_cache\030\001 \001(\010\022\032\n\022search_cli" +
-      "ck_count\030\002 \001(\r\022$\n\034device_click_count_hit" +
-      "_cache\030\003 \001(\010\022\032\n\022device_click_count\030\004 \001(\r" +
-      "\032\360\001\n\006Charge\022\'\n\004type\030\001 \002(\0162\031.eventprotoco" +
-      "l.ChargeType\022\r\n\005price\030\002 \002(\r\022\017\n\007success\030\003" +
-      " \001(\010\022?\n\022trigger_event_type\030\004 \001(\0162#.event" +
-      "protocol.Event.Body.EventType\022\023\n\013over_bu" +
-      "dget\030\005 \001(\010\022\024\n\014over_deficit\030\006 \001(\010\022\023\n\013low_" +
-      "balance\030\007 \001(\010\022\014\n\004cash\030\010 \001(\r\022\016\n\006coupon\030\t ",
-      "\001(\r\032\364\001\n\006Action\022\022\n\ntarget_url\030\001 \001(\t\022=\n\rre" +
-      "direct_type\030\002 \001(\0162&.eventprotocol.Event." +
-      "Body.RedirectType\022\023\n\013trace_level\030\003 \001(\r\022\017" +
-      "\n\007is_post\030\004 \001(\010\022\026\n\016click_monitors\030\005 \003(\t\022" +
-      "\030\n\020trace_timepoints\030\006 \003(\r\022\025\n\rad_target_u" +
-      "rl\030\007 \001(\t\022\022\n\nuser_agent\030\010 \001(\t\022\024\n\014referer_" +
-      "host\030\t \001(\t\032\212\001\n\003App\022\024\n\014package_name\030\001 \002(\t" +
-      "\022\024\n\014install_time\030\002 \001(\r\022\023\n\013update_time\030\003 " +
-      "\001(\r\022\031\n\021last_running_time\030\004 \001(\r\022\'\n\007versio" +
-      "n\030\005 \001(\0132\026.eventprotocol.Version\032e\n\006Clien",
-      "t\0222\n\004type\030\001 \002(\0162$.eventprotocol.Event.Bo" +
-      "dy.ClientType\022\'\n\007version\030\002 \001(\0132\026.eventpr" +
-      "otocol.Version\032I\n\010Location\022\017\n\007country\030\001 " +
-      "\001(\r\022\020\n\010province\030\002 \001(\r\022\014\n\004city\030\003 \001(\r\022\014\n\004i" +
-      "sps\030\004 \003(\r\"~\n\tEventType\022\t\n\005CLICK\020\000\022\016\n\nIMP" +
-      "RESSION\020\001\022\016\n\nACTIVATION\020\002\022\014\n\010DOWNLOAD\020\003\022" +
-      "\013\n\007INSTALL\020\004\022\t\n\005ORDER\020\005\022\024\n\020INSTALL_PACKA" +
-      "GES\020\n\022\n\n\006CHARGE\020\036\"W\n\014RedirectType\022\n\n\006DIR" +
-      "ECT\020\000\022\020\n\014SYNC_TRACING\020\001\022\021\n\rDELAY_TRACING" +
-      "\020\002\022\026\n\022DELAY_POST_TRACING\020\003\"@\n\nAdslotType",
-      "\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_FEED\020\002\022\021\n\rSLO" +
-      "T_INTERACT\020\003\"\265\001\n\013BrowserType\022\022\n\016UnknownB" +
-      "rowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Chrome\020\002\022\r\n\t" +
-      "UCBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013MiuiBro" +
-      "wser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEMobileBrows" +
-      "er\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQChat\020\t\"P\n\014" +
-      "DeviceIdType\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVID" +
-      "_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\"R" +
-      "\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tTEXT_IC" +
-      "ON\020\003\022\023\n\017THREE_TEXT_ICON\020\004\022\017\n\013AD_INTERACT",
-      "\020\005\"\215\001\n\017InteractionType\022\017\n\013NO_INTERACT\020\000\022" +
-      "\021\n\rINTER_SURFING\020\001\022\022\n\016INTER_DOWNLOAD\020\002\022\021" +
-      "\n\rINTER_DIALING\020\003\022\021\n\rINTER_MESSAGE\020\004\022\016\n\n" +
-      "INTER_MAIL\020\005\022\014\n\010INTER_GP\020\006\"3\n\nClientType" +
-      "\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\032" +
-      "\227\002\n\005Extra\0220\n\007unknown\030\001 \003(\0132\037.eventprotoc" +
-      "ol.Event.Extra.Item\022\017\n\007touch_x\030\002 \001(\r\022\017\n\007" +
-      "touch_y\030\003 \001(\r\022\022\n\npress_time\030\004 \001(\r\022\022\n\nscr" +
-      "oll_num\030\005 \001(\r\022\023\n\013scroll_time\030\006 \001(\r\022\r\n\005wi" +
-      "dth\030\007 \001(\r\022\016\n\006height\030\010 \001(\r\022\023\n\013click_delta",
-      "\030\t \001(\001\022\017\n\007on_mask\030\n \001(\010\022\025\n\rdispatch_time" +
-      "\030\013 \001(\r\032!\n\004Item\022\n\n\002id\030\001 \002(\r\022\r\n\005value\030\002 \002(" +
-      "\t\"2\n\016LockerUProfile\022\021\n\ttimestamp\030\001 \002(\r\022\r" +
-      "\n\005count\030\002 \001(\r*L\n\nDeviceType\022\027\n\023UNKNOWN_D" +
-      "EVICE_TYPE\020\000\022\006\n\002PC\020\001\022\t\n\005PHONE\020\002\022\n\n\006TABLE" +
-      "T\020\003\022\006\n\002TV\020\004*&\n\tMediaType\022\007\n\003APP\020\001\022\007\n\003WEB" +
-      "\020\002\022\007\n\003WAP\020\003*;\n\006OSType\022\023\n\017UNKNOWN_OS_TYPE" +
-      "\020\000\022\013\n\007ANDROID\020\001\022\007\n\003IOS\020\002\022\006\n\002WP\020\003*p\n\014Devi" +
-      "ceIDType\022\010\n\004IMEI\020\001\022\007\n\003MAC\020\002\022\010\n\004IDFA\020\003\022\010\n" +
-      "\004AAID\020\004\022\014\n\010OPENUDID\020\005\022\r\n\tANDROIDID\020\006\022\010\n\004",
-      "UDID\020\007\022\010\n\004ODIN\020\010\022\010\n\004DUID\020\t*Q\n\rPromotionT" +
-      "ype\022\014\n\010NOACTION\020\000\022\006\n\002LP\020\001\022\014\n\010DOWNLOAD\020\002\022" +
-      "\010\n\004DAIL\020\003\022\007\n\003SMS\020\004\022\t\n\005EMAIL\020\005*`\n\013Network" +
-      "Type\022\010\n\004WIFI\020\001\022\024\n\020CELLULAR_UNKNOWN\020\002\022\017\n\013" +
-      "CELLULAR_2G\020\003\022\017\n\013CELLULAR_3G\020\004\022\017\n\013CELLUL" +
-      "AR_4G\020\005*)\n\007GeoType\022\t\n\005WGS84\020\001\022\t\n\005GCJ02\020\002" +
-      "\022\010\n\004BD09\020\003*3\n\nClientType\022\r\n\tNATIVESDK\020\001\022" +
-      "\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003*\"\n\tGeoSource\022\n\n\006" +
-      "NATIVE\020\001\022\t\n\005BAIDU\020\002*1\n\nChargeType\022\010\n\004FRE" +
-      "E\020\000\022\007\n\003CPC\020\001\022\007\n\003CPM\020\002\022\007\n\003CPA\020\003*\"\n\003Dsp\022\016\n",
-      "\nJESGOO_DSP\020\001\022\013\n\007CPC_DSP\020\002*\251\003\n\014AntispamR" +
-      "ule\022\021\n\rDUP_SEARCH_ID\020\001\022\021\n\rOUT_TIME_SPAN\020" +
-      "\002\022\014\n\010DUP_USER\020\003\022\021\n\rNEW_USER_RATE\020\004\022\022\n\016IN" +
-      "VALID_COOKIE\020\005\022\022\n\016INVALID_REGION\020\006\022\016\n\nNE" +
-      "W_COOKIE\020\007\022\r\n\tNO_COOKIE\020\010\022\022\n\016NO_DEVICE_I" +
-      "NFO\020\t\022\020\n\014NO_DEVICE_ID\020\n\022\013\n\007ON_MASK\020\013\022\n\n\006" +
-      "DUP_IP\020\014\022\022\n\016JS_CLICK_DELTA\020\r\022\021\n\rSAME_POS" +
-      "ITION\020\016\022\014\n\010NO_EXTRA\020\017\022\016\n\nNO_REFERER\020\020\022\023\n" +
-      "\017CK_DISPATCHTIME\020\021\022\n\n\006RANDOM\020\022\022\010\n\004GIFT\020\023" +
-      "\022\016\n\nBAD_METHOD\020\024\022\022\n\016SERVER_REQUEST\020\025\022\013\n\007",
-      "MAX_CTR\020\026\022\013\n\007DIFF_UA\020\027\022\r\n\tMAX_CLICK\020\030\022\017\n" +
-      "\013TRAIN_MODEL\020\031"
+      "\0132\026.eventprotocol.Network\022\025\n\revent_refer" +
+      "er\030h \001(\t\032F\n\006Region\022\017\n\007country\030\001 \002(\r\022\020\n\010p" +
+      "rovince\030\002 \002(\r\022\014\n\004city\030\003 \002(\r\022\013\n\003isp\030\004 \001(\r" +
+      "\032^\n\010DeviceId\0224\n\004type\030\001 \002(\0162&.eventprotoc" +
+      "ol.Event.Body.DeviceIdType\022\n\n\002id\030\002 \002(\t\022\020",
+      "\n\010original\030\003 \001(\010\032\332\002\n\006Device\022!\n\002os\030\001 \001(\0162" +
+      "\025.eventprotocol.OSType\022)\n\tosversion\030\002 \001(" +
+      "\0132\026.eventprotocol.Version\022/\n\003ids\030\003 \003(\0132\"" +
+      ".eventprotocol.Event.Body.DeviceId\022\r\n\005br" +
+      "and\030\004 \001(\t\022\r\n\005model\030\005 \001(\t\022\021\n\tuseragent\030\006 " +
+      "\001(\014\0226\n\007browser\030\007 \001(\0162%.eventprotocol.Eve" +
+      "nt.Body.BrowserType\022\013\n\003uid\030\010 \001(\t\022\017\n\007ua_s" +
+      "ign\030\t \001(\t\022\020\n\010screen_w\030\n \001(\005\022\020\n\010screen_h\030" +
+      "\013 \001(\005\022\022\n\nphoneprice\030\014 \001(\r\022\022\n\nphonelevel\030" +
+      "\r \001(\r\032\322\001\n\005Media\022\020\n\010media_id\030\001 \002(\t\022\022\n\ncha",
+      "nnel_id\030\002 \001(\t\022\024\n\014package_name\030\003 \001(\t\022\'\n\007v" +
+      "ersion\030\004 \001(\0132\026.eventprotocol.Version\022\021\n\t" +
+      "adslot_id\030\005 \001(\t\0229\n\013adslot_type\030\006 \001(\0162$.e" +
+      "ventprotocol.Event.Body.AdslotType\022\026\n\016su" +
+      "b_account_id\030\007 \001(\t\032\222\002\n\002Ad\022\017\n\007user_id\030\001 \001" +
+      "(\r\022\017\n\007plan_id\030\002 \001(\r\022\020\n\010group_id\030\003 \001(\r\022\022\n" +
+      "\nproduct_id\030\004 \001(\r\022\017\n\007unit_id\030\005 \001(\r\022\023\n\013te" +
+      "mplate_id\030\006 \001(\r\022.\n\004type\030\007 \001(\0162 .eventpro" +
+      "tocol.Event.Body.AdType\022>\n\013interaction\030\010" +
+      " \001(\0162).eventprotocol.Event.Body.Interact",
+      "ionType\022\r\n\005score\030\t \001(\r\022\016\n\006domain\030\n \001(\t\022\017" +
+      "\n\007adidstr\030\013 \001(\t\0321\n\014InterestItem\022\022\n\ninter" +
+      "estid\030\001 \001(\004\022\r\n\005score\030\002 \001(\004\032\272\001\n\013UserProfi" +
+      "le\0229\n\tinterests\030\001 \003(\0132&.eventprotocol.Ev" +
+      "ent.Body.InterestItem\022\013\n\003age\030\002 \001(\r\022\013\n\003se" +
+      "x\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpcategory\030\005 \001(\r" +
+      "\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshare_coin\030\007 \001(\r\022\017" +
+      "\n\007newuser\030\010 \001(\r\032\235\002\n\010Antispam\022\r\n\005score\030\001 " +
+      "\002(\r\022*\n\005rules\030\002 \003(\0162\033.eventprotocol.Antis" +
+      "pamRule\0227\n\005flags\030\003 \001(\0132(.eventprotocol.E",
+      "vent.Body.Antispam.Flags\022\017\n\007predict\030\004 \001(" +
+      "\002\032\213\001\n\005Flags\022$\n\034search_click_count_hit_ca" +
+      "che\030\001 \001(\010\022\032\n\022search_click_count\030\002 \001(\r\022$\n" +
+      "\034device_click_count_hit_cache\030\003 \001(\010\022\032\n\022d" +
+      "evice_click_count\030\004 \001(\r\032\360\001\n\006Charge\022\'\n\004ty" +
+      "pe\030\001 \002(\0162\031.eventprotocol.ChargeType\022\r\n\005p" +
+      "rice\030\002 \002(\r\022\017\n\007success\030\003 \001(\010\022?\n\022trigger_e" +
+      "vent_type\030\004 \001(\0162#.eventprotocol.Event.Bo" +
+      "dy.EventType\022\023\n\013over_budget\030\005 \001(\010\022\024\n\014ove" +
+      "r_deficit\030\006 \001(\010\022\023\n\013low_balance\030\007 \001(\010\022\014\n\004",
+      "cash\030\010 \001(\r\022\016\n\006coupon\030\t \001(\r\032\364\001\n\006Action\022\022\n" +
+      "\ntarget_url\030\001 \001(\t\022=\n\rredirect_type\030\002 \001(\016" +
+      "2&.eventprotocol.Event.Body.RedirectType" +
+      "\022\023\n\013trace_level\030\003 \001(\r\022\017\n\007is_post\030\004 \001(\010\022\026" +
+      "\n\016click_monitors\030\005 \003(\t\022\030\n\020trace_timepoin" +
+      "ts\030\006 \003(\r\022\025\n\rad_target_url\030\007 \001(\t\022\022\n\nuser_" +
+      "agent\030\010 \001(\t\022\024\n\014referer_host\030\t \001(\t\032\212\001\n\003Ap" +
+      "p\022\024\n\014package_name\030\001 \002(\t\022\024\n\014install_time\030" +
+      "\002 \001(\r\022\023\n\013update_time\030\003 \001(\r\022\031\n\021last_runni" +
+      "ng_time\030\004 \001(\r\022\'\n\007version\030\005 \001(\0132\026.eventpr",
+      "otocol.Version\032e\n\006Client\0222\n\004type\030\001 \002(\0162$" +
+      ".eventprotocol.Event.Body.ClientType\022\'\n\007" +
+      "version\030\002 \001(\0132\026.eventprotocol.Version\032I\n" +
+      "\010Location\022\017\n\007country\030\001 \001(\r\022\020\n\010province\030\002" +
+      " \001(\r\022\014\n\004city\030\003 \001(\r\022\014\n\004isps\030\004 \003(\r\"~\n\tEven" +
+      "tType\022\t\n\005CLICK\020\000\022\016\n\nIMPRESSION\020\001\022\016\n\nACTI" +
+      "VATION\020\002\022\014\n\010DOWNLOAD\020\003\022\013\n\007INSTALL\020\004\022\t\n\005O" +
+      "RDER\020\005\022\024\n\020INSTALL_PACKAGES\020\n\022\n\n\006CHARGE\020\036" +
+      "\"W\n\014RedirectType\022\n\n\006DIRECT\020\000\022\020\n\014SYNC_TRA" +
+      "CING\020\001\022\021\n\rDELAY_TRACING\020\002\022\026\n\022DELAY_POST_",
+      "TRACING\020\003\"@\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020" +
+      "\n\014CONTENT_FEED\020\002\022\021\n\rSLOT_INTERACT\020\003\"\265\001\n\013" +
+      "BrowserType\022\022\n\016UnknownBrowser\020\000\022\016\n\nMQQBr" +
+      "owser\020\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014Ba" +
+      "iduBrowser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBro" +
+      "wser\020\006\022\023\n\017IEMobileBrowser\020\007\022\022\n\016MicroMess" +
+      "enger\020\010\022\n\n\006QQChat\020\t\"P\n\014DeviceIdType\022\021\n\rD" +
+      "EVID_UNKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_" +
+      "MAC\020\002\022\016\n\nDEVID_IDFA\020\003\"R\n\006AdType\022\010\n\004TEXT\020" +
+      "\001\022\t\n\005IMAGE\020\002\022\r\n\tTEXT_ICON\020\003\022\023\n\017THREE_TEX",
+      "T_ICON\020\004\022\017\n\013AD_INTERACT\020\005\"\215\001\n\017Interactio" +
+      "nType\022\017\n\013NO_INTERACT\020\000\022\021\n\rINTER_SURFING\020" +
+      "\001\022\022\n\016INTER_DOWNLOAD\020\002\022\021\n\rINTER_DIALING\020\003" +
+      "\022\021\n\rINTER_MESSAGE\020\004\022\016\n\nINTER_MAIL\020\005\022\014\n\010I" +
+      "NTER_GP\020\006\"3\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t" +
+      "\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\032\227\002\n\005Extra\0220\n\007unkn" +
+      "own\030\001 \003(\0132\037.eventprotocol.Event.Extra.It" +
+      "em\022\017\n\007touch_x\030\002 \001(\r\022\017\n\007touch_y\030\003 \001(\r\022\022\n\n" +
+      "press_time\030\004 \001(\r\022\022\n\nscroll_num\030\005 \001(\r\022\023\n\013" +
+      "scroll_time\030\006 \001(\r\022\r\n\005width\030\007 \001(\r\022\016\n\006heig",
+      "ht\030\010 \001(\r\022\023\n\013click_delta\030\t \001(\001\022\017\n\007on_mask" +
+      "\030\n \001(\010\022\025\n\rdispatch_time\030\013 \001(\r\032!\n\004Item\022\n\n" +
+      "\002id\030\001 \002(\r\022\r\n\005value\030\002 \002(\t\"2\n\016LockerUProfi" +
+      "le\022\021\n\ttimestamp\030\001 \002(\r\022\r\n\005count\030\002 \001(\r*L\n\n" +
+      "DeviceType\022\027\n\023UNKNOWN_DEVICE_TYPE\020\000\022\006\n\002P" +
+      "C\020\001\022\t\n\005PHONE\020\002\022\n\n\006TABLET\020\003\022\006\n\002TV\020\004*&\n\tMe" +
+      "diaType\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*;\n\006OS" +
+      "Type\022\023\n\017UNKNOWN_OS_TYPE\020\000\022\013\n\007ANDROID\020\001\022\007" +
+      "\n\003IOS\020\002\022\006\n\002WP\020\003*p\n\014DeviceIDType\022\010\n\004IMEI\020" +
+      "\001\022\007\n\003MAC\020\002\022\010\n\004IDFA\020\003\022\010\n\004AAID\020\004\022\014\n\010OPENUD",
+      "ID\020\005\022\r\n\tANDROIDID\020\006\022\010\n\004UDID\020\007\022\010\n\004ODIN\020\010\022" +
+      "\010\n\004DUID\020\t*Q\n\rPromotionType\022\014\n\010NOACTION\020\000" +
+      "\022\006\n\002LP\020\001\022\014\n\010DOWNLOAD\020\002\022\010\n\004DAIL\020\003\022\007\n\003SMS\020" +
+      "\004\022\t\n\005EMAIL\020\005*`\n\013NetworkType\022\010\n\004WIFI\020\001\022\024\n" +
+      "\020CELLULAR_UNKNOWN\020\002\022\017\n\013CELLULAR_2G\020\003\022\017\n\013" +
+      "CELLULAR_3G\020\004\022\017\n\013CELLULAR_4G\020\005*)\n\007GeoTyp" +
+      "e\022\t\n\005WGS84\020\001\022\t\n\005GCJ02\020\002\022\010\n\004BD09\020\003*3\n\nCli" +
+      "entType\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPE" +
+      "NAPI\020\003*\"\n\tGeoSource\022\n\n\006NATIVE\020\001\022\t\n\005BAIDU" +
+      "\020\002*1\n\nChargeType\022\010\n\004FREE\020\000\022\007\n\003CPC\020\001\022\007\n\003C",
+      "PM\020\002\022\007\n\003CPA\020\003*\"\n\003Dsp\022\016\n\nJESGOO_DSP\020\001\022\013\n\007" +
+      "CPC_DSP\020\002*\251\003\n\014AntispamRule\022\021\n\rDUP_SEARCH" +
+      "_ID\020\001\022\021\n\rOUT_TIME_SPAN\020\002\022\014\n\010DUP_USER\020\003\022\021" +
+      "\n\rNEW_USER_RATE\020\004\022\022\n\016INVALID_COOKIE\020\005\022\022\n" +
+      "\016INVALID_REGION\020\006\022\016\n\nNEW_COOKIE\020\007\022\r\n\tNO_" +
+      "COOKIE\020\010\022\022\n\016NO_DEVICE_INFO\020\t\022\020\n\014NO_DEVIC" +
+      "E_ID\020\n\022\013\n\007ON_MASK\020\013\022\n\n\006DUP_IP\020\014\022\022\n\016JS_CL" +
+      "ICK_DELTA\020\r\022\021\n\rSAME_POSITION\020\016\022\014\n\010NO_EXT" +
+      "RA\020\017\022\016\n\nNO_REFERER\020\020\022\023\n\017CK_DISPATCHTIME\020" +
+      "\021\022\n\n\006RANDOM\020\022\022\010\n\004GIFT\020\023\022\016\n\nBAD_METHOD\020\024\022",
+      "\022\n\016SERVER_REQUEST\020\025\022\013\n\007MAX_CTR\020\026\022\013\n\007DIFF" +
+      "_UA\020\027\022\r\n\tMAX_CLICK\020\030\022\017\n\013TRAIN_MODEL\020\031"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -49005,7 +49218,7 @@ public final class Protocol {
     internal_static_eventprotocol_Event_Body_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_eventprotocol_Event_Body_descriptor,
-        new java.lang.String[] { "Type", "SearchId", "SearchTimestamp", "SearchIp", "EventTimestamp", "EventIp", "Media", "Region", "Ad", "Charge", "Dsp", "Action", "Apps", "DspInfo", "Exptags", "Cookie", "Device", "Client", "Antispam", "SearchMachine", "EventMachine", "SearchLocation", "EventLocation", "Debug", "EventId", "Userprofile", "Network", });
+        new java.lang.String[] { "Type", "SearchId", "SearchTimestamp", "SearchIp", "EventTimestamp", "EventIp", "Media", "Region", "Ad", "Charge", "Dsp", "Action", "Apps", "DspInfo", "Exptags", "Cookie", "Device", "Client", "Antispam", "SearchMachine", "EventMachine", "SearchLocation", "EventLocation", "Debug", "EventId", "Userprofile", "Network", "EventReferer", });
     internal_static_eventprotocol_Event_Body_Region_descriptor =
       internal_static_eventprotocol_Event_Body_descriptor.getNestedTypes().get(0);
     internal_static_eventprotocol_Event_Body_Region_fieldAccessorTable = new

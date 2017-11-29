@@ -494,6 +494,7 @@ message Event {
         optional uint64    event_id         = 101;  // 事件ID
         optional UserProfile   userprofile   = 102;  // 事件ID
         optional Network network             =103;
+        optional string    event_referer  = 104;   // 点击referer
     }
 
     message Extra {

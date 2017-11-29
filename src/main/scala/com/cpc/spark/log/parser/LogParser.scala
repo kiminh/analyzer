@@ -188,6 +188,7 @@ object LogParser {
         ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
         ext.update("phone_price", ExtValue(int_value = body.getDevice.getPhoneprice))
         ext.update("phone_level", ExtValue(int_value = body.getDevice.getPhonelevel))
+        ext.update("request_referer", ExtValue(string_value = body.getEventReferer))
         //ext.update("adclass", ExtValue(int_value = body.getAd.getClass_))
         val interests = body.getUserprofile.getInterestsList.iterator()
         var interRows = Seq[String]()
