@@ -11,8 +11,6 @@ import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types._
 
 import scala.collection.mutable
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
 
 
 /**
@@ -54,76 +52,92 @@ object AnalUnionLog {
       System.exit(1)
     }
     var unionData = searchData.map(x => LogParser.parseSearchLog(x.getString(0)))
+      .filter(u => u != null && u.searchid.length > 0 && u.date == date && u.hour == hour)
+      .map(u => (u.searchid, u))
+      .reduceByKey((x, y) => x)
 
     val showData = prepareSource(spark, "cpc_show", hourBefore, 2)
     if (showData != null) {
-      unionData = unionData.union(showData.map(x => LogParser.parseShowLog(x.getString(0))))
+      val showlog = showData.map(x => LogParser.parseShowLog(x.getString(0)))
+        .filter(u => u != null && u.searchid.length > 0)
+        .map(u => (u.searchid, u))
+        .reduceByKey((x, y) => x)
+
+      unionData = unionData.union(showlog)
+        .reduceByKey {
+          (x, y) =>
+            var log = x
+            var u = y
+            if (x.isshow > 0) {
+              log = y
+              u = x
+            }
+            log.copy(
+              isshow = u.isshow,
+              show_timestamp = u.show_timestamp,
+              show_network = u.show_network,
+              show_ip = u.show_ip
+            )
+        }
     }
 
     val clickData = prepareSource(spark, "cpc_click", hourBefore, 2)
     if (clickData != null) {
-      unionData = unionData.union(clickData.map(x => LogParser.parseClickLog(x.getString(0))))
-    }
+      val clicklog = clickData.map(x => LogParser.parseClickLog(x.getString(0)))
+        .filter(u => u != null && u.searchid.length > 0)
+        .map(u => (u.searchid, Seq(u)))
+        .reduceByKey(_ ++ _)
+        .map{
+          x =>
+            val v: UnionLog = null
+            (x._1, (v, x._2))
+        }
 
-    unionData = unionData
-      .filter(x => x != null && x.searchid.length > 0)
-      .map(x => (x.searchid, Seq(x)))
-      .reduceByKey {
-        (x, y) =>
-          x ++ y
-      }
-      .map {
-        x =>
-          var log = x._2.find(_.timestamp > 0).getOrElse(null)
-          if (log != null) {
-            x._2.foreach {
-              u =>
-                if (u.isshow == 1) {
-                  log = log.copy(
-                    isshow = u.isshow,
-                    show_timestamp = u.show_timestamp,
-                    show_network = u.show_network,
-                    show_ip = u.show_ip
-                  )
-                }
-                if (u.isclick == 1) {
-                  var ext = mutable.Map[String, ExtValue]()
-                  if (log.ext != null) {
-                    ext = ext ++ log.ext
-                  }
-                  if (u.isSpamClick() == 1) {
-                    val spam = ext.getOrElse("spam_click", ExtValue())
-                    ext.update("spam_click", ExtValue(int_value = spam.int_value + 1))
-                    log = log.copy(
-                      ext = ext
-                    )
-                  } else {
-                    ext.update("touch_x", u.ext("touch_x"))
-                    ext.update("touch_y", u.ext("touch_y"))
-                    ext.update("slot_width", u.ext("slot_width"))
-                    ext.update("slot_height", u.ext("slot_height"))
-                    ext.update("antispam_predict", u.ext("antispam_predict"))
-                    log = log.copy(
-                      isclick = u.isclick,
-                      click_timestamp = u.click_timestamp,
-                      antispam_score = u.antispam_score,
-                      antispam_rules = u.antispam_rules,
-                      click_network = u.click_network,
-                      click_ip = u.click_ip,
-                      ext = ext
-                    )
-                  }
-                }
+      unionData = unionData.map(x => (x._1, (x._2, Seq[UnionLog]())))
+        .union(clicklog)
+        .reduceByKey {
+          (x, y) =>
+            if (x._1 != null) {
+              (x._1, y._2)
+            } else {
+              (y._1, x._2)
             }
-          }
-          log
-      }
-      .filter(x => x != null && x.date == date && x.hour == hour)
-      .cache()
+        }
+        .filter(_._2._1 != null)
+        .map {
+          x =>
+            var log = x._2._1
+            val clicks = x._2._2
+            if (clicks.length > 0) {
+              var ext = mutable.Map[String, ExtValue]()
+              if (log.ext != null) {
+                ext = ext ++ log.ext
+              }
+
+              val spam = clicks.map(_.isSpamClick()).sum
+              val u = clicks.find(_.isSpamClick() == 0).orNull
+              ext.update("spam_click", ExtValue(int_value = spam))
+
+              if (u != null) {
+                ext = ext ++ u.ext
+                log = log.copy(
+                  isclick = u.isclick,
+                  click_timestamp = u.click_timestamp,
+                  antispam_score = u.antispam_score,
+                  antispam_rules = u.antispam_rules,
+                  click_network = u.click_network,
+                  click_ip = u.click_ip
+                )
+              }
+              log = log.copy(ext = ext)
+            }
+            (x._1, log)
+        }
+    }
 
     //clear dir
     Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
-    spark.createDataFrame(unionData)
+    spark.createDataFrame(unionData.map(_._2))
       .write
       .mode(SaveMode.Append)
       .format("parquet")
@@ -131,7 +145,7 @@ object AnalUnionLog {
       .saveAsTable("dl_cpc." + table)
     println("union", unionData.count())
 
-    var traceData = unionData.map(x => (x.searchid, (x, Seq[TraceLog]())))
+    var traceData = unionData.map(x => (x._1, (x._2, Seq[TraceLog]())))
     val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
     if (traceData1 != null) {
       traceData = traceData.union(prepareTraceSource(traceData1))
@@ -147,8 +161,7 @@ object AnalUnionLog {
             var u: UnionLog = null
             if (x._1 != null) {
               u = x._1
-            }
-            if (y._1 != null) {
+            } else if (y._1 != null) {
               u = y._1
             }
             (u, x._2 ++ y._2)
@@ -166,7 +179,6 @@ object AnalUnionLog {
                   )
               }
         }
-        .cache()
 
       //clear dir
       Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
@@ -176,12 +188,8 @@ object AnalUnionLog {
         .format("parquet")
         .partitionBy("date", "hour")
         .saveAsTable("dl_cpc." + traceTbl)
-
       println("trace", traceRdd.count())
-      traceData.unpersist()
     }
-    unionData.unpersist()
-    spark.stop()
   }
 
   val schema = StructType(Array(

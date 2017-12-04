@@ -354,7 +354,7 @@ object GetHourReport {
          |select * from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and adslotid > 0
        """.stripMargin.format(table, date, hour))
       .as[UnionLog]
-      .rdd.cache()
+      .rdd
 
     val fillData = fillLog
       .map {

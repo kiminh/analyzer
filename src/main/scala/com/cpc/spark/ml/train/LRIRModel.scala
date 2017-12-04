@@ -36,6 +36,10 @@ class LRIRModel {
     ctx
   }
 
+  def setSpark(spark: SparkSession): Unit = {
+    ctx = spark
+  }
+
   def stopSpark(): Unit = {
     ctx.stop()
   }
