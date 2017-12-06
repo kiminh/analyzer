@@ -234,6 +234,7 @@ enum AntispamRule {
     DIFF_UA         = 23;  // UA不同
     MAX_CLICK       = 24;  // 每日最大点击数量
     TRAIN_MODEL     = 25;  // 模型过滤
+    IP_ISP          = 26;  // ISP过滤
 }
 
 //// 基础数据区结束
@@ -495,6 +496,7 @@ message Event {
         optional UserProfile   userprofile   = 102;  // 事件ID
         optional Network network             =103;
         optional string    event_referer  = 104;   // 点击referer
+        optional uint32    event_isp_tag    = 105;   // event_isp_tag
     }
 
     message Extra {
