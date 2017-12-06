@@ -293,7 +293,32 @@ object LogParser {
     }
     log
   }
-
+  def parseHuDongTraceLog(txt: String): HuDongLog = {
+    var log: HuDongLog = null
+    if (txt != null) {
+      traceRegex.findFirstMatchIn(txt).foreach {
+        m =>
+          val sub = m.subgroups
+          if (sub.length == 1) {
+            log = HuDongLog()
+            sub(0).split('&').foreach {
+              x =>
+                try {
+                  val Array(k , vv) = x.trim.split("=", 2)
+                  val v = URLDecoder.decode(vv.trim, "UTF8")
+                  k match {
+                    case "t" => log = log.copy(log_type = v)
+                    case "adslot_id" => log = log.copy(adslot_id = v)
+                  }
+                } catch {
+                  case e: Exception => null
+                }
+            }
+          }
+      }
+    }
+    log
+  }
   /*
   t: seconds
    */
