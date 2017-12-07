@@ -10,12 +10,10 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.sql.SparkSession
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
-import org.apache.spark.mllib.clustering.{KMeans, KMeansModel}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.rdd.RDD
 import userprofile.Userprofile.{InterestItem, UserProfile}
 
-import scala.collection.mutable
 
 /**
   * Created by roydong on 04/12/2017.
@@ -60,9 +58,9 @@ object TagUserByApps {
     println("has loans app users", sum)
     loanUids.take(10).foreach(println)
 
-    val finUids = uidHasApps(userPkgs, "user_tag_by_apps.finance.contains")
-    sum = tagUser(finUids, conf.getInt("user_tag_by_apps.finance.tag_id"))
-    println("has finance app users", sum)
+    val finUids = uidHasApps(userPkgs, "user_tag_by_apps.invest.contains")
+    sum = tagUser(finUids, conf.getInt("user_tag_by_apps.invest.tag_id"))
+    println("has invest app users", sum)
     finUids.take(10).foreach(println)
 
     //二类电商
@@ -76,6 +74,8 @@ object TagUserByApps {
     sum = tagUser(alipayUids, conf.getInt("user_tag_by_apps.no_alipay.tag_id"))
     println("no alipay users", sum)
     alipayUids.take(10).foreach(println)
+
+    userPkgs.unpersist()
   }
 
   def uidHasNoApps(userPkgs: RDD[(String, List[String])], pkg: String): RDD[String] = {
@@ -100,12 +100,13 @@ object TagUserByApps {
       .reduceByKey(_ || _)
   }
 
-  def tagUser(uids: RDD[String], tag: Int): Double = {
+  def tagUser(uids: RDD[String], tag: Int): (Int, Int) = {
     val conf = ConfigFactory.load()
-    uids
+    val sum = uids
       .mapPartitions {
         p =>
           var n = 0
+          var n1 = 0
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           p.foreach {
             uid =>
@@ -130,85 +131,15 @@ object TagUserByApps {
                 }
                 if (!has) {
                   user.addInterestedWords(in)
+                  n1 = n1 + 1
                 }
                 n = n + 1
-                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
-          Seq(n).iterator
+          Seq((n, n1)).iterator
       }
-      .sum()
-  }
-
-  def trainKMeans(spark: SparkSession, userPkgs: RDD[(String, List[String])]): Unit = {
-    //kmeans
-    val appDict = mutable.Map[String, (Int, Double)]()
-    var n = 0
-    val appUsage = userPkgs.flatMap(x => x._2.map(v => (v, 1d)))
-      .reduceByKey(_ + _)
-      .filter(x => x._2 < 4000000)
-      .sortBy(x => x._2, false)
-      .take(1000)
-      .foreach {
-        x =>
-          appDict.update(x._1, (n, 1 / x._2))
-          n += 1
-      }
-
-    val appDictSpark = spark.sparkContext.broadcast(appDict)
-    val sample = userPkgs
-      .map {
-        x =>
-          var elems = Seq[(Int, Double)]()
-          x._2
-            .foreach {
-              pkg =>
-                val appDict = appDictSpark.value
-                val v = appDict.getOrElse(pkg, (-1, 0d))
-                if (v._1 >= 0) {
-                  elems = elems :+ (v._1, v._2)
-                }
-            }
-          if (elems.size > 0) {
-            (x._1, Vectors.sparse(1000, elems.sortBy(_._2)))
-          } else {
-            null
-          }
-      }
-      .filter(_ != null)
-      .randomSplit(Array(0.9, 0.1), 5235235L)
-
-    val train = sample(0)
-    val test = sample(1)
-    println(train.count(), train.first())
-    val clusters = KMeans.train(train.map(_._2).cache(), 40, 100)
-    Utils.deleteHdfs("/user/cpc/kmeansmodel")
-    clusters.save(spark.sparkContext, "/user/cpc/kmeansmodel")
-    //val clusters = KMeansModel.load(spark.sparkContext, "/user/cpc/kmeansmodel")
-
-    val WSSSE = clusters.computeCost(test.map(_._2))
-    println("Within Set Sum of Squared Errors = " + WSSSE)
-
-    val fw = new PrintWriter("kmeans.txt")
-    test.join(userPkgs)
-      .map {
-        x =>
-          (clusters.predict(x._2._1), Seq((x._1, x._2._2)))
-      }
-      .reduceByKey((x, y) => x ++ y)
-      .toLocalIterator
-      .foreach {
-        x =>
-          println("cluster", x._1)
-          x._2.take(20).foreach(println)
-
-          fw.write("\ncluster %d\n".format(x._1))
-          x._2.foreach {
-            w =>
-              fw.write("%s %s\n".format(w._1, w._2.mkString(" ")))
-          }
-      }
-    fw.close()
+    sum.reduce((x, y) => (x._1 + y._1, x._2 + y._2))
   }
 }
 
