@@ -38,6 +38,28 @@ object Utils {
         false
     }
   }
+
+  //得到所有排列组合 C(n, m)
+  def getCombination[T: Manifest](all: Seq[T], n: Int): Seq[Seq[T]] = {
+    var combs = Seq[Seq[T]]()
+    val comb = new Array[T](n)
+    def mapCombination(n: Int, start: Int, idx: Int, comb: Array[T]): Unit = {
+      if (n > 0) {
+        for (i <- start until all.length) {
+          comb(idx) = all(i)
+          mapCombination(n - 1, i + 1, idx + 1, comb)
+        }
+      } else {
+        var seq = Seq[T]()
+        comb.foreach {
+          v => seq = seq :+ v
+        }
+        combs :+= seq
+      }
+    }
+    mapCombination(n, 0, 0, comb)
+    combs
+  }
 }
 
 

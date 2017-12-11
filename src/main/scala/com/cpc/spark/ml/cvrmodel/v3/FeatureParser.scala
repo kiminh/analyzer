@@ -3,7 +3,8 @@ package com.cpc.spark.ml.cvrmodel.v3
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.{TraceLog, UnionLog}
-import com.cpc.spark.ml.common.{Dict, Utils}
+import com.cpc.spark.ml.common.{Dict}
+import com.cpc.spark.common.Utils
 import mlserver.mlserver._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.util.MLUtils
