@@ -155,7 +155,7 @@ object CtrModel {
         |%s
         |
         """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC(), irError, lrTestLog, irBinsLog, nodes)
-    CUtils.sendMail(txt, "CTR model train " + result, Seq("cpc-rd@innotechx.com"))
+    CUtils.sendMail(txt, "CTR model train " + result, Seq("cpc-rd@innotechx.com","rd@aiclk.com"))
 
     println("all done")
     model.stopSpark()
