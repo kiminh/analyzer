@@ -1801,6 +1801,14 @@ public final class Protocol {
      * <code>IP_ISP = 26;</code>
      */
     IP_ISP(26),
+    /**
+     * <pre>
+     * IP 黑名单过滤
+     * </pre>
+     *
+     * <code>IP_BLACK = 27;</code>
+     */
+    IP_BLACK(27),
     ;
 
     /**
@@ -2011,6 +2019,14 @@ public final class Protocol {
      * <code>IP_ISP = 26;</code>
      */
     public static final int IP_ISP_VALUE = 26;
+    /**
+     * <pre>
+     * IP 黑名单过滤
+     * </pre>
+     *
+     * <code>IP_BLACK = 27;</code>
+     */
+    public static final int IP_BLACK_VALUE = 27;
 
 
     public final int getNumber() {
@@ -2053,6 +2069,7 @@ public final class Protocol {
         case 24: return MAX_CLICK;
         case 25: return TRAIN_MODEL;
         case 26: return IP_ISP;
+        case 27: return IP_BLACK;
         default: return null;
       }
     }
@@ -49235,7 +49252,7 @@ public final class Protocol {
       "SDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003*\"\n\tGeoSour" +
       "ce\022\n\n\006NATIVE\020\001\022\t\n\005BAIDU\020\002*1\n\nChargeType\022",
       "\010\n\004FREE\020\000\022\007\n\003CPC\020\001\022\007\n\003CPM\020\002\022\007\n\003CPA\020\003*\"\n\003" +
-      "Dsp\022\016\n\nJESGOO_DSP\020\001\022\013\n\007CPC_DSP\020\002*\265\003\n\014Ant" +
+      "Dsp\022\016\n\nJESGOO_DSP\020\001\022\013\n\007CPC_DSP\020\002*\303\003\n\014Ant" +
       "ispamRule\022\021\n\rDUP_SEARCH_ID\020\001\022\021\n\rOUT_TIME" +
       "_SPAN\020\002\022\014\n\010DUP_USER\020\003\022\021\n\rNEW_USER_RATE\020\004" +
       "\022\022\n\016INVALID_COOKIE\020\005\022\022\n\016INVALID_REGION\020\006" +
@@ -49246,7 +49263,8 @@ public final class Protocol {
       "R\020\020\022\023\n\017CK_DISPATCHTIME\020\021\022\n\n\006RANDOM\020\022\022\010\n\004",
       "GIFT\020\023\022\016\n\nBAD_METHOD\020\024\022\022\n\016SERVER_REQUEST" +
       "\020\025\022\013\n\007MAX_CTR\020\026\022\013\n\007DIFF_UA\020\027\022\r\n\tMAX_CLIC" +
-      "K\020\030\022\017\n\013TRAIN_MODEL\020\031\022\n\n\006IP_ISP\020\032"
+      "K\020\030\022\017\n\013TRAIN_MODEL\020\031\022\n\n\006IP_ISP\020\032\022\014\n\010IP_B" +
+      "LACK\020\033"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

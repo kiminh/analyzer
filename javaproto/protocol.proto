@@ -235,6 +235,7 @@ enum AntispamRule {
     MAX_CLICK       = 24;  // 每日最大点击数量
     TRAIN_MODEL     = 25;  // 模型过滤
     IP_ISP          = 26;  // ISP过滤
+    IP_BLACK        = 27;  // IP 黑名单过滤
 }
 
 //// 基础数据区结束
