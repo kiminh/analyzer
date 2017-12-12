@@ -38,7 +38,7 @@ object AnalHuDongLog {
     Logger.getRootLogger.setLevel(Level.WARN)
      srcRoot = args(0)
     val hourBefore = args(1).toInt
-    val logType = args(2)
+    val logTypeStr = args(2)
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
@@ -54,14 +54,14 @@ object AnalHuDongLog {
     mariadbProp.put("password", conf.getString("mariadb.union_write.password"))
     mariadbProp.put("driver", conf.getString("mariadb.union_write.driver"))
 
-    val logTypeArr = logType.split(",")
+    val logTypeArr = logTypeStr.split(",")
     if(logTypeArr.length <= 0){
       System.err.println(
         s"""logTypeArr error
         """)
       System.exit(1)
     }
-    println("logType :"+logType)
+    println("logType :"+logTypeArr)
     val traceData = prepareSource(spark, "cpc_trace", hourBefore, 1)
     if (traceData == null) {
         spark.stop()
@@ -79,7 +79,7 @@ object AnalHuDongLog {
         ((x.adslot_id,x.log_type,x.date,x.hour),1)
     }.reduceByKey((x,y) => x+y).map{
       case ((adslot_id,log_type,date1,hour1),count) =>
-        HuDongLog(adslot_id,logType,date1,hour1,count)
+        HuDongLog(adslot_id,log_type,date1,hour1,count)
     }
 
     println("hudonglog", hudongLog.count())
@@ -101,7 +101,7 @@ object AnalHuDongLog {
       val stmt = conn.createStatement()
       val sql =
         """
-          |delete from report.%s where `date` = "%s" and hour ="%s"
+          |delete from union.%s where `date` = "%s" and hour ="%s"
         """.stripMargin.format(tbl, date, hour)
       stmt.executeUpdate(sql);
     } catch {

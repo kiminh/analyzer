@@ -159,6 +159,7 @@ object LogParser {
         ext.update("slot_width", ExtValue(int_value = extra.getWidth))
         ext.update("slot_height", ExtValue(int_value = extra.getHeight))
         ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
+        ext.update("click_ua", ExtValue(string_value = body.getAction.getUserAgent))
         log = UnionLog(
           searchid = body.getSearchId,
           isclick = 1,
@@ -189,6 +190,8 @@ object LogParser {
         ext.update("phone_price", ExtValue(int_value = body.getDevice.getPhoneprice))
         ext.update("phone_level", ExtValue(int_value = body.getDevice.getPhonelevel))
         ext.update("click_referer", ExtValue(string_value = body.getEventReferer))
+        ext.update("event_isp_tag", ExtValue(int_value = body.getEventIspTag))
+        ext.update("click_ua", ExtValue(string_value = body.getAction.getUserAgent))
         //ext.update("adclass", ExtValue(int_value = body.getAd.getClass_))
         val interests = body.getUserprofile.getInterestsList.iterator()
         var interRows = Seq[String]()
