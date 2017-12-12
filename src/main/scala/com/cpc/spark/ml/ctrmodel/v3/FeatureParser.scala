@@ -1,27 +1,40 @@
 package com.cpc.spark.ml.ctrmodel.v3
 
 import java.util.Calendar
-
-import com.cpc.spark.log.parser.{ExtValue, UnionLog}
-import com.cpc.spark.ml.common.{Dict, FeatureDict, Utils}
 import mlserver.mlserver._
+import com.cpc.spark.log.parser.UnionLog
+import com.cpc.spark.ml.common.Dict
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.util.MLUtils
 
 
 /**
-  * Created by Roy on 2017/5/15.
+  * Created by zhaolei on 2017/11/28.
   */
 object FeatureParser {
 
-  def unionLogToObject(x: UnionLog): (AdInfo, Media, User, Location, Network, Device, Long) = {
+  def unionLogToObject(x: UnionLog): (AdInfo, Media, AdSlot, User, Location, Network, Device, Long) = {
     var cls = 0
+    var pagenum = 0
+    var bookid = ""
+
     if (x.ext != null) {
-      val v = x.ext.getOrElse("adclass", null)
-      if (v != null) {
-        cls = v.int_value
+      val ac = x.ext.getOrElse("adclass", null)
+      if (ac != null) {
+        cls = ac.int_value
+      }
+
+      val pn = x.ext.getOrElse("pagenum", null)
+      if (pn != null) {
+        pagenum = pn.int_value
+      }
+
+      val bi = x.ext.getOrElse("bookid", null)
+      if (bi != null) {
+        bookid = bi.string_value
       }
     }
+
     val ad = AdInfo(
       bid = x.bid,
       ideaid = x.ideaid,
@@ -39,6 +52,12 @@ object FeatureParser {
       adslotType = x.adslot_type,
       floorbid = x.floorbid
     )
+
+    val ast = AdSlot(
+      pageNum = pagenum,
+      bookId = bookid
+    )
+
     val interests = x.interests.split(",")
       .map{
         x =>
@@ -74,13 +93,13 @@ object FeatureParser {
       os = x.os,
       model = x.model
     )
-    (ad, m, u, loc, n, d, x.timestamp * 1000L)
+    (ad, m, ast, u, loc, n, d, x.timestamp * 1000L)
   }
 
   def parseUnionLog(x: UnionLog, dict: Dict): String = {
-    val (ad, m, u, loc, n, d, t) = unionLogToObject(x)
+    val (ad, m, ast, u, loc, n, d, t) = unionLogToObject(x)
     var svm = ""
-    val vector = getVector(dict, ad, m, u, loc, n, d, x.timestamp * 1000L)
+    val vector = getVector(dict, ad, m, ast, u, loc, n, d, x.timestamp * 1000L)
     if (vector != null) {
       var p = -1
       svm = x.isclick.toString
@@ -110,8 +129,12 @@ object FeatureParser {
     svm
   }
 
-  def getVector(dict: Dict, ad: AdInfo, m: Media, u: User,
-            loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
+  def getVector(dict: Dict, ad: AdInfo, m: Media, ast: AdSlot, u: User,
+                loc: Location, n: Network, d: Device, timeMills: Long): Vector = {
+
+    val bookIdMap = Map[String,Int]("1" -> 1, "2" -> 2, "3" -> 3, "4" -> 4, "5" -> 5,
+                                    "6" -> 6, "7" -> 7, "8" -> 8, "9" -> 9, "10" -> 10)
+
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(timeMills)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
@@ -202,6 +225,18 @@ object FeatureParser {
     }
     els = els :+ (adid + i, 1d)
     i += 200000
+
+    //pagenum
+    var pnum = 0
+    if (ast.pageNum >= 1 && ast.pageNum <= 50){
+      pnum = ast.pageNum
+    }
+    els = els :+ (pnum + 1 + i, 1d)
+    i += 60
+
+    //bookid
+    els = els :+ (bookIdMap.getOrElse(ast.bookId,0) + i, 1d)
+    i += 20
 
     try {
       Vectors.sparse(i, els)

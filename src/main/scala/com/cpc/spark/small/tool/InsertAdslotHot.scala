@@ -56,8 +56,8 @@ object InsertAdslotHot {
           val touchy = x.getInt(4)
           val slot_width = x.getInt(5)
           val slot_height = x.getInt(6)
-          val stxp = (touchx.toDouble / slot_width.toDouble * 100).toInt
-          val styp = (touchy.toDouble / slot_height.toDouble * 100).toInt
+          val stxp = (touchx.toDouble / slot_width.toDouble * 10000).toInt
+          val styp = (touchy.toDouble / slot_height.toDouble * 10000).toInt
           val total = 1
           val key = "%s-%d-%d".format(adslotid, stxp, styp)
           (key, (media_appsid, adslotid, adslot_type, stxp, styp, total))

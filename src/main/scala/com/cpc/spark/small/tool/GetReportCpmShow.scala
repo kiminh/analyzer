@@ -3,6 +3,8 @@ package com.cpc.spark.small.tool
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
+import com.cpc.spark.small.tool.InsertAdslotHot.{mariadbProp, mariadbUrl}
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -10,7 +12,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   * Created by wanli on 2017/8/10.
   */
 object GetReportCpmShow {
-  val mariadbUrl = "jdbc:mysql://10.9.164.80:3306/report"
+  var mariadbUrl = ""
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger().setLevel(Level.WARN)
@@ -20,11 +22,13 @@ object GetReportCpmShow {
     cal.add(Calendar.DATE, -dayBefore)
     val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
-    val mariadbProp = new Properties()
-    mariadbProp.put("user", "report")
-    mariadbProp.put("password", "report!@#")
-    mariadbProp.put("driver", "org.mariadb.jdbc.Driver")
+    val conf = ConfigFactory.load()
+    mariadbUrl = conf.getString("mariadb.url")
 
+    val mariadbProp = new Properties()
+    mariadbProp.put("user", conf.getString("mariadb.user"))
+    mariadbProp.put("password", conf.getString("mariadb.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     val ctx = SparkSession.builder()
       .appName("small tool GetReportCpmShow")

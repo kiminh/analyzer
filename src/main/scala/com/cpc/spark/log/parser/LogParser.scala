@@ -106,6 +106,9 @@ object LogParser {
       )
       ext.update("phone_price", ExtValue(int_value = device.getPhoneprice))
       ext.update("phone_level", ExtValue(int_value = device.getPhonelevel))
+      val osv = device.getOsversion
+      ext.update("os_version", ExtValue(string_value = "%d.%d.%d.%d"
+        .format(osv.getMajor, osv.getMinor, osv.getMicro, osv.getBuild)))
       val user = notice.getUserprofile
       val interests = user.getInterestsList.iterator()
       var interRows = Seq[String]()

@@ -11,8 +11,8 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   */
 
 object InsertAdvUser {
-  val mariadbUrl = "jdbc:mysql://10.9.180.16:3306/adv"
-  val mariadbUrlNew = "jdbc:mysql://10.9.175.120/adv"
+  val mariadbUrl = "jdbc:mysql://rm-2ze36c9171fpxx438.mysql.rds.aliyuncs.com/adv"
+  val mariadbUrlNew = "jdbc:mysql://rm-2ze94yx574mt4arp0.mysql.rds.aliyuncs.com/adv"
 
   val mariadbProp = new Properties()
 

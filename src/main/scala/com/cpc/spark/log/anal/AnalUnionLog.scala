@@ -166,7 +166,6 @@ object AnalUnionLog {
                   )
               }
         }
-        .cache()
 
       //clear dir
       Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
@@ -178,10 +177,8 @@ object AnalUnionLog {
         .saveAsTable("dl_cpc." + traceTbl)
 
       println("trace", traceRdd.count())
-      traceData.unpersist()
     }
     unionData.unpersist()
-    spark.stop()
   }
 
   val schema = StructType(Array(
@@ -230,5 +227,3 @@ object AnalUnionLog {
     "{" + parts.mkString(",") + "}"
   }
 }
-
-

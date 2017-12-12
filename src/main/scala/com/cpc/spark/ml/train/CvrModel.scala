@@ -152,7 +152,7 @@ object CvrModel {
         """.stripMargin.format(date, adclass, lrfilepath, model.getAuPRC(), model.getAuROC(),
         irError, lrTestLog, irBinsLog, nodes)
 
-    CUtils.sendMail(txt, "CVR model train " + result, Seq("cpc-rd@innotechx.com"))
+    CUtils.sendMail(txt, "CVR model train " + result, Seq("cpc-rd@innotechx.com","rd@aiclk.com"))
 
     println("all done")
     model.stopSpark()

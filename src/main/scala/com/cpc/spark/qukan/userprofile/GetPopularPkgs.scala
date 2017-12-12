@@ -27,20 +27,21 @@ object GetPopularPkgs {
     cal.add(Calendar.DATE, -1)
     val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
-    val ctx = SparkSession.builder()
+    val spark = SparkSession.builder()
       .appName("cpc get popular pkgs [%s]".format(day))
       .getOrCreate()
 
     println("-----pkg usage-----")
     //user app install info
     val aiPath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(day)
-    val aiRdd = ctx.read.orc(aiPath).rdd
+    val aiRdd = spark.read.orc(aiPath).rdd
       .map(HdfsParser.parseInstallApp(_, x => true, null))
       .filter(x => x != null && x.pkgs.length > 0)
-      .flatMap(_.pkgs)
-      .cache()
+      .map(x => (x.devid, x.pkgs.map(_.name)))
+      .reduceByKey(_ ++ _)
+      .flatMap(_._2.distinct)
 
-    aiRdd.map(x => (x.name, 1))
+    aiRdd.map(x => (x, 1))
       .reduceByKey((x, y) => x + y)
       .map(x => (x._2, x._1))
       .sortByKey(false)
@@ -56,7 +57,7 @@ object GetPopularPkgs {
     aiRdd
       .flatMap {
         x =>
-          val key = x.name.replace('.', '|')
+          val key = x.replace('.', '|')
           var vals = List[Int]()
           if (pkgConf.hasPath(key)) {
             val tags = pkgConf.getIntList(key)
@@ -77,8 +78,6 @@ object GetPopularPkgs {
         x =>
           println(x)
       }
-
-    ctx.stop()
   }
 }
 

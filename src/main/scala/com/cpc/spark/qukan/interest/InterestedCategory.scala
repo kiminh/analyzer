@@ -4,11 +4,11 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.log.parser.UnionLog
-import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import userprofile.Userprofile.{InterestItem, UserProfile}
+import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 
 /**
@@ -62,9 +62,6 @@ object InterestedCategory {
   )
 
   def main(args: Array[String]): Unit = {
-
-    val adclass = args(0).toInt
-
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder()
       .appName("cpc get user interested category")
@@ -88,7 +85,6 @@ object InterestedCategory {
             (u.uid, (u.isclick, 1))
         }
         .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
-        .cache()
 
       val num1 = day1.count()
       if (num1 > 0) {
@@ -108,7 +104,7 @@ object InterestedCategory {
             (u.uid, (u.isclick, 1))
         }
         .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
-        .cache
+        .cache()
 
       val num2 = day2.count()
       if (num2 > 0) {
@@ -116,9 +112,9 @@ object InterestedCategory {
         println("day2", num2, ret2._1, ret2._2, ret2._1.toDouble / ret2._2.toDouble)
       }
 
-      val click1 = day1.filter(_._2._1 > 0).cache()
+      val click1 = day1.filter(_._2._1 > 0)
       println("click1", click1.count())
-      val day = click1.join(day2).cache()
+      val day = click1.join(day2)
       val num = day.count()
       if (num > 0) {
         val ret = day.map(_._2._2).reduce((x, y) => (x._1 + y._1, x._2 + y._2))
@@ -161,6 +157,7 @@ object InterestedCategory {
           }
           Seq(n).iterator
       }
+      day2.unpersist()
       println("update", sum.sum())
     }
 

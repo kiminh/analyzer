@@ -93,19 +93,34 @@ object HdfsParser {
     var profile: ProfileRow = null
     val devid = x.getString(1)
     if (devid != null && devid.length > 0) {
+      val data = x.getString(2)
+      val dataType = x.getInt(5)
       try {
-        val pkgs: List[AppPkg] = for {
-          JArray(pkgs) <- parse(x.getString(2))
-          JObject(pkg) <- pkgs
-          JField("firstInstallTime", JInt(ftime)) <- pkg
-          JField("lastUpdateTime", JInt(ltime)) <- pkg
-          JField("packageName", JString(pname)) <- pkg
-          p = AppPkg(
-            name = pname,
-            firstInstallTime = ftime.toLong,
-            lastUpdateTime = ltime.toLong
-          )
-        } yield p
+        var pkgs: List[AppPkg] = null
+
+        //data 有2种格式的数据
+        if (dataType == 1) {
+          pkgs = for {
+            JArray(pkgs) <- parse(x.getString(2))
+            JObject(pkg) <- pkgs
+            JField("firstInstallTime", JInt(ftime)) <- pkg
+            JField("lastUpdateTime", JInt(ltime)) <- pkg
+            JField("packageName", JString(pname)) <- pkg
+            p = AppPkg(
+              name = pname,
+              firstInstallTime = ftime.toLong,
+              lastUpdateTime = ltime.toLong
+            )
+          } yield p
+        } else {
+          pkgs = for {
+            JArray(pkgs) <- parse(x.getString(2))
+            JString(pname) <- pkgs
+            p = AppPkg(
+              name = pname
+            )
+          } yield p
+        }
 
         if (pkgs.length > 0) {
           var uis = List[UserInterest]()
