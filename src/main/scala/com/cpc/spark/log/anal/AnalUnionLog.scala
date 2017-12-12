@@ -103,6 +103,7 @@ object AnalUnionLog {
                     ext.update("slot_width", u.ext("slot_width"))
                     ext.update("slot_height", u.ext("slot_height"))
                     ext.update("antispam_predict", u.ext("antispam_predict"))
+                    ext.update("click_ua", u.ext("click_ua"))
                     log = log.copy(
                       isclick = u.isclick,
                       click_timestamp = u.click_timestamp,
