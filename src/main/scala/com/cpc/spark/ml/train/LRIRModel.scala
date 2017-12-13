@@ -281,7 +281,8 @@ class LRIRModel {
             val ctr = click / pv
             bins = bins :+ (ctr, pMin, pSum / pv, pMax)
             n = n + 1
-            if (n < 50 || n > binNum - 50) {
+            //if (n < 50 || n > binNum - 50) {
+            if (n > binNum - 20) {
               val logStr = "bin %d: %.6f(%d/%d) %.6f %.6f %.6f".format(
                 n, ctr, click.toInt, pv.toInt, pMin, pSum / pv, pMax)
 

@@ -59,6 +59,9 @@ object CtrModel {
       cal.add(Calendar.DATE, 1)
     }
 
+    var train1 = 0
+    var train0 = 0
+
     var testSample: RDD[LabeledPoint] = null
     if (mode.startsWith("test")) {
       testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
@@ -107,7 +110,16 @@ object CtrModel {
         }
         .reduceByKey((x, y) => x + y)
         .toLocalIterator
-        .foreach(println)
+        .foreach{
+          x =>
+            if(x._1 == 1){
+              train1 = x._2
+            }else{
+              train0 = x._2
+            }
+        }
+
+      println("train0: " + train0 + " , train1: " + train1)
 
       sample.take(1).foreach(x => println(x.features))
       println("training...")
@@ -166,6 +178,8 @@ object CtrModel {
     val txt =
       """
         |date: %s
+        |train set between %s and %s, %s days
+        |train set distribution: %d, %d(1) %d(0), 1:%.2f
         |LRfile: %s
         |auPRC: %.6f need > 0.07
         |auROC: %.6f need > 0.80
@@ -180,7 +194,7 @@ object CtrModel {
         |===========================
         |%s
         |
-        """.stripMargin.format(date, lrfilepath, model.getAuPRC(), model.getAuROC(), irError, lrTestLog, irBinsLog, nodes)
+        """.stripMargin.format(date, pathSep(0), pathSep(pathSep.length-1), pathSep.length, train0 + train1, train1, train0, train0/train1.toFloat, lrfilepath, model.getAuPRC(), model.getAuROC(), irError, lrTestLog, irBinsLog, nodes)
     CUtils.sendMail(txt, "CTR " + info + " model train " + result, Seq("cpc-rd@innotechx.com","rd@aiclk.com"))
 
     println("all done")
