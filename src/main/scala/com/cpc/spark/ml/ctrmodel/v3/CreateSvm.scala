@@ -45,7 +45,8 @@ object CreateSvm {
 
     val adslotTypeInfo = Map[Int,String](1 -> " and adslot_type = 1",
                                          2 -> " and adslot_type = 2",
-                                         3 -> " and adslot_type = 3")
+                                         3 -> " and adslot_type = 3",
+                                         4 -> "")
 
     val ctx = SparkSession.builder()
       .appName("create " + info + " svm data code:v6 data:" + version)

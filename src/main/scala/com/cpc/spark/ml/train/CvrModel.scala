@@ -58,6 +58,10 @@ object CvrModel {
       pathSep = pathSep :+ date
       cal.add(Calendar.DATE, 1)
     }
+
+    var train1 = 0
+    var train0 = 0
+
     println("%s/{%s}".format(inpath, pathSep.mkString(",")))
     val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
     val totalNum = rawData.count()
@@ -83,7 +87,16 @@ object CvrModel {
         }
         .reduceByKey((x, y) => x + y)
         .toLocalIterator
-        .foreach(println)
+        .foreach{
+          x =>
+            if(x._1 == 1){
+              train1 = x._2
+            }else{
+              train0 = x._2
+            }
+        }
+
+      println("train0: " + train0 + " , train1: " + train1)
 
       sample.take(1).foreach(x => println(x.features))
       println("training...")
@@ -134,6 +147,8 @@ object CvrModel {
       """
         |
         |date: %s
+        |train set between %s and %s, %s days
+        |train set distribution: %d, %d(1) %d(0), 1:%.2f
         |adclass: %d
         |LRfile: %s
         |auPRC: %.6f  need > 0.1
@@ -149,7 +164,7 @@ object CvrModel {
         |===========================
         |%s
         |
-        """.stripMargin.format(date, adclass, lrfilepath, model.getAuPRC(), model.getAuROC(),
+        """.stripMargin.format(date, pathSep(0), pathSep(pathSep.length-1), pathSep.length, train0 + train1, train1, train0, train0/train1.toFloat, adclass, lrfilepath, model.getAuPRC(), model.getAuROC(),
         irError, lrTestLog, irBinsLog, nodes)
 
     CUtils.sendMail(txt, "CVR model train " + result, Seq("cpc-rd@innotechx.com","rd@aiclk.com"))
