@@ -54,6 +54,9 @@ object FeatureParser {
     )
 
     val ast = AdSlot(
+      adslotid = x.adslotid.toInt,
+      adslotType = x.adslot_type,
+      floorbid = x.floorbid,
       pageNum = pagenum,
       bookId = bookid
     )
@@ -190,7 +193,7 @@ object FeatureParser {
     i += 1000
 
     //ad slot id
-    val slotid = dict.adslot.getOrElse(m.adslotid, 0)
+    val slotid = dict.adslot.getOrElse(ast.adslotid, 0)
     els = els :+ (slotid + i, 1d)
     i += 1000
 
@@ -203,7 +206,7 @@ object FeatureParser {
     els = els :+ (adtype + i, 1d)
     i += 10
 
-    val mchannel = dict.channel.getOrElse(m.channel, 0)
+    val mchannel = dict.channel.getOrElse(ast.channel, 0)
     els = els :+ (mchannel + i, 1d)
     i += 200
 
