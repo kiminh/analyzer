@@ -197,11 +197,11 @@ object FeatureParser {
     } else if (ad.ideaid < 30000) {
       adid = ad.ideaid  //老平台
     }
-    if (adid >= 200000) {
+    if (adid >= 280000) {
       adid = 0
     }
     els = els :+ (adid + i, 1d)
-    i += 200000
+    i += 280000
 
     try {
       Vectors.sparse(i, els)

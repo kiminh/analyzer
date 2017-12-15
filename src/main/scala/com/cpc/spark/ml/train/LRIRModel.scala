@@ -1,15 +1,17 @@
 package com.cpc.spark.ml.train
 
-import java.io.PrintWriter
+import java.io.{FileOutputStream, PrintWriter}
 import java.util.{Calendar, Date}
 
+import lrmodel.lrmodel.{IRModel, LRModel, Pack}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.optimization.{L1Updater, LBFGS, LogisticGradient, SquaredL2Updater}
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel, LabeledPoint}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-import java.util.Arrays.binarySearch
+
+import scala.collection.mutable
 
 /**
   * Created by Roy on 2017/5/15.
@@ -248,6 +250,34 @@ class LRIRModel {
     w.close()
   }
 
+  def savePbPack(parser: String, path: String): Unit = {
+    val weights = mutable.Map[Int, Double]()
+    lrmodel.weights.toSparse.foreachActive {
+      case (i, d) =>
+        weights.update(i, d)
+    }
+    val lr = LRModel(
+      parser = parser,
+      featureNum = lrmodel.numFeatures,
+      auPRC = auPRC,
+      auROC = auROC,
+      weights = weights.toMap
+    )
+    val ir = IRModel(
+      boundaries = irmodel.boundaries.toSeq,
+      predictions = irmodel.predictions.toSeq,
+      meanSquareError = irError * irError
+    )
+
+    val pack = Pack(
+      lr = Option(lr),
+      ir = Option(ir),
+      createTime = new Date().getTime
+      //TODO adid city slotid adclass
+    )
+    pack.writeTo(new FileOutputStream(path))
+  }
+
   var binsLog = Seq[String]()
 
   /*
@@ -281,7 +311,8 @@ class LRIRModel {
             val ctr = click / pv
             bins = bins :+ (ctr, pMin, pSum / pv, pMax)
             n = n + 1
-            if (n < 50 || n > binNum - 50) {
+            //if (n < 50 || n > binNum - 50) {
+            if (n > binNum - 20) {
               val logStr = "bin %d: %.6f(%d/%d) %.6f %.6f %.6f".format(
                 n, ctr, click.toInt, pv.toInt, pMin, pSum / pv, pMax)
 
@@ -298,86 +329,4 @@ class LRIRModel {
       }
     bins
   }
-
-  /*
-  var boundaries = Array[Double]()
-  var predictions = Array[Double]()
-  var caliBinNum = 0
-  var caliError = 0d
-
-  def runCalibrateData(binNum: Int, rate: Double, rateTest: Double): Double = {
-    if (lrTestResults == null) {
-      throw new Exception("must run lr and test first")
-    }
-    caliBinNum = binNum
-    val sample = lrTestResults.randomSplit(
-      Array(rate, rateTest, 1 - rate - rateTest), seed = new Date().getTime)
-    val bins = binData(sample(0), caliBinNum)
-    var n = 0
-    boundaries = new Array[Double](bins.length)
-    predictions = new Array[Double](bins.length)
-    bins.foreach {
-      x =>
-        boundaries(n) = x._4  //prediction max
-        predictions(n) = x._1   //ctr
-        n = n + 1
-    }
-    val sum = sample(1).toLocalIterator
-      .map {
-        x =>
-          val cali = calibrate(x._1)
-          (x._2, cali, 1)
-      }
-      .reduce {
-        (x, y) =>
-          (x._1 + y._1, x._2 + y._2, x._3 + y._3)
-      }
-
-    val ctr = sum._1 / sum._3
-    val caliCtr = sum._2 / sum._3
-    caliError = caliCtr / ctr
-    caliError
-  }
-
-  def saveCaliText(path: String): Unit = {
-    val w = new PrintWriter(path)
-    w.write("version 0.1\n")
-    w.write("num_data %d\n".format(boundaries.length))
-    w.write("bin_num %d\n".format(caliBinNum))
-    w.write("mean_squared_error %.10f\n".format(irError))
-    w.write("\r\n")
-    boundaries.indices.foreach {
-      i =>
-        w.write("%.10f %.10f\n".format(boundaries(i), predictions(i)))
-    }
-    w.close()
-  }
-
-  def calibrate(testData: Double): Double = {
-
-    def linearInterpolation(x1: Double, y1: Double, x2: Double, y2: Double, x: Double): Double = {
-      y1 + (y2 - y1) * (x - x1) / (x2 - x1)
-    }
-
-    val foundIndex = binarySearch(boundaries, testData)
-    val insertIndex = -foundIndex - 1
-
-    // Find if the index was lower than all values,
-    // higher than all values, in between two values or exact match.
-    if (insertIndex == 0) {
-      predictions.head
-    } else if (insertIndex == boundaries.length) {
-      predictions.last
-    } else if (foundIndex < 0) {
-      linearInterpolation(
-        boundaries(insertIndex - 1),
-        predictions(insertIndex - 1),
-        boundaries(insertIndex),
-        predictions(insertIndex),
-        testData)
-    } else {
-      predictions(foundIndex)
-    }
-  }
-  */
 }
