@@ -13,6 +13,8 @@ import scala.collection.mutable
 import mlserver.mlserver._
 import org.apache.spark.mllib.regression.LabeledPoint
 
+import scala.util.Random
+
 /**
   * Created by roydong on 15/12/2017.
   */
@@ -36,7 +38,14 @@ object LRTrain {
 
     val Array(train, test) = sample.randomSplit(Array(1 - testRate, testRate), 1231245L)
 
-    model.run(train, 200, 1e-8)
+    val tnum = train.count().toDouble
+    val pnum = train.filter(_.label > 0).count().toDouble
+    val nnum = tnum - pnum
+    println("total positive negative", tnum, pnum, nnum)
+
+    val rate = (pnum * 10 / nnum * 1000).toInt
+
+    model.run(train.filter(x => x.label > 0 || Random.nextInt(1000) < rate), 200, 1e-8)
     model.test(test)
     model.printLrTestLog()
 
@@ -66,7 +75,7 @@ object LRTrain {
           p.map {
             u =>
               val vec = parseFeature(u)
-              LabeledPoint(u.isclick, vec)
+              LabeledPoint(u.isclick.toDouble, vec)
           }
       }
   }
@@ -302,7 +311,12 @@ object LRTrain {
     i += 100
 
     //bookid
-    var bid = slot.bookId.toInt
+    var bid = 0
+    try {
+      bid = slot.bookId.toInt
+    } catch {
+      case e: Exception =>
+    }
     if (bid < 0 || bid > 50) {
       bid = 0
     }
