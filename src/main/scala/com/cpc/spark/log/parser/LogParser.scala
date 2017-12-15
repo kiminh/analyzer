@@ -162,8 +162,9 @@ object LogParser {
         search_timestamp = body.getTimestamp,
         request_url = body.getRequestUrl,
         resp_body = body.getRespBody,
+        redirect_url = body.getRedirectUrl,
         template_conf = body.getTemplateConfList().toArray.mkString(","),
-        adslot_conf = body.getRespBody,
+        adslot_conf = body.getAdslotConf,
         date = date,
         hour = hour
       )
