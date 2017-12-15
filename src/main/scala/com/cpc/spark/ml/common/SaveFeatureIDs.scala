@@ -27,6 +27,7 @@ object SaveFeatureIDs {
         """.stripMargin.format(date))
       .as[UnionLog].rdd.cache()
 
+    saveids(spark, ulog.map(_.media_appsid.toInt), "mediaid", date)
     saveids(spark, ulog.map(_.planid), "planid", date)
     saveids(spark, ulog.map(_.unitid), "unitid", date)
     saveids(spark, ulog.map(_.ideaid), "ideaid", date)

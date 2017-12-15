@@ -251,7 +251,7 @@ class LRIRModel {
     w.close()
   }
 
-  def savePbPack(parser: String, path: String): Unit = {
+  def savePbPack(parser: String, path: String, dict: Map[String, Map[Int, Int]]): Unit = {
     val weights = mutable.Map[Int, Double]()
     lrmodel.weights.toSparse.foreachActive {
       case (i, d) =>
@@ -269,12 +269,17 @@ class LRIRModel {
       predictions = irmodel.predictions.toSeq,
       meanSquareError = irError * irError
     )
-
     val pack = Pack(
       lr = Option(lr),
-      ir = Option(ir)
-      //createTime = new Date().getTime
-      //TODO adid city slotid adclass
+      ir = Option(ir),
+      createTime = new Date().getTime,
+      planid = dict("planid"),
+      unitid = dict("unitid"),
+      ideaid = dict("ideaid"),
+      slotid = dict("slotid"),
+      adclass = dict("adclass"),
+      city = dict("city"),
+      mediaid = dict("mediaid")
     )
     pack.writeTo(new FileOutputStream(path))
   }

@@ -43,7 +43,8 @@ object LRTrain {
     val pnum = train.filter(_.isclick > 0).count().toDouble
     val nnum = tnum - pnum
 
-    val rate = (pnum * 10 / nnum * 1000).toInt
+    //保证训练数据正负比例 1:9
+    val rate = (pnum * 9 / nnum * 1000).toInt
     println("total positive negative", tnum, pnum, nnum, rate)
 
     val sampleTrain = formatSample(spark, train.filter(x => x.isclick > 0 || Random.nextInt(1000) < rate))
@@ -75,7 +76,7 @@ object LRTrain {
   }
 
   var dict = mutable.Map[String, Map[Int, Int]]()
-  val dictNames = Seq("planid", "unitid", "ideaid", "slotid", "adclass", "city")
+  val dictNames = Seq("mediaid", "planid", "unitid", "ideaid", "slotid", "adclass", "city")
 
   def initFeatureDict(spark: SparkSession): Unit = {
     val calendar = Calendar.getInstance()
@@ -85,7 +86,6 @@ object LRTrain {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
       pathSeps = pathSeps :+ date
     }
-
     for (name <- dictNames) {
       val pathTpl = "/user/cpc/feature_ids/%s/{%s}"
       var n = 0
@@ -95,6 +95,7 @@ object LRTrain {
         .rdd
         .map(x => x.getInt(0))
         .distinct()
+        .sortBy(x => x)
         .toLocalIterator
         .foreach {
           id =>
@@ -110,7 +111,7 @@ object LRTrain {
   def getUnionLog(spark: SparkSession): RDD[UnionLog] = {
     val calendar = Calendar.getInstance()
     val endDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
-    calendar.add(Calendar.DATE, -1)
+    calendar.add(Calendar.DATE, -7)
     val startDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
     val stmt =
       """
