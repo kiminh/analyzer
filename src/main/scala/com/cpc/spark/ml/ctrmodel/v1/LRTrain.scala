@@ -11,6 +11,7 @@ import org.apache.spark.sql.SparkSession
 
 import scala.collection.mutable
 import mlserver.mlserver._
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.mllib.regression.LabeledPoint
 
 import scala.util.Random
@@ -24,10 +25,10 @@ object LRTrain {
     val model = new LRIRModel
     val spark = model.initSpark("ctr lr model")
 
-    val ulog = getUnionLog(spark)
-    val sample = formatSample(spark, ulog)
+    initFeatureDict(spark)
 
-    val num = sample.count().toDouble
+    val ulog = getUnionLog(spark)
+    val num = ulog.count().toDouble
     println("sample num", num)
 
     //最多2000w条测试数据
@@ -36,17 +37,20 @@ object LRTrain {
         testRate = 2e7 / num
     }
 
-    val Array(train, test) = sample.randomSplit(Array(1 - testRate, testRate), 1231245L)
+    val Array(train, test) = ulog.randomSplit(Array(1 - testRate, testRate), 1231245L)
 
     val tnum = train.count().toDouble
-    val pnum = train.filter(_.label > 0).count().toDouble
+    val pnum = train.filter(_.isclick > 0).count().toDouble
     val nnum = tnum - pnum
-    println("total positive negative", tnum, pnum, nnum)
 
     val rate = (pnum * 10 / nnum * 1000).toInt
+    println("total positive negative", tnum, pnum, nnum, rate)
 
-    model.run(train.filter(x => x.label > 0 || Random.nextInt(1000) < rate), 200, 1e-8)
-    model.test(test)
+    val sampleTrain = formatSample(spark, train.filter(x => x.isclick > 0 || Random.nextInt(1000) < rate))
+    val sampleTest = formatSample(spark, test)
+
+    model.run(sampleTrain, 200, 1e-8)
+    model.test(sampleTest)
     model.printLrTestLog()
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
@@ -56,22 +60,12 @@ object LRTrain {
   }
 
   def formatSample(spark: SparkSession, ulog: RDD[UnionLog]): RDD[LabeledPoint] = {
-    val BcPlanid = spark.sparkContext.broadcast(planid)
-    val BcUnitid = spark.sparkContext.broadcast(unitid)
-    val BcIdeaid = spark.sparkContext.broadcast(ideaid)
-    val BcAdclass = spark.sparkContext.broadcast(adclass)
-    val BcSlotid = spark.sparkContext.broadcast(slotid)
-    val BcCity = spark.sparkContext.broadcast(city)
+    val BcDict = spark.sparkContext.broadcast(dict)
 
     ulog
       .mapPartitions {
         p =>
-          planid = BcPlanid.value
-          unitid = BcUnitid.value
-          ideaid = BcIdeaid.value
-          adclass = BcAdclass.value
-          slotid = BcSlotid.value
-          city = BcCity.value
+          dict = BcDict.value
           p.map {
             u =>
               val vec = parseFeature(u)
@@ -80,85 +74,43 @@ object LRTrain {
       }
   }
 
-  var planid = mutable.Map[Int, Int]()
-  var unitid = mutable.Map[Int, Int]()
-  var ideaid = mutable.Map[Int, Int]()
-  var adclass = mutable.Map[Int, Int]()
-  var slotid = mutable.Map[Int, Int]()
-  var city = mutable.Map[Int, Int]()
+  var dict = mutable.Map[String, Map[Int, Int]]()
+  val dictNames = Seq("planid", "unitid", "ideaid", "slotid", "adclass", "city")
 
-  def analFeatureDict(ulog: RDD[UnionLog]): Unit = {
-    //planid
-    var n = 0
-    ulog.map(x => x.planid).distinct()
-      .toLocalIterator
-      .foreach {
-        id =>
-          planid.update(id, n)
-          n += 1
-      }
-    println("planid num", n)
+  def initFeatureDict(spark: SparkSession): Unit = {
+    val calendar = Calendar.getInstance()
+    var pathSeps = Seq[String]()
+    for (d <- 1 to 7) {
+      calendar.add(Calendar.DATE, -1)
+      val date = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
+      pathSeps = pathSeps :+ date
+    }
 
-    //unitid
-    n = 0
-    ulog.map(x => x.unitid).distinct()
-      .toLocalIterator
-      .foreach {
-        id =>
-          unitid.update(id, n)
-          n += 1
-      }
-    println("unitid num", n)
-
-    //ideaid
-    n = 0
-    ulog.map(x => x.ideaid).distinct()
-      .toLocalIterator
-      .foreach {
-        id =>
-          ideaid.update(id, n)
-          n += 1
-      }
-    println("ideaid num", n)
-
-    //adclass
-    n = 0
-    ulog.map(x => x.ext.getOrElse("adclass", ExtValue()).int_value).distinct()
-      .toLocalIterator
-      .foreach {
-        id =>
-          ideaid.update(id, n)
-          n += 1
-      }
-    println("adclass num", n)
-
-    //slotid
-    n = 0
-    ulog.map(x => x.adslotid.toInt).distinct()
-      .toLocalIterator
-      .foreach {
-        id =>
-          slotid.update(id, n)
-          n += 1
-      }
-    println("slotid num", n)
-
-    //city
-    n = 0
-    ulog.map(x => x.city).distinct()
-      .toLocalIterator
-      .foreach {
-        id =>
-          city.update(id, n)
-          n += 1
-      }
-    println("city num", n)
+    for (name <- dictNames) {
+      val pathTpl = "/user/cpc/feature_ids/%s/{%s}"
+      var n = 0
+      val ids = mutable.Map[Int, Int]()
+      spark.read
+        .parquet(pathTpl.format(name, pathSeps.mkString(",")))
+        .rdd
+        .map(x => x.getInt(0))
+        .distinct()
+        .toLocalIterator
+        .foreach {
+          id =>
+            n += 1
+            ids.update(id, n)
+        }
+      println("dict", name, ids.size)
+      dict.update(name, ids.toMap)
+    }
   }
+
 
   def getUnionLog(spark: SparkSession): RDD[UnionLog] = {
     val calendar = Calendar.getInstance()
     val endDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
-    calendar.add(Calendar.DATE, -7)
+    calendar.add(Calendar.DATE, -1)
     val startDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
     val stmt =
       """
@@ -166,7 +118,7 @@ object LRTrain {
       """.stripMargin.format(startDate, endDate)
 
     import spark.implicits._
-    spark.sql(stmt).as[UnionLog].rdd.cache()
+    spark.sql(stmt).as[UnionLog].rdd
   }
 
   def parseFeature(ulog: UnionLog): Vector = {
@@ -276,7 +228,7 @@ object LRTrain {
     els = els :+ (u.sex + i, 1d)
     i += 9
 
-    els = els :+ (u.age, 1d)
+    els = els :+ (u.age + i, 1d)
     i += 100
 
     //os 96 - 97 (2)
@@ -289,12 +241,12 @@ object LRTrain {
     els = els :+ (n.network + i, 1d)
     i += 10
 
-    val cityid = city.getOrElse(loc.city, 0)
+    val cityid = dict("city").getOrElse(loc.city, 0)
     els = els :+ (cityid + i, 1d)
     i += 1000
 
     //ad slot id
-    val sid = slotid.getOrElse(slot.adslotid, 0)
+    val sid = dict("slotid").getOrElse(slot.adslotid, 0)
     els = els :+ (sid + i, 1d)
     i += 1000
 
@@ -307,7 +259,7 @@ object LRTrain {
     if (slot.pageNum >= 1 && slot.pageNum <= 50){
       pnum = slot.pageNum
     }
-    els = els :+ (pnum + 1 + i, 1d)
+    els = els :+ (pnum + i, 1d)
     i += 100
 
     //bookid
@@ -324,7 +276,7 @@ object LRTrain {
     i += 100
 
     //ad class
-    val adcls = adclass.getOrElse(ad._class, 0)
+    val adcls = dict("adclass").getOrElse(ad._class, 0)
     els = els :+ (adcls + i, 1d)
     i += 1000
 
@@ -333,18 +285,24 @@ object LRTrain {
     i += 10
 
     //planid
-    els = els :+ (planid.getOrElse(ad.planid,0 ) + i, 1d)
+    els = els :+ (dict("planid").getOrElse(ad.planid, 0) + i, 1d)
     i += 30000
 
     //unitid
-    els = els :+ (planid.getOrElse(ad.planid,0 ) + i, 1d)
+    els = els :+ (dict("unitid").getOrElse(ad.unitid, 0) + i, 1d)
     i += 50000
 
     //ideaid
-    els = els :+ (ideaid.getOrElse(ad.ideaid, 0) + i, 1d)
+    els = els :+ (dict("ideaid").getOrElse(ad.ideaid, 0) + i, 1d)
     i += 200000
 
-    Vectors.sparse(i, els)
+    try {
+      Vectors.sparse(i, els)
+    } catch {
+      case e: Exception =>
+        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        null
+    }
   }
 }
 
