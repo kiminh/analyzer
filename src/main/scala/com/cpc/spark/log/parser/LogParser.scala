@@ -4,7 +4,7 @@ import java.net.{InetAddress, URLDecoder}
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.cpc.spark.common.{Event, Ui}
+import com.cpc.spark.common.{Event, Ui, Cfg}
 import org.apache.spark.sql.types._
 
 import scala.collection.mutable
@@ -146,7 +146,30 @@ object LogParser {
     }
     log
   }
-
+  def parseCfgLog(txt: String): CfgLog = {
+    var log: CfgLog = null
+    val data = Cfg.parseData(txt)
+    if (data != null) {
+      val body = data.cfg
+      var aid = body.getAdSlotId
+      val (date, hour) = getDateHourFromTime(body.getTimestamp)
+      if(aid.length <= 0){
+        aid = body.getAidList.toArray().mkString(",")
+      }
+      log = CfgLog(
+        aid = aid,
+        log_type = body.getUrlPath,
+        search_timestamp = body.getTimestamp,
+        request_url = body.getRequestUrl,
+        resp_body = body.getRespBody,
+        template_conf = body.getTemplateConfList().toArray.mkString(","),
+        adslot_conf = body.getRespBody,
+        date = date,
+        hour = hour
+      )
+    }
+    log
+  }
   def parseClickLog(txt: String): UnionLog = {
     var log: UnionLog = null
     val data = Event.parse_click_log(txt)

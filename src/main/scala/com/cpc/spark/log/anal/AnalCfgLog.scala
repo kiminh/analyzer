@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Utils
+import com.cpc.spark.log.anal.AnalClickLog.srcRoot
 import com.cpc.spark.log.parser.{ExtValue, LogParser, TraceLog, UnionLog}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd
@@ -16,7 +17,7 @@ import scala.collection.mutable
 /**
   * Created by Roy on 2017/4/18.
   */
-object AnalClickLog {
+object AnalCfgLog {
 
   var srcRoot = "/gobblin/source/cpc"
 
@@ -32,25 +33,25 @@ object AnalClickLog {
       System.exit(1)
     }
     Logger.getRootLogger.setLevel(Level.WARN)
-     srcRoot = args(0)
+    srcRoot = args(0)
     val hourBefore = args(1).toInt
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val hour = new SimpleDateFormat("HH").format(cal.getTime)
-    val table ="cpc_click_log"
+    val table ="cpc_cfg_log"
     val spark = SparkSession.builder()
-      .appName("cpc anal click log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
+      .appName("cpc anal cfg log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
-    val clickData = prepareSource(spark, "cpc_click", hourBefore, 2)
-    if (clickData == null) {
+    val cfgData = prepareSource(spark, "cpc_cfg", hourBefore, 1)
+    if (cfgData == null) {
       spark.stop()
       System.exit(1)
     }
-    val clicklog =   clickData.map(x => LogParser.parseClickLog2(x.getString(0))).filter(x => x != null && x.date == date && x.hour == hour)
-    //clear dir   .map(x => (x.searchid, x)).reduceByKey((x, y) => x).map(x => x._2)
+    val clicklog =   cfgData.map(x => LogParser.parseCfgLog(x.getString(0))).filter(x => x != null && x.date == date && x.hour == hour)
+    //clear dir
     Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
     spark.createDataFrame(clicklog)
       .write
@@ -58,7 +59,7 @@ object AnalClickLog {
       .format("parquet")
       .partitionBy("date", "hour")
       .saveAsTable("dl_cpc." + table)
-    println("clicklog", clickData.count())
+    println("cfglog", cfgData.count())
     spark.stop()
   }
 
@@ -78,6 +79,7 @@ object AnalClickLog {
   def prepareSource(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
     try {
       val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours))
+      println("input:" + input)
       val baseData = ctx.read.schema(schema).parquet(input)
       val tbl = "%s_data_%d".format(src, hourBefore)
       baseData.createTempView(tbl)
@@ -85,6 +87,16 @@ object AnalClickLog {
     } catch {
       case e: Exception => null
     }
+  }
+
+  def prepareTraceSource(src: rdd.RDD[Row]): rdd.RDD[(String, (UnionLog, Seq[TraceLog]))] = {
+    src.map(x => LogParser.parseTraceLog(x.getString(0)))
+      .filter(x => x != null && x.searchid.length > 0)
+      .map {
+        x =>
+          val u: UnionLog = null
+          (x.searchid, (u, Seq(x)))
+      }
   }
 
   def getDateHourPath(hourBefore: Int, hours: Int): String = {
