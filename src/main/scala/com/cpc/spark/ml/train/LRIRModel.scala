@@ -34,6 +34,7 @@ class LRIRModel {
       .config("spark.scheduler.maxRegisteredResourcesWaitingTime", "100")
       .config("spark.core.connection.auth.wait.timeout", "100")
       .appName(appName)
+      .enableHiveSupport()
       .getOrCreate()
     ctx
   }
@@ -271,8 +272,8 @@ class LRIRModel {
 
     val pack = Pack(
       lr = Option(lr),
-      ir = Option(ir),
-      createTime = new Date().getTime
+      ir = Option(ir)
+      //createTime = new Date().getTime
       //TODO adid city slotid adclass
     )
     pack.writeTo(new FileOutputStream(path))

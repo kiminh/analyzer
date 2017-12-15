@@ -63,11 +63,6 @@ object DspData {
     while (result.next()) {
       mergeData()
     }
-    result = getAdDbResult("mariadb.adv_old")
-    while (result.next()) {
-      mergeData()
-    }
-    println("max title len", maxTitleLen)
 
     var n = 0
     val adidmap = mutable.Map[Int, Int]()
