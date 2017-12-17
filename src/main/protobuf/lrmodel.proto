@@ -26,7 +26,7 @@ message Pack {
     map<int32, int32> ideaid = 7;
     map<int32, int32> adclass = 8;
     map<int32, int32> slotid = 9;
-    map<int32, int32> city = 10;
+    map<int32, int32> cityid = 10;
     map<int32, int32> mediaid = 11;
 }
 

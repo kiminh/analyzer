@@ -278,7 +278,7 @@ class LRIRModel {
       ideaid = dict("ideaid"),
       slotid = dict("slotid"),
       adclass = dict("adclass"),
-      city = dict("city"),
+      cityid = dict("cityid"),
       mediaid = dict("mediaid")
     )
     pack.writeTo(new FileOutputStream(path))

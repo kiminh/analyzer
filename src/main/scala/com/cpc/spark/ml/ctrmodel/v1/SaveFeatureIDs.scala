@@ -1,7 +1,4 @@
-package com.cpc.spark.ml.common
-
-import java.text.SimpleDateFormat
-import java.util.Calendar
+package com.cpc.spark.ml.ctrmodel.v1
 
 import com.cpc.spark.log.parser.{ExtValue, UnionLog}
 import org.apache.spark.rdd.RDD
@@ -32,7 +29,7 @@ object SaveFeatureIDs {
     saveids(spark, ulog.map(_.unitid), "unitid", date)
     saveids(spark, ulog.map(_.ideaid), "ideaid", date)
     saveids(spark, ulog.map(_.adslotid.toInt), "slotid", date)
-    saveids(spark, ulog.map(_.city), "city", date)
+    saveids(spark, ulog.map(_.city), "cityid", date)
     saveids(spark, ulog.map(_.ext.getOrElse("adclass", ExtValue()).int_value), "adclass", date)
 
     ulog.unpersist()

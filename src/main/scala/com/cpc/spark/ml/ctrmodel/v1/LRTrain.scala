@@ -4,14 +4,12 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
-import com.cpc.spark.log.parser.{ExtValue, UnionLog}
 import com.cpc.spark.ml.train.LRIRModel
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
 import scala.collection.mutable
 import mlserver.mlserver._
-import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.mllib.regression.LabeledPoint
 
 import scala.util.Random
@@ -27,7 +25,7 @@ object LRTrain {
 
     initFeatureDict(spark)
 
-    val ulog = getUnionLog(spark)
+    val ulog = getData(spark)
     val num = ulog.count().toDouble
     println("sample num", num)
 
@@ -38,18 +36,20 @@ object LRTrain {
     }
 
     val Array(train, test) = ulog.randomSplit(Array(1 - testRate, testRate), 1231245L)
+    ulog.unpersist()
 
     val tnum = train.count().toDouble
-    val pnum = train.filter(_.isclick > 0).count().toDouble
+    val pnum = train.filter(_.getInt(0) > 0).count().toDouble
     val nnum = tnum - pnum
 
     //保证训练数据正负比例 1:9
     val rate = (pnum * 9 / nnum * 1000).toInt
     println("total positive negative", tnum, pnum, nnum, rate)
 
-    val sampleTrain = formatSample(spark, train.filter(x => x.isclick > 0 || Random.nextInt(1000) < rate))
+    val sampleTrain = formatSample(spark, train.filter(x => x.getInt(0) > 0 || Random.nextInt(1000) < rate))
     val sampleTest = formatSample(spark, test)
 
+    println(sampleTrain.take(5).foreach(x => println(x.features)))
     model.run(sampleTrain, 200, 1e-8)
     model.test(sampleTest)
     model.printLrTestLog()
@@ -58,9 +58,10 @@ object LRTrain {
     model.saveHdfs("/user/cpc/ctrmodel/lrmodel/%s".format(date))
     val lrfilepath = "/data/cpc/anal/model/ctr-lr-model-%s.txt".format(date)
     model.saveText(lrfilepath)
+    model.savePbPack("parser4", "/data/cpc/model/ctr-all-%s.lrm".format(date), dict.toMap)
   }
 
-  def formatSample(spark: SparkSession, ulog: RDD[UnionLog]): RDD[LabeledPoint] = {
+  def formatSample(spark: SparkSession, ulog: RDD[Row]): RDD[LabeledPoint] = {
     val BcDict = spark.sparkContext.broadcast(dict)
 
     ulog
@@ -69,14 +70,22 @@ object LRTrain {
           dict = BcDict.value
           p.map {
             u =>
-              val vec = parseFeature(u)
-              LabeledPoint(u.isclick.toDouble, vec)
+              val vec = getVector(u)
+              LabeledPoint(u.getInt(0).toDouble, vec)
           }
       }
   }
 
   var dict = mutable.Map[String, Map[Int, Int]]()
-  val dictNames = Seq("mediaid", "planid", "unitid", "ideaid", "slotid", "adclass", "city")
+  val dictNames = Map(
+    "mediaid" -> 1000,
+    "planid" -> 10000,
+    "unitid" -> 10000,
+    "ideaid" -> 30000,
+    "slotid" -> 1000,
+    "adclass" -> 1000,
+    "cityid" -> 1000
+  )
 
   def initFeatureDict(spark: SparkSession): Unit = {
     val calendar = Calendar.getInstance()
@@ -86,7 +95,7 @@ object LRTrain {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
       pathSeps = pathSeps :+ date
     }
-    for (name <- dictNames) {
+    for ((name, max) <- dictNames) {
       val pathTpl = "/user/cpc/feature_ids/%s/{%s}"
       var n = 0
       val ids = mutable.Map[Int, Int]()
@@ -103,117 +112,74 @@ object LRTrain {
             ids.update(id, n)
         }
       println("dict", name, ids.size)
+      if (ids.size > max) {
+        //TODO send email
+      }
       dict.update(name, ids.toMap)
     }
   }
 
-
-  def getUnionLog(spark: SparkSession): RDD[UnionLog] = {
+  def getData(spark: SparkSession): RDD[Row] = {
     val calendar = Calendar.getInstance()
-    val endDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
-    calendar.add(Calendar.DATE, -7)
-    val startDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
-    val stmt =
-      """
-        |select * from dl_cpc.cpc_union_log where `date` >= "%s" and `date` < "%s"
-      """.stripMargin.format(startDate, endDate)
-
-    import spark.implicits._
-    spark.sql(stmt).as[UnionLog].rdd
-  }
-
-  def parseFeature(ulog: UnionLog): Vector = {
-    val (ad, m, slot, u, loc, n, d, t) = unionLogToObject(ulog)
-    var svm = ""
-    getVector(ad, m, slot, u, loc, n, d, ulog.timestamp * 1000L)
-  }
-
-
-  def unionLogToObject(x: UnionLog): (AdInfo, Media, AdSlot, User, Location, Network, Device, Long) = {
-    var cls = 0
-    var pagenum = 0
-    var bookid = ""
-
-    if (x.ext != null) {
-      val ac = x.ext.getOrElse("adclass", null)
-      if (ac != null) {
-        cls = ac.int_value
-      }
-
-      val pn = x.ext.getOrElse("pagenum", null)
-      if (pn != null) {
-        pagenum = pn.int_value
-      }
-
-      val bi = x.ext.getOrElse("bookid", null)
-      if (bi != null) {
-        bookid = bi.string_value
-      }
+    var pathSeps = Seq[String]()
+    for (d <- 1 to 7) {
+      calendar.add(Calendar.DATE, -1)
+      val date = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
+      pathSeps = pathSeps :+ date
     }
 
-    val ad = AdInfo(
-      bid = x.bid,
-      ideaid = x.ideaid,
-      unitid = x.unitid,
-      planid = x.planid,
-      userid = x.userid,
-      adtype = x.adtype,
-      interaction = x.interaction,
-      _class = cls
-    )
-    val m = Media(
-      mediaAppsid = x.media_appsid.toInt,
-      mediaType = x.media_type
-    )
-    val slot = AdSlot(
-      adslotid = x.adslotid.toInt,
-      adslotType = x.adslot_type,
-      pageNum = pagenum,
-      bookId = bookid
-    )
-    val interests = x.interests.split(",")
-      .map{
-        x =>
-          val v = x.split("=")
-          if (v.length == 2) {
-            (v(0).toInt, v(1).toInt)
-          } else {
-            (0, 0)
-          }
-      }
-      .filter(x => x._1 > 0 && x._2 >= 2)
-      .sortWith((x, y) => x._2 > y._2)
-      .map(_._1)
-      .toSeq
-    val u = User(
-      sex = x.sex,
-      age = x.age,
-      coin = x.coin,
-      uid = x.uid,
-      interests = interests
-    )
-    val n = Network(
-      network = x.network,
-      isp = x.isp,
-      ip = x.ip
-    )
-    val loc = Location(
-      country = x.country,
-      province = x.province,
-      city = x.city
-    )
-    val d = Device(
-      os = x.os,
-      model = x.model
-    )
-    (ad, m, slot, u, loc, n, d, x.timestamp * 1000L)
+    val path = "/user/cpc/lrmodel/ctrdata/{%s}".format(pathSeps.mkString(","))
+    println(path)
+    spark.read.parquet(path).rdd.coalesce(2000)cache()
   }
 
-  def getVector(ad: AdInfo, m: Media, slot: AdSlot, u: User, loc: Location,
-                n: Network, d: Device, timeMills: Long): Vector = {
+  /*
+  def parseFeature(row: Row): Vector = {
+    val (ad, m, slot, u, loc, n, d, t) = unionLogToObject(row)
+    var svm = ""
+    getVector(ad, m, slot, u, loc, n, d, t)
+  }
+  */
+
+  def unionLogToObject(x: Row): (AdInfo, Media, AdSlot, User, Location, Network, Device, Long) = {
+    val ad = AdInfo(
+      ideaid = x.getInt(13),
+      unitid = x.getInt(12),
+      planid = x.getInt(11),
+      adtype = x.getInt(10),
+      _class = x.getInt(14)
+    )
+    val m = Media(
+      mediaAppsid = x.getString(7).toInt
+    )
+    val slot = AdSlot(
+      adslotid = x.getString(15).toInt,
+      adslotType = x.getInt(16),
+      pageNum = x.getInt(17),
+      bookId = x.getString(18)
+    )
+    val u = User(
+      sex = x.getInt(1),
+      age = x.getInt(2)
+    )
+    val n = Network(
+      network = x.getInt(5),
+      isp = x.getInt(4)
+    )
+    val loc = Location(
+      city = x.getInt(6)
+    )
+    val d = Device(
+      os = x.getInt(3),
+      phoneLevel = x.getInt(8)
+    )
+    (ad, m, slot, u, loc, n, d, x.getInt(9) * 1000L)
+  }
+
+  def getVector(x: Row): Vector = {
 
     val cal = Calendar.getInstance()
-    cal.setTimeInMillis(timeMills)
+    cal.setTimeInMillis(x.getInt(9) * 1000L)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     var els = Seq[(Int, Double)]()
@@ -226,39 +192,45 @@ object LRTrain {
     els = els :+ (hour + i, 1d)
     i += 24
 
-    els = els :+ (u.sex + i, 1d)
+    //sex
+    els = els :+ (x.getInt(1) + i, 1d)
     i += 9
 
-    els = els :+ (u.age + i, 1d)
+    //age
+    els = els :+ (x.getInt(2) + i, 1d)
     i += 100
 
     //os 96 - 97 (2)
-    els = els :+ (d.os + i, 1d)
+    els = els :+ (x.getInt(3) + i, 1d)
     i += 10
 
-    els = els :+ (n.isp + i, 1d)
+    //isp
+    els = els :+ (x.getInt(4) + i, 1d)
     i += 20
 
-    els = els :+ (n.network + i, 1d)
+    //net
+    els = els :+ (x.getInt(5) + i, 1d)
     i += 10
 
-    val cityid = dict("city").getOrElse(loc.city, 0)
-    els = els :+ (cityid + i, 1d)
-    i += 1000
+    els = els :+ (dict("cityid").getOrElse(x.getInt(6), 0) + i, 1d)
+    i += dict("cityid").size + 1
+
+    //media id
+    els = els :+ (dict("mediaid").getOrElse(x.getString(7).toInt, 0) + i, 1d)
+    i += dict("mediaid").size + 1
 
     //ad slot id
-    val sid = dict("slotid").getOrElse(slot.adslotid, 0)
-    els = els :+ (sid + i, 1d)
-    i += 1000
+    els = els :+ (dict("slotid").getOrElse(x.getString(15).toInt, 0) + i, 1d)
+    i += dict("slotid").size + 1
 
     //0 to 4
-    els = els :+ (d.phoneLevel + i, 1d)
+    els = els :+ (x.getInt(8) + i, 1d)
     i += 10
 
     //pagenum
-    var pnum = 0
-    if (slot.pageNum >= 1 && slot.pageNum <= 50){
-      pnum = slot.pageNum
+    var pnum = x.getInt(17)
+    if (pnum < 0 || pnum > 50) {
+      pnum = 0
     }
     els = els :+ (pnum + i, 1d)
     i += 100
@@ -266,7 +238,7 @@ object LRTrain {
     //bookid
     var bid = 0
     try {
-      bid = slot.bookId.toInt
+      bid = x.getString(18).toInt
     } catch {
       case e: Exception =>
     }
@@ -277,25 +249,25 @@ object LRTrain {
     i += 100
 
     //ad class
-    val adcls = dict("adclass").getOrElse(ad._class, 0)
+    val adcls = dict("adclass").getOrElse(x.getInt(14), 0)
     els = els :+ (adcls + i, 1d)
-    i += 1000
+    i += dict("adclass").size + 1
 
     //adtype
-    els = els :+ (ad.adtype + i, 1d)
+    els = els :+ (x.getInt(10) + i, 1d)
     i += 10
 
     //planid
-    els = els :+ (dict("planid").getOrElse(ad.planid, 0) + i, 1d)
-    i += 30000
+    els = els :+ (dict("planid").getOrElse(x.getInt(11), 0) + i, 1d)
+    i += dict("planid").size + 1
 
     //unitid
-    els = els :+ (dict("unitid").getOrElse(ad.unitid, 0) + i, 1d)
-    i += 50000
+    els = els :+ (dict("unitid").getOrElse(x.getInt(12), 0) + i, 1d)
+    i += dict("unitid").size + 1
 
     //ideaid
-    els = els :+ (dict("ideaid").getOrElse(ad.ideaid, 0) + i, 1d)
-    i += 200000
+    els = els :+ (dict("ideaid").getOrElse(x.getInt(13), 0) + i, 1d)
+    i += dict("ideaid").size + 1
 
     try {
       Vectors.sparse(i, els)
