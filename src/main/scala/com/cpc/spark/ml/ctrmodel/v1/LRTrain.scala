@@ -4,8 +4,10 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.common.{Utils => MUtils}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import com.cpc.spark.ml.train.LRIRModel
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
@@ -35,20 +37,24 @@ object LRTrain {
     model = new LRIRModel
     spark = model.initSpark("ctr lr model")
     initFeatureDict()
+    val ulog = getData().cache()
 
     //qtt
-    var ulog = getData().filter(x => x.getString(7) == "80000001" || x.getString(7) == "80000002")
-    train("parser4", "qtt-all", ulog)
+    val qtt = ulog.filter(x => x.getString(7) == "80000001" || x.getString(7) == "80000002")
+    train("parser4", "qtt-all", qtt, "qtt.lrm")
 
     //qtt-list
     model.clearResult()
-    ulog = getData().filter(x => x.getString(7) == "80000001" && x.getInt(16) == 1)
-    train("parser4", "qtt-list", ulog)
+    val qttlist = getData().filter(x => x.getString(7) == "80000001" && x.getInt(16) == 1)
+    train("parser4", "qtt-list", qttlist, "qtt-list.lrm")
+
+    //TODO
 
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
+    ulog.unpersist()
   }
 
-  def train(parser: String, name: String, ulog: RDD[Row]): Unit = {
+  def train(parser: String, name: String, ulog: RDD[Row], destfile: String): Unit = {
     trainLog :+= "\n------train log--------"
     trainLog :+= "name=%s parser=%s".format(name, parser)
 
@@ -62,7 +68,7 @@ object LRTrain {
       testRate = 2e7 / num
     }
 
-    val Array(train, test) = ulog.randomSplit(Array(1 - testRate, testRate), 1231245L)
+    val Array(train, test) = ulog.randomSplit(Array(1 - testRate, testRate), new Date().getTime)
     ulog.unpersist()
 
     val tnum = train.count().toDouble
@@ -74,8 +80,8 @@ object LRTrain {
     println("total positive negative", tnum, pnum, nnum, rate)
     trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
 
-    val sampleTrain = formatSample(spark, train.filter(x => x.getInt(0) > 0 || Random.nextInt(1000) < rate))
-    val sampleTest = formatSample(spark, test)
+    val sampleTrain = formatSample(parser, train.filter(x => x.getInt(0) > 0 || Random.nextInt(1000) < rate))
+    val sampleTest = formatSample(parser, test)
 
     println(sampleTrain.take(5).foreach(x => println(x.features)))
     model.run(sampleTrain, 200, 1e-8)
@@ -92,9 +98,14 @@ object LRTrain {
     model.saveHdfs("/user/cpc/ctrmodel/lrmodel/%s".format(date))
     model.savePbPack(parser, lrfilepath, dict.toMap)
     trainLog :+= "protobuf pack %s".format(lrfilepath)
+
+    trainLog :+= "\n-------update server data------"
+    if (destfile.length > 0) {
+      trainLog :+= MUtils.updateOnlineData(lrfilepath, destfile, ConfigFactory.load())
+    }
   }
 
-  def formatSample(spark: SparkSession, ulog: RDD[Row]): RDD[LabeledPoint] = {
+  def formatSample(parser: String, ulog: RDD[Row]): RDD[LabeledPoint] = {
     val BcDict = spark.sparkContext.broadcast(dict)
 
     ulog
@@ -103,7 +114,10 @@ object LRTrain {
           dict = BcDict.value
           p.map {
             u =>
-              val vec = getVector(u)
+              val vec = parser match {
+                case "parser4" =>
+                  getVector(u)
+              }
               LabeledPoint(u.getInt(0).toDouble, vec)
           }
       }
@@ -163,10 +177,10 @@ object LRTrain {
       calendar.add(Calendar.DATE, 1)
     }
 
-    val path = "/user/cpc/lrmodel/ctrdata/{%s}".format(pathSeps.mkString(","))
+    val path = "/user/cpc/lrmodel/features/{%s}".format(pathSeps.mkString(","))
     println(path)
     trainLog :+= path
-    spark.read.parquet(path).rdd.coalesce(2000)cache()
+    spark.read.parquet(path).rdd.coalesce(2000)
   }
 
   /*

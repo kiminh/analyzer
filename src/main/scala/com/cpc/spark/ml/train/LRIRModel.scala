@@ -144,7 +144,7 @@ class LRIRModel {
     auPRC = 0
     auROC = 0
     lrTestResults = null
-    binsLog = null
+    binsLog = Seq[String]()
     irBinNum = 0
     irError = 0
   }
