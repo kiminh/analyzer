@@ -201,7 +201,7 @@ object LRTrain {
       calendar.add(Calendar.DATE, 1)
     }
 
-    val path = "/user/cpc/lrmodel/features/{%s}".format(pathSeps.mkString(","))
+    val path = "/user/cpc/lrmodel/ctrdata/{%s}".format(pathSeps.mkString(","))
     println(path)
     trainLog :+= path
     spark.read.parquet(path).rdd.coalesce(2000)
