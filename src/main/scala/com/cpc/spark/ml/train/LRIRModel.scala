@@ -140,6 +140,15 @@ class LRIRModel {
     auROC = metrics.areaUnderROC
   }
 
+  def clearResult(): Unit = {
+    auPRC = 0
+    auROC = 0
+    lrTestResults = null
+    binsLog = null
+    irBinNum = 0
+    irError = 0
+  }
+
   def printLrTestLog(): Unit = {
     println(getLrTestLog())
   }

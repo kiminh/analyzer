@@ -31,6 +31,7 @@ object SaveFeatureIDs {
     saveids(spark, ulog.map(_.adslotid.toInt), "slotid", date)
     saveids(spark, ulog.map(_.city), "cityid", date)
     saveids(spark, ulog.map(_.ext.getOrElse("adclass", ExtValue()).int_value), "adclass", date)
+    saveids(spark, ulog.filter(_.isclick > 0).map(_.city), "clickcityid", date)
 
     ulog.unpersist()
   }

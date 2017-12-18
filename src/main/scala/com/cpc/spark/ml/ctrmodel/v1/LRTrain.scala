@@ -3,6 +3,7 @@ package com.cpc.spark.ml.ctrmodel.v1
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
+import com.cpc.spark.common.Utils
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import com.cpc.spark.ml.train.LRIRModel
 import org.apache.spark.rdd.RDD
@@ -19,20 +20,46 @@ import scala.util.Random
   */
 object LRTrain {
 
+  private var days = 7
+  private var dayBefore = 7
+  private var trainLog = Seq[String]()
+
+  private var spark: SparkSession = _
+  private var model: LRIRModel = _
+
   def main(args: Array[String]): Unit = {
-    val model = new LRIRModel
-    val spark = model.initSpark("ctr lr model")
+    if (args.length > 0) {
+      dayBefore = args(0).toInt
+      days = args(1).toInt
+    }
+    model = new LRIRModel
+    spark = model.initSpark("ctr lr model")
+    initFeatureDict()
 
-    initFeatureDict(spark)
+    //qtt
+    var ulog = getData().filter(x => x.getString(7) == "80000001" || x.getString(7) == "80000002")
+    train("parser4", "qtt-all", ulog)
 
-    val ulog = getData(spark)
+    //qtt-list
+    model.clearResult()
+    ulog = getData().filter(x => x.getString(7) == "80000001" && x.getInt(16) == 1)
+    train("parser4", "qtt-list", ulog)
+
+    Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
+  }
+
+  def train(parser: String, name: String, ulog: RDD[Row]): Unit = {
+    trainLog :+= "\n------train log--------"
+    trainLog :+= "name=%s parser=%s".format(name, parser)
+
     val num = ulog.count().toDouble
     println("sample num", num)
+    trainLog :+= "total size %.0f".format(num)
 
     //最多2000w条测试数据
     var testRate = 0.1
     if (num * testRate > 2e7) {
-        testRate = 2e7 / num
+      testRate = 2e7 / num
     }
 
     val Array(train, test) = ulog.randomSplit(Array(1 - testRate, testRate), 1231245L)
@@ -45,6 +72,7 @@ object LRTrain {
     //保证训练数据正负比例 1:9
     val rate = (pnum * 9 / nnum * 1000).toInt
     println("total positive negative", tnum, pnum, nnum, rate)
+    trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
 
     val sampleTrain = formatSample(spark, train.filter(x => x.getInt(0) > 0 || Random.nextInt(1000) < rate))
     val sampleTest = formatSample(spark, test)
@@ -53,12 +81,17 @@ object LRTrain {
     model.run(sampleTrain, 200, 1e-8)
     model.test(sampleTest)
     model.printLrTestLog()
+    trainLog :+= model.getLrTestLog()
+
+    model.runIr(1000, 0.9)
+    trainLog :+= model.binsLog.mkString("\n")
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
+    val lrfilepath = "/data/cpc/anal/model/ctr-model-%s-%s.lrm".format(name, date)
+
     model.saveHdfs("/user/cpc/ctrmodel/lrmodel/%s".format(date))
-    val lrfilepath = "/data/cpc/anal/model/ctr-lr-model-%s.txt".format(date)
-    model.saveText(lrfilepath)
-    model.savePbPack("parser4", "/data/cpc/model/ctr-all-%s.lrm".format(date), dict.toMap)
+    model.savePbPack(parser, lrfilepath, dict.toMap)
+    trainLog :+= "protobuf pack %s".format(lrfilepath)
   }
 
   def formatSample(spark: SparkSession, ulog: RDD[Row]): RDD[LabeledPoint] = {
@@ -77,25 +110,27 @@ object LRTrain {
   }
 
   var dict = mutable.Map[String, Map[Int, Int]]()
-  val dictNames = Map(
-    "mediaid" -> 1000,
-    "planid" -> 10000,
-    "unitid" -> 10000,
-    "ideaid" -> 30000,
-    "slotid" -> 1000,
-    "adclass" -> 1000,
-    "cityid" -> 1000
+  val dictNames = Seq(
+    "mediaid",
+    "planid",
+    "unitid",
+    "ideaid",
+    "slotid",
+    "adclass",
+    "cityid"
   )
 
-  def initFeatureDict(spark: SparkSession): Unit = {
+  def initFeatureDict(): Unit = {
     val calendar = Calendar.getInstance()
+    calendar.add(Calendar.DATE, -dayBefore)
     var pathSeps = Seq[String]()
-    for (d <- 1 to 7) {
-      calendar.add(Calendar.DATE, -1)
+    for (d <- 1 to days) {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
       pathSeps = pathSeps :+ date
+      calendar.add(Calendar.DATE, 1)
     }
-    for ((name, max) <- dictNames) {
+    trainLog :+= "\n------dict size------"
+    for (name <- dictNames) {
       val pathTpl = "/user/cpc/feature_ids/%s/{%s}"
       var n = 0
       val ids = mutable.Map[Int, Int]()
@@ -111,25 +146,26 @@ object LRTrain {
             n += 1
             ids.update(id, n)
         }
-      println("dict", name, ids.size)
-      if (ids.size > max) {
-        //TODO send email
-      }
       dict.update(name, ids.toMap)
+      println("dict", name, ids.size)
+      trainLog :+= "%s=%d".format(name, ids.size)
     }
   }
 
-  def getData(spark: SparkSession): RDD[Row] = {
+  def getData(): RDD[Row] = {
+    trainLog :+= "\n-------get ulog data------"
     val calendar = Calendar.getInstance()
+    calendar.add(Calendar.DATE, -dayBefore)
     var pathSeps = Seq[String]()
-    for (d <- 1 to 7) {
-      calendar.add(Calendar.DATE, -1)
+    for (d <- 1 to days) {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
       pathSeps = pathSeps :+ date
+      calendar.add(Calendar.DATE, 1)
     }
 
     val path = "/user/cpc/lrmodel/ctrdata/{%s}".format(pathSeps.mkString(","))
     println(path)
+    trainLog :+= path
     spark.read.parquet(path).rdd.coalesce(2000)cache()
   }
 
