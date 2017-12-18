@@ -39,14 +39,38 @@ object LRTrain {
     initFeatureDict()
     val ulog = getData().cache()
 
-    //qtt
+    //qtt-all
     val qtt = ulog.filter(x => x.getString(7) == "80000001" || x.getString(7) == "80000002")
-    train("parser4", "qtt-all", qtt, "qtt.lrm")
+    train("parser1", "qtt-all", qtt, "qtt-all.lrm")
 
     //qtt-list
     model.clearResult()
-    val qttlist = getData().filter(x => x.getString(7) == "80000001" && x.getInt(16) == 1)
-    train("parser4", "qtt-list", qttlist, "qtt-list.lrm")
+    val qttlist = ulog.filter(x => (x.getString(7) == "80000001" || x.getString(7) == "80000002") && x.getInt(16) == 1)
+    train("parser1", "qtt-list", qttlist, "qtt-list.lrm")
+
+    //qtt-content
+    model.clearResult()
+    val qttcontent = ulog.filter(x => (x.getString(7) == "80000001" || x.getString(7) == "80000002") && x.getInt(16) == 2)
+    train("parser1", "qtt-content", qttcontent, "qtt-content.lrm")
+
+    //external-list
+    model.clearResult()
+    val externallist = ulog.filter(x => (x.getString(7) != "80000001" && x.getString(7) != "80000002") && x.getInt(16) == 1)
+    train("parser1", "external-list", externallist, "external-list.lrm")
+
+    //external-content
+    model.clearResult()
+    val externalcontent = ulog.filter(x => (x.getString(7) != "80000001" && x.getString(7) != "80000002") && x.getInt(16) == 2)
+    train("parser1", "external-content", externalcontent, "external-content.lrm")
+
+    //all-interact
+    model.clearResult()
+    val allinteract = ulog.filter(x => x.getInt(16) == 3)
+    train("parser1", "all-interact", allinteract, "all-interact.lrm")
+
+    //all-media
+    val allmedia = ulog
+    train("parser1", "all-media", allmedia, "all-media.lrm")
 
     //TODO
 
@@ -115,7 +139,7 @@ object LRTrain {
           p.map {
             u =>
               val vec = parser match {
-                case "parser4" =>
+                case "parser1" =>
                   getVector(u)
               }
               LabeledPoint(u.getInt(0).toDouble, vec)
