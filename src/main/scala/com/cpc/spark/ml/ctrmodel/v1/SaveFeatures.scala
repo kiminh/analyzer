@@ -19,7 +19,7 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    //saveDataFromLog(spark, date)
+    saveDataFromLog(spark, date)
     saveCvrData(spark, date)
   }
 

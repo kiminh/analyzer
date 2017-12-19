@@ -50,37 +50,37 @@ object LRTrain {
     val ulog = getData().cache()
 
     //qtt-all
-    val qtt = ulog.filter(x => x.getString(7) == "80000001" || x.getString(7) == "80000002")
+    val qtt = ulog.filter(x => x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002")
     train("parser1", "qtt-all", qtt, "qtt-all.lrm")
 
     //qtt-list
     model.clearResult()
-    val qttlist = ulog.filter(x => (x.getString(7) == "80000001" || x.getString(7) == "80000002") && x.getInt(16) == 1)
+    val qttlist = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 1)
     train("parser1", "qtt-list", qttlist, "qtt-list.lrm")
 
     //qtt-content
     model.clearResult()
-    val qttcontent = ulog.filter(x => (x.getString(7) == "80000001" || x.getString(7) == "80000002") && x.getInt(16) == 2)
+    val qttcontent = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 2)
     train("parser1", "qtt-content", qttcontent, "qtt-content.lrm")
 
     //external-list
     model.clearResult()
-    val externallist = ulog.filter(x => (x.getString(7) != "80000001" && x.getString(7) != "80000002") && x.getInt(16) == 1)
+    val externallist = ulog.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && x.getAs[Int]("adslot_type") == 1)
     train("parser1", "external-list", externallist, "external-list.lrm")
 
     //external-content
     model.clearResult()
-    val externalcontent = ulog.filter(x => (x.getString(7) != "80000001" && x.getString(7) != "80000002") && x.getInt(16) == 2)
+    val externalcontent = ulog.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && x.getAs[Int]("adslot_type") == 2)
     train("parser1", "external-content", externalcontent, "external-content.lrm")
 
     //all-interact
     model.clearResult()
-    val allinteract = ulog.filter(x => x.getInt(16) == 3)
+    val allinteract = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
     train("parser1", "all-interact", allinteract, "all-interact.lrm")
 
-    //all-media
-    val allmedia = ulog
-    train("parser1", "all-media", allmedia, "all-media.lrm")
+    //cvr
+    model.clearResult()
+    train("parser1", "cvr", cvrlog, "cvr.lrm")
 
     //TODO
 
@@ -90,7 +90,9 @@ object LRTrain {
 
   def train(parser: String, name: String, ulog: RDD[Row], destfile: String): Unit = {
     trainLog :+= "\n------train log--------"
-    trainLog :+= "name=%s parser=%s".format(name, parser)
+    trainLog :+= "name = %s".format(name)
+    trainLog :+= "parser = %s".format(parser)
+    trainLog :+= "destfile = %s".format(destfile)
 
     val num = ulog.count().toDouble
     println("sample num", num)
@@ -127,9 +129,8 @@ object LRTrain {
     trainLog :+= model.binsLog.mkString("\n")
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
-    val lrfilepath = "/data/cpc/anal/model/ctr-model-%s-%s.lrm".format(name, date)
-
-    model.saveHdfs("/user/cpc/ctrmodel/lrmodel/%s".format(date))
+    val lrfilepath = "/data/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
+    model.saveHdfs("/user/cpc/lrmodel/modeldata/%s".format(date))
     model.savePbPack(parser, lrfilepath, dict.toMap)
     trainLog :+= "protobuf pack %s".format(lrfilepath)
 
@@ -325,7 +326,7 @@ object LRTrain {
     i += dict("slotid").size + 1
 
     //0 to 4
-    els = els :+ (x.getInt(8) + i, 1d)
+    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
     i += 10
 
     //pagenum
