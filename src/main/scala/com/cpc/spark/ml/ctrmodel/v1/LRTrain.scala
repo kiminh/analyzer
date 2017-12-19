@@ -38,15 +38,6 @@ object LRTrain {
     spark = model.initSpark("ctr lr model")
     initFeatureDict()
 
-    val cvrlog = getCvrData()
-
-    cvrlog.take(10).foreach {
-      row =>
-        val a = (row.getAs[String]("searchid"), row.getAs[Int]("sex"), row.getAs[Int]("convert"))
-        println(a)
-    }
-
-
     val ulog = getData().cache()
 
     //qtt-all
@@ -80,9 +71,9 @@ object LRTrain {
 
     //cvr
     model.clearResult()
+    val cvrlog = getCvrData()
     train("parser1", "cvr", cvrlog, "cvr.lrm")
 
-    //TODO
 
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
     ulog.unpersist()
