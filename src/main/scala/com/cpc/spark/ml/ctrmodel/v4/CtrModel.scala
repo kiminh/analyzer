@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.ctrmodel.v3
+package com.cpc.spark.ml.ctrmodel.v4
 
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
@@ -16,7 +16,7 @@ import scala.util.Random
 /**
   * Created by zhaolei on 22/11/2017.
   */
-object CtrModelOld {
+object CtrModel {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 11) {
@@ -68,7 +68,29 @@ object CtrModelOld {
         .coalesce(2000)
       model.loadLRmodel(modelPath)
     } else {
-      val rawData = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s/{%s}".format(inpath, pathSep.mkString(",")))
+
+      var rawData : RDD[LabeledPoint] = null
+
+      //前4天-前1天,取全量数据
+      rawData = MLUtils.loadLibSVMFile(ctx.sparkContext,"%s/{%s}".format(inpath, pathSep.takeRight(4).mkString(",")))
+
+      statistic_info("rawData",rawData,pathSep.takeRight(4).mkString(","))
+
+      //前10天-前5天,分别取1/10,1/10,...,1/10的训练数据
+      var num = 1
+      pathSep.take(6).foreach{
+        pathSeqDay =>
+          val dayData = MLUtils.loadLibSVMFile(ctx.sparkContext,"%s/{%s}".format(inpath, pathSeqDay))
+            .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
+            .randomSplit(Array( 1/10.0, 1 - 1/10.0 ), seed = new Date().getTime)
+
+          rawData = rawData.union(dayData(0))
+
+          num += 1
+
+          statistic_info("rawData",rawData,pathSeqDay)
+      }
+
       val totalNum = rawData.count()
       val svm = rawData.coalesce(totalNum.toInt / 20000)
         //random pick 1/pnRate negative sample

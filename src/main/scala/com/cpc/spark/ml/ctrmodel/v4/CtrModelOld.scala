@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.ctrmodel.v3
+package com.cpc.spark.ml.ctrmodel.v4
 
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
@@ -48,7 +48,7 @@ object CtrModelOld {
 
     val fmt = new SimpleDateFormat("yyyy-MM-dd")
     val date = new SimpleDateFormat("yyyy-MM-dd-HH").format(new Date().getTime)
-    val yesterday = fmt.format(new Date().getTime - 3600L * 24000L)
+    val yesterday = fmt.format(new Date().getTime - 3600L * 24000L * 2)
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -daybefore)
 

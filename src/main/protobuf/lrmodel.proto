@@ -20,13 +20,14 @@ message Pack {
     string name = 1;
     LRModel lr = 2;
     IRModel ir = 3;
-    int32 create_time = 4;
+    int64 create_time = 4;
     map<int32, int32> planid = 5;
     map<int32, int32> unitid = 6;
     map<int32, int32> ideaid = 7;
     map<int32, int32> adclass = 8;
     map<int32, int32> slotid = 9;
-    map<int32, int32> city = 10;
+    map<int32, int32> cityid = 10;
+    map<int32, int32> mediaid = 11;
 }
 
 

@@ -50,6 +50,7 @@ message  Adslot {
 	optional string   channel = 11; //栏目名称
 	optional int32	  pagenum = 12; // 当前页面第几次请求
 	optional string   bookid  = 13; // 相同站点不同页面标记
+	optional int32    discount = 14; //广告位打折值，单位%
 };
 
 enum NetworkType {
@@ -221,6 +222,7 @@ message UserProfile {
 	optional uint32 antispam = 6; // 是否是antispam用户
 	optional uint32 share_coin = 7; // 金币增长数
 	optional uint32 newuser = 8; // 新老用户 1老用户 2新用户
+	optional uint32 req_count = 9; //同一用户一天内的请求次数
 }
 
 message NoticeLogBody {
@@ -246,4 +248,5 @@ message NoticeLogBody {
 	optional uint64 timecost = 23;
 	optional bool https = 24; //是否https请求
 	optional string ctrtarget = 25; // ctr 请求地址
+	repeated uint32 dupuserfilter = 26; // 同一user过滤
 };

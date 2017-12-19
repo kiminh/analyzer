@@ -71,14 +71,14 @@ object CtrModel {
 
       var rawData : RDD[LabeledPoint] = null
 
-      //前3天-前1天,取全量数据
-      rawData = MLUtils.loadLibSVMFile(ctx.sparkContext,"%s/{%s}".format(inpath, pathSep.takeRight(3).mkString(",")))
+      //前4天-前1天,取全量数据
+      rawData = MLUtils.loadLibSVMFile(ctx.sparkContext,"%s/{%s}".format(inpath, pathSep.takeRight(4).mkString(",")))
 
-      statistic_info("rawData",rawData,pathSep.takeRight(3).mkString(","))
+      statistic_info("rawData",rawData,pathSep.takeRight(4).mkString(","))
 
-      //前10天-前7天,分别取1/10,1/10,...,1/10的训练数据
+      //前10天-前5天,分别取1/10,1/10,...,1/10的训练数据
       var num = 1
-      pathSep.take(7).foreach{
+      pathSep.take(6).foreach{
         pathSeqDay =>
           val dayData = MLUtils.loadLibSVMFile(ctx.sparkContext,"%s/{%s}".format(inpath, pathSeqDay))
             .filter(x => x.label > 0.01 || Random.nextInt(pnRate) == 0)
@@ -130,8 +130,7 @@ object CtrModel {
     }
 
     if (testSample == null) {
-      testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s_full/%s".format(inpath, yesterday))
-        .union(MLUtils.loadLibSVMFile(ctx.sparkContext, "%s_full/%s".format(inpath, yesterday))).coalesce(2000)
+      testSample = MLUtils.loadLibSVMFile(ctx.sparkContext, "%s_full/%s".format(inpath, yesterday)).coalesce(2000)
     }
     println("testing...")
     model.test(testSample)
