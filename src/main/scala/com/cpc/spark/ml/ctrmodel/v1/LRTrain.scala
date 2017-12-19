@@ -217,43 +217,43 @@ object LRTrain {
 
   def unionLogToObject(x: Row): (AdInfo, Media, AdSlot, User, Location, Network, Device, Long) = {
     val ad = AdInfo(
-      ideaid = x.getInt(13),
-      unitid = x.getInt(12),
-      planid = x.getInt(11),
-      adtype = x.getInt(10),
-      _class = x.getInt(14)
+      ideaid = x.getAs[Int]("ideaid"),
+      unitid = x.getAs[Int]("unitid"),
+      planid = x.getAs[Int]("planid"),
+      adtype = x.getAs[Int]("adtype"),
+      _class = x.getAs[Int]("adclass")
     )
     val m = Media(
-      mediaAppsid = x.getString(7).toInt
+      mediaAppsid = x.getAs[String]("media_appsid").toInt
     )
     val slot = AdSlot(
-      adslotid = x.getString(15).toInt,
-      adslotType = x.getInt(16),
-      pageNum = x.getInt(17),
-      bookId = x.getString(18)
+      adslotid = x.getAs[String]("adslotid").toInt,
+      adslotType = x.getAs[Int]("adslot_type"),
+      pageNum = x.getAs[Int]("pagenum"),
+      bookId = x.getAs[String]("bookid")
     )
     val u = User(
-      sex = x.getInt(1),
-      age = x.getInt(2)
+      sex = x.getAs[Int]("sex"),
+      age = x.getAs[Int]("age")
     )
     val n = Network(
-      network = x.getInt(5),
-      isp = x.getInt(4)
+      network = x.getAs[Int]("network"),
+      isp = x.getAs[Int]("isp")
     )
     val loc = Location(
-      city = x.getInt(6)
+      city = x.getAs[Int]("city")
     )
     val d = Device(
-      os = x.getInt(3),
-      phoneLevel = x.getInt(8)
+      os = x.getAs[Int]("os"),
+      phoneLevel = x.getAs[Int]("phone_level")
     )
-    (ad, m, slot, u, loc, n, d, x.getInt(9) * 1000L)
+    (ad, m, slot, u, loc, n, d, x.getAs[Int]("timestamp") * 1000L)
   }
 
   def getVector(x: Row): Vector = {
 
     val cal = Calendar.getInstance()
-    cal.setTimeInMillis(x.getInt(9) * 1000L)
+    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     var els = Seq[(Int, Double)]()
@@ -267,34 +267,34 @@ object LRTrain {
     i += 24
 
     //sex
-    els = els :+ (x.getInt(1) + i, 1d)
+    els = els :+ (x.getAs[Int]("sex") + i, 1d)
     i += 9
 
     //age
-    els = els :+ (x.getInt(2) + i, 1d)
+    els = els :+ (x.getAs[Int]("age") + i, 1d)
     i += 100
 
     //os 96 - 97 (2)
-    els = els :+ (x.getInt(3) + i, 1d)
+    els = els :+ (x.getAs[Int]("os") + i, 1d)
     i += 10
 
     //isp
-    els = els :+ (x.getInt(4) + i, 1d)
+    els = els :+ (x.getAs[Int]("isp") + i, 1d)
     i += 20
 
     //net
-    els = els :+ (x.getInt(5) + i, 1d)
+    els = els :+ (x.getAs[Int]("network") + i, 1d)
     i += 10
 
-    els = els :+ (dict("cityid").getOrElse(x.getInt(6), 0) + i, 1d)
+    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
     i += dict("cityid").size + 1
 
     //media id
-    els = els :+ (dict("mediaid").getOrElse(x.getString(7).toInt, 0) + i, 1d)
+    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
     i += dict("mediaid").size + 1
 
     //ad slot id
-    els = els :+ (dict("slotid").getOrElse(x.getString(15).toInt, 0) + i, 1d)
+    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
     i += dict("slotid").size + 1
 
     //0 to 4
@@ -302,7 +302,7 @@ object LRTrain {
     i += 10
 
     //pagenum
-    var pnum = x.getInt(17)
+    var pnum = x.getAs[Int]("pagenum")
     if (pnum < 0 || pnum > 50) {
       pnum = 0
     }
@@ -312,7 +312,7 @@ object LRTrain {
     //bookid
     var bid = 0
     try {
-      bid = x.getString(18).toInt
+      bid = x.getAs[String]("bookid").toInt
     } catch {
       case e: Exception =>
     }
@@ -323,24 +323,24 @@ object LRTrain {
     i += 100
 
     //ad class
-    val adcls = dict("adclass").getOrElse(x.getInt(14), 0)
+    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
     els = els :+ (adcls + i, 1d)
     i += dict("adclass").size + 1
 
     //adtype
-    els = els :+ (x.getInt(10) + i, 1d)
+    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
     i += 10
 
     //planid
-    els = els :+ (dict("planid").getOrElse(x.getInt(11), 0) + i, 1d)
+    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
     i += dict("planid").size + 1
 
     //unitid
-    els = els :+ (dict("unitid").getOrElse(x.getInt(12), 0) + i, 1d)
+    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
     i += dict("unitid").size + 1
 
     //ideaid
-    els = els :+ (dict("ideaid").getOrElse(x.getInt(13), 0) + i, 1d)
+    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
     i += dict("ideaid").size + 1
 
     try {

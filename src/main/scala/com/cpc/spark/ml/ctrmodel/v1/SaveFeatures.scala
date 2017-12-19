@@ -28,9 +28,9 @@ object SaveFeatures {
     val stmt =
       """
         |select isclick,sex,age,os,isp,network,
-        |       city,media_appsid,ext['phone_level'].int_value,`timestamp`,adtype,
-        |       planid,unitid,ideaid,ext['adclass'].int_value,adslotid,
-        |       adslot_type,ext['pagenum'].int_value,ext['bookid'].string_value
+        |       city,media_appsid,ext['phone_level'].int_value as phone_level,`timestamp`,adtype,
+        |       planid,unitid,ideaid,ext['adclass'].int_value as adclass,adslotid,
+        |       adslot_type,ext['pagenum'].int_value as pagenum,ext['bookid'].string_value as bookid
         |
         |from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
         |and ext['antispam'].int_value = 0
