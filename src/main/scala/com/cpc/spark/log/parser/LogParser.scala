@@ -35,7 +35,9 @@ object LogParser {
         date = date,
         hour = hour
       )
-
+      ext.update("client_type", ExtValue(string_value = notice.getClient.getType.name()))
+      ext.update("client_version", ExtValue(string_value = "%s.%s.%s.%s".format(notice.getClient.getVersion.getMajor,
+        notice.getClient.getVersion.getMinor,notice.getClient.getVersion.getMicro,notice.getClient.getVersion.getBuild)))
       ext.update("media_site_url", ExtValue(string_value = notice.getMedia.getSite.getUrls))
       if (notice.getAdslotCount > 0) {
         val slot = notice.getAdslot(0)
