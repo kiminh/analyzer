@@ -23,11 +23,10 @@ object SaveFeatures {
     saveCvrData(spark, date)
   }
 
-
   def saveDataFromLog(spark: SparkSession, date: String): Unit = {
     val stmt =
       """
-        |select isclick,sex,age,os,isp,network,
+        |select searchid,isclick as label,sex,age,os,isp,network,
         |       city,media_appsid,ext['phone_level'].int_value as phone_level,`timestamp`,adtype,
         |       planid,unitid,ideaid,ext['adclass'].int_value as adclass,adslotid,
         |       adslot_type,ext['pagenum'].int_value as pagenum,ext['bookid'].string_value as bookid
@@ -53,24 +52,7 @@ object SaveFeatures {
   }
 
   def saveCvrData(spark: SparkSession, date: String): Unit = {
-    val sqlStmt =
-      """
-        |select searchid,sex,age,os,isp,network,
-        |       city,media_appsid,ext['phone_level'].int_value,`timestamp`,adtype,
-        |       planid,unitid,ideaid,ext['adclass'].int_value,adslotid,
-        |       adslot_type,ext['pagenum'].int_value,ext['bookid'].string_value
-        |
-        |from dl_cpc.cpc_union_log where `date` = "%s" and isclick = 1
-        |and ext['antispam'].int_value = 0
-        |
-      """.stripMargin.format(date)
     import spark.implicits._
-
-
-    println(sqlStmt)
-    val clicklog = spark.sql(sqlStmt)
-    println("click log", clicklog.count())
-
     val cvrlog = spark.sql(
       s"""
          |select * from dl_cpc.cpc_union_trace_log where `date` = "%s"
@@ -83,19 +65,34 @@ object SaveFeatures {
       .reduceByKey(_ ++ _)
       .map {
         x =>
-          val convert = cvrPositive(x._2:_*)
-          Cvr(searchid = x._1, convert = convert)
+          val convert = cvrPositive(x._2)
+          (x._1, convert)
       }
+      .toDF("searchid", "label")
+    println("cvr log", cvrlog.count())
 
-    clicklog.join(cvrlog.toDS(), Seq("searchid"))
+    val sqlStmt =
+      """
+        |select searchid,sex,age,os,isp,network,
+        |       city,media_appsid,ext['phone_level'].int_value,`timestamp`,adtype,
+        |       planid,unitid,ideaid,ext['adclass'].int_value,adslotid,
+        |       adslot_type,ext['pagenum'].int_value,ext['bookid'].string_value
+        |
+        |from dl_cpc.cpc_union_log where `date` = "%s" and isclick = 1
+        |and ext['antispam'].int_value = 0
+        |
+      """.stripMargin.format(date)
+    println(sqlStmt)
+    val clicklog = spark.sql(sqlStmt)
+    println("click log", clicklog.count())
+
+    clicklog.join(cvrlog, Seq("searchid"))
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/lrmodel/cvrdata/%s".format(date))
   }
 
-  private case class Cvr(searchid: String = "", convert: Int = 0)
-
-  def cvrPositive(traces: TraceLog*): Int = {
+  def cvrPositive(traces: Seq[TraceLog]): Int = {
     var stay = 0
     var click = 0
     var active = 0
@@ -117,6 +114,8 @@ object SaveFeatures {
             if (t.duration > stay) {
               stay = t.duration
             }
+
+          case _ =>
         }
     }
 

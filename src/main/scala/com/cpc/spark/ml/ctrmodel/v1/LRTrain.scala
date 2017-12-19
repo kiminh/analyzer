@@ -37,6 +37,16 @@ object LRTrain {
     model = new LRIRModel
     spark = model.initSpark("ctr lr model")
     initFeatureDict()
+
+    val cvrlog = getCvrData()
+
+    cvrlog.take(10).foreach {
+      row =>
+        val a = (row.getAs[String]("searchid"), row.getAs[Int]("sex"), row.getAs[Int]("convert"))
+        println(a)
+    }
+
+
     val ulog = getData().cache()
 
     //qtt-all
@@ -142,7 +152,7 @@ object LRTrain {
                 case "parser1" =>
                   getVector(u)
               }
-              LabeledPoint(u.getInt(0).toDouble, vec)
+              LabeledPoint(u.getAs[Int]("label").toDouble, vec)
           }
       }
   }
@@ -169,7 +179,7 @@ object LRTrain {
     }
     trainLog :+= "\n------dict size------"
     for (name <- dictNames) {
-      val pathTpl = "/user/cpc/feature_ids/%s/{%s}"
+      val pathTpl = "/user/cpc/lrmodel/feature_ids/%s/{%s}"
       var n = 0
       val ids = mutable.Map[Int, Int]()
       spark.read
@@ -188,6 +198,23 @@ object LRTrain {
       println("dict", name, ids.size)
       trainLog :+= "%s=%d".format(name, ids.size)
     }
+  }
+
+  def getCvrData(): RDD[Row] = {
+    trainLog :+= "\n-------get ulog data------"
+    val calendar = Calendar.getInstance()
+    calendar.add(Calendar.DATE, -dayBefore)
+    var pathSeps = Seq[String]()
+    for (d <- 1 to days) {
+      val date = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
+      pathSeps = pathSeps :+ date
+      calendar.add(Calendar.DATE, 1)
+    }
+
+    val path = "/user/cpc/lrmodel/cvrdata/{%s}".format(pathSeps.mkString(","))
+    println(path)
+    trainLog :+= path
+    spark.read.parquet(path).rdd
   }
 
   def getData(): RDD[Row] = {

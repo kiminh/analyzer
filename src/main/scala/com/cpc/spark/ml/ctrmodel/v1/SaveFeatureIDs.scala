@@ -37,7 +37,7 @@ object SaveFeatureIDs {
 
   def saveids(spark: SparkSession, ids: RDD[Int], name: String, date: String): Unit = {
     import spark.implicits._
-    val path = "/user/cpc/feature_ids/%s/%s".format(name, date)
+    val path = "/user/cpc/lrmodel/feature_ids/%s/%s".format(name, date)
     ids.distinct(100).filter(_ > 0)
       .sortBy(x => x)
       .toDF()
