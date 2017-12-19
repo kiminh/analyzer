@@ -4710,6 +4710,23 @@ public final class Aslog {
      */
     com.google.protobuf.ByteString
         getBookidBytes();
+
+    /**
+     * <pre>
+     *广告位打折值，单位%
+     * </pre>
+     *
+     * <code>optional int32 discount = 14;</code>
+     */
+    boolean hasDiscount();
+    /**
+     * <pre>
+     *广告位打折值，单位%
+     * </pre>
+     *
+     * <code>optional int32 discount = 14;</code>
+     */
+    int getDiscount();
   }
   /**
    * Protobuf type {@code aslog.Adslot}
@@ -4735,6 +4752,7 @@ public final class Aslog {
       channel_ = "";
       pagenum_ = 0;
       bookid_ = "";
+      discount_ = 0;
     }
 
     @java.lang.Override
@@ -4846,6 +4864,11 @@ public final class Aslog {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00001000;
               bookid_ = bs;
+              break;
+            }
+            case 112: {
+              bitField0_ |= 0x00002000;
+              discount_ = input.readInt32();
               break;
             }
           }
@@ -5275,6 +5298,29 @@ public final class Aslog {
       }
     }
 
+    public static final int DISCOUNT_FIELD_NUMBER = 14;
+    private int discount_;
+    /**
+     * <pre>
+     *广告位打折值，单位%
+     * </pre>
+     *
+     * <code>optional int32 discount = 14;</code>
+     */
+    public boolean hasDiscount() {
+      return ((bitField0_ & 0x00002000) == 0x00002000);
+    }
+    /**
+     * <pre>
+     *广告位打折值，单位%
+     * </pre>
+     *
+     * <code>optional int32 discount = 14;</code>
+     */
+    public int getDiscount() {
+      return discount_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -5346,6 +5392,9 @@ public final class Aslog {
       if (((bitField0_ & 0x00001000) == 0x00001000)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 13, bookid_);
       }
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+        output.writeInt32(14, discount_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -5401,6 +5450,10 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x00001000) == 0x00001000)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(13, bookid_);
+      }
+      if (((bitField0_ & 0x00002000) == 0x00002000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(14, discount_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -5487,6 +5540,11 @@ public final class Aslog {
         result = result && getBookid()
             .equals(other.getBookid());
       }
+      result = result && (hasDiscount() == other.hasDiscount());
+      if (hasDiscount()) {
+        result = result && (getDiscount()
+            == other.getDiscount());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -5552,6 +5610,10 @@ public final class Aslog {
       if (hasBookid()) {
         hash = (37 * hash) + BOOKID_FIELD_NUMBER;
         hash = (53 * hash) + getBookid().hashCode();
+      }
+      if (hasDiscount()) {
+        hash = (37 * hash) + DISCOUNT_FIELD_NUMBER;
+        hash = (53 * hash) + getDiscount();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -5702,6 +5764,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00000800);
         bookid_ = "";
         bitField0_ = (bitField0_ & ~0x00001000);
+        discount_ = 0;
+        bitField0_ = (bitField0_ & ~0x00002000);
         return this;
       }
 
@@ -5782,6 +5846,10 @@ public final class Aslog {
           to_bitField0_ |= 0x00001000;
         }
         result.bookid_ = bookid_;
+        if (((from_bitField0_ & 0x00002000) == 0x00002000)) {
+          to_bitField0_ |= 0x00002000;
+        }
+        result.discount_ = discount_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -5870,6 +5938,9 @@ public final class Aslog {
           bitField0_ |= 0x00001000;
           bookid_ = other.bookid_;
           onChanged();
+        }
+        if (other.hasDiscount()) {
+          setDiscount(other.getDiscount());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -6776,6 +6847,54 @@ public final class Aslog {
   }
   bitField0_ |= 0x00001000;
         bookid_ = value;
+        onChanged();
+        return this;
+      }
+
+      private int discount_ ;
+      /**
+       * <pre>
+       *广告位打折值，单位%
+       * </pre>
+       *
+       * <code>optional int32 discount = 14;</code>
+       */
+      public boolean hasDiscount() {
+        return ((bitField0_ & 0x00002000) == 0x00002000);
+      }
+      /**
+       * <pre>
+       *广告位打折值，单位%
+       * </pre>
+       *
+       * <code>optional int32 discount = 14;</code>
+       */
+      public int getDiscount() {
+        return discount_;
+      }
+      /**
+       * <pre>
+       *广告位打折值，单位%
+       * </pre>
+       *
+       * <code>optional int32 discount = 14;</code>
+       */
+      public Builder setDiscount(int value) {
+        bitField0_ |= 0x00002000;
+        discount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *广告位打折值，单位%
+       * </pre>
+       *
+       * <code>optional int32 discount = 14;</code>
+       */
+      public Builder clearDiscount() {
+        bitField0_ = (bitField0_ & ~0x00002000);
+        discount_ = 0;
         onChanged();
         return this;
       }
@@ -18712,6 +18831,23 @@ public final class Aslog {
      * <code>optional uint32 newuser = 8;</code>
      */
     int getNewuser();
+
+    /**
+     * <pre>
+     *同一用户一天内的请求次数
+     * </pre>
+     *
+     * <code>optional uint32 req_count = 9;</code>
+     */
+    boolean hasReqCount();
+    /**
+     * <pre>
+     *同一用户一天内的请求次数
+     * </pre>
+     *
+     * <code>optional uint32 req_count = 9;</code>
+     */
+    int getReqCount();
   }
   /**
    * Protobuf type {@code aslog.UserProfile}
@@ -18733,6 +18869,7 @@ public final class Aslog {
       antispam_ = 0;
       shareCoin_ = 0;
       newuser_ = 0;
+      reqCount_ = 0;
     }
 
     @java.lang.Override
@@ -18805,6 +18942,11 @@ public final class Aslog {
             case 64: {
               bitField0_ |= 0x00000040;
               newuser_ = input.readUInt32();
+              break;
+            }
+            case 72: {
+              bitField0_ |= 0x00000080;
+              reqCount_ = input.readUInt32();
               break;
             }
           }
@@ -19051,6 +19193,29 @@ public final class Aslog {
       return newuser_;
     }
 
+    public static final int REQ_COUNT_FIELD_NUMBER = 9;
+    private int reqCount_;
+    /**
+     * <pre>
+     *同一用户一天内的请求次数
+     * </pre>
+     *
+     * <code>optional uint32 req_count = 9;</code>
+     */
+    public boolean hasReqCount() {
+      return ((bitField0_ & 0x00000080) == 0x00000080);
+    }
+    /**
+     * <pre>
+     *同一用户一天内的请求次数
+     * </pre>
+     *
+     * <code>optional uint32 req_count = 9;</code>
+     */
+    public int getReqCount() {
+      return reqCount_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -19086,6 +19251,9 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
         output.writeUInt32(8, newuser_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        output.writeUInt32(9, reqCount_);
       }
       unknownFields.writeTo(output);
     }
@@ -19126,6 +19294,10 @@ public final class Aslog {
       if (((bitField0_ & 0x00000040) == 0x00000040)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(8, newuser_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(9, reqCount_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -19181,6 +19353,11 @@ public final class Aslog {
         result = result && (getNewuser()
             == other.getNewuser());
       }
+      result = result && (hasReqCount() == other.hasReqCount());
+      if (hasReqCount()) {
+        result = result && (getReqCount()
+            == other.getReqCount());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -19223,6 +19400,10 @@ public final class Aslog {
       if (hasNewuser()) {
         hash = (37 * hash) + NEWUSER_FIELD_NUMBER;
         hash = (53 * hash) + getNewuser();
+      }
+      if (hasReqCount()) {
+        hash = (37 * hash) + REQ_COUNT_FIELD_NUMBER;
+        hash = (53 * hash) + getReqCount();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -19363,6 +19544,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00000040);
         newuser_ = 0;
         bitField0_ = (bitField0_ & ~0x00000080);
+        reqCount_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000100);
         return this;
       }
 
@@ -19424,6 +19607,10 @@ public final class Aslog {
           to_bitField0_ |= 0x00000040;
         }
         result.newuser_ = newuser_;
+        if (((from_bitField0_ & 0x00000100) == 0x00000100)) {
+          to_bitField0_ |= 0x00000080;
+        }
+        result.reqCount_ = reqCount_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -19512,6 +19699,9 @@ public final class Aslog {
         }
         if (other.hasNewuser()) {
           setNewuser(other.getNewuser());
+        }
+        if (other.hasReqCount()) {
+          setReqCount(other.getReqCount());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -20188,6 +20378,54 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private int reqCount_ ;
+      /**
+       * <pre>
+       *同一用户一天内的请求次数
+       * </pre>
+       *
+       * <code>optional uint32 req_count = 9;</code>
+       */
+      public boolean hasReqCount() {
+        return ((bitField0_ & 0x00000100) == 0x00000100);
+      }
+      /**
+       * <pre>
+       *同一用户一天内的请求次数
+       * </pre>
+       *
+       * <code>optional uint32 req_count = 9;</code>
+       */
+      public int getReqCount() {
+        return reqCount_;
+      }
+      /**
+       * <pre>
+       *同一用户一天内的请求次数
+       * </pre>
+       *
+       * <code>optional uint32 req_count = 9;</code>
+       */
+      public Builder setReqCount(int value) {
+        bitField0_ |= 0x00000100;
+        reqCount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *同一用户一天内的请求次数
+       * </pre>
+       *
+       * <code>optional uint32 req_count = 9;</code>
+       */
+      public Builder clearReqCount() {
+        bitField0_ = (bitField0_ & ~0x00000100);
+        reqCount_ = 0;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -20655,6 +20893,31 @@ public final class Aslog {
      */
     com.google.protobuf.ByteString
         getCtrtargetBytes();
+
+    /**
+     * <pre>
+     * 同一user过滤
+     * </pre>
+     *
+     * <code>repeated uint32 dupuserfilter = 26;</code>
+     */
+    java.util.List<java.lang.Integer> getDupuserfilterList();
+    /**
+     * <pre>
+     * 同一user过滤
+     * </pre>
+     *
+     * <code>repeated uint32 dupuserfilter = 26;</code>
+     */
+    int getDupuserfilterCount();
+    /**
+     * <pre>
+     * 同一user过滤
+     * </pre>
+     *
+     * <code>repeated uint32 dupuserfilter = 26;</code>
+     */
+    int getDupuserfilter(int index);
   }
   /**
    * Protobuf type {@code aslog.NoticeLogBody}
@@ -20684,6 +20947,7 @@ public final class Aslog {
       timecost_ = 0L;
       https_ = false;
       ctrtarget_ = "";
+      dupuserfilter_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -20943,6 +21207,27 @@ public final class Aslog {
               ctrtarget_ = bs;
               break;
             }
+            case 208: {
+              if (!((mutable_bitField0_ & 0x00400000) == 0x00400000)) {
+                dupuserfilter_ = new java.util.ArrayList<java.lang.Integer>();
+                mutable_bitField0_ |= 0x00400000;
+              }
+              dupuserfilter_.add(input.readUInt32());
+              break;
+            }
+            case 210: {
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              if (!((mutable_bitField0_ & 0x00400000) == 0x00400000) && input.getBytesUntilLimit() > 0) {
+                dupuserfilter_ = new java.util.ArrayList<java.lang.Integer>();
+                mutable_bitField0_ |= 0x00400000;
+              }
+              while (input.getBytesUntilLimit() > 0) {
+                dupuserfilter_.add(input.readUInt32());
+              }
+              input.popLimit(limit);
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -20974,6 +21259,9 @@ public final class Aslog {
         }
         if (((mutable_bitField0_ & 0x00040000) == 0x00040000)) {
           dspReqInfo_ = java.util.Collections.unmodifiableList(dspReqInfo_);
+        }
+        if (((mutable_bitField0_ & 0x00400000) == 0x00400000)) {
+          dupuserfilter_ = java.util.Collections.unmodifiableList(dupuserfilter_);
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -21650,6 +21938,40 @@ public final class Aslog {
       }
     }
 
+    public static final int DUPUSERFILTER_FIELD_NUMBER = 26;
+    private java.util.List<java.lang.Integer> dupuserfilter_;
+    /**
+     * <pre>
+     * 同一user过滤
+     * </pre>
+     *
+     * <code>repeated uint32 dupuserfilter = 26;</code>
+     */
+    public java.util.List<java.lang.Integer>
+        getDupuserfilterList() {
+      return dupuserfilter_;
+    }
+    /**
+     * <pre>
+     * 同一user过滤
+     * </pre>
+     *
+     * <code>repeated uint32 dupuserfilter = 26;</code>
+     */
+    public int getDupuserfilterCount() {
+      return dupuserfilter_.size();
+    }
+    /**
+     * <pre>
+     * 同一user过滤
+     * </pre>
+     *
+     * <code>repeated uint32 dupuserfilter = 26;</code>
+     */
+    public int getDupuserfilter(int index) {
+      return dupuserfilter_.get(index);
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -21784,6 +22106,9 @@ public final class Aslog {
       if (((bitField0_ & 0x00002000) == 0x00002000)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 25, ctrtarget_);
       }
+      for (int i = 0; i < dupuserfilter_.size(); i++) {
+        output.writeUInt32(26, dupuserfilter_.get(i));
+      }
       unknownFields.writeTo(output);
     }
 
@@ -21896,6 +22221,15 @@ public final class Aslog {
       if (((bitField0_ & 0x00002000) == 0x00002000)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(25, ctrtarget_);
       }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < dupuserfilter_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeUInt32SizeNoTag(dupuserfilter_.get(i));
+        }
+        size += dataSize;
+        size += 2 * getDupuserfilterList().size();
+      }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
@@ -21999,6 +22333,8 @@ public final class Aslog {
         result = result && getCtrtarget()
             .equals(other.getCtrtarget());
       }
+      result = result && getDupuserfilterList()
+          .equals(other.getDupuserfilterList());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -22100,6 +22436,10 @@ public final class Aslog {
       if (hasCtrtarget()) {
         hash = (37 * hash) + CTRTARGET_FIELD_NUMBER;
         hash = (53 * hash) + getCtrtarget().hashCode();
+      }
+      if (getDupuserfilterCount() > 0) {
+        hash = (37 * hash) + DUPUSERFILTER_FIELD_NUMBER;
+        hash = (53 * hash) + getDupuserfilterList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -22313,6 +22653,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00100000);
         ctrtarget_ = "";
         bitField0_ = (bitField0_ & ~0x00200000);
+        dupuserfilter_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x00400000);
         return this;
       }
 
@@ -22473,6 +22815,11 @@ public final class Aslog {
           to_bitField0_ |= 0x00002000;
         }
         result.ctrtarget_ = ctrtarget_;
+        if (((bitField0_ & 0x00400000) == 0x00400000)) {
+          dupuserfilter_ = java.util.Collections.unmodifiableList(dupuserfilter_);
+          bitField0_ = (bitField0_ & ~0x00400000);
+        }
+        result.dupuserfilter_ = dupuserfilter_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -22705,6 +23052,16 @@ public final class Aslog {
         if (other.hasCtrtarget()) {
           bitField0_ |= 0x00200000;
           ctrtarget_ = other.ctrtarget_;
+          onChanged();
+        }
+        if (!other.dupuserfilter_.isEmpty()) {
+          if (dupuserfilter_.isEmpty()) {
+            dupuserfilter_ = other.dupuserfilter_;
+            bitField0_ = (bitField0_ & ~0x00400000);
+          } else {
+            ensureDupuserfilterIsMutable();
+            dupuserfilter_.addAll(other.dupuserfilter_);
+          }
           onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
@@ -25375,6 +25732,100 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private java.util.List<java.lang.Integer> dupuserfilter_ = java.util.Collections.emptyList();
+      private void ensureDupuserfilterIsMutable() {
+        if (!((bitField0_ & 0x00400000) == 0x00400000)) {
+          dupuserfilter_ = new java.util.ArrayList<java.lang.Integer>(dupuserfilter_);
+          bitField0_ |= 0x00400000;
+         }
+      }
+      /**
+       * <pre>
+       * 同一user过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupuserfilter = 26;</code>
+       */
+      public java.util.List<java.lang.Integer>
+          getDupuserfilterList() {
+        return java.util.Collections.unmodifiableList(dupuserfilter_);
+      }
+      /**
+       * <pre>
+       * 同一user过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupuserfilter = 26;</code>
+       */
+      public int getDupuserfilterCount() {
+        return dupuserfilter_.size();
+      }
+      /**
+       * <pre>
+       * 同一user过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupuserfilter = 26;</code>
+       */
+      public int getDupuserfilter(int index) {
+        return dupuserfilter_.get(index);
+      }
+      /**
+       * <pre>
+       * 同一user过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupuserfilter = 26;</code>
+       */
+      public Builder setDupuserfilter(
+          int index, int value) {
+        ensureDupuserfilterIsMutable();
+        dupuserfilter_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 同一user过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupuserfilter = 26;</code>
+       */
+      public Builder addDupuserfilter(int value) {
+        ensureDupuserfilterIsMutable();
+        dupuserfilter_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 同一user过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupuserfilter = 26;</code>
+       */
+      public Builder addAllDupuserfilter(
+          java.lang.Iterable<? extends java.lang.Integer> values) {
+        ensureDupuserfilterIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, dupuserfilter_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 同一user过滤
+       * </pre>
+       *
+       * <code>repeated uint32 dupuserfilter = 26;</code>
+       */
+      public Builder clearDupuserfilter() {
+        dupuserfilter_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x00400000);
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -25526,90 +25977,92 @@ public final class Aslog {
       "\t\022\021\n\tchannelid\030\003 \001(\t\022\033\n\003app\030\004 \001(\0132\016.aslo" +
       "g.AppInfo\022\035\n\004site\030\005 \001(\0132\017.aslog.SiteInfo" +
       "\022\020\n\010category\030\006 \001(\r\022\024\n\014subaccountid\030\007 \001(\t" +
-      "\"\371\001\n\006Adslot\022\n\n\002id\030\001 \002(\t\022\037\n\004type\030\002 \002(\0162\021." +
+      "\"\213\002\n\006Adslot\022\n\n\002id\030\001 \002(\t\022\037\n\004type\030\002 \002(\0162\021." +
       "aslog.AdslotType\022\031\n\004size\030\003 \002(\0132\013.aslog.S",
       "ize\022\020\n\010capacity\030\004 \002(\r\022\020\n\010inittime\030\005 \001(\004\022" +
       "\r\n\005apseq\030\006 \001(\r\022\r\n\005apuid\030\007 \001(\t\022\021\n\tbuildty" +
       "pe\030\010 \001(\r\022\020\n\010floorbid\030\t \001(\002\022\016\n\006cpmbid\030\n \001" +
       "(\002\022\017\n\007channel\030\013 \001(\t\022\017\n\007pagenum\030\014 \001(\005\022\016\n\006" +
-      "bookid\030\r \001(\t\"7\n\007Network\022 \n\004type\030\001 \002(\0162\022." +
-      "aslog.NetworkType\022\n\n\002ip\030\002 \002(\t\"E\n\007Version" +
-      "\022\r\n\005major\030\001 \002(\r\022\r\n\005minor\030\002 \001(\r\022\r\n\005micro\030" +
-      "\003 \001(\r\022\r\n\005build\030\004 \001(\r\"K\n\010DeviceId\022!\n\004type" +
-      "\030\001 \002(\0162\023.aslog.DeviceIdType\022\n\n\002id\030\002 \002(\t\022" +
-      "\020\n\010original\030\003 \001(\010\"\336\002\n\006Device\022\031\n\002os\030\001 \002(\016",
-      "2\r.aslog.OSType\022!\n\tosversion\030\002 \002(\0132\016.asl" +
-      "og.Version\022\034\n\003ids\030\003 \003(\0132\017.aslog.DeviceId" +
-      "\022\r\n\005brand\030\004 \001(\t\022\r\n\005model\030\005 \001(\t\022\021\n\tuserag" +
-      "ent\030\006 \001(\014\022\016\n\006cookie\030\007 \001(\014\022#\n\007browser\030\010 \001" +
-      "(\0162\022.aslog.BrowserType\022\021\n\tmatchimei\030\t \001(" +
-      "\t\022\013\n\003uid\030\n \001(\t\022\020\n\010screen_w\030\013 \001(\005\022\020\n\010scre" +
-      "en_h\030\014 \001(\005\022\021\n\tmatchidfa\030\r \001(\t\022\022\n\nphonepr" +
-      "ice\030\016 \001(\r\022\022\n\nphonelevel\030\017 \001(\r\022\023\n\013brand_t" +
-      "itle\030\020 \001(\t\"J\n\006Client\022\037\n\004type\030\001 \002(\0162\021.asl" +
-      "og.ClientType\022\037\n\007version\030\002 \001(\0132\016.aslog.V",
-      "ersion\"\376\001\n\nDspReqInfo\022\031\n\003src\030\001 \002(\0162\014.asl" +
-      "og.AdSrc\022\022\n\ndspmediaid\030\002 \001(\t\022\021\n\tretAdsNu" +
-      "m\030\003 \001(\005\022\020\n\010timecost\030\004 \001(\003\022\022\n\ntargetHost\030" +
-      "\005 \001(\t\022\022\n\nioTimeCost\030\006 \001(\003\022\024\n\014materialTim" +
-      "e\030\007 \001(\003\022\024\n\014showFreqTime\030\010 \001(\003\022\024\n\014reqBsAl" +
-      "lTime\030\t \001(\003\022\034\n\024blackMediaFilterTime\030\n \001(" +
-      "\003\022\024\n\014fixClickTime\030\013 \001(\003\"\230\003\n\006AdInfo\022\033\n\004ty" +
-      "pe\030\001 \002(\0162\r.aslog.AdType\022\031\n\003src\030\002 \002(\0162\014.a" +
-      "slog.AdSrc\022+\n\013interaction\030\003 \002(\0162\026.aslog." +
-      "InteractionType\022\014\n\004adid\030\004 \001(\r\022\017\n\007groupid",
-      "\030\005 \001(\r\022\016\n\006planid\030\006 \001(\r\022\016\n\006userid\030\007 \001(\r\022\013" +
-      "\n\003bid\030\010 \001(\r\022\r\n\005price\030\t \001(\r\022\013\n\003ctr\030\n \001(\004\022" +
-      "\013\n\003cpm\030\013 \001(\004\022\r\n\005class\030\014 \001(\r\022\020\n\010usertype\030" +
-      "\r \001(\005\022\020\n\010titlectr\030\016 \001(\004\022\016\n\006expcpm\030\017 \001(\004\022" +
-      "\013\n\003cvr\030\020 \001(\004\022\025\n\rcvr_threshold\030\021 \001(\004\022\021\n\tc" +
-      "vr_thres\030\022 \001(\004\022\022\n\nmaterialid\030\023 \003(\r\022\024\n\014tr" +
-      "igger_type\030\024 \001(\r\022\020\n\010discount\030\025 \002(\005\"4\n\010Ad" +
-      "DspRet\022\031\n\003src\030\001 \002(\0162\014.aslog.AdSrc\022\r\n\005adn" +
-      "um\030\002 \002(\r\"H\n\010Location\022\017\n\007country\030\001 \001(\r\022\020\n" +
-      "\010province\030\002 \001(\r\022\014\n\004city\030\003 \001(\r\022\013\n\003isp\030\004 \001",
-      "(\r\"1\n\014InterestItem\022\022\n\ninterestid\030\001 \001(\004\022\r" +
-      "\n\005score\030\002 \001(\004\"\247\001\n\013UserProfile\022&\n\tinteres" +
-      "ts\030\001 \003(\0132\023.aslog.InterestItem\022\013\n\003age\030\002 \001" +
-      "(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpcatego" +
-      "ry\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshare_coin" +
-      "\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\"\273\004\n\rNoticeLogBod" +
-      "y\022\020\n\010searchid\030\001 \002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033" +
-      "\n\005media\030\003 \001(\0132\014.aslog.Media\022\035\n\006adslot\030\004 " +
-      "\003(\0132\r.aslog.Adslot\022\035\n\006device\030\005 \001(\0132\r.asl" +
-      "og.Device\022\032\n\003ads\030\006 \003(\0132\r.aslog.AdInfo\022\037\n",
-      "\006dspret\030\007 \003(\0132\017.aslog.AdDspRet\022\r\n\005debug\030" +
-      "\010 \001(\010\022\035\n\006client\030\t \001(\0132\r.aslog.Client\022\037\n\007" +
-      "network\030\n \001(\0132\016.aslog.Network\022\017\n\007exptags" +
-      "\030\013 \003(\t\022!\n\010location\030\014 \001(\0132\017.aslog.Locatio" +
-      "n\022\020\n\010sourceip\030\r \001(\t\022\021\n\tintertype\030\016 \001(\r\022\'" +
-      "\n\013userprofile\030\017 \001(\0132\022.aslog.UserProfile\022" +
-      "\025\n\rdupplanfilter\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021" +
-      " \003(\r\022\024\n\014lowcvrfilter\030\022 \003(\r\022%\n\ndspReqInfo" +
-      "\030\026 \003(\0132\021.aslog.DspReqInfo\022\020\n\010timecost\030\027 " +
-      "\001(\004\022\r\n\005https\030\030 \001(\010\022\021\n\tctrtarget\030\031 \001(\t*3\n",
-      "\tMediaType\022\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020" +
-      "\002\022\007\n\003WAP\020\003*@\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022" +
-      "\020\n\014CONTENT_FEED\020\002\022\021\n\rSLOT_INTERACT\020\003*P\n\013" +
-      "NetworkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI" +
-      "\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?" +
-      "\n\006OSType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020\001" +
-      "\022\n\n\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType\022" +
-      "\022\n\016UnknownBrowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006C" +
-      "hrome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020\004" +
-      "\022\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IE",
-      "MobileBrowser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006Q" +
-      "QChat\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNOW" +
-      "N\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDE" +
-      "VID_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCO" +
-      "OKIE\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVID_IMS" +
-      "I\020\007*R\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tIC" +
-      "ON_TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013AD_INT" +
-      "ERACT\020\005*\020\n\005AdSrc\022\007\n\003CPC\020\001*i\n\017Interaction" +
-      "Type\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DO" +
-      "WNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MA",
-      "IL\020\005\022\006\n\002GP\020\006*3\n\nClientType\022\r\n\tNATIVESDK\020" +
-      "\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003"
+      "bookid\030\r \001(\t\022\020\n\010discount\030\016 \001(\005\"7\n\007Networ" +
+      "k\022 \n\004type\030\001 \002(\0162\022.aslog.NetworkType\022\n\n\002i" +
+      "p\030\002 \002(\t\"E\n\007Version\022\r\n\005major\030\001 \002(\r\022\r\n\005min" +
+      "or\030\002 \001(\r\022\r\n\005micro\030\003 \001(\r\022\r\n\005build\030\004 \001(\r\"K" +
+      "\n\010DeviceId\022!\n\004type\030\001 \002(\0162\023.aslog.DeviceI" +
+      "dType\022\n\n\002id\030\002 \002(\t\022\020\n\010original\030\003 \001(\010\"\336\002\n\006",
+      "Device\022\031\n\002os\030\001 \002(\0162\r.aslog.OSType\022!\n\tosv" +
+      "ersion\030\002 \002(\0132\016.aslog.Version\022\034\n\003ids\030\003 \003(" +
+      "\0132\017.aslog.DeviceId\022\r\n\005brand\030\004 \001(\t\022\r\n\005mod" +
+      "el\030\005 \001(\t\022\021\n\tuseragent\030\006 \001(\014\022\016\n\006cookie\030\007 " +
+      "\001(\014\022#\n\007browser\030\010 \001(\0162\022.aslog.BrowserType" +
+      "\022\021\n\tmatchimei\030\t \001(\t\022\013\n\003uid\030\n \001(\t\022\020\n\010scre" +
+      "en_w\030\013 \001(\005\022\020\n\010screen_h\030\014 \001(\005\022\021\n\tmatchidf" +
+      "a\030\r \001(\t\022\022\n\nphoneprice\030\016 \001(\r\022\022\n\nphoneleve" +
+      "l\030\017 \001(\r\022\023\n\013brand_title\030\020 \001(\t\"J\n\006Client\022\037" +
+      "\n\004type\030\001 \002(\0162\021.aslog.ClientType\022\037\n\007versi",
+      "on\030\002 \001(\0132\016.aslog.Version\"\376\001\n\nDspReqInfo\022" +
+      "\031\n\003src\030\001 \002(\0162\014.aslog.AdSrc\022\022\n\ndspmediaid" +
+      "\030\002 \001(\t\022\021\n\tretAdsNum\030\003 \001(\005\022\020\n\010timecost\030\004 " +
+      "\001(\003\022\022\n\ntargetHost\030\005 \001(\t\022\022\n\nioTimeCost\030\006 " +
+      "\001(\003\022\024\n\014materialTime\030\007 \001(\003\022\024\n\014showFreqTim" +
+      "e\030\010 \001(\003\022\024\n\014reqBsAllTime\030\t \001(\003\022\034\n\024blackMe" +
+      "diaFilterTime\030\n \001(\003\022\024\n\014fixClickTime\030\013 \001(" +
+      "\003\"\230\003\n\006AdInfo\022\033\n\004type\030\001 \002(\0162\r.aslog.AdTyp" +
+      "e\022\031\n\003src\030\002 \002(\0162\014.aslog.AdSrc\022+\n\013interact" +
+      "ion\030\003 \002(\0162\026.aslog.InteractionType\022\014\n\004adi",
+      "d\030\004 \001(\r\022\017\n\007groupid\030\005 \001(\r\022\016\n\006planid\030\006 \001(\r" +
+      "\022\016\n\006userid\030\007 \001(\r\022\013\n\003bid\030\010 \001(\r\022\r\n\005price\030\t" +
+      " \001(\r\022\013\n\003ctr\030\n \001(\004\022\013\n\003cpm\030\013 \001(\004\022\r\n\005class\030" +
+      "\014 \001(\r\022\020\n\010usertype\030\r \001(\005\022\020\n\010titlectr\030\016 \001(" +
+      "\004\022\016\n\006expcpm\030\017 \001(\004\022\013\n\003cvr\030\020 \001(\004\022\025\n\rcvr_th" +
+      "reshold\030\021 \001(\004\022\021\n\tcvr_thres\030\022 \001(\004\022\022\n\nmate" +
+      "rialid\030\023 \003(\r\022\024\n\014trigger_type\030\024 \001(\r\022\020\n\010di" +
+      "scount\030\025 \002(\005\"4\n\010AdDspRet\022\031\n\003src\030\001 \002(\0162\014." +
+      "aslog.AdSrc\022\r\n\005adnum\030\002 \002(\r\"H\n\010Location\022\017" +
+      "\n\007country\030\001 \001(\r\022\020\n\010province\030\002 \001(\r\022\014\n\004cit",
+      "y\030\003 \001(\r\022\013\n\003isp\030\004 \001(\r\"1\n\014InterestItem\022\022\n\n" +
+      "interestid\030\001 \001(\004\022\r\n\005score\030\002 \001(\004\"\272\001\n\013User" +
+      "Profile\022&\n\tinterests\030\001 \003(\0132\023.aslog.Inter" +
+      "estItem\022\013\n\003age\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coi" +
+      "n\030\004 \001(\r\022\021\n\tpcategory\030\005 \001(\r\022\020\n\010antispam\030\006" +
+      " \001(\r\022\022\n\nshare_coin\030\007 \001(\r\022\017\n\007newuser\030\010 \001(" +
+      "\r\022\021\n\treq_count\030\t \001(\r\"\322\004\n\rNoticeLogBody\022\020" +
+      "\n\010searchid\030\001 \002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033\n\005m" +
+      "edia\030\003 \001(\0132\014.aslog.Media\022\035\n\006adslot\030\004 \003(\013" +
+      "2\r.aslog.Adslot\022\035\n\006device\030\005 \001(\0132\r.aslog.",
+      "Device\022\032\n\003ads\030\006 \003(\0132\r.aslog.AdInfo\022\037\n\006ds" +
+      "pret\030\007 \003(\0132\017.aslog.AdDspRet\022\r\n\005debug\030\010 \001" +
+      "(\010\022\035\n\006client\030\t \001(\0132\r.aslog.Client\022\037\n\007net" +
+      "work\030\n \001(\0132\016.aslog.Network\022\017\n\007exptags\030\013 " +
+      "\003(\t\022!\n\010location\030\014 \001(\0132\017.aslog.Location\022\020" +
+      "\n\010sourceip\030\r \001(\t\022\021\n\tintertype\030\016 \001(\r\022\'\n\013u" +
+      "serprofile\030\017 \001(\0132\022.aslog.UserProfile\022\025\n\r" +
+      "dupplanfilter\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021 \003(" +
+      "\r\022\024\n\014lowcvrfilter\030\022 \003(\r\022%\n\ndspReqInfo\030\026 " +
+      "\003(\0132\021.aslog.DspReqInfo\022\020\n\010timecost\030\027 \001(\004",
+      "\022\r\n\005https\030\030 \001(\010\022\021\n\tctrtarget\030\031 \001(\t\022\025\n\rdu" +
+      "puserfilter\030\032 \003(\r*3\n\tMediaType\022\013\n\007UNKNOW" +
+      "N\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*@\n\nAdslot" +
+      "Type\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_FEED\020\002\022\021\n" +
+      "\rSLOT_INTERACT\020\003*P\n\013NetworkType\022\017\n\013NET_U" +
+      "NKNOWN\020\000\022\014\n\010NET_WIFI\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NE" +
+      "T_3G\020\003\022\n\n\006NET_4G\020\004*?\n\006OSType\022\016\n\nOS_UNKNO" +
+      "WN\020\000\022\016\n\nOS_ANDROID\020\001\022\n\n\006OS_IOS\020\002\022\t\n\005OS_W" +
+      "P\020\003*\265\001\n\013BrowserType\022\022\n\016UnknownBrowser\020\000\022" +
+      "\016\n\nMQQBrowser\020\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser",
+      "\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n" +
+      "\013QvodBrowser\020\006\022\023\n\017IEMobileBrowser\020\007\022\022\n\016M" +
+      "icroMessenger\020\010\022\n\n\006QQChat\020\t*\231\001\n\014DeviceId" +
+      "Type\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022" +
+      "\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\022\016\n\nDEVID_" +
+      "AAID\020\004\022\022\n\016DEVID_LSCOOKIE\020\005\022\023\n\017DEVID_ANDR" +
+      "OIDID\020\006\022\016\n\nDEVID_IMSI\020\007*R\n\006AdType\022\010\n\004TEX" +
+      "T\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_TEXT\020\003\022\023\n\017THREE_I" +
+      "CON_TEXT\020\004\022\017\n\013AD_INTERACT\020\005*\020\n\005AdSrc\022\007\n\003" +
+      "CPC\020\001*i\n\017InteractionType\022\017\n\013NO_INTERACT\020",
+      "\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020" +
+      "\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006*3\n\nClie" +
+      "ntType\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPEN" +
+      "API\020\003"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -25652,7 +26105,7 @@ public final class Aslog {
     internal_static_aslog_Adslot_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_Adslot_descriptor,
-        new java.lang.String[] { "Id", "Type", "Size", "Capacity", "Inittime", "Apseq", "Apuid", "Buildtype", "Floorbid", "Cpmbid", "Channel", "Pagenum", "Bookid", });
+        new java.lang.String[] { "Id", "Type", "Size", "Capacity", "Inittime", "Apseq", "Apuid", "Buildtype", "Floorbid", "Cpmbid", "Channel", "Pagenum", "Bookid", "Discount", });
     internal_static_aslog_Network_descriptor =
       getDescriptor().getMessageTypes().get(5);
     internal_static_aslog_Network_fieldAccessorTable = new
@@ -25718,13 +26171,13 @@ public final class Aslog {
     internal_static_aslog_UserProfile_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_UserProfile_descriptor,
-        new java.lang.String[] { "Interests", "Age", "Sex", "Coin", "Pcategory", "Antispam", "ShareCoin", "Newuser", });
+        new java.lang.String[] { "Interests", "Age", "Sex", "Coin", "Pcategory", "Antispam", "ShareCoin", "Newuser", "ReqCount", });
     internal_static_aslog_NoticeLogBody_descriptor =
       getDescriptor().getMessageTypes().get(16);
     internal_static_aslog_NoticeLogBody_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_NoticeLogBody_descriptor,
-        new java.lang.String[] { "Searchid", "Timestamp", "Media", "Adslot", "Device", "Ads", "Dspret", "Debug", "Client", "Network", "Exptags", "Location", "Sourceip", "Intertype", "Userprofile", "Dupplanfilter", "Lowcpmfilter", "Lowcvrfilter", "DspReqInfo", "Timecost", "Https", "Ctrtarget", });
+        new java.lang.String[] { "Searchid", "Timestamp", "Media", "Adslot", "Device", "Ads", "Dspret", "Debug", "Client", "Network", "Exptags", "Location", "Sourceip", "Intertype", "Userprofile", "Dupplanfilter", "Lowcpmfilter", "Lowcvrfilter", "DspReqInfo", "Timecost", "Https", "Ctrtarget", "Dupuserfilter", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
