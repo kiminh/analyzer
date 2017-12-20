@@ -26,7 +26,7 @@ object LRTrain {
   private var dayBefore = 7
   private var trainLog = Seq[String]()
 
-  private var spark: SparkSession = _
+  var spark: SparkSession = _
   private var model: LRIRModel = _
 
   def main(args: Array[String]): Unit = {

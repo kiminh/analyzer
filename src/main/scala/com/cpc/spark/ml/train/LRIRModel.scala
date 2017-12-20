@@ -147,8 +147,8 @@ class LRIRModel {
     binsLog = Seq[String]()
     irBinNum = 0
     irError = 0
-    irmodel = _
-    lrmodel = _
+    irmodel = null
+    lrmodel = null
   }
 
   def printLrTestLog(): Unit = {
