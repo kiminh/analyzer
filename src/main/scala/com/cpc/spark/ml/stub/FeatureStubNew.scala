@@ -4,8 +4,6 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.log.parser.{ExtValue, LogParser, UnionLog}
-import com.cpc.spark.ml.common.FeatureDict
-import com.cpc.spark.ml.ctrmodel.v1.FeatureParser
 import com.typesafe.config.ConfigFactory
 import io.grpc.ManagedChannelBuilder
 import mlserver.mlserver._
@@ -72,6 +70,7 @@ object FeatureStubNew {
       x =>
         val v = LRTrain.getVector(x)
 
+        println(v)
         val p = model.predict(v)
         val p1 = irmodel.predict(p)
 
