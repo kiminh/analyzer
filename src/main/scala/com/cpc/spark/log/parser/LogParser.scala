@@ -78,6 +78,7 @@ object LogParser {
         ext.update("usertype", ExtValue(int_value = ad.getUsertype))
         ext.update("trigger_type", ExtValue(int_value = ad.getTriggerType))
         ext.update("rank_discount", ExtValue(int_value = ad.getDiscount))
+        ext.update("user_req_ad_num", ExtValue(int_value = ad.getShowCount))
 
         val mcount = ad.getMaterialidCount
         if (mcount > 0) {
@@ -123,6 +124,7 @@ object LogParser {
       ext.update("antispam", ExtValue(int_value = user.getAntispam))
       ext.update("share_coin", ExtValue(int_value = user.getShareCoin))
       ext.update("qukan_new_user", ExtValue(int_value = user.getNewuser))
+      ext.update("user_req_num", ExtValue(int_value = user.getReqCount))
       log = log.copy(
         sex = user.getSex,
         age = user.getAge,

@@ -194,6 +194,7 @@ message AdInfo {
 	repeated uint32 materialid = 19; //素材id
 	optional uint32 trigger_type = 20; // 0 默认触发  1兴趣触发
 	required int32 discount = 21; //广告最终的提权值，单位%
+	optional int32 show_count = 22; //记录广告所在单元，在此用户下的一天的显示次数
 };
 
 message AdDspRet {
