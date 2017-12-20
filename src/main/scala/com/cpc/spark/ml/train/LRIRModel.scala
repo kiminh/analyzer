@@ -147,6 +147,8 @@ class LRIRModel {
     binsLog = Seq[String]()
     irBinNum = 0
     irError = 0
+    irmodel = _
+    lrmodel = _
   }
 
   def printLrTestLog(): Unit = {
@@ -212,7 +214,7 @@ class LRIRModel {
     log + "auPRC: %.10f, auROC: %.10f\n".format(auPRC, auROC)
   }
 
-  private var irmodel: IsotonicRegressionModel = null
+  private var irmodel: IsotonicRegressionModel = _
 
   def getIRmodel(): IsotonicRegressionModel = {
     irmodel

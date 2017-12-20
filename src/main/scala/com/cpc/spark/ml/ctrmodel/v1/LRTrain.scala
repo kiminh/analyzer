@@ -125,7 +125,14 @@ object LRTrain {
     model.printLrTestLog()
     trainLog :+= model.getLrTestLog()
 
-    model.runIr(1000, 0.9)
+    val testNum = sampleTest.count().toDouble * 0.9
+    val minBinSize = 1000d
+    var binNum = 1000d
+    if (testNum < minBinSize * binNum) {
+      binNum = testNum / minBinSize
+    }
+
+    model.runIr(binNum.toInt, 0.9)
     trainLog :+= model.binsLog.mkString("\n")
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
