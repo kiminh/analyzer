@@ -37,25 +37,28 @@ object GetAntispamLog {
     import ctx.implicits._
     var sql1 = (" SELECT hour,antispam_rules,media_appsid,adslotid,adslot_type,count(distinct searchid) as num  from dl_cpc.cpc_click_log " +
       "where `date` ='%s' and isclick=1 group by media_appsid,adslotid,adslot_type,antispam_rules,hour").format(date)
-
     println("sql1:" + sql1)
     var union = ctx.sql(sql1).rdd.map {
       x =>
-        val hour = x(0).toString()
-        val antispam_rules = x(1).toString()
-        val media_appsid = x(2).toString().toInt
-        val adslot_id = x(3).toString().toInt
-        val adslot_type = x(4).toString().toInt
-        val num = x(5).toString().toInt
-        (hour, media_appsid, adslot_id, adslot_type, antispam_rules, num)
-    }
-    var all = union.filter(x => x._5.trim != "DUP_SEARCH_ID").map(x => ((x._1, x._2, x._3, x._4), x._6)).reduceByKey((x, y) => (x + y))
-    var toResult = union.map(x => ((x._1, x._2, x._3, x._4), (x._5, x._6))).join(all).map {
-      case ((hour, media_appsid, adslot_id, adslot_type), ((antispam_rules, num), total)) =>
-        var antispam_rules_name = antispam_rules
-        if(antispam_rules.length == 0){
-          antispam_rules_name = "OK"
+        try {
+          val hour = x(0).toString()
+          var antispam_rules = x(1).toString()
+          val media_appsid = x(2).toString().toInt
+          val adslot_id = x(3).toString().toInt
+          val adslot_type = x(4).toString().toInt
+          val num = x(5).toString().toInt
+          if(antispam_rules.length == 0){
+            antispam_rules ="OK"
+          }
+          (hour, media_appsid, adslot_id, adslot_type, antispam_rules, num)
+        }catch {
+          case e: Exception =>
+            null
         }
+    }.filter(x => x!= null)
+    var toResult = union.map(x => ((x._1, x._2, x._3, x._4, x._5), x._6)).reduceByKey((x,y) => x+y).map {
+      case ((hour, media_appsid, adslot_id, adslot_type, antispam_rules), num) =>
+        var antispam_rules_name = antispam_rules
         AntispamLog(
           date,
           hour,
@@ -64,10 +67,11 @@ object GetAntispamLog {
           adslot_type,
           antispam_rules_name,
           num,
-          total
+          0
         )
     }
 
+    println("count:"+ toResult.count())
     clearReportHourData("report_media_antispam_hourly", date)
     ctx.createDataFrame(toResult)
       .write

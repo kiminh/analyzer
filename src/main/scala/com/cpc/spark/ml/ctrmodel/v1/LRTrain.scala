@@ -38,15 +38,6 @@ object LRTrain {
     spark = model.initSpark("ctr lr model")
     initFeatureDict()
 
-    val cvrlog = getCvrData()
-
-    cvrlog.take(10).foreach {
-      row =>
-        val a = (row.getAs[String]("searchid"), row.getAs[Int]("sex"), row.getAs[Int]("convert"))
-        println(a)
-    }
-
-
     val ulog = getData().cache()
 
     //qtt-all
@@ -80,9 +71,9 @@ object LRTrain {
 
     //cvr
     model.clearResult()
+    val cvrlog = getCvrData()
     train("parser1", "cvr", cvrlog, "cvr.lrm")
 
-    //TODO
 
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
     ulog.unpersist()
@@ -108,7 +99,7 @@ object LRTrain {
     ulog.unpersist()
 
     val tnum = train.count().toDouble
-    val pnum = train.filter(_.getInt(0) > 0).count().toDouble
+    val pnum = train.filter(_.getAs[Int]("label") > 0).count().toDouble
     val nnum = tnum - pnum
 
     //保证训练数据正负比例 1:9
@@ -116,7 +107,7 @@ object LRTrain {
     println("total positive negative", tnum, pnum, nnum, rate)
     trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
 
-    val sampleTrain = formatSample(parser, train.filter(x => x.getInt(0) > 0 || Random.nextInt(1000) < rate))
+    val sampleTrain = formatSample(parser, train.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate))
     val sampleTest = formatSample(parser, test)
 
     println(sampleTrain.take(5).foreach(x => println(x.features)))
@@ -137,7 +128,8 @@ object LRTrain {
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     val lrfilepath = "/data/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
-    model.saveHdfs("/user/cpc/lrmodel/modeldata/%s".format(date))
+    model.saveHdfs("/user/cpc/lrmodel/lrmodeldata/%s".format(date))
+    model.saveIrHdfs("/user/cpc/lrmodel/irmodeldata/%s".format(date))
     model.savePbPack(parser, lrfilepath, dict.toMap)
     trainLog :+= "protobuf pack %s".format(lrfilepath)
 
