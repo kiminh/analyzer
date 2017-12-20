@@ -69,7 +69,7 @@ object SaveFeatures {
           (x._1, convert)
       }
       .toDF("searchid", "label")
-    println("cvr log", cvrlog.count())
+    println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
 
     val sqlStmt =
       """
@@ -97,6 +97,7 @@ object SaveFeatures {
     var click = 0
     var active = 0
     var mclick = 0
+    var zombie = 0
     traces.foreach {
       t =>
         t.trace_type match {
@@ -110,6 +111,8 @@ object SaveFeatures {
 
           case "press" => click += 1
 
+          case "zombie" => zombie += 1
+
           case "stay" =>
             if (t.duration > stay) {
               stay = t.duration
@@ -119,7 +122,7 @@ object SaveFeatures {
         }
     }
 
-    if ((stay >= 30 && click > 0) || active > 0 || (stay >= 60 && mclick > 0)) {
+    if ((stay >= 30 && click > 0) || active > 0 || (stay >= 60 && zombie == 0)) {
       1
     } else {
       0

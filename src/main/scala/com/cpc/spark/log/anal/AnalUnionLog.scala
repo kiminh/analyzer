@@ -180,6 +180,7 @@ object AnalUnionLog {
       println("trace", traceRdd.count())
     }
     unionData.unpersist()
+    spark.stop()
   }
 
   val schema = StructType(Array(
