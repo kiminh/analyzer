@@ -48,7 +48,7 @@ object FeatureStubNew {
     //val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime)
     //val hour = new SimpleDateFormat("HH").format(new Date().getTime - 7200L * 1000L)
 
-    val date = "2017-12-19"
+    val date = "2017-12-21"
     val hour = "13"
 
     val sql = "select searchid,isclick as label,sex,age,os,isp,network,city,media_appsid,ext['phone_level'].int_value as phone_level,`timestamp`,adtype,planid,unitid,ideaid,ext['adclass'].int_value as adclass,adslotid,adslot_type,ext['pagenum'].int_value as pagenum,ext['bookid'].string_value as bookid from dl_cpc.cpc_union_log where `date` = \"%s\" and media_appsid in (\"80000001\", \"80000002\") and adslot_type in (1,2)  and interests != \"\" and isclick = 1 and hour = \"%s\" and ext['antispam'].int_value = 0 limit %s".format(date, hour, args(4).toInt)
@@ -68,7 +68,7 @@ object FeatureStubNew {
 
     logs.toLocalIterator.foreach{
       x =>
-        val v = LRTrain.getVector(x)
+        val v = LRTrain.getVectorParser2(x)
 
         println(v)
         val p = model.predict(v)
@@ -77,7 +77,7 @@ object FeatureStubNew {
         val (ad, m, slot, u, loc, n, d, t) = LRTrain.unionLogToObject(x)
 
         val req = Request(
-          version = "v2",
+          version = "v3",
           ads = Seq(ad),
           media = Option(m),
           user = Option(u),
