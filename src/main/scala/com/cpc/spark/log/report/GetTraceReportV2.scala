@@ -90,7 +90,7 @@ object GetTraceReportV2 {
         ((idea_id, media_id, adslot_id, hour), (user_id, plan_id, unit_id, date, trace_type, duration, auto, count))
     }
     val toResult = traceData.join(unionRdd).map {
-      case   ((idea_id, media_id, adslot_id, hour), ((user_id, plan_id, unit_id, date, trace_type, duration, auto, count),(click, impression))) =>
+      case   ((idea_id, media_id, adslot_id, hour), ((user_id, plan_id, unit_id, date, trace_type, duration, auto, count),(impression, click))) =>
         AdvTraceReport2(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration, auto , count, impression, click,media_id,adslot_id)
     }
 

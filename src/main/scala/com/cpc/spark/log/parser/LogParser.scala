@@ -39,6 +39,16 @@ object LogParser {
       ext.update("client_version", ExtValue(string_value = "%s.%s.%s.%s".format(notice.getClient.getVersion.getMajor,
         notice.getClient.getVersion.getMinor,notice.getClient.getVersion.getMicro,notice.getClient.getVersion.getBuild)))
       ext.update("media_site_url", ExtValue(string_value = notice.getMedia.getSite.getUrls))
+      var devices = ""
+      val deviceCount = notice.getDevice.getIdsCount-1
+      for  (i <- 0 to  deviceCount){
+        if(devices.length >0){
+          devices += ";" + notice.getDevice.getIds(i).getType+":"+ notice.getDevice.getIds(i).getId
+        }else{
+          devices +=  notice.getDevice.getIds(i).getType + ":" + notice.getDevice.getIds(i).getId
+        }
+      }
+      ext.update("device_ids", ExtValue(string_value = devices))
       if (notice.getAdslotCount > 0) {
         val slot = notice.getAdslot(0)
         log = log.copy(
