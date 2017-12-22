@@ -74,6 +74,40 @@ object LRTrain {
     val cvrlog = getCvrData()
     train("parser1", "cvr", cvrlog, "cvr.lrm")
 
+    //qtt-all-paser2
+    val qtt_parser2 = ulog.filter(x => x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002")
+    train("parser2", "qtt-all-parser2", qtt_parser2, "qtt-all-parser2.lrm")
+
+/*    //qtt-list
+    model.clearResult()
+    val qttlist = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 1)
+    train("parser2", "qtt-list", qttlist, "")
+
+    //qtt-content
+    model.clearResult()
+    val qttcontent = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 2)
+    train("parser2", "qtt-content", qttcontent, "")
+
+    //external-list
+    model.clearResult()
+    val externallist = ulog.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && x.getAs[Int]("adslot_type") == 1)
+    train("parser2", "external-list", externallist, "")
+
+    //external-content
+    model.clearResult()
+    val externalcontent = ulog.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && x.getAs[Int]("adslot_type") == 2)
+    train("parser2", "external-content", externalcontent, "")
+
+    //all-interact
+    model.clearResult()
+    val allinteract = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
+    train("parser2", "all-interact", allinteract, "")
+
+    //cvr
+    model.clearResult()
+    val cvrlog = getCvrData()
+    train("parser2", "cvr", cvrlog, "")
+*/
 
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
     ulog.unpersist()
@@ -151,6 +185,8 @@ object LRTrain {
               val vec = parser match {
                 case "parser1" =>
                   getVector(u)
+                case "parser2" =>
+                  getVectorParser2(u)
               }
               LabeledPoint(u.getAs[Int]("label").toDouble, vec)
           }
@@ -369,6 +405,150 @@ object LRTrain {
     //ideaid
     els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
     i += dict("ideaid").size + 1
+
+    try {
+      Vectors.sparse(i, els)
+    } catch {
+      case e: Exception =>
+        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        null
+    }
+  }
+
+
+  def getVectorParser2(x: Row): Vector = {
+
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
+    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
+    val hour = cal.get(Calendar.HOUR_OF_DAY)
+    var els = Seq[(Int, Double)]()
+    var i = 0
+
+    els = els :+ (week + i - 1, 1d)
+    i += 7
+
+    //(24)
+    els = els :+ (hour + i, 1d)
+    i += 24
+
+    //sex
+    els = els :+ (x.getAs[Int]("sex") + i, 1d)
+    i += 9
+
+    //age
+    els = els :+ (x.getAs[Int]("age") + i, 1d)
+    i += 100
+
+    //os 96 - 97 (2)
+    els = els :+ (x.getAs[Int]("os") + i, 1d)
+    i += 10
+
+    //isp
+    els = els :+ (x.getAs[Int]("isp") + i, 1d)
+    i += 20
+
+    //net
+    els = els :+ (x.getAs[Int]("network") + i, 1d)
+    i += 10
+
+    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
+    i += dict("cityid").size + 1
+
+    //media id
+    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
+    i += dict("mediaid").size + 1
+
+    //ad slot id
+    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
+    i += dict("slotid").size + 1
+
+    //0 to 4
+    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
+    i += 10
+
+    //pagenum
+    var pnum = x.getAs[Int]("pagenum")
+    if (pnum < 0 || pnum > 50) {
+      pnum = 0
+    }
+    els = els :+ (pnum + i, 1d)
+    i += 100
+
+    //bookid
+    var bid = 0
+    try {
+      bid = x.getAs[String]("bookid").toInt
+    } catch {
+      case e: Exception =>
+    }
+    if (bid < 0 || bid > 50) {
+      bid = 0
+    }
+    els = els :+ (bid + i, 1d)
+    i += 100
+
+    //ad class
+    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
+    els = els :+ (adcls + i, 1d)
+    i += dict("adclass").size + 1
+
+    //adtype
+    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
+    i += 10
+
+    //adslot_type
+    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
+    i += 10
+
+    //planid
+    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
+    i += dict("planid").size + 1
+
+    //unitid
+    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
+    i += dict("unitid").size + 1
+
+    //ideaid
+    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
+    i += dict("ideaid").size + 1
+/*
+    //sex(1,2) - age(1-6)
+    if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0){
+      els = els :+ (6 * (x.getAs[Int]("sex") - 1) + x.getAs[Int]("age") + i, 1d)
+    }
+    i += 2 * 6 + 1
+
+    //ideaid(15410) - age(1-6)
+    if (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"),0) > 0 && x.getAs[Int]("age") > 0){
+      els = els :+ (6 * (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"),0) - 1) + x.getAs[Int]("age") + i, 1d)
+    }
+    i += dict("ideaid").size * 6 + 1
+
+    //ideaid(15410) - sex(1,2)
+    if (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"),0) > 0 && x.getAs[Int]("sex") > 0){
+      els = els :+ (2 * (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"),0) - 1) + x.getAs[Int]("sex") + i, 1d)
+    }
+    i += dict("ideaid").size * 2 + 1
+
+    //sex(1-2) - age(1-6) - phone_level(1-4) - city
+    if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0
+      && x.getAs[Int]("phone_level") > 0 && dict("cityid").getOrElse(x.getAs[Int]("city"),0) > 0){
+      els = els :+ ( dict("cityid").size * (4 * (6 * (x.getAs[Int]("sex") - 1) + x.getAs[Int]("age") - 1) + x.getAs[Int]("phone_level") - 1) + dict("cityid").getOrElse(x.getAs[Int]("city"),0) + i, 1d)
+    }
+    i += 2 * 6 * 4 * dict("cityid").size + 1
+
+    //city - unitid
+    if ( dict("cityid").getOrElse(x.getAs[Int]("city"), 0) > 0 && dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) > 0){
+      els = els :+ (dict("cityid").size * (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) - 1) + dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
+    }
+    i += dict("cityid").size * dict("unitid").size + 1
+*/
+    //sex(1-2) - age(1-6) - ideaid
+    if ( x.getAs[Int]("age") > 0 && x.getAs[Int]("sex") > 0 && dict("ideaid").getOrElse(x.getAs[Int]("ideaid"),0) > 0 ){
+      els = els :+ (dict("ideaid").size * (6 * ( x.getAs[Int]("sex")- 1) + x.getAs[Int]("age") - 1) + dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
+    }
+    i += 2 * 6 * dict("ideaid").size + 1
 
     try {
       Vectors.sparse(i, els)
