@@ -78,37 +78,6 @@ object LRTrain {
     val qtt_parser2 = ulog.filter(x => x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002")
     train("parser2", "qtt-all-parser2", qtt_parser2, "qtt-all-parser2.lrm")
 
-/*    //qtt-list
-    model.clearResult()
-    val qttlist = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 1)
-    train("parser2", "qtt-list", qttlist, "")
-
-    //qtt-content
-    model.clearResult()
-    val qttcontent = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 2)
-    train("parser2", "qtt-content", qttcontent, "")
-
-    //external-list
-    model.clearResult()
-    val externallist = ulog.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && x.getAs[Int]("adslot_type") == 1)
-    train("parser2", "external-list", externallist, "")
-
-    //external-content
-    model.clearResult()
-    val externalcontent = ulog.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && x.getAs[Int]("adslot_type") == 2)
-    train("parser2", "external-content", externalcontent, "")
-
-    //all-interact
-    model.clearResult()
-    val allinteract = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
-    train("parser2", "all-interact", allinteract, "")
-
-    //cvr
-    model.clearResult()
-    val cvrlog = getCvrData()
-    train("parser2", "cvr", cvrlog, "")
-*/
-
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
     ulog.unpersist()
   }
@@ -512,25 +481,26 @@ object LRTrain {
     //ideaid
     els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
     i += dict("ideaid").size + 1
-/*
-    //sex(1,2) - age(1-6)
+
+    //sex - age
     if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0){
       els = els :+ (6 * (x.getAs[Int]("sex") - 1) + x.getAs[Int]("age") + i, 1d)
     }
     i += 2 * 6 + 1
 
-    //ideaid(15410) - age(1-6)
+    //ideaid - age
     if (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"),0) > 0 && x.getAs[Int]("age") > 0){
       els = els :+ (6 * (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"),0) - 1) + x.getAs[Int]("age") + i, 1d)
     }
     i += dict("ideaid").size * 6 + 1
 
-    //ideaid(15410) - sex(1,2)
+    //ideaid - sex
     if (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"),0) > 0 && x.getAs[Int]("sex") > 0){
       els = els :+ (2 * (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"),0) - 1) + x.getAs[Int]("sex") + i, 1d)
     }
     i += dict("ideaid").size * 2 + 1
 
+    /*
     //sex(1-2) - age(1-6) - phone_level(1-4) - city
     if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0
       && x.getAs[Int]("phone_level") > 0 && dict("cityid").getOrElse(x.getAs[Int]("city"),0) > 0){
@@ -543,12 +513,13 @@ object LRTrain {
       els = els :+ (dict("cityid").size * (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) - 1) + dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
     }
     i += dict("cityid").size * dict("unitid").size + 1
-*/
+
     //sex(1-2) - age(1-6) - ideaid
     if ( x.getAs[Int]("age") > 0 && x.getAs[Int]("sex") > 0 && dict("ideaid").getOrElse(x.getAs[Int]("ideaid"),0) > 0 ){
       els = els :+ (dict("ideaid").size * (6 * ( x.getAs[Int]("sex")- 1) + x.getAs[Int]("age") - 1) + dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
     }
     i += 2 * 6 * dict("ideaid").size + 1
+*/
 
     try {
       Vectors.sparse(i, els)
