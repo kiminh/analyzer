@@ -75,6 +75,7 @@ object LRTrain {
     train("parser1", "cvr", cvrlog, "cvr.lrm")
 
     //qtt-all-paser2
+    model.clearResult()
     val qtt_parser2 = ulog.filter(x => x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002")
     train("parser2", "qtt-all-parser2", qtt_parser2, "qtt-all-parser2.lrm")
 
