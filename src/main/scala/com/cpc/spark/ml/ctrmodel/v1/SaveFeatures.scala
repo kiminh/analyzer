@@ -29,8 +29,10 @@ object SaveFeatures {
         |select searchid,isclick as label,sex,age,os,isp,network,
         |       city,media_appsid,ext['phone_level'].int_value as phone_level,`timestamp`,adtype,
         |       planid,unitid,ideaid,ext['adclass'].int_value as adclass,adslotid,
-        |       adslot_type,ext['pagenum'].int_value as pagenum,ext['bookid'].string_value as bookid
-        |
+        |       adslot_type,ext['pagenum'].int_value as pagenum,ext['bookid'].string_value as bookid,
+        |       ext['brand_title'].string_value as brand_title,
+        |       ext['user_req_ad_num'].int_value as user_req_ad_num,
+        |       ext['user_req_num'].int_value as user_req_num
         |from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
         |and ext['antispam'].int_value = 0
         |
@@ -69,15 +71,17 @@ object SaveFeatures {
           (x._1, convert)
       }
       .toDF("searchid", "label")
-    println("cvr log", cvrlog.count())
+    println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
 
     val sqlStmt =
       """
         |select searchid,sex,age,os,isp,network,
         |       city,media_appsid,ext['phone_level'].int_value as phone_level,`timestamp`,adtype,
         |       planid,unitid,ideaid,ext['adclass'].int_value as adclass,adslotid,
-        |       adslot_type,ext['pagenum'].int_value as pagenum,ext['bookid'].string_value as bookid
-        |
+        |       adslot_type,ext['pagenum'].int_value as pagenum,ext['bookid'].string_value as bookid,
+        |       ext['brand_title'].string_value as brand_title,
+        |       ext['user_req_ad_num'].int_value as user_req_ad_num,
+        |       ext['user_req_num'].int_value as user_req_num
         |from dl_cpc.cpc_union_log where `date` = "%s" and isclick = 1
         |and ext['antispam'].int_value = 0
         |
@@ -97,6 +101,7 @@ object SaveFeatures {
     var click = 0
     var active = 0
     var mclick = 0
+    var zombie = 0
     traces.foreach {
       t =>
         t.trace_type match {
@@ -110,6 +115,8 @@ object SaveFeatures {
 
           case "press" => click += 1
 
+          case "zombie" => zombie += 1
+
           case "stay" =>
             if (t.duration > stay) {
               stay = t.duration
@@ -119,7 +126,7 @@ object SaveFeatures {
         }
     }
 
-    if ((stay >= 30 && click > 0) || active > 0 || (stay >= 60 && mclick > 0)) {
+    if ((stay >= 30 && click > 0) || active > 0 || (stay >= 60 && zombie == 0)) {
       1
     } else {
       0

@@ -88,6 +88,7 @@ object LogParser {
         ext.update("usertype", ExtValue(int_value = ad.getUsertype))
         ext.update("trigger_type", ExtValue(int_value = ad.getTriggerType))
         ext.update("rank_discount", ExtValue(int_value = ad.getDiscount))
+        ext.update("user_req_ad_num", ExtValue(int_value = ad.getShowCount))
 
         val mcount = ad.getMaterialidCount
         if (mcount > 0) {
@@ -118,6 +119,7 @@ object LogParser {
       )
       ext.update("phone_price", ExtValue(int_value = device.getPhoneprice))
       ext.update("phone_level", ExtValue(int_value = device.getPhonelevel))
+      ext.update("brand_title", ExtValue(string_value = device.getBrandTitle))
       val osv = device.getOsversion
       ext.update("os_version", ExtValue(string_value = "%d.%d.%d.%d"
         .format(osv.getMajor, osv.getMinor, osv.getMicro, osv.getBuild)))
@@ -133,6 +135,7 @@ object LogParser {
       ext.update("antispam", ExtValue(int_value = user.getAntispam))
       ext.update("share_coin", ExtValue(int_value = user.getShareCoin))
       ext.update("qukan_new_user", ExtValue(int_value = user.getNewuser))
+      ext.update("user_req_num", ExtValue(int_value = user.getReqCount))
       log = log.copy(
         sex = user.getSex,
         age = user.getAge,
@@ -325,6 +328,7 @@ object LogParser {
                     case "op3" => log = log.copy(trace_op3 = v)
                     case "duration" => log = log.copy(duration = toInt(v))
                     case "auto" => log = log.copy(auto = toInt(v))
+                    case _ =>
                   }
                 } catch {
                   case e: Exception => null

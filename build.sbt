@@ -23,7 +23,8 @@ libraryDependencies ++= Seq(
   "com.hankcs" % "hanlp" % "portable-1.3.4",
   "com.github.jurajburian" %% "mailer" % "1.2.1",
   "io.grpc" % "grpc-netty" % com.trueaccord.scalapb.compiler.Version.grpcJavaVersion,
-  "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion
+  "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion,
+  "com.google.code.gson" % "gson" % "2.8.1"
 )
 
 assemblyMergeStrategy in assembly := {
