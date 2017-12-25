@@ -297,6 +297,46 @@ object GetMediaLog {
         )
         (key,media2)
     }
+
+    val deviceIdsRdd =  rddData.map{
+      case x =>
+        (x.media_appsid,x.adslotid,x.adslot_type, x.ext.getOrElse("device_ids", ExtValue()).string_value)
+    }.filter(x => x._4.length() > 0 ).map{
+      case (media_appsid,adslotid,adslot_type,device_ids) =>
+        var deviceIdsArr = device_ids.split(";")
+        var list = Seq[(String,String,Int,String)]()
+        deviceIdsArr.foreach{
+          x =>
+            list = list :+ (media_appsid,adslotid,adslot_type,x.split(":")(0))
+        }
+        list
+    }.flatMap(x => x).map{
+      case (media_appsid,adslotid,adslot_type,device_id) =>
+        ((media_appsid,adslotid,adslot_type,device_id), 1)
+    }.reduceByKey((x, y) => x+y).map{
+      case ((media_appsid,adslotid,adslot_type,device_id), num) =>
+        ((media_appsid,adslotid,adslot_type),device_id + "," + num)
+    }.reduceByKey((x, y) => x +";"+ y) .map{
+      case ((media_appsid,adslotid,adslot_type2),value) =>
+        val media = MediaRequest(
+          date = date,
+          media_id = media_appsid.toInt,
+          adslot_id = adslotid.toInt,
+          adslot_type = adslot_type2,
+          device_ids= value
+        )
+        (media.key, media)
+    }
+
+    allData = allData.leftOuterJoin(deviceIdsRdd).map{
+      case (key, (media, other:Option[MediaRequest]))=>
+        var other2 = other.getOrElse(MediaRequest())
+        var  media2 = media.copy(
+          device_ids= other2.device_ids
+        )
+        (key,media2)
+    }
+
     val toResult = allData.map(x => x._2)
     println("count:" + toResult.count())
     clearReportHourData("report_media_request_info", date)
@@ -340,7 +380,8 @@ object GetMediaLog {
                           client_type: String = "",
                           client_version: String = "",
                           network_type: String = "",
-                          network_ip: String = ""
+                          network_ip: String = "",
+                          device_ids: String = ""
                         ){
     val key = "%d-%d-%d".format(media_id, adslot_id, adslot_type)
   }
