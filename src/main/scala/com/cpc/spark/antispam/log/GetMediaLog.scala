@@ -1,0 +1,348 @@
+package com.cpc.spark.antispam.log
+
+import java.sql.DriverManager
+import java.text.SimpleDateFormat
+import java.util.{Calendar, Properties}
+
+import com.cpc.spark.log.parser.{CfgLog, ExtValue, UnionLog}
+import com.typesafe.config.ConfigFactory
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.{SaveMode, SparkSession}
+
+/**
+  * Created by wanli on 2017/8/4.
+  */
+object GetMediaLog {
+  var mariadbUrl = ""
+  val mariadbProp = new Properties()
+
+  def main(args: Array[String]): Unit = {
+    if (args.length < 1) {
+      System.err.println(
+        s"""
+           |Usage: day <date>
+        """.stripMargin)
+      System.exit(1)
+    }
+    val dayBefore = args(0).toInt
+    Logger.getRootLogger.setLevel(Level.WARN)
+
+    val conf = ConfigFactory.load()
+    mariadbUrl = conf.getString("mariadb.union_write.url")
+    mariadbProp.put("user", conf.getString("mariadb.union_write.user"))
+    mariadbProp.put("password", conf.getString("mariadb.union_write.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.union_write.driver"))
+
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.DATE, -dayBefore)
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+
+    val ctx = SparkSession.builder()
+      .appName("media request anal" + date)
+      .enableHiveSupport()
+      .getOrCreate()
+    import ctx.implicits._
+    var sql1 = "SELECT * from dl_cpc.cpc_union_log where `date`='%s' and isfill =1  ".format(date)
+
+    println("sql1:" + sql1)
+    var rddData = ctx.sql(sql1).as[UnionLog]
+      .rdd.cache()
+
+    var allData = rddData.map(x => ((x.media_appsid,x.adslotid,x.adslot_type),1)).reduceByKey((x, y) => x + y)
+      .map{
+        case ((media_appsid, adslotid, adslot_type2),count2) =>
+          var media = MediaRequest(
+            date = date,
+            media_id = media_appsid.toInt,
+            adslot_id = adslotid.toInt,
+            adslot_type = adslot_type2,
+            count = count2
+          )
+          (media.key, media)
+      }
+
+    val mediaTypeRdd =  rddData.map(x => ((x.media_appsid,x.adslotid,x.adslot_type,x.media_type),1)).reduceByKey((x, y) => x + y).map{
+      case ((media_appsid,adslotid,adslot_type,media_type), num) =>
+        ((media_appsid,adslotid,adslot_type),""+ media_type+","+ num)
+    }.reduceByKey((x, y) => x +";"+ y) .map{
+      case ((media_appsid,adslotid,adslot_type),value) =>
+        val media = MediaRequest(date, media_appsid.toInt ,adslotid.toInt ,adslot_type, 0,value)
+        (media.key, media)
+    }
+    allData = allData.leftOuterJoin(mediaTypeRdd).map{
+      case (key, (media, other:Option[MediaRequest]))=>
+        var other2 = other.getOrElse(MediaRequest())
+        var  media2 = media.copy(
+          media_type= other2.media_type
+        )
+        (key,media2)
+    }
+    val userAgentRdd =  rddData.map{
+      case x =>
+        var isExitUserAgent = 0
+        if(x.ua.length>3){
+          isExitUserAgent =1
+        }
+      ((x.media_appsid,x.adslotid,x.adslot_type,isExitUserAgent),1)
+    }.reduceByKey((x, y) => x + y).map{
+        case ((media_appsid,adslotid,adslot_type,isExitUserAgent), num) =>
+        ((media_appsid,adslotid,adslot_type),isExitUserAgent +","+ num)
+    }.reduceByKey((x, y) => x +";"+ y) .map{
+      case ((media_appsid,adslotid,adslot_type2),value) =>
+        val media = MediaRequest(
+          date = date,
+          media_id = media_appsid.toInt,
+          adslot_id = adslotid.toInt,
+          adslot_type = adslot_type2,
+          user_agent = value
+        )
+        (media.key, media)
+    }
+    allData = allData.leftOuterJoin(userAgentRdd).map{
+      case (key, (media, other:Option[MediaRequest]))=>
+        var other2 = other.getOrElse(MediaRequest())
+        var  media2 = media.copy(
+          user_agent= other2.user_agent
+        )
+        (key,media2)
+    }
+    val osTypeRdd =  rddData.map(x => ((x.media_appsid,x.adslotid,x.adslot_type,x.os),1)).reduceByKey((x, y) => x + y).map{
+      case ((media_appsid,adslotid,adslot_type,os_type), num) =>
+        ((media_appsid,adslotid,adslot_type),os_type+","+num)
+    }.reduceByKey((x, y) => x +";"+ y) .map{
+      case ((media_appsid,adslotid,adslot_type2),value) =>
+        val media = MediaRequest(
+          date = date,
+          media_id = media_appsid.toInt,
+          adslot_id = adslotid.toInt,
+          adslot_type = adslot_type2,
+          os_type = value
+        )
+        (media.key, media)
+    }
+    allData = allData.leftOuterJoin(osTypeRdd).map{
+      case (key, (media, other:Option[MediaRequest]))=>
+        var other2 = other.getOrElse(MediaRequest())
+        var  media2 =  media.copy(
+          os_type= other2.os_type
+        )
+        (key,media2)
+    }
+   val osVersionRdd =  rddData.map{
+      case x =>
+        ((x.media_appsid,x.adslotid,x.adslot_type, x.ext.getOrElse("os_version", ExtValue()).string_value),1)
+    }.reduceByKey((x, y) => x + y).map{
+      case ((media_appsid,adslotid,adslot_type,version), num) =>
+        ((media_appsid,adslotid,adslot_type),version+"," +num)
+    }.reduceByKey((x, y) => x +";"+ y) .map{
+     case ((media_appsid,adslotid,adslot_type2),value) =>
+       val media = MediaRequest(
+         date = date,
+         media_id = media_appsid.toInt,
+         adslot_id = adslotid.toInt,
+         adslot_type = adslot_type2,
+         os_version = value
+       )
+       (media.key, media)
+   }
+    allData = allData.leftOuterJoin(osVersionRdd).map{
+      case (key, (media, other:Option[MediaRequest]))=>
+        var other2 = other.getOrElse(MediaRequest())
+        var  media2 = media.copy(
+          os_version= other2.os_version
+        )
+        (key,media2)
+    }
+    val osUaRdd =  rddData.map{
+      case x =>
+        var deviceType = "no"
+        val imeiRegex = """^[0-9]*$""".r
+        val idfaRegex = """^([0-9a-zA-Z]{1,})(([/\s-][0-9a-zA-Z]{1,}){4})$""".r
+        if(x.uid == x.ip){
+          deviceType = "ip"
+        }else if(!imeiRegex.findFirstMatchIn(x.uid).isEmpty){
+          deviceType = "imei"
+        }else if(!idfaRegex.findFirstMatchIn(x.uid).isEmpty){
+          deviceType = "imei"
+        }
+        ((x.media_appsid,x.adslotid,x.adslot_type, deviceType),1)
+
+    }.reduceByKey((x, y) => x + y).map{
+      case ((media_appsid,adslotid,adslot_type,deviceType), num) =>
+        ((media_appsid,adslotid,adslot_type),deviceType +","+num)
+    }.reduceByKey((x, y) => x +";"+ y) .map{
+      case ((media_appsid,adslotid,adslot_type2),value) =>
+        val media = MediaRequest(
+          date = date,
+          media_id = media_appsid.toInt,
+          adslot_id = adslotid.toInt,
+          adslot_type = adslot_type2,
+          device_type= value
+        )
+        (media.key, media)
+    }
+
+    allData = allData.leftOuterJoin(osUaRdd).map{
+      case (key, (media, other:Option[MediaRequest]))=>
+        var other2 = other.getOrElse(MediaRequest())
+        var  media2 =  media.copy(
+          device_type= other2.device_type
+        )
+        (key,media2)
+    }
+
+    val clientTypeRdd =  rddData.map{
+     case x =>
+       ((x.media_appsid,x.adslotid,x.adslot_type, x.ext.getOrElse("client_type", ExtValue()).string_value),1)
+   }.reduceByKey((x, y) => x + y).map{
+     case ((media_appsid,adslotid,adslot_type,client_type), num) =>
+       ((media_appsid,adslotid,adslot_type),client_type +","+ num)
+   }.reduceByKey((x, y) => x +";"+ y) .map{
+      case ((media_appsid,adslotid,adslot_type2),value) =>
+        val media = MediaRequest(
+          date = date,
+          media_id = media_appsid.toInt,
+          adslot_id = adslotid.toInt,
+          adslot_type = adslot_type2,
+          client_type= value
+        )
+        (media.key, media)
+    }
+    allData = allData.leftOuterJoin(clientTypeRdd).map{
+      case (key, (media, other:Option[MediaRequest]))=>
+        var other2 = other.getOrElse(MediaRequest())
+        var  media2 = media.copy(
+          client_type= other2.client_type
+        )
+        (key,media2)
+    }
+
+   val clientVersionRdd =  rddData.map{
+      case x =>
+        ((x.media_appsid,x.adslotid,x.adslot_type, x.ext.getOrElse("client_version", ExtValue()).string_value),1)
+    }.reduceByKey((x, y) => x + y).map{
+      case ((media_appsid,adslotid,adslot_type,client_version), num) =>
+        ((media_appsid,adslotid,adslot_type),client_version+ ","+ num)
+    }.reduceByKey((x, y) => x +";"+ y) .map{
+     case ((media_appsid,adslotid,adslot_type2),value) =>
+       val media = MediaRequest(
+         date = date,
+         media_id = media_appsid.toInt,
+         adslot_id = adslotid.toInt,
+         adslot_type = adslot_type2,
+         client_version= value
+       )
+       (media.key, media)
+   }
+    allData = allData.leftOuterJoin(clientVersionRdd).map{
+      case (key, (media, other:Option[MediaRequest]))=>
+        var other2 = other.getOrElse(MediaRequest())
+        var  media2 =  media.copy(
+          client_version= other2.client_version
+        )
+        (key,media2)
+    }
+
+
+    val networkTypeRdd =  rddData.map{
+     case x =>
+       ((x.media_appsid,x.adslotid,x.adslot_type, x.network),1)
+   }.reduceByKey((x, y) => x + y).map{
+     case ((media_appsid,adslotid,adslot_type,network), num) =>
+       ((media_appsid,adslotid,adslot_type),network+","+num)
+   }.reduceByKey((x, y) => x +";"+ y) .map{
+      case ((media_appsid,adslotid,adslot_type2),value) =>
+        val media = MediaRequest(
+          date = date,
+          media_id = media_appsid.toInt,
+          adslot_id = adslotid.toInt,
+          adslot_type = adslot_type2,
+          network_type= value
+        )
+        (media.key, media)
+    }
+    allData = allData.leftOuterJoin(networkTypeRdd).map{
+      case (key, (media, other:Option[MediaRequest]))=>
+        var other2 = other.getOrElse(MediaRequest())
+        var  media2 = media.copy(
+          network_type= other2.network_type
+        )
+        (key,media2)
+    }
+    val networkIpRdd =  rddData.map{
+       case x =>
+         ((x.media_appsid,x.adslotid,x.adslot_type, x.network,x.ip),1)
+     }.reduceByKey((x, y) => x).map{
+       case ((media_appsid, adslotid, adslot_type, network, ip), num) =>
+         ((media_appsid, adslotid, adslot_type, network), 1)
+     }.reduceByKey((x, y) => x + y).map{
+       case ((media_appsid,adslotid,adslot_type,network), num) =>
+         ((media_appsid,adslotid,adslot_type),network + "," + num)
+     }.reduceByKey((x, y) => x +";"+ y) .map{
+      case ((media_appsid,adslotid,adslot_type2),value) =>
+        val media = MediaRequest(
+          date = date,
+          media_id = media_appsid.toInt,
+          adslot_id = adslotid.toInt,
+          adslot_type = adslot_type2,
+          network_ip= value
+        )
+        (media.key, media)
+    }
+    allData = allData.leftOuterJoin(networkIpRdd).map{
+      case (key, (media, other:Option[MediaRequest]))=>
+        var other2 = other.getOrElse(MediaRequest())
+        var  media2 = media.copy(
+          network_ip= other2.network_ip
+        )
+        (key,media2)
+    }
+    val toResult = allData.map(x => x._2)
+    println("count:" + toResult.count())
+    clearReportHourData("report_media_request_info", date)
+     ctx.createDataFrame(toResult)
+       .write
+       .mode(SaveMode.Append)
+       .jdbc(mariadbUrl, "union.report_media_request_info", mariadbProp)
+     ctx.stop()
+  }
+
+  def clearReportHourData(tbl: String, date: String): Unit = {
+    try {
+      Class.forName(mariadbProp.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        mariadbUrl,
+        mariadbProp.getProperty("user"),
+        mariadbProp.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        """
+          |delete from union.%s where `date` = "%s"
+        """.stripMargin.format(tbl, date)
+      println("sql" + sql) ;
+      stmt.executeUpdate(sql);
+    } catch {
+      case e: Exception => println("exception caught: " + e)
+    }
+  }
+
+  case class MediaRequest(
+                          date: String = "",
+                          media_id:Int = 0,
+                          adslot_id:Int = 0,
+                          adslot_type:Int = 0,
+                          count: Int = 0,
+                          media_type: String = "",
+                          user_agent: String = "",
+                          os_type: String = "",
+                          os_version: String = "",
+                          device_type: String = "",
+                          client_type: String = "",
+                          client_version: String = "",
+                          network_type: String = "",
+                          network_ip: String = ""
+                        ){
+    val key = "%d-%d-%d".format(media_id, adslot_id, adslot_type)
+  }
+
+}
