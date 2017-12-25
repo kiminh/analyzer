@@ -405,7 +405,11 @@ object LogParser {
 
   def toInt(s: String): Int = {
     try {
-      s.trim.toInt
+      if(s.indexOf("1") >= 0){
+        return 1
+      }else{
+        return s.trim.toInt
+      }
     } catch {
       case e : Exception => 0
     }
