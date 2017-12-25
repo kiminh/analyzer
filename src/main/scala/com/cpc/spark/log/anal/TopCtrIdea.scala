@@ -175,9 +175,27 @@ object TopCtrIdea {
     mariadbProp.put("user", conf.getString("mariadb.user"))
     mariadbProp.put("password",conf.getString("mariadb.password"))
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
+
+    //truncate table
+    try {
+      Class.forName(mariadbProp.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        mariadbUrl,
+        mariadbProp.getProperty("user"),
+        mariadbProp.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        """
+          |TRUNCATE TABLE report.top_ctr_idea
+        """.stripMargin
+      stmt.executeUpdate(sql);
+    } catch {
+      case e: Exception => println("exception caught: " + e);
+    }
+
     spark.createDataFrame(top)
       .write
-      .mode(SaveMode.Overwrite)
+      .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.top_ctr_idea", mariadbProp)
 
     println("num", top.length)
