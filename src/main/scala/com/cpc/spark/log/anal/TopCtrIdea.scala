@@ -20,10 +20,10 @@ object TopCtrIdea {
 
   def main(args: Array[String]): Unit = {
 
-    if (args.length < 1) {
+    if (args.length < 2) {
       System.err.println(
         s"""
-           |Usage: GetUserProfile <day_before> <int>
+           |Usage: GetUserProfile <day_before> <int> <table:string>
            |
         """.stripMargin)
       System.exit(1)
@@ -31,6 +31,7 @@ object TopCtrIdea {
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val dayBefore = args(0).toInt
+    val table = args(1)
 
     val spark = SparkSession.builder()
       .appName("top ctr ideas")
@@ -103,6 +104,7 @@ object TopCtrIdea {
     val imgs = getIdaeImg()
 
     println(max1, max2, rate)
+    var id = 0
     val top = adinfo.map(x => (x.idea_id, x))
       .reduceByKey {
         (x, y) =>
@@ -151,7 +153,9 @@ object TopCtrIdea {
 
             val adclass = (x.adclass / 1000000) * 1000000 + 100100
 
+            id += 1
             TopIdea (
+              id = id,
               user_id = x.user_id,
               idea_id = x.idea_id,
               agent_id = ub.getOrElse(x.user_id, 0),
@@ -175,10 +179,28 @@ object TopCtrIdea {
     mariadbProp.put("user", conf.getString("mariadb.user"))
     mariadbProp.put("password",conf.getString("mariadb.password"))
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
+
+    //truncate table
+    try {
+      Class.forName(mariadbProp.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        mariadbUrl,
+        mariadbProp.getProperty("user"),
+        mariadbProp.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        """
+          |TRUNCATE TABLE report.%s
+        """.stripMargin.format(table)
+      stmt.executeUpdate(sql);
+    } catch {
+      case e: Exception => println("truncate table failed : " + e);
+    }
+
     spark.createDataFrame(top)
       .write
-      .mode(SaveMode.Overwrite)
-      .jdbc(mariadbUrl, "report.top_ctr_idea", mariadbProp)
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report." + table, mariadbProp)
 
     println("num", top.length)
   }
@@ -261,6 +283,7 @@ object TopCtrIdea {
   }
 
   private case class TopIdea(
+                              id: Int = 0,
                               agent_id: Int = 0,
                               user_id: Int = 0,
                               idea_id: Int = 0,
