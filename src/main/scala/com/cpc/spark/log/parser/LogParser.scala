@@ -327,7 +327,7 @@ object LogParser {
                     case "op2" => log = log.copy(trace_op2 = v)
                     case "op3" => log = log.copy(trace_op3 = v)
                     case "duration" => log = log.copy(duration = toInt(v))
-                    case "auto" => log = log.copy(auto = toInt(v))
+                    case "auto" => log = log.copy(auto = toAutoInt(v))
                     case _ =>
                   }
                 } catch {
@@ -405,6 +405,13 @@ object LogParser {
 
   def toInt(s: String): Int = {
     try {
+      s.trim.toInt
+    } catch {
+      case e : Exception => 0
+    }
+  }
+  def toAutoInt(s: String): Int = {
+    try {
       if(s.indexOf("1") >= 0){
         return 1
       }else{
@@ -414,7 +421,6 @@ object LogParser {
       case e : Exception => 0
     }
   }
-
   def toFloat(s: String): Float = {
     try {
       s.trim.toFloat
