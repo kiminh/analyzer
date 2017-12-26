@@ -5,15 +5,19 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.cpc.spark.qukan.parser.HdfsParser
+import com.redis.RedisClient
+import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
+import userprofile.Userprofile.{APPPackage, UserProfile}
 
 
 /**
   * Created by zhaolei on 22/12/2017.
   */
 
-object SaveUserAppInstalledInfo{
+object saveUserAppInstalledInfo{
 
   var tableName = ""
 
@@ -46,17 +50,54 @@ object SaveUserAppInstalledInfo{
       .filter(x => x != null && x.pkgs.length > 0)
       .map(x => (x.devid, x.pkgs.map(_.name)))
       .reduceByKey(_++_)
+      .map(x => (x._1, x._2.distinct))
 
-    /*
     //保存当天的
-    pkgs.map(x => (x._1, x._2.distinct.mkString(",")))
-      .toDF("uid", "pkgs")
+    pkgs.toDF("uid", "pkgs")
       .write
       .mode(SaveMode.Overwrite)
       .parquet(outpath)
-      */
+
+    //保存redis
+    val sum = pkgs
+      .mapPartitions {
+        p =>
+          var n1 = 0
+          var n2 = 0
+          val conf = ConfigFactory.load()
+          val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+          p.foreach {
+            x =>
+              n1 = n1 + 1
+              val key = x._1 + "_UPDATA"
+              val buffer = redis.get[Array[Byte]](key).getOrElse(null)
+              if (buffer != null) {
+                val user = UserProfile.parseFrom(buffer).toBuilder
+                val pkgs = APPPackage.newBuilder()
+                user.clearInstallpkg()
+                x._2.foreach {
+                  n =>
+                    val pkg = APPPackage.newBuilder().setPackagename(n)
+                    user.addInstallpkg(pkg)
+                }
+                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                n2 += 1
+              }
+          }
+          Seq((0, n1), (1, n2)).iterator
+      }
+      .reduceByKey(_ + _)
+      .take(10)
+    println("update redis", sum)
 
     //更新字典
+    //updateUserPkgDict(spark, pkgs)
+
+    spark.close()
+  }
+
+  def updateUserPkgDict(spark: SparkSession, pkgs: RDD[(String, List[String])]): Unit = {
+    import spark.implicits._
     val userPkgs = userPkgDict().toDF("pkg_name", "id")
     val topPkgs = pkgs.flatMap(x => x._2.map(v => (v, 1)))
       .reduceByKey(_ + _)
@@ -103,10 +144,6 @@ object SaveUserAppInstalledInfo{
       }
 
     println("update", n1, "add", n2)
-    spark.close()
-  }
-
-  def updateUserPkgDict(topPkgs: Seq[(String, Int)], usedPkgs: Seq[(String, Int)]): Unit = {
   }
 
   def userPkgDict(): Seq[(String, Int)] = {

@@ -8,6 +8,7 @@ message AdShow {
 }
 message AdFreq {
 	repeated AdShow ads = 1;
+	uint32 req_count = 2;
 }
 
 message APPPackage {

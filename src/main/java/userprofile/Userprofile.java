@@ -573,6 +573,11 @@ public final class Userprofile {
      */
     userprofile.Userprofile.AdShowOrBuilder getAdsOrBuilder(
         int index);
+
+    /**
+     * <code>optional uint32 req_count = 2;</code>
+     */
+    int getReqCount();
   }
   /**
    * Protobuf type {@code userprofile.AdFreq}
@@ -587,6 +592,7 @@ public final class Userprofile {
     }
     private AdFreq() {
       ads_ = java.util.Collections.emptyList();
+      reqCount_ = 0;
     }
 
     @java.lang.Override
@@ -623,6 +629,11 @@ public final class Userprofile {
                   input.readMessage(userprofile.Userprofile.AdShow.parser(), extensionRegistry));
               break;
             }
+            case 16: {
+
+              reqCount_ = input.readUInt32();
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -649,6 +660,7 @@ public final class Userprofile {
               userprofile.Userprofile.AdFreq.class, userprofile.Userprofile.AdFreq.Builder.class);
     }
 
+    private int bitField0_;
     public static final int ADS_FIELD_NUMBER = 1;
     private java.util.List<userprofile.Userprofile.AdShow> ads_;
     /**
@@ -684,6 +696,15 @@ public final class Userprofile {
       return ads_.get(index);
     }
 
+    public static final int REQ_COUNT_FIELD_NUMBER = 2;
+    private int reqCount_;
+    /**
+     * <code>optional uint32 req_count = 2;</code>
+     */
+    public int getReqCount() {
+      return reqCount_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -699,6 +720,9 @@ public final class Userprofile {
       for (int i = 0; i < ads_.size(); i++) {
         output.writeMessage(1, ads_.get(i));
       }
+      if (reqCount_ != 0) {
+        output.writeUInt32(2, reqCount_);
+      }
     }
 
     public int getSerializedSize() {
@@ -709,6 +733,10 @@ public final class Userprofile {
       for (int i = 0; i < ads_.size(); i++) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(1, ads_.get(i));
+      }
+      if (reqCount_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(2, reqCount_);
       }
       memoizedSize = size;
       return size;
@@ -728,6 +756,8 @@ public final class Userprofile {
       boolean result = true;
       result = result && getAdsList()
           .equals(other.getAdsList());
+      result = result && (getReqCount()
+          == other.getReqCount());
       return result;
     }
 
@@ -742,6 +772,8 @@ public final class Userprofile {
         hash = (37 * hash) + ADS_FIELD_NUMBER;
         hash = (53 * hash) + getAdsList().hashCode();
       }
+      hash = (37 * hash) + REQ_COUNT_FIELD_NUMBER;
+      hash = (53 * hash) + getReqCount();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -867,6 +899,8 @@ public final class Userprofile {
         } else {
           adsBuilder_.clear();
         }
+        reqCount_ = 0;
+
         return this;
       }
 
@@ -890,6 +924,7 @@ public final class Userprofile {
       public userprofile.Userprofile.AdFreq buildPartial() {
         userprofile.Userprofile.AdFreq result = new userprofile.Userprofile.AdFreq(this);
         int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
         if (adsBuilder_ == null) {
           if (((bitField0_ & 0x00000001) == 0x00000001)) {
             ads_ = java.util.Collections.unmodifiableList(ads_);
@@ -899,6 +934,8 @@ public final class Userprofile {
         } else {
           result.ads_ = adsBuilder_.build();
         }
+        result.reqCount_ = reqCount_;
+        result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
       }
@@ -965,6 +1002,9 @@ public final class Userprofile {
               adsBuilder_.addAllMessages(other.ads_);
             }
           }
+        }
+        if (other.getReqCount() != 0) {
+          setReqCount(other.getReqCount());
         }
         onChanged();
         return this;
@@ -1231,6 +1271,32 @@ public final class Userprofile {
           ads_ = null;
         }
         return adsBuilder_;
+      }
+
+      private int reqCount_ ;
+      /**
+       * <code>optional uint32 req_count = 2;</code>
+       */
+      public int getReqCount() {
+        return reqCount_;
+      }
+      /**
+       * <code>optional uint32 req_count = 2;</code>
+       */
+      public Builder setReqCount(int value) {
+        
+        reqCount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint32 req_count = 2;</code>
+       */
+      public Builder clearReqCount() {
+        
+        reqCount_ = 0;
+        onChanged();
+        return this;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -5334,19 +5400,20 @@ public final class Userprofile {
     java.lang.String[] descriptorData = {
       "\n\033javaproto/userprofile.proto\022\013userprofi" +
       "le\"%\n\006AdShow\022\014\n\004adid\030\001 \001(\005\022\r\n\005count\030\002 \001(" +
-      "\005\"*\n\006AdFreq\022 \n\003ads\030\001 \003(\0132\023.userprofile.A" +
-      "dShow\"d\n\nAPPPackage\022\023\n\013packagename\030\001 \001(\t" +
-      "\022\017\n\007version\030\002 \001(\t\022\030\n\020firstInstallTime\030\003 " +
-      "\001(\003\022\026\n\016lastUpdateTime\030\004 \001(\003\"*\n\014InterestI" +
-      "tem\022\013\n\003tag\030\001 \001(\005\022\r\n\005score\030\002 \001(\005\"\260\002\n\013User" +
-      "Profile\022\r\n\005devid\030\001 \001(\t\022\013\n\003age\030\002 \001(\005\022\013\n\003s" +
-      "ex\030\003 \001(\005\022\014\n\004coin\030\004 \001(\005\022,\n\tinterests\030\005 \003(" +
-      "\0132\031.userprofile.InterestItem\022+\n\ninstallp",
-      "kg\030\006 \003(\0132\027.userprofile.APPPackage\022\021\n\tpca" +
-      "tegory\030\007 \001(\005\022\021\n\tincr_coin\030\010 \001(\005\022\020\n\010antis" +
-      "pam\030\t \001(\005\022\022\n\nshare_coin\030\n \001(\005\022\017\n\007newUser" +
-      "\030\013 \001(\005\0222\n\017interestedWords\030\014 \003(\0132\031.userpr" +
-      "ofile.InterestItemb\006proto3"
+      "\005\"=\n\006AdFreq\022 \n\003ads\030\001 \003(\0132\023.userprofile.A" +
+      "dShow\022\021\n\treq_count\030\002 \001(\r\"d\n\nAPPPackage\022\023" +
+      "\n\013packagename\030\001 \001(\t\022\017\n\007version\030\002 \001(\t\022\030\n\020" +
+      "firstInstallTime\030\003 \001(\003\022\026\n\016lastUpdateTime" +
+      "\030\004 \001(\003\"*\n\014InterestItem\022\013\n\003tag\030\001 \001(\005\022\r\n\005s" +
+      "core\030\002 \001(\005\"\260\002\n\013UserProfile\022\r\n\005devid\030\001 \001(" +
+      "\t\022\013\n\003age\030\002 \001(\005\022\013\n\003sex\030\003 \001(\005\022\014\n\004coin\030\004 \001(" +
+      "\005\022,\n\tinterests\030\005 \003(\0132\031.userprofile.Inter",
+      "estItem\022+\n\ninstallpkg\030\006 \003(\0132\027.userprofil" +
+      "e.APPPackage\022\021\n\tpcategory\030\007 \001(\005\022\021\n\tincr_" +
+      "coin\030\010 \001(\005\022\020\n\010antispam\030\t \001(\005\022\022\n\nshare_co" +
+      "in\030\n \001(\005\022\017\n\007newUser\030\013 \001(\005\0222\n\017interestedW" +
+      "ords\030\014 \003(\0132\031.userprofile.InterestItemb\006p" +
+      "roto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -5371,7 +5438,7 @@ public final class Userprofile {
     internal_static_userprofile_AdFreq_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_userprofile_AdFreq_descriptor,
-        new java.lang.String[] { "Ads", });
+        new java.lang.String[] { "Ads", "ReqCount", });
     internal_static_userprofile_APPPackage_descriptor =
       getDescriptor().getMessageTypes().get(2);
     internal_static_userprofile_APPPackage_fieldAccessorTable = new
