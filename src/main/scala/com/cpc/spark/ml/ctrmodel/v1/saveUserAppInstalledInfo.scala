@@ -73,7 +73,6 @@ object saveUserAppInstalledInfo{
               val buffer = redis.get[Array[Byte]](key).getOrElse(null)
               if (buffer != null) {
                 val user = UserProfile.parseFrom(buffer).toBuilder
-                val pkgs = APPPackage.newBuilder()
                 user.clearInstallpkg()
                 x._2.foreach {
                   n =>
@@ -88,7 +87,8 @@ object saveUserAppInstalledInfo{
       }
       .reduceByKey(_ + _)
       .take(10)
-    println("update redis", sum)
+    println("update redis")
+    sum.foreach(println)
 
     //更新字典
     //updateUserPkgDict(spark, pkgs)
