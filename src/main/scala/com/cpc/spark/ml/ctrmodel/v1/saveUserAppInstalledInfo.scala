@@ -68,18 +68,17 @@ object SaveUserAppInstalledInfo{
     val dateStr = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
     var n1 = 0
     var n2 = 0
+    val conf = ConfigFactory.load()
+    Class.forName(conf.getString("mariadb.driver"))
+    val conn = DriverManager.getConnection(
+      conf.getString("mariadb.url"),
+      conf.getString("mariadb.user"),
+      conf.getString("mariadb.password"))
     topPkgs.join(userPkgs, Seq("pkg_name"), "leftouter")
       .rdd
       .toLocalIterator
       .foreach {
         row =>
-          val conf = ConfigFactory.load()
-          Class.forName(conf.getString("mariadb.driver"))
-          val conn = DriverManager.getConnection(
-            conf.getString("mariadb.url"),
-            conf.getString("mariadb.user"),
-            conf.getString("mariadb.password"))
-
           val id = row.getAs[Int]("id")
           val name = row.getAs[String]("pkg_name")
           val num = row.getAs[Int]("user_num")
