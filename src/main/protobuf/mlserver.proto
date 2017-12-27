@@ -49,6 +49,7 @@ message Device {
     int32 phone_level = 4;
     int32 screen_w = 5;
     int32 screen_h = 6;
+    string brand_title = 7;
 }
 
 message User {
@@ -57,6 +58,8 @@ message User {
     int32 coin = 4;
 	string uid = 5; // 用户标示
     repeated int32 interests = 6;
+    repeated string installpkg = 7;
+    uint32 req_count = 8; //用户今天第几次请求
 }
 
 message AdInfo {
@@ -68,6 +71,7 @@ message AdInfo {
     int32 adtype = 6;
     int32 interaction = 7;
     int32 class = 8;
+    int32 show_count = 9; //记录广告所在单元，在此用户下的今天的显示次数
 }
 
 message Extra {

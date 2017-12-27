@@ -1,9 +1,7 @@
 package com.cpc.spark.ml.stub
 
-import java.text.SimpleDateFormat
-import java.util.{Calendar, Date}
 
-import com.cpc.spark.log.parser.{ExtValue, LogParser, UnionLog}
+import com.cpc.spark.ml.ctrmodel.v1.LRTrain
 import com.typesafe.config.ConfigFactory
 import io.grpc.ManagedChannelBuilder
 import mlserver.mlserver._
@@ -12,8 +10,9 @@ import org.apache.spark.mllib.regression.IsotonicRegressionModel
 import org.apache.spark.mllib.classification.LogisticRegressionModel
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
-import com.cpc.spark.ml.ctrmodel.v1.LRTrain
-
+import com.redis.RedisClient
+import com.redis.serialization.Parse.Implicits._
+import userprofile.Userprofile.{APPPackage, UserProfile}
 
 /**
   * Created by zhaolei on 2017/12/14.
@@ -42,16 +41,11 @@ object FeatureStubNew {
       .usePlaintext(true)
       .build
 
-    LRTrain.spark = ctx
-    LRTrain.initFeatureDict()
 
-    //val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime)
-    //val hour = new SimpleDateFormat("HH").format(new Date().getTime - 7200L * 1000L)
-
-    val date = "2017-12-21"
+    val date = "2017-12-26"
     val hour = "13"
 
-    val sql = "select searchid,isclick as label,sex,age,os,isp,network,city,media_appsid,ext['phone_level'].int_value as phone_level,`timestamp`,adtype,planid,unitid,ideaid,ext['adclass'].int_value as adclass,adslotid,adslot_type,ext['pagenum'].int_value as pagenum,ext['bookid'].string_value as bookid from dl_cpc.cpc_union_log where `date` = \"%s\" and media_appsid in (\"80000001\", \"80000002\") and adslot_type in (1,2)  and interests != \"\" and isclick = 1 and hour = \"%s\" and ext['antispam'].int_value = 0 limit %s".format(date, hour, args(4).toInt)
+    val sql = "select searchid,isclick as label,sex,age,os,isp,network,city,media_appsid,ext['phone_level'].int_value as phone_level,`timestamp`,adtype,planid,unitid,ideaid,ext['adclass'].int_value as adclass,adslotid,adslot_type,ext['pagenum'].int_value as pagenum,ext['bookid'].string_value as bookid,ext['user_req_ad_num'].int_value as user_req_ad_num,ext[ 'user_req_num'].int_value as user_req_num, uid from dl_cpc.cpc_union_log where `date` = \"%s\" and media_appsid in (\"80000001\", \"80000002\") and adslot_type in (1,2)  and interests != \"\" and isclick = 1 and hour = \"%s\" and ext['antispam'].int_value = 0 limit %s".format(date, hour, args(4).toInt)
 
     println(sql)
 
@@ -68,13 +62,26 @@ object FeatureStubNew {
 
     logs.toLocalIterator.foreach{
       x =>
-        val v = LRTrain.getVectorParser2(x)
 
+        val v = LRTrain.getVectorParser3(x)
         println(v)
         val p = model.predict(v)
         val p1 = irmodel.predict(p)
 
-        val (ad, m, slot, u, loc, n, d, t) = LRTrain.unionLogToObject(x)
+        var seq = Seq[String]()
+        val uid = x.getAs[String]("uid") + "_UPDATA"
+
+        val conf = ConfigFactory.load()
+        val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+        val buffer = redis.get[Array[Byte]](uid).getOrElse(null)
+        if (buffer != null) {
+          val installpkg = UserProfile.parseFrom(buffer).getInstallpkgList
+          for( i <- 0 until installpkg.size){
+            seq = seq :+ installpkg.get(i).getPackagename
+          }
+        }
+
+        val (ad, m, slot, u, loc, n, d, t) = LRTrain.unionLogToObject(x,seq)
 
         val req = Request(
           version = "v3",

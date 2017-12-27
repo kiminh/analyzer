@@ -28,6 +28,7 @@ message Pack {
     map<int32, int32> slotid = 9;
     map<int32, int32> cityid = 10;
     map<int32, int32> mediaid = 11;
+    map<string,int32> appid = 12;
 }
 
 

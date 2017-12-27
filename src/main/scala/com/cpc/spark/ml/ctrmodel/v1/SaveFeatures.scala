@@ -50,7 +50,7 @@ object SaveFeatures {
     ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0)
       .write
       .mode(SaveMode.Overwrite)
-      .parquet("/user/cpc/lrmodel/ctrdata/%s".format(date))
+      .parquet("/user/cpc/lrmodel/ctrdata_v2/%s".format(date))
   }
 
   def saveCvrData(spark: SparkSession, date: String): Unit = {

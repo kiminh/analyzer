@@ -262,7 +262,7 @@ class LRIRModel {
     w.close()
   }
 
-  def savePbPack(parser: String, path: String, dict: Map[String, Map[Int, Int]]): Unit = {
+  def savePbPack(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]]): Unit = {
     val weights = mutable.Map[Int, Double]()
     lrmodel.weights.toSparse.foreachActive {
       case (i, d) =>
@@ -290,7 +290,8 @@ class LRIRModel {
       slotid = dict("slotid"),
       adclass = dict("adclass"),
       cityid = dict("cityid"),
-      mediaid = dict("mediaid")
+      mediaid = dict("mediaid"),
+      appid = dictStr("appid")
     )
     pack.writeTo(new FileOutputStream(path))
   }
