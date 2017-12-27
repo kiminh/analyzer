@@ -50,7 +50,7 @@ object SaveFeatures {
     ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0)
       .write
       .mode(SaveMode.Overwrite)
-      .parquet("/user/cpc/lrmodel/ctrdata_v2/%s".format(date))
+      .parquet("/user/cpc/lrmodel/ctrdata/%s".format(date))
   }
 
   def saveCvrData(spark: SparkSession, date: String): Unit = {
@@ -126,7 +126,7 @@ object SaveFeatures {
         }
     }
 
-    if ((stay >= 30 && click > 0) || active > 0 || (stay >= 60 && zombie == 0)) {
+    if ((stay >= 30 && click > 0) || active > 0) {
       1
     } else {
       0

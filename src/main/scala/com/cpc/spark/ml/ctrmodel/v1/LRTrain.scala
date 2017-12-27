@@ -64,7 +64,7 @@ object LRTrain {
     val ulogData = getLeftJoinData(ulog, userAppIdx).cache()
 
 
-    //qtt-all-parser2
+    //qtt-all
     model.clearResult()
     val qttAll = ulogData.filter(x => x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002").cache()
     train(spark, "parser3", "qtt-all-parser3", qttAll, "qtt-all-parser3.lrm")
