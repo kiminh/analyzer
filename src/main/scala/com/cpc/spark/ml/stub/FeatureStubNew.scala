@@ -1,10 +1,14 @@
 package com.cpc.spark.ml.stub
 
 
+import java.io.FileInputStream
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import com.cpc.spark.ml.ctrmodel.v1.LRTrain
+import com.cpc.spark.ml.train.LRIRModel
 import com.typesafe.config.ConfigFactory
 import io.grpc.ManagedChannelBuilder
-import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.regression.IsotonicRegressionModel
 import org.apache.spark.mllib.classification.LogisticRegressionModel
@@ -13,6 +17,9 @@ import org.apache.spark.sql.SparkSession
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import userprofile.Userprofile.{APPPackage, UserProfile}
+import lrmodel.lrmodel._
+import mlserver.mlserver._
+import scala.collection.mutable
 
 /**
   * Created by zhaolei on 2017/12/14.
@@ -49,7 +56,35 @@ object FeatureStubNew {
 
     println(sql)
 
-    val logs = ctx.sql(sql).rdd
+    val logs = ctx.sql(sql)
+
+
+    //按分区取数据
+    val days = 7
+    val dayBefore = 7
+    var date1 = ""
+    LRTrain.initFeatureDict(ctx)
+
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.DATE, -dayBefore)
+    var pathSep = Seq[String]()
+    for (n <- 1 to days) {
+      date1 = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      pathSep = pathSep :+ date1
+      cal.add(Calendar.DATE, 1)
+    }
+
+    var dictStr = mutable.Map[String, Map[String, Int]]()
+    val inpath = "/gobblin/source/lechuan/qukan/extend_report/{%s}".format(pathSep.mkString(","))
+    val uidApp = LRTrain.getUserAppInstalled(ctx, inpath)
+
+    val pack = Pack.parseFrom(new FileInputStream(args(5)))
+    val ids =  pack.appid
+
+
+    //val ids = LRTrain.getTopApp(uidApp, 1000)
+    dictStr.update("appid",ids)
+    val userAppIdx = LRTrain.getUserAppIdx(ctx, uidApp, ids)
 
     val modelPath = args(2).trim
     val irPath = args(3).trim
@@ -59,14 +94,11 @@ object FeatureStubNew {
     println(model.numFeatures)
 
     println("start logs process")
+    import ctx.implicits._
 
-    logs.toLocalIterator.foreach{
+
+    logs.rdd.toLocalIterator.foreach{
       x =>
-
-        val v = LRTrain.getVectorParser3(x)
-        println(v)
-        val p = model.predict(v)
-        val p1 = irmodel.predict(p)
 
         var seq = Seq[String]()
         val uid = x.getAs[String]("uid") + "_UPDATA"
@@ -80,6 +112,14 @@ object FeatureStubNew {
             seq = seq :+ installpkg.get(i).getPackagename
           }
         }
+
+
+
+        val v = LRTrain.getVectorParser3(x)
+        println(v)
+
+        val p = model.predict(v)
+        val p1 = irmodel.predict(p)
 
         val (ad, m, slot, u, loc, n, d, t) = LRTrain.unionLogToObject(x,seq)
 
@@ -97,12 +137,12 @@ object FeatureStubNew {
         )
 
         val blockingStub = PredictorGrpc.blockingStub(channel)
-
         val reply = blockingStub.predict(req)
 
         //val ctr = x.ext.getOrElse("exp_ctr", ExtValue()).int_value / 1e6
 
         println(ad.ideaid, p1, reply.results(0).value)
+        println(ad.ideaid, p1)
         println("")
     }
 
