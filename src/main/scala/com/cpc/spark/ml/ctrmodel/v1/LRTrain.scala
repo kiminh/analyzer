@@ -64,37 +64,41 @@ object LRTrain {
     val ulogData = getLeftJoinData(ulog, userAppIdx).cache()
 
 
-    //qtt-all
+    //qtt-all-parser3
     model.clearResult()
     val qttAll = ulogData.filter(x => x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002").cache()
     train(spark, "parser3", "qtt-all-parser3", qttAll, "qtt-all-parser3.lrm")
 
-    //qtt-list
+    //qtt-all-parser2
+    model.clearResult()
+    train(spark, "parser2", "qtt-all-parser2", qttAll, "qtt-all-parser2.lrm")
+
+    //qtt-list-parser3
     model.clearResult()
     val qttList = qttAll.filter(x =>x.getAs[Int]("adslot_type") == 1)
     train(spark, "parser3", "qtt-list-parser3", qttList, "qtt-list-parser3.lrm")
 
-    //qtt-content
+    //qtt-content-parser3
     model.clearResult()
     val qttContent = qttAll.filter(x =>x.getAs[Int]("adslot_type") == 2)
     train(spark, "parser3", "qtt-content-parser3", qttContent, "qtt-content-parser3.lrm")
 
-    //external-list
+    //external-list-parser2
     model.clearResult()
     val externalList = ulogData.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && x.getAs[Int]("adslot_type") == 1)
     train(spark, "parser2", "external-list-parser2", externalList, "external-list-parser2.lrm")
 
-    //external-content
+    //external-content-parser2
     model.clearResult()
     val externalContent = ulogData.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && x.getAs[Int]("adslot_type") == 2)
     train(spark, "parser2", "external-content-parser2", externalContent, "external-content-parser2.lrm")
 
-    //all-interact
+    //all-interact-parser2
     model.clearResult()
     val allInteract = ulogData.filter(x => x.getAs[Int]("adslot_type") == 3)
     train(spark, "parser2", "all-interact-parser2", allInteract, "all-interact-parser2.lrm")
 
-    //cvr
+    //cvr-parser1
     model.clearResult()
     val cvrlog = getCvrData(spark)
     train(spark, "parser1", "cvr-parser2", cvrlog, "cvr-parser1.lrm")
