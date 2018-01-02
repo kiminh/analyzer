@@ -9,7 +9,7 @@ import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import userprofile.Userprofile.{APPPackage, UserProfile}
 
 
@@ -44,22 +44,48 @@ object saveUserAppInstalledInfo{
     println("------save user installed apps %s------".format(date))
 
     import spark.implicits._
-    val pkgs = spark.read.orc(inpath)
+    var pkgs = spark.read.orc(inpath)
       .rdd
       .map(HdfsParser.parseInstallApp(_, x => true, null))
       .filter(x => x != null && x.pkgs.length > 0)
       .map(x => (x.devid, x.pkgs.map(_.name)))
       .reduceByKey(_++_)
-      .map(x => (x._1, x._2.distinct))
+      .map(x => (x._1, (x._2.distinct, 1)))
+      .cache()
 
-    //保存当天的
-    pkgs.toDF("uid", "pkgs")
-      .write
-      .mode(SaveMode.Overwrite)
-      .parquet(outpath)
 
-    //保存redis
-    val sum = pkgs
+    var old: RDD[(String, (List[String], Int))] = null
+    try {
+      old = spark.read
+        .parquet(outpath)
+        .rdd
+        .map {
+          x =>
+            (x.getAs[String]("uid"), (x.getAs[Seq[String]]("pkgs").toList, 0))
+        }
+      println("old", old.count())
+    } catch {
+      case e: Exception =>
+        println("old", 0)
+    }
+
+    //标记出老数据
+    if (old != null) {
+      pkgs = pkgs.union(old)
+        .reduceByKey {
+          (x, y) =>
+            if (x._2 == 0) {
+              x
+            } else {
+              y
+            }
+        }
+    }
+    val added = pkgs.filter(_._2._2 == 1)
+    println("new", added.count())
+
+    //保存新增数据 redis
+    val sum = added.map(x => (x._1, x._2._1))
       .mapPartitions {
         p =>
           var n = 0
@@ -105,9 +131,14 @@ object saveUserAppInstalledInfo{
     println("update redis")
     sum.foreach(println)
 
-    //更新字典
-    //updateUserPkgDict(spark, pkgs)
+    //保存当天的数据
+    pkgs.map(x => (x._1, x._2._1))
+      .toDF("uid", "pkgs")
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet(outpath)
 
+    pkgs.unpersist()
     spark.close()
   }
 

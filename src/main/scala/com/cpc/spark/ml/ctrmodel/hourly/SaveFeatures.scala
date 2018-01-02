@@ -85,14 +85,14 @@ object SaveFeatures {
       case e: Exception =>
     }
 
-    daily.distinct()
-      .filter(_.length > 0)
-      .sortBy(x => x)
+    daily = daily.distinct().filter(_.length > 0)
+    val num = daily.count()
+    daily.sortBy(x => x)
       .toDF()
       .write
       .mode(SaveMode.Overwrite)
       .parquet(path)
-    println(path + " done")
+    println(path, num)
   }
 
   def saveIntIds(spark: SparkSession, ids: RDD[Int], name: String, date: String): Unit = {
@@ -107,16 +107,15 @@ object SaveFeatures {
       case e: Exception =>
     }
 
-    daily.distinct()
-      .filter(_ > 0)
-      .sortBy(x => x)
+    daily = daily.distinct().filter(_ > 0)
+    val num = daily.count()
+    daily.sortBy(x => x)
       .toDF()
       .write
       .mode(SaveMode.Overwrite)
       .parquet(path)
-    println(path + " done")
+    println(path, num)
   }
-
 
   def saveCvrData(spark: SparkSession, date: String, hour: String): Unit = {
     import spark.implicits._
