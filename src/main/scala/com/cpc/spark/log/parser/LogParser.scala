@@ -107,6 +107,8 @@ object LogParser {
         city = loc.getCity,
         isp = loc.getIsp
       )
+      ext.update("city_level", ExtValue(int_value = loc.getCityLevel))
+
       val device = notice.getDevice
       log = log.copy(
         uid = device.getUid,
