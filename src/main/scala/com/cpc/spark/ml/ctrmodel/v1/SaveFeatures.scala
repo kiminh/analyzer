@@ -93,7 +93,7 @@ object SaveFeatures {
     clicklog.join(cvrlog, Seq("searchid"))
       .write
       .mode(SaveMode.Overwrite)
-      .parquet("/user/cpc/lrmodel/cvrdata/%s".format(date))
+      .parquet("/user/cpc/lrmodel/cvrdata_v2/%s".format(date))
   }
 
   def cvrPositive(traces: Seq[TraceLog]): Int = {

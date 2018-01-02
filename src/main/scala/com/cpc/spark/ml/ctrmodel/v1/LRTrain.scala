@@ -60,13 +60,14 @@ object LRTrain {
     dictStr.update("appid",ids)
     val userAppIdx = getUserAppIdx(spark, uidApp, ids)
 
+
     val ulog = getData(spark)
     val ulogData = getLeftJoinData(ulog, userAppIdx).cache()
 
 
     //qtt-all-parser3
     model.clearResult()
-    val qttAll = ulogData.filter(x => x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002").cache()
+    val qttAll = ulogData.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && (x.getAs[Int]("adslot_type") == 1 || x.getAs[Int]("adslot_type") == 2)).cache()
     train(spark, "parser3", "qtt-all-parser3", qttAll, "qtt-all-parser3.lrm")
 
     //qtt-all-parser2
@@ -98,13 +99,27 @@ object LRTrain {
     val allInteract = ulogData.filter(x => x.getAs[Int]("adslot_type") == 3)
     train(spark, "parser2", "all-interact-parser2", allInteract, "all-interact-parser2.lrm")
 
-    //cvr-parser1
+
+    //cvr按20天取数据
+    days = 20
+    dayBefore = 20
+    initFeatureDict(spark)
+
+    //cvr-parser2
     model.clearResult()
-    val cvrlog = getCvrData(spark)
-    train(spark, "parser1", "cvr-parser2", cvrlog, "cvr-parser1.lrm")
+    val cvrlog = getCvrData(spark).filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && (x.getAs[Int]("adslot_type") == 1 || x.getAs[Int]("adslot_type") == 2))
+    val cvrlogData = getLeftJoinData(cvrlog, userAppIdx).cache()
+    train(spark, "parser2", "cvr-parser2", cvrlogData, "cvr-parser2.lrm")
+
+    //cvr-parser3
+    model.clearResult()
+    train(spark, "parser3", "cvr-parser3", cvrlogData, "cvr-parser3.lrm")
+
 
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
     ulogData.unpersist()
+    qttAll.unpersist()
+    cvrlog.unpersist()
   }
 
   def getTime(): String = {
@@ -297,7 +312,7 @@ object LRTrain {
       calendar.add(Calendar.DATE, 1)
     }
 
-    val path = "/user/cpc/lrmodel/cvrdata/{%s}".format(pathSeps.mkString(","))
+    val path = "/user/cpc/lrmodel/cvrdata_v2/{%s}".format(pathSeps.mkString(","))
     println(path)
     trainLog :+= path
     spark.read.parquet(path)
