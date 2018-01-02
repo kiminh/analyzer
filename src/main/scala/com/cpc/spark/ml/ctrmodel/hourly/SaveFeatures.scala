@@ -1,8 +1,8 @@
 package com.cpc.spark.ml.ctrmodel.hourly
 
-import java.util.Date
 
 import com.cpc.spark.log.parser.TraceLog
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
@@ -10,11 +10,13 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   */
 object SaveFeatures {
 
+  private var version = "v1"
+
   def main(args: Array[String]): Unit = {
     if(args.length < 3){
       System.err.println(
         s"""
-           |Usage: SaveFeatures <date=int> <hour=int> <version=string>
+           |Usage: SaveFeatures <date=string> <hour=string> <version=string>
            |
         """.stripMargin
       )
@@ -22,18 +24,18 @@ object SaveFeatures {
     }
     val date = args(0)
     val hour = args(1)
-    val version = args(2)
+    version = args(2)
 
     val spark = SparkSession.builder()
-      .appName("save feature ids" + date)
+      .appName("Save features from UnionLog [%s/%s/%s]".format(version, date, hour))
       .enableHiveSupport()
       .getOrCreate()
 
-    saveDataFromLog(spark, date, hour, version)
-    saveCvrData(spark, date, hour, version)
+    saveDataFromLog(spark, date, hour)
+    saveCvrData(spark, date, hour)
   }
 
-  def saveDataFromLog(spark: SparkSession, date: String, hour: String, ver: String): Unit = {
+  def saveDataFromLog(spark: SparkSession, date: String, hour: String): Unit = {
     val stmt =
       """
         |select searchid,isclick as label,sex,age,os,isp,network,
@@ -49,14 +51,74 @@ object SaveFeatures {
       """.stripMargin.format(date, hour)
 
     println(stmt)
-    val ulog = spark.sql(stmt)
-    println("num", ulog.count())
-    ulog.write
+    val rows = spark.sql(stmt)
+    println("num", rows.count())
+    rows.write
       .mode(SaveMode.Overwrite)
-      .parquet("/user/cpc/lrmodel/ctrdata_%s/%s/%s".format(ver, date, hour))
+      .parquet("/user/cpc/lrmodel/ctrdata_%s/%s/%s".format(version, date, hour))
+
+    val ulog = rows.rdd.cache()
+    //int dict
+    saveIntIds(spark, ulog.map(_.getAs[String]("media_appsid").toInt), "mediaid", date)
+    saveIntIds(spark, ulog.map(_.getAs[Int]("planid")), "planid", date)
+    saveIntIds(spark, ulog.map(_.getAs[Int]("unitid")), "unitid", date)
+    saveIntIds(spark, ulog.map(_.getAs[Int]("ideaid")), "ideaid", date)
+    saveIntIds(spark, ulog.map(_.getAs[String]("adslotid").toInt), "slotid", date)
+    saveIntIds(spark, ulog.map(_.getAs[Int]("city")), "cityid", date)
+    saveIntIds(spark, ulog.map(_.getAs[Int]("adclass")), "adclass", date)
+
+    //string dict
+    saveStrIds(spark, ulog.map(_.getAs[String]("brand_title")), "brand", date)
+    ulog.unpersist()
+
   }
 
-  def saveCvrData(spark: SparkSession, date: String, hour: String, v: String): Unit = {
+  def saveStrIds(spark: SparkSession, ids: RDD[String], name: String, date: String): Unit = {
+    import spark.implicits._
+    val path = "/user/cpc/lrmodel/feature_ids_%s/%s/%s".format(version, name, date)
+
+    var daily: RDD[String] = ids
+    try {
+      val old = spark.read.parquet(path).rdd.map(x => x.getString(0))
+      daily = daily.union(old)
+    } catch {
+      case e: Exception =>
+    }
+
+    daily.distinct()
+      .filter(_.length > 0)
+      .sortBy(x => x)
+      .toDF()
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet(path)
+    println(path + " done")
+  }
+
+  def saveIntIds(spark: SparkSession, ids: RDD[Int], name: String, date: String): Unit = {
+    import spark.implicits._
+    val path = "/user/cpc/lrmodel/feature_ids_%s/%s/%s".format(version, name, date)
+
+    var daily: RDD[Int] = ids
+    try {
+      val old = spark.read.parquet(path).rdd.map(x => x.getInt(0))
+      daily = daily.union(old)
+    } catch {
+      case e: Exception =>
+    }
+
+    daily.distinct()
+      .filter(_ > 0)
+      .sortBy(x => x)
+      .toDF()
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet(path)
+    println(path + " done")
+  }
+
+
+  def saveCvrData(spark: SparkSession, date: String, hour: String): Unit = {
     import spark.implicits._
     val cvrlog = spark.sql(
       s"""
@@ -96,7 +158,7 @@ object SaveFeatures {
     clicklog.join(cvrlog, Seq("searchid"))
       .write
       .mode(SaveMode.Overwrite)
-      .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(v, date, hour))
+      .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
   }
 
   def cvrPositive(traces: Seq[TraceLog]): Int = {
@@ -136,3 +198,5 @@ object SaveFeatures {
     }
   }
 }
+
+

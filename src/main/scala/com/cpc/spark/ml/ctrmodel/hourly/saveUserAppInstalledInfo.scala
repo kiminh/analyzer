@@ -25,7 +25,7 @@ object saveUserAppInstalledInfo{
     if(args.length < 1){
       System.err.println(
         s"""
-           |Usage: Tag user by installed apps <dayBefore int>
+           |Usage: save user installed apps <date=string> <hour=string>
            |
         """.stripMargin
       )
@@ -35,7 +35,7 @@ object saveUserAppInstalledInfo{
     val date = args(0)
     tableName = args(1)
 
-    val spark = SparkSession.builder().appName("save user installed apps" + date)
+    val spark = SparkSession.builder().appName("save user installed apps " + date)
       .enableHiveSupport().getOrCreate()
 
     val inpath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(date)
@@ -62,28 +62,43 @@ object saveUserAppInstalledInfo{
     val sum = pkgs
       .mapPartitions {
         p =>
+          var n = 0
           var n1 = 0
           var n2 = 0
           val conf = ConfigFactory.load()
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+          val sec = new Date().getTime / 1000
           p.foreach {
             x =>
-              n1 = n1 + 1
+              n += 1
               val key = x._1 + "_UPDATA"
               val buffer = redis.get[Array[Byte]](key).getOrElse(null)
               if (buffer != null) {
                 val user = UserProfile.parseFrom(buffer).toBuilder
-                user.clearInstallpkg()
-                x._2.foreach {
-                  n =>
-                    val pkg = APPPackage.newBuilder().setPackagename(n)
-                    user.addInstallpkg(pkg)
+
+                //判断老数据
+                if (user.getInstallpkgCount > 0) {
+                  val pkg = user.getInstallpkg(0)
+                  //更新时间大于一天
+                  if (sec > pkg.getLastUpdateTime + 60 * 60 * 24) {
+                    user.clearInstallpkg()
+                  } else {
+                    n1 += 1
+                  }
                 }
-                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-                n2 += 1
+
+                if (user.getInstallpkgCount == 0) {
+                  x._2.foreach {
+                    n =>
+                      val pkg = APPPackage.newBuilder().setPackagename(n).setLastUpdateTime(sec)
+                      user.addInstallpkg(pkg)
+                  }
+                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                  n2 += 1
+                }
               }
           }
-          Seq(("all", n1), ("update", n2)).iterator
+          Seq(("all", n), ("pass", n1), ("update", n2)).iterator
       }
       .reduceByKey(_ + _)
       .take(10)
