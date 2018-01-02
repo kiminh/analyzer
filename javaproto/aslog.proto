@@ -207,6 +207,7 @@ message Location {
 	optional uint32 province = 2;
 	optional uint32 city = 3;
 	optional uint32 isp = 4;
+	optional uint32 city_level = 5;
 }
 
 message InterestItem {
