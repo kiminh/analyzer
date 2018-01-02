@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.ctrmodel.v1
+package com.cpc.spark.ml.ctrmodel.hourly
 
 import java.sql.DriverManager
 import java.text.SimpleDateFormat
