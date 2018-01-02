@@ -16,6 +16,7 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.collection.mutable
 import mlserver.mlserver._
+
 import scala.collection.mutable.WrappedArray
 import scala.util.Random
 
@@ -43,7 +44,7 @@ object LRTrain {
     initFeatureDict(spark)
 
     //按分区取数据
-    var date = ""
+/*    var date = ""
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -dayBefore)
     var pathSep = Seq[String]()
@@ -59,7 +60,9 @@ object LRTrain {
     val ids = getTopApp(uidApp, 1000)
     dictStr.update("appid",ids)
     val userAppIdx = getUserAppIdx(spark, uidApp, ids)
+*/
 
+    val userAppIdx = getUserApp(spark, dayBefore, days)
 
     val ulog = getData(spark)
     val ulogData = getLeftJoinData(ulog, userAppIdx).cache()
@@ -105,10 +108,13 @@ object LRTrain {
     dayBefore = 20
     initFeatureDict(spark)
 
+    //按分区取数据
+    val cvr_userAppIdx = getUserApp(spark, dayBefore, days)
+
     //cvr-parser2
     model.clearResult()
     val cvrlog = getCvrData(spark).filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && (x.getAs[Int]("adslot_type") == 1 || x.getAs[Int]("adslot_type") == 2))
-    val cvrlogData = getLeftJoinData(cvrlog, userAppIdx).cache()
+    val cvrlogData = getLeftJoinData(cvrlog, cvr_userAppIdx).cache()
     train(spark, "parser2", "cvr-parser2", cvrlogData, "cvr-parser2.lrm")
 
     //cvr-parser3
@@ -121,6 +127,27 @@ object LRTrain {
     qttAll.unpersist()
     cvrlog.unpersist()
   }
+
+  def getUserApp(spark: SparkSession, dayBefore: Int, days: Int): DataFrame ={
+    //按分区取数据
+    var date = ""
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.DATE, -dayBefore)
+    var pathSep = Seq[String]()
+    for (n <- 1 to days) {
+      date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+      pathSep = pathSep :+ date
+      cal.add(Calendar.DATE, 1)
+    }
+
+    val inpath = "/gobblin/source/lechuan/qukan/extend_report/{%s}".format(pathSep.mkString(","))
+
+    val uidApp = getUserAppInstalled(spark, inpath)
+    val ids = getTopApp(uidApp, 1000)
+    dictStr.update("appid",ids)
+    getUserAppIdx(spark, uidApp, ids)
+  }
+
 
   def getTime(): String = {
     val now: Date = new Date()
