@@ -1201,6 +1201,20 @@ public final class Aslog {
      */
     com.google.protobuf.ByteString
         getPackagenameBytes();
+
+    /**
+     * <code>optional string version = 2;</code>
+     */
+    boolean hasVersion();
+    /**
+     * <code>optional string version = 2;</code>
+     */
+    java.lang.String getVersion();
+    /**
+     * <code>optional string version = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getVersionBytes();
   }
   /**
    * Protobuf type {@code aslog.AppInfo}
@@ -1215,6 +1229,7 @@ public final class Aslog {
     }
     private AppInfo() {
       packagename_ = "";
+      version_ = "";
     }
 
     @java.lang.Override
@@ -1249,6 +1264,12 @@ public final class Aslog {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000001;
               packagename_ = bs;
+              break;
+            }
+            case 18: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000002;
+              version_ = bs;
               break;
             }
           }
@@ -1318,6 +1339,48 @@ public final class Aslog {
       }
     }
 
+    public static final int VERSION_FIELD_NUMBER = 2;
+    private volatile java.lang.Object version_;
+    /**
+     * <code>optional string version = 2;</code>
+     */
+    public boolean hasVersion() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>optional string version = 2;</code>
+     */
+    public java.lang.String getVersion() {
+      java.lang.Object ref = version_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          version_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string version = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getVersionBytes() {
+      java.lang.Object ref = version_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        version_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -1333,6 +1396,9 @@ public final class Aslog {
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 1, packagename_);
       }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, version_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -1343,6 +1409,9 @@ public final class Aslog {
       size = 0;
       if (((bitField0_ & 0x00000001) == 0x00000001)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, packagename_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, version_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -1366,6 +1435,11 @@ public final class Aslog {
         result = result && getPackagename()
             .equals(other.getPackagename());
       }
+      result = result && (hasVersion() == other.hasVersion());
+      if (hasVersion()) {
+        result = result && getVersion()
+            .equals(other.getVersion());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -1380,6 +1454,10 @@ public final class Aslog {
       if (hasPackagename()) {
         hash = (37 * hash) + PACKAGENAME_FIELD_NUMBER;
         hash = (53 * hash) + getPackagename().hashCode();
+      }
+      if (hasVersion()) {
+        hash = (37 * hash) + VERSION_FIELD_NUMBER;
+        hash = (53 * hash) + getVersion().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -1501,6 +1579,8 @@ public final class Aslog {
         super.clear();
         packagename_ = "";
         bitField0_ = (bitField0_ & ~0x00000001);
+        version_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
         return this;
       }
 
@@ -1529,6 +1609,10 @@ public final class Aslog {
           to_bitField0_ |= 0x00000001;
         }
         result.packagename_ = packagename_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.version_ = version_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1574,6 +1658,11 @@ public final class Aslog {
         if (other.hasPackagename()) {
           bitField0_ |= 0x00000001;
           packagename_ = other.packagename_;
+          onChanged();
+        }
+        if (other.hasVersion()) {
+          bitField0_ |= 0x00000002;
+          version_ = other.version_;
           onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
@@ -1676,6 +1765,82 @@ public final class Aslog {
   }
   bitField0_ |= 0x00000001;
         packagename_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object version_ = "";
+      /**
+       * <code>optional string version = 2;</code>
+       */
+      public boolean hasVersion() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional string version = 2;</code>
+       */
+      public java.lang.String getVersion() {
+        java.lang.Object ref = version_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            version_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string version = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getVersionBytes() {
+        java.lang.Object ref = version_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          version_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string version = 2;</code>
+       */
+      public Builder setVersion(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        version_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string version = 2;</code>
+       */
+      public Builder clearVersion() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        version_ = getDefaultInstance().getVersion();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string version = 2;</code>
+       */
+      public Builder setVersionBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        version_ = value;
         onChanged();
         return this;
       }
@@ -26175,101 +26340,101 @@ public final class Aslog {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\025javaproto/aslog.proto\022\005aslog\"\036\n\007AppInf" +
-      "o\022\023\n\013packagename\030\001 \001(\t\"(\n\010SiteInfo\022\016\n\006do" +
-      "main\030\001 \001(\t\022\014\n\004urls\030\002 \001(\t\"%\n\004Size\022\016\n\006heig" +
-      "ht\030\001 \002(\r\022\r\n\005width\030\002 \002(\r\"\256\001\n\005Media\022\036\n\004typ" +
-      "e\030\001 \002(\0162\020.aslog.MediaType\022\016\n\006appsid\030\002 \002(" +
-      "\t\022\021\n\tchannelid\030\003 \001(\t\022\033\n\003app\030\004 \001(\0132\016.aslo" +
-      "g.AppInfo\022\035\n\004site\030\005 \001(\0132\017.aslog.SiteInfo" +
-      "\022\020\n\010category\030\006 \001(\r\022\024\n\014subaccountid\030\007 \001(\t" +
-      "\"\213\002\n\006Adslot\022\n\n\002id\030\001 \002(\t\022\037\n\004type\030\002 \002(\0162\021." +
-      "aslog.AdslotType\022\031\n\004size\030\003 \002(\0132\013.aslog.S",
-      "ize\022\020\n\010capacity\030\004 \002(\r\022\020\n\010inittime\030\005 \001(\004\022" +
-      "\r\n\005apseq\030\006 \001(\r\022\r\n\005apuid\030\007 \001(\t\022\021\n\tbuildty" +
-      "pe\030\010 \001(\r\022\020\n\010floorbid\030\t \001(\002\022\016\n\006cpmbid\030\n \001" +
-      "(\002\022\017\n\007channel\030\013 \001(\t\022\017\n\007pagenum\030\014 \001(\005\022\016\n\006" +
-      "bookid\030\r \001(\t\022\020\n\010discount\030\016 \001(\005\"7\n\007Networ" +
-      "k\022 \n\004type\030\001 \002(\0162\022.aslog.NetworkType\022\n\n\002i" +
-      "p\030\002 \002(\t\"E\n\007Version\022\r\n\005major\030\001 \002(\r\022\r\n\005min" +
-      "or\030\002 \001(\r\022\r\n\005micro\030\003 \001(\r\022\r\n\005build\030\004 \001(\r\"K" +
-      "\n\010DeviceId\022!\n\004type\030\001 \002(\0162\023.aslog.DeviceI" +
-      "dType\022\n\n\002id\030\002 \002(\t\022\020\n\010original\030\003 \001(\010\"\336\002\n\006",
-      "Device\022\031\n\002os\030\001 \002(\0162\r.aslog.OSType\022!\n\tosv" +
-      "ersion\030\002 \002(\0132\016.aslog.Version\022\034\n\003ids\030\003 \003(" +
-      "\0132\017.aslog.DeviceId\022\r\n\005brand\030\004 \001(\t\022\r\n\005mod" +
-      "el\030\005 \001(\t\022\021\n\tuseragent\030\006 \001(\014\022\016\n\006cookie\030\007 " +
-      "\001(\014\022#\n\007browser\030\010 \001(\0162\022.aslog.BrowserType" +
-      "\022\021\n\tmatchimei\030\t \001(\t\022\013\n\003uid\030\n \001(\t\022\020\n\010scre" +
-      "en_w\030\013 \001(\005\022\020\n\010screen_h\030\014 \001(\005\022\021\n\tmatchidf" +
-      "a\030\r \001(\t\022\022\n\nphoneprice\030\016 \001(\r\022\022\n\nphoneleve" +
-      "l\030\017 \001(\r\022\023\n\013brand_title\030\020 \001(\t\"J\n\006Client\022\037" +
-      "\n\004type\030\001 \002(\0162\021.aslog.ClientType\022\037\n\007versi",
-      "on\030\002 \001(\0132\016.aslog.Version\"\376\001\n\nDspReqInfo\022" +
-      "\031\n\003src\030\001 \002(\0162\014.aslog.AdSrc\022\022\n\ndspmediaid" +
-      "\030\002 \001(\t\022\021\n\tretAdsNum\030\003 \001(\005\022\020\n\010timecost\030\004 " +
-      "\001(\003\022\022\n\ntargetHost\030\005 \001(\t\022\022\n\nioTimeCost\030\006 " +
-      "\001(\003\022\024\n\014materialTime\030\007 \001(\003\022\024\n\014showFreqTim" +
-      "e\030\010 \001(\003\022\024\n\014reqBsAllTime\030\t \001(\003\022\034\n\024blackMe" +
-      "diaFilterTime\030\n \001(\003\022\024\n\014fixClickTime\030\013 \001(" +
-      "\003\"\254\003\n\006AdInfo\022\033\n\004type\030\001 \002(\0162\r.aslog.AdTyp" +
-      "e\022\031\n\003src\030\002 \002(\0162\014.aslog.AdSrc\022+\n\013interact" +
-      "ion\030\003 \002(\0162\026.aslog.InteractionType\022\014\n\004adi",
-      "d\030\004 \001(\r\022\017\n\007groupid\030\005 \001(\r\022\016\n\006planid\030\006 \001(\r" +
-      "\022\016\n\006userid\030\007 \001(\r\022\013\n\003bid\030\010 \001(\r\022\r\n\005price\030\t" +
-      " \001(\r\022\013\n\003ctr\030\n \001(\004\022\013\n\003cpm\030\013 \001(\004\022\r\n\005class\030" +
-      "\014 \001(\r\022\020\n\010usertype\030\r \001(\005\022\020\n\010titlectr\030\016 \001(" +
-      "\004\022\016\n\006expcpm\030\017 \001(\004\022\013\n\003cvr\030\020 \001(\004\022\025\n\rcvr_th" +
-      "reshold\030\021 \001(\004\022\021\n\tcvr_thres\030\022 \001(\004\022\022\n\nmate" +
-      "rialid\030\023 \003(\r\022\024\n\014trigger_type\030\024 \001(\r\022\020\n\010di" +
-      "scount\030\025 \002(\005\022\022\n\nshow_count\030\026 \001(\005\"4\n\010AdDs" +
-      "pRet\022\031\n\003src\030\001 \002(\0162\014.aslog.AdSrc\022\r\n\005adnum" +
-      "\030\002 \002(\r\"\\\n\010Location\022\017\n\007country\030\001 \001(\r\022\020\n\010p",
-      "rovince\030\002 \001(\r\022\014\n\004city\030\003 \001(\r\022\013\n\003isp\030\004 \001(\r" +
-      "\022\022\n\ncity_level\030\005 \001(\r\"1\n\014InterestItem\022\022\n\n" +
-      "interestid\030\001 \001(\004\022\r\n\005score\030\002 \001(\004\"\272\001\n\013User" +
-      "Profile\022&\n\tinterests\030\001 \003(\0132\023.aslog.Inter" +
-      "estItem\022\013\n\003age\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coi" +
-      "n\030\004 \001(\r\022\021\n\tpcategory\030\005 \001(\r\022\020\n\010antispam\030\006" +
-      " \001(\r\022\022\n\nshare_coin\030\007 \001(\r\022\017\n\007newuser\030\010 \001(" +
-      "\r\022\021\n\treq_count\030\t \001(\r\"\322\004\n\rNoticeLogBody\022\020" +
-      "\n\010searchid\030\001 \002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033\n\005m" +
-      "edia\030\003 \001(\0132\014.aslog.Media\022\035\n\006adslot\030\004 \003(\013",
-      "2\r.aslog.Adslot\022\035\n\006device\030\005 \001(\0132\r.aslog." +
-      "Device\022\032\n\003ads\030\006 \003(\0132\r.aslog.AdInfo\022\037\n\006ds" +
-      "pret\030\007 \003(\0132\017.aslog.AdDspRet\022\r\n\005debug\030\010 \001" +
-      "(\010\022\035\n\006client\030\t \001(\0132\r.aslog.Client\022\037\n\007net" +
-      "work\030\n \001(\0132\016.aslog.Network\022\017\n\007exptags\030\013 " +
-      "\003(\t\022!\n\010location\030\014 \001(\0132\017.aslog.Location\022\020" +
-      "\n\010sourceip\030\r \001(\t\022\021\n\tintertype\030\016 \001(\r\022\'\n\013u" +
-      "serprofile\030\017 \001(\0132\022.aslog.UserProfile\022\025\n\r" +
-      "dupplanfilter\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021 \003(" +
-      "\r\022\024\n\014lowcvrfilter\030\022 \003(\r\022%\n\ndspReqInfo\030\026 ",
-      "\003(\0132\021.aslog.DspReqInfo\022\020\n\010timecost\030\027 \001(\004" +
-      "\022\r\n\005https\030\030 \001(\010\022\021\n\tctrtarget\030\031 \001(\t\022\025\n\rdu" +
-      "puserfilter\030\032 \003(\r*3\n\tMediaType\022\013\n\007UNKNOW" +
-      "N\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*@\n\nAdslot" +
-      "Type\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_FEED\020\002\022\021\n" +
-      "\rSLOT_INTERACT\020\003*P\n\013NetworkType\022\017\n\013NET_U" +
-      "NKNOWN\020\000\022\014\n\010NET_WIFI\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NE" +
-      "T_3G\020\003\022\n\n\006NET_4G\020\004*?\n\006OSType\022\016\n\nOS_UNKNO" +
-      "WN\020\000\022\016\n\nOS_ANDROID\020\001\022\n\n\006OS_IOS\020\002\022\t\n\005OS_W" +
-      "P\020\003*\265\001\n\013BrowserType\022\022\n\016UnknownBrowser\020\000\022",
-      "\016\n\nMQQBrowser\020\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser" +
-      "\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n" +
-      "\013QvodBrowser\020\006\022\023\n\017IEMobileBrowser\020\007\022\022\n\016M" +
-      "icroMessenger\020\010\022\n\n\006QQChat\020\t*\231\001\n\014DeviceId" +
-      "Type\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022" +
-      "\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\022\016\n\nDEVID_" +
-      "AAID\020\004\022\022\n\016DEVID_LSCOOKIE\020\005\022\023\n\017DEVID_ANDR" +
-      "OIDID\020\006\022\016\n\nDEVID_IMSI\020\007*R\n\006AdType\022\010\n\004TEX" +
-      "T\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_TEXT\020\003\022\023\n\017THREE_I" +
-      "CON_TEXT\020\004\022\017\n\013AD_INTERACT\020\005*\020\n\005AdSrc\022\007\n\003",
-      "CPC\020\001*i\n\017InteractionType\022\017\n\013NO_INTERACT\020" +
-      "\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020" +
-      "\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006*3\n\nClie" +
-      "ntType\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPEN" +
-      "API\020\003"
+      "\n\025javaproto/aslog.proto\022\005aslog\"/\n\007AppInf" +
+      "o\022\023\n\013packagename\030\001 \001(\t\022\017\n\007version\030\002 \001(\t\"" +
+      "(\n\010SiteInfo\022\016\n\006domain\030\001 \001(\t\022\014\n\004urls\030\002 \001(" +
+      "\t\"%\n\004Size\022\016\n\006height\030\001 \002(\r\022\r\n\005width\030\002 \002(\r" +
+      "\"\256\001\n\005Media\022\036\n\004type\030\001 \002(\0162\020.aslog.MediaTy" +
+      "pe\022\016\n\006appsid\030\002 \002(\t\022\021\n\tchannelid\030\003 \001(\t\022\033\n" +
+      "\003app\030\004 \001(\0132\016.aslog.AppInfo\022\035\n\004site\030\005 \001(\013" +
+      "2\017.aslog.SiteInfo\022\020\n\010category\030\006 \001(\r\022\024\n\014s" +
+      "ubaccountid\030\007 \001(\t\"\213\002\n\006Adslot\022\n\n\002id\030\001 \002(\t" +
+      "\022\037\n\004type\030\002 \002(\0162\021.aslog.AdslotType\022\031\n\004siz",
+      "e\030\003 \002(\0132\013.aslog.Size\022\020\n\010capacity\030\004 \002(\r\022\020" +
+      "\n\010inittime\030\005 \001(\004\022\r\n\005apseq\030\006 \001(\r\022\r\n\005apuid" +
+      "\030\007 \001(\t\022\021\n\tbuildtype\030\010 \001(\r\022\020\n\010floorbid\030\t " +
+      "\001(\002\022\016\n\006cpmbid\030\n \001(\002\022\017\n\007channel\030\013 \001(\t\022\017\n\007" +
+      "pagenum\030\014 \001(\005\022\016\n\006bookid\030\r \001(\t\022\020\n\010discoun" +
+      "t\030\016 \001(\005\"7\n\007Network\022 \n\004type\030\001 \002(\0162\022.aslog" +
+      ".NetworkType\022\n\n\002ip\030\002 \002(\t\"E\n\007Version\022\r\n\005m" +
+      "ajor\030\001 \002(\r\022\r\n\005minor\030\002 \001(\r\022\r\n\005micro\030\003 \001(\r" +
+      "\022\r\n\005build\030\004 \001(\r\"K\n\010DeviceId\022!\n\004type\030\001 \002(" +
+      "\0162\023.aslog.DeviceIdType\022\n\n\002id\030\002 \002(\t\022\020\n\010or",
+      "iginal\030\003 \001(\010\"\336\002\n\006Device\022\031\n\002os\030\001 \002(\0162\r.as" +
+      "log.OSType\022!\n\tosversion\030\002 \002(\0132\016.aslog.Ve" +
+      "rsion\022\034\n\003ids\030\003 \003(\0132\017.aslog.DeviceId\022\r\n\005b" +
+      "rand\030\004 \001(\t\022\r\n\005model\030\005 \001(\t\022\021\n\tuseragent\030\006" +
+      " \001(\014\022\016\n\006cookie\030\007 \001(\014\022#\n\007browser\030\010 \001(\0162\022." +
+      "aslog.BrowserType\022\021\n\tmatchimei\030\t \001(\t\022\013\n\003" +
+      "uid\030\n \001(\t\022\020\n\010screen_w\030\013 \001(\005\022\020\n\010screen_h\030" +
+      "\014 \001(\005\022\021\n\tmatchidfa\030\r \001(\t\022\022\n\nphoneprice\030\016" +
+      " \001(\r\022\022\n\nphonelevel\030\017 \001(\r\022\023\n\013brand_title\030" +
+      "\020 \001(\t\"J\n\006Client\022\037\n\004type\030\001 \002(\0162\021.aslog.Cl",
+      "ientType\022\037\n\007version\030\002 \001(\0132\016.aslog.Versio" +
+      "n\"\376\001\n\nDspReqInfo\022\031\n\003src\030\001 \002(\0162\014.aslog.Ad" +
+      "Src\022\022\n\ndspmediaid\030\002 \001(\t\022\021\n\tretAdsNum\030\003 \001" +
+      "(\005\022\020\n\010timecost\030\004 \001(\003\022\022\n\ntargetHost\030\005 \001(\t" +
+      "\022\022\n\nioTimeCost\030\006 \001(\003\022\024\n\014materialTime\030\007 \001" +
+      "(\003\022\024\n\014showFreqTime\030\010 \001(\003\022\024\n\014reqBsAllTime" +
+      "\030\t \001(\003\022\034\n\024blackMediaFilterTime\030\n \001(\003\022\024\n\014" +
+      "fixClickTime\030\013 \001(\003\"\254\003\n\006AdInfo\022\033\n\004type\030\001 " +
+      "\002(\0162\r.aslog.AdType\022\031\n\003src\030\002 \002(\0162\014.aslog." +
+      "AdSrc\022+\n\013interaction\030\003 \002(\0162\026.aslog.Inter",
+      "actionType\022\014\n\004adid\030\004 \001(\r\022\017\n\007groupid\030\005 \001(" +
+      "\r\022\016\n\006planid\030\006 \001(\r\022\016\n\006userid\030\007 \001(\r\022\013\n\003bid" +
+      "\030\010 \001(\r\022\r\n\005price\030\t \001(\r\022\013\n\003ctr\030\n \001(\004\022\013\n\003cp" +
+      "m\030\013 \001(\004\022\r\n\005class\030\014 \001(\r\022\020\n\010usertype\030\r \001(\005" +
+      "\022\020\n\010titlectr\030\016 \001(\004\022\016\n\006expcpm\030\017 \001(\004\022\013\n\003cv" +
+      "r\030\020 \001(\004\022\025\n\rcvr_threshold\030\021 \001(\004\022\021\n\tcvr_th" +
+      "res\030\022 \001(\004\022\022\n\nmaterialid\030\023 \003(\r\022\024\n\014trigger" +
+      "_type\030\024 \001(\r\022\020\n\010discount\030\025 \002(\005\022\022\n\nshow_co" +
+      "unt\030\026 \001(\005\"4\n\010AdDspRet\022\031\n\003src\030\001 \002(\0162\014.asl" +
+      "og.AdSrc\022\r\n\005adnum\030\002 \002(\r\"\\\n\010Location\022\017\n\007c",
+      "ountry\030\001 \001(\r\022\020\n\010province\030\002 \001(\r\022\014\n\004city\030\003" +
+      " \001(\r\022\013\n\003isp\030\004 \001(\r\022\022\n\ncity_level\030\005 \001(\r\"1\n" +
+      "\014InterestItem\022\022\n\ninterestid\030\001 \001(\004\022\r\n\005sco" +
+      "re\030\002 \001(\004\"\272\001\n\013UserProfile\022&\n\tinterests\030\001 " +
+      "\003(\0132\023.aslog.InterestItem\022\013\n\003age\030\002 \001(\r\022\013\n" +
+      "\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpcategory\030\005 " +
+      "\001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshare_coin\030\007 \001(" +
+      "\r\022\017\n\007newuser\030\010 \001(\r\022\021\n\treq_count\030\t \001(\r\"\322\004" +
+      "\n\rNoticeLogBody\022\020\n\010searchid\030\001 \002(\t\022\021\n\ttim" +
+      "estamp\030\002 \002(\r\022\033\n\005media\030\003 \001(\0132\014.aslog.Medi",
+      "a\022\035\n\006adslot\030\004 \003(\0132\r.aslog.Adslot\022\035\n\006devi" +
+      "ce\030\005 \001(\0132\r.aslog.Device\022\032\n\003ads\030\006 \003(\0132\r.a" +
+      "slog.AdInfo\022\037\n\006dspret\030\007 \003(\0132\017.aslog.AdDs" +
+      "pRet\022\r\n\005debug\030\010 \001(\010\022\035\n\006client\030\t \001(\0132\r.as" +
+      "log.Client\022\037\n\007network\030\n \001(\0132\016.aslog.Netw" +
+      "ork\022\017\n\007exptags\030\013 \003(\t\022!\n\010location\030\014 \001(\0132\017" +
+      ".aslog.Location\022\020\n\010sourceip\030\r \001(\t\022\021\n\tint" +
+      "ertype\030\016 \001(\r\022\'\n\013userprofile\030\017 \001(\0132\022.aslo" +
+      "g.UserProfile\022\025\n\rdupplanfilter\030\020 \003(\r\022\024\n\014" +
+      "lowcpmfilter\030\021 \003(\r\022\024\n\014lowcvrfilter\030\022 \003(\r",
+      "\022%\n\ndspReqInfo\030\026 \003(\0132\021.aslog.DspReqInfo\022" +
+      "\020\n\010timecost\030\027 \001(\004\022\r\n\005https\030\030 \001(\010\022\021\n\tctrt" +
+      "arget\030\031 \001(\t\022\025\n\rdupuserfilter\030\032 \003(\r*3\n\tMe" +
+      "diaType\022\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007" +
+      "\n\003WAP\020\003*@\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014" +
+      "CONTENT_FEED\020\002\022\021\n\rSLOT_INTERACT\020\003*P\n\013Net" +
+      "workType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI\020\001\022" +
+      "\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?\n\006O" +
+      "SType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020\001\022\n\n" +
+      "\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType\022\022\n\016",
+      "UnknownBrowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Chro" +
+      "me\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n" +
+      "\013MiuiBrowser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEMob" +
+      "ileBrowser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQCh" +
+      "at\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNOWN\020\000" +
+      "\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID" +
+      "_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCOOKI" +
+      "E\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVID_IMSI\020\007" +
+      "*R\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_" +
+      "TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013AD_INTERA",
+      "CT\020\005*\020\n\005AdSrc\022\007\n\003CPC\020\001*i\n\017InteractionTyp" +
+      "e\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNL" +
+      "OAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020" +
+      "\005\022\006\n\002GP\020\006*3\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t" +
+      "\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -26288,7 +26453,7 @@ public final class Aslog {
     internal_static_aslog_AppInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_AppInfo_descriptor,
-        new java.lang.String[] { "Packagename", });
+        new java.lang.String[] { "Packagename", "Version", });
     internal_static_aslog_SiteInfo_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_aslog_SiteInfo_fieldAccessorTable = new

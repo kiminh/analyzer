@@ -4,6 +4,7 @@ package aslog;
 
 message AppInfo {
 	optional string packagename = 1;
+	optional string version = 2;
 };
 
 message SiteInfo {
