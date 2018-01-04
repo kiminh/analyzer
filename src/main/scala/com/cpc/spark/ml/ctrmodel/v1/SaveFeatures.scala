@@ -16,7 +16,7 @@ object SaveFeatures {
     val date = args(0)
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder()
-      .appName("save feature ids" + date)
+      .appName("save feature" + date)
       .enableHiveSupport()
       .getOrCreate()
 
