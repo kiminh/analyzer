@@ -1,6 +1,7 @@
 package com.cpc.spark.ml.ctrmodel.v1
 
 import com.cpc.spark.log.parser.{ExtValue, UnionLog}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -12,6 +13,7 @@ object SaveFeatureIDs {
   def main(args: Array[String]): Unit = {
     val date = args(0)
 
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder()
       .appName("save feature ids" + date)
       .enableHiveSupport()
