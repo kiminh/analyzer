@@ -3,12 +3,15 @@ package com.cpc.spark.ml.ctrmodel.hourly
 
 import com.cpc.spark.log.parser.TraceLog
 import org.apache.spark.rdd.RDD
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
   * Created by roydong on 15/12/2017.
   */
 object SaveFeatures {
+
+  Logger.getRootLogger.setLevel(Level.WARN)
 
   private var version = "v1"
 
