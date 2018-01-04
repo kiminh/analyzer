@@ -310,7 +310,7 @@ object LRTrain {
     }
     trainLog :+= "\n------dict size------"
     for (name <- dictNames) {
-      val pathTpl = "/user/cpc/lrmodel/feature_ids/%s/{%s}"
+      val pathTpl = "/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
       var n = 0
       val ids = mutable.Map[Int, Int]()
       spark.read
