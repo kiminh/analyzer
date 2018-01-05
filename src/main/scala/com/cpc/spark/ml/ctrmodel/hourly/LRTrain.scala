@@ -79,8 +79,8 @@ object LRTrain {
 
     val ulog = getData(spark,pathSep).cache()
 
-    println("ulog nums: " + ulog.rdd.count)
-    println("ulog NumPartitions: "+ ulog.rdd.getNumPartitions)
+    trainLog :+= "ulog nums = %s".format(ulog.rdd.count)
+    trainLog :+= "ulog NumPartitions = %s".format(ulog.rdd.getNumPartitions)
 
     val ulogData = getLeftJoinData(ulog, userAppIdx).cache()
 
@@ -132,7 +132,7 @@ object LRTrain {
 
   //用户安装列表特征合并到原有特征
   def getLeftJoinData(data: DataFrame, userAppIdx: DataFrame): DataFrame ={
-    data.join(userAppIdx,Seq("uid"),"leftouter").coalesce(2000)
+    data.join(userAppIdx,Seq("uid"),"leftouter")
   }
 
   //限制总的样本数
@@ -144,7 +144,7 @@ object LRTrain {
       rate = limitedNum / num
     }
 
-    ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0).coalesce(2000)
+    ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0)
   }
 
 
@@ -304,7 +304,7 @@ object LRTrain {
         println(x)
     }
 
-    spark.read.parquet(path:_*).distinct.coalesce(2000)
+    spark.read.parquet(path:_*)
   }
 
   /*
