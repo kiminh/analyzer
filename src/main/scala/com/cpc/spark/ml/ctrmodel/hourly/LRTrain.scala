@@ -9,9 +9,11 @@ import com.cpc.spark.ml.train.LRIRModel
 import com.cpc.spark.qukan.parser.HdfsParser
 import com.typesafe.config.ConfigFactory
 import mlserver.mlserver._
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.types.{ArrayType, StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.collection.mutable
@@ -25,7 +27,7 @@ import scala.util.Random
 
 object LRTrain {
 
-  private var days = 7
+  private var days = 2
   private var dayBefore = 7
   private var trainLog = Seq[String]()
 
@@ -37,97 +39,74 @@ object LRTrain {
       days = args(1).toInt
     }
 
+    Logger.getRootLogger.setLevel(Level.WARN)
+
     val spark: SparkSession = model.initSpark("cpc lr model")
 
-    initFeatureDict(spark)
 
     //按分区取数据
     var date = ""
+    var hour = ""
     val cal = Calendar.getInstance()
-    cal.add(Calendar.DATE, -dayBefore)
-    var pathSep = Seq[String]()
-    for (n <- 1 to days) {
+    cal.add(Calendar.HOUR, -(days * 24 + 2))
+    var pathSep = mutable.Map[String,Seq[String]]()
+
+    for (n <- 1 to days * 24) {
       date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-      pathSep = pathSep :+ date
-      cal.add(Calendar.DATE, 1)
+      hour = new SimpleDateFormat("HH").format(cal.getTime)
+
+      pathSep.update(date,(pathSep.getOrElse(date,Seq[String]()) :+ hour))
+
+      cal.add(Calendar.HOUR, 1)
     }
 
-    val inpath = "/gobblin/source/lechuan/qukan/extend_report/{%s}".format(pathSep.mkString(","))
+    initFeatureDict(spark, pathSep)
 
-    val uidApp = getUserAppInstalled(spark, inpath)
+    val inpath = "/user/cpc/userInstalledApp/{%s}".format(pathSep.keys.mkString(","))
+    println(inpath)
+
+    import spark.implicits._
+    val uidApp = spark.read.parquet(inpath).rdd
+      .map(x => (x.getAs[String]("uid"),x.getAs[WrappedArray[String]]("pkgs")))
+      .reduceByKey(_ ++ _)
+      .map(x => (x._1,x._2.distinct))
+      .toDF("uid","pkgs").rdd.cache()
+
+
     val ids = getTopApp(uidApp, 1000)
     dictStr.update("appid",ids)
     val userAppIdx = getUserAppIdx(spark, uidApp, ids)
 
-    val ulog = getData(spark)
+    val ulog = getData(spark,pathSep).cache()
+
+    println("ulog nums: " + ulog.rdd.count)
+    println("ulog NumPartitions: "+ ulog.rdd.getNumPartitions)
+
     val ulogData = getLeftJoinData(ulog, userAppIdx).cache()
 
-
-    //qtt-all-parser3
+    //qtt-all-parser1
     model.clearResult()
-    val qttAll = ulogData.filter(x => x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002").cache()
-    train(spark, "parser3", "qtt-all-parser3", qttAll, "qtt-all-parser3.lrm")
+    val qttAllPre = ulogData.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && (x.getAs[Int]("adslot_type") == 1 || x.getAs[Int]("adslot_type") == 2))
+    val qttAll = getLimitedData(4e8, qttAllPre).cache()
 
-    //qtt-all-parser2
-    model.clearResult()
-    train(spark, "parser2", "qtt-all-parser2", qttAll, "qtt-all-parser2.lrm")
-
-    //qtt-list-parser3
-    model.clearResult()
-    val qttList = qttAll.filter(x =>x.getAs[Int]("adslot_type") == 1)
-    train(spark, "parser3", "qtt-list-parser3", qttList, "qtt-list-parser3.lrm")
-
-    //qtt-content-parser3
-    model.clearResult()
-    val qttContent = qttAll.filter(x =>x.getAs[Int]("adslot_type") == 2)
-    train(spark, "parser3", "qtt-content-parser3", qttContent, "qtt-content-parser3.lrm")
-
-    //external-list-parser2
-    model.clearResult()
-    val externalList = ulogData.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && x.getAs[Int]("adslot_type") == 1)
-    train(spark, "parser2", "external-list-parser2", externalList, "external-list-parser2.lrm")
-
-    //external-content-parser2
-    model.clearResult()
-    val externalContent = ulogData.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && x.getAs[Int]("adslot_type") == 2)
-    train(spark, "parser2", "external-content-parser2", externalContent, "external-content-parser2.lrm")
-
-    //all-interact-parser2
-    model.clearResult()
-    val allInteract = ulogData.filter(x => x.getAs[Int]("adslot_type") == 3)
-    train(spark, "parser2", "all-interact-parser2", allInteract, "all-interact-parser2.lrm")
-
-    //cvr-parser1
-    model.clearResult()
-    val cvrlog = getCvrData(spark)
-    train(spark, "parser1", "cvr-parser2", cvrlog, "cvr-parser1.lrm")
+    println("=========start train=========")
+    train(spark, "parser1", "qtt-all-parser1", qttAll, "qtt-all-parser1.lrm")
 
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
+
+    ulog.unpersist()
+    qttAll.unpersist()
+    uidApp.unpersist()
     ulogData.unpersist()
   }
 
-  def getTime(): String = {
-    val now: Date = new Date()
-    val dateFormat: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-    dateFormat.format(now)
-  }
-
-  //用户及其App安装列表
-  def getUserAppInstalled(spark : SparkSession, inpath : String): RDD[(String,List[String])] ={
-    spark.read.orc(inpath).rdd
-      .map(HdfsParser.parseInstallApp(_, x => true, null))
-      .filter(x => x != null && x.pkgs.length > 0)
-      .map(x => (x.devid, x.pkgs.map(_.name)))
-      .reduceByKey(_ ++ _)
-      .map(x => (x._1, x._2.distinct))
-  }
 
   //安装列表中top k的App
-  def getTopApp(uidApp : RDD[(String,List[String])], k : Int): Map[String,Int] ={
+  def getTopApp(uidApp : RDD[Row], k : Int): Map[String,Int] ={
     var idx = 0
     val ids = mutable.Map[String,Int]()
     uidApp
-      .flatMap(x => x._2.map((_,1)))
+      .flatMap(x => x.getAs[WrappedArray[String]]("pkgs").map((_,1)))
       .reduceByKey(_ + _)
       .sortBy(_._2,false)
       .toLocalIterator
@@ -141,20 +120,33 @@ object LRTrain {
   }
 
   //用户安装列表对应的App idx
-  def getUserAppIdx(spark: SparkSession, uidApp : RDD[(String,List[String])], ids : Map[String,Int]): DataFrame ={
+  def getUserAppIdx(spark: SparkSession, uidApp : RDD[Row], ids : Map[String,Int]): DataFrame ={
     import spark.implicits._
     uidApp.map{
       x =>
-        val k = x._1
-        val v = x._2.map(p => (ids.getOrElse(p,0))).filter(_ > 0)
+        val k = x.getAs[String]("uid")
+        val v = x.getAs[WrappedArray[String]]("pkgs").map(p => (ids.getOrElse(p,0))).filter(_ > 0)
         (k,v)
     }.toDF("uid","appIdx")
   }
 
   //用户安装列表特征合并到原有特征
   def getLeftJoinData(data: DataFrame, userAppIdx: DataFrame): DataFrame ={
-    data.join(userAppIdx,Seq("uid"),"leftouter")
+    data.join(userAppIdx,Seq("uid"),"leftouter").coalesce(2000)
   }
+
+  //限制总的样本数
+  def getLimitedData(limitedNum: Double, ulog: DataFrame): DataFrame ={
+    var rate = 1d
+    val num = ulog.count().toDouble
+
+    if (num > limitedNum){
+      rate = limitedNum / num
+    }
+
+    ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0).coalesce(2000)
+  }
+
 
   def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String): Unit = {
     trainLog :+= "\n------train log--------"
@@ -253,22 +245,16 @@ object LRTrain {
   )
   var dictStr = mutable.Map[String, Map[String, Int]]()
 
-  def initFeatureDict(spark: SparkSession): Unit = {
-    val calendar = Calendar.getInstance()
-    calendar.add(Calendar.DATE, -dayBefore)
-    var pathSeps = Seq[String]()
-    for (d <- 1 to days) {
-      val date = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
-      pathSeps = pathSeps :+ date
-      calendar.add(Calendar.DATE, 1)
-    }
+  def initFeatureDict(spark: SparkSession, pathSep: mutable.Map[String,Seq[String]]): Unit = {
+
     trainLog :+= "\n------dict size------"
     for (name <- dictNames) {
-      val pathTpl = "/user/cpc/lrmodel/feature_ids/%s/{%s}"
+      val pathTpl = "/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
       var n = 0
       val ids = mutable.Map[Int, Int]()
+      println(pathTpl.format(name, pathSep.keys.mkString(",")))
       spark.read
-        .parquet(pathTpl.format(name, pathSeps.mkString(",")))
+        .parquet(pathTpl.format(name, pathSep.keys.mkString(",")))
         .rdd
         .map(x => x.getInt(0))
         .distinct()
@@ -303,21 +289,22 @@ object LRTrain {
   }
 
 
-  def getData(spark: SparkSession): DataFrame = {
+  def getData(spark: SparkSession, pathSep: mutable.Map[String,Seq[String]]): DataFrame = {
     trainLog :+= "\n-------get ulog data------"
-    val calendar = Calendar.getInstance()
-    calendar.add(Calendar.DATE, -dayBefore)
-    var pathSeps = Seq[String]()
-    for (d <- 1 to days) {
-      val date = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
-      pathSeps = pathSeps :+ date
-      calendar.add(Calendar.DATE, 1)
+
+    var path = Seq[String]()
+    pathSep.map{
+      x =>
+        path = path :+ "/user/cpc/lrmodel/ctrdata_v1/%s/{%s}".format(x._1, x._2.mkString(","))
     }
 
-    val path = "/user/cpc/lrmodel/ctrdata_v2/{%s}".format(pathSeps.mkString(","))
-    println(path)
-    trainLog :+= path
-    spark.read.parquet(path).coalesce(2000)
+    path.foreach{
+      x =>
+        trainLog :+= x
+        println(x)
+    }
+
+    spark.read.parquet(path:_*).distinct.coalesce(2000)
   }
 
   /*
@@ -396,8 +383,8 @@ object LRTrain {
     i += 10
 
     //isp
-    els = els :+ (x.getAs[Int]("isp") + i, 1d)
-    i += 20
+    //els = els :+ (x.getAs[Int]("isp") + i, 1d)
+    //i += 20
 
     //net
     els = els :+ (x.getAs[Int]("network") + i, 1d)
@@ -418,33 +405,16 @@ object LRTrain {
     els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
     i += 10
 
-    //pagenum
-    var pnum = x.getAs[Int]("pagenum")
-    if (pnum < 0 || pnum > 50) {
-      pnum = 0
-    }
-    els = els :+ (pnum + i, 1d)
-    i += 100
-
-    //bookid
-    var bid = 0
-    try {
-      bid = x.getAs[String]("bookid").toInt
-    } catch {
-      case e: Exception =>
-    }
-    if (bid < 0 || bid > 50) {
-      bid = 0
-    }
-    els = els :+ (bid + i, 1d)
-    i += 100
-
     //ad class
     val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
     els = els :+ (adcls + i, 1d)
     i += dict("adclass").size + 1
 
     //adtype
+    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
+    i += 10
+
+    //adslot_type
     els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
     i += 10
 
