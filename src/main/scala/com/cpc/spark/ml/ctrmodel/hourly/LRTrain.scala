@@ -88,14 +88,26 @@ object LRTrain {
     model.clearResult()
     val qttAllPre = ulogData.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && (x.getAs[Int]("adslot_type") == 1 || x.getAs[Int]("adslot_type") == 2))
     val qttAll = getLimitedData(4e8, qttAllPre).cache()
-
-    println("=========start train=========")
     train(spark, "parser1", "qtt-all-parser1", qttAll, "qtt-all-parser1.lrm")
+
+    //qtt-list-parser3
+    model.clearResult()
+    val qttListPre = ulogData.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 1)
+    val qttList = getLimitedData(4e8, qttListPre).cache()
+    train(spark, "parser3", "qtt-list-parser3", qttList, "qtt-list-parser3.lrm")
+
+    //qtt-content-parser3
+    model.clearResult()
+    val qttContentPre = ulogData.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 2)
+    val qttContent = getLimitedData(4e8, qttContentPre).cache()
+    train(spark, "parser3", "qtt-content-parser3", qttContent, "qtt-content-parser3.lrm")
 
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
 
     ulog.unpersist()
     qttAll.unpersist()
+    qttList.unpersist()
+    qttContent.unpersist()
     uidApp.unpersist()
     ulogData.unpersist()
   }
