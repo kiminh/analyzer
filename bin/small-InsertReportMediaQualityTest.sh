@@ -23,6 +23,6 @@ $spark/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=30'\
     --conf 'spark.yarn.executor.memoryOverhead=2g'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.small.tool.InsertReportCategoryTarget \
+    --class com.cpc.spark.small.tool.InsertReportMediaQualityTest \
     $cur/lib/cpc-small.jar $date
 
