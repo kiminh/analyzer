@@ -90,15 +90,10 @@ object LRTrain {
     val qttContent = qttAll.filter(x =>x.getAs[Int]("adslot_type") == 2)
     train(spark, "parser3", "qtt-content-parser3", qttContent, "qtt-content-parser3.lrm")
 
-    //external-list-parser2
+    //external-all-parser2
     model.clearResult()
-    val externalList = ulogData.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && x.getAs[Int]("adslot_type") == 1)
-    train(spark, "parser2", "external-list-parser2", externalList, "external-list-parser2.lrm")
-
-    //external-content-parser2
-    model.clearResult()
-    val externalContent = ulogData.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && x.getAs[Int]("adslot_type") == 2)
-    train(spark, "parser2", "external-content-parser2", externalContent, "external-content-parser2.lrm")
+    val externalAll = ulogData.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && (x.getAs[Int]("adslot_type") == 1 || x.getAs[Int]("adslot_type") == 2))
+    train(spark, "parser2", "external-all-parser2", externalAll, "external-all-parser2.lrm")
 
     //all-interact-parser2
     model.clearResult()
