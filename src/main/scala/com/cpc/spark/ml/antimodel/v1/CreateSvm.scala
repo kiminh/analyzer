@@ -60,7 +60,7 @@ object CreateSvm {
         FeatureDict.updateDict(unionLog(0).cache())
       }
       FeatureDict.loadData()
-      //FeatureDict.saveLua()
+      FeatureDict.saveLua()
       FeatureDict.updateAntispamServerData(ConfigFactory.load())
 
       val bdict = ctx.sparkContext.broadcast(FeatureDict.dict)
