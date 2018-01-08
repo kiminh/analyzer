@@ -310,7 +310,7 @@ object GetMediaLog {
             list = list :+ (media_appsid,adslotid,adslot_type,x.split(":")(0))
         }
         list
-    }.flatMap(x => x).map{
+    }.flatMap(x => x).filter(x => x._4.length > 0).map{
       case (media_appsid,adslotid,adslot_type,device_id) =>
         ((media_appsid,adslotid,adslot_type,device_id), 1)
     }.reduceByKey((x, y) => x+y).map{
