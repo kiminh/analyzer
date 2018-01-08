@@ -11,6 +11,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import userprofile.Userprofile.{APPPackage, UserProfile}
+import org.apache.log4j.{Level, Logger}
 
 
 /**
@@ -18,6 +19,8 @@ import userprofile.Userprofile.{APPPackage, UserProfile}
   */
 
 object saveUserAppInstalledInfo{
+
+  Logger.getRootLogger.setLevel(Level.WARN)
 
   var tableName = ""
 

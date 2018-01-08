@@ -46,7 +46,7 @@ object GetDayUv {
 
     val unionLog = ctx.sql(
       s"""
-         |select * from dl_cpc.%s where `date` = "%s" and adslotid > 0
+         |select * from dl_cpc.%s where `date` = "%s" and adslotid > 0 and isshow = 1
        """.stripMargin.format(table, date))
       .as[UnionLog].rdd
 

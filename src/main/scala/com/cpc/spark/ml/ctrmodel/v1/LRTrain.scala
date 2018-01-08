@@ -16,6 +16,7 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.collection.mutable
 import mlserver.mlserver._
+import org.apache.log4j.{Level, Logger}
 
 import scala.collection.mutable.WrappedArray
 import scala.util.Random
@@ -38,6 +39,8 @@ object LRTrain {
       dayBefore = args(0).toInt
       days = args(1).toInt
     }
+
+    Logger.getRootLogger.setLevel(Level.WARN)
 
     val spark: SparkSession = model.initSpark("cpc lr model")
 
@@ -307,7 +310,7 @@ object LRTrain {
     }
     trainLog :+= "\n------dict size------"
     for (name <- dictNames) {
-      val pathTpl = "/user/cpc/lrmodel/feature_ids/%s/{%s}"
+      val pathTpl = "/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
       var n = 0
       val ids = mutable.Map[Int, Int]()
       spark.read

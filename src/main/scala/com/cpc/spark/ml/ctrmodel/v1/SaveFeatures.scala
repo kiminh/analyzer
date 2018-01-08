@@ -3,6 +3,7 @@ package com.cpc.spark.ml.ctrmodel.v1
 import java.util.Date
 
 import com.cpc.spark.log.parser.{TraceLog, UnionLog}
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
@@ -13,9 +14,9 @@ object SaveFeatures {
 
   def main(args: Array[String]): Unit = {
     val date = args(0)
-
+    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder()
-      .appName("save feature ids" + date)
+      .appName("save feature" + date)
       .enableHiveSupport()
       .getOrCreate()
 
