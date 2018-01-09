@@ -1,6 +1,10 @@
 package com.cpc.spark.antispam.anal
 
+import java.sql.DriverManager
+import java.util.Properties
+
 import com.cpc.spark.log.parser.{ExtValue, UnionLog}
+import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -8,6 +12,8 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   * Created by wanli on 2017/8/4.
   */
 object GetDeviceAnal {
+  var mariadbUrl = ""
+  val mariadbProp = new Properties()
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       System.err.println(
@@ -21,10 +27,17 @@ object GetDeviceAnal {
     Logger.getRootLogger.setLevel(Level.WARN)
     Logger.getRootLogger.setLevel(Level.WARN)
     val ctx = SparkSession.builder()
-      .appName("device anal")
+      .appName("device anal city")
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
+
+    val conf = ConfigFactory.load()
+    mariadbUrl = conf.getString("mariadb.union_write.url")
+    mariadbProp.put("user", conf.getString("mariadb.union_write.user"))
+    mariadbProp.put("password", conf.getString("mariadb.union_write.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.union_write.driver"))
+
     var sql1 = "SELECT * from  dl_cpc.cpc_union_log where `date` ='%s'  and ext['device_ids'].string_value != '' ".format(date1)
     var sql2 = "SELECT * from  dl_cpc.cpc_union_log where `date` ='%s'  and ext['device_ids'].string_value != '' ".format(date2)
 
@@ -109,8 +122,6 @@ object GetDeviceAnal {
       case (media_appsid, adslotid, adslot_type, model, brand,os , imei, androidId,idfa, city) =>
         if(os == 1 && imei.length > 0 ){
           true
-          /*}else if (os == 2 && idfa.length >0){
-             true*/
         }else{
           false
         }
@@ -147,43 +158,56 @@ object GetDeviceAnal {
         ((media_appsid, adslotid, adslot_type),(1,sameImei, flagAndroid, flagBrand, flagModel, flagCity))
     }.reduceByKey((x, y) => (x._1+y._1,x._2+y._2 ,x._3+y._3,x._4+y._4,x._5+y._5,x._6+y._6)).map{
      case ((media_appsid, adslotid, adslot_type),(allImei, sameImei, flagAndroid, flagBrand, flagModel,flagCity))=>
-       media_appsid+","+adslotid+","+adslot_type+","+allImei+","+sameImei+","+flagAndroid+","+flagBrand+","+flagModel + ","+flagCity
+       //media_appsid+","+adslotid+","+adslot_type+","+allImei+","+sameImei+","+flagAndroid+","+flagBrand+","+flagModel + ","+flagCity
+        ImeiDiff(
+          date =  date2,
+          media_id = media_appsid.toInt,
+          adslot_id = adslotid.toInt,
+          adslot_type = adslot_type,
+          imei_count = allImei,
+          same_imei_count = sameImei,
+          diff_androidid_count = flagAndroid,
+          diff_brand_count = flagBrand,
+          diff_model_count = flagModel,
+          diff_city_count = flagCity
+        )
    }
-  /*  var toResult =  unionAll.leftOuterJoin(diffAndroidId).map{
-      case ((media_appsid, adslotid, adslot_type),(request, imei: Option[(Int, Int, Int, Int, Int)]))=>
-        var imeiObj = imei.getOrElse((0,0,0,0,0))
-        media_appsid+","+adslotid+","+adslot_type+","+request+","+imeiObj._1+","+imeiObj._2+","+imeiObj._3+","+imeiObj._4+","+imeiObj._5
-    }*/
-    diffAndroidId.collect().foreach(println)
-
-   /*var diffAndroidId =  union1.join(union2).map{
-      case  ((media_appsid, adslotid, adslot_type, imei),((model1, brand1, os1, imei1, androidId1, idfa1, city1),(model2, brand2, os2, imei2, androidId2, idfa2, city2))) =>
-        var flagAndroid = 0
-        var flagModel = 0
-        var flagBrand = 0
-        var flagCity = 0
-        if(androidId1 != androidId2){
-          flagAndroid = 1
-        }
-        if(model1 != model2){
-          flagModel = 1
-        }
-        if(brand1 != brand2){
-          flagBrand = 1
-        }
-        if(city1 != city2){
-          flagCity = 1
-        }
-        ((media_appsid, adslotid, adslot_type),(1, flagAndroid, flagBrand, flagModel, flagCity))
-    }.reduceByKey((x, y) => (x._1+y._1,x._2+y._2 ,x._3+y._3,x._4+y._4,x._5+y._5))/*.map{
-     case ((media_appsid, adslotid, adslot_type),(count, flagAndroid, flagBrand, flagModel))=>
-      // media_appsid+","+adslotid+","+adslot_type+","+count+","+flagAndroid+","+flagBrand+","+flagModel
-   }*/
-   var toResult =  unionAll.leftOuterJoin(diffAndroidId).map{
-      case ((media_appsid, adslotid, adslot_type),(request, imei: Option[(Int, Int, Int, Int, Int)]))=>
-        var imeiObj = imei.getOrElse((0,0,0,0,0))
-        media_appsid+","+adslotid+","+adslot_type+","+request+","+imeiObj._1+","+imeiObj._2+","+imeiObj._3+","+imeiObj._4+","+imeiObj._5
-    }
-    toResult.collect().foreach(println)*/
+    println("count:" + diffAndroidId.count())
+    clearReportHourData("report_media_imei_diff", date2)
+    ctx.createDataFrame(diffAndroidId)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "union.report_media_imei_diff", mariadbProp)
+    ctx.stop()
   }
+  def clearReportHourData(tbl: String, date: String): Unit = {
+    try {
+      Class.forName(mariadbProp.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        mariadbUrl,
+        mariadbProp.getProperty("user"),
+        mariadbProp.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        """
+          |delete from union.%s where `date` = "%s"
+        """.stripMargin.format(tbl, date)
+      println("sql" + sql) ;
+      stmt.executeUpdate(sql);
+    } catch {
+      case e: Exception => println("exception caught: " + e)
+    }
+  }
+  case class ImeiDiff(
+                 date: String = "",
+                 media_id:Int = 0,
+                 adslot_id:Int = 0,
+                 adslot_type:Int = 0,
+                 imei_count:Int = 0,
+                 same_imei_count:Int = 0,
+                 diff_androidid_count:Int = 0,
+                 diff_brand_count:Int = 0,
+                 diff_model_count:Int = 0,
+                 diff_city_count:Int = 0
+               )
 }
