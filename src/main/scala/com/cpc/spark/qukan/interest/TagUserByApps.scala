@@ -85,6 +85,18 @@ object TagUserByApps {
     println("has qipai app users", sum)
     qipaiUids.take(10).foreach(println)
 
+    //保健品
+    val baojianpinUids = uidHasApps(userPkgs, "user_tag_by_apps.baojianpin.contains")
+    sum = tagUser(baojianpinUids, conf.getInt("user_tag_by_apps.baojianpin.tag_id"))
+    println("has baojianpin app users", sum)
+    baojianpinUids.take(10).foreach(println)
+
+    //医疗
+    val yiliaoUids = uidHasApps(userPkgs, "user_tag_by_apps.yiliao.contains")
+    sum = tagUser(yiliaoUids, conf.getInt("user_tag_by_apps.yiliao.tag_id"))
+    println("has yiliao app users", sum)
+    yiliaoUids.take(10).foreach(println)
+
     userPkgs.unpersist()
   }
 
