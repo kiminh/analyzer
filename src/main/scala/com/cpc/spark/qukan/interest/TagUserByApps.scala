@@ -75,6 +75,11 @@ object TagUserByApps {
     println("no alipay users", sum)
     alipayUids.take(10).foreach(println)
 
+    //棋牌
+    val qipaiUids = uidHasApps(userPkgs, "user_tag_by_apps.qipai.contains")
+    sum = tagUser(qipaiUids, conf.getInt("user_tag_by_apps.qipai.tag_id"))
+    println("has qipai app users", sum)
+
     userPkgs.unpersist()
   }
 
