@@ -10,6 +10,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.sql.SparkSession
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.rdd.RDD
 import userprofile.Userprofile.{InterestItem, UserProfile}
@@ -29,6 +30,9 @@ object TagUserByApps {
         """.stripMargin)
       System.exit(1)
     }
+
+    Logger.getRootLogger.setLevel(Level.WARN)
+
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -args(0).toInt)
     val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
@@ -79,6 +83,7 @@ object TagUserByApps {
     val qipaiUids = uidHasApps(userPkgs, "user_tag_by_apps.qipai.contains")
     sum = tagUser(qipaiUids, conf.getInt("user_tag_by_apps.qipai.tag_id"))
     println("has qipai app users", sum)
+    qipaiUids.take(10).foreach(println)
 
     userPkgs.unpersist()
   }
