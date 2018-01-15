@@ -25,36 +25,27 @@ import scala.util.Random
 
 object LRTrain {
 
-  private var days = 3
+  private var days = 7
   private var dayBefore = 7
   private var trainLog = Seq[String]()
+  private val model = new LRIRModel
 
-  private val model: LRIRModel = new LRIRModel
 
   def main(args: Array[String]): Unit = {
-    if (args.length > 0) {
-      dayBefore = args(0).toInt
-      days = args(1).toInt
-    }
-
     Logger.getRootLogger.setLevel(Level.WARN)
-
     val spark: SparkSession = model.initSpark("cpc lr model")
-
 
     //按分区取数据
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -(days * 24 + 2))
+    cal.add(Calendar.HOUR, -(days * 24 + 3))
     var pathSep = mutable.Map[String,Seq[String]]()
 
     for (n <- 1 to days * 24) {
       date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       hour = new SimpleDateFormat("HH").format(cal.getTime)
-
       pathSep.update(date,(pathSep.getOrElse(date,Seq[String]()) :+ hour))
-
       cal.add(Calendar.HOUR, 1)
     }
 
@@ -77,13 +68,12 @@ object LRTrain {
     val userAppIdx = getUserAppIdx(spark, uidApp, ids)
       .repartition(pnum)
       .cache()
+    uidApp.unpersist()
 
     val ulog = getData(spark,pathSep).cache()
 
     trainLog :+= "ulog nums = %s".format(ulog.rdd.count)
     trainLog :+= "ulog NumPartitions = %s".format(ulog.rdd.getNumPartitions)
-
-    //val ulogData = getLeftJoinData(ulog, userAppIdx).cache()
 
     //qtt-list-parser3-hourly
     model.clearResult()
@@ -98,11 +88,45 @@ object LRTrain {
     val qttContent = getLimitedData(4e8, qttContentPre)
     train(spark, "parser3", "qtt-content-parser3-hourly", getLeftJoinData(qttContent, userAppIdx), "qtt-content-parser3-hourly.lrm")
 
+    //qtt-all-parser3-hourly
+    model.clearResult()
+    val qttAllPre = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+    val qttAll = getLimitedData(4e8, qttAllPre)
+    train(spark, "parser3", "qtt-all-parser3-hourly", getLeftJoinData(qttAll, userAppIdx), "qtt-all-parser3-hourly.lrm")
+
+    //qtt-all-parser2-hourly
+    model.clearResult()
+    val qttAllPre2 = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+    val qttAll2 = getLimitedData(4e8, qttAllPre2)
+    train(spark, "parser2", "qtt-all-parser2-hourly", getLeftJoinData(qttAll2, userAppIdx), "qtt-all-parser2-hourly.lrm")
+
+    //凌晨计算所有的模型
+    if (isMorning()) {
+      //external-all-parser2-hourly
+      model.clearResult()
+      val extAllPre = ulog.filter(x => !Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+      val extAll = getLimitedData(4e8, extAllPre)
+      train(spark, "parser2", "external-all-parser2-hourly", extAll, "external-all-parser2-hourly.lrm")
+
+      //interact-all-parser3-hourly
+      model.clearResult()
+      val interactAllPre = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
+      val interactAll = getLimitedData(4e8, interactAllPre)
+      train(spark, "parser3", "interact-all-parser3-hourly", getLeftJoinData(interactAll, userAppIdx), "interact-all-parser3-hourly.lrm")
+
+      //interact-all-parser2-hourly
+      model.clearResult()
+      val interactAllPre2 = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
+      val interactAll2 = getLimitedData(4e8, interactAllPre2)
+      train(spark, "parser2", "interact-all-parser2-hourly", interactAll2, "interact-all-parser2-hourly.lrm")
+
+      //TODO cvr按20天取数据
+    }
+
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
     ulog.unpersist()
     userAppIdx.unpersist()
   }
-
 
   //安装列表中top k的App
   def getTopApp(uidApp : RDD[Row], k : Int): Map[String,Int] ={
@@ -120,6 +144,10 @@ object LRTrain {
           ids.update(id._1,idx)
       }
     ids.toMap
+  }
+
+  def isMorning(): Boolean = {
+    new SimpleDateFormat("HH").format(new Date().getTime) < "08"
   }
 
   //用户安装列表对应的App idx
