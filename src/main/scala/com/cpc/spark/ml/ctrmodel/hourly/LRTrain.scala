@@ -61,12 +61,10 @@ object LRTrain {
       .map(x => (x._1,x._2.distinct))
       .toDF("uid","pkgs").rdd.cache()
 
-    val pnum = 600
-
     val ids = getTopApp(uidApp, 1000)
     dictStr.update("appid",ids)
     val userAppIdx = getUserAppIdx(spark, uidApp, ids)
-      .repartition(pnum)
+      .repartition(1000)
       .cache()
     uidApp.unpersist()
 
@@ -167,7 +165,7 @@ object LRTrain {
   }
 
   //限制总的样本数
-  def getLimitedData(limitedNum: Double, ulog: DataFrame): DataFrame ={
+  def getLimitedData(limitedNum: Double, ulog: DataFrame): DataFrame = {
     var rate = 1d
     val num = ulog.count().toDouble
 
@@ -175,7 +173,7 @@ object LRTrain {
       rate = limitedNum / num
     }
 
-    ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0)
+    ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0).coalesce(1000)
   }
 
 
