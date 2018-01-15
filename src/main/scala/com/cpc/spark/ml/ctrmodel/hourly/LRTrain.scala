@@ -6,14 +6,12 @@ import java.util.{Calendar, Date}
 import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ml.train.LRIRModel
-import com.cpc.spark.qukan.parser.HdfsParser
 import com.typesafe.config.ConfigFactory
 import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types.{ArrayType, StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.collection.mutable
@@ -72,40 +70,37 @@ object LRTrain {
       .map(x => (x._1,x._2.distinct))
       .toDF("uid","pkgs").rdd.cache()
 
+    val pnum = 600
 
     val ids = getTopApp(uidApp, 1000)
     dictStr.update("appid",ids)
     val userAppIdx = getUserAppIdx(spark, uidApp, ids)
+      .repartition(pnum)
+      .cache()
 
     val ulog = getData(spark,pathSep).cache()
 
     trainLog :+= "ulog nums = %s".format(ulog.rdd.count)
     trainLog :+= "ulog NumPartitions = %s".format(ulog.rdd.getNumPartitions)
 
-    val ulogData = getLeftJoinData(ulog, userAppIdx).cache()
+    //val ulogData = getLeftJoinData(ulog, userAppIdx).cache()
 
     //qtt-list-parser3-hourly
     model.clearResult()
-    val qttListPre = ulogData.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 1)
+    val qttListPre = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 1)
     val qttList = getLimitedData(4e8, qttListPre)
-    train(spark, "parser3", "qtt-list-parser3-hourly", qttList, "qtt-list-parser3-hourly.lrm")
+    val qttListWithApp = getLeftJoinData(qttList, userAppIdx)
+    train(spark, "parser3", "qtt-list-parser3-hourly", getLeftJoinData(qttList, userAppIdx), "qtt-list-parser3-hourly.lrm")
 
     //qtt-content-parser3-hourly
     model.clearResult()
-    val qttContentPre = ulogData.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 2)
+    val qttContentPre = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 2)
     val qttContent = getLimitedData(4e8, qttContentPre)
-    train(spark, "parser3", "qtt-content-parser3-hourly", qttContent, "qtt-content-parser3-hourly.lrm")
-
-    //qtt-all-parser1-hourly
-    model.clearResult()
-    val qttAllPre = ulogData.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && (x.getAs[Int]("adslot_type") == 1 || x.getAs[Int]("adslot_type") == 2))
-    val qttAll = getLimitedData(4e8, qttAllPre)
-    train(spark, "parser1", "qtt-all-parser1-hourly", qttAll, "qtt-all-parser1-hourly.lrm")
+    train(spark, "parser3", "qtt-content-parser3-hourly", getLeftJoinData(qttContent, userAppIdx), "qtt-content-parser3-hourly.lrm")
 
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
-
     ulog.unpersist()
-    ulogData.unpersist()
+    userAppIdx.unpersist()
   }
 
 
