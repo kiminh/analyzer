@@ -43,7 +43,7 @@ object GetFailLoad {
                   |AND field['error_code'].string_type != "0"
                   |AND thedate = "%s"
                   |AND thehour = "%d"
-                """.stripMargin.format("%iclicashsid=%", day, hour))
+                """.stripMargin.format("%iclica%", day, hour))
             .rdd
             .map {
                 x =>
@@ -63,7 +63,7 @@ object GetFailLoad {
         var allCount = 0
         val data = logData.collect()
         for (d <- data) {
-//            println(d.toString())
+            //            println(d.toString())
             allCount += d._2
         }
         println("allCount:", allCount)
