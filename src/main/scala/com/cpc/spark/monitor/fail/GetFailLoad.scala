@@ -37,7 +37,7 @@ object GetFailLoad {
             .sql(
                 """
                   |SELECT field['url'].string_type
-                  |FROM gobblin.qukan_report_log_five_minutes
+                  |FROM dw_qukan.qukan_report_log
                   |WHERE field['cmd'].string_type = "9027"
                   |AND field['url'].string_type like "%s"
                   |AND field['error_code'].string_type != "0"
@@ -58,12 +58,12 @@ object GetFailLoad {
             }
             .cache()
 
-        println("userData count", logData.count())
+        println("logData count", logData.count())
 
         var allCount = 0
         val data = logData.collect()
         for (d <- data) {
-            println(d.toString())
+//            println(d.toString())
             allCount += d._2
         }
         println("allCount:", allCount)
