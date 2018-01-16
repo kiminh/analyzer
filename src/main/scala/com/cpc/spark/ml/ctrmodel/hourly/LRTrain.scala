@@ -77,7 +77,6 @@ object LRTrain {
     model.clearResult()
     val qttListPre = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 1)
     val qttList = getLimitedData(4e8, qttListPre)
-    val qttListWithApp = getLeftJoinData(qttList, userAppIdx)
     train(spark, "parser3", "qtt-list-parser3-hourly", getLeftJoinData(qttList, userAppIdx), "qtt-list-parser3-hourly.lrm")
 
     //qtt-content-parser3-hourly
