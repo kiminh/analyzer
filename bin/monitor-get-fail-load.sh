@@ -12,9 +12,14 @@ jars=(
     "$cur/lib/mariadb-java-client-1.5.9.jar"
 )
 
+h=1
+date=`date -d "now -$h hours" +%Y-%m-%d`
+hour=`date -d "now -$h hours" +%H`
+echo "start $date $hour"
+
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --deploy-mode "client" \
     --executor-memory 10G --executor-cores 10 --total-executor-cores 10 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.monitor.fail.GetFailLoad \
-    /home/cpc/tankaide/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $last_timestramp_path
+    /home/cpc/tankaide/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $date $hour
