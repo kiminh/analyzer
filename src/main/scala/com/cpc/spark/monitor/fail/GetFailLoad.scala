@@ -1,8 +1,10 @@
 package com.cpc.spark.monitor.fail
 
 import java.io.{File, PrintWriter}
-import java.util.Properties
+import java.text.SimpleDateFormat
+import java.util.{Calendar, Properties}
 
+import com.cpc.spark.small.tool.InsertUserCvr.{mariadbProp, mariadbUrl}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -17,7 +19,9 @@ object GetFailLoad {
 
         Logger.getRootLogger.setLevel(Level.WARN)
 
-        val path = args(0).toString
+        val day = args(0).toString
+        val hour = args(1).toInt
+        val path = args(3).toString
         if (path.length == 0) {
             System.err.println(
                 s"""
@@ -48,11 +52,11 @@ object GetFailLoad {
 
         println("GetFailLoad run ....lastTimestamp %s".format(lastTimestamp))
 
-        val reg = "[?&](iclicashsid|iclitype|icliqqid|icliwxid)=[^&]*".r
+        val reg = "iclicashsid=[^&]*".r
         val logData = ctx
             .sql(
                 """
-                  |SELECT log_timestamp, field['url'].string_type, thedate, thehour
+                  |SELECT log_timestamp, field['url'].string_type
                   |FROM gobblin.qukan_report_log_five_minutes
                   |WHERE field['cmd'].string_type = "9027"
                   |AND field['url'].string_type like "%s"
@@ -64,18 +68,26 @@ object GetFailLoad {
                 x =>
                     val timestamp = x.getLong(0)
                     val url = reg.replaceAllIn(x.getString(1), "")
-                    val theDate = x.getString(2)
-                    val theHour = x.getString(3)
-                    (timestamp, url, theDate, theHour)
+                    val count = 1
+                    (url, (timestamp, count))
+            }
+            .reduceByKey {
+                (a, b) =>
+                    var timestamp = a._1
+                    if (a._1 < b._1) {
+                        timestamp = b._1
+                    }
+                    (timestamp, a._2 + b._2)
             }
             .cache()
+
         println("userData count", logData.count())
 
         var newestTimestramp = 0L
         val data = logData.collect()
         for (d <- data) {
-            if (newestTimestramp < d._1) {
-                newestTimestramp = d._1
+            if (newestTimestramp < d._2._1) {
+                newestTimestramp = d._2._1
             }
             println(d.toString())
         }
@@ -90,5 +102,18 @@ object GetFailLoad {
                 writer.close()
             }
         }
+
+        logData
+            .map {
+                x =>
+                    (x._1, x._2._2, day, hour)
+            }
+
+        val userCvrDataFrame = ctx.createDataFrame(logData).toDF("url", "count", "date", "hour")
+
+        userCvrDataFrame
+            .write
+            .mode(SaveMode.Append)
+            .jdbc(mariadbUrl, "report.monitor_fail_load", mariadbProp)
     }
 }
