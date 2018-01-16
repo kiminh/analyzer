@@ -23,13 +23,19 @@ object GetFailLoad {
         val day = args(0).toString
         val hour = args(1).toInt
 
+        val conf = ConfigFactory.load()
+        mariadbUrl = conf.getString("mariadb.url")
+        mariadbProp.put("user", conf.getString("mariadb.user"))
+        mariadbProp.put("password", conf.getString("mariadb.password"))
+        mariadbProp.put("driver", conf.getString("mariadb.driver"))
+
         val ctx = SparkSession
             .builder()
-            .appName("GetFailLoad run ....time %s %s".format(day, hour))
+            .appName("GetFailLoad run ....time %s %d".format(day, hour))
             .enableHiveSupport()
             .getOrCreate()
 
-        println("GetFailLoad run ....time %s %s".format(day, hour))
+        println("GetFailLoad run ....time %s %d".format(day, hour))
 
         val reg = "iclicashsid=[^&]*".r
         val logData = ctx
@@ -41,7 +47,7 @@ object GetFailLoad {
                   |AND field['url'].string_type like "%s"
                   |AND field['error_code'].string_type != "0"
                   |AND thedate = "%s"
-                  |AND thehour = "%s"
+                  |AND thehour = "%d"
                 """.stripMargin.format("%iclica%", day, hour))
             .rdd
             .map {
