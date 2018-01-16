@@ -1,23 +1,19 @@
 package com.cpc.spark.monitor.fail
 
-import java.io.{File, PrintWriter}
 import java.sql.DriverManager
-import java.text.SimpleDateFormat
-import java.util.{Calendar, Properties}
-
-import com.cpc.spark.small.tool.InsertUserCvr.{mariadbProp, mariadbUrl}
+import java.util.Properties
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
-import scala.io.Source
-
 object GetFailLoad {
     var mariadbUrl = ""
     val mariadbProp = new Properties()
+    val reg_and_iclicashsid = "&iclicashsid=[^&]*".r
+    val reg_first_iclicashsid = "[?]iclicashsid=[^&]*&".r
+    val reg_only_iclicashsid = "[?]iclicashsid=[^&]*".r
 
     def main(args: Array[String]): Unit = {
-
         Logger.getRootLogger.setLevel(Level.WARN)
 
         val day = args(0).toString
@@ -37,7 +33,6 @@ object GetFailLoad {
 
         println("GetFailLoad run ....time %s %d".format(day, hour))
 
-        val reg = "iclicashsid=[^&]*".r
         val logData = ctx
             .sql(
                 """
@@ -48,11 +43,13 @@ object GetFailLoad {
                   |AND field['error_code'].string_type != "0"
                   |AND thedate = "%s"
                   |AND thehour = "%d"
-                """.stripMargin.format("%iclica%", day, hour))
+                """.stripMargin.format("%iclicashsid=%", day, hour))
             .rdd
             .map {
                 x =>
-                    val url = reg.replaceAllIn(x.getString(0), "")
+                    var url = reg_and_iclicashsid.replaceAllIn(x.getString(0), "")
+                    url = reg_first_iclicashsid.replaceAllIn(url, "?")
+                    url = reg_only_iclicashsid.replaceAllIn(url, "")
                     (url, 1)
             }
             .reduceByKey {
@@ -71,13 +68,14 @@ object GetFailLoad {
         }
         println("allCount:", allCount)
 
-        logData
+        val sqlData = logData
             .map {
                 x =>
                     (x._1, x._2, day, hour)
             }
+            .cache()
         clearReportHourData(day, hour)
-        val userCvrDataFrame = ctx.createDataFrame(logData).toDF("url", "count", "date", "hour")
+        val userCvrDataFrame = ctx.createDataFrame(sqlData).toDF("url", "count", "date", "hour")
 
         userCvrDataFrame
             .write
