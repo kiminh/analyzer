@@ -22,4 +22,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --executor-memory 10G --executor-cores 10 --total-executor-cores 10 \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.monitor.fail.GetFailLoad \
-    /home/cpc/tankaide/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $date $hour
+    /home/cpc/tankaide/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $date $hour 0

@@ -17,7 +17,8 @@ object GetFailLoad {
         Logger.getRootLogger.setLevel(Level.WARN)
 
         val day = args(0).toString
-        val hour = args(1).toInt
+        val hour = args(1).toString
+        val allTable = args(2).toString
 
         val conf = ConfigFactory.load()
         mariadbUrl = conf.getString("mariadb.url")
@@ -27,23 +28,28 @@ object GetFailLoad {
 
         val ctx = SparkSession
             .builder()
-            .appName("GetFailLoad run ....time %s %d".format(day, hour))
+            .appName("GetFailLoad run ....time %s %s".format(day, hour))
             .enableHiveSupport()
             .getOrCreate()
 
-        println("GetFailLoad run ....time %s %d".format(day, hour))
+        println("GetFailLoad run ....time %s %s".format(day, hour))
+
+        var tableName = "gobblin.qukan_report_log_five_minutes"
+        if (allTable.equals("1")) {
+            tableName = "dw_qukan.qukan_report_log"
+        }
 
         val logData = ctx
             .sql(
                 """
                   |SELECT field['url'].string_type
-                  |FROM dw_qukan.qukan_report_log
+                  |FROM %s
                   |WHERE field['cmd'].string_type = "9027"
                   |AND field['url'].string_type like "%s"
                   |AND field['error_code'].string_type != "0"
                   |AND thedate = "%s"
-                  |AND thehour = "%d"
-                """.stripMargin.format("%iclica%", day, hour))
+                  |AND thehour = "%s"
+                """.stripMargin.format(tableName, "%iclica%", day, hour))
             .rdd
             .map {
                 x =>
@@ -71,10 +77,10 @@ object GetFailLoad {
         val sqlData = logData
             .map {
                 x =>
-                    (x._1, x._2, day, hour)
+                    (x._1, x._2, day, hour.toInt)
             }
             .cache()
-        clearReportHourData(day, hour)
+        clearReportHourData(day, hour.toInt)
         val userCvrDataFrame = ctx.createDataFrame(sqlData).toDF("url", "count", "date", "hour")
 
         userCvrDataFrame
