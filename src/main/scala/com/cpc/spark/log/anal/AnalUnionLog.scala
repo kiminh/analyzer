@@ -79,11 +79,18 @@ object AnalUnionLog {
             x._2.foreach {
               u =>
                 if (u.isshow == 1) {
+                  var ext = mutable.Map[String, ExtValue]()
+                  if (log.ext != null) {
+                    ext = ext ++ log.ext
+                  }
+                  ext.update("show_refer", u.ext("show_refer"))
+                  ext.update("show_ua", u.ext("show_ua"))
                   log = log.copy(
                     isshow = u.isshow,
                     show_timestamp = u.show_timestamp,
                     show_network = u.show_network,
-                    show_ip = u.show_ip
+                    show_ip = u.show_ip,
+                    ext = ext
                   )
                 }
                 if (u.isclick == 1) {

@@ -1102,6 +1102,14 @@ public final class Aslog {
      * <code>OPENAPI = 3;</code>
      */
     OPENAPI(3),
+    /**
+     * <code>HZ = 4;</code>
+     */
+    HZ(4),
+    /**
+     * <code>FUN = 5;</code>
+     */
+    FUN(5),
     ;
 
     /**
@@ -1116,6 +1124,14 @@ public final class Aslog {
      * <code>OPENAPI = 3;</code>
      */
     public static final int OPENAPI_VALUE = 3;
+    /**
+     * <code>HZ = 4;</code>
+     */
+    public static final int HZ_VALUE = 4;
+    /**
+     * <code>FUN = 5;</code>
+     */
+    public static final int FUN_VALUE = 5;
 
 
     public final int getNumber() {
@@ -1135,6 +1151,8 @@ public final class Aslog {
         case 1: return NATIVESDK;
         case 2: return JSSDK;
         case 3: return OPENAPI;
+        case 4: return HZ;
+        case 5: return FUN;
         default: return null;
       }
     }
@@ -1450,7 +1468,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasPackagename()) {
         hash = (37 * hash) + PACKAGENAME_FIELD_NUMBER;
         hash = (53 * hash) + getPackagename().hashCode();
@@ -2159,7 +2177,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasDomain()) {
         hash = (37 * hash) + DOMAIN_FIELD_NUMBER;
         hash = (53 * hash) + getDomain().hashCode();
@@ -2812,7 +2830,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasHeight()) {
         hash = (37 * hash) + HEIGHT_FIELD_NUMBER;
         hash = (53 * hash) + getHeight();
@@ -3725,7 +3743,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -5720,7 +5738,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasId()) {
         hash = (37 * hash) + ID_FIELD_NUMBER;
         hash = (53 * hash) + getId().hashCode();
@@ -7360,7 +7378,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -8057,7 +8075,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasMajor()) {
         hash = (37 * hash) + MAJOR_FIELD_NUMBER;
         hash = (53 * hash) + getMajor();
@@ -8807,7 +8825,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -10384,7 +10402,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasOs()) {
         hash = (37 * hash) + OS_FIELD_NUMBER;
         hash = (53 * hash) + os_;
@@ -12280,7 +12298,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -13392,7 +13410,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasSrc()) {
         hash = (37 * hash) + SRC_FIELD_NUMBER;
         hash = (53 * hash) + src_;
@@ -15530,7 +15548,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -17242,7 +17260,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasSrc()) {
         hash = (37 * hash) + SRC_FIELD_NUMBER;
         hash = (53 * hash) + src_;
@@ -17931,7 +17949,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasCountry()) {
         hash = (37 * hash) + COUNTRY_FIELD_NUMBER;
         hash = (53 * hash) + getCountry();
@@ -18651,7 +18669,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasInterestid()) {
         hash = (37 * hash) + INTERESTID_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
@@ -19739,7 +19757,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (getInterestsCount() > 0) {
         hash = (37 * hash) + INTERESTS_FIELD_NUMBER;
         hash = (53 * hash) + getInterestsList().hashCode();
@@ -22716,7 +22734,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasSearchid()) {
         hash = (37 * hash) + SEARCHID_FIELD_NUMBER;
         hash = (53 * hash) + getSearchid().hashCode();
@@ -26433,8 +26451,8 @@ public final class Aslog {
       "CT\020\005*\020\n\005AdSrc\022\007\n\003CPC\020\001*i\n\017InteractionTyp" +
       "e\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNL" +
       "OAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020" +
-      "\005\022\006\n\002GP\020\006*3\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t" +
-      "\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003"
+      "\005\022\006\n\002GP\020\006*D\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t" +
+      "\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
