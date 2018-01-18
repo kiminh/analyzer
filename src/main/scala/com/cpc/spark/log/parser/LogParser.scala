@@ -158,11 +158,15 @@ object LogParser {
     val data = Event.parse_show_log(txt)
     if (data != null) {
       val body = data.event
+      val ext = mutable.Map[String, ExtValue]()
+      ext.update("show_refer", ExtValue(string_value = data.refer))
+      ext.update("show_ua", ExtValue(string_value = data.ua))
       log = UnionLog(
         searchid = body.getSearchId,
         isshow = 1,
         show_timestamp = body.getEventTimestamp,
-        show_ip = data.ip
+        show_ip = data.ip ,
+        ext = ext
       )
     }
     log

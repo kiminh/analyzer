@@ -152,6 +152,8 @@ enum ClientType {
 	NATIVESDK 	= 1;
 	JSSDK 		= 2;
 	OPENAPI		= 3;
+	HZ          = 4;
+	FUN         = 5;
 };
 
 message Client {

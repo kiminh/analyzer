@@ -196,7 +196,7 @@ enum ChargeType {
 // 广告源相关
 enum Dsp {
     JESGOO_DSP   = 1;
-	CPC_DSP = 2; 
+    CPC_DSP = 2;
 }
 
 // DSP计费相关字段
@@ -290,6 +290,14 @@ message Event {
             SYNC_TRACING       = 1;  // 内嵌iframe，同步追踪
             DELAY_TRACING      = 2;  // JS脚本跳转，延迟到达
             DELAY_POST_TRACING = 3;  // 延迟到达，但最终跳使用POST方法
+            NO_DIRECT = 4;  // 不跳转,返回200
+        }
+        enum AdRedirectType {
+            AD_NO_DIRECT            = 0;  // 不跳转
+            AD_DIRECT               = 1;  // 302
+            AD_SYNC_TRACING         = 2;  // 内嵌iframe，同步追踪
+            AD_DELAY_TRACING        = 3;  // JS脚本跳转，延迟到达
+            AD_DELAY_POST_TRACING   = 4;  // 延迟到达，但最终跳使用POST方法
         }
         // 广告位类型
         enum AdslotType {
@@ -388,7 +396,8 @@ message Event {
             optional uint32          score       = 9;   // 应用内返还给用户的分数或钱
             optional string          domain      = 10;  // 广告的domain
             optional string          adidstr     = 11;  // 广告id,jesgoo签名
-
+            optional int32          class     = 12;  // 广告class
+            optional AdRedirectType redirect_type    = 13;  // 跳转类型
         }
         message InterestItem {
             optional uint64 interestid = 1; // 兴趣id
@@ -454,6 +463,8 @@ message Event {
             NATIVESDK     = 1;  // 原生SDK
             JSSDK         = 2;  // JSSDK
             OPENAPI       = 3;  // 开放API
+            HZ          = 4;
+            FUN         = 5;
         };
         // 客户端信息
         message Client {
