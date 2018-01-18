@@ -6,14 +6,12 @@ import java.util.{Calendar, Date}
 import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ml.train.LRIRModel
-import com.cpc.spark.qukan.parser.HdfsParser
 import com.typesafe.config.ConfigFactory
 import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.types.{ArrayType, StringType, StructField, StructType}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.collection.mutable
@@ -27,41 +25,123 @@ import scala.util.Random
 
 object LRTrain {
 
-  private var days = 2
-  private var dayBefore = 7
+  private var days = 7
+  private var daysCvr = 20
   private var trainLog = Seq[String]()
+  private val model = new LRIRModel
 
-  private val model: LRIRModel = new LRIRModel
 
   def main(args: Array[String]): Unit = {
-    if (args.length > 0) {
-      dayBefore = args(0).toInt
-      days = args(1).toInt
-    }
-
     Logger.getRootLogger.setLevel(Level.WARN)
-
     val spark: SparkSession = model.initSpark("cpc lr model")
 
-
     //按分区取数据
+    val ctrPathSep = getPathSeq(days)
+    val cvrPathSep = getPathSeq(daysCvr)
+
+    initFeatureDict(spark, ctrPathSep)
+
+    val userAppIdx = getUidApp(spark, ctrPathSep).cache()
+
+    val ulog = getData(spark,"ctrdata_v1",ctrPathSep).cache()
+
+    trainLog :+= "ulog nums = %s".format(ulog.rdd.count)
+    trainLog :+= "ulog NumPartitions = %s".format(ulog.rdd.getNumPartitions)
+
+    //qtt-list-parser3-hourly
+    model.clearResult()
+    val qttListPre = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 1)
+    val qttList = getLimitedData(4e8, qttListPre)
+    train(spark, "parser3", "qtt-list-parser3-hourly", getLeftJoinData(qttList, userAppIdx), "qtt-list-parser3-hourly.lrm")
+
+    //qtt-content-parser3-hourly
+    model.clearResult()
+    val qttContentPre = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 2)
+    val qttContent = getLimitedData(4e8, qttContentPre)
+    train(spark, "parser3", "qtt-content-parser3-hourly", getLeftJoinData(qttContent, userAppIdx), "qtt-content-parser3-hourly.lrm")
+
+    //qtt-all-parser3-hourly
+    model.clearResult()
+    val qttAllPre = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+    val qttAll = getLimitedData(4e8, qttAllPre)
+    train(spark, "parser3", "qtt-all-parser3-hourly", getLeftJoinData(qttAll, userAppIdx), "qtt-all-parser3-hourly.lrm")
+
+    //qtt-all-parser2-hourly
+    model.clearResult()
+    val qttAllPre2 = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+    val qttAll2 = getLimitedData(4e8, qttAllPre2)
+    train(spark, "parser2", "qtt-all-parser2-hourly", getLeftJoinData(qttAll2, userAppIdx), "qtt-all-parser2-hourly.lrm")
+
+    //凌晨计算所有的模型
+    if (isMorning()) {
+      //external-all-parser2-hourly
+      model.clearResult()
+      val extAllPre = ulog.filter(x => !Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+      val extAll = getLimitedData(4e8, extAllPre)
+      train(spark, "parser2", "external-all-parser2-hourly", extAll, "external-all-parser2-hourly.lrm")
+
+      //interact-all-parser3-hourly
+      model.clearResult()
+      val interactAllPre = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
+      val interactAll = getLimitedData(4e8, interactAllPre)
+      train(spark, "parser3", "interact-all-parser3-hourly", getLeftJoinData(interactAll, userAppIdx), "interact-all-parser3-hourly.lrm")
+
+      //interact-all-parser2-hourly
+      model.clearResult()
+      val interactAllPre2 = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
+      val interactAll2 = getLimitedData(4e8, interactAllPre2)
+      train(spark, "parser2", "interact-all-parser2-hourly", interactAll2, "interact-all-parser2-hourly.lrm")
+
+      //cvr按20天取数据
+      val cvrUserAppIdx = getUidApp(spark, cvrPathSep).cache()
+
+      initFeatureDict(spark, cvrPathSep)
+      val cvrUlog = getData(spark,"cvrdata_v1",cvrPathSep).cache()
+
+      trainLog :+= "cvr ulog nums = %s".format(cvrUlog.rdd.count)
+      trainLog :+= "cvr ulog NumPartitions = %s".format(cvrUlog.rdd.getNumPartitions)
+
+      //cvr-qtt-all-parser3-hourly
+      model.clearResult()
+      val cvrQttAllPre = cvrUlog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+      val cvrQttAll = getLimitedData(4e8, cvrQttAllPre)
+      train(spark, "parser3", "cvr-qtt-all-parser3-hourly", getLeftJoinData(cvrQttAll,cvrUserAppIdx), "cvr-qtt-all-parser3-hourly.lrm")
+
+      //cvr-qtt-all-parser2-hourly
+      model.clearResult()
+      val cvrQttAllPre2 = cvrUlog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+      val cvrQttAll2 = getLimitedData(4e8, cvrQttAllPre2)
+      train(spark, "parser2", "cvr-qtt-all-parser2-hourly", cvrQttAll2, "cvr-qtt-all-parser2-hourly.lrm")
+
+      cvrUserAppIdx.unpersist()
+      cvrUlog.unpersist()
+    }
+
+    Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
+    ulog.unpersist()
+    userAppIdx.unpersist()
+  }
+
+
+  def getPathSeq(days: Int): mutable.Map[String,Seq[String]] ={
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -(days * 24 + 2))
-    var pathSep = mutable.Map[String,Seq[String]]()
+    val pathSep = mutable.Map[String,Seq[String]]()
 
     for (n <- 1 to days * 24) {
       date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       hour = new SimpleDateFormat("HH").format(cal.getTime)
-
       pathSep.update(date,(pathSep.getOrElse(date,Seq[String]()) :+ hour))
-
       cal.add(Calendar.HOUR, 1)
     }
 
-    initFeatureDict(spark, pathSep)
+    pathSep
+  }
 
+
+  def getUidApp(spark: SparkSession, pathSep: mutable.Map[String,Seq[String]]): DataFrame ={
     val inpath = "/user/cpc/userInstalledApp/{%s}".format(pathSep.keys.mkString(","))
     println(inpath)
 
@@ -72,46 +152,16 @@ object LRTrain {
       .map(x => (x._1,x._2.distinct))
       .toDF("uid","pkgs").rdd.cache()
 
-
     val ids = getTopApp(uidApp, 1000)
     dictStr.update("appid",ids)
+
     val userAppIdx = getUserAppIdx(spark, uidApp, ids)
+      .repartition(1000)
 
-    val ulog = getData(spark,pathSep).cache()
-
-    trainLog :+= "ulog nums = %s".format(ulog.rdd.count)
-    trainLog :+= "ulog NumPartitions = %s".format(ulog.rdd.getNumPartitions)
-
-    val ulogData = getLeftJoinData(ulog, userAppIdx).cache()
-
-    //qtt-list-parser3-hourly
-    model.clearResult()
-    val qttListPre = ulogData.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 1)
-    val qttList = getLimitedData(4e8, qttListPre).cache()
-    train(spark, "parser3", "qtt-list-parser3-hourly", qttList, "qtt-list-parser3-hourly.lrm")
-
-    //qtt-content-parser3-hourly
-    model.clearResult()
-    val qttContentPre = ulogData.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 2)
-    val qttContent = getLimitedData(4e8, qttContentPre).cache()
-    train(spark, "parser3", "qtt-content-parser3-hourly", qttContent, "qtt-content-parser3-hourly.lrm")
-
-    //qtt-all-parser1-hourly
-    model.clearResult()
-    val qttAllPre = ulogData.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && (x.getAs[Int]("adslot_type") == 1 || x.getAs[Int]("adslot_type") == 2))
-    val qttAll = getLimitedData(4e8, qttAllPre).cache()
-    train(spark, "parser1", "qtt-all-parser1-hourly", qttAll, "qtt-all-parser1-hourly.lrm")
-
-    Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
-
-    ulog.unpersist()
-    qttAll.unpersist()
-    qttList.unpersist()
-    qttContent.unpersist()
     uidApp.unpersist()
-    ulogData.unpersist()
-  }
 
+    userAppIdx
+  }
 
   //安装列表中top k的App
   def getTopApp(uidApp : RDD[Row], k : Int): Map[String,Int] ={
@@ -131,6 +181,10 @@ object LRTrain {
     ids.toMap
   }
 
+  def isMorning(): Boolean = {
+    new SimpleDateFormat("HH").format(new Date().getTime) < "08"
+  }
+
   //用户安装列表对应的App idx
   def getUserAppIdx(spark: SparkSession, uidApp : RDD[Row], ids : Map[String,Int]): DataFrame ={
     import spark.implicits._
@@ -148,7 +202,7 @@ object LRTrain {
   }
 
   //限制总的样本数
-  def getLimitedData(limitedNum: Double, ulog: DataFrame): DataFrame ={
+  def getLimitedData(limitedNum: Double, ulog: DataFrame): DataFrame = {
     var rate = 1d
     val num = ulog.count().toDouble
 
@@ -156,7 +210,7 @@ object LRTrain {
       rate = limitedNum / num
     }
 
-    ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0)
+    ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0).coalesce(1000)
   }
 
 
@@ -283,31 +337,14 @@ object LRTrain {
     }
   }
 
-  def getCvrData(spark: SparkSession): DataFrame = {
-    trainLog :+= "\n-------get ulog data------"
-    val calendar = Calendar.getInstance()
-    calendar.add(Calendar.DATE, -dayBefore)
-    var pathSeps = Seq[String]()
-    for (d <- 1 to days) {
-      val date = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime)
-      pathSeps = pathSeps :+ date
-      calendar.add(Calendar.DATE, 1)
-    }
 
-    val path = "/user/cpc/lrmodel/cvrdata/{%s}".format(pathSeps.mkString(","))
-    println(path)
-    trainLog :+= path
-    spark.read.parquet(path)
-  }
-
-
-  def getData(spark: SparkSession, pathSep: mutable.Map[String,Seq[String]]): DataFrame = {
+  def getData(spark: SparkSession, dataVersion: String, pathSep: mutable.Map[String,Seq[String]]): DataFrame = {
     trainLog :+= "\n-------get ulog data------"
 
     var path = Seq[String]()
     pathSep.map{
       x =>
-        path = path :+ "/user/cpc/lrmodel/ctrdata_v1/%s/{%s}".format(x._1, x._2.mkString(","))
+        path = path :+ "/user/cpc/lrmodel/%s/%s/{%s}".format(dataVersion, x._1, x._2.mkString(","))
     }
 
     path.foreach{

@@ -73,7 +73,7 @@ object InsertReportMediaQualityTest {
         |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslotid,cul.adslot_type,cutl.trace_type,cutl.duration
         |FROM dl_cpc.cpc_union_trace_log cutl
         |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
-        |WHERE cutl.date="%s" AND cul.date="%s" AND cul.ext["adclass"].int_value=132102100 AND cul.userid=1001028 AND cul.isshow>0
+        |WHERE cutl.date="%s" AND cul.date="%s" AND cul.ext["adclass"].int_value=132102100 AND cul.userid=1001028 AND cul.isclick>0
       """.stripMargin.format(argDay, argDay))
       .rdd
       .map {

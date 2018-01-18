@@ -71,6 +71,7 @@ object LRTrain {
     val ulogData = getLeftJoinData(ulog, userAppIdx).cache()
 
 
+    /*
     //qtt-all-parser3
     model.clearResult()
     val qttAll = ulogData.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && (x.getAs[Int]("adslot_type") == 1 || x.getAs[Int]("adslot_type") == 2)).cache()
@@ -94,6 +95,7 @@ object LRTrain {
     model.clearResult()
     val externalAll = ulogData.filter(x => (x.getAs[String]("media_appsid") != "80000001" && x.getAs[String]("media_appsid") != "80000002") && (x.getAs[Int]("adslot_type") == 1 || x.getAs[Int]("adslot_type") == 2))
     train(spark, "parser2", "external-all-parser2", externalAll, "external-all-parser2.lrm")
+    */
 
     //all-interact-parser2
     model.clearResult()
@@ -122,7 +124,6 @@ object LRTrain {
 
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
     ulogData.unpersist()
-    qttAll.unpersist()
     cvrlog.unpersist()
   }
 

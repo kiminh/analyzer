@@ -10,6 +10,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.sql.SparkSession
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.rdd.RDD
 import userprofile.Userprofile.{InterestItem, UserProfile}
@@ -29,6 +30,9 @@ object TagUserByApps {
         """.stripMargin)
       System.exit(1)
     }
+
+    Logger.getRootLogger.setLevel(Level.WARN)
+
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -args(0).toInt)
     val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
@@ -74,6 +78,24 @@ object TagUserByApps {
     sum = tagUser(alipayUids, conf.getInt("user_tag_by_apps.no_alipay.tag_id"))
     println("no alipay users", sum)
     alipayUids.take(10).foreach(println)
+
+    //棋牌
+    val qipaiUids = uidHasApps(userPkgs, "user_tag_by_apps.qipai.contains")
+    sum = tagUser(qipaiUids, conf.getInt("user_tag_by_apps.qipai.tag_id"))
+    println("has qipai app users", sum)
+    qipaiUids.take(10).foreach(println)
+
+    //保健品
+    val baojianpinUids = uidHasApps(userPkgs, "user_tag_by_apps.baojianpin.contains")
+    sum = tagUser(baojianpinUids, conf.getInt("user_tag_by_apps.baojianpin.tag_id"))
+    println("has baojianpin app users", sum)
+    baojianpinUids.take(10).foreach(println)
+
+    //医疗
+    val yiliaoUids = uidHasApps(userPkgs, "user_tag_by_apps.yiliao.contains")
+    sum = tagUser(yiliaoUids, conf.getInt("user_tag_by_apps.yiliao.tag_id"))
+    println("has yiliao app users", sum)
+    yiliaoUids.take(10).foreach(println)
 
     userPkgs.unpersist()
   }

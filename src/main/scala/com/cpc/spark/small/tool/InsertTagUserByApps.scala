@@ -60,7 +60,7 @@ object InsertTagUserByApps {
             if (!user.isJsonNull) {
               var appName = ""
               if (ttype == 1) {
-                appName = user.getAsJsonObject.get("packageName").toString
+                appName = user.getAsJsonObject.get("packageName").getAsString
               } else if (ttype == 2) {
                 appName = user.getAsString
               }
