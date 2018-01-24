@@ -97,6 +97,12 @@ object TagUserByApps {
     println("has yiliao app users", sum)
     yiliaoUids.take(10).foreach(println)
 
+    //腾讯QQ
+    val qqUids = uidHasApps(userPkgs, "user_tag_by_apps.mobileqq.contains")
+    sum = tagUser(qqUids, conf.getInt("user_tag_by_apps.mobileqq.tag_id"))
+    println("has mobileqq app users", sum)
+    qqUids.take(10).foreach(println)
+
     userPkgs.unpersist()
   }
 
