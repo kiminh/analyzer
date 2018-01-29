@@ -79,7 +79,8 @@ object ConditionTouchedUV {
     calcCondPercent("phone_level", ulog.map(u => (u.ext.getOrElse("phone_level", ExtValue()).int_value, u))
       .filter(_._1 > 0)
       .map(x => ((x._1, x._2.uid), 1)))
-
+    /*
+    计算量太大暂停
     calcCondPercent("interest", ulog
       .flatMap{
         x =>
@@ -88,6 +89,7 @@ object ConditionTouchedUV {
             .filter(x => x.length == 2 && x(0).toInt > 0)
             .map(i => ((i(0).toInt, x.uid), 1))
       })
+      */
 
     calcCondPercent("user_type", ulog
       .flatMap{

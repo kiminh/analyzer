@@ -4,6 +4,7 @@ import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
+import com.cpc.spark.common.Utils
 import com.cpc.spark.log.parser.{ExtValue, UnionLog}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
@@ -163,6 +164,7 @@ object GetHourReport {
       .map(_._2)
 
 
+    checkReportHourData("report_media_charge_hourly")
     clearReportHourData("report_media_charge_hourly", date, hour)
     ctx.createDataFrame(chargeData)
       .write
@@ -175,8 +177,8 @@ object GetHourReport {
       .map {
         x =>
           val report = MediaGeoReport(
-            media_id = x.media_appsid.toInt,
-            adslot_id = x.adslotid.toInt,
+            //media_id = x.media_appsid.toInt,
+            //adslot_id = x.adslotid.toInt,
             unit_id = x.unitid,
             idea_id = x.ideaid,
             plan_id = x.planid,
@@ -200,6 +202,7 @@ object GetHourReport {
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
 
+    checkReportHourData("report_media_geo_hourly")
     clearReportHourData("report_media_geo_hourly", date, hour)
     ctx.createDataFrame(geoData)
       .write
@@ -234,6 +237,7 @@ object GetHourReport {
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
 
+    checkReportHourData("report_media_os_hourly")
     clearReportHourData("report_media_os_hourly", date, hour)
     ctx.createDataFrame(osData)
       .write
@@ -260,6 +264,8 @@ object GetHourReport {
         )
         report
     }
+
+    checkReportHourData("report_media_ip_request_hourly")
     clearReportHourData("report_media_ip_request_hourly", date, hour)
     ctx.createDataFrame(ipRequestData)
       .write
@@ -287,6 +293,8 @@ object GetHourReport {
         )
         report
     }
+
+    checkReportHourData("report_media_ip_click_hourly")
     clearReportHourData("report_media_ip_click_hourly", date, hour)
     ctx.createDataFrame(ipClickData)
       .write
@@ -314,6 +322,8 @@ object GetHourReport {
         )
         report
     }
+
+    checkReportHourData("report_media_uid_request_hourly")
     clearReportHourData("report_media_uid_request_hourly", date, hour)
     ctx.createDataFrame(uidRequestData)
       .write
@@ -341,6 +351,8 @@ object GetHourReport {
         )
         report
     }
+
+    checkReportHourData("report_media_uid_click_hourly")
     clearReportHourData("report_media_uid_click_hourly", date, hour)
     ctx.createDataFrame(uidClickData)
       .write
@@ -379,6 +391,7 @@ object GetHourReport {
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
 
+    checkReportHourData("report_media_fill_hourly")
     clearReportHourData("report_media_fill_hourly", date, hour)
     ctx.createDataFrame(fillData)
       .write
@@ -406,6 +419,36 @@ object GetHourReport {
     }
   }
 
+  def checkReportHourData(tbl: String): Unit = {
+    try {
+      val cal = Calendar.getInstance()
+      cal.add(Calendar.HOUR, -3)
+      val date = new SimpleDateFormat("dd").format(cal.getTime)
+      val hour = new SimpleDateFormat("HH").format(cal.getTime)
+
+      Class.forName(mariadbProp.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        mariadbUrl,
+        mariadbProp.getProperty("user"),
+        mariadbProp.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        """
+          |select count(*) as num from report.%s where `date` = "%s" and `hour` = %d
+        """.stripMargin.format(tbl, date, hour.toInt)
+      val result = stmt.executeQuery(sql)
+      var num = 0
+      if (result.next()) {
+        num = result.getInt("num")
+      }
+      if (num == 0) {
+        val msg = "found report.%s empty(num=%d) [%s/%s]".format(tbl, num, date, hour)
+        Utils.sendMail(msg, "Empty Report Data", Seq("rd@aiclk.com"))
+      }
+    } catch {
+      case e: Exception => println("exception caught: " + e);
+    }
+  }
   private case class CtrReport(
                                media_id: Int = 0,
                                adslot_id: Int = 0,
