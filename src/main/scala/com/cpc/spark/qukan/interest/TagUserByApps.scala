@@ -103,6 +103,12 @@ object TagUserByApps {
     println("has mobileqq app users", sum)
     qqUids.take(10).foreach(println)
 
+    //唯品会
+    val vipUids = uidHasApps(userPkgs, "user_tag_by_apps.vipshop.contains")
+    sum = tagUser(vipUids, conf.getInt("user_tag_by_apps.vipshop.tag_id"))
+    println("has vipshop app users", sum)
+    vipUids.take(10).foreach(println)
+
     userPkgs.unpersist()
   }
 
@@ -122,7 +128,7 @@ object TagUserByApps {
       val c = pconf.get(i)
       pkgs = pkgs :+ c.getString("pkg")
     }
-    println("has pkg names", pkgs)
+    //println("has pkg names", pkgs)
     userPkgs.flatMap(x => x._2.map(v => (x._1, v)))
       .map(x => (x._1, pkgs.contains(x._2)))
       .reduceByKey(_ || _)

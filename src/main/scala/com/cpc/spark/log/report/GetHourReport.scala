@@ -18,6 +18,8 @@ object GetHourReport {
 
   var mariadbUrl = ""
 
+  var logs = Seq[String]()
+
   val mariadbProp = new Properties()
 
   def main(args: Array[String]): Unit = {
@@ -398,6 +400,10 @@ object GetHourReport {
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_fill_hourly", mariadbProp)
     println("fill", fillData.count())
+
+    if (logs.length > 0) {
+      Utils.sendMail(logs.mkString("\n"), "Empty Report Data", Seq("rd@aiclk.com"))
+    }
     ctx.stop()
   }
 
@@ -423,7 +429,7 @@ object GetHourReport {
     try {
       val cal = Calendar.getInstance()
       cal.add(Calendar.HOUR, -3)
-      val date = new SimpleDateFormat("dd").format(cal.getTime)
+      val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       val hour = new SimpleDateFormat("HH").format(cal.getTime)
 
       Class.forName(mariadbProp.getProperty("driver"))
@@ -442,8 +448,8 @@ object GetHourReport {
         num = result.getInt("num")
       }
       if (num == 0) {
-        val msg = "found report.%s empty(num=%d) [%s/%s]".format(tbl, num, date, hour)
-        Utils.sendMail(msg, "Empty Report Data", Seq("rd@aiclk.com"))
+        val msg = "report.%s rows=%d [%s/%s]".format(tbl, num, date, hour)
+        logs = logs :+ msg
       }
     } catch {
       case e: Exception => println("exception caught: " + e);
