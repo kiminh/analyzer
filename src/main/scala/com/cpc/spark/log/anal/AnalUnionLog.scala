@@ -129,14 +129,14 @@ object AnalUnionLog {
       .filter(x => x != null && x.date == date && x.hour == hour)
       .cache()
 
-    //clear dir
-    Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
-    spark.createDataFrame(unionData)
+    val w = spark.createDataFrame(unionData)
       .write
       .mode(SaveMode.Append)
       .format("parquet")
       .partitionBy("date", "hour")
-      .saveAsTable("dl_cpc." + table)
+    //clear dir
+    Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
+    w.saveAsTable("dl_cpc." + table)
     println("union", unionData.count())
 
     var traceData = unionData.map(x => (x.searchid, (x, Seq[TraceLog]())))
@@ -175,15 +175,14 @@ object AnalUnionLog {
               }
         }
 
-      //clear dir
-      Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
-      traceRdd.toDF()
+      val w = traceRdd.toDF()
         .write
         .mode(SaveMode.Append)
         .format("parquet")
         .partitionBy("date", "hour")
-        .saveAsTable("dl_cpc." + traceTbl)
-
+      //clear dir
+      Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
+      w.saveAsTable("dl_cpc." + traceTbl)
       println("trace", traceRdd.count())
     }
     unionData.unpersist()
