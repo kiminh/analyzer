@@ -22,6 +22,11 @@ object ConditionTouchedUV {
 
   var redis: RedisClient = _
 
+
+  var interestids = Seq(110, 125, 201, 202, 203, 204, 205, 206, 207, 208, 209)
+
+
+
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       System.err.println(
@@ -54,6 +59,17 @@ object ConditionTouchedUV {
     ulog = ulog.randomSplit(Array(rate, 1-rate), new Date().getTime)(0)
 
     ulog.cache()
+
+    //人群包
+    calcCondPercent("people", ulog
+      .flatMap{
+        x =>
+          x.interests.split(",")
+            .map(i => i.split("="))
+            .filter(x => x.length == 2 && interestids.contains(x(0).toInt))
+            .map(i => ((i(0).toInt, x.uid), 1))
+      })
+
     calcCondPercent("province", ulog.filter(_.province > 0).map(u => ((u.province, u.uid), 1)))
     calcCondPercent("city", ulog.filter(_.city > 0).map(u => ((u.city, u.uid), 1)))
     calcCondPercent("sex", ulog.filter(_.sex > 0).map(u => ((u.sex, u.uid), 1)))
@@ -79,17 +95,6 @@ object ConditionTouchedUV {
     calcCondPercent("phone_level", ulog.map(u => (u.ext.getOrElse("phone_level", ExtValue()).int_value, u))
       .filter(_._1 > 0)
       .map(x => ((x._1, x._2.uid), 1)))
-    /*
-    计算量太大暂停
-    calcCondPercent("interest", ulog
-      .flatMap{
-        x =>
-          x.interests.split(",")
-            .map(i => i.split("="))
-            .filter(x => x.length == 2 && x(0).toInt > 0)
-            .map(i => ((i(0).toInt, x.uid), 1))
-      })
-      */
 
     calcCondPercent("user_type", ulog
       .flatMap{
