@@ -18,8 +18,6 @@ object GetHourReport {
 
   var mariadbUrl = ""
 
-  var logs = Seq[String]()
-
   val mariadbProp = new Properties()
 
   def main(args: Array[String]): Unit = {
@@ -166,7 +164,6 @@ object GetHourReport {
       .map(_._2)
 
 
-    checkReportHourData("report_media_charge_hourly")
     clearReportHourData("report_media_charge_hourly", date, hour)
     ctx.createDataFrame(chargeData)
       .write
@@ -204,7 +201,6 @@ object GetHourReport {
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
 
-    checkReportHourData("report_media_geo_hourly")
     clearReportHourData("report_media_geo_hourly", date, hour)
     ctx.createDataFrame(geoData)
       .write
@@ -239,7 +235,6 @@ object GetHourReport {
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
 
-    checkReportHourData("report_media_os_hourly")
     clearReportHourData("report_media_os_hourly", date, hour)
     ctx.createDataFrame(osData)
       .write
@@ -267,7 +262,6 @@ object GetHourReport {
         report
     }
 
-    checkReportHourData("report_media_ip_request_hourly")
     clearReportHourData("report_media_ip_request_hourly", date, hour)
     ctx.createDataFrame(ipRequestData)
       .write
@@ -296,7 +290,6 @@ object GetHourReport {
         report
     }
 
-    checkReportHourData("report_media_ip_click_hourly")
     clearReportHourData("report_media_ip_click_hourly", date, hour)
     ctx.createDataFrame(ipClickData)
       .write
@@ -325,7 +318,6 @@ object GetHourReport {
         report
     }
 
-    checkReportHourData("report_media_uid_request_hourly")
     clearReportHourData("report_media_uid_request_hourly", date, hour)
     ctx.createDataFrame(uidRequestData)
       .write
@@ -354,7 +346,6 @@ object GetHourReport {
         report
     }
 
-    checkReportHourData("report_media_uid_click_hourly")
     clearReportHourData("report_media_uid_click_hourly", date, hour)
     ctx.createDataFrame(uidClickData)
       .write
@@ -393,7 +384,6 @@ object GetHourReport {
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
 
-    checkReportHourData("report_media_fill_hourly")
     clearReportHourData("report_media_fill_hourly", date, hour)
     ctx.createDataFrame(fillData)
       .write
@@ -401,9 +391,6 @@ object GetHourReport {
       .jdbc(mariadbUrl, "report.report_media_fill_hourly", mariadbProp)
     println("fill", fillData.count())
 
-    if (logs.length > 0) {
-      Utils.sendMail(logs.mkString("\n"), "Empty Report Data", Seq("rd@aiclk.com"))
-    }
     ctx.stop()
   }
 
@@ -449,7 +436,7 @@ object GetHourReport {
       }
       if (num == 0) {
         val msg = "report.%s rows=%d [%s/%s]".format(tbl, num, date, hour)
-        logs = logs :+ msg
+        //TODO
       }
     } catch {
       case e: Exception => println("exception caught: " + e);
