@@ -26,7 +26,7 @@ import scala.util.Random
 object LRTrain {
 
   private var days = 7
-  private var daysCvr = 40
+  private var daysCvr = 20
   private var trainLog = Seq[String]()
   private val model = new LRIRModel
 
@@ -104,13 +104,13 @@ object LRTrain {
       //cvr-qtt-all-parser3-hourly
       model.clearResult()
       val cvrQttAllPre = cvrUlog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-      val cvrQttAll = getLimitedData(1e8, cvrQttAllPre)
+      val cvrQttAll = getLimitedData(4e8, cvrQttAllPre)
       train(spark, "parser3", "cvr-qtt-all-parser3-hourly", getLeftJoinData(cvrQttAll,cvrUserAppIdx), "cvr-qtt-all-parser3-hourly.lrm")
 
       //cvr-qtt-all-parser2-hourly
       model.clearResult()
       val cvrQttAllPre2 = cvrUlog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-      val cvrQttAll2 = getLimitedData(1e8, cvrQttAllPre2)
+      val cvrQttAll2 = getLimitedData(4e8, cvrQttAllPre2)
       train(spark, "parser2", "cvr-qtt-all-parser2-hourly", cvrQttAll2, "cvr-qtt-all-parser2-hourly.lrm")
 
       cvrUserAppIdx.unpersist()
