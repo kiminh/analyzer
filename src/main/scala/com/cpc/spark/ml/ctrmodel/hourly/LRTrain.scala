@@ -223,7 +223,7 @@ object LRTrain {
     }
 
     //最多2000w条测试数据
-    var testRate = 0.1
+    var testRate = 0.09
     if (num * testRate > 2e7) {
       testRate = 2e7 / num
     }

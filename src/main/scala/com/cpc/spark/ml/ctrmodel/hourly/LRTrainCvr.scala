@@ -60,11 +60,11 @@ object LRTrainCvr {
 
     //cvr-qtt-all-parser3-hourly
     model.clearResult()
-    train(spark, "parser3", "cvr-qtt-all-parser3-hourly", cvrQttAll, "cvr-qtt-all-parser3-hourly.lrm")
+    train(spark, "parser3", "cvr-qtt-all-parser3-hourly", cvrQttAll, "cvr-qtt-all-parser3-hourly.lrm", 1e8)
 
     //cvr-qtt-all-parser2-hourly
     model.clearResult()
-    train(spark, "parser2", "cvr-qtt-all-parser2-hourly", cvrQttAll, "cvr-qtt-all-parser2-hourly.lrm")
+    train(spark, "parser2", "cvr-qtt-all-parser2-hourly", cvrQttAll, "cvr-qtt-all-parser2-hourly.lrm", 1e8)
 
     cvrQttAll.unpersist()
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
@@ -149,7 +149,7 @@ object LRTrainCvr {
     data.join(userAppIdx,Seq("uid"),"leftouter")
   }
 
-  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Int): Unit = {
+  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double): Unit = {
     trainLog :+= "\n------train log--------"
     trainLog :+= "name = %s".format(name)
     trainLog :+= "parser = %s".format(parser)
@@ -166,7 +166,7 @@ object LRTrainCvr {
     }
 
     //最多2000w条测试数据
-    var testRate = 0.1
+    var testRate = 0.09
     if (num * testRate > 2e7) {
       testRate = 2e7 / num
     }
