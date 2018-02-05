@@ -169,10 +169,13 @@ object SaveFeatures {
     var active = 0
     var mclick = 0
     var zombie = 0
+    var disactive = 0
     traces.foreach {
       t =>
         t.trace_type match {
           case s if s.startsWith("active") => active += 1
+
+          case "disactive" => disactive += 1
 
           case "buttonClick" => click += 1
 
@@ -193,7 +196,7 @@ object SaveFeatures {
         }
     }
 
-    if ((stay >= 30 && click > 0) || active > 0) {
+    if (((stay >= 30 && click > 0) || active > 0) && disactive == 0) {
       1
     } else {
       0

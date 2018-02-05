@@ -2,22 +2,9 @@ package com.cpc.spark.ml.train
 
 import scala.util.control.Breaks._
 import scala.io.Source
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkContext._
+import org.apache.spark.{AccumulableParam, SparkConf, SparkContext}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.SparkConf
-
-import java.lang.Math
-//import java.util.Random
-import scala.math.random
-
-import org.apache.spark.broadcast.Broadcast
-import org.apache.spark.Accumulator
-import org.apache.spark.Accumulable
-import org.apache.spark.AccumulableParam
-import org.apache.spark.AccumulatorParam
-
-import org.apache.spark.serializer.KryoSerializer
+import org.apache.spark.util.AccumulatorV2
 import org.apache.spark.serializer.KryoRegistrator
 import com.esotericsoftware.kryo._
 

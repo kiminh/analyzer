@@ -5,8 +5,8 @@ import java.util.{Calendar, Date}
 
 import lrmodel.lrmodel.{IRModel, LRModel, Pack}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
-import org.apache.spark.mllib.evaluation.{BinaryClassificationMetrics, RegressionMetrics}
-import org.apache.spark.mllib.optimization.{L1Updater, LBFGS, LogisticGradient, SquaredL2Updater}
+import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
+import org.apache.spark.mllib.optimization.L1Updater
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel, LabeledPoint}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
@@ -25,7 +25,8 @@ class LRIRModel {
     ctx = SparkSession.builder()
       .config("spark.driver.maxResultSize", "20G")
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-      //.config("spark.kryo.registrator", "com.cpc.spark.ml.train.LRRegistrator")
+      .config("spark.kryo.registrator", "com.cpc.spark.ml.train.LRRegistrator")
+      //.config("spark.kryo.registrator", "org.nd4j.Nd4jRegistrator")
       .config("spark.kryoserializer.buffer.max", "2047MB")
       .config("spark.rpc.message.maxSize", "400")
       .config("spark.network.timeout", "240s")
@@ -348,3 +349,4 @@ class LRIRModel {
     bins
   }
 }
+

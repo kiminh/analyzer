@@ -21,110 +21,53 @@ import scala.util.Random
 /**
   * Created by zhaolei on 22/12/2017.
   */
-object LRTrain {
+object LRTrainCvr {
 
-  private var days = 7
-  private var daysCvr = 30
   private var trainLog = Seq[String]()
+  private val daysCvr = 20
   private val model = new LRIRModel
-
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
-    val spark: SparkSession = model.initSpark("cpc lr model")
+    val spark: SparkSession = model.initSpark("cpc lr model cvr")
 
     //按分区取数据
-    val ctrPathSep = getPathSeq(days)
     val cvrPathSep = getPathSeq(daysCvr)
+    val cvrUlog = getData(spark,"cvrdata_v1",cvrPathSep).cache()
 
-    initFeatureDict(spark, ctrPathSep)
+    //去掉长尾广告id
+    val minIdeaNum = 50
+    val ideaids = cvrUlog.select("ideaid")
+      .groupBy("ideaid")
+      .count()
+      .where("count > %d".format(minIdeaNum))
 
-    val userAppIdx = getUidApp(spark, ctrPathSep).cache()
+    val sample = cvrUlog.join(ideaids, Seq("ideaid")).cache()
+    println(cvrUlog.count(), sample.count())
+    cvrUlog.unpersist()
 
-    val ulog = getData(spark,"ctrdata_v1",ctrPathSep).cache()
+    val cvrUserAppIdx = getUidApp(spark, cvrPathSep)
+    initFeatureDict(spark, cvrPathSep)
 
-    trainLog :+= "ulog nums = %d".format(ulog.rdd.count)
-    trainLog :+= "ulog NumPartitions = %d".format(ulog.rdd.getNumPartitions)
+    trainLog :+= "cvr ulog nums = %d".format(sample.count())
+    trainLog :+= "cvr ulog NumPartitions = %d".format(sample.rdd.getNumPartitions)
+    trainLog :+= "cvr ulog ideas num = %d(load > %d)".format(ideaids.count(), minIdeaNum)
 
-    //qtt-list-parser3-hourly
+    val cvrQttAll = sample.where("media_appsid in (\"80000001\", \"80000002\") and adslot_type in (1, 2)")
+      .join(cvrUserAppIdx, Seq("uid"), "leftouter")
+      .cache()
+    sample.unpersist()
+
+    //cvr-qtt-all-parser3-hourly
     model.clearResult()
-    val qttList = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 1)
-    train(spark, "parser3", "qtt-list-parser3-hourly", getLeftJoinData(qttList, userAppIdx), "qtt-list-parser3-hourly.lrm", 4e8)
+    train(spark, "parser3", "cvr-qtt-all-parser3-hourly", cvrQttAll, "cvr-qtt-all-parser3-hourly.lrm")
 
-    //qtt-content-parser3-hourly
+    //cvr-qtt-all-parser2-hourly
     model.clearResult()
-    val qttContent = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 2)
-    train(spark, "parser3", "qtt-content-parser3-hourly", getLeftJoinData(qttContent, userAppIdx), "qtt-content-parser3-hourly.lrm", 4e8)
+    train(spark, "parser2", "cvr-qtt-all-parser2-hourly", cvrQttAll, "cvr-qtt-all-parser2-hourly.lrm")
 
-    //qtt-all-parser3-hourly
-    model.clearResult()
-    val qttAll = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-    train(spark, "parser3", "qtt-all-parser3-hourly", getLeftJoinData(qttAll, userAppIdx), "qtt-all-parser3-hourly.lrm", 4e8)
-
-    //qtt-all-parser2-hourly
-    model.clearResult()
-    val qttAll2 = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-    train(spark, "parser2", "qtt-all-parser2-hourly", getLeftJoinData(qttAll2, userAppIdx), "qtt-all-parser2-hourly.lrm", 4e8)
-
-    //凌晨计算所有的模型
-    if (isMorning()) {
-      //external-all-parser2-hourly
-      model.clearResult()
-      val extAll = ulog.filter(x => !Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-      train(spark, "parser2", "external-all-parser2-hourly", extAll, "external-all-parser2-hourly.lrm", 4e8)
-
-      //interact-all-parser3-hourly
-      model.clearResult()
-      val interactAll = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
-      train(spark, "parser3", "interact-all-parser3-hourly", getLeftJoinData(interactAll, userAppIdx), "interact-all-parser3-hourly.lrm", 4e8)
-
-      //interact-all-parser2-hourly
-      model.clearResult()
-      val interactAll2 = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
-      train(spark, "parser2", "interact-all-parser2-hourly", interactAll2, "interact-all-parser2-hourly.lrm", 4e8)
-
-      //cvr按20天取数据
-      //按分区取数据
-      val cvrPathSep = getPathSeq(daysCvr)
-      val cvrUlog = getData(spark,"cvrdata_v1",cvrPathSep).cache()
-
-      //去掉长尾广告id
-      val minIdeaNum = 50
-      val ideaids = cvrUlog.select("ideaid")
-        .groupBy("ideaid")
-        .count()
-        .where("count > %d".format(minIdeaNum))
-
-      val sample = cvrUlog.join(ideaids, Seq("ideaid")).cache()
-      println(cvrUlog.count(), sample.count())
-      cvrUlog.unpersist()
-
-      val cvrUserAppIdx = getUidApp(spark, cvrPathSep)
-      initFeatureDict(spark, cvrPathSep)
-
-      trainLog :+= "cvr ulog nums = %d".format(sample.count())
-      trainLog :+= "cvr ulog NumPartitions = %d".format(sample.rdd.getNumPartitions)
-      trainLog :+= "cvr ulog ideas num = %d(load > %d)".format(ideaids.count(), minIdeaNum)
-
-      val cvrQttAll = sample.where("media_appsid in (\"80000001\", \"80000002\") and adslot_type in (1, 2)")
-        .join(cvrUserAppIdx, Seq("uid"), "leftouter")
-        .cache()
-      sample.unpersist()
-
-      //cvr-qtt-all-parser3-hourly
-      model.clearResult()
-      train(spark, "parser3", "cvr-qtt-all-parser3-hourly", cvrQttAll, "cvr-qtt-all-parser3-hourly.lrm", 1e8)
-
-      //cvr-qtt-all-parser2-hourly
-      model.clearResult()
-      train(spark, "parser2", "cvr-qtt-all-parser2-hourly", cvrQttAll, "cvr-qtt-all-parser2-hourly.lrm", 1e8)
-
-      cvrQttAll.unpersist()
-    }
-
+    cvrQttAll.unpersist()
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
-    ulog.unpersist()
-    userAppIdx.unpersist()
   }
 
 
@@ -206,7 +149,7 @@ object LRTrain {
     data.join(userAppIdx,Seq("uid"),"leftouter")
   }
 
-  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double): Unit = {
+  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Int): Unit = {
     trainLog :+= "\n------train log--------"
     trainLog :+= "name = %s".format(name)
     trainLog :+= "parser = %s".format(parser)
@@ -216,7 +159,7 @@ object LRTrain {
     println("sample num", num)
     trainLog :+= "total size %.0f".format(num)
 
-    //最多n条训练数据
+    //最多1亿条训练数据
     var trainRate = 0.9
     if (num * trainRate > n) {
       trainRate = n / num
@@ -231,7 +174,6 @@ object LRTrain {
     val Array(train, test) = ulog
       .randomSplit(Array(trainRate, testRate, 1 - trainRate - testRate), new Date().getTime)
     ulog.unpersist()
-
 
     val tnum = train.count().toDouble
     val pnum = train.filter(_.getAs[Int]("label") > 0).count().toDouble
@@ -353,7 +295,7 @@ object LRTrain {
         println(x)
     }
 
-    spark.read.parquet(path:_*)
+    spark.read.parquet(path:_*).coalesce(1000)
   }
 
   /*
