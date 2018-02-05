@@ -24,7 +24,7 @@ import scala.util.Random
 object LRTrainCvr {
 
   private var trainLog = Seq[String]()
-  private val daysCvr = 20
+  private val daysCvr = 15
   private val model = new LRIRModel
 
   def main(args: Array[String]): Unit = {
@@ -171,7 +171,7 @@ object LRTrainCvr {
       testRate = 2e7 / num
     }
 
-    val Array(train, test) = ulog
+    val Array(train, test, tmp) = ulog
       .randomSplit(Array(trainRate, testRate, 1 - trainRate - testRate), new Date().getTime)
     ulog.unpersist()
 
