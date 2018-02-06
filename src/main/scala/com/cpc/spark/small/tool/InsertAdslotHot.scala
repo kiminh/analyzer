@@ -59,12 +59,13 @@ object InsertAdslotHot {
           val stxp = (touchx.toDouble / slot_width.toDouble * 10000).toInt
           val styp = (touchy.toDouble / slot_height.toDouble * 10000).toInt
           val total = 1
+          val cheat = if (touchx.toDouble == 1 && touchy.toDouble == 1) 1 else 0
           val key = "%s-%d-%d".format(adslotid, stxp, styp)
-          (key, (media_appsid, adslotid, adslot_type, stxp, styp, total))
+          (key, (media_appsid, adslotid, adslot_type, stxp, styp, total, cheat))
       }
       .reduceByKey {
         (a, b) =>
-          (a._1, a._2, a._3, a._4, a._5, a._6 + b._6)
+          (a._1, a._2, a._3, a._4, a._5, a._6 + b._6, a._7 + b._7)
       }
       .filter {
         x =>
@@ -81,15 +82,17 @@ object InsertAdslotHot {
           var hour = argHour.toInt
           var datetime = "%s %s:00:00".format(argDay, argHour)
           var date = argDay
-          (media_appsid, adslotid, adslot_type, date, hour, datetime, touchx, touchy, total)
+          var cheat = x._2._7
+          (media_appsid, adslotid, adslot_type, date, hour, datetime, touchx, touchy, total, cheat)
       }
       .cache()
     println("hotData count", hotData.count())
 
 
     val hotDataFrame = ctx.createDataFrame(hotData).toDF("media_id", "adslot_id", "adslot_type", "date", "hour",
-      "datetime", "touch_x", "touch_y", "total")
+      "datetime", "touch_x", "touch_y", "total", "cheat")
 
+    hotDataFrame.show(20)
     clearReportHourData(argDay, argHour)
 
     hotDataFrame
