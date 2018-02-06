@@ -7,6 +7,8 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
+import scala.util.Success
+
 /**
   * Created by wanli on 2017/11/14.
   */
@@ -57,7 +59,7 @@ object InsertReportAdslotTarget {
           val adclass = if (x.get(13) == null) 0 else x.getInt(13)
           val req = 1
           val isfull = x.getInt(14)
-          val price = if(isclick>0) x.getInt(15) else 0
+          val price = if (isclick > 0) x.getInt(15) else 0
 
           val load = 0
           val active = 0
@@ -129,7 +131,7 @@ object InsertReportAdslotTarget {
 
           val req = if (a._16 != -1) a._16 else b._16
           val isfull = if (a._17 != -1) a._17 else b._17
-          val price = a._18+b._18//if (a._18 != -1) a._18 else b._18
+          val price = a._18 + b._18 //if (a._18 != -1) a._18 else b._18
           (mediaid, adslotid, adslot_type, isshow, isclick, sex, age, os, province, phone_level, hour, os_version,
             adclass, load, active, req, isfull, price)
       }
@@ -196,7 +198,13 @@ object InsertReportAdslotTarget {
                     tmpOsVersion = tmpOsVersion + y
                   }
               }
-              osVersion = if (tmpOsVersion.length > 0) "%s%s".format(os, tmpOsVersion).toInt else 0
+              if (tmpOsVersion.length > 0) {
+                var tmpOsV = scala.util.Try("%s%s".format(os, tmpOsVersion).toInt)
+                osVersion = tmpOsV match {
+                  case Success(_) => "%s%s".format(os, tmpOsVersion).toInt;
+                  case _ => 0
+                }
+              }
             }
           }
 

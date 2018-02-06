@@ -1,18 +1,20 @@
 package com.cpc.spark.small.tool
 
+import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.small.tool.InsertAdslotHot.{mariadbProp, mariadbUrl}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
+
 
 /**
   * Created by wanli on 2017/8/10.
   */
 object GetReportCpmShow {
   var mariadbUrl = ""
+  val mariadbProp = new Properties()
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger().setLevel(Level.WARN)
@@ -25,13 +27,12 @@ object GetReportCpmShow {
     val conf = ConfigFactory.load()
     mariadbUrl = conf.getString("mariadb.url")
 
-    val mariadbProp = new Properties()
     mariadbProp.put("user", conf.getString("mariadb.user"))
     mariadbProp.put("password", conf.getString("mariadb.password"))
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     val ctx = SparkSession.builder()
-      .appName("small tool GetReportCpmShow")
+      .appName("small tool GetReportCpmShow %s".format(day))
       .enableHiveSupport()
       .getOrCreate()
 
@@ -57,16 +58,35 @@ object GetReportCpmShow {
       }
     //.cache()
 
-    //    unionLog.take(10).foreach(println)
-    //    println("unionLog.count()", unionLog.count().toInt)
-    //
+    //unionLog.take(10).foreach(println)
+    println("unionLog.count()", unionLog.count())
+    clearDataByDay(day)
+
     ctx.createDataFrame(unionLog)
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_cpm_show", mariadbProp)
   }
 
+  def clearDataByDay(date: String): Unit = {
+    try {
+      Class.forName(mariadbProp.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        mariadbUrl,
+        mariadbProp.getProperty("user"),
+        mariadbProp.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        """
+          |delete from report.report_cpm_show where `date` = "%s"
+        """.stripMargin.format(date)
+      stmt.executeUpdate(sql);
+    } catch {
+      case e: Exception => println("exception caught: " + e);
+    }
+  }
 }
+
 
 case class CpmShow(
                     cpm: Int = 0,

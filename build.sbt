@@ -48,13 +48,16 @@ assemblyExcludedJars in assembly := {
     "config-1.2.1.jar",
     "cpc-protocol_2.11-1.0.jar",
     "hadoop-lzo-0.4.20.jar",
+    "imlib_2.11-0.0.1.jar",
     "mariadb-java-client-1.5.9.jar",
     "mchange-commons-java-0.2.11.jar",
     "mysql-connector-java-5.1.41-bin.jar",
     "protobuf-java-3.0.2.jar",
     "scala-redis_2.11-1.0.jar",
     "spark-redis-0.3.2.jar",
-    "spark-streaming-kafka-0-8-assembly_2.11-2.1.0.jar"
+    "spark-streaming-kafka-0-8-assembly_2.11-2.1.0.jar",
+    "xgboost4j-0.7.jar",
+    "xgboost4j-spark-0.7.jar"
   )
   (fullClasspath in assembly).value.filter {
     x => jars.contains(x.data.getName)

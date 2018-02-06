@@ -3,7 +3,6 @@ package com.cpc.spark.small.tool
 import java.sql.DriverManager
 import java.util.Properties
 
-import com.cpc.spark.small.tool.InsertReportMediaQualityTest.UnionLogInfo
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -110,24 +109,24 @@ object InsertReportSpecifiedMedia {
       .map {
         x =>
           val info = x._2
-          UnionLogInfo(info.searchid, info.userid, info.unitid, info.ideaid, 0, 0, "impression", info.isshow)
+          UnionLogInfo(info.searchid, info.userid, info.unitid, info.ideaid, 0, 0, "impression", info.isshow, info.hour)
       }
 
     val clickData = unionLogData
-      .filter(_._2.isclick>0)
+      .filter(_._2.isclick > 0)
       .map {
         x =>
           val info = x._2
-          UnionLogInfo(info.searchid, info.userid, info.unitid, info.ideaid, 0, 0, "click", info.isclick)
+          UnionLogInfo(info.searchid, info.userid, info.unitid, info.ideaid, 0, 0, "click", info.isclick, info.hour)
       }
 
     val allData = impressionData
       .union(clickData)
       .union(traceData)
       .map {
-        x =>
-          (x.userid, x.unitid, x.ideaid, x.trace_type, x.total, argDay, x.hour)
-      }
+      x =>
+        (x.userid, x.unitid, x.ideaid, x.trace_type, x.total, argDay, x.hour)
+    }
       .repartition(50)
       .cache()
 
@@ -137,7 +136,6 @@ object InsertReportSpecifiedMedia {
     println("insertDataFrame count", insertDataFrame.count())
 
     insertDataFrame.show(10)
-
 
     clearReportSpecifiedMedia(argDay, argHour)
 
