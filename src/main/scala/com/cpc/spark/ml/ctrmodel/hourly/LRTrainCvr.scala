@@ -24,7 +24,7 @@ import scala.util.Random
 object LRTrainCvr {
 
   private var trainLog = Seq[String]()
-  private val daysCvr = 15
+  private val daysCvr = 20
   private val model = new LRIRModel
 
   def main(args: Array[String]): Unit = {

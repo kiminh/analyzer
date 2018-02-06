@@ -83,9 +83,7 @@ object LRTrain {
       val interactAll2 = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
       train(spark, "parser2", "interact-all-parser2-hourly", interactAll2, "interact-all-parser2-hourly.lrm", 4e8)
 
-      //cvr按20天取数据
       //按分区取数据
-      val cvrPathSep = getPathSeq(daysCvr)
       val cvrUlog = getData(spark,"cvrdata_v1",cvrPathSep).cache()
 
       //去掉长尾广告id
