@@ -390,13 +390,14 @@ object GetHourReport {
           val slottype = u.adslot_type
           val adclass = u.ext("adclass").int_value
           val expcvr = u.ext("exp_cvr").int_value.toDouble / 1e6
+          val cost = u.realCost()
 
-          val k = (mediaid, adslotid, slottype, adclass, exptag)
-          (k, (iscvr, expcvr, isload, 1))
+          val k = (mediaid, adslotid, adclass, exptag)
+          (k, (iscvr, expcvr, isload, 1, cost, slottype))
       }
       .reduceByKey {
         (x, y) =>
-          (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)
+          (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5, x._6)
       }
       .filter(_._2._3 > 0)
       .map {
@@ -408,9 +409,9 @@ object GetHourReport {
           val ecvr = v._2 / v._4.toDouble
           val load = v._3.toDouble / v._4.toDouble
 
-          (k._1, k._2, k._3, k._4, k._5, v._1, v._3, v._4, cvr, ecvr, load, d)
+          (k._1, k._2, v._6, k._3, k._4, v._5, v._1, v._3, v._4, cvr, ecvr, load, d)
       }
-      .toDF("media_id", "adslot_id", "adslot_type", "adclass", "exp_tag",
+      .toDF("media_id", "adslot_id", "adslot_type", "adclass", "exp_tag", "cash_cost",
         "cvr_num", "load_num", "click_num", "cvr", "exp_cvr", "load", "date")
 
     clearReportHourData("report_cvr_prediction_hourly", "%s %s:00:00".format(date, hour), "0")
