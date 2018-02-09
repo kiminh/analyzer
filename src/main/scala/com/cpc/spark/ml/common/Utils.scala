@@ -1,6 +1,8 @@
 package com.cpc.spark.ml.common
 
+import com.cpc.spark.log.parser.TraceLog
 import com.typesafe.config.Config
+
 import scala.collection.mutable
 import sys.process._
 
@@ -58,6 +60,46 @@ object Utils {
       val ret = cmd !
     }
     log.mkString("\n")
+  }
+
+  def cvrPositive(traces: Seq[TraceLog]): Int = {
+    var stay = 0
+    var click = 0
+    var active = 0
+    var mclick = 0
+    var zombie = 0
+    var disactive = 0
+    traces.foreach {
+      t =>
+        t.trace_type match {
+          case s if s.startsWith("active") => active += 1
+
+          case "disactive" => disactive += 1
+
+          case "buttonClick" => click += 1
+
+          case "clickMonitor" => mclick += 1
+
+          case "inputFocus" => click += 1
+
+          case "press" => click += 1
+
+          case "zombie" => zombie += 1
+
+          case "stay" =>
+            if (t.duration > stay) {
+              stay = t.duration
+            }
+
+          case _ =>
+        }
+    }
+
+    if (((stay >= 30 && click > 0) || active > 0) && disactive == 0) {
+      1
+    } else {
+      0
+    }
   }
 }
 
