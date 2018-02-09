@@ -62,7 +62,7 @@ object Utils {
     log.mkString("\n")
   }
 
-  def cvrPositive(traces: Seq[TraceLog]): Int = {
+  def cvrPositive(traces: Seq[TraceLog], version: String): Int = {
     var stay = 0
     var click = 0
     var active = 0
@@ -95,10 +95,19 @@ object Utils {
         }
     }
 
-    if (((stay >= 30 && click > 0) || active > 0) && disactive == 0) {
-      1
-    } else {
-      0
+    if(version == "v1"){
+      if (((stay >= 30 && click > 0) || active > 0) && disactive == 0) {
+        1
+      } else {
+        0
+      }
+    }
+    else{
+      if ((stay >= 30 && click > 0) || active > 0) {
+        1
+      } else {
+        0
+      }
     }
   }
 }

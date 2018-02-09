@@ -15,7 +15,7 @@ object SaveFeatures {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   private var version = "v1"
-
+  private var versionV2 = "v2"
   def main(args: Array[String]): Unit = {
     if(args.length < 3){
       System.err.println(
@@ -29,6 +29,7 @@ object SaveFeatures {
     val date = args(0)
     val hour = args(1)
     version = args(2)
+    versionV2 = args(3)
 
     val spark = SparkSession.builder()
       .appName("Save features from UnionLog [%s/%s/%s]".format(version, date, hour))
@@ -36,7 +37,8 @@ object SaveFeatures {
       .getOrCreate()
 
     saveDataFromLog(spark, date, hour)
-    saveCvrData(spark, date, hour)
+    saveCvrData(spark, date, hour, version)
+    saveCvrData(spark, date, hour, versionV2)
   }
 
   def saveDataFromLog(spark: SparkSession, date: String, hour: String): Unit = {
@@ -121,7 +123,7 @@ object SaveFeatures {
     println(path, num)
   }
 
-  def saveCvrData(spark: SparkSession, date: String, hour: String): Unit = {
+  def saveCvrData(spark: SparkSession, date: String, hour: String, version: String): Unit = {
     import spark.implicits._
     val cvrlog = spark.sql(
       s"""
@@ -135,7 +137,7 @@ object SaveFeatures {
       .reduceByKey(_ ++ _)
       .map {
         x =>
-          val convert = Utils.cvrPositive(x._2)
+          val convert = Utils.cvrPositive(x._2, version)
           (x._1, convert)
       }
       .toDF("searchid", "label")
