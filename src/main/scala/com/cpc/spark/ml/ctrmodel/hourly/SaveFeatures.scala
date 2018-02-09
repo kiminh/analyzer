@@ -137,7 +137,7 @@ object SaveFeatures {
       .reduceByKey(_ ++ _)
       .map {
         x =>
-          val convert = Utils.cvrPositive(x._2, version)
+          val convert = Utils.cvrPositiveV(x._2, version)
           (x._1, convert)
       }
       .toDF("searchid", "label")
