@@ -117,8 +117,8 @@ object LRTrain {
       model.clearResult()
       train(spark, "parser2", "cvr-qtt-all-parser2-hourly", cvrQttAll, "cvr-qtt-all-parser2-hourly.lrm", 1e8)
 
-/*
-      //----------------------------
+
+      //-----------cvrdata_v1-----------
       //按分区取数据
       cvrUlog = getData(spark,"cvrdata_v1",cvrPathSep).cache()
 
@@ -152,8 +152,6 @@ object LRTrain {
       //cvr-qtt-all-parser2-hourly
       model.clearResult()
       train(spark, "parser2", "cvr-v1-qtt-all-parser2-hourly", cvrQttAll, "cvr-v1-qtt-all-parser2-hourly.lrm", 1e8)
-
-*/
 
       cvrQttAll.unpersist()
     }
