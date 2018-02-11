@@ -381,10 +381,26 @@ object GetHourReport {
             iscvr = x._2._2.get
           }
 
-          val exptag = u.exptags.split(",")
+          var exptag = u.exptags.split(",")
             .find(_.startsWith("cvrmodel"))
             .getOrElse("none")
             .replaceFirst("cvrmodel=", "")
+
+          var cvrthres = u.ext("cvr_threshold").int_value
+
+          if (cvrthres <= 0) {
+            exptag = "none"
+            cvrthres = 0
+          } else if (cvrthres <= 10000) {
+            cvrthres = 1
+          } else if (cvrthres <= 40000) {
+            cvrthres = 2
+          } else if (cvrthres <= 80000) {
+            cvrthres = 3
+          } else {
+            cvrthres = 4
+          }
+
           val mediaid = u.media_appsid.toInt
           val adslotid = u.adslotid.toInt
           val slottype = u.adslot_type
@@ -392,7 +408,7 @@ object GetHourReport {
           val expcvr = u.ext("exp_cvr").int_value.toDouble / 1e6
           val cost = u.realCost()
 
-          val k = (mediaid, adslotid, adclass, exptag)
+          val k = (mediaid, adslotid, adclass, exptag, cvrthres)
           (k, (iscvr, expcvr, isload, 1, cost, slottype))
       }
       .reduceByKey {
@@ -409,16 +425,17 @@ object GetHourReport {
           val ecvr = v._2 / v._4.toDouble
           val load = v._3.toDouble / v._4.toDouble
 
-          (k._1, k._2, v._6, k._3, k._4, v._5, v._1, v._3, v._4, cvr, ecvr, load, d)
+          (k._1, k._2, v._6, k._3, k._4, k._5, v._5, v._1, v._3, v._4, cvr, ecvr, load, d)
       }
-      .toDF("media_id", "adslot_id", "adslot_type", "adclass", "exp_tag", "cash_cost",
-        "cvr_num", "load_num", "click_num", "cvr", "exp_cvr", "load", "date")
+      .toDF("media_id", "adslot_id", "adslot_type", "adclass", "exp_tag", "threshold",
+        "cash_cost", "cvr_num", "load_num", "click_num", "cvr", "exp_cvr", "load", "date")
 
     clearReportHourData("report_cvr_prediction_hourly", "%s %s:00:00".format(date, hour), "0")
     cvrData.write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_cvr_prediction_hourly", mariadbProp)
     println("cvr", cvrData.count())
+
 
     unionLog.unpersist()
 
