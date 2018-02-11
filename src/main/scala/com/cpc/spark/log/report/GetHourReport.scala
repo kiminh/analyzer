@@ -425,17 +425,17 @@ object GetHourReport {
           val ecvr = v._2 / v._4.toDouble
           val load = v._3.toDouble / v._4.toDouble
 
-          (k._1, k._2, v._6, k._3, k._4, k._5, v._5, v._1, v._3, v._4, cvr, ecvr, load, d)
+          (k._1, k._2, v._6, k._3, k._4, k._5,
+            v._5, v._1, v._2, v._3, v._4, cvr, ecvr, load, d)
       }
       .toDF("media_id", "adslot_id", "adslot_type", "adclass", "exp_tag", "threshold",
-        "cash_cost", "cvr_num", "load_num", "click_num", "cvr", "exp_cvr", "load", "date")
+        "cash_cost", "cvr_num", "exp_cvr_num", "load_num", "click_num", "cvr", "exp_cvr", "load", "date")
 
     clearReportHourData("report_cvr_prediction_hourly", "%s %s:00:00".format(date, hour), "0")
     cvrData.write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_cvr_prediction_hourly", mariadbProp)
     println("cvr", cvrData.count())
-
 
     unionLog.unpersist()
 
