@@ -275,6 +275,42 @@ object GetHourReport {
       .jdbc(mariadbUrl, "report.report_media_uid_click_hourly", mariadbProp)
     println("uid_click", uidClickData.count())
 
+    val fillLog = ctx.sql(
+      s"""
+         |select * from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and adslotid > 0
+       """.stripMargin.format(table, date, hour))
+      .as[UnionLog]
+      .rdd
+
+    val fillData = fillLog
+      .map {
+        x =>
+          val report = MediaFillReport(
+            media_id = x.media_appsid.toInt,
+            adslot_id = x.adslotid.toInt,
+            adslot_type = x.adslot_type,
+            request = 1,
+            served_request = x.isfill,
+            impression = x.isshow,
+            click = x.isclick + x.spamClick(),
+            charged_click = x.isclick,
+            spam_click = x.spamClick(),
+            cash_cost = x.realCost(),
+            date = x.date,
+            hour = x.hour.toInt
+          )
+          (report.key, report)
+      }
+      .reduceByKey((x, y) => x.sum(y))
+      .map(_._2)
+
+    clearReportHourData("report_media_fill_hourly", date, hour)
+    ctx.createDataFrame(fillData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_media_fill_hourly", mariadbProp)
+    println("fill", fillData.count())
+
     val ctrData = unionLog
       .filter(u => u.ext.getOrElse("rank_discount", ExtValue()).int_value <= 20000)
       .map{
@@ -438,42 +474,6 @@ object GetHourReport {
     println("cvr", cvrData.count())
 
     unionLog.unpersist()
-
-    val fillLog = ctx.sql(
-      s"""
-         |select * from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and adslotid > 0
-       """.stripMargin.format(table, date, hour))
-      .as[UnionLog]
-      .rdd
-
-    val fillData = fillLog
-      .map {
-        x =>
-          val report = MediaFillReport(
-            media_id = x.media_appsid.toInt,
-            adslot_id = x.adslotid.toInt,
-            adslot_type = x.adslot_type,
-            request = 1,
-            served_request = x.isfill,
-            impression = x.isshow,
-            click = x.isclick + x.spamClick(),
-            charged_click = x.isclick,
-            spam_click = x.spamClick(),
-            cash_cost = x.realCost(),
-            date = x.date,
-            hour = x.hour.toInt
-          )
-          (report.key, report)
-      }
-      .reduceByKey((x, y) => x.sum(y))
-      .map(_._2)
-
-    clearReportHourData("report_media_fill_hourly", date, hour)
-    ctx.createDataFrame(fillData)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_media_fill_hourly", mariadbProp)
-    println("fill", fillData.count())
 
     ctx.stop()
   }
