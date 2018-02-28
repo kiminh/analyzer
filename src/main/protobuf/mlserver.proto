@@ -94,6 +94,7 @@ message Request {
     string antispam_version = 12;
     uint32 click_timestamp = 13;   // 点击时间戳
     AdSlot ad_slot = 14;
+    bool debug = 15;
 }
 
 message Prediction {
@@ -106,6 +107,13 @@ message Prediction {
 message Response {
     int32 recode = 1;
     repeated Prediction results = 2;
+    repeated DebugLog debug_logs = 3;
 }
+
+message DebugLog {
+    string module_name = 1;
+    repeated string logs = 2;
+}
+
 
 
