@@ -6,14 +6,15 @@ import java.util.{Calendar, Date}
 import ml.dmlc.xgboost4j.scala.spark.{XGBoost, XGBoostEstimator, XGBoostModel, XGBoostRegressionModel}
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.ml.evaluation.RegressionEvaluator
-import org.apache.spark.ml.linalg.{Vector, VectorUDT, Vectors}
-import org.apache.spark.ml.feature.{StringIndexer, VectorAssembler, VectorIndexer}
+import org.apache.spark.ml.linalg.{SQLDataTypes, Vector, VectorUDT, Vectors}
+import org.apache.spark.ml.feature.{LabeledPoint, StringIndexer, VectorAssembler, VectorIndexer}
 import org.apache.spark.ml.regression.{GBTRegressionModel, GBTRegressor}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.rdd.RDD
 import com.cpc.spark.common.Utils
+import org.apache.spark.sql.types.{DoubleType, StructField, StructType}
 
 import scala.util.Random
 
@@ -33,11 +34,13 @@ object Train {
 
   def main(args: Array[String]): Unit = {
 
+
     val spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .appName("xgboost")
       .enableHiveSupport()
       .getOrCreate()
+    import spark.implicits._
 
     var pathSep = Seq[String]()
     val cal = Calendar.getInstance()
@@ -50,7 +53,13 @@ object Train {
 
     val path = "/user/cpc/lrmodel/ctrdata_v1/{%s}/*".format(pathSep.mkString(","))
     println(path)
-    val data = spark.read.parquet(path).coalesce(1000)
+    val srcdata = spark.read.parquet(path).coalesce(1000)
+    val data = srcdata.map {
+        r =>
+          val vec = getVectorParser2(r)
+          (r.getAs[Int]("label"), vec)
+      }
+      .toDF("label", "features")
 
     val Array(tmp1, tmp2) = data.randomSplit(Array(0.9, 0.1), 123L)
     val test = getLimitedData(1e7, tmp2)
@@ -63,30 +72,6 @@ object Train {
     val train = getLimitedData(4e7, tmp1)
     //val Array(train, test) = data.randomSplit(Array(0.9, 0.1), 123L)
 
-    val mi = new StringIndexer()
-      .setInputCol("media_appsid")
-      .setOutputCol("mediaid_")
-      .setHandleInvalid("skip")
-
-    val si = new StringIndexer()
-      .setInputCol("adslotid")
-      .setOutputCol("adslotid_")
-      .setHandleInvalid("skip")
-
-    val bi = new StringIndexer()
-      .setInputCol("bookid")
-      .setOutputCol("bookid_")
-      .setHandleInvalid("skip")
-
-    val vectorAssembler = new VectorAssembler()
-      .setInputCols(cols.toArray)
-      .setOutputCol("features")
-
-    val vi = new VectorIndexer()
-      .setInputCol("f1")
-      .setOutputCol("features")
-      .setMaxCategories(10000)
-
     val params = Map(
       //"eta" -> 1f,
       //"lambda" -> 2.5
@@ -98,20 +83,11 @@ object Train {
     )
 
     val xgb = new XGBoostEstimator(params)
+    val model = xgb.train(train)
 
-
-    // Chain indexer and GBT in a Pipeline.
-    val pipeline = new Pipeline()
-      .setStages(Array(mi, si, bi, vectorAssembler, xgb))
-
-
-    //val model = XGBoostModel.load("/user/cpc/xgboost/cvr_v1")
-
-
-    val model = pipeline.fit(train)
     Utils.deleteHdfs("/user/cpc/xgboost/ctr_v1")
     model.save("/user/cpc/xgboost/ctr_v1")
-
+    model.booster.saveModel("/home/cpc/qtt.gbm")
 
     val predictions = model.transform(test)
 
@@ -217,6 +193,45 @@ object Train {
       }
 
     println(log)
+  }
+
+  def getVectorParser2(x: Row): Vector = {
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
+    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
+    val hour = cal.get(Calendar.HOUR_OF_DAY)
+    var els = Seq[Int]()
+
+    els = els :+ week
+    els = els :+ hour
+    els = els :+ x.getAs[Int]("sex")
+    els = els :+ x.getAs[Int]("age")
+    els = els :+ x.getAs[Int]("os")
+    els = els :+ x.getAs[Int]("isp")
+    els = els :+ x.getAs[Int]("network")
+    els = els :+ x.getAs[Int]("city")
+    els = els :+ x.getAs[String]("media_appsid").toInt
+    els = els :+ x.getAs[String]("adslotid").toInt
+    els = els :+ x.getAs[Int]("phone_level")
+    els = els :+ x.getAs[Int]("pagenum")
+
+    try {
+      els = els :+ x.getAs[String]("bookid").toInt
+    } catch {
+      case e: Exception =>
+        els = els :+ 0
+    }
+
+    els = els :+ x.getAs[Int]("adclass")
+    els = els :+ x.getAs[Int]("adtype")
+    els = els :+ x.getAs[Int]("adslot_type")
+    els = els :+ x.getAs[Int]("planid")
+    els = els :+ x.getAs[Int]("unitid")
+    els = els :+ x.getAs[Int]("ideaid")
+    els = els :+ x.getAs[Int]("user_req_ad_num")
+    els = els :+ x.getAs[Int]("user_req_num")
+
+    Vectors.dense(els.map(_.toDouble).toArray)
   }
 }
 
