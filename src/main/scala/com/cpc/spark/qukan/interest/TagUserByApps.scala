@@ -109,6 +109,64 @@ object TagUserByApps {
     println("has vipshop app users", sum)
     vipUids.take(10).foreach(println)
 
+/*
+    //格斗游戏
+    val game_gedou = uidHasApps(userPkgs, "user_tag_by_apps.game_gedou.contains")
+    var sum = tagUser(game_gedou, conf.getInt("user_tag_by_apps.game_gedou.tag_id"))
+    println("has game_gedou app users", sum)
+    game_gedou.take(10).foreach(println)
+
+    //棋牌游戏
+    val game_qipai = uidHasApps(userPkgs, "user_tag_by_apps.game_qipai.contains")
+    sum = tagUser(game_qipai, conf.getInt("user_tag_by_apps.game_qipai.tag_id"))
+    println("has game_qipai app users", sum)
+    game_qipai.take(10).foreach(println)
+    */
+    //益智游戏
+    val game_yizhi = uidHasApps(userPkgs, "user_tag_by_apps.game_yizhi.contains")
+    sum = tagUser(game_yizhi, conf.getInt("user_tag_by_apps.game_yizhi.tag_id"))
+    println("has game_yizhi app users", sum)
+    game_yizhi.take(10).foreach(println)
+/*
+    //模拟游戏
+    val game_moni = uidHasApps(userPkgs, "user_tag_by_apps.game_moni.contains")
+    sum = tagUser(game_moni, conf.getInt("user_tag_by_apps.game_moni.tag_id"))
+    println("has game_moni app users", sum)
+    game_moni.take(10).foreach(println)
+
+    //赛车体育游戏
+    val game_tiyu = uidHasApps(userPkgs, "user_tag_by_apps.game_tiyu.contains")
+    sum = tagUser(game_tiyu, conf.getInt("user_tag_by_apps.game_tiyu.tag_id"))
+    println("has game_tiyu app users", sum)
+    game_tiyu.take(10).foreach(println)
+
+    //休闲游戏
+    val game_xiuxian = uidHasApps(userPkgs, "user_tag_by_apps.game_xiuxian.contains")
+    sum = tagUser(game_xiuxian, conf.getInt("user_tag_by_apps.game_xiuxian.tag_id"))
+    println("has game_xiuxian app users", sum)
+    game_xiuxian.take(10).foreach(println)
+*/
+    //策略游戏
+    val game_celue = uidHasApps(userPkgs, "user_tag_by_apps.game_celue.contains")
+    sum = tagUser(game_celue, conf.getInt("user_tag_by_apps.game_celue.tag_id"))
+    println("has game_celue app users", sum)
+    game_celue.take(10).foreach(println)
+/*
+    //mmorpg
+    val game_mmorpg = uidHasApps(userPkgs, "user_tag_by_apps.game_mmorpg.contains")
+    sum = tagUser(game_mmorpg, conf.getInt("user_tag_by_apps.game_mmorpg.tag_id"))
+    println("has game_mmorpg app users", sum)
+    game_mmorpg.take(10).foreach(println)
+*/
+    //团队合作游戏
+    val game_tuandui = uidHasApps(userPkgs, "user_tag_by_apps.game_tuandui.contains")
+    sum = tagUser(game_tuandui, conf.getInt("user_tag_by_apps.game_tuandui.tag_id"))
+    println("has game_tuandui app users", sum)
+    game_tuandui.take(10).foreach(println)
+
+
+
+
     userPkgs.unpersist()
   }
 

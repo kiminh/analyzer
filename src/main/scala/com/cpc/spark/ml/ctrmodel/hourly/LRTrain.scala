@@ -84,27 +84,27 @@ object LRTrain {
       train(spark, "parser2", "interact-all-parser2-hourly", interactAll2, "interact-all-parser2-hourly.lrm", 4e8)
 
       //按分区取数据
-      val cvrUlog = getData(spark,"cvrdata_v1",cvrPathSep).cache()
+      var cvrUlog = getData(spark,"cvrdata_v2",cvrPathSep).cache()
 
       //去掉长尾广告id
-      val minIdeaNum = 50
-      val ideaids = cvrUlog.select("ideaid")
+      var minIdeaNum = 50
+      var ideaids = cvrUlog.select("ideaid")
         .groupBy("ideaid")
         .count()
         .where("count > %d".format(minIdeaNum))
 
-      val sample = cvrUlog.join(ideaids, Seq("ideaid")).cache()
+      var sample = cvrUlog.join(ideaids, Seq("ideaid")).cache()
       println(cvrUlog.count(), sample.count())
       cvrUlog.unpersist()
 
-      val cvrUserAppIdx = getUidApp(spark, cvrPathSep)
+      var cvrUserAppIdx = getUidApp(spark, cvrPathSep)
       initFeatureDict(spark, cvrPathSep)
 
       trainLog :+= "cvr ulog nums = %d".format(sample.count())
       trainLog :+= "cvr ulog NumPartitions = %d".format(sample.rdd.getNumPartitions)
       trainLog :+= "cvr ulog ideas num = %d(load > %d)".format(ideaids.count(), minIdeaNum)
 
-      val cvrQttAll = sample.where("media_appsid in (\"80000001\", \"80000002\") and adslot_type in (1, 2)")
+      var cvrQttAll = sample.where("media_appsid in (\"80000001\", \"80000002\") and adslot_type in (1, 2)")
         .join(cvrUserAppIdx, Seq("uid"), "leftouter")
         .cache()
       sample.unpersist()
@@ -116,6 +116,42 @@ object LRTrain {
       //cvr-qtt-all-parser2-hourly
       model.clearResult()
       train(spark, "parser2", "cvr-qtt-all-parser2-hourly", cvrQttAll, "cvr-qtt-all-parser2-hourly.lrm", 1e8)
+
+
+      //-----------cvrdata_v1-----------
+      //按分区取数据
+      cvrUlog = getData(spark,"cvrdata_v1",cvrPathSep).cache()
+
+      //去掉长尾广告id
+      minIdeaNum = 50
+      ideaids = cvrUlog.select("ideaid")
+        .groupBy("ideaid")
+        .count()
+        .where("count > %d".format(minIdeaNum))
+
+      sample = cvrUlog.join(ideaids, Seq("ideaid")).cache()
+      println(cvrUlog.count(), sample.count())
+      cvrUlog.unpersist()
+
+      cvrUserAppIdx = getUidApp(spark, cvrPathSep)
+      initFeatureDict(spark, cvrPathSep)
+
+      trainLog :+= "cvr ulog nums = %d".format(sample.count())
+      trainLog :+= "cvr ulog NumPartitions = %d".format(sample.rdd.getNumPartitions)
+      trainLog :+= "cvr ulog ideas num = %d(load > %d)".format(ideaids.count(), minIdeaNum)
+
+      cvrQttAll = sample.where("media_appsid in (\"80000001\", \"80000002\") and adslot_type in (1, 2)")
+        .join(cvrUserAppIdx, Seq("uid"), "leftouter")
+        .cache()
+      sample.unpersist()
+
+      //cvr-qtt-all-parser3-hourly
+      model.clearResult()
+      train(spark, "parser3", "cvr-v1-qtt-all-parser3-hourly", cvrQttAll, "cvr-v1-qtt-all-parser3-hourly.lrm", 1e8)
+
+      //cvr-qtt-all-parser2-hourly
+      model.clearResult()
+      train(spark, "parser2", "cvr-v1-qtt-all-parser2-hourly", cvrQttAll, "cvr-v1-qtt-all-parser2-hourly.lrm", 1e8)
 
       cvrQttAll.unpersist()
     }

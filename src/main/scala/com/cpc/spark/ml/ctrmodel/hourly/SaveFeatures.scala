@@ -2,6 +2,7 @@ package com.cpc.spark.ml.ctrmodel.hourly
 
 
 import com.cpc.spark.log.parser.TraceLog
+import com.cpc.spark.ml.common.Utils
 import org.apache.spark.rdd.RDD
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -14,7 +15,7 @@ object SaveFeatures {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   private var version = "v1"
-
+  private var versionV2 = "v2"
   def main(args: Array[String]): Unit = {
     if(args.length < 3){
       System.err.println(
@@ -28,6 +29,7 @@ object SaveFeatures {
     val date = args(0)
     val hour = args(1)
     version = args(2)
+    versionV2 = args(3)
 
     val spark = SparkSession.builder()
       .appName("Save features from UnionLog [%s/%s/%s]".format(version, date, hour))
@@ -35,7 +37,8 @@ object SaveFeatures {
       .getOrCreate()
 
     saveDataFromLog(spark, date, hour)
-    saveCvrData(spark, date, hour)
+    saveCvrData(spark, date, hour, version)
+    saveCvrData(spark, date, hour, versionV2)
   }
 
   def saveDataFromLog(spark: SparkSession, date: String, hour: String): Unit = {
@@ -120,7 +123,7 @@ object SaveFeatures {
     println(path, num)
   }
 
-  def saveCvrData(spark: SparkSession, date: String, hour: String): Unit = {
+  def saveCvrData(spark: SparkSession, date: String, hour: String, version: String): Unit = {
     import spark.implicits._
     val cvrlog = spark.sql(
       s"""
@@ -134,7 +137,7 @@ object SaveFeatures {
       .reduceByKey(_ ++ _)
       .map {
         x =>
-          val convert = cvrPositive(x._2)
+          val convert = Utils.cvrPositiveV(x._2, version)
           (x._1, convert)
       }
       .toDF("searchid", "label")
@@ -161,46 +164,6 @@ object SaveFeatures {
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
-  }
-
-  def cvrPositive(traces: Seq[TraceLog]): Int = {
-    var stay = 0
-    var click = 0
-    var active = 0
-    var mclick = 0
-    var zombie = 0
-    var disactive = 0
-    traces.foreach {
-      t =>
-        t.trace_type match {
-          case s if s.startsWith("active") => active += 1
-
-          case "disactive" => disactive += 1
-
-          case "buttonClick" => click += 1
-
-          case "clickMonitor" => mclick += 1
-
-          case "inputFocus" => click += 1
-
-          case "press" => click += 1
-
-          case "zombie" => zombie += 1
-
-          case "stay" =>
-            if (t.duration > stay) {
-              stay = t.duration
-            }
-
-          case _ =>
-        }
-    }
-
-    if (((stay >= 30 && click > 0) || active > 0) && disactive == 0) {
-      1
-    } else {
-      0
-    }
   }
 }
 
