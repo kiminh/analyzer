@@ -19072,9 +19072,21 @@ public final class Protocol {
          */
         CONTENT_FEED(2),
         /**
+         * <pre>
+         *互动广告
+         * </pre>
+         *
          * <code>SLOT_INTERACT = 3;</code>
          */
         SLOT_INTERACT(3),
+        /**
+         * <pre>
+         *开屏广告
+         * </pre>
+         *
+         * <code>SLOT_SPLASH = 4;</code>
+         */
+        SLOT_SPLASH(4),
         ;
 
         /**
@@ -19094,9 +19106,21 @@ public final class Protocol {
          */
         public static final int CONTENT_FEED_VALUE = 2;
         /**
+         * <pre>
+         *互动广告
+         * </pre>
+         *
          * <code>SLOT_INTERACT = 3;</code>
          */
         public static final int SLOT_INTERACT_VALUE = 3;
+        /**
+         * <pre>
+         *开屏广告
+         * </pre>
+         *
+         * <code>SLOT_SPLASH = 4;</code>
+         */
+        public static final int SLOT_SPLASH_VALUE = 4;
 
 
         public final int getNumber() {
@@ -19116,6 +19140,7 @@ public final class Protocol {
             case 1: return LIST_FEED;
             case 2: return CONTENT_FEED;
             case 3: return SLOT_INTERACT;
+            case 4: return SLOT_SPLASH;
             default: return null;
           }
         }
@@ -19597,9 +19622,21 @@ public final class Protocol {
          */
         THREE_TEXT_ICON(4),
         /**
+         * <pre>
+         * 互动广告
+         * </pre>
+         *
          * <code>AD_INTERACT = 5;</code>
          */
         AD_INTERACT(5),
+        /**
+         * <pre>
+         * 开屏广告
+         * </pre>
+         *
+         * <code>AD_SPLASH = 6;</code>
+         */
+        AD_SPLASH(6),
         ;
 
         /**
@@ -19635,9 +19672,21 @@ public final class Protocol {
          */
         public static final int THREE_TEXT_ICON_VALUE = 4;
         /**
+         * <pre>
+         * 互动广告
+         * </pre>
+         *
          * <code>AD_INTERACT = 5;</code>
          */
         public static final int AD_INTERACT_VALUE = 5;
+        /**
+         * <pre>
+         * 开屏广告
+         * </pre>
+         *
+         * <code>AD_SPLASH = 6;</code>
+         */
+        public static final int AD_SPLASH_VALUE = 6;
 
 
         public final int getNumber() {
@@ -19659,6 +19708,7 @@ public final class Protocol {
             case 3: return TEXT_ICON;
             case 4: return THREE_TEXT_ICON;
             case 5: return AD_INTERACT;
+            case 6: return AD_SPLASH;
             default: return null;
           }
         }
@@ -49545,7 +49595,7 @@ public final class Protocol {
       ".ClientType\022\'\n\007version\030\002 \002(\0132\026.eventprot" +
       "ocol.Version\"b\n\007DspInfo\022\037\n\003dsp\030\001 \002(\0162\022.e" +
       "ventprotocol.Dsp\022\020\n\010media_id\030\002 \001(\t\022\022\n\nch" +
-      "annel_id\030\003 \001(\t\022\020\n\010timecost\030\004 \001(\005\"\365)\n\005Eve" +
+      "annel_id\030\003 \001(\t\022\020\n\010timecost\030\004 \001(\005\"\225*\n\005Eve" +
       "nt\022\'\n\004head\030\001 \002(\0132\031.eventprotocol.Event.H" +
       "ead\022\'\n\004body\030\002 \002(\0132\031.eventprotocol.Event." +
       "Body\022)\n\005extra\030\003 \001(\0132\032.eventprotocol.Even" +
@@ -49561,7 +49611,7 @@ public final class Protocol {
       "YPE\020\005\022\025\n\021BODY_BASE64_ERROR\020\006\022\027\n\023BODY_PRO" +
       "TOBUF_ERROR\020\007\022\023\n\017EXTRA_RSA_ERROR\020\010\022\026\n\022EX" +
       "TRA_FORMAT_ERROR\020\t\022\035\n\031APPEND_TARGET_PARA",
-      "M_ERROR\020\n\032\362\"\n\004Body\0221\n\004type\030\001 \002(\0162#.event" +
+      "M_ERROR\020\n\032\222#\n\004Body\0221\n\004type\030\001 \002(\0162#.event" +
       "protocol.Event.Body.EventType\022\021\n\tsearch_" +
       "id\030\002 \001(\t\022\030\n\020search_timestamp\030\003 \001(\r\022\021\n\tse" +
       "arch_ip\030\004 \001(\r\022\027\n\017event_timestamp\030\005 \001(\r\022\020" +
@@ -49657,59 +49707,60 @@ public final class Protocol {
       "IRECT\020\004\"w\n\016AdRedirectType\022\020\n\014AD_NO_DIREC" +
       "T\020\000\022\r\n\tAD_DIRECT\020\001\022\023\n\017AD_SYNC_TRACING\020\002\022" +
       "\024\n\020AD_DELAY_TRACING\020\003\022\031\n\025AD_DELAY_POST_T" +
-      "RACING\020\004\"@\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n" +
-      "\014CONTENT_FEED\020\002\022\021\n\rSLOT_INTERACT\020\003\"\265\001\n\013B" +
-      "rowserType\022\022\n\016UnknownBrowser\020\000\022\016\n\nMQQBro" +
-      "wser\020\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014Bai",
-      "duBrowser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBrow" +
-      "ser\020\006\022\023\n\017IEMobileBrowser\020\007\022\022\n\016MicroMesse" +
-      "nger\020\010\022\n\n\006QQChat\020\t\"P\n\014DeviceIdType\022\021\n\rDE" +
-      "VID_UNKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_M" +
-      "AC\020\002\022\016\n\nDEVID_IDFA\020\003\"R\n\006AdType\022\010\n\004TEXT\020\001" +
-      "\022\t\n\005IMAGE\020\002\022\r\n\tTEXT_ICON\020\003\022\023\n\017THREE_TEXT" +
-      "_ICON\020\004\022\017\n\013AD_INTERACT\020\005\"\215\001\n\017Interaction" +
-      "Type\022\017\n\013NO_INTERACT\020\000\022\021\n\rINTER_SURFING\020\001" +
-      "\022\022\n\016INTER_DOWNLOAD\020\002\022\021\n\rINTER_DIALING\020\003\022" +
-      "\021\n\rINTER_MESSAGE\020\004\022\016\n\nINTER_MAIL\020\005\022\014\n\010IN",
-      "TER_GP\020\006\"D\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t\n" +
-      "\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005\032\227" +
-      "\002\n\005Extra\0220\n\007unknown\030\001 \003(\0132\037.eventprotoco" +
-      "l.Event.Extra.Item\022\017\n\007touch_x\030\002 \001(\r\022\017\n\007t" +
-      "ouch_y\030\003 \001(\r\022\022\n\npress_time\030\004 \001(\r\022\022\n\nscro" +
-      "ll_num\030\005 \001(\r\022\023\n\013scroll_time\030\006 \001(\r\022\r\n\005wid" +
-      "th\030\007 \001(\r\022\016\n\006height\030\010 \001(\r\022\023\n\013click_delta\030" +
-      "\t \001(\001\022\017\n\007on_mask\030\n \001(\010\022\025\n\rdispatch_time\030" +
-      "\013 \001(\r\032!\n\004Item\022\n\n\002id\030\001 \002(\r\022\r\n\005value\030\002 \002(\t" +
-      "\"2\n\016LockerUProfile\022\021\n\ttimestamp\030\001 \002(\r\022\r\n",
-      "\005count\030\002 \001(\r*L\n\nDeviceType\022\027\n\023UNKNOWN_DE" +
-      "VICE_TYPE\020\000\022\006\n\002PC\020\001\022\t\n\005PHONE\020\002\022\n\n\006TABLET" +
-      "\020\003\022\006\n\002TV\020\004*&\n\tMediaType\022\007\n\003APP\020\001\022\007\n\003WEB\020" +
-      "\002\022\007\n\003WAP\020\003*;\n\006OSType\022\023\n\017UNKNOWN_OS_TYPE\020" +
-      "\000\022\013\n\007ANDROID\020\001\022\007\n\003IOS\020\002\022\006\n\002WP\020\003*p\n\014Devic" +
-      "eIDType\022\010\n\004IMEI\020\001\022\007\n\003MAC\020\002\022\010\n\004IDFA\020\003\022\010\n\004" +
-      "AAID\020\004\022\014\n\010OPENUDID\020\005\022\r\n\tANDROIDID\020\006\022\010\n\004U" +
-      "DID\020\007\022\010\n\004ODIN\020\010\022\010\n\004DUID\020\t*Q\n\rPromotionTy" +
-      "pe\022\014\n\010NOACTION\020\000\022\006\n\002LP\020\001\022\014\n\010DOWNLOAD\020\002\022\010" +
-      "\n\004DAIL\020\003\022\007\n\003SMS\020\004\022\t\n\005EMAIL\020\005*`\n\013NetworkT",
-      "ype\022\010\n\004WIFI\020\001\022\024\n\020CELLULAR_UNKNOWN\020\002\022\017\n\013C" +
-      "ELLULAR_2G\020\003\022\017\n\013CELLULAR_3G\020\004\022\017\n\013CELLULA" +
-      "R_4G\020\005*)\n\007GeoType\022\t\n\005WGS84\020\001\022\t\n\005GCJ02\020\002\022" +
-      "\010\n\004BD09\020\003*3\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t" +
-      "\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003*\"\n\tGeoSource\022\n\n\006N" +
-      "ATIVE\020\001\022\t\n\005BAIDU\020\002*1\n\nChargeType\022\010\n\004FREE" +
-      "\020\000\022\007\n\003CPC\020\001\022\007\n\003CPM\020\002\022\007\n\003CPA\020\003*\"\n\003Dsp\022\016\n\n" +
-      "JESGOO_DSP\020\001\022\013\n\007CPC_DSP\020\002*\303\003\n\014AntispamRu" +
-      "le\022\021\n\rDUP_SEARCH_ID\020\001\022\021\n\rOUT_TIME_SPAN\020\002" +
-      "\022\014\n\010DUP_USER\020\003\022\021\n\rNEW_USER_RATE\020\004\022\022\n\016INV",
-      "ALID_COOKIE\020\005\022\022\n\016INVALID_REGION\020\006\022\016\n\nNEW" +
-      "_COOKIE\020\007\022\r\n\tNO_COOKIE\020\010\022\022\n\016NO_DEVICE_IN" +
-      "FO\020\t\022\020\n\014NO_DEVICE_ID\020\n\022\013\n\007ON_MASK\020\013\022\n\n\006D" +
-      "UP_IP\020\014\022\022\n\016JS_CLICK_DELTA\020\r\022\021\n\rSAME_POSI" +
-      "TION\020\016\022\014\n\010NO_EXTRA\020\017\022\016\n\nNO_REFERER\020\020\022\023\n\017" +
-      "CK_DISPATCHTIME\020\021\022\n\n\006RANDOM\020\022\022\010\n\004GIFT\020\023\022" +
-      "\016\n\nBAD_METHOD\020\024\022\022\n\016SERVER_REQUEST\020\025\022\013\n\007M" +
-      "AX_CTR\020\026\022\013\n\007DIFF_UA\020\027\022\r\n\tMAX_CLICK\020\030\022\017\n\013" +
-      "TRAIN_MODEL\020\031\022\n\n\006IP_ISP\020\032\022\014\n\010IP_BLACK\020\033"
+      "RACING\020\004\"Q\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n" +
+      "\014CONTENT_FEED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SL" +
+      "OT_SPLASH\020\004\"\265\001\n\013BrowserType\022\022\n\016UnknownBr" +
+      "owser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Chrome\020\002\022\r\n\tU",
+      "CBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013MiuiBrow" +
+      "ser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEMobileBrowse" +
+      "r\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQChat\020\t\"P\n\014D" +
+      "eviceIdType\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVID_" +
+      "IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\"a\n" +
+      "\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tTEXT_ICO" +
+      "N\020\003\022\023\n\017THREE_TEXT_ICON\020\004\022\017\n\013AD_INTERACT\020" +
+      "\005\022\r\n\tAD_SPLASH\020\006\"\215\001\n\017InteractionType\022\017\n\013" +
+      "NO_INTERACT\020\000\022\021\n\rINTER_SURFING\020\001\022\022\n\016INTE" +
+      "R_DOWNLOAD\020\002\022\021\n\rINTER_DIALING\020\003\022\021\n\rINTER",
+      "_MESSAGE\020\004\022\016\n\nINTER_MAIL\020\005\022\014\n\010INTER_GP\020\006" +
+      "\"D\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002" +
+      "\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005\032\227\002\n\005Extra" +
+      "\0220\n\007unknown\030\001 \003(\0132\037.eventprotocol.Event." +
+      "Extra.Item\022\017\n\007touch_x\030\002 \001(\r\022\017\n\007touch_y\030\003" +
+      " \001(\r\022\022\n\npress_time\030\004 \001(\r\022\022\n\nscroll_num\030\005" +
+      " \001(\r\022\023\n\013scroll_time\030\006 \001(\r\022\r\n\005width\030\007 \001(\r" +
+      "\022\016\n\006height\030\010 \001(\r\022\023\n\013click_delta\030\t \001(\001\022\017\n" +
+      "\007on_mask\030\n \001(\010\022\025\n\rdispatch_time\030\013 \001(\r\032!\n" +
+      "\004Item\022\n\n\002id\030\001 \002(\r\022\r\n\005value\030\002 \002(\t\"2\n\016Lock",
+      "erUProfile\022\021\n\ttimestamp\030\001 \002(\r\022\r\n\005count\030\002" +
+      " \001(\r*L\n\nDeviceType\022\027\n\023UNKNOWN_DEVICE_TYP" +
+      "E\020\000\022\006\n\002PC\020\001\022\t\n\005PHONE\020\002\022\n\n\006TABLET\020\003\022\006\n\002TV" +
+      "\020\004*&\n\tMediaType\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP" +
+      "\020\003*;\n\006OSType\022\023\n\017UNKNOWN_OS_TYPE\020\000\022\013\n\007AND" +
+      "ROID\020\001\022\007\n\003IOS\020\002\022\006\n\002WP\020\003*p\n\014DeviceIDType\022" +
+      "\010\n\004IMEI\020\001\022\007\n\003MAC\020\002\022\010\n\004IDFA\020\003\022\010\n\004AAID\020\004\022\014" +
+      "\n\010OPENUDID\020\005\022\r\n\tANDROIDID\020\006\022\010\n\004UDID\020\007\022\010\n" +
+      "\004ODIN\020\010\022\010\n\004DUID\020\t*Q\n\rPromotionType\022\014\n\010NO" +
+      "ACTION\020\000\022\006\n\002LP\020\001\022\014\n\010DOWNLOAD\020\002\022\010\n\004DAIL\020\003",
+      "\022\007\n\003SMS\020\004\022\t\n\005EMAIL\020\005*`\n\013NetworkType\022\010\n\004W" +
+      "IFI\020\001\022\024\n\020CELLULAR_UNKNOWN\020\002\022\017\n\013CELLULAR_" +
+      "2G\020\003\022\017\n\013CELLULAR_3G\020\004\022\017\n\013CELLULAR_4G\020\005*)" +
+      "\n\007GeoType\022\t\n\005WGS84\020\001\022\t\n\005GCJ02\020\002\022\010\n\004BD09\020" +
+      "\003*3\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020" +
+      "\002\022\013\n\007OPENAPI\020\003*\"\n\tGeoSource\022\n\n\006NATIVE\020\001\022" +
+      "\t\n\005BAIDU\020\002*1\n\nChargeType\022\010\n\004FREE\020\000\022\007\n\003CP" +
+      "C\020\001\022\007\n\003CPM\020\002\022\007\n\003CPA\020\003*\"\n\003Dsp\022\016\n\nJESGOO_D" +
+      "SP\020\001\022\013\n\007CPC_DSP\020\002*\303\003\n\014AntispamRule\022\021\n\rDU" +
+      "P_SEARCH_ID\020\001\022\021\n\rOUT_TIME_SPAN\020\002\022\014\n\010DUP_",
+      "USER\020\003\022\021\n\rNEW_USER_RATE\020\004\022\022\n\016INVALID_COO" +
+      "KIE\020\005\022\022\n\016INVALID_REGION\020\006\022\016\n\nNEW_COOKIE\020" +
+      "\007\022\r\n\tNO_COOKIE\020\010\022\022\n\016NO_DEVICE_INFO\020\t\022\020\n\014" +
+      "NO_DEVICE_ID\020\n\022\013\n\007ON_MASK\020\013\022\n\n\006DUP_IP\020\014\022" +
+      "\022\n\016JS_CLICK_DELTA\020\r\022\021\n\rSAME_POSITION\020\016\022\014" +
+      "\n\010NO_EXTRA\020\017\022\016\n\nNO_REFERER\020\020\022\023\n\017CK_DISPA" +
+      "TCHTIME\020\021\022\n\n\006RANDOM\020\022\022\010\n\004GIFT\020\023\022\016\n\nBAD_M" +
+      "ETHOD\020\024\022\022\n\016SERVER_REQUEST\020\025\022\013\n\007MAX_CTR\020\026" +
+      "\022\013\n\007DIFF_UA\020\027\022\r\n\tMAX_CLICK\020\030\022\017\n\013TRAIN_MO" +
+      "DEL\020\031\022\n\n\006IP_ISP\020\032\022\014\n\010IP_BLACK\020\033"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

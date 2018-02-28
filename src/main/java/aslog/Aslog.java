@@ -139,6 +139,10 @@ public final class Aslog {
      * <code>SLOT_INTERACT = 3;</code>
      */
     SLOT_INTERACT(3),
+    /**
+     * <code>SLOT_SPLASH = 4;</code>
+     */
+    SLOT_SPLASH(4),
     ;
 
     /**
@@ -153,6 +157,10 @@ public final class Aslog {
      * <code>SLOT_INTERACT = 3;</code>
      */
     public static final int SLOT_INTERACT_VALUE = 3;
+    /**
+     * <code>SLOT_SPLASH = 4;</code>
+     */
+    public static final int SLOT_SPLASH_VALUE = 4;
 
 
     public final int getNumber() {
@@ -172,6 +180,7 @@ public final class Aslog {
         case 1: return LIST_FEED;
         case 2: return CONTENT_FEED;
         case 3: return SLOT_INTERACT;
+        case 4: return SLOT_SPLASH;
         default: return null;
       }
     }
@@ -777,6 +786,10 @@ public final class Aslog {
      * <code>AD_INTERACT = 5;</code>
      */
     AD_INTERACT(5),
+    /**
+     * <code>AD_SPLASH = 6;</code>
+     */
+    AD_SPLASH(6),
     ;
 
     /**
@@ -799,6 +812,10 @@ public final class Aslog {
      * <code>AD_INTERACT = 5;</code>
      */
     public static final int AD_INTERACT_VALUE = 5;
+    /**
+     * <code>AD_SPLASH = 6;</code>
+     */
+    public static final int AD_SPLASH_VALUE = 6;
 
 
     public final int getNumber() {
@@ -820,6 +837,7 @@ public final class Aslog {
         case 3: return ICON_TEXT;
         case 4: return THREE_ICON_TEXT;
         case 5: return AD_INTERACT;
+        case 6: return AD_SPLASH;
         default: return null;
       }
     }
@@ -26432,27 +26450,28 @@ public final class Aslog {
       "\020\n\010timecost\030\027 \001(\004\022\r\n\005https\030\030 \001(\010\022\021\n\tctrt" +
       "arget\030\031 \001(\t\022\025\n\rdupuserfilter\030\032 \003(\r*3\n\tMe" +
       "diaType\022\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007" +
-      "\n\003WAP\020\003*@\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014" +
-      "CONTENT_FEED\020\002\022\021\n\rSLOT_INTERACT\020\003*P\n\013Net" +
-      "workType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI\020\001\022" +
-      "\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?\n\006O" +
-      "SType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020\001\022\n\n" +
-      "\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType\022\022\n\016",
-      "UnknownBrowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Chro" +
-      "me\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n" +
-      "\013MiuiBrowser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEMob" +
-      "ileBrowser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQCh" +
-      "at\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNOWN\020\000" +
-      "\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID" +
-      "_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCOOKI" +
-      "E\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVID_IMSI\020\007" +
-      "*R\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_" +
-      "TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013AD_INTERA",
-      "CT\020\005*\020\n\005AdSrc\022\007\n\003CPC\020\001*i\n\017InteractionTyp" +
-      "e\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNL" +
-      "OAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020" +
-      "\005\022\006\n\002GP\020\006*D\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t" +
-      "\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005"
+      "\n\003WAP\020\003*Q\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014" +
+      "CONTENT_FEED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLO" +
+      "T_SPLASH\020\004*P\n\013NetworkType\022\017\n\013NET_UNKNOWN" +
+      "\020\000\022\014\n\010NET_WIFI\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003" +
+      "\022\n\n\006NET_4G\020\004*?\n\006OSType\022\016\n\nOS_UNKNOWN\020\000\022\016" +
+      "\n\nOS_ANDROID\020\001\022\n\n\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001",
+      "\n\013BrowserType\022\022\n\016UnknownBrowser\020\000\022\016\n\nMQQ" +
+      "Browser\020\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014" +
+      "BaiduBrowser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n\013QvodB" +
+      "rowser\020\006\022\023\n\017IEMobileBrowser\020\007\022\022\n\016MicroMe" +
+      "ssenger\020\010\022\n\n\006QQChat\020\t*\231\001\n\014DeviceIdType\022\021" +
+      "\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEV" +
+      "ID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\022\016\n\nDEVID_AAID\020\004" +
+      "\022\022\n\016DEVID_LSCOOKIE\020\005\022\023\n\017DEVID_ANDROIDID\020" +
+      "\006\022\016\n\nDEVID_IMSI\020\007*a\n\006AdType\022\010\n\004TEXT\020\001\022\t\n" +
+      "\005IMAGE\020\002\022\r\n\tICON_TEXT\020\003\022\023\n\017THREE_ICON_TE",
+      "XT\020\004\022\017\n\013AD_INTERACT\020\005\022\r\n\tAD_SPLASH\020\006*\020\n\005" +
+      "AdSrc\022\007\n\003CPC\020\001*i\n\017InteractionType\022\017\n\013NO_" +
+      "INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002\022\013\n" +
+      "\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP\020" +
+      "\006*D\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020" +
+      "\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
