@@ -18,8 +18,10 @@ object Event {
         if (split_log_tmps.length == 2) {
           val head_byte = Encoding.base64Decoder(split_log_tmps(0))
           val head_event = eventprotocol.Protocol.Event.Head.parseFrom(head_byte.toArray)
+          val sourceProtobufBody = split_log_tmps(1).split("&")
+          val protobufBody = sourceProtobufBody(0)
           if (head_event.getCryptoType == eventprotocol.Protocol.Event.Head.CryptoType.JESGOO_BASE64) {
-            val meds = Encoding.base64Decoder(split_log_tmps(1), head_event.getCryptoParam)
+            val meds = Encoding.base64Decoder(protobufBody, head_event.getCryptoParam)
             new Show(meds, ip,referer ,user_agent)
           } else {
             null
