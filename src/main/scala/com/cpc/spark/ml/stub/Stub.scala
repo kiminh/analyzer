@@ -5,12 +5,14 @@ import java.util.Date
 
 import com.cpc.spark.log.parser.{ExtValue, LogParser, UnionLog}
 import com.cpc.spark.ml.common.FeatureDict
+import com.cpc.spark.ml.ctrmodel.gbdt.Train
 import com.cpc.spark.ml.ctrmodel.hourly.LRTrain
 import com.cpc.spark.ml.ctrmodel.v1.FeatureParser
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
 import io.grpc.ManagedChannelBuilder
+import ml.dmlc.xgboost4j.scala.spark.XGBoostModel
 import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.regression.IsotonicRegressionModel
@@ -54,11 +56,27 @@ object Stub {
         |ext['user_req_ad_num'].int_value as user_req_ad_num,ext[ 'user_req_num'].int_value as user_req_num, uid
         |from dl_cpc.cpc_union_log
         |where `date` = "%s" and media_appsid in ("80000001", "80000002") and adslot_type in (1,2)
-        | and unitid = 1544715 and ext['antispam'].int_value = 0 limit %s"""
+        | and isclick = 1 and ext['antispam'].int_value = 0 limit %d"""
         .stripMargin.format(args(2), args(3).toInt)
 
     println(sql)
     val logs = ctx.sql(sql).cache()
+
+    val model = XGBoostModel.load("/user/cpc/xgboost/ctr_v1")
+
+    val vecs = logs.rdd.map { r => Train.getVectorParser2(r).toDense }
+
+    vecs.toLocalIterator.foreach{
+      v =>
+        println(v.values.mkString(" "))
+    }
+
+    model.predict(vecs, 0.0001f)
+      .toLocalIterator
+      .foreach {
+        x =>
+          println(x.mkString(" "))
+      }
 
     logs.rdd.toLocalIterator.foreach{
       x =>
@@ -76,10 +94,11 @@ object Stub {
             seq = seq :+ name
           }
         }
+
         val (ad, m, slot, u, loc, n, d, t) = LRTrain.unionLogToObject(x,seq)
 
         val req = Request(
-          version = "v3",
+          version = "v1",
           ads = Seq(ad),
           media = Option(m),
           user = Option(u),
