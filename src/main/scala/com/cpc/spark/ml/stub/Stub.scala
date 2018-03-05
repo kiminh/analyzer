@@ -60,10 +60,10 @@ object Stub {
         .stripMargin.format(args(2), args(3).toInt)
 
     println(sql)
-    val logs = ctx.sql(sql).cache()
-
+    //val logs = ctx.sql(sql).cache()
+    //logs.toDF().write.parquet("/user/cpc/xgboost/ulog")
+    val logs = ctx.read.parquet("/user/cpc/xgboost/ulog")
     val model = XGBoostModel.load("/user/cpc/xgboost/ctr_v1")
-
     val vecs = logs.rdd.map { r => Train.getVectorParser2(r).toDense }
 
     vecs.toLocalIterator.foreach{
@@ -78,50 +78,53 @@ object Stub {
           println(x.mkString(" "))
       }
 
-    logs.rdd.toLocalIterator.foreach{
-      x =>
-        var seq = Seq[String]()
-        val uid = x.getAs[String]("uid") + "_UPDATA"
-        println(uid)
+    for (i <- 1 to 100000) {
+      Thread.sleep(500)
+      logs.rdd.toLocalIterator.foreach{
+        x =>
+          var seq = Seq[String]()
+          val uid = x.getAs[String]("uid") + "_UPDATA"
+          println(uid)
 
-        val conf = ConfigFactory.load()
-        val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-        val buffer = redis.get[Array[Byte]](uid).getOrElse(null)
-        if (buffer != null) {
-          val installpkg = UserProfile.parseFrom(buffer).getInstallpkgList
-          for( i <- 0 until installpkg.size){
-            val name = installpkg.get(i).getPackagename
-            seq = seq :+ name
+          /*
+          val conf = ConfigFactory.load()
+          val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+          val buffer = redis.get[Array[Byte]](uid).getOrElse(null)
+          if (buffer != null) {
+            val installpkg = UserProfile.parseFrom(buffer).getInstallpkgList
+            for( i <- 0 until installpkg.size){
+              val name = installpkg.get(i).getPackagename
+              seq = seq :+ name
+            }
           }
-        }
+          */
 
-        val (ad, m, slot, u, loc, n, d, t) = LRTrain.unionLogToObject(x,seq)
+          val (ad, m, slot, u, loc, n, d, t) = LRTrain.unionLogToObject(x,seq)
+          var ads = Seq[AdInfo]()
+          for (i <- 1 to 200) {
+            ads = ads :+ ad
+          }
 
-        var ads = Seq[AdInfo]()
-        for (i <- 1 to 200) {
-          ads = ads :+ ad
-        }
+          val req = Request(
+            version = "v1",
+            ads = ads,
+            media = Option(m),
+            user = Option(u),
+            loc = Option(loc),
+            network = Option(n),
+            device = Option(d),
+            time = x.getAs[Int]("timestamp"),
+            cvrVersion = "cvr_v1",
+            adSlot = Option(slot)
+          )
 
-        val req = Request(
-          version = "v1",
-          ads = ads,
-          media = Option(m),
-          user = Option(u),
-          loc = Option(loc),
-          network = Option(n),
-          device = Option(d),
-          time = x.getAs[Int]("timestamp"),
-          cvrVersion = "cvr_v1",
-          adSlot = Option(slot)
-        )
+          val blockingStub = PredictorGrpc.blockingStub(channel)
+          val reply = blockingStub.predict(req)
 
-        val blockingStub = PredictorGrpc.blockingStub(channel)
-        val reply = blockingStub.predict(req)
-
-        println("ideaid=%d scala=%.8f ml=%.8f %.8f".format(ad.ideaid, 0d, reply.results(0).value,reply.results(1).value ))
-        println("")
+          println("ideaid=%d scala=%.8f ml=%.8f".format(ad.ideaid, 0d, reply.results(0).value))
+          println("")
+      }
     }
-
   }
 
 }
