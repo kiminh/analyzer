@@ -5,23 +5,24 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.common.{Utils => MUtils}
 import ml.dmlc.xgboost4j.scala.spark.XGBoostEstimator
 import mlmodel.mlmodel.{IRModel, Pack}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.ml.evaluation.RegressionEvaluator
+import org.apache.spark.ml.feature.StringIndexer
 import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import com.cpc.spark.ml.common.{Utils => MUtils}
-import com.typesafe.config.ConfigFactory
+
 import scala.util.Random
 
 /**
   * Created by roydong on 31/01/2018.
   */
-object TrainCvr {
+object TrainCtr2 {
 
   Logger.getRootLogger.setLevel(Level.WARN)
 
@@ -34,54 +35,59 @@ object TrainCvr {
 
   private var ctx: SparkSession = null
 
-
   def main(args: Array[String]): Unit = {
-
     val spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-      .appName("zyc_cvr_xgboost")
+      .appName("zyc_ctr_xgboost")
       .enableHiveSupport()
       .getOrCreate()
-
     ctx = spark
 
-    import spark.implicits._
 
     var pathSep = Seq[String]()
     val cal = Calendar.getInstance()
-    for (n <- 1 to 20) {
+    for (n <- 1 to 7) {
       cal.add(Calendar.DATE, -1)
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       val hour = new SimpleDateFormat("HH").format(cal.getTime)
       pathSep = pathSep :+ date
     }
 
-    //val path = "/user/cpc/lrmodel/ctrdata_v1/{%s}/*".format(pathSep.mkString(",")) //ctrdata_v1下的东西是cpc_union_log表SaveFeatures产生的
-    val path = "/user/cpc/lrmodel/cvrdata_v2/{%s}/*".format(pathSep.mkString(","))
+    val path = "/user/cpc/lrmodel/ctrdata_v1/{%s}/*".format(pathSep.mkString(",")) //ctrdata_v1下的东西是cpc_union_log表SaveFeatures产生的
     println(path)
     trainLog :+= path
+
     val srcdata = spark.read.parquet(path).coalesce(1000).cache()
 
-    println("training qtt_cvr ----------------------------")
-    trainLog :+= "training qtt_cvr -------------------------------"
-//    val qttAll = srcdata.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-    train(spark, srcdata, "qtt_cvr")  //趣头条广告
-//    train(spark, qttAll, "cvr_qtt")  //趣头条广告
+    println("training qtt 11111111111111111111111111111111111111111")
+    trainLog :+= "training qtt 11111111111111111111111111111111111111111"
+    val qttAll = srcdata.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+    train(spark, qttAll, "qtt")  //趣头条广告
+//    train(spark, qttAll, "ctr_qtt")  //趣头条广告
 
 //    if (isMorning()) {
 //      modelClear()
+//      println("training external 222222222222222222222222222222222")
+//      trainLog :+= "training external 222222222222222222222222222222222"
 //      val extAll = srcdata.filter(x => !Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-//      train(spark, qttAll, "external_cvr")  //外媒广告
+//      train(spark, qttAll, "external")  //外媒广告
+////      train(spark, qttAll, "ctr_extAll")  //外媒广告
 //
+//      //interact-all-parser3-hourly
 //      modelClear()
+//      println("training interact 33333333333333333333333333333333")
+//      trainLog :+= "training interact 33333333333333333333333333333333"
 //      val interactAll = srcdata.filter(x => x.getAs[Int]("adslot_type") == 3)  //互动广告=趣头条的互动广告 + 外媒互动广告
-//      train(spark, qttAll, "interact_cvr")
+//      train(spark, qttAll, "interact")
+////      train(spark, qttAll, "ctr_interactAll")
+//
 //
 //
 //    }
-    Utils.sendMail(trainLog.mkString("\n"), "xg_cvr_trainLog", Seq("rd@aiclk.com"))
+    Utils.sendMail(trainLog.mkString("\n"), "xg_ctr_trainLog5day", Seq("rd@aiclk.com")) //Utils.sendMail(trainLog.mkString("\n"), "zyc_TrainLog", Seq("rd@aiclk.com"))
     srcdata.unpersist()
   }
+
   def isMorning(): Boolean = {
     new SimpleDateFormat("HH").format(new Date().getTime) < "08"
   }
@@ -95,7 +101,7 @@ object TrainCvr {
     isUpdateModel = false
   }
   //  private val minBinSize = 10000d
-  private var binNum = 400d
+  private var binNum = 1000d
   private var binsLog = Seq[String]()
   private var irBinNum = 0
   private var irError = 0d
@@ -106,11 +112,35 @@ object TrainCvr {
 
 
   def train(spark: SparkSession, srcdata: DataFrame,  destfile: String): Unit = {
-
-    import spark.implicits._
     trainLog :+= "\n------train log--------"
     trainLog :+= "destfile = %s".format(destfile)
-    val data = srcdata.map {
+    import spark.implicits._
+
+//    els = els :+ x.getAs[String]("adslotid").toInt  //1111
+//    els = els :+ x.getAs[Int]("adclass")  //1111
+//    els = els :+ x.getAs[Int]("planid")  //1111
+//    els = els :+ x.getAs[Int]("unitid")  //1111
+//    els = els :+ x.getAs[Int]("ideaid")  //1111
+
+    val citydxModel = new StringIndexer().setInputCol("city").setOutputCol("citydx").setHandleInvalid("skip").fit(srcdata)
+    var df = citydxModel.transform(srcdata)
+
+    val adslotModel = new StringIndexer().setInputCol("adslotid").setOutputCol("adslotdx").setHandleInvalid("skip").fit(df)
+    df = adslotModel.transform(df)
+
+    val adclassModel = new StringIndexer().setInputCol("adclass").setOutputCol("adclassdx").setHandleInvalid("skip").fit(df)
+    df = adclassModel.transform(df)
+
+    val planModel = new StringIndexer().setInputCol("planid").setOutputCol("plandx").setHandleInvalid("skip").fit(df)
+    df = planModel.transform(df)
+
+    val unitModel = new StringIndexer().setInputCol("unitid").setOutputCol("unitdx").setHandleInvalid("skip").fit(df)
+    df = unitModel.transform(df)
+
+    val ideaModel = new StringIndexer().setInputCol("ideaid").setOutputCol("ideadx").setHandleInvalid("skip").fit(df)
+    df = ideaModel.transform(df)
+
+    val data = df.map {
       r =>
         val vec = getVectorParser2(r) //解析数据
         (r.getAs[Int]("label"), vec)
@@ -121,17 +151,19 @@ object TrainCvr {
     val test = getLimitedData(1e7, tmp2)
     val totalNum = data.count().toDouble
     val pnum = tmp1.filter(x => x.getAs[Int]("label") > 0).count().toDouble
-//    val rate = (pnum * 10 / totalNum * 1000).toInt // 1.24% * 10000 = 124
-    println(pnum, totalNum)
-    trainLog :+= "xgb train: pnum=%.0f totalNum=%.0f ".format(pnum, totalNum)
-//    val tmp = tmp1.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate) //之前正样本数可能占1/1000，可以变成占1/100
-    val train = getLimitedData(2e7, tmp1)
+    val rate = (pnum * 10 / totalNum * 1000).toInt // 1.24% * 10000 = 124
+    println(pnum, totalNum, rate)
+    trainLog :+= "xgb train: pnum=%.0f totalNum=%.0f rate=%d/1000".format(pnum, totalNum, rate)
+    val tmp = tmp1.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate) //之前正样本数可能占1/1000，可以变成占1/100
+    val train = getLimitedData(4e7, tmp)
     //val Array(train, test) = data.randomSplit(Array(0.9, 0.1), 123L)
+
+
 
     val params = Map(
       //"eta" -> 1f,
       //"lambda" -> 2.5
-      "num_round" -> 20, //20
+      "num_round" -> 20,
       //"max_delta_step" -> 4,
       "colsample_bytree" -> 0.8,
       "max_depth" -> 10, //数的最大深度。缺省值为6 ,取值范围为：[1,∞]
@@ -179,43 +211,42 @@ object TrainCvr {
     runIr(binNum.toInt, 0.95)
     trainLog :+= binsLog.mkString("\n")
 
+
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
 
-    //Utils.deleteHdfs("/user/cpc/xgboost/ctr_v1") 赵翌臣调试地址
-    /*  model.save("/user/cpc/xgboost/xgbmodeldata/cvr_%s.xgm".format(date)) //在hdfs存xg模型
-        model.booster.saveModel("/home/cpc/model_zyc/xg_model/cvr_%s.xgm".format(date)) //存xg模型
-        val xgbfilepath = "/home/cpc/model_zyc/xg_model/cvr_%s.xgmpb".format(date) // 存xg模型的pb
-        savePbPack(xgbfilepath)
-        irmodel.save(ctx.sparkContext, "/user/cpc/xgboost/xgbmodeldata/cvr_%s.ir".format(date)) // 存IR模型的pb
-        Utils.sendMail(trainLog.mkString("\n"), "zyc_cvr_TrainLog", Seq("zhaoyichen@aiclk.com")) //Utils.sendMail(trainLog.mkString("\n"), "zyc_TrainLog", Seq("rd@aiclk.com"))
-    */
-    val hdfsPath ="/user/cpc/xgboost/xgbmodeldata/cvr_%s.xgm".format(date)
-    model.save(hdfsPath) //在hdfs存xg模型
-    trainLog :+= "hdfsPath: " + hdfsPath
+    //Utils.deleteHdfs("/user/cpc/xgboost/ctr_v1")
+    /* 赵翌臣的调试存储地址
+  model.save("/user/cpc/xgboost/xgbmodeldata/%s.xgm".format(date)) //在hdfs存xg模型
+  model.booster.saveModel("/home/cpc/model_zyc/xg_model/%s.xgm".format(date)) //存xg模型
+  val xgbfilepath = "/home/cpc/model_zyc/xg_model/%s.xgmpb".format(date) // 存xg模型的pb
+  trainLog :+= "protobuf pack /home/cpc/model_zyc/xg_model/%s.xgmpb".format(date)
+  savePbPack(xgbfilepath)
+  irmodel.save(ctx.sparkContext, "/user/cpc/xgboost/xgbmodeldata/%s.ir".format(date)) // 存IR模型的pb
+  Utils.sendMail(trainLog.mkString("\n"), "zyc_TrainLog_save", Seq("zhaoyichen@aiclk.com")) //Utils.sendMail(trainLog.mkString("\n"), "zyc_TrainLog", Seq("rd@aiclk.com"))
+  */
 
-    val xgmodelfilepath = "/home/cpc/anal/xgmodel/cvr_%s.xgm".format(date) // 存xg模型
+    model.save("/user/cpc/xgboost/xgbmodeldata/ctr_%s.xgm".format(date)) //在hdfs存xg模型
+
+    val xgmodelfilepath = "/home/cpc/anal/xgmodel/ctr_%s.xgm".format(date) // 存xg模型
     model.booster.saveModel(xgmodelfilepath)
-    trainLog :+= "xgmodelfilepath: " + xgmodelfilepath
 
-    val xgbfilePBpath = "/home/cpc/anal/xgmodel/cvr_%s.xgmpb".format(date) // 存xg模型的pb
-    savePbPack(xgbfilePBpath)
-    trainLog :+= "xgbfilePBpath: " + xgbfilePBpath
+    val xgbfilepath = "/home/cpc/anal/xgmodel/ctr_%s.xgmpb".format(date) // 存xg模型的pb
+    savePbPack(xgbfilepath)
 
-    val irPath = "/user/cpc/xgboost/xgbmodeldata/cvr_%s.ir".format(date)
-    irmodel.save(ctx.sparkContext, irPath) // 存IR模型的pb
-    trainLog :+= "irPath: " + irPath
+    trainLog :+= "protobuf pack " + xgbfilepath
+    irmodel.save(ctx.sparkContext, "/user/cpc/xgboost/xgbmodeldata/ctr_%s.ir".format(date)) // 存IR模型的pb
+//    Utils.sendMail(trainLog.mkString("\n"), "xg_ctr_trainLog", Seq("rd@aiclk.com")) //Utils.sendMail(trainLog.mkString("\n"), "zyc_TrainLog", Seq("rd@aiclk.com"))
 
     trainLog :+= "\n-------update server data------"
     if (isUpdateModel) {
       println("update model~~~~~~~~~~~~~~~~~~~~~~")
       trainLog :+= "\n-------update model------"
-      trainLog :+= MUtils.updateOnlineData2(xgmodelfilepath, destfile + ".gbm", ConfigFactory.load())
-      trainLog :+= MUtils.updateOnlineData2(xgbfilePBpath, destfile + ".mlm", ConfigFactory.load())
     }else {
       println("not update model~~~~~~~~~~~~~~~~~~~~~~")
     }
+//    trainLog :+= MUtils.updateOnlineData2(xgmodelfilepath, destfile + ".gbm", ConfigFactory.load())
+//    trainLog :+= MUtils.updateOnlineData2(xgbfilepath, destfile + ".mlm", ConfigFactory.load())
   }
-
 
   //限制总的样本数
   def getLimitedData(limitedNum: Double, ulog: DataFrame): DataFrame = {
@@ -304,36 +335,44 @@ object TrainCvr {
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
     val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
-    var els = Seq[Int]()
+    var els = Seq[Double]()
 
-    els = els :+ week
-    els = els :+ hour
-    els = els :+ x.getAs[Int]("sex")
-    els = els :+ x.getAs[Int]("age")
-    els = els :+ x.getAs[Int]("os")
-    els = els :+ x.getAs[Int]("isp")
-    els = els :+ x.getAs[Int]("network")
-    els = els :+ x.getAs[Int]("city")
-    els = els :+ x.getAs[String]("media_appsid").toInt
-    els = els :+ x.getAs[String]("adslotid").toInt
-    els = els :+ x.getAs[Int]("phone_level")
-    els = els :+ x.getAs[Int]("pagenum")
+    els = els :+ week.toDouble
+    els = els :+ hour.toDouble
+    els = els :+ x.getAs[Int]("sex").toDouble
+    els = els :+ x.getAs[Int]("age").toDouble
+    els = els :+ x.getAs[Int]("os").toDouble
+    els = els :+ x.getAs[Int]("isp").toDouble
+    els = els :+ x.getAs[Int]("network").toDouble
+//    els = els :+ x.getAs[Int]("city")  //1111
+    els = els :+ x.getAs[Double]("citydx")  //1111
+
+
+//    els = els :+ x.getAs[String]("media_appsid").toInt
+//    els = els :+ x.getAs[String]("adslotid").toInt  //1111
+    els = els :+ x.getAs[Double]("adslotdx")   //1111
+    els = els :+ x.getAs[Int]("phone_level").toDouble
+    els = els :+ x.getAs[Int]("pagenum").toDouble
 
     try {
-      els = els :+ x.getAs[String]("bookid").toInt
+      els = els :+ x.getAs[String]("bookid").toDouble
     } catch {
       case e: Exception =>
-        els = els :+ 0
+        els = els :+ 0.0
     }
 
-    els = els :+ x.getAs[Int]("adclass")
-    els = els :+ x.getAs[Int]("adtype")
-    els = els :+ x.getAs[Int]("adslot_type")
-    els = els :+ x.getAs[Int]("planid")
-    els = els :+ x.getAs[Int]("unitid")
-    els = els :+ x.getAs[Int]("ideaid")
-    els = els :+ x.getAs[Int]("user_req_ad_num")
-    els = els :+ x.getAs[Int]("user_req_num")
+//    els = els :+ x.getAs[Int]("adclass")  //1111
+    els = els :+ x.getAs[Double]("adclassdx")  //1111
+    els = els :+ x.getAs[Int]("adtype").toDouble
+    els = els :+ x.getAs[Int]("adslot_type").toDouble
+//    els = els :+ x.getAs[Int]("planid")  //1111
+    els = els :+ x.getAs[Double]("plandx")  //1111
+//    els = els :+ x.getAs[Int]("unitid")  //1111
+    els = els :+ x.getAs[Double]("unitdx")  //1111
+//    els = els :+ x.getAs[Int]("ideaid")  //1111
+    els = els :+ x.getAs[Double]("ideadx")  //1111
+    els = els :+ x.getAs[Int]("user_req_ad_num").toDouble
+    els = els :+ x.getAs[Int]("user_req_num").toDouble
 
     Vectors.dense(els.map(_.toDouble).toArray)
   }
@@ -344,8 +383,8 @@ object TrainCvr {
     val sample = xgbTestResults.randomSplit(Array(rate, 1 - rate), seed = new Date().getTime)
     val bins = binData(sample(0), irBinNum)
     val sc = ctx.sparkContext
-    val ir = new IsotonicRegression().setIsotonic(true).run(sc.parallelize(bins.map(x => (x._1, x._3, 1d))))    // 真实值y，预测均值x
-    val sum = sample(1)
+    val ir = new IsotonicRegression().setIsotonic(true).run(sc.parallelize(bins.map(x => (x._1, x._3, 1d))))    // 真实值y轴，预测均值x轴   样本量就是桶的个数
+    val sum = sample(1) //在测试数据上计算误差
       .map(x => (x._2, ir.predict(x._1))) //(click, calibrate ctr)
       .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
 
@@ -383,13 +422,14 @@ object TrainCvr {
             bins = bins :+ (ctr, pMin, pSum / pv, pMax)  // 真实值，最小值，预测均值，最大值
             n = n + 1
             //if (n < 50 || n > binNum - 50) {
+
             val logStr2 = "bin %d: %.6f(%d/%d) %.6f %.6f %.6f".format(
               n, ctr, click.toInt, pv.toInt, pMin, pSum / pv, pMax) //桶号：真实ctr（点击/展示），最小值，预测均值，最大值
             println(logStr2)
 
             if (n > binNum - 20) {
               val logStr = "bin %d: %.6f(%d/%d) %.6f %.6f %.6f".format(
-                n, ctr, click.toInt, pv.toInt, pMin, pSum / pv, pMax)
+                n, ctr, click.toInt, pv.toInt, pMin, pSum / pv, pMax) //桶号：真实ctr（点击/展示），最小值，预测均值，最大值
 
               binsLog = binsLog :+ logStr
               println(logStr)

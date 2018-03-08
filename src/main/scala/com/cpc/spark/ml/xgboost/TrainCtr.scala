@@ -60,30 +60,30 @@ object TrainCtr {
 
     println("training qtt 11111111111111111111111111111111111111111")
     trainLog :+= "training qtt 11111111111111111111111111111111111111111"
-    val qttAll = srcdata.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-    train(spark, qttAll, "qtt")  //趣头条广告
+//    val qttAll = srcdata.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+    train(spark, srcdata, "qtt")  //趣头条广告
 //    train(spark, qttAll, "ctr_qtt")  //趣头条广告
 
-    if (isMorning()) {
-      modelClear()
-      println("training external 222222222222222222222222222222222")
-      trainLog :+= "training external 222222222222222222222222222222222"
-      val extAll = srcdata.filter(x => !Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-      train(spark, qttAll, "external")  //外媒广告
-//      train(spark, qttAll, "ctr_extAll")  //外媒广告
-
-      //interact-all-parser3-hourly
-      modelClear()
-      println("training interact 33333333333333333333333333333333")
-      trainLog :+= "training interact 33333333333333333333333333333333"
-      val interactAll = srcdata.filter(x => x.getAs[Int]("adslot_type") == 3)  //互动广告=趣头条的互动广告 + 外媒互动广告
-      train(spark, qttAll, "interact")
-//      train(spark, qttAll, "ctr_interactAll")
-
-
-
-    }
-    Utils.sendMail(trainLog.mkString("\n"), "xg_ctr_trainLog", Seq("rd@aiclk.com")) //Utils.sendMail(trainLog.mkString("\n"), "zyc_TrainLog", Seq("rd@aiclk.com"))
+//    if (isMorning()) {
+//      modelClear()
+//      println("training external 222222222222222222222222222222222")
+//      trainLog :+= "training external 222222222222222222222222222222222"
+//      val extAll = srcdata.filter(x => !Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+//      train(spark, qttAll, "external")  //外媒广告
+////      train(spark, qttAll, "ctr_extAll")  //外媒广告
+//
+//      //interact-all-parser3-hourly
+//      modelClear()
+//      println("training interact 33333333333333333333333333333333")
+//      trainLog :+= "training interact 33333333333333333333333333333333"
+//      val interactAll = srcdata.filter(x => x.getAs[Int]("adslot_type") == 3)  //互动广告=趣头条的互动广告 + 外媒互动广告
+//      train(spark, qttAll, "interact")
+////      train(spark, qttAll, "ctr_interactAll")
+//
+//
+//
+//    }
+    Utils.sendMail(trainLog.mkString("\n"), "xg_ctr_trainLog5day", Seq("rd@aiclk.com")) //Utils.sendMail(trainLog.mkString("\n"), "zyc_TrainLog", Seq("rd@aiclk.com"))
     srcdata.unpersist()
   }
 
@@ -196,27 +196,31 @@ object TrainCtr {
   Utils.sendMail(trainLog.mkString("\n"), "zyc_TrainLog_save", Seq("zhaoyichen@aiclk.com")) //Utils.sendMail(trainLog.mkString("\n"), "zyc_TrainLog", Seq("rd@aiclk.com"))
   */
 
-    model.save("/user/cpc/xgboost/xgbmodeldata/ctr_%s.xgm".format(date)) //在hdfs存xg模型
+    val hdfsPath = "/user/cpc/xgboost/xgbmodeldata/ctr_%s.xgm".format(date)
+    model.save(hdfsPath) //在hdfs存xg模型
+    trainLog :+= "hdfsPath: " + hdfsPath
 
     val xgmodelfilepath = "/home/cpc/anal/xgmodel/ctr_%s.xgm".format(date) // 存xg模型
     model.booster.saveModel(xgmodelfilepath)
+    trainLog :+= "xgmodelfilepath: " + xgmodelfilepath
 
-    val xgbfilepath = "/home/cpc/anal/xgmodel/ctr_%s.xgmpb".format(date) // 存xg模型的pb
-    savePbPack(xgbfilepath)
+    val xgbfilePBpath = "/home/cpc/anal/xgmodel/ctr_%s.xgmpb".format(date) // 存xg模型的pb
+    savePbPack(xgbfilePBpath)
+    trainLog :+= "xgbfilePBpath: " + xgbfilePBpath
 
-    trainLog :+= "protobuf pack " + xgbfilepath
-    irmodel.save(ctx.sparkContext, "/user/cpc/xgboost/xgbmodeldata/ctr_%s.ir".format(date)) // 存IR模型的pb
-//    Utils.sendMail(trainLog.mkString("\n"), "xg_ctr_trainLog", Seq("rd@aiclk.com")) //Utils.sendMail(trainLog.mkString("\n"), "zyc_TrainLog", Seq("rd@aiclk.com"))
+    val irPath = "/user/cpc/xgboost/xgbmodeldata/ctr_%s.ir".format(date)
+    irmodel.save(ctx.sparkContext,irPath ) // 存IR模型的pb
+    trainLog :+= "irPath: " + irPath
 
     trainLog :+= "\n-------update server data------"
     if (isUpdateModel) {
       println("update model~~~~~~~~~~~~~~~~~~~~~~")
       trainLog :+= "\n-------update model------"
+      trainLog :+= MUtils.updateOnlineData2(xgmodelfilepath, destfile + ".gbm", ConfigFactory.load())
+      trainLog :+= MUtils.updateOnlineData2(xgbfilePBpath, destfile + ".mlm", ConfigFactory.load())
     }else {
       println("not update model~~~~~~~~~~~~~~~~~~~~~~")
     }
-//    trainLog :+= MUtils.updateOnlineData2(xgmodelfilepath, destfile + ".gbm", ConfigFactory.load())
-//    trainLog :+= MUtils.updateOnlineData2(xgbfilepath, destfile + ".mlm", ConfigFactory.load())
   }
 
   //限制总的样本数
