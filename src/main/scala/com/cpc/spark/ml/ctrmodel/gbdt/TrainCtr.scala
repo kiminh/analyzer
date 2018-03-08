@@ -25,7 +25,7 @@ import scala.util.Random
 /**
   * Created by roydong on 31/01/2018.
   */
-object Train {
+object TrainCtr {
 
   Logger.getRootLogger.setLevel(Level.WARN)
 
@@ -50,6 +50,23 @@ object Train {
     ctx = spark
 
     import spark.implicits._
+
+
+
+    val df = spark.createDataFrame(
+      Seq((1, "a"), (1, "b"))
+    ).toDF("id", "name")
+
+
+    val cityidx = new StringIndexer().setInputCol("city").setOutputCol("city_idx")
+    val useridx = new StringIndexer().setInputCol("userid").setOutputCol("userid_")
+
+
+
+    //    Seq((0, "a"), (1, "b"), (0, "c"), (0, "a"), (1, "a"), (0, "c"))).toDF("id", "category")
+
+
+
 
     var pathSep = Seq[String]()
     val cal = Calendar.getInstance()
