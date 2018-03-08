@@ -36,6 +36,8 @@ enum AdslotType {
 	CONTENT_FEED = 2;
 	SLOT_INTERACT = 3;
 	SLOT_SPLASH = 4;
+	SLOT_BANNER = 5;
+	SLOT_VIDEO = 6;
 };
 
 message  Adslot {
@@ -135,6 +137,8 @@ enum AdType {
 	THREE_ICON_TEXT	= 4;
 	AD_INTERACT		= 5;
 	AD_SPLASH       = 6;
+	AD_BANNER       = 7;
+	AD_VIDEO        = 8;
 };
 
 enum AdSrc {

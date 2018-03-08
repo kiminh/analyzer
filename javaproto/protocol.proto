@@ -305,6 +305,8 @@ message Event {
             CONTENT_FEED   = 2;  //详情页信息流
             SLOT_INTERACT  = 3;  //互动广告
             SLOT_SPLASH    = 4;  //开屏广告
+            SLOT_BANNER    = 5;  //横幅广告
+            SLOT_VIDEO     = 6;  //视频广告
         }
         // 浏览器类型
         enum BrowserType {
@@ -374,6 +376,8 @@ message Event {
             THREE_TEXT_ICON     = 4;  // 组图广告
             AD_INTERACT		    = 5;  // 互动广告
             AD_SPLASH           = 6;  // 开屏广告
+            AD_BANNER           = 7;  // 横幅广告
+            AD_VIDEO            = 8;  // 视频广告
         };
         // 交互类型
         enum InteractionType {
