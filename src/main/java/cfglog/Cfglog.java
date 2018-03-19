@@ -48,6 +48,7 @@ public final class Cfglog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:cfglog.Rule)
       RuleOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use Rule.newBuilder() to construct.
     private Rule(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -67,6 +68,9 @@ public final class Cfglog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -79,8 +83,8 @@ public final class Cfglog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -224,7 +228,6 @@ public final class Cfglog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -256,7 +259,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasRate()) {
         hash = (37 * hash) + RATE_FIELD_NUMBER;
         hash = (53 * hash) + getRate();
@@ -270,6 +273,17 @@ public final class Cfglog {
       return hash;
     }
 
+    public static cfglog.Cfglog.Rule parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static cfglog.Cfglog.Rule parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static cfglog.Cfglog.Rule parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -429,7 +443,7 @@ public final class Cfglog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -442,12 +456,12 @@ public final class Cfglog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -640,7 +654,7 @@ public final class Cfglog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Rule(input, extensionRegistry);
+        return new Rule(input, extensionRegistry);
       }
     };
 
@@ -694,6 +708,7 @@ public final class Cfglog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:cfglog.HdJumpCfg)
       HdJumpCfgOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use HdJumpCfg.newBuilder() to construct.
     private HdJumpCfg(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -712,6 +727,9 @@ public final class Cfglog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -724,8 +742,8 @@ public final class Cfglog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -839,7 +857,6 @@ public final class Cfglog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -863,7 +880,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (getHdJumpCount() > 0) {
         hash = (37 * hash) + HD_JUMP_FIELD_NUMBER;
         hash = (53 * hash) + getHdJumpList().hashCode();
@@ -873,6 +890,17 @@ public final class Cfglog {
       return hash;
     }
 
+    public static cfglog.Cfglog.HdJumpCfg parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static cfglog.Cfglog.HdJumpCfg parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static cfglog.Cfglog.HdJumpCfg parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -1034,7 +1062,7 @@ public final class Cfglog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -1047,12 +1075,12 @@ public final class Cfglog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -1394,7 +1422,7 @@ public final class Cfglog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new HdJumpCfg(input, extensionRegistry);
+        return new HdJumpCfg(input, extensionRegistry);
       }
     };
 
@@ -1452,6 +1480,7 @@ public final class Cfglog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:cfglog.FormValue)
       FormValueOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use FormValue.newBuilder() to construct.
     private FormValue(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -1471,6 +1500,9 @@ public final class Cfglog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -1483,8 +1515,8 @@ public final class Cfglog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -1655,7 +1687,6 @@ public final class Cfglog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -1687,7 +1718,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasKey()) {
         hash = (37 * hash) + KEY_FIELD_NUMBER;
         hash = (53 * hash) + getKey().hashCode();
@@ -1701,6 +1732,17 @@ public final class Cfglog {
       return hash;
     }
 
+    public static cfglog.Cfglog.FormValue parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static cfglog.Cfglog.FormValue parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static cfglog.Cfglog.FormValue parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -1860,7 +1902,7 @@ public final class Cfglog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -1873,12 +1915,12 @@ public final class Cfglog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -2117,7 +2159,7 @@ public final class Cfglog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new FormValue(input, extensionRegistry);
+        return new FormValue(input, extensionRegistry);
       }
     };
 
@@ -2171,6 +2213,7 @@ public final class Cfglog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:cfglog.Form)
       FormOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use Form.newBuilder() to construct.
     private Form(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -2189,6 +2232,9 @@ public final class Cfglog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -2201,8 +2247,8 @@ public final class Cfglog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -2316,7 +2362,6 @@ public final class Cfglog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -2340,7 +2385,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (getValuesCount() > 0) {
         hash = (37 * hash) + VALUES_FIELD_NUMBER;
         hash = (53 * hash) + getValuesList().hashCode();
@@ -2350,6 +2395,17 @@ public final class Cfglog {
       return hash;
     }
 
+    public static cfglog.Cfglog.Form parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static cfglog.Cfglog.Form parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static cfglog.Cfglog.Form parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -2511,7 +2567,7 @@ public final class Cfglog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -2524,12 +2580,12 @@ public final class Cfglog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -2871,7 +2927,7 @@ public final class Cfglog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Form(input, extensionRegistry);
+        return new Form(input, extensionRegistry);
       }
     };
 
@@ -3058,6 +3114,7 @@ public final class Cfglog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:cfglog.NoticeLogBody)
       NoticeLogBodyOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use NoticeLogBody.newBuilder() to construct.
     private NoticeLogBody(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -3084,6 +3141,9 @@ public final class Cfglog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -3096,8 +3156,8 @@ public final class Cfglog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -3707,7 +3767,6 @@ public final class Cfglog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -3778,7 +3837,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (getAidCount() > 0) {
         hash = (37 * hash) + AID_FIELD_NUMBER;
         hash = (53 * hash) + getAidList().hashCode();
@@ -3828,6 +3887,17 @@ public final class Cfglog {
       return hash;
     }
 
+    public static cfglog.Cfglog.NoticeLogBody parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static cfglog.Cfglog.NoticeLogBody parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static cfglog.Cfglog.NoticeLogBody parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -4061,7 +4131,7 @@ public final class Cfglog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -4074,12 +4144,12 @@ public final class Cfglog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -5133,7 +5203,7 @@ public final class Cfglog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new NoticeLogBody(input, extensionRegistry);
+        return new NoticeLogBody(input, extensionRegistry);
       }
     };
 
@@ -5195,7 +5265,7 @@ public final class Cfglog {
       "ot_id\030\002 \001(\t\022\020\n\010url_path\030\003 \002(\t\022\032\n\004form\030\004 " +
       "\002(\0132\014.cfglog.Form\022\021\n\tresp_body\030\005 \001(\t\022&\n\013" +
       "hd_jump_cfg\030\006 \001(\0132\021.cfglog.HdJumpCfg\022\024\n\014" +
-      "redirect_url\030\007 \001(\t\022\021\n\ttimestamp\030\010 \001(\r\022\023\n",
+      "redirect_url\030\007 \001(\t\022\021\n\ttimestamp\030\010 \001(\r\022\023\n" +
       "\013request_url\030\t \001(\t\022\023\n\013adslot_conf\030\n \001(\t\022" +
       "\025\n\rtemplate_conf\030\013 \003(\t"
     };
