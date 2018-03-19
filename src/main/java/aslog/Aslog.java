@@ -1488,7 +1488,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.AppInfo)
       AppInfoOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use AppInfo.newBuilder() to construct.
     private AppInfo(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -1508,9 +1507,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -1523,8 +1519,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -1687,6 +1683,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -1732,17 +1729,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.AppInfo parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.AppInfo parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.AppInfo parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -1902,7 +1888,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -1915,12 +1901,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -2153,7 +2139,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new AppInfo(input, extensionRegistry);
+          return new AppInfo(input, extensionRegistry);
       }
     };
 
@@ -2211,7 +2197,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.SiteInfo)
       SiteInfoOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use SiteInfo.newBuilder() to construct.
     private SiteInfo(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -2231,9 +2216,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -2246,8 +2228,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -2410,6 +2392,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -2455,17 +2438,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.SiteInfo parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.SiteInfo parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.SiteInfo parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -2625,7 +2597,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -2638,12 +2610,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -2876,7 +2848,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new SiteInfo(input, extensionRegistry);
+          return new SiteInfo(input, extensionRegistry);
       }
     };
 
@@ -2924,7 +2896,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Size)
       SizeOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use Size.newBuilder() to construct.
     private Size(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -2944,9 +2915,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -2959,8 +2927,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -3077,6 +3045,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -3122,17 +3091,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.Size parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.Size parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.Size parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -3292,7 +3250,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -3305,12 +3263,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -3457,7 +3415,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new Size(input, extensionRegistry);
+          return new Size(input, extensionRegistry);
       }
     };
 
@@ -3573,7 +3531,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Media)
       MediaOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use Media.newBuilder() to construct.
     private Media(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -3596,9 +3553,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -3611,8 +3565,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -3980,6 +3934,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -4069,17 +4024,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.Media parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.Media parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.Media parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -4287,7 +4231,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -4300,12 +4244,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -4941,7 +4885,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new Media(input, extensionRegistry);
+          return new Media(input, extensionRegistry);
       }
     };
 
@@ -5221,7 +5165,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Adslot)
       AdslotOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use Adslot.newBuilder() to construct.
     private Adslot(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -5252,9 +5195,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -5267,8 +5207,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -5950,6 +5890,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -6109,17 +6050,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.Adslot parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.Adslot parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.Adslot parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -6360,7 +6290,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -6373,12 +6303,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -7428,7 +7358,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new Adslot(input, extensionRegistry);
+          return new Adslot(input, extensionRegistry);
       }
     };
 
@@ -7481,7 +7411,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Network)
       NetworkOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use Network.newBuilder() to construct.
     private Network(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -7501,9 +7430,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -7516,8 +7442,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -7668,6 +7594,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -7712,17 +7639,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.Network parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.Network parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.Network parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -7882,7 +7798,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -7895,12 +7811,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -8097,7 +8013,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new Network(input, extensionRegistry);
+          return new Network(input, extensionRegistry);
       }
     };
 
@@ -8163,7 +8079,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Version)
       VersionOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use Version.newBuilder() to construct.
     private Version(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -8185,9 +8100,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -8200,8 +8112,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -8368,6 +8280,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -8431,17 +8344,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.Version parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.Version parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.Version parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -8613,7 +8515,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -8626,12 +8528,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -8845,7 +8747,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new Version(input, extensionRegistry);
+          return new Version(input, extensionRegistry);
       }
     };
 
@@ -8915,7 +8817,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.DeviceId)
       DeviceIdOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use DeviceId.newBuilder() to construct.
     private DeviceId(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -8936,9 +8837,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -8951,8 +8849,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -9138,6 +9036,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -9192,17 +9091,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.DeviceId parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.DeviceId parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.DeviceId parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -9368,7 +9256,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -9381,12 +9269,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -9634,7 +9522,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new DeviceId(input, extensionRegistry);
+          return new DeviceId(input, extensionRegistry);
       }
     };
 
@@ -9877,7 +9765,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Device)
       DeviceOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use Device.newBuilder() to construct.
     private Device(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -9910,9 +9797,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -9925,8 +9809,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -10668,6 +10552,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -10834,17 +10719,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.Device parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.Device parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.Device parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -11107,7 +10981,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -11120,12 +10994,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -12417,7 +12291,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new Device(input, extensionRegistry);
+          return new Device(input, extensionRegistry);
       }
     };
 
@@ -12469,7 +12343,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Client)
       ClientOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use Client.newBuilder() to construct.
     private Client(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -12488,9 +12361,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -12503,8 +12373,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -12644,6 +12514,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -12688,17 +12559,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.Client parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.Client parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.Client parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -12867,7 +12727,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -12880,12 +12740,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -13124,7 +12984,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new Client(input, extensionRegistry);
+          return new Client(input, extensionRegistry);
       }
     };
 
@@ -13277,7 +13137,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.DspReqInfo)
       DspReqInfoOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use DspReqInfo.newBuilder() to construct.
     private DspReqInfo(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -13307,9 +13166,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -13322,8 +13178,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -13794,6 +13650,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -13935,17 +13792,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.DspReqInfo parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.DspReqInfo parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.DspReqInfo parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -14165,7 +14011,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -14178,12 +14024,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -14819,7 +14665,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new DspReqInfo(input, extensionRegistry);
+          return new DspReqInfo(input, extensionRegistry);
       }
     };
 
@@ -15230,7 +15076,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.AdInfo)
       AdInfoOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use AdInfo.newBuilder() to construct.
     private AdInfo(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -15274,9 +15119,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -15289,8 +15131,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -16331,6 +16173,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -16592,17 +16435,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.AdInfo parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.AdInfo parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.AdInfo parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -16907,7 +16739,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -16920,12 +16752,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -18373,7 +18205,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new AdInfo(input, extensionRegistry);
+          return new AdInfo(input, extensionRegistry);
       }
     };
 
@@ -18421,7 +18253,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.AdDspRet)
       AdDspRetOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use AdDspRet.newBuilder() to construct.
     private AdDspRet(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -18441,9 +18272,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -18456,8 +18284,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -18581,6 +18409,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -18625,17 +18454,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.AdDspRet parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.AdDspRet parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.AdDspRet parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -18795,7 +18613,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -18808,12 +18626,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -18964,7 +18782,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new AdDspRet(input, extensionRegistry);
+          return new AdDspRet(input, extensionRegistry);
       }
     };
 
@@ -19039,7 +18857,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Location)
       LocationOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use Location.newBuilder() to construct.
     private Location(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -19062,9 +18879,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -19077,8 +18891,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -19268,6 +19082,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -19340,17 +19155,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.Location parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.Location parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.Location parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -19528,7 +19332,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -19541,12 +19345,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -19792,7 +19596,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new Location(input, extensionRegistry);
+          return new Location(input, extensionRegistry);
       }
     };
 
@@ -19856,7 +19660,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.InterestItem)
       InterestItemOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use InterestItem.newBuilder() to construct.
     private InterestItem(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -19876,9 +19679,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -19891,8 +19691,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -20017,6 +19817,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -20064,17 +19865,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.InterestItem parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.InterestItem parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.InterestItem parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -20234,7 +20024,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -20247,12 +20037,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -20425,7 +20215,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new InterestItem(input, extensionRegistry);
+          return new InterestItem(input, extensionRegistry);
       }
     };
 
@@ -20635,7 +20425,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.UserProfile)
       UserProfileOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use UserProfile.newBuilder() to construct.
     private UserProfile(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -20662,9 +20451,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -20677,8 +20463,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -21087,6 +20873,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -21192,17 +20979,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.UserProfile parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.UserProfile parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.UserProfile parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -21414,7 +21190,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -21427,12 +21203,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -22249,7 +22025,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new UserProfile(input, extensionRegistry);
+          return new UserProfile(input, extensionRegistry);
       }
     };
 
@@ -22745,7 +22521,6 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.NoticeLogBody)
       NoticeLogBodyOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use NoticeLogBody.newBuilder() to construct.
     private NoticeLogBody(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -22781,9 +22556,6 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -22796,8 +22568,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -24125,6 +23897,7 @@ public final class Aslog {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -24344,17 +24117,6 @@ public final class Aslog {
       return hash;
     }
 
-    public static aslog.Aslog.NoticeLogBody parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static aslog.Aslog.NoticeLogBody parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static aslog.Aslog.NoticeLogBody parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -24745,7 +24507,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -24758,12 +24520,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -27876,7 +27638,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new NoticeLogBody(input, extensionRegistry);
+          return new NoticeLogBody(input, extensionRegistry);
       }
     };
 
@@ -27998,7 +27760,7 @@ public final class Aslog {
       "\003app\030\004 \001(\0132\016.aslog.AppInfo\022\035\n\004site\030\005 \001(\013" +
       "2\017.aslog.SiteInfo\022\020\n\010category\030\006 \001(\r\022\024\n\014s" +
       "ubaccountid\030\007 \001(\t\"\213\002\n\006Adslot\022\n\n\002id\030\001 \002(\t" +
-      "\022\037\n\004type\030\002 \002(\0162\021.aslog.AdslotType\022\031\n\004siz" +
+      "\022\037\n\004type\030\002 \002(\0162\021.aslog.AdslotType\022\031\n\004siz",
       "e\030\003 \002(\0132\013.aslog.Size\022\020\n\010capacity\030\004 \002(\r\022\020" +
       "\n\010inittime\030\005 \001(\004\022\r\n\005apseq\030\006 \001(\r\022\r\n\005apuid" +
       "\030\007 \001(\t\022\021\n\tbuildtype\030\010 \001(\r\022\020\n\010floorbid\030\t " +
@@ -28008,7 +27770,7 @@ public final class Aslog {
       ".NetworkType\022\n\n\002ip\030\002 \002(\t\"E\n\007Version\022\r\n\005m" +
       "ajor\030\001 \002(\r\022\r\n\005minor\030\002 \001(\r\022\r\n\005micro\030\003 \001(\r" +
       "\022\r\n\005build\030\004 \001(\r\"K\n\010DeviceId\022!\n\004type\030\001 \002(" +
-      "\0162\023.aslog.DeviceIdType\022\n\n\002id\030\002 \002(\t\022\020\n\010or" +
+      "\0162\023.aslog.DeviceIdType\022\n\n\002id\030\002 \002(\t\022\020\n\010or",
       "iginal\030\003 \001(\010\"\336\002\n\006Device\022\031\n\002os\030\001 \002(\0162\r.as" +
       "log.OSType\022!\n\tosversion\030\002 \002(\0132\016.aslog.Ve" +
       "rsion\022\034\n\003ids\030\003 \003(\0132\017.aslog.DeviceId\022\r\n\005b" +
@@ -28018,7 +27780,7 @@ public final class Aslog {
       "uid\030\n \001(\t\022\020\n\010screen_w\030\013 \001(\005\022\020\n\010screen_h\030" +
       "\014 \001(\005\022\021\n\tmatchidfa\030\r \001(\t\022\022\n\nphoneprice\030\016" +
       " \001(\r\022\022\n\nphonelevel\030\017 \001(\r\022\023\n\013brand_title\030" +
-      "\020 \001(\t\"J\n\006Client\022\037\n\004type\030\001 \002(\0162\021.aslog.Cl" +
+      "\020 \001(\t\"J\n\006Client\022\037\n\004type\030\001 \002(\0162\021.aslog.Cl",
       "ientType\022\037\n\007version\030\002 \001(\0132\016.aslog.Versio" +
       "n\"\223\002\n\nDspReqInfo\022\031\n\003src\030\001 \002(\0162\014.aslog.Ad" +
       "Src\022\022\n\ndspmediaid\030\002 \001(\t\022\021\n\tretAdsNum\030\003 \001" +
@@ -28028,7 +27790,7 @@ public final class Aslog {
       "\030\t \001(\003\022\034\n\024blackMediaFilterTime\030\n \001(\003\022\024\n\014" +
       "fixClickTime\030\013 \001(\003\022\023\n\013dspadslotid\030\014 \001(\t\"" +
       "\231\004\n\006AdInfo\022\033\n\004type\030\001 \002(\0162\r.aslog.AdType\022" +
-      "\031\n\003src\030\002 \002(\0162\014.aslog.AdSrc\022+\n\013interactio" +
+      "\031\n\003src\030\002 \002(\0162\014.aslog.AdSrc\022+\n\013interactio",
       "n\030\003 \002(\0162\026.aslog.InteractionType\022\014\n\004adid\030" +
       "\004 \001(\r\022\017\n\007groupid\030\005 \001(\r\022\016\n\006planid\030\006 \001(\r\022\016" +
       "\n\006userid\030\007 \001(\r\022\013\n\003bid\030\010 \001(\r\022\r\n\005price\030\t \001" +
@@ -28038,7 +27800,7 @@ public final class Aslog {
       "shold\030\021 \001(\004\022\021\n\tcvr_thres\030\022 \001(\004\022\022\n\nmateri" +
       "alid\030\023 \003(\r\022\024\n\014trigger_type\030\024 \001(\r\022\020\n\010disc" +
       "ount\030\025 \002(\005\022\022\n\nshow_count\030\026 \001(\005\022\024\n\014dsp_me" +
-      "dia_id\030\027 \001(\t\022\025\n\rdsp_adslot_id\030\030 \001(\t\022\020\n\010a" +
+      "dia_id\030\027 \001(\t\022\025\n\rdsp_adslot_id\030\030 \001(\t\022\020\n\010a",
       "did_str\030\031 \001(\t\022,\n\016material_level\030\032 \001(\0162\024." +
       "aslog.MaterialLevel\"4\n\010AdDspRet\022\031\n\003src\030\001" +
       " \002(\0162\014.aslog.AdSrc\022\r\n\005adnum\030\002 \002(\r\"\\\n\010Loc" +
@@ -28048,7 +27810,7 @@ public final class Aslog {
       "\001(\004\022\r\n\005score\030\002 \001(\004\"\272\001\n\013UserProfile\022&\n\tin" +
       "terests\030\001 \003(\0132\023.aslog.InterestItem\022\013\n\003ag" +
       "e\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpc" +
-      "ategory\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshare" +
+      "ategory\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshare",
       "_coin\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\022\021\n\treq_coun" +
       "t\030\t \001(\r\"\350\004\n\rNoticeLogBody\022\020\n\010searchid\030\001 " +
       "\002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033\n\005media\030\003 \001(\0132\014." +
@@ -28058,7 +27820,7 @@ public final class Aslog {
       "aslog.AdDspRet\022\r\n\005debug\030\010 \001(\010\022\035\n\006client\030" +
       "\t \001(\0132\r.aslog.Client\022\037\n\007network\030\n \001(\0132\016." +
       "aslog.Network\022\017\n\007exptags\030\013 \003(\t\022!\n\010locati" +
-      "on\030\014 \001(\0132\017.aslog.Location\022\020\n\010sourceip\030\r " +
+      "on\030\014 \001(\0132\017.aslog.Location\022\020\n\010sourceip\030\r ",
       "\001(\t\022\021\n\tintertype\030\016 \001(\r\022\'\n\013userprofile\030\017 " +
       "\001(\0132\022.aslog.UserProfile\022\025\n\rdupplanfilter" +
       "\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021 \003(\r\022\024\n\014lowcvrfi" +
@@ -28068,7 +27830,7 @@ public final class Aslog {
       " \003(\r\022\024\n\014dsp_strategy\030\033 \001(\t*3\n\tMediaType\022" +
       "\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*" +
       "r\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_" +
-      "FEED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLOT_SPLASH" +
+      "FEED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLOT_SPLASH",
       "\020\004\022\017\n\013SLOT_BANNER\020\005\022\016\n\nSLOT_VIDEO\020\006*P\n\013N" +
       "etworkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI\020" +
       "\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?\n" +
@@ -28078,7 +27840,7 @@ public final class Aslog {
       "rome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022" +
       "\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEM" +
       "obileBrowser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQ" +
-      "Chat\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNOWN" +
+      "Chat\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNOWN",
       "\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEV" +
       "ID_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCOO" +
       "KIE\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVID_IMSI" +
@@ -28088,7 +27850,7 @@ public final class Aslog {
       "AD_VIDEO\020\010*9\n\005AdSrc\022\007\n\003CPC\020\001\022\n\n\006INMOBI\020\002" +
       "\022\013\n\007TANXSSP\020\003\022\016\n\nBOTTOMINIG\020\004*i\n\017Interac" +
       "tionType\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014" +
-      "\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010" +
+      "\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010",
       "\n\004MAIL\020\005\022\006\n\002GP\020\006*\203\001\n\rMaterialLevel\022\032\n\026MA" +
       "TERIAL_LEVEL_UNKNOWN\020\000\022\024\n\020MATERIAL_LEVEL" +
       "_1\020\001\022\024\n\020MATERIAL_LEVEL_2\020\002\022\024\n\020MATERIAL_L" +

@@ -43,7 +43,6 @@ public final class Userprofile {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:userprofile.AdShow)
       AdShowOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use AdShow.newBuilder() to construct.
     private AdShow(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -56,19 +55,14 @@ public final class Userprofile {
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return this.unknownFields;
+      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
     }
     private AdShow(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -78,8 +72,7 @@ public final class Userprofile {
               done = true;
               break;
             default: {
-              if (!parseUnknownFieldProto3(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!input.skipField(tag)) {
                 done = true;
               }
               break;
@@ -102,7 +95,6 @@ public final class Userprofile {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -162,7 +154,6 @@ public final class Userprofile {
       if (count_ != 0) {
         output.writeInt32(2, count_);
       }
-      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -178,11 +169,11 @@ public final class Userprofile {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(2, count_);
       }
-      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -198,7 +189,6 @@ public final class Userprofile {
           == other.getAdid());
       result = result && (getCount()
           == other.getCount());
-      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -218,17 +208,6 @@ public final class Userprofile {
       return hash;
     }
 
-    public static userprofile.Userprofile.AdShow parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static userprofile.Userprofile.AdShow parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static userprofile.Userprofile.AdShow parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -379,7 +358,7 @@ public final class Userprofile {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -392,12 +371,12 @@ public final class Userprofile {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -417,7 +396,6 @@ public final class Userprofile {
         if (other.getCount() != 0) {
           setCount(other.getCount());
         }
-        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
@@ -521,12 +499,12 @@ public final class Userprofile {
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFieldsProto3(unknownFields);
+        return this;
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
+        return this;
       }
 
 
@@ -549,7 +527,7 @@ public final class Userprofile {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new AdShow(input, extensionRegistry);
+          return new AdShow(input, extensionRegistry);
       }
     };
 
@@ -608,7 +586,6 @@ public final class Userprofile {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:userprofile.AdFreq)
       AdFreqOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use AdFreq.newBuilder() to construct.
     private AdFreq(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -621,19 +598,14 @@ public final class Userprofile {
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return this.unknownFields;
+      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
     }
     private AdFreq(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -643,8 +615,7 @@ public final class Userprofile {
               done = true;
               break;
             default: {
-              if (!parseUnknownFieldProto3(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!input.skipField(tag)) {
                 done = true;
               }
               break;
@@ -674,7 +645,6 @@ public final class Userprofile {
         if (((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
           ads_ = java.util.Collections.unmodifiableList(ads_);
         }
-        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -753,7 +723,6 @@ public final class Userprofile {
       if (reqCount_ != 0) {
         output.writeUInt32(2, reqCount_);
       }
-      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -769,11 +738,11 @@ public final class Userprofile {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(2, reqCount_);
       }
-      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -789,7 +758,6 @@ public final class Userprofile {
           .equals(other.getAdsList());
       result = result && (getReqCount()
           == other.getReqCount());
-      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -811,17 +779,6 @@ public final class Userprofile {
       return hash;
     }
 
-    public static userprofile.Userprofile.AdFreq parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static userprofile.Userprofile.AdFreq parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static userprofile.Userprofile.AdFreq parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -988,7 +945,7 @@ public final class Userprofile {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -1001,12 +958,12 @@ public final class Userprofile {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -1049,7 +1006,6 @@ public final class Userprofile {
         if (other.getReqCount() != 0) {
           setReqCount(other.getReqCount());
         }
-        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
@@ -1344,12 +1300,12 @@ public final class Userprofile {
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFieldsProto3(unknownFields);
+        return this;
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
+        return this;
       }
 
 
@@ -1372,7 +1328,7 @@ public final class Userprofile {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new AdFreq(input, extensionRegistry);
+          return new AdFreq(input, extensionRegistry);
       }
     };
 
@@ -1448,7 +1404,6 @@ public final class Userprofile {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:userprofile.APPPackage)
       APPPackageOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use APPPackage.newBuilder() to construct.
     private APPPackage(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -1463,19 +1418,14 @@ public final class Userprofile {
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return this.unknownFields;
+      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
     }
     private APPPackage(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -1485,8 +1435,7 @@ public final class Userprofile {
               done = true;
               break;
             default: {
-              if (!parseUnknownFieldProto3(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!input.skipField(tag)) {
                 done = true;
               }
               break;
@@ -1521,7 +1470,6 @@ public final class Userprofile {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -1663,7 +1611,6 @@ public final class Userprofile {
       if (lastUpdateTime_ != 0L) {
         output.writeInt64(4, lastUpdateTime_);
       }
-      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -1685,11 +1632,11 @@ public final class Userprofile {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(4, lastUpdateTime_);
       }
-      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -1709,7 +1656,6 @@ public final class Userprofile {
           == other.getFirstInstallTime());
       result = result && (getLastUpdateTime()
           == other.getLastUpdateTime());
-      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -1735,17 +1681,6 @@ public final class Userprofile {
       return hash;
     }
 
-    public static userprofile.Userprofile.APPPackage parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static userprofile.Userprofile.APPPackage parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static userprofile.Userprofile.APPPackage parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -1902,7 +1837,7 @@ public final class Userprofile {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -1915,12 +1850,12 @@ public final class Userprofile {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -1948,7 +1883,6 @@ public final class Userprofile {
         if (other.getLastUpdateTime() != 0L) {
           setLastUpdateTime(other.getLastUpdateTime());
         }
-        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
@@ -2206,12 +2140,12 @@ public final class Userprofile {
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFieldsProto3(unknownFields);
+        return this;
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
+        return this;
       }
 
 
@@ -2234,7 +2168,7 @@ public final class Userprofile {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new APPPackage(input, extensionRegistry);
+          return new APPPackage(input, extensionRegistry);
       }
     };
 
@@ -2282,7 +2216,6 @@ public final class Userprofile {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:userprofile.InterestItem)
       InterestItemOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use InterestItem.newBuilder() to construct.
     private InterestItem(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -2295,19 +2228,14 @@ public final class Userprofile {
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return this.unknownFields;
+      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
     }
     private InterestItem(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -2317,8 +2245,7 @@ public final class Userprofile {
               done = true;
               break;
             default: {
-              if (!parseUnknownFieldProto3(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!input.skipField(tag)) {
                 done = true;
               }
               break;
@@ -2341,7 +2268,6 @@ public final class Userprofile {
         throw new com.google.protobuf.InvalidProtocolBufferException(
             e).setUnfinishedMessage(this);
       } finally {
-        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -2401,7 +2327,6 @@ public final class Userprofile {
       if (score_ != 0) {
         output.writeInt32(2, score_);
       }
-      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -2417,11 +2342,11 @@ public final class Userprofile {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(2, score_);
       }
-      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -2437,7 +2362,6 @@ public final class Userprofile {
           == other.getTag());
       result = result && (getScore()
           == other.getScore());
-      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -2457,17 +2381,6 @@ public final class Userprofile {
       return hash;
     }
 
-    public static userprofile.Userprofile.InterestItem parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static userprofile.Userprofile.InterestItem parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static userprofile.Userprofile.InterestItem parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -2618,7 +2531,7 @@ public final class Userprofile {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -2631,12 +2544,12 @@ public final class Userprofile {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -2656,7 +2569,6 @@ public final class Userprofile {
         if (other.getScore() != 0) {
           setScore(other.getScore());
         }
-        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
@@ -2760,12 +2672,12 @@ public final class Userprofile {
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFieldsProto3(unknownFields);
+        return this;
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
+        return this;
       }
 
 
@@ -2788,7 +2700,7 @@ public final class Userprofile {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new InterestItem(input, extensionRegistry);
+          return new InterestItem(input, extensionRegistry);
       }
     };
 
@@ -3040,7 +2952,6 @@ public final class Userprofile {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:userprofile.UserProfile)
       UserProfileOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use UserProfile.newBuilder() to construct.
     private UserProfile(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -3063,19 +2974,14 @@ public final class Userprofile {
     @java.lang.Override
     public final com.google.protobuf.UnknownFieldSet
     getUnknownFields() {
-      return this.unknownFields;
+      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
     }
     private UserProfile(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
-      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
-          com.google.protobuf.UnknownFieldSet.newBuilder();
       try {
         boolean done = false;
         while (!done) {
@@ -3085,8 +2991,7 @@ public final class Userprofile {
               done = true;
               break;
             default: {
-              if (!parseUnknownFieldProto3(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!input.skipField(tag)) {
                 done = true;
               }
               break;
@@ -3181,7 +3086,6 @@ public final class Userprofile {
         if (((mutable_bitField0_ & 0x00000800) == 0x00000800)) {
           interestedWords_ = java.util.Collections.unmodifiableList(interestedWords_);
         }
-        this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
       }
     }
@@ -3557,7 +3461,6 @@ public final class Userprofile {
       for (int i = 0; i < interestedWords_.size(); i++) {
         output.writeMessage(12, interestedWords_.get(i));
       }
-      unknownFields.writeTo(output);
     }
 
     public int getSerializedSize() {
@@ -3612,11 +3515,11 @@ public final class Userprofile {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(12, interestedWords_.get(i));
       }
-      size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -3652,7 +3555,6 @@ public final class Userprofile {
           == other.getNewUser());
       result = result && getInterestedWordsList()
           .equals(other.getInterestedWordsList());
-      result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
 
@@ -3698,17 +3600,6 @@ public final class Userprofile {
       return hash;
     }
 
-    public static userprofile.Userprofile.UserProfile parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static userprofile.Userprofile.UserProfile parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static userprofile.Userprofile.UserProfile parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -3931,7 +3822,7 @@ public final class Userprofile {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -3944,12 +3835,12 @@ public final class Userprofile {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -4069,7 +3960,6 @@ public final class Userprofile {
             }
           }
         }
-        this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
       }
@@ -5427,12 +5317,12 @@ public final class Userprofile {
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.setUnknownFieldsProto3(unknownFields);
+        return this;
       }
 
       public final Builder mergeUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
-        return super.mergeUnknownFields(unknownFields);
+        return this;
       }
 
 
@@ -5455,7 +5345,7 @@ public final class Userprofile {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new UserProfile(input, extensionRegistry);
+          return new UserProfile(input, extensionRegistry);
       }
     };
 
@@ -5517,7 +5407,7 @@ public final class Userprofile {
       "\030\004 \001(\003\"*\n\014InterestItem\022\013\n\003tag\030\001 \001(\005\022\r\n\005s" +
       "core\030\002 \001(\005\"\260\002\n\013UserProfile\022\r\n\005devid\030\001 \001(" +
       "\t\022\013\n\003age\030\002 \001(\005\022\013\n\003sex\030\003 \001(\005\022\014\n\004coin\030\004 \001(" +
-      "\005\022,\n\tinterests\030\005 \003(\0132\031.userprofile.Inter" +
+      "\005\022,\n\tinterests\030\005 \003(\0132\031.userprofile.Inter",
       "estItem\022+\n\ninstallpkg\030\006 \003(\0132\027.userprofil" +
       "e.APPPackage\022\021\n\tpcategory\030\007 \001(\005\022\021\n\tincr_" +
       "coin\030\010 \001(\005\022\020\n\010antispam\030\t \001(\005\022\022\n\nshare_co" +

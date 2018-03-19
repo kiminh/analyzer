@@ -66,7 +66,6 @@ public final class Data {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:data.ValueType)
       ValueTypeOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use ValueType.newBuilder() to construct.
     private ValueType(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -88,9 +87,6 @@ public final class Data {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -103,8 +99,8 @@ public final class Data {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -294,6 +290,7 @@ public final class Data {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -361,17 +358,6 @@ public final class Data {
       return hash;
     }
 
-    public static data.Data.ValueType parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static data.Data.ValueType parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static data.Data.ValueType parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -543,7 +529,7 @@ public final class Data {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -556,12 +542,12 @@ public final class Data {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -818,7 +804,7 @@ public final class Data {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new ValueType(input, extensionRegistry);
+          return new ValueType(input, extensionRegistry);
       }
     };
 
@@ -884,7 +870,6 @@ public final class Data {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:data.Log)
       LogOrBuilder {
-  private static final long serialVersionUID = 0L;
     // Use Log.newBuilder() to construct.
     private Log(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -904,9 +889,6 @@ public final class Data {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
-      if (extensionRegistry == null) {
-        throw new java.lang.NullPointerException();
-      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -919,8 +901,8 @@ public final class Data {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(
-                  input, unknownFields, extensionRegistry, tag)) {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -1009,7 +991,6 @@ public final class Data {
         com.google.protobuf.GeneratedMessageV3 implements
         // @@protoc_insertion_point(message_implements:data.Log.Field)
         FieldOrBuilder {
-    private static final long serialVersionUID = 0L;
       // Use Field.newBuilder() to construct.
       private Field(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
         super(builder);
@@ -1028,9 +1009,6 @@ public final class Data {
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
         this();
-        if (extensionRegistry == null) {
-          throw new java.lang.NullPointerException();
-        }
         int mutable_bitField0_ = 0;
         com.google.protobuf.UnknownFieldSet.Builder unknownFields =
             com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -1043,8 +1021,8 @@ public final class Data {
                 done = true;
                 break;
               default: {
-                if (!parseUnknownField(
-                    input, unknownFields, extensionRegistry, tag)) {
+                if (!parseUnknownField(input, unknownFields,
+                                       extensionRegistry, tag)) {
                   done = true;
                 }
                 break;
@@ -1123,7 +1101,6 @@ public final class Data {
           com.google.protobuf.GeneratedMessageV3 implements
           // @@protoc_insertion_point(message_implements:data.Log.Field.Map)
           MapOrBuilder {
-      private static final long serialVersionUID = 0L;
         // Use Map.newBuilder() to construct.
         private Map(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
           super(builder);
@@ -1142,9 +1119,6 @@ public final class Data {
             com.google.protobuf.ExtensionRegistryLite extensionRegistry)
             throws com.google.protobuf.InvalidProtocolBufferException {
           this();
-          if (extensionRegistry == null) {
-            throw new java.lang.NullPointerException();
-          }
           int mutable_bitField0_ = 0;
           com.google.protobuf.UnknownFieldSet.Builder unknownFields =
               com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -1157,8 +1131,8 @@ public final class Data {
                   done = true;
                   break;
                 default: {
-                  if (!parseUnknownField(
-                      input, unknownFields, extensionRegistry, tag)) {
+                  if (!parseUnknownField(input, unknownFields,
+                                         extensionRegistry, tag)) {
                     done = true;
                   }
                   break;
@@ -1312,6 +1286,7 @@ public final class Data {
           return size;
         }
 
+        private static final long serialVersionUID = 0L;
         @java.lang.Override
         public boolean equals(final java.lang.Object obj) {
           if (obj == this) {
@@ -1357,17 +1332,6 @@ public final class Data {
           return hash;
         }
 
-        public static data.Data.Log.Field.Map parseFrom(
-            java.nio.ByteBuffer data)
-            throws com.google.protobuf.InvalidProtocolBufferException {
-          return PARSER.parseFrom(data);
-        }
-        public static data.Data.Log.Field.Map parseFrom(
-            java.nio.ByteBuffer data,
-            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-            throws com.google.protobuf.InvalidProtocolBufferException {
-          return PARSER.parseFrom(data, extensionRegistry);
-        }
         public static data.Data.Log.Field.Map parseFrom(
             com.google.protobuf.ByteString data)
             throws com.google.protobuf.InvalidProtocolBufferException {
@@ -1536,7 +1500,7 @@ public final class Data {
           }
           public Builder setField(
               com.google.protobuf.Descriptors.FieldDescriptor field,
-              java.lang.Object value) {
+              Object value) {
             return (Builder) super.setField(field, value);
           }
           public Builder clearField(
@@ -1549,12 +1513,12 @@ public final class Data {
           }
           public Builder setRepeatedField(
               com.google.protobuf.Descriptors.FieldDescriptor field,
-              int index, java.lang.Object value) {
+              int index, Object value) {
             return (Builder) super.setRepeatedField(field, index, value);
           }
           public Builder addRepeatedField(
               com.google.protobuf.Descriptors.FieldDescriptor field,
-              java.lang.Object value) {
+              Object value) {
             return (Builder) super.addRepeatedField(field, value);
           }
           public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -1830,7 +1794,7 @@ public final class Data {
               com.google.protobuf.CodedInputStream input,
               com.google.protobuf.ExtensionRegistryLite extensionRegistry)
               throws com.google.protobuf.InvalidProtocolBufferException {
-            return new Map(input, extensionRegistry);
+              return new Map(input, extensionRegistry);
           }
         };
 
@@ -1922,6 +1886,7 @@ public final class Data {
         return size;
       }
 
+      private static final long serialVersionUID = 0L;
       @java.lang.Override
       public boolean equals(final java.lang.Object obj) {
         if (obj == this) {
@@ -1955,17 +1920,6 @@ public final class Data {
         return hash;
       }
 
-      public static data.Data.Log.Field parseFrom(
-          java.nio.ByteBuffer data)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return PARSER.parseFrom(data);
-      }
-      public static data.Data.Log.Field parseFrom(
-          java.nio.ByteBuffer data,
-          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-          throws com.google.protobuf.InvalidProtocolBufferException {
-        return PARSER.parseFrom(data, extensionRegistry);
-      }
       public static data.Data.Log.Field parseFrom(
           com.google.protobuf.ByteString data)
           throws com.google.protobuf.InvalidProtocolBufferException {
@@ -2127,7 +2081,7 @@ public final class Data {
         }
         public Builder setField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
-            java.lang.Object value) {
+            Object value) {
           return (Builder) super.setField(field, value);
         }
         public Builder clearField(
@@ -2140,12 +2094,12 @@ public final class Data {
         }
         public Builder setRepeatedField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
-            int index, java.lang.Object value) {
+            int index, Object value) {
           return (Builder) super.setRepeatedField(field, index, value);
         }
         public Builder addRepeatedField(
             com.google.protobuf.Descriptors.FieldDescriptor field,
-            java.lang.Object value) {
+            Object value) {
           return (Builder) super.addRepeatedField(field, value);
         }
         public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -2487,7 +2441,7 @@ public final class Data {
             com.google.protobuf.CodedInputStream input,
             com.google.protobuf.ExtensionRegistryLite extensionRegistry)
             throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Field(input, extensionRegistry);
+            return new Field(input, extensionRegistry);
         }
       };
 
@@ -2640,6 +2594,7 @@ public final class Data {
       return size;
     }
 
+    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -2695,17 +2650,6 @@ public final class Data {
       return hash;
     }
 
-    public static data.Data.Log parseFrom(
-        java.nio.ByteBuffer data)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data);
-    }
-    public static data.Data.Log parseFrom(
-        java.nio.ByteBuffer data,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      return PARSER.parseFrom(data, extensionRegistry);
-    }
     public static data.Data.Log parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -2880,7 +2824,7 @@ public final class Data {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -2893,12 +2837,12 @@ public final class Data {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, java.lang.Object value) {
+          int index, Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          java.lang.Object value) {
+          Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -3214,7 +3158,7 @@ public final class Data {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new Log(input, extensionRegistry);
+          return new Log(input, extensionRegistry);
       }
     };
 
