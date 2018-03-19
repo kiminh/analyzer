@@ -143,6 +143,9 @@ enum AdType {
 
 enum AdSrc {
 	CPC = 1;
+	INMOBI = 2;
+	TANXSSP = 3;
+	BOTTOMINIG = 4; //打底广告
 };
 enum InteractionType {
 	NO_INTERACT = 0;
@@ -154,12 +157,21 @@ enum InteractionType {
 	GP			= 6;
 };
 
+enum MaterialLevel {
+	MATERIAL_LEVEL_UNKNOWN = 0;
+	MATERIAL_LEVEL_1 = 1;//很正规
+	MATERIAL_LEVEL_2 = 2;//无敏感词擦边球
+	MATERIAL_LEVEL_3 = 3;//有少量敏感词
+	MATERIAL_LEVEL_4 = 4;//尺度较大
+};
+
 enum ClientType {
 	NATIVESDK 	= 1;
 	JSSDK 		= 2;
 	OPENAPI		= 3;
 	HZ          = 4;
 	FUN         = 5;
+	QTT         = 6;
 };
 
 message Client {
@@ -179,6 +191,7 @@ message DspReqInfo {
 	optional int64	reqBsAllTime = 9;
 	optional int64	blackMediaFilterTime = 10;
 	optional int64	fixClickTime = 11;
+	optional string	dspadslotid = 12;
 };
 
 message AdInfo {
@@ -204,6 +217,10 @@ message AdInfo {
 	optional uint32 trigger_type = 20; // 0 默认触发  1兴趣触发
 	required int32 discount = 21; //广告最终的提权值，单位%
 	optional int32 show_count = 22; //记录广告所在单元，在此用户下的一天的显示次数
+	optional string dsp_media_id = 23; //第三方dsp的媒体id，或appid
+	optional string dsp_adslot_id = 24; //第三方dsp的广告位id
+	optional string adid_str = 25; //广告位id的字符串，用于第三方广告源
+	optional MaterialLevel material_level = 26; // 素材等级
 };
 
 message AdDspRet {
@@ -260,4 +277,5 @@ message NoticeLogBody {
 	optional bool https = 24; //是否https请求
 	optional string ctrtarget = 25; // ctr 请求地址
 	repeated uint32 dupuserfilter = 26; // 同一user过滤
+	optional string dsp_strategy = 27; //命中的dsp分流方案
 };
