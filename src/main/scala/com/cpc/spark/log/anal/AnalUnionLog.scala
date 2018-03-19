@@ -7,12 +7,11 @@ import com.cpc.spark.common.Utils
 import com.cpc.spark.log.parser.{ExtValue, LogParser, TraceLog, UnionLog}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd
-import org.apache.spark.sql.{Row, SaveMode, SparkSession}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
 import scala.collection.mutable
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
 
 
 /**
@@ -20,7 +19,8 @@ import org.apache.hadoop.fs.{FileSystem, Path}
   */
 object AnalUnionLog {
 
-  var srcRoot = "/gobblin/source/cpc"
+  var srcRoot = "/warehouse/dl_cpc.db"
+  //  var srcRoot = "/gobblin/source/cpc"
 
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
 
@@ -48,86 +48,153 @@ object AnalUnionLog {
       .getOrCreate()
     import spark.implicits._
 
-    val searchData = prepareSource(spark, "cpc_search", hourBefore, 2)
+    var searchData = prepareSource(spark, "cpc_search", "src_cpc_search", hourBefore, 1)
     if (searchData == null) {
       System.err.println("search data is empty")
       System.exit(1)
     }
-    var unionData = searchData.map(x => LogParser.parseSearchLog(x.getString(0)))
+    println("searchData", searchData.count())
+    searchData.take(1).foreach {
+      x =>
+        println(x)
 
-    val showData = prepareSource(spark, "cpc_show", hourBefore, 2)
+        println(x.getString(0))
+        println(LogParser.parseSearchLog(x.getString(0)))
+    }
+
+
+    val searchData2: rdd.RDD[(String, UnionLog)] = searchData
+      .map(x => LogParser.parseSearchLog(x.getString(0))) //(log)
+      .filter(_ != null)
+      .map(x => (x.searchid, x)) //(searchid, log)
+      .reduceByKey((x, y) => x) //去重
+      .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
+      x =>
+        var ulog = x._2.copy(date = date, hour = hour)
+        (x._1, ulog)
+    }
+    println("searchData2", searchData2.count())
+
+    val showData = prepareSource(spark, "cpc_show", "src_cpc_show", hourBefore, 2)
+    var showData2: rdd.RDD[(String, UnionLog)] = null
     if (showData != null) {
-      unionData = unionData.union(showData.map(x => LogParser.parseShowLog(x.getString(0))))
+      showData2 = showData
+        .map(x => LogParser.parseShowLog(x.getString(0))) //(log)
+        .filter(_ != null)
+        .map(x => (x.searchid, x)) //(searchid, log)
+        .reduceByKey((x, y) => x) //去重
+        .map {
+        x =>
+          (x._1, x._2)
+      }
     }
+    println("showData2", showData2.count())
 
-    val clickData = prepareSource(spark, "cpc_click", hourBefore, 2)
+    val clickData = prepareSource(spark, "cpc_click", "src_cpc_click", hourBefore, 2)
+    var clickData2: rdd.RDD[(String, UnionLog)] = null
     if (clickData != null) {
-      unionData = unionData.union(clickData.map(x => LogParser.parseClickLog(x.getString(0))))
-    }
-
-    unionData = unionData
-      .filter(x => x != null && x.searchid.length > 0)
-      .map(x => (x.searchid, Seq(x)))
-      .reduceByKey {
+      clickData2 = clickData
+        .map(x => LogParser.parseClickLog(x.getString(0))) //(log)
+        .filter(_ != null)
+        .map(x => (x.searchid, Seq(x))) //(searchid, log)
+        .reduceByKey {
         (x, y) =>
           x ++ y
+      }.map {
+        x => //(searchid,seq())
+          var ulog = x._2.head
+          var notgetGood = true
+          var ext = mutable.Map[String, ExtValue]()
+          x._2.foreach { //遍历log的seq
+            log =>
+              if (log.isSpamClick() == 1) {
+                val spam = ext.getOrElse("spam_click", ExtValue())
+                ext.update("spam_click", ExtValue(int_value = spam.int_value + 1))
+                ulog = ulog.copy(
+                  ext = ext
+                )
+              } else {
+                if (notgetGood) {
+                  ext.update("touch_x", log.ext("touch_x"))
+                  ext.update("touch_y", log.ext("touch_y"))
+                  ext.update("slot_width", log.ext("slot_width"))
+                  ext.update("slot_height", log.ext("slot_height"))
+                  ext.update("antispam_predict", log.ext("antispam_predict"))
+                  ext.update("click_ua", log.ext("click_ua"))
+                  ulog = ulog.copy(
+                    isclick = log.isclick,
+                    click_timestamp = log.click_timestamp,
+                    antispam_score = log.antispam_score,
+                    antispam_rules = log.antispam_rules,
+                    click_network = log.click_network,
+                    click_ip = log.click_ip,
+                    ext = ext
+                  )
+                  notgetGood = false
+                }
+              }
+          }
+          (x._1, ulog)
+      }
+    }
+    println("clickData2", clickData2.count())
+
+    val unionData = searchData2.leftOuterJoin(showData2).leftOuterJoin(clickData2)
+      .map {
+        x =>
+          (x._1, (x._2._1._1, x._2._1._2, x._2._2)) //( searchid, (log1,log2,log3) )
       }
       .map {
         x =>
-          var log = x._2.find(_.timestamp > 0).getOrElse(null)
-          if (log != null) {
-            x._2.foreach {
-              u =>
-                if (u.isshow == 1) {
-                  var ext = mutable.Map[String, ExtValue]()
-                  if (log.ext != null) {
-                    ext = ext ++ log.ext
-                  }
-                  ext.update("show_refer", u.ext("show_refer"))
-                  ext.update("show_ua", u.ext("show_ua"))
-                  log = log.copy(
-                    isshow = u.isshow,
-                    show_timestamp = u.show_timestamp,
-                    show_network = u.show_network,
-                    show_ip = u.show_ip,
-                    ext = ext
-                  )
-                }
-                if (u.isclick == 1) {
-                  var ext = mutable.Map[String, ExtValue]()
-                  if (log.ext != null) {
-                    ext = ext ++ log.ext
-                  }
-                  if (u.isSpamClick() == 1) {
-                    val spam = ext.getOrElse("spam_click", ExtValue())
-                    ext.update("spam_click", ExtValue(int_value = spam.int_value + 1))
-                    log = log.copy(
-                      ext = ext
-                    )
-                  } else {
-                    ext.update("touch_x", u.ext("touch_x"))
-                    ext.update("touch_y", u.ext("touch_y"))
-                    ext.update("slot_width", u.ext("slot_width"))
-                    ext.update("slot_height", u.ext("slot_height"))
-                    ext.update("antispam_predict", u.ext("antispam_predict"))
-                    ext.update("click_ua", u.ext("click_ua"))
-                    log = log.copy(
-                      isclick = u.isclick,
-                      click_timestamp = u.click_timestamp,
-                      antispam_score = u.antispam_score,
-                      antispam_rules = u.antispam_rules,
-                      click_network = u.click_network,
-                      click_ip = u.click_ip,
-                      ext = ext
-                    )
-                  }
-                }
+          var log1 = x._2._1
+          val log2 = x._2._2.getOrElse(null)
+          val log3 = x._2._3.getOrElse(null)
+
+          var ext1 = mutable.Map[String, ExtValue]() ++ log1.ext
+          if (log2 != null) {
+            if (log2.ext != null) {
+              ext1 = ext1 ++ log2.ext
+            }
+            ext1.update("show_refer", log2.ext("show_refer"))
+            ext1.update("show_ua", log2.ext("show_ua"))
+            log1 = log1.copy(
+              isshow = log2.isshow,
+              show_timestamp = log2.show_timestamp,
+              show_network = log2.show_network,
+              show_ip = log2.show_ip,
+              ext = ext1
+            )
+          }
+
+          if (log3 != null) {
+            if (log3.ext != null) {
+              ext1 = ext1 ++ log3.ext
+            }
+            val spam = log3.ext.getOrElse("spam_click", ExtValue())
+            ext1.update("spam_click", ExtValue(int_value = spam.int_value))
+            log1 = log1.copy(
+              ext = ext1
+            )
+            if (log3.isSpamClick() != 1) {
+              ext1.update("touch_x", log3.ext("touch_x"))
+              ext1.update("touch_y", log3.ext("touch_y"))
+              ext1.update("slot_width", log3.ext("slot_width"))
+              ext1.update("slot_height", log3.ext("slot_height"))
+              ext1.update("antispam_predict", log3.ext("antispam_predict"))
+              ext1.update("click_ua", log3.ext("click_ua"))
+              log1 = log1.copy(
+                isclick = log3.isclick,
+                click_timestamp = log3.click_timestamp,
+                antispam_score = log3.antispam_score,
+                antispam_rules = log3.antispam_rules,
+                click_network = log3.click_network,
+                click_ip = log3.click_ip,
+                ext = ext1
+              )
             }
           }
-          log
+          log1
       }
-      .filter(x => x != null && x.date == date && x.hour == hour)
-      .cache()
 
     val w = spark.createDataFrame(unionData)
       .write
@@ -139,43 +206,27 @@ object AnalUnionLog {
     w.saveAsTable("dl_cpc." + table)
     println("union", unionData.count())
 
-    var traceData = unionData.map(x => (x.searchid, (x, Seq[TraceLog]())))
-    val traceData1 = prepareSource(spark, "cpc_trace", hourBefore, 1)
+
+    var search = unionData.map(x => (x.searchid, x.timestamp))
+
+    val traceData1 = prepareSource(spark, "cpc_trace", "src_cpc_trace", hourBefore, 2)
+    var traceData = prepareTraceSource(traceData1)
+
     if (traceData1 != null) {
-      traceData = traceData.union(prepareTraceSource(traceData1))
-    }
-    val traceData2 = prepareSource(spark, "cpc_trace", hourBefore - 1, 1)
-    if (traceData2 != null) {
-      traceData = traceData.union(prepareTraceSource(traceData2))
-    }
-    if (traceData1 != null || traceData2 != null) {
-      val traceRdd = traceData
-        .reduceByKey {
-          (x, y) =>
-            var u: UnionLog = null
-            if (x._1 != null) {
-              u = x._1
-            }
-            if (y._1 != null) {
-              u = y._1
-            }
-            (u, x._2 ++ y._2)
-        }
-        .flatMap {
+      var trace = traceData.map(x => (x.searchid, x))
+      trace.leftOuterJoin(search)
+        .filter(x=>x._2._2.isDefined)
+        .map {
           x =>
-            val u = x._2._1
-            x._2._2.filter(x => u != null)
-              .map {
-                t =>
-                  t.copy(
-                    search_timestamp = u.timestamp,
-                    date = u.date,
-                    hour = u.hour
-                  )
-              }
+            val tlog = x._2._1
+            tlog.copy(
+              search_timestamp = x._2._2.get,
+              date = date,
+              hour = hour
+            )
         }
 
-      val w = traceRdd.toDF()
+      val w = trace.toDF()
         .write
         .mode(SaveMode.Append)
         .format("parquet")
@@ -183,9 +234,8 @@ object AnalUnionLog {
       //clear dir
       Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
       w.saveAsTable("dl_cpc." + traceTbl)
-      println("trace", traceRdd.count())
+      println("trace", trace.count())
     }
-    unionData.unpersist()
     spark.stop()
   }
 
@@ -202,26 +252,22 @@ object AnalUnionLog {
   /*
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
    */
-  def prepareSource(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
+  def prepareSource(ctx: SparkSession, key: String, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
+
     try {
-      val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours))
+      val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
       val baseData = ctx.read.schema(schema).parquet(input)
       val tbl = "%s_data_%d".format(src, hourBefore)
       baseData.createTempView(tbl)
-      ctx.sql("select field['%s'].string_type from %s".format(src, tbl)).rdd
+      ctx.sql("select field['%s'].string_type from %s".format(key, tbl)).rdd
     } catch {
       case e: Exception => null
     }
   }
 
-  def prepareTraceSource(src: rdd.RDD[Row]): rdd.RDD[(String, (UnionLog, Seq[TraceLog]))] = {
+  def prepareTraceSource(src: rdd.RDD[Row]): rdd.RDD[TraceLog] = {
     src.map(x => LogParser.parseTraceLog(x.getString(0)))
       .filter(x => x != null && x.searchid.length > 0)
-      .map {
-        x =>
-          val u: UnionLog = null
-          (x.searchid, (u, Seq(x)))
-      }
   }
 
   def getDateHourPath(hourBefore: Int, hours: Int): String = {
@@ -234,4 +280,7 @@ object AnalUnionLog {
     }
     "{" + parts.mkString(",") + "}"
   }
+
+  case class SrcExtValue(int_type: Int = 0, long_type: Long = 0, float_type: Float = 0, string_type: String = "")
+
 }
