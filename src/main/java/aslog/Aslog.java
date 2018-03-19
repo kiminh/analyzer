@@ -932,12 +932,44 @@ public final class Aslog {
      * <code>CPC = 1;</code>
      */
     CPC(1),
+    /**
+     * <code>INMOBI = 2;</code>
+     */
+    INMOBI(2),
+    /**
+     * <code>TANXSSP = 3;</code>
+     */
+    TANXSSP(3),
+    /**
+     * <pre>
+     *打底广告
+     * </pre>
+     *
+     * <code>BOTTOMINIG = 4;</code>
+     */
+    BOTTOMINIG(4),
     ;
 
     /**
      * <code>CPC = 1;</code>
      */
     public static final int CPC_VALUE = 1;
+    /**
+     * <code>INMOBI = 2;</code>
+     */
+    public static final int INMOBI_VALUE = 2;
+    /**
+     * <code>TANXSSP = 3;</code>
+     */
+    public static final int TANXSSP_VALUE = 3;
+    /**
+     * <pre>
+     *打底广告
+     * </pre>
+     *
+     * <code>BOTTOMINIG = 4;</code>
+     */
+    public static final int BOTTOMINIG_VALUE = 4;
 
 
     public final int getNumber() {
@@ -955,6 +987,9 @@ public final class Aslog {
     public static AdSrc forNumber(int value) {
       switch (value) {
         case 1: return CPC;
+        case 2: return INMOBI;
+        case 3: return TANXSSP;
+        case 4: return BOTTOMINIG;
         default: return null;
       }
     }
@@ -1140,6 +1175,155 @@ public final class Aslog {
   }
 
   /**
+   * Protobuf enum {@code aslog.MaterialLevel}
+   */
+  public enum MaterialLevel
+      implements com.google.protobuf.ProtocolMessageEnum {
+    /**
+     * <code>MATERIAL_LEVEL_UNKNOWN = 0;</code>
+     */
+    MATERIAL_LEVEL_UNKNOWN(0),
+    /**
+     * <pre>
+     *很正规
+     * </pre>
+     *
+     * <code>MATERIAL_LEVEL_1 = 1;</code>
+     */
+    MATERIAL_LEVEL_1(1),
+    /**
+     * <pre>
+     *无敏感词擦边球
+     * </pre>
+     *
+     * <code>MATERIAL_LEVEL_2 = 2;</code>
+     */
+    MATERIAL_LEVEL_2(2),
+    /**
+     * <pre>
+     *有少量敏感词
+     * </pre>
+     *
+     * <code>MATERIAL_LEVEL_3 = 3;</code>
+     */
+    MATERIAL_LEVEL_3(3),
+    /**
+     * <pre>
+     *尺度较大
+     * </pre>
+     *
+     * <code>MATERIAL_LEVEL_4 = 4;</code>
+     */
+    MATERIAL_LEVEL_4(4),
+    ;
+
+    /**
+     * <code>MATERIAL_LEVEL_UNKNOWN = 0;</code>
+     */
+    public static final int MATERIAL_LEVEL_UNKNOWN_VALUE = 0;
+    /**
+     * <pre>
+     *很正规
+     * </pre>
+     *
+     * <code>MATERIAL_LEVEL_1 = 1;</code>
+     */
+    public static final int MATERIAL_LEVEL_1_VALUE = 1;
+    /**
+     * <pre>
+     *无敏感词擦边球
+     * </pre>
+     *
+     * <code>MATERIAL_LEVEL_2 = 2;</code>
+     */
+    public static final int MATERIAL_LEVEL_2_VALUE = 2;
+    /**
+     * <pre>
+     *有少量敏感词
+     * </pre>
+     *
+     * <code>MATERIAL_LEVEL_3 = 3;</code>
+     */
+    public static final int MATERIAL_LEVEL_3_VALUE = 3;
+    /**
+     * <pre>
+     *尺度较大
+     * </pre>
+     *
+     * <code>MATERIAL_LEVEL_4 = 4;</code>
+     */
+    public static final int MATERIAL_LEVEL_4_VALUE = 4;
+
+
+    public final int getNumber() {
+      return value;
+    }
+
+    /**
+     * @deprecated Use {@link #forNumber(int)} instead.
+     */
+    @java.lang.Deprecated
+    public static MaterialLevel valueOf(int value) {
+      return forNumber(value);
+    }
+
+    public static MaterialLevel forNumber(int value) {
+      switch (value) {
+        case 0: return MATERIAL_LEVEL_UNKNOWN;
+        case 1: return MATERIAL_LEVEL_1;
+        case 2: return MATERIAL_LEVEL_2;
+        case 3: return MATERIAL_LEVEL_3;
+        case 4: return MATERIAL_LEVEL_4;
+        default: return null;
+      }
+    }
+
+    public static com.google.protobuf.Internal.EnumLiteMap<MaterialLevel>
+        internalGetValueMap() {
+      return internalValueMap;
+    }
+    private static final com.google.protobuf.Internal.EnumLiteMap<
+        MaterialLevel> internalValueMap =
+          new com.google.protobuf.Internal.EnumLiteMap<MaterialLevel>() {
+            public MaterialLevel findValueByNumber(int number) {
+              return MaterialLevel.forNumber(number);
+            }
+          };
+
+    public final com.google.protobuf.Descriptors.EnumValueDescriptor
+        getValueDescriptor() {
+      return getDescriptor().getValues().get(ordinal());
+    }
+    public final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptorForType() {
+      return getDescriptor();
+    }
+    public static final com.google.protobuf.Descriptors.EnumDescriptor
+        getDescriptor() {
+      return aslog.Aslog.getDescriptor().getEnumTypes().get(9);
+    }
+
+    private static final MaterialLevel[] VALUES = values();
+
+    public static MaterialLevel valueOf(
+        com.google.protobuf.Descriptors.EnumValueDescriptor desc) {
+      if (desc.getType() != getDescriptor()) {
+        throw new java.lang.IllegalArgumentException(
+          "EnumValueDescriptor is not for this type.");
+      }
+      return VALUES[desc.getIndex()];
+    }
+
+    private final int value;
+
+    private MaterialLevel(int value) {
+      this.value = value;
+    }
+
+    // @@protoc_insertion_point(enum_scope:aslog.MaterialLevel)
+  }
+
+  /**
    * Protobuf enum {@code aslog.ClientType}
    */
   public enum ClientType
@@ -1164,6 +1348,10 @@ public final class Aslog {
      * <code>FUN = 5;</code>
      */
     FUN(5),
+    /**
+     * <code>QTT = 6;</code>
+     */
+    QTT(6),
     ;
 
     /**
@@ -1186,6 +1374,10 @@ public final class Aslog {
      * <code>FUN = 5;</code>
      */
     public static final int FUN_VALUE = 5;
+    /**
+     * <code>QTT = 6;</code>
+     */
+    public static final int QTT_VALUE = 6;
 
 
     public final int getNumber() {
@@ -1207,6 +1399,7 @@ public final class Aslog {
         case 3: return OPENAPI;
         case 4: return HZ;
         case 5: return FUN;
+        case 6: return QTT;
         default: return null;
       }
     }
@@ -1233,7 +1426,7 @@ public final class Aslog {
     }
     public static final com.google.protobuf.Descriptors.EnumDescriptor
         getDescriptor() {
-      return aslog.Aslog.getDescriptor().getEnumTypes().get(9);
+      return aslog.Aslog.getDescriptor().getEnumTypes().get(10);
     }
 
     private static final ClientType[] VALUES = values();
@@ -1295,6 +1488,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.AppInfo)
       AppInfoOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use AppInfo.newBuilder() to construct.
     private AppInfo(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -1314,6 +1508,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -1326,8 +1523,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -1490,7 +1687,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -1536,6 +1732,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.AppInfo parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.AppInfo parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.AppInfo parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -1695,7 +1902,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -1708,12 +1915,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -1946,7 +2153,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new AppInfo(input, extensionRegistry);
+        return new AppInfo(input, extensionRegistry);
       }
     };
 
@@ -2004,6 +2211,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.SiteInfo)
       SiteInfoOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use SiteInfo.newBuilder() to construct.
     private SiteInfo(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -2023,6 +2231,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -2035,8 +2246,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -2199,7 +2410,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -2245,6 +2455,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.SiteInfo parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.SiteInfo parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.SiteInfo parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -2404,7 +2625,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -2417,12 +2638,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -2655,7 +2876,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new SiteInfo(input, extensionRegistry);
+        return new SiteInfo(input, extensionRegistry);
       }
     };
 
@@ -2703,6 +2924,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Size)
       SizeOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use Size.newBuilder() to construct.
     private Size(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -2722,6 +2944,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -2734,8 +2959,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -2852,7 +3077,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -2898,6 +3122,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.Size parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.Size parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.Size parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -3057,7 +3292,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -3070,12 +3305,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -3222,7 +3457,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Size(input, extensionRegistry);
+        return new Size(input, extensionRegistry);
       }
     };
 
@@ -3338,6 +3573,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Media)
       MediaOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use Media.newBuilder() to construct.
     private Media(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -3360,6 +3596,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -3372,8 +3611,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -3741,7 +3980,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -3831,6 +4069,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.Media parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.Media parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.Media parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -4038,7 +4287,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -4051,12 +4300,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -4692,7 +4941,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Media(input, extensionRegistry);
+        return new Media(input, extensionRegistry);
       }
     };
 
@@ -4972,6 +5221,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Adslot)
       AdslotOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use Adslot.newBuilder() to construct.
     private Adslot(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -5002,6 +5252,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -5014,8 +5267,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -5697,7 +5950,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -5857,6 +6109,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.Adslot parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.Adslot parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.Adslot parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -6097,7 +6360,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -6110,12 +6373,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -7165,7 +7428,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Adslot(input, extensionRegistry);
+        return new Adslot(input, extensionRegistry);
       }
     };
 
@@ -7218,6 +7481,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Network)
       NetworkOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use Network.newBuilder() to construct.
     private Network(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -7237,6 +7501,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -7249,8 +7516,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -7401,7 +7668,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -7446,6 +7712,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.Network parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.Network parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.Network parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -7605,7 +7882,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -7618,12 +7895,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -7820,7 +8097,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Network(input, extensionRegistry);
+        return new Network(input, extensionRegistry);
       }
     };
 
@@ -7886,6 +8163,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Version)
       VersionOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use Version.newBuilder() to construct.
     private Version(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -7907,6 +8185,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -7919,8 +8200,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -8087,7 +8368,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -8151,6 +8431,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.Version parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.Version parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.Version parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -8322,7 +8613,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -8335,12 +8626,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -8554,7 +8845,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Version(input, extensionRegistry);
+        return new Version(input, extensionRegistry);
       }
     };
 
@@ -8624,6 +8915,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.DeviceId)
       DeviceIdOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use DeviceId.newBuilder() to construct.
     private DeviceId(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -8644,6 +8936,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -8656,8 +8951,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -8843,7 +9138,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -8898,6 +9192,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.DeviceId parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.DeviceId parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.DeviceId parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -9063,7 +9368,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -9076,12 +9381,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -9329,7 +9634,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new DeviceId(input, extensionRegistry);
+        return new DeviceId(input, extensionRegistry);
       }
     };
 
@@ -9572,6 +9877,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Device)
       DeviceOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use Device.newBuilder() to construct.
     private Device(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -9604,6 +9910,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -9616,8 +9925,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -10359,7 +10668,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -10526,6 +10834,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.Device parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.Device parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.Device parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -10788,7 +11107,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -10801,12 +11120,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -12098,7 +12417,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Device(input, extensionRegistry);
+        return new Device(input, extensionRegistry);
       }
     };
 
@@ -12150,6 +12469,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Client)
       ClientOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use Client.newBuilder() to construct.
     private Client(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -12168,6 +12488,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -12180,8 +12503,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -12321,7 +12644,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -12366,6 +12688,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.Client parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.Client parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.Client parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -12534,7 +12867,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -12547,12 +12880,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -12791,7 +13124,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Client(input, extensionRegistry);
+        return new Client(input, extensionRegistry);
       }
     };
 
@@ -12922,6 +13255,20 @@ public final class Aslog {
      * <code>optional int64 fixClickTime = 11;</code>
      */
     long getFixClickTime();
+
+    /**
+     * <code>optional string dspadslotid = 12;</code>
+     */
+    boolean hasDspadslotid();
+    /**
+     * <code>optional string dspadslotid = 12;</code>
+     */
+    java.lang.String getDspadslotid();
+    /**
+     * <code>optional string dspadslotid = 12;</code>
+     */
+    com.google.protobuf.ByteString
+        getDspadslotidBytes();
   }
   /**
    * Protobuf type {@code aslog.DspReqInfo}
@@ -12930,6 +13277,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.DspReqInfo)
       DspReqInfoOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use DspReqInfo.newBuilder() to construct.
     private DspReqInfo(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -12946,6 +13294,7 @@ public final class Aslog {
       reqBsAllTime_ = 0L;
       blackMediaFilterTime_ = 0L;
       fixClickTime_ = 0L;
+      dspadslotid_ = "";
     }
 
     @java.lang.Override
@@ -12958,6 +13307,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -12970,8 +13322,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -13037,6 +13389,12 @@ public final class Aslog {
             case 88: {
               bitField0_ |= 0x00000400;
               fixClickTime_ = input.readInt64();
+              break;
+            }
+            case 98: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000800;
+              dspadslotid_ = bs;
               break;
             }
           }
@@ -13284,6 +13642,48 @@ public final class Aslog {
       return fixClickTime_;
     }
 
+    public static final int DSPADSLOTID_FIELD_NUMBER = 12;
+    private volatile java.lang.Object dspadslotid_;
+    /**
+     * <code>optional string dspadslotid = 12;</code>
+     */
+    public boolean hasDspadslotid() {
+      return ((bitField0_ & 0x00000800) == 0x00000800);
+    }
+    /**
+     * <code>optional string dspadslotid = 12;</code>
+     */
+    public java.lang.String getDspadslotid() {
+      java.lang.Object ref = dspadslotid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          dspadslotid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string dspadslotid = 12;</code>
+     */
+    public com.google.protobuf.ByteString
+        getDspadslotidBytes() {
+      java.lang.Object ref = dspadslotid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        dspadslotid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -13332,6 +13732,9 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x00000400) == 0x00000400)) {
         output.writeInt64(11, fixClickTime_);
+      }
+      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 12, dspadslotid_);
       }
       unknownFields.writeTo(output);
     }
@@ -13383,12 +13786,14 @@ public final class Aslog {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(11, fixClickTime_);
       }
+      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(12, dspadslotid_);
+      }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -13454,6 +13859,11 @@ public final class Aslog {
         result = result && (getFixClickTime()
             == other.getFixClickTime());
       }
+      result = result && (hasDspadslotid() == other.hasDspadslotid());
+      if (hasDspadslotid()) {
+        result = result && getDspadslotid()
+            .equals(other.getDspadslotid());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -13516,11 +13926,26 @@ public final class Aslog {
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
             getFixClickTime());
       }
+      if (hasDspadslotid()) {
+        hash = (37 * hash) + DSPADSLOTID_FIELD_NUMBER;
+        hash = (53 * hash) + getDspadslotid().hashCode();
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
     }
 
+    public static aslog.Aslog.DspReqInfo parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.DspReqInfo parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.DspReqInfo parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -13656,6 +14081,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00000200);
         fixClickTime_ = 0L;
         bitField0_ = (bitField0_ & ~0x00000400);
+        dspadslotid_ = "";
+        bitField0_ = (bitField0_ & ~0x00000800);
         return this;
       }
 
@@ -13724,6 +14151,10 @@ public final class Aslog {
           to_bitField0_ |= 0x00000400;
         }
         result.fixClickTime_ = fixClickTime_;
+        if (((from_bitField0_ & 0x00000800) == 0x00000800)) {
+          to_bitField0_ |= 0x00000800;
+        }
+        result.dspadslotid_ = dspadslotid_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -13734,7 +14165,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -13747,12 +14178,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -13802,6 +14233,11 @@ public final class Aslog {
         }
         if (other.hasFixClickTime()) {
           setFixClickTime(other.getFixClickTime());
+        }
+        if (other.hasDspadslotid()) {
+          bitField0_ |= 0x00000800;
+          dspadslotid_ = other.dspadslotid_;
+          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -14277,6 +14713,82 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private java.lang.Object dspadslotid_ = "";
+      /**
+       * <code>optional string dspadslotid = 12;</code>
+       */
+      public boolean hasDspadslotid() {
+        return ((bitField0_ & 0x00000800) == 0x00000800);
+      }
+      /**
+       * <code>optional string dspadslotid = 12;</code>
+       */
+      public java.lang.String getDspadslotid() {
+        java.lang.Object ref = dspadslotid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            dspadslotid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string dspadslotid = 12;</code>
+       */
+      public com.google.protobuf.ByteString
+          getDspadslotidBytes() {
+        java.lang.Object ref = dspadslotid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          dspadslotid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string dspadslotid = 12;</code>
+       */
+      public Builder setDspadslotid(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000800;
+        dspadslotid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string dspadslotid = 12;</code>
+       */
+      public Builder clearDspadslotid() {
+        bitField0_ = (bitField0_ & ~0x00000800);
+        dspadslotid_ = getDefaultInstance().getDspadslotid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string dspadslotid = 12;</code>
+       */
+      public Builder setDspadslotidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000800;
+        dspadslotid_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -14307,7 +14819,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new DspReqInfo(input, extensionRegistry);
+        return new DspReqInfo(input, extensionRegistry);
       }
     };
 
@@ -14615,6 +15127,101 @@ public final class Aslog {
      * <code>optional int32 show_count = 22;</code>
      */
     int getShowCount();
+
+    /**
+     * <pre>
+     *第三方dsp的媒体id，或appid
+     * </pre>
+     *
+     * <code>optional string dsp_media_id = 23;</code>
+     */
+    boolean hasDspMediaId();
+    /**
+     * <pre>
+     *第三方dsp的媒体id，或appid
+     * </pre>
+     *
+     * <code>optional string dsp_media_id = 23;</code>
+     */
+    java.lang.String getDspMediaId();
+    /**
+     * <pre>
+     *第三方dsp的媒体id，或appid
+     * </pre>
+     *
+     * <code>optional string dsp_media_id = 23;</code>
+     */
+    com.google.protobuf.ByteString
+        getDspMediaIdBytes();
+
+    /**
+     * <pre>
+     *第三方dsp的广告位id
+     * </pre>
+     *
+     * <code>optional string dsp_adslot_id = 24;</code>
+     */
+    boolean hasDspAdslotId();
+    /**
+     * <pre>
+     *第三方dsp的广告位id
+     * </pre>
+     *
+     * <code>optional string dsp_adslot_id = 24;</code>
+     */
+    java.lang.String getDspAdslotId();
+    /**
+     * <pre>
+     *第三方dsp的广告位id
+     * </pre>
+     *
+     * <code>optional string dsp_adslot_id = 24;</code>
+     */
+    com.google.protobuf.ByteString
+        getDspAdslotIdBytes();
+
+    /**
+     * <pre>
+     *广告位id的字符串，用于第三方广告源
+     * </pre>
+     *
+     * <code>optional string adid_str = 25;</code>
+     */
+    boolean hasAdidStr();
+    /**
+     * <pre>
+     *广告位id的字符串，用于第三方广告源
+     * </pre>
+     *
+     * <code>optional string adid_str = 25;</code>
+     */
+    java.lang.String getAdidStr();
+    /**
+     * <pre>
+     *广告位id的字符串，用于第三方广告源
+     * </pre>
+     *
+     * <code>optional string adid_str = 25;</code>
+     */
+    com.google.protobuf.ByteString
+        getAdidStrBytes();
+
+    /**
+     * <pre>
+     * 素材等级
+     * </pre>
+     *
+     * <code>optional .aslog.MaterialLevel material_level = 26;</code>
+     */
+    boolean hasMaterialLevel();
+    /**
+     * <pre>
+     * 素材等级
+     * </pre>
+     *
+     * <code>optional .aslog.MaterialLevel material_level = 26;</code>
+     */
+    aslog.Aslog.MaterialLevel getMaterialLevel();
   }
   /**
    * Protobuf type {@code aslog.AdInfo}
@@ -14623,6 +15230,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.AdInfo)
       AdInfoOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use AdInfo.newBuilder() to construct.
     private AdInfo(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -14650,6 +15258,10 @@ public final class Aslog {
       triggerType_ = 0;
       discount_ = 0;
       showCount_ = 0;
+      dspMediaId_ = "";
+      dspAdslotId_ = "";
+      adidStr_ = "";
+      materialLevel_ = 0;
     }
 
     @java.lang.Override
@@ -14662,6 +15274,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -14674,8 +15289,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -14822,6 +15437,35 @@ public final class Aslog {
             case 176: {
               bitField0_ |= 0x00100000;
               showCount_ = input.readInt32();
+              break;
+            }
+            case 186: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00200000;
+              dspMediaId_ = bs;
+              break;
+            }
+            case 194: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00400000;
+              dspAdslotId_ = bs;
+              break;
+            }
+            case 202: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00800000;
+              adidStr_ = bs;
+              break;
+            }
+            case 208: {
+              int rawValue = input.readEnum();
+              aslog.Aslog.MaterialLevel value = aslog.Aslog.MaterialLevel.valueOf(rawValue);
+              if (value == null) {
+                unknownFields.mergeVarintField(26, rawValue);
+              } else {
+                bitField0_ |= 0x01000000;
+                materialLevel_ = rawValue;
+              }
               break;
             }
           }
@@ -15276,6 +15920,192 @@ public final class Aslog {
       return showCount_;
     }
 
+    public static final int DSP_MEDIA_ID_FIELD_NUMBER = 23;
+    private volatile java.lang.Object dspMediaId_;
+    /**
+     * <pre>
+     *第三方dsp的媒体id，或appid
+     * </pre>
+     *
+     * <code>optional string dsp_media_id = 23;</code>
+     */
+    public boolean hasDspMediaId() {
+      return ((bitField0_ & 0x00200000) == 0x00200000);
+    }
+    /**
+     * <pre>
+     *第三方dsp的媒体id，或appid
+     * </pre>
+     *
+     * <code>optional string dsp_media_id = 23;</code>
+     */
+    public java.lang.String getDspMediaId() {
+      java.lang.Object ref = dspMediaId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          dspMediaId_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     *第三方dsp的媒体id，或appid
+     * </pre>
+     *
+     * <code>optional string dsp_media_id = 23;</code>
+     */
+    public com.google.protobuf.ByteString
+        getDspMediaIdBytes() {
+      java.lang.Object ref = dspMediaId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        dspMediaId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int DSP_ADSLOT_ID_FIELD_NUMBER = 24;
+    private volatile java.lang.Object dspAdslotId_;
+    /**
+     * <pre>
+     *第三方dsp的广告位id
+     * </pre>
+     *
+     * <code>optional string dsp_adslot_id = 24;</code>
+     */
+    public boolean hasDspAdslotId() {
+      return ((bitField0_ & 0x00400000) == 0x00400000);
+    }
+    /**
+     * <pre>
+     *第三方dsp的广告位id
+     * </pre>
+     *
+     * <code>optional string dsp_adslot_id = 24;</code>
+     */
+    public java.lang.String getDspAdslotId() {
+      java.lang.Object ref = dspAdslotId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          dspAdslotId_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     *第三方dsp的广告位id
+     * </pre>
+     *
+     * <code>optional string dsp_adslot_id = 24;</code>
+     */
+    public com.google.protobuf.ByteString
+        getDspAdslotIdBytes() {
+      java.lang.Object ref = dspAdslotId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        dspAdslotId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int ADID_STR_FIELD_NUMBER = 25;
+    private volatile java.lang.Object adidStr_;
+    /**
+     * <pre>
+     *广告位id的字符串，用于第三方广告源
+     * </pre>
+     *
+     * <code>optional string adid_str = 25;</code>
+     */
+    public boolean hasAdidStr() {
+      return ((bitField0_ & 0x00800000) == 0x00800000);
+    }
+    /**
+     * <pre>
+     *广告位id的字符串，用于第三方广告源
+     * </pre>
+     *
+     * <code>optional string adid_str = 25;</code>
+     */
+    public java.lang.String getAdidStr() {
+      java.lang.Object ref = adidStr_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          adidStr_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     *广告位id的字符串，用于第三方广告源
+     * </pre>
+     *
+     * <code>optional string adid_str = 25;</code>
+     */
+    public com.google.protobuf.ByteString
+        getAdidStrBytes() {
+      java.lang.Object ref = adidStr_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        adidStr_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int MATERIAL_LEVEL_FIELD_NUMBER = 26;
+    private int materialLevel_;
+    /**
+     * <pre>
+     * 素材等级
+     * </pre>
+     *
+     * <code>optional .aslog.MaterialLevel material_level = 26;</code>
+     */
+    public boolean hasMaterialLevel() {
+      return ((bitField0_ & 0x01000000) == 0x01000000);
+    }
+    /**
+     * <pre>
+     * 素材等级
+     * </pre>
+     *
+     * <code>optional .aslog.MaterialLevel material_level = 26;</code>
+     */
+    public aslog.Aslog.MaterialLevel getMaterialLevel() {
+      aslog.Aslog.MaterialLevel result = aslog.Aslog.MaterialLevel.valueOf(materialLevel_);
+      return result == null ? aslog.Aslog.MaterialLevel.MATERIAL_LEVEL_UNKNOWN : result;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -15369,6 +16199,18 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x00100000) == 0x00100000)) {
         output.writeInt32(22, showCount_);
+      }
+      if (((bitField0_ & 0x00200000) == 0x00200000)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 23, dspMediaId_);
+      }
+      if (((bitField0_ & 0x00400000) == 0x00400000)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 24, dspAdslotId_);
+      }
+      if (((bitField0_ & 0x00800000) == 0x00800000)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 25, adidStr_);
+      }
+      if (((bitField0_ & 0x01000000) == 0x01000000)) {
+        output.writeEnum(26, materialLevel_);
       }
       unknownFields.writeTo(output);
     }
@@ -15471,12 +16313,24 @@ public final class Aslog {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(22, showCount_);
       }
+      if (((bitField0_ & 0x00200000) == 0x00200000)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(23, dspMediaId_);
+      }
+      if (((bitField0_ & 0x00400000) == 0x00400000)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(24, dspAdslotId_);
+      }
+      if (((bitField0_ & 0x00800000) == 0x00800000)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(25, adidStr_);
+      }
+      if (((bitField0_ & 0x01000000) == 0x01000000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeEnumSize(26, materialLevel_);
+      }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -15592,6 +16446,25 @@ public final class Aslog {
         result = result && (getShowCount()
             == other.getShowCount());
       }
+      result = result && (hasDspMediaId() == other.hasDspMediaId());
+      if (hasDspMediaId()) {
+        result = result && getDspMediaId()
+            .equals(other.getDspMediaId());
+      }
+      result = result && (hasDspAdslotId() == other.hasDspAdslotId());
+      if (hasDspAdslotId()) {
+        result = result && getDspAdslotId()
+            .equals(other.getDspAdslotId());
+      }
+      result = result && (hasAdidStr() == other.hasAdidStr());
+      if (hasAdidStr()) {
+        result = result && getAdidStr()
+            .equals(other.getAdidStr());
+      }
+      result = result && (hasMaterialLevel() == other.hasMaterialLevel());
+      if (hasMaterialLevel()) {
+        result = result && materialLevel_ == other.materialLevel_;
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -15698,11 +16571,38 @@ public final class Aslog {
         hash = (37 * hash) + SHOW_COUNT_FIELD_NUMBER;
         hash = (53 * hash) + getShowCount();
       }
+      if (hasDspMediaId()) {
+        hash = (37 * hash) + DSP_MEDIA_ID_FIELD_NUMBER;
+        hash = (53 * hash) + getDspMediaId().hashCode();
+      }
+      if (hasDspAdslotId()) {
+        hash = (37 * hash) + DSP_ADSLOT_ID_FIELD_NUMBER;
+        hash = (53 * hash) + getDspAdslotId().hashCode();
+      }
+      if (hasAdidStr()) {
+        hash = (37 * hash) + ADID_STR_FIELD_NUMBER;
+        hash = (53 * hash) + getAdidStr().hashCode();
+      }
+      if (hasMaterialLevel()) {
+        hash = (37 * hash) + MATERIAL_LEVEL_FIELD_NUMBER;
+        hash = (53 * hash) + materialLevel_;
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
     }
 
+    public static aslog.Aslog.AdInfo parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.AdInfo parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.AdInfo parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -15860,6 +16760,14 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00100000);
         showCount_ = 0;
         bitField0_ = (bitField0_ & ~0x00200000);
+        dspMediaId_ = "";
+        bitField0_ = (bitField0_ & ~0x00400000);
+        dspAdslotId_ = "";
+        bitField0_ = (bitField0_ & ~0x00800000);
+        adidStr_ = "";
+        bitField0_ = (bitField0_ & ~0x01000000);
+        materialLevel_ = 0;
+        bitField0_ = (bitField0_ & ~0x02000000);
         return this;
       }
 
@@ -15973,6 +16881,22 @@ public final class Aslog {
           to_bitField0_ |= 0x00100000;
         }
         result.showCount_ = showCount_;
+        if (((from_bitField0_ & 0x00400000) == 0x00400000)) {
+          to_bitField0_ |= 0x00200000;
+        }
+        result.dspMediaId_ = dspMediaId_;
+        if (((from_bitField0_ & 0x00800000) == 0x00800000)) {
+          to_bitField0_ |= 0x00400000;
+        }
+        result.dspAdslotId_ = dspAdslotId_;
+        if (((from_bitField0_ & 0x01000000) == 0x01000000)) {
+          to_bitField0_ |= 0x00800000;
+        }
+        result.adidStr_ = adidStr_;
+        if (((from_bitField0_ & 0x02000000) == 0x02000000)) {
+          to_bitField0_ |= 0x01000000;
+        }
+        result.materialLevel_ = materialLevel_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -15983,7 +16907,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -15996,12 +16920,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -16087,6 +17011,24 @@ public final class Aslog {
         }
         if (other.hasShowCount()) {
           setShowCount(other.getShowCount());
+        }
+        if (other.hasDspMediaId()) {
+          bitField0_ |= 0x00400000;
+          dspMediaId_ = other.dspMediaId_;
+          onChanged();
+        }
+        if (other.hasDspAdslotId()) {
+          bitField0_ |= 0x00800000;
+          dspAdslotId_ = other.dspAdslotId_;
+          onChanged();
+        }
+        if (other.hasAdidStr()) {
+          bitField0_ |= 0x01000000;
+          adidStr_ = other.adidStr_;
+          onChanged();
+        }
+        if (other.hasMaterialLevel()) {
+          setMaterialLevel(other.getMaterialLevel());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -17049,6 +17991,358 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private java.lang.Object dspMediaId_ = "";
+      /**
+       * <pre>
+       *第三方dsp的媒体id，或appid
+       * </pre>
+       *
+       * <code>optional string dsp_media_id = 23;</code>
+       */
+      public boolean hasDspMediaId() {
+        return ((bitField0_ & 0x00400000) == 0x00400000);
+      }
+      /**
+       * <pre>
+       *第三方dsp的媒体id，或appid
+       * </pre>
+       *
+       * <code>optional string dsp_media_id = 23;</code>
+       */
+      public java.lang.String getDspMediaId() {
+        java.lang.Object ref = dspMediaId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            dspMediaId_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       *第三方dsp的媒体id，或appid
+       * </pre>
+       *
+       * <code>optional string dsp_media_id = 23;</code>
+       */
+      public com.google.protobuf.ByteString
+          getDspMediaIdBytes() {
+        java.lang.Object ref = dspMediaId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          dspMediaId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       *第三方dsp的媒体id，或appid
+       * </pre>
+       *
+       * <code>optional string dsp_media_id = 23;</code>
+       */
+      public Builder setDspMediaId(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00400000;
+        dspMediaId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *第三方dsp的媒体id，或appid
+       * </pre>
+       *
+       * <code>optional string dsp_media_id = 23;</code>
+       */
+      public Builder clearDspMediaId() {
+        bitField0_ = (bitField0_ & ~0x00400000);
+        dspMediaId_ = getDefaultInstance().getDspMediaId();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *第三方dsp的媒体id，或appid
+       * </pre>
+       *
+       * <code>optional string dsp_media_id = 23;</code>
+       */
+      public Builder setDspMediaIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00400000;
+        dspMediaId_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object dspAdslotId_ = "";
+      /**
+       * <pre>
+       *第三方dsp的广告位id
+       * </pre>
+       *
+       * <code>optional string dsp_adslot_id = 24;</code>
+       */
+      public boolean hasDspAdslotId() {
+        return ((bitField0_ & 0x00800000) == 0x00800000);
+      }
+      /**
+       * <pre>
+       *第三方dsp的广告位id
+       * </pre>
+       *
+       * <code>optional string dsp_adslot_id = 24;</code>
+       */
+      public java.lang.String getDspAdslotId() {
+        java.lang.Object ref = dspAdslotId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            dspAdslotId_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       *第三方dsp的广告位id
+       * </pre>
+       *
+       * <code>optional string dsp_adslot_id = 24;</code>
+       */
+      public com.google.protobuf.ByteString
+          getDspAdslotIdBytes() {
+        java.lang.Object ref = dspAdslotId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          dspAdslotId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       *第三方dsp的广告位id
+       * </pre>
+       *
+       * <code>optional string dsp_adslot_id = 24;</code>
+       */
+      public Builder setDspAdslotId(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00800000;
+        dspAdslotId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *第三方dsp的广告位id
+       * </pre>
+       *
+       * <code>optional string dsp_adslot_id = 24;</code>
+       */
+      public Builder clearDspAdslotId() {
+        bitField0_ = (bitField0_ & ~0x00800000);
+        dspAdslotId_ = getDefaultInstance().getDspAdslotId();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *第三方dsp的广告位id
+       * </pre>
+       *
+       * <code>optional string dsp_adslot_id = 24;</code>
+       */
+      public Builder setDspAdslotIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00800000;
+        dspAdslotId_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object adidStr_ = "";
+      /**
+       * <pre>
+       *广告位id的字符串，用于第三方广告源
+       * </pre>
+       *
+       * <code>optional string adid_str = 25;</code>
+       */
+      public boolean hasAdidStr() {
+        return ((bitField0_ & 0x01000000) == 0x01000000);
+      }
+      /**
+       * <pre>
+       *广告位id的字符串，用于第三方广告源
+       * </pre>
+       *
+       * <code>optional string adid_str = 25;</code>
+       */
+      public java.lang.String getAdidStr() {
+        java.lang.Object ref = adidStr_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            adidStr_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       *广告位id的字符串，用于第三方广告源
+       * </pre>
+       *
+       * <code>optional string adid_str = 25;</code>
+       */
+      public com.google.protobuf.ByteString
+          getAdidStrBytes() {
+        java.lang.Object ref = adidStr_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          adidStr_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       *广告位id的字符串，用于第三方广告源
+       * </pre>
+       *
+       * <code>optional string adid_str = 25;</code>
+       */
+      public Builder setAdidStr(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x01000000;
+        adidStr_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *广告位id的字符串，用于第三方广告源
+       * </pre>
+       *
+       * <code>optional string adid_str = 25;</code>
+       */
+      public Builder clearAdidStr() {
+        bitField0_ = (bitField0_ & ~0x01000000);
+        adidStr_ = getDefaultInstance().getAdidStr();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *广告位id的字符串，用于第三方广告源
+       * </pre>
+       *
+       * <code>optional string adid_str = 25;</code>
+       */
+      public Builder setAdidStrBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x01000000;
+        adidStr_ = value;
+        onChanged();
+        return this;
+      }
+
+      private int materialLevel_ = 0;
+      /**
+       * <pre>
+       * 素材等级
+       * </pre>
+       *
+       * <code>optional .aslog.MaterialLevel material_level = 26;</code>
+       */
+      public boolean hasMaterialLevel() {
+        return ((bitField0_ & 0x02000000) == 0x02000000);
+      }
+      /**
+       * <pre>
+       * 素材等级
+       * </pre>
+       *
+       * <code>optional .aslog.MaterialLevel material_level = 26;</code>
+       */
+      public aslog.Aslog.MaterialLevel getMaterialLevel() {
+        aslog.Aslog.MaterialLevel result = aslog.Aslog.MaterialLevel.valueOf(materialLevel_);
+        return result == null ? aslog.Aslog.MaterialLevel.MATERIAL_LEVEL_UNKNOWN : result;
+      }
+      /**
+       * <pre>
+       * 素材等级
+       * </pre>
+       *
+       * <code>optional .aslog.MaterialLevel material_level = 26;</code>
+       */
+      public Builder setMaterialLevel(aslog.Aslog.MaterialLevel value) {
+        if (value == null) {
+          throw new NullPointerException();
+        }
+        bitField0_ |= 0x02000000;
+        materialLevel_ = value.getNumber();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 素材等级
+       * </pre>
+       *
+       * <code>optional .aslog.MaterialLevel material_level = 26;</code>
+       */
+      public Builder clearMaterialLevel() {
+        bitField0_ = (bitField0_ & ~0x02000000);
+        materialLevel_ = 0;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -17079,7 +18373,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new AdInfo(input, extensionRegistry);
+        return new AdInfo(input, extensionRegistry);
       }
     };
 
@@ -17127,6 +18421,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.AdDspRet)
       AdDspRetOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use AdDspRet.newBuilder() to construct.
     private AdDspRet(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -17146,6 +18441,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -17158,8 +18456,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -17283,7 +18581,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -17328,6 +18625,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.AdDspRet parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.AdDspRet parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.AdDspRet parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -17487,7 +18795,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -17500,12 +18808,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -17656,7 +18964,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new AdDspRet(input, extensionRegistry);
+        return new AdDspRet(input, extensionRegistry);
       }
     };
 
@@ -17731,6 +19039,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.Location)
       LocationOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use Location.newBuilder() to construct.
     private Location(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -17753,6 +19062,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -17765,8 +19077,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -17956,7 +19268,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -18029,6 +19340,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.Location parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.Location parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.Location parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -18206,7 +19528,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -18219,12 +19541,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -18470,7 +19792,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new Location(input, extensionRegistry);
+        return new Location(input, extensionRegistry);
       }
     };
 
@@ -18534,6 +19856,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.InterestItem)
       InterestItemOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use InterestItem.newBuilder() to construct.
     private InterestItem(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -18553,6 +19876,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -18565,8 +19891,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -18691,7 +20017,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -18739,6 +20064,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.InterestItem parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.InterestItem parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.InterestItem parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -18898,7 +20234,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -18911,12 +20247,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -19089,7 +20425,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new InterestItem(input, extensionRegistry);
+        return new InterestItem(input, extensionRegistry);
       }
     };
 
@@ -19299,6 +20635,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.UserProfile)
       UserProfileOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use UserProfile.newBuilder() to construct.
     private UserProfile(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -19325,6 +20662,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -19337,8 +20677,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -19747,7 +21087,6 @@ public final class Aslog {
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -19853,6 +21192,17 @@ public final class Aslog {
       return hash;
     }
 
+    public static aslog.Aslog.UserProfile parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.UserProfile parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.UserProfile parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -20064,7 +21414,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -20077,12 +21427,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -20899,7 +22249,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new UserProfile(input, extensionRegistry);
+        return new UserProfile(input, extensionRegistry);
       }
     };
 
@@ -21361,6 +22711,32 @@ public final class Aslog {
      * <code>repeated uint32 dupuserfilter = 26;</code>
      */
     int getDupuserfilter(int index);
+
+    /**
+     * <pre>
+     *命中的dsp分流方案
+     * </pre>
+     *
+     * <code>optional string dsp_strategy = 27;</code>
+     */
+    boolean hasDspStrategy();
+    /**
+     * <pre>
+     *命中的dsp分流方案
+     * </pre>
+     *
+     * <code>optional string dsp_strategy = 27;</code>
+     */
+    java.lang.String getDspStrategy();
+    /**
+     * <pre>
+     *命中的dsp分流方案
+     * </pre>
+     *
+     * <code>optional string dsp_strategy = 27;</code>
+     */
+    com.google.protobuf.ByteString
+        getDspStrategyBytes();
   }
   /**
    * Protobuf type {@code aslog.NoticeLogBody}
@@ -21369,6 +22745,7 @@ public final class Aslog {
       com.google.protobuf.GeneratedMessageV3 implements
       // @@protoc_insertion_point(message_implements:aslog.NoticeLogBody)
       NoticeLogBodyOrBuilder {
+  private static final long serialVersionUID = 0L;
     // Use NoticeLogBody.newBuilder() to construct.
     private NoticeLogBody(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
       super(builder);
@@ -21391,6 +22768,7 @@ public final class Aslog {
       https_ = false;
       ctrtarget_ = "";
       dupuserfilter_ = java.util.Collections.emptyList();
+      dspStrategy_ = "";
     }
 
     @java.lang.Override
@@ -21403,6 +22781,9 @@ public final class Aslog {
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
       int mutable_bitField0_ = 0;
       com.google.protobuf.UnknownFieldSet.Builder unknownFields =
           com.google.protobuf.UnknownFieldSet.newBuilder();
@@ -21415,8 +22796,8 @@ public final class Aslog {
               done = true;
               break;
             default: {
-              if (!parseUnknownField(input, unknownFields,
-                                     extensionRegistry, tag)) {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
                 done = true;
               }
               break;
@@ -21669,6 +23050,12 @@ public final class Aslog {
                 dupuserfilter_.add(input.readUInt32());
               }
               input.popLimit(limit);
+              break;
+            }
+            case 218: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00004000;
+              dspStrategy_ = bs;
               break;
             }
           }
@@ -22415,6 +23802,60 @@ public final class Aslog {
       return dupuserfilter_.get(index);
     }
 
+    public static final int DSP_STRATEGY_FIELD_NUMBER = 27;
+    private volatile java.lang.Object dspStrategy_;
+    /**
+     * <pre>
+     *命中的dsp分流方案
+     * </pre>
+     *
+     * <code>optional string dsp_strategy = 27;</code>
+     */
+    public boolean hasDspStrategy() {
+      return ((bitField0_ & 0x00004000) == 0x00004000);
+    }
+    /**
+     * <pre>
+     *命中的dsp分流方案
+     * </pre>
+     *
+     * <code>optional string dsp_strategy = 27;</code>
+     */
+    public java.lang.String getDspStrategy() {
+      java.lang.Object ref = dspStrategy_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          dspStrategy_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     *命中的dsp分流方案
+     * </pre>
+     *
+     * <code>optional string dsp_strategy = 27;</code>
+     */
+    public com.google.protobuf.ByteString
+        getDspStrategyBytes() {
+      java.lang.Object ref = dspStrategy_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        dspStrategy_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -22552,6 +23993,9 @@ public final class Aslog {
       for (int i = 0; i < dupuserfilter_.size(); i++) {
         output.writeUInt32(26, dupuserfilter_.get(i));
       }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 27, dspStrategy_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -22673,12 +24117,14 @@ public final class Aslog {
         size += dataSize;
         size += 2 * getDupuserfilterList().size();
       }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(27, dspStrategy_);
+      }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
     }
 
-    private static final long serialVersionUID = 0L;
     @java.lang.Override
     public boolean equals(final java.lang.Object obj) {
       if (obj == this) {
@@ -22778,6 +24224,11 @@ public final class Aslog {
       }
       result = result && getDupuserfilterList()
           .equals(other.getDupuserfilterList());
+      result = result && (hasDspStrategy() == other.hasDspStrategy());
+      if (hasDspStrategy()) {
+        result = result && getDspStrategy()
+            .equals(other.getDspStrategy());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -22884,11 +24335,26 @@ public final class Aslog {
         hash = (37 * hash) + DUPUSERFILTER_FIELD_NUMBER;
         hash = (53 * hash) + getDupuserfilterList().hashCode();
       }
+      if (hasDspStrategy()) {
+        hash = (37 * hash) + DSP_STRATEGY_FIELD_NUMBER;
+        hash = (53 * hash) + getDspStrategy().hashCode();
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
     }
 
+    public static aslog.Aslog.NoticeLogBody parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static aslog.Aslog.NoticeLogBody parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
     public static aslog.Aslog.NoticeLogBody parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -23098,6 +24564,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00200000);
         dupuserfilter_ = java.util.Collections.emptyList();
         bitField0_ = (bitField0_ & ~0x00400000);
+        dspStrategy_ = "";
+        bitField0_ = (bitField0_ & ~0x00800000);
         return this;
       }
 
@@ -23263,6 +24731,10 @@ public final class Aslog {
           bitField0_ = (bitField0_ & ~0x00400000);
         }
         result.dupuserfilter_ = dupuserfilter_;
+        if (((from_bitField0_ & 0x00800000) == 0x00800000)) {
+          to_bitField0_ |= 0x00004000;
+        }
+        result.dspStrategy_ = dspStrategy_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -23273,7 +24745,7 @@ public final class Aslog {
       }
       public Builder setField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.setField(field, value);
       }
       public Builder clearField(
@@ -23286,12 +24758,12 @@ public final class Aslog {
       }
       public Builder setRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          int index, Object value) {
+          int index, java.lang.Object value) {
         return (Builder) super.setRepeatedField(field, index, value);
       }
       public Builder addRepeatedField(
           com.google.protobuf.Descriptors.FieldDescriptor field,
-          Object value) {
+          java.lang.Object value) {
         return (Builder) super.addRepeatedField(field, value);
       }
       public Builder mergeFrom(com.google.protobuf.Message other) {
@@ -23505,6 +24977,11 @@ public final class Aslog {
             ensureDupuserfilterIsMutable();
             dupuserfilter_.addAll(other.dupuserfilter_);
           }
+          onChanged();
+        }
+        if (other.hasDspStrategy()) {
+          bitField0_ |= 0x00800000;
+          dspStrategy_ = other.dspStrategy_;
           onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
@@ -26269,6 +27746,106 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private java.lang.Object dspStrategy_ = "";
+      /**
+       * <pre>
+       *命中的dsp分流方案
+       * </pre>
+       *
+       * <code>optional string dsp_strategy = 27;</code>
+       */
+      public boolean hasDspStrategy() {
+        return ((bitField0_ & 0x00800000) == 0x00800000);
+      }
+      /**
+       * <pre>
+       *命中的dsp分流方案
+       * </pre>
+       *
+       * <code>optional string dsp_strategy = 27;</code>
+       */
+      public java.lang.String getDspStrategy() {
+        java.lang.Object ref = dspStrategy_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            dspStrategy_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       *命中的dsp分流方案
+       * </pre>
+       *
+       * <code>optional string dsp_strategy = 27;</code>
+       */
+      public com.google.protobuf.ByteString
+          getDspStrategyBytes() {
+        java.lang.Object ref = dspStrategy_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          dspStrategy_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       *命中的dsp分流方案
+       * </pre>
+       *
+       * <code>optional string dsp_strategy = 27;</code>
+       */
+      public Builder setDspStrategy(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00800000;
+        dspStrategy_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *命中的dsp分流方案
+       * </pre>
+       *
+       * <code>optional string dsp_strategy = 27;</code>
+       */
+      public Builder clearDspStrategy() {
+        bitField0_ = (bitField0_ & ~0x00800000);
+        dspStrategy_ = getDefaultInstance().getDspStrategy();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *命中的dsp分流方案
+       * </pre>
+       *
+       * <code>optional string dsp_strategy = 27;</code>
+       */
+      public Builder setDspStrategyBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00800000;
+        dspStrategy_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -26299,7 +27876,7 @@ public final class Aslog {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-          return new NoticeLogBody(input, extensionRegistry);
+        return new NoticeLogBody(input, extensionRegistry);
       }
     };
 
@@ -26421,7 +27998,7 @@ public final class Aslog {
       "\003app\030\004 \001(\0132\016.aslog.AppInfo\022\035\n\004site\030\005 \001(\013" +
       "2\017.aslog.SiteInfo\022\020\n\010category\030\006 \001(\r\022\024\n\014s" +
       "ubaccountid\030\007 \001(\t\"\213\002\n\006Adslot\022\n\n\002id\030\001 \002(\t" +
-      "\022\037\n\004type\030\002 \002(\0162\021.aslog.AdslotType\022\031\n\004siz",
+      "\022\037\n\004type\030\002 \002(\0162\021.aslog.AdslotType\022\031\n\004siz" +
       "e\030\003 \002(\0132\013.aslog.Size\022\020\n\010capacity\030\004 \002(\r\022\020" +
       "\n\010inittime\030\005 \001(\004\022\r\n\005apseq\030\006 \001(\r\022\r\n\005apuid" +
       "\030\007 \001(\t\022\021\n\tbuildtype\030\010 \001(\r\022\020\n\010floorbid\030\t " +
@@ -26431,7 +28008,7 @@ public final class Aslog {
       ".NetworkType\022\n\n\002ip\030\002 \002(\t\"E\n\007Version\022\r\n\005m" +
       "ajor\030\001 \002(\r\022\r\n\005minor\030\002 \001(\r\022\r\n\005micro\030\003 \001(\r" +
       "\022\r\n\005build\030\004 \001(\r\"K\n\010DeviceId\022!\n\004type\030\001 \002(" +
-      "\0162\023.aslog.DeviceIdType\022\n\n\002id\030\002 \002(\t\022\020\n\010or",
+      "\0162\023.aslog.DeviceIdType\022\n\n\002id\030\002 \002(\t\022\020\n\010or" +
       "iginal\030\003 \001(\010\"\336\002\n\006Device\022\031\n\002os\030\001 \002(\0162\r.as" +
       "log.OSType\022!\n\tosversion\030\002 \002(\0132\016.aslog.Ve" +
       "rsion\022\034\n\003ids\030\003 \003(\0132\017.aslog.DeviceId\022\r\n\005b" +
@@ -26441,75 +28018,83 @@ public final class Aslog {
       "uid\030\n \001(\t\022\020\n\010screen_w\030\013 \001(\005\022\020\n\010screen_h\030" +
       "\014 \001(\005\022\021\n\tmatchidfa\030\r \001(\t\022\022\n\nphoneprice\030\016" +
       " \001(\r\022\022\n\nphonelevel\030\017 \001(\r\022\023\n\013brand_title\030" +
-      "\020 \001(\t\"J\n\006Client\022\037\n\004type\030\001 \002(\0162\021.aslog.Cl",
+      "\020 \001(\t\"J\n\006Client\022\037\n\004type\030\001 \002(\0162\021.aslog.Cl" +
       "ientType\022\037\n\007version\030\002 \001(\0132\016.aslog.Versio" +
-      "n\"\376\001\n\nDspReqInfo\022\031\n\003src\030\001 \002(\0162\014.aslog.Ad" +
+      "n\"\223\002\n\nDspReqInfo\022\031\n\003src\030\001 \002(\0162\014.aslog.Ad" +
       "Src\022\022\n\ndspmediaid\030\002 \001(\t\022\021\n\tretAdsNum\030\003 \001" +
       "(\005\022\020\n\010timecost\030\004 \001(\003\022\022\n\ntargetHost\030\005 \001(\t" +
       "\022\022\n\nioTimeCost\030\006 \001(\003\022\024\n\014materialTime\030\007 \001" +
       "(\003\022\024\n\014showFreqTime\030\010 \001(\003\022\024\n\014reqBsAllTime" +
       "\030\t \001(\003\022\034\n\024blackMediaFilterTime\030\n \001(\003\022\024\n\014" +
-      "fixClickTime\030\013 \001(\003\"\254\003\n\006AdInfo\022\033\n\004type\030\001 " +
-      "\002(\0162\r.aslog.AdType\022\031\n\003src\030\002 \002(\0162\014.aslog." +
-      "AdSrc\022+\n\013interaction\030\003 \002(\0162\026.aslog.Inter",
-      "actionType\022\014\n\004adid\030\004 \001(\r\022\017\n\007groupid\030\005 \001(" +
-      "\r\022\016\n\006planid\030\006 \001(\r\022\016\n\006userid\030\007 \001(\r\022\013\n\003bid" +
-      "\030\010 \001(\r\022\r\n\005price\030\t \001(\r\022\013\n\003ctr\030\n \001(\004\022\013\n\003cp" +
-      "m\030\013 \001(\004\022\r\n\005class\030\014 \001(\r\022\020\n\010usertype\030\r \001(\005" +
-      "\022\020\n\010titlectr\030\016 \001(\004\022\016\n\006expcpm\030\017 \001(\004\022\013\n\003cv" +
-      "r\030\020 \001(\004\022\025\n\rcvr_threshold\030\021 \001(\004\022\021\n\tcvr_th" +
-      "res\030\022 \001(\004\022\022\n\nmaterialid\030\023 \003(\r\022\024\n\014trigger" +
-      "_type\030\024 \001(\r\022\020\n\010discount\030\025 \002(\005\022\022\n\nshow_co" +
-      "unt\030\026 \001(\005\"4\n\010AdDspRet\022\031\n\003src\030\001 \002(\0162\014.asl" +
-      "og.AdSrc\022\r\n\005adnum\030\002 \002(\r\"\\\n\010Location\022\017\n\007c",
-      "ountry\030\001 \001(\r\022\020\n\010province\030\002 \001(\r\022\014\n\004city\030\003" +
-      " \001(\r\022\013\n\003isp\030\004 \001(\r\022\022\n\ncity_level\030\005 \001(\r\"1\n" +
-      "\014InterestItem\022\022\n\ninterestid\030\001 \001(\004\022\r\n\005sco" +
-      "re\030\002 \001(\004\"\272\001\n\013UserProfile\022&\n\tinterests\030\001 " +
-      "\003(\0132\023.aslog.InterestItem\022\013\n\003age\030\002 \001(\r\022\013\n" +
-      "\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpcategory\030\005 " +
-      "\001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshare_coin\030\007 \001(" +
-      "\r\022\017\n\007newuser\030\010 \001(\r\022\021\n\treq_count\030\t \001(\r\"\322\004" +
-      "\n\rNoticeLogBody\022\020\n\010searchid\030\001 \002(\t\022\021\n\ttim" +
-      "estamp\030\002 \002(\r\022\033\n\005media\030\003 \001(\0132\014.aslog.Medi",
-      "a\022\035\n\006adslot\030\004 \003(\0132\r.aslog.Adslot\022\035\n\006devi" +
-      "ce\030\005 \001(\0132\r.aslog.Device\022\032\n\003ads\030\006 \003(\0132\r.a" +
-      "slog.AdInfo\022\037\n\006dspret\030\007 \003(\0132\017.aslog.AdDs" +
-      "pRet\022\r\n\005debug\030\010 \001(\010\022\035\n\006client\030\t \001(\0132\r.as" +
-      "log.Client\022\037\n\007network\030\n \001(\0132\016.aslog.Netw" +
-      "ork\022\017\n\007exptags\030\013 \003(\t\022!\n\010location\030\014 \001(\0132\017" +
-      ".aslog.Location\022\020\n\010sourceip\030\r \001(\t\022\021\n\tint" +
-      "ertype\030\016 \001(\r\022\'\n\013userprofile\030\017 \001(\0132\022.aslo" +
-      "g.UserProfile\022\025\n\rdupplanfilter\030\020 \003(\r\022\024\n\014" +
-      "lowcpmfilter\030\021 \003(\r\022\024\n\014lowcvrfilter\030\022 \003(\r",
-      "\022%\n\ndspReqInfo\030\026 \003(\0132\021.aslog.DspReqInfo\022" +
-      "\020\n\010timecost\030\027 \001(\004\022\r\n\005https\030\030 \001(\010\022\021\n\tctrt" +
-      "arget\030\031 \001(\t\022\025\n\rdupuserfilter\030\032 \003(\r*3\n\tMe" +
-      "diaType\022\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007" +
-      "\n\003WAP\020\003*r\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014" +
-      "CONTENT_FEED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLO" +
-      "T_SPLASH\020\004\022\017\n\013SLOT_BANNER\020\005\022\016\n\nSLOT_VIDE" +
-      "O\020\006*P\n\013NetworkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010N" +
-      "ET_WIFI\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET" +
-      "_4G\020\004*?\n\006OSType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_AN",
-      "DROID\020\001\022\n\n\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013Brows" +
-      "erType\022\022\n\016UnknownBrowser\020\000\022\016\n\nMQQBrowser" +
-      "\020\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBr" +
-      "owser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBrowser\020" +
-      "\006\022\023\n\017IEMobileBrowser\020\007\022\022\n\016MicroMessenger" +
-      "\020\010\022\n\n\006QQChat\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVID" +
-      "_UNKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020" +
-      "\002\022\016\n\nDEVID_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEV" +
-      "ID_LSCOOKIE\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDE" +
-      "VID_IMSI\020\007*~\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020",
-      "\002\022\r\n\tICON_TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n" +
-      "\013AD_INTERACT\020\005\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_BANN" +
-      "ER\020\007\022\014\n\010AD_VIDEO\020\010*\020\n\005AdSrc\022\007\n\003CPC\020\001*i\n\017" +
-      "InteractionType\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURF" +
-      "ING\020\001\022\014\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESS" +
-      "AGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006*D\n\nClientType\022\r\n" +
-      "\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002" +
-      "HZ\020\004\022\007\n\003FUN\020\005"
+      "fixClickTime\030\013 \001(\003\022\023\n\013dspadslotid\030\014 \001(\t\"" +
+      "\231\004\n\006AdInfo\022\033\n\004type\030\001 \002(\0162\r.aslog.AdType\022" +
+      "\031\n\003src\030\002 \002(\0162\014.aslog.AdSrc\022+\n\013interactio" +
+      "n\030\003 \002(\0162\026.aslog.InteractionType\022\014\n\004adid\030" +
+      "\004 \001(\r\022\017\n\007groupid\030\005 \001(\r\022\016\n\006planid\030\006 \001(\r\022\016" +
+      "\n\006userid\030\007 \001(\r\022\013\n\003bid\030\010 \001(\r\022\r\n\005price\030\t \001" +
+      "(\r\022\013\n\003ctr\030\n \001(\004\022\013\n\003cpm\030\013 \001(\004\022\r\n\005class\030\014 " +
+      "\001(\r\022\020\n\010usertype\030\r \001(\005\022\020\n\010titlectr\030\016 \001(\004\022" +
+      "\016\n\006expcpm\030\017 \001(\004\022\013\n\003cvr\030\020 \001(\004\022\025\n\rcvr_thre" +
+      "shold\030\021 \001(\004\022\021\n\tcvr_thres\030\022 \001(\004\022\022\n\nmateri" +
+      "alid\030\023 \003(\r\022\024\n\014trigger_type\030\024 \001(\r\022\020\n\010disc" +
+      "ount\030\025 \002(\005\022\022\n\nshow_count\030\026 \001(\005\022\024\n\014dsp_me" +
+      "dia_id\030\027 \001(\t\022\025\n\rdsp_adslot_id\030\030 \001(\t\022\020\n\010a" +
+      "did_str\030\031 \001(\t\022,\n\016material_level\030\032 \001(\0162\024." +
+      "aslog.MaterialLevel\"4\n\010AdDspRet\022\031\n\003src\030\001" +
+      " \002(\0162\014.aslog.AdSrc\022\r\n\005adnum\030\002 \002(\r\"\\\n\010Loc" +
+      "ation\022\017\n\007country\030\001 \001(\r\022\020\n\010province\030\002 \001(\r" +
+      "\022\014\n\004city\030\003 \001(\r\022\013\n\003isp\030\004 \001(\r\022\022\n\ncity_leve" +
+      "l\030\005 \001(\r\"1\n\014InterestItem\022\022\n\ninterestid\030\001 " +
+      "\001(\004\022\r\n\005score\030\002 \001(\004\"\272\001\n\013UserProfile\022&\n\tin" +
+      "terests\030\001 \003(\0132\023.aslog.InterestItem\022\013\n\003ag" +
+      "e\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpc" +
+      "ategory\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshare" +
+      "_coin\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\022\021\n\treq_coun" +
+      "t\030\t \001(\r\"\350\004\n\rNoticeLogBody\022\020\n\010searchid\030\001 " +
+      "\002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033\n\005media\030\003 \001(\0132\014." +
+      "aslog.Media\022\035\n\006adslot\030\004 \003(\0132\r.aslog.Adsl" +
+      "ot\022\035\n\006device\030\005 \001(\0132\r.aslog.Device\022\032\n\003ads" +
+      "\030\006 \003(\0132\r.aslog.AdInfo\022\037\n\006dspret\030\007 \003(\0132\017." +
+      "aslog.AdDspRet\022\r\n\005debug\030\010 \001(\010\022\035\n\006client\030" +
+      "\t \001(\0132\r.aslog.Client\022\037\n\007network\030\n \001(\0132\016." +
+      "aslog.Network\022\017\n\007exptags\030\013 \003(\t\022!\n\010locati" +
+      "on\030\014 \001(\0132\017.aslog.Location\022\020\n\010sourceip\030\r " +
+      "\001(\t\022\021\n\tintertype\030\016 \001(\r\022\'\n\013userprofile\030\017 " +
+      "\001(\0132\022.aslog.UserProfile\022\025\n\rdupplanfilter" +
+      "\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021 \003(\r\022\024\n\014lowcvrfi" +
+      "lter\030\022 \003(\r\022%\n\ndspReqInfo\030\026 \003(\0132\021.aslog.D" +
+      "spReqInfo\022\020\n\010timecost\030\027 \001(\004\022\r\n\005https\030\030 \001" +
+      "(\010\022\021\n\tctrtarget\030\031 \001(\t\022\025\n\rdupuserfilter\030\032" +
+      " \003(\r\022\024\n\014dsp_strategy\030\033 \001(\t*3\n\tMediaType\022" +
+      "\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*" +
+      "r\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_" +
+      "FEED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLOT_SPLASH" +
+      "\020\004\022\017\n\013SLOT_BANNER\020\005\022\016\n\nSLOT_VIDEO\020\006*P\n\013N" +
+      "etworkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI\020" +
+      "\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?\n" +
+      "\006OSType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020\001\022" +
+      "\n\n\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType\022\022" +
+      "\n\016UnknownBrowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Ch" +
+      "rome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022" +
+      "\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEM" +
+      "obileBrowser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQ" +
+      "Chat\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNOWN" +
+      "\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEV" +
+      "ID_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCOO" +
+      "KIE\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVID_IMSI" +
+      "\020\007*~\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICO" +
+      "N_TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013AD_INTE" +
+      "RACT\020\005\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_BANNER\020\007\022\014\n\010" +
+      "AD_VIDEO\020\010*9\n\005AdSrc\022\007\n\003CPC\020\001\022\n\n\006INMOBI\020\002" +
+      "\022\013\n\007TANXSSP\020\003\022\016\n\nBOTTOMINIG\020\004*i\n\017Interac" +
+      "tionType\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014" +
+      "\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010" +
+      "\n\004MAIL\020\005\022\006\n\002GP\020\006*\203\001\n\rMaterialLevel\022\032\n\026MA" +
+      "TERIAL_LEVEL_UNKNOWN\020\000\022\024\n\020MATERIAL_LEVEL" +
+      "_1\020\001\022\024\n\020MATERIAL_LEVEL_2\020\002\022\024\n\020MATERIAL_L" +
+      "EVEL_3\020\003\022\024\n\020MATERIAL_LEVEL_4\020\004*M\n\nClient" +
+      "Type\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAP" +
+      "I\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005\022\007\n\003QTT\020\006"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -26588,13 +28173,13 @@ public final class Aslog {
     internal_static_aslog_DspReqInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_DspReqInfo_descriptor,
-        new java.lang.String[] { "Src", "Dspmediaid", "RetAdsNum", "Timecost", "TargetHost", "IoTimeCost", "MaterialTime", "ShowFreqTime", "ReqBsAllTime", "BlackMediaFilterTime", "FixClickTime", });
+        new java.lang.String[] { "Src", "Dspmediaid", "RetAdsNum", "Timecost", "TargetHost", "IoTimeCost", "MaterialTime", "ShowFreqTime", "ReqBsAllTime", "BlackMediaFilterTime", "FixClickTime", "Dspadslotid", });
     internal_static_aslog_AdInfo_descriptor =
       getDescriptor().getMessageTypes().get(11);
     internal_static_aslog_AdInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_AdInfo_descriptor,
-        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", "Class_", "Usertype", "Titlectr", "Expcpm", "Cvr", "CvrThreshold", "CvrThres", "Materialid", "TriggerType", "Discount", "ShowCount", });
+        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", "Class_", "Usertype", "Titlectr", "Expcpm", "Cvr", "CvrThreshold", "CvrThres", "Materialid", "TriggerType", "Discount", "ShowCount", "DspMediaId", "DspAdslotId", "AdidStr", "MaterialLevel", });
     internal_static_aslog_AdDspRet_descriptor =
       getDescriptor().getMessageTypes().get(12);
     internal_static_aslog_AdDspRet_fieldAccessorTable = new
@@ -26624,7 +28209,7 @@ public final class Aslog {
     internal_static_aslog_NoticeLogBody_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_NoticeLogBody_descriptor,
-        new java.lang.String[] { "Searchid", "Timestamp", "Media", "Adslot", "Device", "Ads", "Dspret", "Debug", "Client", "Network", "Exptags", "Location", "Sourceip", "Intertype", "Userprofile", "Dupplanfilter", "Lowcpmfilter", "Lowcvrfilter", "DspReqInfo", "Timecost", "Https", "Ctrtarget", "Dupuserfilter", });
+        new java.lang.String[] { "Searchid", "Timestamp", "Media", "Adslot", "Device", "Ads", "Dspret", "Debug", "Client", "Network", "Exptags", "Location", "Sourceip", "Intertype", "Userprofile", "Dupplanfilter", "Lowcpmfilter", "Lowcvrfilter", "DspReqInfo", "Timecost", "Https", "Ctrtarget", "Dupuserfilter", "DspStrategy", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
