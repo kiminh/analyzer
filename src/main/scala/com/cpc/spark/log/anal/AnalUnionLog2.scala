@@ -18,7 +18,7 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 /**
   * Created by Roy on 2017/4/18.
   */
-object AnalUnionLog {
+object AnalUnionLog2 {
 
   var srcRoot = "/gobblin/source/cpc"
 
