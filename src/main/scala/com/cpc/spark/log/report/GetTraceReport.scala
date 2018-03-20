@@ -62,7 +62,7 @@ object GetTraceReport {
          |un.ideaid as idea_id, tr.date as date,tr.hour,
          |tr.trace_type as trace_type,tr.duration as duration, tr.auto
          |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
-         |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s"
+         |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1
        """.stripMargin.format(date, hour, date, hour))
       .as[TraceReportLog]
       .rdd.cache()
