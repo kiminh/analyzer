@@ -163,7 +163,7 @@ object GetHourReport {
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_os_hourly", mariadbProp)
     println("os", osData.count())
-    val ipRequestData = unionLog.filter(x => x.isshow >0)
+   /* val ipRequestData = unionLog.filter(x => x.isshow >0)
       .map {
         x =>
           ((x.media_appsid.toInt,x.adslotid.toInt,x.adslot_type,x.ip,x.date,x.hour.toInt), 1)
@@ -274,7 +274,7 @@ object GetHourReport {
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_uid_click_hourly", mariadbProp)
     println("uid_click", uidClickData.count())
-
+*/
     val fillLog = ctx.sql(
       s"""
          |select * from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and adslotid > 0
