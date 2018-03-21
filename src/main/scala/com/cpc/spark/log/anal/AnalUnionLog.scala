@@ -213,20 +213,20 @@ object AnalUnionLog {
     var traceData = prepareTraceSource(traceData1)
 
     if (traceData1 != null) {
-      var trace = traceData.map(x => (x.searchid, x))
-      trace.leftOuterJoin(search)
-        .filter(x=>x._2._2.isDefined)
+      val trace = traceData.map(x => (x.searchid, x))
+      val trace2 = trace.join(search)
+//        .filter(x=>x._2._2.isDefined)
         .map {
           x =>
             val tlog = x._2._1
             tlog.copy(
-              search_timestamp = x._2._2.get,
+              search_timestamp = x._2._2,
               date = date,
               hour = hour
             )
         }
 
-      val w = trace.toDF()
+      val w = trace2.toDF()
         .write
         .mode(SaveMode.Append)
         .format("parquet")
