@@ -39,6 +39,14 @@ object LogParser {
       ext.update("client_version", ExtValue(string_value = "%s.%s.%s.%s".format(notice.getClient.getVersion.getMajor,
         notice.getClient.getVersion.getMinor,notice.getClient.getVersion.getMicro,notice.getClient.getVersion.getBuild)))
       ext.update("media_site_url", ExtValue(string_value = notice.getMedia.getSite.getUrls))
+
+//      ext.update("LowcpmfilterList", ExtValue(int_value = notice.getLowcpmfilter(0)))
+//      ext.update("LowcpmfilterList", ExtValue(int_value = notice.getLowcpmfilter(0)))
+//      ext.update("DspReqInfoList", ExtValue(int_value = notice.getDspReqInfo(0).getRetAdsNum))
+
+
+
+
       var devices = ""
       val deviceCount = notice.getDevice.getIdsCount-1
       for  (i <- 0 to  deviceCount){
@@ -48,6 +56,7 @@ object LogParser {
           devices +=  notice.getDevice.getIds(i).getType + ":" + notice.getDevice.getIds(i).getId
         }
       }
+
       ext.update("device_ids", ExtValue(string_value = devices))
       if (notice.getAdslotCount > 0) {
         val slot = notice.getAdslot(0)
@@ -81,6 +90,9 @@ object LogParser {
           ctr = ad.getCtr,
           cpm = ad.getCpm
         )
+
+
+        ext.update("material_level", ExtValue(int_value = ad.getMaterialLevel.getNumber))
         ext.update("cvr_threshold", ExtValue(int_value = ad.getCvrThres.toInt))
         ext.update("exp_ctr", ExtValue(int_value = ad.getTitlectr.toInt))
         ext.update("exp_cvr", ExtValue(int_value = ad.getCvr.toInt))
@@ -153,7 +165,7 @@ object LogParser {
     log
   }
 
-  def parseShowLog(txt: String): UnionLog = {
+  def parseShowLog(txt: String): UnionLog = {//zyc
     var log: UnionLog = null
     val data = Event.parse_show_log(txt)
     if (data != null) {
@@ -164,7 +176,7 @@ object LogParser {
       log = UnionLog(
         searchid = body.getSearchId,
         isshow = 1,
-        show_timestamp = body.getEventTimestamp,
+        show_timestamp = body.getEventTimestamp,//show time
         show_ip = data.ip ,
         ext = ext
       )

@@ -55,6 +55,7 @@ message  Adslot {
 	optional int32	  pagenum = 12; // 当前页面第几次请求
 	optional string   bookid  = 13; // 相同站点不同页面标记
 	optional int32    discount = 14; //广告位打折值，单位%
+	optional int32    flooracp = 15; //最低单价
 };
 
 enum NetworkType {
@@ -221,6 +222,7 @@ message AdInfo {
 	optional string dsp_adslot_id = 24; //第三方dsp的广告位id
 	optional string adid_str = 25; //广告位id的字符串，用于第三方广告源
 	optional MaterialLevel material_level = 26; // 素材等级
+	optional int32 click_count = 27; //记录广告所在单元，在此用户下的一天的点击次数
 };
 
 message AdDspRet {
@@ -251,6 +253,7 @@ message UserProfile {
 	optional uint32 share_coin = 7; // 金币增长数
 	optional uint32 newuser = 8; // 新老用户 1老用户 2新用户
 	optional uint32 req_count = 9; //同一用户一天内的请求次数
+	optional uint32 click_count = 10; //同一用户一天内的点击次数
 }
 
 message NoticeLogBody {
@@ -278,4 +281,5 @@ message NoticeLogBody {
 	optional string ctrtarget = 25; // ctr 请求地址
 	repeated uint32 dupuserfilter = 26; // 同一user过滤
 	optional string dsp_strategy = 27; //命中的dsp分流方案
+	repeated uint32 lowacpfilter = 28; //低于最低单价过滤
 };

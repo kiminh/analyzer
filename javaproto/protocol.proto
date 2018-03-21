@@ -70,7 +70,7 @@ enum GeoType {
     BD09  = 3;  // 百度标准
 }
 
-// 广告客户端类型
+// 广告客户端类型,弃用
 enum ClientType {
     NATIVESDK = 1;  // 原生SDK
     JSSDK     = 2;  // JSSDK
@@ -195,8 +195,10 @@ enum ChargeType {
 
 // 广告源相关
 enum Dsp {
-    JESGOO_DSP   = 1;
-    CPC_DSP = 2;
+    CPC_DSP = 1;
+    INMOBI_DSP = 2;
+    TANX_SSP_DSP = 3;
+    BOTTOMING = 4; //打底广告
 }
 
 // DSP计费相关字段
@@ -205,6 +207,7 @@ message DspInfo {
     optional string media_id   = 2;  // DSP提供媒体ID
     optional string channel_id = 3;  // DSP提供渠道ID
     optional int32  timecost   = 4;  // DSP请求花费时间
+    optional string adslot_id  = 5;  // DSP提供的广告位ID
 }
 
 // 反作弊规则
@@ -471,6 +474,7 @@ message Event {
             OPENAPI       = 3;  // 开放API
             HZ          = 4;
             FUN         = 5;
+            QTT         = 6;
         };
         // 客户端信息
         message Client {
@@ -515,6 +519,7 @@ message Event {
         optional Network network             =103;
         optional string    event_referer  = 104;   // 点击referer
         optional uint32    event_isp_tag    = 105;   // event_isp_tag
+        optional uint32    show_time    = 106;   //如果是视频广告，记录展示曝光时间点
     }
 
     message Extra {
