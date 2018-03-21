@@ -1715,7 +1715,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasPackagename()) {
         hash = (37 * hash) + PACKAGENAME_FIELD_NUMBER;
         hash = (53 * hash) + getPackagename().hashCode();
@@ -2424,7 +2424,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasDomain()) {
         hash = (37 * hash) + DOMAIN_FIELD_NUMBER;
         hash = (53 * hash) + getDomain().hashCode();
@@ -3077,7 +3077,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasHeight()) {
         hash = (37 * hash) + HEIGHT_FIELD_NUMBER;
         hash = (53 * hash) + getHeight();
@@ -3990,7 +3990,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -5157,6 +5157,23 @@ public final class Aslog {
      * <code>optional int32 discount = 14;</code>
      */
     int getDiscount();
+
+    /**
+     * <pre>
+     *最低单价
+     * </pre>
+     *
+     * <code>optional int32 flooracp = 15;</code>
+     */
+    boolean hasFlooracp();
+    /**
+     * <pre>
+     *最低单价
+     * </pre>
+     *
+     * <code>optional int32 flooracp = 15;</code>
+     */
+    int getFlooracp();
   }
   /**
    * Protobuf type {@code aslog.Adslot}
@@ -5183,6 +5200,7 @@ public final class Aslog {
       pagenum_ = 0;
       bookid_ = "";
       discount_ = 0;
+      flooracp_ = 0;
     }
 
     @java.lang.Override
@@ -5299,6 +5317,11 @@ public final class Aslog {
             case 112: {
               bitField0_ |= 0x00002000;
               discount_ = input.readInt32();
+              break;
+            }
+            case 120: {
+              bitField0_ |= 0x00004000;
+              flooracp_ = input.readInt32();
               break;
             }
           }
@@ -5751,6 +5774,29 @@ public final class Aslog {
       return discount_;
     }
 
+    public static final int FLOORACP_FIELD_NUMBER = 15;
+    private int flooracp_;
+    /**
+     * <pre>
+     *最低单价
+     * </pre>
+     *
+     * <code>optional int32 flooracp = 15;</code>
+     */
+    public boolean hasFlooracp() {
+      return ((bitField0_ & 0x00004000) == 0x00004000);
+    }
+    /**
+     * <pre>
+     *最低单价
+     * </pre>
+     *
+     * <code>optional int32 flooracp = 15;</code>
+     */
+    public int getFlooracp() {
+      return flooracp_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -5825,6 +5871,9 @@ public final class Aslog {
       if (((bitField0_ & 0x00002000) == 0x00002000)) {
         output.writeInt32(14, discount_);
       }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        output.writeInt32(15, flooracp_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -5884,6 +5933,10 @@ public final class Aslog {
       if (((bitField0_ & 0x00002000) == 0x00002000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(14, discount_);
+      }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(15, flooracp_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -5975,6 +6028,11 @@ public final class Aslog {
         result = result && (getDiscount()
             == other.getDiscount());
       }
+      result = result && (hasFlooracp() == other.hasFlooracp());
+      if (hasFlooracp()) {
+        result = result && (getFlooracp()
+            == other.getFlooracp());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -5985,7 +6043,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasId()) {
         hash = (37 * hash) + ID_FIELD_NUMBER;
         hash = (53 * hash) + getId().hashCode();
@@ -6044,6 +6102,10 @@ public final class Aslog {
       if (hasDiscount()) {
         hash = (37 * hash) + DISCOUNT_FIELD_NUMBER;
         hash = (53 * hash) + getDiscount();
+      }
+      if (hasFlooracp()) {
+        hash = (37 * hash) + FLOORACP_FIELD_NUMBER;
+        hash = (53 * hash) + getFlooracp();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -6196,6 +6258,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00001000);
         discount_ = 0;
         bitField0_ = (bitField0_ & ~0x00002000);
+        flooracp_ = 0;
+        bitField0_ = (bitField0_ & ~0x00004000);
         return this;
       }
 
@@ -6280,6 +6344,10 @@ public final class Aslog {
           to_bitField0_ |= 0x00002000;
         }
         result.discount_ = discount_;
+        if (((from_bitField0_ & 0x00004000) == 0x00004000)) {
+          to_bitField0_ |= 0x00004000;
+        }
+        result.flooracp_ = flooracp_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -6371,6 +6439,9 @@ public final class Aslog {
         }
         if (other.hasDiscount()) {
           setDiscount(other.getDiscount());
+        }
+        if (other.hasFlooracp()) {
+          setFlooracp(other.getFlooracp());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -7328,6 +7399,54 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private int flooracp_ ;
+      /**
+       * <pre>
+       *最低单价
+       * </pre>
+       *
+       * <code>optional int32 flooracp = 15;</code>
+       */
+      public boolean hasFlooracp() {
+        return ((bitField0_ & 0x00004000) == 0x00004000);
+      }
+      /**
+       * <pre>
+       *最低单价
+       * </pre>
+       *
+       * <code>optional int32 flooracp = 15;</code>
+       */
+      public int getFlooracp() {
+        return flooracp_;
+      }
+      /**
+       * <pre>
+       *最低单价
+       * </pre>
+       *
+       * <code>optional int32 flooracp = 15;</code>
+       */
+      public Builder setFlooracp(int value) {
+        bitField0_ |= 0x00004000;
+        flooracp_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *最低单价
+       * </pre>
+       *
+       * <code>optional int32 flooracp = 15;</code>
+       */
+      public Builder clearFlooracp() {
+        bitField0_ = (bitField0_ & ~0x00004000);
+        flooracp_ = 0;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -7625,7 +7744,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -8322,7 +8441,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasMajor()) {
         hash = (37 * hash) + MAJOR_FIELD_NUMBER;
         hash = (53 * hash) + getMajor();
@@ -9072,7 +9191,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -10649,7 +10768,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasOs()) {
         hash = (37 * hash) + OS_FIELD_NUMBER;
         hash = (53 * hash) + os_;
@@ -12545,7 +12664,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -13731,7 +13850,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasSrc()) {
         hash = (37 * hash) + SRC_FIELD_NUMBER;
         hash = (53 * hash) + src_;
@@ -15068,6 +15187,23 @@ public final class Aslog {
      * <code>optional .aslog.MaterialLevel material_level = 26;</code>
      */
     aslog.Aslog.MaterialLevel getMaterialLevel();
+
+    /**
+     * <pre>
+     *记录广告所在单元，在此用户下的一天的点击次数
+     * </pre>
+     *
+     * <code>optional int32 click_count = 27;</code>
+     */
+    boolean hasClickCount();
+    /**
+     * <pre>
+     *记录广告所在单元，在此用户下的一天的点击次数
+     * </pre>
+     *
+     * <code>optional int32 click_count = 27;</code>
+     */
+    int getClickCount();
   }
   /**
    * Protobuf type {@code aslog.AdInfo}
@@ -15107,6 +15243,7 @@ public final class Aslog {
       dspAdslotId_ = "";
       adidStr_ = "";
       materialLevel_ = 0;
+      clickCount_ = 0;
     }
 
     @java.lang.Override
@@ -15308,6 +15445,11 @@ public final class Aslog {
                 bitField0_ |= 0x01000000;
                 materialLevel_ = rawValue;
               }
+              break;
+            }
+            case 216: {
+              bitField0_ |= 0x02000000;
+              clickCount_ = input.readInt32();
               break;
             }
           }
@@ -15948,6 +16090,29 @@ public final class Aslog {
       return result == null ? aslog.Aslog.MaterialLevel.MATERIAL_LEVEL_UNKNOWN : result;
     }
 
+    public static final int CLICK_COUNT_FIELD_NUMBER = 27;
+    private int clickCount_;
+    /**
+     * <pre>
+     *记录广告所在单元，在此用户下的一天的点击次数
+     * </pre>
+     *
+     * <code>optional int32 click_count = 27;</code>
+     */
+    public boolean hasClickCount() {
+      return ((bitField0_ & 0x02000000) == 0x02000000);
+    }
+    /**
+     * <pre>
+     *记录广告所在单元，在此用户下的一天的点击次数
+     * </pre>
+     *
+     * <code>optional int32 click_count = 27;</code>
+     */
+    public int getClickCount() {
+      return clickCount_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -16053,6 +16218,9 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x01000000) == 0x01000000)) {
         output.writeEnum(26, materialLevel_);
+      }
+      if (((bitField0_ & 0x02000000) == 0x02000000)) {
+        output.writeInt32(27, clickCount_);
       }
       unknownFields.writeTo(output);
     }
@@ -16167,6 +16335,10 @@ public final class Aslog {
       if (((bitField0_ & 0x01000000) == 0x01000000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeEnumSize(26, materialLevel_);
+      }
+      if (((bitField0_ & 0x02000000) == 0x02000000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(27, clickCount_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -16308,6 +16480,11 @@ public final class Aslog {
       if (hasMaterialLevel()) {
         result = result && materialLevel_ == other.materialLevel_;
       }
+      result = result && (hasClickCount() == other.hasClickCount());
+      if (hasClickCount()) {
+        result = result && (getClickCount()
+            == other.getClickCount());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -16318,7 +16495,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -16429,6 +16606,10 @@ public final class Aslog {
       if (hasMaterialLevel()) {
         hash = (37 * hash) + MATERIAL_LEVEL_FIELD_NUMBER;
         hash = (53 * hash) + materialLevel_;
+      }
+      if (hasClickCount()) {
+        hash = (37 * hash) + CLICK_COUNT_FIELD_NUMBER;
+        hash = (53 * hash) + getClickCount();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -16600,6 +16781,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x01000000);
         materialLevel_ = 0;
         bitField0_ = (bitField0_ & ~0x02000000);
+        clickCount_ = 0;
+        bitField0_ = (bitField0_ & ~0x04000000);
         return this;
       }
 
@@ -16729,6 +16912,10 @@ public final class Aslog {
           to_bitField0_ |= 0x01000000;
         }
         result.materialLevel_ = materialLevel_;
+        if (((from_bitField0_ & 0x04000000) == 0x04000000)) {
+          to_bitField0_ |= 0x02000000;
+        }
+        result.clickCount_ = clickCount_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -16861,6 +17048,9 @@ public final class Aslog {
         }
         if (other.hasMaterialLevel()) {
           setMaterialLevel(other.getMaterialLevel());
+        }
+        if (other.hasClickCount()) {
+          setClickCount(other.getClickCount());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -18175,6 +18365,54 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private int clickCount_ ;
+      /**
+       * <pre>
+       *记录广告所在单元，在此用户下的一天的点击次数
+       * </pre>
+       *
+       * <code>optional int32 click_count = 27;</code>
+       */
+      public boolean hasClickCount() {
+        return ((bitField0_ & 0x04000000) == 0x04000000);
+      }
+      /**
+       * <pre>
+       *记录广告所在单元，在此用户下的一天的点击次数
+       * </pre>
+       *
+       * <code>optional int32 click_count = 27;</code>
+       */
+      public int getClickCount() {
+        return clickCount_;
+      }
+      /**
+       * <pre>
+       *记录广告所在单元，在此用户下的一天的点击次数
+       * </pre>
+       *
+       * <code>optional int32 click_count = 27;</code>
+       */
+      public Builder setClickCount(int value) {
+        bitField0_ |= 0x04000000;
+        clickCount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *记录广告所在单元，在此用户下的一天的点击次数
+       * </pre>
+       *
+       * <code>optional int32 click_count = 27;</code>
+       */
+      public Builder clearClickCount() {
+        bitField0_ = (bitField0_ & ~0x04000000);
+        clickCount_ = 0;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -18440,7 +18678,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasSrc()) {
         hash = (37 * hash) + SRC_FIELD_NUMBER;
         hash = (53 * hash) + src_;
@@ -19129,7 +19367,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasCountry()) {
         hash = (37 * hash) + COUNTRY_FIELD_NUMBER;
         hash = (53 * hash) + getCountry();
@@ -19849,7 +20087,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasInterestid()) {
         hash = (37 * hash) + INTERESTID_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
@@ -20417,6 +20655,23 @@ public final class Aslog {
      * <code>optional uint32 req_count = 9;</code>
      */
     int getReqCount();
+
+    /**
+     * <pre>
+     *同一用户一天内的点击次数
+     * </pre>
+     *
+     * <code>optional uint32 click_count = 10;</code>
+     */
+    boolean hasClickCount();
+    /**
+     * <pre>
+     *同一用户一天内的点击次数
+     * </pre>
+     *
+     * <code>optional uint32 click_count = 10;</code>
+     */
+    int getClickCount();
   }
   /**
    * Protobuf type {@code aslog.UserProfile}
@@ -20439,6 +20694,7 @@ public final class Aslog {
       shareCoin_ = 0;
       newuser_ = 0;
       reqCount_ = 0;
+      clickCount_ = 0;
     }
 
     @java.lang.Override
@@ -20516,6 +20772,11 @@ public final class Aslog {
             case 72: {
               bitField0_ |= 0x00000080;
               reqCount_ = input.readUInt32();
+              break;
+            }
+            case 80: {
+              bitField0_ |= 0x00000100;
+              clickCount_ = input.readUInt32();
               break;
             }
           }
@@ -20785,6 +21046,29 @@ public final class Aslog {
       return reqCount_;
     }
 
+    public static final int CLICK_COUNT_FIELD_NUMBER = 10;
+    private int clickCount_;
+    /**
+     * <pre>
+     *同一用户一天内的点击次数
+     * </pre>
+     *
+     * <code>optional uint32 click_count = 10;</code>
+     */
+    public boolean hasClickCount() {
+      return ((bitField0_ & 0x00000100) == 0x00000100);
+    }
+    /**
+     * <pre>
+     *同一用户一天内的点击次数
+     * </pre>
+     *
+     * <code>optional uint32 click_count = 10;</code>
+     */
+    public int getClickCount() {
+      return clickCount_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -20823,6 +21107,9 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x00000080) == 0x00000080)) {
         output.writeUInt32(9, reqCount_);
+      }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        output.writeUInt32(10, clickCount_);
       }
       unknownFields.writeTo(output);
     }
@@ -20867,6 +21154,10 @@ public final class Aslog {
       if (((bitField0_ & 0x00000080) == 0x00000080)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(9, reqCount_);
+      }
+      if (((bitField0_ & 0x00000100) == 0x00000100)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(10, clickCount_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -20927,6 +21218,11 @@ public final class Aslog {
         result = result && (getReqCount()
             == other.getReqCount());
       }
+      result = result && (hasClickCount() == other.hasClickCount());
+      if (hasClickCount()) {
+        result = result && (getClickCount()
+            == other.getClickCount());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -20937,7 +21233,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (getInterestsCount() > 0) {
         hash = (37 * hash) + INTERESTS_FIELD_NUMBER;
         hash = (53 * hash) + getInterestsList().hashCode();
@@ -20973,6 +21269,10 @@ public final class Aslog {
       if (hasReqCount()) {
         hash = (37 * hash) + REQ_COUNT_FIELD_NUMBER;
         hash = (53 * hash) + getReqCount();
+      }
+      if (hasClickCount()) {
+        hash = (37 * hash) + CLICK_COUNT_FIELD_NUMBER;
+        hash = (53 * hash) + getClickCount();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -21115,6 +21415,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00000080);
         reqCount_ = 0;
         bitField0_ = (bitField0_ & ~0x00000100);
+        clickCount_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000200);
         return this;
       }
 
@@ -21180,6 +21482,10 @@ public final class Aslog {
           to_bitField0_ |= 0x00000080;
         }
         result.reqCount_ = reqCount_;
+        if (((from_bitField0_ & 0x00000200) == 0x00000200)) {
+          to_bitField0_ |= 0x00000100;
+        }
+        result.clickCount_ = clickCount_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -21271,6 +21577,9 @@ public final class Aslog {
         }
         if (other.hasReqCount()) {
           setReqCount(other.getReqCount());
+        }
+        if (other.hasClickCount()) {
+          setClickCount(other.getClickCount());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -21995,6 +22304,54 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private int clickCount_ ;
+      /**
+       * <pre>
+       *同一用户一天内的点击次数
+       * </pre>
+       *
+       * <code>optional uint32 click_count = 10;</code>
+       */
+      public boolean hasClickCount() {
+        return ((bitField0_ & 0x00000200) == 0x00000200);
+      }
+      /**
+       * <pre>
+       *同一用户一天内的点击次数
+       * </pre>
+       *
+       * <code>optional uint32 click_count = 10;</code>
+       */
+      public int getClickCount() {
+        return clickCount_;
+      }
+      /**
+       * <pre>
+       *同一用户一天内的点击次数
+       * </pre>
+       *
+       * <code>optional uint32 click_count = 10;</code>
+       */
+      public Builder setClickCount(int value) {
+        bitField0_ |= 0x00000200;
+        clickCount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *同一用户一天内的点击次数
+       * </pre>
+       *
+       * <code>optional uint32 click_count = 10;</code>
+       */
+      public Builder clearClickCount() {
+        bitField0_ = (bitField0_ & ~0x00000200);
+        clickCount_ = 0;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -22513,6 +22870,31 @@ public final class Aslog {
      */
     com.google.protobuf.ByteString
         getDspStrategyBytes();
+
+    /**
+     * <pre>
+     *低于最低单价过滤
+     * </pre>
+     *
+     * <code>repeated uint32 lowacpfilter = 28;</code>
+     */
+    java.util.List<java.lang.Integer> getLowacpfilterList();
+    /**
+     * <pre>
+     *低于最低单价过滤
+     * </pre>
+     *
+     * <code>repeated uint32 lowacpfilter = 28;</code>
+     */
+    int getLowacpfilterCount();
+    /**
+     * <pre>
+     *低于最低单价过滤
+     * </pre>
+     *
+     * <code>repeated uint32 lowacpfilter = 28;</code>
+     */
+    int getLowacpfilter(int index);
   }
   /**
    * Protobuf type {@code aslog.NoticeLogBody}
@@ -22544,6 +22926,7 @@ public final class Aslog {
       ctrtarget_ = "";
       dupuserfilter_ = java.util.Collections.emptyList();
       dspStrategy_ = "";
+      lowacpfilter_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -22830,6 +23213,27 @@ public final class Aslog {
               dspStrategy_ = bs;
               break;
             }
+            case 224: {
+              if (!((mutable_bitField0_ & 0x01000000) == 0x01000000)) {
+                lowacpfilter_ = new java.util.ArrayList<java.lang.Integer>();
+                mutable_bitField0_ |= 0x01000000;
+              }
+              lowacpfilter_.add(input.readUInt32());
+              break;
+            }
+            case 226: {
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              if (!((mutable_bitField0_ & 0x01000000) == 0x01000000) && input.getBytesUntilLimit() > 0) {
+                lowacpfilter_ = new java.util.ArrayList<java.lang.Integer>();
+                mutable_bitField0_ |= 0x01000000;
+              }
+              while (input.getBytesUntilLimit() > 0) {
+                lowacpfilter_.add(input.readUInt32());
+              }
+              input.popLimit(limit);
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -22864,6 +23268,9 @@ public final class Aslog {
         }
         if (((mutable_bitField0_ & 0x00400000) == 0x00400000)) {
           dupuserfilter_ = java.util.Collections.unmodifiableList(dupuserfilter_);
+        }
+        if (((mutable_bitField0_ & 0x01000000) == 0x01000000)) {
+          lowacpfilter_ = java.util.Collections.unmodifiableList(lowacpfilter_);
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -23628,6 +24035,40 @@ public final class Aslog {
       }
     }
 
+    public static final int LOWACPFILTER_FIELD_NUMBER = 28;
+    private java.util.List<java.lang.Integer> lowacpfilter_;
+    /**
+     * <pre>
+     *低于最低单价过滤
+     * </pre>
+     *
+     * <code>repeated uint32 lowacpfilter = 28;</code>
+     */
+    public java.util.List<java.lang.Integer>
+        getLowacpfilterList() {
+      return lowacpfilter_;
+    }
+    /**
+     * <pre>
+     *低于最低单价过滤
+     * </pre>
+     *
+     * <code>repeated uint32 lowacpfilter = 28;</code>
+     */
+    public int getLowacpfilterCount() {
+      return lowacpfilter_.size();
+    }
+    /**
+     * <pre>
+     *低于最低单价过滤
+     * </pre>
+     *
+     * <code>repeated uint32 lowacpfilter = 28;</code>
+     */
+    public int getLowacpfilter(int index) {
+      return lowacpfilter_.get(index);
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -23768,6 +24209,9 @@ public final class Aslog {
       if (((bitField0_ & 0x00004000) == 0x00004000)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 27, dspStrategy_);
       }
+      for (int i = 0; i < lowacpfilter_.size(); i++) {
+        output.writeUInt32(28, lowacpfilter_.get(i));
+      }
       unknownFields.writeTo(output);
     }
 
@@ -23892,6 +24336,15 @@ public final class Aslog {
       if (((bitField0_ & 0x00004000) == 0x00004000)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(27, dspStrategy_);
       }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < lowacpfilter_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeUInt32SizeNoTag(lowacpfilter_.get(i));
+        }
+        size += dataSize;
+        size += 2 * getLowacpfilterList().size();
+      }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
@@ -24002,6 +24455,8 @@ public final class Aslog {
         result = result && getDspStrategy()
             .equals(other.getDspStrategy());
       }
+      result = result && getLowacpfilterList()
+          .equals(other.getLowacpfilterList());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -24012,7 +24467,7 @@ public final class Aslog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasSearchid()) {
         hash = (37 * hash) + SEARCHID_FIELD_NUMBER;
         hash = (53 * hash) + getSearchid().hashCode();
@@ -24111,6 +24566,10 @@ public final class Aslog {
       if (hasDspStrategy()) {
         hash = (37 * hash) + DSP_STRATEGY_FIELD_NUMBER;
         hash = (53 * hash) + getDspStrategy().hashCode();
+      }
+      if (getLowacpfilterCount() > 0) {
+        hash = (37 * hash) + LOWACPFILTER_FIELD_NUMBER;
+        hash = (53 * hash) + getLowacpfilterList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -24328,6 +24787,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00400000);
         dspStrategy_ = "";
         bitField0_ = (bitField0_ & ~0x00800000);
+        lowacpfilter_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x01000000);
         return this;
       }
 
@@ -24497,6 +24958,11 @@ public final class Aslog {
           to_bitField0_ |= 0x00004000;
         }
         result.dspStrategy_ = dspStrategy_;
+        if (((bitField0_ & 0x01000000) == 0x01000000)) {
+          lowacpfilter_ = java.util.Collections.unmodifiableList(lowacpfilter_);
+          bitField0_ = (bitField0_ & ~0x01000000);
+        }
+        result.lowacpfilter_ = lowacpfilter_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -24744,6 +25210,16 @@ public final class Aslog {
         if (other.hasDspStrategy()) {
           bitField0_ |= 0x00800000;
           dspStrategy_ = other.dspStrategy_;
+          onChanged();
+        }
+        if (!other.lowacpfilter_.isEmpty()) {
+          if (lowacpfilter_.isEmpty()) {
+            lowacpfilter_ = other.lowacpfilter_;
+            bitField0_ = (bitField0_ & ~0x01000000);
+          } else {
+            ensureLowacpfilterIsMutable();
+            lowacpfilter_.addAll(other.lowacpfilter_);
+          }
           onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
@@ -27608,6 +28084,100 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private java.util.List<java.lang.Integer> lowacpfilter_ = java.util.Collections.emptyList();
+      private void ensureLowacpfilterIsMutable() {
+        if (!((bitField0_ & 0x01000000) == 0x01000000)) {
+          lowacpfilter_ = new java.util.ArrayList<java.lang.Integer>(lowacpfilter_);
+          bitField0_ |= 0x01000000;
+         }
+      }
+      /**
+       * <pre>
+       *低于最低单价过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowacpfilter = 28;</code>
+       */
+      public java.util.List<java.lang.Integer>
+          getLowacpfilterList() {
+        return java.util.Collections.unmodifiableList(lowacpfilter_);
+      }
+      /**
+       * <pre>
+       *低于最低单价过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowacpfilter = 28;</code>
+       */
+      public int getLowacpfilterCount() {
+        return lowacpfilter_.size();
+      }
+      /**
+       * <pre>
+       *低于最低单价过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowacpfilter = 28;</code>
+       */
+      public int getLowacpfilter(int index) {
+        return lowacpfilter_.get(index);
+      }
+      /**
+       * <pre>
+       *低于最低单价过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowacpfilter = 28;</code>
+       */
+      public Builder setLowacpfilter(
+          int index, int value) {
+        ensureLowacpfilterIsMutable();
+        lowacpfilter_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *低于最低单价过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowacpfilter = 28;</code>
+       */
+      public Builder addLowacpfilter(int value) {
+        ensureLowacpfilterIsMutable();
+        lowacpfilter_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *低于最低单价过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowacpfilter = 28;</code>
+       */
+      public Builder addAllLowacpfilter(
+          java.lang.Iterable<? extends java.lang.Integer> values) {
+        ensureLowacpfilterIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, lowacpfilter_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *低于最低单价过滤
+       * </pre>
+       *
+       * <code>repeated uint32 lowacpfilter = 28;</code>
+       */
+      public Builder clearLowacpfilter() {
+        lowacpfilter_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x01000000);
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -27759,104 +28329,106 @@ public final class Aslog {
       "pe\022\016\n\006appsid\030\002 \002(\t\022\021\n\tchannelid\030\003 \001(\t\022\033\n" +
       "\003app\030\004 \001(\0132\016.aslog.AppInfo\022\035\n\004site\030\005 \001(\013" +
       "2\017.aslog.SiteInfo\022\020\n\010category\030\006 \001(\r\022\024\n\014s" +
-      "ubaccountid\030\007 \001(\t\"\213\002\n\006Adslot\022\n\n\002id\030\001 \002(\t" +
+      "ubaccountid\030\007 \001(\t\"\235\002\n\006Adslot\022\n\n\002id\030\001 \002(\t" +
       "\022\037\n\004type\030\002 \002(\0162\021.aslog.AdslotType\022\031\n\004siz",
       "e\030\003 \002(\0132\013.aslog.Size\022\020\n\010capacity\030\004 \002(\r\022\020" +
       "\n\010inittime\030\005 \001(\004\022\r\n\005apseq\030\006 \001(\r\022\r\n\005apuid" +
       "\030\007 \001(\t\022\021\n\tbuildtype\030\010 \001(\r\022\020\n\010floorbid\030\t " +
       "\001(\002\022\016\n\006cpmbid\030\n \001(\002\022\017\n\007channel\030\013 \001(\t\022\017\n\007" +
       "pagenum\030\014 \001(\005\022\016\n\006bookid\030\r \001(\t\022\020\n\010discoun" +
-      "t\030\016 \001(\005\"7\n\007Network\022 \n\004type\030\001 \002(\0162\022.aslog" +
-      ".NetworkType\022\n\n\002ip\030\002 \002(\t\"E\n\007Version\022\r\n\005m" +
-      "ajor\030\001 \002(\r\022\r\n\005minor\030\002 \001(\r\022\r\n\005micro\030\003 \001(\r" +
-      "\022\r\n\005build\030\004 \001(\r\"K\n\010DeviceId\022!\n\004type\030\001 \002(" +
-      "\0162\023.aslog.DeviceIdType\022\n\n\002id\030\002 \002(\t\022\020\n\010or",
-      "iginal\030\003 \001(\010\"\336\002\n\006Device\022\031\n\002os\030\001 \002(\0162\r.as" +
-      "log.OSType\022!\n\tosversion\030\002 \002(\0132\016.aslog.Ve" +
-      "rsion\022\034\n\003ids\030\003 \003(\0132\017.aslog.DeviceId\022\r\n\005b" +
-      "rand\030\004 \001(\t\022\r\n\005model\030\005 \001(\t\022\021\n\tuseragent\030\006" +
-      " \001(\014\022\016\n\006cookie\030\007 \001(\014\022#\n\007browser\030\010 \001(\0162\022." +
-      "aslog.BrowserType\022\021\n\tmatchimei\030\t \001(\t\022\013\n\003" +
-      "uid\030\n \001(\t\022\020\n\010screen_w\030\013 \001(\005\022\020\n\010screen_h\030" +
-      "\014 \001(\005\022\021\n\tmatchidfa\030\r \001(\t\022\022\n\nphoneprice\030\016" +
-      " \001(\r\022\022\n\nphonelevel\030\017 \001(\r\022\023\n\013brand_title\030" +
-      "\020 \001(\t\"J\n\006Client\022\037\n\004type\030\001 \002(\0162\021.aslog.Cl",
-      "ientType\022\037\n\007version\030\002 \001(\0132\016.aslog.Versio" +
-      "n\"\223\002\n\nDspReqInfo\022\031\n\003src\030\001 \002(\0162\014.aslog.Ad" +
-      "Src\022\022\n\ndspmediaid\030\002 \001(\t\022\021\n\tretAdsNum\030\003 \001" +
-      "(\005\022\020\n\010timecost\030\004 \001(\003\022\022\n\ntargetHost\030\005 \001(\t" +
-      "\022\022\n\nioTimeCost\030\006 \001(\003\022\024\n\014materialTime\030\007 \001" +
-      "(\003\022\024\n\014showFreqTime\030\010 \001(\003\022\024\n\014reqBsAllTime" +
-      "\030\t \001(\003\022\034\n\024blackMediaFilterTime\030\n \001(\003\022\024\n\014" +
-      "fixClickTime\030\013 \001(\003\022\023\n\013dspadslotid\030\014 \001(\t\"" +
-      "\231\004\n\006AdInfo\022\033\n\004type\030\001 \002(\0162\r.aslog.AdType\022" +
-      "\031\n\003src\030\002 \002(\0162\014.aslog.AdSrc\022+\n\013interactio",
-      "n\030\003 \002(\0162\026.aslog.InteractionType\022\014\n\004adid\030" +
-      "\004 \001(\r\022\017\n\007groupid\030\005 \001(\r\022\016\n\006planid\030\006 \001(\r\022\016" +
-      "\n\006userid\030\007 \001(\r\022\013\n\003bid\030\010 \001(\r\022\r\n\005price\030\t \001" +
-      "(\r\022\013\n\003ctr\030\n \001(\004\022\013\n\003cpm\030\013 \001(\004\022\r\n\005class\030\014 " +
-      "\001(\r\022\020\n\010usertype\030\r \001(\005\022\020\n\010titlectr\030\016 \001(\004\022" +
-      "\016\n\006expcpm\030\017 \001(\004\022\013\n\003cvr\030\020 \001(\004\022\025\n\rcvr_thre" +
-      "shold\030\021 \001(\004\022\021\n\tcvr_thres\030\022 \001(\004\022\022\n\nmateri" +
-      "alid\030\023 \003(\r\022\024\n\014trigger_type\030\024 \001(\r\022\020\n\010disc" +
-      "ount\030\025 \002(\005\022\022\n\nshow_count\030\026 \001(\005\022\024\n\014dsp_me" +
-      "dia_id\030\027 \001(\t\022\025\n\rdsp_adslot_id\030\030 \001(\t\022\020\n\010a",
-      "did_str\030\031 \001(\t\022,\n\016material_level\030\032 \001(\0162\024." +
-      "aslog.MaterialLevel\"4\n\010AdDspRet\022\031\n\003src\030\001" +
-      " \002(\0162\014.aslog.AdSrc\022\r\n\005adnum\030\002 \002(\r\"\\\n\010Loc" +
-      "ation\022\017\n\007country\030\001 \001(\r\022\020\n\010province\030\002 \001(\r" +
-      "\022\014\n\004city\030\003 \001(\r\022\013\n\003isp\030\004 \001(\r\022\022\n\ncity_leve" +
-      "l\030\005 \001(\r\"1\n\014InterestItem\022\022\n\ninterestid\030\001 " +
-      "\001(\004\022\r\n\005score\030\002 \001(\004\"\272\001\n\013UserProfile\022&\n\tin" +
-      "terests\030\001 \003(\0132\023.aslog.InterestItem\022\013\n\003ag" +
-      "e\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpc" +
-      "ategory\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshare",
-      "_coin\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\022\021\n\treq_coun" +
-      "t\030\t \001(\r\"\350\004\n\rNoticeLogBody\022\020\n\010searchid\030\001 " +
-      "\002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033\n\005media\030\003 \001(\0132\014." +
-      "aslog.Media\022\035\n\006adslot\030\004 \003(\0132\r.aslog.Adsl" +
-      "ot\022\035\n\006device\030\005 \001(\0132\r.aslog.Device\022\032\n\003ads" +
-      "\030\006 \003(\0132\r.aslog.AdInfo\022\037\n\006dspret\030\007 \003(\0132\017." +
-      "aslog.AdDspRet\022\r\n\005debug\030\010 \001(\010\022\035\n\006client\030" +
-      "\t \001(\0132\r.aslog.Client\022\037\n\007network\030\n \001(\0132\016." +
-      "aslog.Network\022\017\n\007exptags\030\013 \003(\t\022!\n\010locati" +
-      "on\030\014 \001(\0132\017.aslog.Location\022\020\n\010sourceip\030\r ",
-      "\001(\t\022\021\n\tintertype\030\016 \001(\r\022\'\n\013userprofile\030\017 " +
-      "\001(\0132\022.aslog.UserProfile\022\025\n\rdupplanfilter" +
-      "\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021 \003(\r\022\024\n\014lowcvrfi" +
-      "lter\030\022 \003(\r\022%\n\ndspReqInfo\030\026 \003(\0132\021.aslog.D" +
-      "spReqInfo\022\020\n\010timecost\030\027 \001(\004\022\r\n\005https\030\030 \001" +
-      "(\010\022\021\n\tctrtarget\030\031 \001(\t\022\025\n\rdupuserfilter\030\032" +
-      " \003(\r\022\024\n\014dsp_strategy\030\033 \001(\t*3\n\tMediaType\022" +
-      "\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*" +
-      "r\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_" +
-      "FEED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLOT_SPLASH",
-      "\020\004\022\017\n\013SLOT_BANNER\020\005\022\016\n\nSLOT_VIDEO\020\006*P\n\013N" +
-      "etworkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI\020" +
-      "\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?\n" +
-      "\006OSType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020\001\022" +
-      "\n\n\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType\022\022" +
-      "\n\016UnknownBrowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Ch" +
-      "rome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022" +
-      "\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEM" +
-      "obileBrowser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQ" +
-      "Chat\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNOWN",
-      "\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEV" +
-      "ID_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCOO" +
-      "KIE\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVID_IMSI" +
-      "\020\007*~\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICO" +
-      "N_TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013AD_INTE" +
-      "RACT\020\005\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_BANNER\020\007\022\014\n\010" +
-      "AD_VIDEO\020\010*9\n\005AdSrc\022\007\n\003CPC\020\001\022\n\n\006INMOBI\020\002" +
-      "\022\013\n\007TANXSSP\020\003\022\016\n\nBOTTOMINIG\020\004*i\n\017Interac" +
-      "tionType\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014" +
-      "\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010",
-      "\n\004MAIL\020\005\022\006\n\002GP\020\006*\203\001\n\rMaterialLevel\022\032\n\026MA" +
-      "TERIAL_LEVEL_UNKNOWN\020\000\022\024\n\020MATERIAL_LEVEL" +
-      "_1\020\001\022\024\n\020MATERIAL_LEVEL_2\020\002\022\024\n\020MATERIAL_L" +
-      "EVEL_3\020\003\022\024\n\020MATERIAL_LEVEL_4\020\004*M\n\nClient" +
-      "Type\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAP" +
-      "I\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005\022\007\n\003QTT\020\006"
+      "t\030\016 \001(\005\022\020\n\010flooracp\030\017 \001(\005\"7\n\007Network\022 \n\004" +
+      "type\030\001 \002(\0162\022.aslog.NetworkType\022\n\n\002ip\030\002 \002" +
+      "(\t\"E\n\007Version\022\r\n\005major\030\001 \002(\r\022\r\n\005minor\030\002 " +
+      "\001(\r\022\r\n\005micro\030\003 \001(\r\022\r\n\005build\030\004 \001(\r\"K\n\010Dev" +
+      "iceId\022!\n\004type\030\001 \002(\0162\023.aslog.DeviceIdType",
+      "\022\n\n\002id\030\002 \002(\t\022\020\n\010original\030\003 \001(\010\"\336\002\n\006Devic" +
+      "e\022\031\n\002os\030\001 \002(\0162\r.aslog.OSType\022!\n\tosversio" +
+      "n\030\002 \002(\0132\016.aslog.Version\022\034\n\003ids\030\003 \003(\0132\017.a" +
+      "slog.DeviceId\022\r\n\005brand\030\004 \001(\t\022\r\n\005model\030\005 " +
+      "\001(\t\022\021\n\tuseragent\030\006 \001(\014\022\016\n\006cookie\030\007 \001(\014\022#" +
+      "\n\007browser\030\010 \001(\0162\022.aslog.BrowserType\022\021\n\tm" +
+      "atchimei\030\t \001(\t\022\013\n\003uid\030\n \001(\t\022\020\n\010screen_w\030" +
+      "\013 \001(\005\022\020\n\010screen_h\030\014 \001(\005\022\021\n\tmatchidfa\030\r \001" +
+      "(\t\022\022\n\nphoneprice\030\016 \001(\r\022\022\n\nphonelevel\030\017 \001" +
+      "(\r\022\023\n\013brand_title\030\020 \001(\t\"J\n\006Client\022\037\n\004typ",
+      "e\030\001 \002(\0162\021.aslog.ClientType\022\037\n\007version\030\002 " +
+      "\001(\0132\016.aslog.Version\"\223\002\n\nDspReqInfo\022\031\n\003sr" +
+      "c\030\001 \002(\0162\014.aslog.AdSrc\022\022\n\ndspmediaid\030\002 \001(" +
+      "\t\022\021\n\tretAdsNum\030\003 \001(\005\022\020\n\010timecost\030\004 \001(\003\022\022" +
+      "\n\ntargetHost\030\005 \001(\t\022\022\n\nioTimeCost\030\006 \001(\003\022\024" +
+      "\n\014materialTime\030\007 \001(\003\022\024\n\014showFreqTime\030\010 \001" +
+      "(\003\022\024\n\014reqBsAllTime\030\t \001(\003\022\034\n\024blackMediaFi" +
+      "lterTime\030\n \001(\003\022\024\n\014fixClickTime\030\013 \001(\003\022\023\n\013" +
+      "dspadslotid\030\014 \001(\t\"\256\004\n\006AdInfo\022\033\n\004type\030\001 \002" +
+      "(\0162\r.aslog.AdType\022\031\n\003src\030\002 \002(\0162\014.aslog.A",
+      "dSrc\022+\n\013interaction\030\003 \002(\0162\026.aslog.Intera" +
+      "ctionType\022\014\n\004adid\030\004 \001(\r\022\017\n\007groupid\030\005 \001(\r" +
+      "\022\016\n\006planid\030\006 \001(\r\022\016\n\006userid\030\007 \001(\r\022\013\n\003bid\030" +
+      "\010 \001(\r\022\r\n\005price\030\t \001(\r\022\013\n\003ctr\030\n \001(\004\022\013\n\003cpm" +
+      "\030\013 \001(\004\022\r\n\005class\030\014 \001(\r\022\020\n\010usertype\030\r \001(\005\022" +
+      "\020\n\010titlectr\030\016 \001(\004\022\016\n\006expcpm\030\017 \001(\004\022\013\n\003cvr" +
+      "\030\020 \001(\004\022\025\n\rcvr_threshold\030\021 \001(\004\022\021\n\tcvr_thr" +
+      "es\030\022 \001(\004\022\022\n\nmaterialid\030\023 \003(\r\022\024\n\014trigger_" +
+      "type\030\024 \001(\r\022\020\n\010discount\030\025 \002(\005\022\022\n\nshow_cou" +
+      "nt\030\026 \001(\005\022\024\n\014dsp_media_id\030\027 \001(\t\022\025\n\rdsp_ad",
+      "slot_id\030\030 \001(\t\022\020\n\010adid_str\030\031 \001(\t\022,\n\016mater" +
+      "ial_level\030\032 \001(\0162\024.aslog.MaterialLevel\022\023\n" +
+      "\013click_count\030\033 \001(\005\"4\n\010AdDspRet\022\031\n\003src\030\001 " +
+      "\002(\0162\014.aslog.AdSrc\022\r\n\005adnum\030\002 \002(\r\"\\\n\010Loca" +
+      "tion\022\017\n\007country\030\001 \001(\r\022\020\n\010province\030\002 \001(\r\022" +
+      "\014\n\004city\030\003 \001(\r\022\013\n\003isp\030\004 \001(\r\022\022\n\ncity_level" +
+      "\030\005 \001(\r\"1\n\014InterestItem\022\022\n\ninterestid\030\001 \001" +
+      "(\004\022\r\n\005score\030\002 \001(\004\"\317\001\n\013UserProfile\022&\n\tint" +
+      "erests\030\001 \003(\0132\023.aslog.InterestItem\022\013\n\003age" +
+      "\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpca",
+      "tegory\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshare_" +
+      "coin\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\022\021\n\treq_count" +
+      "\030\t \001(\r\022\023\n\013click_count\030\n \001(\r\"\376\004\n\rNoticeLo" +
+      "gBody\022\020\n\010searchid\030\001 \002(\t\022\021\n\ttimestamp\030\002 \002" +
+      "(\r\022\033\n\005media\030\003 \001(\0132\014.aslog.Media\022\035\n\006adslo" +
+      "t\030\004 \003(\0132\r.aslog.Adslot\022\035\n\006device\030\005 \001(\0132\r" +
+      ".aslog.Device\022\032\n\003ads\030\006 \003(\0132\r.aslog.AdInf" +
+      "o\022\037\n\006dspret\030\007 \003(\0132\017.aslog.AdDspRet\022\r\n\005de" +
+      "bug\030\010 \001(\010\022\035\n\006client\030\t \001(\0132\r.aslog.Client" +
+      "\022\037\n\007network\030\n \001(\0132\016.aslog.Network\022\017\n\007exp",
+      "tags\030\013 \003(\t\022!\n\010location\030\014 \001(\0132\017.aslog.Loc" +
+      "ation\022\020\n\010sourceip\030\r \001(\t\022\021\n\tintertype\030\016 \001" +
+      "(\r\022\'\n\013userprofile\030\017 \001(\0132\022.aslog.UserProf" +
+      "ile\022\025\n\rdupplanfilter\030\020 \003(\r\022\024\n\014lowcpmfilt" +
+      "er\030\021 \003(\r\022\024\n\014lowcvrfilter\030\022 \003(\r\022%\n\ndspReq" +
+      "Info\030\026 \003(\0132\021.aslog.DspReqInfo\022\020\n\010timecos" +
+      "t\030\027 \001(\004\022\r\n\005https\030\030 \001(\010\022\021\n\tctrtarget\030\031 \001(" +
+      "\t\022\025\n\rdupuserfilter\030\032 \003(\r\022\024\n\014dsp_strategy" +
+      "\030\033 \001(\t\022\024\n\014lowacpfilter\030\034 \003(\r*3\n\tMediaTyp" +
+      "e\022\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020",
+      "\003*r\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTEN" +
+      "T_FEED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLOT_SPLA" +
+      "SH\020\004\022\017\n\013SLOT_BANNER\020\005\022\016\n\nSLOT_VIDEO\020\006*P\n" +
+      "\013NetworkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIF" +
+      "I\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*" +
+      "?\n\006OSType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020" +
+      "\001\022\n\n\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType" +
+      "\022\022\n\016UnknownBrowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006" +
+      "Chrome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020" +
+      "\004\022\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017I",
+      "EMobileBrowser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006" +
+      "QQChat\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNO" +
+      "WN\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nD" +
+      "EVID_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSC" +
+      "OOKIE\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVID_IM" +
+      "SI\020\007*~\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tI" +
+      "CON_TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013AD_IN" +
+      "TERACT\020\005\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_BANNER\020\007\022\014" +
+      "\n\010AD_VIDEO\020\010*9\n\005AdSrc\022\007\n\003CPC\020\001\022\n\n\006INMOBI" +
+      "\020\002\022\013\n\007TANXSSP\020\003\022\016\n\nBOTTOMINIG\020\004*i\n\017Inter",
+      "actionType\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001" +
+      "\022\014\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004" +
+      "\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006*\203\001\n\rMaterialLevel\022\032\n\026" +
+      "MATERIAL_LEVEL_UNKNOWN\020\000\022\024\n\020MATERIAL_LEV" +
+      "EL_1\020\001\022\024\n\020MATERIAL_LEVEL_2\020\002\022\024\n\020MATERIAL" +
+      "_LEVEL_3\020\003\022\024\n\020MATERIAL_LEVEL_4\020\004*M\n\nClie" +
+      "ntType\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPEN" +
+      "API\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005\022\007\n\003QTT\020\006"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -27899,7 +28471,7 @@ public final class Aslog {
     internal_static_aslog_Adslot_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_Adslot_descriptor,
-        new java.lang.String[] { "Id", "Type", "Size", "Capacity", "Inittime", "Apseq", "Apuid", "Buildtype", "Floorbid", "Cpmbid", "Channel", "Pagenum", "Bookid", "Discount", });
+        new java.lang.String[] { "Id", "Type", "Size", "Capacity", "Inittime", "Apseq", "Apuid", "Buildtype", "Floorbid", "Cpmbid", "Channel", "Pagenum", "Bookid", "Discount", "Flooracp", });
     internal_static_aslog_Network_descriptor =
       getDescriptor().getMessageTypes().get(5);
     internal_static_aslog_Network_fieldAccessorTable = new
@@ -27941,7 +28513,7 @@ public final class Aslog {
     internal_static_aslog_AdInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_AdInfo_descriptor,
-        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", "Class_", "Usertype", "Titlectr", "Expcpm", "Cvr", "CvrThreshold", "CvrThres", "Materialid", "TriggerType", "Discount", "ShowCount", "DspMediaId", "DspAdslotId", "AdidStr", "MaterialLevel", });
+        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", "Class_", "Usertype", "Titlectr", "Expcpm", "Cvr", "CvrThreshold", "CvrThres", "Materialid", "TriggerType", "Discount", "ShowCount", "DspMediaId", "DspAdslotId", "AdidStr", "MaterialLevel", "ClickCount", });
     internal_static_aslog_AdDspRet_descriptor =
       getDescriptor().getMessageTypes().get(12);
     internal_static_aslog_AdDspRet_fieldAccessorTable = new
@@ -27965,13 +28537,13 @@ public final class Aslog {
     internal_static_aslog_UserProfile_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_UserProfile_descriptor,
-        new java.lang.String[] { "Interests", "Age", "Sex", "Coin", "Pcategory", "Antispam", "ShareCoin", "Newuser", "ReqCount", });
+        new java.lang.String[] { "Interests", "Age", "Sex", "Coin", "Pcategory", "Antispam", "ShareCoin", "Newuser", "ReqCount", "ClickCount", });
     internal_static_aslog_NoticeLogBody_descriptor =
       getDescriptor().getMessageTypes().get(16);
     internal_static_aslog_NoticeLogBody_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_NoticeLogBody_descriptor,
-        new java.lang.String[] { "Searchid", "Timestamp", "Media", "Adslot", "Device", "Ads", "Dspret", "Debug", "Client", "Network", "Exptags", "Location", "Sourceip", "Intertype", "Userprofile", "Dupplanfilter", "Lowcpmfilter", "Lowcvrfilter", "DspReqInfo", "Timecost", "Https", "Ctrtarget", "Dupuserfilter", "DspStrategy", });
+        new java.lang.String[] { "Searchid", "Timestamp", "Media", "Adslot", "Device", "Ads", "Dspret", "Debug", "Client", "Network", "Exptags", "Location", "Sourceip", "Intertype", "Userprofile", "Dupplanfilter", "Lowcpmfilter", "Lowcvrfilter", "DspReqInfo", "Timecost", "Https", "Ctrtarget", "Dupuserfilter", "DspStrategy", "Lowacpfilter", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
