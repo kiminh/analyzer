@@ -91,7 +91,7 @@ object LogParser {
           cpm = ad.getCpm
         )
 
-
+        ext.update("click_unit_count", ExtValue(int_value = ad.getClickCount))
         ext.update("material_level", ExtValue(int_value = ad.getMaterialLevel.getNumber))
         ext.update("cvr_threshold", ExtValue(int_value = ad.getCvrThres.toInt))
         ext.update("exp_ctr", ExtValue(int_value = ad.getTitlectr.toInt))
@@ -150,6 +150,7 @@ object LogParser {
           interRows = interRows :+ "%d=%d".format(in.getInterestid, in.getScore)
         }
       }
+      ext.update("click_count", ExtValue(int_value = user.getClickCount))
       ext.update("antispam", ExtValue(int_value = user.getAntispam))
       ext.update("share_coin", ExtValue(int_value = user.getShareCoin))
       ext.update("qukan_new_user", ExtValue(int_value = user.getNewuser))
