@@ -204,16 +204,18 @@ object AnalUnionLog {
     //clear dir
     Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
     w.saveAsTable("dl_cpc." + table)
+
     println("union", unionData.count())
 
 
     var search = unionData.map(x => (x.searchid, x.timestamp))
-
+    println("search", search.count())
     val traceData1 = prepareSource(spark, "cpc_trace", "src_cpc_trace", hourBefore, 2)
     var traceData = prepareTraceSource(traceData1)
 
     if (traceData1 != null) {
       val trace = traceData.map(x => (x.searchid, x))
+      println("trace1", trace.count())
       val trace2 = trace.join(search)
 //        .filter(x=>x._2._2.isDefined)
         .map {
@@ -234,7 +236,8 @@ object AnalUnionLog {
       //clear dir
       Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
       w.saveAsTable("dl_cpc." + traceTbl)
-      println("trace", trace.count())
+
+      println("trace2", trace2.count())
     }
     spark.stop()
   }
