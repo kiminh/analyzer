@@ -256,21 +256,17 @@ object AnalUnionLog {
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
    */
   def prepareSource(ctx: SparkSession, key: String, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
-
-    try {
-      val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
-      val baseData = ctx.read.schema(schema).parquet(input)
-      val tbl = "%s_data_%d".format(src, hourBefore)
-      baseData.createTempView(tbl)
-      ctx.sql("select field['%s'].string_type from %s".format(key, tbl)).rdd
-    } catch {
-      case e: Exception => null
-    }
+    val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
+    println(input)
+    val baseData = ctx.read.schema(schema).parquet(input)
+    val tbl = "%s_data_%d".format(src, hourBefore)
+    baseData.createTempView(tbl)
+    ctx.sql("select field['%s'].string_type from %s".format(key, tbl)).rdd
   }
 
   def prepareTraceSource(src: rdd.RDD[Row]): rdd.RDD[TraceLog] = {
     src.map(x => LogParser.parseTraceLog(x.getString(0)))
-      .filter(x => x != null && x.searchid.length > 0)
+      .filter(x => x != null && x.searchid.length > 5)
   }
 
   def getDateHourPath(hourBefore: Int, hours: Int): String = {
