@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.xgboost
 
-import java.io.FileOutputStream
+import java.io.{FileOutputStream, FileWriter}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
@@ -15,7 +15,7 @@ import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 
 import scala.util.Random
 
@@ -25,13 +25,6 @@ import scala.util.Random
 object TrainCtr2 {
 
   Logger.getRootLogger.setLevel(Level.WARN)
-
-  val cols = Seq(
-    "sex", "age", "os", "isp", "network", "city",
-    "mediaid_", "adslotid_", "phone_level", "adclass",
-    "pagenum", "bookid_", "adtype", "adslot_type", "planid",
-    "unitid", "ideaid", "user_req_ad_num", "user_req_num"
-  )
 
   private var ctx: SparkSession = null
 
@@ -57,11 +50,12 @@ object TrainCtr2 {
     println(path)
     trainLog :+= path
 
-    val srcdata = spark.read.parquet(path).coalesce(1000).cache()
+    val srcdata = spark.read.parquet(path)
 
     println("training qtt 11111111111111111111111111111111111111111")
     trainLog :+= "training qtt 11111111111111111111111111111111111111111"
     val qttAll = srcdata.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+
     train(spark, qttAll, "qtt")  //趣头条广告
 //    train(spark, qttAll, "ctr_qtt")  //趣头条广告
 
@@ -85,7 +79,6 @@ object TrainCtr2 {
 //
 //    }
     Utils.sendMail(trainLog.mkString("\n"), "xg_ctr_trainLog5day", Seq("rd@aiclk.com")) //Utils.sendMail(trainLog.mkString("\n"), "zyc_TrainLog", Seq("rd@aiclk.com"))
-    srcdata.unpersist()
   }
 
   def isMorning(): Boolean = {
@@ -147,26 +140,36 @@ object TrainCtr2 {
     }
       .toDF("label", "features")
 
-    val Array(tmp1, tmp2) = data.randomSplit(Array(0.9, 0.1), 123L)
+    data.write.mode(SaveMode.Overwrite).parquet("/user/cpc/xgboost/features")
+    println("save features")
+    //val data = spark.read.parquet("/user/cpc/xgboost/features")
+
+
+    val Array(tmp1, tmp2) = srcdata.randomSplit(Array(0.9, 0.1), 123L)
     val test = getLimitedData(1e7, tmp2)
-    val totalNum = data.count().toDouble
+    val totalNum = srcdata.count().toDouble
     val pnum = tmp1.filter(x => x.getAs[Int]("label") > 0).count().toDouble
     val rate = (pnum * 10 / totalNum * 1000).toInt // 1.24% * 10000 = 124
     println(pnum, totalNum, rate)
     trainLog :+= "xgb train: pnum=%.0f totalNum=%.0f rate=%d/1000".format(pnum, totalNum, rate)
     val tmp = tmp1.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate) //之前正样本数可能占1/1000，可以变成占1/100
-    val train = getLimitedData(4e7, tmp)
+    val train = getLimitedData(2e7, tmp)
     //val Array(train, test) = data.randomSplit(Array(0.9, 0.1), 123L)
 
-
-
     val params = Map(
-      //"eta" -> 1f,
+      "eta" -> 0.1,
       //"lambda" -> 2.5
-      "num_round" -> 20,
+      "num_round" -> 200,
+      "gamma" -> 0.3,
       //"max_delta_step" -> 4,
+
+      "subsample" -> 0.8,
       "colsample_bytree" -> 0.8,
-      "max_depth" -> 10, //数的最大深度。缺省值为6 ,取值范围为：[1,∞]
+
+      "min_child_weight" -> 5,
+      "max_depth" -> 8, //数的最大深度。缺省值为6 ,取值范围为：[1,∞]
+
+      "nthread" -> 24,
       "objective" -> "reg:logistic" //定义学习任务及相应的学习目标
     )
 

@@ -1,5 +1,6 @@
 package com.cpc.spark.ml.stub
 
+import java.io.FileWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -8,18 +9,23 @@ import com.cpc.spark.ml.common.FeatureDict
 import com.cpc.spark.ml.ctrmodel.gbdt.Train
 import com.cpc.spark.ml.ctrmodel.hourly.LRTrain
 import com.cpc.spark.ml.ctrmodel.v1.FeatureParser
+import com.cpc.spark.ml.xgboost.SaveSampleSvm
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
 import io.grpc.ManagedChannelBuilder
 import ml.dmlc.xgboost4j.scala.spark.XGBoostModel
+import ml.dmlc.xgboost4j.scala.XGBoost
+import mlserver.mlserver.PredictorGrpc.PredictorStub
 import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.regression.IsotonicRegressionModel
 import org.apache.spark.mllib.classification.LogisticRegressionModel
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
+import org.json4s.native.Printer
 import userprofile.Userprofile.UserProfile
+import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 
 /**
   * Created by roydong on 2017/5/11.
@@ -61,25 +67,41 @@ object Stub {
 
     println(sql)
     //val logs = ctx.sql(sql).cache()
-    //logs.toDF().write.parquet("/user/cpc/xgboost/ulog")
+    //logs.toDF().write.mode(SaveMode.Overwrite).parquet("/user/cpc/xgboost/ulog")
     val logs = ctx.read.parquet("/user/cpc/xgboost/ulog")
-    val model = XGBoostModel.load("/user/cpc/xgboost/ctr_v1")
-    val vecs = logs.rdd.map { r => Train.getVectorParser2(r).toDense }
+    //val model = XGBoostModel.load("/home/cpc/anal/xgboost_model/ctr-tmp.gbm")
+    //val booster = XGBoost.loadModel("/home/cpc/anal/xgboost_model/ctr-tmp.gbm")
+    val irmodel = IsotonicRegressionModel.load(ctx.sparkContext, "/user/cpc/xgboost/xgbmodeldata/ctr_2018-03-13-07-00.ir")
+    /*
+    val vecs = logs.rdd.map { r => LRTrain.getVectorParser2(r).toDense }
 
-    vecs.toLocalIterator.foreach{
+    val w = new FileWriter("./test_vec.svm")
+    vecs.toLocalIterator.foreach {
       v =>
         println(v.values.mkString(" "))
+        var svm = "1"
+        v.foreachActive {
+          (i, v) =>
+            svm = svm + " %d:%f".format(i + 1, v)
+        }
+        svm
+        w.write(w + "\n")
     }
+    w.close()
+    */
 
+    /*
     model.predict(vecs, 0.0001f)
       .toLocalIterator
       .foreach {
         x =>
-          println(x.mkString(" "))
+          val v = irmodel.predict(x(0))
+          println(x(0), v)
       }
+      */
 
     for (i <- 1 to 100000) {
-      Thread.sleep(500)
+      Thread.sleep(10000)
       logs.rdd.toLocalIterator.foreach{
         x =>
           var seq = Seq[String]()
@@ -118,11 +140,13 @@ object Stub {
             adSlot = Option(slot)
           )
 
+
           val blockingStub = PredictorGrpc.blockingStub(channel)
           val reply = blockingStub.predict(req)
 
           println("ideaid=%d scala=%.8f ml=%.8f".format(ad.ideaid, 0d, reply.results(0).value))
           println("")
+
       }
     }
   }

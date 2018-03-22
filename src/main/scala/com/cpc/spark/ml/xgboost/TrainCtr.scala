@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.xgboost
 
-import java.io.FileOutputStream
+import java.io.{FileOutputStream, FileWriter}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
@@ -13,9 +13,10 @@ import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.typesafe.config.ConfigFactory
+
 import scala.util.Random
 
 /**
@@ -56,12 +57,12 @@ object TrainCtr {
     println(path)
     trainLog :+= path
 
-    val srcdata = spark.read.parquet(path).coalesce(1000).cache()
+    //val srcdata = spark.read.parquet(path)
 
     println("training qtt 11111111111111111111111111111111111111111")
     trainLog :+= "training qtt 11111111111111111111111111111111111111111"
-//    val qttAll = srcdata.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-    train(spark, srcdata, "qtt")  //趣头条广告
+    //val qttAll = srcdata.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+    train(spark, null, "qtt")  //趣头条广告
 //    train(spark, qttAll, "ctr_qtt")  //趣头条广告
 
 //    if (isMorning()) {
@@ -84,7 +85,7 @@ object TrainCtr {
 //
 //    }
     Utils.sendMail(trainLog.mkString("\n"), "xg_ctr_trainLog5day", Seq("rd@aiclk.com")) //Utils.sendMail(trainLog.mkString("\n"), "zyc_TrainLog", Seq("rd@aiclk.com"))
-    srcdata.unpersist()
+    //srcdata.unpersist()
   }
 
   def isMorning(): Boolean = {
@@ -113,12 +114,15 @@ object TrainCtr {
     trainLog :+= "\n------train log--------"
     trainLog :+= "destfile = %s".format(destfile)
     import spark.implicits._
+    /*
     val data = srcdata.map {
       r =>
         val vec = getVectorParser2(r) //解析数据
         (r.getAs[Int]("label"), vec)
     }
       .toDF("label", "features")
+      */
+    val data = spark.read.parquet("/user/cpc/xgboost/features")
 
     val Array(tmp1, tmp2) = data.randomSplit(Array(0.9, 0.1), 123L)
     val test = getLimitedData(1e7, tmp2)
@@ -131,18 +135,49 @@ object TrainCtr {
     val train = getLimitedData(2e7, tmp)
     //val Array(train, test) = data.randomSplit(Array(0.9, 0.1), 123L)
 
+    test.map {
+      x =>
+        val label = x.getAs[Int]("label")
+        val vec = x.getAs[Vector]("features")
+        var svm = label.toString
+        vec.foreachActive {
+          (i, v) =>
+            svm = svm + " %d:%f".format(i + 1, v)
+        }
+        svm
+    }
+    .write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_test_svm_v1")
+
+    train.map {
+      x =>
+        val label = x.getAs[Int]("label")
+        val vec = x.getAs[Vector]("features")
+        var svm = label.toString
+        vec.foreachActive {
+          (i, v) =>
+            svm = svm + " %d:%f".format(i + 1, v)
+        }
+        svm
+    }
+      .write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_train_svm_v1")
+
+    System.exit(1)
+
+
     val params = Map(
       //"eta" -> 1f,
       //"lambda" -> 2.5
-      "num_round" -> 20,
+      "gamma" -> 0.2,
+      "num_round" -> 200,
       //"max_delta_step" -> 4,
-      "colsample_bytree" -> 0.8,
+      "colsample_bytree" -> 0.2,
       "max_depth" -> 10, //数的最大深度。缺省值为6 ,取值范围为：[1,∞]
       "objective" -> "reg:logistic" //定义学习任务及相应的学习目标
     )
 
     val xgb = new XGBoostEstimator(params)
     val model = xgb.train(train)
+
 
     val predictions = model.transform(test)
 
@@ -160,6 +195,7 @@ object TrainCtr {
           val p = r.getAs[Float]("prediction").toDouble
           (p, label)
       }
+      .repartition(600)
 
     printXGBTestLog(result)
 
@@ -232,7 +268,7 @@ object TrainCtr {
       rate = limitedNum / num
     }
 
-    ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0).coalesce(1000)
+    ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0)
   }
 
   def printXGBTestLog(lrTestResults: RDD[(Double, Double)]): Unit = {
@@ -288,7 +324,7 @@ object TrainCtr {
           val sum = x._2
           val pre = x._1.toDouble * 0.05
           if (pre>0.2) {
-            isUpdateModel = true
+            //isUpdateModel = true
           }
           log = log + "%.2f %d %.4f %.4f %d %.4f %.4f %.4f\n".format(
             pre, //预测值

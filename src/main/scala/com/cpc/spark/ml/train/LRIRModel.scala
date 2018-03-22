@@ -5,7 +5,7 @@ import java.util.{Calendar, Date}
 
 import lrmodel.lrmodel.{IRModel, LRModel, Pack}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
-import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
+import org.apache.spark.mllib.evaluation.{BinaryClassificationMetrics, RegressionMetrics}
 import org.apache.spark.mllib.optimization.L1Updater
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel, LabeledPoint}
 import org.apache.spark.rdd.RDD
@@ -110,6 +110,8 @@ class LRIRModel {
 
   private var auPRC = 0d
 
+  private var rmse = 0d
+
   def getAuPRC(): Double = {
     auPRC
   }
@@ -139,6 +141,10 @@ class LRIRModel {
 
     // AUROC
     auROC = metrics.areaUnderROC
+
+    val rmetrics = new RegressionMetrics(lrTestResults)
+
+    rmse = rmetrics.rootMeanSquaredError
   }
 
   def clearResult(): Unit = {
@@ -212,7 +218,7 @@ class LRIRModel {
             sum._1, sum._1.toDouble / test0.toDouble, sum._1.toDouble / testSum.toDouble,
             sum._2.toDouble / (sum._1 + sum._2).toDouble)
       }
-    log + "auPRC: %.10f, auROC: %.10f\n".format(auPRC, auROC)
+    log + "auPRC: %.10f, auROC: %.10f, rmse: %.10f\n".format(auPRC, auROC, rmse)
   }
 
   private var irmodel: IsotonicRegressionModel = _
