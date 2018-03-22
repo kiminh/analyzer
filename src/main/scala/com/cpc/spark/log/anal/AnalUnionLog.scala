@@ -261,7 +261,7 @@ object AnalUnionLog {
     val baseData = ctx.read.schema(schema).parquet(input)
     val tbl = "%s_data_%d".format(src, hourBefore)
     baseData.createTempView(tbl)
-    ctx.sql("select field['%s'].string_type from %s".format(key, tbl)).rdd
+    ctx.sql("select field['%s'].string_type from %s".format(key, tbl)).rdd.repartition(1000)
   }
 
   def prepareTraceSource(src: rdd.RDD[Row]): rdd.RDD[TraceLog] = {
