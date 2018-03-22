@@ -256,10 +256,10 @@ object LRTrain {
       trainRate = n / num
     }
 
-    //最多2000w条测试数据
+    //最多1000w条测试数据
     var testRate = 0.09
-    if (num * testRate > 2e7) {
-      testRate = 2e7 / num
+    if (num * testRate > 1e7) {
+      testRate = 1e7 / num
     }
 
     val Array(train, test, tmp) = ulog
@@ -294,7 +294,7 @@ object LRTrain {
       binNum = testNum / minBinSize
     }
 
-    model.runIr(binNum.toInt, 0.9)
+    model.runIr(binNum.toInt, 0.95)
     trainLog :+= model.binsLog.mkString("\n")
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
