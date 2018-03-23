@@ -24,7 +24,7 @@ object GetHdRedirectLog {
         """.stripMargin)
       System.exit(1)
     }
-    val hourBefore = args(0).toInt
+    val dayBefore = args(0).toInt
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val conf = ConfigFactory.load()
@@ -34,26 +34,25 @@ object GetHdRedirectLog {
     mariadbProp.put("driver", conf.getString("mariadb.union_write.driver"))
 
     val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -hourBefore)
+    cal.add(Calendar.DATE, -dayBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val hour = new SimpleDateFormat("HH").format(cal.getTime)
 
     val ctx = SparkSession.builder()
       .appName("model user anal" + date)
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
-    var sql1 = (" SELECT * FROM dl_cpc.cpc_cfg_log where `date`='%s' and log_type ='/hdjump' and hour = '%s'").format(date,hour)
+    var sql1 = (" SELECT * FROM dl_cpc.cpc_cfg_log where `date`='%s' and log_type ='/hdjump' ").format(date)
 
     println("sql1:" + sql1)
     var cfgLog = ctx.sql(sql1).as[CfgLog]
       .rdd.cache()
-    var toResult = cfgLog.map(x => ((x.aid,x.redirect_url), 1)).reduceByKey((x,y) => x+y).map{
-      case ((adslotId, url),count) =>
+    var toResult = cfgLog.map(x => ((x.aid,x.redirect_url,x.hour), 1)).reduceByKey((x,y) => x+y).map{
+      case ((adslotId, url,hour),count) =>
         HdRedict(date,hour, adslotId,url,count)
     }
    println("count:" + cfgLog.count())
-    clearReportHourData("report_hd_redirect", date, hour)
+    clearReportHourData("report_hd_redirect", date)
     ctx.createDataFrame(toResult)
       .write
       .mode(SaveMode.Append)
@@ -61,7 +60,7 @@ object GetHdRedirectLog {
     ctx.stop()
   }
 
-  def clearReportHourData(tbl: String, date: String, hour:String): Unit = {
+  def clearReportHourData(tbl: String, date: String): Unit = {
     try {
       Class.forName(mariadbProp.getProperty("driver"))
       val conn = DriverManager.getConnection(
@@ -71,8 +70,8 @@ object GetHdRedirectLog {
       val stmt = conn.createStatement()
       val sql =
         """
-          |delete from union.%s where `date` = "%s" and `hour` ="%s"
-        """.stripMargin.format(tbl, date, hour)
+          |delete from union.%s where `date` = "%s"
+        """.stripMargin.format(tbl, date)
       stmt.executeUpdate(sql);
     } catch {
       case e: Exception => println("exception caught: " + e)
