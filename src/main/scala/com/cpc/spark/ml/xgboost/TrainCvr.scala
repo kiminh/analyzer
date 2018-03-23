@@ -209,8 +209,8 @@ object TrainCvr {
     if (isUpdateModel) {
       println("update model~~~~~~~~~~~~~~~~~~~~~~")
       trainLog :+= "\n-------update model------"
-      trainLog :+= MUtils.updateOnlineData2(xgmodelfilepath, destfile + ".gbm", ConfigFactory.load())
-      trainLog :+= MUtils.updateOnlineData2(xgbfilePBpath, destfile + ".mlm", ConfigFactory.load())
+      trainLog :+= MUtils.updateMlcppOnlineData(xgmodelfilepath, destfile + ".gbm", ConfigFactory.load())
+      trainLog :+= MUtils.updateMlcppOnlineData(xgbfilePBpath, destfile + ".mlm", ConfigFactory.load())
     }else {
       println("not update model~~~~~~~~~~~~~~~~~~~~~~")
     }

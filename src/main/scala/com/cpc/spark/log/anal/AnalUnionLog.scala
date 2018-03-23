@@ -204,31 +204,44 @@ object AnalUnionLog {
     //clear dir
     Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
     w.saveAsTable("dl_cpc." + table)
-
     println("union", unionData.count())
 
-
-    var search = unionData.filter(x => x.isclick > 0).map(x => (x.searchid, x.timestamp))
-    println("search", search.count())
-    val traceData1 = prepareSource(spark, "cpc_trace", "src_cpc_trace", hourBefore, 2)
-    var traceData = prepareTraceSource(traceData1)
-
-    if (traceData1 != null) {
-      val trace = traceData.map(x => (x.searchid, x))
-      println("trace1", trace.count())
-      val trace2 = trace.join(search)
-        //        .filter(x=>x._2._2.isDefined)
-        .map {
-        x =>
-          val tlog = x._2._1
-          tlog.copy(
-            search_timestamp = x._2._2,
-            date = date,
-            hour = hour
-          )
+    val traceData = prepareSource(spark, "cpc_trace", "src_cpc_trace", hourBefore, 2)
+    if (traceData != null) {
+      val trace = prepareTraceSource(traceData)
+      println("trace", trace.count())
+      val search = unionData.filter(x => x.isclick > 0)
+        .map{
+          x =>
+            (x.searchid, (x.timestamp, Seq[TraceLog]()))
+        }
+      val trace1 = trace.map(x => (x.searchid, Seq(x)))
+        .reduceByKey(_ ++ _)
+        .map(x => (x._1, (-1, x._2)))
+        .union(search)
+        .reduceByKey {
+          (x, y) =>
+            if (x._1 >= 0) {
+              (x._1, y._2)
+            } else {
+              (y._1, x._2)
+            }
+        }
+        .filter(_._2._1 >= 0)
+        .flatMap {
+          x =>
+            val t = x._2._1
+            x._2._2.map {
+              v =>
+                v.copy(
+                  search_timestamp = t,
+                  date = date,
+                  hour = hour
+                )
+            }
       }
 
-      val w = trace2.toDF()
+      val w = trace1.toDF()
         .write
         .mode(SaveMode.Append)
         .format("parquet")
@@ -236,8 +249,7 @@ object AnalUnionLog {
       //clear dir
       Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
       w.saveAsTable("dl_cpc." + traceTbl)
-
-      println("trace2", trace2.count())
+      println("trace1", trace1.count())
     }
     spark.stop()
   }

@@ -12,6 +12,10 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
 import scala.collection.mutable
+import com.cpc.spark.ml.common.Utils
+import com.typesafe.config.ConfigFactory
+
+import sys.process._
 
 /**
   * Created by roydong on 19/03/2018.
@@ -70,8 +74,20 @@ object TestPyModel {
       ir = Option(ir),
       dict = Option(dict)
     )
-    pack.writeTo(new FileOutputStream("/home/cpc/anal/xgboost_model/%s.mlm".format(filetime)))
 
+    val prefix = "%s-%s".format(args(0), args(1))
+    val filename = "/home/cpc/anal/xgboost_model/%s-%s".format(prefix, filetime)
+    println(filename)
+    pack.writeTo(new FileOutputStream(s"$filename.mlm"))
+    val cmd = s"cp -f /tmp/xgboost.gbm $filename.gbm"
+    val ret = cmd !
+
+
+    if (args(3).toInt == 1) {
+      val conf = ConfigFactory.load()
+      println(Utils.updateMlcppOnlineData(filename+".mlm", s"/home/work/mlcpp/data/$prefix.mlm", conf))
+      println(Utils.updateMlcppOnlineData(filename+".gbm", s"/home/work/mlcpp/data/$prefix.gbm", conf))
+    }
   }
 
   def getIntDict(in: String, out: String): Map[Int, Int] = {
