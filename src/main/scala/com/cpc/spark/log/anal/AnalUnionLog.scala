@@ -208,7 +208,7 @@ object AnalUnionLog {
     println("union", unionData.count())
 
 
-    var search = unionData.map(x => (x.searchid, x.timestamp))
+    var search = unionData.filter(x => x.isclick > 0).map(x => (x.searchid, x.timestamp))
     println("search", search.count())
     val traceData1 = prepareSource(spark, "cpc_trace", "src_cpc_trace", hourBefore, 2)
     var traceData = prepareTraceSource(traceData1)
@@ -217,16 +217,16 @@ object AnalUnionLog {
       val trace = traceData.map(x => (x.searchid, x))
       println("trace1", trace.count())
       val trace2 = trace.join(search)
-//        .filter(x=>x._2._2.isDefined)
+        //        .filter(x=>x._2._2.isDefined)
         .map {
-          x =>
-            val tlog = x._2._1
-            tlog.copy(
-              search_timestamp = x._2._2,
-              date = date,
-              hour = hour
-            )
-        }
+        x =>
+          val tlog = x._2._1
+          tlog.copy(
+            search_timestamp = x._2._2,
+            date = date,
+            hour = hour
+          )
+      }
 
       val w = trace2.toDF()
         .write
