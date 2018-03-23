@@ -14,8 +14,10 @@ import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
 import io.grpc.ManagedChannelBuilder
+import ml.dmlc.xgboost4j.java.DMatrix
 import ml.dmlc.xgboost4j.scala.spark.XGBoostModel
 import ml.dmlc.xgboost4j.scala.XGBoost
+import ml.dmlc.xgboost4j.scala.DMatrix
 import mlserver.mlserver.PredictorGrpc.PredictorStub
 import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
@@ -32,6 +34,8 @@ import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
   */
 object Stub {
 
+  var spark: SparkSession = null;
+
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
       System.err.println(
@@ -46,6 +50,7 @@ object Stub {
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
+    spark = ctx;
 
     val conf = ConfigFactory.load()
     val channel = ManagedChannelBuilder
@@ -68,12 +73,24 @@ object Stub {
     println(sql)
     //val logs = ctx.sql(sql).cache()
     //logs.toDF().write.mode(SaveMode.Overwrite).parquet("/user/cpc/xgboost/ulog")
-    val logs = ctx.read.parquet("/user/cpc/xgboost/ulog")
+    var qtt = ctx.read.parquet("/user/cpc/xgboost/ulog")
     //val model = XGBoostModel.load("/home/cpc/anal/xgboost_model/ctr-tmp.gbm")
     //val booster = XGBoost.loadModel("/home/cpc/anal/xgboost_model/ctr-tmp.gbm")
     val irmodel = IsotonicRegressionModel.load(ctx.sparkContext, "/user/cpc/xgboost/xgbmodeldata/ctr_2018-03-13-07-00.ir")
-    /*
-    val vecs = logs.rdd.map { r => LRTrain.getVectorParser2(r).toDense }
+
+
+    qtt = freqTransform(qtt, "city", "citydx")
+    qtt = freqTransform(qtt, "adslotid", "adslotidx")
+    qtt = freqTransform(qtt, "adclass", "adclassdx")
+    qtt = freqTransform(qtt, "planid", "plandx")
+    qtt = freqTransform(qtt, "unitid", "unitdx")
+    qtt = freqTransform(qtt, "ideaid", "ideadx")
+
+    val vecs = qtt.rdd
+      .map {
+        r =>
+          SaveSampleSvm.getVectorParser2(r).toDense
+      }
 
     val w = new FileWriter("./test_vec.svm")
     vecs.toLocalIterator.foreach {
@@ -85,10 +102,11 @@ object Stub {
             svm = svm + " %d:%f".format(i + 1, v)
         }
         svm
-        w.write(w + "\n")
+        println(svm)
+        w.write(svm + "\n")
     }
     w.close()
-    */
+
 
     /*
     model.predict(vecs, 0.0001f)
@@ -102,7 +120,7 @@ object Stub {
 
     for (i <- 1 to 100000) {
       Thread.sleep(10000)
-      logs.rdd.toLocalIterator.foreach{
+      qtt.rdd.toLocalIterator.foreach{
         x =>
           var seq = Seq[String]()
           val uid = x.getAs[String]("uid") + "_UPDATA"
@@ -123,7 +141,7 @@ object Stub {
 
           val (ad, m, slot, u, loc, n, d, t) = LRTrain.unionLogToObject(x,seq)
           var ads = Seq[AdInfo]()
-          for (i <- 1 to 200) {
+          for (i <- 1 to 1) {
             ads = ads :+ ad
           }
 
@@ -149,6 +167,11 @@ object Stub {
 
       }
     }
+  }
+
+  def freqTransform(src: DataFrame, in: String, out: String): DataFrame = {
+    val dict = spark.read.parquet("/user/cpc/xgboost_dict/%s-%s".format(in, out))
+    src.join(dict, Seq(in), "left_outer")
   }
 
 }
