@@ -37,20 +37,20 @@ object CheckCatesCtr {
       println("retargeting", userid, date)
       val ulog = spark.sql(
         """
-          |select * from dl_cpc.cpc_union_log
+          |select isshow, isclick, ext['trigger_type'].int_value as trigger_type from dl_cpc.cpc_union_log
           |where `date` = "%s"  and isshow = 1 and userid = %d
-        """.stripMargin.format(date, userid)).as[UnionLog].rdd
+        """.stripMargin.format(date, userid)).rdd
 
       val num = ulog.count()
       println("", num)
 
       if (num > 0) {
-        val clk = ulog.filter(_.ext.getOrElse("trigger_type", ExtValue()).int_value == 0)
+        val clk = ulog.filter(x => x.getAs[Int]("trigger_type") == 0)
           .map {
             x =>
-              val show = x.isshow
-              val click = x.isclick
-              val tt = x.ext.getOrElse("trigger_type", ExtValue()).int_value
+              val show = x.getAs[Int]("isshow")
+              val click = x.getAs[Int]("isclick")
+              val tt = x.getAs[Int]("trigger_type")
               (tt, (show, click))
           }
           .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))

@@ -20,6 +20,7 @@ import scala.collection.mutable
 object AnalUnionLog {
 
   var srcRoot = "/warehouse/dl_cpc.db"
+  var prefix = ""
   //  var srcRoot = "/gobblin/source/cpc"
 
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
@@ -38,63 +39,51 @@ object AnalUnionLog {
     val table = args(1)
     val traceTbl = args(2)
     val hourBefore = args(3).toInt
+    prefix = args(4)
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val hour = new SimpleDateFormat("HH").format(cal.getTime)
     val spark = SparkSession.builder()
-      .appName("cpc anal union log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
+      .appName("union log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
 
-    var searchData = prepareSource(spark, "cpc_search", "src_cpc_search", hourBefore, 1)
+    var searchData = prepareSourceString(spark, "cpc_search", prefix + "cpc_search", hourBefore, 1)
     if (searchData == null) {
       System.err.println("search data is empty")
       System.exit(1)
     }
-    println("searchData", searchData.count())
     searchData.take(1).foreach {
       x =>
         println(x)
-
-        println(x.getString(0))
-        println(LogParser.parseSearchLog(x.getString(0)))
+        println(LogParser.parseSearchLog(x))
     }
-
-
     val searchData2: rdd.RDD[(String, UnionLog)] = searchData
-      .map(x => LogParser.parseSearchLog(x.getString(0))) //(log)
+      .map(x => LogParser.parseSearchLog(x)) //(log)
       .filter(_ != null)
       .map(x => (x.searchid, x)) //(searchid, log)
       .reduceByKey((x, y) => x) //去重
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
-      x =>
-        var ulog = x._2.copy(date = date, hour = hour)
-        (x._1, ulog)
-    }
-    println("searchData2", searchData2.count())
-
-    val showData = prepareSource(spark, "cpc_show", "src_cpc_show", hourBefore, 2)
-    var showData2: rdd.RDD[(String, UnionLog)] = null
-    if (showData != null) {
-      showData2 = showData
-        .map(x => LogParser.parseShowLog(x.getString(0))) //(log)
-        .filter(_ != null)
-        .map(x => (x.searchid, x)) //(searchid, log)
-        .reduceByKey((x, y) => x) //去重
-        .map {
         x =>
-          (x._1, x._2)
+          var ulog = x._2.copy(date = date, hour = hour)
+          (x._1, ulog)
       }
-    }
-    println("showData2", showData2.count())
 
-    val clickData = prepareSource(spark, "cpc_click", "src_cpc_click", hourBefore, 2)
+    val showData = prepareSourceString(spark, "cpc_show", prefix + "cpc_show", hourBefore, 2)
+    var showData2: rdd.RDD[(String, UnionLog)] = null
+    showData2 = showData
+      .map(x => LogParser.parseShowLog(x)) //(log)
+      .filter(_ != null)
+      .map(x => (x.searchid, x)) //(searchid, log)
+      .reduceByKey((x, y) => x) //去重
+
+    val clickData = prepareSourceString(spark, "cpc_click", prefix + "cpc_click", hourBefore, 2)
     var clickData2: rdd.RDD[(String, UnionLog)] = null
     if (clickData != null) {
       clickData2 = clickData
-        .map(x => LogParser.parseClickLog(x.getString(0))) //(log)
+        .map(x => LogParser.parseClickLog(x)) //(log)
         .filter(_ != null)
         .map(x => (x.searchid, Seq(x))) //(searchid, log)
         .reduceByKey {
@@ -137,7 +126,6 @@ object AnalUnionLog {
           (x._1, ulog)
       }
     }
-    println("clickData2", clickData2.count())
 
     val unionData = searchData2.leftOuterJoin(showData2).leftOuterJoin(clickData2)
       .map {
@@ -206,51 +194,6 @@ object AnalUnionLog {
     w.saveAsTable("dl_cpc." + table)
     println("union", unionData.count())
 
-    val traceData = prepareSource(spark, "cpc_trace", "src_cpc_trace", hourBefore, 2)
-    if (traceData != null) {
-      val trace = prepareTraceSource(traceData)
-      println("trace", trace.count())
-      val search = unionData.filter(x => x.isclick > 0)
-        .map{
-          x =>
-            (x.searchid, (x.timestamp, Seq[TraceLog]()))
-        }
-      val trace1 = trace.map(x => (x.searchid, Seq(x)))
-        .reduceByKey(_ ++ _)
-        .map(x => (x._1, (-1, x._2)))
-        .union(search)
-        .reduceByKey {
-          (x, y) =>
-            if (x._1 >= 0) {
-              (x._1, y._2)
-            } else {
-              (y._1, x._2)
-            }
-        }
-        .filter(_._2._1 >= 0)
-        .flatMap {
-          x =>
-            val t = x._2._1
-            x._2._2.map {
-              v =>
-                v.copy(
-                  search_timestamp = t,
-                  date = date,
-                  hour = hour
-                )
-            }
-      }
-
-      val w = trace1.toDF()
-        .write
-        .mode(SaveMode.Append)
-        .format("parquet")
-        .partitionBy("date", "hour")
-      //clear dir
-      Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
-      w.saveAsTable("dl_cpc." + traceTbl)
-      println("trace1", trace1.count())
-    }
     spark.stop()
   }
 
@@ -267,13 +210,38 @@ object AnalUnionLog {
   /*
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
    */
+  def prepareSourceString(ctx: SparkSession, key: String, src: String, hourBefore: Int, hours: Int): rdd.RDD[String] = {
+    val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
+    import ctx.implicits._
+    println(input)
+    ctx.read
+      .parquet(input)
+      .repartition(1000)
+      .rdd
+      .map {
+        r =>
+          //val s = r.getMap[String, Row](2).getOrElse(key, null)
+          val s = r.getAs[Map[String, Row]]("field").getOrElse(key, null)
+
+          if (s == null) {
+            null
+          } else {
+            s.getAs[String]("string_type")
+          }
+      }
+      .filter(_ != null)
+  }
+
+  /*
+  cpc_search cpc_show cpc_click cpc_trace cpc_charge
+   */
   def prepareSource(ctx: SparkSession, key: String, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
     val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
     println(input)
-    val baseData = ctx.read.schema(schema).parquet(input)
+    val baseData = ctx.read.schema(schema).parquet(input).repartition(1000)
     val tbl = "%s_data_%d".format(src, hourBefore)
     baseData.createTempView(tbl)
-    ctx.sql("select field['%s'].string_type from %s".format(key, tbl)).rdd.repartition(1000)
+    ctx.sql("select field['%s'].string_type from %s".format(key, tbl)).rdd
   }
 
   def prepareTraceSource(src: rdd.RDD[Row]): rdd.RDD[TraceLog] = {
