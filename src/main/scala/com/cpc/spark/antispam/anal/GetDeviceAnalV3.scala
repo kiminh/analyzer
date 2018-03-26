@@ -3,7 +3,6 @@ package com.cpc.spark.antispam.anal
 import java.sql.DriverManager
 import java.util.Properties
 
-import com.cpc.spark.antispam.anal.GetDeviceAnal.{clearReportHourData, mariadbProp, mariadbUrl}
 import com.cpc.spark.log.parser.{ExtValue, UnionLog}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
@@ -15,6 +14,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 object GetDeviceAnalV3 {
   var mariadbUrl = ""
   val mariadbProp = new Properties()
+
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       System.err.println(
@@ -37,59 +37,65 @@ object GetDeviceAnalV3 {
       .getOrCreate()
     import ctx.implicits._
 
-    var sql1 = "SELECT * from  dl_cpc.cpc_union_log where `date` ='%s'  and ext['device_ids'].string_value != '' ".format(date1)
-    println("sql1:"+ sql1)
-    var unionRdd = ctx.sql(sql1).as[UnionLog].rdd.map(
-      x => (x.media_appsid,x.adslotid,x.adslot_type, x.ip , x.ext.getOrElse("device_ids",ExtValue()).string_value)
-    ).filter(x => x._5.length >0)
-      .map{
+    var sql1 = "SELECT *,ext['device_ids'].string_value as device_ids from  dl_cpc.cpc_union_log where `date` ='%s'  and ext['device_ids'].string_value != '' ".format(date1)
+    println("sql1:" + sql1)
+    var unionRdd = ctx.sql(sql1)
+      //      .as[UnionLog]
+      .rdd.map(
+      x => (x.getAs[String]("media_appsid"),
+        x.getAs[String]("adslotid"),
+        x.getAs[Int]("adslot_type"),
+        x.getAs[String]("ip"),
+        x.getAs[String]("device_ids")))
+      .filter(x => x._5.length > 0)
+      .map {
         case (media_appsid, adslotid, adslot_type, ip, device_ids) =>
           var deviceIdsArr = device_ids.split(";")
           var imei = ""
           var androidId = ""
           var idfa = ""
-          deviceIdsArr.foreach{
+          deviceIdsArr.foreach {
             x =>
               var arr = x.split(":")
-              if(arr.length == 2){
-                if(arr(0) == "DEVID_IMEI"){
+              if (arr.length == 2) {
+                if (arr(0) == "DEVID_IMEI") {
                   imei = arr(1)
-                }else if(arr(0) == "DEVID_ANDROIDID"){
+                } else if (arr(0) == "DEVID_ANDROIDID") {
                   androidId = arr(1)
-                }else if(arr(0) == "DEVID_IDFA"){
+                } else if (arr(0) == "DEVID_IDFA") {
                   idfa = arr(1)
                 }
               }
           }
-          (media_appsid, adslotid, adslot_type, ip , imei)
-      }.filter{
-      case (media_appsid, adslotid, adslot_type, ip , imei) =>
-        if( imei.length > 0 ){
+          (media_appsid, adslotid, adslot_type, ip, imei)
+      }.filter {
+      case (media_appsid, adslotid, adslot_type, ip, imei) =>
+        if (imei.length > 0) {
           true
-        }else{
-           false
+        } else {
+          false
         }
     }
-   val ipRdd =  unionRdd.map{
-      case (media_appsid, adslotid, adslot_type, ip , imei) =>
-        ((media_appsid, adslotid, adslot_type,ip), 1)
-    }.reduceByKey((x, y) => x).map{
-      case ((media_appsid, adslotid, adslot_type, ip ), count) =>
-        ((media_appsid, adslotid, adslot_type), 1 )
+    val ipRdd = unionRdd.map {
+      case (media_appsid, adslotid, adslot_type, ip, imei) =>
+        ((media_appsid, adslotid, adslot_type, ip), 1)
+    }.reduceByKey((x, y) => x).map {
+      case ((media_appsid, adslotid, adslot_type, ip), count) =>
+        ((media_appsid, adslotid, adslot_type), 1)
     }.reduceByKey((x, y) => x + y)
 
-    val imeiRdd =  unionRdd.map{
-      case (media_appsid, adslotid, adslot_type, ip , imei) =>
+    val imeiRdd = unionRdd.map {
+      case (media_appsid, adslotid, adslot_type, ip, imei) =>
         ((media_appsid, adslotid, adslot_type, imei), 1)
-    }.reduceByKey((x, y) => x).map{
+    }.reduceByKey((x, y) => x).map {
       case ((media_appsid, adslotid, adslot_type, imei), count) =>
-        ((media_appsid, adslotid, adslot_type), 1 )
+        ((media_appsid, adslotid, adslot_type), 1)
     }.reduceByKey((x, y) => x + y)
 
 
-    var toResult = ipRdd.join(imeiRdd).map{
-      case ((media_appsid, adslotid, adslot_type),(ip, imei)) =>
-        media_appsid + "," + adslotid + "," + adslot_type + "," + ip + "," + imei + ","+ ip.toDouble/imei.toDouble*100
+    var toResult = ipRdd.join(imeiRdd).map {
+      case ((media_appsid, adslotid, adslot_type), (ip, imei)) =>
+        media_appsid + "," + adslotid + "," + adslot_type + "," + ip + "," + imei + "," + ip.toDouble / imei.toDouble * 100
         ImeiDiff(
           date = date1,
           media_id = media_appsid.toInt,
@@ -109,6 +115,7 @@ object GetDeviceAnalV3 {
     ctx.stop()
 
   }
+
   def clearReportHourData(tbl: String, date: String): Unit = {
     try {
       Class.forName(mariadbProp.getProperty("driver"))
@@ -121,19 +128,20 @@ object GetDeviceAnalV3 {
         """
           |delete from union.%s where `date` = "%s"
         """.stripMargin.format(tbl, date)
-      println("sql" + sql) ;
+      println("sql" + sql);
       stmt.executeUpdate(sql);
     } catch {
       case e: Exception => println("exception caught: " + e)
     }
   }
+
   case class ImeiDiff(
                        date: String = "",
-                       media_id:Int = 0,
-                       adslot_id:Int = 0,
-                       adslot_type:Int = 0,
-                       imei_count:Int = 0,
-                       ip_count:Int = 0
+                       media_id: Int = 0,
+                       adslot_id: Int = 0,
+                       adslot_type: Int = 0,
+                       imei_count: Int = 0,
+                       ip_count: Int = 0
                      )
 
 

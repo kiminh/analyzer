@@ -8,7 +8,7 @@ import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.SparkSession
 
 import scala.collection.mutable
 import scala.util.Random
@@ -47,17 +47,19 @@ object AnalTouchedUV {
     import ctx.implicits._
 
     if (args(1).toBoolean) {
-      val log = ctx.sql("select * from dl_cpc.cpc_union_log where `date` = \"%s\" ".format(date)).as[UnionLog]
-      val ret = log.rdd
-        .filter(x => x.media_appsid == "80000001" || x.media_appsid == "80000002")
+      val log = ctx.sql("select * ,ext['phone_level'].int_value as phone_level from dl_cpc.cpc_union_log where `date` = \"%s\" ".format(date))
+        //        .as[UnionLog]
+        .rdd
+      val ret = log
+        .filter(x => x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002")
         .map {
           x =>
-            var rndSex = x.sex
+            var rndSex = x.getAs[Int]("sex")
             if (rndSex == 0) {
-              rndSex = Random.nextInt(2) + 1  //随机性别
+              rndSex = Random.nextInt(2) + 1 //随机性别
             }
 
-            var rndAge = x.age
+            var rndAge = x.getAs[Int]("age")
             if (rndAge == 0) {
               val rnd = Random.nextInt(100)
               if (rnd < 8) {
@@ -76,25 +78,25 @@ object AnalTouchedUV {
             }
 
             var lvl = 0
-            if (x.coin < 10) {
+            if (x.getAs[Int]("coin") < 10) {
               lvl = 1
-            } else if (x.coin < 1000) {
+            } else if (x.getAs[Int]("coin") < 1000) {
               lvl = 2
-            } else if (x.coin < 10000) {
+            } else if (x.getAs[Int]("coin") < 10000) {
               lvl = 3
             } else {
               lvl = 4
             }
 
             //未知数据随机到其他数据
-            var os = x.os
-            if (x.os == 0) {
+            var os = x.getAs[Int]("os")
+            if (x.getAs[Int]("os") == 0) {
               os = Random.nextInt(2) + 1
             }
 
             //未知数据随机到其他数据   50(wifi) 5(2g) 15(3g) 30(4g)
-            var net = x.network
-            if (x.network == 0) {
+            var net = x.getAs[Int]("network")
+            if (x.getAs[Int]("network") == 0) {
               val r = Random.nextInt(100)
               if (r < 50) {
                 net = 1
@@ -107,25 +109,19 @@ object AnalTouchedUV {
               }
             }
 
-            var pl = 0
-            if (x.ext != null) {
-              val v = x.ext.getOrElse("phone_level", null)
-              if (v != null) {
-                pl = v.int_value
-              }
-            }
+            var pl = x.getAs[Int]("phone_level")
 
             AnalCond(
-              province = x.province,
+              province = x.getAs[Int]("province"),
               sex = rndSex,
               age = rndAge,
               coin_level = lvl,
               os = os,
               network = net,
               phone_level = pl,
-              hour = x.hour.toInt + 1,
+              hour = x.getAs[String]("hour").toInt + 1,
               sum = 1,
-              uid = x.uid,
+              uid = x.getAs[String]("uid"),
               date = date
             )
         }
@@ -201,8 +197,8 @@ object AnalTouchedUV {
 
   val phoneLevel = Seq(0, 1, 2, 3, 4)
 
-  val hour = Seq(0,1,2,3,4,5,6,7,8,9,
-    10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
+  val hour = Seq(0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+    10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24
   )
 
   val provinces1 = Seq(
@@ -224,8 +220,8 @@ object AnalTouchedUV {
 
   val phoneLevel1 = Seq(1, 2, 3, 4)
 
-  val hour1 = Seq(1,2,3,4,5,6,7,8,9,
-    10,11,12,13,14,15,16,17,18,19,20,21,22,23,24
+  val hour1 = Seq(1, 2, 3, 4, 5, 6, 7, 8, 9,
+    10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24
   )
 
   val allCols = Seq(provinces1, sex1, age1, coin1, os1, net1, phoneLevel1)
@@ -292,29 +288,29 @@ object AnalTouchedUV {
   }
 
   private case class AnalCond(
-                       province: Int = 0,
+                               province: Int = 0,
 
-                       //暂时按照100分比例来算
-                       sex: Int = 0,
-                       age: Int = 0,
+                               //暂时按照100分比例来算
+                               sex: Int = 0,
+                               age: Int = 0,
 
-                       //coin_level 注意保证和bs一致
-                       //用户积分级别.
-                       // 0默认全选
-                       // 1第一档用户，积分在0-10分
-                       // 2第二档用户，积分在0-1000分
-                       // 3第三档用户，积分在0-10000分
-                       // 4全选
-                       coin_level: Int = 0,
-                       os: Int = 0,
-                       network: Int = 0,
-                       phone_level: Int = 0,
-                       hour: Int = 0,
-                       sum: Int = 0,
-                       uid: String = "",
-                       date: String = ""
+                               //coin_level 注意保证和bs一致
+                               //用户积分级别.
+                               // 0默认全选
+                               // 1第一档用户，积分在0-10分
+                               // 2第二档用户，积分在0-1000分
+                               // 3第三档用户，积分在0-10000分
+                               // 4全选
+                               coin_level: Int = 0,
+                               os: Int = 0,
+                               network: Int = 0,
+                               phone_level: Int = 0,
+                               hour: Int = 0,
+                               sum: Int = 0,
+                               uid: String = "",
+                               date: String = ""
 
-                     ) {
+                             ) {
 
 
     val key = Seq(province, sex, age, coin_level, os, network, phone_level).mkString("-")
@@ -325,6 +321,7 @@ object AnalTouchedUV {
       copy(sum = sum + k.sum)
     }
   }
+
 }
 
 

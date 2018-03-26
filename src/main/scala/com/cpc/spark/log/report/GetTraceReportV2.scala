@@ -4,7 +4,6 @@ import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.log.parser.TraceReportLog
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -46,7 +45,6 @@ object GetTraceReportV2 {
       .appName("cpc get adslot trace hour report from %s".format(date))
       .enableHiveSupport()
       .getOrCreate()
-    import ctx.implicits._
 
     val traceReport = ctx.sql(
       s"""
@@ -57,7 +55,7 @@ object GetTraceReportV2 {
          |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
          |where  tr.`date` = "%s"  and un.`date` = "%s"
        """.stripMargin.format(date, date))
-      .as[TraceReportLog2]
+      //      .as[TraceReportLog2]
       .rdd.cache()
     val sql1 = ("select ideaid ,media_appsid,adslotid, hour,sum(isshow) as show, sum(isclick) as click " +
       "from dl_cpc.cpc_union_log where `date` = \"%s\"  group by ideaid ,media_appsid,adslotid,hour").format(date)
@@ -74,15 +72,18 @@ object GetTraceReportV2 {
 
     val traceData = traceReport.filter {
       trace =>
-        trace.plan_id > 0 && trace.trace_type.length < 100 && trace.trace_type.length > 1
+        trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type").length < 100 && trace.getAs[String]("trace_type").length > 1
     }.map {
       trace =>
-        ((trace.searchid, trace.trace_type,trace.duration, trace.auto,trace.media_id,trace.adslot_id, trace.hour), trace)
+        ((trace.getAs[String]("searchid"), trace.getAs[String]("trace_type"),trace.getAs[Int]("duration"), trace.getAs[Int]("auto"),
+          trace.getAs[String]("media_id"),trace.getAs[String]("adslot_id"), trace.getAs[String]("hour")), trace)
     }.reduceByKey {
       case (x, y) => x //去重
     }.map{
       case ((searchid, trace_type, duration, auto, media_id, adslot_id,hour), trace) =>
-        ((trace.user_id, trace.plan_id, trace.unit_id, trace.idea_id, trace.date, trace.hour, trace.trace_type, trace.duration, trace.auto,trace.media_id,trace.adslot_id), 1)
+        ((trace.getAs[Int]("user_id"), trace.getAs[Int]("plan_id"), trace.getAs[Int]("unit_id"), trace.getAs[Int]("idea_id"),
+          trace.getAs[String]("date"), trace.getAs[String]("hour"), trace.getAs[String]("trace_type"), trace.getAs[Int]("duration"),
+          trace.getAs[Int]("auto"),trace.getAs[String]("media_id"),trace.getAs[String]("adslot_id")), 1)
     }.reduceByKey {
       case (x, y) => (x + y)
     }.map{
@@ -122,34 +123,34 @@ object GetTraceReportV2 {
   }
 
   case class TraceReportLog2(
-                             searchid:String = "",
-                             user_id: Int = 0,
-                             plan_id: Int = 0,
-                             unit_id: Int = 0,
-                             idea_id: Int = 0,
-                             date: String = "",
-                             hour: String = "",
-                             trace_type: String = "",
-                             duration: Int = 0,
-                             auto: Int = 0,
-                             media_id: String = "0",
-                             adslot_id: String = "0"
-                           )
+                              searchid:String = "",
+                              user_id: Int = 0,
+                              plan_id: Int = 0,
+                              unit_id: Int = 0,
+                              idea_id: Int = 0,
+                              date: String = "",
+                              hour: String = "",
+                              trace_type: String = "",
+                              duration: Int = 0,
+                              auto: Int = 0,
+                              media_id: String = "0",
+                              adslot_id: String = "0"
+                            )
   case class AdvTraceReport2(
-                             user_id: Int = 0,
-                             plan_id: Int = 0,
-                             unit_id: Int = 0,
-                             idea_id: Int = 0,
-                             date: String = "",
-                             hour: String = "",
-                             trace_type: String = "",
-                             duration: Int = 0,
-                             auto: Int = 0,
-                             total_num:Int =0,
-                             impression:Int =0,
-                             click:Int =0,
-                             media_id: String = "0",
-                             adslot_id: String = "0"
-                           )
+                              user_id: Int = 0,
+                              plan_id: Int = 0,
+                              unit_id: Int = 0,
+                              idea_id: Int = 0,
+                              date: String = "",
+                              hour: String = "",
+                              trace_type: String = "",
+                              duration: Int = 0,
+                              auto: Int = 0,
+                              total_num:Int =0,
+                              impression:Int =0,
+                              click:Int =0,
+                              media_id: String = "0",
+                              adslot_id: String = "0"
+                            )
 
 }

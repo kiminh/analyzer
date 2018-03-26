@@ -3,10 +3,11 @@ package com.cpc.spark.log.report
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.log.parser.{LogParser, UnionLog}
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import com.cpc.spark.log.parser.UnionLog
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.{SaveMode, SparkSession}
+
 /**
   * Created by Roy on 2017/4/26.
   */
@@ -48,19 +49,20 @@ object GetDayUv {
       s"""
          |select * from dl_cpc.%s where `date` = "%s" and adslotid > 0 and isshow = 1
        """.stripMargin.format(table, date))
-      .as[UnionLog].rdd
+      //      .as[UnionLog]
+      .rdd
 
     val uvData = unionLog
       .map {
         x =>
           val r = MediaUvReport(
-            media_id = x.media_appsid.toInt,
-            adslot_id = x.adslotid.toInt,
-            adslot_type = x.adslot_type,
+            media_id = x.getAs[String]("media_appsid").toInt,
+            adslot_id = x.getAs[String]("adslotid").toInt,
+            adslot_type = x.getAs[Int]("adslot_type"),
             uniq_user = 1,
-            date = x.date
+            date = x.getAs[String]("date")
           )
-          ("%d-%d-%s".format(r.media_id, r.adslot_id, x.uid), r)
+          ("%d-%d-%s".format(r.media_id, r.adslot_id, x.getAs[String]("uid")), r)
       }
       .reduceByKey((x, y) => x)
       .map {

@@ -4,7 +4,7 @@ import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.log.parser.{CfgLog, ExtValue, UnionLog}
+import com.cpc.spark.log.parser.{ExtValue, UnionLog}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -42,13 +42,19 @@ object GetMediaLog {
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
-    var sql1 = "SELECT * from dl_cpc.cpc_union_log where `date`='%s' and isfill =1  ".format(date)
+    var sql1 = ("SELECT *," +
+      "ext['os_version'].string_value as os_version," +
+      "ext['client_type'].string_value as client_type ," +
+      "ext['client_version'].string_value as client_version  ," +
+      "ext['device_ids'].string_value as device_ids " +
+      "from dl_cpc.cpc_union_log where `date`='%s' and isfill =1  ").format(date)
 
     println("sql1:" + sql1)
-    var rddData = ctx.sql(sql1).as[UnionLog]
+    var rddData = ctx.sql(sql1)
+      //      .as[UnionLog]
       .rdd.cache()
 
-    var allData = rddData.map(x => ((x.media_appsid,x.adslotid,x.adslot_type),1)).reduceByKey((x, y) => x + y)
+    var allData = rddData.map(x => ((x.getAs[String]("media_appsid"),x.getAs[String]("adslotid"),x.getAs[Int]("adslot_type")),1)).reduceByKey((x, y) => x + y)
       .map{
         case ((media_appsid, adslotid, adslot_type2),count2) =>
           var media = MediaRequest(
@@ -61,7 +67,7 @@ object GetMediaLog {
           (media.key, media)
       }
 
-    val mediaTypeRdd =  rddData.map(x => ((x.media_appsid,x.adslotid,x.adslot_type,x.media_type),1)).reduceByKey((x, y) => x + y).map{
+    val mediaTypeRdd =  rddData.map(x => ((x.getAs[String]("media_appsid"),x.getAs[String]("adslotid"),x.getAs[Int]("adslot_type"),x.getAs[Int]("media_type")),1)).reduceByKey((x, y) => x + y).map{
       case ((media_appsid,adslotid,adslot_type,media_type), num) =>
         ((media_appsid,adslotid,adslot_type),""+ media_type+","+ num)
     }.reduceByKey((x, y) => x +";"+ y) .map{
@@ -80,12 +86,12 @@ object GetMediaLog {
     val userAgentRdd =  rddData.map{
       case x =>
         var isExitUserAgent = 0
-        if(x.ua.length>3){
+        if(x.getAs[String]("ua").length>3){
           isExitUserAgent =1
         }
-      ((x.media_appsid,x.adslotid,x.adslot_type,isExitUserAgent),1)
+        ((x.getAs[String]("media_appsid"),x.getAs[String]("adslotid"),x.getAs[Int]("adslot_type"),isExitUserAgent),1)
     }.reduceByKey((x, y) => x + y).map{
-        case ((media_appsid,adslotid,adslot_type,isExitUserAgent), num) =>
+      case ((media_appsid,adslotid,adslot_type,isExitUserAgent), num) =>
         ((media_appsid,adslotid,adslot_type),isExitUserAgent +","+ num)
     }.reduceByKey((x, y) => x +";"+ y) .map{
       case ((media_appsid,adslotid,adslot_type2),value) =>
@@ -106,7 +112,7 @@ object GetMediaLog {
         )
         (key,media2)
     }
-    val osTypeRdd =  rddData.map(x => ((x.media_appsid,x.adslotid,x.adslot_type,x.os),1)).reduceByKey((x, y) => x + y).map{
+    val osTypeRdd =  rddData.map(x => ((x.getAs[String]("media_appsid"),x.getAs[String]("adslotid"),x.getAs[Int]("adslot_type"),x.getAs[Int]("os")),1)).reduceByKey((x, y) => x + y).map{
       case ((media_appsid,adslotid,adslot_type,os_type), num) =>
         ((media_appsid,adslotid,adslot_type),os_type+","+num)
     }.reduceByKey((x, y) => x +";"+ y) .map{
@@ -128,23 +134,23 @@ object GetMediaLog {
         )
         (key,media2)
     }
-   val osVersionRdd =  rddData.map{
+    val osVersionRdd =  rddData.map{
       case x =>
-        ((x.media_appsid,x.adslotid,x.adslot_type, x.ext.getOrElse("os_version", ExtValue()).string_value),1)
+        ((x.getAs[String]("media_appsid"),x.getAs[String]("adslotid"),x.getAs[Int]("adslot_type"), x.getAs[String]("os_version")),1)
     }.reduceByKey((x, y) => x + y).map{
       case ((media_appsid,adslotid,adslot_type,version), num) =>
         ((media_appsid,adslotid,adslot_type),version+"," +num)
     }.reduceByKey((x, y) => x +";"+ y) .map{
-     case ((media_appsid,adslotid,adslot_type2),value) =>
-       val media = MediaRequest(
-         date = date,
-         media_id = media_appsid.toInt,
-         adslot_id = adslotid.toInt,
-         adslot_type = adslot_type2,
-         os_version = value
-       )
-       (media.key, media)
-   }
+      case ((media_appsid,adslotid,adslot_type2),value) =>
+        val media = MediaRequest(
+          date = date,
+          media_id = media_appsid.toInt,
+          adslot_id = adslotid.toInt,
+          adslot_type = adslot_type2,
+          os_version = value
+        )
+        (media.key, media)
+    }
     allData = allData.leftOuterJoin(osVersionRdd).map{
       case (key, (media, other:Option[MediaRequest]))=>
         var other2 = other.getOrElse(MediaRequest())
@@ -158,14 +164,14 @@ object GetMediaLog {
         var deviceType = "no"
         val imeiRegex = """^[0-9]*$""".r
         val idfaRegex = """^([0-9a-zA-Z]{1,})(([/\s-][0-9a-zA-Z]{1,}){4})$""".r
-        if(x.uid == x.ip){
+        if(x.getAs[String]("uid") == x.getAs[String]("ip")){
           deviceType = "ip"
-        }else if(!imeiRegex.findFirstMatchIn(x.uid).isEmpty){
+        }else if(!imeiRegex.findFirstMatchIn(x.getAs[String]("uid")).isEmpty){
           deviceType = "imei"
-        }else if(!idfaRegex.findFirstMatchIn(x.uid).isEmpty){
+        }else if(!idfaRegex.findFirstMatchIn(x.getAs[String]("uid")).isEmpty){
           deviceType = "imei"
         }
-        ((x.media_appsid,x.adslotid,x.adslot_type, deviceType),1)
+        ((x.getAs[String]("media_appsid"),x.getAs[String]("adslotid"),x.getAs[Int]("adslot_type"), deviceType),1)
 
     }.reduceByKey((x, y) => x + y).map{
       case ((media_appsid,adslotid,adslot_type,deviceType), num) =>
@@ -192,12 +198,12 @@ object GetMediaLog {
     }
 
     val clientTypeRdd =  rddData.map{
-     case x =>
-       ((x.media_appsid,x.adslotid,x.adslot_type, x.ext.getOrElse("client_type", ExtValue()).string_value),1)
-   }.reduceByKey((x, y) => x + y).map{
-     case ((media_appsid,adslotid,adslot_type,client_type), num) =>
-       ((media_appsid,adslotid,adslot_type),client_type +","+ num)
-   }.reduceByKey((x, y) => x +";"+ y) .map{
+      case x =>
+        ((x.getAs[String]("media_appsid"),x.getAs[String]("adslotid"),x.getAs[Int]("adslot_type"), x.getAs[String]("client_type")),1)
+    }.reduceByKey((x, y) => x + y).map{
+      case ((media_appsid,adslotid,adslot_type,client_type), num) =>
+        ((media_appsid,adslotid,adslot_type),client_type +","+ num)
+    }.reduceByKey((x, y) => x +";"+ y) .map{
       case ((media_appsid,adslotid,adslot_type2),value) =>
         val media = MediaRequest(
           date = date,
@@ -217,23 +223,23 @@ object GetMediaLog {
         (key,media2)
     }
 
-   val clientVersionRdd =  rddData.map{
+    val clientVersionRdd =  rddData.map{
       case x =>
-        ((x.media_appsid,x.adslotid,x.adslot_type, x.ext.getOrElse("client_version", ExtValue()).string_value),1)
+        ((x.getAs[String]("media_appsid"),x.getAs[String]("adslotid"),x.getAs[Int]("adslot_type"), x.getAs[String]("client_version")),1)
     }.reduceByKey((x, y) => x + y).map{
       case ((media_appsid,adslotid,adslot_type,client_version), num) =>
         ((media_appsid,adslotid,adslot_type),client_version+ ","+ num)
     }.reduceByKey((x, y) => x +";"+ y) .map{
-     case ((media_appsid,adslotid,adslot_type2),value) =>
-       val media = MediaRequest(
-         date = date,
-         media_id = media_appsid.toInt,
-         adslot_id = adslotid.toInt,
-         adslot_type = adslot_type2,
-         client_version= value
-       )
-       (media.key, media)
-   }
+      case ((media_appsid,adslotid,adslot_type2),value) =>
+        val media = MediaRequest(
+          date = date,
+          media_id = media_appsid.toInt,
+          adslot_id = adslotid.toInt,
+          adslot_type = adslot_type2,
+          client_version= value
+        )
+        (media.key, media)
+    }
     allData = allData.leftOuterJoin(clientVersionRdd).map{
       case (key, (media, other:Option[MediaRequest]))=>
         var other2 = other.getOrElse(MediaRequest())
@@ -245,12 +251,12 @@ object GetMediaLog {
 
 
     val networkTypeRdd =  rddData.map{
-     case x =>
-       ((x.media_appsid,x.adslotid,x.adslot_type, x.network),1)
-   }.reduceByKey((x, y) => x + y).map{
-     case ((media_appsid,adslotid,adslot_type,network), num) =>
-       ((media_appsid,adslotid,adslot_type),network+","+num)
-   }.reduceByKey((x, y) => x +";"+ y) .map{
+      case x =>
+        ((x.getAs[String]("media_appsid"),x.getAs[String]("adslotid"),x.getAs[Int]("adslot_type"), x.getAs[Int]("network")),1)
+    }.reduceByKey((x, y) => x + y).map{
+      case ((media_appsid,adslotid,adslot_type,network), num) =>
+        ((media_appsid,adslotid,adslot_type),network+","+num)
+    }.reduceByKey((x, y) => x +";"+ y) .map{
       case ((media_appsid,adslotid,adslot_type2),value) =>
         val media = MediaRequest(
           date = date,
@@ -270,15 +276,15 @@ object GetMediaLog {
         (key,media2)
     }
     val networkIpRdd =  rddData.map{
-       case x =>
-         ((x.media_appsid,x.adslotid,x.adslot_type, x.network,x.ip),1)
-     }.reduceByKey((x, y) => x).map{
-       case ((media_appsid, adslotid, adslot_type, network, ip), num) =>
-         ((media_appsid, adslotid, adslot_type, network), 1)
-     }.reduceByKey((x, y) => x + y).map{
-       case ((media_appsid,adslotid,adslot_type,network), num) =>
-         ((media_appsid,adslotid,adslot_type),network + "," + num)
-     }.reduceByKey((x, y) => x +";"+ y) .map{
+      case x =>
+        ((x.getAs[String]("media_appsid"),x.getAs[String]("adslotid"),x.getAs[Int]("adslot_type"), x.getAs[Int]("network"),x.getAs[String]("ip")),1)
+    }.reduceByKey((x, y) => x).map{
+      case ((media_appsid, adslotid, adslot_type, network, ip), num) =>
+        ((media_appsid, adslotid, adslot_type, network), 1)
+    }.reduceByKey((x, y) => x + y).map{
+      case ((media_appsid,adslotid,adslot_type,network), num) =>
+        ((media_appsid,adslotid,adslot_type),network + "," + num)
+    }.reduceByKey((x, y) => x +";"+ y) .map{
       case ((media_appsid,adslotid,adslot_type2),value) =>
         val media = MediaRequest(
           date = date,
@@ -300,7 +306,7 @@ object GetMediaLog {
 
     val deviceIdsRdd =  rddData.map{
       case x =>
-        (x.media_appsid,x.adslotid,x.adslot_type, x.ext.getOrElse("device_ids", ExtValue()).string_value)
+        (x.getAs[String]("media_appsid"),x.getAs[String]("adslotid"),x.getAs[Int]("adslot_type"), x.getAs[String]("device_ids"))
     }.filter(x => x._4.length() > 0 ).map{
       case (media_appsid,adslotid,adslot_type,device_ids) =>
         var deviceIdsArr = device_ids.split(";")
@@ -340,11 +346,11 @@ object GetMediaLog {
     val toResult = allData.map(x => x._2)
     println("count:" + toResult.count())
     clearReportHourData("report_media_request_info", date)
-     ctx.createDataFrame(toResult)
-       .write
-       .mode(SaveMode.Append)
-       .jdbc(mariadbUrl, "union.report_media_request_info", mariadbProp)
-     ctx.stop()
+    ctx.createDataFrame(toResult)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "union.report_media_request_info", mariadbProp)
+    ctx.stop()
   }
 
   def clearReportHourData(tbl: String, date: String): Unit = {
@@ -367,22 +373,22 @@ object GetMediaLog {
   }
 
   case class MediaRequest(
-                          date: String = "",
-                          media_id:Int = 0,
-                          adslot_id:Int = 0,
-                          adslot_type:Int = 0,
-                          count: Int = 0,
-                          media_type: String = "",
-                          user_agent: String = "",
-                          os_type: String = "",
-                          os_version: String = "",
-                          device_type: String = "",
-                          client_type: String = "",
-                          client_version: String = "",
-                          network_type: String = "",
-                          network_ip: String = "",
-                          device_ids: String = ""
-                        ){
+                           date: String = "",
+                           media_id:Int = 0,
+                           adslot_id:Int = 0,
+                           adslot_type:Int = 0,
+                           count: Int = 0,
+                           media_type: String = "",
+                           user_agent: String = "",
+                           os_type: String = "",
+                           os_version: String = "",
+                           device_type: String = "",
+                           client_type: String = "",
+                           client_version: String = "",
+                           network_type: String = "",
+                           network_ip: String = "",
+                           device_ids: String = ""
+                         ){
     val key = "%d-%d-%d".format(media_id, adslot_id, adslot_type)
   }
 
