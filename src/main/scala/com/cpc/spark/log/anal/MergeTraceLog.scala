@@ -79,7 +79,6 @@ object MergeTraceLog {
         }
       val trace1 = trace.map(x => (x.searchid, Seq(x)))
         .reduceByKey(_ ++ _)
-        .repartition(1000)
         .map(x => (x._1, (-1, x._2)))
         .union(search)
         .reduceByKey {
@@ -104,6 +103,7 @@ object MergeTraceLog {
             }
         }
 
+      /*
       val w = trace1.toDF()
         .write
         .mode(SaveMode.Append)
@@ -112,6 +112,23 @@ object MergeTraceLog {
       //clear dir
       Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
       w.saveAsTable("dl_cpc." + traceTbl)
+      */
+
+      spark.createDataFrame(trace1)
+        .write
+        .mode(SaveMode.Overwrite)
+        .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
+      val parts = spark.sql(
+        """
+          |SHOW PARTITIONS dl_cpc.%s PARTITION(`date` = "%s", `hour` = "%s")
+        """.stripMargin.format(table, date, hour)).rdd
+      if (parts.count() == 0) {
+        spark.sql(
+          """
+            |ALTER TABLE dl_cpc.%s add PARTITION (`date` = "%s", `hour` = "%s")
+            | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+          """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
+      }
       println("trace", trace1.count())
     }
     spark.stop()
