@@ -187,17 +187,11 @@ object MergeLog {
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
-    val parts = spark.sql(
+    spark.sql(
       """
-        |SHOW PARTITIONS dl_cpc.%s PARTITION(`date` = "%s", `hour` = "%s")
-      """.stripMargin.format(table, date, hour)).rdd
-    if (parts.count() == 0) {
-      spark.sql(
-        """
-          |ALTER TABLE dl_cpc.%s add PARTITION (`date` = "%s", `hour` = "%s")
-          | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
-        """.stripMargin.format(table, date, hour, table, date, hour))
-    }
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+      """.stripMargin.format(table, date, hour, table, date, hour))
     println("union", unionData.count())
 
     val traceData = prepareSourceString(spark, "cpc_trace", prefix + "cpc_trace_minute", hourBefore, 2)
@@ -240,17 +234,11 @@ object MergeLog {
         .write
         .mode(SaveMode.Overwrite)
         .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
-      val parts = spark.sql(
+      spark.sql(
         """
-          |SHOW PARTITIONS dl_cpc.%s PARTITION(`date` = "%s", `hour` = "%s")
-        """.stripMargin.format(table, date, hour)).rdd
-      if (parts.count() == 0) {
-        spark.sql(
-          """
-            |ALTER TABLE dl_cpc.%s add PARTITION (`date` = "%s", `hour` = "%s")
-            | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
-          """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
-      }
+          |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+          | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+        """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
       println("trace", trace1.count())
     }
 
