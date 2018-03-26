@@ -7,7 +7,6 @@ import java.util.{Calendar, Properties}
 
 import com.cpc.spark.common.Utils
 import com.cpc.spark.log.parser.{ExtValue, TraceLog, UnionLog}
-import com.cpc.spark.ml.cvrmodel.v1.FeatureParser
 import com.cpc.spark.ml.train.LRIRModel
 import com.cpc.spark.qukan.parser.HdfsParser
 import com.hankcs.hanlp.HanLP
