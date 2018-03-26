@@ -35,12 +35,12 @@ object InterestedCategoryBJP {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       val day2 = spark.sql(
         """
-          |select * from dl_cpc.cpc_union_log where `date` = "%s"
+          |select isclick,uid from dl_cpc.cpc_union_log where `date` = "%s"
           |and round(ext['adclass'].int_value / 1e3,0) = %d and isshow = 1
-        """.stripMargin.format(date, adclass)).as[UnionLog].rdd
+        """.stripMargin.format(date, adclass)).rdd
         .map {
           u =>
-            (u.uid, (u.isclick,1))
+            (u.getAs[String]("uid"), (u.getAs[Int]("isclick"),1))
         }
         .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
         .cache()

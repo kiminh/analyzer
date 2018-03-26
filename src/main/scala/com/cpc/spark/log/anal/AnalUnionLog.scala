@@ -45,7 +45,7 @@ object AnalUnionLog {
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val hour = new SimpleDateFormat("HH").format(cal.getTime)
     val spark = SparkSession.builder()
-      .appName("cpc anal union log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
+      .appName("union log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
@@ -216,6 +216,7 @@ object AnalUnionLog {
     println(input)
     ctx.read
       .parquet(input)
+      .repartition(1000)
       .rdd
       .map {
         r =>

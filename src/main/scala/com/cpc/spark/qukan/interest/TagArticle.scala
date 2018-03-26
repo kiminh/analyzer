@@ -251,16 +251,17 @@ object TagArticle {
     val dataEnd = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
     val sql = s"""
-                 |select * from dl_cpc.cpc_union_log where `date` >= "%s" and `date` < "%s"
+                 |select searchid,uid,ext['adclass'].int_value as adclass
+                 |from dl_cpc.cpc_union_log where `date` >= "%s" and `date` < "%s"
                  |and isclick = 1
         """.stripMargin.format(dataStart, dataEnd)
 
-    val clicklog = spark.sql(sql)
-      .as[UnionLog].rdd
+    val clicklog = spark.sql(sql).rdd
       .map {
         x =>
-          val adclass = x.ext.getOrElse("adclass", ExtValue()).int_value / 1e6
-          (x.searchid, (x.uid, adclass.toInt))
+
+          val adclass = x.getAs[Int]("adclass") / 1e6
+          (x.getAs[String]("searchid"), (x.getAs[String]("uid"), adclass.toInt))
       }
     println("click", clicklog.count())
     clicklog.map(x => (x._2._1, x._2._2, 1))
