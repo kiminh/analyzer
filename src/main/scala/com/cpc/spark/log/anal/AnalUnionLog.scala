@@ -20,6 +20,7 @@ import scala.collection.mutable
 object AnalUnionLog {
 
   var srcRoot = "/warehouse/dl_cpc.db"
+  var prefix = ""
   //  var srcRoot = "/gobblin/source/cpc"
 
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
@@ -38,6 +39,7 @@ object AnalUnionLog {
     val table = args(1)
     val traceTbl = args(2)
     val hourBefore = args(3).toInt
+    prefix = args(4)
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
@@ -48,7 +50,7 @@ object AnalUnionLog {
       .getOrCreate()
     import spark.implicits._
 
-    var searchData = prepareSource(spark, "cpc_search", "src_cpc_search", hourBefore, 1)
+    var searchData = prepareSourceString(spark, "cpc_search", prefix + "cpc_search", hourBefore, 1)
     if (searchData == null) {
       System.err.println("search data is empty")
       System.exit(1)
@@ -57,40 +59,34 @@ object AnalUnionLog {
     searchData.take(1).foreach {
       x =>
         println(x)
-        println(LogParser.parseSearchLog(x.getString(0)))
+        println(LogParser.parseSearchLog(x))
     }
     val searchData2: rdd.RDD[(String, UnionLog)] = searchData
-      .map(x => LogParser.parseSearchLog(x.getString(0))) //(log)
+      .map(x => LogParser.parseSearchLog(x)) //(log)
       .filter(_ != null)
       .map(x => (x.searchid, x)) //(searchid, log)
       .reduceByKey((x, y) => x) //去重
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
-      x =>
-        var ulog = x._2.copy(date = date, hour = hour)
-        (x._1, ulog)
-    }
+        x =>
+          var ulog = x._2.copy(date = date, hour = hour)
+          (x._1, ulog)
+      }
     println("searchData2", searchData2.count())
 
-    val showData = prepareSource(spark, "cpc_show", "src_cpc_show", hourBefore, 2)
+    val showData = prepareSourceString(spark, "cpc_show", prefix + "cpc_show", hourBefore, 2)
     var showData2: rdd.RDD[(String, UnionLog)] = null
-    if (showData != null) {
-      showData2 = showData
-        .map(x => LogParser.parseShowLog(x.getString(0))) //(log)
-        .filter(_ != null)
-        .map(x => (x.searchid, x)) //(searchid, log)
-        .reduceByKey((x, y) => x) //去重
-        .map {
-        x =>
-          (x._1, x._2)
-      }
-    }
+    showData2 = showData
+      .map(x => LogParser.parseShowLog(x)) //(log)
+      .filter(_ != null)
+      .map(x => (x.searchid, x)) //(searchid, log)
+      .reduceByKey((x, y) => x) //去重
     println("showData2", showData2.count())
 
-    val clickData = prepareSource(spark, "cpc_click", "src_cpc_click", hourBefore, 2)
+    val clickData = prepareSourceString(spark, "cpc_click", prefix + "cpc_click", hourBefore, 2)
     var clickData2: rdd.RDD[(String, UnionLog)] = null
     if (clickData != null) {
       clickData2 = clickData
-        .map(x => LogParser.parseClickLog(x.getString(0))) //(log)
+        .map(x => LogParser.parseClickLog(x)) //(log)
         .filter(_ != null)
         .map(x => (x.searchid, Seq(x))) //(searchid, log)
         .reduceByKey {
@@ -215,6 +211,28 @@ object AnalUnionLog {
         StructField("float_type", FloatType, true),
         StructField("string_type", StringType, true))), true), true)))
 
+  /*
+  cpc_search cpc_show cpc_click cpc_trace cpc_charge
+   */
+  def prepareSourceString(ctx: SparkSession, key: String, src: String, hourBefore: Int, hours: Int): rdd.RDD[String] = {
+    val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
+    import ctx.implicits._
+    println(input)
+    ctx.read
+      .parquet(input)
+      .repartition(1000)
+      .rdd
+      .map {
+        r =>
+          val s = r.getMap[String, Row](2).getOrElse(key, null)
+          if (s == null) {
+            null
+          } else {
+            s.getString(3)
+          }
+      }
+      .filter(_ != null)
+  }
 
   /*
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
