@@ -55,7 +55,6 @@ object AnalUnionLog {
       System.err.println("search data is empty")
       System.exit(1)
     }
-    println("searchData", searchData.count())
     searchData.take(1).foreach {
       x =>
         println(x)
@@ -71,7 +70,6 @@ object AnalUnionLog {
           var ulog = x._2.copy(date = date, hour = hour)
           (x._1, ulog)
       }
-    println("searchData2", searchData2.count())
 
     val showData = prepareSourceString(spark, "cpc_show", prefix + "cpc_show", hourBefore, 2)
     var showData2: rdd.RDD[(String, UnionLog)] = null
@@ -80,7 +78,6 @@ object AnalUnionLog {
       .filter(_ != null)
       .map(x => (x.searchid, x)) //(searchid, log)
       .reduceByKey((x, y) => x) //去重
-    println("showData2", showData2.count())
 
     val clickData = prepareSourceString(spark, "cpc_click", prefix + "cpc_click", hourBefore, 2)
     var clickData2: rdd.RDD[(String, UnionLog)] = null
@@ -129,7 +126,6 @@ object AnalUnionLog {
           (x._1, ulog)
       }
     }
-    println("clickData2", clickData2.count())
 
     val unionData = searchData2.leftOuterJoin(showData2).leftOuterJoin(clickData2)
       .map {
@@ -220,15 +216,16 @@ object AnalUnionLog {
     println(input)
     ctx.read
       .parquet(input)
-      .repartition(1000)
       .rdd
       .map {
         r =>
-          val s = r.getMap[String, Row](2).getOrElse(key, null)
+          //val s = r.getMap[String, Row](2).getOrElse(key, null)
+          val s = r.getAs[Map[String, Row]]("field").getOrElse(key, null)
+
           if (s == null) {
             null
           } else {
-            s.getString(3)
+            s.getAs[String]("string_type")
           }
       }
       .filter(_ != null)

@@ -51,7 +51,6 @@ object MergeTraceLog {
       System.err.println("search data is empty")
       System.exit(1)
     }
-    println("searchData", searchData.count())
     searchData.take(1).foreach {
       x =>
         println(x)
@@ -67,14 +66,12 @@ object MergeTraceLog {
         var ulog = x._2.copy(date = date, hour = hour)
         (x._1, ulog)
     }
-    println("searchData2", searchData2.count())
 
     val traceData = prepareSource(spark, "cpc_trace", "src_cpc_trace", hourBefore, 2)
     if (traceData != null) {
       val trace = traceData.map(x => LogParser.parseTraceLog(x))
         .filter(x => x != null && x.searchid.length > 5)
       println(trace.first())
-      println("trace", trace.count())
       val search = searchData2
         .map {
           x =>
@@ -115,7 +112,7 @@ object MergeTraceLog {
       //clear dir
       Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
       w.saveAsTable("dl_cpc." + traceTbl)
-      println("trace1", trace1.count())
+      println("trace", trace1.count())
     }
     spark.stop()
   }
@@ -139,15 +136,16 @@ object MergeTraceLog {
     println(input)
     ctx.read
       .parquet(input)
-      .repartition(1000)
       .rdd
       .map {
         r =>
-          val s = r.getMap[String, Row](2).getOrElse(key, null)
+          //val s = r.getMap[String, Row](2).getOrElse(key, null)
+          val s = r.getAs[Map[String, Row]]("field").getOrElse(key, null)
+
           if (s == null) {
             null
           } else {
-            s.getString(3)
+            s.getAs[String]("string_type")
           }
       }
       .filter(_ != null)
