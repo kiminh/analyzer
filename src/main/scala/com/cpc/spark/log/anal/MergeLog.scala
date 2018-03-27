@@ -19,6 +19,7 @@ object MergeLog {
 
   var srcRoot = "/warehouse/dl_cpc.db"
   var prefix = ""
+  var suffix = ""
   //  var srcRoot = "/gobblin/source/cpc"
 
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
@@ -38,6 +39,7 @@ object MergeLog {
     val traceTbl = args(2)
     val hourBefore = args(3).toInt
     prefix = args(4)
+    suffix = args(4)
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
@@ -47,7 +49,7 @@ object MergeLog {
       .enableHiveSupport()
       .getOrCreate()
 
-    var searchData = prepareSourceString(spark, "cpc_search", prefix + "cpc_search_minute", hourBefore, 1)
+    var searchData = prepareSourceString(spark, "cpc_search", prefix + "cpc_search" + suffix, hourBefore, 1)
     if (searchData == null) {
       System.err.println("search data is empty")
       System.exit(1)
@@ -68,7 +70,7 @@ object MergeLog {
           (x._1, ulog)
       }
 
-    val showData = prepareSourceString(spark, "cpc_show", prefix + "cpc_show_minute", hourBefore, 2)
+    val showData = prepareSourceString(spark, "cpc_show", prefix + "cpc_show" + suffix, hourBefore, 2)
     var showData2: rdd.RDD[(String, UnionLog)] = null
     showData2 = showData
       .map(x => LogParser.parseShowLog(x)) //(log)
@@ -76,7 +78,7 @@ object MergeLog {
       .map(x => (x.searchid, x)) //(searchid, log)
       .reduceByKey((x, y) => x) //去重
 
-    val clickData = prepareSourceString(spark, "cpc_click", prefix + "cpc_click_minute", hourBefore, 2)
+    val clickData = prepareSourceString(spark, "cpc_click", prefix + "cpc_click" + suffix, hourBefore, 2)
     var clickData2: rdd.RDD[(String, UnionLog)] = null
     if (clickData != null) {
       clickData2 = clickData
@@ -192,7 +194,7 @@ object MergeLog {
       """.stripMargin.format(table, date, hour, table, date, hour))
     println("union", unionData.count())
 
-    val traceData = prepareSourceString(spark, "cpc_trace", prefix + "cpc_trace_minute", hourBefore, 2)
+    val traceData = prepareSourceString(spark, "cpc_trace", prefix + "cpc_trace" + suffix, hourBefore, 2)
     if (traceData != null) {
       val trace = traceData.map(x => LogParser.parseTraceLog(x))
         .filter(x => x != null && x.searchid.length > 5)
