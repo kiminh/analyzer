@@ -47,8 +47,6 @@ object MergeLog {
       .enableHiveSupport()
       .getOrCreate()
 
-
-
     var searchData = prepareSourceString(spark, "cpc_search", prefix + "cpc_search_minute", hourBefore, 1)
     if (searchData == null) {
       System.err.println("search data is empty")
@@ -199,37 +197,13 @@ object MergeLog {
       val trace = traceData.map(x => LogParser.parseTraceLog(x))
         .filter(x => x != null && x.searchid.length > 5)
       println(trace.first())
-      val search = unionData.filter(_.isclick > 0)
+      val click = unionData.filter(_.isclick > 0).map(x => (x.searchid, x.timestamp))
+      val trace1 = trace.map(x => (x.searchid, x))
+        .join(click)
         .map {
           x =>
-            (x.searchid, (x.timestamp, Seq[TraceLog]()))
+            x._2._1.copy(search_timestamp = x._2._2, date = date, hour = hour)
         }
-      val trace1 = trace.map(x => (x.searchid, Seq(x)))
-        .reduceByKey(_ ++ _)
-        .map(x => (x._1, (-1, x._2)))
-        .union(search)
-        .reduceByKey {
-          (x, y) =>
-            if (x._1 >= 0) {
-              (x._1, y._2)
-            } else {
-              (y._1, x._2)
-            }
-        }
-        .filter(_._2._1 >= 0)
-        .flatMap {
-          x =>
-            val t = x._2._1
-            x._2._2.map {
-              v =>
-                v.copy(
-                  search_timestamp = t,
-                  date = date,
-                  hour = hour
-                )
-            }
-        }
-
       spark.createDataFrame(trace1)
         .write
         .mode(SaveMode.Overwrite)
