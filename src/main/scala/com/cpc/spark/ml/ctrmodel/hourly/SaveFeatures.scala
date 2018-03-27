@@ -17,10 +17,10 @@ object SaveFeatures {
   private var version = "v1"
   private var versionV2 = "v2"
   def main(args: Array[String]): Unit = {
-    if(args.length < 3){
+    if(args.length < 2){
       System.err.println(
         s"""
-           |Usage: SaveFeatures <date=string> <hour=string> <version=string>
+           |Usage: SaveFeatures <date=string> <hour=string>
            |
         """.stripMargin
       )
@@ -35,8 +35,7 @@ object SaveFeatures {
       .getOrCreate()
 
     saveDataFromLog(spark, date, hour)
-    saveCvrData(spark, date, hour, version)
-    saveCvrData(spark, date, hour, versionV2)
+    saveCvrData(spark, date, hour, "v1")
   }
 
   def saveDataFromLog(spark: SparkSession, date: String, hour: String): Unit = {
@@ -48,7 +47,9 @@ object SaveFeatures {
         |       adslot_type,ext['pagenum'].int_value as pagenum,ext['bookid'].string_value as bookid,
         |       ext['brand_title'].string_value as brand_title,
         |       ext['user_req_ad_num'].int_value as user_req_ad_num,
-        |       ext['user_req_num'].int_value as user_req_num,uid
+        |       ext['user_req_num'].int_value as user_req_num,uid,
+        |       ext['click_count'].int_value as user_click_num,
+        |       ext['click_unit_count'].int_value as user_click_unit_num
         |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isshow = 1
         |and ext['antispam'].int_value = 0
         |
@@ -135,7 +136,7 @@ object SaveFeatures {
       .reduceByKey(_ ++ _)
       .map {
         x =>
-          val convert = Utils.cvrPositiveV(x._2, version)
+          val convert = Utils.cvrPositive(x._2)
           (x._1, convert)
       }
       .toDF("searchid", "label")
