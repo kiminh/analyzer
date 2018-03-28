@@ -35,7 +35,8 @@ object SaveFeatures {
       .getOrCreate()
 
     saveDataFromLog(spark, date, hour)
-    saveCvrData(spark, date, hour, "v1")
+    saveCvrData(spark, date, hour, version)
+    saveCvrData(spark, date, hour, versionV2)
   }
 
   def saveDataFromLog(spark: SparkSession, date: String, hour: String): Unit = {
@@ -136,7 +137,7 @@ object SaveFeatures {
       .reduceByKey(_ ++ _)
       .map {
         x =>
-          val convert = Utils.cvrPositive(x._2)
+          val convert = Utils.cvrPositiveV(x._2, version)
           (x._1, convert)
       }
       .toDF("searchid", "label")

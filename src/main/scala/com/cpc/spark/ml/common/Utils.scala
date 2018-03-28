@@ -84,7 +84,6 @@ object Utils {
     var mclick = 0
     var zombie = 0
     var disactive = 0
-    var dlok = 0
     traces.foreach {
       t =>
         t.trace_type match {
@@ -92,13 +91,13 @@ object Utils {
 
           case "disactive" => disactive += 1
 
-          //case "buttonClick" => click += 1
+          case "buttonClick" => click += 1
 
-          //case "clickMonitor" => mclick += 1
+          case "clickMonitor" => mclick += 1
 
-          //case "inputFocus" => click += 1
+          case "inputFocus" => click += 1
 
-          //case "press" => click += 1
+          case "press" => click += 1
 
           case "zombie" => zombie += 1
 
@@ -110,6 +109,49 @@ object Utils {
           case _ =>
         }
     }
+
+    if (((stay >= 30 && click > 0) || active > 0) && disactive == 0) {
+      1
+    } else {
+      0
+    }
+  }
+
+
+  def cvrPositiveV(traces: Seq[TraceLog], version: String): Int = {
+    var stay = 0
+    var click = 0
+    var active = 0
+    var mclick = 0
+    var zombie = 0
+    var disactive = 0
+    var dlok = 0
+    traces.foreach {
+      t =>
+        t.trace_type match {
+          case s if s.startsWith("active") => active += 1
+
+          case "disactive" => disactive += 1
+
+          case "buttonClick" => click += 1
+
+          case "clickMonitor" => mclick += 1
+
+          //case "inputFocus" => click += 1
+
+          case "press" => click += 1
+
+          case "zombie" => zombie += 1
+
+          case "stay" =>
+            if (t.duration > stay) {
+              stay = t.duration
+            }
+
+          case _ =>
+        }
+    }
+
     traces.foreach {
       t =>
         t.trace_op1 match {
@@ -119,10 +161,20 @@ object Utils {
         }
     }
 
-    if ((dlok > 0 || active > 0) && disactive == 0) {
-      1
-    } else {
-      0
+
+    if(version == "v1"){
+      if (((stay >= 30 && click > 0) || active > 0) && disactive == 0) {
+        1
+      } else {
+        0
+      }
+    }
+    else{
+      if ((dlok > 0 || active > 0) && disactive == 0) {
+        1
+      } else {
+        0
+      }
     }
   }
 }
