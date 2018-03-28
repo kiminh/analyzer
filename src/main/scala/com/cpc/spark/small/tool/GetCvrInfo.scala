@@ -53,7 +53,7 @@ object GetCvrInfo {
             case "load" => load += 1
             case s if s.startsWith("active") => active += 1
             case "buttonClick" => buttonClick += 1
-            case "press" => press += 1
+            //case "press" => press += 1
             case "stay" => x.getInt(2) match {
               case 1 => stay1 += 1
               case 5 => stay5 += 1

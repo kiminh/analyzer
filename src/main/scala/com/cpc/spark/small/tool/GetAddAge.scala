@@ -214,7 +214,8 @@ object GetAddAge {
     println("allData count", allData.count())
 
     val trainDataDocumentDF = ctx.createDataFrame(allData).toDF("deviceid", "features").repartition(50).cache()
-    val lrModel = LogisticRegressionModel.load("/user/cpc/wl/test/model/GetTrainUserAgeModel-lr-setRegParam057-setTol1E-18-setElasticNetParam00-100000-%d".format(1))
+    //val lrModel = LogisticRegressionModel.load("/user/cpc/wl/test/model/GetTrainUserAgeModel-lr-setRegParam057-setTol1E-18-setElasticNetParam00-100000-%d".format(1))
+    val lrModel = LogisticRegressionModel.load("/user/cpc/wl/test/model/GetTrainUserAgeModel-lr-setRegParam042-setTol1E-18-setElasticNetParam00-100000-20180202-zfb-%d".format(5))
 
     val predictions = lrModel.transform(trainDataDocumentDF)
     val result = predictions.select("probability", "deviceid", "prediction")
@@ -227,7 +228,7 @@ object GetAddAge {
           val deviceid = x.get(1).toString()
           (deviceid, threshold, prediction)
       }
-      .filter(_._2 >= 0.49)
+      .filter(_._2 >= 0.56)//0.49
       .repartition(50)
       .cache()
     println("result count", result.count())
