@@ -38,7 +38,7 @@ object InsertReportAdslotTarget {
           |SELECT searchid,media_appsid,adslotid,adslot_type,isshow,isclick,sex,age,os,province,ext['phone_level'].int_value,
           |hour,ext['os_version'].string_value,ext["adclass"].int_value,isfill,price
           |FROM dl_cpc.cpc_union_log
-          |WHERE date="%s"
+          |WHERE date="%s" and userid <>1501897
         """.stripMargin.format(argDay))
       .rdd
       .map {
@@ -86,7 +86,7 @@ object InsertReportAdslotTarget {
           trace_type match {
             case "load" => load += 1
             case s if s.startsWith("active") => active += 1
-            case "press" => active += 1
+            //case "press" => active += 1
             case _ =>
           }
           (searchid, ("", "", -1, -1, -1, -1, -1, -1, -1, -1, -1, "", -1, load, active, -1, -1, 0))

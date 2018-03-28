@@ -63,162 +63,163 @@ object GetAgeModel {
 
     val HASHSUM = 200000
 
-//    var ageData = ctx.sql(
-//      """
-//        |SELECT DISTINCT info.device_code,zfb.info
-//        |from gobblin.qukan_member_zfb_log as zfb
-//        |INNER JOIN dl_cpc.qukan_p_member_info as info ON zfb.member_id = info.member_id
-//        |WHERE zfb.info like "%alipay_user_info_share_response%" AND zfb.info like "%person_birthday%"
-//        |AND info.day="2018-01-28" AND info.device_code is not null
-//      """.stripMargin)
-//      .rdd
-//      //.filter(x => x(1).toString().length > 0)
-//      .map {
-//      x =>
-//        var deviceid = x(0).toString()
-//        var birth = x.getString(1).split("person_birthday\":\"")(1).split("\"")(0)
-//        var age = -1
-//        if (birth >= "20100101") {
-//          age = -1
-//        } else if (birth >= "19900101") {
-//          age = 0
-//        } else if (birth >= "19750101") {
-//          age = 1
-//        } else {
-//          age = 2
-//        }
-//        (deviceid, (age, "", "", ""))
-//    }
-//      .filter(_._2._1 != -1)
-//      .repartition(50)
-//      .cache()
-//    println("ageData num is :" + ageData.count())
-//
-//    //
-//    //    var ageData = ctx.sql(
-//    //      """
-//    //        |select qpm.device_code,qpm.birth
-//    //        |from dl_cpc.qukan_p_member_info qpm
-//    //        |where qpm.day="2018-01-23" AND qpm.update_time>="2017-05-01" AND qpm.device_code is not null
-//    //        |AND birth is not null
-//    //      """.stripMargin)
-//    //      .rdd
-//    //      .filter(x => x(1).toString().length > 0)
-//    //      .map {
-//    //        x =>
-//    //          var deviceid = x(0).toString()
-//    //          var birth = x(1).toString()
-//    //          var age = -1
-//    //          if (birth >= "2010-01-01") {
-//    //            age = -1
-//    //          } else if (birth >= "1990-01-01") {
-//    //            age = 0
-//    //          } else if (birth >= "1975-01-01") {
-//    //            age = 1
-//    //          } else {
-//    //            age = 2
-//    //          }
-//    //          (deviceid, (age, "", "", ""))
-//    //      }
-//    //      .filter(_._2._1 != -1)
-//    //      .repartition(50)
-//    //      .cache()
-//    //    println("ageData num is :" + ageData.count())
-//    //
-//    //
-//    val readdata = ctx.sql(
-//      """
-//        |SELECT DISTINCT qkc.device,qc.title,sec.second_level
-//        |from rpt_qukan.qukan_log_cmd qkc
-//        |INNER JOIN  gobblin.qukan_content qc ON qc.id=qkc.content_id
-//        |LEFT JOIN algo_qukan.algo_feature_content_seclvl sec ON qc.id = sec.content_id
-//        |WHERE qkc.cmd=301 AND qkc.thedate>="%s" AND qkc.thedate<="%s" AND qkc.member_id IS NOT NULL
-//        |AND qkc.device IS NOT NULL
-//        |""".stripMargin.format("2018-01-13", "2018-01-28"))
-//      .rdd
-//      .map {
-//        x =>
-//          (x.getString(0), x.getString(1), x.getString(2))
-//      }
-//      .groupBy(_._1)
-//      .map {
-//        x =>
-//          (x._1, (-1, x._2.map(_._2).toSeq, x._2.map(_._3).toSeq))
-//      }
-//      .filter(_._2._2.length >= 3)
-//      .map {
-//        x =>
-//          (x._1, (-1, x._2._2.mkString("@@@@"), x._2._3.mkString("@@@@"), ""))
-//      }
-//      .repartition(50)
-//      .cache()
-//    println("readdata num: " + readdata.count())
-//
-//    val ageReadData = ageData
-//      .union(readdata)
-//      //.union(extTitleData)
-//      .reduceByKey {
-//      (x, y) =>
-//        var age = x._1
-//        var titles = x._2
-//        var secondLevel = x._3
-//        //var extTitles = x._3
-//        if (age == -1) {
-//          age = y._1
-//        }
-//        if (titles.length == 0) {
-//          titles = y._2
-//        }
-//
-//        if (secondLevel.length == 0) {
-//          secondLevel = x._3
-//        }
-//        (age, titles, secondLevel, "")
-//    }
-//      .filter {
-//        x =>
-//          x._1.length > 3 && x._2._1 != -1 && x._2._2.length > 0 //&& x._2._3.length>0
-//      }
-//      .repartition(50)
-//      .cache()
-//    println("ageReadData count", ageReadData.count())
-//
-//    ageReadData
-//      .map {
-//        x =>
-//          val deviceid = x._1
-//          val age = x._2._1
-//          val titles = x._2._2
-//          val secondLevel = x._2._3
-//          "%s\t%d\t%s\t%s".format(deviceid, age, titles, secondLevel)
-//      }
-//      .saveAsTextFile("/user/cpc/wl/test/ageReadData-20180201-zfb-%d".format(1))
+    //    var ageData = ctx.sql(
+    //      """
+    //        |SELECT DISTINCT info.device_code,zfb.info
+    //        |from gobblin.qukan_member_zfb_log as zfb
+    //        |INNER JOIN dl_cpc.qukan_p_member_info as info ON zfb.member_id = info.member_id
+    //        |WHERE zfb.info like "%alipay_user_info_share_response%" AND zfb.info like "%person_birthday%"
+    //        |AND info.day="2018-01-28" AND info.device_code is not null
+    //      """.stripMargin)
+    //      .rdd
+    //      //.filter(x => x(1).toString().length > 0)
+    //      .map {
+    //      x =>
+    //        var deviceid = x(0).toString()
+    //        var birth = x.getString(1).split("person_birthday\":\"")(1).split("\"")(0)
+    //        var age = -1
+    //        if (birth >= "20100101") {
+    //          age = -1
+    //        } else if (birth >= "19900101") {
+    //          age = 0
+    //        } else if (birth >= "19750101") {
+    //          age = 1
+    //        } else {
+    //          age = 2
+    //        }
+    //        (deviceid, (age, "", "", ""))
+    //    }
+    //      .filter(_._2._1 != -1)
+    //      .repartition(50)
+    //      .cache()
+    //    println("ageData num is :" + ageData.count())
+    //
+    //    //
+    //    //    var ageData = ctx.sql(
+    //    //      """
+    //    //        |select qpm.device_code,qpm.birth
+    //    //        |from dl_cpc.qukan_p_member_info qpm
+    //    //        |where qpm.day="2018-01-23" AND qpm.update_time>="2017-05-01" AND qpm.device_code is not null
+    //    //        |AND birth is not null
+    //    //      """.stripMargin)
+    //    //      .rdd
+    //    //      .filter(x => x(1).toString().length > 0)
+    //    //      .map {
+    //    //        x =>
+    //    //          var deviceid = x(0).toString()
+    //    //          var birth = x(1).toString()
+    //    //          var age = -1
+    //    //          if (birth >= "2010-01-01") {
+    //    //            age = -1
+    //    //          } else if (birth >= "1990-01-01") {
+    //    //            age = 0
+    //    //          } else if (birth >= "1975-01-01") {
+    //    //            age = 1
+    //    //          } else {
+    //    //            age = 2
+    //    //          }
+    //    //          (deviceid, (age, "", "", ""))
+    //    //      }
+    //    //      .filter(_._2._1 != -1)
+    //    //      .repartition(50)
+    //    //      .cache()
+    //    //    println("ageData num is :" + ageData.count())
+    //    //
+    //    //
+    //    val readdata = ctx.sql(
+    //      """
+    //        |SELECT DISTINCT qkc.device,qc.title,sec.second_level
+    //        |from rpt_qukan.qukan_log_cmd qkc
+    //        |INNER JOIN  gobblin.qukan_content qc ON qc.id=qkc.content_id
+    //        |LEFT JOIN algo_qukan.algo_feature_content_seclvl sec ON qc.id = sec.content_id
+    //        |WHERE qkc.cmd=301 AND qkc.thedate>="%s" AND qkc.thedate<="%s" AND qkc.member_id IS NOT NULL
+    //        |AND qkc.device IS NOT NULL
+    //        |""".stripMargin.format("2018-01-13", "2018-01-28"))
+    //      .rdd
+    //      .map {
+    //        x =>
+    //          (x.getString(0), x.getString(1), x.getString(2))
+    //      }
+    //      .groupBy(_._1)
+    //      .map {
+    //        x =>
+    //          (x._1, (-1, x._2.map(_._2).toSeq, x._2.map(_._3).toSeq))
+    //      }
+    //      .filter(_._2._2.length >= 3)
+    //      .map {
+    //        x =>
+    //          (x._1, (-1, x._2._2.mkString("@@@@"), x._2._3.mkString("@@@@"), ""))
+    //      }
+    //      .repartition(50)
+    //      .cache()
+    //    println("readdata num: " + readdata.count())
+    //
+    //    val ageReadData = ageData
+    //      .union(readdata)
+    //      //.union(extTitleData)
+    //      .reduceByKey {
+    //      (x, y) =>
+    //        var age = x._1
+    //        var titles = x._2
+    //        var secondLevel = x._3
+    //        //var extTitles = x._3
+    //        if (age == -1) {
+    //          age = y._1
+    //        }
+    //        if (titles.length == 0) {
+    //          titles = y._2
+    //        }
+    //
+    //        if (secondLevel.length == 0) {
+    //          secondLevel = x._3
+    //        }
+    //        (age, titles, secondLevel, "")
+    //    }
+    //      .filter {
+    //        x =>
+    //          x._1.length > 3 && x._2._1 != -1 && x._2._2.length > 0 //&& x._2._3.length>0
+    //      }
+    //      .repartition(50)
+    //      .cache()
+    //    println("ageReadData count", ageReadData.count())
+    //
+    //    ageReadData
+    //      .map {
+    //        x =>
+    //          val deviceid = x._1
+    //          val age = x._2._1
+    //          val titles = x._2._2
+    //          val secondLevel = x._2._3
+    //          "%s\t%d\t%s\t%s".format(deviceid, age, titles, secondLevel)
+    //      }
+    //      .saveAsTextFile("/user/cpc/wl/test/ageReadData-20180201-zfb-%d".format(1))
 
-        val ageReadData = ctx
-          .sparkContext
-          .textFile("/user/cpc/wl/test/ageReadData-20180201-zfb-%d".format(1))
-          .map {
-            x =>
-              val arr = x.split("\t")
-              var deviceid = ""
-              var age = -1
-              var titles = ""
-              var secondLevel = ""
-              if (arr.length == 4) {
-                deviceid = arr(0)
-                age = arr(1).toInt
-                titles = arr(2)
-                secondLevel = arr(3)
-              }
-              (deviceid, (age, titles, secondLevel, ""))
+    val ageReadData = ctx
+      .sparkContext
+      //.textFile("/user/cpc/wl/test/ageReadData-20180201-zfb-%d".format(1))
+      .textFile("/user/cpc/wl/test/ageReadData-20180128-zfb-2")
+      .map {
+        x =>
+          val arr = x.split("\t")
+          var deviceid = ""
+          var age = -1
+          var titles = ""
+          var secondLevel = ""
+          if (arr.length >= 3) {
+            deviceid = arr(0)
+            age = arr(1).toInt
+            titles = arr(2)
+            secondLevel = if (arr.length == 4) arr(3) else ""
           }
-          .filter {
-            x =>
-              (x._1.length > 0) //&& (x._2._1 == 0 || (x._2._1 == 1 && (new util.Random).nextInt(2) == 1) || (x._2._1 == 2 && (new util.Random).nextInt(2) == 1))
-          }
-          .repartition(50)
-          .cache()
-        println("ageReadData count", ageReadData.count())
+          (deviceid, (age, titles, secondLevel, ""))
+      }
+      .filter {
+        x =>
+          (x._1.length > 0) //&& (x._2._1 == 0 || (x._2._1 == 1 && (new util.Random).nextInt(2) == 1) || (x._2._1 == 2 && (new util.Random).nextInt(2) == 1))
+      }
+      .repartition(50)
+      .cache()
+    println("ageReadData count", ageReadData.count())
 
     val allData = ageReadData
       .filter {
@@ -274,14 +275,14 @@ object GetAgeModel {
     //    println("测试总数:" + testdata.count())
 
     val tmpAllData = allData.randomSplit(Array(0.8, 0.2))
-
-    val age0 = tmpAllData(1).filter(_._1 == 0).count()
-    val age1 = tmpAllData(1).filter(_._1 == 1).count()
-    val age2 = tmpAllData(1).filter(_._1 == 2).count()
+    val tmpAllData1 = tmpAllData(1).cache()
+    val age0 = tmpAllData1.filter(_._1 == 0).count()
+    val age1 = tmpAllData1.filter(_._1 == 1).count()
+    val age2 = tmpAllData1.filter(_._1 == 2).count()
     println("age0, age1, age2", age0, age1, age2)
 
     val trainDataDocumentDF = ctx.createDataFrame(tmpAllData(0)).toDF("label", "features").repartition(50).cache()
-    val testDataDocumentDF = ctx.createDataFrame(tmpAllData(1)).toDF("label", "features").repartition(50).cache()
+    val testDataDocumentDF = ctx.createDataFrame(tmpAllData1).toDF("label", "features").repartition(50).cache()
     trainDataDocumentDF.show(20)
 
     //    for (i <- 1 to 20) {
@@ -291,9 +292,9 @@ object GetAgeModel {
     //      println("-------------------------------------------------")
     //      println("for i is", i)
     val lr = new LogisticRegression()
-      .setMaxIter(100)
-      .setTol(1E-16)
-      .setRegParam(0.4) //0.57
+      .setMaxIter(2000)
+      .setTol(1E-18)
+      .setRegParam(0.42) //0.57
       .setElasticNetParam(0.0)
       .setLabelCol("label")
       .setFeaturesCol("features")
@@ -302,7 +303,7 @@ object GetAgeModel {
     // Fit the model
     val lrModel = lr.fit(trainDataDocumentDF)
     //
-    //lrModel.save("/user/cpc/wl/test/model/GetTrainUserAgeModel-lr-setRegParam040-setTol1E-18-setElasticNetParam00-100000-20180128-zfb-%d".format(2))
+    lrModel.save("/user/cpc/wl/test/model/GetTrainUserAgeModel-lr-setRegParam042-setTol1E-18-setElasticNetParam00-100000-20180202-zfb-%d".format(1))
     //
     val predictions = lrModel.transform(testDataDocumentDF)
     //
@@ -347,7 +348,7 @@ object GetAgeModel {
     evaluator.setMetricName("weightedRecall")
     println("Test set weightedRecall = " + evaluator.evaluate(predictionAndLabels))
     println("")
-    //    }
+    //}
     ctx.stop()
   }
 }
