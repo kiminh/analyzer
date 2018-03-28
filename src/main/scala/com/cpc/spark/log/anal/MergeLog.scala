@@ -39,7 +39,7 @@ object MergeLog {
     val traceTbl = args(2)
     val hourBefore = args(3).toInt
     prefix = args(4)
-    suffix = args(4)
+    suffix = args(5)
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -hourBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
@@ -65,18 +65,37 @@ object MergeLog {
       .map(x => (x.searchid, x)) //(searchid, log)
       .reduceByKey((x, y) => x) //去重
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
-        x =>
-          var ulog = x._2.copy(date = date, hour = hour)
-          (x._1, ulog)
-      }
+      x =>
+        var ulog = x._2.copy(date = date, hour = hour)
+        (x._1, ulog)
+    }
 
     val showData = prepareSourceString(spark, "cpc_show", prefix + "cpc_show" + suffix, hourBefore, 2)
-    var showData2: rdd.RDD[(String, UnionLog)] = null
-    showData2 = showData
+    //    var showData2: rdd.RDD[(String, UnionLog)] = null
+    //    showData2 = showData
+    //      .map(x => LogParser.parseShowLog(x)) //(log)
+    //      .filter(_ != null)
+    //      .map(x => (x.searchid, x)) //(searchid, log)
+    //      .reduceByKey((x, y) => x) //去重
+
+    var showData2 = showData
       .map(x => LogParser.parseShowLog(x)) //(log)
       .filter(_ != null)
-      .map(x => (x.searchid, x)) //(searchid, log)
-      .reduceByKey((x, y) => x) //去重
+      .map(x => (x.searchid, Seq(x))) //(searchid, Seq(log))
+      .reduceByKey((x, y) => x ++ y)
+      .map {
+        x =>
+          var log = x._2.head
+          val logTime = log.ext("video_show_time").int_value
+          x._2.foreach {
+            y =>
+              if (y.ext("video_show_time").int_value > logTime) {
+                log = y
+              }
+          }
+          (log.searchid,log)
+      }
+
 
     val clickData = prepareSourceString(spark, "cpc_click", prefix + "cpc_click" + suffix, hourBefore, 2)
     var clickData2: rdd.RDD[(String, UnionLog)] = null
@@ -197,7 +216,7 @@ object MergeLog {
     val traceData = prepareSourceString(spark, "cpc_trace", prefix + "cpc_trace" + suffix, hourBefore, 2)
     if (traceData != null) {
       val trace = traceData.map(x => LogParser.parseTraceLog(x))
-        .filter(x => x != null && x.searchid.length > 5)
+        .filter(x => x != null)
       println(trace.first())
       val click = unionData.filter(_.isclick > 0).map(x => (x.searchid, x.timestamp))
       val trace1 = trace.map(x => (x.searchid, x))
@@ -215,7 +234,21 @@ object MergeLog {
           |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
           | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
         """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
-      println("trace", trace1.count())
+      println("trace_join", trace1.count())
+
+
+      spark.createDataFrame(trace)
+        .write
+        .mode(SaveMode.Overwrite)
+        .parquet("/warehouse/dl_cpc.db/cpc_all_trace_log/date=%s/hour=%s".format(date, hour))
+      spark.sql(
+        """
+          |ALTER TABLE dl_cpc.cpc_all_trace_log add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+          | LOCATION  '/warehouse/dl_cpc.db/cpc_all_trace_log/date=%s/hour=%s'
+        """.stripMargin.format(date, hour, date, hour))
+      println("trace_all", trace.count())
+
+
     }
 
     spark.stop()
