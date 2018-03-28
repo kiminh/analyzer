@@ -18,11 +18,13 @@ import scala.collection.mutable
   */
 object AnalClickLog {
 
-  var srcRoot = "/gobblin/source/cpc"
+//  var srcRoot = "/gobblin/source/cpc"
+  var srcRoot = "/warehouse/dl_cpc.db"
 
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
 
   def main(args: Array[String]): Unit = {
+    println(111)
     if (args.length < 2) {
       System.err.println(
         s"""
@@ -44,21 +46,40 @@ object AnalClickLog {
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
-    val clickData = prepareSource(spark, "cpc_click", hourBefore, 2)
+    val clickData = prepareSource(spark, "cpc_click", "cpc_click", hourBefore, 2)
+    println(222)
     if (clickData == null) {
+      println(333)
       spark.stop()
       System.exit(1)
     }
     val clicklog =   clickData.map(x => LogParser.parseClickLog2(x.getString(0))).filter(x => x != null && x.date == date && x.hour == hour)
     //clear dir   .map(x => (x.searchid, x)).reduceByKey((x, y) => x).map(x => x._2)
-    Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
+    //Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
+//    spark.createDataFrame(clicklog)
+//      .write
+//      .mode(SaveMode.Append)
+//      .format("parquet")
+//      .partitionBy("date", "hour")
+//      .saveAsTable("dl_cpc." + table)
+//    println("clicklog", clickData.count())
+
+    println(444)
+
     spark.createDataFrame(clicklog)
       .write
-      .mode(SaveMode.Append)
-      .format("parquet")
-      .partitionBy("date", "hour")
-      .saveAsTable("dl_cpc." + table)
-    println("clicklog", clickData.count())
+      .mode(SaveMode.Overwrite)
+      .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+      """.stripMargin.format(table, date, hour, table, date, hour))
+    println("click", clicklog.count())
+
+
+
+
     spark.stop()
   }
 
@@ -75,13 +96,13 @@ object AnalClickLog {
   /*
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
    */
-  def prepareSource(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
+  def prepareSource(ctx: SparkSession, key: String, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
     try {
       val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours))
       val baseData = ctx.read.schema(schema).parquet(input)
       val tbl = "%s_data_%d".format(src, hourBefore)
       baseData.createTempView(tbl)
-      ctx.sql("select field['%s'].string_type from %s".format(src, tbl)).rdd
+      ctx.sql("select field['%s'].string_type from %s".format(key, tbl)).rdd
     } catch {
       case e: Exception => null
     }
