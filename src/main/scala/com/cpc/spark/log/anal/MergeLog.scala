@@ -1,7 +1,7 @@
 package com.cpc.spark.log.anal
 
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Date}
 
 import com.cpc.spark.log.parser.{ExtValue, LogParser, TraceLog, UnionLog}
 import org.apache.log4j.{Level, Logger}
@@ -24,6 +24,8 @@ object MergeLog {
 
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
 
+  var g_date = new Date()
+
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
       System.err.println(
@@ -41,6 +43,7 @@ object MergeLog {
     prefix = args(4)
     suffix = args(5)
     val cal = Calendar.getInstance()
+    g_date = cal.getTime //以后只用这个时间
     cal.add(Calendar.HOUR, -hourBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val hour = new SimpleDateFormat("HH").format(cal.getTime)
@@ -307,6 +310,7 @@ object MergeLog {
 
   def getDateHourPath(hourBefore: Int, hours: Int): String = {
     val cal = Calendar.getInstance()
+    cal.setTime(g_date)
     val parts = new Array[String](hours)
     cal.add(Calendar.HOUR, -hourBefore)
     for (h <- 0 until hours) {
@@ -319,3 +323,15 @@ object MergeLog {
   case class SrcExtValue(int_type: Int = 0, long_type: Long = 0, float_type: Float = 0, string_type: String = "")
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
