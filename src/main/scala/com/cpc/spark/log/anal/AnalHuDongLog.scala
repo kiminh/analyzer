@@ -157,7 +157,7 @@ object AnalHuDongLog {
   }
   def prepareTraceSource(src: rdd.RDD[Row]): rdd.RDD[HuDongLog] = {
     src.map(x => LogParser.parseHuDongTraceLog(x.getString(0)))
-      .filter(x => x != null && x.adslot_id.length >0 )
+      .filter(x => x != null && x.adslot_id >0 )
 
   }
   def prepareTraceSource2(src: rdd.RDD[String]): rdd.RDD[HuDongLog] = {
