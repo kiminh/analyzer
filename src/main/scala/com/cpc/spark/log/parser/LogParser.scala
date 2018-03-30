@@ -378,7 +378,7 @@ object LogParser {
                   val v = URLDecoder.decode(vv.trim, "UTF8")
                   k match {
                     case "t" => log = log.copy(log_type = v)
-                    case "adslot_id" => log = log.copy(adslot_id = v)
+                    case "adslot_id" => log = log.copy(adslot_id =  v.toInt)
                   }
                 } catch {
                   case e: Exception => null
