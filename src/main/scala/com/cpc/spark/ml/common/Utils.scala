@@ -125,7 +125,7 @@ object Utils {
     var mclick = 0
     var zombie = 0
     var disactive = 0
-    var dlok = 0
+    var installed = 0
     traces.foreach {
       t =>
         t.trace_type match {
@@ -155,7 +155,7 @@ object Utils {
     traces.foreach {
       t =>
         t.trace_op1 match {
-          case "REPORT_DOWNLOAD_FINISH" => dlok += 1
+          case "REPORT_DOWNLOAD_INSTALLED" => installed += 1
 
           case _ =>
         }
@@ -170,7 +170,7 @@ object Utils {
       }
     }
     else{
-      if ((dlok > 0 || active > 0) && disactive == 0) {
+      if ((installed > 0 || active > 0) && disactive == 0) {
         1
       } else {
         0

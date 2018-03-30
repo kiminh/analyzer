@@ -57,7 +57,7 @@ object SaveSampleSvm {
       }
     }
 
-    qtt = getLimitedData(4e8, qtt)
+    qtt = getLimitedData(2e8, qtt)
     qtt = intFreqTransform(qtt, "city", "citydx")
     qtt = stringFreqTransform(qtt, "adslotid", "adslotidx")
     qtt = intFreqTransform(qtt, "adclass", "adclassdx")

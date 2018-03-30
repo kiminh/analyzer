@@ -151,7 +151,9 @@ object SaveFeatures {
         |       adslot_type,ext['pagenum'].int_value as pagenum,ext['bookid'].string_value as bookid,
         |       ext['brand_title'].string_value as brand_title,
         |       ext['user_req_ad_num'].int_value as user_req_ad_num,
-        |       ext['user_req_num'].int_value as user_req_num,uid
+        |       ext['user_req_num'].int_value as user_req_num,uid,
+        |       ext['click_count'].int_value as user_click_num,
+        |       ext['click_unit_count'].int_value as user_click_unit_num
         |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isclick = 1
         |and ext['antispam'].int_value = 0
         |

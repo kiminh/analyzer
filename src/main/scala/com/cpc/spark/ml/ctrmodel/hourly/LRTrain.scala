@@ -50,38 +50,32 @@ object LRTrain {
     model.clearResult()
     val qttList = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 1)
     train(spark, "parser3", "qtt-list-parser3-hourly", getLeftJoinData(qttList, userAppIdx), "qtt-list-parser3-hourly.lrm", 4e8)
+    model.clearResult()
+    train(spark, "ctrparser3", "qtt-list-ctrparser3-hourly", getLeftJoinData(qttList, userAppIdx), "qtt-list-ctrparser3-hourly.lrm", 4e8)
 
     //qtt-content-parser3-hourly
     model.clearResult()
     val qttContent = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 2)
     train(spark, "parser3", "qtt-content-parser3-hourly", getLeftJoinData(qttContent, userAppIdx), "qtt-content-parser3-hourly.lrm", 4e8)
+    model.clearResult()
+    train(spark, "ctrparser3", "qtt-content-ctrparser3-hourly", getLeftJoinData(qttContent, userAppIdx), "qtt-content-ctrparser3-hourly.lrm", 4e8)
 
     //qtt-all-parser3-hourly
     model.clearResult()
     val qttAll = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-    train(spark, "parser3", "qtt-all-parser3-hourly", getLeftJoinData(qttAll, userAppIdx), "qtt-all-parser3-hourly.lrm", 4e8)
-
-    //qtt-all-parser2-hourly
-    model.clearResult()
-    val qttAll2 = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-    train(spark, "parser2", "qtt-all-parser2-hourly", getLeftJoinData(qttAll2, userAppIdx), "qtt-all-parser2-hourly.lrm", 4e8)
+    train(spark, "ctrparser3", "qtt-all-ctrparser3-hourly", getLeftJoinData(qttAll, userAppIdx), "qtt-all-ctrparser3-hourly.lrm", 4e8)
 
     //凌晨计算所有的模型
     if (isMorning()) {
       //external-all-parser2-hourly
       model.clearResult()
       val extAll = ulog.filter(x => !Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-      train(spark, "parser2", "external-all-parser2-hourly", extAll, "external-all-parser2-hourly.lrm", 4e8)
+      train(spark, "ctrparser2", "external-all-ctrparser2-hourly", extAll, "external-all-ctrparser2-hourly.lrm", 4e8)
 
       //interact-all-parser3-hourly
       model.clearResult()
       val interactAll = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
-      train(spark, "parser3", "interact-all-parser3-hourly", getLeftJoinData(interactAll, userAppIdx), "interact-all-parser3-hourly.lrm", 4e8)
-
-      //interact-all-parser2-hourly
-      model.clearResult()
-      val interactAll2 = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
-      train(spark, "parser2", "interact-all-parser2-hourly", interactAll2, "interact-all-parser2-hourly.lrm", 4e8)
+      train(spark, "ctrparser3", "interact-all-ctrparser3-hourly", getLeftJoinData(interactAll, userAppIdx), "interact-all-ctrparser3-hourly.lrm", 4e8)
 
       //按分区取数据
       var cvrUlog = getData(spark,"cvrdata_v2",cvrPathSep).cache()
@@ -112,10 +106,6 @@ object LRTrain {
       //cvr-qtt-all-parser3-hourly
       model.clearResult()
       train(spark, "parser3", "cvr-qtt-all-parser3-hourly", cvrQttAll, "cvr-qtt-all-parser3-hourly.lrm", 1e8)
-
-      //cvr-qtt-all-parser2-hourly
-      model.clearResult()
-      train(spark, "parser2", "cvr-qtt-all-parser2-hourly", cvrQttAll, "cvr-qtt-all-parser2-hourly.lrm", 1e8)
 
 
       //-----------cvrdata_v1-----------
@@ -148,10 +138,6 @@ object LRTrain {
       //cvr-qtt-all-parser3-hourly
       model.clearResult()
       train(spark, "parser3", "cvr-v1-qtt-all-parser3-hourly", cvrQttAll, "cvr-v1-qtt-all-parser3-hourly.lrm", 1e8)
-
-      //cvr-qtt-all-parser2-hourly
-      model.clearResult()
-      train(spark, "parser2", "cvr-v1-qtt-all-parser2-hourly", cvrQttAll, "cvr-v1-qtt-all-parser2-hourly.lrm", 1e8)
 
       cvrQttAll.unpersist()
     }
@@ -327,9 +313,9 @@ object LRTrain {
                   getVectorParser2(u)
                 case "parser3" =>
                   getVectorParser3(u)
-                case "ctr_parser2" =>
+                case "ctrparser2" =>
                   getCtrVectorParser2(u)
-                case "ctr_parser3" =>
+                case "ctrparser3" =>
                   getCtrVectorParser3(u)
               }
               LabeledPoint(u.getAs[Int]("label").toDouble, vec)
@@ -391,7 +377,7 @@ object LRTrain {
         println(x)
     }
 
-    spark.read.parquet(path:_*)
+    spark.read.parquet(path:_*).repartition(1000)
   }
 
   /*
