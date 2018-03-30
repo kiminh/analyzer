@@ -45,23 +45,26 @@ object TopCtrIdea {
     for (i <- 0 until dayBefore) {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       val stmt = """
-          |select * from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
-          |and adslotid > 0 and adslot_type in (1,2)
-        """.stripMargin.format(date)
+                   |select *,
+                   | ext['adclass'].int_value as adclass
+                   | from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
+                   |and adslotid > 0 and adslot_type in (1,2)
+                 """.stripMargin.format(date)
       println(stmt)
       val ulog = spark.sql(stmt)
-        .as[UnionLog].rdd
+        //        .as[UnionLog]
+        .rdd
         .map {
           u =>
-            val key = (u.adslot_type, u.ideaid)
-            val cls = u.ext.getOrElse("adclass", ExtValue()).int_value
+            val key = (u.getAs[Int]("adslot_type"), u.getAs[Int]("ideaid"))
+            val cls = u.getAs[Int]("adclass")
             val v = Adinfo(
-              user_id = u.userid,
-              idea_id = u.ideaid,
-              adslot_type = u.adslot_type,
+              user_id = u.getAs[Int]("userid"),
+              idea_id = u.getAs[Int]("ideaid"),
+              adslot_type = u.getAs[Int]("adslot_type"),
               adclass = cls,
-              click = u.isclick,
-              show = u.isshow)
+              click = u.getAs[Int]("isclick"),
+              show = u.getAs[Int]("isshow"))
 
             (key, v)
         }
@@ -269,16 +272,16 @@ object TopCtrIdea {
   }
 
   private case class Adinfo(
-                          agent_id: Int = 0,
-                          user_id: Int = 0,
-                          idea_id: Int = 0,
-                          adclass: Int = 0,
-                          adslot_type: Int = 0,
-                          click: Int = 0,
-                          show: Int = 0,
-                          ctr: Int = 0,
-                          ctr_type: Int = 0
-                          ) {
+                             agent_id: Int = 0,
+                             user_id: Int = 0,
+                             idea_id: Int = 0,
+                             adclass: Int = 0,
+                             adslot_type: Int = 0,
+                             click: Int = 0,
+                             show: Int = 0,
+                             ctr: Int = 0,
+                             ctr_type: Int = 0
+                           ) {
 
   }
 

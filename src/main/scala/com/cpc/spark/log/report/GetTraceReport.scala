@@ -1,11 +1,8 @@
 package com.cpc.spark.log.report
 
 import java.sql.DriverManager
-import java.text.SimpleDateFormat
-import java.util.{Calendar, Properties}
+import java.util.Properties
 
-import com.cpc.spark.log.parser.TraceReportLog
-import com.cpc.spark.log.report.GetHourReport.{clearReportHourData, mariadbProp, mariadbUrl}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -31,11 +28,11 @@ object GetTraceReport {
     }
     Logger.getRootLogger.setLevel(Level.WARN)
 
-   /* val hourBefore = args(0).toInt
-    val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -hourBefore)
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val hour = new SimpleDateFormat("HH").format(cal.getTime)*/
+    /* val hourBefore = args(0).toInt
+     val cal = Calendar.getInstance()
+     cal.add(Calendar.HOUR, -hourBefore)
+     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+     val hour = new SimpleDateFormat("HH").format(cal.getTime)*/
     val date = args(0)
     val hour = args(1)
     println("*******************")
@@ -52,7 +49,6 @@ object GetTraceReport {
       .appName("cpc get trace hour report from %s/%s".format(date, hour))
       .enableHiveSupport()
       .getOrCreate()
-    import ctx.implicits._
 
 
     val traceReport = ctx.sql(
@@ -64,7 +60,7 @@ object GetTraceReport {
          |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
          |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1
        """.stripMargin.format(date, hour, date, hour))
-      .as[TraceReportLog]
+      //      .as[TraceReportLog]
       .rdd.cache()
     val sql1 = "select ideaid , sum(isshow) as show, sum(isclick) as click from dl_cpc.cpc_union_log where `date` = \"%s\" and `hour` =\"%s\" group by ideaid ".format(date, hour)
     val unionRdd = ctx.sql(sql1).rdd.map{
@@ -78,15 +74,23 @@ object GetTraceReport {
 
     val traceData = traceReport.filter {
       trace =>
-        trace.plan_id > 0 && trace.trace_type.length < 100 && trace.trace_type.length > 1
+        trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type").length < 100 && trace.getAs[String]("trace_type").length > 1
     }.map {
       trace =>
-        ((trace.searchid, trace.trace_type,trace.duration, trace.auto), trace)
+        ((trace.getAs[String]("searchid"), trace.getAs[String]("trace_type"),trace.getAs[Int]("duration"), trace.getAs[Int]("auto")), trace)
     }.reduceByKey {
       case (x, y) => x //去重
     }.map{
       case ((searchid, trace_type, duration, auto), trace) =>
-        ((trace.user_id, trace.plan_id, trace.unit_id, trace.idea_id, trace.date, trace.hour, trace.trace_type, trace.duration, trace.auto), 1)
+        ((trace.getAs[Int]("user_id"),
+          trace.getAs[Int]("plan_id"),
+          trace.getAs[Int]("unit_id"),
+          trace.getAs[Int]("idea_id"),
+          trace.getAs[String]("date"),
+          trace.getAs[String]("hour"),
+          trace.getAs[String]("trace_type"),
+          trace.getAs[Int]("duration"),
+          trace.getAs[Int]("auto")), 1)
     }.reduceByKey {
       case (x, y) => (x + y)
     }.map{

@@ -1,13 +1,11 @@
 package com.cpc.spark.log.anal
 
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Date}
 
-import com.cpc.spark.common.Utils
 import com.cpc.spark.log.parser.{ExtValue, LogParser, TraceLog, UnionLog}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
@@ -17,12 +15,16 @@ import scala.collection.mutable
 /**
   * Created by Roy on 2017/4/18.
   */
-object AnalUnionLog {
+object MergeLog {
 
   var srcRoot = "/warehouse/dl_cpc.db"
+  var prefix = ""
+  var suffix = ""
   //  var srcRoot = "/gobblin/source/cpc"
 
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
+
+  var g_date = new Date()
 
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
@@ -38,33 +40,30 @@ object AnalUnionLog {
     val table = args(1)
     val traceTbl = args(2)
     val hourBefore = args(3).toInt
+    prefix = args(4)
+    suffix = args(5)
     val cal = Calendar.getInstance()
+    g_date = cal.getTime //以后只用这个时间
     cal.add(Calendar.HOUR, -hourBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val hour = new SimpleDateFormat("HH").format(cal.getTime)
     val spark = SparkSession.builder()
-      .appName("cpc anal union log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
+      .appName("union log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
       .getOrCreate()
-    import spark.implicits._
 
-    var searchData = prepareSource(spark, "cpc_search", "src_cpc_search", hourBefore, 1)
+    var searchData = prepareSourceString(spark, "cpc_search", prefix + "cpc_search" + suffix, hourBefore, 1)
     if (searchData == null) {
       System.err.println("search data is empty")
       System.exit(1)
     }
-    println("searchData", searchData.count())
     searchData.take(1).foreach {
       x =>
         println(x)
-
-        println(x.getString(0))
-        println(LogParser.parseSearchLog(x.getString(0)))
+        println(LogParser.parseSearchLog(x))
     }
-
-
     val searchData2: rdd.RDD[(String, UnionLog)] = searchData
-      .map(x => LogParser.parseSearchLog(x.getString(0))) //(log)
+      .map(x => LogParser.parseSearchLog(x)) //(log)
       .filter(_ != null)
       .map(x => (x.searchid, x)) //(searchid, log)
       .reduceByKey((x, y) => x) //去重
@@ -73,28 +72,39 @@ object AnalUnionLog {
         var ulog = x._2.copy(date = date, hour = hour)
         (x._1, ulog)
     }
-    println("searchData2", searchData2.count())
 
-    val showData = prepareSource(spark, "cpc_show", "src_cpc_show", hourBefore, 2)
-    var showData2: rdd.RDD[(String, UnionLog)] = null
-    if (showData != null) {
-      showData2 = showData
-        .map(x => LogParser.parseShowLog(x.getString(0))) //(log)
-        .filter(_ != null)
-        .map(x => (x.searchid, x)) //(searchid, log)
-        .reduceByKey((x, y) => x) //去重
-        .map {
+    val showData = prepareSourceString(spark, "cpc_show", prefix + "cpc_show" + suffix, hourBefore, 2)
+    //    var showData2: rdd.RDD[(String, UnionLog)] = null
+    //    showData2 = showData
+    //      .map(x => LogParser.parseShowLog(x)) //(log)
+    //      .filter(_ != null)
+    //      .map(x => (x.searchid, x)) //(searchid, log)
+    //      .reduceByKey((x, y) => x) //去重
+
+    var showData2 = showData
+      .map(x => LogParser.parseShowLog(x)) //(log)
+      .filter(_ != null)
+      .map(x => (x.searchid, Seq(x))) //(searchid, Seq(log))
+      .reduceByKey((x, y) => x ++ y)
+      .map {
         x =>
-          (x._1, x._2)
+          var log = x._2.head
+          val logTime = log.ext("video_show_time").int_value
+          x._2.foreach {
+            y =>
+              if (y.ext("video_show_time").int_value > logTime) {
+                log = y
+              }
+          }
+          (log.searchid,log)
       }
-    }
-    println("showData2", showData2.count())
 
-    val clickData = prepareSource(spark, "cpc_click", "src_cpc_click", hourBefore, 2)
+
+    val clickData = prepareSourceString(spark, "cpc_click", prefix + "cpc_click" + suffix, hourBefore, 2)
     var clickData2: rdd.RDD[(String, UnionLog)] = null
     if (clickData != null) {
       clickData2 = clickData
-        .map(x => LogParser.parseClickLog(x.getString(0))) //(log)
+        .map(x => LogParser.parseClickLog(x)) //(log)
         .filter(_ != null)
         .map(x => (x.searchid, Seq(x))) //(searchid, log)
         .reduceByKey {
@@ -137,7 +147,6 @@ object AnalUnionLog {
           (x._1, ulog)
       }
     }
-    println("clickData2", clickData2.count())
 
     val unionData = searchData2.leftOuterJoin(showData2).leftOuterJoin(clickData2)
       .map {
@@ -196,49 +205,55 @@ object AnalUnionLog {
           log1
       }
 
-    val w = spark.createDataFrame(unionData)
+    spark.createDataFrame(unionData)
       .write
-      .mode(SaveMode.Append)
-      .format("parquet")
-      .partitionBy("date", "hour")
-    //clear dir
-    Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
-    w.saveAsTable("dl_cpc." + table)
-
+      .mode(SaveMode.Overwrite)
+      .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+      """.stripMargin.format(table, date, hour, table, date, hour))
     println("union", unionData.count())
 
-
-    var search = unionData.filter(x => x.isclick > 0).map(x => (x.searchid, x.timestamp))
-    println("search", search.count())
-    val traceData1 = prepareSource(spark, "cpc_trace", "src_cpc_trace", hourBefore, 2)
-    var traceData = prepareTraceSource(traceData1)
-
-    if (traceData1 != null) {
-      val trace = traceData.map(x => (x.searchid, x))
-      println("trace1", trace.count())
-      val trace2 = trace.join(search)
-        //        .filter(x=>x._2._2.isDefined)
+    val traceData = prepareSourceString(spark, "cpc_trace", prefix + "cpc_trace" + suffix, hourBefore, 2)
+    if (traceData != null) {
+      val trace = traceData.map(x => LogParser.parseTraceLog(x))
+        .filter(x => x != null)
+      println(trace.first())
+      val click = unionData.filter(_.isclick > 0).map(x => (x.searchid, x.timestamp))
+      val trace1 = trace.map(x => (x.searchid, x))
+        .join(click)
         .map {
-        x =>
-          val tlog = x._2._1
-          tlog.copy(
-            search_timestamp = x._2._2,
-            date = date,
-            hour = hour
-          )
-      }
-
-      val w = trace2.toDF()
+          x =>
+            x._2._1.copy(search_timestamp = x._2._2, date = date, hour = hour)
+        }
+      spark.createDataFrame(trace1)
         .write
-        .mode(SaveMode.Append)
-        .format("parquet")
-        .partitionBy("date", "hour")
-      //clear dir
-      Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
-      w.saveAsTable("dl_cpc." + traceTbl)
+        .mode(SaveMode.Overwrite)
+        .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
+      spark.sql(
+        """
+          |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+          | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+        """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
+      println("trace_join", trace1.count())
 
-      println("trace2", trace2.count())
+
+      spark.createDataFrame(trace)
+        .write
+        .mode(SaveMode.Overwrite)
+        .parquet("/warehouse/dl_cpc.db/cpc_all_trace_log/date=%s/hour=%s".format(date, hour))
+      spark.sql(
+        """
+          |ALTER TABLE dl_cpc.cpc_all_trace_log add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+          | LOCATION  '/warehouse/dl_cpc.db/cpc_all_trace_log/date=%s/hour=%s'
+        """.stripMargin.format(date, hour, date, hour))
+      println("trace_all", trace.count())
+
+
     }
+
     spark.stop()
   }
 
@@ -255,13 +270,37 @@ object AnalUnionLog {
   /*
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
    */
+  def prepareSourceString(ctx: SparkSession, key: String, src: String, hourBefore: Int, hours: Int): rdd.RDD[String] = {
+    val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
+    println(input)
+    ctx.read
+      .parquet(input)
+      .repartition(1000)
+      .rdd
+      .map {
+        r =>
+          //val s = r.getMap[String, Row](2).getOrElse(key, null)
+          val s = r.getAs[Map[String, Row]]("field").getOrElse(key, null)
+
+          if (s == null) {
+            null
+          } else {
+            s.getAs[String]("string_type")
+          }
+      }
+      .filter(_ != null)
+  }
+
+  /*
+  cpc_search cpc_show cpc_click cpc_trace cpc_charge
+   */
   def prepareSource(ctx: SparkSession, key: String, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
     val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
     println(input)
-    val baseData = ctx.read.schema(schema).parquet(input)
+    val baseData = ctx.read.schema(schema).parquet(input).repartition(1000)
     val tbl = "%s_data_%d".format(src, hourBefore)
     baseData.createTempView(tbl)
-    ctx.sql("select field['%s'].string_type from %s".format(key, tbl)).rdd.repartition(1000)
+    ctx.sql("select field['%s'].string_type from %s".format(key, tbl)).rdd
   }
 
   def prepareTraceSource(src: rdd.RDD[Row]): rdd.RDD[TraceLog] = {
@@ -271,6 +310,7 @@ object AnalUnionLog {
 
   def getDateHourPath(hourBefore: Int, hours: Int): String = {
     val cal = Calendar.getInstance()
+    cal.setTime(g_date)
     val parts = new Array[String](hours)
     cal.add(Calendar.HOUR, -hourBefore)
     for (h <- 0 until hours) {
@@ -283,3 +323,15 @@ object AnalUnionLog {
   case class SrcExtValue(int_type: Int = 0, long_type: Long = 0, float_type: Float = 0, string_type: String = "")
 
 }
+
+
+
+
+
+
+
+
+
+
+
+

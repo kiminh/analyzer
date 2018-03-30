@@ -4,7 +4,6 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.log.parser.{ExtValue, TraceLog, UnionLog}
-import com.cpc.spark.ml.cvrmodel.v1.FeatureParser
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}

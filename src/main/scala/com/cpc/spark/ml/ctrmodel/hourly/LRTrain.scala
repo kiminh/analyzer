@@ -50,38 +50,32 @@ object LRTrain {
     model.clearResult()
     val qttList = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 1)
     train(spark, "parser3", "qtt-list-parser3-hourly", getLeftJoinData(qttList, userAppIdx), "qtt-list-parser3-hourly.lrm", 4e8)
+    model.clearResult()
+    train(spark, "ctrparser3", "qtt-list-ctrparser3-hourly", getLeftJoinData(qttList, userAppIdx), "qtt-list-ctrparser3-hourly.lrm", 4e8)
 
     //qtt-content-parser3-hourly
     model.clearResult()
     val qttContent = ulog.filter(x => (x.getAs[String]("media_appsid") == "80000001" || x.getAs[String]("media_appsid") == "80000002") && x.getAs[Int]("adslot_type") == 2)
     train(spark, "parser3", "qtt-content-parser3-hourly", getLeftJoinData(qttContent, userAppIdx), "qtt-content-parser3-hourly.lrm", 4e8)
+    model.clearResult()
+    train(spark, "ctrparser3", "qtt-content-ctrparser3-hourly", getLeftJoinData(qttContent, userAppIdx), "qtt-content-ctrparser3-hourly.lrm", 4e8)
 
     //qtt-all-parser3-hourly
     model.clearResult()
     val qttAll = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-    train(spark, "parser3", "qtt-all-parser3-hourly", getLeftJoinData(qttAll, userAppIdx), "qtt-all-parser3-hourly.lrm", 4e8)
-
-    //qtt-all-parser2-hourly
-    model.clearResult()
-    val qttAll2 = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-    train(spark, "parser2", "qtt-all-parser2-hourly", getLeftJoinData(qttAll2, userAppIdx), "qtt-all-parser2-hourly.lrm", 4e8)
+    train(spark, "ctrparser3", "qtt-all-ctrparser3-hourly", getLeftJoinData(qttAll, userAppIdx), "qtt-all-ctrparser3-hourly.lrm", 4e8)
 
     //凌晨计算所有的模型
     if (isMorning()) {
       //external-all-parser2-hourly
       model.clearResult()
       val extAll = ulog.filter(x => !Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) && Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-      train(spark, "parser2", "external-all-parser2-hourly", extAll, "external-all-parser2-hourly.lrm", 4e8)
+      train(spark, "ctrparser2", "external-all-ctrparser2-hourly", extAll, "external-all-ctrparser2-hourly.lrm", 4e8)
 
       //interact-all-parser3-hourly
       model.clearResult()
       val interactAll = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
-      train(spark, "parser3", "interact-all-parser3-hourly", getLeftJoinData(interactAll, userAppIdx), "interact-all-parser3-hourly.lrm", 4e8)
-
-      //interact-all-parser2-hourly
-      model.clearResult()
-      val interactAll2 = ulog.filter(x => x.getAs[Int]("adslot_type") == 3)
-      train(spark, "parser2", "interact-all-parser2-hourly", interactAll2, "interact-all-parser2-hourly.lrm", 4e8)
+      train(spark, "ctrparser3", "interact-all-ctrparser3-hourly", getLeftJoinData(interactAll, userAppIdx), "interact-all-ctrparser3-hourly.lrm", 4e8)
 
       //按分区取数据
       var cvrUlog = getData(spark,"cvrdata_v2",cvrPathSep).cache()
@@ -112,10 +106,6 @@ object LRTrain {
       //cvr-qtt-all-parser3-hourly
       model.clearResult()
       train(spark, "parser3", "cvr-qtt-all-parser3-hourly", cvrQttAll, "cvr-qtt-all-parser3-hourly.lrm", 1e8)
-
-      //cvr-qtt-all-parser2-hourly
-      model.clearResult()
-      train(spark, "parser2", "cvr-qtt-all-parser2-hourly", cvrQttAll, "cvr-qtt-all-parser2-hourly.lrm", 1e8)
 
 
       //-----------cvrdata_v1-----------
@@ -148,10 +138,6 @@ object LRTrain {
       //cvr-qtt-all-parser3-hourly
       model.clearResult()
       train(spark, "parser3", "cvr-v1-qtt-all-parser3-hourly", cvrQttAll, "cvr-v1-qtt-all-parser3-hourly.lrm", 1e8)
-
-      //cvr-qtt-all-parser2-hourly
-      model.clearResult()
-      train(spark, "parser2", "cvr-v1-qtt-all-parser2-hourly", cvrQttAll, "cvr-v1-qtt-all-parser2-hourly.lrm", 1e8)
 
       cvrQttAll.unpersist()
     }
@@ -327,6 +313,10 @@ object LRTrain {
                   getVectorParser2(u)
                 case "parser3" =>
                   getVectorParser3(u)
+                case "ctrparser2" =>
+                  getCtrVectorParser2(u)
+                case "ctrparser3" =>
+                  getCtrVectorParser3(u)
               }
               LabeledPoint(u.getAs[Int]("label").toDouble, vec)
           }
@@ -387,7 +377,7 @@ object LRTrain {
         println(x)
     }
 
-    spark.read.parquet(path:_*)
+    spark.read.parquet(path:_*).repartition(1000)
   }
 
   /*
@@ -779,6 +769,316 @@ object LRTrain {
     }
     els = els :+ (urn_idx + i, 1d)
     i += 5 + 1
+
+    //sex - age
+    if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0){
+      els = els :+ (6 * (x.getAs[Int]("sex") - 1) + x.getAs[Int]("age") + i, 1d)
+    }
+    i += 2 * 6 + 1
+
+    //user installed app
+    val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
+    if (appIdx != null){
+      val inxList = appIdx.map(p => (p + i,1d))
+      els = els ++ inxList
+    }
+    i += 1000 + 1
+
+    try {
+      Vectors.sparse(i, els)
+    } catch {
+      case e: Exception =>
+        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        null
+    }
+  }
+
+
+  def getCtrVectorParser2(x: Row): Vector = {
+
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
+    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
+    val hour = cal.get(Calendar.HOUR_OF_DAY)
+    var els = Seq[(Int, Double)]()
+    var i = 0
+
+    els = els :+ (week + i - 1, 1d)
+    i += 7
+
+    //(24)
+    els = els :+ (hour + i, 1d)
+    i += 24
+
+    //sex
+    els = els :+ (x.getAs[Int]("sex") + i, 1d)
+    i += 9
+
+    //age
+    els = els :+ (x.getAs[Int]("age") + i, 1d)
+    i += 100
+
+    //os 96 - 97 (2)
+    els = els :+ (x.getAs[Int]("os") + i, 1d)
+    i += 10
+
+    //isp
+    els = els :+ (x.getAs[Int]("isp") + i, 1d)
+    i += 20
+
+    //net
+    els = els :+ (x.getAs[Int]("network") + i, 1d)
+    i += 10
+
+    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
+    i += dict("cityid").size + 1
+
+    //media id
+    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
+    i += dict("mediaid").size + 1
+
+    //ad slot id
+    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
+    i += dict("slotid").size + 1
+
+    //0 to 4
+    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
+    i += 10
+
+    //pagenum
+    var pnum = x.getAs[Int]("pagenum")
+    if (pnum < 0 || pnum > 50) {
+      pnum = 0
+    }
+    els = els :+ (pnum + i, 1d)
+    i += 100
+
+    //bookid
+    var bid = 0
+    try {
+      bid = x.getAs[String]("bookid").toInt
+    } catch {
+      case e: Exception =>
+    }
+    if (bid < 0 || bid > 50) {
+      bid = 0
+    }
+    els = els :+ (bid + i, 1d)
+    i += 100
+
+    //ad class
+    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
+    els = els :+ (adcls + i, 1d)
+    i += dict("adclass").size + 1
+
+    //adtype
+    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
+    i += 10
+
+    //adslot_type
+    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
+    i += 10
+
+    //planid
+    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
+    i += dict("planid").size + 1
+
+    //unitid
+    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
+    i += dict("unitid").size + 1
+
+    //ideaid
+    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
+    i += dict("ideaid").size + 1
+
+    //user_req_ad_num
+    var uran_idx = 0
+    val uran = x.getAs[Int]("user_req_ad_num")
+    if (uran >= 1 && uran <= 10 ){
+      uran_idx = uran
+    }
+    if (uran > 10){
+      uran_idx = 11
+    }
+    els = els :+ (uran_idx + i, 1d)
+    i += 12 + 1
+
+    //user_req_num
+    var urn_idx = 0
+    val urn = x.getAs[Int]("user_req_num")
+    if (urn >= 1 && urn <= 10){
+      urn_idx = 1
+    }else if(urn > 10 && urn <= 100){
+      urn_idx = 2
+    }else if(urn > 100 && urn <= 1000){
+      urn_idx = 3
+    }else if(urn > 1000){
+      urn_idx = 4
+    }
+    els = els :+ (urn_idx + i, 1d)
+    i += 5 + 1
+
+    var user_click = x.getAs[Int]("user_click_num")
+    if (user_click >= 5) {
+      user_click = 5
+    }
+    els = els :+ (user_click + i, 1d)
+    i += 6
+
+    var user_click_unit = x.getAs[Int]("user_click_unit_num")
+    if (user_click_unit >= 5) {
+      user_click_unit = 5
+    }
+    els = els :+ (user_click + i, 1d)
+    i += 6
+
+
+    try {
+      Vectors.sparse(i, els)
+    } catch {
+      case e: Exception =>
+        throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
+        null
+    }
+  }
+
+  def getCtrVectorParser3(x: Row): Vector = {
+
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
+    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
+    val hour = cal.get(Calendar.HOUR_OF_DAY)
+    var els = Seq[(Int, Double)]()
+    var i = 0
+
+    els = els :+ (week + i - 1, 1d)
+    i += 7
+
+    //(24)
+    els = els :+ (hour + i, 1d)
+    i += 24
+
+    //sex
+    els = els :+ (x.getAs[Int]("sex") + i, 1d)
+    i += 9
+
+    //age
+    els = els :+ (x.getAs[Int]("age") + i, 1d)
+    i += 100
+
+    //os 96 - 97 (2)
+    els = els :+ (x.getAs[Int]("os") + i, 1d)
+    i += 10
+
+    //isp
+    els = els :+ (x.getAs[Int]("isp") + i, 1d)
+    i += 20
+
+    //net
+    els = els :+ (x.getAs[Int]("network") + i, 1d)
+    i += 10
+
+    els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
+    i += dict("cityid").size + 1
+
+    //media id
+    els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
+    i += dict("mediaid").size + 1
+
+    //ad slot id
+    els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
+    i += dict("slotid").size + 1
+
+    //0 to 4
+    els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
+    i += 10
+
+    //pagenum
+    var pnum = x.getAs[Int]("pagenum")
+    if (pnum < 0 || pnum > 50) {
+      pnum = 0
+    }
+    els = els :+ (pnum + i, 1d)
+    i += 100
+
+    //bookid
+    var bid = 0
+    try {
+      bid = x.getAs[String]("bookid").toInt
+    } catch {
+      case e: Exception =>
+    }
+    if (bid < 0 || bid > 50) {
+      bid = 0
+    }
+    els = els :+ (bid + i, 1d)
+    i += 100
+
+    //ad class
+    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
+    els = els :+ (adcls + i, 1d)
+    i += dict("adclass").size + 1
+
+    //adtype
+    els = els :+ (x.getAs[Int]("adtype") + i, 1d)
+    i += 10
+
+    //adslot_type
+    els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
+    i += 10
+
+    //planid
+    els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
+    i += dict("planid").size + 1
+
+    //unitid
+    els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
+    i += dict("unitid").size + 1
+
+    //ideaid
+    els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
+    i += dict("ideaid").size + 1
+
+    //user_req_ad_num
+    var uran_idx = 0
+    val uran = x.getAs[Int]("user_req_ad_num")
+    if (uran >= 1 && uran <= 10 ){
+      uran_idx = uran
+    }
+    if (uran > 10){
+      uran_idx = 11
+    }
+    els = els :+ (uran_idx + i, 1d)
+    i += 12 + 1
+
+    //user_req_num
+    var urn_idx = 0
+    val urn = x.getAs[Int]("user_req_num")
+    if (urn >= 1 && urn <= 10){
+      urn_idx = 1
+    }else if(urn > 10 && urn <= 100){
+      urn_idx = 2
+    }else if(urn > 100 && urn <= 1000){
+      urn_idx = 3
+    }else if(urn > 1000){
+      urn_idx = 4
+    }
+    els = els :+ (urn_idx + i, 1d)
+    i += 5 + 1
+
+    var user_click = x.getAs[Int]("user_click_num")
+    if (user_click >= 5) {
+      user_click = 5
+    }
+    els = els :+ (user_click + i, 1d)
+    i += 6
+
+    var user_click_unit = x.getAs[Int]("user_click_unit_num")
+    if (user_click_unit >= 5) {
+      user_click_unit = 5
+    }
+    els = els :+ (user_click + i, 1d)
+    i += 6
 
     //sex - age
     if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0){

@@ -49,14 +49,13 @@ object Utils {
     log.mkString("\n")
   }
 
-  def updateOnlineData2(srcfile: String, destfile: String, conf: Config): String = {
-    val nodes = conf.getConfigList("mlserver.nodes")
+  def updateMlcppOnlineData(srcfile: String, destfile: String, conf: Config): String = {
+    val nodes = conf.getConfigList("mlserver.cpp_nodes")
     var log = Seq[String]()
     for (i <- 0 until nodes.size()) {
       val node = nodes.get(i)
       var name = node.getString("name")
       val ip = node.getString("ip")
-      //      val cmd = s"scp $srcfile work@$ip:/home/work/zyc/$destfile"
       val cmd = s"scp $srcfile work@$ip:/home/work/mlcpp/data/$destfile"
       log = log :+ "%s %s".format(name, ip)
       val ret = cmd !
@@ -126,6 +125,7 @@ object Utils {
     var mclick = 0
     var zombie = 0
     var disactive = 0
+    var installed = 0
     traces.foreach {
       t =>
         t.trace_type match {
@@ -137,7 +137,7 @@ object Utils {
 
           case "clickMonitor" => mclick += 1
 
-          case "inputFocus" => click += 1
+          //case "inputFocus" => click += 1
 
           case "press" => click += 1
 
@@ -152,6 +152,16 @@ object Utils {
         }
     }
 
+    traces.foreach {
+      t =>
+        t.trace_op1 match {
+          case "REPORT_DOWNLOAD_INSTALLED" => installed += 1
+
+          case _ =>
+        }
+    }
+
+
     if(version == "v1"){
       if (((stay >= 30 && click > 0) || active > 0) && disactive == 0) {
         1
@@ -160,7 +170,7 @@ object Utils {
       }
     }
     else{
-      if ((stay >= 30 && click > 0) || active > 0) {
+      if ((installed > 0 || active > 0) && disactive == 0) {
         1
       } else {
         0

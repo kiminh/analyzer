@@ -3,8 +3,6 @@ package com.cpc.spark.antispam.anal
 import java.sql.DriverManager
 import java.util.Properties
 
-import com.cpc.spark.antispam.anal.GetDeviceAnal.{clearReportHourData, mariadbProp, mariadbUrl}
-import com.cpc.spark.antispam.log.GetMediaLog.{mariadbProp, mariadbUrl}
 import com.cpc.spark.log.parser.{ExtValue, UnionLog}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
@@ -58,10 +56,13 @@ object GetDeviceAnalV2 {
       case (adslot_id,media_id,user_id ) =>
         (media_id, user_id )
     }.distinct()
-    var sql1 = "SELECT * from  dl_cpc.cpc_union_log where `date` ='%s'  and ext['device_ids'].string_value != '' ".format(date1)
+    var sql1 = "SELECT *,ext['device_ids'].string_value as device_ids  from  dl_cpc.cpc_union_log where `date` ='%s'  and ext['device_ids'].string_value != '' ".format(date1)
     println("sql1:"+ sql1)
-    var unionRdd = ctx.sql(sql1).as[UnionLog].rdd.map(
-      x => (x.media_appsid,x.adslotid,x.adslot_type, x.model, x.brand,x.os , x.ext.getOrElse("device_ids",ExtValue()).string_value,x.city)
+    var unionRdd = ctx.sql(sql1)
+      //      .as[UnionLog]
+      .rdd.map(
+      x => (x.getAs[String]("media_appsid"), x.getAs[String]("adslotid"),  x.getAs[Int]("adslot_type"),
+        x.getAs[String]("model"), x.getAs[String]("brand"), x.getAs[Int]("os"), x.getAs[String]("device_ids"), x.getAs[Int]("city"))
     ).filter(x => x._7.length >0)
       .map{
         case (media_appsid, adslotid, adslot_type, model, brand, os, device_ids, city) =>
@@ -88,7 +89,7 @@ object GetDeviceAnalV2 {
         if(os == 1 && imei.length > 0 ){
           true
         }else{
-           false
+          false
         }
     }.map{
       case (media_appsid, adslotid, adslot_type, model, brand,os , imei, androidId,idfa, city) =>
@@ -123,7 +124,7 @@ object GetDeviceAnalV2 {
           user_id = user_id,
           imei_count = count,
           same_imei_count = samecount
-      )
+        )
     }
     println("count:" + toResult.count())
     clearReportHourData("report_media_imei_same", date1)

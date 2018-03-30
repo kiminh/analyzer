@@ -40,9 +40,9 @@ object CheckWordsCtr {
         """
           |select * from dl_cpc.cpc_union_log
           |where `date` = "%s"  and isshow = 1 and ext['trigger_type'].int_value = 1
-        """.stripMargin.format(date)).as[UnionLog].rdd
+        """.stripMargin.format(date)).rdd
 
-      ulog.map(x => (x.isclick, x.interests.split(",")))
+      ulog.map(x => (x.getAs[Int]("isclick"), x.getAs[String]("interests").split(",")))
         .map {
           x =>
             val tag = x._2.filter(_.length > 0).map {

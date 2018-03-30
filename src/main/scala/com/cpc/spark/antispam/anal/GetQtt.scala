@@ -4,8 +4,6 @@ import com.cpc.spark.log.parser.UnionLog
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 
-import scala.io.Source
-
 /**
   * Created by wanli on 2017/8/4.
   */
@@ -32,9 +30,9 @@ object GetQtt {
     println("sql1:"+ sql1)
     println("sql2:"+ sql2)
     var qttRdd =  ctx.sql(sql1).rdd.map{
-    x =>
-      val member_id = x(0).toString()
-      (member_id,1)
+      x =>
+        val member_id = x(0).toString()
+        (member_id,1)
     }
     var qttRdd2 =  ctx.sql(sql2).rdd.map{
       x =>
@@ -46,9 +44,12 @@ object GetQtt {
       case (member_id,(x,device_code)) =>
         (device_code, member_id)
     }
-    var union =  ctx.sql(sql3).as[UnionLog].rdd.map{
+    var union =  ctx.sql(sql3)
+      //      .as[UnionLog]
+      .rdd.map{
       x =>
-        (x.searchid,(x.media_appsid,x.adslotid,x.adslot_type,x.hour,x.uid, x.isshow,x.isclick))
+        (x.getAs[String]("searchid"),(x.getAs[String]("media_appsid"),x.getAs[String]("adslotid"),
+          x.getAs[Int]("adslot_type"),x.getAs[String]("hour"),x.getAs[String]("uid"), x.getAs[Int]("isshow"),x.getAs[Int]("isclick")))
     }
     println("sql4:"+sql4)
     val traceRdd = ctx.sql(sql4).rdd
@@ -74,10 +75,10 @@ object GetQtt {
             case _ =>
           }
           var searchId = x.getString(0)
-  /*        var device = x.getString(3)
-          var hour = x.getString(4)
-          var adslotType = x.getInt(5)
-          var antispam = x.getInt(6)*/
+          /*        var device = x.getString(3)
+                  var hour = x.getString(4)
+                  var adslotType = x.getInt(5)
+                  var antispam = x.getInt(6)*/
           (searchId,(load, active, buttonClick, press, stay1, stay5, stay10, stay30, stay60, stay120))
       }
       .reduceByKey {
@@ -87,7 +88,7 @@ object GetQtt {
       .cache()
 
     var unionTrace =union.leftOuterJoin(traceRdd).map{
-     // def map[U](f: ((String, ((String, String, Int, String, String, Int, Int), Option[(Int, Int, Int, Int, Int, Int, Int, Int, Int, Int)])))
+      // def map[U](f: ((String, ((String, String, Int, String, String, Int, Int), Option[(Int, Int, Int, Int, Int, Int, Int, Int, Int, Int)])))
       case (searchid,((media_appsid,adslotid,adslot_type,hour,uid, isshow,isclick), trace:Option[(Int, Int, Int, Int, Int, Int, Int, Int, Int, Int)]))=>
         var trace2 = trace.getOrElse((0,0,0,0,0,0,0,0,0,0))
         ((media_appsid,adslotid,adslot_type,hour,uid),
@@ -98,7 +99,7 @@ object GetQtt {
           a._10 + b._10, a._11 + b._11, a._12 + b._12)
     }
 
-   val filterUnion =  unionTrace.map{
+    val filterUnion =  unionTrace.map{
       case ((media_appsid,adslotid,adslot_type,hour,uid),
       (isshow,isclick,load, active, buttonClick, press, stay1, stay5, stay10, stay30, stay60, stay120)) =>
         (uid,
@@ -114,7 +115,7 @@ object GetQtt {
           a._10 + b._10, a._11 + b._11, a._12 + b._12)
     }
     filterUnion.take(10).foreach(println)
-   val allUnion =  unionTrace.map{
+    val allUnion =  unionTrace.map{
       case ((media_appsid,adslotid,adslot_type,hour,uid),
       (isshow,isclick,load, active, buttonClick, press, stay1, stay5, stay10, stay30, stay60, stay120)) =>
         ((media_appsid,adslotid,adslot_type,hour),
@@ -133,7 +134,7 @@ object GetQtt {
     }.collect().foreach(println)
 
     ctx.stop()
-}
+  }
   def searchIp(dict:Seq[IpDict], ipint:Long): Long ={
     var min = 0
     var max:Int = dict.length - 1
@@ -175,18 +176,18 @@ object GetQtt {
     var result:Long = 0
     var i = 0
     while (i < ipAddressInArray.length) {
-       val power = 3 - i
-       var ip = ipAddressInArray(i).toLong
-        result =  result + ip * Math.pow(256, power).toLong
-        i += 1
+      val power = 3 - i
+      var ip = ipAddressInArray(i).toLong
+      result =  result + ip * Math.pow(256, power).toLong
+      i += 1
     }
 
     result
   }
   case class IpDict(
-                 Start: Long = 0,
-                 End: Long = 0,
-                  Isp: Long = 0
-                        )
+                     Start: Long = 0,
+                     End: Long = 0,
+                     Isp: Long = 0
+                   )
 
 }

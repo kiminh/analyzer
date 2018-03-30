@@ -26,23 +26,38 @@ object SaveSampleSvm {
 
     var pathSep = Seq[String]()
     val cal = Calendar.getInstance()
-    for (n <- 1 to 7) {
+    for (n <- 1 to args(1).toInt) {
       cal.add(Calendar.DATE, -1)
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       val hour = new SimpleDateFormat("HH").format(cal.getTime)
       pathSep = pathSep :+ date
     }
 
-    val path = "/user/cpc/lrmodel/ctrdata_v1/{%s}/*".format(pathSep.mkString(","))
+    val path = "/user/cpc/lrmodel/%s/{%s}/*".format(args(0), pathSep.mkString(","))
     println(path)
-    val srcdata = spark.read.parquet(path)
-    var qtt = srcdata.filter{
-      x =>
-        Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
-          Seq(1, 2).contains(x.getAs[Int]("adslot_type"))
+    var qtt = spark.read.parquet(path)
+
+    if (args(2) == "qtt-list") {
+      qtt = qtt.filter{
+        x =>
+          Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
+            Seq(1).contains(x.getAs[Int]("adslot_type"))
+      }
+    } else if (args(2) == "qtt-content") {
+      qtt = qtt.filter{
+        x =>
+          Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
+            Seq(2).contains(x.getAs[Int]("adslot_type"))
+      }
+    } else if (args(2) == "qtt-all") {
+      qtt = qtt.filter{
+        x =>
+          Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
+            Seq(1, 2).contains(x.getAs[Int]("adslot_type"))
+      }
     }
 
-    qtt = getLimitedData(4e8, qtt)
+    qtt = getLimitedData(2e8, qtt)
     qtt = intFreqTransform(qtt, "city", "citydx")
     qtt = stringFreqTransform(qtt, "adslotid", "adslotidx")
     qtt = intFreqTransform(qtt, "adclass", "adclassdx")
@@ -65,7 +80,7 @@ object SaveSampleSvm {
     val rate = (pnum * 10 / (totalNum - pnum) * 1000).toInt // 1.24% * 10000 = 124
     println(pnum, totalNum, rate)
     val tmp = tmp1.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate) //之前正样本数可能占1/1000，可以变成占1/100
-    val train = getLimitedData(2e7, tmp)
+    val train = getLimitedData(4e7, tmp)
 
     test
       .map {

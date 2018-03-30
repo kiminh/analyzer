@@ -4,11 +4,11 @@ import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.log.parser.UnionLog
 import com.cpc.spark.qukan.parser.HdfsParser
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
+
 /**
   * Created by zhaogang on 2017/5/24.
   */
@@ -48,13 +48,11 @@ object GetTagReport {
     val aiRdd = ctx.read.orc(aiPath).rdd
       .map(HdfsParser.parseInstallApp(_, x => allowedPkgs.contains(x), pkgTags))
       .filter(x => x != null && x.devid.length > 0).cache()
-
-    import ctx.implicits._
     val unionLog = ctx.sql(
       s"""
          |select * from dl_cpc.cpc_union_log where `date` = "%s" and uid != "" and interests !=""
        """.stripMargin.format(day))
-      .as[UnionLog]
+      //      .as[UnionLog]
       .rdd.distinct()
 
     val tagData1 = aiRdd.map{
@@ -74,13 +72,13 @@ object GetTagReport {
     val tagData2 =  unionLog.map{
       log =>
         var data = List[(Int, Int, Int, String, String)]()
-        log.interests.split(",").foreach(
+        log.getAs[String]("interests").split(",").foreach(
           row =>
             try {
               val Array(tag , score) = row.trim.split("=", 2)
-              data = data :+ (tag.toInt, log.isclick, log.isshow,log.searchid, log.uid)
+              data = data :+ (tag.toInt, log.getAs[Int]("isclick"), log.getAs[Int]("isshow"),log.getAs[String]("searchid"), log.getAs[String]("uid"))
             } catch {
-                case e: Exception => null
+              case e: Exception => null
             }
         )
         data
@@ -108,7 +106,7 @@ object GetTagReport {
         (x._1 + y._1, x._2 + y._2)
     }.map{
       case (tag, (isclick, isshow)) =>
-       TagReport(tag, day, 0, 0, isshow, isclick)
+        TagReport(tag, day, 0, 0, isshow, isclick)
     }
 
     val mergeData = tagData1.union(tagUvData)

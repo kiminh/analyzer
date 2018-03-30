@@ -174,10 +174,11 @@ object LogParser {
       val ext = mutable.Map[String, ExtValue]()
       ext.update("show_refer", ExtValue(string_value = data.refer))
       ext.update("show_ua", ExtValue(string_value = data.ua))
+      ext.update("video_show_time", ExtValue(int_value = body.getShowTime))//video_show_time
       log = UnionLog(
         searchid = body.getSearchId,
         isshow = 1,
-        show_timestamp = body.getEventTimestamp,//show time
+        show_timestamp = body.getEventTimestamp,
         show_ip = data.ip ,
         ext = ext
       )
