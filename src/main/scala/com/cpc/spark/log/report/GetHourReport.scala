@@ -361,7 +361,7 @@ object GetHourReport {
     println("fill", fillData.count())
 
     val ctrData = unionLog
-      .filter(x => x.getAs[Int]("rank_discount") <= 20000)
+      .filter(x => x.getAs[Int]("rank_discount") <= 20000 && x.getAs[Int]("ideaid") > 0)
       .map {
         u =>
           val exptag = u.getAs[String]("exptags").split(",").find(_.startsWith("ctrmodel")).getOrElse("base")

@@ -34,14 +34,16 @@ object LRTrain {
     val spark: SparkSession = model.initSpark("cpc lr model")
 
     //按分区取数据
-    val ctrPathSep = getPathSeq(days)
-    val cvrPathSep = getPathSeq(daysCvr)
+    val ctrPathSep = getPathSeq(args(0).toInt)
+    val cvrPathSep = getPathSeq(args(1).toInt)
 
     initFeatureDict(spark, ctrPathSep)
 
     val userAppIdx = getUidApp(spark, ctrPathSep).cache()
 
-    val ulog = getData(spark,"ctrdata_v1",ctrPathSep).cache()
+    val ulog = getData(spark,"ctrdata_v1",ctrPathSep)
+      .filter(_.getAs[Int]("ideaid") > 0)
+      .cache()
 
     trainLog :+= "ulog nums = %d".format(ulog.rdd.count)
     trainLog :+= "ulog NumPartitions = %d".format(ulog.rdd.getNumPartitions)
