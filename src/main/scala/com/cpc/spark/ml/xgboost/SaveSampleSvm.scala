@@ -111,7 +111,7 @@ object SaveSampleSvm {
     val pnum = qtt.filter(x => x.getAs[Int]("label") > 0).count().toDouble
     val rate = (pnum * 10 / (totalNum - pnum) * 1000).toInt // 1.24% * 10000 = 124
     println(pnum, totalNum, rate)
-    qtt = qtt.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate) //之前正样本数可能占1/1000，可以变成占1/100
+    qtt = qtt.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate)
 
     val train = getLimitedData(4e7, qtt)
 
