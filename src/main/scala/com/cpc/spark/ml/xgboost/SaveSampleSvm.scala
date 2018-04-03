@@ -26,6 +26,7 @@ object SaveSampleSvm {
 
     var pathSep = Seq[String]()
     val cal = Calendar.getInstance()
+    val today = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     for (n <- 1 to args(1).toInt) {
       cal.add(Calendar.DATE, -1)
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
@@ -34,8 +35,9 @@ object SaveSampleSvm {
     }
 
     val path = "/user/cpc/lrmodel/%s/{%s}/*".format(args(0), pathSep.mkString(","))
-    println(path)
+    println(path, today)
     var qtt = spark.read.parquet(path)
+    var qttTest = spark.read.parquet("/user/cpc/lrmodel/%s/%s/*".format(args(0), today))
 
     if (args(2) == "qtt-list") {
       qtt = qtt.filter{
@@ -55,46 +57,63 @@ object SaveSampleSvm {
           Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
             Seq(1, 2).contains(x.getAs[Int]("adslot_type"))
       }
+      qttTest = qttTest.filter{
+        x =>
+          Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
+            Seq(1, 2).contains(x.getAs[Int]("adslot_type"))
+      }
     }
 
-    qtt = getLimitedData(2e8, qtt)
-    qtt = intFreqTransform(qtt, "city", "citydx")
-    qtt = stringFreqTransform(qtt, "adslotid", "adslotidx")
-    qtt = intFreqTransform(qtt, "adclass", "adclassdx")
-    qtt = intFreqTransform(qtt, "planid", "plandx")
-    qtt = intFreqTransform(qtt, "unitid", "unitdx")
-    qtt = intFreqTransform(qtt, "ideaid", "ideadx")
+    qtt = getLimitedData(4e8, qtt)
+    qttTest = getLimitedData(1e7, qttTest).cache()
+    var tmp = intFreqTransform(qtt, "city", "citydx", qttTest)
+    qtt = tmp._1
+    qttTest = tmp._2
+
+    tmp = stringFreqTransform(qtt, "adslotid", "adslotidx", qttTest)
+    qtt = tmp._1
+    qttTest = tmp._2
+
+    tmp = intFreqTransform(qtt, "adclass", "adclassdx", qttTest)
+    qtt = tmp._1
+    qttTest = tmp._2
+
+    tmp = intFreqTransform(qtt, "planid", "plandx", qttTest)
+    qtt = tmp._1
+    qttTest = tmp._2
+
+    tmp = intFreqTransform(qtt, "unitid", "unitdx", qttTest)
+    qtt = tmp._1
+    qttTest = tmp._2
+
+    tmp = intFreqTransform(qtt, "ideaid", "ideadx", qttTest)
+    qtt = tmp._1
+    qttTest = tmp._2
 
     qtt = qtt
       .map {
         r =>
           val vec = getVectorParser2(r)
-          (r.getAs[Int]("label"), vec)
+          (r.getAs[Int]("label"), vec, r.getAs[String]("searchid"))
       }
-      .toDF("label", "features")
+      .toDF("label", "features", "searchid")
 
-    val Array(tmp1, tmp2) = qtt.randomSplit(Array(0.9, 0.1), new Date().getTime)
-    val test = getLimitedData(1e7, tmp2)
-    val totalNum = tmp1.count().toDouble
-    val pnum = tmp1.filter(x => x.getAs[Int]("label") > 0).count().toDouble
+    qttTest = qttTest
+      .map {
+        r =>
+          val vec = getVectorParser2(r)
+          (r.getAs[Int]("label"), vec, r.getAs[String]("searchid"))
+      }
+      .toDF("label", "features", "searchid")
+
+
+    val totalNum = qtt.count().toDouble
+    val pnum = qtt.filter(x => x.getAs[Int]("label") > 0).count().toDouble
     val rate = (pnum * 10 / (totalNum - pnum) * 1000).toInt // 1.24% * 10000 = 124
     println(pnum, totalNum, rate)
-    val tmp = tmp1.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate) //之前正样本数可能占1/1000，可以变成占1/100
-    val train = getLimitedData(4e7, tmp)
+    qtt = qtt.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate)
 
-    test
-      .map {
-        x =>
-          val label = x.getAs[Int]("label")
-          val vec = x.getAs[Vector]("features")
-          var svm = label.toString
-          vec.foreachActive {
-            (i, v) =>
-              svm = svm + " %d:%f".format(i + 1, v)
-          }
-          svm
-      }
-      .write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_test_svm_v1")
+    val train = getLimitedData(4e7, qtt)
 
     train
       .map {
@@ -109,6 +128,20 @@ object SaveSampleSvm {
           svm
       }
       .write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_train_svm_v1")
+
+    qttTest
+      .map {
+        x =>
+          val label = x.getAs[Int]("label")
+          val vec = x.getAs[Vector]("features")
+          var svm = label.toString
+          vec.foreachActive {
+            (i, v) =>
+              svm = svm + " %d:%f".format(i + 1, v)
+          }
+          svm
+      }
+      .write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_test_svm_v1")
   }
 
   def getLimitedData(limitedNum: Double, ulog: DataFrame): DataFrame = {
@@ -122,7 +155,7 @@ object SaveSampleSvm {
     ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0)
   }
 
-  def intFreqTransform(src: DataFrame, in: String, out: String): DataFrame = {
+  def intFreqTransform(src: DataFrame, in: String, out: String, test: DataFrame): (DataFrame, DataFrame) = {
     var n = 0
     var freq = Seq[(Int, Int)]()
     src.rdd.map(r => (r.getAs[Int](in), 1))
@@ -140,10 +173,10 @@ object SaveSampleSvm {
       .toDF(in, out)
 
     dict.write.mode(SaveMode.Overwrite).parquet("/user/cpc/xgboost_dict/%s-%s".format(in, out))
-    src.join(dict, Seq(in), "left_outer")
+    (src.join(dict, Seq(in), "left_outer"), test.join(dict, Seq(in), "left_outer"))
   }
 
-  def stringFreqTransform(src: DataFrame, in: String, out: String): DataFrame = {
+  def stringFreqTransform(src: DataFrame, in: String, out: String, test: DataFrame): (DataFrame, DataFrame) = {
     var n = 0
     var freq = Seq[(String, Int)]()
     src.rdd.map(r => (r.getAs[String](in), 1))
@@ -161,7 +194,7 @@ object SaveSampleSvm {
       .toDF(in, out)
 
     dict.write.mode(SaveMode.Overwrite).parquet("/user/cpc/xgboost_dict/%s-%s".format(in, out))
-    src.join(dict, Seq(in), "left_outer")
+    (src.join(dict, Seq(in), "left_outer"), test.join(dict, Seq(in), "left_outer"))
   }
 
   def getVectorParser2(x: Row): Vector = {
@@ -207,6 +240,8 @@ object SaveSampleSvm {
     els = els :+ x.getAs[Int]("ideadx").toDouble  //1111
     els = els :+ x.getAs[Int]("user_req_ad_num").toDouble
     els = els :+ x.getAs[Int]("user_req_num").toDouble
+    els = els :+ x.getAs[Int]("user_click_num").toDouble
+    els = els :+ x.getAs[Int]("user_click_unit_num").toDouble
 
     Vectors.dense(els.toArray)
   }

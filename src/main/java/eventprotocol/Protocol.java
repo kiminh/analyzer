@@ -1519,6 +1519,10 @@ public final class Protocol {
      * <code>BOTTOMING = 4;</code>
      */
     BOTTOMING(4),
+    /**
+     * <code>HUZHONG_DSP = 5;</code>
+     */
+    HUZHONG_DSP(5),
     ;
 
     /**
@@ -1541,6 +1545,10 @@ public final class Protocol {
      * <code>BOTTOMING = 4;</code>
      */
     public static final int BOTTOMING_VALUE = 4;
+    /**
+     * <code>HUZHONG_DSP = 5;</code>
+     */
+    public static final int HUZHONG_DSP_VALUE = 5;
 
 
     public final int getNumber() {
@@ -1561,6 +1569,7 @@ public final class Protocol {
         case 2: return INMOBI_DSP;
         case 3: return TANX_SSP_DSP;
         case 4: return BOTTOMING;
+        case 5: return HUZHONG_DSP;
         default: return null;
       }
     }
@@ -50186,20 +50195,20 @@ public final class Protocol {
       "Type\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAP" +
       "I\020\003*\"\n\tGeoSource\022\n\n\006NATIVE\020\001\022\t\n\005BAIDU\020\002*" +
       "1\n\nChargeType\022\010\n\004FREE\020\000\022\007\n\003CPC\020\001\022\007\n\003CPM\020",
-      "\002\022\007\n\003CPA\020\003*C\n\003Dsp\022\013\n\007CPC_DSP\020\001\022\016\n\nINMOBI" +
-      "_DSP\020\002\022\020\n\014TANX_SSP_DSP\020\003\022\r\n\tBOTTOMING\020\004*" +
-      "\303\003\n\014AntispamRule\022\021\n\rDUP_SEARCH_ID\020\001\022\021\n\rO" +
-      "UT_TIME_SPAN\020\002\022\014\n\010DUP_USER\020\003\022\021\n\rNEW_USER" +
-      "_RATE\020\004\022\022\n\016INVALID_COOKIE\020\005\022\022\n\016INVALID_R" +
-      "EGION\020\006\022\016\n\nNEW_COOKIE\020\007\022\r\n\tNO_COOKIE\020\010\022\022" +
-      "\n\016NO_DEVICE_INFO\020\t\022\020\n\014NO_DEVICE_ID\020\n\022\013\n\007" +
-      "ON_MASK\020\013\022\n\n\006DUP_IP\020\014\022\022\n\016JS_CLICK_DELTA\020" +
-      "\r\022\021\n\rSAME_POSITION\020\016\022\014\n\010NO_EXTRA\020\017\022\016\n\nNO" +
-      "_REFERER\020\020\022\023\n\017CK_DISPATCHTIME\020\021\022\n\n\006RANDO",
-      "M\020\022\022\010\n\004GIFT\020\023\022\016\n\nBAD_METHOD\020\024\022\022\n\016SERVER_" +
-      "REQUEST\020\025\022\013\n\007MAX_CTR\020\026\022\013\n\007DIFF_UA\020\027\022\r\n\tM" +
-      "AX_CLICK\020\030\022\017\n\013TRAIN_MODEL\020\031\022\n\n\006IP_ISP\020\032\022" +
-      "\014\n\010IP_BLACK\020\033"
+      "\002\022\007\n\003CPA\020\003*T\n\003Dsp\022\013\n\007CPC_DSP\020\001\022\016\n\nINMOBI" +
+      "_DSP\020\002\022\020\n\014TANX_SSP_DSP\020\003\022\r\n\tBOTTOMING\020\004\022" +
+      "\017\n\013HUZHONG_DSP\020\005*\303\003\n\014AntispamRule\022\021\n\rDUP" +
+      "_SEARCH_ID\020\001\022\021\n\rOUT_TIME_SPAN\020\002\022\014\n\010DUP_U" +
+      "SER\020\003\022\021\n\rNEW_USER_RATE\020\004\022\022\n\016INVALID_COOK" +
+      "IE\020\005\022\022\n\016INVALID_REGION\020\006\022\016\n\nNEW_COOKIE\020\007" +
+      "\022\r\n\tNO_COOKIE\020\010\022\022\n\016NO_DEVICE_INFO\020\t\022\020\n\014N" +
+      "O_DEVICE_ID\020\n\022\013\n\007ON_MASK\020\013\022\n\n\006DUP_IP\020\014\022\022" +
+      "\n\016JS_CLICK_DELTA\020\r\022\021\n\rSAME_POSITION\020\016\022\014\n" +
+      "\010NO_EXTRA\020\017\022\016\n\nNO_REFERER\020\020\022\023\n\017CK_DISPAT",
+      "CHTIME\020\021\022\n\n\006RANDOM\020\022\022\010\n\004GIFT\020\023\022\016\n\nBAD_ME" +
+      "THOD\020\024\022\022\n\016SERVER_REQUEST\020\025\022\013\n\007MAX_CTR\020\026\022" +
+      "\013\n\007DIFF_UA\020\027\022\r\n\tMAX_CLICK\020\030\022\017\n\013TRAIN_MOD" +
+      "EL\020\031\022\n\n\006IP_ISP\020\032\022\014\n\010IP_BLACK\020\033"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

@@ -147,6 +147,7 @@ enum AdSrc {
 	INMOBI = 2;
 	TANXSSP = 3;
 	BOTTOMINIG = 4; //打底广告
+	HUZHONG = 5;
 };
 enum InteractionType {
 	NO_INTERACT = 0;
@@ -178,6 +179,8 @@ enum ClientType {
 message Client {
 	required ClientType type = 1;
 	optional Version	version = 2;
+	optional string requestId = 3;
+	optional bool isValid = 4;
 };
 
 message DspReqInfo {

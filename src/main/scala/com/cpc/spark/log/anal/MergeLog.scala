@@ -239,8 +239,11 @@ object MergeLog {
         """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
       println("trace_join", trace1.count())
 
-
-      spark.createDataFrame(trace)
+      val traceall = prepareSourceString(spark, "cpc_trace", prefix + "cpc_trace" + suffix, hourBefore, 1)
+        .map(x => LogParser.parseTraceLog(x))
+        .filter(_ != null)
+        .map(_.copy(date = date, hour = hour))
+      spark.createDataFrame(traceall)
         .write
         .mode(SaveMode.Overwrite)
         .parquet("/warehouse/dl_cpc.db/cpc_all_trace_log/date=%s/hour=%s".format(date, hour))
@@ -249,7 +252,7 @@ object MergeLog {
           |ALTER TABLE dl_cpc.cpc_all_trace_log add if not exists PARTITION(`date` = "%s", `hour` = "%s")
           | LOCATION  '/warehouse/dl_cpc.db/cpc_all_trace_log/date=%s/hour=%s'
         """.stripMargin.format(date, hour, date, hour))
-      println("trace_all", trace.count())
+      println("trace_all", traceall.count())
 
 
     }

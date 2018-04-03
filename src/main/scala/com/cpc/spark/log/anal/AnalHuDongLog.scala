@@ -19,7 +19,8 @@ import org.apache.spark.sql.{Row, SaveMode, SparkSession}
   */
 object AnalHuDongLog {
 
-  var srcRoot = "/gobblin/source/cpc"
+//  var srcRoot = "/gobblin/source/cpc"
+  var srcRoot = "/warehouse/dl_cpc.db"
 
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
 
@@ -62,12 +63,13 @@ object AnalHuDongLog {
       System.exit(1)
     }
     println("logType :"+logTypeArr)
-    val traceData = prepareSource(spark, "cpc_trace", hourBefore, 1)
+//    val traceData = prepareSource(spark, "cpc_trace", hourBefore, 1)
+    val traceData = prepareSourceString(spark, "cpc_trace", "src_cpc_trace_minute", hourBefore, 1)
     if (traceData == null) {
         spark.stop()
         System.exit(1)
     }
-    var hudongLog = prepareTraceSource(traceData).map(x => x.copy( date = date, hour = hour)).filter{
+    var hudongLog = prepareTraceSource2(traceData).map(x => x.copy( date = date, hour = hour)).filter{
       x =>
         var flag = false
         logTypeArr.foreach{
@@ -118,6 +120,27 @@ object AnalHuDongLog {
         StructField("float_type", FloatType, true),
         StructField("string_type", StringType, true))), true), true)))
 
+  def prepareSourceString(ctx: SparkSession, key: String, src: String, hourBefore: Int, hours: Int): rdd.RDD[String] = {
+    val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
+    println(input)
+    ctx.read
+      .parquet(input)
+      .repartition(1000)
+      .rdd
+      .map {
+        r =>
+          //val s = r.getMap[String, Row](2).getOrElse(key, null)
+          val s = r.getAs[Map[String, Row]]("field").getOrElse(key, null)
+
+          if (s == null) {
+            null
+          } else {
+            s.getAs[String]("string_type")
+          }
+      }
+      .filter(_ != null)
+  }
+
   /*
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
    */
@@ -137,7 +160,11 @@ object AnalHuDongLog {
       .filter(x => x != null && x.adslot_id >0 )
 
   }
+  def prepareTraceSource2(src: rdd.RDD[String]): rdd.RDD[HuDongLog] = {
+    src.map(x => LogParser.parseHuDongTraceLog(x))
+      .filter(x => x != null && x.adslot_id >0 )
 
+  }
   def getDateHourPath(hourBefore: Int, hours: Int): String = {
     val cal = Calendar.getInstance()
     val parts = new Array[String](hours)
