@@ -1,16 +1,23 @@
 package com.cpc.spark.ml.xgboost
 
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
+import org.apache.spark.ml.linalg.{SparseVector => MSVec, Vector => MVec, Vectors => MVecs}
+import mlmodel.mlmodel.{Dict, IRModel, LRModel, Pack}
 import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ml.train.LRIRModel
 import com.typesafe.config.ConfigFactory
+import ml.dmlc.xgboost4j.scala.spark.{XGBoostEstimator, XGBoostModel}
 import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
+import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
-import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.mllib.optimization.L1Updater
+import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel, LabeledPoint}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 
@@ -25,39 +32,155 @@ object LRTransform {
 
   private val days = 7
   private val daysCvr = 20
+  //  private val minBinSize = 10000d
+  private var binNum = 1000d
+  private var binsLog = Seq[String]()
+  private var irBinNum = 0
+  private var irError = 0d
+  private var isUpdateModel = false
+  private var xgbTestResults: RDD[(Double, Double)] = null
   private var trainLog = Seq[String]()
-  private val model = new LRIRModel
+  private var irmodel: IsotonicRegressionModel = _
+  private var lrmodel: LogisticRegressionModel = _
 
+  def modelClear(): Unit = {
+    binsLog = Seq[String]()
+    irBinNum = 0
+    irError = 0
+    xgbTestResults = null
+    irmodel = null
+    isUpdateModel = false
+  }
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
-    val spark: SparkSession = model.initSpark("cpc lr model")
+    val spark = SparkSession.builder()
+      .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+      .config("spark.kryoserializer.buffer.max", "1024m")
+      .appName("lr -> xgboost")
+      .enableHiveSupport()
+      .getOrCreate()
+    import spark.implicits._
 
     //按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
     val cvrPathSep = getPathSeq(args(1).toInt)
 
-    initFeatureDict(spark, ctrPathSep)
-
-    val userAppIdx = getUidApp(spark, ctrPathSep)
-
     val ulog = getData(spark,"ctrdata_v1",ctrPathSep)
       .filter(_.getAs[Int]("ideaid") > 0)
 
-    trainLog :+= "ulog nums = %d".format(ulog.rdd.count)
-    trainLog :+= "ulog NumPartitions = %d".format(ulog.rdd.getNumPartitions)
-
-    //qtt-all-parser3-hourly
-    model.clearResult()
-    val qttAll = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
+    val srcdata = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
       Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
-    train(spark, "ctrparser2", "qtt-all-ctrparser2-hourly", qttAll, "", 4e8)
+
+    var Array(test, train, _) = srcdata.randomSplit(Array(0.1, 0.1, 0.8), new Date().getTime)
+    test = test.coalesce(1000).cache()
+    train = train.coalesce(1000).cache()
+    test = getLimitedData(spark, 1e7, test)
+
+    val totalNum = train.count().toDouble
+    val pnum = train.filter(x => x.getAs[Int]("label") > 0).count().toDouble
+    val rate = (pnum * 10 / (totalNum - pnum) * 1000).toInt
+    println(pnum, totalNum, rate)
+    train = train.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate)
+    train = getLimitedData(spark, 4e7, train)
+
+    initFeatureDict(spark, ctrPathSep)
+    val userAppIdx = getUidApp(spark, ctrPathSep)
+
+    val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
+    lbfgs.optimizer.setUpdater(new L1Updater())
+    lbfgs.optimizer.setNumIterations(200)
+    lbfgs.optimizer.setConvergenceTol(1e-8)
+    val sampleTrain = formatSample(spark, "ctrparser2", train)
+    lrmodel = lbfgs.run(sampleTrain)
+    Utils.deleteHdfs("/user/cpc/xgboost_tmplr")
+    lrmodel.save(spark.sparkContext, "/user/cpc/xgboost_tmplr")
+    lrmodel.clearThreshold()
+
+    val BcDict = spark.sparkContext.broadcast(dict)
+    val BcWeights = spark.sparkContext.broadcast(lrmodel.weights)
+
+    import spark.implicits._
+    val xgbtrain = train
+      .mapPartitions {
+        p =>
+          dict = BcDict.value
+          val weights = BcWeights.value.toArray
+          p.map {
+            r =>
+              val vec = transformFeature(weights, r)
+              (r.getAs[Int]("label"), vec)
+          }
+      }
+      .toDF("label", "features")
+    val xgbtest = test
+      .mapPartitions {
+        p =>
+          dict = BcDict.value
+          val weights = BcWeights.value.toArray
+          p.map {
+            r =>
+              val vec = transformFeature(weights, r)
+              (r.getAs[Int]("label"), vec)
+          }
+      }
+      .toDF("label", "features")
 
 
-    ulog.unpersist()
-    userAppIdx.unpersist()
+    val params = Map(
+      "eta" -> 0.2,
+      //"lambda" -> 2.5
+      "gamma" -> 0,
+      "num_round" -> 25,
+      //"max_delta_step" -> 4,
+      "subsample" -> 0.6,
+      "colsample_bytree" -> 0.4,
+      "min_child_weight" -> 1,
+      "max_depth" -> 40,
+      "reg_alpha" -> 0.2,
+      "nthread" -> 10,
+      "seed" -> 0,
+      "objective" -> "reg:logistic"
+    )
+
+    val xgb = new XGBoostEstimator(params)
+    val xm = xgb.train(xgbtrain)
+    Utils.deleteHdfs("/user/cpc/xgboost_tmpmodel")
+    xm.save("/user/cpc/xgboost_tmpmodel")
+    //val xgb = XGBoostModel.load("/user/cpc/xgboost_tmpmodel")
+    val results = xm.transform(xgbtest)
+
+    xgbTestResults = results.rdd
+      .map {
+        r =>
+          val label = r.getAs[Int]("label").toDouble
+          val p = r.getAs[Float]("prediction").toDouble
+          (p, label)
+      }
+
+    printXGBTestLog(xgbTestResults)
+    val metrics = new BinaryClassificationMetrics(xgbTestResults)
+    val auPRC = metrics.areaUnderPR
+    val auROC = metrics.areaUnderROC
+    println(auPRC, auROC)
+    trainLog :+= "auPRC=%.3f auROC=%.3f ".format(auPRC, auROC)
+
+    runIr(spark, binNum.toInt, 0.95)
+    trainLog :+= binsLog.mkString("\n")
+
+    val filetime = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
+    val prefix = "%s-%s".format(args(2), args(3))
+    val filename = "/home/cpc/anal/xgboost_model/%s-%s".format(prefix, filetime)
+    println(filename)
+    xm.booster.saveModel(filename + ".gbm")
+    savePbPack(filename + ".mlm", "ctrparser2")
+
+    if (args(4).toInt == 1) {
+      val conf = ConfigFactory.load()
+      println(MUtils.updateMlcppOnlineData(filename+".mlm", s"/home/work/mlcpp/data/$prefix.mlm", conf))
+      println(MUtils.updateMlcppOnlineData(filename+".gbm", s"/home/work/mlcpp/data/$prefix.gbm", conf))
+    }
   }
-
 
   def getPathSeq(days: Int): mutable.Map[String,Seq[String]] ={
     var date = ""
@@ -93,8 +216,6 @@ object LRTransform {
 
     val userAppIdx = getUserAppIdx(spark, uidApp, ids)
       .repartition(1000)
-
-    uidApp.unpersist()
 
     userAppIdx
   }
@@ -137,126 +258,9 @@ object LRTransform {
     data.join(userAppIdx,Seq("uid"),"leftouter")
   }
 
-  def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double): Unit = {
-    trainLog :+= "\n------train log--------"
-    trainLog :+= "name = %s".format(name)
-    trainLog :+= "parser = %s".format(parser)
-    trainLog :+= "destfile = %s".format(destfile)
 
-    val num = ulog.count().toDouble
-    println("sample num", num)
-    trainLog :+= "total size %.0f".format(num)
-
-    //最多n条训练数据
-    var trainRate = 0.9
-    if (num * trainRate > n) {
-      trainRate = n / num
-    }
-
-    //最多1000w条测试数据
-    var testRate = 0.09
-    if (num * testRate > 1e7) {
-      testRate = 1e7 / num
-    }
-
-    var Array(train, test, tmp) = ulog
-      .randomSplit(Array(trainRate, testRate, 1 - trainRate - testRate), new Date().getTime)
-    ulog.unpersist()
-
-    val tnum = train.count().toDouble
-    val pnum = train.filter(_.getAs[Int]("label") > 0).count().toDouble
-    val nnum = tnum - pnum
-
-    //保证训练数据正负比例 1:9
-    val rate = (pnum * 9 / nnum * 1000).toInt
-    println("total positive negative", tnum, pnum, nnum, rate)
-    trainLog :+= "train size total=%.0f positive=%.0f negative=%.0f scaleRate=%d/1000".format(tnum, pnum, nnum, rate)
-
-    train = getLimitedData(2e7, train.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate))
-    val sampleTrain = formatSample(spark, parser, train)
-    val sampleTest = formatSample(spark, parser, test)
-
-    model.run(sampleTrain, 200, 1e-8)
-    model.test(sampleTest)
-    model.printLrTestLog()
-
-    val lr = model.getLRmodel()
-    Utils.deleteHdfs("/user/cpc/xgboost_lr")
-    model.saveHdfs("/user/cpc/xgboost_lr")
-    val BcDict = spark.sparkContext.broadcast(dict)
-    val BcWeights = spark.sparkContext.broadcast(lr.weights)
-
+  def getLimitedData(spark: SparkSession, limitedNum: Double, ulog: DataFrame): DataFrame = {
     import spark.implicits._
-
-    train
-      .mapPartitions {
-        p =>
-          dict = BcDict.value
-          val weights = BcWeights.value.toArray
-          p.map {
-            r =>
-
-              var svm = r.getAs[Int]("label").toString
-              val vec = transformFeature(weights, r)
-              vec.foreachActive {
-                (i, v) =>
-                  svm = svm + " %d:%f".format(i + 1, v)
-              }
-              svm
-          }
-      }
-      .write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_train_svm_v2")
-
-    test
-      .mapPartitions {
-        p =>
-          dict = BcDict.value
-          val weights = BcWeights.value.toArray
-          p.map {
-            r =>
-
-              var svm = r.getAs[Int]("label").toString
-              val vec = transformFeature(weights, r)
-              vec.foreachActive {
-                (i, v) =>
-                  svm = svm + " %d:%f".format(i + 1, v)
-              }
-              svm
-          }
-      }
-      .write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_test_svm_v2")
-
-    println("done")
-    System.exit(1)
-
-    trainLog :+= model.getLrTestLog()
-
-
-    val testNum = sampleTest.count().toDouble * 0.9
-    val minBinSize = 1000d
-    var binNum = 1000d
-    if (testNum < minBinSize * binNum) {
-      binNum = testNum / minBinSize
-    }
-
-    model.runIr(binNum.toInt, 0.95)
-    trainLog :+= model.binsLog.mkString("\n")
-
-    val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
-    val lrfilepath = "/data/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
-    model.saveHdfs("/user/cpc/lrmodel/lrmodeldata/%s".format(date))
-    model.saveIrHdfs("/user/cpc/lrmodel/irmodeldata/%s".format(date))
-    model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap)
-
-    trainLog :+= "protobuf pack %s".format(lrfilepath)
-
-    trainLog :+= "\n-------update server data------"
-    if (destfile.length > 0) {
-      trainLog :+= MUtils.updateOnlineData(lrfilepath, destfile, ConfigFactory.load())
-    }
-  }
-
-  def getLimitedData(limitedNum: Double, ulog: DataFrame): DataFrame = {
     var rate = 1d
     val num = ulog.count().toDouble
 
@@ -285,7 +289,7 @@ object LRTransform {
       }
   }
 
-  var dict = mutable.Map[String, Map[Int, Int]]()
+  private var dict = mutable.Map[String, Map[Int, Int]]()
   val dictNames = Seq(
     "mediaid",
     "planid",
@@ -295,7 +299,7 @@ object LRTransform {
     "adclass",
     "cityid"
   )
-  var dictStr = mutable.Map[String, Map[String, Int]]()
+  private var dictStr = mutable.Map[String, Map[String, Int]]()
 
   def initFeatureDict(spark: SparkSession, pathSep: mutable.Map[String,Seq[String]]): Unit = {
 
@@ -328,7 +332,7 @@ object LRTransform {
     trainLog :+= "\n-------get ulog data------"
 
     var path = Seq[String]()
-    pathSep.map{
+    pathSep.foreach{
       x =>
         path = path :+ "/user/cpc/lrmodel/%s/%s/{%s}".format(dataVersion, x._1, x._2.mkString(","))
     }
@@ -339,7 +343,7 @@ object LRTransform {
         println(x)
     }
 
-    spark.read.parquet(path:_*).repartition(1000)
+    spark.read.parquet(path:_*)
   }
 
   /*
@@ -405,11 +409,11 @@ object LRTransform {
 
     //sex
     els = els :+ (x.getAs[Int]("sex") + i, 1d)
-    i += 9
+    i += 5
 
     //age
     els = els :+ (x.getAs[Int]("age") + i, 1d)
-    i += 100
+    i += 20
 
     //os 96 - 97 (2)
     els = els :+ (x.getAs[Int]("os") + i, 1d)
@@ -466,7 +470,7 @@ object LRTransform {
 
     //adtype
     els = els :+ (x.getAs[Int]("adtype") + i, 1d)
-    i += 10
+    i += 20
 
     //adslot_type
     els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
@@ -527,9 +531,8 @@ object LRTransform {
     } else if (user_click_unit > 9) {
       user_click_unit = 9
     }
-    els = els :+ (user_click + i, 1d)
+    els = els :+ (user_click_unit + i, 1d)
     i += 10
-
 
     try {
       Vectors.sparse(i, els)
@@ -540,7 +543,7 @@ object LRTransform {
     }
   }
 
-  def transformFeature(weights: Array[Double], x: Row): Vector = {
+  def transformFeature(weights: Array[Double], x: Row): MVec = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
@@ -555,10 +558,10 @@ object LRTransform {
     i += 24
 
     els :+= weights(x.getAs[Int]("sex") + i)
-    i += 9
+    i += 5
 
     els :+= weights(x.getAs[Int]("age") + i)
-    i += 100
+    i += 20
 
     els :+= weights(x.getAs[Int]("os") + i)
     i += 10
@@ -607,7 +610,7 @@ object LRTransform {
     i += dict("adclass").size + 1
 
     els :+= weights(x.getAs[Int]("adtype") + i)
-    i += 10
+    i += 20
 
     els :+= weights(x.getAs[Int]("adslot_type") + i)
     i += 10
@@ -664,11 +667,11 @@ object LRTransform {
     } else if (user_click_unit > 9) {
       user_click_unit = 9
     }
-    els :+= weights(user_click + i)
+    els :+= weights(user_click_unit + i)
     i += 10
 
     try {
-      Vectors.dense(els.toArray)
+      MVecs.dense(els.toArray)
     } catch {
       case e: Exception =>
         throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
@@ -676,5 +679,181 @@ object LRTransform {
     }
   }
 
+  def runIr(spark: SparkSession, binNum: Int, rate: Double): Double = {
+    irBinNum = binNum
+    val sample = xgbTestResults.randomSplit(Array(rate, 1 - rate), seed = new Date().getTime)
+    val bins = binData(sample(0), irBinNum)
+    val sc = spark.sparkContext
+
+    // 真实值y轴，预测均值x轴   样本量就是桶的个数
+    val ir = new IsotonicRegression().setIsotonic(true).run(sc.parallelize(bins.map(x => (x._1, x._3, 1d))))
+    val sum = sample(1) //在测试数据上计算误差
+      .map(x => (x._2, ir.predict(x._1))) //(click, calibrate ctr)
+      .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
+
+    irError = (sum._2 - sum._1) / sum._1 //误差比
+    irmodel = ir
+    irError
+  }
+
+  private def binData(sample: RDD[(Double, Double)], binNum: Int): Seq[(Double, Double, Double, Double)] = {
+    val binSize = sample.count().toInt / binNum  //每个桶的容量
+    var bins = Seq[(Double, Double, Double, Double)]()
+    var click = 0d  //正例数
+    var pv = 0d  //总数或展示数
+    var pSum = 0d  //预测值的累加
+    var pMin = 1d  // 最小的预测值
+    var pMax = 0d  // 最大的预测值
+    var n = 0  //控制打印
+    sample.sortByKey()  //(p, label)按照XGB预测值升序排序
+      .toLocalIterator
+      .foreach {
+        x =>
+          pSum = pSum + x._1
+          if (x._1 < pMin) {
+            pMin = x._1
+          }
+          if (x._1 > pMax) {
+            pMax = x._1
+          }
+          if (x._2 > 0.01) {
+            click = click + 1
+          }
+          pv = pv + 1
+          if (pv >= binSize) {  //如果超过通的容量，就换下一个桶
+            val ctr = click / pv    //  点击/展示
+            bins = bins :+ (ctr, pMin, pSum / pv, pMax)  // 真实值，最小值，预测均值，最大值
+            n = n + 1
+            //if (n < 50 || n > binNum - 50) {
+
+            val logStr2 = "bin %d: %.6f(%d/%d) %.6f %.6f %.6f".format(
+              n, ctr, click.toInt, pv.toInt, pMin, pSum / pv, pMax) //桶号：真实ctr（点击/展示），最小值，预测均值，最大值
+            println(logStr2)
+
+            if (n > binNum - 20) {
+              val logStr = "bin %d: %.6f(%d/%d) %.6f %.6f %.6f".format(
+                n, ctr, click.toInt, pv.toInt, pMin, pSum / pv, pMax) //桶号：真实ctr（点击/展示），最小值，预测均值，最大值
+
+              binsLog = binsLog :+ logStr
+              println(logStr)
+            }
+
+            click = 0d
+            pv = 0d
+            pSum = 0d
+            pMin = 1d
+            pMax = 0d
+          }
+      }
+    bins
+  }
+
+  def savePbPack(path: String, parser: String): Unit = {
+    val weights = mutable.Map[Int, Double]()
+    lrmodel.weights.toSparse.foreachActive {
+      case (i, d) =>
+        weights.update(i, d)
+    }
+    val lr = LRModel(
+      parser = parser,
+      featureNum = lrmodel.numFeatures,
+      //auPRC = auPRC,
+      //auROC = auROC,
+      weights = weights.toMap
+    )
+    val ir = IRModel(
+      boundaries = irmodel.boundaries.toSeq,
+      predictions = irmodel.predictions.toSeq,
+      meanSquareError = irError * irError
+    )
+    val dictpb = Dict(
+      planid = dict("planid"),
+      unitid = dict("unitid"),
+      ideaid = dict("ideaid"),
+      slotid = dict("slotid"),
+      adclass = dict("adclass"),
+      cityid = dict("cityid"),
+      mediaid = dict("mediaid"),
+      appid = dictStr("appid")
+    )
+
+    val pack = Pack(
+      createTime = new Date().getTime,
+      ir = Option(ir),
+      dict = Option(dictpb)
+    )
+
+    pack.writeTo(new FileOutputStream(path))
+  }
+
+  def printXGBTestLog(lrTestResults: RDD[(Double, Double)]): Unit = {
+    val testSum = lrTestResults.count()
+    if (testSum < 0) {
+      throw new Exception("must run lr test first or test results is empty")
+    }
+    var test0 = 0 //反例数
+    var test1 = 0 //正例数
+    lrTestResults
+      .map {
+        x =>
+          var label = 0
+          if (x._2 > 0.01) {
+            label = 1
+          }
+          (label, 1)
+      }
+      .reduceByKey((x, y) => x + y)
+      .toLocalIterator
+      .foreach {
+        x =>
+          if (x._1 == 1) {
+            test1 = x._2
+          } else {
+            test0 = x._2
+          }
+      }
+
+    var log = "predict distribution %s %d(1) %d(0)\n".format(testSum, test1, test0)
+    lrTestResults  //(p, label)
+      .map {
+      x =>
+        val v = (x._1 * 100).toInt / 5
+        ((v, x._2.toInt), 1)
+    }  //  ((预测值,lable),1)
+      .reduceByKey((x, y) => x + y)  //  ((预测值,lable),num)
+      .map {
+      x =>
+        val key = x._1._1
+        val label = x._1._2
+        if (label == 0) {
+          (key, (x._2, 0))  //  (预测值,(num1,0))
+        } else {
+          (key, (0, x._2))  //  (预测值,(0,num2))
+        }
+    }
+      .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))  //  (预测值,(num1反,num2正))
+      .sortByKey(false)
+      .toLocalIterator
+      .foreach {
+        x =>
+          val sum = x._2
+          val pre = x._1.toDouble * 0.05
+          if (pre>0.2) {
+            //isUpdateModel = true
+          }
+          log = log + "%.2f %d %.4f %.4f %d %.4f %.4f %.4f\n".format(
+            pre, //预测值
+            sum._2, //正例数
+            sum._2.toDouble / test1.toDouble, //该准确率下的正例数/总正例数
+            sum._2.toDouble / testSum.toDouble, //该准确率下的正例数/总数
+            sum._1,  //反例数
+            sum._1.toDouble / test0.toDouble, //该准确率下的反例数/总反例数
+            sum._1.toDouble / testSum.toDouble, //该准确率下的反例数/总数
+            sum._2.toDouble / (sum._1 + sum._2).toDouble)  // 真实值
+      }
+
+    println(log)
+    trainLog :+= log
+  }
 }
 
