@@ -19,7 +19,7 @@ object AntispamUserAnal {
     val date = args(0)
     Logger.getRootLogger.setLevel(Level.WARN)
     val ctx = SparkSession.builder()
-      .appName("model user anal" + date)
+      .appName("antispam user anal " + date)
       .enableHiveSupport()
       .getOrCreate()
     var sql1 = " select uid,hour,adslot_type,ext['antispam'].int_value, sum(isshow), sum(isclick) FROM dl_cpc.cpc_union_log where `date` ='%s'  group by uid,hour,adslot_type,ext['antispam'].int_value".format(date)

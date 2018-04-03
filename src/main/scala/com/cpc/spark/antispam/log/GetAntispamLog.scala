@@ -31,7 +31,7 @@ object GetAntispamLog {
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     val ctx = SparkSession.builder()
-      .appName("model user anal" + date)
+      .appName("get antispamlog " + date)
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
