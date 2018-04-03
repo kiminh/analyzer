@@ -195,10 +195,11 @@ enum ChargeType {
 
 // 广告源相关
 enum Dsp {
-    CPC_DSP = 1;
-    INMOBI_DSP = 2;
-    TANX_SSP_DSP = 3;
-    BOTTOMING = 4; //打底广告
+	CPC_DSP = 1;
+	INMOBI_DSP = 2;
+	TANX_SSP_DSP = 3;
+	BOTTOMING = 4; //打底广告
+    HUZHONG_DSP = 5;
 }
 
 // DSP计费相关字段
