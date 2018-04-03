@@ -85,11 +85,11 @@ object AnalHuDongLog {
     }
 
     println("hudonglog", hudongLog.count())
-//    clearReportHourData("report_hudong", date,hour)
-//    spark.createDataFrame(hudongLog)
-//      .write
-//      .mode(SaveMode.Append)
-//      .jdbc(mariadbUrl, "union.report_hudong", mariadbProp)
+    clearReportHourData("report_hudong", date,hour)
+    spark.createDataFrame(hudongLog)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "union.report_hudong", mariadbProp)
     spark.stop()
   }
 
@@ -162,7 +162,7 @@ object AnalHuDongLog {
   }
   def prepareTraceSource2(src: rdd.RDD[String]): rdd.RDD[HuDongLog] = {
     src.map(x => LogParser.parseHuDongTraceLog(x))
-      .filter(x => x != null && x.adslot_id.length >0 )
+      .filter(x => x != null && x.adslot_id >0 )
 
   }
   def getDateHourPath(hourBefore: Int, hours: Int): String = {
