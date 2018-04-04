@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.xgboost
 
-import java.io.FileOutputStream
+import java.io.{FileInputStream, FileOutputStream}
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -52,27 +52,13 @@ object TestPyModel {
 
     irmodel.save(spark.sparkContext, "/user/cpc/xgboost_ir/"+filetime)
 
-    //dict
-    val adslotid = getAdslotDict("adslotid", "adslotidx")
-    val adclass = getIntDict("adclass", "adclassdx")
-    val planid = getIntDict("planid", "plandx")
-    val unitid = getIntDict("unitid", "unitdx")
-    val ideaid = getIntDict("ideaid", "ideadx")
-    val cityid = getIntDict("city", "citydx")
-
-    val dict = Dict(
-      slotid = adslotid,
-      adclass = adclass,
-      planid = planid,
-      unitid = unitid,
-      ideaid = ideaid,
-      cityid = cityid
-    )
+    val mlm = Pack.parseFrom(new FileInputStream("/tmp/xgboost.mlm"))
 
     val pack = Pack(
-      createTime = new Date().getTime,
+      createTime = mlm.createTime,
+      lr = mlm.lr,
       ir = Option(ir),
-      dict = Option(dict)
+      dict = mlm.dict
     )
 
     val prefix = "%s-%s".format(args(0), args(1))

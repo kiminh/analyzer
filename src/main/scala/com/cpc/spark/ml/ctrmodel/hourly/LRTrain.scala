@@ -209,7 +209,7 @@ object LRTrain {
   }
 
   def isMorning(): Boolean = {
-    new SimpleDateFormat("HH").format(new Date().getTime) < "08"
+    new SimpleDateFormat("HH").format(new Date().getTime) <= "10"
   }
 
   //用户安装列表对应的App idx
