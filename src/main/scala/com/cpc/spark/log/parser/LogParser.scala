@@ -39,6 +39,8 @@ object LogParser {
       ext.update("client_version", ExtValue(string_value = "%s.%s.%s.%s".format(notice.getClient.getVersion.getMajor,
         notice.getClient.getVersion.getMinor,notice.getClient.getVersion.getMicro,notice.getClient.getVersion.getBuild)))
       ext.update("media_site_url", ExtValue(string_value = notice.getMedia.getSite.getUrls))
+      ext.update("client_requestId", ExtValue(string_value = notice.getClient.getRequestId))
+      ext.update("client_isValid", ExtValue(int_value = if(notice.getClient.getIsValid) {1 }else 0))
 
 //      ext.update("LowcpmfilterList", ExtValue(int_value = notice.getLowcpmfilter(0)))
 //      ext.update("LowcpmfilterList", ExtValue(int_value = notice.getLowcpmfilter(0)))
