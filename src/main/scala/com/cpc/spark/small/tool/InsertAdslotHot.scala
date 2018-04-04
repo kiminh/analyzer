@@ -99,6 +99,7 @@ object InsertAdslotHot {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.adslot_hot", mariadbProp)
+    println("InsertAdslotHot_done")
   }
 
   def clearReportHourData(date: String, hour: String): Unit = {
