@@ -161,6 +161,7 @@ object InsertUserCvr {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.user_cvr", mariadbProp)
+    println("InsertUserCvr_done")
   }
 
   def clearReportHourData(date: String, hour: String): Unit = {
