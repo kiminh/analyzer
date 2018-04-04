@@ -94,6 +94,7 @@ object InsertReportGameCenter {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_game_center", mariadbProp)
+    println("InsertReportGameCenter_done")
   }
 
   def clearReportGameCenter(date: String, hour: String): Unit = {
