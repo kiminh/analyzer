@@ -110,6 +110,7 @@ object GetTraceReport {
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_trace", mariadbProp)
     ctx.stop()
+    println("GetTraceReport_done")
   }
   def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
     try {

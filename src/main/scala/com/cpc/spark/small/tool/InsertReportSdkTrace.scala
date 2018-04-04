@@ -526,6 +526,7 @@ object InsertReportSdkTrace {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_sdk_trace", mariadbProp)
+    println("InsertReportSdkTrace_done")
 
 
     //---------------------------------------------------
