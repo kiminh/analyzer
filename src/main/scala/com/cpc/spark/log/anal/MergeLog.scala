@@ -257,7 +257,9 @@ object MergeLog {
 
     }
 
+
     spark.stop()
+    println("MergeLog_done")
   }
 
   val schema = StructType(Array(
