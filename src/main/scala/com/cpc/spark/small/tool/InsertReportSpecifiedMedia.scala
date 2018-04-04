@@ -143,6 +143,7 @@ object InsertReportSpecifiedMedia {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_specified_media", mariadbProp)
+    println("InsertReportSpecifiedMedia_done")
   }
 
   def clearReportSpecifiedMedia(date: String, hour: String): Unit = {
