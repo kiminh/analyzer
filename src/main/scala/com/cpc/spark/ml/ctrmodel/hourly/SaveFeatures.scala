@@ -37,6 +37,7 @@ object SaveFeatures {
     saveDataFromLog(spark, date, hour)
     saveCvrData(spark, date, hour, version)
     saveCvrData(spark, date, hour, versionV2)
+    println("SaveFeatures_done")
   }
 
   def saveDataFromLog(spark: SparkSession, date: String, hour: String): Unit = {
