@@ -543,6 +543,7 @@ object GetHourReport {
     unionLog.unpersist()
 
     ctx.stop()
+    println("GetHourReport_done")
   }
 
   def cvrPositive(traces: Seq[Row]): Int = {
