@@ -70,6 +70,7 @@ object LRTransform {
     //按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
     initFeatureDict(spark, ctrPathSep)
+    val userAppIdx = getUidApp(spark, ctrPathSep)
     var qtt = getData(spark,"ctrdata_v1",ctrPathSep).coalesce(200)
 
     if (args(3) == "qtt-list") {
@@ -90,9 +91,10 @@ object LRTransform {
           Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
             Seq(1, 2).contains(x.getAs[Int]("adslot_type")) && x.getAs[Int]("ideaid") > 0
       }
+    } else {
+      qtt = qtt.filter{ x => x.getAs[Int]("ideaid") > 0 }
     }
 
-    val userAppIdx = getUidApp(spark, ctrPathSep)
     var Array(test, train, _) = qtt.randomSplit(Array(0.1, 0.2, 0.7), new Date().getTime)
     test = test.cache()
     test = getLimitedData(spark, 1e7, test).join(userAppIdx, Seq("uid"), "leftouter")

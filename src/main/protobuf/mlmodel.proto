@@ -33,6 +33,7 @@ message Pack {
     IRModel ir = 3;
     Dict dict = 4;
     int64 create_time = 5;
+    uint32 gbm_tree_limit = 6;
 }
 
 
