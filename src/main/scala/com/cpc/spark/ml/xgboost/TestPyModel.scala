@@ -15,6 +15,7 @@ import scala.collection.mutable
 import com.cpc.spark.ml.common.Utils
 import com.typesafe.config.ConfigFactory
 
+import scala.io.Source
 import sys.process._
 
 /**
@@ -52,13 +53,16 @@ object TestPyModel {
 
     irmodel.save(spark.sparkContext, "/user/cpc/xgboost_ir/"+filetime)
 
+    val treeLimit = Source.fromFile("/tmp/xgboost_best_ntree_limit.txt").mkString.toInt
+    println("tree limit", treeLimit)
     val mlm = Pack.parseFrom(new FileInputStream("/tmp/xgboost.mlm"))
 
     val pack = Pack(
       createTime = mlm.createTime,
       lr = mlm.lr,
       ir = Option(ir),
-      dict = mlm.dict
+      dict = mlm.dict,
+      gbmTreeLimit = treeLimit
     )
 
     val prefix = "%s-%s".format(args(0), args(1))
@@ -69,7 +73,7 @@ object TestPyModel {
     val ret = cmd !
 
 
-    if (args(3).toInt == 1) {
+    if (args(2).toInt == 1) {
       val conf = ConfigFactory.load()
       println(Utils.updateMlcppOnlineData(filename+".mlm", s"/home/work/mlcpp/data/$prefix.mlm", conf))
       println(Utils.updateMlcppOnlineData(filename+".gbm", s"/home/work/mlcpp/data/$prefix.gbm", conf))
