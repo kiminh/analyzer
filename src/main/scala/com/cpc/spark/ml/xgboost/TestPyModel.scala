@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.xgboost
 
-import java.io.FileOutputStream
+import java.io.{FileInputStream, FileOutputStream}
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -15,6 +15,7 @@ import scala.collection.mutable
 import com.cpc.spark.ml.common.Utils
 import com.typesafe.config.ConfigFactory
 
+import scala.io.Source
 import sys.process._
 
 /**
@@ -52,27 +53,16 @@ object TestPyModel {
 
     irmodel.save(spark.sparkContext, "/user/cpc/xgboost_ir/"+filetime)
 
-    //dict
-    val adslotid = getAdslotDict("adslotid", "adslotidx")
-    val adclass = getIntDict("adclass", "adclassdx")
-    val planid = getIntDict("planid", "plandx")
-    val unitid = getIntDict("unitid", "unitdx")
-    val ideaid = getIntDict("ideaid", "ideadx")
-    val cityid = getIntDict("city", "citydx")
-
-    val dict = Dict(
-      slotid = adslotid,
-      adclass = adclass,
-      planid = planid,
-      unitid = unitid,
-      ideaid = ideaid,
-      cityid = cityid
-    )
+    val treeLimit = Source.fromFile("/tmp/xgboost_best_ntree_limit.txt").mkString.toInt
+    println("tree limit", treeLimit)
+    val mlm = Pack.parseFrom(new FileInputStream("/tmp/xgboost.mlm"))
 
     val pack = Pack(
-      createTime = new Date().getTime,
+      createTime = mlm.createTime,
+      lr = mlm.lr,
       ir = Option(ir),
-      dict = Option(dict)
+      dict = mlm.dict,
+      gbmTreeLimit = treeLimit
     )
 
     val prefix = "%s-%s".format(args(0), args(1))
@@ -83,7 +73,7 @@ object TestPyModel {
     val ret = cmd !
 
 
-    if (args(3).toInt == 1) {
+    if (args(2).toInt == 1) {
       val conf = ConfigFactory.load()
       println(Utils.updateMlcppOnlineData(filename+".mlm", s"/home/work/mlcpp/data/$prefix.mlm", conf))
       println(Utils.updateMlcppOnlineData(filename+".gbm", s"/home/work/mlcpp/data/$prefix.gbm", conf))

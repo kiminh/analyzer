@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.xgboost
 
-import java.io.FileOutputStream
+import java.io.{FileInputStream, FileOutputStream}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
@@ -53,49 +53,86 @@ object LRTransform {
   }
 
   def main(args: Array[String]): Unit = {
+    println(args.mkString(" "))
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-      .config("spark.kryoserializer.buffer.max", "1024m")
-      .appName("lr -> xgboost")
+      .config("spark.kryoserializer.buffer.max", "2047MB")
+      .appName("lr -> xgboost %s %s %s".format(args(4), args(2), args(3)))
       .enableHiveSupport()
       .getOrCreate()
-    import spark.implicits._
+
+    if (args(4) == "eval") {
+      evaluate(spark, args(5))
+      System.exit(1)
+    }
 
     //按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
-    val cvrPathSep = getPathSeq(args(1).toInt)
+    initFeatureDict(spark, ctrPathSep)
+    val userAppIdx = getUidApp(spark, ctrPathSep)
+    var qtt = getData(spark,"ctrdata_v1",ctrPathSep).coalesce(200)
 
-    val ulog = getData(spark,"ctrdata_v1",ctrPathSep)
-      .filter(_.getAs[Int]("ideaid") > 0)
+    if (args(3) == "qtt-list") {
+      qtt = qtt.filter{
+        x =>
+          Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
+            x.getAs[Int]("adslot_type") == 1 && x.getAs[Int]("ideaid") > 0
+      }
+    } else if (args(3) == "qtt-content") {
+      qtt = qtt.filter{
+        x =>
+          Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
+            x.getAs[Int]("adslot_type") == 2 && x.getAs[Int]("ideaid") > 0
+      }
+    } else if (args(3) == "qtt-all") {
+      qtt = qtt.filter{
+        x =>
+          Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
+            Seq(1, 2).contains(x.getAs[Int]("adslot_type")) && x.getAs[Int]("ideaid") > 0
+      }
+    } else {
+      qtt = qtt.filter{ x => x.getAs[Int]("ideaid") > 0 }
+    }
 
-    val srcdata = ulog.filter(x => Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
-      Seq(1, 2).contains(x.getAs[Int]("adslot_type")))
+    var Array(test, train, _) = qtt.randomSplit(Array(0.1, 0.2, 0.7), new Date().getTime)
+    test = test.cache()
+    test = getLimitedData(spark, 1e7, test).join(userAppIdx, Seq("uid"), "leftouter")
+    train = train.cache()
 
-    var Array(test, train, _) = srcdata.randomSplit(Array(0.1, 0.1, 0.8), new Date().getTime)
-    test = test.coalesce(1000).cache()
-    train = train.coalesce(1000).cache()
-    test = getLimitedData(spark, 1e7, test)
+    //去掉长尾广告id
+    val minIdeaNum = 1000
+    val ideaids = train.select("ideaid")
+      .groupBy("ideaid")
+      .count()
+      .where("count > %d".format(minIdeaNum))
+    train = train.join(ideaids, Seq("ideaid"))
 
     val totalNum = train.count().toDouble
     val pnum = train.filter(x => x.getAs[Int]("label") > 0).count().toDouble
     val rate = (pnum * 10 / (totalNum - pnum) * 1000).toInt
     println(pnum, totalNum, rate)
     train = train.filter(x => x.getAs[Int]("label") > 0 || Random.nextInt(1000) < rate)
-    train = getLimitedData(spark, 4e7, train)
-
-    initFeatureDict(spark, ctrPathSep)
-    val userAppIdx = getUidApp(spark, ctrPathSep)
+    train = getLimitedData(spark, 4e7, train).join(userAppIdx, Seq("uid"), "leftouter")
 
     val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
     lbfgs.optimizer.setUpdater(new L1Updater())
     lbfgs.optimizer.setNumIterations(200)
     lbfgs.optimizer.setConvergenceTol(1e-8)
     val sampleTrain = formatSample(spark, "ctrparser2", train)
-    lrmodel = lbfgs.run(sampleTrain)
+    println(sampleTrain.first())
+    val sampleTest = formatSample(spark, "ctrparser2", test)
+    val lr = lbfgs.run(sampleTrain)
     Utils.deleteHdfs("/user/cpc/xgboost_tmplr")
-    lrmodel.save(spark.sparkContext, "/user/cpc/xgboost_tmplr")
-    lrmodel.clearThreshold()
+    lr.save(spark.sparkContext, "/user/cpc/xgboost_tmplr")
+    lr.clearThreshold()
+    val lrresults = sampleTest.map { r => (lr.predict(r.features), r.label) }
+    printXGBTestLog(lrresults)
+    val metrics = new BinaryClassificationMetrics(lrresults)
+    val auPRC = metrics.areaUnderPR
+    val auROC = metrics.areaUnderROC
+    println(auPRC, auROC)
+    lrmodel = lr
 
     val BcDict = spark.sparkContext.broadcast(dict)
     val BcWeights = spark.sparkContext.broadcast(lrmodel.weights)
@@ -126,7 +163,37 @@ object LRTransform {
       }
       .toDF("label", "features")
 
+    println(xgbtrain.first())
+    xgbtrain
+      .map {
+        x =>
+          val label = x.getAs[Int]("label")
+          val vec = x.getAs[MVec]("features")
+          var svm = label.toString
+          vec.foreachActive {
+            (i, v) =>
+              svm = svm + " %d:%f".format(i + 1, v)
+          }
+          svm
+      }
+      .write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_train_svm_v1")
 
+    xgbtest
+      .map {
+        x =>
+          val label = x.getAs[Int]("label")
+          val vec = x.getAs[MVec]("features")
+          var svm = label.toString
+          vec.foreachActive {
+            (i, v) =>
+              svm = svm + " %d:%f".format(i + 1, v)
+          }
+          svm
+      }
+      .write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_test_svm_v1")
+
+
+    /*
     val params = Map(
       "eta" -> 0.2,
       //"lambda" -> 2.5
@@ -167,26 +234,21 @@ object LRTransform {
 
     runIr(spark, binNum.toInt, 0.95)
     trainLog :+= binsLog.mkString("\n")
+    */
 
     val filetime = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     val prefix = "%s-%s".format(args(2), args(3))
-    val filename = "/home/cpc/anal/xgboost_model/%s-%s".format(prefix, filetime)
-    println(filename)
-    xm.booster.saveModel(filename + ".gbm")
-    savePbPack(filename + ".mlm", "ctrparser2")
-
-    if (args(4).toInt == 1) {
-      val conf = ConfigFactory.load()
-      println(MUtils.updateMlcppOnlineData(filename+".mlm", s"/home/work/mlcpp/data/$prefix.mlm", conf))
-      println(MUtils.updateMlcppOnlineData(filename+".gbm", s"/home/work/mlcpp/data/$prefix.gbm", conf))
-    }
+    //val filename = "/home/cpc/anal/xgboost_model/%s-%s".format(prefix, filetime)
+    //println(filename)
+    //xm.booster.saveModel(filename + ".gbm")
+    savePbPack("/tmp/xgboost.mlm", "ctrparser2")
   }
 
   def getPathSeq(days: Int): mutable.Map[String,Seq[String]] ={
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -(days * 24 + 2))
+    cal.add(Calendar.HOUR, -(days * 24 + 1))
     val pathSep = mutable.Map[String,Seq[String]]()
 
     for (n <- 1 to days * 24) {
@@ -206,18 +268,14 @@ object LRTransform {
 
     import spark.implicits._
     val uidApp = spark.read.parquet(inpath).rdd
-      .map(x => (x.getAs[String]("uid"),x.getAs[WrappedArray[String]]("pkgs")))
+      .map(x => (x.getAs[String]("uid"),x.getAs[mutable.WrappedArray[String]]("pkgs")))
       .reduceByKey(_ ++ _)
       .map(x => (x._1,x._2.distinct))
       .toDF("uid","pkgs").rdd
 
-    val ids = getTopApp(uidApp, 1000)
+    val ids = getTopApp(uidApp, 500)
     dictStr.update("appid",ids)
-
-    val userAppIdx = getUserAppIdx(spark, uidApp, ids)
-      .repartition(1000)
-
-    userAppIdx
+    getUserAppIdx(spark, uidApp, ids)
   }
 
   //安装列表中top k的App
@@ -225,15 +283,16 @@ object LRTransform {
     var idx = 0
     val ids = mutable.Map[String,Int]()
     uidApp
-      .flatMap(x => x.getAs[WrappedArray[String]]("pkgs").map((_,1)))
+      .flatMap(x => x.getAs[mutable.WrappedArray[String]]("pkgs").map((_,1)))
       .reduceByKey(_ + _)
       .sortBy(_._2,false)
       .toLocalIterator
       .take(k)
       .foreach{
         id =>
-          idx += 1
           ids.update(id._1,idx)
+          println(id._1, idx)
+          idx += 1
       }
     ids.toMap
   }
@@ -400,45 +459,47 @@ object LRTransform {
     var els = Seq[(Int, Double)]()
     var i = 0
 
+    //1
     els = els :+ (week + i - 1, 1d)
     i += 7
 
-    //(24)
+    //2
     els = els :+ (hour + i, 1d)
     i += 24
 
-    //sex
+    //3
     els = els :+ (x.getAs[Int]("sex") + i, 1d)
     i += 5
 
-    //age
+    //4
     els = els :+ (x.getAs[Int]("age") + i, 1d)
     i += 20
 
-    //os 96 - 97 (2)
+    //5
     els = els :+ (x.getAs[Int]("os") + i, 1d)
     i += 10
 
-    //isp
+    //6
     els = els :+ (x.getAs[Int]("isp") + i, 1d)
     i += 20
 
-    //net
+    //7
     els = els :+ (x.getAs[Int]("network") + i, 1d)
     i += 10
 
+    //8
     els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
     i += dict("cityid").size + 1
 
-    //ad slot id
+    //9
     els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
     i += dict("slotid").size + 1
 
-    //0 to 4
+    //10
     els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
     i += 10
 
-    //pagenum
+    //11
     var pnum = x.getAs[Int]("pagenum")
     if (pnum < 0) {
       pnum = 0
@@ -448,7 +509,7 @@ object LRTransform {
     els = els :+ (pnum + i, 1d)
     i += 50
 
-    //bookid
+    //12
     var bid = 0
     try {
       bid = x.getAs[String]("bookid").toInt
@@ -463,32 +524,32 @@ object LRTransform {
     els = els :+ (bid + i, 1d)
     i += 50
 
-    //ad class
+    //13
     val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
     els = els :+ (adcls + i, 1d)
     i += dict("adclass").size + 1
 
-    //adtype
+    //14
     els = els :+ (x.getAs[Int]("adtype") + i, 1d)
     i += 20
 
-    //adslot_type
+    //15
     els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
     i += 10
 
-    //planid
+    //16
     els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
     i += dict("planid").size + 1
 
-    //unitid
+    //17
     els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
     i += dict("unitid").size + 1
 
-    //ideaid
+    //18
     els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
     i += dict("ideaid").size + 1
 
-    //user_req_ad_num
+    //19
     var uran_idx = x.getAs[Int]("user_req_ad_num")
     if (uran_idx < 0) {
       uran_idx = 0
@@ -498,7 +559,7 @@ object LRTransform {
     els = els :+ (uran_idx + i, 1d)
     i += 20
 
-    //user_req_num
+    //20
     var urn_idx = x.getAs[Int]("user_req_num")
     if (urn_idx < 0) {
       urn_idx = 0
@@ -516,6 +577,7 @@ object LRTransform {
     els = els :+ (urn_idx + i, 1d)
     i += 20
 
+    //21
     var user_click = x.getAs[Int]("user_click_num")
     if (user_click < 0) {
       user_click = 0
@@ -525,6 +587,7 @@ object LRTransform {
     els = els :+ (user_click + i, 1d)
     i += 20
 
+    //22
     var user_click_unit = x.getAs[Int]("user_click_unit_num")
     if (user_click_unit < 0) {
       user_click_unit = 0
@@ -533,6 +596,17 @@ object LRTransform {
     }
     els = els :+ (user_click_unit + i, 1d)
     i += 10
+
+    //23
+    val appIdx = x.getAs[mutable.WrappedArray[Int]]("appIdx")
+    if (appIdx != null){
+      appIdx.sortBy(p => p)
+        .foreach {
+          p =>
+            els = els :+ (p + i, 1d)
+        }
+    }
+    i += 500
 
     try {
       Vectors.sparse(i, els)
@@ -551,37 +625,47 @@ object LRTransform {
     var els = Seq[Double]()
     var i = 0
 
+    //1
     els :+= weights(week + i - 1)
     i += 7
 
+    //2
     els :+= weights(hour + i)
     i += 24
 
+    //3
     els :+= weights(x.getAs[Int]("sex") + i)
     i += 5
 
+    //4
     els :+= weights(x.getAs[Int]("age") + i)
     i += 20
 
+    //5
     els :+= weights(x.getAs[Int]("os") + i)
     i += 10
 
+    //6
     els :+= weights(x.getAs[Int]("isp") + i)
     i += 20
 
+    //7
     els :+= weights(x.getAs[Int]("network") + i)
     i += 10
 
+    //8
     els :+= weights(dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i)
     i += dict("cityid").size + 1
 
+    //9
     els :+= weights(dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i)
     i += dict("slotid").size + 1
 
+    //10
     els :+= weights(x.getAs[Int]("phone_level") + i)
     i += 10
 
-    //pagenum
+    //11
     var pnum = x.getAs[Int]("pagenum")
     if (pnum < 0) {
       pnum = 0
@@ -591,6 +675,7 @@ object LRTransform {
     els :+= weights(pnum + i)
     i += 50
 
+    //12
     var bid = 0
     try {
       bid = x.getAs[String]("bookid").toInt
@@ -605,26 +690,32 @@ object LRTransform {
     els :+= weights(bid + i)
     i += 50
 
+    //13
     val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
     els :+= weights(adcls + i)
     i += dict("adclass").size + 1
 
+    //14
     els :+= weights(x.getAs[Int]("adtype") + i)
     i += 20
 
+    //15
     els :+= weights(x.getAs[Int]("adslot_type") + i)
     i += 10
 
+    //16
     els :+= weights(dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i)
     i += dict("planid").size + 1
 
+    //17
     els :+= weights(dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i)
     i += dict("unitid").size + 1
 
+    //18
     els :+= weights(dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i)
     i += dict("ideaid").size + 1
 
-    //user_req_ad_num
+    //19
     var uran_idx = x.getAs[Int]("user_req_ad_num")
     if (uran_idx < 0) {
       uran_idx = 0
@@ -634,7 +725,7 @@ object LRTransform {
     els :+= weights(uran_idx + i)
     i += 20
 
-    //user_req_num
+    //20
     var urn_idx = x.getAs[Int]("user_req_num")
     if (urn_idx < 0) {
       urn_idx = 0
@@ -652,15 +743,17 @@ object LRTransform {
     els :+= weights(urn_idx + i)
     i += 20
 
+    //21
     var user_click = x.getAs[Int]("user_click_num")
     if (user_click < 0) {
       user_click = 0
     } else if (user_click > 19) {
       user_click = 19
     }
-    els :+ weights(user_click + i)
+    els :+= weights(user_click + i)
     i += 20
 
+    //22
     var user_click_unit = x.getAs[Int]("user_click_unit_num")
     if (user_click_unit < 0) {
       user_click_unit = 0
@@ -669,6 +762,19 @@ object LRTransform {
     }
     els :+= weights(user_click_unit + i)
     i += 10
+
+    //23
+    var appw = 0d
+    val appIdx = x.getAs[mutable.WrappedArray[Int]]("appIdx")
+    if (appIdx != null){
+      appIdx.sortBy(p => p)
+        .foreach {
+          id =>
+            appw += weights(id + i)
+        }
+    }
+    els :+= appw
+    i += 1
 
     try {
       MVecs.dense(els.toArray)
@@ -724,12 +830,6 @@ object LRTransform {
             val ctr = click / pv    //  点击/展示
             bins = bins :+ (ctr, pMin, pSum / pv, pMax)  // 真实值，最小值，预测均值，最大值
             n = n + 1
-            //if (n < 50 || n > binNum - 50) {
-
-            val logStr2 = "bin %d: %.6f(%d/%d) %.6f %.6f %.6f".format(
-              n, ctr, click.toInt, pv.toInt, pMin, pSum / pv, pMax) //桶号：真实ctr（点击/展示），最小值，预测均值，最大值
-            println(logStr2)
-
             if (n > binNum - 20) {
               val logStr = "bin %d: %.6f(%d/%d) %.6f %.6f %.6f".format(
                 n, ctr, click.toInt, pv.toInt, pMin, pSum / pv, pMax) //桶号：真实ctr（点击/展示），最小值，预测均值，最大值
@@ -761,11 +861,13 @@ object LRTransform {
       //auROC = auROC,
       weights = weights.toMap
     )
+    /*
     val ir = IRModel(
       boundaries = irmodel.boundaries.toSeq,
       predictions = irmodel.predictions.toSeq,
       meanSquareError = irError * irError
     )
+    */
     val dictpb = Dict(
       planid = dict("planid"),
       unitid = dict("unitid"),
@@ -779,11 +881,12 @@ object LRTransform {
 
     val pack = Pack(
       createTime = new Date().getTime,
-      ir = Option(ir),
+      lr = Option(lr),
+      //ir = Option(ir),
       dict = Option(dictpb)
     )
 
-    pack.writeTo(new FileOutputStream(path))
+    pack.writeTo(new FileOutputStream("/tmp/xgboost.mlm"))
   }
 
   def printXGBTestLog(lrTestResults: RDD[(Double, Double)]): Unit = {
@@ -854,6 +957,86 @@ object LRTransform {
 
     println(log)
     trainLog :+= log
+  }
+
+  def evaluate(spark: SparkSession, mlmfile: String): Unit = {
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.HOUR, -4)
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val part = new SimpleDateFormat("yyyy-MM-dd/HH").format(cal.getTime)
+    var test = spark.read.parquet("/user/cpc/lrmodel/ctrdata_v1/%s/*".format(part))
+
+    val mlm = Pack.parseFrom(new FileInputStream(mlmfile))
+    val dictData = mlm.dict.get
+
+    dict.update("mediaid", dictData.mediaid)
+    dict.update("planid", dictData.planid)
+    dict.update("ideaid", dictData.ideaid)
+    dict.update("unitid", dictData.unitid)
+    dict.update("slotid", dictData.slotid)
+    dict.update("adclass", dictData.adclass)
+    dict.update("cityid", dictData.cityid)
+
+    import spark.implicits._
+    val uidApp = spark.read.parquet("/user/cpc/userInstalledApp/%s/*".format(date)).rdd
+      .map(x => (x.getAs[String]("uid"),x.getAs[mutable.WrappedArray[String]]("pkgs")))
+      .reduceByKey(_ ++ _)
+      .map(x => (x._1,x._2.distinct))
+      .toDF("uid","pkgs").rdd
+    val appids = dictData.appid
+    val userAppids = getUserAppIdx(spark, uidApp, appids)
+
+    test = getLimitedData(spark, 1e7, test).join(userAppids, Seq("uid"), "leftouter").cache()
+
+    val lr = LogisticRegressionModel.load(spark.sparkContext, "/user/cpc/xgboost_tmplr")
+    val BcDict = spark.sparkContext.broadcast(dict)
+    val BcWeights = spark.sparkContext.broadcast(lr.weights)
+    val lrtest = test.rdd
+      .mapPartitions {
+        p =>
+          dict = BcDict.value
+          p.map {
+            u =>
+              val vec = getCtrVectorParser2(u)
+              LabeledPoint(u.getAs[Int]("label").toDouble, vec)
+          }
+      }
+
+    println(lrtest.first())
+    lr.clearThreshold()
+    val lrresults = lrtest.map { r => (lr.predict(r.features), r.label) }
+    printXGBTestLog(lrresults)
+    val metrics = new BinaryClassificationMetrics(lrresults)
+    val auPRC = metrics.areaUnderPR
+    val auROC = metrics.areaUnderROC
+    println(auPRC, auROC)
+
+    val xgbtest = test
+      .mapPartitions {
+        p =>
+          dict = BcDict.value
+          val weights = BcWeights.value.toArray
+          p.map {
+            r =>
+              val vec = transformFeature(weights, r)
+              (r.getAs[Int]("label"), vec)
+          }
+      }
+      .toDF("label", "features")
+    println(xgbtest.first())
+    xgbtest
+      .map {
+        x =>
+          val label = x.getAs[Int]("label")
+          val vec = x.getAs[MVec]("features")
+          var svm = label.toString
+          vec.foreachActive {
+            (i, v) =>
+              svm = svm + " %d:%f".format(i + 1, v)
+          }
+          svm
+      }
+      .write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_eval_svm_v1")
   }
 }
 
