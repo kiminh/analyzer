@@ -321,11 +321,15 @@ object LogParser {
   def parseTraceLog(txt: String): TraceLog = {
     var log: TraceLog = null
     if (txt != null) {
+      val txt2 = txt.substring(0,30)
+      val traceRegex2 = """(\d{1,3}\.){3}\d{1,3}""".r
+      val ip = traceRegex2.findFirstMatchIn(txt2).getOrElse("").toString
       traceRegex.findFirstMatchIn(txt).foreach {
         m =>
           val sub = m.subgroups
           if (sub.length == 1) {
             log = TraceLog()
+            log = log.copy(ip = ip)
             sub(0).split('&').foreach {
               x =>
                 try {
@@ -354,6 +358,7 @@ object LogParser {
                     case "op3" => log = log.copy(trace_op3 = v)
                     case "duration" => log = log.copy(duration = toInt(v))
                     case "auto" => log = log.copy(auto = toAutoInt(v))
+                    case "adslot_id" => log = log.copy(adslot_id =  v.toInt)
                     case _ =>
                   }
                 } catch {

@@ -42,6 +42,9 @@ object MergeLog {
     val hourBefore = args(3).toInt
     prefix = args(4)
     suffix = args(5)
+    val allTraceTbl = args(6) //cpc_all_trace_log
+
+
     val cal = Calendar.getInstance()
     g_date = cal.getTime //以后只用这个时间
     cal.add(Calendar.HOUR, -hourBefore)
@@ -239,6 +242,9 @@ object MergeLog {
         """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
       println("trace_join", trace1.count())
 
+
+
+
       val traceall = prepareSourceString(spark, "cpc_trace", prefix + "cpc_trace" + suffix, hourBefore, 1)
         .map(x => LogParser.parseTraceLog(x))
         .filter(_ != null)
@@ -246,12 +252,12 @@ object MergeLog {
       spark.createDataFrame(traceall)
         .write
         .mode(SaveMode.Overwrite)
-        .parquet("/warehouse/dl_cpc.db/cpc_all_trace_log/date=%s/hour=%s".format(date, hour))
+        .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(allTraceTbl, date, hour))
       spark.sql(
         """
-          |ALTER TABLE dl_cpc.cpc_all_trace_log add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-          | LOCATION  '/warehouse/dl_cpc.db/cpc_all_trace_log/date=%s/hour=%s'
-        """.stripMargin.format(date, hour, date, hour))
+          |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+          | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+        """.stripMargin.format(allTraceTbl, date, hour, allTraceTbl, date, hour))
       println("trace_all", traceall.count())
 
 
@@ -259,6 +265,9 @@ object MergeLog {
 
 
     spark.stop()
+    for (i <- 0 until 50 ){
+      println("-")
+    }
     println("MergeLog_done")
   }
 

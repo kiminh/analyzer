@@ -44,7 +44,7 @@ object ConditionTouchedUV {
       .getOrCreate()
     import ctx.implicits._
     var ulog = ctx.sql(
-      "select *,ext['share_coin'].int_value as share_coin ,ext['phone_level'].int_value as phone_level  from dl_cpc.cpc_union_log where `date` = \"%s\" and media_appsid in (\"80000001\", \"80000002\")"
+      "select *,ext['share_coin'].int_value as share_coin ,ext['phone_level'].int_value as phone_level  from dl_cpc.cpc_union_log where `date` = \"%s\" and media_appsid in (\"80000001\", \"80000002\") and isshow=1 and ideaid>0"
         .format(date))
       //      .as[UnionLog]
       .rdd
@@ -52,19 +52,19 @@ object ConditionTouchedUV {
     val uv = ulog.map(x => (x.getAs[String]("uid"), 1)).reduceByKey((x, y) => x).count()
     redis.set("touched_uv_total", uv)
     println("uv", uv)
-    ulog = ulog.randomSplit(Array(rate, 1-rate), new Date().getTime)(0)
+    ulog = ulog.randomSplit(Array(rate, 1-rate), new Date().getTime)(0).coalesce(900)
 
     ulog.cache()
 
     //人群包
-    calcCondPercent("people", ulog
-      .flatMap{
-        x =>
-          x.getAs[String]("interests").split(",")
-            .map(i => i.split("="))
-            .filter(x => x.length == 2 && interestids.contains(x(0).toInt))
-            .map(i => ((i(0).toInt, x.getAs[String]("uid")), 1))
-      })
+//    calcCondPercent("people", ulog
+//      .flatMap{
+//        x =>
+//          x.getAs[String]("interests").split(",")
+//            .map(i => i.split("="))
+//            .filter(x => x.length == 2 && interestids.contains(x(0).toInt))
+//            .map(i => ((i(0).toInt, x.getAs[String]("uid")), 1))
+//      })
 
     calcCondPercent("province", ulog.filter(_.getAs[Int]("province") > 0).map(u => ((u.getAs[Int]("province"), u.getAs[String]("uid")), 1)))
     calcCondPercent("city", ulog.filter(_.getAs[Int]("city") > 0).map(u => ((u.getAs[Int]("city"), u.getAs[String]("uid")), 1)))
@@ -92,14 +92,14 @@ object ConditionTouchedUV {
       .filter(_._1 > 0)
       .map(x => ((x._1, x._2.getAs[String]("uid")), 1)))
 
-    calcCondPercent("user_type", ulog
-      .flatMap{
-        x =>
-          x.getAs[String]("interests").split(",")
-            .map(i => i.split("="))
-            .filter(x => x.length == 2 && x(0).toInt > 0)
-            .map(i => ((i(0).toInt, x.getAs[String]("uid")), 1))
-      })
+//    calcCondPercent("user_type", ulog
+//      .flatMap{
+//        x =>
+//          x.getAs[String]("interests").split(",")
+//            .map(i => i.split("="))
+//            .filter(x => x.length == 2 && x(0).toInt > 0)
+//            .map(i => ((i(0).toInt, x.getAs[String]("uid")), 1))
+//      })
 
     println("done")
     ctx.stop()
