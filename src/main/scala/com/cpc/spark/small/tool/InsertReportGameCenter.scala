@@ -71,7 +71,7 @@ object InsertReportGameCenter {
       .map {
         x =>
           val traceType = x._2._1
-          val total = x._2._2
+          val total = x._2._2.toLong
           val date = argDay
           val hour = argHour.toInt
           (traceType, total, date, hour)
@@ -80,11 +80,36 @@ object InsertReportGameCenter {
       .cache()
     println("traceData count", traceData.count())
 
+    val pvCount = ctx.sql(
+      """
+        |SELECT catl.trace_type,ip
+        |FROM dl_cpc.cpc_all_trace_log catl
+        |WHERE catl.date="%s" AND catl.hour="%s" AND catl.trace_type IS NOT NULL
+        |AND catl.trace_op1 IS NOT NULL AND catl.trace_op2 IS NOT NULL
+        |AND catl.ip IS NOT NULL
+      """.stripMargin.format(argDay, argHour))
+      .rdd
+      .filter(_.getString(0) == "load_gameCenter")
+      .map {
+        x =>
+          val ip = x.getString(1)
+          (ip, (1))
+      }
+      .reduceByKey {
+        (a, b) =>
+          (1)
+      }
+      .count()
+    println("pvCount is ", pvCount)
 
-    var insertDataFrame = ctx.createDataFrame(traceData)
+    val pvData = ctx.sparkContext.parallelize(Seq(("load_gameCenter_pv", pvCount, argDay, argHour.toInt)))
+
+
+    var insertDataFrame = ctx.createDataFrame(pvData.union(traceData))
       .toDF("target_type", "target_value", "date", "hour")
 
     println("insertDataFrame count", insertDataFrame.count())
+
 
     insertDataFrame.show(30)
 
