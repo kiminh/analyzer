@@ -57,17 +57,18 @@ object TestPyModel {
     println("tree limit", treeLimit)
     val mlm = Pack.parseFrom(new FileInputStream("/tmp/xgboost.mlm"))
 
+
+    val prefix = "%s-%s".format(args(0), args(1))
+    val filename = "/home/cpc/anal/xgboost_model/%s-%s".format(prefix, filetime)
+    println(filename)
     val pack = Pack(
       createTime = mlm.createTime,
       lr = mlm.lr,
       ir = Option(ir),
       dict = mlm.dict,
-      gbmTreeLimit = treeLimit
+      gbmTreeLimit = treeLimit,
+      gbmfile = s"/home/work/mlcpp/data/$prefix.gbm"
     )
-
-    val prefix = "%s-%s".format(args(0), args(1))
-    val filename = "/home/cpc/anal/xgboost_model/%s-%s".format(prefix, filetime)
-    println(filename)
     pack.writeTo(new FileOutputStream(s"$filename.mlm"))
     val cmd = s"cp -f /tmp/xgboost.gbm $filename.gbm"
     val ret = cmd !
@@ -75,8 +76,8 @@ object TestPyModel {
 
     if (args(2).toInt == 1) {
       val conf = ConfigFactory.load()
-      println(Utils.updateMlcppOnlineData(filename+".mlm", s"/home/work/mlcpp/data/$prefix.mlm", conf))
       println(Utils.updateMlcppOnlineData(filename+".gbm", s"/home/work/mlcpp/data/$prefix.gbm", conf))
+      println(Utils.updateMlcppOnlineData(filename+".mlm", s"/home/work/mlcpp/data/$prefix.mlm", conf))
     }
   }
 

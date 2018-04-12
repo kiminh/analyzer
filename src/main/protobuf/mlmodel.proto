@@ -34,6 +34,7 @@ message Pack {
     Dict dict = 4;
     int64 create_time = 5;
     uint32 gbm_tree_limit = 6;
+    string gbmfile = 7;
 }
 
 

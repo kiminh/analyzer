@@ -1,5 +1,6 @@
 package com.cpc.spark.ml.ctrmodel.hourly
 
+import java.io.FileInputStream
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
@@ -7,8 +8,11 @@ import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ml.train.LRIRModel
 import com.typesafe.config.ConfigFactory
+import lrmodel.lrmodel.Pack
 import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.mllib.classification.LogisticRegressionModel
+import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
@@ -32,6 +36,10 @@ object LRTrain {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark: SparkSession = model.initSpark("cpc lr model")
+
+    evaluate(spark, "qtt-list", "/data/cpc/anal/model/lrmodel-qtt-list-ctrparser3-hourly-2018-04-09-03-37.lrm")
+    System.exit(1)
+
 
     //按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
@@ -1103,5 +1111,160 @@ object LRTrain {
         throw new Exception(els.toString + " " + i.toString + " " + e.getMessage)
         null
     }
+  }
+
+  def evaluate(spark: SparkSession, dataType: String, mlmfile: String): Unit = {
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.HOUR, -4)
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val part = new SimpleDateFormat("yyyy-MM-dd/HH").format(cal.getTime)
+
+    val mlm = Pack.parseFrom(new FileInputStream(mlmfile))
+    val dictData = mlm
+    dict.update("mediaid", dictData.mediaid)
+    dict.update("planid", dictData.planid)
+    dict.update("ideaid", dictData.ideaid)
+    dict.update("unitid", dictData.unitid)
+    dict.update("slotid", dictData.slotid)
+    dict.update("adclass", dictData.adclass)
+    dict.update("cityid", dictData.cityid)
+
+    import spark.implicits._
+    val uidApp = spark.read.parquet("/user/cpc/userInstalledApp/%s/*".format(date)).rdd
+      .map(x => (x.getAs[String]("uid"),x.getAs[mutable.WrappedArray[String]]("pkgs")))
+      .reduceByKey(_ ++ _)
+      .map(x => (x._1,x._2.distinct))
+      .toDF("uid","pkgs").rdd
+    val appids = dictData.appid
+    val userAppids = getUserAppIdx(spark, uidApp, appids)
+
+    var qtt = spark.read.parquet("/user/cpc/lrmodel/ctrdata_v1/%s/*".format(date)).coalesce(200)
+    if (dataType == "qtt-list") {
+      qtt = qtt.filter{
+        x =>
+          Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
+            x.getAs[Int]("adslot_type") == 1 && x.getAs[Int]("ideaid") > 0
+      }
+    } else if (dataType == "qtt-content") {
+      qtt = qtt.filter{
+        x =>
+          Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
+            x.getAs[Int]("adslot_type") == 2 && x.getAs[Int]("ideaid") > 0
+      }
+    } else if (dataType == "qtt-all") {
+      qtt = qtt.filter{
+        x =>
+          Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
+            Seq(1, 2).contains(x.getAs[Int]("adslot_type")) && x.getAs[Int]("ideaid") > 0
+      }
+    } else {
+      qtt = qtt.filter{ x => x.getAs[Int]("ideaid") > 0 }
+    }
+    qtt = getLimitedData(spark, 1e7, qtt).join(userAppids, Seq("uid"), "leftouter").cache()
+
+    val lr = LogisticRegressionModel.load(spark.sparkContext, "/user/cpc/lrmodel/lrmodeldata/2018-04-09-03-37")
+    val BcDict = spark.sparkContext.broadcast(dict)
+    val BcWeights = spark.sparkContext.broadcast(lr.weights)
+    val lrtest = qtt.rdd
+      .mapPartitions {
+        p =>
+          dict = BcDict.value
+          p.map {
+            u =>
+              val vec = getCtrVectorParser3(u)
+              LabeledPoint(u.getAs[Int]("label").toDouble, vec)
+          }
+      }
+
+    println(lrtest.first())
+    lr.clearThreshold()
+    val lrresults = lrtest.map { r => (lr.predict(r.features), r.label) }
+    printXGBTestLog(lrresults)
+    val metrics = new BinaryClassificationMetrics(lrresults)
+    val auPRC = metrics.areaUnderPR
+    val auROC = metrics.areaUnderROC
+    println(auPRC, auROC)
+
+  }
+
+  def getLimitedData(spark: SparkSession, limitedNum: Double, ulog: DataFrame): DataFrame = {
+    import spark.implicits._
+    var rate = 1d
+    val num = ulog.count().toDouble
+
+    if (num > limitedNum) {
+      rate = limitedNum / num
+    }
+
+    ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0)
+  }
+  def printXGBTestLog(lrTestResults: RDD[(Double, Double)]): Unit = {
+    val testSum = lrTestResults.count()
+    if (testSum < 0) {
+      throw new Exception("must run lr test first or test results is empty")
+    }
+    var test0 = 0 //反例数
+    var test1 = 0 //正例数
+    lrTestResults
+      .map {
+        x =>
+          var label = 0
+          if (x._2 > 0.01) {
+            label = 1
+          }
+          (label, 1)
+      }
+      .reduceByKey((x, y) => x + y)
+      .toLocalIterator
+      .foreach {
+        x =>
+          if (x._1 == 1) {
+            test1 = x._2
+          } else {
+            test0 = x._2
+          }
+      }
+
+    var log = "predict distribution %s %d(1) %d(0)\n".format(testSum, test1, test0)
+    lrTestResults  //(p, label)
+      .map {
+      x =>
+        val v = (x._1 * 100).toInt / 5
+        ((v, x._2.toInt), 1)
+    }  //  ((预测值,lable),1)
+      .reduceByKey((x, y) => x + y)  //  ((预测值,lable),num)
+      .map {
+      x =>
+        val key = x._1._1
+        val label = x._1._2
+        if (label == 0) {
+          (key, (x._2, 0))  //  (预测值,(num1,0))
+        } else {
+          (key, (0, x._2))  //  (预测值,(0,num2))
+        }
+    }
+      .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))  //  (预测值,(num1反,num2正))
+      .sortByKey(false)
+      .toLocalIterator
+      .foreach {
+        x =>
+          val sum = x._2
+          val pre = x._1.toDouble * 0.05
+          if (pre>0.2) {
+            //isUpdateModel = true
+          }
+          log = log + "%.2f %d %.4f %.4f %d %.4f %.4f %.4f\n".format(
+            pre, //预测值
+            sum._2, //正例数
+            sum._2.toDouble / test1.toDouble, //该准确率下的正例数/总正例数
+            sum._2.toDouble / testSum.toDouble, //该准确率下的正例数/总数
+            sum._1,  //反例数
+            sum._1.toDouble / test0.toDouble, //该准确率下的反例数/总反例数
+            sum._1.toDouble / testSum.toDouble, //该准确率下的反例数/总数
+            sum._2.toDouble / (sum._1 + sum._2).toDouble)  // 真实值
+      }
+
+    println(log)
+    trainLog :+= log
   }
 }
