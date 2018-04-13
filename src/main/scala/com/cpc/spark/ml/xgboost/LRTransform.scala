@@ -343,7 +343,6 @@ object LRTransform {
       .foreach{
         id =>
           ids.update(id._1,idx)
-          println(id._1, idx)
           idx += 1
       }
     ids.toMap

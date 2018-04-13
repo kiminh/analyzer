@@ -67,7 +67,7 @@ object TestPyModel {
       ir = Option(ir),
       dict = mlm.dict,
       gbmTreeLimit = treeLimit,
-      gbmfile = s"/home/work/mlcpp/data/$prefix.gbm"
+      gbmfile = s"data/$prefix.gbm"
     )
     pack.writeTo(new FileOutputStream(s"$filename.mlm"))
     val cmd = s"cp -f /tmp/xgboost.gbm $filename.gbm"
