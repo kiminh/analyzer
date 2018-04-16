@@ -952,6 +952,14 @@ public final class Aslog {
      * <code>HUZHONG = 5;</code>
      */
     HUZHONG(5),
+    /**
+     * <code>FANCY = 6;</code>
+     */
+    FANCY(6),
+    /**
+     * <code>GDT = 7;</code>
+     */
+    GDT(7),
     ;
 
     /**
@@ -978,6 +986,14 @@ public final class Aslog {
      * <code>HUZHONG = 5;</code>
      */
     public static final int HUZHONG_VALUE = 5;
+    /**
+     * <code>FANCY = 6;</code>
+     */
+    public static final int FANCY_VALUE = 6;
+    /**
+     * <code>GDT = 7;</code>
+     */
+    public static final int GDT_VALUE = 7;
 
 
     public final int getNumber() {
@@ -999,6 +1015,8 @@ public final class Aslog {
         case 3: return TANXSSP;
         case 4: return BOTTOMINIG;
         case 5: return HUZHONG;
+        case 6: return FANCY;
+        case 7: return GDT;
         default: return null;
       }
     }
@@ -15466,6 +15484,23 @@ public final class Aslog {
      * <code>optional int32 click_count = 27;</code>
      */
     int getClickCount();
+
+    /**
+     * <pre>
+     *记录广告所在单元，在此用户下总共点击次数
+     * </pre>
+     *
+     * <code>optional int32 long_click_count = 28;</code>
+     */
+    boolean hasLongClickCount();
+    /**
+     * <pre>
+     *记录广告所在单元，在此用户下总共点击次数
+     * </pre>
+     *
+     * <code>optional int32 long_click_count = 28;</code>
+     */
+    int getLongClickCount();
   }
   /**
    * Protobuf type {@code aslog.AdInfo}
@@ -15506,6 +15541,7 @@ public final class Aslog {
       adidStr_ = "";
       materialLevel_ = 0;
       clickCount_ = 0;
+      longClickCount_ = 0;
     }
 
     @java.lang.Override
@@ -15712,6 +15748,11 @@ public final class Aslog {
             case 216: {
               bitField0_ |= 0x02000000;
               clickCount_ = input.readInt32();
+              break;
+            }
+            case 224: {
+              bitField0_ |= 0x04000000;
+              longClickCount_ = input.readInt32();
               break;
             }
           }
@@ -16375,6 +16416,29 @@ public final class Aslog {
       return clickCount_;
     }
 
+    public static final int LONG_CLICK_COUNT_FIELD_NUMBER = 28;
+    private int longClickCount_;
+    /**
+     * <pre>
+     *记录广告所在单元，在此用户下总共点击次数
+     * </pre>
+     *
+     * <code>optional int32 long_click_count = 28;</code>
+     */
+    public boolean hasLongClickCount() {
+      return ((bitField0_ & 0x04000000) == 0x04000000);
+    }
+    /**
+     * <pre>
+     *记录广告所在单元，在此用户下总共点击次数
+     * </pre>
+     *
+     * <code>optional int32 long_click_count = 28;</code>
+     */
+    public int getLongClickCount() {
+      return longClickCount_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -16483,6 +16547,9 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x02000000) == 0x02000000)) {
         output.writeInt32(27, clickCount_);
+      }
+      if (((bitField0_ & 0x04000000) == 0x04000000)) {
+        output.writeInt32(28, longClickCount_);
       }
       unknownFields.writeTo(output);
     }
@@ -16601,6 +16668,10 @@ public final class Aslog {
       if (((bitField0_ & 0x02000000) == 0x02000000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(27, clickCount_);
+      }
+      if (((bitField0_ & 0x04000000) == 0x04000000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(28, longClickCount_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -16747,6 +16818,11 @@ public final class Aslog {
         result = result && (getClickCount()
             == other.getClickCount());
       }
+      result = result && (hasLongClickCount() == other.hasLongClickCount());
+      if (hasLongClickCount()) {
+        result = result && (getLongClickCount()
+            == other.getLongClickCount());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -16872,6 +16948,10 @@ public final class Aslog {
       if (hasClickCount()) {
         hash = (37 * hash) + CLICK_COUNT_FIELD_NUMBER;
         hash = (53 * hash) + getClickCount();
+      }
+      if (hasLongClickCount()) {
+        hash = (37 * hash) + LONG_CLICK_COUNT_FIELD_NUMBER;
+        hash = (53 * hash) + getLongClickCount();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -17045,6 +17125,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x02000000);
         clickCount_ = 0;
         bitField0_ = (bitField0_ & ~0x04000000);
+        longClickCount_ = 0;
+        bitField0_ = (bitField0_ & ~0x08000000);
         return this;
       }
 
@@ -17178,6 +17260,10 @@ public final class Aslog {
           to_bitField0_ |= 0x02000000;
         }
         result.clickCount_ = clickCount_;
+        if (((from_bitField0_ & 0x08000000) == 0x08000000)) {
+          to_bitField0_ |= 0x04000000;
+        }
+        result.longClickCount_ = longClickCount_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -17313,6 +17399,9 @@ public final class Aslog {
         }
         if (other.hasClickCount()) {
           setClickCount(other.getClickCount());
+        }
+        if (other.hasLongClickCount()) {
+          setLongClickCount(other.getLongClickCount());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -18672,6 +18761,54 @@ public final class Aslog {
       public Builder clearClickCount() {
         bitField0_ = (bitField0_ & ~0x04000000);
         clickCount_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int longClickCount_ ;
+      /**
+       * <pre>
+       *记录广告所在单元，在此用户下总共点击次数
+       * </pre>
+       *
+       * <code>optional int32 long_click_count = 28;</code>
+       */
+      public boolean hasLongClickCount() {
+        return ((bitField0_ & 0x08000000) == 0x08000000);
+      }
+      /**
+       * <pre>
+       *记录广告所在单元，在此用户下总共点击次数
+       * </pre>
+       *
+       * <code>optional int32 long_click_count = 28;</code>
+       */
+      public int getLongClickCount() {
+        return longClickCount_;
+      }
+      /**
+       * <pre>
+       *记录广告所在单元，在此用户下总共点击次数
+       * </pre>
+       *
+       * <code>optional int32 long_click_count = 28;</code>
+       */
+      public Builder setLongClickCount(int value) {
+        bitField0_ |= 0x08000000;
+        longClickCount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *记录广告所在单元，在此用户下总共点击次数
+       * </pre>
+       *
+       * <code>optional int32 long_click_count = 28;</code>
+       */
+      public Builder clearLongClickCount() {
+        bitField0_ = (bitField0_ & ~0x08000000);
+        longClickCount_ = 0;
         onChanged();
         return this;
       }
@@ -28622,7 +28759,7 @@ public final class Aslog {
       "terialTime\030\007 \001(\003\022\024\n\014showFreqTime\030\010 \001(\003\022\024" +
       "\n\014reqBsAllTime\030\t \001(\003\022\034\n\024blackMediaFilter" +
       "Time\030\n \001(\003\022\024\n\014fixClickTime\030\013 \001(\003\022\023\n\013dspa" +
-      "dslotid\030\014 \001(\t\"\256\004\n\006AdInfo\022\033\n\004type\030\001 \002(\0162\r",
+      "dslotid\030\014 \001(\t\"\310\004\n\006AdInfo\022\033\n\004type\030\001 \002(\0162\r",
       ".aslog.AdType\022\031\n\003src\030\002 \002(\0162\014.aslog.AdSrc" +
       "\022+\n\013interaction\030\003 \002(\0162\026.aslog.Interactio" +
       "nType\022\014\n\004adid\030\004 \001(\r\022\017\n\007groupid\030\005 \001(\r\022\016\n\006" +
@@ -28636,62 +28773,64 @@ public final class Aslog {
       " \001(\005\022\024\n\014dsp_media_id\030\027 \001(\t\022\025\n\rdsp_adslot" +
       "_id\030\030 \001(\t\022\020\n\010adid_str\030\031 \001(\t\022,\n\016material_" +
       "level\030\032 \001(\0162\024.aslog.MaterialLevel\022\023\n\013cli" +
-      "ck_count\030\033 \001(\005\"4\n\010AdDspRet\022\031\n\003src\030\001 \002(\0162" +
-      "\014.aslog.AdSrc\022\r\n\005adnum\030\002 \002(\r\"\\\n\010Location" +
-      "\022\017\n\007country\030\001 \001(\r\022\020\n\010province\030\002 \001(\r\022\014\n\004c" +
-      "ity\030\003 \001(\r\022\013\n\003isp\030\004 \001(\r\022\022\n\ncity_level\030\005 \001" +
-      "(\r\"1\n\014InterestItem\022\022\n\ninterestid\030\001 \001(\004\022\r" +
-      "\n\005score\030\002 \001(\004\"\317\001\n\013UserProfile\022&\n\tinteres" +
-      "ts\030\001 \003(\0132\023.aslog.InterestItem\022\013\n\003age\030\002 \001",
-      "(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpcatego" +
-      "ry\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshare_coin" +
-      "\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\022\021\n\treq_count\030\t \001" +
-      "(\r\022\023\n\013click_count\030\n \001(\r\"\376\004\n\rNoticeLogBod" +
-      "y\022\020\n\010searchid\030\001 \002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033" +
-      "\n\005media\030\003 \001(\0132\014.aslog.Media\022\035\n\006adslot\030\004 " +
-      "\003(\0132\r.aslog.Adslot\022\035\n\006device\030\005 \001(\0132\r.asl" +
-      "og.Device\022\032\n\003ads\030\006 \003(\0132\r.aslog.AdInfo\022\037\n" +
-      "\006dspret\030\007 \003(\0132\017.aslog.AdDspRet\022\r\n\005debug\030" +
-      "\010 \001(\010\022\035\n\006client\030\t \001(\0132\r.aslog.Client\022\037\n\007",
-      "network\030\n \001(\0132\016.aslog.Network\022\017\n\007exptags" +
-      "\030\013 \003(\t\022!\n\010location\030\014 \001(\0132\017.aslog.Locatio" +
-      "n\022\020\n\010sourceip\030\r \001(\t\022\021\n\tintertype\030\016 \001(\r\022\'" +
-      "\n\013userprofile\030\017 \001(\0132\022.aslog.UserProfile\022" +
-      "\025\n\rdupplanfilter\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021" +
-      " \003(\r\022\024\n\014lowcvrfilter\030\022 \003(\r\022%\n\ndspReqInfo" +
-      "\030\026 \003(\0132\021.aslog.DspReqInfo\022\020\n\010timecost\030\027 " +
-      "\001(\004\022\r\n\005https\030\030 \001(\010\022\021\n\tctrtarget\030\031 \001(\t\022\025\n" +
-      "\rdupuserfilter\030\032 \003(\r\022\024\n\014dsp_strategy\030\033 \001" +
-      "(\t\022\024\n\014lowacpfilter\030\034 \003(\r*3\n\tMediaType\022\013\n",
-      "\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*r\n" +
-      "\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_FE" +
-      "ED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLOT_SPLASH\020\004" +
-      "\022\017\n\013SLOT_BANNER\020\005\022\016\n\nSLOT_VIDEO\020\006*P\n\013Net" +
-      "workType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI\020\001\022" +
-      "\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?\n\006O" +
-      "SType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020\001\022\n\n" +
-      "\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType\022\022\n\016" +
-      "UnknownBrowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Chro" +
-      "me\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n",
-      "\013MiuiBrowser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEMob" +
-      "ileBrowser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQCh" +
-      "at\020\t*\231\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNOWN\020\000" +
-      "\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID" +
-      "_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCOOKI" +
-      "E\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVID_IMSI\020\007" +
-      "*~\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_" +
-      "TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013AD_INTERA" +
-      "CT\020\005\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_BANNER\020\007\022\014\n\010AD" +
-      "_VIDEO\020\010*F\n\005AdSrc\022\007\n\003CPC\020\001\022\n\n\006INMOBI\020\002\022\013",
-      "\n\007TANXSSP\020\003\022\016\n\nBOTTOMINIG\020\004\022\013\n\007HUZHONG\020\005" +
-      "*i\n\017InteractionType\022\017\n\013NO_INTERACT\020\000\022\013\n\007" +
-      "SURFING\020\001\022\014\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007" +
-      "MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006*\203\001\n\rMaterial" +
-      "Level\022\032\n\026MATERIAL_LEVEL_UNKNOWN\020\000\022\024\n\020MAT" +
-      "ERIAL_LEVEL_1\020\001\022\024\n\020MATERIAL_LEVEL_2\020\002\022\024\n" +
-      "\020MATERIAL_LEVEL_3\020\003\022\024\n\020MATERIAL_LEVEL_4\020" +
-      "\004*M\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020" +
-      "\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005\022\007\n\003QTT\020\006"
+      "ck_count\030\033 \001(\005\022\030\n\020long_click_count\030\034 \001(\005" +
+      "\"4\n\010AdDspRet\022\031\n\003src\030\001 \002(\0162\014.aslog.AdSrc\022" +
+      "\r\n\005adnum\030\002 \002(\r\"\\\n\010Location\022\017\n\007country\030\001 " +
+      "\001(\r\022\020\n\010province\030\002 \001(\r\022\014\n\004city\030\003 \001(\r\022\013\n\003i" +
+      "sp\030\004 \001(\r\022\022\n\ncity_level\030\005 \001(\r\"1\n\014Interest" +
+      "Item\022\022\n\ninterestid\030\001 \001(\004\022\r\n\005score\030\002 \001(\004\"" +
+      "\317\001\n\013UserProfile\022&\n\tinterests\030\001 \003(\0132\023.asl",
+      "og.InterestItem\022\013\n\003age\030\002 \001(\r\022\013\n\003sex\030\003 \001(" +
+      "\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpcategory\030\005 \001(\r\022\020\n\010an" +
+      "tispam\030\006 \001(\r\022\022\n\nshare_coin\030\007 \001(\r\022\017\n\007newu" +
+      "ser\030\010 \001(\r\022\021\n\treq_count\030\t \001(\r\022\023\n\013click_co" +
+      "unt\030\n \001(\r\"\376\004\n\rNoticeLogBody\022\020\n\010searchid\030" +
+      "\001 \002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033\n\005media\030\003 \001(\0132" +
+      "\014.aslog.Media\022\035\n\006adslot\030\004 \003(\0132\r.aslog.Ad" +
+      "slot\022\035\n\006device\030\005 \001(\0132\r.aslog.Device\022\032\n\003a" +
+      "ds\030\006 \003(\0132\r.aslog.AdInfo\022\037\n\006dspret\030\007 \003(\0132" +
+      "\017.aslog.AdDspRet\022\r\n\005debug\030\010 \001(\010\022\035\n\006clien",
+      "t\030\t \001(\0132\r.aslog.Client\022\037\n\007network\030\n \001(\0132" +
+      "\016.aslog.Network\022\017\n\007exptags\030\013 \003(\t\022!\n\010loca" +
+      "tion\030\014 \001(\0132\017.aslog.Location\022\020\n\010sourceip\030" +
+      "\r \001(\t\022\021\n\tintertype\030\016 \001(\r\022\'\n\013userprofile\030" +
+      "\017 \001(\0132\022.aslog.UserProfile\022\025\n\rdupplanfilt" +
+      "er\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021 \003(\r\022\024\n\014lowcvr" +
+      "filter\030\022 \003(\r\022%\n\ndspReqInfo\030\026 \003(\0132\021.aslog" +
+      ".DspReqInfo\022\020\n\010timecost\030\027 \001(\004\022\r\n\005https\030\030" +
+      " \001(\010\022\021\n\tctrtarget\030\031 \001(\t\022\025\n\rdupuserfilter" +
+      "\030\032 \003(\r\022\024\n\014dsp_strategy\030\033 \001(\t\022\024\n\014lowacpfi",
+      "lter\030\034 \003(\r*3\n\tMediaType\022\013\n\007UNKNOWN\020\000\022\007\n\003" +
+      "APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*r\n\nAdslotType\022\r\n" +
+      "\tLIST_FEED\020\001\022\020\n\014CONTENT_FEED\020\002\022\021\n\rSLOT_I" +
+      "NTERACT\020\003\022\017\n\013SLOT_SPLASH\020\004\022\017\n\013SLOT_BANNE" +
+      "R\020\005\022\016\n\nSLOT_VIDEO\020\006*P\n\013NetworkType\022\017\n\013NE" +
+      "T_UNKNOWN\020\000\022\014\n\010NET_WIFI\020\001\022\n\n\006NET_2G\020\002\022\n\n" +
+      "\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?\n\006OSType\022\016\n\nOS_UN" +
+      "KNOWN\020\000\022\016\n\nOS_ANDROID\020\001\022\n\n\006OS_IOS\020\002\022\t\n\005O" +
+      "S_WP\020\003*\265\001\n\013BrowserType\022\022\n\016UnknownBrowser" +
+      "\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrow",
+      "ser\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013MiuiBrowser\020\005" +
+      "\022\017\n\013QvodBrowser\020\006\022\023\n\017IEMobileBrowser\020\007\022\022" +
+      "\n\016MicroMessenger\020\010\022\n\n\006QQChat\020\t*\231\001\n\014Devic" +
+      "eIdType\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVID_IMEI" +
+      "\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\022\016\n\nDEV" +
+      "ID_AAID\020\004\022\022\n\016DEVID_LSCOOKIE\020\005\022\023\n\017DEVID_A" +
+      "NDROIDID\020\006\022\016\n\nDEVID_IMSI\020\007*~\n\006AdType\022\010\n\004" +
+      "TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_TEXT\020\003\022\023\n\017THRE" +
+      "E_ICON_TEXT\020\004\022\017\n\013AD_INTERACT\020\005\022\r\n\tAD_SPL" +
+      "ASH\020\006\022\r\n\tAD_BANNER\020\007\022\014\n\010AD_VIDEO\020\010*Z\n\005Ad",
+      "Src\022\007\n\003CPC\020\001\022\n\n\006INMOBI\020\002\022\013\n\007TANXSSP\020\003\022\016\n" +
+      "\nBOTTOMINIG\020\004\022\013\n\007HUZHONG\020\005\022\t\n\005FANCY\020\006\022\007\n" +
+      "\003GDT\020\007*i\n\017InteractionType\022\017\n\013NO_INTERACT" +
+      "\020\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002\022\013\n\007DIALING" +
+      "\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006*\203\001\n\rMa" +
+      "terialLevel\022\032\n\026MATERIAL_LEVEL_UNKNOWN\020\000\022" +
+      "\024\n\020MATERIAL_LEVEL_1\020\001\022\024\n\020MATERIAL_LEVEL_" +
+      "2\020\002\022\024\n\020MATERIAL_LEVEL_3\020\003\022\024\n\020MATERIAL_LE" +
+      "VEL_4\020\004*M\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t\n\005" +
+      "JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005\022\007\n",
+      "\003QTT\020\006"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -28776,7 +28915,7 @@ public final class Aslog {
     internal_static_aslog_AdInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_AdInfo_descriptor,
-        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", "Class_", "Usertype", "Titlectr", "Expcpm", "Cvr", "CvrThreshold", "CvrThres", "Materialid", "TriggerType", "Discount", "ShowCount", "DspMediaId", "DspAdslotId", "AdidStr", "MaterialLevel", "ClickCount", });
+        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", "Class_", "Usertype", "Titlectr", "Expcpm", "Cvr", "CvrThreshold", "CvrThres", "Materialid", "TriggerType", "Discount", "ShowCount", "DspMediaId", "DspAdslotId", "AdidStr", "MaterialLevel", "ClickCount", "LongClickCount", });
     internal_static_aslog_AdDspRet_descriptor =
       getDescriptor().getMessageTypes().get(12);
     internal_static_aslog_AdDspRet_fieldAccessorTable = new
