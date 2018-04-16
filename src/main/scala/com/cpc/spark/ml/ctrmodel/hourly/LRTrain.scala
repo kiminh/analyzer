@@ -37,13 +37,10 @@ object LRTrain {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark: SparkSession = model.initSpark("cpc lr model")
 
-    evaluate(spark, "qtt-list", "/data/cpc/anal/model/lrmodel-qtt-list-ctrparser3-hourly-2018-04-09-03-37.lrm")
-    System.exit(1)
-
-
     //按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
     val cvrPathSep = getPathSeq(args(1).toInt)
+
 
     initFeatureDict(spark, ctrPathSep)
 
@@ -217,7 +214,7 @@ object LRTrain {
   }
 
   def isMorning(): Boolean = {
-    new SimpleDateFormat("HH").format(new Date().getTime) <= "10"
+    new SimpleDateFormat("HH").format(new Date().getTime) <= "17"
   }
 
   //用户安装列表对应的App idx
@@ -387,7 +384,7 @@ object LRTrain {
         println(x)
     }
 
-    spark.read.parquet(path:_*).repartition(1000)
+    spark.read.parquet(path:_*).coalesce(600)
   }
 
   /*
