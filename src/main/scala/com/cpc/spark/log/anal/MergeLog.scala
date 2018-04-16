@@ -241,28 +241,23 @@ object MergeLog {
           | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
         """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
       println("trace_join", trace1.count())
-
-
-
-
-      val traceall = prepareSourceString(spark, "cpc_trace", prefix + "cpc_trace" + suffix, hourBefore, 1)
-        .map(x => LogParser.parseTraceLog(x))
-        .filter(_ != null)
-        .map(_.copy(date = date, hour = hour))
-      spark.createDataFrame(traceall)
-        .write
-        .mode(SaveMode.Overwrite)
-        .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(allTraceTbl, date, hour))
-      spark.sql(
-        """
-          |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-          | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
-        """.stripMargin.format(allTraceTbl, date, hour, allTraceTbl, date, hour))
-      println("trace_all", traceall.count())
-
-
     }
 
+
+    val traceall = prepareSourceString(spark, "cpc_trace", prefix + "cpc_trace" + suffix, hourBefore, 1)
+      .map(x => LogParser.parseTraceLog(x))
+      .filter(_ != null)
+      .map(_.copy(date = date, hour = hour))
+    spark.createDataFrame(traceall)
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(allTraceTbl, date, hour))
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+      """.stripMargin.format(allTraceTbl, date, hour, allTraceTbl, date, hour))
+    println("trace_all", traceall.count())
 
     spark.stop()
     for (i <- 0 until 50 ){
