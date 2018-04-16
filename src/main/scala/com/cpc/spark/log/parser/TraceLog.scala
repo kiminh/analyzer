@@ -30,7 +30,8 @@ case class TraceLog(
                    hour: String = "",
                    auto: Int = 0,
                    ip: String = "",
-                   adslot_id:Int = 0
+                   adslot_id:Int = 0,
+                   ua:String = ""
                    ) {
 
 }
