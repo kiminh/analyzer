@@ -4,18 +4,15 @@ import java.io.{FileInputStream, FileOutputStream}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import org.apache.spark.ml.linalg.{SparseVector => MSVec, Vector => MVec, Vectors => MVecs}
-import mlmodel.mlmodel.{Dict, IRModel, LRModel, Pack}
-import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
-import com.cpc.spark.ml.train.LRIRModel
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
 import io.grpc.ManagedChannelBuilder
-import ml.dmlc.xgboost4j.scala.spark.{XGBoostEstimator, XGBoostModel}
+import mlmodel.mlmodel.{Dict, IRModel, LRModel, Pack}
 import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.ml.linalg.{SparseVector => MSVec, Vector => MVec, Vectors => MVecs}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
@@ -32,7 +29,7 @@ import scala.util.Random
 /**
   * Created by zhaolei on 22/12/2017.
   */
-object LRTransform {
+object LRTransformCvr {
 
   //  private val minBinSize = 10000d
   private var binNum = 1000d
@@ -111,17 +108,18 @@ object LRTransform {
       qtt = qtt.filter{ x => x.getAs[Int]("ideaid") > 0 }
     }
 
-    var Array(test, train, _) = qtt.randomSplit(Array(0.1, 0.2, 0.7), new Date().getTime)
+    var Array(test, train) = qtt.randomSplit(Array(0.1, 0.9), new Date().getTime)
     test = test.cache()
     test = getLimitedData(spark, 1e7, test).join(userAppIdx, Seq("uid"), "leftouter")
     train = train.cache()
 
     //去掉长尾广告id
-    val minIdeaNum = 10
+    val minIdeaNum = 50
     val ideaids = train.select("ideaid")
       .groupBy("ideaid")
       .count()
       .where("count > %d".format(minIdeaNum))
+    train = train.join(ideaids, Seq("ideaid"))
     val totalNum = train.count().toDouble
     val pnum = train.filter(x => x.getAs[Int]("label") > 0).count().toDouble
     val rate = (pnum * 10 / (totalNum - pnum) * 1000).toInt
@@ -357,7 +355,6 @@ object LRTransform {
   }
 
   def getLimitedData(spark: SparkSession, limitedNum: Double, ulog: DataFrame): DataFrame = {
-    import spark.implicits._
     var rate = 1d
     val num = ulog.count().toDouble
 
