@@ -150,6 +150,7 @@ enum AdSrc {
 	HUZHONG = 5;
 	FANCY = 6;
 	GDT = 7;
+	MOBVISTA = 8;
 };
 enum InteractionType {
 	NO_INTERACT = 0;
