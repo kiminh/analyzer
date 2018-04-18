@@ -202,6 +202,7 @@ enum Dsp {
     HUZHONG_DSP = 5;
     FANCY_DSP = 6;
     GDT_DSP = 7;
+    MOBVISTA_DSP = 8;
 }
 
 // DSP计费相关字段
