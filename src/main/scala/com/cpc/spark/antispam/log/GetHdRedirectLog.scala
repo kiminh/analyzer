@@ -42,7 +42,7 @@ object GetHdRedirectLog {
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
-    var sql1 = (" SELECT * FROM dl_cpc.cpc_cfg_log where `date`='%s' and log_type ='/hdjump' ").format(date)
+    var sql1 = (" SELECT * FROM dl_cpc.cpc_cfg_log where `date`='%s' and log_type in('/hdjump','/reqhd') ").format(date)
 
     println("sql1:" + sql1)
     var cfgLog = ctx.sql(sql1).as[CfgLog]
