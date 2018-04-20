@@ -28,6 +28,11 @@ object TestPyModel {
   private var irError = 0d
 
   def main(args: Array[String]): Unit = {
+    val cur = args(0)
+    val parser = args(1)
+    val dataType = args(2)
+    val upload = args(3).toInt
+    val namespace = dataType + "-" + parser
     spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .appName("test xgboost pymodel and run IR")
@@ -35,7 +40,7 @@ object TestPyModel {
       .getOrCreate()
     val filetime = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
 
-    val results = spark.read.parquet("/user/cpc/xgboost_test_results")
+    val results = spark.read.parquet("/user/cpc/xgboost_test_results/" + namespace)
       .rdd
       .map {
         x =>
@@ -52,13 +57,11 @@ object TestPyModel {
     )
 
     irmodel.save(spark.sparkContext, "/user/cpc/xgboost_ir/"+filetime)
-
-    val treeLimit = Source.fromFile("/tmp/xgboost_best_ntree_limit.txt").mkString.toInt
+    val treeLimit = Source.fromFile(cur + "/_tmp/" + namespace + "-xgboost_best_ntree_limit.txt").mkString.toInt
     println("tree limit", treeLimit)
-    val mlm = Pack.parseFrom(new FileInputStream("/tmp/xgboost.mlm"))
+    val mlm = Pack.parseFrom(new FileInputStream(cur + "/_tmp/" + namespace + "-xgboost.mlm"))
 
-
-    val prefix = "%s-%s".format(args(0), args(1))
+    val prefix = "%s-%s".format(parser, dataType)
     val filename = "/home/cpc/anal/xgboost_model/%s-%s".format(prefix, filetime)
     println(filename)
     val pack = Pack(
@@ -70,57 +73,15 @@ object TestPyModel {
       gbmfile = s"data/$prefix.gbm"
     )
     pack.writeTo(new FileOutputStream(s"$filename.mlm"))
-    val cmd = s"cp -f /tmp/xgboost.gbm $filename.gbm"
+    val cmd = s"cp -f $cur/_tmp/$namespace-xgboost.gbm $filename.gbm"
     val ret = cmd !
 
 
-    if (args(2).toInt == 1) {
+    if (upload == 1) {
       val conf = ConfigFactory.load()
       println(Utils.updateMlcppOnlineData(filename+".gbm", s"/home/work/mlcpp/data/$prefix.gbm", conf))
       println(Utils.updateMlcppOnlineData(filename+".mlm", s"/home/work/mlcpp/data/$prefix.mlm", conf))
     }
-  }
-
-  def getIntDict(in: String, out: String): Map[Int, Int] = {
-    val dict = mutable.Map[Int, Int]()
-    spark.read.parquet("/user/cpc/xgboost_dict/%s-%s".format(in, out))
-      .rdd
-      .toLocalIterator
-      .foreach {
-        x =>
-          val k = x.getInt(0)
-          val v = x.getInt(1)
-          dict.update(k, v)
-      }
-    dict.toMap
-  }
-
-  def getAdslotDict(in: String, out: String): Map[Int, Int] = {
-    val dict = mutable.Map[Int, Int]()
-    spark.read.parquet("/user/cpc/xgboost_dict/%s-%s".format(in, out))
-      .rdd
-      .toLocalIterator
-      .foreach {
-        x =>
-          val k = x.getString(0).toInt
-          val v = x.getInt(1)
-          dict.update(k, v)
-      }
-    dict.toMap
-  }
-
-  def getStringDict(in: String, out: String): Map[String, Int] = {
-    val dict = mutable.Map[String, Int]()
-    spark.read.parquet("/user/cpc/xgboost_dict/%s-%s".format(in, out))
-      .rdd
-      .toLocalIterator
-      .foreach {
-        x =>
-          val k = x.getString(0)
-          val v = x.getInt(1)
-          dict.update(k, v)
-      }
-    dict.toMap
   }
 
   def runIr(results: RDD[(Double, Double)], binNum: Int, rate: Double): Double = {

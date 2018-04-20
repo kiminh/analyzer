@@ -60,9 +60,8 @@ object GetHourReport {
          |      ext['adclass'].int_value as adclass,
          |      ext['exp_cvr'].int_value as exp_cvr,
          |      ext['exp_ctr'].int_value as exp_ctr
-         |from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and isfill = 1 and adslotid > 0
+         |from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and isfill = 1 and adslotid > 0 and adsrc <= 1
        """.stripMargin.format(table, date, hour))
-      //      .as[UnionLog]
       .rdd.cache()
 
     val chargeData = unionLog
@@ -317,7 +316,7 @@ object GetHourReport {
          |      ext['adclass'].int_value as adclass,
          |      ext['exp_cvr'].int_value as exp_cvr,
          |      ext['exp_ctr'].int_value as exp_ctr
-         |      from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and adslotid > 0
+         |      from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and adslotid > 0 and adsrc <= 1
        """.stripMargin.format(table, date, hour))
       //      .as[UnionLog]
       .rdd

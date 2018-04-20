@@ -60,12 +60,15 @@ object LRTransform {
     trainLog :+= args.mkString(" ")
     println(args.mkString(" "))
     val days = args(0)
-    val dataSrc = args(1)
-    val parser = args(2)
-    val dataType = args(3)
-    val action = args(4)
+    val dataSrc = args(1)       //ctrdata_v1
+    val parser = args(2)        //ctr-parser1
+    val dataType = args(3)      //qtt-all
+    val action = args(4)        //train, stub, eval
     val mlmfile = args(5)
-    val upload = args(6)toInt
+    val upload = args(6)toInt   //upload to mlserver
+    val cur = args(7)
+
+    val namespace = dataType + "-" + parser
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder()
@@ -122,6 +125,7 @@ object LRTransform {
       .groupBy("ideaid")
       .count()
       .where("count > %d".format(minIdeaNum))
+    train = train.join(ideaids, Seq("ideaid"))
     val totalNum = train.count().toDouble
     val pnum = train.filter(x => x.getAs[Int]("label") > 0).count().toDouble
     val rate = (pnum * 10 / (totalNum - pnum) * 1000).toInt
@@ -215,7 +219,7 @@ object LRTransform {
       }
 
     svmtrain.write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_train_svm/" + filetime)
-    svmtrain.write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_train_svm_v1/")
+    svmtrain.write.mode(SaveMode.Overwrite).text("/user/cpc/%s-xgboost_train_svm/".format(namespace))
 
     val svmtest = xgbtest
       .map {
@@ -230,7 +234,7 @@ object LRTransform {
           svm
       }
     svmtest.write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_test_svm/" + filetime)
-    svmtest.write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_test_svm_v1/")
+    svmtest.write.mode(SaveMode.Overwrite).text("/user/cpc/%s-xgboost_test_svm/".format(namespace))
 
 
     /*
@@ -276,12 +280,12 @@ object LRTransform {
     trainLog :+= binsLog.mkString("\n")
     */
 
-    savePbPack("/tmp/xgboost.mlm", "ctrparser1")
-    println(filetime, "/tmp/xgboost.mlm")
+    savePbPack("%s/_tmp/%s-xgboost.mlm".format(cur, namespace), "ctrparser1")
 
     val prefix = "lr-%s-%s".format(parser, dataType)
     val filename = "/home/cpc/anal/xgboost_model/%s-%s.mlm".format(prefix, filetime)
     saveLrPbPack(filename , "ctrparser1")
+    println(filetime, filename)
 
     if (upload > 0) {
       val conf = ConfigFactory.load()

@@ -41,7 +41,6 @@ object LRTrain {
     val ctrPathSep = getPathSeq(args(0).toInt)
     val cvrPathSep = getPathSeq(args(1).toInt)
 
-
     initFeatureDict(spark, ctrPathSep)
 
     val userAppIdx = getUidApp(spark, ctrPathSep).cache()
@@ -292,15 +291,18 @@ object LRTrain {
 
     val date = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     val lrfilepath = "/data/cpc/anal/model/lrmodel-%s-%s.lrm".format(name, date)
+    val mlfilepath = "/data/cpc/anal/model/lrmodel-%s-%s.mlm".format(name, date)
     model.saveHdfs("/user/cpc/lrmodel/lrmodeldata/%s".format(date))
     model.saveIrHdfs("/user/cpc/lrmodel/irmodeldata/%s".format(date))
     model.savePbPack(parser, lrfilepath, dict.toMap, dictStr.toMap)
+    model.savePbPack2(parser, mlfilepath, dict.toMap, dictStr.toMap)
 
     trainLog :+= "protobuf pack %s".format(lrfilepath)
 
     trainLog :+= "\n-------update server data------"
     if (destfile.length > 0) {
       trainLog :+= MUtils.updateOnlineData(lrfilepath, destfile, ConfigFactory.load())
+      MUtils.updateMlcppOnlineData(mlfilepath, "/home/work/mlcpp/data/" + destfile, ConfigFactory.load())
     }
   }
 
@@ -662,49 +664,51 @@ object LRTrain {
     var els = Seq[(Int, Double)]()
     var i = 0
 
+    //1
     els = els :+ (week + i - 1, 1d)
     i += 7
 
-    //(24)
+    //2
     els = els :+ (hour + i, 1d)
     i += 24
 
-    //sex
+    //3
     els = els :+ (x.getAs[Int]("sex") + i, 1d)
     i += 9
 
-    //age
+    //4
     els = els :+ (x.getAs[Int]("age") + i, 1d)
     i += 100
 
-    //os 96 - 97 (2)
+    //5
     els = els :+ (x.getAs[Int]("os") + i, 1d)
     i += 10
 
-    //isp
+    //6
     els = els :+ (x.getAs[Int]("isp") + i, 1d)
     i += 20
 
-    //net
+    //7
     els = els :+ (x.getAs[Int]("network") + i, 1d)
     i += 10
 
+    //8
     els = els :+ (dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i, 1d)
     i += dict("cityid").size + 1
 
-    //media id
+    //9
     els = els :+ (dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i, 1d)
     i += dict("mediaid").size + 1
 
-    //ad slot id
+    //10
     els = els :+ (dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i, 1d)
     i += dict("slotid").size + 1
 
-    //0 to 4
+    //11
     els = els :+ (x.getAs[Int]("phone_level") + i, 1d)
     i += 10
 
-    //pagenum
+    //12
     var pnum = x.getAs[Int]("pagenum")
     if (pnum < 0 || pnum > 50) {
       pnum = 0
@@ -712,7 +716,7 @@ object LRTrain {
     els = els :+ (pnum + i, 1d)
     i += 100
 
-    //bookid
+    //13
     var bid = 0
     try {
       bid = x.getAs[String]("bookid").toInt
@@ -725,32 +729,32 @@ object LRTrain {
     els = els :+ (bid + i, 1d)
     i += 100
 
-    //ad class
+    //14
     val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
     els = els :+ (adcls + i, 1d)
     i += dict("adclass").size + 1
 
-    //adtype
+    //15
     els = els :+ (x.getAs[Int]("adtype") + i, 1d)
     i += 10
 
-    //adslot_type
+    //16
     els = els :+ (x.getAs[Int]("adslot_type") + i, 1d)
     i += 10
 
-    //planid
+    //17
     els = els :+ (dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i, 1d)
     i += dict("planid").size + 1
 
-    //unitid
+    //18
     els = els :+ (dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i, 1d)
     i += dict("unitid").size + 1
 
-    //ideaid
+    //19
     els = els :+ (dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i, 1d)
     i += dict("ideaid").size + 1
 
-    //user_req_ad_num
+    //20
     var uran_idx = 0
     val uran = x.getAs[Int]("user_req_ad_num")
     if (uran >= 1 && uran <= 10 ){
@@ -762,7 +766,7 @@ object LRTrain {
     els = els :+ (uran_idx + i, 1d)
     i += 12 + 1
 
-    //user_req_num
+    //21
     var urn_idx = 0
     val urn = x.getAs[Int]("user_req_num")
     if (urn >= 1 && urn <= 10){
@@ -777,13 +781,13 @@ object LRTrain {
     els = els :+ (urn_idx + i, 1d)
     i += 5 + 1
 
-    //sex - age
+    //22
     if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0){
       els = els :+ (6 * (x.getAs[Int]("sex") - 1) + x.getAs[Int]("age") + i, 1d)
     }
     i += 2 * 6 + 1
 
-    //user installed app
+    //23
     val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
     if (appIdx != null){
       val inxList = appIdx.map(p => (p + i,1d))
