@@ -79,6 +79,10 @@ object AnalCfgLog {
 
 
     spark.stop()
+    for (i<-0 to 100){
+      println("-")
+    }
+    println("AnalCfgLog_done")
   }
 
   val schema = StructType(Array(
