@@ -230,6 +230,11 @@ message AdInfo {
 	optional MaterialLevel material_level = 26; // 素材等级
 	optional int32 click_count = 27; //记录广告所在单元，在此用户下的一天的点击次数
 	optional int32 long_click_count = 28; //记录广告所在单元，在此用户下总共点击次数
+	optional uint32 real_bid = 29; //被cvr智能优化后的价格
+	optional string title = 30; //广告的标题
+	optional string desc = 31; //广告的描述
+	repeated string img_urls = 32; //广告的图片地址
+	optional string click_url = 33; //广告点击地址
 };
 
 message AdDspRet {
