@@ -147,9 +147,17 @@ object LRTransform {
           dict = BcDict.value
           p.map {
             u =>
-              val vec = getCtrVectorParser1(u)
-              LabeledPoint(u.getAs[Int]("label").toDouble, vec)
+              if (parser == "ctr-parser1") {
+                val vec = getCtrVectorParser1(u)
+                LabeledPoint(u.getAs[Int]("label").toDouble, vec)
+              } else if (parser == "ctr-parser2") {
+                val vec = getCtrVectorParser2(u)
+                LabeledPoint(u.getAs[Int]("label").toDouble, vec)
+              } else {
+                null
+              }
           }
+          .filter(_ != null)
       }
     println(sampleTrain.first())
 
@@ -280,11 +288,10 @@ object LRTransform {
     trainLog :+= binsLog.mkString("\n")
     */
 
-    savePbPack("%s/_tmp/%s-xgboost.mlm".format(cur, namespace), "ctrparser1")
-
+    savePbPack("%s/_tmp/%s-xgboost.mlm".format(cur, namespace), parser)
     val prefix = "lr-%s-%s".format(parser, dataType)
     val filename = "/home/cpc/anal/xgboost_model/%s-%s.mlm".format(prefix, filetime)
-    saveLrPbPack(filename , "ctrparser1")
+    saveLrPbPack(filename , parser)
     println(filetime, filename)
 
     if (upload > 0) {
@@ -702,17 +709,7 @@ object LRTransform {
     i += 20
 
     //21
-    var user_click = x.getAs[Int]("user_click_num")
-    if (user_click < 0) {
-      user_click = 0
-    } else if (user_click > 19) {
-      user_click = 19
-    }
-    els = els :+ (user_click + i, 1d)
-    i += 20
-
-    //22
-    var user_click_unit = x.getAs[Int]("user_click_unit_num")
+    var user_click_unit = x.getAs[Int]("user_long_click_count")
     if (user_click_unit < 0) {
       user_click_unit = 0
     } else if (user_click_unit > 9) {
@@ -721,7 +718,7 @@ object LRTransform {
     els = els :+ (user_click_unit + i, 1d)
     i += 10
 
-    //23
+    //22
     val appIdx = x.getAs[mutable.WrappedArray[Int]]("appIdx")
     if (appIdx != null){
       appIdx.sortBy(p => p)
@@ -1016,17 +1013,7 @@ object LRTransform {
     i += 20
 
     //21
-    var user_click = x.getAs[Int]("user_click_num")
-    if (user_click < 0) {
-      user_click = 0
-    } else if (user_click > 19) {
-      user_click = 19
-    }
-    els :+= weights(user_click + i)
-    i += 20
-
-    //22
-    var user_click_unit = x.getAs[Int]("user_click_unit_num")
+    var user_click_unit = x.getAs[Int]("user_long_click_count")
     if (user_click_unit < 0) {
       user_click_unit = 0
     } else if (user_click_unit > 9) {
@@ -1035,7 +1022,7 @@ object LRTransform {
     els :+= weights(user_click_unit + i)
     i += 10
 
-    //23
+    //22
     var appw = 0d
     val appIdx = x.getAs[mutable.WrappedArray[Int]]("appIdx")
     if (appIdx != null){
