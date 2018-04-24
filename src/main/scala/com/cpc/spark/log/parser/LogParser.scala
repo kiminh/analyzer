@@ -183,7 +183,7 @@ object LogParser {
       log = UnionLog(
         searchid = body.getSearchId,
         isshow = 1,
-        show_timestamp = body.getEventTimestamp,
+        show_timestamp = data.timestamp,
         show_ip = data.ip ,
         ext = ext
       )

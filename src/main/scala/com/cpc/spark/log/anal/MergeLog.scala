@@ -99,7 +99,7 @@ object MergeLog {
                 log = y
               }
           }
-          (log.searchid,log)
+          (log.searchid, log)
       }
 
 
@@ -260,7 +260,7 @@ object MergeLog {
     println("trace_all", traceall.count())
 
     spark.stop()
-    for (i <- 0 until 50 ){
+    for (i <- 0 until 50) {
       println("-")
     }
     println("MergeLog_done")
@@ -290,11 +290,14 @@ object MergeLog {
         r =>
           //val s = r.getMap[String, Row](2).getOrElse(key, null)
           val s = r.getAs[Map[String, Row]]("field").getOrElse(key, null)
-
+          val timestamp = r.getAs[Long]("log_timestamp")
           if (s == null) {
             null
           } else {
-            s.getAs[String]("string_type")
+            if (key == "cpc_show") {
+              timestamp + s.getAs[String]("string_type")
+            }
+            else s.getAs[String]("string_type")
           }
       }
       .filter(_ != null)
