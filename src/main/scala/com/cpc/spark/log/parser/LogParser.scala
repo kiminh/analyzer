@@ -311,6 +311,7 @@ object LogParser {
           age = body.getUserprofile.getAge,
           coin = body.getUserprofile.getCoin,
           interests = interRows.mkString(","),
+          adsrc = body.getDspInfo.getDsp.getNumber,
           ext = ext.toMap
         )
       }
