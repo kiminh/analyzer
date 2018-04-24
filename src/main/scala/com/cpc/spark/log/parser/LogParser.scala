@@ -106,6 +106,11 @@ object LogParser {
         ext.update("rank_discount", ExtValue(int_value = ad.getDiscount))
         ext.update("user_req_ad_num", ExtValue(int_value = ad.getShowCount))
         ext.update("long_click_count", ExtValue(int_value = ad.getLongClickCount))
+        ext.update("cvr_real_bid", ExtValue(int_value = ad.getRealBid))
+        ext.update("ad_title", ExtValue(string_value = ad.getTitle))
+        ext.update("ad_desc", ExtValue(string_value = ad.getDesc))
+        ext.update("ad_img_urls", ExtValue(string_value = ad.getImgUrlsList.toArray.mkString(" ")))
+        ext.update("ad_click_url", ExtValue(string_value = ad.getClickUrl))
 
         val mcount = ad.getMaterialidCount
         if (mcount > 0) {
