@@ -369,8 +369,6 @@ object GetHourReport {
             expctr = u.getAs[Int]("exp_ctr")
           }
 
-          val discount = u.getAs[Int]("rank_discount")
-
           var isclick = u.getAs[Int]("isclick")
           var spam_click = u.getAs[Int]("spam_click")
           var antispam_score = u.getAs[Int]("antispam_score")
@@ -382,9 +380,6 @@ object GetHourReport {
           }
 
           var cost = realCost.toFloat
-          if (discount > 0) {
-            //cost = cost * discount.toFloat / 100
-          }
 
           val ctr = CtrReport(
             media_id = u.getAs[String]("media_appsid").toInt,
