@@ -167,9 +167,17 @@ object LRTransform {
           dict = BcDict.value
           p.map {
             u =>
-              val vec = getCtrVectorParser1(u)
-              LabeledPoint(u.getAs[Int]("label").toDouble, vec)
+              if (parser == "ctr-parser1") {
+                val vec = getCtrVectorParser1(u)
+                LabeledPoint(u.getAs[Int]("label").toDouble, vec)
+              } else if (parser == "ctr-parser2") {
+                val vec = getCtrVectorParser2(u)
+                LabeledPoint(u.getAs[Int]("label").toDouble, vec)
+              } else {
+                null
+              }
           }
+          .filter(_ != null)
       }
 
     val lr = lbfgs.run(sampleTrain)
