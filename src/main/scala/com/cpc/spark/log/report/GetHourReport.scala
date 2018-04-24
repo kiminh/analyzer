@@ -360,7 +360,7 @@ object GetHourReport {
     println("fill", fillData.count())
 
     val ctrData = unionLog
-      .filter(x => x.getAs[Int]("rank_discount") <= 20000 && x.getAs[Int]("ideaid") > 0)
+      .filter(x => x.getAs[Int]("ideaid") > 0)
       .map {
         u =>
           val exptag = u.getAs[String]("exptags").split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
@@ -383,7 +383,7 @@ object GetHourReport {
 
           var cost = realCost.toFloat
           if (discount > 0) {
-            cost = cost * discount.toFloat / 100
+            //cost = cost * discount.toFloat / 100
           }
 
           val ctr = CtrReport(
