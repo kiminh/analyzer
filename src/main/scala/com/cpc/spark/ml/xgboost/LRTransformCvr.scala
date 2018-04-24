@@ -63,6 +63,9 @@ object LRTransformCvr {
     val action = args(4)
     val mlmfile = args(5)
     val upload = args(6)toInt
+    val cur = args(7)
+
+    val namespace = dataType + "-" + parser
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder()
@@ -213,7 +216,7 @@ object LRTransformCvr {
       }
 
     svmtrain.write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_train_svm/" + filetime)
-    svmtrain.write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_train_svm_v1/")
+    svmtrain.write.mode(SaveMode.Overwrite).text("/user/cpc/%s-xgboost_train_svm/".format(namespace))
 
     val svmtest = xgbtest
       .map {
@@ -228,58 +231,14 @@ object LRTransformCvr {
           svm
       }
     svmtest.write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_test_svm/" + filetime)
-    svmtest.write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_test_svm_v1/")
+    svmtest.write.mode(SaveMode.Overwrite).text("/user/cpc/%s-xgboost_test_svm/".format(namespace))
 
-
-    /*
-    val params = Map(
-      "eta" -> 0.2,
-      //"lambda" -> 2.5
-      "gamma" -> 0,
-      "num_round" -> 25,
-      //"max_delta_step" -> 4,
-      "subsample" -> 0.6,
-      "colsample_bytree" -> 0.4,
-      "min_child_weight" -> 1,
-      "max_depth" -> 40,
-      "reg_alpha" -> 0.2,
-      "nthread" -> 10,
-      "seed" -> 0,
-      "objective" -> "reg:logistic"
-    )
-
-    val xgb = new XGBoostEstimator(params)
-    val xm = xgb.train(xgbtrain)
-    Utils.deleteHdfs("/user/cpc/xgboost_tmpmodel")
-    xm.save("/user/cpc/xgboost_tmpmodel")
-    //val xgb = XGBoostModel.load("/user/cpc/xgboost_tmpmodel")
-    val results = xm.transform(xgbtest)
-
-    xgbTestResults = results.rdd
-      .map {
-        r =>
-          val label = r.getAs[Int]("label").toDouble
-          val p = r.getAs[Float]("prediction").toDouble
-          (p, label)
-      }
-
-    printXGBTestLog(xgbTestResults)
-    val metrics = new BinaryClassificationMetrics(xgbTestResults)
-    val auPRC = metrics.areaUnderPR
-    val auROC = metrics.areaUnderROC
-    println(auPRC, auROC)
-    trainLog :+= "auPRC=%.3f auROC=%.3f ".format(auPRC, auROC)
-
-    runIr(spark, binNum.toInt, 0.95)
-    trainLog :+= binsLog.mkString("\n")
-    */
-
-    savePbPack("/tmp/xgboost.mlm", "ctrparser1")
-    println(filetime, "/tmp/xgboost.mlm")
+    savePbPack("%s/_tmp/%s-xgboost.mlm".format(cur, namespace), "ctrparser1")
 
     val prefix = "lr-%s-%s".format(parser, dataType)
     val filename = "/home/cpc/anal/xgboost_model/%s-%s.mlm".format(prefix, filetime)
     saveLrPbPack(filename , "ctrparser1")
+    println(filetime, filename)
 
     if (upload > 0) {
       val conf = ConfigFactory.load()

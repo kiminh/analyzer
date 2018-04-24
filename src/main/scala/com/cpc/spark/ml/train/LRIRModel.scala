@@ -4,6 +4,7 @@ import java.io.{FileOutputStream, PrintWriter}
 import java.util.{Calendar, Date}
 
 import lrmodel.lrmodel.{IRModel, LRModel, Pack}
+import mlmodel.mlmodel
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.evaluation.{BinaryClassificationMetrics, RegressionMetrics}
 import org.apache.spark.mllib.optimization.L1Updater
@@ -299,6 +300,43 @@ class LRIRModel {
       cityid = dict("cityid"),
       mediaid = dict("mediaid"),
       appid = dictStr("appid")
+    )
+    pack.writeTo(new FileOutputStream(path))
+  }
+
+  def savePbPack2(parser: String, path: String, dict: Map[String, Map[Int, Int]], dictStr: Map[String, Map[String, Int]]): Unit = {
+    val weights = mutable.Map[Int, Double]()
+    lrmodel.weights.toSparse.foreachActive {
+      case (i, d) =>
+        weights.update(i, d)
+    }
+    val lr = mlmodel.LRModel(
+      parser = parser,
+      featureNum = lrmodel.numFeatures,
+      auPRC = auPRC,
+      auROC = auROC,
+      weights = weights.toMap
+    )
+    val ir = mlmodel.IRModel(
+      boundaries = irmodel.boundaries.toSeq,
+      predictions = irmodel.predictions.toSeq,
+      meanSquareError = irError * irError
+    )
+    val dictpb = mlmodel.Dict(
+      planid = dict("planid"),
+      unitid = dict("unitid"),
+      ideaid = dict("ideaid"),
+      slotid = dict("slotid"),
+      adclass = dict("adclass"),
+      cityid = dict("cityid"),
+      mediaid = dict("mediaid"),
+      appid = dictStr("appid")
+    )
+    val pack = mlmodel.Pack(
+      lr = Option(lr),
+      ir = Option(ir),
+      createTime = new Date().getTime,
+      dict = Option(dictpb)
     )
     pack.writeTo(new FileOutputStream(path))
   }
