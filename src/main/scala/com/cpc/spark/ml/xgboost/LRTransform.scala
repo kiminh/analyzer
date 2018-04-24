@@ -202,9 +202,17 @@ object LRTransform {
           val weights = BcWeights.value.toArray
           p.map {
             r =>
-              val vec = transformFeature1(weights, r)
-              (r.getAs[Int]("label"), vec)
+              if (parser == "ctr-parser1") {
+                val vec = transformFeature1(weights, r)
+                (r.getAs[Int]("label"), vec)
+              } else if (parser == "ctr-parser2") {
+                val vec = transformFeature2(weights, r)
+                (r.getAs[Int]("label"), vec)
+              } else {
+                null
+              }
           }
+          .filter(_  != null)
       }
       .toDF("label", "features")
     val xgbtest = test
@@ -214,9 +222,18 @@ object LRTransform {
           val weights = BcWeights.value.toArray
           p.map {
             r =>
-              val vec = transformFeature1(weights, r)
-              (r.getAs[Int]("label"), vec)
+
+              if (parser == "ctr-parser1") {
+                val vec = transformFeature1(weights, r)
+                (r.getAs[Int]("label"), vec)
+              } else if (parser == "ctr-parser2") {
+                val vec = transformFeature2(weights, r)
+                (r.getAs[Int]("label"), vec)
+              } else {
+                null
+              }
           }
+          .filter(_  != null)
       }
       .toDF("label", "features")
 
