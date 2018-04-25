@@ -360,15 +360,11 @@ object GetHourReport {
     println("fill", fillData.count())
 
     val ctrData = unionLog
-      .filter(x => x.getAs[Int]("ideaid") > 0)
+      .filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
       .map {
         u =>
           val exptag = u.getAs[String]("exptags").split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
-          var expctr = 0
-          if (u.getAs[Int]("isshow") > 0) {
-            expctr = u.getAs[Int]("exp_ctr")
-          }
-
+          val expctr = u.getAs[Int]("exp_ctr")
           var isclick = u.getAs[Int]("isclick")
           var spam_click = u.getAs[Int]("spam_click")
           var antispam_score = u.getAs[Int]("antispam_score")
