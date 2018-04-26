@@ -2,6 +2,7 @@ package com.cpc.spark.ml.common
 
 import com.cpc.spark.log.parser.TraceLog
 import com.typesafe.config.Config
+import org.apache.spark.sql.Row
 
 import scala.collection.mutable
 import sys.process._
@@ -118,7 +119,7 @@ object Utils {
   }
 
 
-  def cvrPositiveV(traces: Seq[TraceLog], version: String): Int = {
+  def cvrPositiveV(traces: Seq[Row], version: String): Int = {
     var stay = 0
     var click = 0
     var active = 0
@@ -128,7 +129,7 @@ object Utils {
     var installed = 0
     traces.foreach {
       t =>
-        t.trace_type match {
+        t.getAs[String]("trace_type") match {
           case s if s.startsWith("active") => active += 1
 
           case "disactive" => disactive += 1
@@ -144,8 +145,8 @@ object Utils {
           case "zombie" => zombie += 1
 
           case "stay" =>
-            if (t.duration > stay) {
-              stay = t.duration
+            if (t.getAs[Int]("duration") > stay) {
+              stay = t.getAs[Int]("duration")
             }
 
           case _ =>
@@ -154,7 +155,7 @@ object Utils {
 
     traces.foreach {
       t =>
-        t.trace_op1 match {
+        t.getAs[String]("trace_op1") match {
           case "REPORT_DOWNLOAD_INSTALLED" => installed += 1
 
           case _ =>

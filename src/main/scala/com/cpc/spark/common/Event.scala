@@ -6,7 +6,12 @@ import com.cpc.spark.streaming.tools.Encoding
 object Event {
   def parse_show_log(data: String): Show = {
     try {
-      val log_map = NgLogParser.split_ng_log(data)
+      //20180424 15:20:00 修改show_timestamp取值逻辑
+      //--修改Show类的结构，增加timestamp
+      val timestamp = (data.substring(0, 13).toLong / 1000).toInt
+      val data1 = data.substring(13)
+
+      val log_map = NgLogParser.split_ng_log(data1)
       val query = log_map("request")
       val ip = log_map("remote_addr")
       val referer = log_map("referer")
@@ -22,7 +27,7 @@ object Event {
           val protobufBody = sourceProtobufBody(0)
           if (head_event.getCryptoType == eventprotocol.Protocol.Event.Head.CryptoType.JESGOO_BASE64) {
             val meds = Encoding.base64Decoder(protobufBody, head_event.getCryptoParam)
-            new Show(meds, ip,referer ,user_agent)
+            new Show(meds, ip, referer, user_agent, timestamp)
           } else {
             null
           }
@@ -53,12 +58,13 @@ object Event {
   }
 }
 
-class Show(data: Seq[Byte], ips:String, referer:String, user_agent:String) {
+class Show(data: Seq[Byte], ips: String, referer: String, user_agent: String, show_timestamp: Int) {
   val typed = 2
   val ip = ips
   val refer = referer
   val ua = user_agent
   val event = eventprotocol.Protocol.Event.Body.parseFrom(data.toArray)
+  val timestamp = show_timestamp
 }
 
 class Click(data: Seq[Byte]) {

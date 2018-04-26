@@ -56,7 +56,7 @@ object GetTraceReport {
          |select tr.searchid, un.userid as user_id
          |,un.planid as plan_id ,un.unitid as unit_id ,
          |un.ideaid as idea_id, tr.date as date,tr.hour,
-         |tr.trace_type as trace_type,tr.duration as duration, tr.auto
+         |tr.trace_type as trace_type,tr.trace_op1 as trace_op1 ,tr.duration as duration, tr.auto
          |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
          |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1
        """.stripMargin.format(date, hour, date, hour))
@@ -77,11 +77,16 @@ object GetTraceReport {
         trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type").length < 100 && trace.getAs[String]("trace_type").length > 1
     }.map {
       trace =>
-        ((trace.getAs[String]("searchid"), trace.getAs[String]("trace_type"),trace.getAs[Int]("duration"), trace.getAs[Int]("auto")), trace)
+        val trace_type = trace.getAs[String]("trace_type")
+        var trace_op1 = ""
+        if(trace_type == "apkdown" || trace_type == "lpload" ){
+          trace_op1 = trace.getAs[String]("trace_op1")
+        }
+        ((trace.getAs[String]("searchid"), trace_type, trace_op1,trace.getAs[Int]("duration"), trace.getAs[Int]("auto")), trace)
     }.reduceByKey {
       case (x, y) => x //去重
     }.map{
-      case ((searchid, trace_type, duration, auto), trace) =>
+      case ((searchid, trace_type, trace_op1, duration, auto), trace) =>
         ((trace.getAs[Int]("user_id"),
           trace.getAs[Int]("plan_id"),
           trace.getAs[Int]("unit_id"),
@@ -89,17 +94,18 @@ object GetTraceReport {
           trace.getAs[String]("date"),
           trace.getAs[String]("hour"),
           trace.getAs[String]("trace_type"),
+          trace_op1,
           trace.getAs[Int]("duration"),
           trace.getAs[Int]("auto")), 1)
     }.reduceByKey {
       case (x, y) => (x + y)
     }.map{
-      case ((user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration, auto), count) =>
-        (idea_id, (user_id, plan_id, unit_id, date, hour, trace_type, duration, auto, count))
+      case ((user_id, plan_id, unit_id, idea_id, date, hour, trace_type, trace_op1, duration, auto), count) =>
+        (idea_id, (user_id, plan_id, unit_id, date, hour, trace_type,trace_op1, duration, auto, count))
     }
     val toResult = traceData.join(unionRdd).map {
-      case   (idea_id, ((user_id, plan_id, unit_id, date, hour, trace_type, duration, auto, count),(impression, click))) =>
-        AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, duration, auto , count, impression, click)
+      case   (idea_id, ((user_id, plan_id, unit_id, date, hour, trace_type, trace_op1, duration, auto, count),(impression, click))) =>
+        AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, trace_op1, duration, auto , count, impression, click)
     }
 
 

@@ -60,9 +60,8 @@ object GetHourReport {
          |      ext['adclass'].int_value as adclass,
          |      ext['exp_cvr'].int_value as exp_cvr,
          |      ext['exp_ctr'].int_value as exp_ctr
-         |from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and isfill = 1 and adslotid > 0
+         |from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and isfill = 1 and adslotid > 0 and adsrc <= 1
        """.stripMargin.format(table, date, hour))
-      //      .as[UnionLog]
       .rdd.cache()
 
     val chargeData = unionLog
@@ -317,7 +316,7 @@ object GetHourReport {
          |      ext['adclass'].int_value as adclass,
          |      ext['exp_cvr'].int_value as exp_cvr,
          |      ext['exp_ctr'].int_value as exp_ctr
-         |      from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and adslotid > 0
+         |      from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and adslotid > 0 and adsrc <= 1
        """.stripMargin.format(table, date, hour))
       //      .as[UnionLog]
       .rdd
@@ -361,17 +360,11 @@ object GetHourReport {
     println("fill", fillData.count())
 
     val ctrData = unionLog
-      .filter(x => x.getAs[Int]("rank_discount") <= 20000 && x.getAs[Int]("ideaid") > 0)
+      .filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
       .map {
         u =>
           val exptag = u.getAs[String]("exptags").split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
-          var expctr = 0
-          if (u.getAs[Int]("isshow") > 0) {
-            expctr = u.getAs[Int]("exp_ctr")
-          }
-
-          val discount = u.getAs[Int]("rank_discount")
-
+          val expctr = u.getAs[Int]("exp_ctr")
           var isclick = u.getAs[Int]("isclick")
           var spam_click = u.getAs[Int]("spam_click")
           var antispam_score = u.getAs[Int]("antispam_score")
@@ -383,9 +376,6 @@ object GetHourReport {
           }
 
           var cost = realCost.toFloat
-          if (discount > 0) {
-            cost = cost * discount.toFloat / 100
-          }
 
           val ctr = CtrReport(
             media_id = u.getAs[String]("media_appsid").toInt,

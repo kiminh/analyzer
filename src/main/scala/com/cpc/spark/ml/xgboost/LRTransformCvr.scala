@@ -4,18 +4,15 @@ import java.io.{FileInputStream, FileOutputStream}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import org.apache.spark.ml.linalg.{SparseVector => MSVec, Vector => MVec, Vectors => MVecs}
-import mlmodel.mlmodel.{Dict, IRModel, LRModel, Pack}
-import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
-import com.cpc.spark.ml.train.LRIRModel
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
 import io.grpc.ManagedChannelBuilder
-import ml.dmlc.xgboost4j.scala.spark.{XGBoostEstimator, XGBoostModel}
+import mlmodel.mlmodel.{Dict, IRModel, LRModel, Pack}
 import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.ml.linalg.{SparseVector => MSVec, Vector => MVec, Vectors => MVecs}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
@@ -32,7 +29,7 @@ import scala.util.Random
 /**
   * Created by zhaolei on 22/12/2017.
   */
-object LRTransform {
+object LRTransformCvr {
 
   //  private val minBinSize = 10000d
   private var binNum = 1000d
@@ -60,12 +57,12 @@ object LRTransform {
     trainLog :+= args.mkString(" ")
     println(args.mkString(" "))
     val days = args(0)
-    val dataSrc = args(1)       //ctrdata_v1
-    val parser = args(2)        //ctr-parser1
-    val dataType = args(3)      //qtt-all
-    val action = args(4)        //train, stub, eval
+    val dataSrc = args(1)
+    val parser = args(2)
+    val dataType = args(3)
+    val action = args(4)
     val mlmfile = args(5)
-    val upload = args(6)toInt   //upload to mlserver
+    val upload = args(6)toInt
     val cur = args(7)
 
     val namespace = dataType + "-" + parser
@@ -114,13 +111,13 @@ object LRTransform {
       qtt = qtt.filter{ x => x.getAs[Int]("ideaid") > 0 }
     }
 
-    var Array(test, train, _) = qtt.randomSplit(Array(0.1, 0.2, 0.7), new Date().getTime)
+    var Array(test, train) = qtt.randomSplit(Array(0.1, 0.9), new Date().getTime)
     test = test.cache()
     test = getLimitedData(spark, 1e7, test).join(userAppIdx, Seq("uid"), "leftouter")
     train = train.cache()
 
     //去掉长尾广告id
-    val minIdeaNum = 10
+    val minIdeaNum = 50
     val ideaids = train.select("ideaid")
       .groupBy("ideaid")
       .count()
@@ -147,17 +144,9 @@ object LRTransform {
           dict = BcDict.value
           p.map {
             u =>
-              if (parser == "ctr-parser1") {
-                val vec = getCtrVectorParser1(u)
-                LabeledPoint(u.getAs[Int]("label").toDouble, vec)
-              } else if (parser == "ctr-parser2") {
-                val vec = getCtrVectorParser2(u)
-                LabeledPoint(u.getAs[Int]("label").toDouble, vec)
-              } else {
-                null
-              }
+              val vec = getCtrVectorParser1(u)
+              LabeledPoint(u.getAs[Int]("label").toDouble, vec)
           }
-          .filter(_ != null)
       }
     println(sampleTrain.first())
 
@@ -167,17 +156,9 @@ object LRTransform {
           dict = BcDict.value
           p.map {
             u =>
-              if (parser == "ctr-parser1") {
-                val vec = getCtrVectorParser1(u)
-                LabeledPoint(u.getAs[Int]("label").toDouble, vec)
-              } else if (parser == "ctr-parser2") {
-                val vec = getCtrVectorParser2(u)
-                LabeledPoint(u.getAs[Int]("label").toDouble, vec)
-              } else {
-                null
-              }
+              val vec = getCtrVectorParser1(u)
+              LabeledPoint(u.getAs[Int]("label").toDouble, vec)
           }
-          .filter(_ != null)
       }
 
     val lr = lbfgs.run(sampleTrain)
@@ -202,17 +183,9 @@ object LRTransform {
           val weights = BcWeights.value.toArray
           p.map {
             r =>
-              if (parser == "ctr-parser1") {
-                val vec = transformFeature1(weights, r)
-                (r.getAs[Int]("label"), vec)
-              } else if (parser == "ctr-parser2") {
-                val vec = transformFeature2(weights, r)
-                (r.getAs[Int]("label"), vec)
-              } else {
-                null
-              }
+              val vec = transformFeature1(weights, r)
+              (r.getAs[Int]("label"), vec)
           }
-          .filter(_  != null)
       }
       .toDF("label", "features")
     val xgbtest = test
@@ -222,18 +195,9 @@ object LRTransform {
           val weights = BcWeights.value.toArray
           p.map {
             r =>
-
-              if (parser == "ctr-parser1") {
-                val vec = transformFeature1(weights, r)
-                (r.getAs[Int]("label"), vec)
-              } else if (parser == "ctr-parser2") {
-                val vec = transformFeature2(weights, r)
-                (r.getAs[Int]("label"), vec)
-              } else {
-                null
-              }
+              val vec = transformFeature1(weights, r)
+              (r.getAs[Int]("label"), vec)
           }
-          .filter(_  != null)
       }
       .toDF("label", "features")
 
@@ -269,54 +233,11 @@ object LRTransform {
     svmtest.write.mode(SaveMode.Overwrite).text("/user/cpc/xgboost_test_svm/" + filetime)
     svmtest.write.mode(SaveMode.Overwrite).text("/user/cpc/%s-xgboost_test_svm/".format(namespace))
 
+    savePbPack("%s/_tmp/%s-xgboost.mlm".format(cur, namespace), "ctrparser1")
 
-    /*
-    val params = Map(
-      "eta" -> 0.2,
-      //"lambda" -> 2.5
-      "gamma" -> 0,
-      "num_round" -> 25,
-      //"max_delta_step" -> 4,
-      "subsample" -> 0.6,
-      "colsample_bytree" -> 0.4,
-      "min_child_weight" -> 1,
-      "max_depth" -> 40,
-      "reg_alpha" -> 0.2,
-      "nthread" -> 10,
-      "seed" -> 0,
-      "objective" -> "reg:logistic"
-    )
-
-    val xgb = new XGBoostEstimator(params)
-    val xm = xgb.train(xgbtrain)
-    Utils.deleteHdfs("/user/cpc/xgboost_tmpmodel")
-    xm.save("/user/cpc/xgboost_tmpmodel")
-    //val xgb = XGBoostModel.load("/user/cpc/xgboost_tmpmodel")
-    val results = xm.transform(xgbtest)
-
-    xgbTestResults = results.rdd
-      .map {
-        r =>
-          val label = r.getAs[Int]("label").toDouble
-          val p = r.getAs[Float]("prediction").toDouble
-          (p, label)
-      }
-
-    printXGBTestLog(xgbTestResults)
-    val metrics = new BinaryClassificationMetrics(xgbTestResults)
-    val auPRC = metrics.areaUnderPR
-    val auROC = metrics.areaUnderROC
-    println(auPRC, auROC)
-    trainLog :+= "auPRC=%.3f auROC=%.3f ".format(auPRC, auROC)
-
-    runIr(spark, binNum.toInt, 0.95)
-    trainLog :+= binsLog.mkString("\n")
-    */
-
-    savePbPack("%s/_tmp/%s-xgboost.mlm".format(cur, namespace), parser)
     val prefix = "lr-%s-%s".format(parser, dataType)
     val filename = "/home/cpc/anal/xgboost_model/%s-%s.mlm".format(prefix, filetime)
-    saveLrPbPack(filename , parser)
+    saveLrPbPack(filename , "ctrparser1")
     println(filetime, filename)
 
     if (upload > 0) {
@@ -393,7 +314,6 @@ object LRTransform {
   }
 
   def getLimitedData(spark: SparkSession, limitedNum: Double, ulog: DataFrame): DataFrame = {
-    import spark.implicits._
     var rate = 1d
     val num = ulog.count().toDouble
 
@@ -734,7 +654,17 @@ object LRTransform {
     i += 20
 
     //21
-    var user_click_unit = x.getAs[Int]("user_long_click_count")
+    var user_click = x.getAs[Int]("user_click_num")
+    if (user_click < 0) {
+      user_click = 0
+    } else if (user_click > 19) {
+      user_click = 19
+    }
+    els = els :+ (user_click + i, 1d)
+    i += 20
+
+    //22
+    var user_click_unit = x.getAs[Int]("user_click_unit_num")
     if (user_click_unit < 0) {
       user_click_unit = 0
     } else if (user_click_unit > 9) {
@@ -743,7 +673,7 @@ object LRTransform {
     els = els :+ (user_click_unit + i, 1d)
     i += 10
 
-    //22
+    //23
     val appIdx = x.getAs[mutable.WrappedArray[Int]]("appIdx")
     if (appIdx != null){
       appIdx.sortBy(p => p)
@@ -1038,7 +968,17 @@ object LRTransform {
     i += 20
 
     //21
-    var user_click_unit = x.getAs[Int]("user_long_click_count")
+    var user_click = x.getAs[Int]("user_click_num")
+    if (user_click < 0) {
+      user_click = 0
+    } else if (user_click > 19) {
+      user_click = 19
+    }
+    els :+= weights(user_click + i)
+    i += 20
+
+    //22
+    var user_click_unit = x.getAs[Int]("user_click_unit_num")
     if (user_click_unit < 0) {
       user_click_unit = 0
     } else if (user_click_unit > 9) {
@@ -1047,7 +987,7 @@ object LRTransform {
     els :+= weights(user_click_unit + i)
     i += 10
 
-    //22
+    //23
     var appw = 0d
     val appIdx = x.getAs[mutable.WrappedArray[Int]]("appIdx")
     if (appIdx != null){

@@ -32,4 +32,6 @@ message NoticeLogBody {
     optional string request_url = 9;
     optional string adslot_conf = 10;
     repeated string template_conf = 11;
+    optional string ip = 12;
+    optional string ua = 13;
 };

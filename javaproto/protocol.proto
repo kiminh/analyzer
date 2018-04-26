@@ -200,6 +200,9 @@ enum Dsp {
 	TANX_SSP_DSP = 3;
 	BOTTOMING = 4; //打底广告
     HUZHONG_DSP = 5;
+    FANCY_DSP = 6;
+    GDT_DSP = 7;
+    MOBVISTA_DSP = 8;
 }
 
 // DSP计费相关字段

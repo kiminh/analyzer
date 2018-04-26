@@ -256,7 +256,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasRate()) {
         hash = (37 * hash) + RATE_FIELD_NUMBER;
         hash = (53 * hash) + getRate();
@@ -863,7 +863,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (getHdJumpCount() > 0) {
         hash = (37 * hash) + HD_JUMP_FIELD_NUMBER;
         hash = (53 * hash) + getHdJumpList().hashCode();
@@ -1687,7 +1687,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasKey()) {
         hash = (37 * hash) + KEY_FIELD_NUMBER;
         hash = (53 * hash) + getKey().hashCode();
@@ -2340,7 +2340,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (getValuesCount() > 0) {
         hash = (37 * hash) + VALUES_FIELD_NUMBER;
         hash = (53 * hash) + getValuesList().hashCode();
@@ -3050,6 +3050,34 @@ public final class Cfglog {
      */
     com.google.protobuf.ByteString
         getTemplateConfBytes(int index);
+
+    /**
+     * <code>optional string ip = 12;</code>
+     */
+    boolean hasIp();
+    /**
+     * <code>optional string ip = 12;</code>
+     */
+    java.lang.String getIp();
+    /**
+     * <code>optional string ip = 12;</code>
+     */
+    com.google.protobuf.ByteString
+        getIpBytes();
+
+    /**
+     * <code>optional string ua = 13;</code>
+     */
+    boolean hasUa();
+    /**
+     * <code>optional string ua = 13;</code>
+     */
+    java.lang.String getUa();
+    /**
+     * <code>optional string ua = 13;</code>
+     */
+    com.google.protobuf.ByteString
+        getUaBytes();
   }
   /**
    * Protobuf type {@code cfglog.NoticeLogBody}
@@ -3072,6 +3100,8 @@ public final class Cfglog {
       requestUrl_ = "";
       adslotConf_ = "";
       templateConf_ = com.google.protobuf.LazyStringArrayList.EMPTY;
+      ip_ = "";
+      ua_ = "";
     }
 
     @java.lang.Override
@@ -3185,6 +3215,18 @@ public final class Cfglog {
                 mutable_bitField0_ |= 0x00000400;
               }
               templateConf_.add(bs);
+              break;
+            }
+            case 98: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000200;
+              ip_ = bs;
+              break;
+            }
+            case 106: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000400;
+              ua_ = bs;
               break;
             }
           }
@@ -3585,6 +3627,90 @@ public final class Cfglog {
       return templateConf_.getByteString(index);
     }
 
+    public static final int IP_FIELD_NUMBER = 12;
+    private volatile java.lang.Object ip_;
+    /**
+     * <code>optional string ip = 12;</code>
+     */
+    public boolean hasIp() {
+      return ((bitField0_ & 0x00000200) == 0x00000200);
+    }
+    /**
+     * <code>optional string ip = 12;</code>
+     */
+    public java.lang.String getIp() {
+      java.lang.Object ref = ip_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          ip_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string ip = 12;</code>
+     */
+    public com.google.protobuf.ByteString
+        getIpBytes() {
+      java.lang.Object ref = ip_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        ip_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int UA_FIELD_NUMBER = 13;
+    private volatile java.lang.Object ua_;
+    /**
+     * <code>optional string ua = 13;</code>
+     */
+    public boolean hasUa() {
+      return ((bitField0_ & 0x00000400) == 0x00000400);
+    }
+    /**
+     * <code>optional string ua = 13;</code>
+     */
+    public java.lang.String getUa() {
+      java.lang.Object ref = ua_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          ua_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string ua = 13;</code>
+     */
+    public com.google.protobuf.ByteString
+        getUaBytes() {
+      java.lang.Object ref = ua_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        ua_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -3648,6 +3774,12 @@ public final class Cfglog {
       for (int i = 0; i < templateConf_.size(); i++) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 11, templateConf_.getRaw(i));
       }
+      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 12, ip_);
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 13, ua_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -3701,6 +3833,12 @@ public final class Cfglog {
         }
         size += dataSize;
         size += 1 * getTemplateConfList().size();
+      }
+      if (((bitField0_ & 0x00000200) == 0x00000200)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(12, ip_);
+      }
+      if (((bitField0_ & 0x00000400) == 0x00000400)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(13, ua_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -3768,6 +3906,16 @@ public final class Cfglog {
       }
       result = result && getTemplateConfList()
           .equals(other.getTemplateConfList());
+      result = result && (hasIp() == other.hasIp());
+      if (hasIp()) {
+        result = result && getIp()
+            .equals(other.getIp());
+      }
+      result = result && (hasUa() == other.hasUa());
+      if (hasUa()) {
+        result = result && getUa()
+            .equals(other.getUa());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -3778,7 +3926,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (getAidCount() > 0) {
         hash = (37 * hash) + AID_FIELD_NUMBER;
         hash = (53 * hash) + getAidList().hashCode();
@@ -3822,6 +3970,14 @@ public final class Cfglog {
       if (getTemplateConfCount() > 0) {
         hash = (37 * hash) + TEMPLATE_CONF_FIELD_NUMBER;
         hash = (53 * hash) + getTemplateConfList().hashCode();
+      }
+      if (hasIp()) {
+        hash = (37 * hash) + IP_FIELD_NUMBER;
+        hash = (53 * hash) + getIp().hashCode();
+      }
+      if (hasUa()) {
+        hash = (37 * hash) + UA_FIELD_NUMBER;
+        hash = (53 * hash) + getUa().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -3973,6 +4129,10 @@ public final class Cfglog {
         bitField0_ = (bitField0_ & ~0x00000200);
         templateConf_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         bitField0_ = (bitField0_ & ~0x00000400);
+        ip_ = "";
+        bitField0_ = (bitField0_ & ~0x00000800);
+        ua_ = "";
+        bitField0_ = (bitField0_ & ~0x00001000);
         return this;
       }
 
@@ -4051,6 +4211,14 @@ public final class Cfglog {
           bitField0_ = (bitField0_ & ~0x00000400);
         }
         result.templateConf_ = templateConf_;
+        if (((from_bitField0_ & 0x00000800) == 0x00000800)) {
+          to_bitField0_ |= 0x00000200;
+        }
+        result.ip_ = ip_;
+        if (((from_bitField0_ & 0x00001000) == 0x00001000)) {
+          to_bitField0_ |= 0x00000400;
+        }
+        result.ua_ = ua_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -4150,6 +4318,16 @@ public final class Cfglog {
             ensureTemplateConfIsMutable();
             templateConf_.addAll(other.templateConf_);
           }
+          onChanged();
+        }
+        if (other.hasIp()) {
+          bitField0_ |= 0x00000800;
+          ip_ = other.ip_;
+          onChanged();
+        }
+        if (other.hasUa()) {
+          bitField0_ |= 0x00001000;
+          ua_ = other.ua_;
           onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
@@ -5103,6 +5281,158 @@ public final class Cfglog {
         onChanged();
         return this;
       }
+
+      private java.lang.Object ip_ = "";
+      /**
+       * <code>optional string ip = 12;</code>
+       */
+      public boolean hasIp() {
+        return ((bitField0_ & 0x00000800) == 0x00000800);
+      }
+      /**
+       * <code>optional string ip = 12;</code>
+       */
+      public java.lang.String getIp() {
+        java.lang.Object ref = ip_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            ip_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string ip = 12;</code>
+       */
+      public com.google.protobuf.ByteString
+          getIpBytes() {
+        java.lang.Object ref = ip_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          ip_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string ip = 12;</code>
+       */
+      public Builder setIp(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000800;
+        ip_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string ip = 12;</code>
+       */
+      public Builder clearIp() {
+        bitField0_ = (bitField0_ & ~0x00000800);
+        ip_ = getDefaultInstance().getIp();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string ip = 12;</code>
+       */
+      public Builder setIpBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000800;
+        ip_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object ua_ = "";
+      /**
+       * <code>optional string ua = 13;</code>
+       */
+      public boolean hasUa() {
+        return ((bitField0_ & 0x00001000) == 0x00001000);
+      }
+      /**
+       * <code>optional string ua = 13;</code>
+       */
+      public java.lang.String getUa() {
+        java.lang.Object ref = ua_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            ua_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string ua = 13;</code>
+       */
+      public com.google.protobuf.ByteString
+          getUaBytes() {
+        java.lang.Object ref = ua_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          ua_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string ua = 13;</code>
+       */
+      public Builder setUa(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00001000;
+        ua_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string ua = 13;</code>
+       */
+      public Builder clearUa() {
+        bitField0_ = (bitField0_ & ~0x00001000);
+        ua_ = getDefaultInstance().getUa();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string ua = 13;</code>
+       */
+      public Builder setUaBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00001000;
+        ua_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -5191,13 +5521,14 @@ public final class Cfglog {
       "mpCfg\022\035\n\007hd_jump\030\001 \003(\0132\014.cfglog.Rule\"\'\n\t" +
       "FormValue\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t\")\n" +
       "\004Form\022!\n\006values\030\001 \003(\0132\021.cfglog.FormValue" +
-      "\"\203\002\n\rNoticeLogBody\022\013\n\003aid\030\001 \003(\t\022\022\n\nad_sl" +
+      "\"\233\002\n\rNoticeLogBody\022\013\n\003aid\030\001 \003(\t\022\022\n\nad_sl" +
       "ot_id\030\002 \001(\t\022\020\n\010url_path\030\003 \002(\t\022\032\n\004form\030\004 " +
       "\002(\0132\014.cfglog.Form\022\021\n\tresp_body\030\005 \001(\t\022&\n\013" +
       "hd_jump_cfg\030\006 \001(\0132\021.cfglog.HdJumpCfg\022\024\n\014" +
       "redirect_url\030\007 \001(\t\022\021\n\ttimestamp\030\010 \001(\r\022\023\n",
       "\013request_url\030\t \001(\t\022\023\n\013adslot_conf\030\n \001(\t\022" +
-      "\025\n\rtemplate_conf\030\013 \003(\t"
+      "\025\n\rtemplate_conf\030\013 \003(\t\022\n\n\002ip\030\014 \001(\t\022\n\n\002ua" +
+      "\030\r \001(\t"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -5240,7 +5571,7 @@ public final class Cfglog {
     internal_static_cfglog_NoticeLogBody_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_cfglog_NoticeLogBody_descriptor,
-        new java.lang.String[] { "Aid", "AdSlotId", "UrlPath", "Form", "RespBody", "HdJumpCfg", "RedirectUrl", "Timestamp", "RequestUrl", "AdslotConf", "TemplateConf", });
+        new java.lang.String[] { "Aid", "AdSlotId", "UrlPath", "Form", "RespBody", "HdJumpCfg", "RedirectUrl", "Timestamp", "RequestUrl", "AdslotConf", "TemplateConf", "Ip", "Ua", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

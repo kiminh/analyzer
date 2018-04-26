@@ -42,6 +42,7 @@ object LogParser {
       ext.update("client_requestId", ExtValue(string_value = notice.getClient.getRequestId))
       ext.update("client_isValid", ExtValue(int_value = if(notice.getClient.getIsValid) {1 }else 0))
 
+
 //      ext.update("LowcpmfilterList", ExtValue(int_value = notice.getLowcpmfilter(0)))
 //      ext.update("LowcpmfilterList", ExtValue(int_value = notice.getLowcpmfilter(0)))
 //      ext.update("DspReqInfoList", ExtValue(int_value = notice.getDspReqInfo(0).getRetAdsNum))
@@ -68,6 +69,7 @@ object LogParser {
           floorbid = slot.getFloorbid,
           cpmbid = slot.getCpmbid
         )
+
         ext.update("channel", ExtValue(string_value = slot.getChannel))
         ext.update("pagenum", ExtValue(int_value = slot.getPagenum))
         ext.update("bookid", ExtValue(string_value = slot.getBookid))
@@ -103,6 +105,13 @@ object LogParser {
         ext.update("trigger_type", ExtValue(int_value = ad.getTriggerType))
         ext.update("rank_discount", ExtValue(int_value = ad.getDiscount))
         ext.update("user_req_ad_num", ExtValue(int_value = ad.getShowCount))
+        ext.update("long_click_count", ExtValue(int_value = ad.getLongClickCount))
+        ext.update("cvr_real_bid", ExtValue(int_value = ad.getRealBid))
+        ext.update("adid str", ExtValue(string_value = ad.getAdidStr))
+        ext.update("ad_title", ExtValue(string_value = ad.getTitle))
+        ext.update("ad_desc", ExtValue(string_value = ad.getDesc))
+        ext.update("ad_img_urls", ExtValue(string_value = ad.getImgUrlsList.toArray.mkString(" ")))
+        ext.update("ad_click_url", ExtValue(string_value = ad.getClickUrl))
 
         val mcount = ad.getMaterialidCount
         if (mcount > 0) {
@@ -152,7 +161,7 @@ object LogParser {
           interRows = interRows :+ "%d=%d".format(in.getInterestid, in.getScore)
         }
       }
-      ext.update("click_count", ExtValue(int_value = user.getClickCount))
+      ext.update("click_count", ExtValue(int_value = user.getClickCount)) //zycc
       ext.update("antispam", ExtValue(int_value = user.getAntispam))
       ext.update("share_coin", ExtValue(int_value = user.getShareCoin))
       ext.update("qukan_new_user", ExtValue(int_value = user.getNewuser))
@@ -180,7 +189,7 @@ object LogParser {
       log = UnionLog(
         searchid = body.getSearchId,
         isshow = 1,
-        show_timestamp = body.getEventTimestamp,
+        show_timestamp = data.timestamp,
         show_ip = data.ip ,
         ext = ext
       )
@@ -308,6 +317,7 @@ object LogParser {
           age = body.getUserprofile.getAge,
           coin = body.getUserprofile.getCoin,
           interests = interRows.mkString(","),
+          adsrc = body.getDspInfo.getDsp.getNumber,
           ext = ext.toMap
         )
       }
@@ -315,17 +325,21 @@ object LogParser {
     log
   }
   //val txt = "36.149.39.90 - - [15/May/2017:08:02:36 +0800] \"GET /trace?t=stay&duration=1&iclicashsid=90c60d5e0fc887090984f5589aaa157a62207613&w=980&h=1306&sw=360&sh=640&os=Android&ref=http%3A%2F%2Fcj.juseyx.com%2Fb2%2F%3Ficlicashsid%3D90c60d5e0fc887090984f5589aaa157a62207613&v=1.0&_t=0 HTTP/1.1\" 200 43 \"http://cj.juseyx.com/b2/?iclicashsid=90c60d5e0fc887090984f5589aaa157a62207613&t=1494806555248\" \"Mozilla/5.0 (Linux; Android 6.0; NEM-TL00 Build/HONORNEM-TL00; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/55.0.2883.91 Mobile Safari/537.36 qukan_android\" \"-\" \"-\" 0.000"
-
+   //        "118.121.245.117 - - [09/Apr/2018:01:50:00 +0800] ""GET /trace?t=inter_click&adslot_id=7409447 HTTP/1.1"" 200 43 ""http://cdn.aiclicash.com/game/directory/directory.html?iclicashid=7409447&&settings=1&&gameType=48,47,46,45,44,43&&gameTimes=8&&isFull=0&&rate=0&&back=0&&redpack=1&&appShow=0"" ""Mozilla/5.0 (Linux; Android 6.0; KONKA D6+ Build/MRA58K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/48.0.2531.0 Mobile Safari/537.36"" ""-"" ""-"" 0.000",1523212322086,50238-09-05 13:54:46,"39.179.56.224 - - [09/Apr/2018:02:32:00 +0800] ""GET /trace?t=inter_click&adslot_id=7409447 HTTP/1.1"" 200 43 ""
   val traceRegex = """GET\s/trace\?([^\s]+)""".r
 
   def parseTraceLog(txt: String): TraceLog = {
     var log: TraceLog = null
     if (txt != null) {
+      val txt2 = txt.substring(0,30)
+      val traceRegex2 = """(\d{1,3}\.){3}\d{1,3}""".r
+      val ip = traceRegex2.findFirstMatchIn(txt2).getOrElse("").toString
       traceRegex.findFirstMatchIn(txt).foreach {
         m =>
           val sub = m.subgroups
           if (sub.length == 1) {
             log = TraceLog()
+            log = log.copy(ip = ip)
             sub(0).split('&').foreach {
               x =>
                 try {
@@ -354,6 +368,8 @@ object LogParser {
                     case "op3" => log = log.copy(trace_op3 = v)
                     case "duration" => log = log.copy(duration = toInt(v))
                     case "auto" => log = log.copy(auto = toAutoInt(v))
+                    case "adslot_id" => log = log.copy(adslot_id =  toInt(v))
+                    case "ua" => log = log.copy(ua =  v)
                     case _ =>
                   }
                 } catch {
@@ -380,7 +396,7 @@ object LogParser {
                   val v = URLDecoder.decode(vv.trim, "UTF8")
                   k match {
                     case "t" => log = log.copy(log_type = v)
-                    case "adslot_id" => log = log.copy(adslot_id =  v.toInt)
+                    case "adslot_id" => log = log.copy(adslot_id =  toInt(v))
                   }
                 } catch {
                   case e: Exception => null
