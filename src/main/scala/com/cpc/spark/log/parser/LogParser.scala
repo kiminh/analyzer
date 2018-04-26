@@ -24,6 +24,9 @@ object LogParser {
       val notice = srcData.ui
       val (date, hour) = getDateHourFromTime(notice.getTimestamp)
       val ext = mutable.Map[String, ExtValue]()
+      val extInt = mutable.Map[String, Long]()
+      val extString = mutable.Map[String, String]()
+      val extFloat = mutable.Map[String, Double]()
       log = UnionLog(
         searchid = notice.getSearchid,
         timestamp = notice.getTimestamp,
@@ -40,14 +43,7 @@ object LogParser {
         notice.getClient.getVersion.getMinor,notice.getClient.getVersion.getMicro,notice.getClient.getVersion.getBuild)))
       ext.update("media_site_url", ExtValue(string_value = notice.getMedia.getSite.getUrls))
       ext.update("client_requestId", ExtValue(string_value = notice.getClient.getRequestId))
-      ext.update("client_isValid", ExtValue(int_value = if(notice.getClient.getIsValid) {1 }else 0))
-
-
-//      ext.update("LowcpmfilterList", ExtValue(int_value = notice.getLowcpmfilter(0)))
-//      ext.update("LowcpmfilterList", ExtValue(int_value = notice.getLowcpmfilter(0)))
-//      ext.update("DspReqInfoList", ExtValue(int_value = notice.getDspReqInfo(0).getRetAdsNum))
-
-
+      ext.update("client_isValid", ExtValue(int_value = if(notice.getClient.getIsValid) {1} else 0))
 
 
       var devices = ""
@@ -75,9 +71,19 @@ object LogParser {
         ext.update("bookid", ExtValue(string_value = slot.getBookid))
       }
       if (notice.getDspReqInfoCount > 0) {
-        val dsp = notice.getDspReqInfo(0)
-        log = log.copy(adnum = dsp.getRetAdsNum)
+        val dspnum = notice.getDspReqInfoCount
+        extInt.update("dsp_num", dspnum)
+        for (i <- 0 until dspnum) {
+          val dsp = notice.getDspReqInfo(i)
+          extInt.update("dsp_src_%d".format(i), dsp.getSrc.getNumber)
+          extString.update("dsp_mediaid_%d".format(i), dsp.getDspmediaid)
+          extString.update("dsp_adslotid_%d".format(i), dsp.getDspadslotid)
+
+          val adnum = dsp.getRetAdsNum
+          extInt.update("dsp_adnum_%d".format(i), adnum)
+        }
       }
+
       if (notice.getAdsCount > 0) {
         val ad = notice.getAds(0)
         log = log.copy(
@@ -171,7 +177,10 @@ object LogParser {
         age = user.getAge,
         coin = user.getCoin,
         interests = interRows.mkString(","),
-        ext = ext.toMap
+        ext = ext.toMap,
+        ext_int = extInt.toMap,
+        ext_string = extString.toMap,
+        ext_float = extFloat.toMap
       )
     }
     log
