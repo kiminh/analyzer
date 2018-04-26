@@ -1,0 +1,120 @@
+syntax = "proto3";
+
+package mlserver;
+
+message MlPingReq {
+}
+message MlPingResp {
+}
+
+service Predictor {
+    rpc Predict (Request) returns (Response) {}
+    rpc Ping(MlPingReq)returns(MlPingResp){}
+}
+
+message Media {
+    int32 media_appsid = 1;
+    int32 media_type = 2;
+    int32 adslotid = 3;  //废弃
+    int32 adslot_type = 4; //废弃
+    float floorbid = 5; //废弃
+    int32 channel = 6; //废弃
+}
+
+message AdSlot {
+    int32 adslotid = 1;
+    int32 adslot_type = 2;
+    float floorbid = 3;
+    int32 channel = 4;
+    int32 page_num = 5;  //第几页
+    string book_id = 6;  //标志符
+}
+
+message Network {
+    int32 network = 1; // 网络类型
+    int32 isp = 2;
+    string ip = 3;
+}
+
+message Location {
+    int32 country = 1;
+    int32 province = 2;
+    int32 city = 3;
+}
+
+message Device {
+    int32 os = 1;
+    string model = 2;
+    int32 phone_price = 3;
+    int32 phone_level = 4;
+    int32 screen_w = 5;
+    int32 screen_h = 6;
+    string brand_title = 7;
+}
+
+message User {
+    int32 sex = 2;
+    int32 age = 3;
+    int32 coin = 4;
+    string uid = 5; // 用户标示
+    repeated int32 interests = 6;
+    repeated string installpkg = 7;
+    uint32 req_count = 8; //用户今天第几次请求
+    int32 click_count = 9; //用户今天第几次点击
+}
+
+message AdInfo {
+    int32 bid = 1;
+    int32 ideaid = 2;
+    int32 unitid = 3;
+    int32 planid = 4;
+    int32 userid = 5;
+    int32 adtype = 6;
+    int32 interaction = 7;
+    int32 class = 8;
+    int32 show_count = 9; //记录广告所在单元，在此用户下的今天的显示次数
+    int32 click_count = 10; //用户点击该广告次数
+}
+
+message Extra {
+    uint32 touch_x = 1;   // 点击坐标X
+    uint32 touch_y = 2;   // 点击坐标Y
+}
+
+message Request {
+    string version = 1;
+    repeated AdInfo ads = 2;
+    Media media = 3;
+    User user = 4;
+    Location loc = 5;
+    Network network = 6;
+    Device device = 7;
+    int64 time = 8;
+    string cvr_version = 9;
+    uint32 search_timestamp = 10;   // 检索时间戳
+    Extra extra = 11;
+    string antispam_version = 12;
+    uint32 click_timestamp = 13;   // 点击时间戳
+    AdSlot ad_slot = 14;
+    bool debug = 15;
+}
+
+message Prediction {
+    int32 adid = 1; //ideaid
+    double value = 2; //predict value
+    double cvr = 3;
+    double antispam = 4;
+}
+
+message Response {
+    int32 recode = 1;
+    repeated Prediction results = 2;
+    repeated DebugLog debug_logs = 3;
+}
+
+message DebugLog {
+    string module_name = 1;
+    repeated string logs = 2;
+}
+
+

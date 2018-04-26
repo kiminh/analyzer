@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package mlmodel;
+
+message LRModel {
+    map<int32, double> weights = 1;
+    string parser = 2;
+    int32 feature_num = 3;
+    double auPRC = 4;
+    double auROC = 5;
+}
+
+message IRModel {
+    repeated double boundaries = 1;
+    repeated double predictions = 2;
+    double mean_square_error = 3;
+}
+
+message Dict {
+    map<int32, int32> planid = 1;
+    map<int32, int32> unitid = 2;
+    map<int32, int32> ideaid = 3;
+    map<int32, int32> adclass = 4;
+    map<int32, int32> slotid = 5;
+    map<int32, int32> cityid = 6;
+    map<int32, int32> mediaid = 7;
+    map<string,int32> appid = 8;
+}
+
+message Pack {
+    string name = 1;
+    LRModel lr = 2;
+    IRModel ir = 3;
+    Dict dict = 4;
+    int64 create_time = 5;
+    uint32 gbm_tree_limit = 6;
+    string gbmfile = 7;
+}
+
+
+
+
+

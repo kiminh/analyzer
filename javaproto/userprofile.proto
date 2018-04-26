@@ -1,0 +1,38 @@
+syntax="proto3";
+
+package userprofile;
+
+message AdShow {
+	int32 adid = 1; // 单元ID,单元级别生效
+	int32 count = 2; // 今天投放次数
+}
+message AdFreq {
+	repeated AdShow ads = 1;
+	uint32 req_count = 2;
+}
+
+message APPPackage {
+	string packagename = 1; // 包名
+	string version = 2; // 版本
+    int64 firstInstallTime = 3;
+    int64 lastUpdateTime = 4;
+}
+
+message InterestItem {
+	int32 tag = 1; //兴趣标签id
+	int32 score = 2; // 兴趣权值
+}
+message UserProfile {
+	string devid = 1; //设备号，没有后缀
+	int32 age = 2; //年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: >50
+	int32 sex = 3; //性别 0: 未知 1: 男 2: 女
+	int32 coin = 4; // 金币数
+	repeated InterestItem interests = 5; // 人群标签
+	repeated APPPackage installpkg = 6; // 已安装列表
+	int32 pcategory = 7; //人群类型标签,趣头条用
+	int32 incr_coin = 8; // 新增金币数
+	int32 antispam = 9; // 是否命中反作弊人群
+	int32 share_coin = 10; //分享朋友圈获得的积分
+	int32 newUser = 11; //是否是新用户，45天内是新用户，是1，不是0
+    repeated InterestItem interestedWords = 12;  //感兴趣的词汇分类
+}
