@@ -19,7 +19,7 @@ import scala.collection.mutable
   */
 object AnalCfgLog {
 
-//  var srcRoot = "/gobblin/source/cpc"
+  //  var srcRoot = "/gobblin/source/cpc"
   var srcRoot = "/warehouse/dl_cpc.db"
 
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
@@ -40,29 +40,28 @@ object AnalCfgLog {
     cal.add(Calendar.HOUR, -hourBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val hour = new SimpleDateFormat("HH").format(cal.getTime)
-    val table ="cpc_cfg_log"
+    val table = "cpc_cfg_log"
     val spark = SparkSession.builder()
       .appName("cpc anal cfg log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
-//    val cfgData = prepareSource(spark, "cpc_cfg", hourBefore, 1)
+    //    val cfgData = prepareSource(spark, "cpc_cfg", hourBefore, 1)
     val cfgData = prepareSourceString(spark, "cpc_cfg", "src_cpc_cfg_minute", hourBefore, 1)
     if (cfgData == null) {
       spark.stop()
       System.exit(1)
     }
-    val cfglog =   cfgData.map(x => LogParser.parseCfgLog(x)).filter(x => x != null && x.date == date && x.hour == hour)
+    val cfglog = cfgData.map(x => LogParser.parseCfgLog(x)).filter(x => x != null).map(x => x.copy(date = date, hour = hour))
     //clear dir
-//    Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
-//    spark.createDataFrame(cfglog)
-//      .write
-//      .mode(SaveMode.Append)
-//      .format("parquet")
-//      .partitionBy("date", "hour")
-//      .saveAsTable("dl_cpc." + table)
-//    println("cfglog", cfgData.count())
-
+    //    Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
+    //    spark.createDataFrame(cfglog)
+    //      .write
+    //      .mode(SaveMode.Append)
+    //      .format("parquet")
+    //      .partitionBy("date", "hour")
+    //      .saveAsTable("dl_cpc." + table)
+    //    println("cfglog", cfgData.count())
 
 
     spark.createDataFrame(cfglog)
@@ -77,23 +76,13 @@ object AnalCfgLog {
     println("cfglog", cfglog.count())
 
 
-
     spark.stop()
-    for (i<-0 to 100){
+    for (i <- 0 to 100) {
       println("-")
     }
     println("AnalCfgLog_done")
   }
 
-  val schema = StructType(Array(
-    StructField("log_timestamp", LongType, true),
-    StructField("ip", StringType, true),
-    StructField("field", MapType(StringType,
-      StructType(Array(
-        StructField("int_type", IntegerType, true),
-        StructField("long_type", LongType, true),
-        StructField("float_type", FloatType, true),
-        StructField("string_type", StringType, true))), true), true)))
 
   def prepareSourceString(ctx: SparkSession, key: String, src: String, hourBefore: Int, hours: Int): rdd.RDD[String] = {
     val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
@@ -115,31 +104,7 @@ object AnalCfgLog {
       }
       .filter(_ != null)
   }
-  /*
-  cpc_search cpc_show cpc_click cpc_trace cpc_charge
-   */
-  def prepareSource(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): rdd.RDD[Row] = {
-    try {
-      val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours))
-      println("input:" + input)
-      val baseData = ctx.read.schema(schema).parquet(input)
-      val tbl = "%s_data_%d".format(src, hourBefore)
-      baseData.createTempView(tbl)
-      ctx.sql("select field['%s'].string_type from %s".format(src, tbl)).rdd
-    } catch {
-      case e: Exception => null
-    }
-  }
 
-  def prepareTraceSource(src: rdd.RDD[Row]): rdd.RDD[(String, (UnionLog, Seq[TraceLog]))] = {
-    src.map(x => LogParser.parseTraceLog(x.getString(0)))
-      .filter(x => x != null && x.searchid.length > 0)
-      .map {
-        x =>
-          val u: UnionLog = null
-          (x.searchid, (u, Seq(x)))
-      }
-  }
 
   def getDateHourPath(hourBefore: Int, hours: Int): String = {
     val cal = Calendar.getInstance()

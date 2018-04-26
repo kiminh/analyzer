@@ -14,6 +14,9 @@ case class CfgLog(
                    adslot_conf: String = "",
                    date: String = "",
                    hour: String = "",
-                   ext: collection.Map[String, ExtValue] = null
-                   )
+                   ext: collection.Map[String, ExtValue] = null,
+                   adslotid: String = "",
+                   ip: String = "",
+                   ua: String = ""
+                 )
 
