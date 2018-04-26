@@ -40,7 +40,7 @@ object AnalCfgLog {
     cal.add(Calendar.HOUR, -hourBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val hour = new SimpleDateFormat("HH").format(cal.getTime)
-    val table = "cpc_cfg_log2"
+    val table = "cpc_cfg_log"
     val spark = SparkSession.builder()
       .appName("cpc anal cfg log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
