@@ -40,19 +40,19 @@ object LogParser {
       )
       ext.update("client_type", ExtValue(string_value = notice.getClient.getType.name()))
       ext.update("client_version", ExtValue(string_value = "%s.%s.%s.%s".format(notice.getClient.getVersion.getMajor,
-        notice.getClient.getVersion.getMinor,notice.getClient.getVersion.getMicro,notice.getClient.getVersion.getBuild)))
+        notice.getClient.getVersion.getMinor, notice.getClient.getVersion.getMicro, notice.getClient.getVersion.getBuild)))
       ext.update("media_site_url", ExtValue(string_value = notice.getMedia.getSite.getUrls))
       ext.update("client_requestId", ExtValue(string_value = notice.getClient.getRequestId))
       ext.update("client_isValid", ExtValue(int_value = if(notice.getClient.getIsValid) {1} else 0))
 
 
       var devices = ""
-      val deviceCount = notice.getDevice.getIdsCount-1
-      for  (i <- 0 to  deviceCount){
-        if(devices.length >0){
-          devices += ";" + notice.getDevice.getIds(i).getType+":"+ notice.getDevice.getIds(i).getId
-        }else{
-          devices +=  notice.getDevice.getIds(i).getType + ":" + notice.getDevice.getIds(i).getId
+      val deviceCount = notice.getDevice.getIdsCount - 1
+      for (i <- 0 to deviceCount) {
+        if (devices.length > 0) {
+          devices += ";" + notice.getDevice.getIds(i).getType + ":" + notice.getDevice.getIds(i).getId
+        } else {
+          devices += notice.getDevice.getIds(i).getType + ":" + notice.getDevice.getIds(i).getId
         }
       }
 
@@ -186,7 +186,8 @@ object LogParser {
     log
   }
 
-  def parseShowLog(txt: String): UnionLog = {//zyc
+  def parseShowLog(txt: String): UnionLog = {
+    //zyc
     var log: UnionLog = null
     val data = Event.parse_show_log(txt)
     if (data != null) {
@@ -194,17 +195,18 @@ object LogParser {
       val ext = mutable.Map[String, ExtValue]()
       ext.update("show_refer", ExtValue(string_value = data.refer))
       ext.update("show_ua", ExtValue(string_value = data.ua))
-      ext.update("video_show_time", ExtValue(int_value = body.getShowTime))//video_show_time
+      ext.update("video_show_time", ExtValue(int_value = body.getShowTime)) //video_show_time
       log = UnionLog(
         searchid = body.getSearchId,
         isshow = 1,
         show_timestamp = data.timestamp,
-        show_ip = data.ip ,
+        show_ip = data.ip,
         ext = ext
       )
     }
     log
   }
+
   def parseCfgLog(txt: String): CfgLog = {
     var log: CfgLog = null
     val data = Cfg.parseData(txt)
@@ -212,7 +214,7 @@ object LogParser {
       val body = data.cfg
       var aid = body.getAdSlotId
       val (date, hour) = getDateHourFromTime(body.getTimestamp)
-      if(aid.length <= 0){
+      if (aid.length <= 0) {
         aid = body.getAidList.toArray().mkString(",")
       }
       log = CfgLog(
@@ -225,11 +227,14 @@ object LogParser {
         template_conf = body.getTemplateConfList().toArray.mkString(","),
         adslot_conf = body.getAdslotConf,
         date = date,
-        hour = hour
+        hour = hour,
+        ip = body.getIp,
+        ua = body.getUa
       )
     }
     log
   }
+
   def parseClickLog(txt: String): UnionLog = {
     var log: UnionLog = null
     val data = Event.parse_click_log(txt)
@@ -302,7 +307,7 @@ object LogParser {
           click_timestamp = body.getEventTimestamp,
           antispam_score = body.getAntispam.getScore,
           antispam_rules = body.getAntispam.getRulesList.toArray.mkString(","),
-          click_ip = LongToIPv4(body.getEventIp.toLong) ,
+          click_ip = LongToIPv4(body.getEventIp.toLong),
           isfill = 1,
           ideaid = body.getAd.getUnitId,
           unitid = body.getAd.getGroupId,
@@ -333,17 +338,24 @@ object LogParser {
     }
     log
   }
+
   //val txt = "36.149.39.90 - - [15/May/2017:08:02:36 +0800] \"GET /trace?t=stay&duration=1&iclicashsid=90c60d5e0fc887090984f5589aaa157a62207613&w=980&h=1306&sw=360&sh=640&os=Android&ref=http%3A%2F%2Fcj.juseyx.com%2Fb2%2F%3Ficlicashsid%3D90c60d5e0fc887090984f5589aaa157a62207613&v=1.0&_t=0 HTTP/1.1\" 200 43 \"http://cj.juseyx.com/b2/?iclicashsid=90c60d5e0fc887090984f5589aaa157a62207613&t=1494806555248\" \"Mozilla/5.0 (Linux; Android 6.0; NEM-TL00 Build/HONORNEM-TL00; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/55.0.2883.91 Mobile Safari/537.36 qukan_android\" \"-\" \"-\" 0.000"
+<<<<<<< HEAD
    //        "118.121.245.117 - - [09/Apr/2018:01:50:00 +0800] ""GET /trace?t=inter_click&adslot_id=7409447 HTTP/1.1"" 200 43 ""http://cdn.aiclicash.com/game/directory/directory.html?iclicashid=7409447&&settings=1&&gameType=48,47,46,45,44,43&&gameTimes=8&&isFull=0&&rate=0&&back=0&&redpack=1&&appShow=0"" ""Mozilla/5.0 (Linux; Android 6.0; KONKA D6+ Build/MRA58K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/48.0.2531.0 Mobile Safari/537.36"" ""-"" ""-"" 0.000",1523212322086,50238-09-05 13:54:46,"39.179.56.224 - - [09/Apr/2018:02:32:00 +0800] ""GET /trace?t=inter_click&adslot_id=7409447 HTTP/1.1"" 200 43 ""
 
 
 
   val traceRegex = """GET\s/trace\?([^\s]+)""".r
+=======
+  //        "118.121.245.117 - - [09/Apr/2018:01:50:00 +0800] ""GET /trace?t=inter_click&adslot_id=7409447 HTTP/1.1"" 200 43 ""http://cdn.aiclicash.com/game/directory/directory.html?iclicashid=7409447&&settings=1&&gameType=48,47,46,45,44,43&&gameTimes=8&&isFull=0&&rate=0&&back=0&&redpack=1&&appShow=0"" ""Mozilla/5.0 (Linux; Android 6.0; KONKA D6+ Build/MRA58K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/48.0.2531.0 Mobile Safari/537.36"" ""-"" ""-"" 0.000",1523212322086,50238-09-05 13:54:46,"39.179.56.224 - - [09/Apr/2018:02:32:00 +0800] ""GET /trace?t=inter_click&adslot_id=7409447 HTTP/1.1"" 200 43 ""
+  val traceRegex =
+  """GET\s/trace\?([^\s]+)""".r
+>>>>>>> e41d999608faeda44b6dc64c2df9aa6fae91d85a
 
   def parseTraceLog(txt: String): TraceLog = {
     var log: TraceLog = null
     if (txt != null) {
-      val txt2 = txt.substring(0,30)
+      val txt2 = txt.substring(0, 30)
       val traceRegex2 = """(\d{1,3}\.){3}\d{1,3}""".r
       val ip = traceRegex2.findFirstMatchIn(txt2).getOrElse("").toString
       traceRegex.findFirstMatchIn(txt).foreach {
@@ -355,7 +367,7 @@ object LogParser {
             sub(0).split('&').foreach {
               x =>
                 try {
-                  val Array(k , vv) = x.trim.split("=", 2)
+                  val Array(k, vv) = x.trim.split("=", 2)
                   val v = URLDecoder.decode(vv.trim, "UTF8")
                   k match {
                     case "t" => log = log.copy(trace_type = v)
@@ -380,8 +392,8 @@ object LogParser {
                     case "op3" => log = log.copy(trace_op3 = v)
                     case "duration" => log = log.copy(duration = toInt(v))
                     case "auto" => log = log.copy(auto = toAutoInt(v))
-                    case "adslot_id" => log = log.copy(adslot_id =  toInt(v))
-                    case "ua" => log = log.copy(ua =  v)
+                    case "adslot_id" => log = log.copy(adslot_id = toInt(v))
+                    case "ua" => log = log.copy(ua = v)
                     case _ =>
                   }
                 } catch {
@@ -393,6 +405,7 @@ object LogParser {
     }
     log
   }
+
   def parseHuDongTraceLog(txt: String): HuDongLog = {
     var log: HuDongLog = null
     if (txt != null) {
@@ -404,11 +417,11 @@ object LogParser {
             sub(0).split('&').foreach {
               x =>
                 try {
-                  val Array(k , vv) = x.trim.split("=", 2)
+                  val Array(k, vv) = x.trim.split("=", 2)
                   val v = URLDecoder.decode(vv.trim, "UTF8")
                   k match {
                     case "t" => log = log.copy(log_type = v)
-                    case "adslot_id" => log = log.copy(adslot_id =  toInt(v))
+                    case "adslot_id" => log = log.copy(adslot_id = toInt(v))
                   }
                 } catch {
                   case e: Exception => null
@@ -419,6 +432,7 @@ object LogParser {
     }
     log
   }
+
   /*
   t: seconds
    */
@@ -448,7 +462,7 @@ object LogParser {
     num
   }
 
-  def LongToIPv4 (ip : Long) : String = {
+  def LongToIPv4(ip: Long): String = {
     val bytes: Array[Byte] = new Array[Byte](4)
     bytes(0) = ((ip & 0xff000000) >> 24).toByte
     bytes(1) = ((ip & 0x00ff0000) >> 16).toByte
@@ -461,25 +475,27 @@ object LogParser {
     try {
       s.trim.toInt
     } catch {
-      case e : Exception => 0
+      case e: Exception => 0
     }
   }
+
   def toAutoInt(s: String): Int = {
     try {
-      if(s.indexOf("1") >= 0){
+      if (s.indexOf("1") >= 0) {
         return 1
-      }else{
+      } else {
         return s.trim.toInt
       }
     } catch {
-      case e : Exception => 0
+      case e: Exception => 0
     }
   }
+
   def toFloat(s: String): Float = {
     try {
       s.trim.toFloat
     } catch {
-      case e : Exception => 0
+      case e: Exception => 0
     }
   }
 }
