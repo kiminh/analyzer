@@ -330,13 +330,13 @@ object GetHourReport {
 
           val extInt = x.getAs[Map[String, Long]]("ext_int")
           val extString = x.getAs[Map[String, String]]("ext_string")
-          val dspnum = extInt.getOrElse("dsp_num", 0)
+          val dspnum = extInt.getOrElse("dsp_num", 0L)
           var rows = Seq[ReqDspReport]()
-          for (i <- 0 until dspnum) {
-            val src = extInt.getOrElse("dsp_src_" + i, 0)
+          for (i <- 0 until dspnum.toInt) {
+            val src = extInt.getOrElse("dsp_src_" + i, 0L)
             val mediaid = extString.getOrElse("dsp_mediaid_" + i, "")
             val adslotid = extString.getOrElse("dsp_adslotid_" + i, "")
-            val adnum = extInt.getOrElse("dsp_adnum_" + i, 0)
+            val adnum = extInt.getOrElse("dsp_adnum_" + i, 0L)
             rows = rows :+ report.copy(
               dsp_src = src.toInt,
               dsp_mediaid = mediaid,
