@@ -4,8 +4,7 @@ import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
-import com.cpc.spark.log.parser.{ExtValue, TraceLog, UnionLog}
-import com.cpc.spark.ml.common.{Utils => MUtils}
+import com.cpc.spark.ml.common.Utils
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
@@ -33,11 +32,6 @@ object GetHourReport {
     val table = args(0)
     val date = args(1)
     val hour = args(2)
-    //val hourBefore = args(1).toInt
-    //val cal = Calendar.getInstance()
-    //cal.add(Calendar.HOUR, -hourBefore)
-    //val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    //val hour = new SimpleDateFormat("HH").format(cal.getTime)
 
     val conf = ConfigFactory.load()
     mariadbUrl = conf.getString("mariadb.url")
@@ -195,6 +189,7 @@ object GetHourReport {
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_os_hourly", mariadbProp)
     println("os", osData.count())
+
     /* val ipRequestData = unionLog.filter(x => x.isshow >0)
        .map {
          x =>
@@ -307,6 +302,64 @@ object GetHourReport {
        .jdbc(mariadbUrl, "report.report_media_uid_click_hourly", mariadbProp)
      println("uid_click", uidClickData.count())
  */
+
+    val dsplog = ctx.sql(
+      """
+        |select * from dl_cpc.%s where `date` = "%s" and `hour` = "%s"
+      """.stripMargin.format(table, date, hour))
+
+    val dspdata = dsplog.rdd
+      .flatMap {
+        x =>
+          val isclick = x.getAs[Int]("isclick")
+          var realCost = 0
+          if (isclick > 0) {
+            realCost = x.getAs[Int]("price")
+          }
+          val report = ReqDspReport(
+            media_id = x.getAs[String]("media_appsid").toInt,
+            adslot_id = x.getAs[String]("adslotid").toInt,
+            adslot_type = x.getAs[Int]("adslot_type"),
+            request = 1,
+            fill = x.getAs[Int]("isfill"),
+            show = x.getAs[Int]("isshow"),
+            click = isclick,
+            cash_cost = realCost,
+            date = "%s %s:00:00".format(date, hour)
+          )
+
+          val extInt = x.getAs[Map[String, Long]]("ext_int")
+          val extString = x.getAs[Map[String, String]]("ext_string")
+          val dspnum = extInt.getOrElse("dsp_num", 0)
+          var rows = Seq[ReqDspReport]()
+          for (i <- 0 until dspnum) {
+            val src = extInt.getOrElse("dsp_src_" + i, 0)
+            val mediaid = extString.getOrElse("dsp_mediaid_" + i, "")
+            val adslotid = extString.getOrElse("dsp_adslotid_" + i, "")
+            val adnum = extInt.getOrElse("dsp_adnum_" + i, 0)
+            rows = rows :+ report.copy(
+              dsp_src = src.toInt,
+              dsp_mediaid = mediaid,
+              dsp_adslotid = adslotid,
+              dsp_adnum = adnum.toInt
+            )
+          }
+          rows
+      }
+      .map {
+        x =>
+          val key = (x.media_id, x.adslot_id, x.dsp_src, x.dsp_mediaid, x.dsp_adslotid, x.date)
+          (key, x)
+      }
+      .reduceByKey((x, y) => x.sum(y))
+
+    clearReportHourData2("report_req_dsp_hourly", date)
+    ctx.createDataFrame(dspdata)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_req_dsp_hourly", mariadbProp)
+    println("dsp", dspdata.count())
+
     val fillLog = ctx.sql(
       s"""
          |select *,
@@ -448,7 +501,7 @@ object GetHourReport {
       .reduceByKey(_ ++ _)
       .map {
         x =>
-          val convert = cvrPositive(x._2)
+          val convert = Utils.cvrPositiveV(x._2, "v2")
           (x._1, convert)
       }
 
@@ -536,45 +589,6 @@ object GetHourReport {
     println("GetHourReport_done")
   }
 
-  def cvrPositive(traces: Seq[Row]): Int = {
-    var stay = 0
-    var click = 0
-    var active = 0
-    var mclick = 0
-    var zombie = 0
-    var disactive = 0
-    traces.foreach {
-      t =>
-        t.getAs[String]("trace_type") match {
-          case s if s.startsWith("active") => active += 1
-
-          case "disactive" => disactive += 1
-
-          case "buttonClick" => click += 1
-
-          case "clickMonitor" => mclick += 1
-
-          case "inputFocus" => click += 1
-
-          case "press" => click += 1
-
-          case "zombie" => zombie += 1
-
-          case "stay" =>
-            if (t.getAs[Int]("duration") > stay) {
-              stay = t.getAs[Int]("duration")
-            }
-
-          case _ =>
-        }
-    }
-
-    if (((stay >= 30 && click > 0) || active > 0) && disactive == 0) {
-      1
-    } else {
-      0
-    }
-  }
 
   def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
     try {
@@ -594,13 +608,8 @@ object GetHourReport {
     }
   }
 
-  def checkReportHourData(tbl: String): Unit = {
+  def clearReportHourData2(tbl: String, date: String): Unit = {
     try {
-      val cal = Calendar.getInstance()
-      cal.add(Calendar.HOUR, -3)
-      val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-      val hour = new SimpleDateFormat("HH").format(cal.getTime)
-
       Class.forName(mariadbProp.getProperty("driver"))
       val conn = DriverManager.getConnection(
         mariadbUrl,
@@ -609,22 +618,13 @@ object GetHourReport {
       val stmt = conn.createStatement()
       val sql =
         """
-          |select count(*) as num from report.%s where `date` = "%s" and `hour` = %d
-        """.stripMargin.format(tbl, date, hour.toInt)
-      val result = stmt.executeQuery(sql)
-      var num = 0
-      if (result.next()) {
-        num = result.getInt("num")
-      }
-      if (num == 0) {
-        val msg = "report.%s rows=%d [%s/%s]".format(tbl, num, date, hour)
-        //TODO
-      }
+          |delete from report.%s where `date` = "%s"
+        """.stripMargin.format(tbl, date)
+      stmt.executeUpdate(sql);
     } catch {
       case e: Exception => println("exception caught: " + e);
     }
   }
-
   private case class CtrReport(
                                 media_id: Int = 0,
                                 adslot_id: Int = 0,
@@ -647,4 +647,31 @@ object GetHourReport {
                                 hour: Int = 0
                               )
 
+  private case class ReqDspReport(
+                                 media_id: Int = 0,
+                                 adslot_id: Int = 0,
+                                 adslot_type: Int = 0,
+                                 dsp_src: Int = 0,
+                                 dsp_mediaid: String = "",
+                                 dsp_adslotid: String = "",
+                                 dsp_adnum: Int = 0,
+                                 request: Int = 0,
+                                 fill: Int = 0,
+                                 show: Int = 0,
+                                 click: Int = 0,
+                                 cash_cost: Int = 0,
+                                 date: String = ""
+                                 ) {
+
+    def sum(r: ReqDspReport): ReqDspReport = {
+      copy(
+        request = r.request + request,
+        fill = r.fill + fill,
+        show = r.show + show,
+        click = r.click + click,
+        cash_cost = r.cash_cost + cash_cost,
+        dsp_adnum = r.dsp_adnum + dsp_adnum
+      )
+    }
+  }
 }
