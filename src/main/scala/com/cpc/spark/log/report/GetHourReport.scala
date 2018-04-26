@@ -352,6 +352,7 @@ object GetHourReport {
           (key, x)
       }
       .reduceByKey((x, y) => x.sum(y))
+        .map(x=>x._2)
 
     clearReportHourData2("report_req_dsp_hourly", date)
     ctx.createDataFrame(dspdata)
