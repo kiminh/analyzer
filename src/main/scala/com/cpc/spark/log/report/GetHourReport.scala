@@ -307,7 +307,9 @@ object GetHourReport {
     val dsplog = ctx.sql(
       """
         |select * from dl_cpc.%s where `date` = "%s" and `hour` = "%s"
-      """.stripMargin.format(table, date, hour))
+      """.stripMargin.format(table, date, hour))*/
+
+    val dsplog = ctx.read.parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
 
     val dspdata = dsplog.rdd
       .flatMap {
@@ -361,7 +363,6 @@ object GetHourReport {
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_req_dsp_hourly", mariadbProp)
     println("dsp", dspdata.count())
-    */
 
     val fillLog = ctx.sql(
       s"""
