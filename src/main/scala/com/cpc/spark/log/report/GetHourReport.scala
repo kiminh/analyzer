@@ -303,10 +303,12 @@ object GetHourReport {
      println("uid_click", uidClickData.count())
  */
 
-    val dsplog = ctx.sql(
+    /*val dsplog = ctx.sql(
       """
         |select * from dl_cpc.%s where `date` = "%s" and `hour` = "%s"
-      """.stripMargin.format(table, date, hour))
+      """.stripMargin.format(table, date, hour))*/
+
+    val dsplog = ctx.read.parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
 
     val dspdata = dsplog.rdd
       .flatMap {
