@@ -303,6 +303,7 @@ object GetHourReport {
      println("uid_click", uidClickData.count())
  */
 
+    /*
     val dsplog = ctx.sql(
       """
         |select * from dl_cpc.%s where `date` = "%s" and `hour` = "%s"
@@ -360,6 +361,7 @@ object GetHourReport {
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_req_dsp_hourly", mariadbProp)
     println("dsp", dspdata.count())
+    */
 
     val fillLog = ctx.sql(
       s"""
