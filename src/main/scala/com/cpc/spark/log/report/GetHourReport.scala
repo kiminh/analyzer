@@ -326,7 +326,7 @@ object GetHourReport {
             request = 1,
             date = "%s %s:00:00".format(date, hour)
           )
-          val adsrc = x.getAs[Long]("adsrc")
+          val adsrc = x.getAs[Int]("adsrc").toLong
 
           val extInt = x.getAs[Map[String, Long]]("ext_int")
           val extString = x.getAs[Map[String, String]]("ext_string")
