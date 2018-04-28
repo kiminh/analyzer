@@ -256,7 +256,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasRate()) {
         hash = (37 * hash) + RATE_FIELD_NUMBER;
         hash = (53 * hash) + getRate();
@@ -863,7 +863,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (getHdJumpCount() > 0) {
         hash = (37 * hash) + HD_JUMP_FIELD_NUMBER;
         hash = (53 * hash) + getHdJumpList().hashCode();
@@ -1687,7 +1687,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasKey()) {
         hash = (37 * hash) + KEY_FIELD_NUMBER;
         hash = (53 * hash) + getKey().hashCode();
@@ -2340,7 +2340,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (getValuesCount() > 0) {
         hash = (37 * hash) + VALUES_FIELD_NUMBER;
         hash = (53 * hash) + getValuesList().hashCode();
@@ -3926,7 +3926,7 @@ public final class Cfglog {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (getAidCount() > 0) {
         hash = (37 * hash) + AID_FIELD_NUMBER;
         hash = (53 * hash) + getAidList().hashCode();

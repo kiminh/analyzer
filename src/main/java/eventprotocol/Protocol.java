@@ -1535,6 +1535,10 @@ public final class Protocol {
      * <code>MOBVISTA_DSP = 8;</code>
      */
     MOBVISTA_DSP(8),
+    /**
+     * <code>VANKA_DSP = 9;</code>
+     */
+    VANKA_DSP(9),
     ;
 
     /**
@@ -1573,6 +1577,10 @@ public final class Protocol {
      * <code>MOBVISTA_DSP = 8;</code>
      */
     public static final int MOBVISTA_DSP_VALUE = 8;
+    /**
+     * <code>VANKA_DSP = 9;</code>
+     */
+    public static final int VANKA_DSP_VALUE = 9;
 
 
     public final int getNumber() {
@@ -1597,6 +1605,7 @@ public final class Protocol {
         case 6: return FANCY_DSP;
         case 7: return GDT_DSP;
         case 8: return MOBVISTA_DSP;
+        case 9: return VANKA_DSP;
         default: return null;
       }
     }
@@ -2539,7 +2548,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasMajor()) {
         hash = (37 * hash) + MAJOR_FIELD_NUMBER;
         hash = (53 * hash) + getMajor();
@@ -3297,7 +3306,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasWidth()) {
         hash = (37 * hash) + WIDTH_FIELD_NUMBER;
         hash = (53 * hash) + getWidth();
@@ -4013,7 +4022,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasPackageName()) {
         hash = (37 * hash) + PACKAGE_NAME_FIELD_NUMBER;
         hash = (53 * hash) + getPackageName().hashCode();
@@ -4853,7 +4862,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasDomain()) {
         hash = (37 * hash) + DOMAIN_FIELD_NUMBER;
         hash = (53 * hash) + getDomain().hashCode();
@@ -5585,7 +5594,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasUserAgent()) {
         hash = (37 * hash) + USER_AGENT_FIELD_NUMBER;
         hash = (53 * hash) + getUserAgent().hashCode();
@@ -6718,7 +6727,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasId()) {
         hash = (37 * hash) + ID_FIELD_NUMBER;
         hash = (53 * hash) + getId().hashCode();
@@ -8226,7 +8235,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasMac()) {
         hash = (37 * hash) + MAC_FIELD_NUMBER;
         hash = (53 * hash) + getMac().hashCode();
@@ -9240,7 +9249,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasIp()) {
         hash = (37 * hash) + IP_FIELD_NUMBER;
         hash = (53 * hash) + getIp().hashCode();
@@ -10593,7 +10602,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -11939,7 +11948,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -13798,7 +13807,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -14668,7 +14677,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasType()) {
         hash = (37 * hash) + TYPE_FIELD_NUMBER;
         hash = (53 * hash) + type_;
@@ -15725,7 +15734,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasDsp()) {
         hash = (37 * hash) + DSP_FIELD_NUMBER;
         hash = (53 * hash) + dsp_;
@@ -17252,7 +17261,7 @@ public final class Protocol {
           return memoizedHashCode;
         }
         int hash = 41;
-        hash = (19 * hash) + getDescriptor().hashCode();
+        hash = (19 * hash) + getDescriptorForType().hashCode();
         if (hasCryptoType()) {
           hash = (37 * hash) + CRYPTO_TYPE_FIELD_NUMBER;
           hash = (53 * hash) + cryptoType_;
@@ -20823,7 +20832,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (hasCountry()) {
             hash = (37 * hash) + COUNTRY_FIELD_NUMBER;
             hash = (53 * hash) + getCountry();
@@ -21675,7 +21684,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (hasType()) {
             hash = (37 * hash) + TYPE_FIELD_NUMBER;
             hash = (53 * hash) + type_;
@@ -23288,7 +23297,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (hasOs()) {
             hash = (37 * hash) + OS_FIELD_NUMBER;
             hash = (53 * hash) + os_;
@@ -25716,7 +25725,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (hasMediaId()) {
             hash = (37 * hash) + MEDIA_ID_FIELD_NUMBER;
             hash = (53 * hash) + getMediaId().hashCode();
@@ -27779,7 +27788,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (hasUserId()) {
             hash = (37 * hash) + USER_ID_FIELD_NUMBER;
             hash = (53 * hash) + getUserId();
@@ -29191,7 +29200,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (hasInterestid()) {
             hash = (37 * hash) + INTERESTID_FIELD_NUMBER;
             hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
@@ -30221,7 +30230,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (getInterestsCount() > 0) {
             hash = (37 * hash) + INTERESTS_FIELD_NUMBER;
             hash = (53 * hash) + getInterestsList().hashCode();
@@ -31773,7 +31782,7 @@ public final class Protocol {
               return memoizedHashCode;
             }
             int hash = 41;
-            hash = (19 * hash) + getDescriptor().hashCode();
+            hash = (19 * hash) + getDescriptorForType().hashCode();
             if (hasSearchClickCountHitCache()) {
               hash = (37 * hash) + SEARCH_CLICK_COUNT_HIT_CACHE_FIELD_NUMBER;
               hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
@@ -32441,7 +32450,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (hasScore()) {
             hash = (37 * hash) + SCORE_FIELD_NUMBER;
             hash = (53 * hash) + getScore();
@@ -33795,7 +33804,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (hasType()) {
             hash = (37 * hash) + TYPE_FIELD_NUMBER;
             hash = (53 * hash) + type_;
@@ -35525,7 +35534,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (hasTargetUrl()) {
             hash = (37 * hash) + TARGET_URL_FIELD_NUMBER;
             hash = (53 * hash) + getTargetUrl().hashCode();
@@ -37190,7 +37199,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (hasPackageName()) {
             hash = (37 * hash) + PACKAGE_NAME_FIELD_NUMBER;
             hash = (53 * hash) + getPackageName().hashCode();
@@ -38216,7 +38225,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (hasType()) {
             hash = (37 * hash) + TYPE_FIELD_NUMBER;
             hash = (53 * hash) + type_;
@@ -39124,7 +39133,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (hasCountry()) {
             hash = (37 * hash) + COUNTRY_FIELD_NUMBER;
             hash = (53 * hash) + getCountry();
@@ -41163,7 +41172,7 @@ public final class Protocol {
           return memoizedHashCode;
         }
         int hash = 41;
-        hash = (19 * hash) + getDescriptor().hashCode();
+        hash = (19 * hash) + getDescriptorForType().hashCode();
         if (hasType()) {
           hash = (37 * hash) + TYPE_FIELD_NUMBER;
           hash = (53 * hash) + type_;
@@ -46066,7 +46075,7 @@ public final class Protocol {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptor().hashCode();
+          hash = (19 * hash) + getDescriptorForType().hashCode();
           if (hasId()) {
             hash = (37 * hash) + ID_FIELD_NUMBER;
             hash = (53 * hash) + getId();
@@ -46979,7 +46988,7 @@ public final class Protocol {
           return memoizedHashCode;
         }
         int hash = 41;
-        hash = (19 * hash) + getDescriptor().hashCode();
+        hash = (19 * hash) + getDescriptorForType().hashCode();
         if (getUnknownCount() > 0) {
           hash = (37 * hash) + UNKNOWN_FIELD_NUMBER;
           hash = (53 * hash) + getUnknownList().hashCode();
@@ -48420,7 +48429,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasHead()) {
         hash = (37 * hash) + HEAD_FIELD_NUMBER;
         hash = (53 * hash) + getHead().hashCode();
@@ -49468,7 +49477,7 @@ public final class Protocol {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (19 * hash) + getDescriptorForType().hashCode();
       if (hasTimestamp()) {
         hash = (37 * hash) + TIMESTAMP_FIELD_NUMBER;
         hash = (53 * hash) + getTimestamp();
@@ -50222,21 +50231,22 @@ public final class Protocol {
       "Type\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAP" +
       "I\020\003*\"\n\tGeoSource\022\n\n\006NATIVE\020\001\022\t\n\005BAIDU\020\002*" +
       "1\n\nChargeType\022\010\n\004FREE\020\000\022\007\n\003CPC\020\001\022\007\n\003CPM\020",
-      "\002\022\007\n\003CPA\020\003*\202\001\n\003Dsp\022\013\n\007CPC_DSP\020\001\022\016\n\nINMOB" +
+      "\002\022\007\n\003CPA\020\003*\221\001\n\003Dsp\022\013\n\007CPC_DSP\020\001\022\016\n\nINMOB" +
       "I_DSP\020\002\022\020\n\014TANX_SSP_DSP\020\003\022\r\n\tBOTTOMING\020\004" +
       "\022\017\n\013HUZHONG_DSP\020\005\022\r\n\tFANCY_DSP\020\006\022\013\n\007GDT_" +
-      "DSP\020\007\022\020\n\014MOBVISTA_DSP\020\010*\303\003\n\014AntispamRule" +
-      "\022\021\n\rDUP_SEARCH_ID\020\001\022\021\n\rOUT_TIME_SPAN\020\002\022\014" +
-      "\n\010DUP_USER\020\003\022\021\n\rNEW_USER_RATE\020\004\022\022\n\016INVAL" +
-      "ID_COOKIE\020\005\022\022\n\016INVALID_REGION\020\006\022\016\n\nNEW_C" +
-      "OOKIE\020\007\022\r\n\tNO_COOKIE\020\010\022\022\n\016NO_DEVICE_INFO" +
-      "\020\t\022\020\n\014NO_DEVICE_ID\020\n\022\013\n\007ON_MASK\020\013\022\n\n\006DUP" +
-      "_IP\020\014\022\022\n\016JS_CLICK_DELTA\020\r\022\021\n\rSAME_POSITI",
-      "ON\020\016\022\014\n\010NO_EXTRA\020\017\022\016\n\nNO_REFERER\020\020\022\023\n\017CK" +
-      "_DISPATCHTIME\020\021\022\n\n\006RANDOM\020\022\022\010\n\004GIFT\020\023\022\016\n" +
-      "\nBAD_METHOD\020\024\022\022\n\016SERVER_REQUEST\020\025\022\013\n\007MAX" +
-      "_CTR\020\026\022\013\n\007DIFF_UA\020\027\022\r\n\tMAX_CLICK\020\030\022\017\n\013TR" +
-      "AIN_MODEL\020\031\022\n\n\006IP_ISP\020\032\022\014\n\010IP_BLACK\020\033"
+      "DSP\020\007\022\020\n\014MOBVISTA_DSP\020\010\022\r\n\tVANKA_DSP\020\t*\303" +
+      "\003\n\014AntispamRule\022\021\n\rDUP_SEARCH_ID\020\001\022\021\n\rOU" +
+      "T_TIME_SPAN\020\002\022\014\n\010DUP_USER\020\003\022\021\n\rNEW_USER_" +
+      "RATE\020\004\022\022\n\016INVALID_COOKIE\020\005\022\022\n\016INVALID_RE" +
+      "GION\020\006\022\016\n\nNEW_COOKIE\020\007\022\r\n\tNO_COOKIE\020\010\022\022\n" +
+      "\016NO_DEVICE_INFO\020\t\022\020\n\014NO_DEVICE_ID\020\n\022\013\n\007O" +
+      "N_MASK\020\013\022\n\n\006DUP_IP\020\014\022\022\n\016JS_CLICK_DELTA\020\r",
+      "\022\021\n\rSAME_POSITION\020\016\022\014\n\010NO_EXTRA\020\017\022\016\n\nNO_" +
+      "REFERER\020\020\022\023\n\017CK_DISPATCHTIME\020\021\022\n\n\006RANDOM" +
+      "\020\022\022\010\n\004GIFT\020\023\022\016\n\nBAD_METHOD\020\024\022\022\n\016SERVER_R" +
+      "EQUEST\020\025\022\013\n\007MAX_CTR\020\026\022\013\n\007DIFF_UA\020\027\022\r\n\tMA" +
+      "X_CLICK\020\030\022\017\n\013TRAIN_MODEL\020\031\022\n\n\006IP_ISP\020\032\022\014" +
+      "\n\010IP_BLACK\020\033"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

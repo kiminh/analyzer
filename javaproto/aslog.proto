@@ -151,6 +151,7 @@ enum AdSrc {
 	FANCY = 6;
 	GDT = 7;
 	MOBVISTA = 8;
+	VANKA = 9;
 };
 enum InteractionType {
 	NO_INTERACT = 0;
