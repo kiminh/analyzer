@@ -222,7 +222,6 @@ object LRTransform {
           val weights = BcWeights.value.toArray
           p.map {
             r =>
-
               if (parser == "ctr-parser1") {
                 val vec = transformFeature1(weights, r)
                 (r.getAs[Int]("label"), vec)
