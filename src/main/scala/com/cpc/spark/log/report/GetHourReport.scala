@@ -324,12 +324,9 @@ object GetHourReport {
             adslot_id = x.getAs[String]("adslotid").toInt,
             adslot_type = x.getAs[Int]("adslot_type"),
             request = 1,
-            fill = x.getAs[Int]("isfill"),
-            show = x.getAs[Int]("isshow"),
-            click = isclick,
-            cash_cost = realCost,
             date = "%s %s:00:00".format(date, hour)
           )
+          val adsrc = x.getAs[Long]("adsrc")
 
           val extInt = x.getAs[Map[String, Long]]("ext_int")
           val extString = x.getAs[Map[String, String]]("ext_string")
@@ -340,11 +337,20 @@ object GetHourReport {
             val mediaid = extString.getOrElse("dsp_mediaid_" + i, "")
             val adslotid = extString.getOrElse("dsp_adslotid_" + i, "")
             val adnum = extInt.getOrElse("dsp_adnum_" + i, 0L)
+
+            val fill = if (src == adsrc) x.getAs[Int]("isfill") else 0
+            val shows = if (src == adsrc) x.getAs[Int]("isshow") else 0
+            val dsp_click = if (src == adsrc) isclick else 0
+            val dsp_cash = if (src == adsrc) realCost else 0
             rows = rows :+ report.copy(
               dsp_src = src.toInt,
               dsp_mediaid = mediaid,
               dsp_adslotid = adslotid,
-              dsp_adnum = adnum.toInt
+              dsp_adnum = adnum.toInt,
+              fill = fill,
+              shows = shows,
+              click = dsp_click,
+              cash_cost = dsp_cash
             )
           }
           rows
@@ -355,7 +361,7 @@ object GetHourReport {
           (key, x)
       }
       .reduceByKey((x, y) => x.sum(y))
-        .map(x=>x._2)
+      .map(x => x._2)
 
     clearReportHourData2("report_req_dsp_hourly", date)
     ctx.createDataFrame(dspdata)
@@ -629,6 +635,7 @@ object GetHourReport {
       case e: Exception => println("exception caught: " + e);
     }
   }
+
   private case class CtrReport(
                                 media_id: Int = 0,
                                 adslot_id: Int = 0,
@@ -652,30 +659,31 @@ object GetHourReport {
                               )
 
   private case class ReqDspReport(
-                                 media_id: Int = 0,
-                                 adslot_id: Int = 0,
-                                 adslot_type: Int = 0,
-                                 dsp_src: Int = 0,
-                                 dsp_mediaid: String = "",
-                                 dsp_adslotid: String = "",
-                                 dsp_adnum: Int = 0,
-                                 request: Int = 0,
-                                 fill: Int = 0,
-                                 show: Int = 0,
-                                 click: Int = 0,
-                                 cash_cost: Int = 0,
-                                 date: String = ""
+                                   media_id: Int = 0,
+                                   adslot_id: Int = 0,
+                                   adslot_type: Int = 0,
+                                   dsp_src: Int = 0,
+                                   dsp_mediaid: String = "",
+                                   dsp_adslotid: String = "",
+                                   dsp_adnum: Int = 0,
+                                   request: Int = 0,
+                                   fill: Int = 0,
+                                   shows: Int = 0,
+                                   click: Int = 0,
+                                   cash_cost: Int = 0,
+                                   date: String = ""
                                  ) {
 
     def sum(r: ReqDspReport): ReqDspReport = {
       copy(
         request = r.request + request,
         fill = r.fill + fill,
-        show = r.show + show,
+        shows = r.shows + shows,
         click = r.click + click,
         cash_cost = r.cash_cost + cash_cost,
         dsp_adnum = r.dsp_adnum + dsp_adnum
       )
     }
   }
+
 }
