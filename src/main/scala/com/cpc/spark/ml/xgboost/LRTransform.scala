@@ -5,7 +5,7 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import org.apache.spark.ml.linalg.{SparseVector => MSVec, Vector => MVec, Vectors => MVecs}
-import mlmodel.mlmodel.{Dict, IRModel, LRModel, Pack}
+import mlmodel.mlmodel._
 import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ml.train.LRIRModel
@@ -1166,7 +1166,8 @@ object LRTransform {
       createTime = new Date().getTime,
       lr = Option(lr),
       //ir = Option(ir),
-      dict = Option(dictpb)
+      dict = Option(dictpb),
+      strategy = Strategy.StrategyLRXgboost
     )
 
     pack.writeTo(new FileOutputStream(path))
@@ -1205,7 +1206,8 @@ object LRTransform {
       createTime = new Date().getTime,
       lr = Option(lr),
       ir = Option(ir),
-      dict = Option(dictpb)
+      dict = Option(dictpb),
+      strategy = Strategy.StrategyLR
     )
 
     pack.writeTo(new FileOutputStream(path))

@@ -10,6 +10,13 @@ message LRModel {
     double auROC = 5;
 }
 
+enum Strategy {
+    StrategyNone = 0;
+    StrategyLR = 1;
+    StrategyXgboost = 2;
+    StrategyLRXgboost = 3;
+}
+
 message IRModel {
     repeated double boundaries = 1;
     repeated double predictions = 2;
@@ -35,9 +42,6 @@ message Pack {
     int64 create_time = 5;
     uint32 gbm_tree_limit = 6;
     string gbmfile = 7;
+    Strategy strategy = 8;
 }
-
-
-
-
 
