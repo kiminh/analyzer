@@ -56,6 +56,8 @@ message  Adslot {
 	optional string   bookid  = 13; // 相同站点不同页面标记
 	optional int32    discount = 14; //广告位打折值，单位%
 	optional int32    flooracp = 15; //最低单价
+	optional int32    exp_style = 16; //实验样式id
+	optional string   exp_feature = 17; //实验功能id
 };
 
 enum NetworkType {
