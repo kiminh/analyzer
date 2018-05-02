@@ -46,9 +46,9 @@ assemblyExcludedJars in assembly := {
   val jars = Seq(
     "c3p0-0.9.5.2.jar",
     "config-1.2.1.jar",
-    "cpc-protocol_2.11-1.0.jar",
     "hadoop-lzo-0.4.20.jar",
     "imlib_2.11-0.0.1.jar",
+    "jedis-2.1.0.jar",
     "mariadb-java-client-1.5.9.jar",
     "mchange-commons-java-0.2.11.jar",
     "mysql-connector-java-5.1.41-bin.jar",

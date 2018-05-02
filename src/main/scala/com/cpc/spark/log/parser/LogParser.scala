@@ -66,6 +66,8 @@ object LogParser {
           cpmbid = slot.getCpmbid
         )
 
+        extInt.update("exp_style",slot.getExpStyle.toLong)
+        extString.update("exp_feature",slot.getExpFeature)
         ext.update("channel", ExtValue(string_value = slot.getChannel))
         ext.update("pagenum", ExtValue(int_value = slot.getPagenum))
         ext.update("bookid", ExtValue(string_value = slot.getBookid))

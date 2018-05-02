@@ -203,6 +203,7 @@ enum Dsp {
     FANCY_DSP = 6;
     GDT_DSP = 7;
     MOBVISTA_DSP = 8;
+    VANKA_DSP = 9;
 }
 
 // DSP计费相关字段
