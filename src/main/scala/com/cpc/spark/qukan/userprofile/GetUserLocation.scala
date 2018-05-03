@@ -22,7 +22,7 @@ object GetUserLocation {
             """
               |SELECT info.device_code, city.province, city.city
               |from rpt_qukan.analysis_province_city_p as city LEFT JOIN dl_cpc.qukan_p_member_info as info on city.id = info.member_id
-              |WHERE (city.city != "" or city.province != "") and info.device_code != "" and city.day = "%s" and info.day = "%s" limit 10
+              |WHERE (city.city != "" or city.province != "") and info.device_code != "" and city.day = "%s" and info.day = "%s"
             """.stripMargin.format(day, day)
 
         println("sql:" + sql)
@@ -44,10 +44,10 @@ object GetUserLocation {
             (x, y) => (x._1, x._2)
         }.cache()
 
-        val data = rdd.collect()
-        for (d <- data) {
-            println(d.toString())
-        }
+//        val data = rdd.collect()
+//        for (d <- data) {
+//            println(d.toString())
+//        }
 
         val sum = rdd.mapPartitions {
             p =>
