@@ -64,11 +64,9 @@ object TestPyModel {
     val prefix = "%s-%s".format(parser, dataType)
     val filename = "/home/cpc/anal/xgboost_model/%s-%s".format(prefix, filetime)
     println(filename)
-    val pack = Pack(
-      createTime = mlm.createTime,
-      lr = mlm.lr,
+
+    val pack = mlm.copy(
       ir = Option(ir),
-      dict = mlm.dict,
       gbmTreeLimit = treeLimit,
       gbmfile = "data/%s.gbm".format(prefix)
     )
