@@ -1,5 +1,6 @@
 package com.cpc.spark.qukan.userprofile
 
+import com.redis.serialization.Parse.Implicits._
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
@@ -30,13 +31,22 @@ object GetUserLocation {
             .map {
                 x =>
                     val devCode: String = x(0).toString
-                    val province = x(1).toString
-                    val city = x(2).toString
-                    println("devCode: %s, province: %s, city: %s".format(devCode, province, city))
+                    var province = x(1).toString
+                    var city = x(2).toString
+                    province = province.stripSuffix("省")
+                    if (!(city.equals("新北市") || city.equals("台北市") || city.equals("高雄市") || city.equals("台中市") || city.equals("新竹市") || city.equals("桃园市") || city.equals("基隆市")
+                        || city.equals("嘉义市") || city.equals("台南市") || city.equals("吉林市"))) {
+                        city = city.stripSuffix("市")
+                    }
                     (devCode, (province, city))
             }.reduceByKey {
             (x, y) => (x._1, x._2)
         }.cache()
+
+        val data = rdd.collect()
+        for (d <- data) {
+            println(d.toString())
+        }
 
         val sum = rdd.mapPartitions {
             p =>
@@ -48,7 +58,6 @@ object GetUserLocation {
                     case (devCode, (province, city)) =>
                         n1 = n1 + 1
                         val key = devCode + "_UPDATA"
-                        println("key: %s".format(key))
                         val buffer = redis.get[Array[Byte]](key).orNull
                         var user: UserProfile.Builder = null
                         if (buffer == null) {
@@ -62,7 +71,6 @@ object GetUserLocation {
                             n3 = n3 + 1
                             //user = user.setProvince(province).setCity(city)
                             //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-                            println("setProvince: %s setCity: %s".format(province, city))
                         }
                 }
                 Seq((0, n1), (1, n2), (2, n3)).iterator
