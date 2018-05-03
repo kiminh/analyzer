@@ -22,7 +22,7 @@ object GetUserLocation {
             """
               |SELECT info.device_code, city.province, city.city
               |from rpt_qukan.analysis_province_city_p as city LEFT JOIN dl_cpc.qukan_p_member_info as info on city.id = info.member_id
-              |WHERE (city.city != "" or city.province != "") and info.device_code != "" and city.day = "%s" and info.day = "%s"
+              |WHERE (city.city != "" or city.province != "") and info.device_code != "" and city.day = "%s" and info.day = "%s limit 10"
             """.stripMargin.format(day, day)
 
         println("sql:" + sql)
@@ -34,6 +34,7 @@ object GetUserLocation {
                     var province = x(1).toString
                     var city = x(2).toString
                     province = province.stripSuffix("省")
+                    province = province.stripSuffix("市")
                     if (!(city.equals("新北市") || city.equals("台北市") || city.equals("高雄市") || city.equals("台中市") || city.equals("新竹市") || city.equals("桃园市") || city.equals("基隆市")
                         || city.equals("嘉义市") || city.equals("台南市") || city.equals("吉林市"))) {
                         city = city.stripSuffix("市")
@@ -69,8 +70,8 @@ object GetUserLocation {
                         val u = user.build()
                         if (u.getProvince != province || u.getCity != city) {
                             n3 = n3 + 1
-                            //user = user.setProvince(province).setCity(city)
-                            //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                            user = user.setProvince(province).setCity(city)
+                            redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
                         }
                 }
                 Seq((0, n1), (1, n2), (2, n3)).iterator
