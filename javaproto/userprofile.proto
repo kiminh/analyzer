@@ -5,10 +5,12 @@ package userprofile;
 message AdShow {
 	int32 adid = 1; // 单元ID,单元级别生效
 	int32 count = 2; // 今天投放次数
+	int32 click_count = 3; // 今日广告被此用户点击次数
 }
 message AdFreq {
 	repeated AdShow ads = 1;
 	uint32 req_count = 2;
+	uint32 click_count = 3; //用户今天点击次数
 }
 
 message APPPackage {
@@ -35,4 +37,6 @@ message UserProfile {
 	int32 share_coin = 10; //分享朋友圈获得的积分
 	int32 newUser = 11; //是否是新用户，45天内是新用户，是1，不是0
     repeated InterestItem interestedWords = 12;  //感兴趣的词汇分类
+	string province = 13; //省份
+	string city = 14; //城市
 }

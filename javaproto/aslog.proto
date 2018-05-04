@@ -56,6 +56,8 @@ message  Adslot {
 	optional string   bookid  = 13; // 相同站点不同页面标记
 	optional int32    discount = 14; //广告位打折值，单位%
 	optional int32    flooracp = 15; //最低单价
+	optional int32    exp_style = 16; //实验样式id
+	optional string   exp_feature = 17; //实验功能id
 };
 
 enum NetworkType {
@@ -104,6 +106,7 @@ enum DeviceIdType {
 	DEVID_LSCOOKIE = 5;
 	DEVID_ANDROIDID = 6;
 	DEVID_IMSI = 7;
+	DEVID_TKID = 8;
 };
 
 message DeviceId {
@@ -151,6 +154,7 @@ enum AdSrc {
 	FANCY = 6;
 	GDT = 7;
 	MOBVISTA = 8;
+	VANKA = 9;
 };
 enum InteractionType {
 	NO_INTERACT = 0;
@@ -266,6 +270,8 @@ message UserProfile {
 	optional uint32 newuser = 8; // 新老用户 1老用户 2新用户
 	optional uint32 req_count = 9; //同一用户一天内的请求次数
 	optional uint32 click_count = 10; //同一用户一天内的点击次数
+	optional string province = 11; //省份
+	optional string city = 12; //城市
 }
 
 message NoticeLogBody {

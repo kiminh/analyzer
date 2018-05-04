@@ -57,20 +57,18 @@ object TestPyModel {
     )
 
     irmodel.save(spark.sparkContext, "/user/cpc/xgboost_ir/"+filetime)
-    val treeLimit = Source.fromFile(cur + "/_tmp/" + namespace + "-xgboost_best_ntree_limit.txt").mkString.toInt
+    val treeLimit = Source.fromFile(cur + "/_tmp/" + namespace + "-xgboost_best_ntree_limit.txt").mkString.trim.toInt
     println("tree limit", treeLimit)
     val mlm = Pack.parseFrom(new FileInputStream(cur + "/_tmp/" + namespace + "-xgboost.mlm"))
 
     val prefix = "%s-%s".format(parser, dataType)
     val filename = "/home/cpc/anal/xgboost_model/%s-%s".format(prefix, filetime)
     println(filename)
-    val pack = Pack(
-      createTime = mlm.createTime,
-      lr = mlm.lr,
+
+    val pack = mlm.copy(
       ir = Option(ir),
-      dict = mlm.dict,
       gbmTreeLimit = treeLimit,
-      gbmfile = s"data/$prefix.gbm"
+      gbmfile = "data/%s.gbm".format(prefix)
     )
     pack.writeTo(new FileOutputStream(s"$filename.mlm"))
     val cmd = s"cp -f $cur/_tmp/$namespace-xgboost.gbm $filename.gbm"
