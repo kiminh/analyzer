@@ -23,7 +23,7 @@ import sys.process._
   */
 object TestPyModel {
 
-  var spark: SparkSession = null;
+  var spark: SparkSession = _
   private var irmodel: IsotonicRegressionModel = _
   private var irError = 0d
 
