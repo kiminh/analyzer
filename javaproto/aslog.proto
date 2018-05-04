@@ -106,6 +106,7 @@ enum DeviceIdType {
 	DEVID_LSCOOKIE = 5;
 	DEVID_ANDROIDID = 6;
 	DEVID_IMSI = 7;
+	DEVID_TKID = 8;
 };
 
 message DeviceId {
@@ -269,6 +270,8 @@ message UserProfile {
 	optional uint32 newuser = 8; // 新老用户 1老用户 2新用户
 	optional uint32 req_count = 9; //同一用户一天内的请求次数
 	optional uint32 click_count = 10; //同一用户一天内的点击次数
+	optional string province = 11; //省份
+	optional string city = 12; //城市
 }
 
 message NoticeLogBody {
