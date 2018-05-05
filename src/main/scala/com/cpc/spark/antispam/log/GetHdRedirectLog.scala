@@ -48,7 +48,7 @@ object GetHdRedirectLog {
     var cfgLog = ctx.sql(sql1).as[CfgLog]
       .rdd.cache()
     var toResult = cfgLog.map(x => ((x.aid,x.redirect_url,x.hour), 1)).reduceByKey((x,y) => x+y).map{
-      case ((adslotId, url,hour),count) =>
+      case (((adslotId, url,hour),count)) =>
         HdRedict(date,hour, adslotId,url,count)
     }
    println("count:" + cfgLog.count())
