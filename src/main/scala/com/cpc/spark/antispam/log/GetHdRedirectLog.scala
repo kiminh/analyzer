@@ -42,16 +42,15 @@ object GetHdRedirectLog {
       .enableHiveSupport()
       .getOrCreate()
     import ctx.implicits._
-    var sql1 = (" SELECT * FROM dl_cpc.cpc_cfg_log where `date`='%s' and log_type in('/hdjump','/reqhd') ").format(date)
-
-    println("sql1:" + sql1)
-    var cfgLog = ctx.sql(sql1).as[CfgLog]
-      .rdd.cache()
-    var toResult = cfgLog.map(x => ((x.aid,x.redirect_url,x.hour), 1)).reduceByKey((x,y) => x+y).map{
-      case (((adslotId, url,hour),count)) =>
-        HdRedict(date,hour, adslotId,url,count)
+    var cfgLog = ctx.read
+      .parquet("/warehouse/dl_cpc.db/cpc_cfg_log/date=%s".format(date))
+      .as[CfgLog].rdd.filter(x => x.log_type == "/hdjump" || x.log_type == "/reqhd")
+      .cache()
+    var toResult = cfgLog.map(x => ((x.aid, x.redirect_url, x.hour), 1)).reduceByKey((x, y) => x + y).map {
+      case ((adslotId, url, hour), count) =>
+        HdRedict(date, hour, adslotId, url, count)
     }
-   println("count:" + cfgLog.count())
+    println("count:" + cfgLog.count())
     clearReportHourData("report_hd_redirect", date)
     ctx.createDataFrame(toResult)
       .write
@@ -79,11 +78,11 @@ object GetHdRedirectLog {
   }
 
   case class HdRedict(
-                          date: String = "",
-                          hour: String = "",
-                          adslot_id:String = "",
-                          redirect_url: String = "",
-                          pv: Int = 0
-                        )
+                       date: String = "",
+                       hour: String = "",
+                       adslot_id: String = "",
+                       redirect_url: String = "",
+                       pv: Int = 0
+                     )
 
 }
