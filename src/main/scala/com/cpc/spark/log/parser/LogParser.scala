@@ -57,6 +57,7 @@ object LogParser {
           devices += notice.getDevice.getIds(i).getType + ":" + notice.getDevice.getIds(i).getId
         }
       }
+      extInt.update("browser_type",notice.getDevice.getBrowser.getNumber.toLong)
 
       ext.update("device_ids", ExtValue(string_value = devices))
       if (notice.getAdslotCount > 0) {
