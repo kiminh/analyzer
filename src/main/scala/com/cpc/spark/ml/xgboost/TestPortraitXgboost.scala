@@ -4,24 +4,21 @@ import java.io.{FileInputStream, FileOutputStream}
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import ml.dmlc.xgboost4j.scala.XGBoost
-import ml.dmlc.xgboost4j.scala.spark.XGBoostEstimator
-import mlmodel.mlmodel.{Dict, IRModel, Pack}
+import com.cpc.spark.ml.common.Utils
+import com.typesafe.config.ConfigFactory
+import mlmodel.mlmodel.Strategy.StrategyXgboost
+import mlmodel.mlmodel.{IRModel, Pack}
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
-import scala.collection.mutable
-import com.cpc.spark.ml.common.Utils
-import com.typesafe.config.ConfigFactory
-
 import scala.io.Source
-import sys.process._
+import scala.sys.process._
 
 /**
   * Created by roydong on 19/03/2018.
   */
-object TestPyModel {
+object TestPortraitXgboost {
 
   var spark: SparkSession = _
   private var irmodel: IsotonicRegressionModel = _
@@ -57,18 +54,15 @@ object TestPyModel {
     )
 
     irmodel.save(spark.sparkContext, "/user/cpc/xgboost_ir/"+filetime)
-    val treeLimit = Source.fromFile(cur + "/_tmp/" + namespace + "-xgboost_best_ntree_limit.txt").mkString.trim.toInt
-    println("tree limit", treeLimit)
-    val mlm = Pack.parseFrom(new FileInputStream(cur + "/_tmp/" + namespace + "-xgboost.mlm"))
 
     val prefix = "%s-%s".format(parser, dataType)
     val filename = "/home/cpc/anal/xgboost_model/%s-%s".format(prefix, filetime)
     println(filename)
 
-    val pack = mlm.copy(
+    val pack = Pack(
       ir = Option(ir),
-      gbmTreeLimit = treeLimit,
-      gbmfile = "data/%s.gbm".format(prefix)
+      gbmfile = "data/%s.gbm".format(prefix),
+      strategy = StrategyXgboost
     )
     pack.writeTo(new FileOutputStream(s"$filename.mlm"))
     val cmd = s"cp -f $cur/_tmp/$namespace-xgboost.gbm $filename.gbm"
