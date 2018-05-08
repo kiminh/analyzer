@@ -108,7 +108,6 @@ object GetHourReport {
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_charge_hourly", mariadbProp)
 
-    clearReportHourData("report_media_charge_hourly", date, hour)
     chargedata.write
       .mode(SaveMode.Append)
       .jdbc(mariadb_amateur_url, "report.report_media_charge_hourly", mariadb_amateur_prop)
