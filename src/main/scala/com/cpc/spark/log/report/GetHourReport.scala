@@ -19,6 +19,9 @@ object GetHourReport {
 
   val mariadbProp = new Properties()
 
+  var mariadb_amateur_url = ""
+  val mariadb_amateur_prop = new Properties()
+
   def main(args: Array[String]): Unit = {
     if (args.length < 2) {
       System.err.println(
@@ -38,6 +41,11 @@ object GetHourReport {
     mariadbProp.put("user", conf.getString("mariadb.user"))
     mariadbProp.put("password", conf.getString("mariadb.password"))
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
+
+    mariadb_amateur_url=conf.getString("mariadb.amateur_write.url")
+    mariadb_amateur_prop.put("user",conf.getString("mariadb.amateur_write.user"))
+    mariadb_amateur_prop.put("password", conf.getString("mariadb.amateur_write.password"))
+    mariadb_amateur_prop.put("driver", conf.getString("mariadb.amateur_write.driver"))
     val ctx = SparkSession.builder()
       .appName("cpc get hour report from %s %s/%s".format(table, date, hour))
       .enableHiveSupport()
@@ -95,10 +103,15 @@ object GetHourReport {
 
 
     clearReportHourData("report_media_charge_hourly", date, hour)
-    ctx.createDataFrame(chargeData)
-      .write
+    val chargedata=ctx.createDataFrame(chargeData).persist
+    chargedata.write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_charge_hourly", mariadbProp)
+
+    clearReportHourData("report_media_charge_hourly", date, hour)
+    chargedata.write
+      .mode(SaveMode.Append)
+      .jdbc(mariadb_amateur_url, "report.report_media_charge_hourly", mariadb_amateur_prop)
 
     println("charge", chargeData.count())
 
@@ -489,11 +502,20 @@ object GetHourReport {
         mariadbProp.getProperty("user"),
         mariadbProp.getProperty("password"))
       val stmt = conn.createStatement()
+
+      val conn_amateur=DriverManager.getConnection(
+        mariadb_amateur_url,
+        mariadb_amateur_prop.getProperty("user"),
+        mariadb_amateur_prop.getProperty("password")
+      )
+      val stmt_amateur=conn_amateur.createStatement()
+
       val sql =
         """
           |delete from report.%s where `date` = "%s" and `hour` = %d
         """.stripMargin.format(tbl, date, hour.toInt)
-      stmt.executeUpdate(sql);
+      stmt.executeUpdate(sql)
+      stmt_amateur.execute(sql)
     } catch {
       case e: Exception => println("exception caught: " + e);
     }
