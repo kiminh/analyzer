@@ -165,7 +165,7 @@ object InsertReportSdkTrace {
           |FROM dl_cpc.cpc_union_trace_log cutl
           |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
           |WHERE cutl.date="%s" AND cul.date="%s"
-          |AND cutl.hour="%s" AND cul.hour="%s" AND cutl.trace_type in("load")
+          |AND cutl.hour="%s" AND cul.hour="%s" AND cutl.trace_type in("load","active5","disactive")
           |AND cul.ext["client_type"].string_value<>"NATIVESDK"
           |AND cul.media_appsid in ("80000001","80000002", "80000006", "800000062", "80000064", "80000066", "80000141")
           |AND cul.ext["adclass"].int_value=110110100
@@ -236,7 +236,7 @@ object InsertReportSdkTrace {
           |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
           |WHERE cutl.date="%s" AND cul.date="%s"
           |AND cutl.hour="%s" AND cul.hour="%s"
-          |AND cutl.trace_type in("lpload","load")
+          |AND cutl.trace_type in("lpload","load","active5","disactive","active_auto")
           |AND cul.ext["client_type"].string_value="NATIVESDK"
           |AND cul.ext["adclass"].int_value=110110100
           |AND cul.isclick>0
@@ -249,6 +249,9 @@ object InsertReportSdkTrace {
           val adslotType = x.getInt(3)
           var traceType = x.getString(4)
           var traceOp1 = x.getString(5)
+          if (traceType == "load" || traceType == "active5" || traceType == "active_auto" || traceType == "disactive") {
+            traceOp1 = ""
+          }
           var total = 1.toLong
           ((adslotId, traceType, traceOp1), (Info(mediaId, adslotId, adslotType, 0, 0, 0, 0, traceType, traceOp1, total)))
       }
@@ -412,7 +415,8 @@ object InsertReportSdkTrace {
     var wzNoSdkLoad = jsTraceDataByWzNoSdk
       .map {
         x =>
-          (x.mediaId, x.adslotId, x.adslotType, "load", x.traceOp1, x.total, argDay, argHour.toInt, "WzNoSdk")
+          //"load"
+          (x.mediaId, x.adslotId, x.adslotType, x.traceType, x.traceOp1, x.total, argDay, argHour.toInt, "WzNoSdk")
       }
 
 
@@ -444,10 +448,10 @@ object InsertReportSdkTrace {
       }
 
     var wzSdkLoad = jsTraceDataByWzSdk
-      .filter(_.traceType == "load")
+      .filter(_.traceType != "lpload")
       .map {
         x =>
-          (x.mediaId, x.adslotId, x.adslotType, "load", x.traceOp1, x.total, argDay, argHour.toInt, "WzSdk")
+          (x.mediaId, x.adslotId, x.adslotType, x.traceType, x.traceOp1, x.total, argDay, argHour.toInt, "WzSdk")
       }
 
     var wzSdkLpload = jsTraceDataByWzSdk

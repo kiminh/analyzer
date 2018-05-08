@@ -22,7 +22,8 @@ object InsertReportSiteBuilding {
                            trace_type: String,
                            total: Int,
                            siteid: Int = 0,
-                           price: Int = 0) {
+                           price: Int = 0,
+                           traceOp1: String = "") {
 
   }
 
@@ -132,7 +133,7 @@ object InsertReportSiteBuilding {
     val traceData = ctx.sql(
       """
         |SELECT DISTINCT cutl.searchid,cutl.trace_type,cutl.duration,
-        |cul.userid, cul.unitid,cul.ideaid
+        |cul.userid, cul.unitid,cul.ideaid,cutl.trace_op1
         |FROM dl_cpc.cpc_union_trace_log cutl
         |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
         |WHERE cutl.date="%s" AND cul.date="%s" AND cul.isclick>0 AND cul.ideaid>0 AND cul.userid>0
@@ -146,7 +147,11 @@ object InsertReportSiteBuilding {
           val userid = x.getInt(3)
           val unitid = x.getInt(4)
           val ideaid = x.getInt(5)
-          ((ideaid, trace_type), UnionLogInfo(searchid, userid, unitid, ideaid, 0, 0, trace_type, 1))
+          var traceOp1 = ""
+          if ((trace_type == "apkdown") || (trace_type == "lpload")) {
+            traceOp1 = x.getString(6)
+          }
+          ((ideaid, trace_type), UnionLogInfo(searchid, userid, unitid, ideaid, 0, 0, trace_type, 1, 0, 0, traceOp1))
       }
       .filter {
         x =>
@@ -155,12 +160,12 @@ object InsertReportSiteBuilding {
       .map {
         x =>
           val siteid = broadcastIdeaMaps.value(x._2.ideaid).siteid
-          ((siteid, x._2.trace_type),
-            UnionLogInfo(x._2.searchid, x._2.userid, x._2.unitid, x._2.ideaid, 0, 0, x._2.trace_type, 1, siteid))
+          ((siteid, x._2.trace_type, x._2.traceOp1),
+            UnionLogInfo(x._2.searchid, x._2.userid, x._2.unitid, x._2.ideaid, 0, 0, x._2.trace_type, 1, siteid, 0, x._2.traceOp1))
       }
       .reduceByKey {
         (a, b) =>
-          UnionLogInfo(a.searchid, a.userid, a.unitid, a.ideaid, 0, 0, a.trace_type, a.total + b.total, a.siteid, 0)
+          UnionLogInfo(a.searchid, a.userid, a.unitid, a.ideaid, 0, 0, a.trace_type, a.total + b.total, a.siteid, 0, a.traceOp1)
       }
       .map {
         x =>
@@ -200,13 +205,13 @@ object InsertReportSiteBuilding {
       .union(priceData)
       .map {
         x =>
-          (x.siteid, x.userid, x.trace_type, x.total, argDay)
+          (x.siteid, x.userid, x.trace_type, x.total, argDay, x.traceOp1)
       }
       .repartition(50)
       .cache()
 
     var insertDataFrame = ctx.createDataFrame(allData)
-      .toDF("site_id", "user_id", "target_type", "target_value", "date")
+      .toDF("site_id", "user_id", "target_type", "target_value", "date", "trace_op1")
 
     println("insertDataFrame count", insertDataFrame.count())
 
