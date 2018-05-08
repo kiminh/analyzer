@@ -307,7 +307,8 @@ object GetHourReport {
       .map {
         u =>
           val exptag = u.getAs[String]("exptags").split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
-          val expctr = u.getAs[Int]("exp_ctr")
+          var expctr = u.getAs[Int]("exp_ctr")
+          expctr = if (expctr < 0) 0 else expctr
           var isclick = u.getAs[Int]("isclick")
           var spam_click = u.getAs[Int]("spam_click")
           var antispam_score = u.getAs[Int]("antispam_score")
