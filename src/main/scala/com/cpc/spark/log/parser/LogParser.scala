@@ -57,7 +57,7 @@ object LogParser {
           devices += notice.getDevice.getIds(i).getType + ":" + notice.getDevice.getIds(i).getId
         }
       }
-      extInt.update("browser_type",notice.getDevice.getBrowser.getNumber.toLong)
+      extInt.update("browser_type", notice.getDevice.getBrowser.getNumber.toLong)
 
       ext.update("device_ids", ExtValue(string_value = devices))
       if (notice.getAdslotCount > 0) {
@@ -80,12 +80,16 @@ object LogParser {
         extInt.update("dsp_num", dspnum)
         for (i <- 0 until dspnum) {
           val dsp = notice.getDspReqInfo(i)
-          extInt.update("dsp_src_%d".format(i), dsp.getSrc.getNumber)
+          val src = dsp.getSrc.getNumber
+          extInt.update("dsp_src_%d".format(i), src)
           extString.update("dsp_mediaid_%d".format(i), dsp.getDspmediaid)
           extString.update("dsp_adslotid_%d".format(i), dsp.getDspadslotid)
 
+          extString.update("dsp_adslotid_by_src_%d".format(src), dsp.getDspadslotid)
+
           val adnum = dsp.getRetAdsNum
           extInt.update("dsp_adnum_%d".format(i), adnum)
+          extInt.update("dsp_adnum_by_src_%d".format(src), adnum)
         }
       }
 
