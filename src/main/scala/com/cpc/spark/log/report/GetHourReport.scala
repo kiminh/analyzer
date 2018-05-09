@@ -501,20 +501,22 @@ object GetHourReport {
         mariadbProp.getProperty("user"),
         mariadbProp.getProperty("password"))
       val stmt = conn.createStatement()
-
-      val conn_amateur=DriverManager.getConnection(
-        mariadb_amateur_url,
-        mariadb_amateur_prop.getProperty("user"),
-        mariadb_amateur_prop.getProperty("password")
-      )
-      val stmt_amateur=conn_amateur.createStatement()
-
       val sql =
         """
           |delete from report.%s where `date` = "%s" and `hour` = %d
         """.stripMargin.format(tbl, date, hour.toInt)
       stmt.executeUpdate(sql)
-      stmt_amateur.execute(sql)
+
+      if(tbl=="report_media_charge_hourly"){
+        val conn_amateur=DriverManager.getConnection(
+          mariadb_amateur_url,
+          mariadb_amateur_prop.getProperty("user"),
+          mariadb_amateur_prop.getProperty("password")
+        )
+        val stmt_amateur=conn_amateur.createStatement()
+        stmt_amateur.executeUpdate(sql)
+      }
+
     } catch {
       case e: Exception => println("exception caught: " + e);
     }
