@@ -102,7 +102,7 @@ object InsertReportGameCenter {
       .count()
     println("pvCount is ", pvCount)
 
-    val pvData = ctx.sparkContext.parallelize(Seq(("load_gameCenter_pv", pvCount, argDay, argHour.toInt)))
+    val pvData = ctx.sparkContext.parallelize(Seq(("gameCenter_uv", pvCount, argDay, argHour.toInt)))
 
 
     var insertDataFrame = ctx.createDataFrame(pvData.union(traceData))

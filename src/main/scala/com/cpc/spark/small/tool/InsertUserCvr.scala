@@ -139,7 +139,12 @@ object InsertUserCvr {
           var isshow = x._2._2
           var isclick = x._2._3
           var price = x._2._4
-          var media_appsid = x._2._5
+          var media_appsid = 0
+          try {
+            media_appsid = x._2._5.toInt
+          } catch {
+            case e: Exception =>
+          }
           var adslotid = x._2._6
           var adslot_type = x._2._7
           var load = x._2._8
@@ -149,6 +154,7 @@ object InsertUserCvr {
           var date = argDay
           (userid, media_appsid, adslotid, adslot_type, date, hour, datetime, isshow, isclick, price, load, active)
       }
+      .filter(_._2 > 0)
       .cache()
     println("usercvrData count", userCvrData.count())
 

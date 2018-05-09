@@ -134,6 +134,7 @@ object InsertReportCategoryTarget {
             case "load" => load += 1
             case s if s.startsWith("active") => active += 1
             //case "press" => active += 1
+            case "disactive" => active -= 1
             case _ =>
           }
 

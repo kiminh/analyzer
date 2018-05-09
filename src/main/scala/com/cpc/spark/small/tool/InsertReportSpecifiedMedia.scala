@@ -100,7 +100,11 @@ object InsertReportSpecifiedMedia {
         x =>
           (x._2)
       }
-      .filter(_.userid > 0)
+      //.filter(_.userid > 0)
+      .filter {
+        x =>
+          (x.userid > 0) && (x.trace_type.length <= 200)
+      }
       .repartition(50)
       .cache()
     println("traceData count", traceData.count())
@@ -124,9 +128,9 @@ object InsertReportSpecifiedMedia {
       .union(clickData)
       .union(traceData)
       .map {
-      x =>
-        (x.userid, x.unitid, x.ideaid, x.trace_type, x.total, argDay, x.hour)
-    }
+        x =>
+          (x.userid, x.unitid, x.ideaid, x.trace_type, x.total, argDay, x.hour)
+      }
       .repartition(50)
       .cache()
 
