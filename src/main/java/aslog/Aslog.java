@@ -977,6 +977,10 @@ public final class Aslog {
      * <code>VANKA = 9;</code>
      */
     VANKA(9),
+    /**
+     * <code>IFLYTEK = 10;</code>
+     */
+    IFLYTEK(10),
     ;
 
     /**
@@ -1019,6 +1023,10 @@ public final class Aslog {
      * <code>VANKA = 9;</code>
      */
     public static final int VANKA_VALUE = 9;
+    /**
+     * <code>IFLYTEK = 10;</code>
+     */
+    public static final int IFLYTEK_VALUE = 10;
 
 
     public final int getNumber() {
@@ -1044,6 +1052,7 @@ public final class Aslog {
         case 7: return GDT;
         case 8: return MOBVISTA;
         case 9: return VANKA;
+        case 10: return IFLYTEK;
         default: return null;
       }
     }
@@ -30626,18 +30635,18 @@ public final class Aslog {
       "\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_TE" +
       "XT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013AD_INTERACT" +
       "\020\005\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_BANNER\020\007\022\014\n\010AD_V" +
-      "IDEO\020\010*s\n\005AdSrc\022\007\n\003CPC\020\001\022\n\n\006INMOBI\020\002\022\013\n\007" +
-      "TANXSSP\020\003\022\016\n\nBOTTOMINIG\020\004\022\013\n\007HUZHONG\020\005\022\t" +
-      "\n\005FANCY\020\006\022\007\n\003GDT\020\007\022\014\n\010MOBVISTA\020\010\022\t\n\005VANK" +
-      "A\020\t*i\n\017InteractionType\022\017\n\013NO_INTERACT\020\000\022" +
-      "\013\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020\003\022" +
-      "\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006*\203\001\n\rMater",
-      "ialLevel\022\032\n\026MATERIAL_LEVEL_UNKNOWN\020\000\022\024\n\020" +
-      "MATERIAL_LEVEL_1\020\001\022\024\n\020MATERIAL_LEVEL_2\020\002" +
-      "\022\024\n\020MATERIAL_LEVEL_3\020\003\022\024\n\020MATERIAL_LEVEL" +
-      "_4\020\004*M\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t\n\005JSS" +
-      "DK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005\022\007\n\003QT" +
-      "T\020\006"
+      "IDEO\020\010*\200\001\n\005AdSrc\022\007\n\003CPC\020\001\022\n\n\006INMOBI\020\002\022\013\n" +
+      "\007TANXSSP\020\003\022\016\n\nBOTTOMINIG\020\004\022\013\n\007HUZHONG\020\005\022" +
+      "\t\n\005FANCY\020\006\022\007\n\003GDT\020\007\022\014\n\010MOBVISTA\020\010\022\t\n\005VAN" +
+      "KA\020\t\022\013\n\007IFLYTEK\020\n*i\n\017InteractionType\022\017\n\013" +
+      "NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002" +
+      "\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002",
+      "GP\020\006*\203\001\n\rMaterialLevel\022\032\n\026MATERIAL_LEVEL" +
+      "_UNKNOWN\020\000\022\024\n\020MATERIAL_LEVEL_1\020\001\022\024\n\020MATE" +
+      "RIAL_LEVEL_2\020\002\022\024\n\020MATERIAL_LEVEL_3\020\003\022\024\n\020" +
+      "MATERIAL_LEVEL_4\020\004*M\n\nClientType\022\r\n\tNATI" +
+      "VESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022" +
+      "\007\n\003FUN\020\005\022\007\n\003QTT\020\006"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

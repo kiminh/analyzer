@@ -204,6 +204,7 @@ enum Dsp {
     GDT_DSP = 7;
     MOBVISTA_DSP = 8;
     VANKA_DSP = 9;
+    IFLYTEK_DSP = 10;
 }
 
 // DSP计费相关字段
