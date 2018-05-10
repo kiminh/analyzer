@@ -314,8 +314,7 @@ object GetHourReport {
       .jdbc(mariadbUrl, "report.report_media_fill_hourly", mariadbProp)
     println("fill", fillData.count())
 
-    val ctrData = unionLog
-      .filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
+    val ctrData = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
       .map {
         u =>
           val exptag = u.getAs[String]("exptags").split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
@@ -331,16 +330,26 @@ object GetHourReport {
             realCost = 0
           }
 
-          var cost = realCost.toFloat
+          var adclass = u.getAs[Int]("adclass")
+          /*
+          110110100  网赚
+          130104101  男科
+          125100100  彩票
+          100101109  扑克
+          99   其他
+           */
+          val topAdclass = Seq(110110100, 130104101, 125100100, 100101109)
+          if (!topAdclass.contains(adclass)) {
+            adclass = 99
+          }
+
+          val cost = realCost.toFloat
 
           val ctr = CtrReport(
             media_id = u.getAs[String]("media_appsid").toInt,
             adslot_id = u.getAs[String]("adslotid").toInt,
             adslot_type = u.getAs[Int]("adslot_type"),
-            //unit_id = u.unitid,
-            //idea_id = u.ideaid,
-            //plan_id = u.planid,
-            //user_id = u.userid,
+            adclass = adclass,
             exp_tag = exptag,
             request = 1,
             served_request = u.getAs[Int]("isfill"),
@@ -350,8 +359,31 @@ object GetHourReport {
             exp_click = expctr,
             date = "%s %s:00:00".format(u.getAs[String]("date"), u.getAs[String]("hour"))
           )
+          (u.getAs[String]("searchid"), ctr)
+      }
 
-          val key = (ctr.media_id, ctr.adslot_id, ctr.plan_id, ctr.unit_id, ctr.idea_id, exptag)
+    //get cvr data
+    val cvrlog = ctx.sql(
+      s"""
+         |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
+        """.stripMargin.format(date, hour))
+      .rdd
+      .map {
+        x =>
+          (x.getAs[String]("searchid"), Seq(x))
+      }
+      .reduceByKey(_ ++ _)
+      .map {
+        x =>
+          val convert = Utils.cvrPositiveV(x._2, "v2")
+          (x._1, convert)
+      }
+
+    val ctrCvrData = ctrData.leftOuterJoin(cvrlog)
+      .map {x => x._2._1.copy(cvr_num = x._2._2.getOrElse(0))}
+      .map {
+        ctr =>
+          val key = (ctr.media_id, ctr.adslot_id, ctr.adclass, ctr.exp_tag)
           (key, ctr)
       }
       .reduceByKey {
@@ -362,7 +394,8 @@ object GetHourReport {
             impression = x.impression + y.impression,
             cash_cost = x.cash_cost + y.cash_cost,
             click = x.click + y.click,
-            exp_click = x.exp_click + y.exp_click
+            exp_click = x.exp_click + y.exp_click,
+            cvr_num = x.cvr_num + y.cvr_num
           )
       }
       .map {
@@ -385,17 +418,17 @@ object GetHourReport {
       }
 
     clearReportHourData("report_ctr_prediction_hourly", "%s %s:00:00".format(date, hour), "0")
-    ctx.createDataFrame(ctrData)
+    ctx.createDataFrame(ctrCvrData)
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_ctr_prediction_hourly", mariadbProp)
-    println("ctr", ctrData.count())
+    println("ctr", ctrCvrData.count())
 
+    /*
     val cvrlog = ctx.sql(
       s"""
          |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
         """.stripMargin.format(date, hour))
-      //      .as[TraceLog]
       .rdd
       .map {
         x =>
@@ -485,6 +518,7 @@ object GetHourReport {
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_cvr_prediction_hourly", mariadbProp)
     println("cvr", cvrData.count())
+    */
 
     unionLog.unpersist()
 
@@ -544,6 +578,7 @@ object GetHourReport {
                                 media_id: Int = 0,
                                 adslot_id: Int = 0,
                                 adslot_type: Int = 0,
+                                adclass: Int = 0,
                                 idea_id: Int = 0,
                                 unit_id: Int = 0,
                                 plan_id: Int = 0,
@@ -554,6 +589,7 @@ object GetHourReport {
                                 impression: Int = 0,
                                 cash_cost: Float = 0,
                                 click: Int = 0,
+                                cvr_num: Int = 0,
                                 exp_click: Float = 0,
                                 ctr: Float = 0,
                                 exp_ctr: Float = 0,
