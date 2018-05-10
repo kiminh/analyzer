@@ -66,117 +66,6 @@ object GetHourReport {
        """.stripMargin.format(table, date, hour))
       .rdd.cache()
 
-    val ctrData = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
-      .map {
-        u =>
-          val exptag = u.getAs[String]("exptags").split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
-          var expctr = u.getAs[Int]("exp_ctr")
-          expctr = if (expctr < 0) 0 else expctr
-          var isclick = u.getAs[Int]("isclick")
-          var spam_click = u.getAs[Int]("spam_click")
-          var antispam_score = u.getAs[Int]("antispam_score")
-          var realCost = 0
-          if (isclick > 0 && antispam_score == 10000) {
-            realCost = u.getAs[Int]("price")
-          } else {
-            realCost = 0
-          }
-
-          var adclass = u.getAs[Int]("adclass")
-          /*
-          110110100  网赚
-          130104101  男科
-          125100100  彩票
-          100101109  扑克
-          99   其他
-           */
-          val topAdclass = Seq(110110100, 130104101, 125100100, 100101109)
-          if (!topAdclass.contains(adclass)) {
-            adclass = 99
-          }
-
-          val cost = realCost.toFloat
-
-          val ctr = CtrReport(
-            media_id = u.getAs[String]("media_appsid").toInt,
-            adslot_id = u.getAs[String]("adslotid").toInt,
-            adslot_type = u.getAs[Int]("adslot_type"),
-            adclass = adclass,
-            exp_tag = exptag,
-            request = 1,
-            served_request = u.getAs[Int]("isfill"),
-            impression = u.getAs[Int]("isshow"),
-            cash_cost = cost,
-            click = isclick,
-            exp_click = expctr,
-            date = "%s %s:00:00".format(u.getAs[String]("date"), u.getAs[String]("hour"))
-          )
-          (u.getAs[String]("searchid"), ctr)
-      }
-
-    //get cvr data
-    val cvrlog = ctx.sql(
-      s"""
-         |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
-        """.stripMargin.format(date, hour))
-      .rdd
-      .map {
-        x =>
-          (x.getAs[String]("searchid"), Seq(x))
-      }
-      .reduceByKey(_ ++ _)
-      .map {
-        x =>
-          val convert = Utils.cvrPositiveV(x._2, "v2")
-          (x._1, convert)
-      }
-
-    val ctrCvrData = ctrData.leftOuterJoin(cvrlog)
-      .map {x => x._2._1.copy(cvr_num = x._2._2.getOrElse(0))}
-      .map {
-        ctr =>
-          val key = (ctr.media_id, ctr.adslot_id, ctr.adclass, ctr.exp_tag)
-          (key, ctr)
-      }
-      .reduceByKey {
-        (x, y) =>
-          x.copy(
-            request = x.request + y.request,
-            served_request = x.served_request + y.served_request,
-            impression = x.impression + y.impression,
-            cash_cost = x.cash_cost + y.cash_cost,
-            click = x.click + y.click,
-            exp_click = x.exp_click + y.exp_click,
-            cvr_num = x.cvr_num + y.cvr_num
-          )
-      }
-      .map {
-        x =>
-          val ctr = x._2.copy(
-            exp_click = x._2.exp_click / 1000000
-          )
-          if (ctr.impression > 0) {
-            ctr.copy(
-              ctr = ctr.click.toFloat / ctr.impression.toFloat,
-              exp_ctr = ctr.exp_click / ctr.impression.toFloat,
-              cpm = ctr.cash_cost / ctr.impression.toFloat * (1000 / 100),
-              cash_cost = ctr.cash_cost.toInt
-            )
-          } else {
-            ctr.copy(
-              cash_cost = ctr.cash_cost.toInt
-            )
-          }
-      }
-
-    clearReportHourData("report_ctr_prediction_hourly", "%s %s:00:00".format(date, hour), "0")
-    ctx.createDataFrame(ctrCvrData)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_ctr_prediction_hourly", mariadbProp)
-    println("ctr", ctrCvrData.count())
-    return
-
     val chargeData = unionLog
       .map {
         x =>
@@ -425,6 +314,115 @@ object GetHourReport {
       .jdbc(mariadbUrl, "report.report_media_fill_hourly", mariadbProp)
     println("fill", fillData.count())
 
+    val ctrData = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
+      .map {
+        u =>
+          val exptag = u.getAs[String]("exptags").split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
+          var expctr = u.getAs[Int]("exp_ctr")
+          expctr = if (expctr < 0) 0 else expctr
+          var isclick = u.getAs[Int]("isclick")
+          var spam_click = u.getAs[Int]("spam_click")
+          var antispam_score = u.getAs[Int]("antispam_score")
+          var realCost = 0
+          if (isclick > 0 && antispam_score == 10000) {
+            realCost = u.getAs[Int]("price")
+          } else {
+            realCost = 0
+          }
+
+          var adclass = u.getAs[Int]("adclass")
+          /*
+          110110100  网赚
+          130104101  男科
+          125100100  彩票
+          100101109  扑克
+          99   其他
+           */
+          val topAdclass = Seq(110110100, 130104101, 125100100, 100101109)
+          if (!topAdclass.contains(adclass)) {
+            adclass = 99
+          }
+
+          val cost = realCost.toFloat
+
+          val ctr = CtrReport(
+            media_id = u.getAs[String]("media_appsid").toInt,
+            adslot_id = u.getAs[String]("adslotid").toInt,
+            adslot_type = u.getAs[Int]("adslot_type"),
+            adclass = adclass,
+            exp_tag = exptag,
+            request = 1,
+            served_request = u.getAs[Int]("isfill"),
+            impression = u.getAs[Int]("isshow"),
+            cash_cost = cost,
+            click = isclick,
+            exp_click = expctr,
+            date = "%s %s:00:00".format(u.getAs[String]("date"), u.getAs[String]("hour"))
+          )
+          (u.getAs[String]("searchid"), ctr)
+      }
+
+    //get cvr data
+    val cvrlog = ctx.sql(
+      s"""
+         |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
+        """.stripMargin.format(date, hour))
+      .rdd
+      .map {
+        x =>
+          (x.getAs[String]("searchid"), Seq(x))
+      }
+      .reduceByKey(_ ++ _)
+      .map {
+        x =>
+          val convert = Utils.cvrPositiveV(x._2, "v2")
+          (x._1, convert)
+      }
+
+    val ctrCvrData = ctrData.leftOuterJoin(cvrlog)
+      .map {x => x._2._1.copy(cvr_num = x._2._2.getOrElse(0))}
+      .map {
+        ctr =>
+          val key = (ctr.media_id, ctr.adslot_id, ctr.adclass, ctr.exp_tag)
+          (key, ctr)
+      }
+      .reduceByKey {
+        (x, y) =>
+          x.copy(
+            request = x.request + y.request,
+            served_request = x.served_request + y.served_request,
+            impression = x.impression + y.impression,
+            cash_cost = x.cash_cost + y.cash_cost,
+            click = x.click + y.click,
+            exp_click = x.exp_click + y.exp_click,
+            cvr_num = x.cvr_num + y.cvr_num
+          )
+      }
+      .map {
+        x =>
+          val ctr = x._2.copy(
+            exp_click = x._2.exp_click / 1000000
+          )
+          if (ctr.impression > 0) {
+            ctr.copy(
+              ctr = ctr.click.toFloat / ctr.impression.toFloat,
+              exp_ctr = ctr.exp_click / ctr.impression.toFloat,
+              cpm = ctr.cash_cost / ctr.impression.toFloat * (1000 / 100),
+              cash_cost = ctr.cash_cost.toInt
+            )
+          } else {
+            ctr.copy(
+              cash_cost = ctr.cash_cost.toInt
+            )
+          }
+      }
+
+    clearReportHourData("report_ctr_prediction_hourly", "%s %s:00:00".format(date, hour), "0")
+    ctx.createDataFrame(ctrCvrData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_ctr_prediction_hourly", mariadbProp)
+    println("ctr", ctrCvrData.count())
 
     /*
     val cvrlog = ctx.sql(
