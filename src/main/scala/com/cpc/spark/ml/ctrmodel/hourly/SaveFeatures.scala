@@ -64,6 +64,11 @@ object SaveFeatures {
     rows.write
       .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/lrmodel/ctrdata_%s/%s/%s".format(version, date, hour))
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.ml_ctr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/ctrdata_v1/%s/%s'
+      """.stripMargin.format(date, hour, date, hour))
 
     val ulog = rows.rdd.cache()
     //int dict
@@ -170,6 +175,11 @@ object SaveFeatures {
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
+      """.stripMargin.format(date, hour, date, hour))
   }
 }
 
