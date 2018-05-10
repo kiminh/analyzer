@@ -110,6 +110,7 @@ object LogParser {
           cpm = ad.getCpm
         )
 
+        extInt.update("cvr_threshold_by_user",ad.getCvrThreshold)
         ext.update("click_unit_count", ExtValue(int_value = ad.getClickCount))
         ext.update("material_level", ExtValue(int_value = ad.getMaterialLevel.getNumber))
         ext.update("cvr_threshold", ExtValue(int_value = ad.getCvrThres.toInt))
