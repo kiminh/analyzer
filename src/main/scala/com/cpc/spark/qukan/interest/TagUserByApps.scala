@@ -167,21 +167,6 @@ object TagUserByApps {
     println("has game_tuandui app users", sum)
     game_tuandui.take(10).foreach(println)
 
-
-    //手机银行
-    conf = ConfigFactory.load("people/shoujiyinhang")
-    val shoujiyinhangUids = uidHasApps(userPkgs,"people/shoujiyinhang","user_tag_by_apps.shoujiyinhang.contains")
-    sum = tagUser(shoujiyinhangUids, conf.getInt("user_tag_by_apps.shoujiyinhang.tag_id"))
-    println("has shoujiyinhang app users", sum)
-    shoujiyinhangUids.take(10).foreach(println)
-
-    //信用卡
-    conf = ConfigFactory.load("people/xinyongka")
-    val xinyongkaUids = uidHasApps(userPkgs, "people/xinyongka", "user_tag_by_apps.xinyongka.contains")
-    sum = tagUser(xinyongkaUids, conf.getInt("user_tag_by_apps.xinyongka.tag_id"))
-    println("has xinyongka app users", sum)
-    xinyongkaUids.take(10).foreach(println)
-
     //京东
     val jingdong = uidHasApps(userPkgs, "interest", "user_tag_by_apps.jingdong.contains")
     sum = tagUser(jingdong, conf.getInt("user_tag_by_apps.jingdong.tag_id"))
@@ -200,6 +185,19 @@ object TagUserByApps {
     println("has pingduoduo users", sum)
     pingduoduo.take(10).foreach(println)
 
+    //手机银行
+    conf = ConfigFactory.load("people/shoujiyinhang")
+    val shoujiyinhangUids = uidHasApps(userPkgs,"people/shoujiyinhang","user_tag_by_apps.shoujiyinhang.contains")
+    sum = tagUser(shoujiyinhangUids, conf.getInt("user_tag_by_apps.shoujiyinhang.tag_id"))
+    println("has shoujiyinhang app users", sum)
+    shoujiyinhangUids.take(10).foreach(println)
+
+    //信用卡
+    conf = ConfigFactory.load("people/xinyongka")
+    val xinyongkaUids = uidHasApps(userPkgs, "people/xinyongka", "user_tag_by_apps.xinyongka.contains")
+    sum = tagUser(xinyongkaUids, conf.getInt("user_tag_by_apps.xinyongka.tag_id"))
+    println("has xinyongka app users", sum)
+    xinyongkaUids.take(10).foreach(println)
 
 
     //    val shoujiyinhangUids = getDistribution(userPkgs, "user_tag_by_apps.shoujiyinhang.contains")
