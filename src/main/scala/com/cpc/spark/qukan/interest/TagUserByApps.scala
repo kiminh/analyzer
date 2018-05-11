@@ -182,6 +182,26 @@ object TagUserByApps {
     println("has xinyongka app users", sum)
     xinyongkaUids.take(10).foreach(println)
 
+    //京东
+    val jingdong = uidHasApps(userPkgs, "interest", "user_tag_by_apps.jingdong")
+    sum = tagUser(jingdong, conf.getInt("user_tag_by_apps.jingdong.tag_id"))
+    println("has jingdong users", sum)
+    jingdong.take(10).foreach(println)
+
+    //淘宝和天猫
+    val taobao_and_tianmao = uidHasApps(userPkgs, "interest", "user_tag_by_apps.taobao_and_tianmao")
+    sum = tagUser(taobao_and_tianmao, conf.getInt("user_tag_by_apps.taobao_and_tianmao.tag_id"))
+    println("has taobao_and_tianmao users", sum)
+    taobao_and_tianmao.take(10).foreach(println)
+
+    //拼多多
+    val pingduoduo = uidHasApps(userPkgs, "interest", "user_tag_by_apps.pingduoduo")
+    sum = tagUser(pingduoduo, conf.getInt("user_tag_by_apps.pingduoduo.tag_id"))
+    println("has pingduoduo users", sum)
+    pingduoduo.take(10).foreach(println)
+
+
+
     //    val shoujiyinhangUids = getDistribution(userPkgs, "user_tag_by_apps.shoujiyinhang.contains")
     //    println("手机银行")
     //    println("只安装了1个app的用户数:%d".format(shoujiyinhangUids.filter(x=>x._2==1).count))
