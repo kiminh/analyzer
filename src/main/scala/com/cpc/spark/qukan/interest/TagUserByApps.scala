@@ -183,19 +183,19 @@ object TagUserByApps {
     xinyongkaUids.take(10).foreach(println)
 
     //京东
-    val jingdong = uidHasApps(userPkgs, "interest", "user_tag_by_apps.jingdong")
+    val jingdong = uidHasApps(userPkgs, "interest", "user_tag_by_apps.jingdong.contains")
     sum = tagUser(jingdong, conf.getInt("user_tag_by_apps.jingdong.tag_id"))
     println("has jingdong users", sum)
     jingdong.take(10).foreach(println)
 
     //淘宝和天猫
-    val taobao_and_tianmao = uidHasApps(userPkgs, "interest", "user_tag_by_apps.taobao_and_tianmao")
+    val taobao_and_tianmao = uidHasApps(userPkgs, "interest", "user_tag_by_apps.taobao_and_tianmao.contains")
     sum = tagUser(taobao_and_tianmao, conf.getInt("user_tag_by_apps.taobao_and_tianmao.tag_id"))
     println("has taobao_and_tianmao users", sum)
     taobao_and_tianmao.take(10).foreach(println)
 
     //拼多多
-    val pingduoduo = uidHasApps(userPkgs, "interest", "user_tag_by_apps.pingduoduo")
+    val pingduoduo = uidHasApps(userPkgs, "interest", "user_tag_by_apps.pingduoduo.contains")
     sum = tagUser(pingduoduo, conf.getInt("user_tag_by_apps.pingduoduo.tag_id"))
     println("has pingduoduo users", sum)
     pingduoduo.take(10).foreach(println)
