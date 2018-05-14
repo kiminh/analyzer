@@ -7,7 +7,7 @@ import java.util.Date
 import com.cpc.spark.ml.common.Utils
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.Strategy.StrategyXgboost
-import mlmodel.mlmodel.{IRModel, Pack}
+import mlmodel.mlmodel.{IRModel, LRModel, Pack}
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
@@ -60,8 +60,9 @@ object TestPortraitXgboost {
     println(filename)
 
     val pack = Pack(
-      name = namespace,
+      lr = Option(LRModel(parser = parser)),
       ir = Option(ir),
+      name = namespace,
       gbmfile = "data/%s.gbm".format(prefix),
       strategy = StrategyXgboost
     )
