@@ -60,6 +60,7 @@ object TestPortraitXgboost {
     println(filename)
 
     val pack = Pack(
+      name = namespace,
       ir = Option(ir),
       gbmfile = "data/%s.gbm".format(prefix),
       strategy = StrategyXgboost
