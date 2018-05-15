@@ -240,6 +240,7 @@ message AdInfo {
 	optional string desc = 31; //广告的描述
 	repeated string img_urls = 32; //广告的图片地址
 	optional string click_url = 33; //广告点击地址
+	optional int32 siteid = 34; //建站id，0：非建站
 };
 
 message AdDspRet {
