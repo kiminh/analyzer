@@ -57,7 +57,8 @@ assemblyExcludedJars in assembly := {
     "spark-redis-0.3.2.jar",
     "spark-streaming-kafka-0-8-assembly_2.11-2.1.0.jar",
     "xgboost4j-0.7.jar",
-    "xgboost4j-spark-0.7.jar"
+    "xgboost4j-spark-0.7.jar",
+    "scala-library-2.11.8.jar"
   )
   (fullClasspath in assembly).value.filter {
     x => jars.contains(x.data.getName)
