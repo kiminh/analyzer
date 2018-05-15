@@ -237,7 +237,7 @@ object LRTransformCvr {
 
     val prefix = "lr-%s-%s".format(parser, dataType)
     val filename = "/home/cpc/anal/xgboost_model/%s-%s.mlm".format(prefix, filetime)
-    saveLrPbPack(filename , "ctrparser1")
+    saveLrPbPack(filename , parser)
     println(filetime, filename)
 
     if (upload > 0) {
