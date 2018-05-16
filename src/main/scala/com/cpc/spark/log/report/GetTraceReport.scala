@@ -3,6 +3,7 @@ package com.cpc.spark.log.report
 import java.sql.DriverManager
 import java.util.Properties
 
+import com.cpc.spark.log.report.GetHourReport.{mariadb_amateur_prop, mariadb_amateur_url}
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -16,6 +17,9 @@ object GetTraceReport {
   var mariadbUrl  = ""
 
   val mariadbProp = new Properties()
+
+  var mariadb_amateur_url = ""
+  val mariadb_amateur_prop = new Properties()
 
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
@@ -44,6 +48,11 @@ object GetTraceReport {
     mariadbProp.put("user", conf.getString("mariadb.user"))
     mariadbProp.put("password",conf.getString("mariadb.password"))
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
+
+    mariadb_amateur_url=conf.getString("mariadb.amateur_write.url")
+    mariadb_amateur_prop.put("user",conf.getString("mariadb.amateur_write.user"))
+    mariadb_amateur_prop.put("password", conf.getString("mariadb.amateur_write.password"))
+    mariadb_amateur_prop.put("driver", conf.getString("mariadb.amateur_write.driver"))
 
     val ctx = SparkSession.builder()
       .appName("cpc get trace hour report from %s/%s".format(date, hour))
@@ -115,6 +124,13 @@ object GetTraceReport {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_trace", mariadbProp)
+
+    clearReportHourData2("report_trace", date, hour)
+    ctx.createDataFrame(toResult)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadb_amateur_url, "report.report_trace", mariadb_amateur_prop)
+
     ctx.stop()
     println("GetTraceReport_done")
   }
@@ -125,6 +141,23 @@ object GetTraceReport {
         mariadbUrl,
         mariadbProp.getProperty("user"),
         mariadbProp.getProperty("password"));
+      val stmt = conn.createStatement();
+      val sql =
+        """
+          |delete from report.%s where `date` = "%s" and `hour` = %d
+        """.stripMargin.format(tbl, date, hour.toInt);
+      stmt.executeUpdate(sql);
+    } catch {
+      case e: Exception => println("exception caught: " + e);
+    }
+  }
+  def clearReportHourData2(tbl: String, date: String, hour: String): Unit = {
+    try {
+      Class.forName(mariadb_amateur_prop.getProperty("driver"));
+      val conn = DriverManager.getConnection(
+        mariadb_amateur_url,
+        mariadb_amateur_prop.getProperty("user"),
+        mariadb_amateur_prop.getProperty("password"));
       val stmt = conn.createStatement();
       val sql =
         """
