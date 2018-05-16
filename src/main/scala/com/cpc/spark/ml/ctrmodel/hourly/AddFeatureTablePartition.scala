@@ -28,7 +28,7 @@ object AddFeatureTablePartition {
       for (hour <- 0 to 23) {
         val sql =
           """
-            |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+            |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%02d")
             | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%02d'
           """.stripMargin.format(date, hour, date, hour)
 
