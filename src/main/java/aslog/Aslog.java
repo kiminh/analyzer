@@ -15999,6 +15999,23 @@ public final class Aslog {
      */
     com.google.protobuf.ByteString
         getClickUrlBytes();
+
+    /**
+     * <pre>
+     *建站id，0：非建站
+     * </pre>
+     *
+     * <code>optional int32 siteid = 34;</code>
+     */
+    boolean hasSiteid();
+    /**
+     * <pre>
+     *建站id，0：非建站
+     * </pre>
+     *
+     * <code>optional int32 siteid = 34;</code>
+     */
+    int getSiteid();
   }
   /**
    * Protobuf type {@code aslog.AdInfo}
@@ -16045,6 +16062,7 @@ public final class Aslog {
       desc_ = "";
       imgUrls_ = com.google.protobuf.LazyStringArrayList.EMPTY;
       clickUrl_ = "";
+      siteid_ = 0;
     }
 
     @java.lang.Override
@@ -16289,6 +16307,11 @@ public final class Aslog {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x40000000;
               clickUrl_ = bs;
+              break;
+            }
+            case 272: {
+              bitField0_ |= 0x80000000;
+              siteid_ = input.readInt32();
               break;
             }
           }
@@ -17208,6 +17231,29 @@ public final class Aslog {
       }
     }
 
+    public static final int SITEID_FIELD_NUMBER = 34;
+    private int siteid_;
+    /**
+     * <pre>
+     *建站id，0：非建站
+     * </pre>
+     *
+     * <code>optional int32 siteid = 34;</code>
+     */
+    public boolean hasSiteid() {
+      return ((bitField0_ & 0x80000000) == 0x80000000);
+    }
+    /**
+     * <pre>
+     *建站id，0：非建站
+     * </pre>
+     *
+     * <code>optional int32 siteid = 34;</code>
+     */
+    public int getSiteid() {
+      return siteid_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -17334,6 +17380,9 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x40000000) == 0x40000000)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 33, clickUrl_);
+      }
+      if (((bitField0_ & 0x80000000) == 0x80000000)) {
+        output.writeInt32(34, siteid_);
       }
       unknownFields.writeTo(output);
     }
@@ -17477,6 +17526,10 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x40000000) == 0x40000000)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(33, clickUrl_);
+      }
+      if (((bitField0_ & 0x80000000) == 0x80000000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(34, siteid_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -17650,6 +17703,11 @@ public final class Aslog {
         result = result && getClickUrl()
             .equals(other.getClickUrl());
       }
+      result = result && (hasSiteid() == other.hasSiteid());
+      if (hasSiteid()) {
+        result = result && (getSiteid()
+            == other.getSiteid());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -17799,6 +17857,10 @@ public final class Aslog {
       if (hasClickUrl()) {
         hash = (37 * hash) + CLICK_URL_FIELD_NUMBER;
         hash = (53 * hash) + getClickUrl().hashCode();
+      }
+      if (hasSiteid()) {
+        hash = (37 * hash) + SITEID_FIELD_NUMBER;
+        hash = (53 * hash) + getSiteid();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -17984,6 +18046,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x80000000);
         clickUrl_ = "";
         bitField1_ = (bitField1_ & ~0x00000001);
+        siteid_ = 0;
+        bitField1_ = (bitField1_ & ~0x00000002);
         return this;
       }
 
@@ -18143,6 +18207,10 @@ public final class Aslog {
           to_bitField0_ |= 0x40000000;
         }
         result.clickUrl_ = clickUrl_;
+        if (((from_bitField1_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x80000000;
+        }
+        result.siteid_ = siteid_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -18309,6 +18377,9 @@ public final class Aslog {
           bitField1_ |= 0x00000001;
           clickUrl_ = other.clickUrl_;
           onChanged();
+        }
+        if (other.hasSiteid()) {
+          setSiteid(other.getSiteid());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -20194,6 +20265,54 @@ public final class Aslog {
   }
   bitField1_ |= 0x00000001;
         clickUrl_ = value;
+        onChanged();
+        return this;
+      }
+
+      private int siteid_ ;
+      /**
+       * <pre>
+       *建站id，0：非建站
+       * </pre>
+       *
+       * <code>optional int32 siteid = 34;</code>
+       */
+      public boolean hasSiteid() {
+        return ((bitField1_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <pre>
+       *建站id，0：非建站
+       * </pre>
+       *
+       * <code>optional int32 siteid = 34;</code>
+       */
+      public int getSiteid() {
+        return siteid_;
+      }
+      /**
+       * <pre>
+       *建站id，0：非建站
+       * </pre>
+       *
+       * <code>optional int32 siteid = 34;</code>
+       */
+      public Builder setSiteid(int value) {
+        bitField1_ |= 0x00000002;
+        siteid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *建站id，0：非建站
+       * </pre>
+       *
+       * <code>optional int32 siteid = 34;</code>
+       */
+      public Builder clearSiteid() {
+        bitField1_ = (bitField1_ & ~0x00000002);
+        siteid_ = 0;
         onChanged();
         return this;
       }
@@ -30571,7 +30690,7 @@ public final class Aslog {
       "terialTime\030\007 \001(\003\022\024\n\014showFreqTime\030\010 \001(\003\022\024" +
       "\n\014reqBsAllTime\030\t \001(\003\022\034\n\024blackMediaFilter" +
       "Time\030\n \001(\003\022\024\n\014fixClickTime\030\013 \001(\003\022\023\n\013dspa",
-      "dslotid\030\014 \001(\t\"\234\005\n\006AdInfo\022\033\n\004type\030\001 \002(\0162\r" +
+      "dslotid\030\014 \001(\t\"\254\005\n\006AdInfo\022\033\n\004type\030\001 \002(\0162\r" +
       ".aslog.AdType\022\031\n\003src\030\002 \002(\0162\014.aslog.AdSrc" +
       "\022+\n\013interaction\030\003 \002(\0162\026.aslog.Interactio" +
       "nType\022\014\n\004adid\030\004 \001(\r\022\017\n\007groupid\030\005 \001(\r\022\016\n\006" +
@@ -30588,65 +30707,65 @@ public final class Aslog {
       "ck_count\030\033 \001(\005\022\030\n\020long_click_count\030\034 \001(\005" +
       "\022\020\n\010real_bid\030\035 \001(\r\022\r\n\005title\030\036 \001(\t\022\014\n\004des" +
       "c\030\037 \001(\t\022\020\n\010img_urls\030  \003(\t\022\021\n\tclick_url\030!" +
-      " \001(\t\"4\n\010AdDspRet\022\031\n\003src\030\001 \002(\0162\014.aslog.Ad" +
-      "Src\022\r\n\005adnum\030\002 \002(\r\"\\\n\010Location\022\017\n\007countr" +
-      "y\030\001 \001(\r\022\020\n\010province\030\002 \001(\r\022\014\n\004city\030\003 \001(\r\022",
-      "\013\n\003isp\030\004 \001(\r\022\022\n\ncity_level\030\005 \001(\r\"1\n\014Inte" +
-      "restItem\022\022\n\ninterestid\030\001 \001(\004\022\r\n\005score\030\002 " +
-      "\001(\004\"\357\001\n\013UserProfile\022&\n\tinterests\030\001 \003(\0132\023" +
-      ".aslog.InterestItem\022\013\n\003age\030\002 \001(\r\022\013\n\003sex\030" +
-      "\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpcategory\030\005 \001(\r\022\020" +
-      "\n\010antispam\030\006 \001(\r\022\022\n\nshare_coin\030\007 \001(\r\022\017\n\007" +
-      "newuser\030\010 \001(\r\022\021\n\treq_count\030\t \001(\r\022\023\n\013clic" +
-      "k_count\030\n \001(\r\022\020\n\010province\030\013 \001(\t\022\014\n\004city\030" +
-      "\014 \001(\t\"\376\004\n\rNoticeLogBody\022\020\n\010searchid\030\001 \002(" +
-      "\t\022\021\n\ttimestamp\030\002 \002(\r\022\033\n\005media\030\003 \001(\0132\014.as",
-      "log.Media\022\035\n\006adslot\030\004 \003(\0132\r.aslog.Adslot" +
-      "\022\035\n\006device\030\005 \001(\0132\r.aslog.Device\022\032\n\003ads\030\006" +
-      " \003(\0132\r.aslog.AdInfo\022\037\n\006dspret\030\007 \003(\0132\017.as" +
-      "log.AdDspRet\022\r\n\005debug\030\010 \001(\010\022\035\n\006client\030\t " +
-      "\001(\0132\r.aslog.Client\022\037\n\007network\030\n \001(\0132\016.as" +
-      "log.Network\022\017\n\007exptags\030\013 \003(\t\022!\n\010location" +
-      "\030\014 \001(\0132\017.aslog.Location\022\020\n\010sourceip\030\r \001(" +
-      "\t\022\021\n\tintertype\030\016 \001(\r\022\'\n\013userprofile\030\017 \001(" +
-      "\0132\022.aslog.UserProfile\022\025\n\rdupplanfilter\030\020" +
-      " \003(\r\022\024\n\014lowcpmfilter\030\021 \003(\r\022\024\n\014lowcvrfilt",
-      "er\030\022 \003(\r\022%\n\ndspReqInfo\030\026 \003(\0132\021.aslog.Dsp" +
-      "ReqInfo\022\020\n\010timecost\030\027 \001(\004\022\r\n\005https\030\030 \001(\010" +
-      "\022\021\n\tctrtarget\030\031 \001(\t\022\025\n\rdupuserfilter\030\032 \003" +
-      "(\r\022\024\n\014dsp_strategy\030\033 \001(\t\022\024\n\014lowacpfilter" +
-      "\030\034 \003(\r*3\n\tMediaType\022\013\n\007UNKNOWN\020\000\022\007\n\003APP\020" +
-      "\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*r\n\nAdslotType\022\r\n\tLIS" +
-      "T_FEED\020\001\022\020\n\014CONTENT_FEED\020\002\022\021\n\rSLOT_INTER" +
-      "ACT\020\003\022\017\n\013SLOT_SPLASH\020\004\022\017\n\013SLOT_BANNER\020\005\022" +
-      "\016\n\nSLOT_VIDEO\020\006*P\n\013NetworkType\022\017\n\013NET_UN" +
-      "KNOWN\020\000\022\014\n\010NET_WIFI\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NET",
-      "_3G\020\003\022\n\n\006NET_4G\020\004*?\n\006OSType\022\016\n\nOS_UNKNOW" +
-      "N\020\000\022\016\n\nOS_ANDROID\020\001\022\n\n\006OS_IOS\020\002\022\t\n\005OS_WP" +
-      "\020\003*\265\001\n\013BrowserType\022\022\n\016UnknownBrowser\020\000\022\016" +
-      "\n\nMQQBrowser\020\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser\020" +
-      "\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n\013" +
-      "QvodBrowser\020\006\022\023\n\017IEMobileBrowser\020\007\022\022\n\016Mi" +
-      "croMessenger\020\010\022\n\n\006QQChat\020\t*\251\001\n\014DeviceIdT" +
-      "ype\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022\r" +
-      "\n\tDEVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\022\016\n\nDEVID_A" +
-      "AID\020\004\022\022\n\016DEVID_LSCOOKIE\020\005\022\023\n\017DEVID_ANDRO",
-      "IDID\020\006\022\016\n\nDEVID_IMSI\020\007\022\016\n\nDEVID_TKID\020\010*~" +
-      "\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_TE" +
-      "XT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013AD_INTERACT" +
-      "\020\005\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_BANNER\020\007\022\014\n\010AD_V" +
-      "IDEO\020\010*\200\001\n\005AdSrc\022\007\n\003CPC\020\001\022\n\n\006INMOBI\020\002\022\013\n" +
-      "\007TANXSSP\020\003\022\016\n\nBOTTOMINIG\020\004\022\013\n\007HUZHONG\020\005\022" +
-      "\t\n\005FANCY\020\006\022\007\n\003GDT\020\007\022\014\n\010MOBVISTA\020\010\022\t\n\005VAN" +
-      "KA\020\t\022\013\n\007IFLYTEK\020\n*i\n\017InteractionType\022\017\n\013" +
-      "NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002" +
-      "\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002",
-      "GP\020\006*\203\001\n\rMaterialLevel\022\032\n\026MATERIAL_LEVEL" +
-      "_UNKNOWN\020\000\022\024\n\020MATERIAL_LEVEL_1\020\001\022\024\n\020MATE" +
-      "RIAL_LEVEL_2\020\002\022\024\n\020MATERIAL_LEVEL_3\020\003\022\024\n\020" +
-      "MATERIAL_LEVEL_4\020\004*M\n\nClientType\022\r\n\tNATI" +
-      "VESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022" +
-      "\007\n\003FUN\020\005\022\007\n\003QTT\020\006"
+      " \001(\t\022\016\n\006siteid\030\" \001(\005\"4\n\010AdDspRet\022\031\n\003src\030" +
+      "\001 \002(\0162\014.aslog.AdSrc\022\r\n\005adnum\030\002 \002(\r\"\\\n\010Lo" +
+      "cation\022\017\n\007country\030\001 \001(\r\022\020\n\010province\030\002 \001(",
+      "\r\022\014\n\004city\030\003 \001(\r\022\013\n\003isp\030\004 \001(\r\022\022\n\ncity_lev" +
+      "el\030\005 \001(\r\"1\n\014InterestItem\022\022\n\ninterestid\030\001" +
+      " \001(\004\022\r\n\005score\030\002 \001(\004\"\357\001\n\013UserProfile\022&\n\ti" +
+      "nterests\030\001 \003(\0132\023.aslog.InterestItem\022\013\n\003a" +
+      "ge\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tp" +
+      "category\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshar" +
+      "e_coin\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\022\021\n\treq_cou" +
+      "nt\030\t \001(\r\022\023\n\013click_count\030\n \001(\r\022\020\n\010provinc" +
+      "e\030\013 \001(\t\022\014\n\004city\030\014 \001(\t\"\376\004\n\rNoticeLogBody\022" +
+      "\020\n\010searchid\030\001 \002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033\n\005",
+      "media\030\003 \001(\0132\014.aslog.Media\022\035\n\006adslot\030\004 \003(" +
+      "\0132\r.aslog.Adslot\022\035\n\006device\030\005 \001(\0132\r.aslog" +
+      ".Device\022\032\n\003ads\030\006 \003(\0132\r.aslog.AdInfo\022\037\n\006d" +
+      "spret\030\007 \003(\0132\017.aslog.AdDspRet\022\r\n\005debug\030\010 " +
+      "\001(\010\022\035\n\006client\030\t \001(\0132\r.aslog.Client\022\037\n\007ne" +
+      "twork\030\n \001(\0132\016.aslog.Network\022\017\n\007exptags\030\013" +
+      " \003(\t\022!\n\010location\030\014 \001(\0132\017.aslog.Location\022" +
+      "\020\n\010sourceip\030\r \001(\t\022\021\n\tintertype\030\016 \001(\r\022\'\n\013" +
+      "userprofile\030\017 \001(\0132\022.aslog.UserProfile\022\025\n" +
+      "\rdupplanfilter\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021 \003",
+      "(\r\022\024\n\014lowcvrfilter\030\022 \003(\r\022%\n\ndspReqInfo\030\026" +
+      " \003(\0132\021.aslog.DspReqInfo\022\020\n\010timecost\030\027 \001(" +
+      "\004\022\r\n\005https\030\030 \001(\010\022\021\n\tctrtarget\030\031 \001(\t\022\025\n\rd" +
+      "upuserfilter\030\032 \003(\r\022\024\n\014dsp_strategy\030\033 \001(\t" +
+      "\022\024\n\014lowacpfilter\030\034 \003(\r*3\n\tMediaType\022\013\n\007U" +
+      "NKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*r\n\nA" +
+      "dslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_FEED" +
+      "\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLOT_SPLASH\020\004\022\017" +
+      "\n\013SLOT_BANNER\020\005\022\016\n\nSLOT_VIDEO\020\006*P\n\013Netwo" +
+      "rkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI\020\001\022\n\n",
+      "\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?\n\006OST" +
+      "ype\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020\001\022\n\n\006O" +
+      "S_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType\022\022\n\016Un" +
+      "knownBrowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Chrome" +
+      "\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013M" +
+      "iuiBrowser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEMobil" +
+      "eBrowser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQChat" +
+      "\020\t*\251\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNOWN\020\000\022\016" +
+      "\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_I" +
+      "DFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCOOKIE\020",
+      "\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVID_IMSI\020\007\022\016" +
+      "\n\nDEVID_TKID\020\010*~\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IM" +
+      "AGE\020\002\022\r\n\tICON_TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020" +
+      "\004\022\017\n\013AD_INTERACT\020\005\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_" +
+      "BANNER\020\007\022\014\n\010AD_VIDEO\020\010*\200\001\n\005AdSrc\022\007\n\003CPC\020" +
+      "\001\022\n\n\006INMOBI\020\002\022\013\n\007TANXSSP\020\003\022\016\n\nBOTTOMINIG" +
+      "\020\004\022\013\n\007HUZHONG\020\005\022\t\n\005FANCY\020\006\022\007\n\003GDT\020\007\022\014\n\010M" +
+      "OBVISTA\020\010\022\t\n\005VANKA\020\t\022\013\n\007IFLYTEK\020\n*i\n\017Int" +
+      "eractionType\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING" +
+      "\020\001\022\014\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE",
+      "\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006*\203\001\n\rMaterialLevel\022\032" +
+      "\n\026MATERIAL_LEVEL_UNKNOWN\020\000\022\024\n\020MATERIAL_L" +
+      "EVEL_1\020\001\022\024\n\020MATERIAL_LEVEL_2\020\002\022\024\n\020MATERI" +
+      "AL_LEVEL_3\020\003\022\024\n\020MATERIAL_LEVEL_4\020\004*M\n\nCl" +
+      "ientType\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OP" +
+      "ENAPI\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005\022\007\n\003QTT\020\006"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -30731,7 +30850,7 @@ public final class Aslog {
     internal_static_aslog_AdInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_AdInfo_descriptor,
-        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", "Class_", "Usertype", "Titlectr", "Expcpm", "Cvr", "CvrThreshold", "CvrThres", "Materialid", "TriggerType", "Discount", "ShowCount", "DspMediaId", "DspAdslotId", "AdidStr", "MaterialLevel", "ClickCount", "LongClickCount", "RealBid", "Title", "Desc", "ImgUrls", "ClickUrl", });
+        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", "Class_", "Usertype", "Titlectr", "Expcpm", "Cvr", "CvrThreshold", "CvrThres", "Materialid", "TriggerType", "Discount", "ShowCount", "DspMediaId", "DspAdslotId", "AdidStr", "MaterialLevel", "ClickCount", "LongClickCount", "RealBid", "Title", "Desc", "ImgUrls", "ClickUrl", "Siteid", });
     internal_static_aslog_AdDspRet_descriptor =
       getDescriptor().getMessageTypes().get(12);
     internal_static_aslog_AdDspRet_fieldAccessorTable = new
