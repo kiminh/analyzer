@@ -7,7 +7,7 @@ import org.apache.spark.sql.SparkSession
   */
 object AddFeatureTablePartition {
   def main(args: Array[String]): Unit = {
-    if (args.length < 2) {
+    if (args.length < 1) {
       System.err.println(
         s"""
            |Usage: SaveFeatures <date=string> <hour=string>
@@ -17,23 +17,26 @@ object AddFeatureTablePartition {
       System.exit(1)
     }
 
-    val date = args(0)
+    val dates = args(0).split(" ").toSeq
 
     val spark = SparkSession.builder()
       .appName("add features partition ")
       .enableHiveSupport()
       .getOrCreate()
 
-    for (hour <- 0 to 23) {
-      val sql =
-        """
-          |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-          | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%02d'
-        """.stripMargin.format(date, hour, date, hour)
+    for (date <- dates) {
+      for (hour <- 0 to 23) {
+        val sql =
+          """
+            |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+            | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%02d'
+          """.stripMargin.format(date, hour, date, hour)
 
-      println(sql)
+        println(sql)
 
-      //spark.sql(sql);
+        //spark.sql(sql);
+      }
+
     }
   }
 }
