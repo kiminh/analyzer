@@ -113,38 +113,6 @@ object LRTrain {
       model.clearResult()
       train(spark, "parser3", "cvr-qtt-all-parser3-hourly", cvrQttAll, "cvr-qtt-all-parser3-hourly.lrm", 1e8)
 
-
-      //-----------cvrdata_v1-----------
-      //按分区取数据
-      cvrUlog = getData(spark,"cvrdata_v1",cvrPathSep).cache()
-
-      //去掉长尾广告id
-      minIdeaNum = 50
-      ideaids = cvrUlog.select("ideaid")
-        .groupBy("ideaid")
-        .count()
-        .where("count > %d".format(minIdeaNum))
-
-      sample = cvrUlog.join(ideaids, Seq("ideaid")).cache()
-      println(cvrUlog.count(), sample.count())
-      cvrUlog.unpersist()
-
-      cvrUserAppIdx = getUidApp(spark, cvrPathSep)
-      initFeatureDict(spark, cvrPathSep)
-
-      trainLog :+= "cvr ulog nums = %d".format(sample.count())
-      trainLog :+= "cvr ulog NumPartitions = %d".format(sample.rdd.getNumPartitions)
-      trainLog :+= "cvr ulog ideas num = %d(load > %d)".format(ideaids.count(), minIdeaNum)
-
-      cvrQttAll = sample.where("media_appsid in (\"80000001\", \"80000002\") and adslot_type in (1, 2)")
-        .join(cvrUserAppIdx, Seq("uid"), "leftouter")
-        .cache()
-      sample.unpersist()
-
-      //cvr-qtt-all-parser3-hourly
-      model.clearResult()
-      train(spark, "parser3", "cvr-v1-qtt-all-parser3-hourly", cvrQttAll, "cvr-v1-qtt-all-parser3-hourly.lrm", 1e8)
-
       cvrQttAll.unpersist()
     }
 

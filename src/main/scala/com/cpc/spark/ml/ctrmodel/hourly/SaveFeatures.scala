@@ -35,7 +35,7 @@ object SaveFeatures {
       .getOrCreate()
 
     saveDataFromLog(spark, date, hour)
-    saveCvrData(spark, date, hour, version)
+    //saveCvrData(spark, date, hour, version)
     saveCvrData(spark, date, hour, versionV2)
     println("SaveFeatures_done")
   }
