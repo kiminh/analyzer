@@ -34,7 +34,7 @@ object AddFeatureTablePartition {
 
         println(sql)
 
-        //spark.sql(sql);
+        spark.sql(sql)
       }
 
     }
