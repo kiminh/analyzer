@@ -42,11 +42,14 @@ object CpcStreamingLog3 {
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
 
 
+    val conf = ConfigFactory.load()
+
+
     var fromOffsets: Map[TopicAndPartition, Long] = Map()
     val messageHandler = (mmd: MessageAndMetadata[String, Array[Byte]]) => (mmd.topic, mmd.message())
     try {
       for (topic <- topicsSet) {
-//        val partitions = redis.smembers[String](topic).get
+        //        val partitions = redis.smembers[String](topic).get
         val partitions = OffsetRedis.getOffsetRedis.getPartitionByTopic(topic)
         for (partition <- partitions) {
           println("topic:" + topic + ";partition:" + partition)
@@ -170,30 +173,22 @@ object CpcStreamingLog3 {
             println("~~~~~~~~~ zyc_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
 
             if (numbs > 0) {
+              val table = conf.getString("topic2tbl." + topics)
               spark.createDataFrame(part)
                 .toDF("log_timestamp", "ip", "field", "thedate", "thehour", "theminute")
                 .write
                 .mode(SaveMode.Append)
-                .parquet("/warehouse/dl_cpc.db/src_%s_minute/%s/%s/%s".format(topics, key._1, key._2, key._3))
+                .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
 
-              val isExistsSql =
+
+              val sqlStmt =
                 """
-                  |SELECT 1 from dl_cpc.src_%s_minute WHERE thedate = "%s" and thehour = "%s" and theminute = "%s" limit 1
+                  |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
+                  |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
                   |
-                """.stripMargin.format(topics, key._1, key._2, key._3)
-              println(isExistsSql)
-              val isExists = spark.sql(isExistsSql)
-
-              if (isExists.count() == 0) {
-                val sqlStmt =
-                  """
-                    |ALTER TABLE dl_cpc.src_%s_minute add PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
-                    |       '/warehouse/dl_cpc.db/src_%s_minute/%s/%s/%s'
-                    |
-                """.stripMargin.format(topics, key._1, key._2, key._3, topics, key._1, key._2, key._3)
-                println(sqlStmt)
-                spark.sql(sqlStmt)
-              }
+                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
+              println(sqlStmt)
+              spark.sql(sqlStmt)
 
             }
         }
