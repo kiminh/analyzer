@@ -149,7 +149,7 @@ object saveUserAppInstalledInfo {
 
     val sql =
       """
-        |ALTER TABLE dl_cpc.dl_cpc.cpc_user_installed_apps add if not exists PARTITION (load_date = "%s" )  LOCATION
+        |ALTER TABLE dl_cpc.cpc_user_installed_apps add if not exists PARTITION (load_date = "%s" )  LOCATION
         |       '/user/cpc/userInstalledApp/%s'
         |
                 """.stripMargin.format(date, date)
