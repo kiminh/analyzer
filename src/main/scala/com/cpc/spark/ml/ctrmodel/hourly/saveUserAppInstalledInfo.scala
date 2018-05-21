@@ -18,14 +18,14 @@ import org.apache.log4j.{Level, Logger}
   * Created by zhaolei on 22/12/2017.
   */
 
-object saveUserAppInstalledInfo{
+object saveUserAppInstalledInfo {
 
   Logger.getRootLogger.setLevel(Level.WARN)
 
   var tableName = ""
 
-  def main(args:Array[String]): Unit ={
-    if(args.length < 1){
+  def main(args: Array[String]): Unit = {
+    if (args.length < 1) {
       System.err.println(
         s"""
            |Usage: save user installed apps <date=string> <hour=string>
@@ -52,7 +52,7 @@ object saveUserAppInstalledInfo{
       .map(HdfsParser.parseInstallApp(_, x => true, null))
       .filter(x => x != null && x.pkgs.length > 0)
       .map(x => (x.devid, x.pkgs.map(_.name)))
-      .reduceByKey(_++_)
+      .reduceByKey(_ ++ _)
       .map(x => (x._1, (x._2.distinct, 1)))
       .cache()
 
@@ -146,6 +146,14 @@ object saveUserAppInstalledInfo{
       .write
       .mode(SaveMode.Overwrite)
       .parquet(outpath)
+
+    val sql =
+      """
+        |ALTER TABLE dl_cpc.dl_cpc.cpc_user_installed_apps add if not exists PARTITION (load_date = "%s" )  LOCATION
+        |       '/user/cpc/userInstalledApp/%s'
+        |
+                """.stripMargin.format(date, date)
+    spark.sql(sql)
 
     pkgs.unpersist()
     spark.close()
