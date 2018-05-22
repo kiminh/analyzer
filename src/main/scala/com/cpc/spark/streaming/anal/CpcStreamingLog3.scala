@@ -173,7 +173,7 @@ object CpcStreamingLog3 {
             println("~~~~~~~~~ zyc_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
 
             if (numbs > 0) {
-              val table = conf.getString("topic2tbl." + topics)
+              val table = conf.getString("topic2tbl." + topics.split(",")(0))
               spark.createDataFrame(part)
                 .toDF("log_timestamp", "ip", "field", "thedate", "thehour", "theminute")
                 .write
