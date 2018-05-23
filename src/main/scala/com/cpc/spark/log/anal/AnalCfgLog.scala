@@ -95,12 +95,19 @@ object AnalCfgLog {
         r =>
           //val s = r.getMap[String, Row](2).getOrElse(key, null)
           val s = r.getAs[Map[String, Row]]("field").getOrElse(key, null)
+          val s1 = r.getAs[Map[String, Row]]("field").getOrElse(key + "_new", null)
 
-          if (s == null) {
+          val r1 = if (s == null) {
             null
           } else {
             s.getAs[String]("string_type")
           }
+          val r2 = if (s1 == null) {
+            null
+          } else {
+            s1.getAs[String]("string_type")
+          }
+          Seq(r1, r2)
       }
       .filter(_ != null)
   }
