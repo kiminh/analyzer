@@ -286,12 +286,14 @@ object MergeLog {
       .parquet(input)
       .repartition(1000)
       .rdd
-      .map {
+      .flatMap {
         r =>
           //val s = r.getMap[String, Row](2).getOrElse(key, null)
           val s = r.getAs[Map[String, Row]]("field").getOrElse(key, null)
+          val s1 = r.getAs[Map[String, Row]]("field").getOrElse(key + "_new", null)
           val timestamp = r.getAs[Long]("log_timestamp")
-          if (s == null) {
+
+          val r1 = if (s == null) {
             null
           } else {
             if (key == "cpc_show") {
@@ -299,6 +301,16 @@ object MergeLog {
             }
             else s.getAs[String]("string_type")
           }
+
+          val r2 = if (s1 == null) {
+            null
+          } else {
+            if (key == "cpc_show_new") {
+              timestamp + s1.getAs[String]("string_type")
+            }
+            else s1.getAs[String]("string_type")
+          }
+          Seq(r1, r2)
       }
       .filter(_ != null)
   }

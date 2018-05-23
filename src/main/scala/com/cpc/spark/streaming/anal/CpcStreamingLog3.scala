@@ -167,7 +167,7 @@ object CpcStreamingLog3 {
         keys.foreach { //(日期，小时)
           key =>
             val part = rs.filter(r => r.thedate == key._1 && r.thehour == key._2 && r.theminute == key._3)
-            val numbs = part.count()
+            val numbs = part.take(1).length
 
             date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
             println("~~~~~~~~~ zyc_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
