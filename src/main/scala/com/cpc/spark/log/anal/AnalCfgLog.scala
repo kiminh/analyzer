@@ -91,7 +91,7 @@ object AnalCfgLog {
       .parquet(input)
       .repartition(1000)
       .rdd
-      .map {
+      .flatMap {
         r =>
           //val s = r.getMap[String, Row](2).getOrElse(key, null)
           val s = r.getAs[Map[String, Row]]("field").getOrElse(key, null)
