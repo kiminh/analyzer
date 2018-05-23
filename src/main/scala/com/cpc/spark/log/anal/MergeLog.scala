@@ -305,7 +305,7 @@ object MergeLog {
           val r2 = if (s1 == null) {
             null
           } else {
-            if (key == "cpc_show_new") {
+            if (key == "cpc_show") {
               timestamp + s1.getAs[String]("string_type")
             }
             else s1.getAs[String]("string_type")
