@@ -47,16 +47,15 @@ object InsertReportDspIdea {
 
     println("InsertReportDspIdea is run day is %s".format(argDay))
 
-
     val unionData = ctx.sql(
       """
         |SELECT cul.ext["adid_str"].string_value,cul.ext["ad_title"].string_value,
         |cul.ext["ad_desc"].string_value,cul.ext["ad_img_urls"].string_value,
         |cul.ext["ad_click_url"].string_value,isshow,isclick,cul.adsrc
         |FROM dl_cpc.cpc_union_log cul
-        |WHERE cul.`date`="2018-05-07" AND cul.ext["adid_str"].string_value != "" AND cul.adsrc>1
+        |WHERE cul.`date`="%s" AND cul.ext["adid_str"].string_value != "" AND cul.adsrc>1
         |AND (cul.isclick+cul.isshow)>0
-        |""".stripMargin)
+        |""".stripMargin.format(argDay))
       .rdd
       .map {
         x =>
@@ -89,16 +88,17 @@ object InsertReportDspIdea {
       }
       .filter {
         x =>
-          x.ad_click_url.length > 0 && x.isshow >= 1000
+          x.ad_click_url.length > 0 && x.isshow >= 100
       }
       .cache()
 
     println("unionData count is", unionData.count())
 
+
     val insertDataFrame = ctx.createDataFrame(unionData)
       .toDF("dsp_src", "adid_str", "ad_title", "ad_desc", "ad_img_urls", "ad_click_url", "impression", "click", "date")
 
-    insertDataFrame.show(10)
+    insertDataFrame.show(20)
 
     clearReportDspIdea(argDay)
 
