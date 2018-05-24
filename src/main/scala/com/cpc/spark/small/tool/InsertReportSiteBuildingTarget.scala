@@ -57,7 +57,8 @@ object InsertReportSiteBuildingTarget {
                    landpage_ok: Long = 0,
                    stayinwx: Long = 0,
                    adslotid: Int = 0,
-                   brand: String = ""
+                   brand: String = "",
+                   browserType: Int = 0
                  )
 
 
@@ -92,52 +93,83 @@ object InsertReportSiteBuildingTarget {
 
     println("InsertReportSiteBuildingTarget is run day is %s".format(argDay))
 
-    var ideaData = ctx.read.jdbc(mariaAdvdbUrl,
-      """
-        |(
-        | SELECT DISTINCT(c.idea_id),i.clk_site_id,i.user_id
-        | FROM cost c
-        | INNER JOIN idea i ON i.id=c.idea_id
-        | WHERE c.date="%s" AND i.clk_site_id>0
-        |) xidea
-      """.stripMargin.format(argDay), mariaAdvdbProp)
-      .rdd
-      .map(
-        x =>
-          (x.get(0), x.get(1), x.get(2))
-      )
-      .map {
-        x =>
-          val ideaid = x._1.toString.toInt
-          val siteid = x._2.toString.toInt
-          val userid = x._3.toString.toInt
-          (UnionLogInfo("", userid, 0, ideaid, 0, 0, "", 0, siteid))
-      }
-      .cache()
-    println("ideaData count", ideaData.count())
+    //    var ideaData = ctx.read.jdbc(mariaAdvdbUrl,
+    //      """
+    //        |(
+    //        | SELECT DISTINCT(c.idea_id),i.clk_site_id,i.user_id
+    //        | FROM cost c
+    //        | INNER JOIN idea i ON i.id=c.idea_id
+    //        | WHERE c.date="%s" AND i.clk_site_id>0
+    //        |) xidea
+    //      """.stripMargin.format(argDay), mariaAdvdbProp)
+    //      .rdd
+    //      .map(
+    //        x =>
+    //          (x.get(0), x.get(1), x.get(2))
+    //      )
+    //      .map {
+    //        x =>
+    //          val ideaid = x._1.toString.toInt
+    //          val siteid = x._2.toString.toInt
+    //          val userid = x._3.toString.toInt
+    //          (UnionLogInfo("", userid, 0, ideaid, 0, 0, "", 0, siteid))
+    //      }
+    //      .cache()
+    //    println("ideaData count", ideaData.count())
+    //
+    //    var ideaMaps: Map[Int, UnionLogInfo] = Map()
+    //    ideaData
+    //      .map {
+    //        x =>
+    //          (x.ideaid, x)
+    //      }
+    //      .take(ideaData.count().toInt)
+    //      .foreach {
+    //        x =>
+    //          ideaMaps += (x._1 -> x._2)
+    //      }
+    //
+    //    val broadcastIdeaMaps = ctx.sparkContext.broadcast(ideaMaps)
 
-    var ideaMaps: Map[Int, UnionLogInfo] = Map()
-    ideaData
-      .map {
-        x =>
-          (x.ideaid, x)
-      }
-      .take(ideaData.count().toInt)
-      .foreach {
-        x =>
-          ideaMaps += (x._1 -> x._2)
-      }
+    var brandMaps: Map[String, Int] = Map(
+      "oppo" -> 1,
+      "vivo" -> 2,
+      "huawei" -> 3,
+      "xiaomi" -> 4,
+      "honor" -> 5,
+      "meizu" -> 6,
+      "samsung" -> 7,
+      "gionee" -> 8,
+      "leeco" -> 9,
+      "zte" -> 10,
+      "360" -> 11,
+      "coolpad" -> 12,
+      "letv" -> 13,
+      "lenovo" -> 14,
+      "nubia" -> 15,
+      "smartisan" -> 16,
+      "hisense" -> 17,
+      "doov" -> 18,
+      "cmcc" -> 19,
+      "koobee" -> 20,
+      "lephone" -> 21,
+      "xiaolajiao" -> 22,
+      "sugar" -> 23,
+      "oneplus" -> 24,
+      "ivvi" -> 25,
+      "htc" -> 26
+    )
 
-    val broadcastIdeaMaps = ctx.sparkContext.broadcast(ideaMaps)
-
+    val broadcastBrandMaps = ctx.sparkContext.broadcast(brandMaps)
 
     val unionData = ctx
       .sql(
         """
           |SELECT searchid,ideaid,isshow,isclick,sex,age,os,province,ext['phone_level'].int_value,hour,
-          |network,coin,ext['qukan_new_user'].int_value,adslot_type,media_appsid,adslotid,brand
+          |network,coin,ext['qukan_new_user'].int_value,adslot_type,media_appsid,adslotid,brand,ext_int["browser_type"],
+          |ext_int["siteid"]
           |FROM dl_cpc.cpc_union_log
-          |WHERE date="%s" AND (isshow+isclick)>0
+          |WHERE date="%s" AND (isshow+isclick)>0 AND ext_int["siteid"]>0
         """.stripMargin.format(argDay))
       .rdd
       .map {
@@ -171,21 +203,22 @@ object InsertReportSiteBuildingTarget {
           val mediaId = x.getString(14).toInt
           val adslotid = x.getString(15).toInt
           val brand = if (x.get(16) != null) x.get(16).toString else ""
+          val browserType = x.get(17).toString.toInt
 
-          val siteid = 0
+          val siteid = x.get(18).toString.toInt
 
           (searchid, (Info(siteid, ideaid, isshow, isclick, sex, age, os, province, phoneLevel, hour,
-            network, userLevel, qukanNewUser, adslotType, mediaId, 0, 0, 0, 0, adslotid, brand)))
+            network, userLevel, qukanNewUser, adslotType, mediaId, 0, 0, 0, 0, adslotid, brand, browserType)))
       }
       .cache()
     println("unionData count", unionData.count())
 
     val traceData = ctx.sql(
       """
-        |SELECT DISTINCT cutl.searchid,cutl.trace_type,cutl.duration,cutl.trace_op1
+        |SELECT DISTINCT cutl.searchid,cutl.trace_type,cutl.duration,cutl.trace_op1,cul.ext_int["siteid"]
         |FROM dl_cpc.cpc_union_trace_log cutl
         |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
-        |WHERE cutl.date="%s" AND cul.date="%s" AND cul.isclick>0
+        |WHERE cutl.date="%s" AND cul.date="%s" AND cul.isclick>0 AND cul.ideaid>0 AND cul.userid>0 AND cul.ext_int["siteid"]>0
       """.stripMargin.format(argDay, argDay))
       .rdd
       .map {
@@ -216,8 +249,8 @@ object InsertReportSiteBuildingTarget {
               landpage_ok = 1
             }
           }
-
-          (searchid, (Info(-1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, load, active, landpage_ok, stayinwx)))
+          val siteid = x.get(4).toString.toInt
+          (searchid, (Info(siteid, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, load, active, landpage_ok, stayinwx)))
       }
       .cache()
     println("traceData count", traceData.count())
@@ -227,67 +260,96 @@ object InsertReportSiteBuildingTarget {
       .union(traceData)
       .reduceByKey {
         (a, b) =>
-          val siteId = if (a.siteId != -1) a.siteId else b.siteId
-          val ideaid = if (a.siteId != -1) a.ideaid else b.ideaid
-          val isshow = if (a.siteId != -1) a.isshow else b.isshow
-          val isclick = if (a.siteId != -1) a.isclick else b.isclick
-          val sex = if (a.siteId != -1) a.sex else b.sex
-          val age = if (a.siteId != -1) a.age else b.age
-          val os = if (a.siteId != -1) a.os else b.os
-          val province = if (a.siteId != -1) a.province else b.province
-          val phoneLevel = if (a.siteId != -1) a.phoneLevel else b.phoneLevel
-          val hour = if (a.siteId != -1) a.hour else b.hour
-          val network = if (a.siteId != -1) a.network else b.network
-          val userLevel = if (a.siteId != -1) a.userLevel else b.userLevel
-          val qukanNewUser = if (a.siteId != -1) a.qukanNewUser else b.qukanNewUser
-          val adslotType = if (a.siteId != -1) a.adslotType else b.adslotType
-          val mediaid = if (a.siteId != -1) a.mediaid else b.mediaid
+          val siteId = if (a.ideaid != -1) a.siteId else b.siteId
+          val ideaid = if (a.ideaid != -1) a.ideaid else b.ideaid
+          val isshow = if (a.ideaid != -1) a.isshow else b.isshow
+          val isclick = if (a.ideaid != -1) a.isclick else b.isclick
+          val sex = if (a.ideaid != -1) a.sex else b.sex
+          val age = if (a.ideaid != -1) a.age else b.age
+          val os = if (a.ideaid != -1) a.os else b.os
+          val province = if (a.ideaid != -1) a.province else b.province
+          val phoneLevel = if (a.ideaid != -1) a.phoneLevel else b.phoneLevel
+          val hour = if (a.ideaid != -1) a.hour else b.hour
+          val network = if (a.ideaid != -1) a.network else b.network
+          val userLevel = if (a.ideaid != -1) a.userLevel else b.userLevel
+          val qukanNewUser = if (a.ideaid != -1) a.qukanNewUser else b.qukanNewUser
+          val adslotType = if (a.ideaid != -1) a.adslotType else b.adslotType
+          val mediaid = if (a.ideaid != -1) a.mediaid else b.mediaid
           val load = a.load + b.load
           val active = a.active + b.active
           val landpage_ok = a.landpage_ok + b.landpage_ok
           val stayinwx = a.stayinwx + b.stayinwx
-          val adslotid = if (a.siteId != -1) a.adslotid else b.adslotid
-          val brand = if (a.siteId != -1) a.brand else b.brand
+          val adslotid = if (a.ideaid != -1) a.adslotid else b.adslotid
+          val brand = if (a.ideaid != -1) a.brand else b.brand
+          val browserType = if (a.ideaid != -1) a.browserType else b.browserType
           Info(siteId, ideaid, isshow, isclick, sex, age, os, province, phoneLevel, hour, network, userLevel, qukanNewUser, adslotType,
-            mediaid, load, active, landpage_ok, stayinwx, adslotid, brand)
-      }
-      .filter(_._2.ideaid > 0)
-      .filter {
-        x =>
-          broadcastIdeaMaps.value.contains(x._2.ideaid)
+            mediaid, load, active, landpage_ok, stayinwx, adslotid, brand, browserType)
       }
       .map {
         x =>
           val info = x._2
-          val siteId = broadcastIdeaMaps.value(info.ideaid).siteid
-          (0, Info(siteId, info.ideaid, info.isshow, info.isclick, info.sex, info.age, info.os, info.province, info.phoneLevel, info.hour,
+          (0, Info(info.siteId, info.ideaid, info.isshow, info.isclick, info.sex, info.age, info.os, info.province, info.phoneLevel, info.hour,
             info.network, info.userLevel, info.qukanNewUser, info.adslotType, info.mediaid, info.load, info.active, info.landpage_ok, info.stayinwx,
-            info.adslotid, info.brand))
+            info.adslotid, info.brand, info.browserType))
       }
-      //.filter(_._2.siteId == 1797)
+      .filter(_._2.siteId > 0)
       .cache()
 
-    //    val inputBrowserTypeData = allData
-    //      .filter(_._2.siteId == 4188)
-    //      //.filter(_._2.browserType > 0)
-    //      .map {
-    //        x =>
-    //          val info = x._2
-    //          val siteId = info.siteId
-    //          val isshow = info.isshow
-    //          val isclick = info.isclick
-    //          val typeVal = info.brand
-    //          val load = info.load
-    //          val active = info.active
-    //          val landpage_ok = info.landpage_ok
-    //          val stayinwx = info.stayinwx
-    //          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
-    //      }
-    //    val browserTypeData = getTargetData1(inputBrowserTypeData, "brand", argDay).cache()
-    //    println("browserTypeData count is", browserTypeData.count())
-    //    browserTypeData.take(200).foreach(println)
-    //
-    //    return
+    val inputBrandData = allData
+      .filter {
+        x =>
+          val mediaId = x._2.mediaid
+          val adslotType = x._2.adslotType
+          ((mediaId == 80000001) || (mediaId == 80000002)) && (adslotType == 1)
+      }
+      .map {
+        x =>
+          val info = x._2
+          val siteId = info.siteId
+          val isshow = info.isshow
+          val isclick = info.isclick
+          var typeVal = if (broadcastBrandMaps.value.contains(info.brand.toLowerCase)) broadcastBrandMaps.value(info.brand.toLowerCase) else 0
+          val load = info.load
+          val active = info.active
+          val landpage_ok = info.landpage_ok
+          val stayinwx = info.stayinwx
+          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
+      }
+    val brandData = getTargetData(inputBrandData, "brand", argDay).cache()
+    println("brandData count is", brandData.count())
+
+    val inputBrowserTypeData = allData
+      .filter {
+        x =>
+          val mediaId = x._2.mediaid
+          var ok = true
+          mediaId match {
+            case 80000001 => ok = false
+            case 80000002 => ok = false
+            case 80000006 => ok = false
+            case 800000062 => ok = false
+            case 80000064 => ok = false
+            case 80000066 => ok = false
+            case 80000141 => ok = false
+            case _ =>
+          }
+          ok
+      }
+      .map {
+        x =>
+          val info = x._2
+          val siteId = info.siteId
+          val isshow = info.isshow
+          val isclick = info.isclick
+          var typeVal = info.browserType
+          val load = info.load
+          val active = info.active
+          val landpage_ok = info.landpage_ok
+          val stayinwx = info.stayinwx
+          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
+      }
+    val browserTypeData = getTargetData(inputBrowserTypeData, "browser_type", argDay).cache()
+    println("browserTypeData count is", browserTypeData.count())
 
     val inputAdslotIdData = allData
       .map {
@@ -323,6 +385,7 @@ object InsertReportSiteBuildingTarget {
       }
     val sexData = getTargetData(inputSexData, "sex", argDay).cache()
     println("sexData count is", sexData.count())
+
 
     val inputAgeData = allData
       .map {
@@ -513,6 +576,9 @@ object InsertReportSiteBuildingTarget {
       .union(adslotTypeData)
       .union(quAdslotTypeData)
       .union(adslotIdData)
+      .union(brandData)
+      .union(browserTypeData)
+
 
     var insertDataFrame = ctx.createDataFrame(insertAllData)
       .toDF("site_id", "impression", "click", "target_type", "target_value", "load", "active", "date", "sdk_ok", "stayinwx")
