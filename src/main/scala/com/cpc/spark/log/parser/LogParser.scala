@@ -153,6 +153,10 @@ object LogParser {
       ext.update("media_app_packagename", ExtValue(string_value = media_app.getPackagename))
       ext.update("media_app_version", ExtValue(string_value = media_app.getVersion))
 
+      val siteInfo=notice.getMedia.getSite
+      extString.update("title",siteInfo.getTitle)
+      extString.update("config",siteInfo.getConfig)
+
       val device = notice.getDevice
       log = log.copy(
         uid = device.getUid,

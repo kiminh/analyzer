@@ -10,6 +10,8 @@ message AppInfo {
 message SiteInfo {
 	optional string domain = 1;
 	optional string urls = 2;
+	optional string title = 3;
+	optional string config = 4;
 };
 enum MediaType {
 	UNKNOWN = 0;
@@ -302,4 +304,5 @@ message NoticeLogBody {
 	repeated uint32 dupuserfilter = 26; // 同一user过滤
 	optional string dsp_strategy = 27; //命中的dsp分流方案
 	repeated uint32 lowacpfilter = 28; //低于最低单价过滤
+	repeated uint32 zerobid = 29; //过滤价格计算为0广告
 };
