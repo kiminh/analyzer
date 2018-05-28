@@ -110,8 +110,9 @@ object LogParser {
           cpm = ad.getCpm
         )
 
-        extInt.update("siteid",ad.getSiteid.toLong)
-        extInt.update("cvr_threshold_by_user",ad.getCvrThreshold)
+        extInt.update("siteid", ad.getSiteid.toLong)
+        extInt.update("cvr_threshold_by_user", ad.getCvrThreshold)
+        extInt.update("lastcpm", ad.getLastcpm)
         ext.update("click_unit_count", ExtValue(int_value = ad.getClickCount))
         ext.update("material_level", ExtValue(int_value = ad.getMaterialLevel.getNumber))
         ext.update("cvr_threshold", ExtValue(int_value = ad.getCvrThres.toInt))
@@ -153,9 +154,9 @@ object LogParser {
       ext.update("media_app_packagename", ExtValue(string_value = media_app.getPackagename))
       ext.update("media_app_version", ExtValue(string_value = media_app.getVersion))
 
-      val siteInfo=notice.getMedia.getSite
-      extString.update("title",siteInfo.getTitle)
-      extString.update("config",siteInfo.getConfig)
+      val siteInfo = notice.getMedia.getSite
+      extString.update("title", siteInfo.getTitle)
+      extString.update("config", siteInfo.getConfig)
 
       val device = notice.getDevice
       log = log.copy(

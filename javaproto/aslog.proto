@@ -243,6 +243,7 @@ message AdInfo {
 	repeated string img_urls = 32; //广告的图片地址
 	optional string click_url = 33; //广告点击地址
 	optional int32 siteid = 34; //建站id，0：非建站
+	optional uint64 lastcpm = 35; // 最终计算价格的cpm
 };
 
 message AdDspRet {
