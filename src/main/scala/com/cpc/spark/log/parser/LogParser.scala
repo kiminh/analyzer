@@ -376,7 +376,7 @@ object LogParser {
           val sub = m.subgroups
           if (sub.length == 1) {
             log = TraceLog()
-            log = log.copy(ip = ip)
+            val opt = mutable.Map[String, String]();
             sub(0).split('&').foreach {
               x =>
                 try {
@@ -407,12 +407,18 @@ object LogParser {
                     case "auto" => log = log.copy(auto = toAutoInt(v))
                     case "adslot_id" => log = log.copy(adslot_id = toInt(v))
                     case "ua" => log = log.copy(ua = v)
+                    case s if s.startsWith("opt_") =>
+                      val key = s.stripPrefix("opt_")
+                      if (key.length > 0) {
+                        opt.update(key, v.trim)
+                      }
                     case _ =>
                   }
                 } catch {
                   case e: Exception => null
                 }
             }
+            log = log.copy(ip = ip, opt = opt.toMap)
           }
       }
     }

@@ -31,7 +31,8 @@ case class TraceLog(
                    auto: Int = 0,
                    ip: String = "",
                    adslot_id:Int = 0,
-                   ua:String = ""
+                   ua:String = "",
+                   opt: collection.Map[String, String] = null
                    ) {
 
 }
