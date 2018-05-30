@@ -36,7 +36,6 @@ object MLSnapshot {
     val topicsSet = topics.split(",").toSet
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
 
-    val conf = ConfigFactory.load()
     val base_data = KafkaUtils
       .createDirectStream[String, Array[Byte], StringDecoder, DefaultDecoder](ssc, kafkaParams, topicsSet)
       .flatMap {
@@ -68,7 +67,6 @@ object MLSnapshot {
               Seq()
           }
       }
-      .filter(_ != null)
 
     base_data.print()
     val spark = SparkSession.builder()
