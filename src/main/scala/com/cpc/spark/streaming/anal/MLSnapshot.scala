@@ -20,7 +20,7 @@ import scala.collection.mutable
 
 object MLSnapshot {
   def main(args: Array[String]) {
-    if (args.length < 4) {
+    if (args.length < 3) {
       System.err.println(
         s"""
             haha
@@ -29,6 +29,7 @@ object MLSnapshot {
     }
     Logger.getRootLogger.setLevel(Level.WARN)
     val Array(brokers, topics, seconds) = args
+    println(args.mkString(" "))
 
     val sparkConf = new SparkConf().setAppName("ml snapshot: topics = " + topics)
     val ssc = new StreamingContext(sparkConf, Seconds(seconds.toInt))
