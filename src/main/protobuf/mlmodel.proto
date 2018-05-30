@@ -45,3 +45,35 @@ message Pack {
     Strategy strategy = 8;
 }
 
+message ProtoPortrait {
+    int64 id = 1;
+    string sid = 2;
+    map<int64, float> valueMap = 3;
+    map<string, ProtoPortrait> subMap = 4;
+}
+
+message ProtoPortraitFile {
+    map<string, mlmodel.ProtoPortrait> subMap = 1;
+}
+
+message Snapshot {
+    map<string, int32> raw_int = 1;
+    map<string, string> raw_str = 2;
+    map<int32, float> feature_vector = 3;
+    float result = 4;
+    string req_version = 5;
+    string model_name = 6;
+    int32 data_type = 7;
+    Strategy strategy = 8;
+    float calibrated = 9;
+}
+
+message AccessLog {
+    string searchid = 1;
+    repeated Snapshot snapshots = 2;
+    int64 timestamp = 3;
+}
+
+
+
+
