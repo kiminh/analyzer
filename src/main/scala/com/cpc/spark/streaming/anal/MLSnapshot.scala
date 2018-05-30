@@ -56,6 +56,8 @@ object MLSnapshot {
                     strategy = v.strategy.name,
                     result = v.result,
                     calibrated = v.calibrated,
+                    raw_int = v.rawInt,
+                    raw_string = v.rawStr,
                     feature_vector = v.featureVector,
                     date = date,
                     hour = hour
@@ -118,6 +120,8 @@ object MLSnapshot {
                      strategy: String = "",
                      result: Float = 0,
                      calibrated: Float = 0,
+                     raw_int: collection.Map[String, Int] = null,
+                     raw_string: collection.Map[String, String] = null,
                      feature_vector: collection.Map[Int, Float] = null,
                      date: String = "",
                      hour: String = ""
