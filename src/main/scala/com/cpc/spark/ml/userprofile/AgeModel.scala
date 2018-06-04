@@ -33,6 +33,7 @@ object AgeModel {
           val vec = Vectors.dense(x.features.toArray)
           (x.label, vec)
       }
+      .filter(_._2.size == 22)
       .toDF("label", "features")
     val dtest = MLUtils.loadLibSVMFile(spark.sparkContext, "/user/cpc/qtt-list-ctr-parser2-xgboost_test_svm")
       .map {
@@ -40,6 +41,7 @@ object AgeModel {
           val vec = Vectors.dense(x.features.toArray)
           (x.label, vec)
       }
+      .filter(_._2.size == 22)
       .toDF("label", "features")
 
     println(dtrain.first())
