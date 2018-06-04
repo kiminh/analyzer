@@ -2,9 +2,9 @@ package com.cpc.spark.ml.userprofile
 
 import org.apache.spark.ml.classification.MultilayerPerceptronClassifier
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
+import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.ml.linalg.{Vector, Vectors}
 
 
 /**
@@ -59,6 +59,13 @@ object AgeModel {
 
     // train the model
     val model = trainer.fit(dtrain)
+
+    println("weights: ")
+    model.weights
+      .foreachActive {
+        (i, v) =>
+          println(i, v)
+      }
 
 
     // compute accuracy on the test set
