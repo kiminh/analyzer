@@ -2,6 +2,7 @@ package com.cpc.spark.ml.userprofile
 
 import org.apache.spark.ml.classification.MultilayerPerceptronClassifier
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
+import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
 
 
@@ -19,9 +20,14 @@ object AgeModel {
       .enableHiveSupport()
       .getOrCreate()
 
+    import spark.implicits._
+
     // Load the data stored in LIBSVM format as a DataFrame.
-    val dtrain = spark.read.format("libsvm").load("/user/cpc/qtt-list-ctr-parser2-xgboost_train_svm")
-    val dtest = spark.read.format("libsvm").load("/user/cpc/qtt-list-ctr-parser2-xgboost_test_svm")
+    //val dtrain = spark.read.format("libsvm").load("/user/cpc/qtt-list-ctr-parser2-xgboost_train_svm")
+    //val dtest = spark.read.format("libsvm").load("/user/cpc/qtt-list-ctr-parser2-xgboost_test_svm")
+
+    val dtrain = MLUtils.loadLibSVMFile(spark.sparkContext, "/user/cpc/qtt-list-ctr-parser2-xgboost_train_svm").toDF()
+    val dtest = MLUtils.loadLibSVMFile(spark.sparkContext, "/user/cpc/qtt-list-ctr-parser2-xgboost_test_svm").toDF()
 
     println(dtrain.first())
 
