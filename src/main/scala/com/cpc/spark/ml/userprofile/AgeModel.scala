@@ -33,7 +33,6 @@ object AgeModel {
           val vec = Vectors.dense(x.features.toArray)
           (x.label, vec)
       }
-      .filter(_._2.size == 22)
       .toDF("label", "features")
     val dtest = MLUtils.loadLibSVMFile(spark.sparkContext, "/user/cpc/qtt-list-ctr-parser2-xgboost_test_svm")
       .map {
@@ -41,7 +40,6 @@ object AgeModel {
           val vec = Vectors.dense(x.features.toArray)
           (x.label, vec)
       }
-      .filter(_._2.size == 22)
       .toDF("label", "features")
 
     println(dtrain.first())
@@ -49,7 +47,7 @@ object AgeModel {
     // specify layers for the neural network:
     // input layer of size 4 (features), two intermediate of size 5 and 4
     // and output of size 3 (classes)
-    val layers = Array[Int](22, 10, 5, 1)
+    val layers = Array[Int](22, 10, 5, 2)
 
 
     // create the trainer and set its parameters
