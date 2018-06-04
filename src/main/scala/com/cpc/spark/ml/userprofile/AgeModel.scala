@@ -66,7 +66,7 @@ object AgeModel {
     // train the model
     val model = trainer.fit(dtrain)
 
-    println("weights: ")
+    println("weights: ", model.weights.size)
     model.weights
       .foreachActive {
         (i, v) =>
@@ -76,9 +76,10 @@ object AgeModel {
 
     // compute accuracy on the test set
     val result = model.transform(dtest)
-    //val predictionAndLabels = result.select("prediction", "label")
-    val predictionAndLabels = result.select("probability", "label")
+    val predictionAndLabels = result.select("prediction", "label")
+    //val predictionAndLabels = result.select("probability", "label")
     val testResults = predictionAndLabels.rdd.map(x => (x.getDouble(0), x.getDouble(1)))
+
 
     printXGBTestLog(testResults)
     val metrics = new BinaryClassificationMetrics(testResults)
