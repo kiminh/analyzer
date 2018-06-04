@@ -4,6 +4,7 @@ import org.apache.spark.ml.classification.MultilayerPerceptronClassifier
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.ml.linalg.{Vector, Vectors}
 
 
 /**
@@ -26,15 +27,27 @@ object AgeModel {
     //val dtrain = spark.read.format("libsvm").load("/user/cpc/qtt-list-ctr-parser2-xgboost_train_svm")
     //val dtest = spark.read.format("libsvm").load("/user/cpc/qtt-list-ctr-parser2-xgboost_test_svm")
 
-    val dtrain = MLUtils.loadLibSVMFile(spark.sparkContext, "/user/cpc/qtt-list-ctr-parser2-xgboost_train_svm").toDF()
-    val dtest = MLUtils.loadLibSVMFile(spark.sparkContext, "/user/cpc/qtt-list-ctr-parser2-xgboost_test_svm").toDF()
+    val dtrain = MLUtils.loadLibSVMFile(spark.sparkContext, "/user/cpc/qtt-list-ctr-parser2-xgboost_train_svm")
+      .map {
+        x =>
+          val vec = Vectors.dense(x.features.toArray)
+          (x.label, vec)
+      }
+      .toDF("label", "features")
+    val dtest = MLUtils.loadLibSVMFile(spark.sparkContext, "/user/cpc/qtt-list-ctr-parser2-xgboost_test_svm")
+      .map {
+        x =>
+          val vec = Vectors.dense(x.features.toArray)
+          (x.label, vec)
+      }
+      .toDF("label", "features")
 
     println(dtrain.first())
 
     // specify layers for the neural network:
     // input layer of size 4 (features), two intermediate of size 5 and 4
     // and output of size 3 (classes)
-    val layers = Array[Int](21, 10, 5, 1)
+    val layers = Array[Int](22, 10, 5, 1)
 
 
     // create the trainer and set its parameters
