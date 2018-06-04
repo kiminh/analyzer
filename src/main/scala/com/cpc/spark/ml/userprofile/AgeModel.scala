@@ -3,6 +3,7 @@ package com.cpc.spark.ml.userprofile
 import org.apache.spark.ml.classification.MultilayerPerceptronClassifier
 import org.apache.spark.ml.evaluation.MulticlassClassificationEvaluator
 import org.apache.spark.ml.linalg.{Vector, Vectors}
+import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.util.MLUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
@@ -49,8 +50,9 @@ object AgeModel {
     // input layer of size 4 (features), two intermediate of size 5 and 4
     // and output of size 3 (classes)
     val layers = Array[Int](22, 10, 5, 2)
+    val thresholds = Array[Double](0, 0, 0, 0)
 
-    10 * 22 + 5 * 10 + 2 * 5 + 2
+    println(10 * 22 + 5 * 10 + 2 * 5 + 2)
 
 
     // create the trainer and set its parameters
@@ -59,6 +61,7 @@ object AgeModel {
       .setBlockSize(128)
       .setSeed(1234L)
       .setMaxIter(100)
+
 
     // train the model
     val model = trainer.fit(dtrain)
@@ -73,9 +76,15 @@ object AgeModel {
 
     // compute accuracy on the test set
     val result = model.transform(dtest)
-    val predictionAndLabels = result.select("prediction", "label")
+    //val predictionAndLabels = result.select("prediction", "label")
+    val predictionAndLabels = result.select("probability", "label")
+    val testResults = predictionAndLabels.rdd.map(x => (x.getDouble(0), x.getDouble(1)))
 
-    printXGBTestLog(predictionAndLabels.rdd.map(x => (x.getDouble(0), x.getDouble(1))))
+    printXGBTestLog(testResults)
+    val metrics = new BinaryClassificationMetrics(testResults)
+    val auPRC = metrics.areaUnderPR
+    val auROC = metrics.areaUnderROC
+    println("auPRC=%.6f auROC=%.6f".format(auPRC, auROC))
 
 
     val evaluator = new MulticlassClassificationEvaluator()
