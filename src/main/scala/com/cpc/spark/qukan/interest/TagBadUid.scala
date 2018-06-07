@@ -45,7 +45,7 @@ object TagBadUid {
       """
         |SELECT searchid,uid,userid
         |FROM dl_cpc.cpc_union_log
-        |WHERE date = "%s" AND isshow = 1
+        |WHERE `date` = "%s" AND isshow = 1
       """.stripMargin.format(date);
 
     var rs1 = spark.sql(stmt).rdd
@@ -61,7 +61,7 @@ object TagBadUid {
       """
         |SELECT searchid
         |FROM dl_cpc.cpc_union_trace_log
-        |WHERE date = "%s" like "active%"
+        |WHERE `date` = "%s" like "active%"
       """.stripMargin.format(date)
 
     val rs2 = spark.sql(stmt).rdd
