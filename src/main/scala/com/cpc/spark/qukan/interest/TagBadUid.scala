@@ -44,7 +44,7 @@ object TagBadUid {
     var stmt =
       """
         |SELECT searchid,uid,userid
-        |FROM cpc_union_log
+        |FROM dl_cpc.cpc_union_log
         |WHERE date = "%s" AND isshow = 1
       """.stripMargin.format(date);
 
@@ -60,7 +60,7 @@ object TagBadUid {
     stmt =
       """
         |SELECT searchid
-        |FROM cpc_union_trace_log
+        |FROM dl_cpc.cpc_union_trace_log
         |WHERE date = "%s" like "active%"
       """.stripMargin.format(date)
 
