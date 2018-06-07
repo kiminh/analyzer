@@ -84,9 +84,9 @@ object TagBadUid {
     val stage2 = rs3.filter(x => x._2 >= 10 && x._2 <= 100)
     val stage3 = rs3.filter(x => x._2 > 100)
 
-    println(stage1.count())
-    println(stage2.count())
-    println(stage3.count())
+    println("###" + stage1.count() + "###")
+    println("###" + stage2.count() + "###")
+    println("###" + stage3.count() + "###")
 
     /*
     stage1.saveAsTextFile("/home/work/myt/stage1")
