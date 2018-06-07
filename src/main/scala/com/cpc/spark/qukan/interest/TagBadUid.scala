@@ -53,7 +53,7 @@ object TagBadUid {
         row =>
           val searchid = row.getString(0)
           val uid = row.getString(1)
-          val userid = row.getString(2)
+          val userid = row.getInt(2)
           (searchid, "user#" + userid + "u#" + uid)
       }
 
