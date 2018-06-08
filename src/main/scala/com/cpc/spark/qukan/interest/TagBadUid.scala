@@ -89,7 +89,7 @@ object TagBadUid {
     stage2.saveAsTextFile("/home/work/myt/stage2")
     stage3.saveAsTextFile("/home/work/myt/stage3")
     */
-    /*
+
     val conf = ConfigFactory.load()
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     stage.foreach {
@@ -119,7 +119,7 @@ object TagBadUid {
           redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
         }
     }
-    */
+    
 
   }
 
