@@ -3,7 +3,7 @@ package com.cpc.spark.log.anal
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import com.cpc.spark.log.parser.{ExtValue, LogParser, TraceLog, UnionLog}
+import com.cpc.spark.log.parser._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd
 import org.apache.spark.sql.types._
@@ -65,15 +65,15 @@ object MergeLog {
         println(x)
         println(LogParser.parseSearchLog(x))
     }
-    val searchData2: rdd.RDD[(String, UnionLog)] = searchData
+    val searchData2 = searchData
       .map(x => LogParser.parseSearchLog(x)) //(log)
       .filter(_ != null)
-      .map(x => (x.searchid, x)) //(searchid, log)
-      .reduceByKey((x, y) => x) //去重
+      .map(x => ((x.searchid, x.ideaid), x)) //((searchid,ideaid), Seq(log))
+      .reduceByKey((x, y) => x, numPartitions = 800) //去重
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
       x =>
         var ulog = x._2.copy(date = date, hour = hour)
-        (x._1, ulog)
+        ((ulog.searchid, ulog.ideaid), ulog)
     }
 
     val showData = prepareSourceString(spark, "cpc_show", prefix + "cpc_show" + suffix, hourBefore, 2)
@@ -87,8 +87,8 @@ object MergeLog {
     var showData2 = showData
       .map(x => LogParser.parseShowLog(x)) //(log)
       .filter(_ != null)
-      .map(x => (x.searchid, Seq(x))) //(searchid, Seq(log))
-      .reduceByKey((x, y) => x ++ y)
+      .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(log))
+      .reduceByKey((x, y) => x ++ y, numPartitions = 50)
       .map {
         x =>
           var log = x._2.head
@@ -99,22 +99,22 @@ object MergeLog {
                 log = y
               }
           }
-          (log.searchid, log)
+          ((log.searchid, log.ideaid), log)
       }
 
 
     val clickData = prepareSourceString(spark, "cpc_click", prefix + "cpc_click" + suffix, hourBefore, 2)
-    var clickData2: rdd.RDD[(String, UnionLog)] = null
+    var clickData2: rdd.RDD[((String, Int), UnionLog)] = null
     if (clickData != null) {
       clickData2 = clickData
         .map(x => LogParser.parseClickLog(x)) //(log)
         .filter(_ != null)
-        .map(x => (x.searchid, Seq(x))) //(searchid, log)
+        .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(log))
         .reduceByKey {
         (x, y) =>
           x ++ y
       }.map {
-        x => //(searchid,seq())
+        x => //((searchid,ideaid),seq())
           var ulog = x._2.head
           var notgetGood = true
           var ext = mutable.Map[String, ExtValue]()
@@ -147,14 +147,14 @@ object MergeLog {
                 }
               }
           }
-          (x._1, ulog)
+          ((ulog.searchid, ulog.ideaid), ulog)
       }
     }
 
-    val unionData = searchData2.leftOuterJoin(showData2).leftOuterJoin(clickData2)
+    val unionData1 = searchData2.leftOuterJoin(showData2).leftOuterJoin(clickData2)
       .map {
         x =>
-          (x._1, (x._2._1._1, x._2._1._2, x._2._2)) //( searchid, (log1,log2,log3) )
+          (x._1, (x._2._1._1, x._2._1._2, x._2._2)) //( (searchid,ideaid), (log1,log2,log3) )
       }
       .map {
         x =>
@@ -205,7 +205,22 @@ object MergeLog {
               )
             }
           }
-          log1
+          (log1.searchid, log1)
+      }
+    val unionData = unionData1.groupByKey(1000)
+      .map { rec =>
+        val logs = rec._2
+        if (logs.size > 1) {
+          var motive = Seq[Motivation]()
+          val head = logs.head
+          for (log <- logs) {
+            val m = Motivation(log.userid, log.planid, log.unitid, log.ideaid, log.bid, log.price, log.isfill,
+              log.isshow, log.isclick)
+            motive = motive :+ m
+          }
+          head.copy(motive = motive)
+        } else
+          rec._2.head
       }
 
     spark.createDataFrame(unionData)
@@ -284,7 +299,7 @@ object MergeLog {
     println(input)
     ctx.read
       .parquet(input)
-      .repartition(1000)
+      .coalesce(1000)
       .rdd
       .flatMap {
         r =>
