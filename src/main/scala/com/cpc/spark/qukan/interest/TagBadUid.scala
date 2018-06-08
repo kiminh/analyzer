@@ -23,6 +23,7 @@ import scala.io.Source
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.util.Random
+import userprofile.Userprofile.{InterestItem, UserProfile}
 
 /**
   * Created by YuntaoMa on 06/06/2018.
@@ -119,7 +120,7 @@ object TagBadUid {
           redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
         }
     }
-    
+
 
   }
 
