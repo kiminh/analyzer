@@ -96,7 +96,7 @@ object TagBadUid {
     stage.foreach {
       uid =>
         val key = uid + "_UPDATA"
-        val buffer = redis.get[Array[Byte]](key).orNull
+        val buffer = redis.get(key).orNull
         if (buffer != null) {
           val user = UserProfile.parseFrom(buffer).toBuilder
           val in = InterestItem.newBuilder()
