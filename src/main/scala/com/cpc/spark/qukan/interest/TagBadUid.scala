@@ -83,7 +83,10 @@ object TagBadUid {
     val stage = rs3.filter(x => x._2 > 10).map(x => x._1)
 
     println("###" + stage.count() + "###")
-    println(stage.take(10))
+    stage.foreach {
+      x =>
+        println(x)
+    }
     /*
     stage1.saveAsTextFile("/home/work/myt/stage1")
     stage2.saveAsTextFile("/home/work/myt/stage2")
