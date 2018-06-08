@@ -43,7 +43,7 @@ object TagBadUid {
 
     var stmt =
       """
-        |SELECT searchid,uid,ext["adclass"].int_value
+        |SELECT searchid,uid,userid
         |FROM dl_cpc.cpc_union_log
         |WHERE `date` = "%s" AND isshow = 1
       """.stripMargin.format(date)
@@ -80,14 +80,15 @@ object TagBadUid {
       }
       .reduceByKey((x, y) => x.max(y))
 
-    val stage1 = rs3.filter(x => x._2 < 10)
-    val stage2 = rs3.filter(x => x._2 >= 10 && x._2 <= 100)
-    val stage3 = rs3.filter(x => x._2 > 100)
+    val stage1 = rs3.filter(x => x._2 < 5)
+    val stage2 = rs3.filter(x => x._2 >= 5 && x._2 <= 10)
+    val stage3 = rs3.filter(x => x._2 > 10 && x._2 <= 100)
+    val stage4 = rs3.filter(x => x._2 > 100)
 
     println("###" + stage1.count() + "###")
     println("###" + stage2.count() + "###")
     println("###" + stage3.count() + "###")
-
+    println("###" + stage4.count() + "###")
     /*
     stage1.saveAsTextFile("/home/work/myt/stage1")
     stage2.saveAsTextFile("/home/work/myt/stage2")
