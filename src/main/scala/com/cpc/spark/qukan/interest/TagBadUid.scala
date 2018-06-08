@@ -43,7 +43,7 @@ object TagBadUid {
 
     var stmt =
       """
-        |SELECT searchid,uid,userid
+        |SELECT searchid,uid,ext["adclass"].int_value
         |FROM dl_cpc.cpc_union_log
         |WHERE `date` = "%s" AND isshow = 1
       """.stripMargin.format(date)
@@ -94,8 +94,8 @@ object TagBadUid {
     stage3.saveAsTextFile("/home/work/myt/stage3")
     */
 
-    val conf = ConfigFactory.load()
-    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+    //val conf = ConfigFactory.load()
+    //val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
 
   }
 
