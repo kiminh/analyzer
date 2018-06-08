@@ -24,6 +24,7 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.util.Random
 import userprofile.Userprofile.{InterestItem, UserProfile}
+import com.redis.serialization.Parse.Implicits._
 
 /**
   * Created by YuntaoMa on 06/06/2018.
@@ -93,10 +94,13 @@ object TagBadUid {
 
     val conf = ConfigFactory.load()
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+
+    var n = 0
+    var nl = 0
     stage.foreach {
       uid =>
         val key = uid + "_UPDATA"
-        val buffer = redis.get(key).orNull
+        val buffer = redis.get[Array[Byte]](key).orNull
         if (buffer != null) {
           val user = UserProfile.parseFrom(buffer).toBuilder
           val in = InterestItem.newBuilder()
@@ -116,11 +120,14 @@ object TagBadUid {
           }
           if (!has) {
             user.addInterestedWords(in)
+            nl = nl + 1
           }
           redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+          n = n + 1
         }
-    }
 
+    }
+    println("update " + n + " insert " + nl)
 
   }
 
