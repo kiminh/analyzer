@@ -25,6 +25,8 @@ import scala.collection.mutable
 import scala.util.Random
 import userprofile.Userprofile.{InterestItem, UserProfile}
 import com.redis.serialization.Parse.Implicits._
+import com.redis.RedisClient
+import com.cpc.spark.qukan.parser.HdfsParser
 
 /**
   * Created by YuntaoMa on 06/06/2018.
@@ -32,7 +34,6 @@ import com.redis.serialization.Parse.Implicits._
 
 object TagBadUid {
   def main(args: Array[String]): Unit = {
-    import com.redis.RedisClient
     val spark = SparkSession.builder()
       .appName("Tag bad uid")
       .enableHiveSupport()
