@@ -80,23 +80,46 @@ object TagBadUid {
       }
       .reduceByKey((x, y) => x.max(y))
 
-    val stage1 = rs3.filter(x => x._2 < 5)
-    val stage2 = rs3.filter(x => x._2 >= 5 && x._2 <= 10)
-    val stage3 = rs3.filter(x => x._2 > 10 && x._2 <= 100)
-    val stage4 = rs3.filter(x => x._2 > 100)
+    val stage = rs3.filter(x => x._2 > 10).map(x => x._1)
 
-    println("###" + stage1.count() + "###")
-    println("###" + stage2.count() + "###")
-    println("###" + stage3.count() + "###")
-    println("###" + stage4.count() + "###")
+    println("###" + stage.count() + "###")
+    println(stage.take(10))
     /*
     stage1.saveAsTextFile("/home/work/myt/stage1")
     stage2.saveAsTextFile("/home/work/myt/stage2")
     stage3.saveAsTextFile("/home/work/myt/stage3")
     */
-
-    //val conf = ConfigFactory.load()
-    //val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+    /*
+    val conf = ConfigFactory.load()
+    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+    stage.foreach {
+      uid =>
+        val key = uid + "_UPDATA"
+        val buffer = redis.get[Array[Byte]](key).orNull
+        if (buffer != null) {
+          val user = UserProfile.parseFrom(buffer).toBuilder
+          val in = InterestItem.newBuilder()
+            .setTag(226)
+            .setScore(100)
+          var has = false
+          for (i <- 0 until user.getInterestedWordsCount) {
+            val w = user.getInterestedWords(i)
+            if (w.getTag == in.getTag) {
+              if (!has) {
+                user.setInterestedWords(i, in)
+                has = true
+              } else {
+                user.removeInterestedWords(i)
+              }
+            }
+          }
+          if (!has) {
+            user.addInterestedWords(in)
+          }
+          redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+        }
+    }
+    */
 
   }
 
