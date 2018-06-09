@@ -83,7 +83,7 @@ object TagBadUid {
       }
       .reduceByKey((x, y) => x.max(y))
 
-    val stage = rs3.filter(x => x._2 > 10).map(x => x._1)
+    val stage = rs3.filter(x => x._2 >= 10).map(x => x._1)
 
     println("###" + stage.count() + "###")
     //stage.take(10).foreach(println)
