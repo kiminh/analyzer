@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.log.parser._
+import com.cpc.spark.test_partitioner
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd
 import org.apache.spark.sql.types._
@@ -69,7 +70,7 @@ object MergeLog {
       .map(x => LogParser.parseSearchLog(x)) //(log)
       .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), x)) //((searchid,ideaid), Seq(log))
-      .reduceByKey((x, y) => x, numPartitions = 800) //去重
+      .reduceByKey(new test_partitioner(800), (x, y) => x) //去重
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
       x =>
         var ulog = x._2.copy(date = date, hour = hour)
@@ -88,7 +89,7 @@ object MergeLog {
       .map(x => LogParser.parseShowLog(x)) //(log)
       .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(log))
-      .reduceByKey((x, y) => x ++ y, numPartitions = 100)
+      .reduceByKey(new test_partitioner(800), (x, y) => x ++ y)
       .map {
         x =>
           var log = x._2.head
@@ -110,10 +111,7 @@ object MergeLog {
         .map(x => LogParser.parseClickLog(x)) //(log)
         .filter(_ != null)
         .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(log))
-        .reduceByKey {
-        (x, y) =>
-          x ++ y
-      }.map {
+        .reduceByKey(new test_partitioner(800), (x, y) => x ++ y).map {
         x => //((searchid,ideaid),seq())
           var ulog = x._2.head
           var notgetGood = true
