@@ -69,7 +69,7 @@ object MergeLog {
       .map(x => LogParser.parseSearchLog(x)) //(log)
       .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), x)) //((searchid,ideaid), Seq(log))
-      .reduceByKey( (x, y) => x) //去重
+      .reduceByKey((x, y) => x) //去重
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
       x =>
         var ulog = x._2.copy(date = date, hour = hour)
@@ -88,7 +88,7 @@ object MergeLog {
       .map(x => LogParser.parseShowLog(x)) //(log)
       .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(log))
-      .reduceByKey( (x, y) => x ++ y)
+      .reduceByKey((x, y) => x ++ y)
       .map {
         x =>
           var log = x._2.head
@@ -296,6 +296,7 @@ object MergeLog {
     println(input)
     ctx.read
       .parquet(input)
+      .repartition(1000)
       .rdd
       .flatMap {
         r =>
@@ -324,7 +325,7 @@ object MergeLog {
           Seq(r1, r2)
       }
       .filter(_ != null)
-  }.coalesce(1000)
+  }
 
   /*
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
