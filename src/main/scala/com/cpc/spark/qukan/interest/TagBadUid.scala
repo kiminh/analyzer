@@ -94,7 +94,7 @@ object TagBadUid {
     */
 
     val conf = ConfigFactory.load()
-    stage
+    val sum = stage
       .mapPartitions {
         p =>
           var n = 0
@@ -113,27 +113,20 @@ object TagBadUid {
                 for (i <- 0 until user.getInterestedWordsCount) {
                   val w = user.getInterestedWords(i)
                   if (w.getTag == in.getTag) {
-                    if (!has) {
-                      user.setInterestedWords(i, in)
-                      has = true
-                    } else {
-                      user.removeInterestedWords(i)
-                    }
+                    has = true
                   }
                 }
                 if (!has) {
                   user.addInterestedWords(in)
-                  n1 = n1 + 1
+                  n = n + 1
                 }
-                n = n + 1
                 redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
-          println("###" + n + "###" + n1)
-          Seq((n, n1)).iterator
+          Seq(n).iterator
       }
-      .collect().foreach(x => println("###" + x._1 + "###" + x._2))
-
+      .reduce((x, y) => x + y)
+      println(sum)
 
   }
 
