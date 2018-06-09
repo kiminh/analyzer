@@ -132,6 +132,7 @@ object TagBadUid {
           println("###" + n + "###" + n1)
           Seq((n, n1)).iterator
       }
+      .collect().foreach(x => println("###" + x._1 + "###" + x._2))
 
 
   }
