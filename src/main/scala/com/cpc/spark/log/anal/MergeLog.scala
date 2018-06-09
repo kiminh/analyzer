@@ -296,6 +296,7 @@ object MergeLog {
     println(input)
     ctx.read
       .parquet(input)
+      .coalesce(500)
       .rdd
       .flatMap {
         r =>
@@ -324,7 +325,7 @@ object MergeLog {
           Seq(r1, r2)
       }
       .filter(_ != null)
-  }.coalesce(1000)
+  }
 
   /*
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
