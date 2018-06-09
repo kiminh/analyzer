@@ -296,7 +296,7 @@ object MergeLog {
     println(input)
     ctx.read
       .parquet(input)
-      .repartition(1000)
+      .coalesce(1000)
       .rdd
       .flatMap {
         r =>
