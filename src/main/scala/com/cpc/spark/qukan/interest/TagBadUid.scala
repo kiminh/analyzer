@@ -118,15 +118,16 @@ object TagBadUid {
                 }
                 if (!has) {
                   user.addInterestedWords(in)
-                  n = n + 1
+                  n1 = n1 + 1
                 }
+                n = n + 1
                 redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
-          Seq(n).iterator
+          Seq((n, n1)).iterator
       }
-      .reduce((x, y) => x + y)
-      println(sum)
+      .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
+      println("###" + sum._1+ "###" + sum._2 )
 
   }
 
