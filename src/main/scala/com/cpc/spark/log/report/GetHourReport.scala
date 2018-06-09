@@ -42,8 +42,8 @@ object GetHourReport {
     mariadbProp.put("password", conf.getString("mariadb.password"))
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
-    mariadb_amateur_url=conf.getString("mariadb.amateur_write.url")
-    mariadb_amateur_prop.put("user",conf.getString("mariadb.amateur_write.user"))
+    mariadb_amateur_url = conf.getString("mariadb.amateur_write.url")
+    mariadb_amateur_prop.put("user", conf.getString("mariadb.amateur_write.user"))
     mariadb_amateur_prop.put("password", conf.getString("mariadb.amateur_write.password"))
     mariadb_amateur_prop.put("driver", conf.getString("mariadb.amateur_write.driver"))
     val ctx = SparkSession.builder()
@@ -64,7 +64,7 @@ object GetHourReport {
          |      ext['exp_ctr'].int_value as exp_ctr
          |from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and isfill = 1 and adslotid > 0 and adsrc <= 1
        """.stripMargin.format(table, date, hour))
-      .rdd.cache()
+      .rdd.coalesce(100).cache()
 
     val chargeData = unionLog
       .map {
@@ -103,7 +103,7 @@ object GetHourReport {
 
 
     clearReportHourData("report_media_charge_hourly", date, hour)
-    val chargedata=ctx.createDataFrame(chargeData).persist
+    val chargedata = ctx.createDataFrame(chargeData).persist
     chargedata.write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_charge_hourly", mariadbProp)
@@ -252,10 +252,10 @@ object GetHourReport {
           val key = (x.media_id, x.adslot_id, x.dsp_src, x.dsp_mediaid, x.dsp_adslotid, x.date)
           (key, x)
       }
-      .reduceByKey((x, y) => x.sum(y))
+      .reduceByKey((x, y) => x.sum(y), 20)
       .map(x => x._2)
 
-    clearReportHourData2("report_req_dsp_hourly", date+" "+hour+":00:00")
+    clearReportHourData2("report_req_dsp_hourly", date + " " + hour + ":00:00")
     ctx.createDataFrame(dspdata)
       .write
       .mode(SaveMode.Append)
@@ -380,7 +380,7 @@ object GetHourReport {
       }
 
     val ctrCvrData = ctrData.leftOuterJoin(cvrlog)
-      .map {x => x._2._1.copy(cvr_num = x._2._2.getOrElse(0))}
+      .map { x => x._2._1.copy(cvr_num = x._2._2.getOrElse(0)) }
       .map {
         ctr =>
           val key = (ctr.media_id, ctr.adslot_id, ctr.adclass, ctr.exp_tag)
@@ -541,13 +541,13 @@ object GetHourReport {
         """.stripMargin.format(tbl, date, hour.toInt)
       stmt.executeUpdate(sql)
 
-      if(tbl=="report_media_charge_hourly"){
-        val conn_amateur=DriverManager.getConnection(
+      if (tbl == "report_media_charge_hourly") {
+        val conn_amateur = DriverManager.getConnection(
           mariadb_amateur_url,
           mariadb_amateur_prop.getProperty("user"),
           mariadb_amateur_prop.getProperty("password")
         )
-        val stmt_amateur=conn_amateur.createStatement()
+        val stmt_amateur = conn_amateur.createStatement()
         stmt_amateur.executeUpdate(sql)
       }
 

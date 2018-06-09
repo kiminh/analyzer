@@ -217,6 +217,7 @@ object LogParser {
       log = UnionLog(
         searchid = body.getSearchId,
         isshow = 1,
+        ideaid = body.getAd.getUnitId,
         show_timestamp = data.timestamp,
         show_ip = data.ip,
         ext = ext
@@ -272,6 +273,7 @@ object LogParser {
         log = UnionLog(
           searchid = body.getSearchId,
           isclick = 1,
+          ideaid = body.getAd.getUnitId,
           click_timestamp = body.getEventTimestamp,
           antispam_score = body.getAntispam.getScore,
           antispam_rules = body.getAntispam.getRulesList.toArray.mkString(","),
