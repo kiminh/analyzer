@@ -88,7 +88,7 @@ object MergeLog {
       .map(x => LogParser.parseShowLog(x)) //(log)
       .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(log))
-      .reduceByKey((x, y) => x ++ y, numPartitions = 50)
+      .reduceByKey((x, y) => x ++ y, numPartitions = 100)
       .map {
         x =>
           var log = x._2.head
