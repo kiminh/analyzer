@@ -86,7 +86,7 @@ object TagBadUid {
     val stage = rs3.filter(x => x._2 > 10).map(x => x._1)
 
     println("###" + stage.count() + "###")
-    stage.take(10).foreach(println)
+    //stage.take(10).foreach(println)
     /*
     stage1.saveAsTextFile("/home/work/myt/stage1")
     stage2.saveAsTextFile("/home/work/myt/stage2")
@@ -94,9 +94,6 @@ object TagBadUid {
     */
 
     val conf = ConfigFactory.load()
-
-    var n = 0
-    var nl = 0
     stage
       .mapPartitions {
         p =>
@@ -132,7 +129,7 @@ object TagBadUid {
                 redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
-          println("###" + n + "###" + nl)
+          println("###" + n + "###" + n1)
           Seq((n, n1)).iterator
       }
 
