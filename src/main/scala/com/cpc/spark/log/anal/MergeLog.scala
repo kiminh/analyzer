@@ -4,7 +4,6 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.log.parser._
-import com.cpc.spark.test_partitioner
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd
 import org.apache.spark.sql.types._
@@ -230,7 +229,7 @@ object MergeLog {
         |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
         | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
       """.stripMargin.format(table, date, hour, table, date, hour))
-    println("union", unionData.count())
+    println("union done")
 
     val traceData = prepareSourceString(spark, "cpc_trace", prefix + "cpc_trace" + suffix, hourBefore, 2)
     if (traceData != null) {
@@ -253,7 +252,7 @@ object MergeLog {
           |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
           | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
         """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
-      println("trace_join", trace1.count())
+      println("trace_join done")
     }
 
 
@@ -270,7 +269,7 @@ object MergeLog {
         |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
         | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
       """.stripMargin.format(allTraceTbl, date, hour, allTraceTbl, date, hour))
-    println("trace_all", traceall.count())
+    println("trace_all done")
 
     spark.stop()
     for (i <- 0 until 50) {
