@@ -565,6 +565,7 @@ object InsertReportSiteBuildingTarget {
 
     var insertDataFrame = ctx.createDataFrame(insertAllData)
       .toDF("site_id", "impression", "click", "target_type", "target_value", "load", "active", "date", "sdk_ok", "stayinwx")
+      .persist()
     insertDataFrame.show(10)
 
     //report
@@ -584,6 +585,8 @@ object InsertReportSiteBuildingTarget {
       .mode(SaveMode.Append)
       .jdbc(mariaAmateurdbUrl, "report.report_site_building_target", mariaAmateurdbProp)
     println("Amateur over!")
+
+    insertDataFrame.unpersist()
 
   }
 
