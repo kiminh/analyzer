@@ -217,8 +217,10 @@ object TrainSex3{
               } else {
                 try {
                   user = UserProfile.parseFrom(buffer).toBuilder
-                } finally {
+                } catch {
+                  case ex: Exception => {
                   user = UserProfile.newBuilder().setDevid(deviceid)
+                  }
                 }
                 n2 = n2 + 1
               }
