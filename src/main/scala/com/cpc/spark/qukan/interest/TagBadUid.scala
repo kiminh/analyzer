@@ -34,6 +34,7 @@ import com.cpc.spark.qukan.parser.HdfsParser
 
 object TagBadUid {
   def main(args: Array[String]): Unit = {
+    val threshold = args(0).toInt
     val spark = SparkSession.builder()
       .appName("Tag bad uid")
       .enableHiveSupport()
@@ -83,7 +84,10 @@ object TagBadUid {
       }
       .reduceByKey((x, y) => x.max(y))
 
-    val stage = rs3.filter(x => x._2 >= 10).map(x => x._1)
+    val stage = rs3.filter(x => x._2 >= threshold).map(x => x._1)
+    for (i <- 3 to 10) {
+      println(rs3.filter(x => x._2 >= i).map(x => x._1).count())
+    }
 
     println("###" + stage.count() + "###")
     //stage.take(10).foreach(println)
