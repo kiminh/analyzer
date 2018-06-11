@@ -210,8 +210,7 @@ object InsertReportSiteBuildingTarget {
           (searchid, (Info(siteid, ideaid, isshow, isclick, sex, age, os, province, phoneLevel, hour,
             network, userLevel, qukanNewUser, adslotType, mediaId, 0, 0, 0, 0, adslotid, brand, browserType)))
       }
-      .cache()
-    println("unionData count", unionData.count())
+
 
     val traceData = ctx.sql(
       """
@@ -252,8 +251,6 @@ object InsertReportSiteBuildingTarget {
           val siteid = x.get(4).toString.toInt
           (searchid, (Info(siteid, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, load, active, landpage_ok, stayinwx)))
       }
-      .cache()
-    println("traceData count", traceData.count())
 
 
     val allData = unionData
@@ -293,7 +290,6 @@ object InsertReportSiteBuildingTarget {
             info.adslotid, info.brand, info.browserType))
       }
       .filter(_._2.siteId > 0)
-      .cache()
 
     val inputBrandData = allData
       .filter {
@@ -315,8 +311,8 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val brandData = getTargetData(inputBrandData, "brand", argDay).cache()
-    println("brandData count is", brandData.count())
+    val brandData = getTargetData(inputBrandData, "brand", argDay)
+
 
     val inputBrowserTypeData = allData
       .filter {
@@ -348,8 +344,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val browserTypeData = getTargetData(inputBrowserTypeData, "browser_type", argDay).cache()
-    println("browserTypeData count is", browserTypeData.count())
+    val browserTypeData = getTargetData(inputBrowserTypeData, "browser_type", argDay)
 
     val inputAdslotIdData = allData
       .map {
@@ -365,8 +360,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val adslotIdData = getTargetData(inputAdslotIdData, "adslot_id", argDay).cache()
-    println("adslotIdData count is", adslotIdData.count())
+    val adslotIdData = getTargetData(inputAdslotIdData, "adslot_id", argDay)
 
 
     val inputSexData = allData
@@ -383,8 +377,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val sexData = getTargetData(inputSexData, "sex", argDay).cache()
-    println("sexData count is", sexData.count())
+    val sexData = getTargetData(inputSexData, "sex", argDay)
 
 
     val inputAgeData = allData
@@ -401,8 +394,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val ageData = getTargetData(inputAgeData, "age", argDay).cache()
-    println("age count is", ageData.count())
+    val ageData = getTargetData(inputAgeData, "age", argDay)
 
     val inputOsData = allData
       .map {
@@ -418,8 +410,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val osData = getTargetData(inputOsData, "os", argDay).cache()
-    println("os count is", osData.count())
+    val osData = getTargetData(inputOsData, "os", argDay)
 
     val inputProvinceData = allData
       .map {
@@ -435,8 +426,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val provinceData = getTargetData(inputProvinceData, "province", argDay).cache()
-    println("province count is", provinceData.count())
+    val provinceData = getTargetData(inputProvinceData, "province", argDay)
 
     val inputPhoneLevelData = allData
       .map {
@@ -452,8 +442,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val phoneLevelData = getTargetData(inputPhoneLevelData, "phone_level", argDay).cache()
-    println("phone_level count is", phoneLevelData.count())
+    val phoneLevelData = getTargetData(inputPhoneLevelData, "phone_level", argDay)
 
     val inputHourData = allData
       .map {
@@ -469,8 +458,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val hourData = getTargetData(inputHourData, "hour", argDay).cache()
-    println("hour count is", hourData.count())
+    val hourData = getTargetData(inputHourData, "hour", argDay)
 
     val inputNetworkData = allData
       .map {
@@ -486,8 +474,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val networkData = getTargetData(inputNetworkData, "network_type", argDay).cache()
-    println("network_type count is", networkData.count())
+    val networkData = getTargetData(inputNetworkData, "network_type", argDay)
 
     val inputUserLevelData = allData
       .map {
@@ -503,8 +490,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val userLevelData = getTargetData(inputUserLevelData, "user_level", argDay).cache()
-    println("user_level count is", userLevelData.count())
+    val userLevelData = getTargetData(inputUserLevelData, "user_level", argDay)
 
     val inputQukanNewUserData = allData
       .map {
@@ -520,8 +506,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val qukanNewUserData = getTargetData(inputQukanNewUserData, "user_orient", argDay).cache()
-    println("user_orient count is", qukanNewUserData.count())
+    val qukanNewUserData = getTargetData(inputQukanNewUserData, "user_orient", argDay)
 
     val inputAdslotTypeData = allData
       .map {
@@ -537,8 +522,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val adslotTypeData = getTargetData(inputAdslotTypeData, "adslot_type", argDay).cache()
-    println("adslot_type count is", adslotTypeData.count())
+    val adslotTypeData = getTargetData(inputAdslotTypeData, "adslot_type", argDay)
 
     val inputQuAdslotTypeData = allData
       .filter {
@@ -560,8 +544,7 @@ object InsertReportSiteBuildingTarget {
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
 
-    val quAdslotTypeData = getTargetData(inputQuAdslotTypeData, "adslot_type_media", argDay).cache()
-    println("adslot_type_media count is", quAdslotTypeData.count())
+    val quAdslotTypeData = getTargetData(inputQuAdslotTypeData, "adslot_type_media", argDay)
 
 
     val insertAllData = sexData
