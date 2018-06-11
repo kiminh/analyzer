@@ -568,6 +568,8 @@ object InsertReportSiteBuildingTarget {
       .coalesce(100)
       .persist()
 
+    println("total num is : " + insertDataFrame.count)
+
     //report
     clearReportSiteBuildingTarget(argDay)
 
