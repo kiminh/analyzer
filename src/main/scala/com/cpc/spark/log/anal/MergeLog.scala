@@ -294,9 +294,9 @@ object MergeLog {
   def prepareSourceString(ctx: SparkSession, key: String, src: String, hourBefore: Int, hours: Int): rdd.RDD[String] = {
     val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
     println(input)
-    ctx.read
+    val readData = ctx.read
       .parquet(input)
-      .repartition(1000)
+      .coalesce(1000)
       .rdd
       .flatMap {
         r =>
@@ -325,6 +325,7 @@ object MergeLog {
           Seq(r1, r2)
       }
       .filter(_ != null)
+    readData
   }
 
   /*
