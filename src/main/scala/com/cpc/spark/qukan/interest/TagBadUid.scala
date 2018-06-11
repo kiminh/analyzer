@@ -64,7 +64,7 @@ object TagBadUid {
       """
         |SELECT searchid
         |FROM dl_cpc.cpc_union_trace_log
-        |WHERE `date` = "%s" AND trace_type like "active%%" AND (media_appsid = "80000001" OR media_appsid = "80000002")
+        |WHERE `date` = "%s" AND trace_type like "active%%" 
       """.stripMargin.format(date)
 
     val rs2 = spark.sql(stmt).rdd
