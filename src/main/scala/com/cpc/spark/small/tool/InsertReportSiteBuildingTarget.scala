@@ -566,7 +566,6 @@ object InsertReportSiteBuildingTarget {
     var insertDataFrame = ctx.createDataFrame(insertAllData)
       .toDF("site_id", "impression", "click", "target_type", "target_value", "load", "active", "date", "sdk_ok", "stayinwx")
       .persist()
-    insertDataFrame.show(10)
 
     //report
     clearReportSiteBuildingTarget(argDay)
