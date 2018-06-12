@@ -57,7 +57,7 @@ object MergeLog {
       .enableHiveSupport()
       .getOrCreate()
 
-    var searchData = prepareSourceString(spark, "cpc_search", prefix + "cpc_search" + suffix, hourBefore, 1)
+    var searchData = prepareSourceString(spark, "cpc_search_new", prefix + "cpc_search" + suffix, hourBefore, 1)
     if (searchData == null) {
       System.err.println("search data is empty")
       System.exit(1)
@@ -78,7 +78,7 @@ object MergeLog {
         ((ulog.searchid, ulog.ideaid), ulog)
     }
 
-    val showData = prepareSourceString(spark, "cpc_show", prefix + "cpc_show" + suffix, hourBefore, 2)
+    val showData = prepareSourceString(spark, "cpc_show_new", prefix + "cpc_show" + suffix, hourBefore, 2)
     //    var showData2: rdd.RDD[(String, UnionLog)] = null
     //    showData2 = showData
     //      .map(x => LogParser.parseShowLog(x)) //(log)
@@ -105,7 +105,7 @@ object MergeLog {
       }
 
 
-    val clickData = prepareSourceString(spark, "cpc_click", prefix + "cpc_click" + suffix, hourBefore, 2)
+    val clickData = prepareSourceString(spark, "cpc_click_new", prefix + "cpc_click" + suffix, hourBefore, 2)
     var clickData2: rdd.RDD[((String, Int), UnionLog)] = null
     if (clickData != null) {
       clickData2 = clickData
@@ -233,7 +233,7 @@ object MergeLog {
       """.stripMargin.format(table, date, hour, table, date, hour))
     println("union done")
 
-    val traceData = prepareSourceString(spark, "cpc_trace", prefix + "cpc_trace" + suffix, hourBefore, 2)
+    val traceData = prepareSourceString(spark, "cpc_trace_new", prefix + "cpc_trace" + suffix, hourBefore, 2)
     if (traceData != null) {
       val trace = traceData.map(x => LogParser.parseTraceLog(x))
         .filter(x => x != null)
@@ -258,7 +258,7 @@ object MergeLog {
     }
 
 
-    val traceall = prepareSourceString(spark, "cpc_trace", prefix + "cpc_trace" + suffix, hourBefore, 1)
+    val traceall = prepareSourceString(spark, "cpc_trace_new", prefix + "cpc_trace" + suffix, hourBefore, 1)
       .map(x => LogParser.parseTraceLog(x))
       .filter(_ != null)
       .map(_.copy(date = date, hour = hour))
@@ -300,31 +300,20 @@ object MergeLog {
       .parquet(input)
       .coalesce(1000)
       .rdd
-      .flatMap {
-        r =>
+      .map {
+        rec =>
           //val s = r.getMap[String, Row](2).getOrElse(key, null)
-          val s = r.getAs[Map[String, Row]]("field").getOrElse(key, null)
-          val s1 = r.getAs[Map[String, Row]]("field").getOrElse(key + "_new", null)
-          val timestamp = r.getAs[Long]("log_timestamp")
+          val s = rec.getAs[Map[String, Row]]("field").getOrElse(key, null)
+          val timestamp = rec.getAs[Long]("log_timestamp")
 
-          val r1 = if (s == null) {
+          if (s == null) {
             null
           } else {
-            if (key == "cpc_show") {
+            if (key == "cpc_show_new") {
               timestamp + s.getAs[String]("string_type")
             }
             else s.getAs[String]("string_type")
           }
-
-          val r2 = if (s1 == null) {
-            null
-          } else {
-            if (key == "cpc_show") {
-              timestamp + s1.getAs[String]("string_type")
-            }
-            else s1.getAs[String]("string_type")
-          }
-          Seq(r1, r2)
       }
       .filter(_ != null)
     readData
