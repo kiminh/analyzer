@@ -292,7 +292,7 @@ object MergeLog {
   cpc_search cpc_show cpc_click cpc_trace cpc_charge
    */
   def prepareSourceString(ctx: SparkSession, key: String, src: String, hourBefore: Int, hours: Int): rdd.RDD[String] = {
-    val input = "%s/%s/%s".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
+    val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
     println(input)
     val readData = ctx.read
       .parquet(input)
