@@ -46,7 +46,6 @@ object MergeLog {
     val allTraceTbl = args(6) //cpc_all_trace_log
 
 
-    val cpcPartitioner = new CpcPartitioner(1000)
     val cal = Calendar.getInstance()
     g_date = cal.getTime //以后只用这个时间
     cal.add(Calendar.HOUR, -hourBefore)
@@ -71,7 +70,7 @@ object MergeLog {
       .map(x => LogParser.parseSearchLog(x)) //(log)
       .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), x)) //((searchid,ideaid), Seq(log))
-      .reduceByKey(cpcPartitioner, (x, y) => x) //去重
+      .reduceByKey(new CpcPartitioner(1000), (x, y) => x) //去重
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
       x =>
         var ulog = x._2.copy(date = date, hour = hour)
@@ -90,7 +89,7 @@ object MergeLog {
       .map(x => LogParser.parseShowLog(x)) //(log)
       .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(log))
-      .reduceByKey(cpcPartitioner, (x, y) => x ++ y)
+      .reduceByKey(new CpcPartitioner(500), (x, y) => x ++ y)
       .map {
         x =>
           var log = x._2.head
@@ -112,7 +111,7 @@ object MergeLog {
         .map(x => LogParser.parseClickLog(x)) //(log)
         .filter(_ != null)
         .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(log))
-        .reduceByKey(cpcPartitioner, (x, y) => x ++ y).map {
+        .reduceByKey(new CpcPartitioner(100), (x, y) => x ++ y).map {
         x => //((searchid,ideaid),seq())
           var ulog = x._2.head
           var notgetGood = true
