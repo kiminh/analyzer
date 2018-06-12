@@ -298,7 +298,6 @@ object MergeLog {
     println(input)
     val readData = ctx.read
       .parquet(input)
-      .coalesce(1000)
       .rdd
       .map {
         rec =>
