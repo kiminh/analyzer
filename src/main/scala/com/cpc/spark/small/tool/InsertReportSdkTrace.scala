@@ -276,7 +276,7 @@ object InsertReportSdkTrace {
           |FROM dl_cpc.cpc_union_log cul
           |WHERE cul.date="%s" AND cul.hour="%s"
           |AND cul.ext["client_type"].string_value="NATIVESDK"
-          |AND cul.interaction=2
+          |AND cul.interaction=2 AND cul.adsrc=1
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
@@ -310,7 +310,7 @@ object InsertReportSdkTrace {
           |AND cutl.hour="%s" AND cul.hour="%s" AND cutl.trace_type in("apkdown")
           |AND cul.ext["client_type"].string_value="NATIVESDK"
           |AND cul.interaction=2
-          |AND cul.isclick>0
+          |AND cul.isclick>0 AND cul.adsrc=1
         """.stripMargin.format(argDay, argDay, argHour, argHour))
       .rdd
       .map {
