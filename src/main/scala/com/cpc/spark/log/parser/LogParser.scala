@@ -4,7 +4,8 @@ import java.net.{InetAddress, URLDecoder}
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.cpc.spark.common.{Event, Ui, Cfg}
+import aslog.Aslog.Adslot
+import com.cpc.spark.common.{Cfg, Event, Ui}
 import org.apache.spark.sql.types._
 
 import scala.collection.mutable
