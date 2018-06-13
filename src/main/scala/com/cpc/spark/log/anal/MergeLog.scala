@@ -67,7 +67,7 @@ object MergeLog {
         println(LogParser.parseSearchLog(x))
     }
     val searchData2 = searchData
-      .map(x => LogParser.parseSearchLog(x)) //(log)
+      .flatMap(x => LogParser.parseSearchLog_v2(x)) //(log)
       .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), x)) //((searchid,ideaid), Seq(log))
       .reduceByKey((x, y) => x) //去重
