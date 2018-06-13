@@ -151,6 +151,10 @@ public final class Aslog {
      * <code>SLOT_VIDEO = 6;</code>
      */
     SLOT_VIDEO(6),
+    /**
+     * <code>SLOT_MOTIVATE = 7;</code>
+     */
+    SLOT_MOTIVATE(7),
     ;
 
     /**
@@ -177,6 +181,10 @@ public final class Aslog {
      * <code>SLOT_VIDEO = 6;</code>
      */
     public static final int SLOT_VIDEO_VALUE = 6;
+    /**
+     * <code>SLOT_MOTIVATE = 7;</code>
+     */
+    public static final int SLOT_MOTIVATE_VALUE = 7;
 
 
     public final int getNumber() {
@@ -199,6 +207,7 @@ public final class Aslog {
         case 4: return SLOT_SPLASH;
         case 5: return SLOT_BANNER;
         case 6: return SLOT_VIDEO;
+        case 7: return SLOT_MOTIVATE;
         default: return null;
       }
     }
@@ -825,6 +834,10 @@ public final class Aslog {
      * <code>AD_VIDEO = 8;</code>
      */
     AD_VIDEO(8),
+    /**
+     * <code>AD_MOTIVATE = 9;</code>
+     */
+    AD_MOTIVATE(9),
     ;
 
     /**
@@ -859,6 +872,10 @@ public final class Aslog {
      * <code>AD_VIDEO = 8;</code>
      */
     public static final int AD_VIDEO_VALUE = 8;
+    /**
+     * <code>AD_MOTIVATE = 9;</code>
+     */
+    public static final int AD_MOTIVATE_VALUE = 9;
 
 
     public final int getNumber() {
@@ -883,6 +900,7 @@ public final class Aslog {
         case 6: return AD_SPLASH;
         case 7: return AD_BANNER;
         case 8: return AD_VIDEO;
+        case 9: return AD_MOTIVATE;
         default: return null;
       }
     }
@@ -981,6 +999,10 @@ public final class Aslog {
      * <code>IFLYTEK = 10;</code>
      */
     IFLYTEK(10),
+    /**
+     * <code>WINQ = 11;</code>
+     */
+    WINQ(11),
     ;
 
     /**
@@ -1027,6 +1049,10 @@ public final class Aslog {
      * <code>IFLYTEK = 10;</code>
      */
     public static final int IFLYTEK_VALUE = 10;
+    /**
+     * <code>WINQ = 11;</code>
+     */
+    public static final int WINQ_VALUE = 11;
 
 
     public final int getNumber() {
@@ -1053,6 +1079,7 @@ public final class Aslog {
         case 8: return MOBVISTA;
         case 9: return VANKA;
         case 10: return IFLYTEK;
+        case 11: return WINQ;
         default: return null;
       }
     }
@@ -31403,37 +31430,38 @@ public final class Aslog {
       "\001(\t\022\025\n\rdupuserfilter\030\032 \003(\r\022\024\n\014dsp_strate" +
       "gy\030\033 \001(\t\022\024\n\014lowacpfilter\030\034 \003(\r\022\017\n\007zerobi" +
       "d\030\035 \003(\r*3\n\tMediaType\022\013\n\007UNKNOWN\020\000\022\007\n\003APP" +
-      "\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*r\n\nAdslotType\022\r\n\tLI" +
-      "ST_FEED\020\001\022\020\n\014CONTENT_FEED\020\002\022\021\n\rSLOT_INTE" +
-      "RACT\020\003\022\017\n\013SLOT_SPLASH\020\004\022\017\n\013SLOT_BANNER\020\005",
-      "\022\016\n\nSLOT_VIDEO\020\006*P\n\013NetworkType\022\017\n\013NET_U" +
-      "NKNOWN\020\000\022\014\n\010NET_WIFI\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NE" +
-      "T_3G\020\003\022\n\n\006NET_4G\020\004*?\n\006OSType\022\016\n\nOS_UNKNO" +
-      "WN\020\000\022\016\n\nOS_ANDROID\020\001\022\n\n\006OS_IOS\020\002\022\t\n\005OS_W" +
-      "P\020\003*\265\001\n\013BrowserType\022\022\n\016UnknownBrowser\020\000\022" +
-      "\016\n\nMQQBrowser\020\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser" +
-      "\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n" +
-      "\013QvodBrowser\020\006\022\023\n\017IEMobileBrowser\020\007\022\022\n\016M" +
-      "icroMessenger\020\010\022\n\n\006QQChat\020\t*\251\001\n\014DeviceId" +
-      "Type\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022",
-      "\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\022\016\n\nDEVID_" +
-      "AAID\020\004\022\022\n\016DEVID_LSCOOKIE\020\005\022\023\n\017DEVID_ANDR" +
-      "OIDID\020\006\022\016\n\nDEVID_IMSI\020\007\022\016\n\nDEVID_TKID\020\010*" +
-      "~\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_T" +
-      "EXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013AD_INTERAC" +
-      "T\020\005\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_BANNER\020\007\022\014\n\010AD_" +
-      "VIDEO\020\010*\200\001\n\005AdSrc\022\007\n\003CPC\020\001\022\n\n\006INMOBI\020\002\022\013" +
-      "\n\007TANXSSP\020\003\022\016\n\nBOTTOMINIG\020\004\022\013\n\007HUZHONG\020\005" +
-      "\022\t\n\005FANCY\020\006\022\007\n\003GDT\020\007\022\014\n\010MOBVISTA\020\010\022\t\n\005VA" +
-      "NKA\020\t\022\013\n\007IFLYTEK\020\n*i\n\017InteractionType\022\017\n",
-      "\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020" +
-      "\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n" +
-      "\002GP\020\006*\203\001\n\rMaterialLevel\022\032\n\026MATERIAL_LEVE" +
-      "L_UNKNOWN\020\000\022\024\n\020MATERIAL_LEVEL_1\020\001\022\024\n\020MAT" +
-      "ERIAL_LEVEL_2\020\002\022\024\n\020MATERIAL_LEVEL_3\020\003\022\024\n" +
-      "\020MATERIAL_LEVEL_4\020\004*M\n\nClientType\022\r\n\tNAT" +
-      "IVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004" +
-      "\022\007\n\003FUN\020\005\022\007\n\003QTT\020\006"
+      "\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*\205\001\n\nAdslotType\022\r\n\tL" +
+      "IST_FEED\020\001\022\020\n\014CONTENT_FEED\020\002\022\021\n\rSLOT_INT" +
+      "ERACT\020\003\022\017\n\013SLOT_SPLASH\020\004\022\017\n\013SLOT_BANNER\020",
+      "\005\022\016\n\nSLOT_VIDEO\020\006\022\021\n\rSLOT_MOTIVATE\020\007*P\n\013" +
+      "NetworkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI" +
+      "\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?" +
+      "\n\006OSType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020\001" +
+      "\022\n\n\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType\022" +
+      "\022\n\016UnknownBrowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006C" +
+      "hrome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020\004" +
+      "\022\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IE" +
+      "MobileBrowser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006Q" +
+      "QChat\020\t*\251\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNOW",
+      "N\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDE" +
+      "VID_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCO" +
+      "OKIE\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVID_IMS" +
+      "I\020\007\022\016\n\nDEVID_TKID\020\010*\217\001\n\006AdType\022\010\n\004TEXT\020\001" +
+      "\022\t\n\005IMAGE\020\002\022\r\n\tICON_TEXT\020\003\022\023\n\017THREE_ICON" +
+      "_TEXT\020\004\022\017\n\013AD_INTERACT\020\005\022\r\n\tAD_SPLASH\020\006\022" +
+      "\r\n\tAD_BANNER\020\007\022\014\n\010AD_VIDEO\020\010\022\017\n\013AD_MOTIV" +
+      "ATE\020\t*\212\001\n\005AdSrc\022\007\n\003CPC\020\001\022\n\n\006INMOBI\020\002\022\013\n\007" +
+      "TANXSSP\020\003\022\016\n\nBOTTOMINIG\020\004\022\013\n\007HUZHONG\020\005\022\t" +
+      "\n\005FANCY\020\006\022\007\n\003GDT\020\007\022\014\n\010MOBVISTA\020\010\022\t\n\005VANK",
+      "A\020\t\022\013\n\007IFLYTEK\020\n\022\010\n\004WINQ\020\013*i\n\017Interactio" +
+      "nType\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010D" +
+      "OWNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004M" +
+      "AIL\020\005\022\006\n\002GP\020\006*\203\001\n\rMaterialLevel\022\032\n\026MATER" +
+      "IAL_LEVEL_UNKNOWN\020\000\022\024\n\020MATERIAL_LEVEL_1\020" +
+      "\001\022\024\n\020MATERIAL_LEVEL_2\020\002\022\024\n\020MATERIAL_LEVE" +
+      "L_3\020\003\022\024\n\020MATERIAL_LEVEL_4\020\004*M\n\nClientTyp" +
+      "e\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003" +
+      "\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005\022\007\n\003QTT\020\006"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
