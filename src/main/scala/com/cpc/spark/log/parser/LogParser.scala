@@ -6,6 +6,7 @@ import java.util.Date
 
 import aslog.Aslog.Adslot
 import com.cpc.spark.common.{Cfg, Event, Ui}
+import com.cpc.spark.ml.common.DspData.AdInfo
 import org.apache.spark.sql.types._
 
 import scala.collection.mutable
@@ -406,7 +407,8 @@ object LogParser {
               ctr = ad.getCtr,
               cpm = ad.getCpm)
         }
-      } else logs :+ log
+      } else
+        logs :+ log
     }
     logs
   }
