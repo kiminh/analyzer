@@ -394,7 +394,7 @@ object LogParser {
       if (notice.getAdsCount > 1 && notice.getAdslot(0).getType.getNumber == 7) {
         notice.getAdsList.forEach {
           ad: Aslog.AdInfo =>
-            logs :+ log.copy(
+            logs = logs :+ log.copy(
               isfill = 1,
               ideaid = ad.getAdid,
               unitid = ad.getGroupid,
@@ -409,7 +409,7 @@ object LogParser {
               cpm = ad.getCpm)
         }
       } else
-        logs :+ log
+        logs = logs :+ log
     }
     logs
   }
