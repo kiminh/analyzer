@@ -4,6 +4,7 @@ import java.net.{InetAddress, URLDecoder}
 import java.text.SimpleDateFormat
 import java.util.Date
 
+import aslog.Aslog
 import aslog.Aslog.Adslot
 import com.cpc.spark.common.{Cfg, Event, Ui}
 import com.cpc.spark.ml.common.DspData.AdInfo
@@ -392,7 +393,7 @@ object LogParser {
       )
       if (notice.getAdsCount > 1 && notice.getAdslot(0).getType.getNumber == 7) {
         notice.getAdsList.forEach {
-          ad =>
+          ad: Aslog.AdInfo =>
             logs :+ log.copy(
               isfill = 1,
               ideaid = ad.getAdid,
