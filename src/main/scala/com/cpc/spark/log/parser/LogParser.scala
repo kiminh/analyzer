@@ -208,7 +208,7 @@ object LogParser {
   }
 
   def parseSearchLog_v2(txt: String): Seq[UnionLog] = {
-    var logs: Seq[UnionLog] = null
+    var logs = Seq[UnionLog]()
     var log: UnionLog = null
     val srcData = Ui.parseData(txt)
     if (srcData != null) {
