@@ -40,6 +40,7 @@ enum AdslotType {
 	SLOT_SPLASH = 4;
 	SLOT_BANNER = 5;
 	SLOT_VIDEO = 6;
+	SLOT_MOTIVATE = 7;
 };
 
 message  Adslot {
@@ -145,6 +146,7 @@ enum AdType {
 	AD_SPLASH       = 6;
 	AD_BANNER       = 7;
 	AD_VIDEO        = 8;
+	AD_MOTIVATE     = 9;
 };
 
 enum AdSrc {
@@ -158,6 +160,7 @@ enum AdSrc {
 	MOBVISTA = 8;
 	VANKA = 9;
 	IFLYTEK = 10;
+	WINQ = 11;
 };
 enum InteractionType {
 	NO_INTERACT = 0;

@@ -245,7 +245,7 @@ object LRTransform {
           var svm = label.toString
           vec.foreachActive {
             (i, v) =>
-              svm = svm + " %d:%f".format(i + 1, v)
+              svm = svm + " %d:%.20f".format(i + 1, v)
           }
           svm
       }
@@ -261,7 +261,7 @@ object LRTransform {
           var svm = label.toString
           vec.foreachActive {
             (i, v) =>
-              svm = svm + " %d:%f".format(i + 1, v)
+              svm = svm + " %d:%.20f".format(i + 1, v)
           }
           svm
       }
@@ -1376,7 +1376,7 @@ object LRTransform {
           var svm = label.toString
           vec.foreachActive {
             (i, v) =>
-              svm = svm + " %d:%f".format(i + 1, v)
+              svm = svm + " %d:%.20f".format(i + 1, v)
           }
           svm
       }
@@ -1471,7 +1471,7 @@ object LRTransform {
           var svm = label.toString
           vec.foreachActive {
             (i, v) =>
-              svm = svm + " %d:%f".format(i + 1, v)
+              svm = svm + " %d:%.20f".format(i + 1, v)
           }
           svm
       }
