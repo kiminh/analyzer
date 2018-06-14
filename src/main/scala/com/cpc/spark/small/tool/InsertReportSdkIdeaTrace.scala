@@ -34,7 +34,6 @@ object InsertReportSdkIdeaTrace {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val argDay = args(0).toString
-    val argHour = args(1).toString
 
     val conf = ConfigFactory.load()
     mariadbUrl = conf.getString("mariadb.url")
@@ -45,11 +44,11 @@ object InsertReportSdkIdeaTrace {
     val ctx = SparkSession
       .builder()
       .config("spark.sql.shuffle.partitions", "800")
-      .appName("InsertReportSdkDownTrace is run day is %s %s".format(argDay, argHour))
+      .appName("InsertReportSdkDownTrace is run day is %s".format(argDay))
       .enableHiveSupport()
       .getOrCreate()
 
-    println("InsertReportSdkDownTrace is run day is %s %s".format(argDay, argHour))
+    println("InsertReportSdkDownTrace is run day is %s".format(argDay))
 
     /**
       * 获取sdk下载流量信息
