@@ -59,7 +59,7 @@ case class UnionLog(
                      ext_int: collection.Map[String, Long] = null,
                      ext_string: collection.Map[String, String] = null,
                      ext_float: collection.Map[String, Double] = null,
-                     motive: Seq[Motivation] = null,
+                     motivation: Seq[Motivation] = null,
                      date: String = "",
                      hour: String = ""
                    ) {

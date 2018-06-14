@@ -209,14 +209,14 @@ object MergeLog {
       .map { rec =>
         val logs = rec._2
         if (logs.size > 1) {
-          var motive = Seq[Motivation]()
+          var motivation = Seq[Motivation]()
           val head = logs.head
           for (log <- logs) {
             val m = Motivation(log.userid, log.planid, log.unitid, log.ideaid, log.bid, log.price, log.isfill,
               log.isshow, log.isclick)
-            motive = motive :+ m
+            motivation = motivation :+ m
           }
-          head.copy(motive = motive)
+          head.copy(motivation = motivation)
         } else
           rec._2.head
       }
