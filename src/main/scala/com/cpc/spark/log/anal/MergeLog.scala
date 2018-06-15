@@ -208,7 +208,7 @@ object MergeLog {
     val unionData = unionData1.groupByKey(1000)
       .map { rec =>
         val logs = rec._2
-        if (logs.size > 1) {
+        if (logs.head.adslot_type == 7) {
           var motivation = Seq[Motivation]()
           val head = logs.head
           for (log <- logs) {
