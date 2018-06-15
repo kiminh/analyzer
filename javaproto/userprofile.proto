@@ -3,7 +3,13 @@ syntax="proto3";
 package userprofile;
 
 message AdShow {
-	int32 adid = 1; // 单元ID,单元级别生效
+	 int32 adid = 1; // 单元ID,单元级别生效
+	 int32 count = 2; // 今天投放次数
+	 int32 click_count = 3; // 今日广告被此用户点击次数
+}
+
+message DspSrc {
+	string dsp_pid = 1; // 单元ID,单元级别生效
 	int32 count = 2; // 今天投放次数
 	int32 click_count = 3; // 今日广告被此用户点击次数
 }
@@ -11,6 +17,7 @@ message AdFreq {
 	repeated AdShow ads = 1;
 	uint32 req_count = 2;
 	uint32 click_count = 3; //用户今天点击次数
+	repeated DspSrc dsps = 4; //此用户今日广告展示信息
 }
 
 message APPPackage {

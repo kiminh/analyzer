@@ -629,6 +629,711 @@ public final class Userprofile {
 
   }
 
+  public interface DspSrcOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:userprofile.DspSrc)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <pre>
+     * 单元ID,单元级别生效
+     * </pre>
+     *
+     * <code>optional string dsp_pid = 1;</code>
+     */
+    java.lang.String getDspPid();
+    /**
+     * <pre>
+     * 单元ID,单元级别生效
+     * </pre>
+     *
+     * <code>optional string dsp_pid = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getDspPidBytes();
+
+    /**
+     * <pre>
+     * 今天投放次数
+     * </pre>
+     *
+     * <code>optional int32 count = 2;</code>
+     */
+    int getCount();
+
+    /**
+     * <pre>
+     * 今日广告被此用户点击次数
+     * </pre>
+     *
+     * <code>optional int32 click_count = 3;</code>
+     */
+    int getClickCount();
+  }
+  /**
+   * Protobuf type {@code userprofile.DspSrc}
+   */
+  public  static final class DspSrc extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:userprofile.DspSrc)
+      DspSrcOrBuilder {
+    // Use DspSrc.newBuilder() to construct.
+    private DspSrc(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+      super(builder);
+    }
+    private DspSrc() {
+      dspPid_ = "";
+      count_ = 0;
+      clickCount_ = 0;
+    }
+
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+    getUnknownFields() {
+      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+    }
+    private DspSrc(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      this();
+      int mutable_bitField0_ = 0;
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!input.skipField(tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              dspPid_ = s;
+              break;
+            }
+            case 16: {
+
+              count_ = input.readInt32();
+              break;
+            }
+            case 24: {
+
+              clickCount_ = input.readInt32();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e).setUnfinishedMessage(this);
+      } finally {
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return userprofile.Userprofile.internal_static_userprofile_DspSrc_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return userprofile.Userprofile.internal_static_userprofile_DspSrc_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              userprofile.Userprofile.DspSrc.class, userprofile.Userprofile.DspSrc.Builder.class);
+    }
+
+    public static final int DSP_PID_FIELD_NUMBER = 1;
+    private volatile java.lang.Object dspPid_;
+    /**
+     * <pre>
+     * 单元ID,单元级别生效
+     * </pre>
+     *
+     * <code>optional string dsp_pid = 1;</code>
+     */
+    public java.lang.String getDspPid() {
+      java.lang.Object ref = dspPid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        dspPid_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * 单元ID,单元级别生效
+     * </pre>
+     *
+     * <code>optional string dsp_pid = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getDspPidBytes() {
+      java.lang.Object ref = dspPid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        dspPid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int COUNT_FIELD_NUMBER = 2;
+    private int count_;
+    /**
+     * <pre>
+     * 今天投放次数
+     * </pre>
+     *
+     * <code>optional int32 count = 2;</code>
+     */
+    public int getCount() {
+      return count_;
+    }
+
+    public static final int CLICK_COUNT_FIELD_NUMBER = 3;
+    private int clickCount_;
+    /**
+     * <pre>
+     * 今日广告被此用户点击次数
+     * </pre>
+     *
+     * <code>optional int32 click_count = 3;</code>
+     */
+    public int getClickCount() {
+      return clickCount_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!getDspPidBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, dspPid_);
+      }
+      if (count_ != 0) {
+        output.writeInt32(2, count_);
+      }
+      if (clickCount_ != 0) {
+        output.writeInt32(3, clickCount_);
+      }
+    }
+
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!getDspPidBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, dspPid_);
+      }
+      if (count_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(2, count_);
+      }
+      if (clickCount_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(3, clickCount_);
+      }
+      memoizedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof userprofile.Userprofile.DspSrc)) {
+        return super.equals(obj);
+      }
+      userprofile.Userprofile.DspSrc other = (userprofile.Userprofile.DspSrc) obj;
+
+      boolean result = true;
+      result = result && getDspPid()
+          .equals(other.getDspPid());
+      result = result && (getCount()
+          == other.getCount());
+      result = result && (getClickCount()
+          == other.getClickCount());
+      return result;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (37 * hash) + DSP_PID_FIELD_NUMBER;
+      hash = (53 * hash) + getDspPid().hashCode();
+      hash = (37 * hash) + COUNT_FIELD_NUMBER;
+      hash = (53 * hash) + getCount();
+      hash = (37 * hash) + CLICK_COUNT_FIELD_NUMBER;
+      hash = (53 * hash) + getClickCount();
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static userprofile.Userprofile.DspSrc parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static userprofile.Userprofile.DspSrc parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static userprofile.Userprofile.DspSrc parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static userprofile.Userprofile.DspSrc parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static userprofile.Userprofile.DspSrc parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static userprofile.Userprofile.DspSrc parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static userprofile.Userprofile.DspSrc parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+    public static userprofile.Userprofile.DspSrc parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static userprofile.Userprofile.DspSrc parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static userprofile.Userprofile.DspSrc parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(userprofile.Userprofile.DspSrc prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code userprofile.DspSrc}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:userprofile.DspSrc)
+        userprofile.Userprofile.DspSrcOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return userprofile.Userprofile.internal_static_userprofile_DspSrc_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return userprofile.Userprofile.internal_static_userprofile_DspSrc_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                userprofile.Userprofile.DspSrc.class, userprofile.Userprofile.DspSrc.Builder.class);
+      }
+
+      // Construct using userprofile.Userprofile.DspSrc.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
+        }
+      }
+      public Builder clear() {
+        super.clear();
+        dspPid_ = "";
+
+        count_ = 0;
+
+        clickCount_ = 0;
+
+        return this;
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return userprofile.Userprofile.internal_static_userprofile_DspSrc_descriptor;
+      }
+
+      public userprofile.Userprofile.DspSrc getDefaultInstanceForType() {
+        return userprofile.Userprofile.DspSrc.getDefaultInstance();
+      }
+
+      public userprofile.Userprofile.DspSrc build() {
+        userprofile.Userprofile.DspSrc result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public userprofile.Userprofile.DspSrc buildPartial() {
+        userprofile.Userprofile.DspSrc result = new userprofile.Userprofile.DspSrc(this);
+        result.dspPid_ = dspPid_;
+        result.count_ = count_;
+        result.clickCount_ = clickCount_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder clone() {
+        return (Builder) super.clone();
+      }
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.setField(field, value);
+      }
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return (Builder) super.clearField(field);
+      }
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return (Builder) super.clearOneof(oneof);
+      }
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, Object value) {
+        return (Builder) super.setRepeatedField(field, index, value);
+      }
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.addRepeatedField(field, value);
+      }
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof userprofile.Userprofile.DspSrc) {
+          return mergeFrom((userprofile.Userprofile.DspSrc)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(userprofile.Userprofile.DspSrc other) {
+        if (other == userprofile.Userprofile.DspSrc.getDefaultInstance()) return this;
+        if (!other.getDspPid().isEmpty()) {
+          dspPid_ = other.dspPid_;
+          onChanged();
+        }
+        if (other.getCount() != 0) {
+          setCount(other.getCount());
+        }
+        if (other.getClickCount() != 0) {
+          setClickCount(other.getClickCount());
+        }
+        onChanged();
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        userprofile.Userprofile.DspSrc parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (userprofile.Userprofile.DspSrc) e.getUnfinishedMessage();
+          throw e.unwrapIOException();
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+
+      private java.lang.Object dspPid_ = "";
+      /**
+       * <pre>
+       * 单元ID,单元级别生效
+       * </pre>
+       *
+       * <code>optional string dsp_pid = 1;</code>
+       */
+      public java.lang.String getDspPid() {
+        java.lang.Object ref = dspPid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          dspPid_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 单元ID,单元级别生效
+       * </pre>
+       *
+       * <code>optional string dsp_pid = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getDspPidBytes() {
+        java.lang.Object ref = dspPid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          dspPid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 单元ID,单元级别生效
+       * </pre>
+       *
+       * <code>optional string dsp_pid = 1;</code>
+       */
+      public Builder setDspPid(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        dspPid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 单元ID,单元级别生效
+       * </pre>
+       *
+       * <code>optional string dsp_pid = 1;</code>
+       */
+      public Builder clearDspPid() {
+        
+        dspPid_ = getDefaultInstance().getDspPid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 单元ID,单元级别生效
+       * </pre>
+       *
+       * <code>optional string dsp_pid = 1;</code>
+       */
+      public Builder setDspPidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        dspPid_ = value;
+        onChanged();
+        return this;
+      }
+
+      private int count_ ;
+      /**
+       * <pre>
+       * 今天投放次数
+       * </pre>
+       *
+       * <code>optional int32 count = 2;</code>
+       */
+      public int getCount() {
+        return count_;
+      }
+      /**
+       * <pre>
+       * 今天投放次数
+       * </pre>
+       *
+       * <code>optional int32 count = 2;</code>
+       */
+      public Builder setCount(int value) {
+        
+        count_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 今天投放次数
+       * </pre>
+       *
+       * <code>optional int32 count = 2;</code>
+       */
+      public Builder clearCount() {
+        
+        count_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int clickCount_ ;
+      /**
+       * <pre>
+       * 今日广告被此用户点击次数
+       * </pre>
+       *
+       * <code>optional int32 click_count = 3;</code>
+       */
+      public int getClickCount() {
+        return clickCount_;
+      }
+      /**
+       * <pre>
+       * 今日广告被此用户点击次数
+       * </pre>
+       *
+       * <code>optional int32 click_count = 3;</code>
+       */
+      public Builder setClickCount(int value) {
+        
+        clickCount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 今日广告被此用户点击次数
+       * </pre>
+       *
+       * <code>optional int32 click_count = 3;</code>
+       */
+      public Builder clearClickCount() {
+        
+        clickCount_ = 0;
+        onChanged();
+        return this;
+      }
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return this;
+      }
+
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return this;
+      }
+
+
+      // @@protoc_insertion_point(builder_scope:userprofile.DspSrc)
+    }
+
+    // @@protoc_insertion_point(class_scope:userprofile.DspSrc)
+    private static final userprofile.Userprofile.DspSrc DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new userprofile.Userprofile.DspSrc();
+    }
+
+    public static userprofile.Userprofile.DspSrc getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<DspSrc>
+        PARSER = new com.google.protobuf.AbstractParser<DspSrc>() {
+      public DspSrc parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+          return new DspSrc(input, extensionRegistry);
+      }
+    };
+
+    public static com.google.protobuf.Parser<DspSrc> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<DspSrc> getParserForType() {
+      return PARSER;
+    }
+
+    public userprofile.Userprofile.DspSrc getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
   public interface AdFreqOrBuilder extends
       // @@protoc_insertion_point(interface_extends:userprofile.AdFreq)
       com.google.protobuf.MessageOrBuilder {
@@ -670,6 +1375,50 @@ public final class Userprofile {
      * <code>optional uint32 click_count = 3;</code>
      */
     int getClickCount();
+
+    /**
+     * <pre>
+     *此用户今日广告展示信息
+     * </pre>
+     *
+     * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+     */
+    java.util.List<userprofile.Userprofile.DspSrc> 
+        getDspsList();
+    /**
+     * <pre>
+     *此用户今日广告展示信息
+     * </pre>
+     *
+     * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+     */
+    userprofile.Userprofile.DspSrc getDsps(int index);
+    /**
+     * <pre>
+     *此用户今日广告展示信息
+     * </pre>
+     *
+     * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+     */
+    int getDspsCount();
+    /**
+     * <pre>
+     *此用户今日广告展示信息
+     * </pre>
+     *
+     * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+     */
+    java.util.List<? extends userprofile.Userprofile.DspSrcOrBuilder> 
+        getDspsOrBuilderList();
+    /**
+     * <pre>
+     *此用户今日广告展示信息
+     * </pre>
+     *
+     * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+     */
+    userprofile.Userprofile.DspSrcOrBuilder getDspsOrBuilder(
+        int index);
   }
   /**
    * Protobuf type {@code userprofile.AdFreq}
@@ -686,6 +1435,7 @@ public final class Userprofile {
       ads_ = java.util.Collections.emptyList();
       reqCount_ = 0;
       clickCount_ = 0;
+      dsps_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -732,6 +1482,15 @@ public final class Userprofile {
               clickCount_ = input.readUInt32();
               break;
             }
+            case 34: {
+              if (!((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
+                dsps_ = new java.util.ArrayList<userprofile.Userprofile.DspSrc>();
+                mutable_bitField0_ |= 0x00000008;
+              }
+              dsps_.add(
+                  input.readMessage(userprofile.Userprofile.DspSrc.parser(), extensionRegistry));
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -742,6 +1501,9 @@ public final class Userprofile {
       } finally {
         if (((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
           ads_ = java.util.Collections.unmodifiableList(ads_);
+        }
+        if (((mutable_bitField0_ & 0x00000008) == 0x00000008)) {
+          dsps_ = java.util.Collections.unmodifiableList(dsps_);
         }
         makeExtensionsImmutable();
       }
@@ -816,6 +1578,61 @@ public final class Userprofile {
       return clickCount_;
     }
 
+    public static final int DSPS_FIELD_NUMBER = 4;
+    private java.util.List<userprofile.Userprofile.DspSrc> dsps_;
+    /**
+     * <pre>
+     *此用户今日广告展示信息
+     * </pre>
+     *
+     * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+     */
+    public java.util.List<userprofile.Userprofile.DspSrc> getDspsList() {
+      return dsps_;
+    }
+    /**
+     * <pre>
+     *此用户今日广告展示信息
+     * </pre>
+     *
+     * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+     */
+    public java.util.List<? extends userprofile.Userprofile.DspSrcOrBuilder> 
+        getDspsOrBuilderList() {
+      return dsps_;
+    }
+    /**
+     * <pre>
+     *此用户今日广告展示信息
+     * </pre>
+     *
+     * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+     */
+    public int getDspsCount() {
+      return dsps_.size();
+    }
+    /**
+     * <pre>
+     *此用户今日广告展示信息
+     * </pre>
+     *
+     * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+     */
+    public userprofile.Userprofile.DspSrc getDsps(int index) {
+      return dsps_.get(index);
+    }
+    /**
+     * <pre>
+     *此用户今日广告展示信息
+     * </pre>
+     *
+     * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+     */
+    public userprofile.Userprofile.DspSrcOrBuilder getDspsOrBuilder(
+        int index) {
+      return dsps_.get(index);
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -837,6 +1654,9 @@ public final class Userprofile {
       if (clickCount_ != 0) {
         output.writeUInt32(3, clickCount_);
       }
+      for (int i = 0; i < dsps_.size(); i++) {
+        output.writeMessage(4, dsps_.get(i));
+      }
     }
 
     public int getSerializedSize() {
@@ -855,6 +1675,10 @@ public final class Userprofile {
       if (clickCount_ != 0) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(3, clickCount_);
+      }
+      for (int i = 0; i < dsps_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(4, dsps_.get(i));
       }
       memoizedSize = size;
       return size;
@@ -878,6 +1702,8 @@ public final class Userprofile {
           == other.getReqCount());
       result = result && (getClickCount()
           == other.getClickCount());
+      result = result && getDspsList()
+          .equals(other.getDspsList());
       return result;
     }
 
@@ -896,6 +1722,10 @@ public final class Userprofile {
       hash = (53 * hash) + getReqCount();
       hash = (37 * hash) + CLICK_COUNT_FIELD_NUMBER;
       hash = (53 * hash) + getClickCount();
+      if (getDspsCount() > 0) {
+        hash = (37 * hash) + DSPS_FIELD_NUMBER;
+        hash = (53 * hash) + getDspsList().hashCode();
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -1011,6 +1841,7 @@ public final class Userprofile {
         if (com.google.protobuf.GeneratedMessageV3
                 .alwaysUseFieldBuilders) {
           getAdsFieldBuilder();
+          getDspsFieldBuilder();
         }
       }
       public Builder clear() {
@@ -1025,6 +1856,12 @@ public final class Userprofile {
 
         clickCount_ = 0;
 
+        if (dspsBuilder_ == null) {
+          dsps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000008);
+        } else {
+          dspsBuilder_.clear();
+        }
         return this;
       }
 
@@ -1060,6 +1897,15 @@ public final class Userprofile {
         }
         result.reqCount_ = reqCount_;
         result.clickCount_ = clickCount_;
+        if (dspsBuilder_ == null) {
+          if (((bitField0_ & 0x00000008) == 0x00000008)) {
+            dsps_ = java.util.Collections.unmodifiableList(dsps_);
+            bitField0_ = (bitField0_ & ~0x00000008);
+          }
+          result.dsps_ = dsps_;
+        } else {
+          result.dsps_ = dspsBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -1133,6 +1979,32 @@ public final class Userprofile {
         }
         if (other.getClickCount() != 0) {
           setClickCount(other.getClickCount());
+        }
+        if (dspsBuilder_ == null) {
+          if (!other.dsps_.isEmpty()) {
+            if (dsps_.isEmpty()) {
+              dsps_ = other.dsps_;
+              bitField0_ = (bitField0_ & ~0x00000008);
+            } else {
+              ensureDspsIsMutable();
+              dsps_.addAll(other.dsps_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.dsps_.isEmpty()) {
+            if (dspsBuilder_.isEmpty()) {
+              dspsBuilder_.dispose();
+              dspsBuilder_ = null;
+              dsps_ = other.dsps_;
+              bitField0_ = (bitField0_ & ~0x00000008);
+              dspsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getDspsFieldBuilder() : null;
+            } else {
+              dspsBuilder_.addAllMessages(other.dsps_);
+            }
+          }
         }
         onChanged();
         return this;
@@ -1463,6 +2335,318 @@ public final class Userprofile {
         clickCount_ = 0;
         onChanged();
         return this;
+      }
+
+      private java.util.List<userprofile.Userprofile.DspSrc> dsps_ =
+        java.util.Collections.emptyList();
+      private void ensureDspsIsMutable() {
+        if (!((bitField0_ & 0x00000008) == 0x00000008)) {
+          dsps_ = new java.util.ArrayList<userprofile.Userprofile.DspSrc>(dsps_);
+          bitField0_ |= 0x00000008;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          userprofile.Userprofile.DspSrc, userprofile.Userprofile.DspSrc.Builder, userprofile.Userprofile.DspSrcOrBuilder> dspsBuilder_;
+
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public java.util.List<userprofile.Userprofile.DspSrc> getDspsList() {
+        if (dspsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(dsps_);
+        } else {
+          return dspsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public int getDspsCount() {
+        if (dspsBuilder_ == null) {
+          return dsps_.size();
+        } else {
+          return dspsBuilder_.getCount();
+        }
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public userprofile.Userprofile.DspSrc getDsps(int index) {
+        if (dspsBuilder_ == null) {
+          return dsps_.get(index);
+        } else {
+          return dspsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public Builder setDsps(
+          int index, userprofile.Userprofile.DspSrc value) {
+        if (dspsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureDspsIsMutable();
+          dsps_.set(index, value);
+          onChanged();
+        } else {
+          dspsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public Builder setDsps(
+          int index, userprofile.Userprofile.DspSrc.Builder builderForValue) {
+        if (dspsBuilder_ == null) {
+          ensureDspsIsMutable();
+          dsps_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          dspsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public Builder addDsps(userprofile.Userprofile.DspSrc value) {
+        if (dspsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureDspsIsMutable();
+          dsps_.add(value);
+          onChanged();
+        } else {
+          dspsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public Builder addDsps(
+          int index, userprofile.Userprofile.DspSrc value) {
+        if (dspsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureDspsIsMutable();
+          dsps_.add(index, value);
+          onChanged();
+        } else {
+          dspsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public Builder addDsps(
+          userprofile.Userprofile.DspSrc.Builder builderForValue) {
+        if (dspsBuilder_ == null) {
+          ensureDspsIsMutable();
+          dsps_.add(builderForValue.build());
+          onChanged();
+        } else {
+          dspsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public Builder addDsps(
+          int index, userprofile.Userprofile.DspSrc.Builder builderForValue) {
+        if (dspsBuilder_ == null) {
+          ensureDspsIsMutable();
+          dsps_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          dspsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public Builder addAllDsps(
+          java.lang.Iterable<? extends userprofile.Userprofile.DspSrc> values) {
+        if (dspsBuilder_ == null) {
+          ensureDspsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, dsps_);
+          onChanged();
+        } else {
+          dspsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public Builder clearDsps() {
+        if (dspsBuilder_ == null) {
+          dsps_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000008);
+          onChanged();
+        } else {
+          dspsBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public Builder removeDsps(int index) {
+        if (dspsBuilder_ == null) {
+          ensureDspsIsMutable();
+          dsps_.remove(index);
+          onChanged();
+        } else {
+          dspsBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public userprofile.Userprofile.DspSrc.Builder getDspsBuilder(
+          int index) {
+        return getDspsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public userprofile.Userprofile.DspSrcOrBuilder getDspsOrBuilder(
+          int index) {
+        if (dspsBuilder_ == null) {
+          return dsps_.get(index);  } else {
+          return dspsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public java.util.List<? extends userprofile.Userprofile.DspSrcOrBuilder> 
+           getDspsOrBuilderList() {
+        if (dspsBuilder_ != null) {
+          return dspsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(dsps_);
+        }
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public userprofile.Userprofile.DspSrc.Builder addDspsBuilder() {
+        return getDspsFieldBuilder().addBuilder(
+            userprofile.Userprofile.DspSrc.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public userprofile.Userprofile.DspSrc.Builder addDspsBuilder(
+          int index) {
+        return getDspsFieldBuilder().addBuilder(
+            index, userprofile.Userprofile.DspSrc.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       *此用户今日广告展示信息
+       * </pre>
+       *
+       * <code>repeated .userprofile.DspSrc dsps = 4;</code>
+       */
+      public java.util.List<userprofile.Userprofile.DspSrc.Builder> 
+           getDspsBuilderList() {
+        return getDspsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          userprofile.Userprofile.DspSrc, userprofile.Userprofile.DspSrc.Builder, userprofile.Userprofile.DspSrcOrBuilder> 
+          getDspsFieldBuilder() {
+        if (dspsBuilder_ == null) {
+          dspsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              userprofile.Userprofile.DspSrc, userprofile.Userprofile.DspSrc.Builder, userprofile.Userprofile.DspSrcOrBuilder>(
+                  dsps_,
+                  ((bitField0_ & 0x00000008) == 0x00000008),
+                  getParentForChildren(),
+                  isClean());
+          dsps_ = null;
+        }
+        return dspsBuilder_;
       }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -5882,6 +7066,11 @@ public final class Userprofile {
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_userprofile_AdShow_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_userprofile_DspSrc_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_userprofile_DspSrc_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_userprofile_AdFreq_descriptor;
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
@@ -5912,21 +7101,24 @@ public final class Userprofile {
     java.lang.String[] descriptorData = {
       "\n\033javaproto/userprofile.proto\022\013userprofi" +
       "le\":\n\006AdShow\022\014\n\004adid\030\001 \001(\005\022\r\n\005count\030\002 \001(" +
-      "\005\022\023\n\013click_count\030\003 \001(\005\"R\n\006AdFreq\022 \n\003ads\030" +
-      "\001 \003(\0132\023.userprofile.AdShow\022\021\n\treq_count\030" +
-      "\002 \001(\r\022\023\n\013click_count\030\003 \001(\r\"d\n\nAPPPackage" +
-      "\022\023\n\013packagename\030\001 \001(\t\022\017\n\007version\030\002 \001(\t\022\030" +
-      "\n\020firstInstallTime\030\003 \001(\003\022\026\n\016lastUpdateTi" +
-      "me\030\004 \001(\003\"*\n\014InterestItem\022\013\n\003tag\030\001 \001(\005\022\r\n" +
-      "\005score\030\002 \001(\005\"\320\002\n\013UserProfile\022\r\n\005devid\030\001 " +
-      "\001(\t\022\013\n\003age\030\002 \001(\005\022\013\n\003sex\030\003 \001(\005\022\014\n\004coin\030\004 ",
-      "\001(\005\022,\n\tinterests\030\005 \003(\0132\031.userprofile.Int" +
-      "erestItem\022+\n\ninstallpkg\030\006 \003(\0132\027.userprof" +
-      "ile.APPPackage\022\021\n\tpcategory\030\007 \001(\005\022\021\n\tinc" +
-      "r_coin\030\010 \001(\005\022\020\n\010antispam\030\t \001(\005\022\022\n\nshare_" +
-      "coin\030\n \001(\005\022\017\n\007newUser\030\013 \001(\005\0222\n\017intereste" +
-      "dWords\030\014 \003(\0132\031.userprofile.InterestItem\022" +
-      "\020\n\010province\030\r \001(\t\022\014\n\004city\030\016 \001(\tb\006proto3"
+      "\005\022\023\n\013click_count\030\003 \001(\005\"=\n\006DspSrc\022\017\n\007dsp_" +
+      "pid\030\001 \001(\t\022\r\n\005count\030\002 \001(\005\022\023\n\013click_count\030" +
+      "\003 \001(\005\"u\n\006AdFreq\022 \n\003ads\030\001 \003(\0132\023.userprofi" +
+      "le.AdShow\022\021\n\treq_count\030\002 \001(\r\022\023\n\013click_co" +
+      "unt\030\003 \001(\r\022!\n\004dsps\030\004 \003(\0132\023.userprofile.Ds" +
+      "pSrc\"d\n\nAPPPackage\022\023\n\013packagename\030\001 \001(\t\022" +
+      "\017\n\007version\030\002 \001(\t\022\030\n\020firstInstallTime\030\003 \001" +
+      "(\003\022\026\n\016lastUpdateTime\030\004 \001(\003\"*\n\014InterestIt",
+      "em\022\013\n\003tag\030\001 \001(\005\022\r\n\005score\030\002 \001(\005\"\320\002\n\013UserP" +
+      "rofile\022\r\n\005devid\030\001 \001(\t\022\013\n\003age\030\002 \001(\005\022\013\n\003se" +
+      "x\030\003 \001(\005\022\014\n\004coin\030\004 \001(\005\022,\n\tinterests\030\005 \003(\013" +
+      "2\031.userprofile.InterestItem\022+\n\ninstallpk" +
+      "g\030\006 \003(\0132\027.userprofile.APPPackage\022\021\n\tpcat" +
+      "egory\030\007 \001(\005\022\021\n\tincr_coin\030\010 \001(\005\022\020\n\010antisp" +
+      "am\030\t \001(\005\022\022\n\nshare_coin\030\n \001(\005\022\017\n\007newUser\030" +
+      "\013 \001(\005\0222\n\017interestedWords\030\014 \003(\0132\031.userpro" +
+      "file.InterestItem\022\020\n\010province\030\r \001(\t\022\014\n\004c" +
+      "ity\030\016 \001(\tb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -5946,26 +7138,32 @@ public final class Userprofile {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_userprofile_AdShow_descriptor,
         new java.lang.String[] { "Adid", "Count", "ClickCount", });
-    internal_static_userprofile_AdFreq_descriptor =
+    internal_static_userprofile_DspSrc_descriptor =
       getDescriptor().getMessageTypes().get(1);
+    internal_static_userprofile_DspSrc_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_userprofile_DspSrc_descriptor,
+        new java.lang.String[] { "DspPid", "Count", "ClickCount", });
+    internal_static_userprofile_AdFreq_descriptor =
+      getDescriptor().getMessageTypes().get(2);
     internal_static_userprofile_AdFreq_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_userprofile_AdFreq_descriptor,
-        new java.lang.String[] { "Ads", "ReqCount", "ClickCount", });
+        new java.lang.String[] { "Ads", "ReqCount", "ClickCount", "Dsps", });
     internal_static_userprofile_APPPackage_descriptor =
-      getDescriptor().getMessageTypes().get(2);
+      getDescriptor().getMessageTypes().get(3);
     internal_static_userprofile_APPPackage_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_userprofile_APPPackage_descriptor,
         new java.lang.String[] { "Packagename", "Version", "FirstInstallTime", "LastUpdateTime", });
     internal_static_userprofile_InterestItem_descriptor =
-      getDescriptor().getMessageTypes().get(3);
+      getDescriptor().getMessageTypes().get(4);
     internal_static_userprofile_InterestItem_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_userprofile_InterestItem_descriptor,
         new java.lang.String[] { "Tag", "Score", });
     internal_static_userprofile_UserProfile_descriptor =
-      getDescriptor().getMessageTypes().get(4);
+      getDescriptor().getMessageTypes().get(5);
     internal_static_userprofile_UserProfile_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_userprofile_UserProfile_descriptor,
