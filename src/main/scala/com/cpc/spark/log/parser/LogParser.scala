@@ -480,6 +480,7 @@ object LogParser {
         ext.update("slot_height", ExtValue(int_value = extra.getHeight))
         ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
         ext.update("click_ua", ExtValue(string_value = body.getAction.getUserAgent))
+        ext.update("charge_type",ExtValue(int_value = charge.getType.getNumber))
         log = UnionLog(
           searchid = body.getSearchId,
           isclick = 1,
