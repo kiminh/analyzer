@@ -424,6 +424,7 @@ object LogParser {
       ext.update("show_refer", ExtValue(string_value = data.refer))
       ext.update("show_ua", ExtValue(string_value = data.ua))
       ext.update("video_show_time", ExtValue(int_value = body.getShowTime)) //video_show_time
+      ext.update("charge_type", ExtValue(int_value = body.getCharge.getType.getNumber))
       log = UnionLog(
         searchid = body.getSearchId,
         isshow = 1,
@@ -471,7 +472,6 @@ object LogParser {
       val event = data.event
       if (event.getBody.getSearchId.length > 0) {
         val body = event.getBody
-        val charge = body.getCharge
         val extra = event.getExtra
         val ext = mutable.Map[String, ExtValue]()
         ext.update("touch_x", ExtValue(int_value = extra.getTouchX))
@@ -480,7 +480,6 @@ object LogParser {
         ext.update("slot_height", ExtValue(int_value = extra.getHeight))
         ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
         ext.update("click_ua", ExtValue(string_value = body.getAction.getUserAgent))
-        ext.update("charge_type",ExtValue(int_value = charge.getType.getNumber))
         log = UnionLog(
           searchid = body.getSearchId,
           isclick = 1,
