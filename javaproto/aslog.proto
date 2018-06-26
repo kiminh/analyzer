@@ -281,6 +281,7 @@ message UserProfile {
 	optional uint32 click_count = 10; //同一用户一天内的点击次数
 	optional string province = 11; //省份
 	optional string city = 12; //城市
+	optional string member_id = 13; //趣头条用户id
 }
 
 message NoticeLogBody {
