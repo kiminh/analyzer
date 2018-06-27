@@ -26,6 +26,7 @@ import scala.util.Random
 import com.redis.serialization.Parse.Implicits._
 import com.redis.RedisClient
 import com.cpc.spark.qukan.parser.HdfsParser
+import userprofile.Userprofile.{InterestItem, UserProfile}
 
 /**
   * Created by YuntaoMa on 06/06/2018.
