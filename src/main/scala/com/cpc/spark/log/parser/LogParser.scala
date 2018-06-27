@@ -286,6 +286,7 @@ object LogParser {
 
       if (notice.getAdsCount > 0) {
         val ad = notice.getAds(0)
+        extString.update("downloaded_app", ad.getAppInfo.getName)
         log = log.copy(
           isfill = 1,
           ideaid = ad.getAdid,
@@ -298,7 +299,8 @@ object LogParser {
           bid = ad.getBid,
           price = ad.getPrice,
           ctr = ad.getCtr,
-          cpm = ad.getCpm
+          cpm = ad.getCpm,
+          ext_string = extString
         )
 
         extInt.update("siteid", ad.getSiteid.toLong)
