@@ -47,7 +47,7 @@ object TagBadUid {
 
     var stmt =
       """
-        |SELECT searchid,uid,userid
+        |SELECT searchid,uid,userid,ext
         |FROM dl_cpc.cpc_union_log
         |WHERE `date` = "%s" AND isshow = 1 AND (media_appsid = "80000001" OR media_appsid = "80000002")
       """.stripMargin.format(date)
@@ -58,9 +58,13 @@ object TagBadUid {
           val searchid = row.getString(0)
           val uid = row.getString(1)
           val userid = row.getInt(2)
-          (searchid, "user#" + userid + "u#" + uid)
-      }
+          val ext = row.getMap[String, Map[String, Any]](3)
+          val new_user = ext("qukan_new_user")("int_value")
 
+          (searchid, "user#" + userid + "u#" + uid, new_user)
+      }
+    rs1.take(10).foreach(println)
+/*
     stmt =
       """
         |SELECT searchid
@@ -132,7 +136,7 @@ object TagBadUid {
       }
       .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
       println("###" + sum._1+ "###" + sum._2 )
-
+*/
   }
 
 }
