@@ -59,7 +59,7 @@ object TagBadUid {
           val uid = row.getString(1)
           val userid = row.getInt(2)
           val ext = row.getMap[String, Any](3)
-          val new_user = ext("qukan_new_user")
+          val new_user = ext("qukan_new_user")(0)
 
           (searchid, "user#" + userid + "u#" + uid, new_user)
       }
