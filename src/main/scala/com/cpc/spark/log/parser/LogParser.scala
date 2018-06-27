@@ -396,6 +396,7 @@ object LogParser {
       if (notice.getAdsCount > 1 && notice.getAdslot(0).getType.getNumber == 7) {
         for (i <- 1 until notice.getAdsList.size()) {
           val ad = notice.getAds(i)
+          extString.update("downloaded_app", ad.getAppInfo.getName)
           logs = logs :+ log.copy(
             isfill = 1,
             ideaid = ad.getAdid,
@@ -408,7 +409,9 @@ object LogParser {
             bid = ad.getBid,
             price = ad.getPrice,
             ctr = ad.getCtr,
-            cpm = ad.getCpm)
+            cpm = ad.getCpm,
+            ext_string = extString.toMap
+          )
         }
       }
     }
