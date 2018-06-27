@@ -60,11 +60,16 @@ object TagBadUid {
           val ext = row.getMap[String, Row](3)
           val new_user = ext("qukan_new_user").getAs[Int]("int_value")
 
-
-          (searchid, "user#" + userid + "u#" + uid, new_user)
+          if (new_user == 1) {
+            (searchid, "user#" + userid + "u#" + uid)
+          }
+          else {
+            null
+          }
       }
+        .filter(_ != null)
     rs1.take(10).foreach(println)
-/*
+
     stmt =
       """
         |SELECT searchid
@@ -136,7 +141,7 @@ object TagBadUid {
       }
       .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
       println("###" + sum._1+ "###" + sum._2 )
-*/
+
   }
 
 }
