@@ -17,13 +17,12 @@ import org.apache.spark.mllib.feature.{Word2Vec, Word2VecModel}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
 import scala.io.Source
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.util.Random
-import userprofile.Userprofile.{InterestItem, UserProfile}
 import com.redis.serialization.Parse.Implicits._
 import com.redis.RedisClient
 import com.cpc.spark.qukan.parser.HdfsParser
@@ -58,7 +57,7 @@ object TagBadUid {
           val searchid = row.getString(0)
           val uid = row.getString(1)
           val userid = row.getInt(2)
-          val ext = row.getMap[String, Row](3)
+          val ext = row.getMap[String, DataFrame](3)
           val new_user = ext("qukan_new_user").getAs[Int]("int_value")
 
 
