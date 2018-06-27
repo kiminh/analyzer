@@ -1543,6 +1543,10 @@ public final class Protocol {
      * <code>IFLYTEK_DSP = 10;</code>
      */
     IFLYTEK_DSP(10),
+    /**
+     * <code>WINQ_DSP = 11;</code>
+     */
+    WINQ_DSP(11),
     ;
 
     /**
@@ -1589,6 +1593,10 @@ public final class Protocol {
      * <code>IFLYTEK_DSP = 10;</code>
      */
     public static final int IFLYTEK_DSP_VALUE = 10;
+    /**
+     * <code>WINQ_DSP = 11;</code>
+     */
+    public static final int WINQ_DSP_VALUE = 11;
 
 
     public final int getNumber() {
@@ -1615,6 +1623,7 @@ public final class Protocol {
         case 8: return MOBVISTA_DSP;
         case 9: return VANKA_DSP;
         case 10: return IFLYTEK_DSP;
+        case 11: return WINQ_DSP;
         default: return null;
       }
     }
@@ -19419,6 +19428,14 @@ public final class Protocol {
          * <code>SLOT_VIDEO = 6;</code>
          */
         SLOT_VIDEO(6),
+        /**
+         * <pre>
+         *激励广告
+         * </pre>
+         *
+         * <code>SLOT_MOTIVATE = 7;</code>
+         */
+        SLOT_MOTIVATE(7),
         ;
 
         /**
@@ -19469,6 +19486,14 @@ public final class Protocol {
          * <code>SLOT_VIDEO = 6;</code>
          */
         public static final int SLOT_VIDEO_VALUE = 6;
+        /**
+         * <pre>
+         *激励广告
+         * </pre>
+         *
+         * <code>SLOT_MOTIVATE = 7;</code>
+         */
+        public static final int SLOT_MOTIVATE_VALUE = 7;
 
 
         public final int getNumber() {
@@ -19491,6 +19516,7 @@ public final class Protocol {
             case 4: return SLOT_SPLASH;
             case 5: return SLOT_BANNER;
             case 6: return SLOT_VIDEO;
+            case 7: return SLOT_MOTIVATE;
             default: return null;
           }
         }
@@ -20003,6 +20029,14 @@ public final class Protocol {
          * <code>AD_VIDEO = 8;</code>
          */
         AD_VIDEO(8),
+        /**
+         * <pre>
+         * 激励广告
+         * </pre>
+         *
+         * <code>AD_MOTIVATE = 9;</code>
+         */
+        AD_MOTIVATE(9),
         ;
 
         /**
@@ -20069,6 +20103,14 @@ public final class Protocol {
          * <code>AD_VIDEO = 8;</code>
          */
         public static final int AD_VIDEO_VALUE = 8;
+        /**
+         * <pre>
+         * 激励广告
+         * </pre>
+         *
+         * <code>AD_MOTIVATE = 9;</code>
+         */
+        public static final int AD_MOTIVATE_VALUE = 9;
 
 
         public final int getNumber() {
@@ -20093,6 +20135,7 @@ public final class Protocol {
             case 6: return AD_SPLASH;
             case 7: return AD_BANNER;
             case 8: return AD_VIDEO;
+            case 9: return AD_MOTIVATE;
             default: return null;
           }
         }
@@ -25140,6 +25183,32 @@ public final class Protocol {
          */
         com.google.protobuf.ByteString
             getSubAccountIdBytes();
+
+        /**
+         * <pre>
+         * 用户id
+         * </pre>
+         *
+         * <code>optional string user_id = 8;</code>
+         */
+        boolean hasUserId();
+        /**
+         * <pre>
+         * 用户id
+         * </pre>
+         *
+         * <code>optional string user_id = 8;</code>
+         */
+        java.lang.String getUserId();
+        /**
+         * <pre>
+         * 用户id
+         * </pre>
+         *
+         * <code>optional string user_id = 8;</code>
+         */
+        com.google.protobuf.ByteString
+            getUserIdBytes();
       }
       /**
        * <pre>
@@ -25163,6 +25232,7 @@ public final class Protocol {
           adslotId_ = "";
           adslotType_ = 1;
           subAccountId_ = "";
+          userId_ = "";
         }
 
         @java.lang.Override
@@ -25245,6 +25315,12 @@ public final class Protocol {
                   com.google.protobuf.ByteString bs = input.readBytes();
                   bitField0_ |= 0x00000040;
                   subAccountId_ = bs;
+                  break;
+                }
+                case 66: {
+                  com.google.protobuf.ByteString bs = input.readBytes();
+                  bitField0_ |= 0x00000080;
+                  userId_ = bs;
                   break;
                 }
               }
@@ -25599,6 +25675,60 @@ public final class Protocol {
           }
         }
 
+        public static final int USER_ID_FIELD_NUMBER = 8;
+        private volatile java.lang.Object userId_;
+        /**
+         * <pre>
+         * 用户id
+         * </pre>
+         *
+         * <code>optional string user_id = 8;</code>
+         */
+        public boolean hasUserId() {
+          return ((bitField0_ & 0x00000080) == 0x00000080);
+        }
+        /**
+         * <pre>
+         * 用户id
+         * </pre>
+         *
+         * <code>optional string user_id = 8;</code>
+         */
+        public java.lang.String getUserId() {
+          java.lang.Object ref = userId_;
+          if (ref instanceof java.lang.String) {
+            return (java.lang.String) ref;
+          } else {
+            com.google.protobuf.ByteString bs = 
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              userId_ = s;
+            }
+            return s;
+          }
+        }
+        /**
+         * <pre>
+         * 用户id
+         * </pre>
+         *
+         * <code>optional string user_id = 8;</code>
+         */
+        public com.google.protobuf.ByteString
+            getUserIdBytes() {
+          java.lang.Object ref = userId_;
+          if (ref instanceof java.lang.String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            userId_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+
         private byte memoizedIsInitialized = -1;
         public final boolean isInitialized() {
           byte isInitialized = memoizedIsInitialized;
@@ -25642,6 +25772,9 @@ public final class Protocol {
           if (((bitField0_ & 0x00000040) == 0x00000040)) {
             com.google.protobuf.GeneratedMessageV3.writeString(output, 7, subAccountId_);
           }
+          if (((bitField0_ & 0x00000080) == 0x00000080)) {
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 8, userId_);
+          }
           unknownFields.writeTo(output);
         }
 
@@ -25672,6 +25805,9 @@ public final class Protocol {
           }
           if (((bitField0_ & 0x00000040) == 0x00000040)) {
             size += com.google.protobuf.GeneratedMessageV3.computeStringSize(7, subAccountId_);
+          }
+          if (((bitField0_ & 0x00000080) == 0x00000080)) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(8, userId_);
           }
           size += unknownFields.getSerializedSize();
           memoizedSize = size;
@@ -25724,6 +25860,11 @@ public final class Protocol {
             result = result && getSubAccountId()
                 .equals(other.getSubAccountId());
           }
+          result = result && (hasUserId() == other.hasUserId());
+          if (hasUserId()) {
+            result = result && getUserId()
+                .equals(other.getUserId());
+          }
           result = result && unknownFields.equals(other.unknownFields);
           return result;
         }
@@ -25762,6 +25903,10 @@ public final class Protocol {
           if (hasSubAccountId()) {
             hash = (37 * hash) + SUB_ACCOUNT_ID_FIELD_NUMBER;
             hash = (53 * hash) + getSubAccountId().hashCode();
+          }
+          if (hasUserId()) {
+            hash = (37 * hash) + USER_ID_FIELD_NUMBER;
+            hash = (53 * hash) + getUserId().hashCode();
           }
           hash = (29 * hash) + unknownFields.hashCode();
           memoizedHashCode = hash;
@@ -25904,6 +26049,8 @@ public final class Protocol {
             bitField0_ = (bitField0_ & ~0x00000020);
             subAccountId_ = "";
             bitField0_ = (bitField0_ & ~0x00000040);
+            userId_ = "";
+            bitField0_ = (bitField0_ & ~0x00000080);
             return this;
           }
 
@@ -25960,6 +26107,10 @@ public final class Protocol {
               to_bitField0_ |= 0x00000040;
             }
             result.subAccountId_ = subAccountId_;
+            if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+              to_bitField0_ |= 0x00000080;
+            }
+            result.userId_ = userId_;
             result.bitField0_ = to_bitField0_;
             onBuilt();
             return result;
@@ -26031,6 +26182,11 @@ public final class Protocol {
             if (other.hasSubAccountId()) {
               bitField0_ |= 0x00000040;
               subAccountId_ = other.subAccountId_;
+              onChanged();
+            }
+            if (other.hasUserId()) {
+              bitField0_ |= 0x00000080;
+              userId_ = other.userId_;
               onChanged();
             }
             this.mergeUnknownFields(other.unknownFields);
@@ -26774,6 +26930,106 @@ public final class Protocol {
             onChanged();
             return this;
           }
+
+          private java.lang.Object userId_ = "";
+          /**
+           * <pre>
+           * 用户id
+           * </pre>
+           *
+           * <code>optional string user_id = 8;</code>
+           */
+          public boolean hasUserId() {
+            return ((bitField0_ & 0x00000080) == 0x00000080);
+          }
+          /**
+           * <pre>
+           * 用户id
+           * </pre>
+           *
+           * <code>optional string user_id = 8;</code>
+           */
+          public java.lang.String getUserId() {
+            java.lang.Object ref = userId_;
+            if (!(ref instanceof java.lang.String)) {
+              com.google.protobuf.ByteString bs =
+                  (com.google.protobuf.ByteString) ref;
+              java.lang.String s = bs.toStringUtf8();
+              if (bs.isValidUtf8()) {
+                userId_ = s;
+              }
+              return s;
+            } else {
+              return (java.lang.String) ref;
+            }
+          }
+          /**
+           * <pre>
+           * 用户id
+           * </pre>
+           *
+           * <code>optional string user_id = 8;</code>
+           */
+          public com.google.protobuf.ByteString
+              getUserIdBytes() {
+            java.lang.Object ref = userId_;
+            if (ref instanceof String) {
+              com.google.protobuf.ByteString b = 
+                  com.google.protobuf.ByteString.copyFromUtf8(
+                      (java.lang.String) ref);
+              userId_ = b;
+              return b;
+            } else {
+              return (com.google.protobuf.ByteString) ref;
+            }
+          }
+          /**
+           * <pre>
+           * 用户id
+           * </pre>
+           *
+           * <code>optional string user_id = 8;</code>
+           */
+          public Builder setUserId(
+              java.lang.String value) {
+            if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000080;
+            userId_ = value;
+            onChanged();
+            return this;
+          }
+          /**
+           * <pre>
+           * 用户id
+           * </pre>
+           *
+           * <code>optional string user_id = 8;</code>
+           */
+          public Builder clearUserId() {
+            bitField0_ = (bitField0_ & ~0x00000080);
+            userId_ = getDefaultInstance().getUserId();
+            onChanged();
+            return this;
+          }
+          /**
+           * <pre>
+           * 用户id
+           * </pre>
+           *
+           * <code>optional string user_id = 8;</code>
+           */
+          public Builder setUserIdBytes(
+              com.google.protobuf.ByteString value) {
+            if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000080;
+            userId_ = value;
+            onChanged();
+            return this;
+          }
           public final Builder setUnknownFields(
               final com.google.protobuf.UnknownFieldSet unknownFields) {
             return super.setUnknownFields(unknownFields);
@@ -27065,6 +27321,23 @@ public final class Protocol {
          * <code>optional .eventprotocol.Event.Body.AdRedirectType redirect_type = 13;</code>
          */
         eventprotocol.Protocol.Event.Body.AdRedirectType getRedirectType();
+
+        /**
+         * <pre>
+         *广告的金币数
+         * </pre>
+         *
+         * <code>optional int32 coin = 14;</code>
+         */
+        boolean hasCoin();
+        /**
+         * <pre>
+         *广告的金币数
+         * </pre>
+         *
+         * <code>optional int32 coin = 14;</code>
+         */
+        int getCoin();
       }
       /**
        * <pre>
@@ -27095,6 +27368,7 @@ public final class Protocol {
           adidstr_ = "";
           class__ = 0;
           redirectType_ = 0;
+          coin_ = 0;
         }
 
         @java.lang.Override
@@ -27208,6 +27482,11 @@ public final class Protocol {
                     bitField0_ |= 0x00001000;
                     redirectType_ = rawValue;
                   }
+                  break;
+                }
+                case 112: {
+                  bitField0_ |= 0x00002000;
+                  coin_ = input.readInt32();
                   break;
                 }
               }
@@ -27599,6 +27878,29 @@ public final class Protocol {
           return result == null ? eventprotocol.Protocol.Event.Body.AdRedirectType.AD_NO_DIRECT : result;
         }
 
+        public static final int COIN_FIELD_NUMBER = 14;
+        private int coin_;
+        /**
+         * <pre>
+         *广告的金币数
+         * </pre>
+         *
+         * <code>optional int32 coin = 14;</code>
+         */
+        public boolean hasCoin() {
+          return ((bitField0_ & 0x00002000) == 0x00002000);
+        }
+        /**
+         * <pre>
+         *广告的金币数
+         * </pre>
+         *
+         * <code>optional int32 coin = 14;</code>
+         */
+        public int getCoin() {
+          return coin_;
+        }
+
         private byte memoizedIsInitialized = -1;
         public final boolean isInitialized() {
           byte isInitialized = memoizedIsInitialized;
@@ -27649,6 +27951,9 @@ public final class Protocol {
           }
           if (((bitField0_ & 0x00001000) == 0x00001000)) {
             output.writeEnum(13, redirectType_);
+          }
+          if (((bitField0_ & 0x00002000) == 0x00002000)) {
+            output.writeInt32(14, coin_);
           }
           unknownFields.writeTo(output);
         }
@@ -27707,6 +28012,10 @@ public final class Protocol {
           if (((bitField0_ & 0x00001000) == 0x00001000)) {
             size += com.google.protobuf.CodedOutputStream
               .computeEnumSize(13, redirectType_);
+          }
+          if (((bitField0_ & 0x00002000) == 0x00002000)) {
+            size += com.google.protobuf.CodedOutputStream
+              .computeInt32Size(14, coin_);
           }
           size += unknownFields.getSerializedSize();
           memoizedSize = size;
@@ -27787,6 +28096,11 @@ public final class Protocol {
           if (hasRedirectType()) {
             result = result && redirectType_ == other.redirectType_;
           }
+          result = result && (hasCoin() == other.hasCoin());
+          if (hasCoin()) {
+            result = result && (getCoin()
+                == other.getCoin());
+          }
           result = result && unknownFields.equals(other.unknownFields);
           return result;
         }
@@ -27849,6 +28163,10 @@ public final class Protocol {
           if (hasRedirectType()) {
             hash = (37 * hash) + REDIRECT_TYPE_FIELD_NUMBER;
             hash = (53 * hash) + redirectType_;
+          }
+          if (hasCoin()) {
+            hash = (37 * hash) + COIN_FIELD_NUMBER;
+            hash = (53 * hash) + getCoin();
           }
           hash = (29 * hash) + unknownFields.hashCode();
           memoizedHashCode = hash;
@@ -27998,6 +28316,8 @@ public final class Protocol {
             bitField0_ = (bitField0_ & ~0x00000800);
             redirectType_ = 0;
             bitField0_ = (bitField0_ & ~0x00001000);
+            coin_ = 0;
+            bitField0_ = (bitField0_ & ~0x00002000);
             return this;
           }
 
@@ -28074,6 +28394,10 @@ public final class Protocol {
               to_bitField0_ |= 0x00001000;
             }
             result.redirectType_ = redirectType_;
+            if (((from_bitField0_ & 0x00002000) == 0x00002000)) {
+              to_bitField0_ |= 0x00002000;
+            }
+            result.coin_ = coin_;
             result.bitField0_ = to_bitField0_;
             onBuilt();
             return result;
@@ -28158,6 +28482,9 @@ public final class Protocol {
             }
             if (other.hasRedirectType()) {
               setRedirectType(other.getRedirectType());
+            }
+            if (other.hasCoin()) {
+              setCoin(other.getCoin());
             }
             this.mergeUnknownFields(other.unknownFields);
             onChanged();
@@ -28923,6 +29250,54 @@ public final class Protocol {
           public Builder clearRedirectType() {
             bitField0_ = (bitField0_ & ~0x00001000);
             redirectType_ = 0;
+            onChanged();
+            return this;
+          }
+
+          private int coin_ ;
+          /**
+           * <pre>
+           *广告的金币数
+           * </pre>
+           *
+           * <code>optional int32 coin = 14;</code>
+           */
+          public boolean hasCoin() {
+            return ((bitField0_ & 0x00002000) == 0x00002000);
+          }
+          /**
+           * <pre>
+           *广告的金币数
+           * </pre>
+           *
+           * <code>optional int32 coin = 14;</code>
+           */
+          public int getCoin() {
+            return coin_;
+          }
+          /**
+           * <pre>
+           *广告的金币数
+           * </pre>
+           *
+           * <code>optional int32 coin = 14;</code>
+           */
+          public Builder setCoin(int value) {
+            bitField0_ |= 0x00002000;
+            coin_ = value;
+            onChanged();
+            return this;
+          }
+          /**
+           * <pre>
+           *广告的金币数
+           * </pre>
+           *
+           * <code>optional int32 coin = 14;</code>
+           */
+          public Builder clearCoin() {
+            bitField0_ = (bitField0_ & ~0x00002000);
+            coin_ = 0;
             onChanged();
             return this;
           }
@@ -50085,7 +50460,7 @@ public final class Protocol {
       "ocol.Version\"u\n\007DspInfo\022\037\n\003dsp\030\001 \002(\0162\022.e" +
       "ventprotocol.Dsp\022\020\n\010media_id\030\002 \001(\t\022\022\n\nch" +
       "annel_id\030\003 \001(\t\022\020\n\010timecost\030\004 \001(\005\022\021\n\tadsl" +
-      "ot_id\030\005 \001(\t\"\357*\n\005Event\022\'\n\004head\030\001 \002(\0132\031.ev" +
+      "ot_id\030\005 \001(\t\"\264+\n\005Event\022\'\n\004head\030\001 \002(\0132\031.ev" +
       "entprotocol.Event.Head\022\'\n\004body\030\002 \002(\0132\031.e" +
       "ventprotocol.Event.Body\022)\n\005extra\030\003 \001(\0132\032" +
       ".eventprotocol.Event.Extra\032\337\003\n\004Head\0229\n\013c" +
@@ -50100,7 +50475,7 @@ public final class Protocol {
       "\027\n\023UNKNOWN_CRYPTO_TYPE\020\005\022\025\n\021BODY_BASE64_" +
       "ERROR\020\006\022\027\n\023BODY_PROTOBUF_ERROR\020\007\022\023\n\017EXTR" +
       "A_RSA_ERROR\020\010\022\026\n\022EXTRA_FORMAT_ERROR\020\t\022\035\n",
-      "\031APPEND_TARGET_PARAM_ERROR\020\n\032\354#\n\004Body\0221\n" +
+      "\031APPEND_TARGET_PARAM_ERROR\020\n\032\261$\n\004Body\0221\n" +
       "\004type\030\001 \002(\0162#.eventprotocol.Event.Body.E" +
       "ventType\022\021\n\tsearch_id\030\002 \001(\t\022\030\n\020search_ti" +
       "mestamp\030\003 \001(\r\022\021\n\tsearch_ip\030\004 \001(\r\022\027\n\017even" +
@@ -50140,122 +50515,124 @@ public final class Protocol {
       "\0162%.eventprotocol.Event.Body.BrowserType" +
       "\022\013\n\003uid\030\010 \001(\t\022\017\n\007ua_sign\030\t \001(\t\022\020\n\010screen" +
       "_w\030\n \001(\005\022\020\n\010screen_h\030\013 \001(\005\022\022\n\nphoneprice",
-      "\030\014 \001(\r\022\022\n\nphonelevel\030\r \001(\r\032\322\001\n\005Media\022\020\n\010" +
+      "\030\014 \001(\r\022\022\n\nphonelevel\030\r \001(\r\032\343\001\n\005Media\022\020\n\010" +
       "media_id\030\001 \002(\t\022\022\n\nchannel_id\030\002 \001(\t\022\024\n\014pa" +
       "ckage_name\030\003 \001(\t\022\'\n\007version\030\004 \001(\0132\026.even" +
       "tprotocol.Version\022\021\n\tadslot_id\030\005 \001(\t\0229\n\013" +
       "adslot_type\030\006 \001(\0162$.eventprotocol.Event." +
-      "Body.AdslotType\022\026\n\016sub_account_id\030\007 \001(\t\032" +
-      "\342\002\n\002Ad\022\017\n\007user_id\030\001 \001(\r\022\017\n\007plan_id\030\002 \001(\r" +
-      "\022\020\n\010group_id\030\003 \001(\r\022\022\n\nproduct_id\030\004 \001(\r\022\017" +
-      "\n\007unit_id\030\005 \001(\r\022\023\n\013template_id\030\006 \001(\r\022.\n\004" +
-      "type\030\007 \001(\0162 .eventprotocol.Event.Body.Ad",
-      "Type\022>\n\013interaction\030\010 \001(\0162).eventprotoco" +
-      "l.Event.Body.InteractionType\022\r\n\005score\030\t " +
-      "\001(\r\022\016\n\006domain\030\n \001(\t\022\017\n\007adidstr\030\013 \001(\t\022\r\n\005" +
-      "class\030\014 \001(\005\022?\n\rredirect_type\030\r \001(\0162(.eve" +
-      "ntprotocol.Event.Body.AdRedirectType\0321\n\014" +
-      "InterestItem\022\022\n\ninterestid\030\001 \001(\004\022\r\n\005scor" +
-      "e\030\002 \001(\004\032\272\001\n\013UserProfile\0229\n\tinterests\030\001 \003" +
-      "(\0132&.eventprotocol.Event.Body.InterestIt" +
-      "em\022\013\n\003age\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001" +
-      "(\r\022\021\n\tpcategory\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022",
-      "\022\n\nshare_coin\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\032\235\002\n" +
-      "\010Antispam\022\r\n\005score\030\001 \002(\r\022*\n\005rules\030\002 \003(\0162" +
-      "\033.eventprotocol.AntispamRule\0227\n\005flags\030\003 " +
-      "\001(\0132(.eventprotocol.Event.Body.Antispam." +
-      "Flags\022\017\n\007predict\030\004 \001(\002\032\213\001\n\005Flags\022$\n\034sear" +
-      "ch_click_count_hit_cache\030\001 \001(\010\022\032\n\022search" +
-      "_click_count\030\002 \001(\r\022$\n\034device_click_count" +
-      "_hit_cache\030\003 \001(\010\022\032\n\022device_click_count\030\004" +
-      " \001(\r\032\360\001\n\006Charge\022\'\n\004type\030\001 \002(\0162\031.eventpro" +
-      "tocol.ChargeType\022\r\n\005price\030\002 \002(\r\022\017\n\007succe",
-      "ss\030\003 \001(\010\022?\n\022trigger_event_type\030\004 \001(\0162#.e" +
-      "ventprotocol.Event.Body.EventType\022\023\n\013ove" +
-      "r_budget\030\005 \001(\010\022\024\n\014over_deficit\030\006 \001(\010\022\023\n\013" +
-      "low_balance\030\007 \001(\010\022\014\n\004cash\030\010 \001(\r\022\016\n\006coupo" +
-      "n\030\t \001(\r\032\364\001\n\006Action\022\022\n\ntarget_url\030\001 \001(\t\022=" +
-      "\n\rredirect_type\030\002 \001(\0162&.eventprotocol.Ev" +
-      "ent.Body.RedirectType\022\023\n\013trace_level\030\003 \001" +
-      "(\r\022\017\n\007is_post\030\004 \001(\010\022\026\n\016click_monitors\030\005 " +
-      "\003(\t\022\030\n\020trace_timepoints\030\006 \003(\r\022\025\n\rad_targ" +
-      "et_url\030\007 \001(\t\022\022\n\nuser_agent\030\010 \001(\t\022\024\n\014refe",
-      "rer_host\030\t \001(\t\032\212\001\n\003App\022\024\n\014package_name\030\001" +
-      " \002(\t\022\024\n\014install_time\030\002 \001(\r\022\023\n\013update_tim" +
-      "e\030\003 \001(\r\022\031\n\021last_running_time\030\004 \001(\r\022\'\n\007ve" +
-      "rsion\030\005 \001(\0132\026.eventprotocol.Version\032e\n\006C" +
-      "lient\0222\n\004type\030\001 \002(\0162$.eventprotocol.Even" +
-      "t.Body.ClientType\022\'\n\007version\030\002 \001(\0132\026.eve" +
-      "ntprotocol.Version\032I\n\010Location\022\017\n\007countr" +
-      "y\030\001 \001(\r\022\020\n\010province\030\002 \001(\r\022\014\n\004city\030\003 \001(\r\022" +
-      "\014\n\004isps\030\004 \003(\r\"~\n\tEventType\022\t\n\005CLICK\020\000\022\016\n" +
-      "\nIMPRESSION\020\001\022\016\n\nACTIVATION\020\002\022\014\n\010DOWNLOA",
-      "D\020\003\022\013\n\007INSTALL\020\004\022\t\n\005ORDER\020\005\022\024\n\020INSTALL_P" +
-      "ACKAGES\020\n\022\n\n\006CHARGE\020\036\"f\n\014RedirectType\022\n\n" +
-      "\006DIRECT\020\000\022\020\n\014SYNC_TRACING\020\001\022\021\n\rDELAY_TRA" +
-      "CING\020\002\022\026\n\022DELAY_POST_TRACING\020\003\022\r\n\tNO_DIR" +
-      "ECT\020\004\"w\n\016AdRedirectType\022\020\n\014AD_NO_DIRECT\020" +
-      "\000\022\r\n\tAD_DIRECT\020\001\022\023\n\017AD_SYNC_TRACING\020\002\022\024\n" +
-      "\020AD_DELAY_TRACING\020\003\022\031\n\025AD_DELAY_POST_TRA" +
-      "CING\020\004\"r\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014C" +
-      "ONTENT_FEED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLOT" +
-      "_SPLASH\020\004\022\017\n\013SLOT_BANNER\020\005\022\016\n\nSLOT_VIDEO",
-      "\020\006\"\265\001\n\013BrowserType\022\022\n\016UnknownBrowser\020\000\022\016" +
-      "\n\nMQQBrowser\020\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser\020" +
-      "\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n\013" +
-      "QvodBrowser\020\006\022\023\n\017IEMobileBrowser\020\007\022\022\n\016Mi" +
-      "croMessenger\020\010\022\n\n\006QQChat\020\t\"P\n\014DeviceIdTy" +
-      "pe\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n" +
-      "\tDEVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\"~\n\006AdType\022\010" +
-      "\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tTEXT_ICON\020\003\022\023\n\017TH" +
-      "REE_TEXT_ICON\020\004\022\017\n\013AD_INTERACT\020\005\022\r\n\tAD_S" +
-      "PLASH\020\006\022\r\n\tAD_BANNER\020\007\022\014\n\010AD_VIDEO\020\010\"\215\001\n",
-      "\017InteractionType\022\017\n\013NO_INTERACT\020\000\022\021\n\rINT" +
-      "ER_SURFING\020\001\022\022\n\016INTER_DOWNLOAD\020\002\022\021\n\rINTE" +
-      "R_DIALING\020\003\022\021\n\rINTER_MESSAGE\020\004\022\016\n\nINTER_" +
-      "MAIL\020\005\022\014\n\010INTER_GP\020\006\"M\n\nClientType\022\r\n\tNA" +
-      "TIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020" +
-      "\004\022\007\n\003FUN\020\005\022\007\n\003QTT\020\006\032\227\002\n\005Extra\0220\n\007unknown" +
-      "\030\001 \003(\0132\037.eventprotocol.Event.Extra.Item\022" +
-      "\017\n\007touch_x\030\002 \001(\r\022\017\n\007touch_y\030\003 \001(\r\022\022\n\npre" +
-      "ss_time\030\004 \001(\r\022\022\n\nscroll_num\030\005 \001(\r\022\023\n\013scr" +
-      "oll_time\030\006 \001(\r\022\r\n\005width\030\007 \001(\r\022\016\n\006height\030",
-      "\010 \001(\r\022\023\n\013click_delta\030\t \001(\001\022\017\n\007on_mask\030\n " +
-      "\001(\010\022\025\n\rdispatch_time\030\013 \001(\r\032!\n\004Item\022\n\n\002id" +
-      "\030\001 \002(\r\022\r\n\005value\030\002 \002(\t\"2\n\016LockerUProfile\022" +
-      "\021\n\ttimestamp\030\001 \002(\r\022\r\n\005count\030\002 \001(\r*L\n\nDev" +
-      "iceType\022\027\n\023UNKNOWN_DEVICE_TYPE\020\000\022\006\n\002PC\020\001" +
-      "\022\t\n\005PHONE\020\002\022\n\n\006TABLET\020\003\022\006\n\002TV\020\004*&\n\tMedia" +
-      "Type\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*;\n\006OSTyp" +
-      "e\022\023\n\017UNKNOWN_OS_TYPE\020\000\022\013\n\007ANDROID\020\001\022\007\n\003I" +
-      "OS\020\002\022\006\n\002WP\020\003*p\n\014DeviceIDType\022\010\n\004IMEI\020\001\022\007" +
-      "\n\003MAC\020\002\022\010\n\004IDFA\020\003\022\010\n\004AAID\020\004\022\014\n\010OPENUDID\020",
-      "\005\022\r\n\tANDROIDID\020\006\022\010\n\004UDID\020\007\022\010\n\004ODIN\020\010\022\010\n\004" +
-      "DUID\020\t*Q\n\rPromotionType\022\014\n\010NOACTION\020\000\022\006\n" +
-      "\002LP\020\001\022\014\n\010DOWNLOAD\020\002\022\010\n\004DAIL\020\003\022\007\n\003SMS\020\004\022\t" +
-      "\n\005EMAIL\020\005*`\n\013NetworkType\022\010\n\004WIFI\020\001\022\024\n\020CE" +
-      "LLULAR_UNKNOWN\020\002\022\017\n\013CELLULAR_2G\020\003\022\017\n\013CEL" +
-      "LULAR_3G\020\004\022\017\n\013CELLULAR_4G\020\005*)\n\007GeoType\022\t" +
-      "\n\005WGS84\020\001\022\t\n\005GCJ02\020\002\022\010\n\004BD09\020\003*3\n\nClient" +
-      "Type\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAP" +
-      "I\020\003*\"\n\tGeoSource\022\n\n\006NATIVE\020\001\022\t\n\005BAIDU\020\002*" +
-      "1\n\nChargeType\022\010\n\004FREE\020\000\022\007\n\003CPC\020\001\022\007\n\003CPM\020",
-      "\002\022\007\n\003CPA\020\003*\242\001\n\003Dsp\022\013\n\007CPC_DSP\020\001\022\016\n\nINMOB" +
-      "I_DSP\020\002\022\020\n\014TANX_SSP_DSP\020\003\022\r\n\tBOTTOMING\020\004" +
-      "\022\017\n\013HUZHONG_DSP\020\005\022\r\n\tFANCY_DSP\020\006\022\013\n\007GDT_" +
-      "DSP\020\007\022\020\n\014MOBVISTA_DSP\020\010\022\r\n\tVANKA_DSP\020\t\022\017" +
-      "\n\013IFLYTEK_DSP\020\n*\303\003\n\014AntispamRule\022\021\n\rDUP_" +
-      "SEARCH_ID\020\001\022\021\n\rOUT_TIME_SPAN\020\002\022\014\n\010DUP_US" +
-      "ER\020\003\022\021\n\rNEW_USER_RATE\020\004\022\022\n\016INVALID_COOKI" +
-      "E\020\005\022\022\n\016INVALID_REGION\020\006\022\016\n\nNEW_COOKIE\020\007\022" +
-      "\r\n\tNO_COOKIE\020\010\022\022\n\016NO_DEVICE_INFO\020\t\022\020\n\014NO" +
-      "_DEVICE_ID\020\n\022\013\n\007ON_MASK\020\013\022\n\n\006DUP_IP\020\014\022\022\n",
-      "\016JS_CLICK_DELTA\020\r\022\021\n\rSAME_POSITION\020\016\022\014\n\010" +
-      "NO_EXTRA\020\017\022\016\n\nNO_REFERER\020\020\022\023\n\017CK_DISPATC" +
-      "HTIME\020\021\022\n\n\006RANDOM\020\022\022\010\n\004GIFT\020\023\022\016\n\nBAD_MET" +
-      "HOD\020\024\022\022\n\016SERVER_REQUEST\020\025\022\013\n\007MAX_CTR\020\026\022\013" +
-      "\n\007DIFF_UA\020\027\022\r\n\tMAX_CLICK\020\030\022\017\n\013TRAIN_MODE" +
-      "L\020\031\022\n\n\006IP_ISP\020\032\022\014\n\010IP_BLACK\020\033"
+      "Body.AdslotType\022\026\n\016sub_account_id\030\007 \001(\t\022" +
+      "\017\n\007user_id\030\010 \001(\t\032\360\002\n\002Ad\022\017\n\007user_id\030\001 \001(\r" +
+      "\022\017\n\007plan_id\030\002 \001(\r\022\020\n\010group_id\030\003 \001(\r\022\022\n\np" +
+      "roduct_id\030\004 \001(\r\022\017\n\007unit_id\030\005 \001(\r\022\023\n\013temp" +
+      "late_id\030\006 \001(\r\022.\n\004type\030\007 \001(\0162 .eventproto",
+      "col.Event.Body.AdType\022>\n\013interaction\030\010 \001" +
+      "(\0162).eventprotocol.Event.Body.Interactio" +
+      "nType\022\r\n\005score\030\t \001(\r\022\016\n\006domain\030\n \001(\t\022\017\n\007" +
+      "adidstr\030\013 \001(\t\022\r\n\005class\030\014 \001(\005\022?\n\rredirect" +
+      "_type\030\r \001(\0162(.eventprotocol.Event.Body.A" +
+      "dRedirectType\022\014\n\004coin\030\016 \001(\005\0321\n\014InterestI" +
+      "tem\022\022\n\ninterestid\030\001 \001(\004\022\r\n\005score\030\002 \001(\004\032\272" +
+      "\001\n\013UserProfile\0229\n\tinterests\030\001 \003(\0132&.even" +
+      "tprotocol.Event.Body.InterestItem\022\013\n\003age" +
+      "\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpca",
+      "tegory\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshare_" +
+      "coin\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\032\235\002\n\010Antispam" +
+      "\022\r\n\005score\030\001 \002(\r\022*\n\005rules\030\002 \003(\0162\033.eventpr" +
+      "otocol.AntispamRule\0227\n\005flags\030\003 \001(\0132(.eve" +
+      "ntprotocol.Event.Body.Antispam.Flags\022\017\n\007" +
+      "predict\030\004 \001(\002\032\213\001\n\005Flags\022$\n\034search_click_" +
+      "count_hit_cache\030\001 \001(\010\022\032\n\022search_click_co" +
+      "unt\030\002 \001(\r\022$\n\034device_click_count_hit_cach" +
+      "e\030\003 \001(\010\022\032\n\022device_click_count\030\004 \001(\r\032\360\001\n\006" +
+      "Charge\022\'\n\004type\030\001 \002(\0162\031.eventprotocol.Cha",
+      "rgeType\022\r\n\005price\030\002 \002(\r\022\017\n\007success\030\003 \001(\010\022" +
+      "?\n\022trigger_event_type\030\004 \001(\0162#.eventproto" +
+      "col.Event.Body.EventType\022\023\n\013over_budget\030" +
+      "\005 \001(\010\022\024\n\014over_deficit\030\006 \001(\010\022\023\n\013low_balan" +
+      "ce\030\007 \001(\010\022\014\n\004cash\030\010 \001(\r\022\016\n\006coupon\030\t \001(\r\032\364" +
+      "\001\n\006Action\022\022\n\ntarget_url\030\001 \001(\t\022=\n\rredirec" +
+      "t_type\030\002 \001(\0162&.eventprotocol.Event.Body." +
+      "RedirectType\022\023\n\013trace_level\030\003 \001(\r\022\017\n\007is_" +
+      "post\030\004 \001(\010\022\026\n\016click_monitors\030\005 \003(\t\022\030\n\020tr" +
+      "ace_timepoints\030\006 \003(\r\022\025\n\rad_target_url\030\007 ",
+      "\001(\t\022\022\n\nuser_agent\030\010 \001(\t\022\024\n\014referer_host\030" +
+      "\t \001(\t\032\212\001\n\003App\022\024\n\014package_name\030\001 \002(\t\022\024\n\014i" +
+      "nstall_time\030\002 \001(\r\022\023\n\013update_time\030\003 \001(\r\022\031" +
+      "\n\021last_running_time\030\004 \001(\r\022\'\n\007version\030\005 \001" +
+      "(\0132\026.eventprotocol.Version\032e\n\006Client\0222\n\004" +
+      "type\030\001 \002(\0162$.eventprotocol.Event.Body.Cl" +
+      "ientType\022\'\n\007version\030\002 \001(\0132\026.eventprotoco" +
+      "l.Version\032I\n\010Location\022\017\n\007country\030\001 \001(\r\022\020" +
+      "\n\010province\030\002 \001(\r\022\014\n\004city\030\003 \001(\r\022\014\n\004isps\030\004" +
+      " \003(\r\"~\n\tEventType\022\t\n\005CLICK\020\000\022\016\n\nIMPRESSI",
+      "ON\020\001\022\016\n\nACTIVATION\020\002\022\014\n\010DOWNLOAD\020\003\022\013\n\007IN" +
+      "STALL\020\004\022\t\n\005ORDER\020\005\022\024\n\020INSTALL_PACKAGES\020\n" +
+      "\022\n\n\006CHARGE\020\036\"f\n\014RedirectType\022\n\n\006DIRECT\020\000" +
+      "\022\020\n\014SYNC_TRACING\020\001\022\021\n\rDELAY_TRACING\020\002\022\026\n" +
+      "\022DELAY_POST_TRACING\020\003\022\r\n\tNO_DIRECT\020\004\"w\n\016" +
+      "AdRedirectType\022\020\n\014AD_NO_DIRECT\020\000\022\r\n\tAD_D" +
+      "IRECT\020\001\022\023\n\017AD_SYNC_TRACING\020\002\022\024\n\020AD_DELAY" +
+      "_TRACING\020\003\022\031\n\025AD_DELAY_POST_TRACING\020\004\"\205\001" +
+      "\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_F" +
+      "EED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLOT_SPLASH\020",
+      "\004\022\017\n\013SLOT_BANNER\020\005\022\016\n\nSLOT_VIDEO\020\006\022\021\n\rSL" +
+      "OT_MOTIVATE\020\007\"\265\001\n\013BrowserType\022\022\n\016Unknown" +
+      "Browser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Chrome\020\002\022\r\n" +
+      "\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013MiuiBr" +
+      "owser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEMobileBrow" +
+      "ser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQChat\020\t\"P\n" +
+      "\014DeviceIdType\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVI" +
+      "D_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\"" +
+      "\217\001\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tTEXT_" +
+      "ICON\020\003\022\023\n\017THREE_TEXT_ICON\020\004\022\017\n\013AD_INTERA",
+      "CT\020\005\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_BANNER\020\007\022\014\n\010AD" +
+      "_VIDEO\020\010\022\017\n\013AD_MOTIVATE\020\t\"\215\001\n\017Interactio" +
+      "nType\022\017\n\013NO_INTERACT\020\000\022\021\n\rINTER_SURFING\020" +
+      "\001\022\022\n\016INTER_DOWNLOAD\020\002\022\021\n\rINTER_DIALING\020\003" +
+      "\022\021\n\rINTER_MESSAGE\020\004\022\016\n\nINTER_MAIL\020\005\022\014\n\010I" +
+      "NTER_GP\020\006\"M\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t" +
+      "\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005\022" +
+      "\007\n\003QTT\020\006\032\227\002\n\005Extra\0220\n\007unknown\030\001 \003(\0132\037.ev" +
+      "entprotocol.Event.Extra.Item\022\017\n\007touch_x\030" +
+      "\002 \001(\r\022\017\n\007touch_y\030\003 \001(\r\022\022\n\npress_time\030\004 \001",
+      "(\r\022\022\n\nscroll_num\030\005 \001(\r\022\023\n\013scroll_time\030\006 " +
+      "\001(\r\022\r\n\005width\030\007 \001(\r\022\016\n\006height\030\010 \001(\r\022\023\n\013cl" +
+      "ick_delta\030\t \001(\001\022\017\n\007on_mask\030\n \001(\010\022\025\n\rdisp" +
+      "atch_time\030\013 \001(\r\032!\n\004Item\022\n\n\002id\030\001 \002(\r\022\r\n\005v" +
+      "alue\030\002 \002(\t\"2\n\016LockerUProfile\022\021\n\ttimestam" +
+      "p\030\001 \002(\r\022\r\n\005count\030\002 \001(\r*L\n\nDeviceType\022\027\n\023" +
+      "UNKNOWN_DEVICE_TYPE\020\000\022\006\n\002PC\020\001\022\t\n\005PHONE\020\002" +
+      "\022\n\n\006TABLET\020\003\022\006\n\002TV\020\004*&\n\tMediaType\022\007\n\003APP" +
+      "\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*;\n\006OSType\022\023\n\017UNKNOW" +
+      "N_OS_TYPE\020\000\022\013\n\007ANDROID\020\001\022\007\n\003IOS\020\002\022\006\n\002WP\020",
+      "\003*p\n\014DeviceIDType\022\010\n\004IMEI\020\001\022\007\n\003MAC\020\002\022\010\n\004" +
+      "IDFA\020\003\022\010\n\004AAID\020\004\022\014\n\010OPENUDID\020\005\022\r\n\tANDROI" +
+      "DID\020\006\022\010\n\004UDID\020\007\022\010\n\004ODIN\020\010\022\010\n\004DUID\020\t*Q\n\rP" +
+      "romotionType\022\014\n\010NOACTION\020\000\022\006\n\002LP\020\001\022\014\n\010DO" +
+      "WNLOAD\020\002\022\010\n\004DAIL\020\003\022\007\n\003SMS\020\004\022\t\n\005EMAIL\020\005*`" +
+      "\n\013NetworkType\022\010\n\004WIFI\020\001\022\024\n\020CELLULAR_UNKN" +
+      "OWN\020\002\022\017\n\013CELLULAR_2G\020\003\022\017\n\013CELLULAR_3G\020\004\022" +
+      "\017\n\013CELLULAR_4G\020\005*)\n\007GeoType\022\t\n\005WGS84\020\001\022\t" +
+      "\n\005GCJ02\020\002\022\010\n\004BD09\020\003*3\n\nClientType\022\r\n\tNAT" +
+      "IVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003*\"\n\tGeoS",
+      "ource\022\n\n\006NATIVE\020\001\022\t\n\005BAIDU\020\002*1\n\nChargeTy" +
+      "pe\022\010\n\004FREE\020\000\022\007\n\003CPC\020\001\022\007\n\003CPM\020\002\022\007\n\003CPA\020\003*" +
+      "\260\001\n\003Dsp\022\013\n\007CPC_DSP\020\001\022\016\n\nINMOBI_DSP\020\002\022\020\n\014" +
+      "TANX_SSP_DSP\020\003\022\r\n\tBOTTOMING\020\004\022\017\n\013HUZHONG" +
+      "_DSP\020\005\022\r\n\tFANCY_DSP\020\006\022\013\n\007GDT_DSP\020\007\022\020\n\014MO" +
+      "BVISTA_DSP\020\010\022\r\n\tVANKA_DSP\020\t\022\017\n\013IFLYTEK_D" +
+      "SP\020\n\022\014\n\010WINQ_DSP\020\013*\303\003\n\014AntispamRule\022\021\n\rD" +
+      "UP_SEARCH_ID\020\001\022\021\n\rOUT_TIME_SPAN\020\002\022\014\n\010DUP" +
+      "_USER\020\003\022\021\n\rNEW_USER_RATE\020\004\022\022\n\016INVALID_CO" +
+      "OKIE\020\005\022\022\n\016INVALID_REGION\020\006\022\016\n\nNEW_COOKIE",
+      "\020\007\022\r\n\tNO_COOKIE\020\010\022\022\n\016NO_DEVICE_INFO\020\t\022\020\n" +
+      "\014NO_DEVICE_ID\020\n\022\013\n\007ON_MASK\020\013\022\n\n\006DUP_IP\020\014" +
+      "\022\022\n\016JS_CLICK_DELTA\020\r\022\021\n\rSAME_POSITION\020\016\022" +
+      "\014\n\010NO_EXTRA\020\017\022\016\n\nNO_REFERER\020\020\022\023\n\017CK_DISP" +
+      "ATCHTIME\020\021\022\n\n\006RANDOM\020\022\022\010\n\004GIFT\020\023\022\016\n\nBAD_" +
+      "METHOD\020\024\022\022\n\016SERVER_REQUEST\020\025\022\013\n\007MAX_CTR\020" +
+      "\026\022\013\n\007DIFF_UA\020\027\022\r\n\tMAX_CLICK\020\030\022\017\n\013TRAIN_M" +
+      "ODEL\020\031\022\n\n\006IP_ISP\020\032\022\014\n\010IP_BLACK\020\033"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -50388,13 +50765,13 @@ public final class Protocol {
     internal_static_eventprotocol_Event_Body_Media_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_eventprotocol_Event_Body_Media_descriptor,
-        new java.lang.String[] { "MediaId", "ChannelId", "PackageName", "Version", "AdslotId", "AdslotType", "SubAccountId", });
+        new java.lang.String[] { "MediaId", "ChannelId", "PackageName", "Version", "AdslotId", "AdslotType", "SubAccountId", "UserId", });
     internal_static_eventprotocol_Event_Body_Ad_descriptor =
       internal_static_eventprotocol_Event_Body_descriptor.getNestedTypes().get(4);
     internal_static_eventprotocol_Event_Body_Ad_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_eventprotocol_Event_Body_Ad_descriptor,
-        new java.lang.String[] { "UserId", "PlanId", "GroupId", "ProductId", "UnitId", "TemplateId", "Type", "Interaction", "Score", "Domain", "Adidstr", "Class_", "RedirectType", });
+        new java.lang.String[] { "UserId", "PlanId", "GroupId", "ProductId", "UnitId", "TemplateId", "Type", "Interaction", "Score", "Domain", "Adidstr", "Class_", "RedirectType", "Coin", });
     internal_static_eventprotocol_Event_Body_InterestItem_descriptor =
       internal_static_eventprotocol_Event_Body_descriptor.getNestedTypes().get(5);
     internal_static_eventprotocol_Event_Body_InterestItem_fieldAccessorTable = new

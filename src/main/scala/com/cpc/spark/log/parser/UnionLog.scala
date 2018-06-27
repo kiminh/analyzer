@@ -59,6 +59,8 @@ case class UnionLog(
                      ext_int: collection.Map[String, Long] = null,
                      ext_string: collection.Map[String, String] = null,
                      ext_float: collection.Map[String, Double] = null,
+                     motivation: Seq[Motivation] = null,
+                     motive_ext: Seq[Map[String, String]] = null,
                      date: String = "",
                      hour: String = ""
                    ) {
@@ -97,3 +99,7 @@ case class UnionLog(
 }
 
 case class ExtValue(int_value: Int = 0, long_value: Long = 0, float_value: Float = 0, string_value: String = "")
+
+
+case class Motivation(userid: Int = 0, planid: Int = 0, unitid: Int = 0, ideaid: Int = 0, bid: Int = 0, price: Int = 0,
+                      isfill: Int = 0, isshow: Int = 0, isclick: Int = 0)

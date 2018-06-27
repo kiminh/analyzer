@@ -205,6 +205,7 @@ enum Dsp {
     MOBVISTA_DSP = 8;
     VANKA_DSP = 9;
     IFLYTEK_DSP = 10;
+    WINQ_DSP = 11;
 }
 
 // DSP计费相关字段
@@ -316,6 +317,7 @@ message Event {
             SLOT_SPLASH    = 4;  //开屏广告
             SLOT_BANNER    = 5;  //横幅广告
             SLOT_VIDEO     = 6;  //视频广告
+            SLOT_MOTIVATE  = 7;  //激励广告
         }
         // 浏览器类型
         enum BrowserType {
@@ -376,6 +378,7 @@ message Event {
             optional string     adslot_id      = 5;  // 广告位ID
             optional AdslotType adslot_type    = 6;  // 广告位类型
             optional string     sub_account_id = 7;  // 子账号ID
+            optional string     user_id        = 8;  // 用户id
         }
         // 广告类型
         enum AdType {
@@ -387,6 +390,7 @@ message Event {
             AD_SPLASH           = 6;  // 开屏广告
             AD_BANNER           = 7;  // 横幅广告
             AD_VIDEO            = 8;  // 视频广告
+            AD_MOTIVATE         = 9;  // 激励广告
         };
         // 交互类型
         enum InteractionType {
@@ -411,8 +415,9 @@ message Event {
             optional uint32          score       = 9;   // 应用内返还给用户的分数或钱
             optional string          domain      = 10;  // 广告的domain
             optional string          adidstr     = 11;  // 广告id,jesgoo签名
-            optional int32          class     = 12;  // 广告class
-            optional AdRedirectType redirect_type    = 13;  // 跳转类型
+            optional int32           class     = 12;  // 广告class
+            optional AdRedirectType  redirect_type    = 13;  // 跳转类型
+            optional int32           coin = 14; //广告的金币数
         }
         message InterestItem {
             optional uint64 interestid = 1; // 兴趣id
