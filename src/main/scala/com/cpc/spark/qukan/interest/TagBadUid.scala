@@ -135,7 +135,7 @@ object TagBadUid {
                   n1 = n1 + 1
                 }
                 n = n + 1
-                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
           Seq((n, n1)).iterator
