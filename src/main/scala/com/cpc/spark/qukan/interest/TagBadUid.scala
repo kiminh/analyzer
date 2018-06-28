@@ -36,6 +36,7 @@ object TagBadUid {
   def main(args: Array[String]): Unit = {
     val threshold = args(0).toInt
     val hour = args(1).toInt
+    val time_span = args(2).toInt
     val spark = SparkSession.builder()
       .appName("Tag bad uid")
       .enableHiveSupport()
@@ -46,12 +47,12 @@ object TagBadUid {
     cal.add(Calendar.DATE, -1)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     var sHour = "("
-    for (i <- hour - 10 to hour - 1) {
+    for (i <- hour - time_span to hour - 1) {
       sHour += "'%02d',".format(i)
     }
     sHour += "'%02d')".format(hour)
     println(sHour)
-    /*
+
     var stmt =
       """
         |SELECT searchid,uid,userid,ext
@@ -142,14 +143,14 @@ object TagBadUid {
                   n1 = n1 + 1
                 }
                 n = n + 1
-                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
           Seq((n, n1)).iterator
       }
       .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
       println("###" + sum._1+ "###" + sum._2 )
-*/
+
   }
 
 }
