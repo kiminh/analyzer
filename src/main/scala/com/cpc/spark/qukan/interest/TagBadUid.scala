@@ -69,7 +69,7 @@ object TagBadUid {
           val ext = row.getMap[String, Row](3)
           val new_user = ext("qukan_new_user").getAs[Int]("int_value")
           val adclass = ext("adclass").getAs[Int]("int_value")
-          (searchid, "adclss#" + adclass + "u#" + uid)
+          (searchid, "adclss#" + userid + "u#" + uid)
           /*
           if (new_user == 1) {
             (searchid, "user#" + userid + "u#" + uid)
@@ -146,7 +146,7 @@ object TagBadUid {
                   n1 = n1 + 1
                 }
                 n = n + 1
-                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
           Seq((n, n1)).iterator
