@@ -232,16 +232,13 @@ object MergeLog {
         val logs = rec._2
         if (logs.head.adslot_type == 7) {
           var motivation = Seq[Motivation]()
-          var motive_ext = Seq[Map[String, String]]()
           val head = logs.head
           for (log <- logs) {
             val m = Motivation(log.userid, log.planid, log.unitid, log.ideaid, log.bid, log.price, log.isfill,
               log.isshow, log.isclick)
-            val m_ext = Map("ideaid" -> log.ideaid.toString, "downloaded_app" -> log.ext_string.getOrElse("downloaded_app", ""))
             motivation = motivation :+ m
-            motive_ext = motive_ext :+ m_ext
           }
-          head.copy(motivation = motivation, motive_ext = motive_ext)
+          head.copy(motivation = motivation)
         } else
           rec._2.head
       }
@@ -257,7 +254,7 @@ object MergeLog {
       """.stripMargin.format(table, date, hour, table, date, hour))
     println("union done")
 
-    createSuccessMarkHDFSFile("union_done") //创建成功标记文件
+    createSuccessMarkHDFSFile(date,hour,"union_done") //创建成功标记文件
 
 
     /**
@@ -288,7 +285,7 @@ object MergeLog {
         """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
       println("trace_join done")
 
-      createSuccessMarkHDFSFile("union_trance_done") //创建成功标记文件
+      createSuccessMarkHDFSFile(date,hour,"union_trance_done") //创建成功标记文件
     }
 
 
@@ -393,9 +390,9 @@ object MergeLog {
 
   /**
     * 在hdfs上创建成功标记文件；unionlog, uniontracelog合并成功的标记文件
-    * @param part
+    * @param mark
     */
-  def createSuccessMarkHDFSFile(part: String): Unit ={
+  def createSuccessMarkHDFSFile(date: String, hour: String ,mark: String): Unit ={
     val fileName="/warehouse/cpc/%s/%s-%s.ok".format(part,date,hour)
     val path =new Path(fileName)
 
@@ -417,7 +414,7 @@ object MergeLog {
           fileSystem.close()
         }
       } catch {
-        case e:IOException => e.printStackTrace()
+        case e: IOException => e.printStackTrace()
       }
     }
   }
