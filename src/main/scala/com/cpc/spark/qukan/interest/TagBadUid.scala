@@ -68,8 +68,8 @@ object TagBadUid {
           val userid = row.getInt(2)
           val ext = row.getMap[String, Row](3)
           val new_user = ext("qukan_new_user").getAs[Int]("int_value")
-
-          (searchid, "user#" + userid + "u#" + uid)
+          val adclass = ext("adclass").getAs[Int]("int_value")
+          (searchid, "adclss#" + adclass + "u#" + uid)
           /*
           if (new_user == 1) {
             (searchid, "user#" + userid + "u#" + uid)
