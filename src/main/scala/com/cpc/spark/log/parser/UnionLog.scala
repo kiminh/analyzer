@@ -60,6 +60,7 @@ case class UnionLog(
                      ext_string: collection.Map[String, String] = null,
                      ext_float: collection.Map[String, Double] = null,
                      motivation: Seq[Motivation] = null,
+                     motive_ext: Seq[Map[String, String]] = null,
                      date: String = "",
                      hour: String = ""
                    ) {

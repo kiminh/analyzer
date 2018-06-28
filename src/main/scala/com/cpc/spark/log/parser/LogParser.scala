@@ -286,6 +286,7 @@ object LogParser {
 
       if (notice.getAdsCount > 0) {
         val ad = notice.getAds(0)
+        extString.update("downloaded_app", ad.getAppInfo.getName)
         log = log.copy(
           isfill = 1,
           ideaid = ad.getAdid,
@@ -298,7 +299,8 @@ object LogParser {
           bid = ad.getBid,
           price = ad.getPrice,
           ctr = ad.getCtr,
-          cpm = ad.getCpm
+          cpm = ad.getCpm,
+          ext_string = extString
         )
 
         extInt.update("siteid", ad.getSiteid.toLong)
@@ -381,6 +383,7 @@ object LogParser {
       ext.update("user_req_num", ExtValue(int_value = user.getReqCount))
       extString.update("user_province", user.getProvince)
       extString.update("user_city", user.getCity)
+      extString.update("qtt_member_id", user.getMemberId)
       log = log.copy(
         sex = user.getSex,
         age = user.getAge,
@@ -395,6 +398,7 @@ object LogParser {
       if (notice.getAdsCount > 1 && notice.getAdslot(0).getType.getNumber == 7) {
         for (i <- 1 until notice.getAdsList.size()) {
           val ad = notice.getAds(i)
+          extString.update("downloaded_app", ad.getAppInfo.getName)
           logs = logs :+ log.copy(
             isfill = 1,
             ideaid = ad.getAdid,
@@ -407,7 +411,9 @@ object LogParser {
             bid = ad.getBid,
             price = ad.getPrice,
             ctr = ad.getCtr,
-            cpm = ad.getCpm)
+            cpm = ad.getCpm,
+            ext_string = extString.toMap
+          )
         }
       }
     }
@@ -424,6 +430,7 @@ object LogParser {
       ext.update("show_refer", ExtValue(string_value = data.refer))
       ext.update("show_ua", ExtValue(string_value = data.ua))
       ext.update("video_show_time", ExtValue(int_value = body.getShowTime)) //video_show_time
+      ext.update("charge_type", ExtValue(int_value = body.getCharge.getType.getNumber))
       log = UnionLog(
         searchid = body.getSearchId,
         isshow = 1,
@@ -471,7 +478,6 @@ object LogParser {
       val event = data.event
       if (event.getBody.getSearchId.length > 0) {
         val body = event.getBody
-        val charge = body.getCharge
         val extra = event.getExtra
         val ext = mutable.Map[String, ExtValue]()
         ext.update("touch_x", ExtValue(int_value = extra.getTouchX))
@@ -480,7 +486,6 @@ object LogParser {
         ext.update("slot_height", ExtValue(int_value = extra.getHeight))
         ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
         ext.update("click_ua", ExtValue(string_value = body.getAction.getUserAgent))
-        ext.update("charge_type",ExtValue(int_value = charge.getType.getNumber))
         log = UnionLog(
           searchid = body.getSearchId,
           isclick = 1,

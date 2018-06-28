@@ -17,16 +17,16 @@ import org.apache.spark.mllib.feature.{Word2Vec, Word2VecModel}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession, Row}
 
 import scala.io.Source
 import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.util.Random
-import userprofile.Userprofile.{InterestItem, UserProfile}
 import com.redis.serialization.Parse.Implicits._
 import com.redis.RedisClient
 import com.cpc.spark.qukan.parser.HdfsParser
+import userprofile.Userprofile.{InterestItem, UserProfile}
 
 /**
   * Created by YuntaoMa on 06/06/2018.
@@ -34,6 +34,7 @@ import com.cpc.spark.qukan.parser.HdfsParser
 
 object TagBadUid {
   def main(args: Array[String]): Unit = {
+    val threshold = args(0).toInt
     val spark = SparkSession.builder()
       .appName("Tag bad uid")
       .enableHiveSupport()
@@ -46,7 +47,7 @@ object TagBadUid {
 
     var stmt =
       """
-        |SELECT searchid,uid,userid
+        |SELECT searchid,uid,userid,ext
         |FROM dl_cpc.cpc_union_log
         |WHERE `date` = "%s" AND isshow = 1 AND (media_appsid = "80000001" OR media_appsid = "80000002")
       """.stripMargin.format(date)
@@ -57,8 +58,18 @@ object TagBadUid {
           val searchid = row.getString(0)
           val uid = row.getString(1)
           val userid = row.getInt(2)
-          (searchid, "user#" + userid + "u#" + uid)
+          val ext = row.getMap[String, Row](3)
+          val new_user = ext("qukan_new_user").getAs[Int]("int_value")
+
+          if (new_user == 1) {
+            (searchid, "user#" + userid + "u#" + uid)
+          }
+          else {
+            null
+          }
       }
+        .filter(_ != null)
+    rs1.take(10).foreach(println)
 
     stmt =
       """
@@ -83,7 +94,10 @@ object TagBadUid {
       }
       .reduceByKey((x, y) => x.max(y))
 
-    val stage = rs3.filter(x => x._2 >= 10).map(x => x._1)
+    val stage = rs3.filter(x => x._2 >= threshold).map(x => x._1)
+    for (i <- 3 to 10) {
+      println(rs3.filter(x => x._2 >= i).map(x => x._1).count())
+    }
 
     println("###" + stage.count() + "###")
     //stage.take(10).foreach(println)
