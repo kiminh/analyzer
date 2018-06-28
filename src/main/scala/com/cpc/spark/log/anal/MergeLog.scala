@@ -419,6 +419,7 @@ object MergeLog {
       } catch {
         case e:IOException => e.printStackTrace()
       }
+    }
   }
 
   case class SrcExtValue(int_type: Int = 0, long_type: Long = 0, float_type: Float = 0, string_type: String = "")
