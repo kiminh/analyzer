@@ -69,12 +69,15 @@ object TagBadUid {
           val ext = row.getMap[String, Row](3)
           val new_user = ext("qukan_new_user").getAs[Int]("int_value")
 
+          (searchid, "user#" + userid + "u#" + uid)
+          /*
           if (new_user == 1) {
             (searchid, "user#" + userid + "u#" + uid)
           }
           else {
             null
           }
+          */
       }
         .filter(_ != null)
     rs1.take(10).foreach(println)
