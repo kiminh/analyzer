@@ -44,7 +44,7 @@ object TagBadUid {
 
 
     val cal = Calendar.getInstance()
-    cal.add(Calendar.DATE, -1)
+    //cal.add(Calendar.DATE, -1)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     var sHour = "("
     for (i <- hour - time_span to hour - 1) {
@@ -52,7 +52,7 @@ object TagBadUid {
     }
     sHour += "'%02d')".format(hour)
     println(sHour)
-
+    println(date)
     var stmt =
       """
         |SELECT searchid,uid,userid,ext
