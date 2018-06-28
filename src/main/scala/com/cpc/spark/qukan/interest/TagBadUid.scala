@@ -35,6 +35,7 @@ import userprofile.Userprofile.{InterestItem, UserProfile}
 object TagBadUid {
   def main(args: Array[String]): Unit = {
     val threshold = args(0).toInt
+    val hour = args(1).toInt
     val spark = SparkSession.builder()
       .appName("Tag bad uid")
       .enableHiveSupport()
@@ -44,7 +45,13 @@ object TagBadUid {
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -1)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-
+    var sHour = "("
+    for (i <- hour - 10 to hour - 1) {
+      sHour += "'%02d',".format(i)
+    }
+    sHour += "'%02d')".format(hour)
+    println(sHour)
+    /*
     var stmt =
       """
         |SELECT searchid,uid,userid,ext
@@ -75,8 +82,8 @@ object TagBadUid {
       """
         |SELECT searchid
         |FROM dl_cpc.cpc_union_trace_log
-        |WHERE `date` = "%s" AND trace_type like "active%%" 
-      """.stripMargin.format(date)
+        |WHERE `date` = "%s" AND `hour` in %s AND trace_type like "active%%"
+      """.stripMargin.format(date, sHour)
 
     val rs2 = spark.sql(stmt).rdd
         .map {
@@ -142,7 +149,7 @@ object TagBadUid {
       }
       .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
       println("###" + sum._1+ "###" + sum._2 )
-
+*/
   }
 
 }
