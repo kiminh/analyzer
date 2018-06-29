@@ -285,7 +285,7 @@ object MergeLog {
         """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
       println("trace_join done")
 
-      createSuccessMarkHDFSFile(date,hour,"union_trance_done") //创建成功标记文件
+      createSuccessMarkHDFSFile(date,hour,"union_trace_done") //创建成功标记文件
     }
 
 
