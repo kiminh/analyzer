@@ -393,13 +393,13 @@ object MergeLog {
     * @param mark
     */
   def createSuccessMarkHDFSFile(date: String, hour: String ,mark: String): Unit ={
-    val fileName="/warehouse/cpc/%s/%s-%s.ok".format(part,date,hour)
+    val fileName="/warehouse/cpc/%s/%s-%s.ok".format(mark,date,hour)
     val path =new Path(fileName)
 
     //get object conf
     val conf = new Configuration()
     //get FileSystem
-    val fileSystem=FileSystem.get(conf)
+    val fileSystem=FileSystem.newInstance(conf)
 
     try{
       val success=fileSystem.createNewFile(path)
