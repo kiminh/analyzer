@@ -32,7 +32,7 @@ object TagUserByZfb {
   def main(args: Array[String]): Unit = {
     val days = args(0).toInt
     val spark = SparkSession.builder()
-      .appName("Tag bad uid")
+      .appName("Tag user by zfb")
       .enableHiveSupport()
       .getOrCreate()
 
