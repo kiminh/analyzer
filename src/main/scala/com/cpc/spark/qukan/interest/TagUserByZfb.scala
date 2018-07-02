@@ -1,4 +1,4 @@
-package main.scala.com.cpc.spark.qukan.interest
+package com.cpc.spark.qukan.interest
 
 import java.io.{FileWriter, PrintWriter}
 import java.sql.{DriverManager, ResultSet}
