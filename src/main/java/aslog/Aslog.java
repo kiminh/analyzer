@@ -26491,7 +26491,7 @@ public final class Aslog {
      *as主机名
      * </pre>
      *
-     * <code>required string hostname = 30;</code>
+     * <code>optional string hostname = 30;</code>
      */
     boolean hasHostname();
     /**
@@ -26499,7 +26499,7 @@ public final class Aslog {
      *as主机名
      * </pre>
      *
-     * <code>required string hostname = 30;</code>
+     * <code>optional string hostname = 30;</code>
      */
     java.lang.String getHostname();
     /**
@@ -26507,7 +26507,7 @@ public final class Aslog {
      *as主机名
      * </pre>
      *
-     * <code>required string hostname = 30;</code>
+     * <code>optional string hostname = 30;</code>
      */
     com.google.protobuf.ByteString
         getHostnameBytes();
@@ -27758,7 +27758,7 @@ public final class Aslog {
      *as主机名
      * </pre>
      *
-     * <code>required string hostname = 30;</code>
+     * <code>optional string hostname = 30;</code>
      */
     public boolean hasHostname() {
       return ((bitField0_ & 0x00008000) == 0x00008000);
@@ -27768,7 +27768,7 @@ public final class Aslog {
      *as主机名
      * </pre>
      *
-     * <code>required string hostname = 30;</code>
+     * <code>optional string hostname = 30;</code>
      */
     public java.lang.String getHostname() {
       java.lang.Object ref = hostname_;
@@ -27789,7 +27789,7 @@ public final class Aslog {
      *as主机名
      * </pre>
      *
-     * <code>required string hostname = 30;</code>
+     * <code>optional string hostname = 30;</code>
      */
     public com.google.protobuf.ByteString
         getHostnameBytes() {
@@ -27816,10 +27816,6 @@ public final class Aslog {
         return false;
       }
       if (!hasTimestamp()) {
-        memoizedIsInitialized = 0;
-        return false;
-      }
-      if (!hasHostname()) {
         memoizedIsInitialized = 0;
         return false;
       }
@@ -29033,9 +29029,6 @@ public final class Aslog {
           return false;
         }
         if (!hasTimestamp()) {
-          return false;
-        }
-        if (!hasHostname()) {
           return false;
         }
         if (hasMedia()) {
@@ -32083,7 +32076,7 @@ public final class Aslog {
        *as主机名
        * </pre>
        *
-       * <code>required string hostname = 30;</code>
+       * <code>optional string hostname = 30;</code>
        */
       public boolean hasHostname() {
         return ((bitField0_ & 0x04000000) == 0x04000000);
@@ -32093,7 +32086,7 @@ public final class Aslog {
        *as主机名
        * </pre>
        *
-       * <code>required string hostname = 30;</code>
+       * <code>optional string hostname = 30;</code>
        */
       public java.lang.String getHostname() {
         java.lang.Object ref = hostname_;
@@ -32114,7 +32107,7 @@ public final class Aslog {
        *as主机名
        * </pre>
        *
-       * <code>required string hostname = 30;</code>
+       * <code>optional string hostname = 30;</code>
        */
       public com.google.protobuf.ByteString
           getHostnameBytes() {
@@ -32134,7 +32127,7 @@ public final class Aslog {
        *as主机名
        * </pre>
        *
-       * <code>required string hostname = 30;</code>
+       * <code>optional string hostname = 30;</code>
        */
       public Builder setHostname(
           java.lang.String value) {
@@ -32151,7 +32144,7 @@ public final class Aslog {
        *as主机名
        * </pre>
        *
-       * <code>required string hostname = 30;</code>
+       * <code>optional string hostname = 30;</code>
        */
       public Builder clearHostname() {
         bitField0_ = (bitField0_ & ~0x04000000);
@@ -32164,7 +32157,7 @@ public final class Aslog {
        *as主机名
        * </pre>
        *
-       * <code>required string hostname = 30;</code>
+       * <code>optional string hostname = 30;</code>
        */
       public Builder setHostnameBytes(
           com.google.protobuf.ByteString value) {
@@ -32407,7 +32400,7 @@ public final class Aslog {
       "cost\030\027 \001(\004\022\r\n\005https\030\030 \001(\010\022\021\n\tctrtarget\030\031" +
       " \001(\t\022\025\n\rdupuserfilter\030\032 \003(\r\022\024\n\014dsp_strat" +
       "egy\030\033 \001(\t\022\024\n\014lowacpfilter\030\034 \003(\r\022\017\n\007zerob" +
-      "id\030\035 \003(\r\022\020\n\010hostname\030\036 \002(\t*3\n\tMediaType\022" +
+      "id\030\035 \003(\r\022\020\n\010hostname\030\036 \001(\t*3\n\tMediaType\022" +
       "\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*",
       "\205\001\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT" +
       "_FEED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLOT_SPLAS" +

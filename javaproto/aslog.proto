@@ -313,5 +313,5 @@ message NoticeLogBody {
 	optional string dsp_strategy = 27; //命中的dsp分流方案
 	repeated uint32 lowacpfilter = 28; //低于最低单价过滤
 	repeated uint32 zerobid = 29; //过滤价格计算为0广告
-	required string	hostname = 30; //as主机名
+	optional string	hostname = 30; //as主机名
 };
