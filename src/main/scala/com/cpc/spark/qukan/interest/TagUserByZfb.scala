@@ -112,7 +112,7 @@ object TagUserByZfb {
                 if (age_224 && age_225) {
                   age_r += 1
                 }
-                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
           Seq((age_n, age_m, sex_m, age_r)).iterator
