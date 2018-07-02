@@ -103,7 +103,7 @@ object TagUserByZfb {
                 }
                 if (r._2 != user.getSex) {
                   sex_m += 1
-                  user.setSex(sex)
+                  user.setSex(r._2)
                 }
                 //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
