@@ -6,6 +6,7 @@ import java.util.{Calendar, Properties}
 
 import com.cpc.spark.ml.common.Utils
 import com.typesafe.config.ConfigFactory
+import eventprotocol.Protocol.ChargeType
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
@@ -314,7 +315,8 @@ object GetHourReport {
       .jdbc(mariadbUrl, "report.report_media_fill_hourly", mariadbProp)
     println("fill", fillData.count())
 
-    val ctrData = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
+    val ctrData = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0 &&
+      x.getAs[Int]("ext['charge_type'].int_value") == ChargeType.CPC_VALUE)
       .map {
         u =>
           val exptag = u.getAs[String]("exptags").split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
