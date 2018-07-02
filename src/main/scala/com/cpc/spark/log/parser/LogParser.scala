@@ -387,6 +387,7 @@ object LogParser {
       extString.update("user_province", user.getProvince)
       extString.update("user_city", user.getCity)
       extString.update("qtt_member_id", user.getMemberId)
+      extString.update("hostname", notice.getHostname)
       log = log.copy(
         sex = user.getSex,
         age = user.getAge,
