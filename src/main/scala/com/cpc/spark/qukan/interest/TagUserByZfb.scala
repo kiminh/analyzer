@@ -111,7 +111,7 @@ object TagUserByZfb {
           Seq((age_n, age_m, sex_m)).iterator
       }
       .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3))
-    println("###" + sum._1+ "###" + sum._2 + "###" + "sum._3")
+    println("###" + sum._1+ "###" + sum._2 + "###" + sum._3)
 
   }
 
