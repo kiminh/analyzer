@@ -59,7 +59,7 @@ object TagUserByZfb {
       .mapPartitions {
         p =>
           var age_n = 0  //age插入个数
-          var sex_n = 0  //sex插入个数
+          var age_r = 0  //sex插入个数
           var age_m = 0  //age冲突个数
           var sex_m = 0  //sex冲突个数
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
@@ -76,11 +76,15 @@ object TagUserByZfb {
                   .setScore(100)
                 var has = false
                 var conflict = false
+                var age_224 = false
+                var age_225 = false
                 loop.breakable{
                   var idx = 0
                   while(idx < user.getInterestedWordsCount) {
                     val w = user.getInterestedWords(idx)
                     if (w.getTag == 224 || w.getTag == 225) {
+                      if (w.getTag == 224) age_224 = true
+                      if (w.getTag == 225) age_225 = true
                       has = true
                       if (w.getTag != in.getTag) {
                         conflict = true
@@ -104,6 +108,9 @@ object TagUserByZfb {
                 if (r._2 != user.getSex) {
                   sex_m += 1
                   user.setSex(r._2)
+                }
+                if (age_224 && age_225) {
+                  age_r += 1
                 }
                 //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
