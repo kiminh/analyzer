@@ -30,7 +30,7 @@ import userprofile.Userprofile.{InterestItem, UserProfile}
 
 object TagUserByZfb {
   def main(args: Array[String]): Unit = {
-    val days = args(0).toInt
+    val x  = args(0).toInt
     val spark = SparkSession.builder()
       .appName("Tag user by zfb")
       .enableHiveSupport()
@@ -54,27 +54,6 @@ object TagUserByZfb {
         (did, sex, age)
     }
     val conf = ConfigFactory.load()
-    zfb.take(1).foreach {
-      r =>
-        val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-        val key = r._1 + "_UPDATA"
-        val buffer = redis.get[Array[Byte]](key).orNull
-        if (buffer != null) {
-          val user = UserProfile.parseFrom(buffer).toBuilder
-          for (i <- 0 until user.getInterestedWordsCount) {
-            val in = user.getInterestedWords(i)
-            println(i + " " + in.getTag + " " + in.getScore)
-          }
-          println("after")
-          user.removeInterestedWords(user.getInterestedWordsCount / 2)
-          for (i <- 0 until user.getInterestedWordsCount) {
-            val in = user.getInterestedWords(i)
-            println(i + " " + in.getTag + " " + in.getScore)
-          }
-        }
-
-    }
-    /*
     val sum = zfb
       .mapPartitions {
         p =>
@@ -130,9 +109,9 @@ object TagUserByZfb {
           }
           Seq((age_n, age_m, sex_m)).iterator
       }
-      .reduce((x, y) => (x._1 + y._1, x._2 + y._2))
-    println("###" + sum._1+ "###" + sum._2 )
-  */
+      .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3))
+    println("###" + sum._1+ "###" + sum._2 + "###" + "sum._3")
+
   }
 
 }
