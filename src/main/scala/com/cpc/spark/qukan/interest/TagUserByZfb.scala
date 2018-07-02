@@ -30,7 +30,7 @@ import userprofile.Userprofile.{InterestItem, UserProfile}
 
 object TagUserByZfb {
   def main(args: Array[String]): Unit = {
-    val x  = args(0).toInt
+    val days  = args(0).toInt
     val spark = SparkSession.builder()
       .appName("Tag user by zfb")
       .enableHiveSupport()
