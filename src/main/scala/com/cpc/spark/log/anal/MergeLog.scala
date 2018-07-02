@@ -345,7 +345,7 @@ object MergeLog {
           val s = rec.getAs[Map[String, Row]]("field").getOrElse(key, null)  // key='cpc_search_new',..
           val timestamp = rec.getAs[Long]("log_timestamp")
 
-          if (s == null) {  //没有key 'cpc_search_new',..
+          if (s == null) {  //没有key 'cpc_search_new'
             null
           } else {  //有
             if (key == "cpc_show_new") {
@@ -380,7 +380,7 @@ object MergeLog {
     val cal = Calendar.getInstance()
     cal.setTime(g_date)   //当前日期
     val parts = new Array[String](hours)
-    cal.add(Calendar.HOUR, -hourBefore)  //前一个小时
+    cal.add(Calendar.HOUR, -hourBefore)  //前一个小时 时间
     for (h <- 0 until hours) {
       parts(h) = partitionPathFormat.format(cal.getTime)  //yyyy-MM-dd/HH
       cal.add(Calendar.HOUR, 1)
