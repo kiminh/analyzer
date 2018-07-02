@@ -78,7 +78,7 @@ object TagUserByZfb {
                 var conflict = false
                 loop.breakable{
                   var idx = 0
-                  while(true) {
+                  while(idx < user.getInterestedWordsCount) {
                     val w = user.getInterestedWords(idx)
                     if (w.getTag == 224 || w.getTag == 225) {
                       has = true
