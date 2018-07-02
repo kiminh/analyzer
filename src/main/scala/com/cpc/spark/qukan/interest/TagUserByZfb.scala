@@ -115,10 +115,10 @@ object TagUserByZfb {
                 redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
-          Seq((age_n, age_m, sex_m, age_r)).iterator
+          Seq((age_n, age_n, sex_m, age_r)).iterator
       }
       .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3,x._4 + y._4))
-    println("###" + sum._1+ "###" + sum._2 + "###" + sum._3 + "###" + sum._4)
+    println("age_newupdate:" + sum._1+ " age_conflict:" + sum._2 + " sex_conflict:" + sum._3 + " age_both_taged:" + sum._4)
 
   }
 
