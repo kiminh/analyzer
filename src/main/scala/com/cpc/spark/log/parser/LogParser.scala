@@ -22,7 +22,7 @@ object LogParser {
 
   def parseSearchLog(txt: String): UnionLog = {
     var log: UnionLog = null
-    val srcData = Ui.parseData(txt)
+    val srcData = Ui.parseData(txt)  //Ui
     if (srcData != null) {
       val notice = srcData.ui
       val (date, hour) = getDateHourFromTime(notice.getTimestamp)
@@ -63,8 +63,11 @@ object LogParser {
       extInt.update("browser_type", notice.getDevice.getBrowser.getNumber.toLong)
 
       ext.update("device_ids", ExtValue(string_value = devices))
+
       if (notice.getAdslotCount > 0) {
         val slot = notice.getAdslot(0)
+        //log.adslotid=slot.getId
+
         log = log.copy(
           adslotid = slot.getId,
           adslot_type = slot.getType.getNumber,
@@ -384,6 +387,9 @@ object LogParser {
       extString.update("user_province", user.getProvince)
       extString.update("user_city", user.getCity)
       extString.update("qtt_member_id", user.getMemberId)
+
+      extString.update("hostname", notice.getHostname)
+
       log = log.copy(
         sex = user.getSex,
         age = user.getAge,
@@ -394,6 +400,7 @@ object LogParser {
         ext_string = extString.toMap,
         ext_float = extFloat.toMap
       )
+
       logs = logs :+ log
       if (notice.getAdsCount > 1 && notice.getAdslot(0).getType.getNumber == 7) {
         for (i <- 1 until notice.getAdsList.size()) {
