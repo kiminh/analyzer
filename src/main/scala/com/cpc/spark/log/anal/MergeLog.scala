@@ -261,6 +261,7 @@ object MergeLog {
     createSuccessMarkHDFSFile(date, hour, "union_done") //创建成功标记文件
 
 
+
     /**
       * cpc_union_trace_log
       */
