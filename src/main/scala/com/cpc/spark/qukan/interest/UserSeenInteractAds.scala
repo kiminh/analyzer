@@ -35,7 +35,7 @@ object UserSeenInteractAds {
     val date = args(0)
     val stmt =
       """
-        |select uid from dl_cpc.cpc_union_log where `date` = "%s" and adslotid in (%s)
+        |select distinct uid from dl_cpc.cpc_union_log where `date` = "%s" and adslotid in (%s)
       """.stripMargin.format(date, interactAdslotIds.mkString(","))
 
     val ipreg = """^[0-9.]+$""".r
@@ -77,7 +77,7 @@ object UserSeenInteractAds {
                   user.addInterestedWords(in)
                   n1 += 1  //浏览来源，且不在app来源的用户数
                 }
-                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               } else{
                 n3 += 1
               }
