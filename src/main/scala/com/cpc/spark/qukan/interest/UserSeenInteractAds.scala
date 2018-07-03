@@ -77,7 +77,7 @@ object UserSeenInteractAds {
                   user.addInterestedWords(in)
                   n1 += 1  //浏览来源，且不在app来源的用户数
                 }
-                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               } else{
                 n3 += 1
               }
