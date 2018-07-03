@@ -38,9 +38,9 @@ object UserSeenInteractAds {
         |select uid from dl_cpc.cpc_union_log where `date` = "%s" and adslotid in (%s)
       """.stripMargin.format(date, interactAdslotIds.mkString(","))
 
-    val ipreg = """[0-9.]+""".r
+    val ipreg = """[0-9\.]+""".r
     val uidRDD = spark.sql(stmt)
-      //.filter(r => ipreg.findAllMatchIn(r.getString(0)).isEmpty) //filter ip
+      .filter(r => ipreg.findFirstMatchIn(r.getString(0)).isEmpty) //filter ip
 
     println("num", uidRDD.count())
     println(uidRDD.take(10).mkString(" "))
