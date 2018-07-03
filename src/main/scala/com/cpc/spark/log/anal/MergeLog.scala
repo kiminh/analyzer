@@ -250,6 +250,7 @@ object MergeLog {
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
+    spark.sql(s"unlock table dl_cpc.$table")
     spark.sql(
       """
         |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
@@ -281,6 +282,7 @@ object MergeLog {
         .write
         .mode(SaveMode.Overwrite)
         .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
+      spark.sql(s"unlock table dl_cpc.$traceTbl")
       spark.sql(
         """
           |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
@@ -304,6 +306,7 @@ object MergeLog {
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(allTraceTbl, date, hour))
+    spark.sql(s"unlock table dl_cpc.$allTraceTbl")
     spark.sql(
       """
         |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
