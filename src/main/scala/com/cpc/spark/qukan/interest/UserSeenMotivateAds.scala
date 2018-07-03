@@ -41,6 +41,7 @@ object UserSeenMotivateAds {
     println(stmt)
     val ipreg = """^[0-9.]+$""".r
     val uidRDD = spark.sql(stmt)
+      .distinct()
       .filter(r => ipreg.findFirstMatchIn(r.getString(0)).isEmpty)
 
     println("num", uidRDD.count())
