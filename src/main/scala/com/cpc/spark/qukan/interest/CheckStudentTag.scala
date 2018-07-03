@@ -41,7 +41,7 @@ object CheckStudentTag {
     println(date)
     var stmt =
       """
-        |SELECT uid,interests
+        |SELECT DISTINCT uid,interests
         |FROM dl_cpc.cpc_union_log
         |WHERE `date` = "%s" AND isshow = 1 AND (media_appsid = "80000001" OR media_appsid = "80000002")
       """.stripMargin.format(date)
