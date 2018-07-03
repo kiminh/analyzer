@@ -40,7 +40,7 @@ object UserSeenInteractAds {
 
     val ipreg = """[0-9.]+""".r
     val uidRDD = spark.sql(stmt)
-      .filter(r => ipreg.findAllMatchIn(r.getString(0)).isEmpty) //filter ip
+      //.filter(r => ipreg.findAllMatchIn(r.getString(0)).isEmpty) //filter ip
 
     println("num", uidRDD.count())
     println(uidRDD.take(10).mkString(" "))
