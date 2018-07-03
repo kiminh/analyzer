@@ -84,7 +84,10 @@ object MergeLog {
       .reduceByKey((x, y) => x) //去重
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
       x =>
-        var ulog = x._2.copy(date = date, hour = hour)
+//        var ulog = x._2.copy(date = date, hour = hour)
+          x._2.date=date
+          x._2.hour=hour
+          var ulog=x._2
         ((ulog.searchid, ulog.ideaid), ulog)  //Pair RDD
     }
 
@@ -138,9 +141,10 @@ object MergeLog {
               if (log.isSpamClick() == 1) {
                 val spam = ext.getOrElse("spam_click", ExtValue())
                 ext.update("spam_click", ExtValue(int_value = spam.int_value + 1))
-                ulog = ulog.copy(
-                  ext = ext
-                )
+                ulog.ext=ext
+//                ulog = ulog.copy(
+//                  ext = ext
+//                )
               } else {
                 if (notgetGood) {
                   ext.update("touch_x", log.ext("touch_x"))
@@ -149,15 +153,23 @@ object MergeLog {
                   ext.update("slot_height", log.ext("slot_height"))
                   ext.update("antispam_predict", log.ext("antispam_predict"))
                   ext.update("click_ua", log.ext("click_ua"))
-                  ulog = ulog.copy(
-                    isclick = log.isclick,
-                    click_timestamp = log.click_timestamp,
-                    antispam_score = log.antispam_score,
-                    antispam_rules = log.antispam_rules,
-                    click_network = log.click_network,
-                    click_ip = log.click_ip,
-                    ext = ext
-                  )
+
+                  ulog.isclick = log.isclick
+                  ulog.click_timestamp = log.click_timestamp
+                  ulog.antispam_score = log.antispam_score
+                  ulog.antispam_rules = log.antispam_rules
+                  ulog.click_network = log.click_network
+                  ulog.click_ip = log.click_ip
+                  ext = ext
+//                  ulog = ulog.copy(
+//                    isclick = log.isclick,
+//                    click_timestamp = log.click_timestamp,
+//                    antispam_score = log.antispam_score,
+//                    antispam_rules = log.antispam_rules,
+//                    click_network = log.click_network,
+//                    click_ip = log.click_ip,
+//                    ext = ext
+//                  )
                   notgetGood = false
                 }
               }
@@ -187,13 +199,19 @@ object MergeLog {
             }
             ext1.update("show_refer", log2.ext("show_refer"))
             ext1.update("show_ua", log2.ext("show_ua"))
-            log1 = log1.copy(
-              isshow = log2.isshow,
-              show_timestamp = log2.show_timestamp,
-              show_network = log2.show_network,
-              show_ip = log2.show_ip,
-              ext = ext1
-            )
+
+            log1.isshow=log2.isshow
+            log1.show_timestamp=log2.show_timestamp
+            log1.show_network=log2.show_network
+            log1.show_ip=log2.show_ip
+            log1.ext=ext1
+//            log1 = log1.copy(
+//              isshow = log2.isshow,
+//              show_timestamp = log2.show_timestamp,
+//              show_network = log2.show_network,
+//              show_ip = log2.show_ip,
+//              ext = ext1
+//            )
           }
 
           //对log3（click log）进行处理，更新log1的值
@@ -213,15 +231,23 @@ object MergeLog {
               ext1.update("slot_height", log3.ext("slot_height"))
               ext1.update("antispam_predict", log3.ext("antispam_predict"))
               ext1.update("click_ua", log3.ext("click_ua"))
-              log1 = log1.copy(
-                isclick = log3.isclick,
-                click_timestamp = log3.click_timestamp,
-                antispam_score = log3.antispam_score,
-                antispam_rules = log3.antispam_rules,
-                click_network = log3.click_network,
-                click_ip = log3.click_ip,
-                ext = ext1
-              )
+
+              log1.isclick = log3.isclick
+              log1.click_timestamp = log3.click_timestamp
+              log1.antispam_score = log3.antispam_score
+              log1.antispam_rules = log3.antispam_rules
+              log1.click_network = log3.click_network
+              log1.click_ip = log3.click_ip
+              log1.ext = ext1
+//              log1 = log1.copy(
+//                isclick = log3.isclick,
+//                click_timestamp = log3.click_timestamp,
+//                antispam_score = log3.antispam_score,
+//                antispam_rules = log3.antispam_rules,
+//                click_network = log3.click_network,
+//                click_ip = log3.click_ip,
+//                ext = ext1
+//              )
             }
           }
           (log1.searchid, log1)

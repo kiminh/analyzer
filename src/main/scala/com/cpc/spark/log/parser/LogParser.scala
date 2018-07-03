@@ -256,12 +256,16 @@ object LogParser {
       ext.update("device_ids", ExtValue(string_value = devices))
       if (notice.getAdslotCount > 0) {
         val slot = notice.getAdslot(0)
-        log = log.copy(
-          adslotid = slot.getId,
-          adslot_type = slot.getType.getNumber,
-          floorbid = slot.getFloorbid,
-          cpmbid = slot.getCpmbid
-        )
+        log.adslotid=slot.getId
+        log.adslot_type=slot.getType.getNumber
+        log.floorbid=slot.getFloorbid
+        log.cpmbid=slot.getCpmbid
+//        log = log.copy(
+//          adslotid = slot.getId,
+//          adslot_type = slot.getType.getNumber,
+//          floorbid = slot.getFloorbid,
+//          cpmbid = slot.getCpmbid
+//        )
 
         extInt.update("exp_style", slot.getExpStyle.toLong)
         extString.update("exp_feature", slot.getExpFeature)
@@ -290,21 +294,34 @@ object LogParser {
       if (notice.getAdsCount > 0) {
         val ad = notice.getAds(0)
         extString.update("downloaded_app", ad.getAppInfo.getName)
-        log = log.copy(
-          isfill = 1,
-          ideaid = ad.getAdid,
-          unitid = ad.getGroupid,
-          planid = ad.getPlanid,
-          userid = ad.getUserid,
-          adtype = ad.getType.getNumber,
-          adsrc = ad.getSrc.getNumber,
-          interaction = ad.getInteraction.getNumber,
-          bid = ad.getBid,
-          price = ad.getPrice,
-          ctr = ad.getCtr,
-          cpm = ad.getCpm,
-          ext_string = extString
-        )
+        log.isfill = 1
+        log.ideaid = ad.getAdid
+        log.unitid = ad.getGroupid
+        log.planid = ad.getPlanid
+        log.userid = ad.getUserid
+        log.adtype = ad.getType.getNumber
+        log.adsrc = ad.getSrc.getNumber
+        log.interaction = ad.getInteraction.getNumber
+        log.bid = ad.getBid
+        log.price = ad.getPrice
+        log.ctr = ad.getCtr
+        log.cpm = ad.getCpm
+        log.ext_string = extString
+//        log = log.copy(
+//          isfill = 1,
+//          ideaid = ad.getAdid,
+//          unitid = ad.getGroupid,
+//          planid = ad.getPlanid,
+//          userid = ad.getUserid,
+//          adtype = ad.getType.getNumber,
+//          adsrc = ad.getSrc.getNumber,
+//          interaction = ad.getInteraction.getNumber,
+//          bid = ad.getBid,
+//          price = ad.getPrice,
+//          ctr = ad.getCtr,
+//          cpm = ad.getCpm,
+//          ext_string = extString
+//        )
 
         extInt.update("siteid", ad.getSiteid.toLong)
         extInt.update("cvr_threshold_by_user", ad.getCvrThreshold)
@@ -338,12 +355,16 @@ object LogParser {
       }
 
       val loc = notice.getLocation
-      log = log.copy(
-        country = loc.getCountry,
-        province = loc.getProvince,
-        city = loc.getCity,
-        isp = loc.getIsp
-      )
+      log.country = loc.getCountry
+      log.province = loc.getProvince
+      log.city = loc.getCity
+      log.isp = loc.getIsp
+//      log = log.copy(
+//        country = loc.getCountry,
+//        province = loc.getProvince,
+//        city = loc.getCity,
+//        isp = loc.getIsp
+//      )
       ext.update("city_level", ExtValue(int_value = loc.getCityLevel))
 
       val media_app = notice.getMedia.getApp
@@ -355,15 +376,22 @@ object LogParser {
       extString.update("config", siteInfo.getConfig)
 
       val device = notice.getDevice
-      log = log.copy(
-        uid = device.getUid,
-        ua = device.getUseragent.toStringUtf8,
-        os = device.getOs.getNumber,
-        screen_w = device.getScreenW,
-        screen_h = device.getScreenH,
-        brand = device.getBrand,
-        model = device.getModel
-      )
+      log.uid = device.getUid
+      log.ua = device.getUseragent.toStringUtf8
+      log.os = device.getOs.getNumber
+      log.screen_w = device.getScreenW
+      log.screen_h = device.getScreenH
+      log.brand = device.getBrand
+      log.model = device.getModel
+//      log = log.copy(
+//        uid = device.getUid,
+//        ua = device.getUseragent.toStringUtf8,
+//        os = device.getOs.getNumber,
+//        screen_w = device.getScreenW,
+//        screen_h = device.getScreenH,
+//        brand = device.getBrand,
+//        model = device.getModel
+//      )
       ext.update("phone_price", ExtValue(int_value = device.getPhoneprice))
       ext.update("phone_level", ExtValue(int_value = device.getPhonelevel))
       ext.update("brand_title", ExtValue(string_value = device.getBrandTitle))
@@ -388,36 +416,62 @@ object LogParser {
       extString.update("user_city", user.getCity)
       extString.update("qtt_member_id", user.getMemberId)
       extString.update("hostname", notice.getHostname)
-      log = log.copy(
-        sex = user.getSex,
-        age = user.getAge,
-        coin = user.getCoin,
-        interests = interRows.mkString(","),
-        ext = ext.toMap,
-        ext_int = extInt.toMap,
-        ext_string = extString.toMap,
-        ext_float = extFloat.toMap
-      )
+
+      log.sex = user.getSex
+      log.age = user.getAge
+      log.coin = user.getCoin
+      log.interests = interRows.mkString(",")
+      log.ext = ext.toMap
+      log.ext_int = extInt.toMap
+      log.ext_string = extString.toMap
+      log.ext_float = extFloat.toMap
+//      log = log.copy(
+//        sex = user.getSex,
+//        age = user.getAge,
+//        coin = user.getCoin,
+//        interests = interRows.mkString(","),
+//        ext = ext.toMap,
+//        ext_int = extInt.toMap,
+//        ext_string = extString.toMap,
+//        ext_float = extFloat.toMap
+//      )
       logs = logs :+ log
       if (notice.getAdsCount > 1 && notice.getAdslot(0).getType.getNumber == 7) {
         for (i <- 1 until notice.getAdsList.size()) {
           val ad = notice.getAds(i)
           extString.update("downloaded_app", ad.getAppInfo.getName)
-          logs = logs :+ log.copy(
-            isfill = 1,
-            ideaid = ad.getAdid,
-            unitid = ad.getGroupid,
-            planid = ad.getPlanid,
-            userid = ad.getUserid,
-            adtype = ad.getType.getNumber,
-            adsrc = ad.getSrc.getNumber,
-            interaction = ad.getInteraction.getNumber,
-            bid = ad.getBid,
-            price = ad.getPrice,
-            ctr = ad.getCtr,
-            cpm = ad.getCpm,
-            ext_string = extString.toMap
-          )
+
+          log.isfill = 1
+          log.ideaid = ad.getAdid
+          log.unitid = ad.getGroupid
+          log.planid = ad.getPlanid
+          log.userid = ad.getUserid
+          log.adtype = ad.getType.getNumber
+          log.adsrc = ad.getSrc.getNumber
+          log.interaction = ad.getInteraction.getNumber
+          log.bid = ad.getBid
+          log.price = ad.getPrice
+          log.ctr = ad.getCtr
+          log.cpm = ad.getCpm
+          log.ext_string = extString.toMap
+
+          logs = logs :+ log
+
+//          logs = logs :+ log.copy(
+//            isfill = 1,
+//            ideaid = ad.getAdid,
+//            unitid = ad.getGroupid,
+//            planid = ad.getPlanid,
+//            userid = ad.getUserid,
+//            adtype = ad.getType.getNumber,
+//            adsrc = ad.getSrc.getNumber,
+//            interaction = ad.getInteraction.getNumber,
+//            bid = ad.getBid,
+//            price = ad.getPrice,
+//            ctr = ad.getCtr,
+//            cpm = ad.getCpm,
+//            ext_string = extString.toMap
+//          )
         }
       }
     }
