@@ -41,8 +41,7 @@ object UserSeenMotivateAds {
     println(stmt)
     val ipreg = """^[0-9.]+$""".r
     val uidRDD = spark.sql(stmt)
-      .distinct()
-      .filter(r => ipreg.findFirstMatchIn(r.getString(0)).isEmpty) //filter ip
+      .filter(r => ipreg.findFirstMatchIn(r.getString(0)).isEmpty)
 
     println("num", uidRDD.count())
     println(uidRDD.take(10).mkString(" "))
@@ -68,7 +67,7 @@ object UserSeenMotivateAds {
                 var has = false
                 for (i <- 0 until user.getInterestedWordsCount) {
                   val w = user.getInterestedWords(i)
-                  if (w.getTag == in.getTag) {  //app来源
+                  if (w.getTag == in.getTag) {
                     if (!has) {
                       has = true
                       n2 += 1
@@ -77,7 +76,7 @@ object UserSeenMotivateAds {
                 }
                 if (!has) {
                   user.addInterestedWords(in)
-                  n1 += 1  //浏览来源，且不在app来源的用户数
+                  n1 += 1
                 }
                 redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               } else{
