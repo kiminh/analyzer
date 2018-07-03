@@ -12,7 +12,7 @@ import userprofile.Userprofile.{InterestItem, UserProfile}
 
 /**
   */
-object UserSeenInteractAds {
+object UserSeenMotivativeAds {
 
   val interactAdslotIds = Seq(
     7004278,
@@ -27,7 +27,7 @@ object UserSeenInteractAds {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder()
-      .appName("cpc get user interested category")
+      .appName("user seen motivate ads")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
