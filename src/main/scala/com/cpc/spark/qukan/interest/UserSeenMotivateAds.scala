@@ -12,7 +12,7 @@ import userprofile.Userprofile.{InterestItem, UserProfile}
 
 /**
   */
-object UserSeenMotivativeAds {
+object UserSeenMotivateAds {
 
   val interactAdslotIds = Seq(
     7004278,
