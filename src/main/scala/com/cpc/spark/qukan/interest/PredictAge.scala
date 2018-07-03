@@ -97,8 +97,8 @@ object PredictAge {
                 var conflict = false
                 var age_224 = false
                 var age_225 = false
+                var idx = 0
                 while(idx < user.getInterestedWordsCount) {
-                  var idx = 0
                   val w = user.getInterestedWords(idx)
                   if (w.getTag == 224 || w.getTag == 225) {
                     if (w.getTag == 224) age_224 = true
