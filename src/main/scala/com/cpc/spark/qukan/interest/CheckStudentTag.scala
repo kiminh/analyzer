@@ -44,6 +44,7 @@ object CheckStudentTag {
         |SELECT DISTINCT uid,interests
         |FROM dl_cpc.cpc_union_log
         |WHERE `date` = "%s" AND isshow = 1 AND (media_appsid = "80000001" OR media_appsid = "80000002")
+        |LIMIT 10000000
       """.stripMargin.format(date)
 
     var rs1 = spark.sql(stmt).rdd
@@ -55,11 +56,13 @@ object CheckStudentTag {
           var age_225 = false
           interests.foreach {
             r =>
-              val tag = r.split("=")(0)
-              if (tag.toInt == 224) {
-                age_224 = true
-              } else if (tag.toInt == 225) {
-                age_225 = true
+              if (r != ""){
+                val tag = r.split("=")(0)
+                if (tag.toInt == 224) {
+                  age_224 = true
+                } else if (tag.toInt == 225) {
+                  age_225 = true
+                }
               }
           }
           if (age_224 && age_225) {
