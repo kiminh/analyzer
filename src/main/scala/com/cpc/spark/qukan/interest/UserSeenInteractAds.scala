@@ -61,18 +61,15 @@ object UserSeenInteractAds {
               if (buffer != null) {
                 val user = UserProfile.parseFrom(buffer).toBuilder
                 val in = InterestItem.newBuilder()
-                  .setTag(206)
-                  .setScore(101)
+                  .setTag(227)
+                  .setScore(100)
                 var has = false
                 for (i <- 0 until user.getInterestedWordsCount) {
                   val w = user.getInterestedWords(i)
                   if (w.getTag == in.getTag) {  //app来源
                     if (!has) {
-                      //user.setInterestedWords(i, in)
                       has = true
                       n2 += 1
-                    } else {
-                      user.removeInterestedWords(i)
                     }
                   }
                 }
