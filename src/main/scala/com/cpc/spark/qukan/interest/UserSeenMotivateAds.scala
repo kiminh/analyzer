@@ -35,12 +35,13 @@ object UserSeenMotivateAds {
     val date = args(0)
     val stmt =
       """
-        |select distinct uid from dl_cpc.cpc_union_log where `date` = "%s" and adslotid in (%s)
+        |select uid from dl_cpc.cpc_union_log where `date` = "%s" and adslotid in (%s)
       """.stripMargin.format(date, interactAdslotIds.mkString(","))
 
     println(stmt)
     val ipreg = """^[0-9.]+$""".r
     val uidRDD = spark.sql(stmt)
+      .distinct()
       .filter(r => ipreg.findFirstMatchIn(r.getString(0)).isEmpty) //filter ip
 
     println("num", uidRDD.count())
