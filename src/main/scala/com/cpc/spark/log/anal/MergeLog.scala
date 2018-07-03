@@ -46,21 +46,21 @@ object MergeLog {
     val table = args(1)
     val traceTbl = args(2)
     val hourBefore = args(3).toInt
-    prefix = args(4)  //src_
-    suffix = args(5)  //_minute
+    prefix = args(4) //src_
+    suffix = args(5) //_minute
     val allTraceTbl = args(6) //cpc_all_trace_log
 
 
     val cal = Calendar.getInstance()
     g_date = cal.getTime //以后只用这个时间
-    cal.add(Calendar.HOUR, -hourBefore)  //hourBefore前的 时间
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)  //年月日
-    val hour = new SimpleDateFormat("HH").format(cal.getTime)  //小时
+    cal.add(Calendar.HOUR, -hourBefore) //hourBefore前的 时间
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime) //年月日
+    val hour = new SimpleDateFormat("HH").format(cal.getTime) //小时
 
     val spark = SparkSession.builder()
       .appName("union log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
-      .getOrCreate()  //获得sparksession
+      .getOrCreate() //获得sparksession
 
     //读取src_cpc_search_minute
     var searchData = prepareSourceString(spark, "cpc_search_new", prefix + "cpc_search" + suffix, hourBefore, 1)
@@ -85,7 +85,7 @@ object MergeLog {
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
       x =>
         var ulog = x._2.copy(date = date, hour = hour)
-        ((ulog.searchid, ulog.ideaid), ulog)  //Pair RDD
+        ((ulog.searchid, ulog.ideaid), ulog) //Pair RDD
     }
 
     //读取src_cpc_search_minute
@@ -102,19 +102,19 @@ object MergeLog {
       .map(x => LogParser.parseShowLog(x)) //(log)
       .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(log))
-      .reduceByKey((x, y) => x ++ y)  //seq
+      .reduceByKey((x, y) => x ++ y) //seq
       .map {
-        x => //((searchid,ideaid),seq())
-          var log = x._2.head
-          val logTime = log.ext("video_show_time").int_value
-          x._2.foreach {
-            y =>
-              if (y.ext("video_show_time").int_value > logTime) {
-                log = y  //获得 '本次播放最大时长' 的日志
-              }
-          }
-          ((log.searchid, log.ideaid), log)
-      }
+      x => //((searchid,ideaid),seq())
+        var log = x._2.head
+        val logTime = log.ext("video_show_time").int_value
+        x._2.foreach {
+          y =>
+            if (y.ext("video_show_time").int_value > logTime) {
+              log = y //获得 '本次播放最大时长' 的日志
+            }
+        }
+        ((log.searchid, log.ideaid), log)
+    }
 
     //读取src_cpc_click_minute
     //返回 s.getAs[String]("string_type")  如NOTICE: 2018-06-01 03:22:27 * CgYIABAWGAESnQcIABIoMjcxMjZmOTQ1M2...
@@ -130,40 +130,40 @@ object MergeLog {
         .reduceByKey((x, y) => x ++ y)
         .map {
           x => //((searchid,ideaid),seq())
-          var ulog = x._2.head
-          var notgetGood = true
-          var ext = mutable.Map[String, ExtValue]()
-          x._2.foreach { //遍历log的seq
-            log =>
-              if (log.isSpamClick() == 1) {
-                val spam = ext.getOrElse("spam_click", ExtValue())
-                ext.update("spam_click", ExtValue(int_value = spam.int_value + 1))
-                ulog = ulog.copy(
-                  ext = ext
-                )
-              } else {
-                if (notgetGood) {
-                  ext.update("touch_x", log.ext("touch_x"))
-                  ext.update("touch_y", log.ext("touch_y"))
-                  ext.update("slot_width", log.ext("slot_width"))
-                  ext.update("slot_height", log.ext("slot_height"))
-                  ext.update("antispam_predict", log.ext("antispam_predict"))
-                  ext.update("click_ua", log.ext("click_ua"))
+            var ulog = x._2.head
+            var notgetGood = true
+            var ext = mutable.Map[String, ExtValue]()
+            x._2.foreach { //遍历log的seq
+              log =>
+                if (log.isSpamClick() == 1) {
+                  val spam = ext.getOrElse("spam_click", ExtValue())
+                  ext.update("spam_click", ExtValue(int_value = spam.int_value + 1))
                   ulog = ulog.copy(
-                    isclick = log.isclick,
-                    click_timestamp = log.click_timestamp,
-                    antispam_score = log.antispam_score,
-                    antispam_rules = log.antispam_rules,
-                    click_network = log.click_network,
-                    click_ip = log.click_ip,
                     ext = ext
                   )
-                  notgetGood = false
+                } else {
+                  if (notgetGood) {
+                    ext.update("touch_x", log.ext("touch_x"))
+                    ext.update("touch_y", log.ext("touch_y"))
+                    ext.update("slot_width", log.ext("slot_width"))
+                    ext.update("slot_height", log.ext("slot_height"))
+                    ext.update("antispam_predict", log.ext("antispam_predict"))
+                    ext.update("click_ua", log.ext("click_ua"))
+                    ulog = ulog.copy(
+                      isclick = log.isclick,
+                      click_timestamp = log.click_timestamp,
+                      antispam_score = log.antispam_score,
+                      antispam_rules = log.antispam_rules,
+                      click_network = log.click_network,
+                      click_ip = log.click_ip,
+                      ext = ext
+                    )
+                    notgetGood = false
+                  }
                 }
-              }
-          }
-          ((ulog.searchid, ulog.ideaid), ulog)
-      }
+            }
+            ((ulog.searchid, ulog.ideaid), ulog)
+        }
     }
 
     val unionData1 = searchData2.leftOuterJoin(showData2).leftOuterJoin(clickData2)
@@ -227,21 +227,24 @@ object MergeLog {
           (log1.searchid, log1)
       }
 
-    val unionData = unionData1.groupByKey(1000)  //设置1000个分区
+    val unionData = unionData1.groupByKey(1000) //设置1000个分区
       .map { rec =>
-        val logs = rec._2
-        if (logs.head.adslot_type == 7) {
-          var motivation = Seq[Motivation]()
-          val head = logs.head
-          for (log <- logs) {
-            val m = Motivation(log.userid, log.planid, log.unitid, log.ideaid, log.bid, log.price, log.isfill,
-              log.isshow, log.isclick)
-            motivation = motivation :+ m
-          }
-          head.copy(motivation = motivation)
-        } else
-          rec._2.head
-      }
+      val logs = rec._2
+      if (logs.head.adslot_type == 7) {
+        var motivation = Seq[Motivation]()
+        var motive_ext = Seq[Map[String, String]]()
+        val head = logs.head
+        for (log <- logs) {
+          val m = Motivation(log.userid, log.planid, log.unitid, log.ideaid, log.bid, log.price, log.isfill,
+            log.isshow, log.isclick)
+          val m_ext = Map("ideaid" -> log.ideaid.toString, "downloaded_app" -> log.ext_string.getOrElse("downloaded_app", ""))
+          motivation = motivation :+ m
+          motive_ext = motive_ext :+ m_ext
+        }
+        head.copy(motivation = motivation, motive_ext = motive_ext)
+      } else
+        rec._2.head
+    }
 
     spark.createDataFrame(unionData)
       .write
@@ -254,11 +257,11 @@ object MergeLog {
       """.stripMargin.format(table, date, hour, table, date, hour))
     println("union done")
 
-    createSuccessMarkHDFSFile(date,hour,"union_done") //创建成功标记文件
+    createSuccessMarkHDFSFile(date, hour, "union_done") //创建成功标记文件
 
 
     /**
-      *  cpc_union_trace_log
+      * cpc_union_trace_log
       */
     val traceData = prepareSourceString(spark, "cpc_trace_new", prefix + "cpc_trace" + suffix, hourBefore, 2)
     if (traceData != null) {
@@ -285,7 +288,7 @@ object MergeLog {
         """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
       println("trace_join done")
 
-      createSuccessMarkHDFSFile(date,hour,"union_trace_done") //创建成功标记文件
+      createSuccessMarkHDFSFile(date, hour, "union_trace_done") //创建成功标记文件
     }
 
 
@@ -342,12 +345,12 @@ object MergeLog {
       .map {
         rec =>
           //val s = r.getMap[String, Row](2).getOrElse(key, null)
-          val s = rec.getAs[Map[String, Row]]("field").getOrElse(key, null)  // key='cpc_search_new',..
-          val timestamp = rec.getAs[Long]("log_timestamp")
+          val s = rec.getAs[Map[String, Row]]("field").getOrElse(key, null) // key='cpc_search_new',..
+        val timestamp = rec.getAs[Long]("log_timestamp")
 
-          if (s == null) {  //没有key 'cpc_search_new'
+          if (s == null) { //没有key 'cpc_search_new'
             null
-          } else {  //有
+          } else { //有
             if (key == "cpc_show_new") {
               timestamp + s.getAs[String]("string_type")
             }
@@ -378,11 +381,11 @@ object MergeLog {
   //获取 {yyyy-MM-dd/HH,yyyy-MM-dd/HH}
   def getDateHourPath(hourBefore: Int, hours: Int): String = {
     val cal = Calendar.getInstance()
-    cal.setTime(g_date)   //当前日期
+    cal.setTime(g_date) //当前日期
     val parts = new Array[String](hours)
-    cal.add(Calendar.HOUR, -hourBefore)  //前一个小时 时间
+    cal.add(Calendar.HOUR, -hourBefore) //前一个小时 时间
     for (h <- 0 until hours) {
-      parts(h) = partitionPathFormat.format(cal.getTime)  //yyyy-MM-dd/HH
+      parts(h) = partitionPathFormat.format(cal.getTime) //yyyy-MM-dd/HH
       cal.add(Calendar.HOUR, 1)
     }
     "{" + parts.mkString(",") + "}"
@@ -390,24 +393,25 @@ object MergeLog {
 
   /**
     * 在hdfs上创建成功标记文件；unionlog, uniontracelog合并成功的标记文件
+    *
     * @param mark
     */
-  def createSuccessMarkHDFSFile(date: String, hour: String ,mark: String): Unit ={
-    val fileName="/warehouse/cpc/%s/%s-%s.ok".format(mark,date,hour)
-    val path =new Path(fileName)
+  def createSuccessMarkHDFSFile(date: String, hour: String, mark: String): Unit = {
+    val fileName = "/warehouse/cpc/%s/%s-%s.ok".format(mark, date, hour)
+    val path = new Path(fileName)
 
     //get object conf
     val conf = new Configuration()
     //get FileSystem
-    val fileSystem=FileSystem.newInstance(conf)
+    val fileSystem = FileSystem.newInstance(conf)
 
-    try{
-      val success=fileSystem.createNewFile(path)
-      if (success){
+    try {
+      val success = fileSystem.createNewFile(path)
+      if (success) {
         println("create file success")
       }
     } catch {
-      case e:IOException => e.printStackTrace()
+      case e: IOException => e.printStackTrace()
     } finally {
       try {
         if (fileSystem != null) {
