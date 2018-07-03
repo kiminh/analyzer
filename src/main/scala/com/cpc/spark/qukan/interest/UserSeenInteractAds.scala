@@ -30,6 +30,7 @@ object UserSeenInteractAds {
       .appName("cpc get user interested category")
       .enableHiveSupport()
       .getOrCreate()
+    import spark.implicits._
 
     val date = args(0)
     val stmt =
