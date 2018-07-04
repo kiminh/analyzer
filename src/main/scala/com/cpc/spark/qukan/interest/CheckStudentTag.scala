@@ -50,7 +50,7 @@ object CheckStudentTag {
          val user = UserProfile.parseFrom(buffer).toBuilder
          var t224 = false
          var t225 = false
-         var r226 = false
+         var t226 = false
          for (i <- 0 until user.getInterestedWordsCount) {
            val w = user.getInterestedWords(i)
            if (w.getTag == 224 && !t224) {
