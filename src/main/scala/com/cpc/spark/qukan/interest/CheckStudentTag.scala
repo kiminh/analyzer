@@ -31,6 +31,7 @@ import scala.util.control._
 object CheckStudentTag {
   def main(args: Array[String]): Unit = {
     val uid = args(0).split(",")
+    val detail = args(1).toBoolean
     val spark = SparkSession.builder()
       .appName("Tag user by zfb")
       .enableHiveSupport()
@@ -66,7 +67,9 @@ object CheckStudentTag {
              t226 = true
            }
          }
-         //println(user)
+         if (detail) {
+           println(user)
+         }
        }
     }
   }
