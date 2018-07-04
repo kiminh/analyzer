@@ -29,7 +29,7 @@ import com.cpc.spark.qukan.parser.HdfsParser
 import scala.util.control._
 object CheckStudentTag {
   def main(args: Array[String]): Unit = {
-    val uid = args(0).toString
+    val uid = args(0)
     val spark = SparkSession.builder()
       .appName("Tag user by zfb")
       .enableHiveSupport()
