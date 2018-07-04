@@ -210,7 +210,6 @@ object InsertReportSiteBuildingTarget {
           (searchid, (Info(siteid, ideaid, isshow, isclick, sex, age, os, province, phoneLevel, hour,
             network, userLevel, qukanNewUser, adslotType, mediaId, 0, 0, 0, 0, adslotid, brand, browserType)))
       }
-      .cache()
     //println("unionData count", unionData.count())
 
 
@@ -253,7 +252,6 @@ object InsertReportSiteBuildingTarget {
           val siteid = x.get(4).toString.toInt
           (searchid, (Info(siteid, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, load, active, landpage_ok, stayinwx)))
       }
-      .cache()
     //println("traceData count", traceData.count())
 
 
@@ -295,7 +293,7 @@ object InsertReportSiteBuildingTarget {
             info.adslotid, info.brand, info.browserType))
       }
       .filter(_._2.siteId > 0)
-      .repartition(50)
+      .repartition(200)
       .cache()
 
 
