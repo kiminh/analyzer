@@ -255,7 +255,6 @@ object InsertReportSiteBuildingTarget {
     //println("traceData count", traceData.count())
 
 
-
     val allData = unionData
       .union(traceData)
       .reduceByKey {
@@ -293,7 +292,7 @@ object InsertReportSiteBuildingTarget {
             info.adslotid, info.brand, info.browserType))
       }
       .filter(_._2.siteId > 0)
-      .repartition(200)
+      .coalesce(300)
       .cache()
 
 
@@ -304,6 +303,7 @@ object InsertReportSiteBuildingTarget {
           val adslotType = x._2.adslotType
           ((mediaId == 80000001) || (mediaId == 80000002)) && (adslotType == 1)
       }
+      .repartition(100)
       .map {
         x =>
           val info = x._2
@@ -339,6 +339,7 @@ object InsertReportSiteBuildingTarget {
           }
           ok
       }
+      .repartition(100)
       .map {
         x =>
           val info = x._2
@@ -559,6 +560,7 @@ object InsertReportSiteBuildingTarget {
           val mediaId = x._2.mediaid
           (mediaId == 80000001) || (mediaId == 80000002)
       }
+      .repartition(100)
       .map {
         x =>
           val info = x._2
@@ -576,7 +578,6 @@ object InsertReportSiteBuildingTarget {
 
     val quAdslotTypeData = getTargetData(inputQuAdslotTypeData, "adslot_type_media", argDay).cache()
     //println("adslot_type_media count is", quAdslotTypeData.count())
-
 
 
     val insertAllData = sexData
