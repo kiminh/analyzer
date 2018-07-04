@@ -48,7 +48,19 @@ object CheckStudentTag {
        val buffer = redis.get[Array[Byte]](key).orNull
        if (buffer != null) {
          val user = UserProfile.parseFrom(buffer).toBuilder
-         println(user)
+         for (i <- 0 until user.getInterestedWordsCount) {
+           val w = user.getInterestedWords(i)
+           if (w.getTag == 224) {
+             println("student_tag")
+           }
+           if (w.getTag == 225) {
+             println("not_student_tag")
+           }
+           if (w.getTag == 226) {
+             println("active_tag")
+           }
+         }
+         //println(user)
        }
     }
   }
