@@ -17,6 +17,7 @@ import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
+import userprofile.Userprofile.{InterestItem, UserProfile}
 
 import scala.io.Source
 import scala.collection.JavaConversions._
