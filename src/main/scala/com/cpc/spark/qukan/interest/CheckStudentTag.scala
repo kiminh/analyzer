@@ -44,6 +44,7 @@ object CheckStudentTag {
     uid.foreach {
       u =>
        var key = u + "_UPDATA"
+        println(key)
        val buffer = redis.get[Array[Byte]](key).orNull
        if (buffer != null) {
          val user = UserProfile.parseFrom(buffer).toBuilder
