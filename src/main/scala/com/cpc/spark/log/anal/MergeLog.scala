@@ -250,11 +250,7 @@ object MergeLog {
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
-    spark.sql(
-      """
-        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
-      """.stripMargin.format(table, date, hour, table, date, hour))
+
     println("union done")
 
     createSuccessMarkHDFSFile(date, hour, "union_done") //创建成功标记文件
@@ -282,11 +278,7 @@ object MergeLog {
         .write
         .mode(SaveMode.Overwrite)
         .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
-      spark.sql(
-        """
-          |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-          | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
-        """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
+
       println("trace_join done")
 
       createSuccessMarkHDFSFile(date, hour, "union_trace_done") //创建成功标记文件
@@ -305,11 +297,7 @@ object MergeLog {
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(allTraceTbl, date, hour))
-    spark.sql(
-      """
-        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
-      """.stripMargin.format(allTraceTbl, date, hour, allTraceTbl, date, hour))
+
     println("trace_all done")
 
     spark.stop()
@@ -317,6 +305,31 @@ object MergeLog {
       println("-")
     }
     println("MergeLog_done")
+
+
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+      """.stripMargin.format(table, date, hour, table, date, hour))
+
+    println("add partition union log done")
+
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+      """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
+
+    println("add partition union trace log done")
+
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+      """.stripMargin.format(allTraceTbl, date, hour, allTraceTbl, date, hour))
+
+    println("add partition all trace log done")
 
   }
 
