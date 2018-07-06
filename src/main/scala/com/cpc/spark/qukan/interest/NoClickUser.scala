@@ -22,7 +22,8 @@ object NoClickUser {
 
     val stmt =
       """
-        |select uid, max(isclick) c from dl_cpc.cpc_union_log where `date` >= "%s" group by uid having c = 0
+        |select uid, max(isclick) c from dl_cpc.cpc_union_log where `date` >= "%s"
+        |and media_appsid in ("80000001", "80000002") group by uid having c = 0
       """.stripMargin.format(date)
 
     println(stmt)
