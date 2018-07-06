@@ -15,7 +15,7 @@ import org.apache.spark.SparkFiles
 class OffsetRedis extends Serializable {
    //private var jedis:Jedis = new Jedis("192.168.101.48", 6379)  
    
-   private val key = "SRCLOG_KAFKA_OFFSET"
+   private var key = "SRCLOG_KAFKA_OFFSET"
    def getRedis():Jedis = {
 //     val prop = new Properties()
 //     var in: InputStream = new FileInputStream(new File(SparkFiles.get("redis.properties")))
@@ -23,9 +23,9 @@ class OffsetRedis extends Serializable {
      val conf = ConfigFactory.load()
      var jedis:Jedis = new Jedis(conf.getString("redis.host"), conf.getInt("redis.port"))
      jedis
-   }   
-   
-   def setTopicAndPartitionOffSet(topic:String,partion:Int,offset:Long):Unit ={
+   }
+
+  def setTopicAndPartitionOffSet(topic:String,partion:Int,offset:Long):Unit ={
      var jedis = getRedis()
      var long = jedis.set(key+"_"+topic+"_"+partion,offset.toString())
      jedis.sadd(key +"_"+ topic, partion.toString())
@@ -48,6 +48,22 @@ class OffsetRedis extends Serializable {
        jedis.del(key)
      }
    }
+
+  def setTopicAndPartitionOffSet(key:String,topic:String,partion:Int,offset:Long):Unit ={
+    var jedis = getRedis()
+    var long = jedis.set(key+"_"+topic+"_"+partion,offset.toString())
+    jedis.sadd(key +"_"+ topic, partion.toString())
+  }
+  def getPartitionByTopic(key:String,topic:String):Set[String] ={
+    var jedis = getRedis()
+    val set:java.util.Set[String] =jedis.smembers(key+"_"+topic)// smembers返回java.util.Set[String]
+    return set.toSet
+  }
+  def getTopicAndPartitionOffSet(key:String,topic:String,partion:Int):Long ={
+    var jedis = getRedis()
+    var offset = jedis.get(key+"_"+topic+"_"+partion)
+    return offset.toLong
+  }
 }
 
 object OffsetRedis {
@@ -60,6 +76,8 @@ object OffsetRedis {
     }
     offsetRedis
   }
-  
 }
+
+
+
 
