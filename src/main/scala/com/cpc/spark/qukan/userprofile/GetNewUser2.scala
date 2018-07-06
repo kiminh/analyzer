@@ -114,7 +114,7 @@ object GetNewUser2 {
               } else {
                 n4 += 1
               }
-              //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+              redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
 
             }
         }
