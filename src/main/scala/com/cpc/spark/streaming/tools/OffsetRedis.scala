@@ -53,22 +53,6 @@ class OffsetRedis extends Serializable {
        jedis.del(key)
      }
    }
-
-  def setTopicAndPartitionOffSet(key:String,topic:String,partion:Int,offset:Long):Unit ={
-    var jedis = getRedis()
-    var long = jedis.set(key+"_"+topic+"_"+partion,offset.toString())
-    jedis.sadd(key +"_"+ topic, partion.toString())
-  }
-  def getPartitionByTopic(key:String,topic:String):Set[String] ={
-    var jedis = getRedis()
-    val set:java.util.Set[String] =jedis.smembers(key+"_"+topic)// smembers返回java.util.Set[String]
-    return set.toSet
-  }
-  def getTopicAndPartitionOffSet(key:String,topic:String,partion:Int):Long ={
-    var jedis = getRedis()
-    var offset = jedis.get(key+"_"+topic+"_"+partion)
-    return offset.toLong
-  }
 }
 
 object OffsetRedis {
@@ -81,6 +65,7 @@ object OffsetRedis {
     }
     offsetRedis
   }
+  
 }
 
 
