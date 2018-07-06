@@ -118,7 +118,7 @@ object GetNewUser2 {
 
             }
         }
-        Seq((0, n1), (1, n2), (3, n3),(4, n4),(5, n5)).iterator
+        Seq((0, n1), (1, n2), (2, n3),(3, n4),(4, n5)).iterator
     }
 
     //统计新增数据
