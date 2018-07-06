@@ -88,7 +88,7 @@ object GetTraceReport {
       trace =>
         val trace_type = trace.getAs[String]("trace_type")
         var trace_op1 = ""
-        if(trace_type == "apkdown" || trace_type == "lpload" ){
+        if(trace_type == "apkdown" || trace_type == "lpload" || trace_type == "sdk_incite"){
           trace_op1 = trace.getAs[String]("trace_op1")
         }
         ((trace.getAs[String]("searchid"), trace_type, trace_op1,trace.getAs[Int]("duration"), trace.getAs[Int]("auto")), trace)

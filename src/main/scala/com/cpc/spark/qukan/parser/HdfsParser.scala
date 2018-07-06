@@ -94,7 +94,7 @@ object HdfsParser {
     val devid = x.getString(1)
     if (devid != null && devid.length > 0) {
       val data = x.getString(2)
-      val dataType = x.getInt(5)
+      val dataType = x.getLong(5).toInt
       try {
         var pkgs: List[AppPkg] = null
 
