@@ -23,6 +23,14 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.streaming.kafka.KafkaCluster.LeaderOffset
 
 object CpcStreamingLogParser3 {
+
+  /**
+    * 创建一个offsetRedis对象
+    * 调用方法设置Redis的key
+    */
+  val offsetRedis = new OffsetRedis()
+  offsetRedis.setRedisKey("PARSED_LOG_KAFKA_OFFSET")
+
   def main(args: Array[String]) {
     if (args.length < 4) {
       System.err.println(
@@ -35,12 +43,6 @@ object CpcStreamingLogParser3 {
       System.exit(1)
     }
     Logger.getRootLogger.setLevel(Level.WARN)
-
-    /**
-      * key: redis存储kafka offset的key的前缀
-      * 如：(key+"_"+topic+"_"+partion, offset)
-      */
-    var key: String = "PARSED_LOG_KAFKA_OFFSET"
     val Array(brokers, topics, out_topics, seconds) = args
 
     val sparkConf = new SparkConf().setAppName("srcLog: topics = " + topics)
@@ -57,11 +59,11 @@ object CpcStreamingLogParser3 {
     try {
       for (topic <- topicsSet) {
         //        val partitions = redis.smembers[String](topic).get
-        val partitions = OffsetRedis.getOffsetRedis.getPartitionByTopic(key,topic)
+        val partitions = offsetRedis.getPartitionByTopic(topic)
         for (partition <- partitions) {
           println("topic:" + topic + ";partition:" + partition)
           val tp = TopicAndPartition(topic, partition.toInt)
-          fromOffsets += (tp -> OffsetRedis.getOffsetRedis.getTopicAndPartitionOffSet(key,topic, partition.toInt))
+          fromOffsets += (tp -> offsetRedis.getTopicAndPartitionOffSet(topic, partition.toInt))
         }
       }
       // OffsetRedis.refreshOffsetKey()
@@ -109,13 +111,13 @@ object CpcStreamingLogParser3 {
       println("from offset")
     }
 
-    messages.foreachRDD {
+    /*messages.foreachRDD {
       rdd => {
         val offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
         rdd.foreachPartition { iter =>
           try {
             val o: OffsetRange = offsetRanges(TaskContext.get.partitionId)
-            OffsetRedis.getOffsetRedis.setTopicAndPartitionOffSet(key, o.topic, o.partition, o.fromOffset)
+            offsetRedis.setTopicAndPartitionOffSet(o.topic, o.partition, o.fromOffset)
           } catch {
             case t: Throwable =>
               t.printStackTrace()
@@ -124,7 +126,7 @@ object CpcStreamingLogParser3 {
 
         }
       }
-    }
+    }*/
     getCurrentDate("end-offsetRanges")
     val base_data = messages.map {
       case (k, v) =>
@@ -183,7 +185,7 @@ object CpcStreamingLogParser3 {
             if (numbs > 0) {
 
               //日志解析
-              val parserLogData = getParserLog(part, topics.split(",")(0))
+              val parserLogData = getParsedLog(part, topics.split(",")(0))
 
               //配置修改
               val table = conf.getString("topic2tbl_logparsed." + topics.split(",")(0))
@@ -262,7 +264,7 @@ object CpcStreamingLogParser3 {
     * @param part DStream中的每个RDD
     * @param key  SrcLog对象中field字段的key，用于获取日志信息
     */
-  def getParserLog(part: rdd.RDD[SrcLog], key: String): rdd.RDD[UnionLog] = {
+  def getParsedLog(part: rdd.RDD[SrcLog], key: String): rdd.RDD[UnionLog] = {
     //获取log
     val srcDataRdd = part.map {
       x =>

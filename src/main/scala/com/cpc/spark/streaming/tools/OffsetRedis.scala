@@ -16,6 +16,11 @@ class OffsetRedis extends Serializable {
    //private var jedis:Jedis = new Jedis("192.168.101.48", 6379)  
    
    private var key = "SRCLOG_KAFKA_OFFSET"
+
+   def setRedisKey(k: String):Unit = {
+    key = k
+   }
+
    def getRedis():Jedis = {
 //     val prop = new Properties()
 //     var in: InputStream = new FileInputStream(new File(SparkFiles.get("redis.properties")))
