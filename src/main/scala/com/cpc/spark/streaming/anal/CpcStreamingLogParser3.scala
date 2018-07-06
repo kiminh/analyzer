@@ -111,7 +111,7 @@ object CpcStreamingLogParser3 {
       println("from offset")
     }
 
-    /*messages.foreachRDD {
+    messages.foreachRDD {
       rdd => {
         val offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
         rdd.foreachPartition { iter =>
@@ -126,7 +126,7 @@ object CpcStreamingLogParser3 {
 
         }
       }
-    }*/
+    }
     getCurrentDate("end-offsetRanges")
     val base_data = messages.map {
       case (k, v) =>

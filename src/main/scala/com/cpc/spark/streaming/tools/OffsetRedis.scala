@@ -65,7 +65,7 @@ object OffsetRedis {
     }
     offsetRedis
   }
-  
+
 }
 
 
