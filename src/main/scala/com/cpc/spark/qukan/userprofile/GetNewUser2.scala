@@ -9,7 +9,7 @@ import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
-import userprofile.Userprofile.{Userprofile, InterestItem}
+import userprofile.Userprofile.{UserProfile, InterestItem}
 
 import scala.util.control.Breaks
 
