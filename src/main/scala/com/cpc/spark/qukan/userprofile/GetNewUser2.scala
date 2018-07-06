@@ -128,7 +128,7 @@ object GetNewUser2 {
     var n4 = 0
     var n5 = 0
     sum.reduceByKey((x, y) => x + y)
-      .take(3)
+      .take(5)
       .foreach {
         x =>
           if (x._1 == 0) {
