@@ -22,7 +22,7 @@ object NoClickUser {
 
     val stmt =
       """
-        |select uid, sum(isclick) c from dl_cpc.cpc_union_log where `date` >= "%s" group by uid having c = 0
+        |select uid, max(isclick) c from dl_cpc.cpc_union_log where `date` >= "%s" and c = 0 group by uid
       """.stripMargin.format(date)
 
     println(stmt)
@@ -47,7 +47,7 @@ object NoClickUser {
               if (buffer != null) {
                 val user = UserProfile.parseFrom(buffer).toBuilder
                 val in = InterestItem.newBuilder()
-                  .setTag(229)
+                  .setTag(230)
                   .setScore(100)
                 var has = false
                 for (i <- 0 until user.getInterestedWordsCount) {
@@ -63,7 +63,7 @@ object NoClickUser {
                   user.addInterestedWords(in)
                   n1 += 1
                 }
-                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               } else{
                 n3 += 1
               }
