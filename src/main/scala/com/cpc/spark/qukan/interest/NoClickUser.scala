@@ -91,7 +91,7 @@ object NoClickUser {
                   user.addInterestedWords(in)
                   n1 += 1
                 }
-                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               } else{
                 n3 += 1
               }
