@@ -135,11 +135,11 @@ object GetNewUser2 {
             n1 = x._2
           } else if (x._1 == 1) {
             n2 = x._2
-          } else if (x._1 == 3) {
+          } else if (x._1 == 2) {
             n3 = x._2
-          } else if (x._1 == 4) {
+          } else if (x._1 == 3) {
             n4 = x._2
-          } else if (x._1 == 5) {
+          } else if (x._1 == 4) {
             n5 = x._2
           }
       }
