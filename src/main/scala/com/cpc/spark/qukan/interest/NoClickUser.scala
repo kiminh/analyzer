@@ -22,7 +22,7 @@ object NoClickUser {
 
     val stmt =
       """
-        |select distinct uid from dl_cpc.cpc_union_log where `date` >= "%s" and isclick = 0
+        |select uid, sum(isclick) c from dl_cpc.cpc_union_log where `date` >= "%s" group by uid having c = 0
       """.stripMargin.format(date)
 
     println(stmt)
