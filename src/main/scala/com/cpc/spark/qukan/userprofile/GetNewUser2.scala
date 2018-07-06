@@ -99,21 +99,21 @@ object GetNewUser2 {
                   }
                 }
               }
-              if (sevenDay < day) {
-                val in = InterestItem.newBuilder()
-                  .setTag(228)
-                  .setScore(100)
-                user.addInterestedWords(in)
-                n2 += 1
-              } else if (toDay < day) {
-                val in = InterestItem.newBuilder()
-                  .setTag(231)
-                  .setScore(100)
-                user.addInterestedWords(in)
-                n3 += 1
-              } else {
-                n4 += 1
-              }
+//              if (sevenDay < day) {
+//                val in = InterestItem.newBuilder()
+//                  .setTag(228)
+//                  .setScore(100)
+//                user.addInterestedWords(in)
+//                n2 += 1
+//              } else if (toDay < day) {
+//                val in = InterestItem.newBuilder()
+//                  .setTag(231)
+//                  .setScore(100)
+//                user.addInterestedWords(in)
+//                n3 += 1
+//              } else {
+//                n4 += 1
+//              }
               redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
 
             }
