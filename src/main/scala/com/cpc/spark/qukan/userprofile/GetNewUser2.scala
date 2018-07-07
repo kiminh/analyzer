@@ -89,7 +89,7 @@ object GetNewUser2 {
                 var idx = 0
                 while(idx < user.getInterestedWordsCount) {
                   val w = user.getInterestedWords(idx)
-                  if (w.getTag == 228 || w.getTag == 231) {
+                  if (w.getTag == 228) {
                     user.removeInterestedWords(idx)
                   } else {
                     idx += 1
@@ -99,21 +99,15 @@ object GetNewUser2 {
                   }
                 }
               }
-//              if (sevenDay < day) {
-//                val in = InterestItem.newBuilder()
-//                  .setTag(228)
-//                  .setScore(100)
-//                user.addInterestedWords(in)
-//                n2 += 1
-//              } else if (toDay < day) {
-//                val in = InterestItem.newBuilder()
-//                  .setTag(231)
-//                  .setScore(100)
-//                user.addInterestedWords(in)
-//                n3 += 1
-//              } else {
-//                n4 += 1
-//              }
+              if (sevenDay > day) {
+                val in = InterestItem.newBuilder()
+                  .setTag(228)
+                  .setScore(100)
+                user.addInterestedWords(in)
+                n2 += 1
+              }  else {
+                n3 += 1
+              }
               redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
 
             }
@@ -151,7 +145,7 @@ object GetNewUser2 {
 
     redis.set(key, "%.8f".format(n2.toDouble/n1.toDouble))
     redis.set(key2, "%.8f".format(n3.toDouble/n1.toDouble))
-    println("total: %d new-7-user: %d new-45-user: %d old: %d ".format(n1, n2, n3, n4))
+    println("total: %d new-7-user: %d old: %d ".format(n1, n3, n2))
     ctx.stop()
   }
 }
