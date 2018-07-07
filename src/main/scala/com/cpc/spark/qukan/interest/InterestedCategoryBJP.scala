@@ -53,7 +53,7 @@ object InterestedCategoryBJP {
 
 
       val conf = ConfigFactory.load()
-      val sum = day2.filter(_._2._1 > 0).mapPartitions {
+      val sum = day2.filter(_._2._1 > 0).coalesce(200).mapPartitions {
         p =>
           var n = 0
           var n1 = 0
