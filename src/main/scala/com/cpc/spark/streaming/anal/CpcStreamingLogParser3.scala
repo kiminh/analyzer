@@ -47,6 +47,8 @@ object CpcStreamingLogParser3 {
 
     val sparkConf = new SparkConf().setAppName("srcLog: topics = " + topics)
     val ssc = new StreamingContext(sparkConf, Seconds(seconds.toInt))
+    ssc.checkpoint("checkpoint")
+
     val topicsSet = topics.split(",").toSet
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
 
@@ -156,7 +158,8 @@ object CpcStreamingLogParser3 {
             null
         }
     }
-      .filter(_ != null)
+      .filter(_ != null).repartition(300)
+
     base_data.print()
 
     val spark = SparkSession.builder()
