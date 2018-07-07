@@ -54,7 +54,7 @@ object NoClickUser {
     println(stmt)
     val uidRDD3 = spark.sql(stmt)
 
-    val uidRDD = uidRDD1.join(uidRDD2, Seq("uid")).join(uidRDD3, Seq("uid"))
+    val uidRDD = uidRDD1.join(uidRDD2, Seq("uid")).join(uidRDD3, Seq("uid")).coalesce(200)
 
     println("num", uidRDD.count())
     println(uidRDD.take(10).mkString(" "))
