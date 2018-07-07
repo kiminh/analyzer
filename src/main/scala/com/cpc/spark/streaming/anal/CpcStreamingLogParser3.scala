@@ -47,7 +47,6 @@ object CpcStreamingLogParser3 {
 
     val sparkConf = new SparkConf().setAppName("srcLog: topics = " + topics)
     val ssc = new StreamingContext(sparkConf, Seconds(seconds.toInt))
-
     val topicsSet = topics.split(",").toSet
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
 
