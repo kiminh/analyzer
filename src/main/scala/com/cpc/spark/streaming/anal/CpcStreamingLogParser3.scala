@@ -103,7 +103,8 @@ object CpcStreamingLogParser3 {
 
     var messages: InputDStream[(String, Array[Byte])] = null
 
-    if (kafkaoffset == null || kafkaoffset.isEmpty) {
+    //if (kafkaoffset == null || kafkaoffset.isEmpty) {
+    if (true) {
       messages = KafkaUtils.createDirectStream[String, Array[Byte], StringDecoder, DefaultDecoder](ssc, kafkaParams, topicsSet)
       println("no offset")
     } else {
