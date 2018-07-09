@@ -237,7 +237,9 @@ object MergeLog {
         for (log <- logs) {
           val m = Motivation(log.userid, log.planid, log.unitid, log.ideaid, log.bid, log.price, log.isfill,
             log.isshow, log.isclick)
-          val m_ext = Map("ideaid" -> log.ideaid.toString, "downloaded_app" -> log.ext_string.getOrElse("downloaded_app", ""))
+          val m_ext = Map("ideaid" -> log.ideaid.toString,
+            "downloaded_app" -> log.ext_string.getOrElse("downloaded_app", ""),
+            "antispam_score" -> log.antispam_score.toString)
           motivation = motivation :+ m
           motive_ext = motive_ext :+ m_ext
         }
@@ -254,7 +256,6 @@ object MergeLog {
     println("union done")
 
     createSuccessMarkHDFSFile(date, hour, "union_done") //创建成功标记文件
-
 
 
     /**
