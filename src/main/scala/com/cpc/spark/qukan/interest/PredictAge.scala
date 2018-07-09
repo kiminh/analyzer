@@ -64,14 +64,15 @@ object PredictAge {
     val conf = ConfigFactory.load()
     var st : String = ""
     val bst = spark.sparkContext.broadcast(st)
-    val sum = result.rdd.map {
+    val predict = result.rdd.map {
       r =>
         val did = r.getAs[String]("did")
         val score = r.getAs[Vector]("probability").toArray
         (did, score(1))
     }
       .filter(x => x._2 > m)
-      .repartition(500)
+    predict.take(10).foreach(println)
+    val sum =  predict.repartition(500)
       .mapPartitions {
         p =>
           var bbst = bst.value
