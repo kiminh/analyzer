@@ -130,7 +130,7 @@ object PredictAge {
       }
 
     //统计数据
-    sum.toLocalIterator.foreach(println)
+    //sum.toLocalIterator.foreach(println)
     var n = 0
     var n1 = 0
     var n2 = 0
