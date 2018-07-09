@@ -129,7 +129,7 @@ object PredictAge {
           }
           Seq((0, insert), (1, revert), (2, both_taged), (3, total)).iterator
       }
-
+    println("####")
     //统计数据
     //sum.toLocalIterator.foreach(println)
     var n = 0
