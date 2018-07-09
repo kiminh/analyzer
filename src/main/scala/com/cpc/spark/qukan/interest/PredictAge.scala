@@ -57,7 +57,7 @@ object PredictAge {
     println(sample.count())
     sample.rdd.take(10).foreach(println)
     var lr: LogisticRegressionModel = null
-    lr = LogisticRegressionModel.load("/u ser/cpc/qtt-age-model/%s".format(days))
+    lr = LogisticRegressionModel.load("/user/cpc/qtt-age-model/%s".format(days))
     val result = lr.transform(sample)
     val f = args(1).toDouble
     val m = args(2).toDouble
@@ -130,26 +130,25 @@ object PredictAge {
           Seq((0, insert), (1, revert), (2, both_taged), (3, total)).iterator
       }
     println("####")
-    //统计数据
-    //sum.toLocalIterator.foreach(println)
-//    var n = 0
-//    var n1 = 0
-//    var n2 = 0
-//    var n3 = 0
-//    sum.reduceByKey((x, y) => x + y)
-//      .take(4)
-//      .foreach {
-//        x =>
-//          if (x._1 == 0) {
-//            n = x._2
-//          } else if (x._1 == 1) {
-//            n1 = x._2
-//          } else if (x._1 == 2) {
-//            n2 = x._2
-//          } else {
-//            n3 = x._2
-//          }
-//      }
-//    println("total: %s, insert: %s, revert %s, both_taged %s".format(n3, n, n1, n2))
+    统计数据
+    var n = 0
+    var n1 = 0
+    var n2 = 0
+    var n3 = 0
+    sum.reduceByKey((x, y) => x + y)
+      .take(4)
+      .foreach {
+        x =>
+          if (x._1 == 0) {
+            n = x._2
+          } else if (x._1 == 1) {
+            n1 = x._2
+          } else if (x._1 == 2) {
+            n2 = x._2
+          } else {
+            n3 = x._2
+          }
+      }
+    println("total: %s, insert: %s, revert %s, both_taged %s".format(n3, n, n1, n2))
   }
 }
