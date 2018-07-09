@@ -107,7 +107,7 @@ object GetNewUser2 {
                   .setScore(100)
                 user.addInterestedWords(in)
                 n2 += 1
-                if (have) {
+                if (!have) {
                   n4 += 1
                 }
               }  else {
