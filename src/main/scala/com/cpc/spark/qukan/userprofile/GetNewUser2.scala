@@ -81,6 +81,7 @@ object GetNewUser2 {
             var deviceid : String = uid
             var user : UserProfile.Builder = null
             val key = deviceid + "_UPDATA"
+            var have = false
             val buffer = redis.get[Array[Byte]](key).getOrElse(null)
             if (buffer != null) {
               n1 += 1
@@ -91,6 +92,7 @@ object GetNewUser2 {
                   val w = user.getInterestedWords(idx)
                   if (w.getTag == 228) {
                     user.removeInterestedWords(idx)
+                    have = true
                   } else {
                     idx += 1
                   }
@@ -105,6 +107,9 @@ object GetNewUser2 {
                   .setScore(100)
                 user.addInterestedWords(in)
                 n2 += 1
+                if (have) {
+                  n4 += 1
+                }
               }  else {
                 n3 += 1
               }
@@ -145,7 +150,7 @@ object GetNewUser2 {
 
     redis.set(key, "%.8f".format(n2.toDouble/n1.toDouble))
     redis.set(key2, "%.8f".format(n3.toDouble/n1.toDouble))
-    println("total: %d new-7-user: %d old: %d ".format(n1, n3, n2))
+    println("total: %d new-7-user: %d old: %d update:%d".format(n1, n3, n2, n4))
     ctx.stop()
   }
 }
