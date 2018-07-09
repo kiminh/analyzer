@@ -135,7 +135,7 @@ object PredictAge {
                   } else if (conflict) {
                     revert += 1
                   }
-                  //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
                 }
               }
           }
