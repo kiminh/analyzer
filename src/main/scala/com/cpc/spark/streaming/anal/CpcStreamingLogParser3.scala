@@ -188,56 +188,44 @@ object CpcStreamingLogParser3 {
               //配置修改
               val table = conf.getString("topic2tbl_logparsed." + topics.split(",")(0))
 
+              val topicKey = topics.split(",")(0)
+
               //日志解析
-              val parserLogData = getParsedLog(part, topics.split(",")(0))
+              //val parserLogData = getParsedLog(part, topics.split(",")(0))
 
               /**
-                * parserLogData: RDD[AbstractLog], 此时不能直接创建DataFrame
+                * parserLogData: RDD[CommonLog], 此时不能直接创建DataFrame
                 * 要先转化为相应的实体类，然后进行持久化
                 *
                 * 代码冗余，不好，可以写个公共方法
                 */
-              parserLogData match {
-                case parserLogData: RDD[UnionLog] => {
-                  val parsedUnionLog=parserLogData.asInstanceOf[RDD[UnionLog]]
-                  spark.createDataFrame(parsedUnionLog)
-                    .write
-                    .mode(SaveMode.Append)
-                    .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
-                }
-                case parserLogData: RDD[ParsedClickLog] => {
-                  val parsedClickLog=parserLogData.asInstanceOf[RDD[ParsedClickLog]]
-                  spark.createDataFrame(parsedClickLog)
-                    .write
-                    .mode(SaveMode.Append)
-                    .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
-                }
-                case parserLogData: RDD[ParsedShowLog] => {
-                  val parsedShowLog=parserLogData.asInstanceOf[RDD[ParsedShowLog]]
-                  spark.createDataFrame(parsedShowLog)
-                    .write
-                    .mode(SaveMode.Append)
-                    .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
-                }
-                case _ => {
-                  System.err.println("not exist type.")
-                  System.exit(1)
-                }
+              if (key == "cpc_search_new") { //search
+                getParsedSearchLog(part, topicKey, spark, table, key)
+
+              } else if (key == "cpc_show_new") { //show
+                getParsedShowLog(part, topicKey, spark, table, key)
+
+              } else if (key == "cpc_click_new") { //click
+                getParsedClickLog(part, topicKey, spark, table, key)
+
+              } else {
+                System.err.println("Can not judge the key of the field.")
+                System.exit(1)
               }
 
 //              spark.createDataFrame(parserLogData)
 //                .write
 //                .mode(SaveMode.Append)
 //                .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
-
-              val sqlStmt =
-                """
-                  |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
-                  |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
-                  |
-                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
-              println(sqlStmt)
-              spark.sql(sqlStmt)
+//
+//              val sqlStmt =
+//                """
+//                  |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
+//                  |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
+//                  |
+//                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
+//              println(sqlStmt)
+//              spark.sql(sqlStmt)
 
             }
         }
@@ -295,38 +283,109 @@ object CpcStreamingLogParser3 {
     *   1. 获取field字段中的日志信息；
     *   2. 调用日志解析函数进行解析
     *
-    * @param part DStream中的每个RDD
-    * @param key  SrcLog对象中field字段的key，用于获取日志信息
+    * @param part  DStream中的每个RDD
+    * @param topic SrcLog对象中field字段的key，用于获取日志信息
     */
-  def getParsedLog(part: rdd.RDD[SrcLog], key: String):RDD[CommonLog] = {
+  def getParsedSearchLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
     //获取log
     val srcDataRdd = part.map {
       x =>
-        if (key == "cpc_show_new") {
-          x.log_timestamp.toString + x.field.getOrElse(key, null).string_type
+        if (topic == "cpc_show_new") {
+          x.log_timestamp.toString + x.field.getOrElse(topic, null).string_type
         }
-        else x.field.getOrElse(key, null).string_type
+        else x.field.getOrElse(topic, null).string_type
     }.filter(_ != null)
 
     //根据不同类型的日志，调用不同的函数进行解析
-    var parsedLog: RDD[CommonLog] = null
+    val searchRDD = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
+    val parsedLog = searchRDD.filter(_ != null)
 
-    if (key == "cpc_search_new") { //search
-      val searchRDD = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
-      val parsedLog = searchRDD.filter(_ != null)
+//    if (topic == "cpc_search_new") { //search
+//      val searchRDD = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
+//      val parsedLog = searchRDD.filter(_ != null)
+//
+//    } else if (topic == "cpc_show_new") { //show
+//      val parsedLog = srcDataRdd.map(x => LogParser.parseShowLog_v2(x))
+//
+//    } else if (topic == "cpc_click_new") { //click
+//      val parsedLog = srcDataRdd.map { x => LogParser.parseClickLog_v2(x) }
+//
+//    } else {
+//      System.err.println("Can not judge the key of the field.")
+//      System.exit(1)
+//    }
 
-    } else if (key == "cpc_show_new") { //show
-      val parsedLog = srcDataRdd.map(x => LogParser.parseShowLog_v2(x))
+    spark.createDataFrame(parsedLog)
+      .write
+      .mode(SaveMode.Append)
+      .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
 
-    } else if (key == "cpc_click_new") { //click
-      val parsedLog = srcDataRdd.map { x => LogParser.parseClickLog_v2(x) }
-
-    } else {
-      System.err.println("Can not judge the key of the field.")
-      System.exit(1)
-    }
-    parsedLog
+    val sqlStmt =
+      """
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
+        |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
+        |
+                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
+    println(sqlStmt)
+    spark.sql(sqlStmt)
   }
+
+  def getParsedShowLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
+    //获取log
+    val srcDataRdd = part.map {
+      x =>
+        if (topic == "cpc_show_new") {
+          x.log_timestamp.toString + x.field.getOrElse(topic, null).string_type
+        }
+        else x.field.getOrElse(topic, null).string_type
+    }.filter(_ != null)
+
+    //根据不同类型的日志，调用不同的函数进行解析
+    val parsedLog = srcDataRdd.map { x => LogParser.parseShowLog_v2(x)}
+
+    spark.createDataFrame(parsedLog)
+      .write
+      .mode(SaveMode.Append)
+      .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
+
+    val sqlStmt =
+      """
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
+        |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
+        |
+                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
+    println(sqlStmt)
+    spark.sql(sqlStmt)
+  }
+
+  def getParsedClickLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
+    //获取log
+    val srcDataRdd = part.map {
+      x =>
+        if (topic == "cpc_show_new") {
+          x.log_timestamp.toString + x.field.getOrElse(topic, null).string_type
+        }
+        else x.field.getOrElse(topic, null).string_type
+    }.filter(_ != null)
+
+    //根据不同类型的日志，调用不同的函数进行解析
+    val parsedLog = srcDataRdd.map(x => LogParser.parseClickLog_v2(x))
+
+    spark.createDataFrame(parsedLog)
+      .write
+      .mode(SaveMode.Append)
+      .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
+
+    val sqlStmt =
+      """
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
+        |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
+        |
+                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
+    println(sqlStmt)
+    spark.sql(sqlStmt)
+  }
+
 
   case class SrcLog(
                      log_timestamp: Long = 0,
