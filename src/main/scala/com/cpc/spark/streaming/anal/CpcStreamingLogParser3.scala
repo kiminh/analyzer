@@ -15,11 +15,12 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.cpc.spark.log.anal.MergeLog.{getDateHourPath, srcRoot}
-import com.cpc.spark.log.parser.{LogParser, UnionLog}
+import com.cpc.spark.log.parser._
 import com.cpc.spark.streaming.tools.OffsetRedis
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.kafka.KafkaCluster.LeaderOffset
 
 object CpcStreamingLogParser3 {
@@ -184,18 +185,50 @@ object CpcStreamingLogParser3 {
             println("~~~~~~~~~ zyc_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
 
             if (numbs > 0) {
+              //配置修改
+              val table = conf.getString("topic2tbl_logparsed." + topics.split(",")(0))
 
               //日志解析
               val parserLogData = getParsedLog(part, topics.split(",")(0))
 
-              //配置修改
-              val table = conf.getString("topic2tbl_logparsed." + topics.split(",")(0))
+              /**
+                * parserLogData: RDD[AbstractLog], 此时不能直接创建DataFrame
+                * 要先转化为相应的实体类，然后进行持久化
+                *
+                * 代码冗余，不好，可以写个公共方法
+                */
+              parserLogData match {
+                case log: RDD[UnionLog] => {
+                  val parsedUnionLog=parserLogData.asInstanceOf[RDD[UnionLog]]
+                  spark.createDataFrame(parsedUnionLog)
+                    .write
+                    .mode(SaveMode.Append)
+                    .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
+                }
+                case log: RDD[ParsedClickLog] => {
+                  val parsedClickLog=parserLogData.asInstanceOf[RDD[ParsedClickLog]]
+                  spark.createDataFrame(parsedClickLog)
+                    .write
+                    .mode(SaveMode.Append)
+                    .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
+                }
+                case log: RDD[ParsedShowLog] => {
+                  val parsedShowLog=parserLogData.asInstanceOf[RDD[ParsedShowLog]]
+                  spark.createDataFrame(parsedShowLog)
+                    .write
+                    .mode(SaveMode.Append)
+                    .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
+                }
+                case _ => {
+                  System.err.println("not exist type.")
+                  System.exit(1)
+                }
+              }
 
-              spark.createDataFrame(parserLogData)
-                .write
-                .mode(SaveMode.Append)
-                .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
-
+//              spark.createDataFrame(parserLogData)
+//                .write
+//                .mode(SaveMode.Append)
+//                .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
 
               val sqlStmt =
                 """
@@ -265,7 +298,7 @@ object CpcStreamingLogParser3 {
     * @param part DStream中的每个RDD
     * @param key  SrcLog对象中field字段的key，用于获取日志信息
     */
-  def getParsedLog(part: rdd.RDD[SrcLog], key: String): rdd.RDD[UnionLog] = {
+  def getParsedLog(part: rdd.RDD[SrcLog], key: String):RDD[CommonLog] = {
     //获取log
     val srcDataRdd = part.map {
       x =>
@@ -276,25 +309,24 @@ object CpcStreamingLogParser3 {
     }.filter(_ != null)
 
     //根据不同类型的日志，调用不同的函数进行解析
-    var parserLog: rdd.RDD[UnionLog] = null
+    var parsedLog: rdd.RDD[CommonLog] = null
 
     if (key == "cpc_search_new") { //search
-      parserLog = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
-      val rdd = parserLog.filter(_ != null)
+      val searchRDD = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
+      val parsedLog = searchRDD.filter(_ != null)
+
     } else if (key == "cpc_show_new") { //show
-      parserLog = srcDataRdd.map(x => LogParser.parseShowLog(x))
-    } else if (key == "cpc_click_new") { //show
-      parserLog = srcDataRdd.map {
-        x => LogParser.parseClickLog(x)
-      }
+      val parsedLog = srcDataRdd.map(x => LogParser.parseShowLog_v2(x))
+
+    } else if (key == "cpc_click_new") { //click
+      val parsedLog = srcDataRdd.map { x => LogParser.parseClickLog_v2(x) }
+
     } else {
       System.err.println("Can not judge the key of the field.")
       System.exit(1)
     }
-
-    parserLog
+    parsedLog
   }
-
 
   case class SrcLog(
                      log_timestamp: Long = 0,

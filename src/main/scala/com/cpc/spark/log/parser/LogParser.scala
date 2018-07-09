@@ -444,6 +444,35 @@ object LogParser {
     log
   }
 
+  /**
+    * 解析 Show log
+    *
+    * @param txt 序列化的日志
+    * @return ParsedShowLog对象
+    */
+  def parseShowLog_v2(txt: String): ParsedShowLog = {
+    //zyc
+    var log: ParsedShowLog = null
+    val data = Event.parse_show_log(txt)
+    if (data != null) {
+      val body = data.event
+      val ext = mutable.Map[String, ExtValue]()
+      ext.update("show_refer", ExtValue(string_value = data.refer))
+      ext.update("show_ua", ExtValue(string_value = data.ua))
+      ext.update("video_show_time", ExtValue(int_value = body.getShowTime)) //video_show_time
+      ext.update("charge_type", ExtValue(int_value = body.getCharge.getType.getNumber))
+      log = ParsedShowLog(
+        searchid = body.getSearchId,
+        isshow = 1,
+        ideaid = body.getAd.getUnitId,
+        show_timestamp = data.timestamp,
+        show_ip = data.ip,
+        ext = ext
+      )
+    }
+    log
+  }
+
   def parseCfgLog(txt: String): CfgLog = {
     var log: CfgLog = null
     val data = Cfg.parseData(txt)
@@ -488,6 +517,42 @@ object LogParser {
         ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
         ext.update("click_ua", ExtValue(string_value = body.getAction.getUserAgent))
         log = UnionLog(
+          searchid = body.getSearchId,
+          isclick = 1,
+          ideaid = body.getAd.getUnitId,
+          click_timestamp = body.getEventTimestamp,
+          antispam_score = body.getAntispam.getScore,
+          antispam_rules = body.getAntispam.getRulesList.toArray.mkString(","),
+          click_ip = LongToIPv4(body.getEventIp.toLong),
+          ext = ext.toMap
+        )
+      }
+    }
+    log
+  }
+
+  /**
+    * 解析Click log
+    *
+    * @param txt 序列化的日志
+    * @return ParsedClickLog对象
+    */
+  def parseClickLog_v2(txt: String): ParsedClickLog = {
+    var log: ParsedClickLog = null
+    val data = Event.parse_click_log(txt)
+    if (data != null) {
+      val event = data.event
+      if (event.getBody.getSearchId.length > 0) {
+        val body = event.getBody
+        val extra = event.getExtra
+        val ext = mutable.Map[String, ExtValue]()
+        ext.update("touch_x", ExtValue(int_value = extra.getTouchX))
+        ext.update("touch_y", ExtValue(int_value = extra.getTouchY))
+        ext.update("slot_width", ExtValue(int_value = extra.getWidth))
+        ext.update("slot_height", ExtValue(int_value = extra.getHeight))
+        ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
+        ext.update("click_ua", ExtValue(string_value = body.getAction.getUserAgent))
+        log = ParsedClickLog(
           searchid = body.getSearchId,
           isclick = 1,
           ideaid = body.getAd.getUnitId,

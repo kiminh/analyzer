@@ -11,13 +11,13 @@ package com.cpc.spark.log.parser
   * @param ext
   */
 case class ParsedShowLog(
-                         var searchid: String="" ,
-                         var isshow: Int=0 ,
-                         var ideaid: Int = 0,
-                         var show_timestamp: Int = 0 ,
-                         var show_ip: String = "" ,
-                         var ext: collection.Map[String, ExtValue] = null
-                         ){
+                          var searchid: String = "",
+                          var isshow: Int = 0,
+                          var ideaid: Int = 0,
+                          var show_timestamp: Int = 0,
+                          var show_ip: String = "",
+                          var ext: collection.Map[String, ExtValue] = null
+                        ) extends CommonLog {
 
 }
 
