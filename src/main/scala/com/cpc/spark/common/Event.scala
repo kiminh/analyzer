@@ -4,7 +4,8 @@ import com.cpc.spark.streaming.tools.NgLogParser
 import com.cpc.spark.streaming.tools.Encoding
 
 object Event {
-  def parse_show_log(data: String): Show = {
+  def parse_show_log(data1: String): Show = {
+    val data = data1.replaceAll("%20", "")
     try {
       //20180424 15:20:00 修改show_timestamp取值逻辑
       //--修改Show类的结构，增加timestamp
