@@ -122,15 +122,17 @@ object PredictAge {
                     }
                   }
                 }
-                user.addInterestedWords(in)
-                if (!has) {
-                  insert += 1
-                } else if (age_224 && age_225) {
-                  both_taged += 1
-                } else if (conflict) {
-                  revert += 1
+                if (in.getTag != 0) {
+                  user.addInterestedWords(in)
+                  if (!has) {
+                    insert += 1
+                  } else if (age_224 && age_225) {
+                    both_taged += 1
+                  } else if (conflict) {
+                    revert += 1
+                  }
+                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
                 }
-                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
           bbst = bbst + "%d ".format(insert) + "%d ".format(revert) + "%d ".format(both_taged) + "%d ".format(total)
