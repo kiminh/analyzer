@@ -102,22 +102,25 @@ object PredictAge {
                 var conflict = false
                 var age_224 = false
                 var age_225 = false
-                var idx = 0
-                while(idx < user.getInterestedWordsCount) {
-                  val w = user.getInterestedWords(idx)
-                  if (w.getTag == 224 || w.getTag == 225) {
-                    if (w.getTag == 224) age_224 = true
-                    if (w.getTag == 225) age_225 = true
-                    has = true
-                    if (w.getTag != in.getTag) {
-                      conflict = true
+
+                loop.breakable {
+                  var idx = 0
+                  while (idx < user.getInterestedWordsCount) {
+                    val w = user.getInterestedWords(idx)
+                    if (w.getTag == 224 || w.getTag == 225) {
+                      if (w.getTag == 224) age_224 = true
+                      if (w.getTag == 225) age_225 = true
+                      has = true
+                      if (w.getTag != in.getTag) {
+                        conflict = true
+                      }
+                      user.removeInterestedWords(idx)
+                    } else {
+                      idx += 1
                     }
-                    user.removeInterestedWords(idx)
-                  } else {
-                    idx += 1
-                  }
-                  if (idx == user.getInterestedWordsCount) {
-                    loop.break()
+                    if (idx == user.getInterestedWordsCount) {
+                      loop.break()
+                    }
                   }
                 }
                 user.addInterestedWords(in)
