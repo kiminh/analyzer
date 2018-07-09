@@ -309,7 +309,7 @@ object CpcStreamingLogParser3 {
     }.filter(_ != null)
 
     //根据不同类型的日志，调用不同的函数进行解析
-    var parsedLog: rdd.RDD[CommonLog] = null
+    var parsedLog: RDD[CommonLog] = null
 
     if (key == "cpc_search_new") { //search
       val searchRDD = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
