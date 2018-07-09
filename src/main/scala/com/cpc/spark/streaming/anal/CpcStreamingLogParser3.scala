@@ -199,13 +199,13 @@ object CpcStreamingLogParser3 {
                 *
                 * 代码冗余，不好，可以写个公共方法
                 */
-              if (key == "cpc_search_new") { //search
+              if (topicKey == "cpc_search_new") { //search
                 getParsedSearchLog(part, topicKey, spark, table, key)
 
-              } else if (key == "cpc_show_new") { //show
+              } else if (topicKey == "cpc_show_new") { //show
                 getParsedShowLog(part, topicKey, spark, table, key)
 
-              } else if (key == "cpc_click_new") { //click
+              } else if (topicKey == "cpc_click_new") { //click
                 getParsedClickLog(part, topicKey, spark, table, key)
 
               } else {
