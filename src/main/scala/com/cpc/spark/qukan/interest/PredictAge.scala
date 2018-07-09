@@ -69,6 +69,7 @@ object PredictAge {
         (did, score(1))
     }
       .filter(x => x._2 > m)
+      .repartition(500)
       .mapPartitions {
         p =>
           var insert = 0
