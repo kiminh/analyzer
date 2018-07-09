@@ -70,7 +70,6 @@ object PredictAge {
         val score = r.getAs[Vector]("probability").toArray
         (did, score(1))
     }
-      .filter(x => x._2 > m)
     predict.take(10).foreach(println)
     val sum =  predict.repartition(500)
       .mapPartitions {
