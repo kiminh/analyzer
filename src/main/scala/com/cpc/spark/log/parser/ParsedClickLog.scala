@@ -38,4 +38,3 @@ case class ParsedClickLog(
 
 }
 
-case class ExtValue(int_value: Int = 0, long_value: Long = 0, float_value: Float = 0, string_value: String = "")
