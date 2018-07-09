@@ -69,7 +69,7 @@ object PredictAge {
         val did = r.getAs[String]("did")
         val score = r.getAs[Vector]("probability").toArray
         (did, score(1))
-    }
+    }.filter(x => x._2 > m)
     predict.take(10).foreach(println)
     val sum =  predict.repartition(500)
       .mapPartitions {
@@ -135,7 +135,7 @@ object PredictAge {
                   } else if (conflict) {
                     revert += 1
                   }
-                  //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
                 }
               }
           }
