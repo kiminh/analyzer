@@ -62,6 +62,8 @@ object PredictAge {
     val f = args(1).toDouble
     val m = args(2).toDouble
     val conf = ConfigFactory.load()
+    var st : String = ""
+    val bst = spark.sparkContext.broadcast(st)
     val sum = result.rdd.map {
       r =>
         val did = r.getAs[String]("did")
@@ -72,6 +74,7 @@ object PredictAge {
       .repartition(500)
       .mapPartitions {
         p =>
+          var bbst = bst.value
           var insert = 0
           var revert = 0
           var both_taged = 0
@@ -127,10 +130,10 @@ object PredictAge {
                 //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
+          bbst = bbst + "%d ".format(insert) + "%d ".format(revert) + "%d ".format(both_taged) + "%d ".format(total)
           Seq((0, insert), (1, revert), (2, both_taged), (3, total)).iterator
       }
-    println("####")
-    sum.reduceByKey(_+_).toLocalIterator.foreach(println)
+    println(st)
     //统计数据
 //    var n = 0
 //    var n1 = 0
