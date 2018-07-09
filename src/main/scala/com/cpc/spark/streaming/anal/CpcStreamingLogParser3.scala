@@ -198,21 +198,21 @@ object CpcStreamingLogParser3 {
                 * 代码冗余，不好，可以写个公共方法
                 */
               parserLogData match {
-                case log: RDD[UnionLog] => {
+                case parserLogData: RDD[UnionLog] => {
                   val parsedUnionLog=parserLogData.asInstanceOf[RDD[UnionLog]]
                   spark.createDataFrame(parsedUnionLog)
                     .write
                     .mode(SaveMode.Append)
                     .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
                 }
-                case log: RDD[ParsedClickLog] => {
+                case parserLogData: RDD[ParsedClickLog] => {
                   val parsedClickLog=parserLogData.asInstanceOf[RDD[ParsedClickLog]]
                   spark.createDataFrame(parsedClickLog)
                     .write
                     .mode(SaveMode.Append)
                     .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
                 }
-                case log: RDD[ParsedShowLog] => {
+                case parserLogData: RDD[ParsedShowLog] => {
                   val parsedShowLog=parserLogData.asInstanceOf[RDD[ParsedShowLog]]
                   spark.createDataFrame(parsedShowLog)
                     .write
