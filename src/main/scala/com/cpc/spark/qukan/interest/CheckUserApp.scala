@@ -43,12 +43,7 @@ object CheckUserApp {
           val did = r.getAs[String]("did")
           val apps = r.getAs[Seq[Row]]("apps")
           val birth = r.getAs[Int]("birth")
-          var count = 0
-          apps.map {
-            r =>
-              val idx = r.getAs[Seq[Row]](1)
-              (idx)
-          }
+          
           if (apps != null) {
             (did, apps.length, birth)
           } else {
