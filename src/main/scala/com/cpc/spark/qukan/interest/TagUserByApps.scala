@@ -199,6 +199,12 @@ object TagUserByApps {
     println("has xinyongka app users", sum)
     xinyongkaUids.take(10).foreach(println)
 
+    //汽车
+    conf = ConfigFactory.load("people/qiche")
+    val qicheUids = uidHasApps(userPkgs, "people/qiche", "user_tag_by_apps.qiche.contains")
+    sum = tagUser(qicheUids, conf.getInt("user_tag_by_apps.qiche.tag_id"))
+    println("has qiche app users", sum)
+    qicheUids.take(10).foreach(println)
 
     //    val shoujiyinhangUids = getDistribution(userPkgs, "user_tag_by_apps.shoujiyinhang.contains")
     //    println("手机银行")
