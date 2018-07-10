@@ -1,10 +1,13 @@
 package com.cpc.spark.log.anal
 
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.common.CpcPartitioner
 import com.cpc.spark.log.parser._
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd
 import org.apache.spark.sql.types._
@@ -36,36 +39,44 @@ object MergeLog {
         """.stripMargin)
       System.exit(1)
     }
+
     Logger.getRootLogger.setLevel(Level.WARN)
+
     srcRoot = args(0)
     val table = args(1)
     val traceTbl = args(2)
     val hourBefore = args(3).toInt
-    prefix = args(4)
-    suffix = args(5)
+    prefix = args(4) //src_
+    suffix = args(5) //_minute
     val allTraceTbl = args(6) //cpc_all_trace_log
 
 
     val cal = Calendar.getInstance()
     g_date = cal.getTime //以后只用这个时间
-    cal.add(Calendar.HOUR, -hourBefore)
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val hour = new SimpleDateFormat("HH").format(cal.getTime)
+    cal.add(Calendar.HOUR, -hourBefore) //hourBefore前的 时间
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime) //年月日
+    val hour = new SimpleDateFormat("HH").format(cal.getTime) //小时
+
     val spark = SparkSession.builder()
       .appName("union log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
-      .getOrCreate()
+      .getOrCreate() //获得sparksession
 
+    //读取src_cpc_search_minute
     var searchData = prepareSourceString(spark, "cpc_search_new", prefix + "cpc_search" + suffix, hourBefore, 1)
+
     if (searchData == null) {
       System.err.println("search data is empty")
       System.exit(1)
     }
+
     searchData.take(1).foreach {
       x =>
         println(x)
         println(LogParser.parseSearchLog(x))
     }
+
+    // search log parser **
     val searchData2 = searchData
       .flatMap(x => LogParser.parseSearchLog_v2(x)) //(log)
       .filter(_ != null)
@@ -74,9 +85,11 @@ object MergeLog {
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
       x =>
         var ulog = x._2.copy(date = date, hour = hour)
-        ((ulog.searchid, ulog.ideaid), ulog)
+        ((ulog.searchid, ulog.ideaid), ulog) //Pair RDD
     }
 
+    //读取src_cpc_search_minute
+    //return timestamp + s.getAs[String]("string_type")
     val showData = prepareSourceString(spark, "cpc_show_new", prefix + "cpc_show" + suffix, hourBefore, 2)
     //    var showData2: rdd.RDD[(String, UnionLog)] = null
     //    showData2 = showData
@@ -89,64 +102,68 @@ object MergeLog {
       .map(x => LogParser.parseShowLog(x)) //(log)
       .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(log))
-      .reduceByKey((x, y) => x ++ y)
+      .reduceByKey((x, y) => x ++ y) //seq
       .map {
-        x =>
-          var log = x._2.head
-          val logTime = log.ext("video_show_time").int_value
-          x._2.foreach {
-            y =>
-              if (y.ext("video_show_time").int_value > logTime) {
-                log = y
-              }
-          }
-          ((log.searchid, log.ideaid), log)
-      }
+      x => //((searchid,ideaid),seq())
+        var log = x._2.head
+        val logTime = log.ext("video_show_time").int_value
+        x._2.foreach {
+          y =>
+            if (y.ext("video_show_time").int_value > logTime) {
+              log = y //获得 '本次播放最大时长' 的日志
+            }
+        }
+        ((log.searchid, log.ideaid), log)
+    }
 
-
+    //读取src_cpc_click_minute
+    //返回 s.getAs[String]("string_type")  如NOTICE: 2018-06-01 03:22:27 * CgYIABAWGAESnQcIABIoMjcxMjZmOTQ1M2...
     val clickData = prepareSourceString(spark, "cpc_click_new", prefix + "cpc_click" + suffix, hourBefore, 2)
+
     var clickData2: rdd.RDD[((String, Int), UnionLog)] = null
+
     if (clickData != null) {
       clickData2 = clickData
         .map(x => LogParser.parseClickLog(x)) //(log)
         .filter(_ != null)
         .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(log))
-        .reduceByKey((x, y) => x ++ y).map {
-        x => //((searchid,ideaid),seq())
-          var ulog = x._2.head
-          var notgetGood = true
-          var ext = mutable.Map[String, ExtValue]()
-          x._2.foreach { //遍历log的seq
-            log =>
-              if (log.isSpamClick() == 1) {
-                val spam = ext.getOrElse("spam_click", ExtValue())
-                ext.update("spam_click", ExtValue(int_value = spam.int_value + 1))
-                ulog = ulog.copy(
-                  ext = ext
-                )
-              } else {
-                if (notgetGood) {
-                  ext.update("touch_x", log.ext("touch_x"))
-                  ext.update("touch_y", log.ext("touch_y"))
-                  ext.update("slot_width", log.ext("slot_width"))
-                  ext.update("slot_height", log.ext("slot_height"))
-                  ext.update("antispam_predict", log.ext("antispam_predict"))
-                  ext.update("click_ua", log.ext("click_ua"))
+        .reduceByKey((x, y) => x ++ y)
+        .map {
+          x => //((searchid,ideaid),seq())
+            var ulog = x._2.head
+            var notgetGood = true
+            var ext = mutable.Map[String, ExtValue]()
+            x._2.foreach { //遍历log的seq
+              log =>
+                if (log.isSpamClick() == 1) {
+                  val spam = ext.getOrElse("spam_click", ExtValue())
+                  ext.update("spam_click", ExtValue(int_value = spam.int_value + 1))
                   ulog = ulog.copy(
-                    isclick = log.isclick,
-                    click_timestamp = log.click_timestamp,
-                    antispam_score = log.antispam_score,
-                    antispam_rules = log.antispam_rules,
-                    click_network = log.click_network,
-                    click_ip = log.click_ip,
                     ext = ext
                   )
-                  notgetGood = false
+                } else {
+                  if (notgetGood) {
+                    ext.update("touch_x", log.ext("touch_x"))
+                    ext.update("touch_y", log.ext("touch_y"))
+                    ext.update("slot_width", log.ext("slot_width"))
+                    ext.update("slot_height", log.ext("slot_height"))
+                    ext.update("antispam_predict", log.ext("antispam_predict"))
+                    ext.update("click_ua", log.ext("click_ua"))
+                    ulog = ulog.copy(
+                      isclick = log.isclick,
+                      click_timestamp = log.click_timestamp,
+                      antispam_score = log.antispam_score,
+                      antispam_rules = log.antispam_rules,
+                      click_network = log.click_network,
+                      click_ip = log.click_ip,
+                      ext = ext
+                    )
+                    notgetGood = false
+                  }
                 }
-              }
-          }
-          ((ulog.searchid, ulog.ideaid), ulog)
-      }
+            }
+            ((ulog.searchid, ulog.ideaid), ulog)
+        }
     }
 
     val unionData1 = searchData2.leftOuterJoin(showData2).leftOuterJoin(clickData2)
@@ -161,6 +178,9 @@ object MergeLog {
           val log3 = x._2._3.getOrElse(null)
 
           var ext1 = mutable.Map[String, ExtValue]() ++ log1.ext
+
+          //对log2,log3进行处理，将值更新到log1中
+          //对log2进行处理, 更新log1的值
           if (log2 != null) {
             if (log2.ext != null) {
               ext1 = ext1 ++ log2.ext
@@ -176,6 +196,7 @@ object MergeLog {
             )
           }
 
+          //对log3（click log）进行处理，更新log1的值
           if (log3 != null) {
             if (log3.ext != null) {
               ext1 = ext1 ++ log3.ext
@@ -205,36 +226,41 @@ object MergeLog {
           }
           (log1.searchid, log1)
       }
-    val unionData = unionData1.groupByKey(1000)
+
+    val unionData = unionData1.groupByKey(1000) //设置1000个分区
       .map { rec =>
-        val logs = rec._2
-        if (logs.head.adslot_type == 7) {
-          var motivation = Seq[Motivation]()
-          var motive_ext = Seq[Map[String, String]]()
-          val head = logs.head
-          for (log <- logs) {
-            val m = Motivation(log.userid, log.planid, log.unitid, log.ideaid, log.bid, log.price, log.isfill,
-              log.isshow, log.isclick)
-            val m_ext = Map("ideaid" -> log.ideaid.toString, "downloaded_app" -> log.ext_string.getOrElse("downloaded_app", ""))
-            motivation = motivation :+ m
-            motive_ext = motive_ext :+ m_ext
-          }
-          head.copy(motivation = motivation, motive_ext = motive_ext)
-        } else
-          rec._2.head
-      }
+      val logs = rec._2
+      if (logs.head.adslot_type == 7) {
+        var motivation = Seq[Motivation]()
+        var motive_ext = Seq[Map[String, String]]()
+        val head = logs.head
+        for (log <- logs) {
+          val m = Motivation(log.userid, log.planid, log.unitid, log.ideaid, log.bid, log.price, log.isfill,
+            log.isshow, log.isclick)
+          val m_ext = Map("ideaid" -> log.ideaid.toString,
+            "downloaded_app" -> log.ext_string.getOrElse("downloaded_app", ""),
+            "antispam_score" -> log.antispam_score.toString)
+          motivation = motivation :+ m
+          motive_ext = motive_ext :+ m_ext
+        }
+        head.copy(motivation = motivation, motive_ext = motive_ext)
+      } else
+        rec._2.head
+    }
 
     spark.createDataFrame(unionData)
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
-    spark.sql(
-      """
-        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
-      """.stripMargin.format(table, date, hour, table, date, hour))
+
     println("union done")
 
+    createSuccessMarkHDFSFile(date, hour, "union_done") //创建成功标记文件
+
+
+    /**
+      * cpc_union_trace_log
+      */
     val traceData = prepareSourceString(spark, "cpc_trace_new", prefix + "cpc_trace" + suffix, hourBefore, 2)
     if (traceData != null) {
       val trace = traceData.map(x => LogParser.parseTraceLog(x))
@@ -248,39 +274,65 @@ object MergeLog {
           x =>
             x._2._1.copy(search_timestamp = x._2._2, date = date, hour = hour)
         }
+
       spark.createDataFrame(trace1)
         .write
         .mode(SaveMode.Overwrite)
         .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(traceTbl, date, hour))
-      spark.sql(
-        """
-          |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-          | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
-        """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
+
       println("trace_join done")
+
+      createSuccessMarkHDFSFile(date, hour, "union_trace_done") //创建成功标记文件
     }
 
 
+    /**
+      * cpc_all_trace_log
+      */
     val traceall = prepareSourceString(spark, "cpc_trace_new", prefix + "cpc_trace" + suffix, hourBefore, 1)
       .map(x => LogParser.parseTraceLog(x))
       .filter(_ != null)
       .map(_.copy(date = date, hour = hour))
+
     spark.createDataFrame(traceall)
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(allTraceTbl, date, hour))
+
+    println("trace_all done")
+
+
+    for (i <- 0 until 50) {
+      println("-")
+    }
+    println("MergeLog_done")
+
+
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+      """.stripMargin.format(table, date, hour, table, date, hour))
+
+    println("add partition union log done")
+
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+      """.stripMargin.format(traceTbl, date, hour, traceTbl, date, hour))
+
+    println("add partition union trace log done")
+
     spark.sql(
       """
         |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
         | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
       """.stripMargin.format(allTraceTbl, date, hour, allTraceTbl, date, hour))
-    println("trace_all done")
 
+    println("add partition all trace log done")
     spark.stop()
-    for (i <- 0 until 50) {
-      println("-")
-    }
-    println("MergeLog_done")
+
   }
 
   val schema = StructType(Array(
@@ -294,23 +346,27 @@ object MergeLog {
         StructField("string_type", StringType, true))), true), true)))
 
   /*
-  cpc_search cpc_show cpc_click cpc_trace cpc_charge
+    cpc_search cpc_show cpc_click cpc_trace cpc_charge
+
+    spark, "cpc_search_new", "src_cpc_search_minute", hourBefore, 1
+    spark, "cpc_show_new", "src_cpc_show_minute", hourBefore, 2
+    读取数据
    */
   def prepareSourceString(ctx: SparkSession, key: String, src: String, hourBefore: Int, hours: Int): rdd.RDD[String] = {
     val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourPath(hourBefore, hours)) ///gobblin/source/cpc/cpc_search/{05,06...}
-    println(input)
+    println(input) // /warehouse/dl_cpc.db/src_cpc_search_minute/{2018-06-26/08}/*
     val readData = ctx.read
       .parquet(input)
       .rdd
       .map {
         rec =>
           //val s = r.getMap[String, Row](2).getOrElse(key, null)
-          val s = rec.getAs[Map[String, Row]]("field").getOrElse(key, null)
-          val timestamp = rec.getAs[Long]("log_timestamp")
+          val s = rec.getAs[Map[String, Row]]("field").getOrElse(key, null) // key='cpc_search_new',..
+        val timestamp = rec.getAs[Long]("log_timestamp")
 
-          if (s == null) {
+          if (s == null) { //没有key 'cpc_search_new'
             null
-          } else {
+          } else { //有
             if (key == "cpc_show_new") {
               timestamp + s.getAs[String]("string_type")
             }
@@ -338,16 +394,49 @@ object MergeLog {
       .filter(x => x != null && x.searchid.length > 5)
   }
 
+  //获取 {yyyy-MM-dd/HH,yyyy-MM-dd/HH}
   def getDateHourPath(hourBefore: Int, hours: Int): String = {
     val cal = Calendar.getInstance()
-    cal.setTime(g_date)
+    cal.setTime(g_date) //当前日期
     val parts = new Array[String](hours)
-    cal.add(Calendar.HOUR, -hourBefore)
+    cal.add(Calendar.HOUR, -hourBefore) //前一个小时 时间
     for (h <- 0 until hours) {
-      parts(h) = partitionPathFormat.format(cal.getTime)
+      parts(h) = partitionPathFormat.format(cal.getTime) //yyyy-MM-dd/HH
       cal.add(Calendar.HOUR, 1)
     }
     "{" + parts.mkString(",") + "}"
+  }
+
+  /**
+    * 在hdfs上创建成功标记文件；unionlog, uniontracelog合并成功的标记文件
+    *
+    * @param mark
+    */
+  def createSuccessMarkHDFSFile(date: String, hour: String, mark: String): Unit = {
+    val fileName = "/warehouse/cpc/%s/%s-%s.ok".format(mark, date, hour)
+    val path = new Path(fileName)
+
+    //get object conf
+    val conf = new Configuration()
+    //get FileSystem
+    val fileSystem = FileSystem.newInstance(conf)
+
+    try {
+      val success = fileSystem.createNewFile(path)
+      if (success) {
+        println("create file success")
+      }
+    } catch {
+      case e: IOException => e.printStackTrace()
+    } finally {
+      try {
+        if (fileSystem != null) {
+          fileSystem.close()
+        }
+      } catch {
+        case e: IOException => e.printStackTrace()
+      }
+    }
   }
 
   case class SrcExtValue(int_type: Int = 0, long_type: Long = 0, float_type: Float = 0, string_type: String = "")
