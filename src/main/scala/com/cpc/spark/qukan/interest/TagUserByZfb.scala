@@ -64,6 +64,7 @@ object TagUserByZfb {
           var age_r = 0  //sex插入个数
           var age_m = 0  //age冲突个数
           var sex_m = 0  //sex冲突个数
+          var add_224 = 0
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           val loop = new Breaks
 
@@ -102,6 +103,9 @@ object TagUserByZfb {
                 }
                 user.addInterestedWords(in)
                 if (!has) {
+                  if (in.getTag == 224) {
+                    add_224 += 1
+                  }
                   age_n += 1
                 }
                 if (conflict) {
@@ -117,10 +121,10 @@ object TagUserByZfb {
                 redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
-          Seq((age_n, age_m, sex_m, age_r)).iterator
+          Seq((age_n, age_m, sex_m, age_r, add_224)).iterator
       }
-      .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3,x._4 + y._4))
-    println("age_newupdate:" + sum._1+ " age_conflict:" + sum._2 + " sex_conflict:" + sum._3 + " age_both_taged:" + sum._4)
+      .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3,x._4 + y._4, x._5 + y._5))
+    println("age_newupdate:" + sum._1+ " age_conflict:" + sum._2 + " sex_conflict:" + sum._3 + " age_both_taged:" + sum._4 + "add_244:" + sum._5)
 
   }
 
