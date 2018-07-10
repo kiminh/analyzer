@@ -167,8 +167,12 @@ object CpcStreamingLogParser3 {
 
 
     var date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
+
     base_data.foreachRDD {
       rs =>
+        val startDate =new Date().getTime
+        println("UnionLog startDate:"+startDate)  //用于实时流报警，超过10min就报警(发emain)
+
         val keys = rs.map {
           x =>
             (x.thedate, x.thehour, x.theminute)
