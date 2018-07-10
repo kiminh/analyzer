@@ -51,10 +51,10 @@ object CheckUserApp {
 
       }
       .filter(_ != null)
-    println(sample.filter(x => x._3 < 22))
-    println(sample.filter(x => x._3 < 22 && x._2 < 10))
-    println(sample.filter(x => x._3 >= 22))
-    println(sample.filter(x => x._3 >= 22 && x._2 < 10))
+    println(sample.filter(x => x._3 < 22).count())
+    println(sample.filter(x => x._3 < 22 && x._2 < 10).count())
+    println(sample.filter(x => x._3 >= 22).count())
+    println(sample.filter(x => x._3 >= 22 && x._2 < 10).count())
   }
 
 }
