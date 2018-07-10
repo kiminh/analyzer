@@ -170,8 +170,8 @@ object CpcStreamingLogParser3 {
 
     base_data.foreachRDD {
       rs =>
-        val startDate =new Date().getTime
-        println("Every Batch of DStream startDate:"+startDate)  //用于实时流报警，超过10min就报警(发emain)
+        val startDate = new Date().getTime
+        println("Every Batch of DStream startDate:" + startDate) //用于实时流报警，超过10min就报警(发emain)
 
         val keys = rs.map {
           x =>
@@ -217,19 +217,19 @@ object CpcStreamingLogParser3 {
                 System.exit(1)
               }
 
-//              spark.createDataFrame(parserLogData)
-//                .write
-//                .mode(SaveMode.Append)
-//                .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
-//
-//              val sqlStmt =
-//                """
-//                  |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
-//                  |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
-//                  |
-//                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
-//              println(sqlStmt)
-//              spark.sql(sqlStmt)
+              //              spark.createDataFrame(parserLogData)
+              //                .write
+              //                .mode(SaveMode.Append)
+              //                .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
+              //
+              //              val sqlStmt =
+              //                """
+              //                  |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
+              //                  |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
+              //                  |
+              //                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
+              //              println(sqlStmt)
+              //              spark.sql(sqlStmt)
 
             }
         }
@@ -304,20 +304,20 @@ object CpcStreamingLogParser3 {
     val searchRDD = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
     val parsedLog = searchRDD.filter(_ != null)
 
-//    if (topic == "cpc_search_new") { //search
-//      val searchRDD = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
-//      val parsedLog = searchRDD.filter(_ != null)
-//
-//    } else if (topic == "cpc_show_new") { //show
-//      val parsedLog = srcDataRdd.map(x => LogParser.parseShowLog_v2(x))
-//
-//    } else if (topic == "cpc_click_new") { //click
-//      val parsedLog = srcDataRdd.map { x => LogParser.parseClickLog_v2(x) }
-//
-//    } else {
-//      System.err.println("Can not judge the key of the field.")
-//      System.exit(1)
-//    }
+    //    if (topic == "cpc_search_new") { //search
+    //      val searchRDD = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
+    //      val parsedLog = searchRDD.filter(_ != null)
+    //
+    //    } else if (topic == "cpc_show_new") { //show
+    //      val parsedLog = srcDataRdd.map(x => LogParser.parseShowLog_v2(x))
+    //
+    //    } else if (topic == "cpc_click_new") { //click
+    //      val parsedLog = srcDataRdd.map { x => LogParser.parseClickLog_v2(x) }
+    //
+    //    } else {
+    //      System.err.println("Can not judge the key of the field.")
+    //      System.exit(1)
+    //    }
 
     spark.createDataFrame(parsedLog)
       .write
@@ -336,7 +336,7 @@ object CpcStreamingLogParser3 {
 
   def getParsedShowLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
 
-    println("~~~~~~~~~"+part.count()+"~~"+topic+"~~"+table+"~~"+key)
+    println("~~~~~~~~~" + part.count() + "~~" + topic + "~~" + table + "~~" + key)
     //获取log
     val srcDataRdd = part.map {
       x =>
@@ -346,11 +346,17 @@ object CpcStreamingLogParser3 {
         else x.field.getOrElse(topic, null).string_type
     }.filter(_ != null)
 
-    //根据不同类型的日志，调用不同的函数进行解析
-    val parsedLog = srcDataRdd.map { x => LogParser.parseShowLog_v2(x)}
+    /*
+      根据不同类型的日志，调用不同的函数进行解析
 
-    parsedLog.take(1).foreach(x=>println(x))
-    println("##########debug##############")
+      Null value appeared in non-nullable field
+      java.lang.NullPointerException: Null value appeared in non-nullable field: top level row object
+      If the schema is inferred from a Scala tuple/case class, or a Java bean, please try to use
+      scala.Option[_] or other nullable types (e.g. java.lang.Integer instead of int/scala.Int).
+
+      解决方法： 过滤null值
+     */
+    val parsedLog = srcDataRdd.map { x => LogParser.parseShowLog_v2(x) }.filter(_ != null)
 
     spark.createDataFrame(parsedLog)
       .write
@@ -380,7 +386,7 @@ object CpcStreamingLogParser3 {
     }.filter(_ != null)
 
     //根据不同类型的日志，调用不同的函数进行解析
-    val parsedLog = srcDataRdd.map(x => LogParser.parseClickLog_v2(x))
+    val parsedLog = srcDataRdd.map(x => LogParser.parseClickLog_v2(x)).filter(_!=null)
 
     spark.createDataFrame(parsedLog)
       .write

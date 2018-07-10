@@ -553,13 +553,13 @@ object LogParser {
       if (event.getBody.getSearchId.length > 0) {
         val body = event.getBody
         val extra = event.getExtra
-        val ext = mutable.Map[String, ExtValue]()
-        ext.update("touch_x", ExtValue(int_value = extra.getTouchX))
-        ext.update("touch_y", ExtValue(int_value = extra.getTouchY))
-        ext.update("slot_width", ExtValue(int_value = extra.getWidth))
-        ext.update("slot_height", ExtValue(int_value = extra.getHeight))
-        ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
-        ext.update("click_ua", ExtValue(string_value = body.getAction.getUserAgent))
+//        val ext = mutable.Map[String, ExtValue]()
+//        ext.update("touch_x", ExtValue(int_value = extra.getTouchX))
+//        ext.update("touch_y", ExtValue(int_value = extra.getTouchY))
+//        ext.update("slot_width", ExtValue(int_value = extra.getWidth))
+//        ext.update("slot_height", ExtValue(int_value = extra.getHeight))
+//        ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
+//        ext.update("click_ua", ExtValue(string_value = body.getAction.getUserAgent))
         log = ParsedClickLog(
           searchid = body.getSearchId,
           isclick = 1,
@@ -568,7 +568,14 @@ object LogParser {
           antispam_score = body.getAntispam.getScore,
           antispam_rules = body.getAntispam.getRulesList.toArray.mkString(","),
           click_ip = LongToIPv4(body.getEventIp.toLong),
-          ext = ext.toMap
+          touch_x=extra.getTouchX,
+          touch_y=extra.getTouchY,
+          slot_width=extra.getWidth,
+          slot_height=extra.getHeight,
+          antispam_predict=body.getAntispam.getPredict,
+          click_ua=body.getAction.getUserAgent
+
+//          ext = ext.toMap
         )
       }
     }

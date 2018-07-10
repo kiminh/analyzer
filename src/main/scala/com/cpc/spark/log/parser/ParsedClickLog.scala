@@ -7,8 +7,15 @@ package com.cpc.spark.log.parser
   * @param isclick
   * @param ideaid
   * @param click_timestamp
+  * @param antispam_score
+  * @param antispam_rules
   * @param click_ip
-  * @param ext
+  * @param touch_x
+  * @param touch_y
+  * @param slot_width
+  * @param slot_height
+  * @param antispam_predict
+  * @param click_ua
   */
 case class ParsedClickLog(
                            var searchid: String = "",
@@ -18,15 +25,15 @@ case class ParsedClickLog(
                            var antispam_score: Int = 0,
                            var antispam_rules: String = "",
                            var click_ip: String = "",
-                           var ext: collection.Map[String, ExtValue] = null
+                           var touch_x: Int = 0,
+                           var touch_y: Int = 0,
+                           var slot_width: Int = 0,
+                           var slot_height: Int = 0,
+                           var antispam_predict: Float = 0,
+                           var click_ua: String = ""
+
+//                           var ext: collection.Map[String, ExtValue] = null
                          ) {
-  def spamClick(): Int = {
-    if (ext != null) {
-      ext.getOrElse("spam_click", ExtValue()).int_value
-    } else {
-      0
-    }
-  }
 
   def isSpamClick(): Int = {
     if (antispam_score < 10000 && isclick > 0) {
