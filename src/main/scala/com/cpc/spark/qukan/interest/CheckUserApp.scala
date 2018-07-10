@@ -43,6 +43,12 @@ object CheckUserApp {
           val did = r.getAs[String]("did")
           val apps = r.getAs[Seq[Row]]("apps")
           val birth = r.getAs[Int]("birth")
+          var count = 0
+          apps.map {
+            r =>
+              val idx = r.getAs[Seq[Row]](1)
+              (idx)
+          }
           if (apps != null) {
             (did, apps.length, birth)
           } else {
@@ -55,6 +61,11 @@ object CheckUserApp {
     println(sample.filter(x => x._3 < 22 && x._2 < 10).count())
     println(sample.filter(x => x._3 >= 22).count())
     println(sample.filter(x => x._3 >= 22 && x._2 < 10).count())
+
+    sample.filter(x => x._3 < 22 && x._2 < 10).take(10).foreach(println)
+    println("#####")
+    println(sample.filter(x => x._3 < 22 && x._2 > 15).count())
+    sample.filter(x => x._3 < 22 && x._2 > 15).take(10).foreach(println)
   }
 
 }
