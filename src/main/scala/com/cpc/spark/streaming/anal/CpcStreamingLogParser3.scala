@@ -171,7 +171,7 @@ object CpcStreamingLogParser3 {
     base_data.foreachRDD {
       rs =>
         val startDate =new Date().getTime
-        println("UnionLog startDate:"+startDate)  //用于实时流报警，超过10min就报警(发emain)
+        println("Every Batch of DStream startDate:"+startDate)  //用于实时流报警，超过10min就报警(发emain)
 
         val keys = rs.map {
           x =>
