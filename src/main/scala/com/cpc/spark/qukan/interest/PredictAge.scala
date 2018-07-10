@@ -12,6 +12,7 @@ import scala.util.control._
 import ml.dmlc.xgboost4j.scala.spark._
 
 import scala.collection.mutable
+import userprofile.Userprofile.{InterestItem, UserProfile}
 
 /**
   * Created by roydong on 11/06/2018.
