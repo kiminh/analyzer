@@ -301,7 +301,7 @@ object MergeLog {
 
     println("trace_all done")
 
-    spark.stop()
+
     for (i <- 0 until 50) {
       println("-")
     }
@@ -331,6 +331,7 @@ object MergeLog {
       """.stripMargin.format(allTraceTbl, date, hour, allTraceTbl, date, hour))
 
     println("add partition all trace log done")
+    spark.stop()
 
   }
 
