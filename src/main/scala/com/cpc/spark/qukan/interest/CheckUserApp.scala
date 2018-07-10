@@ -43,9 +43,9 @@ object CheckUserApp {
           val did = r.getAs[String]("did")
           val apps = r.getAs[Seq[Row]]("apps")
           val birth = r.getAs[Int]("birth")
-          
+
           if (apps != null) {
-            (did, apps.length, birth)
+            (did, apps.length, birth, apps)
           } else {
             null
           }
