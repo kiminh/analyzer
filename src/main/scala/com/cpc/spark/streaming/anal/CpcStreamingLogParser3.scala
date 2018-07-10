@@ -335,6 +335,7 @@ object CpcStreamingLogParser3 {
   }
 
   def getParsedShowLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
+    println("~~~~~~~~~"+topic+"~~"+table+"~~"+key)
     //获取log
     val srcDataRdd = part.map {
       x =>
@@ -347,10 +348,15 @@ object CpcStreamingLogParser3 {
     //根据不同类型的日志，调用不同的函数进行解析
     val parsedLog = srcDataRdd.map { x => LogParser.parseShowLog_v2(x)}
 
+    parsedLog.take(1).foreach(x=>println(x))
+    println("##########debug##############")
+
     spark.createDataFrame(parsedLog)
       .write
       .mode(SaveMode.Append)
       .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
+
+    println("@@@@@@@@@debug##############")
 
     val sqlStmt =
       """
