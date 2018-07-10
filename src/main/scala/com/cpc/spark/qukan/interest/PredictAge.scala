@@ -131,7 +131,7 @@ object PredictAge {
                 age = 224
                 count_224 += 1
               }
-              if (buffer != null && age != 0) {
+              if (buffer != null) {
 
                 val user = UserProfile.parseFrom(buffer).toBuilder
                 val in = InterestItem.newBuilder()
@@ -163,16 +163,17 @@ object PredictAge {
                   }
                 }
                 if (in.getTag != 0) {
-                  user.addInterestedWords(in)
                   if (!has) {
                     insert += 1
-                  } else if (age_224 && age_225) {
-                    both_taged += 1
                   } else if (conflict) {
                     revert += 1
                   }
-                  //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                  user.addInterestedWords(in)
                 }
+                if (age_224 && age_225) {
+                  both_taged += 1
+                }
+                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
           bbst = bbst + "%d ".format(insert) + "%d ".format(revert) + "%d ".format(both_taged) + "%d ".format(total)
