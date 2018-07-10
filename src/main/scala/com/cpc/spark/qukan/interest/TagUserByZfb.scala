@@ -41,7 +41,7 @@ object TagUserByZfb {
       r =>
         val did = r.getAs[String]("did")
         val s_sex = r.getAs[String]("sex")
-        val birth = (2018 - r.getAs[String]("birth").toInt) / 10000
+        val birth = 2018 - (r.getAs[String]("birth").toInt / 10000)
         var age = 224
         if (birth < 22) {
           age = 224
