@@ -445,7 +445,8 @@ object LogParser {
   }
 
   /**
-    * 解析 Show log
+    * 解析 Show log;
+    * 将ext拆开;
     *
     * @param txt 序列化的日志
     * @return ParsedShowLog对象
@@ -456,18 +457,25 @@ object LogParser {
     val data = Event.parse_show_log(txt)
     if (data != null) {
       val body = data.event
-      val ext = mutable.Map[String, ExtValue]()
-      ext.update("show_refer", ExtValue(string_value = data.refer))
-      ext.update("show_ua", ExtValue(string_value = data.ua))
-      ext.update("video_show_time", ExtValue(int_value = body.getShowTime)) //video_show_time
-      ext.update("charge_type", ExtValue(int_value = body.getCharge.getType.getNumber))
+
+//      val ext = mutable.Map[String, ExtValue]()
+//      ext.update("show_refer", ExtValue(string_value = data.refer))
+//      ext.update("show_ua", ExtValue(string_value = data.ua))
+//      ext.update("video_show_time", ExtValue(int_value = body.getShowTime)) //video_show_time
+//      ext.update("charge_type", ExtValue(int_value = body.getCharge.getType.getNumber))
+
       log = ParsedShowLog(
         searchid = body.getSearchId,
         isshow = 1,
         ideaid = body.getAd.getUnitId,
         show_timestamp = data.timestamp,
         show_ip = data.ip,
-        ext = ext
+        show_refer=data.refer,
+        show_ua =data.ua,
+        video_show_time=body.getShowTime,
+        charge_type=body.getCharge.getType.getNumber
+
+//        ext=ext
       )
     }
     log

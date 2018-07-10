@@ -19,7 +19,7 @@ case class ParsedClickLog(
                            var antispam_rules: String = "",
                            var click_ip: String = "",
                            var ext: collection.Map[String, ExtValue] = null
-                         ) extends CommonLog {
+                         ) {
   def spamClick(): Int = {
     if (ext != null) {
       ext.getOrElse("spam_click", ExtValue()).int_value

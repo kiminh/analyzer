@@ -353,7 +353,6 @@ object CpcStreamingLogParser3 {
     println("##########debug##############")
 
     spark.createDataFrame(parsedLog)
-      .toDF("searchid", "isshow", "ideaid", "show_timestamp","show_ip" ,"ext" , "thedate", "thehour", "theminute")
       .write
       .mode(SaveMode.Append)
       .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))

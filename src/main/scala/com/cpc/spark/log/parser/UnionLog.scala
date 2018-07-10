@@ -63,7 +63,7 @@ case class UnionLog(
                      var motive_ext: Seq[Map[String, String]] = null,
                      var date: String = "",
                      var hour: String = ""
-                   ) extends CommonLog {
+                   ) {
 
   def spamClick(): Int = {
     if (ext != null) {
