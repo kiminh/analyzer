@@ -18,8 +18,10 @@ import userprofile.Userprofile.{InterestItem, UserProfile}
   * Created by roydong on 11/06/2018.
   */
 object PredictAge {
-
   val words_fnum = 41e4
+  val word_num = 44e4
+  val app_num = 1000
+  val hour_num = 24
   val leaf_num = 64
   val round_num = 50
   def main(args: Array[String]): Unit = {
@@ -38,23 +40,38 @@ object PredictAge {
           val did = r.getAs[String]("did")
           val brand = r.getAs[Int]("brand")
           val apps = r.getAs[Seq[Row]]("apps")
-
-          val size = 1002
+          val score = r.getAs[Double]("score")
+          val w_els = r.getAs[Seq[Row]]("els")
+          val hour = r.getAs[Seq[Row]]("hour")
+          val sum = r.getAs[Double]("sum")
           var els = Seq[(Int, Double)]()
-          if (apps != null && apps.length > 0) {
-            apps.foreach {
-              app =>
-                els = els :+ (app.getInt(1), 1d)
-            }
+          val size = word_num + app_num + hour_num
 
-          }
-          if (brand != null) {
-            els = els :+ (1000, brand * 1d)
+          if (w_els != null) {
+            els = els ++ w_els.map{x => (x.getAs[Int](0), x.getAs[Double](1))}
           }
           if (apps != null) {
-            els = els :+ (1001, brand * 1d)
+            apps.foreach {
+              app =>
+                els = els :+ ((app.getInt(1) + word_num).toInt, 1d)
+            }
           }
-          val vec = Vectors.sparse(size.toInt, els)
+          if (hour != null) {
+            hour.map{x => (x.getAs[Int](0), x.getAs[Double](1))}.foreach {
+              h =>
+                els = els :+ ((h._1 + word_num + app_num).toInt, h._2 / sum)
+            }
+          }
+          if (brand != null) {
+            els = els :+ (size.toInt, brand * 1d)
+          }
+          if (score != null) {
+            els = els :+ ((size + 1).toInt, score)
+          }
+          if (apps != null) {
+            els = els :+ ((size + 2).toInt, apps.length.toDouble)
+          }
+          val vec = Vectors.sparse((size + 3).toInt, els)
           (did, vec)
       }
       .toDF("did", "features")
@@ -87,7 +104,7 @@ object PredictAge {
         val did = r.getAs[String]("did")
         val score = r.getAs[Vector]("probability").toArray
         (did, score(1))
-    }.filter(x => x._2 > m)
+    }
     predict.take(10).foreach(println)
     val sum =  predict.repartition(500)
       .mapPartitions {
@@ -106,15 +123,16 @@ object PredictAge {
               total += 1
               val key = r._1 + "_UPDATA"
               val buffer = redis.get[Array[Byte]](key).getOrElse(null)
-              if (buffer != null) {
-                var age = 0
-                if (r._2 > m) {
-                  age = 225
-                  count_225 += 1
-                } else if (r._2 < f){
-                  age = 224
-                  count_224 += 1
-                }
+              var age = 0
+              if (r._2 > m) {
+                age = 225
+                count_225 += 1
+              } else if (r._2 < f){
+                age = 224
+                count_224 += 1
+              }
+              if (buffer != null && age != 0) {
+
                 val user = UserProfile.parseFrom(buffer).toBuilder
                 val in = InterestItem.newBuilder()
                   .setTag(age)
