@@ -7,8 +7,11 @@ import org.apache.spark.ml.linalg.{Vector, Vectors}
 import org.apache.spark.sql.{Row, SparkSession}
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
-import userprofile.Userprofile.{InterestItem, UserProfile}
+
 import scala.util.control._
+import ml.dmlc.xgboost4j.scala.spark._
+
+import scala.collection.mutable
 
 /**
   * Created by roydong on 11/06/2018.
@@ -16,7 +19,8 @@ import scala.util.control._
 object PredictAge {
 
   val words_fnum = 41e4
-
+  val leaf_num = 64
+  val round_num = 50
   def main(args: Array[String]): Unit = {
     val days = args(0).toInt
     val spark = SparkSession.builder()
@@ -56,9 +60,22 @@ object PredictAge {
 
     println(sample.count())
     sample.rdd.take(10).foreach(println)
-    var lr: LogisticRegressionModel = null
-    lr = LogisticRegressionModel.load("/user/cpc/qtt-age-model/%s".format(days))
-    val result = lr.transform(sample)
+    val lr = LogisticRegressionModel.load("/user/cpc/qtt-age-lrmodel/%s".format(days))
+    val xgb = XGBoostModel.load("/user/cpc/qtt-age-xgmodel/%s".format(days))
+    val xg_result = xgb.transformLeaf(sample)
+    val lr_input = xg_result.rdd.map {
+      r =>
+        val did = r.getAs[String]("did")
+        val leaf = r.getAs[mutable.WrappedArray[Float]](2).toArray
+        var n_els = Seq[(Int, Double)]()
+
+        for (i <- 0 to round_num - 1) {
+          n_els = n_els :+ ((i * leaf_num + leaf(i)).toInt, 1d)
+        }
+        var vec = Vectors.sparse((leaf_num * round_num), n_els)
+        (did, vec)
+    }.toDF("did", "features")
+    val result = lr.transform(lr_input)
     val f = args(1).toDouble
     val m = args(2).toDouble
     val conf = ConfigFactory.load()
@@ -135,7 +152,7 @@ object PredictAge {
                   } else if (conflict) {
                     revert += 1
                   }
-                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                  //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
                 }
               }
           }
