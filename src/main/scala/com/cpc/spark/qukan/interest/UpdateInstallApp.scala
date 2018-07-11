@@ -53,7 +53,7 @@ object UpdateInstallApp {
         |select trace_op1, trace_op2, trace_op3 from dl_cpc.cpc_all_trace_log where `date` = "%s" and trace_type = "%s"
       """.stripMargin.format(date, "app_list")
     println(stmt)
-    val all_list = spark.sql(stmt).rdd.map {
+    val all_list = spark.sql(stmt).rdd.take(10).map {
       r =>
         val op_type = r.getAs[String](0)
         val did = r.getAs[String](1)
@@ -67,6 +67,7 @@ object UpdateInstallApp {
             case None => null
           }
           if (in != null) {
+            println("###" + parse(in))
             val apps = for {
               JArray(pkgs) <- parse(in)
               JObject(pkg) <- pkgs
