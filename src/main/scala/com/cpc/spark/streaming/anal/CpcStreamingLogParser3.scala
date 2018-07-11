@@ -35,7 +35,7 @@ object CpcStreamingLogParser3 {
   val offsetRedis = new OffsetRedis()
   offsetRedis.setRedisKey("PARSED_LOG_KAFKA_OFFSET")
 
-  val data2Kafka=new Data2Kafka()
+  val data2Kafka = new Data2Kafka()
 
   def main(args: Array[String]) {
     if (args.length < 4) {
@@ -175,15 +175,11 @@ object CpcStreamingLogParser3 {
 
     base_data.foreachRDD {
       rs =>
-        //val startDate = new Date().getTime
-        //println("Every Batch of DStream startDate:" + startDate) //用于实时流报警，超过10min就报警(发emain)
-
         val keys = rs.map {
           x =>
             (x.thedate, x.thehour, x.theminute)
         }
           .distinct().toLocalIterator
-
 
         keys.foreach { //(日期，小时)
           key =>
@@ -208,13 +204,13 @@ object CpcStreamingLogParser3 {
                 *
                 */
               if (topicKey == "cpc_search_new") { //search
-                getParsedSearchLog(part, topicKey, spark, table, key)
+                getParsedSearchLog(part, topicKey, spark, table, key, brokers)
 
               } else if (topicKey == "cpc_show_new") { //show
                 getParsedShowLog(part, topicKey, spark, table, key, brokers)
 
               } else if (topicKey == "cpc_click_new") { //click
-                getParsedClickLog(part, topicKey, spark, table, key)
+                getParsedClickLog(part, topicKey, spark, table, key, brokers)
 
               } else {
                 System.err.println("Can not judge the key of the field.")
@@ -237,6 +233,17 @@ object CpcStreamingLogParser3 {
 
             }
         }
+
+        /**
+          * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
+          */
+        val currentTime = new Date().getTime
+        val field=Seq[(String, String)](("topic",topics.split(",")(0)))
+
+        data2Kafka.clear()
+        data2Kafka.setMessage(currentTime,null,null,null,field)
+        data2Kafka.sendMessage(brokers, "cpc_realtime_parsedlog_warning")
+        data2Kafka.close()
     }
     //    if (allCount < 1e10) {
     //      Utils.sendMail("topic:%s, on time:%s, batch-size:%d".format(topics, date, allCount), "srcLog_empty", Seq("zhaoyichen@aiclk.com"))
@@ -294,14 +301,10 @@ object CpcStreamingLogParser3 {
     * @param part  DStream中的每个RDD
     * @param topic SrcLog对象中field字段的key，用于获取日志信息
     */
-  def getParsedSearchLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
+  def getParsedSearchLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String), brokers: String): Unit = {
     //获取log
     val srcDataRdd = part.map {
-      x =>
-        if (topic == "cpc_show_new") {
-          x.log_timestamp.toString + x.field.getOrElse(topic, null).string_type
-        }
-        else x.field.getOrElse(topic, null).string_type
+      x => x.field.getOrElse(topic, null).string_type
     }.filter(_ != null)
 
     //根据不同类型的日志，调用不同的函数进行解析
@@ -338,15 +341,11 @@ object CpcStreamingLogParser3 {
     spark.sql(sqlStmt)
   }
 
-  def getParsedShowLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String), brokers:String): Unit = {
+  def getParsedShowLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String), brokers: String): Unit = {
 
     //获取log
     val srcDataRdd = part.map {
-      x =>
-        if (topic == "cpc_show_new") {
-          x.log_timestamp.toString + x.field.getOrElse(topic, null).string_type
-        }
-        else x.field.getOrElse(topic, null).string_type
+      x => x.log_timestamp.toString + x.field.getOrElse(topic, null).string_type
     }.filter(_ != null)
 
     /*
@@ -375,31 +374,16 @@ object CpcStreamingLogParser3 {
                 """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
     println(sqlStmt)
     spark.sql(sqlStmt)
-
-    /**
-      * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
-      */
-//    val currentTime = new Date().getTime
-//    val field=Seq[(String, String)](("topic",topic))
-
-//    data2Kafka.clear()
-//    data2Kafka.setMessage(currentTime,null,null,null,field)
-//    data2Kafka.sendMessage(brokers, "cpc_realtime_parsedlog_warning")
-//    data2Kafka.close()
   }
 
-  def getParsedClickLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
+  def getParsedClickLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String), brokers: String): Unit = {
     //获取log
     val srcDataRdd = part.map {
-      x =>
-        if (topic == "cpc_show_new") {
-          x.log_timestamp.toString + x.field.getOrElse(topic, null).string_type
-        }
-        else x.field.getOrElse(topic, null).string_type
+      x => x.field.getOrElse(topic, null).string_type
     }.filter(_ != null)
 
     //根据不同类型的日志，调用不同的函数进行解析
-    val parsedLog = srcDataRdd.map(x => LogParser.parseClickLog_v2(x)).filter(_!=null)
+    val parsedLog = srcDataRdd.map(x => LogParser.parseClickLog_v2(x)).filter(_ != null)
 
     spark.createDataFrame(parsedLog)
       .write
@@ -414,12 +398,6 @@ object CpcStreamingLogParser3 {
                 """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
     println(sqlStmt)
     spark.sql(sqlStmt)
-
-    /*
-      报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
-     */
-
-
   }
 
 
