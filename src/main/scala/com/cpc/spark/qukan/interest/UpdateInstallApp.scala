@@ -1,36 +1,13 @@
 package com.cpc.spark.qukan.interest
 
-import java.io.{FileWriter, PrintWriter}
-import java.sql.{DriverManager, ResultSet}
 import java.text.SimpleDateFormat
-import java.util.{Calendar, Properties}
-import scala.util.parsing.json.JSON
+import java.util.Calendar
 
-import com.cpc.spark.common.Utils
-import com.cpc.spark.log.parser.{ExtValue, TraceLog, UnionLog}
-import com.cpc.spark.ml.train.LRIRModel
-import com.cpc.spark.qukan.parser.HdfsParser
-import com.hankcs.hanlp.HanLP
-import com.hankcs.hanlp.corpus.tag.Nature
-import com.typesafe.config.ConfigFactory
-import org.apache.spark.mllib.clustering.{KMeans, KMeansModel}
-import org.apache.spark.mllib.feature.{Word2Vec, Word2VecModel}
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
-import com.cpc.spark.streaming.tools.{Encoding, Gzip}
-
-import scala.io.Source
-import scala.collection.JavaConversions._
-import scala.collection.mutable
-import scala.util.Random
-import com.redis.serialization.Parse.Implicits._
-import com.redis.RedisClient
-import com.cpc.spark.qukan.parser.HdfsParser
-import javax.sound.sampled.AudioFormat.Encoding
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.json4s._
 import org.json4s.native.JsonMethods._
+
+
 
 /**
   * Created by YuntaoMa on 06/06/2018.
