@@ -67,13 +67,13 @@ object UpdateInstallApp {
             case None => null
           }
           if (in != null) {
-            println("###" + parse(in))
             val apps = for {
               JArray(pkgs) <- parse(in)
               JObject(pkg) <- pkgs
               JField("name", JString(name)) <- pkg
               JField("package_name", JString(package_name)) <- pkg
               p = (name, package_name)
+              println(name, package_name)
             } yield p
           }
         }
