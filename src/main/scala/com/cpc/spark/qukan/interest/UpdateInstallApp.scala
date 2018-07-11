@@ -65,7 +65,7 @@ object UpdateInstallApp {
         }
     }.filter(_ != null)
       .reduceByKey((x, y) => (x._1 ++ y._1, x._2 ++ y._2, x._3 ++ y._3))
-      .map(x => (x._1, x._2._3.distinct))
+      .map(x => (x._1, x._2._3.map(p => p._2).distinct))
         //.map(x => (x._1, x._2._1.distinct, x._2._2.distinct, x._2._3.distinct))
 
     all_list.take(10).foreach(println)
