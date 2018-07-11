@@ -62,13 +62,7 @@ object UpdateInstallApp {
         if (in_b64 != null) {
           val in_gzip = com.cpc.spark.streaming.tools.Encoding.base64Decoder(in_b64).toArray
           in = Gzip.decompress(in_gzip)
-          apps = for {
-            JObject(json) <- parse(in)
-            JField("name", JString(name)) <- json
-            JField("package_name", JString(package_name)) <- json
-
-            p = (name, package_name)
-          } yield p
+          apps = parse(in)
         }
         (op_type, did, apps)
     }
