@@ -38,6 +38,8 @@ object CpcStreamingLogParser3 {
 
   val data2Kafka = new Data2Kafka()
 
+  val cpc_realtime_parsedlog_warning="cpc_realtime_parsedlog_warning"
+
 
   def main(args: Array[String]) {
     if (args.length < 4) {
@@ -247,8 +249,8 @@ object CpcStreamingLogParser3 {
         val costTime = (currentBatchEndTime - currentBatchStartTime) / 60.0
 
         val message = "CurrentTime:" + currentBatchEndTime + ";Topic:" + (topics.split(",")(0)) + ";ProcessingTime:" + costTime.toString
-        println("@@@@" + message)
-        val keyedMessage = new KeyedMessage[String, Array[Byte]](topics.split(",")(0), message.getBytes)
+        println("@@@@@@@@" + message)
+        val keyedMessage = new KeyedMessage[String, Array[Byte]](cpc_realtime_parsedlog_warning, message.getBytes)
 
         if (producer == null) {
           producer = com.cpc.spark.streaming.tools.KafkaUtils.getProducer(brokers)
