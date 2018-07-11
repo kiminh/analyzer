@@ -380,7 +380,8 @@ object CpcStreamingLogParser3 {
       * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
       */
     val currentTime = new Date().getTime
-    val field=Seq[(String,String)]("topic", topic)
+    val
+    val field=Seq[(String, String)](("topic",topic))
 
     data2Kafka.clear()
     data2Kafka.setMessage(currentTime,null,null,null,field)
