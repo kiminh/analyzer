@@ -87,12 +87,14 @@ object UpdateInstallApp {
         }
     }.filter(_ != null)
       .reduceByKey((x, y) => (x._1 ++ y._1, x._2 ++ y._2, x._3 ++ y._3))
-        .map(x => (x._1, x._2._1.distinct, x._2._2.distinct, x._2._3.distinct))
+      .map(x => (x._1, x._2._3.distinct))
+        //.map(x => (x._1, x._2._1.distinct, x._2._2.distinct, x._2._3.distinct))
 
     all_list.take(10).foreach(println)
-    println(all_list.count())
-    println(all_list.filter(x => x._4.length > 5).count())
-    println(all_list.filter(x => x._4.length > 10).count())
+//    println(all_list.count())
+//    println(all_list.filter(x => x._4.length > 5).count())
+//    println(all_list.filter(x => x._4.length > 10).count())
+    all_list.toDF("did", "pkgs").write.mode(SaveMode.Overwrite).parquet("/user/cpc/traceInstalledApp/%s".format(days))
 
 
   }
