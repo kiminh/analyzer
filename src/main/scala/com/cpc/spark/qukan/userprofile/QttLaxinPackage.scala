@@ -40,6 +40,7 @@ object QttLaxinPackage {
       .mapPartitions {
         p =>
           var n = 0
+          var n1 = 0
           val conf = ConfigFactory.load()
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           p.foreach {
@@ -49,15 +50,18 @@ object QttLaxinPackage {
               if (buffer != null) {
                 val user = UserProfile.parseFrom(buffer).toBuilder
                 val qtt = user.getQttProfile.toBuilder
-                qtt.setDevid(x._1)
-                qtt.setLxType(x._2)
-                qtt.setLxPackage(x._3)
-                user.setQttProfile(qtt)
                 n = n + 1
-                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                if (qtt.getDevid != x._1 || qtt.getLxPackage != x._3) {
+                  qtt.setDevid(x._1)
+                  qtt.setLxType(x._2)
+                  qtt.setLxPackage(x._3)
+                  user.setQttProfile(qtt)
+                  n1 = n1 + 1
+                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                }
               }
           }
-          Seq(n).iterator
+          Seq(n1).iterator
       }
     println("update", sum.rdd.sum)
   }
