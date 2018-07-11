@@ -37,6 +37,7 @@ object CheckStudentTag {
       .appName("Tag user by zfb")
       .enableHiveSupport()
       .getOrCreate()
+    import spark.implicits._
 
     val conf = ConfigFactory.load()
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
