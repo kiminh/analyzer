@@ -91,6 +91,7 @@ object UpdateInstallApp {
 
     all_list.take(10).foreach(println)
     println(all_list.count())
+    println(all_list.filter(x => x._4.length > 5).count())
     println(all_list.filter(x => x._4.length > 10).count())
 
 
