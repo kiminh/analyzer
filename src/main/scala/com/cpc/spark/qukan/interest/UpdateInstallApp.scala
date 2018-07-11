@@ -53,7 +53,7 @@ object UpdateInstallApp {
         |select trace_op1, trace_op2, trace_op3 from dl_cpc.cpc_all_trace_log where `date` = "%s" and trace_type = "%s"
       """.stripMargin.format(date, "app_list")
     println(stmt)
-    val all_list = spark.sql(stmt).rdd.map {
+    val all_list = spark.sql(stmt).rdd.take(1000).map {
       r =>
         val op_type = r.getAs[String](0)
         val did = r.getAs[String](1)
@@ -63,13 +63,17 @@ object UpdateInstallApp {
         if (in_b64 != null) {
           val in_gzip = com.cpc.spark.streaming.tools.Encoding.base64Decoder(in_b64).toArray
           in = Gzip.decompress(in_gzip).toString
-//          val apps = for {
-//            JArray(pkgs) <- parse(in)
-//            JObject(pkg) <- pkgs
-//            JField("name", JString(name)) <- pkg
-//            JField("package_name", JString(package_name)) <- pkg
-//            p = (name, package_name)
-//          } yield p
+          try {
+            val apps = for {
+              JArray(pkgs) <- parse(in)
+              JObject(pkg) <- pkgs
+              JField("name", JString(name)) <- pkg
+              JField("package_name", JString(package_name)) <- pkg
+              p = (name, package_name)
+            } yield p
+          } catch {
+            case ex:org.json4s.ParserUtil.ParseException =>  println(in)
+          }
         }
         (op_type, did, apps, in)
     }
