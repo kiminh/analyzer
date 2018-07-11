@@ -11,11 +11,12 @@ import com.cpc.spark.qukan.parser.HdfsParser
 import com.hankcs.hanlp.HanLP
 import com.hankcs.hanlp.corpus.tag.Nature
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.mllib.clustering.{KMeans, KMeansModel}
-import org.apache.spark.mllib.feature.{Word2Vec, Word2VecModel}
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.spark.rdd.RDD
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
+import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.json4s._
+import org.json4s.native.JsonMethods._
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 import userprofile.Userprofile.{InterestItem, UserProfile}
 
@@ -77,15 +78,60 @@ object CheckStudentTag {
          }
        }
     }
-    val zfb = spark.read.parquet("/user/cpc/qtt-zfb/10").rdd
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.DATE, -10)
+    val sdate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    cal.add(Calendar.DATE, 10)
+    val edate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+
+    var stmt =
+      """
+        |select distinct member_id, info from  gobblin.qukan_member_zfb_log
+        | where update_time >= "2018-01-01" and member_id > 0
+      """.stripMargin
+
+    val zfb = spark.sql(stmt)
+    println(stmt, zfb.count(), zfb.first())
+
+    stmt =
+      """
+        |select distinct member_id,device_code as did from dl_cpc.qukan_p_member_info
+        |where day >= "%s" and day < "%s" and device_code = "%s"
+      """.stripMargin.format(sdate, edate, uid(0))
+
+    val qtt = spark.sql(stmt)
+    println(stmt, qtt.count(), qtt.first())
+
+    val data = qtt.join(zfb, Seq("member_id"))
       .map {
         r =>
           val did = r.getAs[String]("did")
-          val birth = r.getAs[String]("birth")
-          val sex = r.getAs[String]("sex")
-          (did, birth, sex)
-      }.filter(x => x._1 == "864320038318439")
-    println(zfb.count())
-    zfb.toLocalIterator.foreach(println)
+          val info = r.getAs[String]("info")
+
+          val rs:Seq[(String, String, String, String, String, String)] = for {
+            JObject(json) <- parse(info)
+            JField("city", JString(city)) <- json
+            JField("gender", JString(sex)) <- json
+            JField("is_student_certified", JString(isStudent)) <- json
+            JField("person_birthday", JString(birth)) <- json
+            JField("province", JString(province)) <- json
+
+            p = (did, sex, birth, isStudent, city, province)
+          } yield p
+
+          if (rs.length > 0) {
+            val v = rs.head
+            (v._1, v)
+          } else {
+            null
+          }
+      }
+      .filter(_ != null)
+      .rdd
+      .reduceByKey((x, y) => x)
+      .map(_._2)
+    println(data.count())
+    data.toLocalIterator.foreach(println)
+
   }
 }
