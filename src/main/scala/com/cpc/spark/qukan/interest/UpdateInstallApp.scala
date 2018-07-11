@@ -76,7 +76,7 @@ object UpdateInstallApp {
             } yield p
           }
         }
-        (op_type, did, apps)
+        (op_type, did, apps, in)
     }
 
     all_list.take(20).foreach(println)
