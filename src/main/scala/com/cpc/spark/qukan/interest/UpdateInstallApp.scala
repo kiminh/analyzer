@@ -35,9 +35,7 @@ import javax.sound.sampled.AudioFormat.Encoding
 
 object UpdateInstallApp {
   def main(args: Array[String]): Unit = {
-    val threshold = args(0).toInt
-    val hour = args(1).toInt
-    val time_span = args(2).toInt
+    val days = args(0).toInt
     val spark = SparkSession.builder()
       .appName("Tag bad uid")
       .enableHiveSupport()
@@ -51,7 +49,7 @@ object UpdateInstallApp {
       """
         |select trace_op1, trace_op2, trace_op3 from dl_cpc.cpc_all_trace_log where `date` = "%s" and trace_type = "%s"
       """.stripMargin.format(date, "app_list")
-
+    println(stmt)
     val all_list = spark.sql(stmt).rdd.map {
       r =>
         val op_type = r.getAs[String](0)
