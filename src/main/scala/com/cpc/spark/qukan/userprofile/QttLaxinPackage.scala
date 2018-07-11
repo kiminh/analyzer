@@ -20,43 +20,39 @@ object QttLaxinPackage {
     import spark.implicits._
 
     val date = args(0)
-
-    val sql =
-      """
-        |select device, is_nlx, lx_way, app_package from bdm.qukan_daily_new_uesr_p
-        |where day = "%s" and is_dubious = 0
-      """.stripMargin.format(date)
-
     val lxrdd = spark.read.parquet("/warehouse/bdm.db/qukan_daily_new_user_p/day=%s".format(date))
-    println(lxrdd.first())
+      .map {
+        r =>
+          val devid = r.getAs[String]("device")
+          val lxs = r.getAs[String]("is_nlx")
+          val pkg = r.getAs[Int]("app_package")
+          var lx = 0
+          if (lxs == "内拉新") {
+            lx = 1
+          } else if (lxs == "外拉新") {
+            lx = 2
+          }
+          (devid, lx, pkg)
+      }
+    
+    lxrdd.take(5).foreach(println)
 
-    val sum = spark.sql(sql).coalesce(200)
+    val sum = lxrdd.coalesce(200)
       .mapPartitions {
         p =>
           var n = 0
           val conf = ConfigFactory.load()
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           p.foreach {
-            r =>
-              val devid = r.getString(0)
-              val lxs = r.getString(1)
-              val pkg = r.getInt(3)
-
-              var lx = 0
-              if (lxs == "内拉新") {
-                lx = 1
-              } else if (lxs == "外拉新") {
-                lx = 2
-              }
-
-              val key = devid + "_UPDATA"
+            x =>
+              val key = x._1 + "_UPDATA"
               val buffer = redis.get[Array[Byte]](key).orNull
               if (buffer != null) {
                 val user = UserProfile.parseFrom(buffer).toBuilder
                 val qtt = user.getQttProfile.toBuilder
-                qtt.setDevid(devid)
-                qtt.setLxType(lx)
-                qtt.setLxPackage(pkg)
+                qtt.setDevid(x._1)
+                qtt.setLxType(x._2)
+                qtt.setLxPackage(x._3)
                 user.setQttProfile(qtt)
                 n = n + 1
                 //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
