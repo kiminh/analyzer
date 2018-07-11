@@ -14,8 +14,7 @@ object QttLaxinPackage {
   def main(args: Array[String]): Unit = {
 
     val spark = SparkSession.builder()
-      .appName("UserStudentTrain Model V1")
-      .config("spark.driver.maxResultSize", "40G")
+      .appName("qtt laxin package")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
