@@ -255,7 +255,7 @@ object CpcStreamingLogParser3 {
         if (producer == null) {
           producer = com.cpc.spark.streaming.tools.KafkaUtils.getProducer(brokers)
         }
-//        producer.send(keyedMessage)
+        producer.send(keyedMessage)
 //        if (producer != null) {
 //          producer.close()
 //        }
