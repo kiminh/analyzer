@@ -7,7 +7,7 @@ import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import com.cpc.spark.streaming.tools.{Encoding, Gzip}
-import spark.implicits._
+
 
 
 /**
@@ -21,7 +21,7 @@ object UpdateInstallApp {
       .appName("Tag bad uid")
       .enableHiveSupport()
       .getOrCreate()
-
+    import spark.implicits._
 
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -days)
