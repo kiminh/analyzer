@@ -1,3 +1,4 @@
+package com.cpc.spark.streaming.tools
 import java.io.{ByteArrayOutputStream, ByteArrayInputStream}
 import java.util.zip.{GZIPOutputStream, GZIPInputStream}
 
