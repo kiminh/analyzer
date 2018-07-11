@@ -34,9 +34,8 @@ object QttLaxinPackage {
           }
           (devid, lx, pkg)
       }
-    
-    lxrdd.take(5).foreach(println)
 
+    lxrdd.take(5).foreach(println)
     val sum = lxrdd.coalesce(200)
       .mapPartitions {
         p =>
@@ -55,12 +54,11 @@ object QttLaxinPackage {
                 qtt.setLxPackage(x._3)
                 user.setQttProfile(qtt)
                 n = n + 1
-                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
           Seq(n).iterator
       }
-
     println("update", sum.rdd.sum)
   }
 }
