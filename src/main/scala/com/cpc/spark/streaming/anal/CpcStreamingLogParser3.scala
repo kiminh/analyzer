@@ -204,13 +204,13 @@ object CpcStreamingLogParser3 {
                 *
                 */
               if (topicKey == "cpc_search_new") { //search
-                getParsedSearchLog(part, topicKey, spark, table, key, brokers)
+                getParsedSearchLog(part, topicKey, spark, table, key)
 
               } else if (topicKey == "cpc_show_new") { //show
-                getParsedShowLog(part, topicKey, spark, table, key, brokers)
+                getParsedShowLog(part, topicKey, spark, table, key)
 
               } else if (topicKey == "cpc_click_new") { //click
-                getParsedClickLog(part, topicKey, spark, table, key, brokers)
+                getParsedClickLog(part, topicKey, spark, table, key)
 
               } else {
                 System.err.println("Can not judge the key of the field.")
@@ -301,7 +301,7 @@ object CpcStreamingLogParser3 {
     * @param part  DStream中的每个RDD
     * @param topic SrcLog对象中field字段的key，用于获取日志信息
     */
-  def getParsedSearchLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String), brokers: String): Unit = {
+  def getParsedSearchLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
     //获取log
     val srcDataRdd = part.map {
       x => x.field.getOrElse(topic, null).string_type
@@ -341,7 +341,7 @@ object CpcStreamingLogParser3 {
     spark.sql(sqlStmt)
   }
 
-  def getParsedShowLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String), brokers: String): Unit = {
+  def getParsedShowLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
 
     //获取log
     val srcDataRdd = part.map {
@@ -376,7 +376,7 @@ object CpcStreamingLogParser3 {
     spark.sql(sqlStmt)
   }
 
-  def getParsedClickLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String), brokers: String): Unit = {
+  def getParsedClickLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
     //获取log
     val srcDataRdd = part.map {
       x => x.field.getOrElse(topic, null).string_type
