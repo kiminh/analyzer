@@ -4,6 +4,7 @@ import java.io.{FileWriter, PrintWriter}
 import java.sql.{DriverManager, ResultSet}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
+import scala.util.parsing.json.JSON
 
 import com.cpc.spark.common.Utils
 import com.cpc.spark.log.parser.{ExtValue, TraceLog, UnionLog}
@@ -62,10 +63,7 @@ object UpdateInstallApp {
         if (in_b64 != null) {
           val in_gzip = com.cpc.spark.streaming.tools.Encoding.base64Decoder(in_b64).toArray
           in = Gzip.decompress(in_gzip).toString
-          apps = for (i <- JObject(json) = parse(in)) {
-            JField("package_name", JString(package_name)) <- json
-            JField("name", JString(name)) <- json
-          }(yield (name, package_name))
+          val json = parse(in)
         }
         (op_type, did, apps)
     }
