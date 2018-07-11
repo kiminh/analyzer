@@ -57,11 +57,11 @@ object UpdateInstallApp {
         val op_type = r.getAs[String](0)
         val did = r.getAs[String](1)
         val in_b64 = r.getAs[String](2)
-        var in : Option[String] = Option[String]("")
+        var in : String = ""
         var apps = Seq[(String, String)]()
         if (in_b64 != null) {
           val in_gzip = com.cpc.spark.streaming.tools.Encoding.base64Decoder(in_b64).toArray
-          in = Gzip.decompress(in_gzip)
+          in = Gzip.decompress(in_gzip).toString
           apps = parse(in)
         }
         (op_type, did, apps)
