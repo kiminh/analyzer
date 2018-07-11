@@ -85,6 +85,7 @@ object CheckStudentTag {
           val sex = r.getAs[String]("sex")
           (did, birth, sex)
       }.filter(x => x._1 == uid)
+    println(zfb.count())
     zfb.toLocalIterator.foreach(println)
   }
 }
