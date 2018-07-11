@@ -27,6 +27,9 @@ object QttLaxinPackage {
         |where day = "%s" and is_dubious = 0
       """.stripMargin.format(date)
 
+    val lxrdd = spark.read.parquet("/warehouse/bdm.db/qukan_daily_new_user_p/day=%s".format(date))
+    println(lxrdd.first())
+
     val sum = spark.sql(sql).coalesce(200)
       .mapPartitions {
         p =>
