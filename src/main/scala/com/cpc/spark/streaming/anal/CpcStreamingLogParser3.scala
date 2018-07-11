@@ -4,6 +4,7 @@ import kafka.serializer.StringDecoder
 import kafka.serializer.DefaultDecoder
 import kafka.common.TopicAndPartition
 import kafka.message.MessageAndMetadata
+import kafka.producer.KeyedMessage
 import org.apache.spark.streaming._
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.apache.spark.streaming._
@@ -37,6 +38,7 @@ object CpcStreamingLogParser3 {
 
   val data2Kafka = new Data2Kafka()
 
+
   def main(args: Array[String]) {
     if (args.length < 4) {
       System.err.println(
@@ -56,6 +58,7 @@ object CpcStreamingLogParser3 {
     val topicsSet = topics.split(",").toSet
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
 
+    var producer = com.cpc.spark.streaming.tools.KafkaUtils.getProducer(brokers)
 
     val conf = ConfigFactory.load()
 
@@ -175,6 +178,9 @@ object CpcStreamingLogParser3 {
 
     base_data.foreachRDD {
       rs =>
+
+        var currentBatchStartTime = new Date().getTime
+
         val keys = rs.map {
           x =>
             (x.thedate, x.thehour, x.theminute)
@@ -237,13 +243,26 @@ object CpcStreamingLogParser3 {
         /**
           * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
           */
-        val currentTime = new Date().getTime
-        val field=Seq[(String, String)](("topic",topics.split(",")(0)))
+        val currentBatchEndTime = new Date().getTime
+        val costTime = (currentBatchEndTime - currentBatchStartTime) / 60
+        
+        val message = topics.split(",")(0) + " " + currentBatchEndTime.toString
+        val keyedMessage = new KeyedMessage[String, Array[Byte]](currentBatchEndTime.toString, message.getBytes)
 
-        data2Kafka.clear()
-        data2Kafka.setMessage(currentTime,null,null,null,field)
-        data2Kafka.sendMessage(brokers, "cpc_realtime_parsedlog_warning")
-        data2Kafka.close()
+        if (producer == null) {
+          producer = com.cpc.spark.streaming.tools.KafkaUtils.getProducer(brokers)
+        }
+        producer.send(keyedMessage)
+        if (producer != null) {
+          producer.close()
+        }
+
+      //        val field=Seq[(String, String)](("topic",topics.split(",")(0)))
+      //
+      //        data2Kafka.clear()
+      //        data2Kafka.setMessage(currentTime,null,null,null,field)
+      //        data2Kafka.sendMessage(brokers, "cpc_realtime_parsedlog_warning")
+      //        data2Kafka.close()
     }
     //    if (allCount < 1e10) {
     //      Utils.sendMail("topic:%s, on time:%s, batch-size:%d".format(topics, date, allCount), "srcLog_empty", Seq("zhaoyichen@aiclk.com"))
