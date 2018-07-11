@@ -80,10 +80,13 @@ object UpdateInstallApp {
           (did, (apps, Seq(), Seq()))
         } else if (op_type == "APP_LIST_REMOVE") {
           (did, (Seq(), apps, Seq()))
-        } else {
+        } else if (op_type == "APP_LIST_USE"){
           (did, (Seq(), Seq(), apps))
+        } else {
+          null
         }
-    }.reduceByKey((x, y) => (x._1 ++ y._1, x._2 ++ y._2, x._3 ++ y._3))
+    }.filter(_ != null)
+      .reduceByKey((x, y) => (x._1 ++ y._1, x._2 ++ y._2, x._3 ++ y._3))
         .map(x => (x._1, x._2._1.distinct, x._2._2.distinct, x._2._3.distinct))
 
     all_list.take(20).foreach(println)
