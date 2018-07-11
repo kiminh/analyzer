@@ -53,7 +53,7 @@ object UpdateInstallApp {
         |select trace_op1, trace_op2, trace_op3 from dl_cpc.cpc_all_trace_log where `date` = "%s" and trace_type = "%s"
       """.stripMargin.format(date, "app_list")
     println(stmt)
-    val all_list = spark.sql(stmt).rdd.take(10).map {
+    val all_list = spark.sql(stmt).rdd.map {
       r =>
         val op_type = r.getAs[String](0)
         val did = r.getAs[String](1)
@@ -76,8 +76,15 @@ object UpdateInstallApp {
             } yield p
           }
         }
-        (op_type, did, apps)
-    }
+        if (op_type == "APP_LIST_ADD") {
+          (did, (apps, Seq(), Seq()))
+        } else if (op_type == "APP_LIST_REMOVE") {
+          (did, (Seq(), apps, Seq()))
+        } else {
+          (did, (Seq(), Seq(), apps))
+        }
+    }.reduceByKey((x, y) => (x._1 ++ y._1, x._2 ++ y._2, x._3 ++ y._3))
+        .map(x => (x._1, x._2._1.distinct, x._2._2.distinct, x._2._3.distinct))
 
     all_list.take(20).foreach(println)
 
