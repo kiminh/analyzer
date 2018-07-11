@@ -166,7 +166,7 @@ object CpcStreamingLogParser3 {
             null
         }
     }
-      .filter(_ != null).repartition(500)
+      .filter(_ != null).repartition(1000)
 
     base_data.print()
 
