@@ -72,7 +72,7 @@ object UpdateInstallApp {
 //    println(all_list.count())
 //    println(all_list.filter(x => x._4.length > 5).count())
 //    println(all_list.filter(x => x._4.length > 10).count())
-    all_list.toDF("did", "pkgs").write.mode(SaveMode.Overwrite).parquet("/user/cpc/traceInstalledApp/%s".format(days))
+    all_list.toDF("uid", "pkgs").write.mode(SaveMode.Overwrite).parquet("/user/cpc/traceInstalledApp/%s".format(days))
 
 
   }
