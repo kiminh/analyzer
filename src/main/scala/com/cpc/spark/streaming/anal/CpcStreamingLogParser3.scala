@@ -244,18 +244,18 @@ object CpcStreamingLogParser3 {
           * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
           */
         val currentBatchEndTime = new Date().getTime
-        val costTime = (currentBatchEndTime - currentBatchStartTime) / 60
-        
-        val message = topics.split(",")(0) + " " + currentBatchEndTime.toString
+        val costTime = (currentBatchEndTime - currentBatchStartTime) / 60.0
+
+        val message = topics.split(",")(0) + " " + costTime.toString
         val keyedMessage = new KeyedMessage[String, Array[Byte]](currentBatchEndTime.toString, message.getBytes)
 
         if (producer == null) {
           producer = com.cpc.spark.streaming.tools.KafkaUtils.getProducer(brokers)
         }
         producer.send(keyedMessage)
-        if (producer != null) {
-          producer.close()
-        }
+//        if (producer != null) {
+//          producer.close()
+//        }
 
       //        val field=Seq[(String, String)](("topic",topics.split(",")(0)))
       //
