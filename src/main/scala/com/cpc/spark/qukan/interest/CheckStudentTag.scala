@@ -38,9 +38,6 @@ object CheckStudentTag {
       .enableHiveSupport()
       .getOrCreate()
 
-    val cal = Calendar.getInstance()
-    //cal.add(Calendar.DATE, -1)
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     uid.foreach {
