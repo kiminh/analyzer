@@ -28,6 +28,8 @@ import com.redis.serialization.Parse.Implicits._
 import com.redis.RedisClient
 import com.cpc.spark.qukan.parser.HdfsParser
 import javax.sound.sampled.AudioFormat.Encoding
+import org.json4s._
+import org.json4s.native.JsonMethods._
 
 /**
   * Created by YuntaoMa on 06/06/2018.
@@ -56,12 +58,19 @@ object UpdateInstallApp {
         val did = r.getAs[String](1)
         val in_b64 = r.getAs[String](2)
         var in : Option[String] = Option[String]("")
-
+        var apps = Seq[(String, String)]()
         if (in_b64 != null) {
           val in_gzip = com.cpc.spark.streaming.tools.Encoding.base64Decoder(in_b64).toArray
           in = Gzip.decompress(in_gzip)
+          apps = for {
+            JObject(json) <- parse(in)
+            JField("name", JString(name)) <- json
+            JField("package_name", JString(package_name)) <- json
+
+            p = (name, package_name)
+          } yield p
         }
-        (op_type, did, in)
+        (op_type, did, apps)
     }
 
     all_list.take(20).foreach(println)
