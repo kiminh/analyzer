@@ -246,9 +246,9 @@ object CpcStreamingLogParser3 {
           * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
           */
         val currentBatchEndTime = new Date().getTime
-        val costTime = (currentBatchEndTime - currentBatchStartTime) / 60.0
+        val costTime = (currentBatchEndTime - currentBatchStartTime) / 1000.0
 
-        val message = "CurrentTime:" + currentBatchEndTime + ";Topic:" + (topics.split(",")(0)) + ";ProcessingTime:" + costTime.toString
+        val message = "CurrentTime:" + currentBatchEndTime + ";Topic:" + (topics.split(",")(0)) + ";ProcessingTime(seconds):" + costTime.toString
         println("@@@@@@@@" + message)
         val keyedMessage = new KeyedMessage[String, Array[Byte]](cpc_realtime_parsedlog_warning, message.getBytes)
 
