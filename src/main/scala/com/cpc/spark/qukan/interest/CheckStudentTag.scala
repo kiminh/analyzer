@@ -52,6 +52,7 @@ object CheckStudentTag {
          var t224 = false
          var t225 = false
          var t226 = false
+         var t228 = false
          for (i <- 0 until user.getInterestedWordsCount) {
            val w = user.getInterestedWords(i)
            if (w.getTag == 224 && !t224) {
@@ -66,11 +67,24 @@ object CheckStudentTag {
              println("active_tag")
              t226 = true
            }
+           if (w.getTag == 228 && !t228) {
+             t228 = true
+             println("not new user")
+           }
          }
          if (detail) {
            println(user)
          }
        }
     }
+    val zfb = spark.read.parquet("/user/cpc/qtt-zfb/10").rdd
+      .map {
+        r =>
+          val did = r.getAs[String]("did")
+          val birth = r.getAs[String]("birth")
+          val sex = r.getAs[String]("sex")
+          (did, birth, sex)
+      }.filter(x => x._1 == uid)
+    zfb.toLocalIterator.foreach(println)
   }
 }
