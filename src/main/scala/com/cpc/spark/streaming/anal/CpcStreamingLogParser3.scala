@@ -246,16 +246,17 @@ object CpcStreamingLogParser3 {
         val currentBatchEndTime = new Date().getTime
         val costTime = (currentBatchEndTime - currentBatchStartTime) / 60.0
 
-        val message = "CurrentTime:"+currentBatchEndTime+";Topic:"+topics.split(",")(0) + ";ProcessingTime:" + costTime.toString
+        val message = "CurrentTime:" + currentBatchEndTime + ";Topic:" + (topics.split(",")(0)) + ";ProcessingTime:" + costTime.toString
+        println("@@@@" + message)
         val keyedMessage = new KeyedMessage[String, Array[Byte]](topics.split(",")(0), message.getBytes)
 
         if (producer == null) {
           producer = com.cpc.spark.streaming.tools.KafkaUtils.getProducer(brokers)
         }
         producer.send(keyedMessage)
-//        if (producer != null) {
-//          producer.close()
-//        }
+        if (producer != null) {
+          producer.close()
+        }
 
       //        val field=Seq[(String, String)](("topic",topics.split(",")(0)))
       //

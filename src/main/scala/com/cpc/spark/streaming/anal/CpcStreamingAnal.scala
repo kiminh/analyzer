@@ -162,9 +162,9 @@ object CpcStreamingAnal {
               } catch {
                 case ex: Exception =>
                   ex.printStackTrace()
-                  if (producer != null) {
-                    producer.close()
-                    producer = null
+                    if (producer != null) {
+                      producer.close()
+                      producer = null
                   }
                   producer = com.cpc.spark.streaming.tools.KafkaUtils.getProducer(brokers)
               }
