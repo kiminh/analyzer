@@ -109,7 +109,7 @@ object CpcStreamingLogParser3 {
 
     var messages: InputDStream[(String, Array[Byte])] = null
 
-    if (kafkaoffset == null || kafkaoffset.isEmpty) {
+    if (true) {
       messages = KafkaUtils.createDirectStream[String, Array[Byte], StringDecoder, DefaultDecoder](ssc, kafkaParams, topicsSet)
       println("no offset")
     } else {
@@ -379,13 +379,13 @@ object CpcStreamingLogParser3 {
     /**
       * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
       */
-    val currentTime = new Date().getTime
-    val field=Seq[(String, String)](("topic",topic))
+//    val currentTime = new Date().getTime
+//    val field=Seq[(String, String)](("topic",topic))
 
-    data2Kafka.clear()
-    data2Kafka.setMessage(currentTime,null,null,null,field)
-    data2Kafka.sendMessage(brokers, "cpc_realtime_parsedlog_warning")
-    data2Kafka.close()
+//    data2Kafka.clear()
+//    data2Kafka.setMessage(currentTime,null,null,null,field)
+//    data2Kafka.sendMessage(brokers, "cpc_realtime_parsedlog_warning")
+//    data2Kafka.close()
   }
 
   def getParsedClickLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
