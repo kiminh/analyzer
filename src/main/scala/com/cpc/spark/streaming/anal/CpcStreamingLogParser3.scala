@@ -16,12 +16,15 @@ import java.util.Date
 
 import com.cpc.spark.log.anal.MergeLog.{getDateHourPath, srcRoot}
 import com.cpc.spark.log.parser._
-import com.cpc.spark.streaming.tools.OffsetRedis
+import com.cpc.spark.streaming.tools.{Data2Kafka, OffsetRedis}
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.streaming.kafka.KafkaCluster.LeaderOffset
+
+import scala.collection.immutable.HashMap
+
 
 object CpcStreamingLogParser3 {
 
@@ -31,6 +34,8 @@ object CpcStreamingLogParser3 {
     */
   val offsetRedis = new OffsetRedis()
   offsetRedis.setRedisKey("PARSED_LOG_KAFKA_OFFSET")
+
+  val data2Kafka=new Data2Kafka()
 
   def main(args: Array[String]) {
     if (args.length < 4) {
@@ -170,8 +175,8 @@ object CpcStreamingLogParser3 {
 
     base_data.foreachRDD {
       rs =>
-        val startDate = new Date().getTime
-        println("Every Batch of DStream startDate:" + startDate) //用于实时流报警，超过10min就报警(发emain)
+        //val startDate = new Date().getTime
+        //println("Every Batch of DStream startDate:" + startDate) //用于实时流报警，超过10min就报警(发emain)
 
         val keys = rs.map {
           x =>
@@ -201,13 +206,12 @@ object CpcStreamingLogParser3 {
                 * parserLogData: RDD[CommonLog], 此时不能直接创建DataFrame
                 * 要先转化为相应的实体类，然后进行持久化
                 *
-                * 代码冗余，不好，可以写个公共方法
                 */
               if (topicKey == "cpc_search_new") { //search
                 getParsedSearchLog(part, topicKey, spark, table, key)
 
               } else if (topicKey == "cpc_show_new") { //show
-                getParsedShowLog(part, topicKey, spark, table, key)
+                getParsedShowLog(part, topicKey, spark, table, key, brokers)
 
               } else if (topicKey == "cpc_click_new") { //click
                 getParsedClickLog(part, topicKey, spark, table, key)
@@ -334,9 +338,8 @@ object CpcStreamingLogParser3 {
     spark.sql(sqlStmt)
   }
 
-  def getParsedShowLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
+  def getParsedShowLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String), brokers:String): Unit = {
 
-    println("~~~~~~~~~" + part.count() + "~~" + topic + "~~" + table + "~~" + key)
     //获取log
     val srcDataRdd = part.map {
       x =>
@@ -363,7 +366,6 @@ object CpcStreamingLogParser3 {
       .mode(SaveMode.Append)
       .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
 
-    println("@@@@@@@@@debug##############")
 
     val sqlStmt =
       """
@@ -373,6 +375,17 @@ object CpcStreamingLogParser3 {
                 """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
     println(sqlStmt)
     spark.sql(sqlStmt)
+
+    /**
+      * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
+      */
+    val currentTime = new Date().getTime
+    val field=Seq[(String,String)]("topic", topic)
+
+    data2Kafka.clear()
+    data2Kafka.setMessage(currentTime,null,null,null,field)
+    data2Kafka.sendMessage(brokers, "cpc_realtime_parsedlog_warning")
+    data2Kafka.close()
   }
 
   def getParsedClickLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
@@ -401,6 +414,12 @@ object CpcStreamingLogParser3 {
                 """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
     println(sqlStmt)
     spark.sql(sqlStmt)
+
+    /*
+      报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
+     */
+
+
   }
 
 
