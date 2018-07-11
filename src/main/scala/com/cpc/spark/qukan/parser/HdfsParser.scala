@@ -100,18 +100,33 @@ object HdfsParser {
 
         //data 有2种格式的数据
         if (dataType == 1) {
-          pkgs = for {
-            JArray(pkgs) <- parse(x.getString(2))
-            JObject(pkg) <- pkgs
-            JField("firstInstallTime", JInt(ftime)) <- pkg
-            JField("lastUpdateTime", JInt(ltime)) <- pkg
-            JField("packageName", JString(pname)) <- pkg
-            p = AppPkg(
-              name = pname,
-              firstInstallTime = ftime.toLong,
-              lastUpdateTime = ltime.toLong
-            )
-          } yield p
+          if (data.contains("firstInstallTime")) {
+            pkgs = for {
+              JArray(pkgs) <- parse(data)
+              JObject(pkg) <- pkgs
+              JField("firstInstallTime", JInt(ftime)) <- pkg
+              JField("lastUpdateTime", JInt(ltime)) <- pkg
+              JField("packageName", JString(pname)) <- pkg
+              p = AppPkg(
+                name = pname,
+                firstInstallTime = ftime.toLong,
+                lastUpdateTime = ltime.toLong
+              )
+            } yield p
+          } else {
+            pkgs = for {
+              JArray(pkgs) <- parse(data)
+              JObject(pkg) <- pkgs
+              JField("a", JInt(ftime)) <- pkg
+              JField("b", JInt(ltime)) <- pkg
+              JField("c", JString(pname)) <- pkg
+              p = AppPkg(
+                name = pname,
+                firstInstallTime = ftime.toLong,
+                lastUpdateTime = ltime.toLong
+              )
+            } yield p
+          }
         } else {
           pkgs = for {
             JArray(pkgs) <- parse(x.getString(2))
