@@ -77,7 +77,6 @@ object TeacherStudents {
       .mapPartitions {
         p =>
           var n = 0
-          var n1 = 0
           val conf = ConfigFactory.load()
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           p.foreach {
@@ -117,7 +116,7 @@ object TeacherStudents {
                 }
 
                 user.setQttProfile(qtt)
-                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
           Seq(n).iterator
