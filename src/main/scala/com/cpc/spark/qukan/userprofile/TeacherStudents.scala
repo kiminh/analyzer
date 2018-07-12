@@ -49,6 +49,7 @@ object TeacherStudents {
 
     val mid = users.map(x => (x._2, x))
 
+    val teacher = users.map(x => (x._5, x._2)).join(mid).map(x => x._2)
     val ts = users
       .map {
         x =>
@@ -60,14 +61,17 @@ object TeacherStudents {
           (x._1, x._2.sortBy(v => -v._6).take(n))
       }
       .join(mid)
+      .join(teacher)
       .map {
         x =>
-          val students = x._2._1
+          val students = x._2._1._1
+          val me = x._2._1._2
           val teacher = x._2._2
-          (teacher, students)
+          (me, teacher, students)
       }
 
     ts.take(10).foreach(println)
+
 
     val sum = ts
       .mapPartitions {
@@ -78,14 +82,18 @@ object TeacherStudents {
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           p.foreach {
             x =>
-              val t = x._1
+              val me = x._1
+              val t = x._2
 
-              val key = x._1 + "_UPDATA"
+              val key = me._1 + "_UPDATA"
               val buffer = redis.get[Array[Byte]](key).orNull
               if (buffer != null) {
+                n = n + 1
                 val user = UserProfile.parseFrom(buffer).toBuilder
                 val qtt = user.getQttProfile.toBuilder
-                n = n + 1
+                qtt.setMemberId(me._2)
+                qtt.setNickname(me._3)
+                qtt.setWxNickname(me._4)
 
                 val teacher = qtt.getTeacher.toBuilder
                 teacher.setDevid(t._1)
@@ -95,7 +103,7 @@ object TeacherStudents {
                 qtt.setTeacher(teacher)
 
                 qtt.clearStudents()
-                x._2.foreach {
+                x._3.foreach {
                   v =>
                     val s = QttProfile.newBuilder()
                     s.setDevid(v._1)
