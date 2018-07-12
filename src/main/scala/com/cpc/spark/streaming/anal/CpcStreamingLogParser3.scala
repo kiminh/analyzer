@@ -38,8 +38,8 @@ object CpcStreamingLogParser3 {
 
   val data2Kafka = new Data2Kafka()
 
-  val cpc_realtime_parsedlog_warning="cpc_realtime_parsedlog_warning"
-
+  val cpc_realtime_parsedlog_warning = "cpc_realtime_parsedlog_warning"
+  var currentBatchStartTime=0L
 
   def main(args: Array[String]) {
     if (args.length < 4) {
@@ -123,6 +123,10 @@ object CpcStreamingLogParser3 {
     }
 
     messages.foreachRDD {
+
+      //每个batch的开始时间
+      currentBatchStartTime = new Date().getTime
+
       rdd => {
         val offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
         rdd.foreachPartition { iter =>
@@ -180,8 +184,6 @@ object CpcStreamingLogParser3 {
 
     base_data.foreachRDD {
       rs =>
-
-        var currentBatchStartTime = new Date().getTime
 
         val keys = rs.map {
           x =>
@@ -245,6 +247,7 @@ object CpcStreamingLogParser3 {
         /**
           * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
           */
+        // 每个batch的结束时间
         val currentBatchEndTime = new Date().getTime
         val costTime = (currentBatchEndTime - currentBatchStartTime) / 1000.0
 
@@ -256,9 +259,9 @@ object CpcStreamingLogParser3 {
           producer = com.cpc.spark.streaming.tools.KafkaUtils.getProducer(brokers)
         }
         producer.send(keyedMessage)
-//        if (producer != null) {
-//          producer.close()
-//        }
+      //        if (producer != null) {
+      //          producer.close()
+      //        }
 
       //        val field=Seq[(String, String)](("topic",topics.split(",")(0)))
       //
@@ -331,7 +334,7 @@ object CpcStreamingLogParser3 {
 
     //根据不同类型的日志，调用不同的函数进行解析
     val searchRDD = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
-    val parsedLog = searchRDD.filter(_ != null)
+    val parsedLog = searchRDD.filter(_ != null).coalesce(500, false)
 
     //    if (topic == "cpc_search_new") { //search
     //      val searchRDD = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
@@ -380,7 +383,7 @@ object CpcStreamingLogParser3 {
 
       解决方法： 过滤null值
      */
-    val parsedLog = srcDataRdd.map { x => LogParser.parseShowLog_v2(x) }.filter(_ != null)
+    val parsedLog = srcDataRdd.map { x => LogParser.parseShowLog_v2(x) }.filter(_ != null).coalesce(200, false)
 
     spark.createDataFrame(parsedLog)
       .write
@@ -405,7 +408,7 @@ object CpcStreamingLogParser3 {
     }.filter(_ != null)
 
     //根据不同类型的日志，调用不同的函数进行解析
-    val parsedLog = srcDataRdd.map(x => LogParser.parseClickLog_v2(x)).filter(_ != null)
+    val parsedLog = srcDataRdd.map(x => LogParser.parseClickLog_v2(x)).filter(_ != null).coalesce(200, false)
 
     spark.createDataFrame(parsedLog)
       .write
