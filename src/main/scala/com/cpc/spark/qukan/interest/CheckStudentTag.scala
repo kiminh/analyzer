@@ -1,6 +1,6 @@
 package com.cpc.spark.qukan.interest
 import java.io.{FileWriter, PrintWriter}
-import java.sql.{DriverManager, ResultSet}
+import java.sql.{DriverManager, ResultSet, Timestamp}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
@@ -26,7 +26,7 @@ import scala.util.Random
 import com.redis.serialization.Parse.Implicits._
 import com.redis.RedisClient
 import com.cpc.spark.qukan.parser.HdfsParser
-import org.apache.commons.net.ntp.TimeStamp
+import userprofile.Userprofile.{InterestItem, UserProfile}
 
 import scala.util.control._
 object CheckStudentTag {
@@ -93,7 +93,7 @@ object CheckStudentTag {
     val zfb = spark.sql(stmt).rdd.map {
       r =>
         val member_id = r.getAs[Long](0)
-        val create_time = r.getAs[TimeStamp](1)
+        val create_time = r.getAs[Timestamp](1)
         val did = r.getAs[String](2)
         (member_id, (create_time, did))
     }.toDF("member_id", "data")
