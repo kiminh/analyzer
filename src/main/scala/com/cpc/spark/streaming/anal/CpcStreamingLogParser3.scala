@@ -382,7 +382,7 @@ object CpcStreamingLogParser3 {
 
       解决方法： 过滤null值
      */
-    val parsedLog = srcDataRdd.map { x => LogParser.parseShowLog_v2(x) }.filter(_ != null).coalesce(200, false)
+    val parsedLog = srcDataRdd.map { x => LogParser.parseShowLog_v2(x) }.filter(_ != null).coalesce(200, true)
 
     spark.createDataFrame(parsedLog)
       .write
