@@ -90,7 +90,13 @@ object CheckStudentTag {
         |where day >= "%s" and day < "%s" and device_code = "%s"
       """.stripMargin.format(sdate, edate, uid(0))
 
-    val zfb = spark.sql(stmt)
+    val zfb = spark.sql(stmt).rdd.map {
+      r =>
+        val member_id = r.getAs[BigInt](0)
+        val create_time = r.getAs[String](1)
+        val did = r.getAs[String](2)
+        (member_id, (create_time, did))
+    }.toDF("member_id", "data")
     println(stmt, zfb.count(), zfb.first())
 
      stmt =
@@ -100,7 +106,12 @@ object CheckStudentTag {
       """.stripMargin.format(zfb.first().get(0))
 
 
-    val qtt = spark.sql(stmt)
+    val qtt = spark.sql(stmt).rdd.map{
+      r =>
+        val member_id = r.getAs[BigInt](0)
+        val info = r.getAs[String](1)
+        (member_id, info)
+    }.toDF("member_id", "info")
     println(stmt, qtt.count(), qtt.first())
 
     val data = qtt.join(zfb, Seq("member_id"))
