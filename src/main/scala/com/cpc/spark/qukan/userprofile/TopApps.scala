@@ -1,7 +1,7 @@
 package com.cpc.spark.qukan.userprofile
 
 import com.cpc.spark.qukan.parser.HdfsParser
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
   * Created by roydong on 12/07/2018.
@@ -42,8 +42,11 @@ object TopApps {
       .reduceByKey(_ + _)
       .sortBy(x => x._2, false)
 
-    pkgs.take(100).foreach(println)
 
+    pkgs.toDF("pkg", "install_user_num")
+      .write
+      .mode(SaveMode.Overwrite)
+      .saveAsTable("dl_cpc.top_apps")
   }
 
 }
