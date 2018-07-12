@@ -38,7 +38,7 @@ object TopApps {
       .map(x => (x.devid, x.pkgs.map(_.name)))
       .reduceByKey(_ ++ _)
       .map(x => (x._1, x._2.distinct))
-      .flatMap(_._2.map(x => (x, 1)))
+      .flatMap(_._2.map(x => (x, 1l)))
       .reduceByKey(_ + _)
       .sortBy(x => x._2, false)
 
