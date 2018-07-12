@@ -113,7 +113,7 @@ object CheckStudentTag {
         (member_id, info)
     }.toDF("member_id", "info")
     println(stmt, qtt.count(), qtt.first())
-
+    println(qtt.join(zfb, "member_id").count())
     val data = qtt.join(zfb, Seq("member_id"))
       .map {
         r =>
