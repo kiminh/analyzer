@@ -92,7 +92,7 @@ object CheckStudentTag {
 
     val zfb = spark.sql(stmt).rdd.map {
       r =>
-        val member_id = r.getAs[BigInt](0)
+        val member_id = r.getAs[Long](0)
         val create_time = r.getAs[String](1)
         val did = r.getAs[String](2)
         (member_id, (create_time, did))
@@ -108,7 +108,7 @@ object CheckStudentTag {
 
     val qtt = spark.sql(stmt).rdd.map{
       r =>
-        val member_id = r.getAs[BigInt](0)
+        val member_id = r.getAs[Long](0)
         val info = r.getAs[String](1)
         (member_id, info)
     }.toDF("member_id", "info")
