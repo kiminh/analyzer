@@ -18,7 +18,6 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
-import userprofile.Userprofile.{InterestItem, UserProfile}
 
 import scala.io.Source
 import scala.collection.JavaConversions._
@@ -27,6 +26,7 @@ import scala.util.Random
 import com.redis.serialization.Parse.Implicits._
 import com.redis.RedisClient
 import com.cpc.spark.qukan.parser.HdfsParser
+import org.apache.commons.net.ntp.TimeStamp
 
 import scala.util.control._
 object CheckStudentTag {
@@ -93,7 +93,7 @@ object CheckStudentTag {
     val zfb = spark.sql(stmt).rdd.map {
       r =>
         val member_id = r.getAs[Long](0)
-        val create_time = r.getAs[String](1)
+        val create_time = r.getAs[TimeStamp](1)
         val did = r.getAs[String](2)
         (member_id, (create_time, did))
     }.toDF("member_id", "data")
