@@ -45,12 +45,13 @@ object TeacherStudents {
       .filter(_._1.length > 0)
       .cache()
 
+    println(users.count())
     users.take(10).foreach(println)
 
     val mid = users.map(x => (x._2, x))
 
-    val teacher = users.map(x => (x._5, x._2)).join(mid).map(x => x._2)
-    val ts = users
+    val teacher = users.filter(_._5 > 0).map(x => (x._5, x._2)).join(mid).map(x => x._2)
+    val ts = users.repartition(1000)
       .map {
         x =>
           (x._5, Seq(x))
@@ -61,7 +62,7 @@ object TeacherStudents {
           (x._1, x._2.sortBy(v => -v._6).take(n))
       }
       .join(mid)
-      .join(teacher)
+      .leftOuterJoin(teacher)
       .map {
         x =>
           val students = x._2._1._1
@@ -71,7 +72,6 @@ object TeacherStudents {
       }
 
     ts.take(10).foreach(println)
-
 
     val sum = ts
       .mapPartitions {
@@ -83,7 +83,6 @@ object TeacherStudents {
           p.foreach {
             x =>
               val me = x._1
-              val t = x._2
 
               val key = me._1 + "_UPDATA"
               val buffer = redis.get[Array[Byte]](key).orNull
@@ -91,16 +90,20 @@ object TeacherStudents {
                 n = n + 1
                 val user = UserProfile.parseFrom(buffer).toBuilder
                 val qtt = user.getQttProfile.toBuilder
+                qtt.setDevid(me._1)
                 qtt.setMemberId(me._2)
                 qtt.setNickname(me._3)
                 qtt.setWxNickname(me._4)
 
-                val teacher = qtt.getTeacher.toBuilder
-                teacher.setDevid(t._1)
-                teacher.setMemberId(t._2)
-                teacher.setNickname(t._3)
-                teacher.setWxNickname(t._4)
-                qtt.setTeacher(teacher)
+                if (x._2.isDefined) {
+                  val t = x._2.get
+                  val teacher = qtt.getTeacher.toBuilder
+                  teacher.setDevid(t._1)
+                  teacher.setMemberId(t._2)
+                  teacher.setNickname(t._3)
+                  teacher.setWxNickname(t._4)
+                  qtt.setTeacher(teacher)
+                }
 
                 qtt.clearStudents()
                 x._3.foreach {
