@@ -126,7 +126,7 @@ object CpcStreamingLogParser3 {
       rdd => {
         //每个batch的开始时间
         currentBatchStartTime = new Date().getTime
-        
+
         val offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
         rdd.foreachPartition { iter =>
           try {
