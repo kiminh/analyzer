@@ -98,7 +98,6 @@ object CheckStudentTag {
         |select distinct member_id, info from  gobblin.qukan_member_zfb_log
         | where update_time >= "2018-01-01" and member_id = %s
       """.stripMargin.format(zfb.first().get(0))
-    println(stmt)
 
 
     val qtt = spark.sql(stmt)
