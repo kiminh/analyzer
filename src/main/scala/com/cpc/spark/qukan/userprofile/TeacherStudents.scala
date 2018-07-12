@@ -44,6 +44,8 @@ object TeacherStudents {
       }
       .cache()
 
+    users.take(10).foreach(println)
+
     val mid = users.map(x => (x._2, x))
 
     val ts = users
