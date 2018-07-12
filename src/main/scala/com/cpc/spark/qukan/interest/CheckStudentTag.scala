@@ -82,20 +82,24 @@ object CheckStudentTag {
     cal.add(Calendar.DATE, 10)
     val edate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
+
+
     var stmt =
-      """
-        |select distinct member_id, info from  gobblin.qukan_member_zfb_log
-        | where update_time >= "2018-01-01" and member_id > 0
-      """.stripMargin
-
-    val zfb = spark.sql(stmt)
-    println(stmt, zfb.count(), zfb.first())
-
-    stmt =
       """
         |select distinct member_id,device_code as did from dl_cpc.qukan_p_member_info
         |where day >= "%s" and day < "%s" and device_code = "%s"
       """.stripMargin.format(sdate, edate, uid(0))
+
+    val zfb = spark.sql(stmt)
+    println(stmt, zfb.count(), zfb.first())
+
+     stmt =
+      """
+        |select distinct member_id, info from  gobblin.qukan_member_zfb_log
+        | where update_time >= "2018-01-01" and member_id = %s
+      """.stripMargin.format(zfb.first().get(0).toLong)
+
+
 
     val qtt = spark.sql(stmt)
     println(stmt, qtt.count(), qtt.first())
