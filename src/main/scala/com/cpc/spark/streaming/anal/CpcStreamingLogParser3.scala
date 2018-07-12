@@ -123,11 +123,10 @@ object CpcStreamingLogParser3 {
     }
 
     messages.foreachRDD {
-
-      //每个batch的开始时间
-      currentBatchStartTime = new Date().getTime
-
       rdd => {
+        //每个batch的开始时间
+        currentBatchStartTime = new Date().getTime
+        
         val offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
         rdd.foreachPartition { iter =>
           try {
