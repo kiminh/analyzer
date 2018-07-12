@@ -95,8 +95,8 @@ object CheckStudentTag {
         val member_id = r.getAs[Long](0)
         val create_time = r.getAs[Timestamp](1)
         val did = r.getAs[String](2)
-        (member_id, (create_time, did))
-    }.toDF("member_id", "data")
+        (member_id, create_time, did)
+    }.toDF("member_id", "create_time", "did")
     println(stmt, zfb.count(), zfb.first())
 
      stmt =
