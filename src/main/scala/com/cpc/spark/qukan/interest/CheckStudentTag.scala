@@ -86,7 +86,7 @@ object CheckStudentTag {
 
     var stmt =
       """
-        |select distinct member_id,device_code as did from dl_cpc.qukan_p_member_info
+        |select distinct member_id, create_time, device_code as did from dl_cpc.qukan_p_member_info
         |where day >= "%s" and day < "%s" and device_code = "%s"
       """.stripMargin.format(sdate, edate, uid(0))
 
