@@ -42,6 +42,7 @@ object TeacherStudents {
 
           (devid, mid, nickname, wxname, tmid, uptime)
       }
+      .filter(_._1.length > 0)
       .cache()
 
     users.take(10).foreach(println)
