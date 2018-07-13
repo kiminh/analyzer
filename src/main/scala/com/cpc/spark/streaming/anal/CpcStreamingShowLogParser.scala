@@ -21,7 +21,7 @@ import org.apache.spark.streaming.kafka._
 import org.apache.spark.{SparkConf, TaskContext}
 
 
-object CpcStreamingLogParser3 {
+object CpcStreamingShowLogParser {
 
   /**
     * 创建一个offsetRedis对象
