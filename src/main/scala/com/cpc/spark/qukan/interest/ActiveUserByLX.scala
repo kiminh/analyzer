@@ -54,43 +54,34 @@ object ActiveUserByLX {
           }
       }.filter(_ != null)
         .distinct()
-      val conf = ConfigFactory.load()
-      val sum = rs.repartition(500)
-        .mapPartitions {
-          p =>
-            val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-            p.map {
-              x =>
-                val key = x._1 + "_UPDATA"
-                val buffer = redis.get[Array[Byte]](key).orNull
-                if (buffer != null) {
-                  val user = UserProfile.parseFrom(buffer).toBuilder
-                  var has = false
-                  var newUser = true
-                  for (i <- 0 until user.getInterestedWordsCount) {
-                    val w = user.getInterestedWords(i)
-                    if (w.getTag == 226) {
-                      has = true
-                    }
-                    if (w.getTag == 228) {
-                      newUser = false
-                    }
-                  }
-                  if (has && newUser) {
-                    (x._2, (1, 1))
-                  } else {
-                    (x._2, (0, 1))
-                  }
-                } else {
-                  null
-                }
-            }.filter(_ != null)
-        }.reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
-        .map(x => (x._1, x._2._1, x._2._2, 1d * x._2._1 / x._2._2))
-        .sortBy(_._4, false)
-      sum.toDF("lx", "hit", "total", "rate").write.parquet("/user/cpc/active-user-by-lx/%s".format(days))
-      sum.take(50).foreach(println)
-      sum.sortBy(_._2, false)
+        .toDF("did", "lx")
+
+      val stmt2 =
+        """
+          |select searchid,uid from dl_cpc.ml_cvr_feature_v1 where `date` >= "%s"
+        """.stripMargin.format(date)
+
+      val rs2 = spark.sql(stmt2).rdd.map {
+        r =>
+          val did = r.getAs[String](1)
+          (did, 1)
+      }.reduceByKey(_+_)
+        .toDF("did", "cnt")
+
+      val sum = rs.join(rs2, "leftouter").rdd.map {
+        r =>
+          val did = r.getAs[String]("did")
+          val lx = r.getAs[Long]("lx")
+          val cnt = r.getAs[Int]("sum")
+          if (cnt == null) {
+            (lx, (0, 1))
+          } else {
+            (lx, (cnt, 1))
+          }
+      }.reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
+        .sortBy(_._2._1)
+
+      sum.toDF("lx", "hit", "total").write.parquet("/user/cpc/active-user-by-lx/%s".format(days))
       sum.take(50).foreach(println)
     } else {
       val sum = spark.read.parquet("/user/cpc/active-user-by-lx/%s".format(days)).rdd.map{
@@ -98,13 +89,9 @@ object ActiveUserByLX {
           val lx = r.getAs[Long](0)
           val hit = r.getAs[Int](1)
           val total = r.getAs[Int](2)
-          val rate = r.getAs[Double](3)
-          (lx, hit, total, rate)
+          (lx, hit, total)
       }
       sum.take(50).foreach(println)
-      println()
-      val sum2 = sum.sortBy(_._2, false)
-      sum2.take(50).foreach(println)
     }
 
 
