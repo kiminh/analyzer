@@ -37,7 +37,7 @@ object ActiveUserByLX {
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val stmt =
       """
-        |select distinct uid, ext_int from dl_cpc.cpc_union_log where `date` >= "%s"
+        |select uid, ext_int from dl_cpc.cpc_union_log where `date` >= "%s"
       """.stripMargin.format(date)
 
     val rs = spark.sql(stmt).rdd.map{
@@ -46,7 +46,7 @@ object ActiveUserByLX {
         val ext = r.getMap[String, Long](1)
         val lx = ext.get("lx_package")
         (did, lx)
-    }
+    }.distinct()
 
     val conf = ConfigFactory.load()
     val sum = rs.repartition(500)
