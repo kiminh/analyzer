@@ -72,7 +72,7 @@ object ActiveUserByLX {
         r =>
           val did = r.getAs[String]("did")
           val lx = r.getAs[Long]("lx")
-          val cnt = r.getAs[Int]("sum")
+          val cnt = r.getAs[Int]("cnt")
           if (cnt == null) {
             (lx, (0, 1))
           } else {
