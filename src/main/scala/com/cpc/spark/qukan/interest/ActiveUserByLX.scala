@@ -102,8 +102,9 @@ object ActiveUserByLX {
           (lx, hit, total, rate)
       }
       sum.take(50).foreach(println)
-      sum.sortBy(_._2, false)
-      sum.take(50).foreach(println)
+      println()
+      val sum2 = sum.sortBy(_._2, false)
+      sum2.take(50).foreach(println)
     }
 
 
