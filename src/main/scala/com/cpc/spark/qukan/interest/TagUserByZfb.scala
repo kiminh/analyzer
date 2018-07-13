@@ -56,6 +56,9 @@ object TagUserByZfb {
     }
     println("student number:")
     println(zfb.filter(x => x._3 == 224).count())
+    println("m student number:")
+    println(zfb.filter(x => x._3 == 224 && x._2 == 1).count())
+    
     val conf = ConfigFactory.load()
     val sum = zfb
       .mapPartitions {
