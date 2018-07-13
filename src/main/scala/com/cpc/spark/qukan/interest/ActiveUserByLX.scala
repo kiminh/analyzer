@@ -68,7 +68,7 @@ object ActiveUserByLX {
       }.reduceByKey(_+_)
         .toDF("did", "cnt")
 
-      val sum = rs.join(rs2, "leftouter").rdd.map {
+      val sum = rs.join(rs2, Seq("did"), "leftouter").rdd.map {
         r =>
           val did = r.getAs[String]("did")
           val lx = r.getAs[Long]("lx")
