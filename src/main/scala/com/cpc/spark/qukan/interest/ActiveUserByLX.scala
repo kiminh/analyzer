@@ -90,9 +90,11 @@ object ActiveUserByLX {
           val lx = r.getAs[Long](0)
           val cvr = r.getAs[Int](1)
           val total = r.getAs[Int](2)
-          (lx, cvr, total)
+          (lx, cvr, total, 1d * cvr / total)
       }.sortBy(_._2, false)
       sum.take(50).foreach(println)
+      println()
+      sum.sortBy(_._4, false).take(50).foreach(println)
     }
 
 
