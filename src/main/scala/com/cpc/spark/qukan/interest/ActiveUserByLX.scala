@@ -55,7 +55,7 @@ object ActiveUserByLX {
       }.filter(_ != null)
         .distinct()
         .toDF("did", "lx")
-
+      rs.take(10).foreach(println)
       val stmt2 =
         """
           |select searchid,uid from dl_cpc.ml_cvr_feature_v1 where `date` >= "%s"
