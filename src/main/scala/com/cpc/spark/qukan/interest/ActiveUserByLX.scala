@@ -80,7 +80,7 @@ object ActiveUserByLX {
           }
       }.reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
         .map{x => (x._1, x._2._1, x._2._2)}
-        .sortBy(_._2)
+        .sortBy(_._2, false)
 
       sum.toDF("lx", "hit", "total").write.mode(SaveMode.Overwrite).parquet("/user/cpc/active-user-by-lx/%s".format(days))
       sum.take(50).foreach(println)
@@ -88,10 +88,10 @@ object ActiveUserByLX {
       val sum = spark.read.parquet("/user/cpc/active-user-by-lx/%s".format(days)).rdd.map{
         r =>
           val lx = r.getAs[Long](0)
-          val hit = r.getAs[Int](1)
+          val cvr = r.getAs[Int](1)
           val total = r.getAs[Int](2)
-          (lx, hit, total)
-      }
+          (lx, cvr, total)
+      }.sortBy(_._2, false)
       sum.take(50).foreach(println)
     }
 
