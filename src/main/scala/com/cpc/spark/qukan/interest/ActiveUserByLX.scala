@@ -16,6 +16,7 @@ import ml.dmlc.xgboost4j.scala.spark._
 import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable
+import userprofile.Userprofile.{InterestItem, UserProfile}
 
 /**
   * Created by myt on 13/07/2018.
