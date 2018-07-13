@@ -38,7 +38,7 @@ object ActiveUserByLX {
     val stmt =
       """
         |select distinct uid, ext_int from dl_cpc.cpc_union_log where `date` >= "%s"
-      """.stripMargin
+      """.stripMargin.format(date)
 
     val rs = spark.sql(stmt).rdd.map{
       r =>
