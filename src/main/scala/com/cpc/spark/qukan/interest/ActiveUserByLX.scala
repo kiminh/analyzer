@@ -32,7 +32,6 @@ object ActiveUserByLX {
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
-    var sum = new RDD[Long, Int, Int, Double]()
     if (isread) {
       val cal = Calendar.getInstance()
       cal.add(Calendar.DATE, -days)
@@ -55,7 +54,7 @@ object ActiveUserByLX {
       }.filter(_ != null)
         .distinct()
       val conf = ConfigFactory.load()
-      sum = rs.repartition(500)
+      val sum = rs.repartition(500)
         .mapPartitions {
           p =>
             val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
@@ -89,9 +88,11 @@ object ActiveUserByLX {
         .map(x => (x._1, x._2._1, x._2._2, 1d * x._2._1 / x._2._2))
         .sortBy(_._4, false)
       sum.toDF("lx", "hit", "total", "rate").write.parquet("/user/cpc/active-user-by-lx/%s".format(days))
-
+      sum.take(50).foreach(println)
+      sum.sortBy(_._2, false)
+      sum.take(50).foreach(println)
     } else {
-      sum = spark.read.parquet("/user/cpc/active-user-by-lx/%s".format(days)).rdd.map{
+      val sum = spark.read.parquet("/user/cpc/active-user-by-lx/%s".format(days)).rdd.map{
         r =>
           val lx = r.getAs[Long](0)
           val hit = r.getAs[Int](1)
@@ -99,10 +100,11 @@ object ActiveUserByLX {
           val rate = r.getAs[Double](3)
           (lx, hit, total, rate)
       }
+      sum.take(50).foreach(println)
+      sum.sortBy(_._2, false)
+      sum.take(50).foreach(println)
     }
 
-    sum.take(50).foreach(println)
-    sum.sortBy(_._2, false)
 
   }
 }
