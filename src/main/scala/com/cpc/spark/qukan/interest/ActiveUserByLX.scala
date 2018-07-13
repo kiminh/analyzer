@@ -79,7 +79,8 @@ object ActiveUserByLX {
             (lx, (cnt, 1))
           }
       }.reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
-        .sortBy(_._2._1)
+        .map{x => (x._1, x._2._1, x._2._2)}
+        .sortBy(_._2)
 
       sum.toDF("lx", "hit", "total").write.parquet("/user/cpc/active-user-by-lx/%s".format(days))
       sum.take(50).foreach(println)
