@@ -18,7 +18,7 @@ object UpdateInstallApp {
   def main(args: Array[String]): Unit = {
     val days = args(0).toInt
     val spark = SparkSession.builder()
-      .appName("Tag bad uid")
+      .appName("update cpc install app")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._

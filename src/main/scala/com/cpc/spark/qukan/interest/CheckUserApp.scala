@@ -33,7 +33,7 @@ object CheckUserApp {
   def main(args: Array[String]): Unit = {
     val days  = args(0).toInt
     val spark = SparkSession.builder()
-      .appName("Tag user by zfb")
+      .appName("check user app")
       .enableHiveSupport()
       .getOrCreate()
 

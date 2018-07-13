@@ -34,7 +34,7 @@ object CheckStudentTag {
     val uid = args(0).split(",")
     val detail = args(1).toBoolean
     val spark = SparkSession.builder()
-      .appName("Tag user by zfb")
+      .appName("check student tag")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._

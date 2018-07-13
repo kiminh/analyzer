@@ -29,7 +29,7 @@ object PredictAge {
     val spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .config("spark.kryoserializer.buffer.max", "2047MB")
-      .appName("age model".format())
+      .appName("predict age".format())
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
