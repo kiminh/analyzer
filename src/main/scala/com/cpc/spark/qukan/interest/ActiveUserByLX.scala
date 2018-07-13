@@ -94,7 +94,7 @@ object ActiveUserByLX {
       }.sortBy(_._2, false)
       sum.take(50).foreach(println)
       println()
-      sum.sortBy(_._4, false).take(50).foreach(println)
+      sum.filter(_._3 > 500).sortBy(_._4, false).take(50).foreach(println)
     }
 
 
