@@ -32,7 +32,7 @@ object ActiveUserByLX {
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
-    var sum = RDD[Long, Int, Int, Double]
+    var sum = RDD[Long, Int, Int, Double]()
     if (isread) {
       val cal = Calendar.getInstance()
       cal.add(Calendar.DATE, -days)
@@ -48,7 +48,7 @@ object ActiveUserByLX {
           val ext = r.getMap[String, Long](1)
           val lx = ext.get("lx_package")
           if (lx != None) {
-            (did, lx.toLong)
+            (did, lx)
           } else {
             null
           }
