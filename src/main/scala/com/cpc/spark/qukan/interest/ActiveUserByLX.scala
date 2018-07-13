@@ -82,7 +82,7 @@ object ActiveUserByLX {
         .map{x => (x._1, x._2._1, x._2._2)}
         .sortBy(_._2)
 
-      sum.toDF("lx", "hit", "total").write.parquet("/user/cpc/active-user-by-lx/%s".format(days))
+      sum.toDF("lx", "hit", "total").write.mode(SaveMode.Overwrite).parquet("/user/cpc/active-user-by-lx/%s".format(days))
       sum.take(50).foreach(println)
     } else {
       val sum = spark.read.parquet("/user/cpc/active-user-by-lx/%s".format(days)).rdd.map{
