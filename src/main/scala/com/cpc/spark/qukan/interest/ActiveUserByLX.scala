@@ -7,7 +7,7 @@ import org.apache.spark.ml.classification.LogisticRegressionModel
 import org.apache.spark.ml.linalg.Vectors
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.ml.linalg.{Vector, Vectors}
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{Row, SparkSession, SaveMode}
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 
