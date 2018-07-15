@@ -205,7 +205,7 @@ object PredictAge {
             n3 = x._2
           } else if (x._1 == 4){
             n4 = x._2
-          } else if (x._1 == 5{
+          } else if (x._1 == 5){
             n5 = x._2
           } else {
             n6 = x._2
