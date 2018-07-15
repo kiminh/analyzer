@@ -192,7 +192,7 @@ object PredictAge {
     var n5 = 0
     var n6 = 0
     sum.reduceByKey((x, y) => x + y)
-      .take(6)
+      .take(7)
       .foreach {
         x =>
           if (x._1 == 0) {
