@@ -48,8 +48,8 @@ object MergeParsedLog {
     srcRoot = args(0)
     val mergeTbl = args(1)
     val hourBefore = args(2).toInt
-    //    prefix = args(3)  //"" 空
-    //    suffix = args(4)  //"" 空
+    prefix = args(3)  //"" 空
+    suffix = args(4)  //"" 空
 
     val cal = Calendar.getInstance()
     g_date = cal.getTime //以后只用这个时间
