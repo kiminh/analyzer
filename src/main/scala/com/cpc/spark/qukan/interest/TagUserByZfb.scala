@@ -70,6 +70,7 @@ object TagUserByZfb {
           var sex_m = 0  //sex冲突个数
           var new_young = 0
           var add_224 = 0
+          var newU = 0
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           val loop = new Breaks
 
@@ -87,6 +88,9 @@ object TagUserByZfb {
                 var age_224 = false
                 var age_225 = false
                 val newuser = user.getNewUser
+                if (newuser == 1) {
+                  newU += 1
+                }
                 if (newuser == 1 && r._3 == 224){
                   new_young += 1
                 }
@@ -132,10 +136,10 @@ object TagUserByZfb {
                 }
               }
           }
-          Seq((age_n, age_m, sex_m, age_r, add_224, new_young)).iterator
+          Seq((age_n, age_m, sex_m, age_r, add_224, new_young, newU)).iterator
       }
-      .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3,x._4 + y._4, x._5 + y._5, x._6 + y._6))
-    println("age_newupdate:" + sum._1+ " age_conflict:" + sum._2 + " sex_conflict:" + sum._3 + " age_both_taged:" + sum._4 + "add_244:" + sum._5 + " new_young:" + sum._6)
+      .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3,x._4 + y._4, x._5 + y._5, x._6 + y._6, x._7 + y._7))
+    println("age_newupdate:" + sum._1+ " age_conflict:" + sum._2 + " sex_conflict:" + sum._3 + " age_both_taged:" + sum._4 + "add_244:" + sum._5 + " new_young:" + sum._6 + " newUser:" + sum._7)
 
   }
 
