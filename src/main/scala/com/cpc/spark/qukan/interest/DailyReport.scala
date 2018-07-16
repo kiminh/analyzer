@@ -84,6 +84,20 @@ object DailyReport {
       }
       .reduceByKey(_+_)
     sum.toLocalIterator.foreach(println)
+
+    val stmt2 =
+      """
+        |select uid, ext_int["lx_package"] from dl_cpc.cpc_union_log where `date` = "%s"
+      """.stripMargin.format(date)
+
+    val rs2 = spark.sql(stmt2).rdd.map {
+      r =>
+        val did = r.getAs[String](0)
+        val lx = r.getAs[Long](1)
+        (did, lx)
+    }.reduceByKey((x, y) => x)
+
+    println(rs.map(x => (x, 1)).join(rs2).filter(x => x._2._2 == 0).count())
   }
 
 }
