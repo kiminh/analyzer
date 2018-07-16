@@ -47,7 +47,7 @@ object DailyReport {
     val stmt =
       """
         |select distinct device_code as did from dl_cpc.qukan_p_member_info where `day` = "%s" and create_time > "%s 00:00:00"
-      """.stripMargin.format(date)
+      """.stripMargin.format(date, date)
 
     println(stmt)
 
