@@ -67,7 +67,7 @@ object DailyReport {
               val key = r + "_UPDATA"
               val buffer = redis.get[Array[Byte]](key).orNull
               if (buffer != null) {
-                val user = Userprofile.parseFrom(buffer).toBuilder
+                val user = UserProfile.parseFrom(buffer).toBuilder
                 for (i <- 0 until user.getInterestedWordsCount) {
                   val w = user.getInterestedWords(i)
                   if (w.getTag == 224) {
