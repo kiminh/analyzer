@@ -39,7 +39,7 @@ object ActiveUserByLX {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       val stmt =
         """
-          |select distinct uid, ext_int from dl_cpc.cpc_union_log where `date` >= "%s"
+          |select uid, ext_int from dl_cpc.cpc_union_log where `date` >= "%s"
         """.stripMargin.format(date)
 
       val rs = spark.sql(stmt).rdd.map {
@@ -55,6 +55,7 @@ object ActiveUserByLX {
       }.filter(_ != null)
         .distinct()
         .toDF("did", "lx")
+      println(rs.count())
       rs.take(10).foreach(println)
       val stmt2 =
         """
@@ -68,7 +69,7 @@ object ActiveUserByLX {
           (did, label)
       }.reduceByKey(_+_)
         .toDF("did", "cnt")
-
+      println(rs.count())
       val sum = rs.join(rs2, Seq("did"), "leftouter").rdd.map {
         r =>
           val did = r.getAs[String]("did")
