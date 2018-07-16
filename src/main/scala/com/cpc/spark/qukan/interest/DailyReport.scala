@@ -63,7 +63,7 @@ object DailyReport {
         p =>
           var young = 0
           var notYoung = 0
-          val redis = new RedisClient(conf.getString("host"), conf.getInt("port"))
+          val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           p.foreach {
             r =>
               val key = r + "_UPDATA"
