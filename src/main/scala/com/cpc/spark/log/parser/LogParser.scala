@@ -451,9 +451,9 @@ object LogParser {
     * @param txt 序列化的日志
     * @return ParsedShowLog对象
     */
-  def parseShowLog_v2(txt: String): ParsedShowLog = {
+  def parseShowLog_v2(txt: String): ShowLog = {
     //zyc
-    var log: ParsedShowLog = null
+    var log: ShowLog = null
     val data = Event.parse_show_log(txt)
     if (data != null) {
       val body = data.event
@@ -464,7 +464,7 @@ object LogParser {
 //      ext.update("video_show_time", ExtValue(int_value = body.getShowTime)) //video_show_time
 //      ext.update("charge_type", ExtValue(int_value = body.getCharge.getType.getNumber))
 
-      log = ParsedShowLog(
+      log = ShowLog(
         searchid = body.getSearchId,
         isshow = 1,
         ideaid = body.getAd.getUnitId,
@@ -473,7 +473,8 @@ object LogParser {
         show_refer=data.refer,
         show_ua =data.ua,
         video_show_time=body.getShowTime,
-        charge_type=body.getCharge.getType.getNumber
+        charge_type=body.getCharge.getType.getNumber,
+        show_network=body.getNetwork.getType.getNumber
 
 //        ext=ext
       )
@@ -545,8 +546,8 @@ object LogParser {
     * @param txt 序列化的日志
     * @return ParsedClickLog对象
     */
-  def parseClickLog_v2(txt: String): ParsedClickLog = {
-    var log: ParsedClickLog = null
+  def parseClickLog_v2(txt: String): ClickLog = {
+    var log: ClickLog = null
     val data = Event.parse_click_log(txt)
     if (data != null) {
       val event = data.event
@@ -560,7 +561,7 @@ object LogParser {
 //        ext.update("slot_height", ExtValue(int_value = extra.getHeight))
 //        ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
 //        ext.update("click_ua", ExtValue(string_value = body.getAction.getUserAgent))
-        log = ParsedClickLog(
+        log = ClickLog(
           searchid = body.getSearchId,
           isclick = 1,
           ideaid = body.getAd.getUnitId,
@@ -573,7 +574,8 @@ object LogParser {
           slot_width=extra.getWidth,
           slot_height=extra.getHeight,
           antispam_predict=body.getAntispam.getPredict,
-          click_ua=body.getAction.getUserAgent
+          click_ua=body.getAction.getUserAgent,
+          click_network=body.getNetwork.getType.getNumber
 
 //          ext = ext.toMap
         )

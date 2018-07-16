@@ -13,12 +13,13 @@ package com.cpc.spark.log.parser
   * @param video_show_time
   * @param charge_type
   */
-case class ParsedShowLog(
+case class ShowLog(
                           var searchid: String = "",
-                          var isshow: Int = 0,
                           var ideaid: Int = 0,
+                          var isshow: Int = 0,
                           var show_timestamp: Int = 0,
                           var show_ip: String = "",
+                          var show_network: Int = 0,
                           var show_refer: String="",
                           var show_ua: String="",
                           var video_show_time: Int=0,

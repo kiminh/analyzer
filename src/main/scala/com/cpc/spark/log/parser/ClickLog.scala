@@ -17,7 +17,7 @@ package com.cpc.spark.log.parser
   * @param antispam_predict
   * @param click_ua
   */
-case class ParsedClickLog(
+case class ClickLog(
                            var searchid: String = "",
                            var isclick: Int = 0,
                            var ideaid: Int = 0,
@@ -25,12 +25,14 @@ case class ParsedClickLog(
                            var antispam_score: Int = 0,
                            var antispam_rules: String = "",
                            var click_ip: String = "",
+                           var click_network: Int = 0,
                            var touch_x: Int = 0,
                            var touch_y: Int = 0,
                            var slot_width: Int = 0,
                            var slot_height: Int = 0,
                            var antispam_predict: Float = 0,
-                           var click_ua: String = ""
+                           var click_ua: String = "",
+                           var spam_click: Int = 0
 
 //                           var ext: collection.Map[String, ExtValue] = null
                          ) {
