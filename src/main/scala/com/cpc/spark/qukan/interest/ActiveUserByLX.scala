@@ -58,13 +58,14 @@ object ActiveUserByLX {
       rs.take(10).foreach(println)
       val stmt2 =
         """
-          |select searchid,uid from dl_cpc.ml_cvr_feature_v1 where `date` >= "%s"
+          |select searchid,uid,label from dl_cpc.ml_cvr_feature_v1 where `date` >= "%s"
         """.stripMargin.format(date)
 
       val rs2 = spark.sql(stmt2).rdd.map {
         r =>
           val did = r.getAs[String](1)
-          (did, 1)
+          val label = r.getAs[Int](2)
+          (did, label)
       }.reduceByKey(_+_)
         .toDF("did", "cnt")
 
