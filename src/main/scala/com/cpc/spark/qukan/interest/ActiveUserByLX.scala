@@ -39,7 +39,7 @@ object ActiveUserByLX {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       val stmt =
         """
-          |select uid, ext_int from dl_cpc.cpc_union_log where `date` >= "%s"
+          |select distinct uid, ext_int from dl_cpc.cpc_union_log where `date` >= "%s"
         """.stripMargin.format(date)
 
       val rs = spark.sql(stmt).rdd.map {
@@ -85,6 +85,9 @@ object ActiveUserByLX {
 
       sum.toDF("lx", "hit", "total").write.mode(SaveMode.Overwrite).parquet("/user/cpc/active-user-by-lx/%s".format(days))
       sum.take(50).foreach(println)
+      println()
+      println(sum.filter(_._3 > 500).count())
+      sum.filter(_._3 > 500).sortBy(_._4, false).toLocalIterator.foreach(println)
     } else {
       val sum = spark.read.parquet("/user/cpc/active-user-by-lx/%s".format(days)).rdd.map{
         r =>
