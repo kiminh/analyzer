@@ -56,6 +56,7 @@ object ActiveUserByLX {
         .distinct()
         .toDF("did", "lx")
       println(rs.count())
+      println(rs.rdd.map(x => (x.getAs[String](0), x.getAs[Long](1))).reduceByKey(_+_).count())
       rs.take(10).foreach(println)
       val stmt2 =
         """
@@ -69,7 +70,7 @@ object ActiveUserByLX {
           (did, label)
       }.reduceByKey(_+_)
         .toDF("did", "cnt")
-      println(rs.count())
+      println(rs2.count())
       val sum = rs.join(rs2, Seq("did"), "leftouter").rdd.map {
         r =>
           val did = r.getAs[String]("did")
@@ -84,7 +85,7 @@ object ActiveUserByLX {
         .map{x => (x._1, x._2._1, x._2._2, 1d * x._2._1 / x._2._2)}
         .sortBy(_._2, false)
 
-      sum.toDF("lx", "hit", "total").write.mode(SaveMode.Overwrite).parquet("/user/cpc/active-user-by-lx/%s".format(days))
+      sum.toDF("lx", "hit", "total", "rate").write.mode(SaveMode.Overwrite).parquet("/user/cpc/active-user-by-lx/%s".format(days))
       sum.take(50).foreach(println)
       println()
       println(sum.filter(_._3 > 500).count())
