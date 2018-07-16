@@ -26,6 +26,7 @@ import scala.util.Random
 import com.redis.serialization.Parse.Implicits._
 import com.redis.RedisClient
 import com.cpc.spark.qukan.parser.HdfsParser
+import userprofile.Userprofile.{InterestItem, UserProfile}
 
 import scala.util.control._
 
@@ -72,7 +73,7 @@ object DailyReport {
                   if (w.getTag == 224) {
                     young += 1
                   } else if (w.getTag == 225) {
-                    notYount += 1
+                    notYoung += 1
                   }
                 }
               }
