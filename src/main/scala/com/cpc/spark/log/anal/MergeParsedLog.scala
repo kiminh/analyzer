@@ -3,6 +3,7 @@ package com.cpc.spark.log.anal
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
+import com.cpc.spark.log.parser.{ParsedShowLog, UnionLog}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Row, SparkSession}
@@ -59,18 +60,61 @@ object MergeParsedLog {
       .enableHiveSupport()
       .getOrCreate()
 
-    // search
+    /**
+      * search
+      */
     var searchRDD = prepareSourceString(spark, "cpc_search_new", prefix + "cpc_search" + suffix, hourBefore, 1)
 
+    // RDD为空，退出
+    if (searchRDD == null) {
+      System.err.println("search data is empty")
+      System.exit(1)
+    }
 
+    //输出一一个元素
+//    searchRDD.take(1).foreach {
+//      x => println(x)
+//    }
 
+    // 去重，转为PairRDD
+    val searchData2 = searchRDD
+      .filter(_ != null)
+      .map(row => ((row.getAs[String]("searchid"),row.getAs[Int]("ideaid")), row)) //((searchid,ideaid), row)
+      .reduceByKey((x, y) => x) //去重
+      .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
+        x =>
+          var ulog = x._2.asInstanceOf[UnionLog].copy(date = date, hour = hour)
+          (x._1, ulog) //Pair RDD
+    }
 
-    //show
+    /**
+      * show
+      */
     var showRDD = prepareSourceString(spark, "cpc_show_new", prefix + "cpc_show" + suffix, hourBefore, 2)
+
+    /**
+      * 获得每个广告 '本次播放最大时长' 的日志； 转为PairRDD
+      */
+    var showData2 = showRDD
+      .filter(_ != null)
+      .map(row => ((row.getAs[String]("searchid"),row.getAs[Int]("ideaid")), Seq(row))) //((searchid,ideaid), Seq(row))
+      .reduceByKey((x, y) => x ++ y)
+      .map {
+        x =>
+          val logs = x._2.asInstanceOf[Seq[ParsedShowLog]]
+          var headLog=logs.head  //获得第一个元素
+          val headLogTime = headLog.video_show_time  //获得第一个元素的video_show_time
+          logs.foreach {
+            y =>
+              if (y.video_show_time > headLogTime) {
+                headLog = y //获得 '本次播放最大时长' 的日志
+              }
+          }
+          (x._1, headLog)  //((searchid,ideaid), Seq(row))
+    }
 
     //click
     var clickRDD = prepareSourceString(spark, "cpc_click_new", prefix + "cpc_click" + suffix, hourBefore, 2)
-
 
 
   }

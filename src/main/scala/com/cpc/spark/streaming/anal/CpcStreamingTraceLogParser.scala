@@ -1,44 +1,48 @@
 package com.cpc.spark.streaming.anal
 
-import kafka.serializer.StringDecoder
-import kafka.serializer.DefaultDecoder
-import kafka.common.TopicAndPartition
-import kafka.message.MessageAndMetadata
-import kafka.producer.KeyedMessage
-import org.apache.spark.streaming._
-import org.apache.spark.sql.{Row, SaveMode, SparkSession}
-import org.apache.spark.streaming._
-import org.apache.spark.streaming.kafka._
-import org.apache.spark.{SparkConf, TaskContext, rdd}
-import com.cpc.spark.common.LogData
-import org.apache.spark.streaming.dstream.InputDStream
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.cpc.spark.log.anal.MergeLog.{getDateHourPath, srcRoot}
+import com.cpc.spark.common.LogData
 import com.cpc.spark.log.parser._
 import com.cpc.spark.streaming.tools.{Data2Kafka, OffsetRedis}
-import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
+import kafka.common.TopicAndPartition
+import kafka.message.MessageAndMetadata
+import kafka.producer.KeyedMessage
+import kafka.serializer.{DefaultDecoder, StringDecoder}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.streaming._
+import org.apache.spark.streaming.dstream.InputDStream
 import org.apache.spark.streaming.kafka.KafkaCluster.LeaderOffset
+import org.apache.spark.streaming.kafka._
+import org.apache.spark.{SparkConf, TaskContext}
 
-import scala.collection.immutable.HashMap
 
-
-object CpcStreamingLogParser3 {
+object CpcStreamingTraceLogParser {
 
   /**
     * 创建一个offsetRedis对象
-    * 调用方法设置Redis的key
+    * 调用方法设置Redis的key前缀
     */
   val offsetRedis = new OffsetRedis()
   offsetRedis.setRedisKey("PARSED_LOG_KAFKA_OFFSET")
 
+  /**
+    * 用于向kafka的主题中发送数据
+    */
   val data2Kafka = new Data2Kafka()
 
+  /**
+    * search,click,show,trace log报警日志发送的kafka topic
+    */
   val cpc_realtime_parsedlog_warning = "cpc_realtime_parsedlog_warning"
+
+  /**
+    * 初始化DStream 每个batch的开始时间； 用于报警服务
+    */
   var currentBatchStartTime = 0L
 
   def main(args: Array[String]) {
@@ -197,47 +201,38 @@ object CpcStreamingLogParser3 {
             println("~~~~~~~~~ zyc_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
 
             if (numbs > 0) {
-              //配置修改
+              //获取hive表名
               val table = conf.getString("topic2tbl_logparsed." + topics.split(",")(0))
-
+              //消费主题名
               val topicKey = topics.split(",")(0)
 
-              //日志解析
-              //val parserLogData = getParsedLog(part, topics.split(",")(0))
+              //获取log
+              val srcDataRdd = part
+                .map { x => x.field.getOrElse(topicKey, null).string_type }
+                .filter(_ != null)
+                .coalesce(200, false)
 
-              /**
-                * parserLogData: RDD[CommonLog], 此时不能直接创建DataFrame
-                * 要先转化为相应的实体类，然后进行持久化
-                *
-                */
-              if (topicKey == "cpc_search_new") { //search
-                getParsedSearchLog(part, topicKey, spark, table, key)
+              //调用函数进行解析
+              val parsedLog = srcDataRdd
+                .map { x => LogParser.parseTraceLog(x) }
+                .filter(_ != null)
+                .coalesce(200, false)
 
-              } else if (topicKey == "cpc_show_new") { //show
-                getParsedShowLog(part, topicKey, spark, table, key)
+              //数据保存到hive
+              spark.createDataFrame(parsedLog)
+                .write
+                .mode(SaveMode.Append)
+                .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
 
-              } else if (topicKey == "cpc_click_new") { //click
-                getParsedClickLog(part, topicKey, spark, table, key)
-
-              } else {
-                System.err.println("Can not judge the key of the field.")
-                System.exit(1)
-              }
-
-              //              spark.createDataFrame(parserLogData)
-              //                .write
-              //                .mode(SaveMode.Append)
-              //                .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
-              //
-              //              val sqlStmt =
-              //                """
-              //                  |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
-              //                  |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
-              //                  |
-              //                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
-              //              println(sqlStmt)
-              //              spark.sql(sqlStmt)
-
+              //添加元数据
+              val sqlStmt =
+                """
+                  |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
+                  |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
+                  |
+                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
+              println(sqlStmt)
+              spark.sql(sqlStmt)
             }
         }
 
@@ -252,9 +247,8 @@ object CpcStreamingLogParser3 {
         val mapFloat: Seq[(String, Float)] = Seq(("ProcessingTime", costTime.toFloat))
         data2Kafka.clear()
         data2Kafka.setMessage(currentBatchEndTime, null, mapFloat, null, mapString)
-        data2Kafka.sendMessage(brokers,cpc_realtime_parsedlog_warning)
+        data2Kafka.sendMessage(brokers, cpc_realtime_parsedlog_warning)
         data2Kafka.close()
-
 
     }
     //    if (allCount < 1e10) {
@@ -303,122 +297,6 @@ object CpcStreamingLogParser3 {
       print("currentDate:" + hehe)
     }
 
-  }
-
-  /**
-    * 使用spark streaming从kafka中读取search、show、click等日志，写入hive表中
-    *   1. 获取field字段中的日志信息；
-    *   2. 调用日志解析函数进行解析
-    *
-    * @param part  DStream中的每个RDD
-    * @param topic SrcLog对象中field字段的key，用于获取日志信息
-    */
-  def getParsedSearchLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
-    //获取log
-    val srcDataRdd = part.map {
-      x => x.field.getOrElse(topic, null).string_type
-    }.filter(_ != null)
-
-    //根据不同类型的日志，调用不同的函数进行解析
-    val searchRDD = srcDataRdd
-      .flatMap(x => LogParser.parseSearchLog_v2(x))
-    val parsedLog = searchRDD
-      .filter(_ != null)
-      .coalesce(500, false)
-
-    //    if (topic == "cpc_search_new") { //search
-    //      val searchRDD = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
-    //      val parsedLog = searchRDD.filter(_ != null)
-    //
-    //    } else if (topic == "cpc_show_new") { //show
-    //      val parsedLog = srcDataRdd.map(x => LogParser.parseShowLog_v2(x))
-    //
-    //    } else if (topic == "cpc_click_new") { //click
-    //      val parsedLog = srcDataRdd.map { x => LogParser.parseClickLog_v2(x) }
-    //
-    //    } else {
-    //      System.err.println("Can not judge the key of the field.")
-    //      System.exit(1)
-    //    }
-
-    spark.createDataFrame(parsedLog)
-      .write
-      .mode(SaveMode.Append)
-      .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
-
-    val sqlStmt =
-      """
-        |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
-        |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
-        |
-                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
-    println(sqlStmt)
-    spark.sql(sqlStmt)
-  }
-
-  def getParsedShowLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
-
-    //获取log
-    val srcDataRdd = part.map {
-      x => x.log_timestamp.toString + x.field.getOrElse(topic, null).string_type
-    }.filter(_ != null)
-
-    /*
-      根据不同类型的日志，调用不同的函数进行解析
-
-      Null value appeared in non-nullable field
-      java.lang.NullPointerException: Null value appeared in non-nullable field: top level row object
-      If the schema is inferred from a Scala tuple/case class, or a Java bean, please try to use
-      scala.Option[_] or other nullable types (e.g. java.lang.Integer instead of int/scala.Int).
-
-      解决方法： 过滤null值
-     */
-    val parsedLog = srcDataRdd
-      .map { x => LogParser.parseShowLog_v2(x) }
-      .filter(_ != null)
-      .coalesce(200, false)
-
-    spark.createDataFrame(parsedLog)
-      .write
-      .mode(SaveMode.Append)
-      .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
-
-
-    val sqlStmt =
-      """
-        |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
-        |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
-        |
-                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
-    println(sqlStmt)
-    spark.sql(sqlStmt)
-  }
-
-  def getParsedClickLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
-    //获取log
-    val srcDataRdd = part.map {
-      x => x.field.getOrElse(topic, null).string_type
-    }.filter(_ != null)
-
-    //根据不同类型的日志，调用不同的函数进行解析
-    val parsedLog = srcDataRdd
-      .map(x => LogParser.parseClickLog_v2(x))
-      .filter(_ != null)
-      .coalesce(200, false)
-
-    spark.createDataFrame(parsedLog)
-      .write
-      .mode(SaveMode.Append)
-      .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
-
-    val sqlStmt =
-      """
-        |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
-        |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
-        |
-                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
-    println(sqlStmt)
-    spark.sql(sqlStmt)
   }
 
 
