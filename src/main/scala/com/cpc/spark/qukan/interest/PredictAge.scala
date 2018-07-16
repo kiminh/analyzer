@@ -26,6 +26,7 @@ object PredictAge {
   val round_num = 50
   def main(args: Array[String]): Unit = {
     val days = args(0).toInt
+    val is_set = args(1).toBoolean
     val spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .config("spark.kryoserializer.buffer.max", "2047MB")
@@ -176,7 +177,9 @@ object PredictAge {
                 if (age_224 && age_225) {
                   both_taged += 1
                 }
-                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                if (is_set) {
+                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                }
               }
           }
           bbst = bbst + "%d ".format(insert) + "%d ".format(revert) + "%d ".format(both_taged) + "%d ".format(total)
