@@ -56,7 +56,7 @@ object ActiveUserByLX {
         .distinct()
         .toDF("did", "lx")
       println(rs.count())
-      println(rs.rdd.map(x => (x.getAs[String](0), x.getAs[Long](1))).reduceByKey(_+_).count())
+      println(rs.rdd.map(x => (x.getAs[Long](1), Seq(x.getAs[String](0)))).reduceByKey(_++_).count())
       rs.take(10).foreach(println)
       val stmt2 =
         """
