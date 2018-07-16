@@ -49,6 +49,8 @@ object DailyReport {
         |select distinct device_code as did from dl_cpc.qukan_p_member_info where `day` = "%s" and create_time > "%s 00:00:00"
       """.stripMargin.format(date)
 
+    println(stmt)
+
     val rs = spark.sql(stmt).rdd.map {
       r =>
         val did = r.getAs[String](0)
