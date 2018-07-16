@@ -118,6 +118,7 @@ object PredictAge {
           var count_224 = 0
           var count_225 = 0
           var new_user = 0
+          var young_new = 0
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           val loop = new Breaks
           p.foreach {
@@ -143,8 +144,11 @@ object PredictAge {
                 var conflict = false
                 var age_224 = false
                 var age_225 = false
-                if (user.getNewUser == 1 && age == 224) {
+                if (user.getNewUser == 1) {
                   new_user += 1
+                }
+                if (user.getNewUser == 1 && age == 224) {
+                  young_new += 1
                 }
                 loop.breakable {
                   var idx = 0
@@ -183,7 +187,7 @@ object PredictAge {
               }
           }
           bbst = bbst + "%d ".format(insert) + "%d ".format(revert) + "%d ".format(both_taged) + "%d ".format(total)
-          Seq((0, insert), (1, revert), (2, both_taged), (3, total), (4, count_224), (5, count_225), (6, new_user)).iterator
+          Seq((0, insert), (1, revert), (2, both_taged), (3, total), (4, count_224), (5, count_225), (6, young_new), (7, new_user)).iterator
       }
     println(st)
     //统计数据
@@ -194,8 +198,9 @@ object PredictAge {
     var n4 = 0
     var n5 = 0
     var n6 = 0
+    var n7 = 0
     sum.reduceByKey((x, y) => x + y)
-      .take(7)
+      .take(8)
       .foreach {
         x =>
           if (x._1 == 0) {
@@ -210,10 +215,12 @@ object PredictAge {
             n4 = x._2
           } else if (x._1 == 5){
             n5 = x._2
-          } else {
+          } else if (x._1 == 6){
             n6 = x._2
+          } else {
+            n7 = x._2
           }
       }
-    println("total: %s, insert: %s, revert %s, both_taged %s count_224: %s count_225 %s young_new: %s".format(n3, n, n1, n2, n4, n5, n6))
+    println("total: %s, insert: %s, revert %s, both_taged %s count_224: %s count_225 %s young_new: %s new_user: %s".format(n3, n, n1, n2, n4, n5, n6, n7))
   }
 }
