@@ -26,7 +26,7 @@ object PredictAge {
   val round_num = 50
   def main(args: Array[String]): Unit = {
     val days = args(0).toInt
-    val is_set = args(1).toBoolean
+    val is_set = args(3).toBoolean
     val spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .config("spark.kryoserializer.buffer.max", "2047MB")
