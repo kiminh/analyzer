@@ -12,6 +12,7 @@ import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
 import scala.collection.mutable
 
 
+
 /**
   * /warehouse/dl_cpc.db/logparsed_cpc_search_minute
   * /warehouse/dl_cpc.db/logparsed_cpc_click_minute
@@ -62,6 +63,8 @@ object MergeParsedLog {
       .appName("union log %s partition = %s".format(mergeTbl, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
       .getOrCreate()
+
+    import spark.implicits._s
 
     /**
       * search
