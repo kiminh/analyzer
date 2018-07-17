@@ -30,6 +30,12 @@ import userprofile.Userprofile.{InterestItem, UserProfile}
 
 import scala.util.control._
 
+
+// 0 日新增学生用户预测
+// 1 日新增非学生用户预测
+// 2 日新增用户有支付宝数据
+// 3 日新增用户无支付宝数据
+
 object DailyReport {
   def main(args: Array[String]): Unit = {
     val days  = args(0).toInt
