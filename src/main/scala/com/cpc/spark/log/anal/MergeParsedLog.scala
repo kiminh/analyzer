@@ -104,14 +104,13 @@ object MergeParsedLog {
       .as[ShowLog]
       .rdd
       .filter(_ != null)
-      .map(x => ((x.searchid,x.ideaid), Seq(x))) //((searchid,ideaid), Seq(ShowLog))
+      .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(ShowLog))
       .reduceByKey((x, y) => x ++ y)
       .map {
         x =>
-          val logs = x._2
-          var headLog = logs.head //获得第一个元素
+          var headLog = x._2.head
           val headLog_VideoShowTime = headLog.video_show_time //获得第一个元素的video_show_time
-          logs.foreach {
+          x._2.foreach {
             y =>
               if (y.video_show_time > headLog_VideoShowTime) {
                 headLog = y //获得 '本次播放最大时长' 的日志
@@ -132,14 +131,13 @@ object MergeParsedLog {
       clickData2 = clickRDD
         .as[ClickLog]
         .rdd
-        .map(x => ((x.searchid,x.ideaid), Seq(x))) //((searchid,ideaid), Seq(ClickLog))
+        .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(ClickLog))
         .reduceByKey((x, y) => x ++ y)
         .map {
           x => //((searchid,ideaid),seq(ClickLog))
-            val logs = x._2
-            var clicklog = logs.head
+            var clicklog = x._2.head
             var notgetGood = true
-            logs.foreach {
+            x._2.foreach {
               clog =>
                 if (clog.isSpamClick() == 1) {
                   //作弊点击，重复点击
