@@ -87,7 +87,7 @@ object MergeParsedLog {
       .rdd
       .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), x)) //((searchid,ideaid), UnionLog)
-      .reduceByKey((x, y) => x) //去重
+//      .reduceByKey((x, y) => x) //去重
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
       x =>
         var ulog = x._2.copy(date = date, hour = hour)
