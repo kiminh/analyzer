@@ -179,7 +179,7 @@ object DailyReport {
                   }
                 }
           }
-          Seq((0, young), (1, notYoung)).iterator
+          Seq((0, young), (1, notYoung), (2,active)).iterator
       }
       .reduceByKey(_+_)
     sum.toLocalIterator.foreach(println)
