@@ -1,4 +1,4 @@
-package com.cpc.spark.qukan.interest
+  package com.cpc.spark.qukan.interest
 
 import org.apache.spark.ml.classification.LogisticRegressionModel
 import org.apache.spark.ml.linalg.Vectors

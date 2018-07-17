@@ -75,6 +75,19 @@ object CheckUserApp {
       }
       .sortBy(_._2, false)
       .take(50).foreach(println)
-  }
 
+    val all_sample = spark.read.parquet("/user/cpc/qtt-age-sample/p1").rdd.map {
+      r =>
+        val apps = r.getAs[Seq[Row]]("apps")
+        if (apps != null && apps.length > 5) {
+          (apps)
+        } else {
+          null
+        }
+    }.filter(_ != null)
+
+    println(all_sample.count())
+
+
+  }
 }
