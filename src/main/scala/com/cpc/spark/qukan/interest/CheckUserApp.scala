@@ -80,7 +80,7 @@ object CheckUserApp {
       r =>
         val apps = r.getAs[Seq[Row]]("apps")
         if (apps != null) {
-          if (apps.length > 10){
+          if (apps.length > 5){
             (1)
           } else {
             (0)
