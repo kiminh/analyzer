@@ -1,0 +1,146 @@
+package com.cpc.spark.qukan.interest
+
+import java.io.{FileWriter, PrintWriter}
+import java.sql.{DriverManager, ResultSet}
+import java.text.SimpleDateFormat
+import java.util.{Calendar, Properties}
+
+import com.cpc.spark.common.Utils
+import com.cpc.spark.log.parser.{ExtValue, TraceLog, UnionLog}
+import com.cpc.spark.ml.train.LRIRModel
+import com.cpc.spark.qukan.parser.HdfsParser
+import com.hankcs.hanlp.HanLP
+import com.hankcs.hanlp.corpus.tag.Nature
+import com.typesafe.config.ConfigFactory
+import org.apache.spark.mllib.clustering.{KMeans, KMeansModel}
+import org.apache.spark.mllib.feature.{Word2Vec, Word2VecModel}
+import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession, Row}
+
+import scala.io.Source
+import scala.collection.JavaConversions._
+import scala.collection.mutable
+import scala.util.Random
+import com.redis.serialization.Parse.Implicits._
+import com.redis.RedisClient
+import com.cpc.spark.qukan.parser.HdfsParser
+import userprofile.Userprofile.{InterestItem, UserProfile}
+import scala.util.control._
+
+object TagUserByZfb {
+  def main(args: Array[String]): Unit = {
+    val days  = args(0).toInt
+    val is_set = args(1).toBoolean
+    val spark = SparkSession.builder()
+      .appName("Tag user by zfb")
+      .enableHiveSupport()
+      .getOrCreate()
+
+    val zfb = spark.read.parquet("/user/cpc/qtt-zfb/%s".format(days)).rdd.map {
+      r =>
+        val did = r.getAs[String]("did")
+        val s_sex = r.getAs[String]("sex")
+        val birth = 2018 - (r.getAs[String]("birth").toInt / 10000)
+        var age = 224
+        if (birth < 22) {
+          age = 224
+        } else {
+          age = 225
+        }
+        var sex = 2
+        if (s_sex == "m") {
+          sex = 1
+        }
+        (did, sex, age)
+    }
+    println("student number:")
+    println(zfb.filter(x => x._3 == 224).count())
+    println("m student number:")
+    println(zfb.filter(x => x._3 == 224 && x._2 == 1).count())
+
+    val conf = ConfigFactory.load()
+    val sum = zfb
+      .mapPartitions {
+        p =>
+          var age_n = 0  //age插入个数
+          var age_r = 0  //sex插入个数
+          var age_m = 0  //age冲突个数
+          var sex_m = 0  //sex冲突个数
+          var new_young = 0
+          var add_224 = 0
+          var newU = 0
+          val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+          val loop = new Breaks
+
+          p.foreach {
+            r =>
+              val key = r._1 + "_UPDATA"
+              val buffer = redis.get[Array[Byte]](key).orNull
+              if (buffer != null) {
+                val user = UserProfile.parseFrom(buffer).toBuilder
+                val in = InterestItem.newBuilder()
+                  .setTag(r._3)
+                  .setScore(100)
+                var has = false
+                var conflict = false
+                var age_224 = false
+                var age_225 = false
+                val newuser = user.getNewUser
+                if (newuser == 1) {
+                  newU += 1
+                }
+                if (newuser == 1 && r._3 == 224){
+                  new_young += 1
+                }
+                loop.breakable{
+                  var idx = 0
+                  while(idx < user.getInterestedWordsCount) {
+                    val w = user.getInterestedWords(idx)
+                    if (w.getTag == 224 || w.getTag == 225) {
+                      if (w.getTag == 224) age_224 = true
+                      if (w.getTag == 225) age_225 = true
+                      has = true
+                      if (w.getTag != in.getTag) {
+                        conflict = true
+                      }
+                      user.removeInterestedWords(idx)
+                    } else {
+                      idx += 1
+                    }
+                    if (idx == user.getInterestedWordsCount) {
+                      loop.break()
+                    }
+                  }
+                }
+                user.addInterestedWords(in)
+                if (!has) {
+                  if (in.getTag == 224) {
+                    add_224 += 1
+                  }
+                  age_n += 1
+                }
+                if (conflict) {
+                  age_m += 1
+                }
+                if (r._2 != user.getSex) {
+                  sex_m += 1
+                  user.setSex(r._2)
+                }
+                if (age_224 && age_225) {
+                  age_r += 1
+                }
+                if (is_set) {
+                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                }
+              }
+          }
+          Seq((age_n, age_m, sex_m, age_r, add_224, new_young, newU)).iterator
+      }
+      .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3,x._4 + y._4, x._5 + y._5, x._6 + y._6, x._7 + y._7))
+    println("age_newupdate:" + sum._1+ " age_conflict:" + sum._2 + " sex_conflict:" + sum._3 + " age_both_taged:" + sum._4 + "add_244:" + sum._5 + " new_young:" + sum._6 + " newUser:" + sum._7)
+
+  }
+
+}

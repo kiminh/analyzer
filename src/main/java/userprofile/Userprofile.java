@@ -668,6 +668,24 @@ public final class Userprofile {
      * <code>optional int32 click_count = 3;</code>
      */
     int getClickCount();
+
+    /**
+     * <pre>
+     *广告位id
+     * </pre>
+     *
+     * <code>optional string ad_slot = 4;</code>
+     */
+    java.lang.String getAdSlot();
+    /**
+     * <pre>
+     *广告位id
+     * </pre>
+     *
+     * <code>optional string ad_slot = 4;</code>
+     */
+    com.google.protobuf.ByteString
+        getAdSlotBytes();
   }
   /**
    * Protobuf type {@code userprofile.DspSrc}
@@ -684,6 +702,7 @@ public final class Userprofile {
       dspPid_ = "";
       count_ = 0;
       clickCount_ = 0;
+      adSlot_ = "";
     }
 
     @java.lang.Override
@@ -725,6 +744,12 @@ public final class Userprofile {
             case 24: {
 
               clickCount_ = input.readInt32();
+              break;
+            }
+            case 34: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              adSlot_ = s;
               break;
             }
           }
@@ -818,6 +843,48 @@ public final class Userprofile {
       return clickCount_;
     }
 
+    public static final int AD_SLOT_FIELD_NUMBER = 4;
+    private volatile java.lang.Object adSlot_;
+    /**
+     * <pre>
+     *广告位id
+     * </pre>
+     *
+     * <code>optional string ad_slot = 4;</code>
+     */
+    public java.lang.String getAdSlot() {
+      java.lang.Object ref = adSlot_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        adSlot_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     *广告位id
+     * </pre>
+     *
+     * <code>optional string ad_slot = 4;</code>
+     */
+    public com.google.protobuf.ByteString
+        getAdSlotBytes() {
+      java.lang.Object ref = adSlot_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        adSlot_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -839,6 +906,9 @@ public final class Userprofile {
       if (clickCount_ != 0) {
         output.writeInt32(3, clickCount_);
       }
+      if (!getAdSlotBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, adSlot_);
+      }
     }
 
     public int getSerializedSize() {
@@ -856,6 +926,9 @@ public final class Userprofile {
       if (clickCount_ != 0) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(3, clickCount_);
+      }
+      if (!getAdSlotBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, adSlot_);
       }
       memoizedSize = size;
       return size;
@@ -879,6 +952,8 @@ public final class Userprofile {
           == other.getCount());
       result = result && (getClickCount()
           == other.getClickCount());
+      result = result && getAdSlot()
+          .equals(other.getAdSlot());
       return result;
     }
 
@@ -895,6 +970,8 @@ public final class Userprofile {
       hash = (53 * hash) + getCount();
       hash = (37 * hash) + CLICK_COUNT_FIELD_NUMBER;
       hash = (53 * hash) + getClickCount();
+      hash = (37 * hash) + AD_SLOT_FIELD_NUMBER;
+      hash = (53 * hash) + getAdSlot().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -1019,6 +1096,8 @@ public final class Userprofile {
 
         clickCount_ = 0;
 
+        adSlot_ = "";
+
         return this;
       }
 
@@ -1044,6 +1123,7 @@ public final class Userprofile {
         result.dspPid_ = dspPid_;
         result.count_ = count_;
         result.clickCount_ = clickCount_;
+        result.adSlot_ = adSlot_;
         onBuilt();
         return result;
       }
@@ -1094,6 +1174,10 @@ public final class Userprofile {
         }
         if (other.getClickCount() != 0) {
           setClickCount(other.getClickCount());
+        }
+        if (!other.getAdSlot().isEmpty()) {
+          adSlot_ = other.adSlot_;
+          onChanged();
         }
         onChanged();
         return this;
@@ -1282,6 +1366,95 @@ public final class Userprofile {
       public Builder clearClickCount() {
         
         clickCount_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object adSlot_ = "";
+      /**
+       * <pre>
+       *广告位id
+       * </pre>
+       *
+       * <code>optional string ad_slot = 4;</code>
+       */
+      public java.lang.String getAdSlot() {
+        java.lang.Object ref = adSlot_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          adSlot_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       *广告位id
+       * </pre>
+       *
+       * <code>optional string ad_slot = 4;</code>
+       */
+      public com.google.protobuf.ByteString
+          getAdSlotBytes() {
+        java.lang.Object ref = adSlot_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          adSlot_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       *广告位id
+       * </pre>
+       *
+       * <code>optional string ad_slot = 4;</code>
+       */
+      public Builder setAdSlot(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        adSlot_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *广告位id
+       * </pre>
+       *
+       * <code>optional string ad_slot = 4;</code>
+       */
+      public Builder clearAdSlot() {
+        
+        adSlot_ = getDefaultInstance().getAdSlot();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *广告位id
+       * </pre>
+       *
+       * <code>optional string ad_slot = 4;</code>
+       */
+      public Builder setAdSlotBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        adSlot_ = value;
         onChanged();
         return this;
       }
@@ -4330,6 +4503,19 @@ public final class Userprofile {
      */
     com.google.protobuf.ByteString
         getCityBytes();
+
+    /**
+     * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+     */
+    boolean hasQttProfile();
+    /**
+     * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+     */
+    userprofile.Userprofile.QttProfile getQttProfile();
+    /**
+     * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+     */
+    userprofile.Userprofile.QttProfileOrBuilder getQttProfileOrBuilder();
   }
   /**
    * Protobuf type {@code userprofile.UserProfile}
@@ -4467,6 +4653,19 @@ public final class Userprofile {
               java.lang.String s = input.readStringRequireUtf8();
 
               city_ = s;
+              break;
+            }
+            case 810: {
+              userprofile.Userprofile.QttProfile.Builder subBuilder = null;
+              if (qttProfile_ != null) {
+                subBuilder = qttProfile_.toBuilder();
+              }
+              qttProfile_ = input.readMessage(userprofile.Userprofile.QttProfile.parser(), extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(qttProfile_);
+                qttProfile_ = subBuilder.buildPartial();
+              }
+
               break;
             }
           }
@@ -4897,6 +5096,27 @@ public final class Userprofile {
       }
     }
 
+    public static final int QTTPROFILE_FIELD_NUMBER = 101;
+    private userprofile.Userprofile.QttProfile qttProfile_;
+    /**
+     * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+     */
+    public boolean hasQttProfile() {
+      return qttProfile_ != null;
+    }
+    /**
+     * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+     */
+    public userprofile.Userprofile.QttProfile getQttProfile() {
+      return qttProfile_ == null ? userprofile.Userprofile.QttProfile.getDefaultInstance() : qttProfile_;
+    }
+    /**
+     * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+     */
+    public userprofile.Userprofile.QttProfileOrBuilder getQttProfileOrBuilder() {
+      return getQttProfile();
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -4950,6 +5170,9 @@ public final class Userprofile {
       }
       if (!getCityBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 14, city_);
+      }
+      if (qttProfile_ != null) {
+        output.writeMessage(101, getQttProfile());
       }
     }
 
@@ -5011,6 +5234,10 @@ public final class Userprofile {
       if (!getCityBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(14, city_);
       }
+      if (qttProfile_ != null) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(101, getQttProfile());
+      }
       memoizedSize = size;
       return size;
     }
@@ -5055,6 +5282,11 @@ public final class Userprofile {
           .equals(other.getProvince());
       result = result && getCity()
           .equals(other.getCity());
+      result = result && (hasQttProfile() == other.hasQttProfile());
+      if (hasQttProfile()) {
+        result = result && getQttProfile()
+            .equals(other.getQttProfile());
+      }
       return result;
     }
 
@@ -5099,6 +5331,10 @@ public final class Userprofile {
       hash = (53 * hash) + getProvince().hashCode();
       hash = (37 * hash) + CITY_FIELD_NUMBER;
       hash = (53 * hash) + getCity().hashCode();
+      if (hasQttProfile()) {
+        hash = (37 * hash) + QTTPROFILE_FIELD_NUMBER;
+        hash = (53 * hash) + getQttProfile().hashCode();
+      }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -5260,6 +5496,12 @@ public final class Userprofile {
 
         city_ = "";
 
+        if (qttProfileBuilder_ == null) {
+          qttProfile_ = null;
+        } else {
+          qttProfile_ = null;
+          qttProfileBuilder_ = null;
+        }
         return this;
       }
 
@@ -5322,6 +5564,11 @@ public final class Userprofile {
         }
         result.province_ = province_;
         result.city_ = city_;
+        if (qttProfileBuilder_ == null) {
+          result.qttProfile_ = qttProfile_;
+        } else {
+          result.qttProfile_ = qttProfileBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -5477,6 +5724,9 @@ public final class Userprofile {
         if (!other.getCity().isEmpty()) {
           city_ = other.city_;
           onChanged();
+        }
+        if (other.hasQttProfile()) {
+          mergeQttProfile(other.getQttProfile());
         }
         onChanged();
         return this;
@@ -7011,6 +7261,123 @@ public final class Userprofile {
         onChanged();
         return this;
       }
+
+      private userprofile.Userprofile.QttProfile qttProfile_ = null;
+      private com.google.protobuf.SingleFieldBuilderV3<
+          userprofile.Userprofile.QttProfile, userprofile.Userprofile.QttProfile.Builder, userprofile.Userprofile.QttProfileOrBuilder> qttProfileBuilder_;
+      /**
+       * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+       */
+      public boolean hasQttProfile() {
+        return qttProfileBuilder_ != null || qttProfile_ != null;
+      }
+      /**
+       * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+       */
+      public userprofile.Userprofile.QttProfile getQttProfile() {
+        if (qttProfileBuilder_ == null) {
+          return qttProfile_ == null ? userprofile.Userprofile.QttProfile.getDefaultInstance() : qttProfile_;
+        } else {
+          return qttProfileBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+       */
+      public Builder setQttProfile(userprofile.Userprofile.QttProfile value) {
+        if (qttProfileBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          qttProfile_ = value;
+          onChanged();
+        } else {
+          qttProfileBuilder_.setMessage(value);
+        }
+
+        return this;
+      }
+      /**
+       * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+       */
+      public Builder setQttProfile(
+          userprofile.Userprofile.QttProfile.Builder builderForValue) {
+        if (qttProfileBuilder_ == null) {
+          qttProfile_ = builderForValue.build();
+          onChanged();
+        } else {
+          qttProfileBuilder_.setMessage(builderForValue.build());
+        }
+
+        return this;
+      }
+      /**
+       * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+       */
+      public Builder mergeQttProfile(userprofile.Userprofile.QttProfile value) {
+        if (qttProfileBuilder_ == null) {
+          if (qttProfile_ != null) {
+            qttProfile_ =
+              userprofile.Userprofile.QttProfile.newBuilder(qttProfile_).mergeFrom(value).buildPartial();
+          } else {
+            qttProfile_ = value;
+          }
+          onChanged();
+        } else {
+          qttProfileBuilder_.mergeFrom(value);
+        }
+
+        return this;
+      }
+      /**
+       * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+       */
+      public Builder clearQttProfile() {
+        if (qttProfileBuilder_ == null) {
+          qttProfile_ = null;
+          onChanged();
+        } else {
+          qttProfile_ = null;
+          qttProfileBuilder_ = null;
+        }
+
+        return this;
+      }
+      /**
+       * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+       */
+      public userprofile.Userprofile.QttProfile.Builder getQttProfileBuilder() {
+        
+        onChanged();
+        return getQttProfileFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+       */
+      public userprofile.Userprofile.QttProfileOrBuilder getQttProfileOrBuilder() {
+        if (qttProfileBuilder_ != null) {
+          return qttProfileBuilder_.getMessageOrBuilder();
+        } else {
+          return qttProfile_ == null ?
+              userprofile.Userprofile.QttProfile.getDefaultInstance() : qttProfile_;
+        }
+      }
+      /**
+       * <code>optional .userprofile.QttProfile qttProfile = 101;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilderV3<
+          userprofile.Userprofile.QttProfile, userprofile.Userprofile.QttProfile.Builder, userprofile.Userprofile.QttProfileOrBuilder> 
+          getQttProfileFieldBuilder() {
+        if (qttProfileBuilder_ == null) {
+          qttProfileBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+              userprofile.Userprofile.QttProfile, userprofile.Userprofile.QttProfile.Builder, userprofile.Userprofile.QttProfileOrBuilder>(
+                  getQttProfile(),
+                  getParentForChildren(),
+                  isClean());
+          qttProfile_ = null;
+        }
+        return qttProfileBuilder_;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return this;
@@ -7060,6 +7427,2150 @@ public final class Userprofile {
 
   }
 
+  public interface QttProfileOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:userprofile.QttProfile)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>optional string devid = 1;</code>
+     */
+    java.lang.String getDevid();
+    /**
+     * <code>optional string devid = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getDevidBytes();
+
+    /**
+     * <code>optional int64 member_id = 2;</code>
+     */
+    long getMemberId();
+
+    /**
+     * <code>optional string nickname = 3;</code>
+     */
+    java.lang.String getNickname();
+    /**
+     * <code>optional string nickname = 3;</code>
+     */
+    com.google.protobuf.ByteString
+        getNicknameBytes();
+
+    /**
+     * <code>optional string wx_nickname = 4;</code>
+     */
+    java.lang.String getWxNickname();
+    /**
+     * <code>optional string wx_nickname = 4;</code>
+     */
+    com.google.protobuf.ByteString
+        getWxNicknameBytes();
+
+    /**
+     * <pre>
+     *0 未知, 1 内  2 外
+     * </pre>
+     *
+     * <code>optional int32 lx_type = 5;</code>
+     */
+    int getLxType();
+
+    /**
+     * <code>optional int32 lx_package = 6;</code>
+     */
+    int getLxPackage();
+
+    /**
+     * <code>optional .userprofile.QttProfile teacher = 11;</code>
+     */
+    boolean hasTeacher();
+    /**
+     * <code>optional .userprofile.QttProfile teacher = 11;</code>
+     */
+    userprofile.Userprofile.QttProfile getTeacher();
+    /**
+     * <code>optional .userprofile.QttProfile teacher = 11;</code>
+     */
+    userprofile.Userprofile.QttProfileOrBuilder getTeacherOrBuilder();
+
+    /**
+     * <pre>
+     *徒弟
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile students = 12;</code>
+     */
+    java.util.List<userprofile.Userprofile.QttProfile> 
+        getStudentsList();
+    /**
+     * <pre>
+     *徒弟
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile students = 12;</code>
+     */
+    userprofile.Userprofile.QttProfile getStudents(int index);
+    /**
+     * <pre>
+     *徒弟
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile students = 12;</code>
+     */
+    int getStudentsCount();
+    /**
+     * <pre>
+     *徒弟
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile students = 12;</code>
+     */
+    java.util.List<? extends userprofile.Userprofile.QttProfileOrBuilder> 
+        getStudentsOrBuilderList();
+    /**
+     * <pre>
+     *徒弟
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile students = 12;</code>
+     */
+    userprofile.Userprofile.QttProfileOrBuilder getStudentsOrBuilder(
+        int index);
+
+    /**
+     * <pre>
+     *同师傅用户
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+     */
+    java.util.List<userprofile.Userprofile.QttProfile> 
+        getSiblingsList();
+    /**
+     * <pre>
+     *同师傅用户
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+     */
+    userprofile.Userprofile.QttProfile getSiblings(int index);
+    /**
+     * <pre>
+     *同师傅用户
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+     */
+    int getSiblingsCount();
+    /**
+     * <pre>
+     *同师傅用户
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+     */
+    java.util.List<? extends userprofile.Userprofile.QttProfileOrBuilder> 
+        getSiblingsOrBuilderList();
+    /**
+     * <pre>
+     *同师傅用户
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+     */
+    userprofile.Userprofile.QttProfileOrBuilder getSiblingsOrBuilder(
+        int index);
+  }
+  /**
+   * Protobuf type {@code userprofile.QttProfile}
+   */
+  public  static final class QttProfile extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:userprofile.QttProfile)
+      QttProfileOrBuilder {
+    // Use QttProfile.newBuilder() to construct.
+    private QttProfile(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+      super(builder);
+    }
+    private QttProfile() {
+      devid_ = "";
+      memberId_ = 0L;
+      nickname_ = "";
+      wxNickname_ = "";
+      lxType_ = 0;
+      lxPackage_ = 0;
+      students_ = java.util.Collections.emptyList();
+      siblings_ = java.util.Collections.emptyList();
+    }
+
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+    getUnknownFields() {
+      return com.google.protobuf.UnknownFieldSet.getDefaultInstance();
+    }
+    private QttProfile(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      this();
+      int mutable_bitField0_ = 0;
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!input.skipField(tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              devid_ = s;
+              break;
+            }
+            case 16: {
+
+              memberId_ = input.readInt64();
+              break;
+            }
+            case 26: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              nickname_ = s;
+              break;
+            }
+            case 34: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              wxNickname_ = s;
+              break;
+            }
+            case 40: {
+
+              lxType_ = input.readInt32();
+              break;
+            }
+            case 48: {
+
+              lxPackage_ = input.readInt32();
+              break;
+            }
+            case 90: {
+              userprofile.Userprofile.QttProfile.Builder subBuilder = null;
+              if (teacher_ != null) {
+                subBuilder = teacher_.toBuilder();
+              }
+              teacher_ = input.readMessage(userprofile.Userprofile.QttProfile.parser(), extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(teacher_);
+                teacher_ = subBuilder.buildPartial();
+              }
+
+              break;
+            }
+            case 98: {
+              if (!((mutable_bitField0_ & 0x00000080) == 0x00000080)) {
+                students_ = new java.util.ArrayList<userprofile.Userprofile.QttProfile>();
+                mutable_bitField0_ |= 0x00000080;
+              }
+              students_.add(
+                  input.readMessage(userprofile.Userprofile.QttProfile.parser(), extensionRegistry));
+              break;
+            }
+            case 106: {
+              if (!((mutable_bitField0_ & 0x00000100) == 0x00000100)) {
+                siblings_ = new java.util.ArrayList<userprofile.Userprofile.QttProfile>();
+                mutable_bitField0_ |= 0x00000100;
+              }
+              siblings_.add(
+                  input.readMessage(userprofile.Userprofile.QttProfile.parser(), extensionRegistry));
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e).setUnfinishedMessage(this);
+      } finally {
+        if (((mutable_bitField0_ & 0x00000080) == 0x00000080)) {
+          students_ = java.util.Collections.unmodifiableList(students_);
+        }
+        if (((mutable_bitField0_ & 0x00000100) == 0x00000100)) {
+          siblings_ = java.util.Collections.unmodifiableList(siblings_);
+        }
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return userprofile.Userprofile.internal_static_userprofile_QttProfile_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return userprofile.Userprofile.internal_static_userprofile_QttProfile_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              userprofile.Userprofile.QttProfile.class, userprofile.Userprofile.QttProfile.Builder.class);
+    }
+
+    private int bitField0_;
+    public static final int DEVID_FIELD_NUMBER = 1;
+    private volatile java.lang.Object devid_;
+    /**
+     * <code>optional string devid = 1;</code>
+     */
+    public java.lang.String getDevid() {
+      java.lang.Object ref = devid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        devid_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>optional string devid = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getDevidBytes() {
+      java.lang.Object ref = devid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        devid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int MEMBER_ID_FIELD_NUMBER = 2;
+    private long memberId_;
+    /**
+     * <code>optional int64 member_id = 2;</code>
+     */
+    public long getMemberId() {
+      return memberId_;
+    }
+
+    public static final int NICKNAME_FIELD_NUMBER = 3;
+    private volatile java.lang.Object nickname_;
+    /**
+     * <code>optional string nickname = 3;</code>
+     */
+    public java.lang.String getNickname() {
+      java.lang.Object ref = nickname_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        nickname_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>optional string nickname = 3;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNicknameBytes() {
+      java.lang.Object ref = nickname_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        nickname_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int WX_NICKNAME_FIELD_NUMBER = 4;
+    private volatile java.lang.Object wxNickname_;
+    /**
+     * <code>optional string wx_nickname = 4;</code>
+     */
+    public java.lang.String getWxNickname() {
+      java.lang.Object ref = wxNickname_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        wxNickname_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>optional string wx_nickname = 4;</code>
+     */
+    public com.google.protobuf.ByteString
+        getWxNicknameBytes() {
+      java.lang.Object ref = wxNickname_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        wxNickname_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int LX_TYPE_FIELD_NUMBER = 5;
+    private int lxType_;
+    /**
+     * <pre>
+     *0 未知, 1 内  2 外
+     * </pre>
+     *
+     * <code>optional int32 lx_type = 5;</code>
+     */
+    public int getLxType() {
+      return lxType_;
+    }
+
+    public static final int LX_PACKAGE_FIELD_NUMBER = 6;
+    private int lxPackage_;
+    /**
+     * <code>optional int32 lx_package = 6;</code>
+     */
+    public int getLxPackage() {
+      return lxPackage_;
+    }
+
+    public static final int TEACHER_FIELD_NUMBER = 11;
+    private userprofile.Userprofile.QttProfile teacher_;
+    /**
+     * <code>optional .userprofile.QttProfile teacher = 11;</code>
+     */
+    public boolean hasTeacher() {
+      return teacher_ != null;
+    }
+    /**
+     * <code>optional .userprofile.QttProfile teacher = 11;</code>
+     */
+    public userprofile.Userprofile.QttProfile getTeacher() {
+      return teacher_ == null ? userprofile.Userprofile.QttProfile.getDefaultInstance() : teacher_;
+    }
+    /**
+     * <code>optional .userprofile.QttProfile teacher = 11;</code>
+     */
+    public userprofile.Userprofile.QttProfileOrBuilder getTeacherOrBuilder() {
+      return getTeacher();
+    }
+
+    public static final int STUDENTS_FIELD_NUMBER = 12;
+    private java.util.List<userprofile.Userprofile.QttProfile> students_;
+    /**
+     * <pre>
+     *徒弟
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile students = 12;</code>
+     */
+    public java.util.List<userprofile.Userprofile.QttProfile> getStudentsList() {
+      return students_;
+    }
+    /**
+     * <pre>
+     *徒弟
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile students = 12;</code>
+     */
+    public java.util.List<? extends userprofile.Userprofile.QttProfileOrBuilder> 
+        getStudentsOrBuilderList() {
+      return students_;
+    }
+    /**
+     * <pre>
+     *徒弟
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile students = 12;</code>
+     */
+    public int getStudentsCount() {
+      return students_.size();
+    }
+    /**
+     * <pre>
+     *徒弟
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile students = 12;</code>
+     */
+    public userprofile.Userprofile.QttProfile getStudents(int index) {
+      return students_.get(index);
+    }
+    /**
+     * <pre>
+     *徒弟
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile students = 12;</code>
+     */
+    public userprofile.Userprofile.QttProfileOrBuilder getStudentsOrBuilder(
+        int index) {
+      return students_.get(index);
+    }
+
+    public static final int SIBLINGS_FIELD_NUMBER = 13;
+    private java.util.List<userprofile.Userprofile.QttProfile> siblings_;
+    /**
+     * <pre>
+     *同师傅用户
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+     */
+    public java.util.List<userprofile.Userprofile.QttProfile> getSiblingsList() {
+      return siblings_;
+    }
+    /**
+     * <pre>
+     *同师傅用户
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+     */
+    public java.util.List<? extends userprofile.Userprofile.QttProfileOrBuilder> 
+        getSiblingsOrBuilderList() {
+      return siblings_;
+    }
+    /**
+     * <pre>
+     *同师傅用户
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+     */
+    public int getSiblingsCount() {
+      return siblings_.size();
+    }
+    /**
+     * <pre>
+     *同师傅用户
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+     */
+    public userprofile.Userprofile.QttProfile getSiblings(int index) {
+      return siblings_.get(index);
+    }
+    /**
+     * <pre>
+     *同师傅用户
+     * </pre>
+     *
+     * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+     */
+    public userprofile.Userprofile.QttProfileOrBuilder getSiblingsOrBuilder(
+        int index) {
+      return siblings_.get(index);
+    }
+
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (!getDevidBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, devid_);
+      }
+      if (memberId_ != 0L) {
+        output.writeInt64(2, memberId_);
+      }
+      if (!getNicknameBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 3, nickname_);
+      }
+      if (!getWxNicknameBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 4, wxNickname_);
+      }
+      if (lxType_ != 0) {
+        output.writeInt32(5, lxType_);
+      }
+      if (lxPackage_ != 0) {
+        output.writeInt32(6, lxPackage_);
+      }
+      if (teacher_ != null) {
+        output.writeMessage(11, getTeacher());
+      }
+      for (int i = 0; i < students_.size(); i++) {
+        output.writeMessage(12, students_.get(i));
+      }
+      for (int i = 0; i < siblings_.size(); i++) {
+        output.writeMessage(13, siblings_.get(i));
+      }
+    }
+
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (!getDevidBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, devid_);
+      }
+      if (memberId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(2, memberId_);
+      }
+      if (!getNicknameBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, nickname_);
+      }
+      if (!getWxNicknameBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, wxNickname_);
+      }
+      if (lxType_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(5, lxType_);
+      }
+      if (lxPackage_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(6, lxPackage_);
+      }
+      if (teacher_ != null) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(11, getTeacher());
+      }
+      for (int i = 0; i < students_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(12, students_.get(i));
+      }
+      for (int i = 0; i < siblings_.size(); i++) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(13, siblings_.get(i));
+      }
+      memoizedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof userprofile.Userprofile.QttProfile)) {
+        return super.equals(obj);
+      }
+      userprofile.Userprofile.QttProfile other = (userprofile.Userprofile.QttProfile) obj;
+
+      boolean result = true;
+      result = result && getDevid()
+          .equals(other.getDevid());
+      result = result && (getMemberId()
+          == other.getMemberId());
+      result = result && getNickname()
+          .equals(other.getNickname());
+      result = result && getWxNickname()
+          .equals(other.getWxNickname());
+      result = result && (getLxType()
+          == other.getLxType());
+      result = result && (getLxPackage()
+          == other.getLxPackage());
+      result = result && (hasTeacher() == other.hasTeacher());
+      if (hasTeacher()) {
+        result = result && getTeacher()
+            .equals(other.getTeacher());
+      }
+      result = result && getStudentsList()
+          .equals(other.getStudentsList());
+      result = result && getSiblingsList()
+          .equals(other.getSiblingsList());
+      return result;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (37 * hash) + DEVID_FIELD_NUMBER;
+      hash = (53 * hash) + getDevid().hashCode();
+      hash = (37 * hash) + MEMBER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getMemberId());
+      hash = (37 * hash) + NICKNAME_FIELD_NUMBER;
+      hash = (53 * hash) + getNickname().hashCode();
+      hash = (37 * hash) + WX_NICKNAME_FIELD_NUMBER;
+      hash = (53 * hash) + getWxNickname().hashCode();
+      hash = (37 * hash) + LX_TYPE_FIELD_NUMBER;
+      hash = (53 * hash) + getLxType();
+      hash = (37 * hash) + LX_PACKAGE_FIELD_NUMBER;
+      hash = (53 * hash) + getLxPackage();
+      if (hasTeacher()) {
+        hash = (37 * hash) + TEACHER_FIELD_NUMBER;
+        hash = (53 * hash) + getTeacher().hashCode();
+      }
+      if (getStudentsCount() > 0) {
+        hash = (37 * hash) + STUDENTS_FIELD_NUMBER;
+        hash = (53 * hash) + getStudentsList().hashCode();
+      }
+      if (getSiblingsCount() > 0) {
+        hash = (37 * hash) + SIBLINGS_FIELD_NUMBER;
+        hash = (53 * hash) + getSiblingsList().hashCode();
+      }
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static userprofile.Userprofile.QttProfile parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static userprofile.Userprofile.QttProfile parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static userprofile.Userprofile.QttProfile parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static userprofile.Userprofile.QttProfile parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static userprofile.Userprofile.QttProfile parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static userprofile.Userprofile.QttProfile parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static userprofile.Userprofile.QttProfile parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+    public static userprofile.Userprofile.QttProfile parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static userprofile.Userprofile.QttProfile parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static userprofile.Userprofile.QttProfile parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(userprofile.Userprofile.QttProfile prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code userprofile.QttProfile}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:userprofile.QttProfile)
+        userprofile.Userprofile.QttProfileOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return userprofile.Userprofile.internal_static_userprofile_QttProfile_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return userprofile.Userprofile.internal_static_userprofile_QttProfile_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                userprofile.Userprofile.QttProfile.class, userprofile.Userprofile.QttProfile.Builder.class);
+      }
+
+      // Construct using userprofile.Userprofile.QttProfile.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
+          getStudentsFieldBuilder();
+          getSiblingsFieldBuilder();
+        }
+      }
+      public Builder clear() {
+        super.clear();
+        devid_ = "";
+
+        memberId_ = 0L;
+
+        nickname_ = "";
+
+        wxNickname_ = "";
+
+        lxType_ = 0;
+
+        lxPackage_ = 0;
+
+        if (teacherBuilder_ == null) {
+          teacher_ = null;
+        } else {
+          teacher_ = null;
+          teacherBuilder_ = null;
+        }
+        if (studentsBuilder_ == null) {
+          students_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000080);
+        } else {
+          studentsBuilder_.clear();
+        }
+        if (siblingsBuilder_ == null) {
+          siblings_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000100);
+        } else {
+          siblingsBuilder_.clear();
+        }
+        return this;
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return userprofile.Userprofile.internal_static_userprofile_QttProfile_descriptor;
+      }
+
+      public userprofile.Userprofile.QttProfile getDefaultInstanceForType() {
+        return userprofile.Userprofile.QttProfile.getDefaultInstance();
+      }
+
+      public userprofile.Userprofile.QttProfile build() {
+        userprofile.Userprofile.QttProfile result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public userprofile.Userprofile.QttProfile buildPartial() {
+        userprofile.Userprofile.QttProfile result = new userprofile.Userprofile.QttProfile(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        result.devid_ = devid_;
+        result.memberId_ = memberId_;
+        result.nickname_ = nickname_;
+        result.wxNickname_ = wxNickname_;
+        result.lxType_ = lxType_;
+        result.lxPackage_ = lxPackage_;
+        if (teacherBuilder_ == null) {
+          result.teacher_ = teacher_;
+        } else {
+          result.teacher_ = teacherBuilder_.build();
+        }
+        if (studentsBuilder_ == null) {
+          if (((bitField0_ & 0x00000080) == 0x00000080)) {
+            students_ = java.util.Collections.unmodifiableList(students_);
+            bitField0_ = (bitField0_ & ~0x00000080);
+          }
+          result.students_ = students_;
+        } else {
+          result.students_ = studentsBuilder_.build();
+        }
+        if (siblingsBuilder_ == null) {
+          if (((bitField0_ & 0x00000100) == 0x00000100)) {
+            siblings_ = java.util.Collections.unmodifiableList(siblings_);
+            bitField0_ = (bitField0_ & ~0x00000100);
+          }
+          result.siblings_ = siblings_;
+        } else {
+          result.siblings_ = siblingsBuilder_.build();
+        }
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder clone() {
+        return (Builder) super.clone();
+      }
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.setField(field, value);
+      }
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return (Builder) super.clearField(field);
+      }
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return (Builder) super.clearOneof(oneof);
+      }
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, Object value) {
+        return (Builder) super.setRepeatedField(field, index, value);
+      }
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.addRepeatedField(field, value);
+      }
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof userprofile.Userprofile.QttProfile) {
+          return mergeFrom((userprofile.Userprofile.QttProfile)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(userprofile.Userprofile.QttProfile other) {
+        if (other == userprofile.Userprofile.QttProfile.getDefaultInstance()) return this;
+        if (!other.getDevid().isEmpty()) {
+          devid_ = other.devid_;
+          onChanged();
+        }
+        if (other.getMemberId() != 0L) {
+          setMemberId(other.getMemberId());
+        }
+        if (!other.getNickname().isEmpty()) {
+          nickname_ = other.nickname_;
+          onChanged();
+        }
+        if (!other.getWxNickname().isEmpty()) {
+          wxNickname_ = other.wxNickname_;
+          onChanged();
+        }
+        if (other.getLxType() != 0) {
+          setLxType(other.getLxType());
+        }
+        if (other.getLxPackage() != 0) {
+          setLxPackage(other.getLxPackage());
+        }
+        if (other.hasTeacher()) {
+          mergeTeacher(other.getTeacher());
+        }
+        if (studentsBuilder_ == null) {
+          if (!other.students_.isEmpty()) {
+            if (students_.isEmpty()) {
+              students_ = other.students_;
+              bitField0_ = (bitField0_ & ~0x00000080);
+            } else {
+              ensureStudentsIsMutable();
+              students_.addAll(other.students_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.students_.isEmpty()) {
+            if (studentsBuilder_.isEmpty()) {
+              studentsBuilder_.dispose();
+              studentsBuilder_ = null;
+              students_ = other.students_;
+              bitField0_ = (bitField0_ & ~0x00000080);
+              studentsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getStudentsFieldBuilder() : null;
+            } else {
+              studentsBuilder_.addAllMessages(other.students_);
+            }
+          }
+        }
+        if (siblingsBuilder_ == null) {
+          if (!other.siblings_.isEmpty()) {
+            if (siblings_.isEmpty()) {
+              siblings_ = other.siblings_;
+              bitField0_ = (bitField0_ & ~0x00000100);
+            } else {
+              ensureSiblingsIsMutable();
+              siblings_.addAll(other.siblings_);
+            }
+            onChanged();
+          }
+        } else {
+          if (!other.siblings_.isEmpty()) {
+            if (siblingsBuilder_.isEmpty()) {
+              siblingsBuilder_.dispose();
+              siblingsBuilder_ = null;
+              siblings_ = other.siblings_;
+              bitField0_ = (bitField0_ & ~0x00000100);
+              siblingsBuilder_ = 
+                com.google.protobuf.GeneratedMessageV3.alwaysUseFieldBuilders ?
+                   getSiblingsFieldBuilder() : null;
+            } else {
+              siblingsBuilder_.addAllMessages(other.siblings_);
+            }
+          }
+        }
+        onChanged();
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        userprofile.Userprofile.QttProfile parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (userprofile.Userprofile.QttProfile) e.getUnfinishedMessage();
+          throw e.unwrapIOException();
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object devid_ = "";
+      /**
+       * <code>optional string devid = 1;</code>
+       */
+      public java.lang.String getDevid() {
+        java.lang.Object ref = devid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          devid_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string devid = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getDevidBytes() {
+        java.lang.Object ref = devid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          devid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string devid = 1;</code>
+       */
+      public Builder setDevid(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        devid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string devid = 1;</code>
+       */
+      public Builder clearDevid() {
+        
+        devid_ = getDefaultInstance().getDevid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string devid = 1;</code>
+       */
+      public Builder setDevidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        devid_ = value;
+        onChanged();
+        return this;
+      }
+
+      private long memberId_ ;
+      /**
+       * <code>optional int64 member_id = 2;</code>
+       */
+      public long getMemberId() {
+        return memberId_;
+      }
+      /**
+       * <code>optional int64 member_id = 2;</code>
+       */
+      public Builder setMemberId(long value) {
+        
+        memberId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int64 member_id = 2;</code>
+       */
+      public Builder clearMemberId() {
+        
+        memberId_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object nickname_ = "";
+      /**
+       * <code>optional string nickname = 3;</code>
+       */
+      public java.lang.String getNickname() {
+        java.lang.Object ref = nickname_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          nickname_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string nickname = 3;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNicknameBytes() {
+        java.lang.Object ref = nickname_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          nickname_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string nickname = 3;</code>
+       */
+      public Builder setNickname(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        nickname_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string nickname = 3;</code>
+       */
+      public Builder clearNickname() {
+        
+        nickname_ = getDefaultInstance().getNickname();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string nickname = 3;</code>
+       */
+      public Builder setNicknameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        nickname_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object wxNickname_ = "";
+      /**
+       * <code>optional string wx_nickname = 4;</code>
+       */
+      public java.lang.String getWxNickname() {
+        java.lang.Object ref = wxNickname_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          wxNickname_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string wx_nickname = 4;</code>
+       */
+      public com.google.protobuf.ByteString
+          getWxNicknameBytes() {
+        java.lang.Object ref = wxNickname_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          wxNickname_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string wx_nickname = 4;</code>
+       */
+      public Builder setWxNickname(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        wxNickname_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string wx_nickname = 4;</code>
+       */
+      public Builder clearWxNickname() {
+        
+        wxNickname_ = getDefaultInstance().getWxNickname();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string wx_nickname = 4;</code>
+       */
+      public Builder setWxNicknameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        wxNickname_ = value;
+        onChanged();
+        return this;
+      }
+
+      private int lxType_ ;
+      /**
+       * <pre>
+       *0 未知, 1 内  2 外
+       * </pre>
+       *
+       * <code>optional int32 lx_type = 5;</code>
+       */
+      public int getLxType() {
+        return lxType_;
+      }
+      /**
+       * <pre>
+       *0 未知, 1 内  2 外
+       * </pre>
+       *
+       * <code>optional int32 lx_type = 5;</code>
+       */
+      public Builder setLxType(int value) {
+        
+        lxType_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *0 未知, 1 内  2 外
+       * </pre>
+       *
+       * <code>optional int32 lx_type = 5;</code>
+       */
+      public Builder clearLxType() {
+        
+        lxType_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int lxPackage_ ;
+      /**
+       * <code>optional int32 lx_package = 6;</code>
+       */
+      public int getLxPackage() {
+        return lxPackage_;
+      }
+      /**
+       * <code>optional int32 lx_package = 6;</code>
+       */
+      public Builder setLxPackage(int value) {
+        
+        lxPackage_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int32 lx_package = 6;</code>
+       */
+      public Builder clearLxPackage() {
+        
+        lxPackage_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private userprofile.Userprofile.QttProfile teacher_ = null;
+      private com.google.protobuf.SingleFieldBuilderV3<
+          userprofile.Userprofile.QttProfile, userprofile.Userprofile.QttProfile.Builder, userprofile.Userprofile.QttProfileOrBuilder> teacherBuilder_;
+      /**
+       * <code>optional .userprofile.QttProfile teacher = 11;</code>
+       */
+      public boolean hasTeacher() {
+        return teacherBuilder_ != null || teacher_ != null;
+      }
+      /**
+       * <code>optional .userprofile.QttProfile teacher = 11;</code>
+       */
+      public userprofile.Userprofile.QttProfile getTeacher() {
+        if (teacherBuilder_ == null) {
+          return teacher_ == null ? userprofile.Userprofile.QttProfile.getDefaultInstance() : teacher_;
+        } else {
+          return teacherBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>optional .userprofile.QttProfile teacher = 11;</code>
+       */
+      public Builder setTeacher(userprofile.Userprofile.QttProfile value) {
+        if (teacherBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          teacher_ = value;
+          onChanged();
+        } else {
+          teacherBuilder_.setMessage(value);
+        }
+
+        return this;
+      }
+      /**
+       * <code>optional .userprofile.QttProfile teacher = 11;</code>
+       */
+      public Builder setTeacher(
+          userprofile.Userprofile.QttProfile.Builder builderForValue) {
+        if (teacherBuilder_ == null) {
+          teacher_ = builderForValue.build();
+          onChanged();
+        } else {
+          teacherBuilder_.setMessage(builderForValue.build());
+        }
+
+        return this;
+      }
+      /**
+       * <code>optional .userprofile.QttProfile teacher = 11;</code>
+       */
+      public Builder mergeTeacher(userprofile.Userprofile.QttProfile value) {
+        if (teacherBuilder_ == null) {
+          if (teacher_ != null) {
+            teacher_ =
+              userprofile.Userprofile.QttProfile.newBuilder(teacher_).mergeFrom(value).buildPartial();
+          } else {
+            teacher_ = value;
+          }
+          onChanged();
+        } else {
+          teacherBuilder_.mergeFrom(value);
+        }
+
+        return this;
+      }
+      /**
+       * <code>optional .userprofile.QttProfile teacher = 11;</code>
+       */
+      public Builder clearTeacher() {
+        if (teacherBuilder_ == null) {
+          teacher_ = null;
+          onChanged();
+        } else {
+          teacher_ = null;
+          teacherBuilder_ = null;
+        }
+
+        return this;
+      }
+      /**
+       * <code>optional .userprofile.QttProfile teacher = 11;</code>
+       */
+      public userprofile.Userprofile.QttProfile.Builder getTeacherBuilder() {
+        
+        onChanged();
+        return getTeacherFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .userprofile.QttProfile teacher = 11;</code>
+       */
+      public userprofile.Userprofile.QttProfileOrBuilder getTeacherOrBuilder() {
+        if (teacherBuilder_ != null) {
+          return teacherBuilder_.getMessageOrBuilder();
+        } else {
+          return teacher_ == null ?
+              userprofile.Userprofile.QttProfile.getDefaultInstance() : teacher_;
+        }
+      }
+      /**
+       * <code>optional .userprofile.QttProfile teacher = 11;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilderV3<
+          userprofile.Userprofile.QttProfile, userprofile.Userprofile.QttProfile.Builder, userprofile.Userprofile.QttProfileOrBuilder> 
+          getTeacherFieldBuilder() {
+        if (teacherBuilder_ == null) {
+          teacherBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+              userprofile.Userprofile.QttProfile, userprofile.Userprofile.QttProfile.Builder, userprofile.Userprofile.QttProfileOrBuilder>(
+                  getTeacher(),
+                  getParentForChildren(),
+                  isClean());
+          teacher_ = null;
+        }
+        return teacherBuilder_;
+      }
+
+      private java.util.List<userprofile.Userprofile.QttProfile> students_ =
+        java.util.Collections.emptyList();
+      private void ensureStudentsIsMutable() {
+        if (!((bitField0_ & 0x00000080) == 0x00000080)) {
+          students_ = new java.util.ArrayList<userprofile.Userprofile.QttProfile>(students_);
+          bitField0_ |= 0x00000080;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          userprofile.Userprofile.QttProfile, userprofile.Userprofile.QttProfile.Builder, userprofile.Userprofile.QttProfileOrBuilder> studentsBuilder_;
+
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public java.util.List<userprofile.Userprofile.QttProfile> getStudentsList() {
+        if (studentsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(students_);
+        } else {
+          return studentsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public int getStudentsCount() {
+        if (studentsBuilder_ == null) {
+          return students_.size();
+        } else {
+          return studentsBuilder_.getCount();
+        }
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public userprofile.Userprofile.QttProfile getStudents(int index) {
+        if (studentsBuilder_ == null) {
+          return students_.get(index);
+        } else {
+          return studentsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public Builder setStudents(
+          int index, userprofile.Userprofile.QttProfile value) {
+        if (studentsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureStudentsIsMutable();
+          students_.set(index, value);
+          onChanged();
+        } else {
+          studentsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public Builder setStudents(
+          int index, userprofile.Userprofile.QttProfile.Builder builderForValue) {
+        if (studentsBuilder_ == null) {
+          ensureStudentsIsMutable();
+          students_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          studentsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public Builder addStudents(userprofile.Userprofile.QttProfile value) {
+        if (studentsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureStudentsIsMutable();
+          students_.add(value);
+          onChanged();
+        } else {
+          studentsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public Builder addStudents(
+          int index, userprofile.Userprofile.QttProfile value) {
+        if (studentsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureStudentsIsMutable();
+          students_.add(index, value);
+          onChanged();
+        } else {
+          studentsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public Builder addStudents(
+          userprofile.Userprofile.QttProfile.Builder builderForValue) {
+        if (studentsBuilder_ == null) {
+          ensureStudentsIsMutable();
+          students_.add(builderForValue.build());
+          onChanged();
+        } else {
+          studentsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public Builder addStudents(
+          int index, userprofile.Userprofile.QttProfile.Builder builderForValue) {
+        if (studentsBuilder_ == null) {
+          ensureStudentsIsMutable();
+          students_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          studentsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public Builder addAllStudents(
+          java.lang.Iterable<? extends userprofile.Userprofile.QttProfile> values) {
+        if (studentsBuilder_ == null) {
+          ensureStudentsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, students_);
+          onChanged();
+        } else {
+          studentsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public Builder clearStudents() {
+        if (studentsBuilder_ == null) {
+          students_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000080);
+          onChanged();
+        } else {
+          studentsBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public Builder removeStudents(int index) {
+        if (studentsBuilder_ == null) {
+          ensureStudentsIsMutable();
+          students_.remove(index);
+          onChanged();
+        } else {
+          studentsBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public userprofile.Userprofile.QttProfile.Builder getStudentsBuilder(
+          int index) {
+        return getStudentsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public userprofile.Userprofile.QttProfileOrBuilder getStudentsOrBuilder(
+          int index) {
+        if (studentsBuilder_ == null) {
+          return students_.get(index);  } else {
+          return studentsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public java.util.List<? extends userprofile.Userprofile.QttProfileOrBuilder> 
+           getStudentsOrBuilderList() {
+        if (studentsBuilder_ != null) {
+          return studentsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(students_);
+        }
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public userprofile.Userprofile.QttProfile.Builder addStudentsBuilder() {
+        return getStudentsFieldBuilder().addBuilder(
+            userprofile.Userprofile.QttProfile.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public userprofile.Userprofile.QttProfile.Builder addStudentsBuilder(
+          int index) {
+        return getStudentsFieldBuilder().addBuilder(
+            index, userprofile.Userprofile.QttProfile.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       *徒弟
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile students = 12;</code>
+       */
+      public java.util.List<userprofile.Userprofile.QttProfile.Builder> 
+           getStudentsBuilderList() {
+        return getStudentsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          userprofile.Userprofile.QttProfile, userprofile.Userprofile.QttProfile.Builder, userprofile.Userprofile.QttProfileOrBuilder> 
+          getStudentsFieldBuilder() {
+        if (studentsBuilder_ == null) {
+          studentsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              userprofile.Userprofile.QttProfile, userprofile.Userprofile.QttProfile.Builder, userprofile.Userprofile.QttProfileOrBuilder>(
+                  students_,
+                  ((bitField0_ & 0x00000080) == 0x00000080),
+                  getParentForChildren(),
+                  isClean());
+          students_ = null;
+        }
+        return studentsBuilder_;
+      }
+
+      private java.util.List<userprofile.Userprofile.QttProfile> siblings_ =
+        java.util.Collections.emptyList();
+      private void ensureSiblingsIsMutable() {
+        if (!((bitField0_ & 0x00000100) == 0x00000100)) {
+          siblings_ = new java.util.ArrayList<userprofile.Userprofile.QttProfile>(siblings_);
+          bitField0_ |= 0x00000100;
+         }
+      }
+
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          userprofile.Userprofile.QttProfile, userprofile.Userprofile.QttProfile.Builder, userprofile.Userprofile.QttProfileOrBuilder> siblingsBuilder_;
+
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public java.util.List<userprofile.Userprofile.QttProfile> getSiblingsList() {
+        if (siblingsBuilder_ == null) {
+          return java.util.Collections.unmodifiableList(siblings_);
+        } else {
+          return siblingsBuilder_.getMessageList();
+        }
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public int getSiblingsCount() {
+        if (siblingsBuilder_ == null) {
+          return siblings_.size();
+        } else {
+          return siblingsBuilder_.getCount();
+        }
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public userprofile.Userprofile.QttProfile getSiblings(int index) {
+        if (siblingsBuilder_ == null) {
+          return siblings_.get(index);
+        } else {
+          return siblingsBuilder_.getMessage(index);
+        }
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public Builder setSiblings(
+          int index, userprofile.Userprofile.QttProfile value) {
+        if (siblingsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureSiblingsIsMutable();
+          siblings_.set(index, value);
+          onChanged();
+        } else {
+          siblingsBuilder_.setMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public Builder setSiblings(
+          int index, userprofile.Userprofile.QttProfile.Builder builderForValue) {
+        if (siblingsBuilder_ == null) {
+          ensureSiblingsIsMutable();
+          siblings_.set(index, builderForValue.build());
+          onChanged();
+        } else {
+          siblingsBuilder_.setMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public Builder addSiblings(userprofile.Userprofile.QttProfile value) {
+        if (siblingsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureSiblingsIsMutable();
+          siblings_.add(value);
+          onChanged();
+        } else {
+          siblingsBuilder_.addMessage(value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public Builder addSiblings(
+          int index, userprofile.Userprofile.QttProfile value) {
+        if (siblingsBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          ensureSiblingsIsMutable();
+          siblings_.add(index, value);
+          onChanged();
+        } else {
+          siblingsBuilder_.addMessage(index, value);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public Builder addSiblings(
+          userprofile.Userprofile.QttProfile.Builder builderForValue) {
+        if (siblingsBuilder_ == null) {
+          ensureSiblingsIsMutable();
+          siblings_.add(builderForValue.build());
+          onChanged();
+        } else {
+          siblingsBuilder_.addMessage(builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public Builder addSiblings(
+          int index, userprofile.Userprofile.QttProfile.Builder builderForValue) {
+        if (siblingsBuilder_ == null) {
+          ensureSiblingsIsMutable();
+          siblings_.add(index, builderForValue.build());
+          onChanged();
+        } else {
+          siblingsBuilder_.addMessage(index, builderForValue.build());
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public Builder addAllSiblings(
+          java.lang.Iterable<? extends userprofile.Userprofile.QttProfile> values) {
+        if (siblingsBuilder_ == null) {
+          ensureSiblingsIsMutable();
+          com.google.protobuf.AbstractMessageLite.Builder.addAll(
+              values, siblings_);
+          onChanged();
+        } else {
+          siblingsBuilder_.addAllMessages(values);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public Builder clearSiblings() {
+        if (siblingsBuilder_ == null) {
+          siblings_ = java.util.Collections.emptyList();
+          bitField0_ = (bitField0_ & ~0x00000100);
+          onChanged();
+        } else {
+          siblingsBuilder_.clear();
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public Builder removeSiblings(int index) {
+        if (siblingsBuilder_ == null) {
+          ensureSiblingsIsMutable();
+          siblings_.remove(index);
+          onChanged();
+        } else {
+          siblingsBuilder_.remove(index);
+        }
+        return this;
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public userprofile.Userprofile.QttProfile.Builder getSiblingsBuilder(
+          int index) {
+        return getSiblingsFieldBuilder().getBuilder(index);
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public userprofile.Userprofile.QttProfileOrBuilder getSiblingsOrBuilder(
+          int index) {
+        if (siblingsBuilder_ == null) {
+          return siblings_.get(index);  } else {
+          return siblingsBuilder_.getMessageOrBuilder(index);
+        }
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public java.util.List<? extends userprofile.Userprofile.QttProfileOrBuilder> 
+           getSiblingsOrBuilderList() {
+        if (siblingsBuilder_ != null) {
+          return siblingsBuilder_.getMessageOrBuilderList();
+        } else {
+          return java.util.Collections.unmodifiableList(siblings_);
+        }
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public userprofile.Userprofile.QttProfile.Builder addSiblingsBuilder() {
+        return getSiblingsFieldBuilder().addBuilder(
+            userprofile.Userprofile.QttProfile.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public userprofile.Userprofile.QttProfile.Builder addSiblingsBuilder(
+          int index) {
+        return getSiblingsFieldBuilder().addBuilder(
+            index, userprofile.Userprofile.QttProfile.getDefaultInstance());
+      }
+      /**
+       * <pre>
+       *同师傅用户
+       * </pre>
+       *
+       * <code>repeated .userprofile.QttProfile siblings = 13;</code>
+       */
+      public java.util.List<userprofile.Userprofile.QttProfile.Builder> 
+           getSiblingsBuilderList() {
+        return getSiblingsFieldBuilder().getBuilderList();
+      }
+      private com.google.protobuf.RepeatedFieldBuilderV3<
+          userprofile.Userprofile.QttProfile, userprofile.Userprofile.QttProfile.Builder, userprofile.Userprofile.QttProfileOrBuilder> 
+          getSiblingsFieldBuilder() {
+        if (siblingsBuilder_ == null) {
+          siblingsBuilder_ = new com.google.protobuf.RepeatedFieldBuilderV3<
+              userprofile.Userprofile.QttProfile, userprofile.Userprofile.QttProfile.Builder, userprofile.Userprofile.QttProfileOrBuilder>(
+                  siblings_,
+                  ((bitField0_ & 0x00000100) == 0x00000100),
+                  getParentForChildren(),
+                  isClean());
+          siblings_ = null;
+        }
+        return siblingsBuilder_;
+      }
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return this;
+      }
+
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return this;
+      }
+
+
+      // @@protoc_insertion_point(builder_scope:userprofile.QttProfile)
+    }
+
+    // @@protoc_insertion_point(class_scope:userprofile.QttProfile)
+    private static final userprofile.Userprofile.QttProfile DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new userprofile.Userprofile.QttProfile();
+    }
+
+    public static userprofile.Userprofile.QttProfile getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<QttProfile>
+        PARSER = new com.google.protobuf.AbstractParser<QttProfile>() {
+      public QttProfile parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+          return new QttProfile(input, extensionRegistry);
+      }
+    };
+
+    public static com.google.protobuf.Parser<QttProfile> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<QttProfile> getParserForType() {
+      return PARSER;
+    }
+
+    public userprofile.Userprofile.QttProfile getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
   private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_userprofile_AdShow_descriptor;
   private static final 
@@ -7090,6 +9601,11 @@ public final class Userprofile {
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_userprofile_UserProfile_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_userprofile_QttProfile_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_userprofile_QttProfile_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -7101,24 +9617,32 @@ public final class Userprofile {
     java.lang.String[] descriptorData = {
       "\n\033javaproto/userprofile.proto\022\013userprofi" +
       "le\":\n\006AdShow\022\014\n\004adid\030\001 \001(\005\022\r\n\005count\030\002 \001(" +
-      "\005\022\023\n\013click_count\030\003 \001(\005\"=\n\006DspSrc\022\017\n\007dsp_" +
+      "\005\022\023\n\013click_count\030\003 \001(\005\"N\n\006DspSrc\022\017\n\007dsp_" +
       "pid\030\001 \001(\t\022\r\n\005count\030\002 \001(\005\022\023\n\013click_count\030" +
-      "\003 \001(\005\"u\n\006AdFreq\022 \n\003ads\030\001 \003(\0132\023.userprofi" +
-      "le.AdShow\022\021\n\treq_count\030\002 \001(\r\022\023\n\013click_co" +
-      "unt\030\003 \001(\r\022!\n\004dsps\030\004 \003(\0132\023.userprofile.Ds" +
-      "pSrc\"d\n\nAPPPackage\022\023\n\013packagename\030\001 \001(\t\022" +
-      "\017\n\007version\030\002 \001(\t\022\030\n\020firstInstallTime\030\003 \001" +
-      "(\003\022\026\n\016lastUpdateTime\030\004 \001(\003\"*\n\014InterestIt",
-      "em\022\013\n\003tag\030\001 \001(\005\022\r\n\005score\030\002 \001(\005\"\320\002\n\013UserP" +
-      "rofile\022\r\n\005devid\030\001 \001(\t\022\013\n\003age\030\002 \001(\005\022\013\n\003se" +
-      "x\030\003 \001(\005\022\014\n\004coin\030\004 \001(\005\022,\n\tinterests\030\005 \003(\013" +
-      "2\031.userprofile.InterestItem\022+\n\ninstallpk" +
-      "g\030\006 \003(\0132\027.userprofile.APPPackage\022\021\n\tpcat" +
-      "egory\030\007 \001(\005\022\021\n\tincr_coin\030\010 \001(\005\022\020\n\010antisp" +
-      "am\030\t \001(\005\022\022\n\nshare_coin\030\n \001(\005\022\017\n\007newUser\030" +
-      "\013 \001(\005\0222\n\017interestedWords\030\014 \003(\0132\031.userpro" +
-      "file.InterestItem\022\020\n\010province\030\r \001(\t\022\014\n\004c" +
-      "ity\030\016 \001(\tb\006proto3"
+      "\003 \001(\005\022\017\n\007ad_slot\030\004 \001(\t\"u\n\006AdFreq\022 \n\003ads\030" +
+      "\001 \003(\0132\023.userprofile.AdShow\022\021\n\treq_count\030" +
+      "\002 \001(\r\022\023\n\013click_count\030\003 \001(\r\022!\n\004dsps\030\004 \003(\013" +
+      "2\023.userprofile.DspSrc\"d\n\nAPPPackage\022\023\n\013p" +
+      "ackagename\030\001 \001(\t\022\017\n\007version\030\002 \001(\t\022\030\n\020fir" +
+      "stInstallTime\030\003 \001(\003\022\026\n\016lastUpdateTime\030\004 ",
+      "\001(\003\"*\n\014InterestItem\022\013\n\003tag\030\001 \001(\005\022\r\n\005scor" +
+      "e\030\002 \001(\005\"\375\002\n\013UserProfile\022\r\n\005devid\030\001 \001(\t\022\013" +
+      "\n\003age\030\002 \001(\005\022\013\n\003sex\030\003 \001(\005\022\014\n\004coin\030\004 \001(\005\022," +
+      "\n\tinterests\030\005 \003(\0132\031.userprofile.Interest" +
+      "Item\022+\n\ninstallpkg\030\006 \003(\0132\027.userprofile.A" +
+      "PPPackage\022\021\n\tpcategory\030\007 \001(\005\022\021\n\tincr_coi" +
+      "n\030\010 \001(\005\022\020\n\010antispam\030\t \001(\005\022\022\n\nshare_coin\030" +
+      "\n \001(\005\022\017\n\007newUser\030\013 \001(\005\0222\n\017interestedWord" +
+      "s\030\014 \003(\0132\031.userprofile.InterestItem\022\020\n\010pr" +
+      "ovince\030\r \001(\t\022\014\n\004city\030\016 \001(\t\022+\n\nqttProfile",
+      "\030e \001(\0132\027.userprofile.QttProfile\"\372\001\n\nQttP" +
+      "rofile\022\r\n\005devid\030\001 \001(\t\022\021\n\tmember_id\030\002 \001(\003" +
+      "\022\020\n\010nickname\030\003 \001(\t\022\023\n\013wx_nickname\030\004 \001(\t\022" +
+      "\017\n\007lx_type\030\005 \001(\005\022\022\n\nlx_package\030\006 \001(\005\022(\n\007" +
+      "teacher\030\013 \001(\0132\027.userprofile.QttProfile\022)" +
+      "\n\010students\030\014 \003(\0132\027.userprofile.QttProfil" +
+      "e\022)\n\010siblings\030\r \003(\0132\027.userprofile.QttPro" +
+      "fileb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -7143,7 +9667,7 @@ public final class Userprofile {
     internal_static_userprofile_DspSrc_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_userprofile_DspSrc_descriptor,
-        new java.lang.String[] { "DspPid", "Count", "ClickCount", });
+        new java.lang.String[] { "DspPid", "Count", "ClickCount", "AdSlot", });
     internal_static_userprofile_AdFreq_descriptor =
       getDescriptor().getMessageTypes().get(2);
     internal_static_userprofile_AdFreq_fieldAccessorTable = new
@@ -7167,7 +9691,13 @@ public final class Userprofile {
     internal_static_userprofile_UserProfile_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_userprofile_UserProfile_descriptor,
-        new java.lang.String[] { "Devid", "Age", "Sex", "Coin", "Interests", "Installpkg", "Pcategory", "IncrCoin", "Antispam", "ShareCoin", "NewUser", "InterestedWords", "Province", "City", });
+        new java.lang.String[] { "Devid", "Age", "Sex", "Coin", "Interests", "Installpkg", "Pcategory", "IncrCoin", "Antispam", "ShareCoin", "NewUser", "InterestedWords", "Province", "City", "QttProfile", });
+    internal_static_userprofile_QttProfile_descriptor =
+      getDescriptor().getMessageTypes().get(6);
+    internal_static_userprofile_QttProfile_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_userprofile_QttProfile_descriptor,
+        new java.lang.String[] { "Devid", "MemberId", "Nickname", "WxNickname", "LxType", "LxPackage", "Teacher", "Students", "Siblings", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

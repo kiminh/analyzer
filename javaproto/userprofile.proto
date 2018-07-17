@@ -12,6 +12,7 @@ message DspSrc {
 	string dsp_pid = 1; // 单元ID,单元级别生效
 	int32 count = 2; // 今天投放次数
 	int32 click_count = 3; // 今日广告被此用户点击次数
+	string ad_slot = 4;//广告位id
 }
 message AdFreq {
 	repeated AdShow ads = 1;
@@ -46,4 +47,19 @@ message UserProfile {
     repeated InterestItem interestedWords = 12;  //感兴趣的词汇分类
 	string province = 13; //省份
 	string city = 14; //城市
+    QttProfile qttProfile = 101;
 }
+
+message QttProfile {
+    string devid = 1;
+    int64 member_id = 2;
+    string nickname = 3;
+    string wx_nickname = 4;
+    int32 lx_type = 5;        //0 未知, 1 内  2 外
+    int32 lx_package = 6;
+    QttProfile teacher = 11;
+    repeated QttProfile students  = 12; //徒弟
+    repeated QttProfile siblings = 13;  //同师傅用户
+}
+
+

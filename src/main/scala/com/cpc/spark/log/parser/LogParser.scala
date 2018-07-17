@@ -1,3 +1,4 @@
+
 package com.cpc.spark.log.parser
 
 import java.net.{InetAddress, URLDecoder}
@@ -819,3 +820,5 @@ object LogParser {
     }
   }
 }
+
+
