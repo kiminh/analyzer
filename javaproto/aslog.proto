@@ -284,6 +284,8 @@ message UserProfile {
 	optional string province = 11; //省份
 	optional string city = 12; //城市
 	optional string member_id = 13; //趣头条用户id
+	optional int32 lx_type = 14; //0 未知, 1 内  2 外
+	optional int32 lx_package = 15;
 }
 
 message NoticeLogBody {
