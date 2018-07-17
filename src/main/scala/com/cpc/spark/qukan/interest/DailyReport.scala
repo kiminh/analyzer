@@ -159,6 +159,7 @@ object DailyReport {
         p =>
           var young = 0
           var notYoung = 0
+          var active = 0
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           p.foreach {
             r =>
@@ -172,6 +173,8 @@ object DailyReport {
                       young += 1
                     } else if (w.getTag == 225) {
                       notYoung += 1
+                    } else if (w.getTag == 226) {
+                      active += 1
                     }
                   }
                 }
