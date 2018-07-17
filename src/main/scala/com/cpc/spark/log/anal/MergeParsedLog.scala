@@ -64,7 +64,7 @@ object MergeParsedLog {
       .enableHiveSupport()
       .getOrCreate()
 
-    import spark.implicits._s
+    import spark.implicits._
 
     /**
       * search
