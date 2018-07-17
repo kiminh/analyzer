@@ -134,6 +134,7 @@ object MergeParsedLog {
       clickData2 = clickRDD
         .as[ClickLog]
         .rdd
+        .filter(_ != null)
         .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(ClickLog))
         .reduceByKey((x, y) => x ++ y)
         .map {
