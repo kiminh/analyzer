@@ -143,7 +143,7 @@ object DailyReport {
     val edate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val stmt =
       """
-        |select distinct uid from dl_cpc.cpc_union_log where `date` >= "%s" and `date` < "%s"
+        |select distinct uid from dl_cpc.cpc_union_log where `date` >= "%s" and `date` < "%s" and media_appsid  in ("80000001", "80000002")
       """.stripMargin.format(sdate,edate)
 
     val rs = spark.sql(stmt).rdd.map {
