@@ -12,7 +12,6 @@ import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
 import scala.collection.mutable
 
 
-
 /**
   * /warehouse/dl_cpc.db/logparsed_cpc_search_minute
   * /warehouse/dl_cpc.db/logparsed_cpc_click_minute
@@ -251,7 +250,9 @@ object MergeParsedLog {
           for (log <- logs) {
             val m = Motivation(log.userid, log.planid, log.unitid, log.ideaid, log.bid, log.price, log.isfill,
               log.isshow, log.isclick)
-            val m_ext = Map("ideaid" -> log.ideaid.toString, "downloaded_app" -> log.ext_string.getOrElse("downloaded_app", ""))
+            val m_ext = Map("ideaid" -> log.ideaid.toString,
+              "downloaded_app" -> log.ext_string.getOrElse("downloaded_app", ""),
+              "antispam_score" -> log.antispam_score.toString)
             motivation = motivation :+ m
             motive_ext = motive_ext :+ m_ext
           }
@@ -264,11 +265,13 @@ object MergeParsedLog {
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(mergeTbl, date, hour))
+
     spark.sql(
       """
         |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
         | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
       """.stripMargin.format(mergeTbl, date, hour, mergeTbl, date, hour))
+
     println("union done")
 
     //    createSuccessMarkHDFSFile(date, hour, "union_done") //创建成功标记文件
