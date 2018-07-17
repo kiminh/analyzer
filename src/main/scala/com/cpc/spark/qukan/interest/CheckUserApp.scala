@@ -72,9 +72,9 @@ object CheckUserApp {
       .map {
         r =>
           (r._1, 1d * r._2 / young)
-      }.filter(_._2 > 0.3)
+      }
       .sortBy(_._2, false)
-      .toLocalIterator.foreach(println)
+      .take(20).foreach(println)
   }
 
 }
