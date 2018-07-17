@@ -79,14 +79,19 @@ object CheckUserApp {
     val all_sample = spark.read.parquet("/user/cpc/qtt-age-sample/p1").rdd.map {
       r =>
         val apps = r.getAs[Seq[Row]]("apps")
-        if (apps != null && apps.length > 5) {
-          (apps)
+        if (apps != null) {
+          if (apps.length > 10){
+            (1)
+          } else {
+            (0)
+          }
         } else {
           null
         }
     }.filter(_ != null)
 
-    println(all_sample.count())
+    println(all_sample.filter(_ == 1).count())
+    println(all_sample.filter(_ == 0).count())
 
 
   }
