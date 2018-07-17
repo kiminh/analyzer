@@ -74,7 +74,7 @@ object CheckUserApp {
           (r._1, 1d * r._2 / young)
       }
       .sortBy(_._2, false)
-      .take(20).foreach(println)
+      .take(50).foreach(println)
   }
 
 }
