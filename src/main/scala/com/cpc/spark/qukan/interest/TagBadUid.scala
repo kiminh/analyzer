@@ -35,6 +35,8 @@ import userprofile.Userprofile.{InterestItem, UserProfile}
 object TagBadUid {
   def main(args: Array[String]): Unit = {
     val threshold = args(0).toInt
+    val hour = args(1).toInt
+    val time_span = args(2).toInt
     val spark = SparkSession.builder()
       .appName("Tag bad uid")
       .enableHiveSupport()
@@ -42,9 +44,15 @@ object TagBadUid {
 
 
     val cal = Calendar.getInstance()
-    cal.add(Calendar.DATE, -1)
+    //cal.add(Calendar.DATE, -1)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-
+    var sHour = "("
+    for (i <- hour - time_span to hour - 1) {
+      sHour += "'%02d',".format(i)
+    }
+    sHour += "'%02d')".format(hour)
+    println(sHour)
+    println(date)
     var stmt =
       """
         |SELECT searchid,uid,userid,ext
@@ -60,13 +68,16 @@ object TagBadUid {
           val userid = row.getInt(2)
           val ext = row.getMap[String, Row](3)
           val new_user = ext("qukan_new_user").getAs[Int]("int_value")
-
+          val adclass = ext("adclass").getAs[Int]("int_value")
+          (searchid, "adclss#" + userid + "u#" + uid)
+          /*
           if (new_user == 1) {
             (searchid, "user#" + userid + "u#" + uid)
           }
           else {
             null
           }
+          */
       }
         .filter(_ != null)
     rs1.take(10).foreach(println)
@@ -75,8 +86,8 @@ object TagBadUid {
       """
         |SELECT searchid
         |FROM dl_cpc.cpc_union_trace_log
-        |WHERE `date` = "%s" AND trace_type like "active%%" 
-      """.stripMargin.format(date)
+        |WHERE `date` = "%s" AND `hour` in %s AND trace_type like "active%%"
+      """.stripMargin.format(date, sHour)
 
     val rs2 = spark.sql(stmt).rdd
         .map {
