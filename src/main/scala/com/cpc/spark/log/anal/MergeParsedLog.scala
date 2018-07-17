@@ -7,7 +7,7 @@ import com.cpc.spark.log.anal.MergeLog.createSuccessMarkHDFSFile
 import com.cpc.spark.log.parser._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{Row, SaveMode, SparkSession}
+import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
 
 import scala.collection.mutable
 
@@ -48,8 +48,8 @@ object MergeParsedLog {
     srcRoot = args(0)
     val mergeTbl = args(1)
     val hourBefore = args(2).toInt
-    prefix = args(3)  //"" 空
-    suffix = args(4)  //"" 空
+    prefix = args(3) //"" 空
+    suffix = args(4) //"" 空
 
     val cal = Calendar.getInstance()
     g_date = cal.getTime //以后只用这个时间
@@ -81,12 +81,14 @@ object MergeParsedLog {
 
     // 去重，转为PairRDD
     val searchData2 = searchRDD
+      .as[UnionLog]
+      .rdd
       .filter(_ != null)
-      .map(row => ((row.getAs[String]("searchid"), row.getAs[Int]("ideaid")), row)) //((searchid,ideaid), row)
+      .map(x => ((x.searchid, x.ideaid), x)) //((searchid,ideaid), UnionLog)
       .reduceByKey((x, y) => x) //去重
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
       x =>
-        var ulog = x._2.asInstanceOf[UnionLog].copy(date = date, hour = hour)
+        var ulog = x._2.copy(date = date, hour = hour)
         (x._1, ulog) //Pair RDD
     }
 
@@ -99,22 +101,25 @@ object MergeParsedLog {
       * 获得每个广告 '本次播放最大时长' 的日志； 转为PairRDD
       */
     var showData2 = showRDD
+      .as[ShowLog]
+      .rdd
       .filter(_ != null)
-      .map(row => ((row.getAs[String]("searchid"), row.getAs[Int]("ideaid")), Seq(row))) //((searchid,ideaid), Seq(row))
+      .map(x => ((x.searchid,x.ideaid), Seq(x))) //((searchid,ideaid), Seq(ShowLog))
       .reduceByKey((x, y) => x ++ y)
       .map {
         x =>
-          val logs = x._2.asInstanceOf[Seq[ShowLog]]
+          val logs = x._2
           var headLog = logs.head //获得第一个元素
-        val headLog_VideoShowTime = headLog.video_show_time //获得第一个元素的video_show_time
+          val headLog_VideoShowTime = headLog.video_show_time //获得第一个元素的video_show_time
           logs.foreach {
             y =>
               if (y.video_show_time > headLog_VideoShowTime) {
                 headLog = y //获得 '本次播放最大时长' 的日志
               }
           }
-          (x._1, headLog) //((searchid,ideaid), Seq(row))
+          (x._1, headLog) //((searchid,ideaid), Seq(ShowLog))
       }
+
 
     /**
       * click
@@ -125,11 +130,13 @@ object MergeParsedLog {
 
     if (clickRDD != null) {
       clickData2 = clickRDD
-        .map(row => ((row.getAs[String]("searchid"), row.getAs[Int]("ideaid")), Seq(row))) //((searchid,ideaid), Seq(row))
+        .as[ClickLog]
+        .rdd
+        .map(x => ((x.searchid,x.ideaid), Seq(x))) //((searchid,ideaid), Seq(ClickLog))
         .reduceByKey((x, y) => x ++ y)
         .map {
-          x => //((searchid,ideaid),seq(Row))
-            val logs = x._2.asInstanceOf[Seq[ClickLog]]
+          x => //((searchid,ideaid),seq(ClickLog))
+            val logs = x._2
             var clicklog = logs.head
             var notgetGood = true
             logs.foreach {
@@ -233,22 +240,22 @@ object MergeParsedLog {
 
     val unionData = unionData1.groupByKey(1000) //设置1000个分区
       .map {
-        rec => //(searchlog1.searchid, searchlog1[UnionLog])
-          val logs = rec._2
-          if (logs.head.adslot_type == 7) {
-            var motivation = Seq[Motivation]()
-            var motive_ext = Seq[Map[String, String]]()
-            val head = logs.head
-            for (log <- logs) {
-              val m = Motivation(log.userid, log.planid, log.unitid, log.ideaid, log.bid, log.price, log.isfill,
-                log.isshow, log.isclick)
-              val m_ext = Map("ideaid" -> log.ideaid.toString, "downloaded_app" -> log.ext_string.getOrElse("downloaded_app", ""))
-              motivation = motivation :+ m
-              motive_ext = motive_ext :+ m_ext
-            }
-            head.copy(motivation = motivation, motive_ext = motive_ext)
-          } else
-            rec._2.head
+      rec => //(searchlog1.searchid, searchlog1[UnionLog])
+        val logs = rec._2
+        if (logs.head.adslot_type == 7) {
+          var motivation = Seq[Motivation]()
+          var motive_ext = Seq[Map[String, String]]()
+          val head = logs.head
+          for (log <- logs) {
+            val m = Motivation(log.userid, log.planid, log.unitid, log.ideaid, log.bid, log.price, log.isfill,
+              log.isshow, log.isclick)
+            val m_ext = Map("ideaid" -> log.ideaid.toString, "downloaded_app" -> log.ext_string.getOrElse("downloaded_app", ""))
+            motivation = motivation :+ m
+            motive_ext = motive_ext :+ m_ext
+          }
+          head.copy(motivation = motivation, motive_ext = motive_ext)
+        } else
+          rec._2.head
     }
 
     spark.createDataFrame(unionData)
@@ -271,13 +278,11 @@ object MergeParsedLog {
   /**
     * 获得数据
     */
-  def prepareSourceString(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): RDD[Row] = {
+  def prepareSourceString(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): Dataset[Row] = {
     val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourPath(hourBefore, hours))
     println(input) // /warehouse/dl_cpc.db/src_cpc_search_minute/{2018-06-26/08}/*
     val readData = ctx.read
       .parquet(input)
-      .rdd
-      .filter(_ != null)
 
     readData
   }
