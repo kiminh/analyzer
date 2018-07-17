@@ -143,14 +143,16 @@ object DailyReport {
     val edate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val stmt =
       """
-        |select uid from dl_cpc.cpc_union_log where `date` >= "%s" and `date` < "%s"
+        |select distinct uid from dl_cpc.cpc_union_log where `date` >= "%s" and `date` < "%s"
       """.stripMargin.format(sdate,edate)
 
     val rs = spark.sql(stmt).rdd.map {
       r =>
         val did = r.getAs[String](0)
         (did)
-    }
+    }.distinct()
+
+    println(rs.count())
     val conf = ConfigFactory.load()
     val sum = rs.repartition(500)
       .mapPartitions{
