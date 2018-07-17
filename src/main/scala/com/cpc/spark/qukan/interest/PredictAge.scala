@@ -73,8 +73,12 @@ object PredictAge {
             els = els :+ ((size + 2).toInt, apps.length.toDouble)
           }
           val vec = Vectors.sparse((size + 3).toInt, els)
-          (did, vec)
-      }
+          if (apps != null) {
+            (did, vec)
+          } else {
+            null
+          }
+      }.filter(_ != null)
       .toDF("did", "features")
 
     println(sample.count())
