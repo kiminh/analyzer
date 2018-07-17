@@ -57,7 +57,7 @@ object DailyReport {
         (did)
     }
     println(rs.count())
-    val zfb = spark.read.parquet("user/cpc/qtt-zfb/10").rdd.map {
+    val zfb = spark.read.parquet("qtt-zfb/10").rdd.map {
       r =>
         val did = r.getAs[String]("did")
         val birth = r.getAs[String]("birth")
