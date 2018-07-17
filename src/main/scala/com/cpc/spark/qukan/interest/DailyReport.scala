@@ -184,4 +184,5 @@ object DailyReport {
       .reduceByKey(_+_)
     sum.toLocalIterator.foreach(println)
   }
+  def check
 }
