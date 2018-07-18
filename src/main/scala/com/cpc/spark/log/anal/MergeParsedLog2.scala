@@ -1,10 +1,12 @@
 package com.cpc.spark.log.anal
 
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import com.cpc.spark.log.anal.MergeLog.createSuccessMarkHDFSFile
 import com.cpc.spark.log.parser._
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
@@ -13,14 +15,17 @@ import scala.collection.mutable
 
 
 /**
-  * deprecated  2018-07-18 11:58:00
-  *
   * /warehouse/dl_cpc.db/logparsed_cpc_search_minute
   * /warehouse/dl_cpc.db/logparsed_cpc_click_minute
   * /warehouse/dl_cpc.db/logparsed_cpc_show_minute
-  * (searchid,ideaid)
+  * (searchid,ideaid)进行join
+  *
+  *
+  * update:2018-07-18 12:15:00
+  * 每小时的15min和45min计算UnionLog
+  * 合并逻辑：取0-30min search、0-60min的show、0-60min的
   */
-object MergeParsedLog {
+object MergeParsedLog2 {
 
   //数据源根目录
   var srcRoot = ""
@@ -28,7 +33,7 @@ object MergeParsedLog {
   var suffix = ""
 
   //时间格式
-  val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
+  val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH/mm")
 
   //当前日期
   var g_date = new Date()
@@ -49,15 +54,24 @@ object MergeParsedLog {
 
     srcRoot = args(0)
     val mergeTbl = args(1)
-    val hourBefore = args(2).toInt
-    prefix = args(3) //"" 空
-    suffix = args(4) //"" 空
+    //    val hourBefore = args(2).toInt
+    val date = args(2)
+    val hour = args(3)
+    val minute = args(4)
+    prefix = args(5) //"" 空
+    suffix = args(6) //"" 空
 
+    val datee = date.split("-")
     val cal = Calendar.getInstance()
-    g_date = cal.getTime //以后只用这个时间
-    cal.add(Calendar.HOUR, -hourBefore) //hourBefore前的 时间
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime) //年月日
-    val hour = new SimpleDateFormat("HH").format(cal.getTime) //小时
+    cal.set(Calendar.YEAR, datee(0).toInt)
+    cal.set(Calendar.MONTH, datee(1).toInt - 1)
+    cal.set(Calendar.DAY_OF_MONTH, datee(2).toInt)
+    cal.set(Calendar.HOUR_OF_DAY, hour.toInt)
+    cal.set(Calendar.MINUTE, minute.toInt)
+    cal.set(Calendar.SECOND,0)
+    //    g_date = cal.getTime //以后只用这个时间
+    //    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime) //年月日
+    //    val hour = new SimpleDateFormat("HH").format(cal.getTime) //小时
 
     //获得sparksession
     val spark = SparkSession.builder()
@@ -70,7 +84,7 @@ object MergeParsedLog {
     /**
       * search
       */
-    var searchRDD = prepareSourceString(spark, prefix + "cpc_search" + suffix, hourBefore, 1)
+    var searchRDD = prepareSourceString(spark, prefix + "cpc_search" + suffix, date, hour.toInt, minute.toInt, 3)
 
     // RDD为空，退出
     if (searchRDD == null) {
@@ -86,20 +100,17 @@ object MergeParsedLog {
     // 去重，转为PairRDD
     val searchData2 = searchRDD
       .as[UnionLog]
-      .rdd
-      .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), x)) //((searchid,ideaid), UnionLog)
-//      .reduceByKey((x, y) => x) //去重
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
-      x =>
-        var ulog = x._2.copy(date = date, hour = hour)
-        (x._1, ulog) //Pair RDD
-    }
+        x =>
+          var ulog = x._2.copy(date = date, hour = hour)
+          (x._1, ulog) //Pair RDD
+    }.rdd
 
     /**
       * show
       */
-    var showRDD = prepareSourceString(spark, prefix + "cpc_show" + suffix, hourBefore, 2)
+    var showRDD = prepareSourceString(spark, prefix + "cpc_show" + suffix, date, hour.toInt, minute.toInt, 6)
 
     /**
       * 获得每个广告 '本次播放最大时长' 的日志； 转为PairRDD
@@ -107,7 +118,6 @@ object MergeParsedLog {
     var showData2 = showRDD
       .as[ShowLog]
       .rdd
-      .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(ShowLog))
       .reduceByKey((x, y) => x ++ y)
       .map {
@@ -127,7 +137,7 @@ object MergeParsedLog {
     /**
       * click
       */
-    var clickRDD = prepareSourceString(spark, prefix + "cpc_click" + suffix, hourBefore, 2)
+    var clickRDD = prepareSourceString(spark, prefix + "cpc_click" + suffix, date, hour.toInt, minute.toInt, 6)
 
     var clickData2: RDD[((String, Int), ClickLog)] = null
 
@@ -135,7 +145,6 @@ object MergeParsedLog {
       clickData2 = clickRDD
         .as[ClickLog]
         .rdd
-        .filter(_ != null)
         .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(ClickLog))
         .reduceByKey((x, y) => x ++ y)
         .map {
@@ -265,7 +274,7 @@ object MergeParsedLog {
 
     spark.createDataFrame(unionData)
       .write
-      .mode(SaveMode.Overwrite)
+      .mode(SaveMode.Append) //修改为Append
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(mergeTbl, date, hour))
 
     spark.sql(
@@ -276,8 +285,8 @@ object MergeParsedLog {
 
     println("union done")
 
-    //    createSuccessMarkHDFSFile(date, hour, "union_done") //创建成功标记文件
-
+    createSuccessMarkHDFSFile(date, hour, "new_union_done") //创建成功标记文件
+    writeTimeStampToHDFSFile(date,hour,mergeTbl)  //将时间写入标记文件
 
   }
 
@@ -285,25 +294,99 @@ object MergeParsedLog {
   /**
     * 获得数据
     */
-  def prepareSourceString(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): Dataset[Row] = {
-    val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourPath(hourBefore, hours))
-    println(input) // /warehouse/dl_cpc.db/src_cpc_search_minute/{2018-06-26/08}/*
+  def prepareSourceString(ctx: SparkSession, src: String, date: String, hour: Int, minute: Int, minutes: Int): Dataset[Row] = {
+    val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourMinutePath(date, hour, minute, minutes))
+    println(input) // /warehouse/dl_cpc.db/src_cpc_search_minute/{2018-06-26/08/00}
     val readData = ctx.read
       .parquet(input)
 
     readData
   }
 
-  //获取 {yyyy-MM-dd/HH,yyyy-MM-dd/HH}
-  def getDateHourPath(hourBefore: Int, hours: Int): String = {
+
+  def getDateHourMinutePath(date: String, hour: Int, minute: Int, minutes: Int): String = {
     val cal = Calendar.getInstance()
-    cal.setTime(g_date) //当前日期
-    val parts = new Array[String](hours)
-    cal.add(Calendar.HOUR, -hourBefore) //前一个小时 时间
-    for (h <- 0 until hours) {
-      parts(h) = partitionPathFormat.format(cal.getTime) //yyyy-MM-dd/HH
-      cal.add(Calendar.HOUR, 1)
+    val parts = new Array[String](minutes)
+    cal.set(Calendar.YEAR, date.split("-")(0).toInt)
+    cal.set(Calendar.MONTH, date.split("-")(1).toInt - 1)
+    cal.set(Calendar.DAY_OF_MONTH, date.split("-")(2).toInt)
+    cal.set(Calendar.HOUR_OF_DAY, hour) //前一个小时 时间
+    cal.set(Calendar.MINUTE, minute)
+    cal.set(Calendar.SECOND,0)
+
+    for (h <- 0 until minutes) {
+      parts(h) = partitionPathFormat.format(cal.getTime) //yyyy-MM-dd/HH/mm
+      cal.add(Calendar.MINUTE, 10)
     }
     "{" + parts.mkString(",") + "}"
   }
+
+
+  def writeTimeStampToHDFSFile(date: String, hour: String, mergeTbl: String): Unit = {
+    val fileName = "/warehouse/cpc/%s/%s-%s.ok".format(mergeTbl, date, hour)
+    val path = new Path(fileName)
+    //get object conf
+    val conf = new Configuration()
+    //get FileSystem
+    val fileSystem = FileSystem.newInstance(conf)
+
+    val cal=Calendar.getInstance()
+    cal.set(Calendar.YEAR, date.split("-")(0).toInt)
+    cal.set(Calendar.MONTH, date.split("-")(1).toInt - 1)
+    cal.set(Calendar.DAY_OF_MONTH, date.split("-")(2).toInt)
+    cal.set(Calendar.HOUR_OF_DAY, hour.toInt)  //不加30，shell已设置
+
+    val timeStampp=cal.getTimeInMillis/1000
+
+    try{
+      val out = fileSystem.create(path)
+      out.writeLong(timeStampp)
+    } catch {
+      case e: IOException => e.printStackTrace()
+    } finally {
+      try {
+        if (fileSystem != null) {
+          fileSystem.close()
+        }
+      } catch {
+        case e: IOException => e.printStackTrace()
+      }
+    }
+
+  }
+
+  /**
+    * 在hdfs上创建成功标记文件；unionlog, uniontracelog合并成功的标记文件
+    *
+    * @param mark
+    */
+  def createSuccessMarkHDFSFile(date: String, hour: String, mark: String): Unit = {
+    val fileName = "/warehouse/cpc/%s/%s-%s.ok".format(mark, date, hour)
+    val path = new Path(fileName)
+
+    //get object conf
+    val conf = new Configuration()
+    //get FileSystem
+    val fileSystem = FileSystem.newInstance(conf)
+
+    try {
+      val success = fileSystem.createNewFile(path)
+      if (success) {
+        println("create file success")
+      } else {
+        println("create file failed")
+      }
+    } catch {
+      case e: IOException => e.printStackTrace()
+    } finally {
+      try {
+        if (fileSystem != null) {
+          fileSystem.close()
+        }
+      } catch {
+        case e: IOException => e.printStackTrace()
+      }
+    }
+  }
+
 }
