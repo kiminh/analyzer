@@ -87,12 +87,13 @@ object PredictSex {
                 } else if (r._2 > m) {
                   sex = 1
                 }
-                val up = UserProfile.parseFrom(buffer)
-                if (up.sex != sex) {
-                  if (up.sex > 0) {
+                val up = UserProfile.parseFrom(buffer).toBuilder()
+                if (up.getSex != sex) {
+                  up.setSex = sex
+                  if (up.getSex > 0) {
                     n2 += 1
                   }
-                  redis.setex(key, 3600 * 24 * 7, up.copy(sex = sex).toByteArray)
+                  redis.setex(key, 3600 * 24 * 7, up.build().toByteArray)
                 }
               }
           }
