@@ -105,6 +105,8 @@ object SetUserProfileTag {
 
   def testSetUserProfileTag (spark : SparkSession, in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
     import spark.implicits._
+    val cal = Calendar.getInstance()
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
     val sum = in.repartition(500)
       .mapPartitions{
@@ -115,7 +117,8 @@ object SetUserProfileTag {
           var tot = 0
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           val loop = new Breaks
-          p.foreach{
+          var ret = Seq[(String, Int)]()
+          val cnt = p.foreach{
             x =>
               tot += 1
               val key = x._1 + "_UPDATA"
@@ -148,6 +151,7 @@ object SetUserProfileTag {
                     ins += 1
                   }
                   user.addInterestedWords(interest)
+                  isIns = true
                 } else {
                   if (isDel) {
                     del += 1
@@ -155,11 +159,18 @@ object SetUserProfileTag {
                 }
                 //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
+              if (isIns) {
+                ret = ret :+ ("uid_num_by_tag_%s".format(x._2), 1)
+              }else if (isDel) {
+                ret = ret :+ ("uid_num_by_tag_%s".format(x._2), -1)
+              } else {
+                ret = ret :+ ("uid_num_by_tag_%s".format(x._2), 0)
+              }
           }
-          Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del)).iterator
+          (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del)) ++ ret).iterator
       }.reduceByKey(_+_)
       .sortBy(_._1)
-
+    sum.toDF("name", "sum").write.mode(SaveMode.Append).parquet("/user/cpc/uid-tag-number/test-%s".format(date))
     sum.toLocalIterator.toArray[(String, Int)]
   }
 
