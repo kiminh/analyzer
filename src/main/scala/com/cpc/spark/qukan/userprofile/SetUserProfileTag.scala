@@ -45,7 +45,8 @@ object SetUserProfileTag {
           var tot = 0
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           val loop = new Breaks
-          val cnt = p.map{
+          var ret = Seq[(String, Int)]()
+          val cnt = p.foreach{
             x =>
               tot += 1
               val key = x._1 + "_UPDATA"
@@ -87,14 +88,14 @@ object SetUserProfileTag {
                 redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
               if (isIns) {
-                ("uid_num_by_tag_%s".format(x._2), 1)
+                ret = ret :+ ("uid_num_by_tag_%s".format(x._2), 1)
               }else if (isDel) {
-                ("uid_num_by_tag_%s".format(x._2), -1)
+                ret = ret :+ ("uid_num_by_tag_%s".format(x._2), -1)
               } else {
-                ("uid_num_by_tag_%s".format(x._2), 0)
+                ret = ret :+ ("uid_num_by_tag_%s".format(x._2), 0)
               }
-          }.toSeq()
-          (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del)) :+ cnt).iterator
+          }
+          (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del)) ++ ret).iterator
       }.reduceByKey(_+_)
       .sortBy(_._1)
     sum.toDF("name", "sum").write.mode(SaveMode.Append).parquet("/user/cpc/uid-tag-number/%s".format(date))
