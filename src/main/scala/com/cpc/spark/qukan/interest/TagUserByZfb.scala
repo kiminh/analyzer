@@ -69,7 +69,7 @@ object TagUserByZfb {
         }
     }
 
-    val ret = SetUserProfileTag.TestsetUserProfileTag(spark, age)
+    val ret = SetUserProfileTag.testSetUserProfileTag(spark, age)
     ret.foreach(println)
 
     val conf = ConfigFactory.load()
