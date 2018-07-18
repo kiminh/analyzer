@@ -1,0 +1,104 @@
+package com.cpc.spark.qukan.utils
+
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
+import org.apache.spark.sql.expressions.UserDefinedFunction
+import org.apache.spark.sql.functions.udf
+import org.apache.spark.ml.linalg.Vectors
+
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
+import scala.collection.mutable.WrappedArray
+
+object Udfs {
+
+  def udfArrayToString: UserDefinedFunction = {
+    udf[String, Seq[String]]((value: Seq[String]) => value.mkString(""))
+  }
+
+  def udfArrayToJSONString: UserDefinedFunction = {
+    udf[String, Seq[String]]((value: Seq[String]) => value.mkString("[", ",", "]"))
+  }
+
+  def nameValue(name: String) = udf((value: String) => {
+    if (value == null) {
+      null
+    } else {
+      s"$name:$value"
+    }
+  })
+
+  def nameValueToIndexValue(map: mutable.LinkedHashMap[String, String]) = udf((value: String) => {
+    if (value == null) {
+      null
+    } else {
+      val array = value.split(" ")
+      var list = new ListBuffer[String]
+      for (a <- array) {
+        val items = a.split(":")
+        val feaname = items(0).trim
+        if (map.contains(feaname)) {
+          val newitem = map(items(0).trim) + ":" + items(1)
+          list += newitem
+        }
+      }
+      list.mkString(" ")
+    }
+  })
+
+  def udfPkgArrayToLibsvm(nameIndexMap: Map[String, String]) = udf((value: WrappedArray[String]) => {
+
+    val array = value.map(x => {
+      if (nameIndexMap.contains(x)) {
+        nameIndexMap(x) + ":1.0"
+      } else {
+        null
+      }
+    })
+    var buf = new StringBuilder
+    for (x <- array) {
+      if (x != null) {
+        buf ++= " " + x
+      }
+    }
+    buf.toString().trim
+  })
+
+  def libsvmToVec(size: Int): UserDefinedFunction = udf((libsvm: String) => {
+
+    var els = Seq[(Int, Double)]()
+    if (libsvm.trim != "") {
+      libsvm.split("\\s+").map(x => {
+        val v = x.split(":")
+        els = els :+ (v(0).toInt, v(1).toDouble)
+      })
+      val vec = Vectors.sparse(size, els)
+      vec
+    } else {
+      val vec = Vectors.sparse(size, els)
+      vec
+    }
+  })
+
+  def predictToLabel(thresh: Double): UserDefinedFunction = udf((predict: Double) => {
+
+    if (predict >= thresh) {
+      1.0
+    } else {
+      0.0
+    }
+
+  })
+
+
+  def udfParseDayOfWeek = udf((logtime: String) => {
+    val calendar = Calendar.getInstance
+    //    val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS")
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd")
+    calendar.setTime(dateFormat.parse(logtime))
+    calendar.get(Calendar.DAY_OF_WEEK)
+  })
+}
+
