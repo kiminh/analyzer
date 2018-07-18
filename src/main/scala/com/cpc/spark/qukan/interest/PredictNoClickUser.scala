@@ -8,6 +8,7 @@ import org.apache.spark.ml.linalg.Vector
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions.col
 import userprofile.Userprofile.{InterestItem, UserProfile}
+import com.redis.serialization.Parse.Implicits._
 
 import scala.util.control.Breaks
 
