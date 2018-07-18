@@ -105,6 +105,12 @@ object SetUserProfileTag {
 
   def testSetUserProfileTag (spark : SparkSession, in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
     import spark.implicits._
+    in.map {
+      x =>
+        ((x._2, x._3), 1)
+    }.reduceByKey(_+_)
+      .toLocalIterator
+      .foreach(println)
     val cal = Calendar.getInstance()
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
@@ -172,6 +178,19 @@ object SetUserProfileTag {
       .sortBy(_._1)
     sum.toDF("name", "sum").write.mode(SaveMode.Append).parquet("/user/cpc/uid-tag-number/test-%s".format(date))
     sum.toLocalIterator.toArray[(String, Int)]
+  }
+
+  def main(args: Array[String]): Unit = {
+    val spark = SparkSession.builder()
+      .appName("Tag bad uid")
+      .enableHiveSupport()
+      .getOrCreate()
+    import spark.implicits._
+
+    val cal = Calendar.getInstance()
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+
+    val today = spark.read.parquet("/user/cpc/uid-tag-number/")
   }
 
 }
