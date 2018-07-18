@@ -28,6 +28,7 @@ import com.redis.RedisClient
 import com.cpc.spark.qukan.parser.HdfsParser
 import userprofile.Userprofile.{InterestItem, UserProfile}
 import scala.util.control._
+import com.cpc.spark.qukan.userprofile.SetUserProfileTag
 
 object TagUserByZfb {
   def main(args: Array[String]): Unit = {
@@ -59,6 +60,15 @@ object TagUserByZfb {
     println(zfb.filter(x => x._3 == 224).count())
     println("m student number:")
     println(zfb.filter(x => x._3 == 224 && x._2 == 1).count())
+    val age = zfb.flatMap {
+      x =>
+        if (x._2 == 224) {
+          Seq((x._1, 224, true), (x._1, 225, false))
+        } else {
+          Seq((x._1, 224, false), (x._1, 225, true))
+        }
+    }
+    SetUserProfileTag.TestsetUserProfileTag(spark, age)
 
     val conf = ConfigFactory.load()
     val sum = zfb
