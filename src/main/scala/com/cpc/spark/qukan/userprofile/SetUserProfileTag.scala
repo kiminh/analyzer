@@ -28,7 +28,7 @@ import scala.collection.mutable
   */
 
 
-class SetUserProfileTag {
+object SetUserProfileTag {
   def setUserProfileTag (spark : SparkSession, in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
     import spark.implicits._
     val conf = ConfigFactory.load()
