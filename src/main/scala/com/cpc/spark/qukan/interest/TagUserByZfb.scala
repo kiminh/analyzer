@@ -62,7 +62,7 @@ object TagUserByZfb {
     println(zfb.filter(x => x._3 == 224 && x._2 == 1).count())
     val age = zfb.flatMap {
       x =>
-        if (x._2 == 224) {
+        if (x._3 == 224) {
           Seq((x._1, 224, true), (x._1, 225, false))
         } else {
           Seq((x._1, 224, false), (x._1, 225, true))
