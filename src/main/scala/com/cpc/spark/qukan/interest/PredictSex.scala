@@ -80,6 +80,7 @@ object PredictSex {
               val key = r._1 + "_UPDATA"
               val buffer = redis.get[Array[Byte]](key).getOrElse(null)
               if (buffer != null) {
+                var up : UserProfile.Builder = null
                 n1 += 1
                 var sex = 0
                 if (r._2 < f) {
@@ -87,7 +88,7 @@ object PredictSex {
                 } else if (r._2 > m) {
                   sex = 1
                 }
-                val up = UserProfile.parseFrom(buffer).toBuilder()
+                up = UserProfile.parseFrom(buffer).toBuilder()
                 if (up.getSex != sex) {
                   up.setSex = sex
                   if (up.getSex > 0) {
