@@ -44,7 +44,7 @@ object SetUserProfileTag {
           p.foreach{
             x =>
               tot += 1
-              val key = x._1 + "_UPDATAT"
+              val key = x._1 + "_UPDATA"
               val buffer = redis.get[Array[Byte]](key).orNull
               var isDel = false
               var isIns = false
@@ -104,7 +104,7 @@ object SetUserProfileTag {
           p.foreach{
             x =>
               tot += 1
-              val key = x._1 + "_UPDATAT"
+              val key = x._1 + "_UPDATA"
               val buffer = redis.get[Array[Byte]](key).orNull
               var isDel = false
               var isIns = false
