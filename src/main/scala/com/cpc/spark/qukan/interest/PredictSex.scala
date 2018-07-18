@@ -90,7 +90,7 @@ object PredictSex {
                 }
                 up = UserProfile.parseFrom(buffer).toBuilder()
                 if (up.getSex != sex) {
-                  up.setSex = sex
+                  up.setSex(sex)
                   if (up.getSex > 0) {
                     n2 += 1
                   }
