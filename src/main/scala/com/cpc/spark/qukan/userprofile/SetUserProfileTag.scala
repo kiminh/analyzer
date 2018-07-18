@@ -11,6 +11,7 @@ import com.redis.serialization.Parse.Implicits._
 import scala.util.control._
 import ml.dmlc.xgboost4j.scala.spark._
 import org.apache.spark.rdd.RDD
+import userprofile.Userprofile.{InterestItem, UserProfile}
 
 import scala.collection.mutable
 
