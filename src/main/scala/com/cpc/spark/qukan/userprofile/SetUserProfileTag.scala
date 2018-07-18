@@ -44,7 +44,7 @@ class SetUserProfileTag {
             x =>
               tot += 1
               val key = x._1 + "_UPDATAT"
-              val buffer = redis.get(key).orNull
+              val buffer = redis.get[Array[Byte]](key).orNull
               var isDel = false
               var isIns = false
               if (buffer != null) {
@@ -104,7 +104,7 @@ class SetUserProfileTag {
             x =>
               tot += 1
               val key = x._1 + "_UPDATAT"
-              val buffer = redis.get(key).orNull
+              val buffer = redis.get[Array[Byte]](key).orNull
               var isDel = false
               var isIns = false
               if (buffer != null) {
