@@ -28,7 +28,7 @@ import com.redis.RedisClient
 import com.cpc.spark.qukan.parser.HdfsParser
 import userprofile.Userprofile.{InterestItem, UserProfile}
 import scala.util.control._
-import com.cpc.spark.qukan.userprofile
+import com.cpc.spark.qukan.userprofile.SetUserProfileTag
 
 object TagUserByZfb {
   def main(args: Array[String]): Unit = {
