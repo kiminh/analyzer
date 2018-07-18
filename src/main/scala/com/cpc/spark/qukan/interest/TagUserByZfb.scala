@@ -28,7 +28,7 @@ import com.redis.RedisClient
 import com.cpc.spark.qukan.parser.HdfsParser
 import userprofile.Userprofile.{InterestItem, UserProfile}
 import scala.util.control._
-import com.cpc.spark.qukan.userprofile.SetUserProfileTag
+import com.cpc.spark.qukan.userprofile
 
 object TagUserByZfb {
   def main(args: Array[String]): Unit = {
@@ -68,6 +68,7 @@ object TagUserByZfb {
           Seq((x._1, 224, false), (x._1, 225, true))
         }
     }
+
     SetUserProfileTag.TestsetUserProfileTag(spark, age)
 
     val conf = ConfigFactory.load()
