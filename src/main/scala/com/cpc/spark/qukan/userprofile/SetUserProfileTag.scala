@@ -106,9 +106,13 @@ object SetUserProfileTag {
             val ret = buffer match {
               case  Some(s) => s
             }
-            redis.setex(key, 3600 * 24 * 30, (ret + x._2).toString)
+            if (ret != null) {
+              redis.setex(key, 3600 * 24 * 30, (ret + x._2).toString)
+              println("set %s as %s".format(key, (ret + x._2).toString))
+            }
           } else {
             redis.setex(key, 3600 * 24 * 30, x._2.toString)
+            println("set %s as %s".format(key, (x._2).toString))
           }
         }
 
@@ -197,11 +201,13 @@ object SetUserProfileTag {
           val buffer = redis.get[Int](x._1)
           if (buffer != None) {
             val ret = buffer match {
-              case  Some(s) => s
+              case Some(s) => s
             }
             redis.setex(key, 3600 * 24 * 30, (ret + x._2).toString)
+            println("set %s as %s".format(key, (ret + x._2).toString))
           } else {
             redis.setex(key, 3600 * 24 * 30, x._2.toString)
+            println("set %s as %s".format(key, (x._2).toString))
           }
         }
 
@@ -239,11 +245,12 @@ object SetUserProfileTag {
         if (buffer != None) {
           val ret = buffer match {
             case Some(s) => s
+            case _ => null
           }
-          if (isTest) {
+          if (ret != null && isTest) {
             redis.setex("uid_num_by_tag_%s_test".format(x), 3600 * 24 * 30, ret.toString)
             println("set %s as %s".format("uid_num_by_tag_%s_test".format(x), ret.toString))
-          } else {
+          } else if (ret != null && !isTest){
             redis.setex("uid_num_by_tag_%s".format(x), 3600 * 24 * 30, ret.toString)
             println("set %s as %s".format("uid_num_by_tag_%s".format(x), ret.toString))
           }
