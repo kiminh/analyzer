@@ -213,7 +213,7 @@ object SetUserProfileTag {
 
   def main(args: Array[String]): Unit = {
     val tagList = Array[Int](201, 202, 203, 204, 205, 206, 207, 208, 209, 212, 216, 218, 219, 220, 221, 222,
-      223, 224, 225, 226, 227, 228, 230, 231, 233, 234)
+      223, 224, 225, 226, 227, 228, 230, 231, 233, 234, 235)
     val isTest = args(0).toBoolean
     val spark = SparkSession.builder()
       .appName("count userprofile tag")
