@@ -60,6 +60,7 @@ object MergeParsedLog2 {
     val minute = args(4)
     prefix = args(5) //"" 空
     suffix = args(6) //"" 空
+    val addData = args(7)
 
     val datee = date.split("-")
     val cal = Calendar.getInstance()
@@ -285,8 +286,23 @@ object MergeParsedLog2 {
 
     println("union done")
 
-    createSuccessMarkHDFSFile(date, hour, "new_union_done") //创建成功标记文件
-    writeTimeStampToHDFSFile(date, hour, minute, "new_union_done") //将时间写入标记文件
+    //创建成功标记文件
+//    createSuccessMarkHDFSFile(date, hour, "new_union_done")
+    val empty=Seq()
+    val emptyRdd=spark.sparkContext.parallelize(empty)
+    emptyRdd.toDF()
+      .write
+      .mode(SaveMode.Overwrite)
+      .text("/user/cpc/new_union_done/%s-%s.ok".format(date,hour))
+
+//    writeTimeStampToHDFSFile(date, hour, minute, "new_union_done") //将时间写入标记文件
+
+    val data=Seq(writeTimeStampToHDFSFile(date,hour,minute))
+    val markRdd=spark.sparkContext.parallelize(data)
+    markRdd.toDF()
+      .write
+      .mode(SaveMode.Overwrite)
+      .text("/user/cpc/new_union_done%s".format{if(addData!=""){"_"+addData}}else{""})
 
   }
 
@@ -322,13 +338,13 @@ object MergeParsedLog2 {
   }
 
 
-  def writeTimeStampToHDFSFile(date: String, hour: String, minute: String, markTbl: String): Unit = {
-    val fileName = "/warehouse/cpc/%s/%s-%s.ok".format(markTbl, date, hour)
-    val path = new Path(fileName)
-    //get object conf
-    val conf = new Configuration()
-    //get FileSystem
-    val fileSystem = FileSystem.newInstance(conf)
+  def writeTimeStampToHDFSFile(date: String, hour: String, minute: String): String = {
+    //    val fileName = "/warehouse/cpc/%s/%s-%s.ok".format(markTbl, date, hour)
+    //    val path = new Path(fileName)
+    //    //get object conf
+    //    val conf = new Configuration()
+    //    //get FileSystem
+    //    val fileSystem = FileSystem.newInstance(conf)
 
     val cal = Calendar.getInstance()
     cal.set(Calendar.YEAR, date.split("-")(0).toInt)
@@ -340,25 +356,26 @@ object MergeParsedLog2 {
 
     val timeStampp = cal.getTimeInMillis / 1000
     val data=timeStampp.toString+"\n"
+    data
 
-    try {
-      if (!fileSystem.exists(path)) {
-        val fsDataOutputStream = fileSystem.create(path)
-        fsDataOutputStream.write(data.getBytes)  //防止乱码
-        fsDataOutputStream.flush()
-      }
-
-    } catch {
-      case e: IOException => e.printStackTrace()
-    } finally {
-      try {
-        if (fileSystem != null) {
-          fileSystem.close()
-        }
-      } catch {
-        case e: IOException => e.printStackTrace()
-      }
-    }
+    //    try {
+    //      if (!fileSystem.exists(path)) {
+    //        val fsDataOutputStream = fileSystem.create(path)
+    //        fsDataOutputStream.write(data.getBytes)  //防止乱码
+    //        fsDataOutputStream.flush()
+    //      }
+    //
+    //    } catch {
+    //      case e: IOException => e.printStackTrace()
+    //    } finally {
+    //      try {
+    //        if (fileSystem != null) {
+    //          fileSystem.close()
+    //        }
+    //      } catch {
+    //        case e: IOException => e.printStackTrace()
+    //      }
+    //    }
 
   }
 
