@@ -99,7 +99,7 @@ object SetUserProfileTag {
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     sum.foreach{
       x =>
-        val key = x._1 + "_%s_test".format(date)
+        val key = x._1 + "_%s".format(date)
         if (x._1.contains("uid")) {
           val buffer = redis.get[Int](x._1)
           if (buffer != None) {
