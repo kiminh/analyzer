@@ -77,6 +77,7 @@ object DailyReport {
 
     println(stmt)
 
+
     val rs = spark.sql(stmt).rdd.map {
       r =>
         val did = r.getAs[String](0)
@@ -152,7 +153,10 @@ object DailyReport {
         (did)
     }.distinct()
 
+    import spark.implicits._
     println(rs.count())
+    val zfb = spark.read.parquet("/user/cpc/qtt-zfb/1").join(rs.toDF("did"))
+    println(zfb.count())
     val conf = ConfigFactory.load()
     val sum = rs.repartition(500)
       .mapPartitions{
