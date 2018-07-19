@@ -184,7 +184,7 @@ object SetUserProfileTag {
   def main(args: Array[String]): Unit = {
     val isTest = args(0).toBoolean
     val spark = SparkSession.builder()
-      .appName("Tag bad uid")
+      .appName("count userprofile tag")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
