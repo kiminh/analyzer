@@ -50,7 +50,7 @@ object TagUserByLx {
         |)
       """.stripMargin
     val cal = Calendar.getInstance()
-    cal.add(Calendar.DATE, days)
+    cal.add(Calendar.DATE, -days)
     val sdate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     cal.add(Calendar.DATE, days)
     val edate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
