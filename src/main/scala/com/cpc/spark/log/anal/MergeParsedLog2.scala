@@ -357,7 +357,7 @@ object MergeParsedLog2 {
     cal.set(Calendar.SECOND, 0)
 
     val timeStampp = cal.getTimeInMillis / 1000
-    val data = timeStampp.toString + "\n"
+    val data = timeStampp.toString
     data
 
   }
