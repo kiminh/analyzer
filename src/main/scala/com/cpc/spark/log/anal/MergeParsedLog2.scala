@@ -299,7 +299,7 @@ object MergeParsedLog2 {
 
       //记录本次运行的开始时间
       val data = Seq(writeTimeStampToHDFSFile(date, hour, minute))
-      val markRdd = spark.sparkContext.parallelize(data)
+      val markRdd = spark.sparkContext.parallelize(data,1)
       markRdd.toDF()
         .write
         .mode(SaveMode.Overwrite)
