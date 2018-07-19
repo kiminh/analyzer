@@ -193,9 +193,9 @@ object SetUserProfileTag {
       x =>
         val key = x._1 + "_%s_test".format(date)
         if (x._1.contains("uid")) {
-          val buffer = redis.get[Int](x._1).orNull
-          if (buffer != null) {
-            redis.setex(key, 3600 * 24 * 30, buffer + x._2)
+          val buffer = redis.get[Int](x._1)
+          if (buffer != None) {
+            redis.setex(key, 3600 * 24 * 30, (buffer + x._2).toString)
           } else {
             redis.setex(key, 3600 * 24 * 30, x._2)
           }
