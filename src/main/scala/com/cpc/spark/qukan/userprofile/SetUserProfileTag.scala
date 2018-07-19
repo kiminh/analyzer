@@ -100,13 +100,16 @@ object SetUserProfileTag {
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     sum.foreach{
       x =>
-        val key = x._1 + "_%s".format(date)
+        val key = x._1 + "_%s_test".format(date)
         if (x._1.contains("uid")) {
-          val buffer = redis.get[Int](x._1).orNull
-          if (buffer != null) {
-            redis.setex(key, 3600 * 24 * 30, buffer + x._2)
+          val buffer = redis.get[Int](x._1)
+          if (buffer != None) {
+            val ret = buffer match {
+              case  Some(s) => s
+            }
+            redis.setex(key, 3600 * 24 * 30, (ret + x._2).toString)
           } else {
-            redis.setex(key, 3600 * 24 * 30, x._2)
+            redis.setex(key, 3600 * 24 * 30, x._2.toString)
           }
         }
 
@@ -195,9 +198,12 @@ object SetUserProfileTag {
         if (x._1.contains("uid")) {
           val buffer = redis.get[Int](x._1)
           if (buffer != None) {
-            redis.setex(key, 3600 * 24 * 30, (buffer.toInt + x._2).toString)
+            val ret = buffer match {
+              case  Some(s) => s
+            }
+            redis.setex(key, 3600 * 24 * 30, (ret + x._2).toString)
           } else {
-            redis.setex(key, 3600 * 24 * 30, x._2)
+            redis.setex(key, 3600 * 24 * 30, x._2.toString)
           }
         }
 
@@ -230,7 +236,7 @@ object SetUserProfileTag {
             "uid_num_by_tag_" + x + "_%s".format(yesterday)
           }
         }
-        val buffer = redis.get[Int](key).orNull
+        val buffer = redis.get[Int](key)
         println(key, buffer)
     }
   }
