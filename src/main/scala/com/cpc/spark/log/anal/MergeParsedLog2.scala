@@ -295,7 +295,7 @@ object MergeParsedLog2 {
       emptyRdd.toDF()
         .write
         .mode(SaveMode.Overwrite)
-        .text("/user/cpc/new_union_done/%s-%s.ok".format(date, hour))
+        .text("/warehouse/cpc/new_union_done/%s-%s.ok".format(date, hour))
 
       //记录本次运行的开始时间
       val data = Seq(writeTimeStampToHDFSFile(date, hour, minute))
