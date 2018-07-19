@@ -158,7 +158,7 @@ object DailyReport {
     val zfb = spark.read.parquet("/user/cpc/qtt-zfb/10")
     rs.toDF("did").join(zfb, "did").rdd.map {
       r =>
-        val birth = r.getAs[String]("sex")
+        val birth = r.getAs[String]("birth")
         if (2018 - birth.toInt / 10000 < 22) {
           (0, 1)
         }  else {
