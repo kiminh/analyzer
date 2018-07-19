@@ -286,23 +286,32 @@ object MergeParsedLog2 {
 
     println("union done")
 
-    //创建成功标记文件
-//    createSuccessMarkHDFSFile(date, hour, "new_union_done")
-    val empty=Seq()
-    val emptyRdd=spark.sparkContext.parallelize(empty)
-    emptyRdd.toDF()
-      .write
-      .mode(SaveMode.Overwrite)
-      .text("/user/cpc/new_union_done/%s-%s.ok".format(date,hour))
 
-//    writeTimeStampToHDFSFile(date, hour, minute, "new_union_done") //将时间写入标记文件
+    //如果合并的RDD的元素大于0，创建标记文件，记录本次运行的开始时间
+    if (unionData.count() > 0) {
+      //创建成功标记文件
+      val empty = Seq("")
+      val emptyRdd = spark.sparkContext.parallelize(empty)
+      emptyRdd.toDF()
+        .write
+        .mode(SaveMode.Overwrite)
+        .text("/user/cpc/new_union_done/%s-%s.ok".format(date, hour))
 
-    val data=Seq(writeTimeStampToHDFSFile(date,hour,minute))
-    val markRdd=spark.sparkContext.parallelize(data)
-    markRdd.toDF()
-      .write
-      .mode(SaveMode.Overwrite)
-      .text("/user/cpc/new_union_done%s".format{if(addData!=""){"_"+addData}}else{""})
+      //记录本次运行的开始时间
+      val data = Seq(writeTimeStampToHDFSFile(date, hour, minute))
+      val markRdd = spark.sparkContext.parallelize(data)
+      markRdd.toDF()
+        .write
+        .mode(SaveMode.Overwrite)
+        .text("/user/cpc/new_union_done%s".format(if (addData != "") {
+          "_" + addData
+        } else {
+          ""
+        }))
+    } else {
+      println("merge log failed.")
+    }
+
 
   }
 
@@ -339,13 +348,6 @@ object MergeParsedLog2 {
 
 
   def writeTimeStampToHDFSFile(date: String, hour: String, minute: String): String = {
-    //    val fileName = "/warehouse/cpc/%s/%s-%s.ok".format(markTbl, date, hour)
-    //    val path = new Path(fileName)
-    //    //get object conf
-    //    val conf = new Configuration()
-    //    //get FileSystem
-    //    val fileSystem = FileSystem.newInstance(conf)
-
     val cal = Calendar.getInstance()
     cal.set(Calendar.YEAR, date.split("-")(0).toInt)
     cal.set(Calendar.MONTH, date.split("-")(1).toInt - 1)
@@ -355,66 +357,9 @@ object MergeParsedLog2 {
     cal.set(Calendar.SECOND, 0)
 
     val timeStampp = cal.getTimeInMillis / 1000
-    val data=timeStampp.toString+"\n"
+    val data = timeStampp.toString + "\n"
     data
 
-    //    try {
-    //      if (!fileSystem.exists(path)) {
-    //        val fsDataOutputStream = fileSystem.create(path)
-    //        fsDataOutputStream.write(data.getBytes)  //防止乱码
-    //        fsDataOutputStream.flush()
-    //      }
-    //
-    //    } catch {
-    //      case e: IOException => e.printStackTrace()
-    //    } finally {
-    //      try {
-    //        if (fileSystem != null) {
-    //          fileSystem.close()
-    //        }
-    //      } catch {
-    //        case e: IOException => e.printStackTrace()
-    //      }
-    //    }
-
-  }
-
-  /**
-    * 在hdfs上创建成功标记文件；unionlog, uniontracelog合并成功的标记文件
-    *
-    * @param mark
-    */
-  def createSuccessMarkHDFSFile(date: String, hour: String, mark: String): Unit = {
-    val fileName = "/warehouse/cpc/%s/%s-%s.ok".format(mark, date, hour)
-    val path = new Path(fileName)
-
-    //get object conf
-    val conf = new Configuration()
-    //get FileSystem
-    val fileSystem = FileSystem.newInstance(conf)
-    var success = false
-
-    try {
-      if (!fileSystem.exists(path)) {
-        success = fileSystem.createNewFile(path)
-      }
-
-      if (success) {
-        println("create file success")
-      } else {
-        println("create file failed")
-      }
-    } catch {
-      case e: IOException => e.printStackTrace()
-    } finally {
-      try {
-        if (fileSystem != null) {
-          fileSystem.close()
-        }
-      } catch {
-        case e: IOException => e.printStackTrace()
-      }
-    }
   }
 
 }
