@@ -156,7 +156,17 @@ object DailyReport {
     import spark.implicits._
     println(rs.count())
     val zfb = spark.read.parquet("/user/cpc/qtt-zfb/10")
-    println(rs.toDF("did").join(zfb, "did").count())
+    rs.toDF("did").join(zfb, "did").rdd.map {
+      r =>
+        val birth = r.getAs[String]("sex")
+        if (2018 - birth.toInt / 10000 < 22) {
+          (0, 1)
+        }  else {
+          (1, 1)
+        }
+    }.reduceByKey(_+_)
+      .toLocalIterator
+      .foreach(println)
     val conf = ConfigFactory.load()
     val sum = rs.repartition(500)
       .mapPartitions{
