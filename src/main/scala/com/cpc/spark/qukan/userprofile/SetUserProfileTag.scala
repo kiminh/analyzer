@@ -31,8 +31,7 @@ import scala.collection.mutable
 
 
 object SetUserProfileTag {
-  def setUserProfileTag (spark : SparkSession, in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
-    import spark.implicits._
+  def setUserProfileTag (in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
     val cal = Calendar.getInstance()
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
@@ -96,15 +95,33 @@ object SetUserProfileTag {
               }
           }
           (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del)) ++ ret).iterator
-      }.reduceByKey(_+_)
-      .sortBy(_._1)
-    sum.toDF("name", "sum").write.mode(SaveMode.Append).parquet("/user/cpc/uid-tag-number/%s".format(date))
-    sum.toLocalIterator.toArray[(String, Int)]
+      }.reduceByKey(_+_).toLocalIterator
+    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+    sum.foreach{
+      x =>
+        val key = x._1 + "_%s_test".format(date)
+        if (x._1.contains("uid")) {
+          val buffer = redis.get[Int](x._1)
+          if (buffer != None) {
+            val ret = buffer match {
+              case  Some(s) => s
+            }
+            if (ret != null) {
+              redis.setex(key, 3600 * 24 * 30, (ret + x._2).toString)
+              println("set %s as %s".format(key, (ret + x._2).toString))
+            }
+          } else {
+            redis.setex(key, 3600 * 24 * 30, x._2.toString)
+            println("set %s as %s".format(key, (x._2).toString))
+          }
+        }
+
+    }
+    sum.toArray[(String, Int)]
 
   }
 
-  def testSetUserProfileTag (spark : SparkSession, in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
-    import spark.implicits._
+  def testSetUserProfileTag (in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
     in.map {
       x =>
         ((x._2, x._3), 1)
@@ -174,14 +191,33 @@ object SetUserProfileTag {
               }
           }
           (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del)) ++ ret).iterator
-      }.reduceByKey(_+_)
-      .sortBy(_._1)
+      }.reduceByKey(_+_).toLocalIterator
 
-    sum.toDF("name", "sum").write.mode(SaveMode.Append).parquet("/user/cpc/uid-tag-number/test-%s".format(date))
-    sum.toLocalIterator.toArray[(String, Int)]
+    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+    sum.foreach{
+      x =>
+        val key = x._1 + "_%s_test".format(date)
+        if (x._1.contains("uid")) {
+          val buffer = redis.get[Int](x._1)
+          if (buffer != None) {
+            val ret = buffer match {
+              case Some(s) => s
+            }
+            redis.setex(key, 3600 * 24 * 30, (ret + x._2).toString)
+            println("set %s as %s".format(key, (ret + x._2).toString))
+          } else {
+            redis.setex(key, 3600 * 24 * 30, x._2.toString)
+            println("set %s as %s".format(key, (x._2).toString))
+          }
+        }
+
+    }
+    sum.toArray[(String, Int)]
   }
 
   def main(args: Array[String]): Unit = {
+    val tagList = Array[Int](201, 202, 203, 204, 205, 206, 207, 208, 209, 212, 216, 218, 219, 220, 221, 222,
+      223, 224, 225, 226, 227, 228, 230, 231, 233, 234)
     val isTest = args(0).toBoolean
     val spark = SparkSession.builder()
       .appName("count userprofile tag")
@@ -193,23 +229,33 @@ object SetUserProfileTag {
     val today = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     cal.add(Calendar.DATE, -1)
     val yesterday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val raw = {
-      if (isTest) {
-        println("today")
-        spark.read.parquet("/user/cpc/uid-tag-number/%s".format(today))
-      } else {
-        println("yesterday")
-        spark.read.parquet("/user/cpc/uid-tag-number/test-%s".format(yesterday))
-      }
+    val conf = ConfigFactory.load()
+    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+    tagList.foreach{
+      x =>
+        val key = {
+          if (isTest) {
+            "uid_num_by_tag_" + x + "_%s_test".format(today)
+          } else {
+            "uid_num_by_tag_" + x + "_%s".format(yesterday)
+          }
+        }
+        val buffer = redis.get[Int](key)
+        println(key, buffer)
+        if (buffer != None) {
+          val ret = buffer match {
+            case Some(s) => s
+            case _ => null
+          }
+          if (ret != null && isTest) {
+            redis.setex("uid_num_by_tag_%s_test".format(x), 3600 * 24 * 30, ret.toString)
+            println("set %s as %s".format("uid_num_by_tag_%s_test".format(x), ret.toString))
+          } else if (ret != null && !isTest){
+            redis.setex("uid_num_by_tag_%s".format(x), 3600 * 24 * 30, ret.toString)
+            println("set %s as %s".format("uid_num_by_tag_%s".format(x), ret.toString))
+          }
+        }
     }
-    raw.rdd.map {
-      r =>
-        val tag = r.getAs[String](0)
-        val cnt = r.getAs[Int](1)
-        (tag, cnt)
-    }.reduceByKey(_+_)
-      .toLocalIterator
-      .foreach(println)
   }
 
 }
