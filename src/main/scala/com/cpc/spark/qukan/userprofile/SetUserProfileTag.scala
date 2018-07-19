@@ -190,7 +190,7 @@ object SetUserProfileTag {
           }
           (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del)) ++ ret).iterator
       }.reduceByKey(_+_).toLocalIterator
-
+    sum.foreach(println)
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     sum.foreach{
       x =>
