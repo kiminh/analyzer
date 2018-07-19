@@ -31,8 +31,7 @@ import scala.collection.mutable
 
 
 object SetUserProfileTag {
-  def setUserProfileTag (spark : SparkSession, in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
-    import spark.implicits._
+  def setUserProfileTag (in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
     val cal = Calendar.getInstance()
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
@@ -118,8 +117,7 @@ object SetUserProfileTag {
 
   }
 
-  def testSetUserProfileTag (spark : SparkSession, in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
-    import spark.implicits._
+  def testSetUserProfileTag (in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
     in.map {
       x =>
         ((x._2, x._3), 1)
