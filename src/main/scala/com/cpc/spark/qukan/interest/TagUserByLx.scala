@@ -50,14 +50,17 @@ object TagUserByLx {
         |)
       """.stripMargin
     val cal = Calendar.getInstance()
-
+    cal.add(Calendar.DATE, days)
+    val sdate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    cal.add(Calendar.DATE, days)
+    val edate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
     val stmt =
       """
         |select distinct uid from dl_cpc.cpc_union_log
         |where `date` >= "%s" and `date` < "%s" and media_appsid  in ("80000001", "80000002") and ext_int["lx_package"] in %s
-      """.stripMargin.format(lx_package)
-
+      """.stripMargin.format(sdate, edate, lx_package)
+    println(stmt)
     val lx = spark.sql(stmt).rdd.map {
       r =>
         val uid = r.getAs[String](0)
