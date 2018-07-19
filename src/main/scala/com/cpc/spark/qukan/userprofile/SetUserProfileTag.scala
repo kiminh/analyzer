@@ -226,7 +226,8 @@ object SetUserProfileTag {
     cal.add(Calendar.DATE, -1)
     val yesterday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
-    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+    val redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
+    redis.select(3)
     tagList.foreach{
       x =>
         val key = {
