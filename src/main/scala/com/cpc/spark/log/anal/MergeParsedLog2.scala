@@ -68,7 +68,7 @@ object MergeParsedLog2 {
     cal.set(Calendar.DAY_OF_MONTH, datee(2).toInt)
     cal.set(Calendar.HOUR_OF_DAY, hour.toInt)
     cal.set(Calendar.MINUTE, minute.toInt)
-    cal.set(Calendar.SECOND,0)
+    cal.set(Calendar.SECOND, 0)
     //    g_date = cal.getTime //以后只用这个时间
     //    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime) //年月日
     //    val hour = new SimpleDateFormat("HH").format(cal.getTime) //小时
@@ -102,9 +102,9 @@ object MergeParsedLog2 {
       .as[UnionLog]
       .map(x => ((x.searchid, x.ideaid), x)) //((searchid,ideaid), UnionLog)
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
-        x =>
-          var ulog = x._2.copy(date = date, hour = hour)
-          (x._1, ulog) //Pair RDD
+      x =>
+        var ulog = x._2.copy(date = date, hour = hour)
+        (x._1, ulog) //Pair RDD
     }.rdd
 
     /**
@@ -286,7 +286,7 @@ object MergeParsedLog2 {
     println("union done")
 
     createSuccessMarkHDFSFile(date, hour, "new_union_done") //创建成功标记文件
-    writeTimeStampToHDFSFile(date,hour,mergeTbl)  //将时间写入标记文件
+    writeTimeStampToHDFSFile(date, hour, minute, "new_union_done") //将时间写入标记文件
 
   }
 
@@ -312,7 +312,7 @@ object MergeParsedLog2 {
     cal.set(Calendar.DAY_OF_MONTH, date.split("-")(2).toInt)
     cal.set(Calendar.HOUR_OF_DAY, hour) //前一个小时 时间
     cal.set(Calendar.MINUTE, minute)
-    cal.set(Calendar.SECOND,0)
+    cal.set(Calendar.SECOND, 0)
 
     for (h <- 0 until minutes) {
       parts(h) = partitionPathFormat.format(cal.getTime) //yyyy-MM-dd/HH/mm
@@ -322,25 +322,32 @@ object MergeParsedLog2 {
   }
 
 
-  def writeTimeStampToHDFSFile(date: String, hour: String, mergeTbl: String): Unit = {
-    val fileName = "/warehouse/cpc/%s/%s-%s.ok".format(mergeTbl, date, hour)
+  def writeTimeStampToHDFSFile(date: String, hour: String, minute: String, markTbl: String): Unit = {
+    val fileName = "/warehouse/cpc/%s/%s-%s.ok".format(markTbl, date, hour)
     val path = new Path(fileName)
     //get object conf
     val conf = new Configuration()
     //get FileSystem
     val fileSystem = FileSystem.newInstance(conf)
 
-    val cal=Calendar.getInstance()
+    val cal = Calendar.getInstance()
     cal.set(Calendar.YEAR, date.split("-")(0).toInt)
     cal.set(Calendar.MONTH, date.split("-")(1).toInt - 1)
     cal.set(Calendar.DAY_OF_MONTH, date.split("-")(2).toInt)
-    cal.set(Calendar.HOUR_OF_DAY, hour.toInt)  //不加30，shell已设置
+    cal.set(Calendar.HOUR_OF_DAY, hour.toInt) //不加30，shell已设置
+    cal.set(Calendar.MINUTE, minute.toInt)
+    cal.set(Calendar.SECOND, 0)
 
-    val timeStampp=cal.getTimeInMillis/1000
+    val timeStampp = cal.getTimeInMillis / 1000
+    val data=timeStampp.toString+"\n"
 
-    try{
-      val out = fileSystem.create(path)
-      out.writeLong(timeStampp)
+    try {
+      if (!fileSystem.exists(path)) {
+        val fsDataOutputStream = fileSystem.create(path)
+        fsDataOutputStream.write(data.getBytes)  //防止乱码
+        fsDataOutputStream.flush()
+      }
+
     } catch {
       case e: IOException => e.printStackTrace()
     } finally {
@@ -368,9 +375,13 @@ object MergeParsedLog2 {
     val conf = new Configuration()
     //get FileSystem
     val fileSystem = FileSystem.newInstance(conf)
+    var success = false
 
     try {
-      val success = fileSystem.createNewFile(path)
+      if (!fileSystem.exists(path)) {
+        success = fileSystem.createNewFile(path)
+      }
+
       if (success) {
         println("create file success")
       } else {
