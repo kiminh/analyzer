@@ -176,11 +176,13 @@ object SetUserProfileTag {
           (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del)) ++ ret).iterator
       }.reduceByKey(_+_)
       .sortBy(_._1)
+
     sum.toDF("name", "sum").write.mode(SaveMode.Append).parquet("/user/cpc/uid-tag-number/test-%s".format(date))
     sum.toLocalIterator.toArray[(String, Int)]
   }
 
   def main(args: Array[String]): Unit = {
+    val isTest = args(0).toBoolean
     val spark = SparkSession.builder()
       .appName("Tag bad uid")
       .enableHiveSupport()
@@ -188,9 +190,26 @@ object SetUserProfileTag {
     import spark.implicits._
 
     val cal = Calendar.getInstance()
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-
-    val today = spark.read.parquet("/user/cpc/uid-tag-number/")
+    val today = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    cal.add(Calendar.DATE, -1)
+    val yesterday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val raw = {
+      if (isTest) {
+        println("today")
+        spark.read.parquet("/user/cpc/uid-tag-number/%s".format(today))
+      } else {
+        println("yesterday")
+        spark.read.parquet("/user/cpc/uid-tag-number/test-%s".format(yesterday))
+      }
+    }
+    raw.rdd.map {
+      r =>
+        val tag = r.getAs[String](0)
+        val cnt = r.getAs[Int](1)
+        (tag, cnt)
+    }.reduceByKey(_+_)
+      .toLocalIterator
+      .foreach(println)
   }
 
 }
