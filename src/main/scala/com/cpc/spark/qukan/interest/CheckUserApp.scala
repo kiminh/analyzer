@@ -43,7 +43,6 @@ object CheckUserApp {
           val did = r.getAs[String]("did")
           val apps = r.getAs[Seq[Row]]("apps")
           val birth = r.getAs[Int]("birth")
-
           if (apps != null) {
             (did, apps.length, birth, apps)
           } else {
@@ -52,7 +51,8 @@ object CheckUserApp {
 
       }
       .filter(_ != null)
-    println(sample.filter(x => x._3 < 22).count())
+    val young = sample.filter(x => x._3 < 22).count()
+    println(young)
     println(sample.filter(x => x._3 < 22 && x._2 < 10).count())
     println(sample.filter(x => x._3 >= 22).count())
     println(sample.filter(x => x._3 >= 22 && x._2 < 10).count())
@@ -61,6 +61,38 @@ object CheckUserApp {
     println("#####")
     println(sample.filter(x => x._3 < 22 && x._2 > 15).count())
     sample.filter(x => x._3 < 22 && x._2 > 15).take(10).foreach(println)
-  }
 
+    sample.filter(x => x._3 < 22).flatMap {
+      r =>
+        r._4.map{
+          x =>
+            (x.getAs[String](0), 1)
+        }
+    }.reduceByKey(_+_)
+      .map {
+        r =>
+          (r._1, 1d * r._2 / young)
+      }
+      .sortBy(_._2, false)
+      .take(50).foreach(println)
+
+    val all_sample = spark.read.parquet("/user/cpc/qtt-age-sample/p1").rdd.map {
+      r =>
+        val apps = r.getAs[Seq[Row]]("apps")
+        if (apps != null) {
+          if (apps.length > 5){
+            (1)
+          } else {
+            (0)
+          }
+        } else {
+          null
+        }
+    }.filter(_ != null)
+
+    println(all_sample.filter(_ == 1).count())
+    println(all_sample.filter(_ == 0).count())
+
+
+  }
 }

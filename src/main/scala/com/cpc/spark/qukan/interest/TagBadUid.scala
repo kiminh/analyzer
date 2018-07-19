@@ -85,8 +85,8 @@ object TagBadUid {
     stmt =
       """
         |SELECT searchid
-        |FROM dl_cpc.cpc_union_trace_log
-        |WHERE `date` = "%s" AND `hour` in %s AND trace_type like "active%%"
+        |FROM dl_cpc.ml_cvr_feature_v1
+        |WHERE `date` = "%s" AND `hour` in %s AND label = 1
       """.stripMargin.format(date, sHour)
 
     val rs2 = spark.sql(stmt).rdd

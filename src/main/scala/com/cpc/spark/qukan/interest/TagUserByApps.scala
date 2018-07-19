@@ -6,6 +6,7 @@ import java.util.Calendar
 
 import com.cpc.spark.common.Utils
 import com.cpc.spark.qukan.parser.HdfsParser
+import com.cpc.spark.qukan.userprofile.SetUserProfileTag
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.sql.SparkSession
 import com.redis.RedisClient
@@ -262,45 +263,9 @@ object TagUserByApps {
   }
 
   def tagUser(uids: RDD[String], tag: Int): (Int, Int) = {
-    val conf = ConfigFactory.load()
-    val sum = uids
-      .mapPartitions {
-        p =>
-          var n = 0
-          var n1 = 0
-          val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-          p.foreach {
-            uid =>
-              val key = uid + "_UPDATA"
-              val buffer = redis.get[Array[Byte]](key).orNull
-              if (buffer != null) {
-                val user = UserProfile.parseFrom(buffer).toBuilder
-                val in = InterestItem.newBuilder()
-                  .setTag(tag)
-                  .setScore(100)
-                var has = false
-                for (i <- 0 until user.getInterestedWordsCount) {
-                  val w = user.getInterestedWords(i)
-                  if (w.getTag == in.getTag) {
-                    if (!has) {
-                      user.setInterestedWords(i, in)
-                      has = true
-                    } else {
-                      user.removeInterestedWords(i)
-                    }
-                  }
-                }
-                if (!has) {
-                  user.addInterestedWords(in)
-                  n1 = n1 + 1
-                }
-                n = n + 1
-                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-              }
-          }
-          Seq((n, n1)).iterator
-      }
-    sum.reduce((x, y) => (x._1 + y._1, x._2 + y._2))
+    val sum = SetUserProfileTag.setUserProfileTag(uids.map(x => (x, tag, true)))
+    sum.foreach(println)
+    (0, 0)
   }
 }
 

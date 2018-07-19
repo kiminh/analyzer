@@ -3,6 +3,7 @@ package com.cpc.spark.qukan.interest
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.qukan.userprofile.SetUserProfileTag
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
@@ -59,46 +60,8 @@ object NoClickUser {
     println("num", uidRDD.count())
     println(uidRDD.take(10).mkString(" "))
 
-    val conf = ConfigFactory.load()
-    val sum = uidRDD.mapPartitions {
-        p =>
-          var n = 0
-          var n1 = 0
-          var n2 = 0
-          var n3 = 0
-          val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-          p.foreach {
-            row =>
-              n = n + 1
-              val key = row.getString(0) + "_UPDATA"
-              val buffer = redis.get[Array[Byte]](key).orNull
-              if (buffer != null) {
-                val user = UserProfile.parseFrom(buffer).toBuilder
-                val in = InterestItem.newBuilder()
-                  .setTag(230)
-                  .setScore(100)
-                var has = false
-                for (i <- 0 until user.getInterestedWordsCount) {
-                  val w = user.getInterestedWords(i)
-                  if (w.getTag == in.getTag) {
-                    if (!has) {
-                      has = true
-                      n2 += 1
-                    }
-                  }
-                }
-                if (!has) {
-                  user.addInterestedWords(in)
-                  n1 += 1
-                }
-                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-              } else{
-                n3 += 1
-              }
-          }
-          Seq((n,n1,n2,n3)).iterator
-      }
-      println("update" + sum.reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)))
+    val sum = SetUserProfileTag.setUserProfileTag(uidRDD.rdd.map(x => (x.getString(0), 230, true)))
+    sum.foreach(println)
   }
 }
 

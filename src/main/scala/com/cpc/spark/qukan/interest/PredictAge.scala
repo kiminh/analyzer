@@ -13,6 +13,7 @@ import ml.dmlc.xgboost4j.scala.spark._
 
 import scala.collection.mutable
 import userprofile.Userprofile.{InterestItem, UserProfile}
+import com.cpc.spark.qukan.userprofile.SetUserProfileTag
 
 /**
   * Created by roydong on 11/06/2018.
@@ -73,8 +74,12 @@ object PredictAge {
             els = els :+ ((size + 2).toInt, apps.length.toDouble)
           }
           val vec = Vectors.sparse((size + 3).toInt, els)
-          (did, vec)
-      }
+          if (apps != null) {
+            (did, vec)
+          } else {
+            null
+          }
+      }.filter(_ != null)
       .toDF("did", "features")
 
     println(sample.count())
