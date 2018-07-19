@@ -226,8 +226,9 @@ object SetUserProfileTag {
     cal.add(Calendar.DATE, -1)
     val yesterday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
-    val redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
-    redis.select(3)
+    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+    val redis2save = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
+    redis2save.select(3)
     tagList.foreach{
       x =>
         val key = {
@@ -242,14 +243,17 @@ object SetUserProfileTag {
         if (buffer != None) {
           val ret = buffer.get
           if (ret != null && isTest) {
-            redis.setex("uid_num_by_tag_%s_test".format(x), 3600 * 24 * 30, ret.toString)
+            redis2save.setex("uid_num_by_tag_%s_test".format(x), 3600 * 24 * 30, ret.toString)
             println("set %s as %s".format("uid_num_by_tag_%s_test".format(x), ret.toString))
           } else if (ret != null && !isTest){
-            redis.setex("uid_num_by_tag_%s".format(x), 3600 * 24 * 30, ret.toString)
+            redis2save.setex("uid_num_by_tag_%s".format(x), 3600 * 24 * 30, ret.toString)
             println("set %s as %s".format("uid_num_by_tag_%s".format(x), ret.toString))
           }
+        } else {
+          null
         }
     }
+
   }
 
 }
