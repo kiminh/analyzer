@@ -29,6 +29,7 @@ object TagUserByLx {
       .appName("Tag user by lx")
       .enableHiveSupport()
       .getOrCreate()
+    import spark.implicits._
 
     val lx_package =
       """
@@ -49,8 +50,7 @@ object TagUserByLx {
         |)
       """.stripMargin
     val cal = Calendar.getInstance()
-    val
-    import spark.implicits._
+
 
     val stmt =
       """
