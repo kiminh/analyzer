@@ -59,8 +59,8 @@ object TagUserByZfb {
         }
     }
 
-    val ret = SetUserProfileTag.testSetUserProfileTag(age)
-    ret.foreach(println)
+    val ret = SetUserProfileTag.setUserProfileTag(age)
+    //ret.foreach(println)
 
     val conf = ConfigFactory.load()
     val sum = zfb
@@ -134,7 +134,7 @@ object TagUserByZfb {
                   age_r += 1
                 }
                 if (is_set) {
-                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                  //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
                 }
               }
           }

@@ -67,7 +67,7 @@ object TagUserByLx {
         (uid, 235, true)
     }
     println(lx.count())
-    val ret = SetUserProfileTag.testSetUserProfileTag(lx)
+    val ret = SetUserProfileTag.setUserProfileTag(lx)
 
   }
 
