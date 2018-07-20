@@ -29,7 +29,7 @@ object UpdateInstallApp {
     cal.add(Calendar.DATE, -days)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
-    val qukanApps = spark.read.parquet("/user/cpc/userInstalledApp/%s".format(today)).rdd.map {
+    val qukanApps = spark.read.parquet("/user/cpc/userInstalledApp/%s".format(date)).rdd.map {
       r =>
         val uid = r.getAs[String]("uid")
         val pkgs = r.getAs[Seq[String]]("pkgs")
@@ -41,7 +41,7 @@ object UpdateInstallApp {
 
     val stmt =
       """
-        |select trace_op1, trace_op2, trace_op3 from dl_cpc.cpc_all_trace_log where `date` >= "%s" and trace_type = "%s"
+        |select trace_op1, trace_op2, trace_op3 from dl_cpc.cpc_all_trace_log where `date` = "%s" and trace_type = "%s"
       """.stripMargin.format(date, "app_list")
     println(stmt)
     val all_list = spark.sql(stmt).rdd.map {
@@ -89,7 +89,7 @@ object UpdateInstallApp {
     println(all_list.count())
     println(all_list.filter(x => x._2._4.length > 5).count())
     println(all_list.filter(x => x._2._4.length > 10).count())
-    all_list.map(x => (x._1, x._2._1, x._2._2, x._2._3, x._2._4)).toDF("uid", "add_pkgs", "remove_pkgs", "used_pkgs", "pkgs").write.mode(SaveMode.Overwrite).parquet("/user/cpc/traceInstalledApp/%s".format(days))
+    all_list.map(x => (x._1, x._2._1, x._2._2, x._2._3, x._2._4)).toDF("uid", "add_pkgs", "remove_pkgs", "used_pkgs", "pkgs").write.mode(SaveMode.Overwrite).parquet("/user/cpc/traceInstalledApp/%s".format(date))
 
 
   }
