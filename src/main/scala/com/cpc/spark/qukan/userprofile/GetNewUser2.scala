@@ -75,7 +75,8 @@ object GetNewUser2 {
         }
     }
     SetUserProfileTag.setUserProfileTag(toSet)
-    val sum = all.mapPartitions {
+    val sum = all.repartition(500)
+      .mapPartitions {
       p =>
         var n1 = 0
         var n2 = 0
