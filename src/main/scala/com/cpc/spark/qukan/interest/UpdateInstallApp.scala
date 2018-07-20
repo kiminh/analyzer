@@ -32,7 +32,7 @@ object UpdateInstallApp {
     val qukanApps = spark.read.parquet("/user/cpc/userInstalledApp/%s".format(today)).rdd.map {
       r =>
         val uid = r.getAs[String]("uid")
-        val pkgs = r.getAs[Seq[Row]]("pkgs").map(x => x.getAs[String](0))
+        val pkgs = r.getAs[Seq[String]]("pkgs")
         (uid, (Seq[String](), Seq[String](), Seq[String](), pkgs))
     }
     println("origin statistic")
