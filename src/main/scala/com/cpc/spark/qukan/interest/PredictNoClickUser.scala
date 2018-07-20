@@ -27,7 +27,7 @@ object PredictNoClickUser {
     val sparkApp = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .config("spark.kryoserializer.buffer.max", "2047MB")
-      .appName("predict age".format())
+      .appName("predict-noclick-user".format())
       .enableHiveSupport()
       .getOrCreate()
 
