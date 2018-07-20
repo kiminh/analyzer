@@ -409,7 +409,9 @@ object MergeParsedLog2 {
     // 创建空rdd, 用于创建空文件
     val empty = Seq("")
     val emptyRdd = spark.sparkContext.parallelize(empty)
-    spark.emptyDataFrame
+
+    import spark.implicits._
+    emptyRdd.toDF
       .write
       .mode(SaveMode.Overwrite)
       .text("/warehouse/cpc/%s/%s-%s.ok".format(markTable, date, hour))
