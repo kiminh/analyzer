@@ -4,7 +4,7 @@ import com.cpc.spark.qukan.utils.Udfs
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import ml.dmlc.xgboost4j.scala.spark.XGBoostModel
-import org.apache.spark.ml.linalg.Vector
+import org.apache.spark.ml.linalg.{DenseVector, Vector}
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions.col
 import userprofile.Userprofile.{InterestItem, UserProfile}
@@ -46,8 +46,8 @@ object PredictNoClickUser {
     val predict = result.rdd.map {
       r =>
         val uid = r.getAs[String]("uid")
-        val score = r.getAs[Vector]("probability").toArray
-        (uid, score(1))
+        val score = r.getAs[DenseVector]("probabilities")
+        (uid, score.values(1))
     }
     val thresh = 0.95
     val tag = 234
@@ -57,7 +57,8 @@ object PredictNoClickUser {
     //res.write.mode("overwrite").saveAsTable("test.noclicktest1")
 
     val conf = ConfigFactory.load()
-    val sum =  predict.repartition(500)
+    var count = 0
+    val sum = predict.repartition(500)
       .mapPartitions {
         p =>
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
@@ -82,18 +83,19 @@ object PredictNoClickUser {
                 }
 
                 // insert then
-                if (r._2 > thresh) {
+                if (r._2 >= thresh) {
                   val in = InterestItem.newBuilder()
                     .setTag(tag)
                     .setScore(100)
                   user.addInterestedWords(in)
+                  count = count + 1
                 }
                 redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
           Seq().iterator
       }
-
+    println(s"tag count: $count")
   }
 
 
