@@ -39,9 +39,10 @@ object InterestedCategoryBJP {
           |select isclick,uid from dl_cpc.cpc_union_log where `date` = "%s"
           |and round(ext['adclass'].int_value / 1e3,0) = %d and isshow = 1
         """.stripMargin.format(date, adclass)).rdd
+        .repartition(1000)
         .map {
           u =>
-            (u.getAs[String]("uid"), (u.getAs[Int]("isclick"),1))
+            (u.getAs[String]("uid"), (u.getAs[Int]("isclick"), 1))
         }
         .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
         .cache()
@@ -52,7 +53,7 @@ object InterestedCategoryBJP {
         println("day2", num2, ret2._1, ret2._2, ret2._1.toDouble / ret2._2.toDouble)
       }
 
-      val sum =SetUserProfileTag.setUserProfileTag(day2.map(x => (x._1, 206, true)))
+      val sum = SetUserProfileTag.setUserProfileTag(day2.map(x => (x._1, 206, true)))
       sum.foreach(println)
     }
   }
