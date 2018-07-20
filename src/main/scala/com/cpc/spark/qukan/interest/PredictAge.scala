@@ -122,6 +122,7 @@ object PredictAge {
           null
         }
     }.filter(_ != null)
+    println(toSet.count())
     SetUserProfileTag.setUserProfileTag(toSet)
     val sum =  predict.repartition(500)
       .mapPartitions {
