@@ -3,11 +3,12 @@ package com.cpc.spark.qukan.interest
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import org.apache.spark.sql.{Row, SaveMode, SparkSession}
+import org.apache.spark.sql.{Row, SaveMode, SparkSession,}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import com.cpc.spark.streaming.tools.{Encoding, Gzip}
 import com.cpc.spark.common.Utils
+import org.apache.spark.rdd.RDD
 
 
 /**
@@ -32,7 +33,7 @@ object UpdateInstallApp {
       r =>
         val uid = r.getAs[String]("uid")
         val pkgs = r.getAs[Seq[Row]]("pkgs").map(x => x.getAs[String](0))
-        (uid, (Seq(), Seq(), Seq(), pkgs))
+        (uid, (Seq[String](), Seq[String](), Seq[String](), pkgs))
     }
     println("origin statistic")
     println(qukanApps.count())
