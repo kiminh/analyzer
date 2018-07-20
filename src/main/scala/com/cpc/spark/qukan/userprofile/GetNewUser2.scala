@@ -71,11 +71,12 @@ object GetNewUser2 {
         if (sevenDay > day) {
           Seq((uid, 228, true))
         } else {
-          null
+          Seq()
         }
-    }.filter(_ != null)
+    }
     SetUserProfileTag.setUserProfileTag(toSet)
-    val sum = all.mapPartitions {
+    val sum = all.repartition(500)
+      .mapPartitions {
       p =>
         var n1 = 0
         var n2 = 0

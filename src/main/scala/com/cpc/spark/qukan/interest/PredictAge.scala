@@ -119,9 +119,10 @@ object PredictAge {
         } else if (x._2 < f){
           Seq((x._1, 224, true), (x._1, 225, false))
         } else {
-          null
+          Seq()
         }
-    }.filter(_ != null)
+    }
+    println(toSet.count())
     SetUserProfileTag.setUserProfileTag(toSet)
     val sum =  predict.repartition(500)
       .mapPartitions {
