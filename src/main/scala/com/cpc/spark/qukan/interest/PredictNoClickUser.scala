@@ -1,5 +1,6 @@
 package com.cpc.spark.qukan.interest
 
+import com.cpc.spark.qukan.userprofile.SetUserProfileTag
 import com.cpc.spark.qukan.utils.Udfs
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
@@ -43,59 +44,68 @@ object PredictNoClickUser {
     val model2 = XGBoostModel.load(modelPath)
     val result = model2.transform(test)
 
+    val thresh = 0.95
+    val tag = 234
     val predict = result.rdd.map {
       r =>
         val uid = r.getAs[String]("uid")
         val score = r.getAs[DenseVector]("probabilities")
-        (uid, score.values(1))
+        val prob = score.values(1)
+        if (prob >= thresh) {
+          (uid, tag, true)
+        } else {
+          (uid, tag, false)
+        }
+        // (uid, score.values(1))
     }
-    val thresh = 0.95
-    val tag = 234
+
 
     predict.take(10).foreach(println)
 
     //res.write.mode("overwrite").saveAsTable("test.noclicktest1")
 
-    val conf = ConfigFactory.load()
-    var count = 0
-    val sum = predict.repartition(500)
-      .mapPartitions {
-        p =>
-          val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-          p.foreach {
-            r =>
-              val key = r._1 + "_UPDATA"
-              val buffer = redis.get[Array[Byte]](key).getOrElse(null)
-              if (buffer != null) {
+    SetUserProfileTag.setUserProfileTag(predict)
 
-                val user = UserProfile.parseFrom(buffer).toBuilder
-
-                // delete first
-                var idx = 0
-                while (idx < user.getInterestedWordsCount) {
-                  val w = user.getInterestedWords(idx)
-                  if (w.getTag == tag) {
-                    user.removeInterestedWords(idx)
-                    idx += 100000
-                  } else {
-                    idx += 1
-                  }
-                }
-
-                // insert then
-                if (r._2 >= thresh) {
-                  val in = InterestItem.newBuilder()
-                    .setTag(tag)
-                    .setScore(100)
-                  user.addInterestedWords(in)
-                  count = count + 1
-                }
-                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-              }
-          }
-          Seq().iterator
-      }
-    println(s"tag count: $count")
+//    val conf = ConfigFactory.load()
+//    var count = 0
+//    val sum = predict.repartition(500)
+//      .mapPartitions {
+//        p =>
+//          val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+//          p.foreach {
+//            r =>
+//              val key = r._1 + "_UPDATA"
+//              val buffer = redis.get[Array[Byte]](key).getOrElse(null)
+//              if (buffer != null) {
+//
+//                val user = UserProfile.parseFrom(buffer).toBuilder
+//
+//                // delete first
+//                var idx = 0
+//                while (idx < user.getInterestedWordsCount) {
+//                  val w = user.getInterestedWords(idx)
+//                  if (w.getTag == tag) {
+//                    user.removeInterestedWords(idx)
+//                    idx += 100000
+//                  } else {
+//                    idx += 1
+//                  }
+//                }
+//
+//                // insert then
+//                if (r._2 >= thresh) {
+//                  val in = InterestItem.newBuilder()
+//                    .setTag(tag)
+//                    .setScore(100)
+//                  user.addInterestedWords(in)
+//                  count = count + 1
+//                }
+//                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+//              }
+//          }
+//          Seq().iterator
+//      }
+//    println(s"tag count: $count")
   }
 
 
