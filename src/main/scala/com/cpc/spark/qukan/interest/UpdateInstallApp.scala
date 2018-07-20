@@ -3,7 +3,7 @@ package com.cpc.spark.qukan.interest
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import org.apache.spark.sql.{Row, SaveMode, SparkSession,}
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import com.cpc.spark.streaming.tools.{Encoding, Gzip}
