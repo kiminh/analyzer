@@ -310,7 +310,7 @@ object MergeParsedLog2 {
     /**
       * cpc_union_trace_log
       */
-    val traceRDD = prepareSourceString(spark, prefix + "cpc_click" + suffix, date, hour.toInt, minute.toInt, 6)
+    val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 6)
     if (traceRDD != null) {
       val click = unionData
         .filter(_.isclick > 0)
