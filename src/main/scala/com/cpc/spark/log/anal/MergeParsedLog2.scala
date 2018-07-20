@@ -274,37 +274,37 @@ object MergeParsedLog2 {
           rec._2.head
     }
 
-    //    spark.createDataFrame(unionData)
-    //      .write
-    //      .mode(SaveMode.Append) //修改为Append
-    //      .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(mergeTbl, date, hour))
-    //
-    //    spark.sql(
-    //      """
-    //        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-    //        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
-    //      """.stripMargin.format(mergeTbl, date, hour, mergeTbl, date, hour))
-    println("union done")
+    spark.createDataFrame(unionData)
+      .write
+      .mode(SaveMode.Append) //修改为Append
+      .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(mergeTbl, date, hour))
 
-    //如果合并的RDD的元素大于0，创建标记文件，记录本次运行的开始时间
-//    if (unionData.count() > 0) {
-//      println("union done")
-//      createMarkFile(spark, "new_union_done", date, hour)
-//
-//      //记录本次运行的开始时间
-//      val data = Seq(writeTimeStampToHDFSFile(date, hour, minute))
-//      val markRdd = spark.sparkContext.parallelize(data, 1)
-//      markRdd.toDF()
-//        .write
-//        .mode(SaveMode.Overwrite)
-//        .text("/user/cpc/new_union_done%s".format(if (addData != "") {
-//          "_" + addData
-//        } else {
-//          ""
-//        }))
-//    } else {
-//      println("union log failed...")
-//    }
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+      """.stripMargin.format(mergeTbl, date, hour, mergeTbl, date, hour))
+
+
+    // 如果合并的RDD的元素大于0，创建标记文件，记录本次运行的开始时间
+    if (unionData.count() > 0) {
+      println("union done")
+      createMarkFile(spark, "new_union_done", date, hour)
+
+      //记录本次运行的开始时间
+      val data = Seq(writeTimeStampToHDFSFile(date, hour, minute))
+      val markRdd = spark.sparkContext.parallelize(data, 1)
+      markRdd.toDF()
+        .write
+        .mode(SaveMode.Overwrite)
+        .text("/user/cpc/new_union_done%s".format(if (addData != "") {
+          "_" + addData
+        } else {
+          ""
+        }))
+    } else {
+      println("union log failed...")
+    }
 
 
     /**
