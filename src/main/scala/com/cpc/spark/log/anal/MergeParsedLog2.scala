@@ -10,6 +10,7 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
+import org.apache.spark.storage.StorageLevel
 
 import scala.collection.mutable
 
@@ -272,7 +273,7 @@ object MergeParsedLog2 {
           head.copy(motivation = motivation, motive_ext = motive_ext)
         } else
           rec._2.head
-    }
+    }.persist(StorageLevel.MEMORY_ONLY_SER)
 
     spark.createDataFrame(unionData)
       .write
@@ -326,6 +327,9 @@ object MergeParsedLog2 {
             x._2._1.copy(search_timestamp = x._2._2, date = date, hour = hour)
         }
 
+      //取消持久化
+      unionData.unpersist()
+
       spark.createDataFrame(traceData)
         .write
         .mode(SaveMode.Overwrite)
@@ -345,7 +349,6 @@ object MergeParsedLog2 {
         println("trace join unionlog failed...")
       }
     }
-
 
 
   }
