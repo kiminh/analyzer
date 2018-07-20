@@ -330,7 +330,13 @@ object MergeParsedLog2 {
         .write
         .mode(SaveMode.Overwrite)
         .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(unionTraceTbl, date, hour))
-      
+
+      spark.sql(
+        """
+          |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+          | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+        """.stripMargin.format(unionTraceTbl, date, hour, unionTraceTbl, date, hour))
+
       //如果合并的RDD的元素大于0，创建标记文件
       if (traceData.count() > 0) {
         println("trace_join_union done")
