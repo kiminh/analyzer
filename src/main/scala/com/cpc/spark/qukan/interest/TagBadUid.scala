@@ -27,6 +27,7 @@ import com.redis.serialization.Parse.Implicits._
 import com.redis.RedisClient
 import com.cpc.spark.qukan.parser.HdfsParser
 import userprofile.Userprofile.{InterestItem, UserProfile}
+import com.cpc.spark.qukan.userprofile.SetUserProfileTag
 
 /**
   * Created by YuntaoMa on 06/06/2018.
@@ -105,10 +106,12 @@ object TagBadUid {
       }
       .reduceByKey((x, y) => x.max(y))
 
-    val stage = rs3.filter(x => x._2 >= threshold).map(x => x._1)
+    val stage = rs3.filter(x => x._2 >= threshold).map(x => (x._1, 226, true))
+    SetUserProfileTag.setUserProfileTag(stage)
     for (i <- 3 to 10) {
       println(rs3.filter(x => x._2 >= i).map(x => x._1).count())
     }
+
 
     println("###" + stage.count() + "###")
     //stage.take(10).foreach(println)
@@ -146,7 +149,7 @@ object TagBadUid {
                   n1 = n1 + 1
                 }
                 n = n + 1
-                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
           }
           Seq((n, n1)).iterator

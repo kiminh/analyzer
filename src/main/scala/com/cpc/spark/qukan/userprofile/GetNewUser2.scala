@@ -66,6 +66,15 @@ object GetNewUser2 {
         (uid, day)
     }
     all.take(10).foreach(println)
+    val toSet = all.flatMap{
+      case (uid, day) =>
+        if (sevenDay > day) {
+          Seq((uid, 228, true))
+        } else {
+          null
+        }
+    }.filter(_ != null)
+    SetUserProfileTag.setUserProfileTag(toSet)
     val sum = all.mapPartitions {
       p =>
         var n1 = 0
@@ -113,7 +122,7 @@ object GetNewUser2 {
               }  else {
                 n3 += 1
               }
-              redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+              //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
 
             }
         }
