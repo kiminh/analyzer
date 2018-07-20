@@ -82,6 +82,10 @@ object UpdateInstallApp {
       .union(qukanApps)
       .reduceByKey((x, y) => ((x._1 ++ y._1).distinct, (x._2 ++ y._2).distinct, (x._3 ++ y._3).distinct, (x._4 ++ y._4).distinct))
 
+    println(all_list.map(x => (x._2._1.length, x._2._2.length, x._2._3.length, x._2._4.length))
+        .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)))
+
+
 
 
         //.map(x => (x._1, x._2._1.distinct, x._2._2.distinct, x._2._3.distinct))
