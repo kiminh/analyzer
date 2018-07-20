@@ -242,10 +242,10 @@ object SetUserProfileTag {
         println(key, buffer)
         if (buffer != None) {
           val ret = buffer.get
-          if (ret != null && isTest) {
+          if (isTest) {
             redis2save.setex("uid_num_by_tag_%s_test".format(x), 3600 * 24 * 30, ret.toString)
             println("set %s as %s".format("uid_num_by_tag_%s_test".format(x), ret.toString))
-          } else if (ret != null && !isTest){
+          } else if (!isTest){
             redis2save.setex("uid_num_by_tag_%s".format(x), 3600 * 24 * 30, ret.toString)
             println("set %s as %s".format("uid_num_by_tag_%s".format(x), ret.toString))
           }
