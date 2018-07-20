@@ -60,7 +60,8 @@ object MergeParsedLog2 {
     val minute = args(4)
     prefix = args(5) //"" 空
     suffix = args(6) //"" 空
-    val addData = args(7)
+    val unionTraceTbl = args(7) //union_trace_table
+    val addData = args(8)
 
     val datee = date.split("-")
     val cal = Calendar.getInstance()
@@ -85,7 +86,7 @@ object MergeParsedLog2 {
     /**
       * search
       */
-    var searchRDD = prepareSourceString(spark, prefix + "cpc_search" + suffix, date, hour.toInt, minute.toInt, 3)
+    val searchRDD = prepareSourceString(spark, prefix + "cpc_search" + suffix, date, hour.toInt, minute.toInt, 3)
 
     // RDD为空，退出
     if (searchRDD == null) {
@@ -111,7 +112,7 @@ object MergeParsedLog2 {
     /**
       * show
       */
-    var showRDD = prepareSourceString(spark, prefix + "cpc_show" + suffix, date, hour.toInt, minute.toInt, 6)
+    val showRDD = prepareSourceString(spark, prefix + "cpc_show" + suffix, date, hour.toInt, minute.toInt, 6)
 
     /**
       * 获得每个广告 '本次播放最大时长' 的日志； 转为PairRDD
@@ -138,7 +139,7 @@ object MergeParsedLog2 {
     /**
       * click
       */
-    var clickRDD = prepareSourceString(spark, prefix + "cpc_click" + suffix, date, hour.toInt, minute.toInt, 6)
+    val clickRDD = prepareSourceString(spark, prefix + "cpc_click" + suffix, date, hour.toInt, minute.toInt, 6)
 
     var clickData2: RDD[((String, Int), ClickLog)] = null
 
@@ -273,44 +274,73 @@ object MergeParsedLog2 {
           rec._2.head
     }
 
-    spark.createDataFrame(unionData)
-      .write
-      .mode(SaveMode.Append) //修改为Append
-      .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(mergeTbl, date, hour))
-
-    spark.sql(
-      """
-        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
-      """.stripMargin.format(mergeTbl, date, hour, mergeTbl, date, hour))
-
+    //    spark.createDataFrame(unionData)
+    //      .write
+    //      .mode(SaveMode.Append) //修改为Append
+    //      .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(mergeTbl, date, hour))
+    //
+    //    spark.sql(
+    //      """
+    //        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+    //        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+    //      """.stripMargin.format(mergeTbl, date, hour, mergeTbl, date, hour))
     println("union done")
 
-
     //如果合并的RDD的元素大于0，创建标记文件，记录本次运行的开始时间
-    if (unionData.count() > 0) {
-      //创建成功标记文件
-      val empty = Seq("")
-      val emptyRdd = spark.sparkContext.parallelize(empty)
-      emptyRdd.toDF()
-        .write
-        .mode(SaveMode.Overwrite)
-        .text("/warehouse/cpc/new_union_done/%s-%s.ok".format(date, hour))
+//    if (unionData.count() > 0) {
+//      println("union done")
+//      createMarkFile(spark, "new_union_done", date, hour)
+//
+//      //记录本次运行的开始时间
+//      val data = Seq(writeTimeStampToHDFSFile(date, hour, minute))
+//      val markRdd = spark.sparkContext.parallelize(data, 1)
+//      markRdd.toDF()
+//        .write
+//        .mode(SaveMode.Overwrite)
+//        .text("/user/cpc/new_union_done%s".format(if (addData != "") {
+//          "_" + addData
+//        } else {
+//          ""
+//        }))
+//    } else {
+//      println("union log failed...")
+//    }
 
-      //记录本次运行的开始时间
-      val data = Seq(writeTimeStampToHDFSFile(date, hour, minute))
-      val markRdd = spark.sparkContext.parallelize(data,1)
-      markRdd.toDF()
+
+    /**
+      * cpc_union_trace_log
+      */
+    val traceRDD = prepareSourceString(spark, prefix + "cpc_click" + suffix, date, hour.toInt, minute.toInt, 6)
+    if (traceRDD != null) {
+      val click = unionData
+        .filter(_.isclick > 0)
+        .map(x => (x.searchid, x.timestamp))
+      val traceData = traceRDD
+        .as[TraceLog]
+        .map(x => (x.searchid, x))
+        .filter(_._1 != "none")
+        .rdd
+        .join(click)
+        .map {
+          x =>
+            x._2._1.copy(search_timestamp = x._2._2, date = date, hour = hour)
+        }
+
+      spark.createDataFrame(traceData)
         .write
         .mode(SaveMode.Overwrite)
-        .text("/user/cpc/new_union_done%s".format(if (addData != "") {
-          "_" + addData
-        } else {
-          ""
-        }))
-    } else {
-      println("merge log failed.")
+        .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(unionTraceTbl, date, hour))
+
+      println("trace_join_union done")
+
+      //如果合并的RDD的元素大于0，创建标记文件
+      if (traceData.count() > 0) {
+        createMarkFile(spark, "new_union_trace_done", date, hour)
+      } else {
+        println("trace join unionlog failed...")
+      }
     }
+
 
 
   }
@@ -360,6 +390,24 @@ object MergeParsedLog2 {
     val data = timeStampp.toString
     data
 
+  }
+
+  /**
+    * 创建成功标记文件
+    *
+    * @param spark     SparkSession
+    * @param markTable 对该表创建标记文件
+    * @param date
+    * @param hour
+    */
+  def createMarkFile(spark: SparkSession, markTable: String, date: String, hour: String): Unit = {
+    // 创建空rdd, 用于创建空文件
+    val empty = Seq("")
+    val emptyRdd = spark.sparkContext.parallelize(empty)
+    spark.emptyDataFrame
+      .write
+      .mode(SaveMode.Overwrite)
+      .text("/warehouse/cpc/%s/%s-%s.ok".format(markTable, date, hour))
   }
 
 }
