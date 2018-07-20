@@ -77,6 +77,7 @@ object DailyReport {
 
     println(stmt)
 
+
     val rs = spark.sql(stmt).rdd.map {
       r =>
         val did = r.getAs[String](0)
@@ -152,7 +153,20 @@ object DailyReport {
         (did)
     }.distinct()
 
+    import spark.implicits._
     println(rs.count())
+    val zfb = spark.read.parquet("/user/cpc/qtt-zfb/10")
+    rs.toDF("did").join(zfb, "did").rdd.map {
+      r =>
+        val birth = r.getAs[String]("birth")
+        if (2018 - birth.toInt / 10000 < 22) {
+          (0, 1)
+        }  else {
+          (1, 1)
+        }
+    }.reduceByKey(_+_)
+      .toLocalIterator
+      .foreach(println)
     val conf = ConfigFactory.load()
     val sum = rs.repartition(500)
       .mapPartitions{

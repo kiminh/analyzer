@@ -112,6 +112,17 @@ object PredictAge {
         (did, score(1))
     }
     predict.take(10).foreach(println)
+    val toSet = predict.flatMap {
+      x =>
+        if (x._2 > m) {
+          Seq((x._1, 225, true), (x._1, 224, false))
+        } else if (x._2 < f){
+          Seq((x._1, 224, true), (x._1, 225, false))
+        } else {
+          null
+        }
+    }.filter(_ != null)
+    SetUserProfileTag.setUserProfileTag(toSet)
     val sum =  predict.repartition(500)
       .mapPartitions {
         p =>
@@ -187,7 +198,7 @@ object PredictAge {
                   both_taged += 1
                 }
                 if (is_set) {
-                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                  //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
                 }
               }
           }
