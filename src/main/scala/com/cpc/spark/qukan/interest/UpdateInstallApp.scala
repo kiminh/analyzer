@@ -85,7 +85,14 @@ object UpdateInstallApp {
     println(all_list.map(x => (x._2._1.length, x._2._2.length, x._2._3.length, x._2._4.length))
         .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)))
 
-
+    val brand = spark.read.parquet("user/cpc/qtt-terminaltype/5")
+    all_list.filter(x => x._2._3.length > 0).map(x => x._1).toDF("did").join(brand, "did")
+        .rdd.map{
+          r =>
+            val brand = r.getAs[String](1)
+            (brand, 1)
+        }.reduceByKey(_+_).sortBy(_._2, false)
+        .toLocalIterator.foreach(println)
 
 
         //.map(x => (x._1, x._2._1.distinct, x._2._2.distinct, x._2._3.distinct))
