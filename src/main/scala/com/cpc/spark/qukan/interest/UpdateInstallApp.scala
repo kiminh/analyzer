@@ -7,7 +7,8 @@ import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import com.cpc.spark.streaming.tools.{Encoding, Gzip}
-
+import com.cpc.spark.common.Utils
+import org.apache.spark.rdd.RDD
 
 
 /**
@@ -24,11 +25,25 @@ object UpdateInstallApp {
     import spark.implicits._
 
     val cal = Calendar.getInstance()
+    val today = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     cal.add(Calendar.DATE, -days)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    cal.add(Calendar.DATE, -1)
+    val yesterday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+
+    val qukanApps = spark.read.parquet("/user/cpc/userInstalledApp/%s".format(date)).rdd.map {
+      r =>
+        val uid = r.getAs[String]("uid")
+        val pkgs = r.getAs[Seq[String]]("pkgs")
+        (uid, (Seq[String](), Seq[String](), Seq[String](), pkgs))
+    }
+    println("origin statistic")
+    println(qukanApps.count())
+    println(qukanApps.filter(_._2._3.length > 10).count())
+
     val stmt =
       """
-        |select trace_op1, trace_op2, trace_op3 from dl_cpc.cpc_all_trace_log where `date` >= "%s" and trace_type = "%s"
+        |select trace_op1, trace_op2, trace_op3 from dl_cpc.cpc_all_trace_log where `date` = "%s" and trace_type = "%s"
       """.stripMargin.format(date, "app_list")
     println(stmt)
     val all_list = spark.sql(stmt).rdd.map {
@@ -37,7 +52,7 @@ object UpdateInstallApp {
         val did = r.getAs[String](1)
         val in_b64 = r.getAs[String](2)
         var in : String = ""
-        var apps = Seq[(String, String)]()
+        var apps = Seq[String]()
         if (in_b64 != null) {
           val in_gzip = com.cpc.spark.streaming.tools.Encoding.base64Decoder(in_b64).toArray
           in = Gzip.decompress(in_gzip) match {
@@ -50,31 +65,65 @@ object UpdateInstallApp {
               JObject(pkg) <- pkgs
               JField("name", JString(name)) <- pkg
               JField("package_name", JString(package_name)) <- pkg
-              p = (name, package_name)
+              p = (package_name)
             } yield p
           }
         }
         if (op_type == "APP_LIST_ADD") {
-          (did, (apps, Seq(), Seq()))
+          (did, (apps, Seq[String](), Seq[String](), Seq[String]()))
         } else if (op_type == "APP_LIST_REMOVE") {
-          (did, (Seq(), apps, Seq()))
+          (did, (Seq[String](), apps, Seq[String](), Seq[String]()))
         } else if (op_type == "APP_LIST_USE"){
-          (did, (Seq(), Seq(), apps))
+          (did, (Seq[String](), Seq[String](), apps, Seq[String]()))
+        } else if (op_type == "APP_LIST_INSTALLED") {
+          (did, (Seq[String](), Seq[String](), Seq[String](), apps))
         } else {
           null
         }
     }.filter(_ != null)
-      .reduceByKey((x, y) => (x._1 ++ y._1, x._2 ++ y._2, x._3 ++ y._3))
-      .map(x => (x._1, x._2._3.map(p => p._2).distinct))
+      .union(qukanApps)
+      .reduceByKey((x, y) => ((x._1 ++ y._1).distinct, (x._2 ++ y._2).distinct, (x._3 ++ y._3).distinct, (x._4 ++ y._4).distinct))
+
+    println(all_list.map(x => (x._2._1.length, x._2._2.length, x._2._3.length, x._2._4.length))
+        .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)))
+
+//    val brand = spark.read.parquet("/user/cpc/qtt-terminaltype/5")
+//    all_list.filter(x => x._2._3.length > 0).map(x => x._1).toDF("did").join(brand, "did")
+//        .rdd.map{
+//          r =>
+//            val brand = r.getAs[String](1)
+//            (brand, 1)
+//        }.reduceByKey(_+_).sortBy(_._2, false)
+//        .toLocalIterator.foreach(println)
+    all_list.flatMap(x => x._2._3).map{x => (x, 1)}.reduceByKey(_+_).sortBy(_._2, false)
+        .take(50).foreach(println)
+
+
         //.map(x => (x._1, x._2._1.distinct, x._2._2.distinct, x._2._3.distinct))
-
     all_list.take(10).foreach(println)
-//    println(all_list.count())
-//    println(all_list.filter(x => x._4.length > 5).count())
-//    println(all_list.filter(x => x._4.length > 10).count())
-    all_list.toDF("uid", "pkgs").write.mode(SaveMode.Overwrite).parquet("/user/cpc/traceInstalledApp/%s".format(days))
+    println(all_list.count())
+    println(all_list.filter(x => x._2._4.length > 5).count())
+    println(all_list.filter(x => x._2._4.length > 10).count())
+    all_list.map(x => (x._1, x._2._1, x._2._2, x._2._3, x._2._4)).toDF("uid", "add_pkgs", "remove_pkgs", "used_pkgs", "pkgs").write.mode(SaveMode.Overwrite).parquet("/user/cpc/traceInstalledApp/%s".format(date))
 
-
+    val yest = spark.read.parquet("/user/cpc/traceInstalledApp/%s".format(yesterday)).rdd.map {
+      r =>
+        val did = r.getAs[String](0)
+        val use = r.getAs[Seq[String]](3)
+        (did, use)
+    }.join(all_list.map(x => (x._1, x._2._3)))
+        .map {
+          x =>
+            ((x._2._1.toSet[String] -- x._2._2.toSet[String]), (x._2._2.toSet[String] -- x._2._1.toSet[String]))
+        }
+    println(yest.count())
+    println(yest.map {
+      x =>
+        (x._1.size, x._2.size)
+    }.reduce((x, y) => (x._1 + y._1, x._2 + y._2)))
+//    yest.flatMap(x => x._1).map(x => (x, 1)).reduceByKey(_+_).sortBy(_._2, false).take(50).foreach(println)
+//    println("===================================================================")
+//    yest.flatMap(x => x._2).map(x => (x, 1)).reduceByKey(_+_).sortBy(_._2, false).take(50).foreach(println)
   }
 
 }
