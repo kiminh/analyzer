@@ -212,13 +212,11 @@ object CpcStreamingSearchLogParser {
 
               //根据不同类型的日志，调用不同的函数进行解析
               val searchRDD = srcDataRdd
-                  .repartition(2000)
                 .flatMap(x => LogParser.parseSearchLog_v2(x))
-              val parsedLog = searchRDD
                 .filter(_ != null)
-              
 
-              spark.createDataFrame(parsedLog)
+
+              spark.createDataFrame(searchRDD)
                 .write
                 .mode(SaveMode.Append)
                 .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
