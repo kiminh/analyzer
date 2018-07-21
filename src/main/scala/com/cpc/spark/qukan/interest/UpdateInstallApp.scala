@@ -121,9 +121,9 @@ object UpdateInstallApp {
       x =>
         (x._1.size, x._2.size)
     }.reduce((x, y) => (x._1 + y._1, x._2 + y._2)))
-    yest.flatMap(x => x._1).map(x => (x, 1)).reduceByKey(_+_).sortBy(_._2, false).take(50).foreach(println)
-    println("===================================================================")
-    yest.flatMap(x => x._2).map(x => (x, 1)).reduceByKey(_+_).sortBy(_._2, false).take(50).foreach(println)
+//    yest.flatMap(x => x._1).map(x => (x, 1)).reduceByKey(_+_).sortBy(_._2, false).take(50).foreach(println)
+//    println("===================================================================")
+//    yest.flatMap(x => x._2).map(x => (x, 1)).reduceByKey(_+_).sortBy(_._2, false).take(50).foreach(println)
   }
 
 }
