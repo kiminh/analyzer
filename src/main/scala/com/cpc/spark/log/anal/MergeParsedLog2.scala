@@ -103,6 +103,7 @@ object MergeParsedLog2 {
     // 去重，转为PairRDD
     val searchData2 = searchRDD
       .as[UnionLog]
+      .repartition(1500)
       .map(x => ((x.searchid, x.ideaid), x)) //((searchid,ideaid), UnionLog)
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
       x =>
@@ -190,7 +191,8 @@ object MergeParsedLog2 {
       * search, show, click使用(searchid,ideaid)进行left outer join
       * 并将show, click的值更新到search(是UnionLog样例类)中
       */
-    val unionData1 = searchData2.leftOuterJoin(showData2).leftOuterJoin(clickData2)
+    val unionDataTmp = searchData2.leftOuterJoin(showData2)
+    val unionData1=unionDataTmp.leftOuterJoin(clickData2)
       .map {
         x => //( (searchid,ideaid), ((searchlog1,showlog2),clicklog3) )
           (x._1, (x._2._1._1, x._2._1._2, x._2._2)) //( (searchid,ideaid), (searchlog1,showlog2,clicklog3) )
@@ -303,6 +305,7 @@ object MergeParsedLog2 {
         } else {
           ""
         }))
+      println("####### WriteTimeStampToHDFSFile:%s(%s %s:%s:00)".format(data,date,hour,minute))
     } else {
       println("union log failed...")
     }
@@ -311,44 +314,44 @@ object MergeParsedLog2 {
     /**
       * cpc_union_trace_log
       */
-    val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 6)
-    if (traceRDD != null) {
-      val click = unionData
-        .filter(_.isclick > 0)
-        .map(x => (x.searchid, x.timestamp))
-      val traceData = traceRDD
-        .as[TraceLog]
-        .map(x => (x.searchid, x))
-        .filter(_._1 != "none")
-        .rdd
-        .join(click)
-        .map {
-          x =>
-            x._2._1.copy(search_timestamp = x._2._2, date = date, hour = hour)
-        }
-
-      //取消持久化
-      unionData.unpersist()
-
-      spark.createDataFrame(traceData)
-        .write
-        .mode(SaveMode.Overwrite)
-        .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(unionTraceTbl, date, hour))
-
-      spark.sql(
-        """
-          |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-          | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
-        """.stripMargin.format(unionTraceTbl, date, hour, unionTraceTbl, date, hour))
-
-      //如果合并的RDD的元素大于0，创建标记文件
-      if (traceData.count() > 0) {
-        println("trace_join_union done")
-        createMarkFile(spark, "new_union_trace_done", date, hour)
-      } else {
-        println("trace join unionlog failed...")
-      }
-    }
+//    val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 6)
+//    if (traceRDD != null) {
+//      val click = unionData
+//        .filter(_.isclick > 0)
+//        .map(x => (x.searchid, x.timestamp))
+//      val traceData = traceRDD
+//        .as[TraceLog]
+//        .map(x => (x.searchid, x))
+//        .filter(_._1 != "none")
+//        .rdd
+//        .join(click)
+//        .map {
+//          x =>
+//            x._2._1.copy(search_timestamp = x._2._2, date = date, hour = hour)
+//        }
+//
+//      //取消持久化
+//      unionData.unpersist()
+//
+//      spark.createDataFrame(traceData)
+//        .write
+//        .mode(SaveMode.Overwrite)
+//        .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(unionTraceTbl, date, hour))
+//
+//      spark.sql(
+//        """
+//          |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+//          | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+//        """.stripMargin.format(unionTraceTbl, date, hour, unionTraceTbl, date, hour))
+//
+//      //如果合并的RDD的元素大于0，创建标记文件
+//      if (traceData.count() > 0) {
+//        println("trace_join_union done")
+//        createMarkFile(spark, "new_union_trace_done", date, hour)
+//      } else {
+//        println("trace join unionlog failed...")
+//      }
+//    }
 
 
   }
