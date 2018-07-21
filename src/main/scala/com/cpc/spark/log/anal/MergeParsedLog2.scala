@@ -103,7 +103,6 @@ object MergeParsedLog2 {
     // 去重，转为PairRDD
     val searchData2 = searchRDD
       .as[UnionLog]
-      .repartition(1500)
       .map(x => ((x.searchid, x.ideaid), x)) //((searchid,ideaid), UnionLog)
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
       x =>
