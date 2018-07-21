@@ -28,6 +28,8 @@ object UpdateInstallApp {
     val today = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     cal.add(Calendar.DATE, -days)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    cal.add(Calendar.DATE, -1)
+    val yesterday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
     val qukanApps = spark.read.parquet("/user/cpc/userInstalledApp/%s".format(date)).rdd.map {
       r =>
@@ -68,13 +70,13 @@ object UpdateInstallApp {
           }
         }
         if (op_type == "APP_LIST_ADD") {
-          (did, (apps, Seq(), Seq(), Seq()))
+          (did, (apps, Seq[String](), Seq[String](), Seq[String]()))
         } else if (op_type == "APP_LIST_REMOVE") {
-          (did, (Seq(), apps, Seq(), Seq()))
+          (did, (Seq[String](), apps, Seq[String](), Seq[String]()))
         } else if (op_type == "APP_LIST_USE"){
-          (did, (Seq(), Seq(), apps, Seq()))
+          (did, (Seq[String](), Seq[String](), apps, Seq[String]()))
         } else if (op_type == "APP_LIST_INSTALLED") {
-          (did, (Seq(), Seq(), Seq(), apps))
+          (did, (Seq[String](), Seq[String](), Seq[String](), apps))
         } else {
           null
         }
@@ -104,7 +106,17 @@ object UpdateInstallApp {
     println(all_list.filter(x => x._2._4.length > 10).count())
     all_list.map(x => (x._1, x._2._1, x._2._2, x._2._3, x._2._4)).toDF("uid", "add_pkgs", "remove_pkgs", "used_pkgs", "pkgs").write.mode(SaveMode.Overwrite).parquet("/user/cpc/traceInstalledApp/%s".format(date))
 
-
+    val yest = spark.read.parquet("/user/cpc/traceInstalledApp/%s".format(yesterday)).rdd.map {
+      r =>
+        val did = r.getAs[String](0)
+        val use = r.getAs[Seq[String]](3)
+        (did, use)
+    }.join(all_list.map(x => (x._1, x._2._3)))
+    println(yest.count())
+    println(yest.map {
+      x =>
+        ((x._2._1.toSet[String] -- x._2._2.toSet[String]).size, (x._2._2.toSet[String] -- x._2._1.toSet[String]).size)
+    }.reduce((x, y) => (x._1 + y._1, x._2 + y._2)))
   }
 
 }
