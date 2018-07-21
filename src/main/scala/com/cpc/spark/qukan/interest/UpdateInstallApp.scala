@@ -112,11 +112,18 @@ object UpdateInstallApp {
         val use = r.getAs[Seq[String]](3)
         (did, use)
     }.join(all_list.map(x => (x._1, x._2._3)))
+        .map {
+          x =>
+            ((x._2._1.toSet[String] -- x._2._2.toSet[String]), (x._2._2.toSet[String] -- x._2._1.toSet[String]))
+        }
     println(yest.count())
     println(yest.map {
       x =>
-        ((x._2._1.toSet[String] -- x._2._2.toSet[String]).size, (x._2._2.toSet[String] -- x._2._1.toSet[String]).size)
+        (x._1.size, x._2.size)
     }.reduce((x, y) => (x._1 + y._1, x._2 + y._2)))
+    yest.flatMap(x => x._1).map(x => (x, 1)).reduceByKey(_+_).sortBy(_._2, false).take(50).foreach(println)
+    println("===================================================================")
+    yest.flatMap(x => x._2).map(x => (x, 1)).reduceByKey(_+_).sortBy(_._2, false).take(50).foreach(println)
   }
 
 }
