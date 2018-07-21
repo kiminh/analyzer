@@ -200,8 +200,8 @@ object MergeParsedLog2 {
       .map {
         x =>
           var searchlog1 = x._2._1
-          val showlog2 = x._2._2.orNull
-          val clicklog3 = x._2._3.orNull
+          val showlog2 = x._2._2.getOrElse(null)
+          val clicklog3 = x._2._3.getOrElse(null)
 
           var ext1 = mutable.Map[String, ExtValue]() ++ searchlog1.ext
 
@@ -360,7 +360,7 @@ object MergeParsedLog2 {
   /**
     * 获得数据
     */
-  def prepareSourceString(ctx: SparkSession, src: String, date: String, hour: Int, minute: Int, minutes: Int): Dataset[_] = {
+  def prepareSourceString(ctx: SparkSession, src: String, date: String, hour: Int, minute: Int, minutes: Int): Dataset[Row] = {
     val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourMinutePath(date, hour, minute, minutes))
     println(input) // /warehouse/dl_cpc.db/src_cpc_search_minute/{2018-06-26/08/00}
     val readData = ctx.read
