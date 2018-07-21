@@ -49,25 +49,28 @@ object TeacherStudents {
     users.take(10).foreach(println)
 
     val mid = users.map(x => (x._2, x))
-
     val teacher = users.filter(_._5 > 0).map(x => (x._5, x._2)).join(mid).map(x => x._2)
-    val ts = users.repartition(1000)
-      .map {
-        x =>
-          (x._5, Seq(x))
-      }
+    val students = users.map(x => (x._5, Seq(x)))
+      .filter(_._1 > 0)
       .reduceByKey(_ ++ _)
       .map {
         x =>
           (x._1, x._2.sortBy(v => -v._6).take(n))
       }
-      .join(mid)
-      .leftOuterJoin(teacher)
+
+
+    val ts = users.repartition(1000)
       .map {
         x =>
-          val students = x._2._1._1
-          val me = x._2._1._2
-          val teacher = x._2._2
+          (x._2, x)
+      }
+      .leftOuterJoin(teacher)
+      .leftOuterJoin(students)
+      .map {
+        x =>
+          val me = x._2._1._1
+          val teacher = x._2._1._2
+          val students = x._2._2
           (me, teacher, students)
       }
 
@@ -104,15 +107,17 @@ object TeacherStudents {
                   qtt.setTeacher(teacher)
                 }
 
-                qtt.clearStudents()
-                x._3.foreach {
-                  v =>
-                    val s = QttProfile.newBuilder()
-                    s.setDevid(v._1)
-                    s.setMemberId(v._2)
-                    s.setNickname(v._3)
-                    s.setWxNickname(v._4)
-                    qtt.addStudents(s)
+                if (x._3.isDefined) {
+                  qtt.clearStudents()
+                  x._3.get.foreach {
+                    v =>
+                      val s = QttProfile.newBuilder()
+                      s.setDevid(v._1)
+                      s.setMemberId(v._2)
+                      s.setNickname(v._3)
+                      s.setWxNickname(v._4)
+                      qtt.addStudents(s)
+                  }
                 }
 
                 user.setQttProfile(qtt)
