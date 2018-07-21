@@ -7,6 +7,7 @@ import org.apache.spark.ml.linalg.Vector
 
 /**
   * 推到redis记录：2018-07-13
+  * created by zhj
   */
 object FinanceBagV1 {
   def main(args: Array[String]): Unit = {
