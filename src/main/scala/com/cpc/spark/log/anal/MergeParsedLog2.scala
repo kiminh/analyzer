@@ -191,8 +191,7 @@ object MergeParsedLog2 {
       * search, show, click使用(searchid,ideaid)进行left outer join
       * 并将show, click的值更新到search(是UnionLog样例类)中
       */
-    val unionDataTmp = searchData2.leftOuterJoin(showData2)
-    val unionData1=unionDataTmp.leftOuterJoin(clickData2)
+    val unionData1 = searchData2.leftOuterJoin(showData2).leftOuterJoin(clickData2)
       .map {
         x => //( (searchid,ideaid), ((searchlog1,showlog2),clicklog3) )
           (x._1, (x._2._1._1, x._2._1._2, x._2._2)) //( (searchid,ideaid), (searchlog1,showlog2,clicklog3) )
