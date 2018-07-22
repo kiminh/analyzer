@@ -281,6 +281,7 @@ object MergeParsedLog2 {
       .write
       .mode(SaveMode.Append) //修改为Append
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(mergeTbl, date, hour))
+    println("write to hive successfully")
 
     spark.sql(
       """
@@ -295,17 +296,17 @@ object MergeParsedLog2 {
       createMarkFile(spark, "new_union_done", date, hour)
 
       //记录本次运行的开始时间
-      val data = Seq(writeTimeStampToHDFSFile(date, hour, minute))
-      val markRdd = spark.sparkContext.parallelize(data, 1)
-      markRdd.toDF()
-        .write
-        .mode(SaveMode.Overwrite)
-        .text("/user/cpc/new_union_done%s".format(if (addData != "") {
-          "_" + addData
-        } else {
-          ""
-        }))
-      println("####### WriteTimeStampToHDFSFile:%s(%s %s:%s:00)".format(data, date, hour, minute))
+//      val data = Seq(writeTimeStampToHDFSFile(date, hour, minute))
+//      val markRdd = spark.sparkContext.parallelize(data, 1)
+//      markRdd.toDF()
+//        .write
+//        .mode(SaveMode.Overwrite)
+//        .text("/user/cpc/new_union_done%s".format(if (addData != "") {
+//          "_" + addData
+//        } else {
+//          ""
+//        }))
+//      println("####### WriteTimeStampToHDFSFile:%s(%s %s:%s:00)".format(data, date, hour, minute))
     } else {
       println("union log failed...")
     }
