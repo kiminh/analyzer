@@ -62,7 +62,7 @@ object MergeParsedLog2 {
     prefix = args(5) //"" 空
     suffix = args(6) //"" 空
     val unionTraceTbl = args(7) //union_trace_table
-    val addData = args(8)
+    //val addData = args(8)  //标记补充数据
 
     val datee = date.split("-")
     val cal = Calendar.getInstance()
