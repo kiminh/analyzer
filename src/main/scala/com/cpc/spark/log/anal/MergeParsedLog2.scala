@@ -279,37 +279,34 @@ object MergeParsedLog2 {
 
     unionData.toDF
       .write
-      .mode(SaveMode.Overwrite) //修改为Append
-      .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s/minute=%s".format(mergeTbl, date, hour, minute))
+      .mode(SaveMode.Append) //修改为Append
+      .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(mergeTbl, date, hour))
     println("write to hive successfully")
 
     spark.sql(
       """
-        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s", `minute` = "%s")
-        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s/minute=%s'
-      """.stripMargin.format(mergeTbl, date, hour, minute, mergeTbl, date, hour, minute))
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+      """.stripMargin.format(mergeTbl, date, hour, mergeTbl, date, hour))
 
 
     // 如果合并的RDD的元素大于0，创建标记文件，记录本次运行的开始时间
     if (unionData.take(1).length > 0) {
       println("union done")
-      if (minute.toInt == 45) {
-        createMarkFile(spark, "new_union_done", date, hour)
-      }
-
+      createMarkFile(spark, "new_union_done", date, hour)
 
       //记录本次运行的开始时间
-      //      val data = Seq(writeTimeStampToHDFSFile(date, hour, minute))
-      //      val markRdd = spark.sparkContext.parallelize(data, 1)
-      //      markRdd.toDF()
-      //        .write
-      //        .mode(SaveMode.Overwrite)
-      //        .text("/user/cpc/new_union_done%s".format(if (addData != "") {
-      //          "_" + addData
-      //        } else {
-      //          ""
-      //        }))
-      //      println("####### WriteTimeStampToHDFSFile:%s(%s %s:%s:00)".format(data, date, hour, minute))
+//      val data = Seq(writeTimeStampToHDFSFile(date, hour, minute))
+//      val markRdd = spark.sparkContext.parallelize(data, 1)
+//      markRdd.toDF()
+//        .write
+//        .mode(SaveMode.Overwrite)
+//        .text("/user/cpc/new_union_done%s".format(if (addData != "") {
+//          "_" + addData
+//        } else {
+//          ""
+//        }))
+//      println("####### WriteTimeStampToHDFSFile:%s(%s %s:%s:00)".format(data, date, hour, minute))
     } else {
       println("union log failed...")
     }
