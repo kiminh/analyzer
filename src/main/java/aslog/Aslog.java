@@ -1003,6 +1003,14 @@ public final class Aslog {
      * <code>WINQ = 11;</code>
      */
     WINQ(11),
+    /**
+     * <code>VLION = 12;</code>
+     */
+    VLION(12),
+    /**
+     * <code>YOUDAO = 13;</code>
+     */
+    YOUDAO(13),
     ;
 
     /**
@@ -1053,6 +1061,14 @@ public final class Aslog {
      * <code>WINQ = 11;</code>
      */
     public static final int WINQ_VALUE = 11;
+    /**
+     * <code>VLION = 12;</code>
+     */
+    public static final int VLION_VALUE = 12;
+    /**
+     * <code>YOUDAO = 13;</code>
+     */
+    public static final int YOUDAO_VALUE = 13;
 
 
     public final int getNumber() {
@@ -1080,6 +1096,8 @@ public final class Aslog {
         case 9: return VANKA;
         case 10: return IFLYTEK;
         case 11: return WINQ;
+        case 12: return VLION;
+        case 13: return YOUDAO;
         default: return null;
       }
     }
@@ -32628,19 +32646,19 @@ public final class Aslog {
       "AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_TEXT" +
       "\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013AD_INTERACT\020\005" +
       "\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_BANNER\020\007\022\014\n\010AD_VID",
-      "EO\020\010\022\017\n\013AD_MOTIVATE\020\t*\212\001\n\005AdSrc\022\007\n\003CPC\020\001" +
+      "EO\020\010\022\017\n\013AD_MOTIVATE\020\t*\241\001\n\005AdSrc\022\007\n\003CPC\020\001" +
       "\022\n\n\006INMOBI\020\002\022\013\n\007TANXSSP\020\003\022\016\n\nBOTTOMINIG\020" +
       "\004\022\013\n\007HUZHONG\020\005\022\t\n\005FANCY\020\006\022\007\n\003GDT\020\007\022\014\n\010MO" +
       "BVISTA\020\010\022\t\n\005VANKA\020\t\022\013\n\007IFLYTEK\020\n\022\010\n\004WINQ" +
-      "\020\013*i\n\017InteractionType\022\017\n\013NO_INTERACT\020\000\022\013" +
-      "\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002\022\013\n\007DIALING\020\003\022\013" +
-      "\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006*\203\001\n\rMateri" +
-      "alLevel\022\032\n\026MATERIAL_LEVEL_UNKNOWN\020\000\022\024\n\020M" +
-      "ATERIAL_LEVEL_1\020\001\022\024\n\020MATERIAL_LEVEL_2\020\002\022" +
-      "\024\n\020MATERIAL_LEVEL_3\020\003\022\024\n\020MATERIAL_LEVEL_",
-      "4\020\004*M\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSD" +
-      "K\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005\022\007\n\003QTT" +
-      "\020\006"
+      "\020\013\022\t\n\005VLION\020\014\022\n\n\006YOUDAO\020\r*i\n\017Interaction" +
+      "Type\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DO" +
+      "WNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MA" +
+      "IL\020\005\022\006\n\002GP\020\006*\203\001\n\rMaterialLevel\022\032\n\026MATERI" +
+      "AL_LEVEL_UNKNOWN\020\000\022\024\n\020MATERIAL_LEVEL_1\020\001" +
+      "\022\024\n\020MATERIAL_LEVEL_2\020\002\022\024\n\020MATERIAL_LEVEL",
+      "_3\020\003\022\024\n\020MATERIAL_LEVEL_4\020\004*M\n\nClientType" +
+      "\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022" +
+      "\006\n\002HZ\020\004\022\007\n\003FUN\020\005\022\007\n\003QTT\020\006"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

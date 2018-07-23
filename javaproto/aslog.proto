@@ -162,6 +162,8 @@ enum AdSrc {
 	VANKA = 9;
 	IFLYTEK = 10;
 	WINQ = 11;
+	VLION = 12;
+	YOUDAO = 13;
 };
 enum InteractionType {
 	NO_INTERACT = 0;
