@@ -5,7 +5,9 @@ import com.cpc.spark.streaming.tools.Encoding
 
 object Event {
   def parse_show_log(data1: String): Show = {
-    val data = data1.replaceAll("%20", "")
+
+    val data = data1.replaceAll("%20", "")  //部分数据无法解析
+
     try {
       //20180424 15:20:00 修改show_timestamp取值逻辑
       //--修改Show类的结构，增加timestamp
