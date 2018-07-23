@@ -83,7 +83,7 @@ object TeacherStudents {
           (me, teacher, students, siblings)
       }
 
-    ts.take(10).foreach(println)
+    ts.filter(x => x._2.isDefined && x._3.isDefined && x._4.isDefined).take(10).foreach(println)
 
     val sum = ts.repartition(200)
       .mapPartitions {
