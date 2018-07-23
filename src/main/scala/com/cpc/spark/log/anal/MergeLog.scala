@@ -239,7 +239,8 @@ object MergeLog {
             log.isshow, log.isclick)
           val m_ext = Map("ideaid" -> log.ideaid.toString,
             "downloaded_app" -> log.ext_string.getOrElse("downloaded_app", ""),
-            "antispam_score" -> log.antispam_score.toString)
+            "antispam_score" -> log.antispam_score.toString,
+            "adsrc" -> log.adsrc.toString)
           motivation = motivation :+ m
           motive_ext = motive_ext :+ m_ext
         }

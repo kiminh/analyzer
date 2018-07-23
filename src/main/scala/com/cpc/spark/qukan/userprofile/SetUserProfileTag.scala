@@ -35,7 +35,7 @@ object SetUserProfileTag {
     val cal = Calendar.getInstance()
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
-    val sum = in.repartition(500)
+    val sum = in.repartition(200)
       .mapPartitions{
         p =>
           var del = 0
