@@ -94,42 +94,6 @@ object UpdateInstallApp {
       .union(qukanApps)
       .reduceByKey((x, y) => ((x._1 ++ y._1).distinct, (x._2 ++ y._2).distinct, (x._3 ++ y._3).distinct, (x._4 ++ y._4).distinct))
 
-    println(all_list.map(x => (x._2._1.length, x._2._2.length, x._2._3.length, x._2._4.length))
-        .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)))
-
-    all_list.flatMap(x => x._2._3).map{x => (x, 1)}.reduceByKey(_+_).sortBy(_._2, false)
-        .take(50).foreach(println)
-
-
-    all_list.take(10).foreach(println)
-    println(all_list.count())
-    println(all_list.filter(x => x._2._4.length > 5).count())
-    println(all_list.filter(x => x._2._4.length > 10).count())
-    all_list.map(x => (x._1, x._2._4, x._2._1, x._2._2, x._2._3, date)).toDF("uid", "pkgs", "add_pkgs", "remove_pkgs", "used_pkgs", "load_date").write.mode(SaveMode.Overwrite).parquet("/user/cpc/traceInstalledApp/%s".format(date))
-
-//    val sql =
-//      """
-//        |ALTER TABLE dl_cpc.cpc_user_installed_apps add if not exists PARTITION (load_date = "%s" )  LOCATION
-//        |       '/user/cpc/userInstalledApp/%s'
-//        |
-//                """.stripMargin.format(date, date)
-//    spark.sql(sql)
-
-//    val yest = spark.read.parquet("/user/cpc/traceInstalledApp/%s".format(yesterday)).rdd.map {
-//      r =>
-//        val did = r.getAs[String](0)
-//        val use = r.getAs[Seq[String]](3)
-//        (did, use)
-//    }.join(all_list.map(x => (x._1, x._2._3)))
-//        .map {
-//          x =>
-//            ((x._2._1.toSet[String] -- x._2._2.toSet[String]), (x._2._2.toSet[String] -- x._2._1.toSet[String]))
-//        }
-//    println(yest.count())
-//    println(yest.map {
-//      x =>
-//        (x._1.size, x._2.size)
-//    }.reduce((x, y) => (x._1 + y._1, x._2 + y._2)))
 
     var old: RDD[(String, (List[String], Int))] = null
     try {
@@ -147,7 +111,7 @@ object UpdateInstallApp {
     }
 
     //标记出老数据
-    var pkgs = all_list.map(x => (x._1, (x._2._4.toList, 1)))
+    var pkgs = all_list.map(x => (x._1, (x._2._4, 1)))
     if (old != null) {
       pkgs = pkgs.union(old)
         .reduceByKey {
@@ -214,6 +178,47 @@ object UpdateInstallApp {
       .take(10)
     println("update redis")
     sum.foreach(println)
+
+
+
+    println(all_list.map(x => (x._2._1.length, x._2._2.length, x._2._3.length, x._2._4.length))
+        .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)))
+
+    all_list.flatMap(x => x._2._3).map{x => (x, 1)}.reduceByKey(_+_).sortBy(_._2, false)
+        .take(50).foreach(println)
+
+
+    all_list.take(10).foreach(println)
+    println(all_list.count())
+    println(all_list.filter(x => x._2._4.length > 5).count())
+    println(all_list.filter(x => x._2._4.length > 10).count())
+    all_list.map(x => (x._1, x._2._4, x._2._1, x._2._2, x._2._3, date)).toDF("uid", "pkgs", "add_pkgs", "remove_pkgs", "used_pkgs", "load_date").write.mode(SaveMode.Overwrite).parquet("/user/cpc/traceInstalledApp/%s".format(date))
+
+//    val sql =
+//      """
+//        |ALTER TABLE dl_cpc.cpc_user_installed_apps add if not exists PARTITION (load_date = "%s" )  LOCATION
+//        |       '/user/cpc/userInstalledApp/%s'
+//        |
+//                """.stripMargin.format(date, date)
+//    spark.sql(sql)
+
+//    val yest = spark.read.parquet("/user/cpc/traceInstalledApp/%s".format(yesterday)).rdd.map {
+//      r =>
+//        val did = r.getAs[String](0)
+//        val use = r.getAs[Seq[String]](3)
+//        (did, use)
+//    }.join(all_list.map(x => (x._1, x._2._3)))
+//        .map {
+//          x =>
+//            ((x._2._1.toSet[String] -- x._2._2.toSet[String]), (x._2._2.toSet[String] -- x._2._1.toSet[String]))
+//        }
+//    println(yest.count())
+//    println(yest.map {
+//      x =>
+//        (x._1.size, x._2.size)
+//    }.reduce((x, y) => (x._1 + y._1, x._2 + y._2)))
+
+
   }
 
 }
