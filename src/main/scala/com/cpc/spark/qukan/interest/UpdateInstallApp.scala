@@ -1,14 +1,18 @@
 package com.cpc.spark.qukan.interest
 
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Date}
 
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import com.cpc.spark.streaming.tools.{Encoding, Gzip}
 import com.cpc.spark.common.Utils
+import com.cpc.spark.qukan.parser.HdfsParser
+import com.redis.RedisClient
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.rdd.RDD
+import userprofile.Userprofile.{APPPackage, UserProfile}
 
 
 /**
@@ -31,12 +35,17 @@ object UpdateInstallApp {
     cal.add(Calendar.DATE, -1)
     val yesterday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
-    val qukanApps = spark.read.parquet("/user/cpc/userInstalledApp/%s".format(date)).rdd.map {
-      r =>
-        val uid = r.getAs[String]("uid")
-        val pkgs = r.getAs[Seq[String]]("pkgs")
-        (uid, (Seq[String](), Seq[String](), Seq[String](), pkgs))
-    }
+    val inpath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(date)
+    val outpath = "/user/cpc/traceInstalledApp/%s".format(date)
+
+    var qukanApps = spark.read.orc(inpath)
+      .rdd
+      .map(HdfsParser.parseInstallApp(_, x => true, null))
+      .filter(x => x != null && x.pkgs.length > 0)
+      .map(x => (x.devid, x.pkgs.map(_.name)))
+      .reduceByKey(_ ++ _)
+      .map(x => (x._1, (Seq[String](), Seq[String](), Seq[String](), x._2.distinct)))
+
     println("origin statistic")
     println(qukanApps.count())
     println(qukanApps.filter(_._2._3.length > 10).count())
@@ -87,43 +96,123 @@ object UpdateInstallApp {
     println(all_list.map(x => (x._2._1.length, x._2._2.length, x._2._3.length, x._2._4.length))
         .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)))
 
-//    val brand = spark.read.parquet("/user/cpc/qtt-terminaltype/5")
-//    all_list.filter(x => x._2._3.length > 0).map(x => x._1).toDF("did").join(brand, "did")
-//        .rdd.map{
-//          r =>
-//            val brand = r.getAs[String](1)
-//            (brand, 1)
-//        }.reduceByKey(_+_).sortBy(_._2, false)
-//        .toLocalIterator.foreach(println)
     all_list.flatMap(x => x._2._3).map{x => (x, 1)}.reduceByKey(_+_).sortBy(_._2, false)
         .take(50).foreach(println)
 
 
-        //.map(x => (x._1, x._2._1.distinct, x._2._2.distinct, x._2._3.distinct))
     all_list.take(10).foreach(println)
     println(all_list.count())
     println(all_list.filter(x => x._2._4.length > 5).count())
     println(all_list.filter(x => x._2._4.length > 10).count())
-    all_list.map(x => (x._1, x._2._1, x._2._2, x._2._3, x._2._4)).toDF("uid", "add_pkgs", "remove_pkgs", "used_pkgs", "pkgs").write.mode(SaveMode.Overwrite).parquet("/user/cpc/traceInstalledApp/%s".format(date))
+    all_list.map(x => (x._1, x._2._4, x._2._1, x._2._2, x._2._3, date)).toDF("uid", "pkgs", "add_pkgs", "remove_pkgs", "used_pkgs", "load_date").write.mode(SaveMode.Overwrite).parquet("/user/cpc/traceInstalledApp/%s".format(date))
 
-    val yest = spark.read.parquet("/user/cpc/traceInstalledApp/%s".format(yesterday)).rdd.map {
-      r =>
-        val did = r.getAs[String](0)
-        val use = r.getAs[Seq[String]](3)
-        (did, use)
-    }.join(all_list.map(x => (x._1, x._2._3)))
+//    val sql =
+//      """
+//        |ALTER TABLE dl_cpc.cpc_user_installed_apps add if not exists PARTITION (load_date = "%s" )  LOCATION
+//        |       '/user/cpc/userInstalledApp/%s'
+//        |
+//                """.stripMargin.format(date, date)
+//    spark.sql(sql)
+
+//    val yest = spark.read.parquet("/user/cpc/traceInstalledApp/%s".format(yesterday)).rdd.map {
+//      r =>
+//        val did = r.getAs[String](0)
+//        val use = r.getAs[Seq[String]](3)
+//        (did, use)
+//    }.join(all_list.map(x => (x._1, x._2._3)))
+//        .map {
+//          x =>
+//            ((x._2._1.toSet[String] -- x._2._2.toSet[String]), (x._2._2.toSet[String] -- x._2._1.toSet[String]))
+//        }
+//    println(yest.count())
+//    println(yest.map {
+//      x =>
+//        (x._1.size, x._2.size)
+//    }.reduce((x, y) => (x._1 + y._1, x._2 + y._2)))
+
+    var old: RDD[(String, (List[String], Int))] = null
+    try {
+      old = spark.read
+        .parquet(outpath)
+        .rdd
         .map {
           x =>
-            ((x._2._1.toSet[String] -- x._2._2.toSet[String]), (x._2._2.toSet[String] -- x._2._1.toSet[String]))
+            (x.getAs[String]("uid"), (x.getAs[Seq[String]]("pkgs").toList, 0))
         }
-    println(yest.count())
-    println(yest.map {
-      x =>
-        (x._1.size, x._2.size)
-    }.reduce((x, y) => (x._1 + y._1, x._2 + y._2)))
-//    yest.flatMap(x => x._1).map(x => (x, 1)).reduceByKey(_+_).sortBy(_._2, false).take(50).foreach(println)
-//    println("===================================================================")
-//    yest.flatMap(x => x._2).map(x => (x, 1)).reduceByKey(_+_).sortBy(_._2, false).take(50).foreach(println)
+      println("old", old.count())
+    } catch {
+      case e: Exception =>
+        println("old", 0)
+    }
+
+    //标记出老数据
+    var pkgs = all_list.map(x => (x._1, (x._2._4.toList, 1)))
+    if (old != null) {
+      pkgs = pkgs.union(old)
+        .reduceByKey {
+          (x, y) =>
+            if (x._2 == 0) {
+              x
+            } else {
+              y
+            }
+        }
+    }
+    val added = pkgs.filter(_._2._2 == 1)
+    println("new", added.count())
+
+    //保存新增数据 redis
+    val sum = added.map(x => (x._1, x._2._1))
+      .mapPartitions {
+        p =>
+          var n = 0
+          var n1 = 0
+          var n2 = 0
+          var n3 = 0
+          val conf = ConfigFactory.load()
+          val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+          val sec = new Date().getTime / 1000
+          p.foreach {
+            x =>
+              n += 1
+              val key = x._1 + "_UPDATA"
+              val buffer = redis.get[Array[Byte]](key).getOrElse(null)
+
+              var user: UserProfile.Builder = null
+              if (buffer == null) {
+                user = UserProfile.newBuilder()
+                n3 = n3 + 1
+              } else {
+                user = UserProfile.parseFrom(buffer).toBuilder
+              }
+
+              //判断老数据
+              if (user.getInstallpkgCount > 0) {
+                val pkg = user.getInstallpkg(0)
+                //更新时间大于一天
+                if (sec > pkg.getLastUpdateTime + 60 * 60 * 24) {
+                  user.clearInstallpkg()
+                } else {
+                  n1 += 1
+                }
+              }
+
+              if (user.getInstallpkgCount == 0) {
+                x._2.foreach {
+                  n =>
+                    val pkg = APPPackage.newBuilder().setPackagename(n).setLastUpdateTime(sec)
+                    user.addInstallpkg(pkg)
+                }
+                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                n2 += 1
+              }
+          }
+          Seq(("pass", n1), ("update", n2), ("new", n3)).iterator
+      }
+      .reduceByKey(_ + _)
+      .take(10)
+    println("update redis")
+    sum.foreach(println)
   }
 
 }

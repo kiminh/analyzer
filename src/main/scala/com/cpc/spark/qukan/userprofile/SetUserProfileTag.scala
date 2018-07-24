@@ -104,13 +104,14 @@ object SetUserProfileTag {
           val buffer = redis.get[Int](x._1)
           if (buffer != None) {
             val ret = buffer.get
+            println("origin: %s".format(ret))
             if (ret != null) {
               redis.setex(key, 3600 * 24 * 30, (ret + x._2).toString)
-              println("set %s as %s".format(key, (ret + x._2).toString))
+              println("set add %s as %s".format(key, (ret + x._2).toString))
             }
           } else {
             redis.setex(key, 3600 * 24 * 30, x._2.toString)
-            println("set %s as %s".format(key, (x._2).toString))
+            println("set new %s as %s".format(key, (x._2).toString))
           }
         }
 
