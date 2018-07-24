@@ -42,7 +42,7 @@ object TeacherStudents {
 
           (devid, mid, nickname, wxname, tmid, uptime)
       }
-      .filter(_._1.length > 0)
+      .filter(x => x._1.length > 0 && x._2 > 0)
       .cache()
 
     println(users.count())
@@ -57,7 +57,7 @@ object TeacherStudents {
         x =>
           (x._1, x._2.sortBy(v => -v._6).take(n))
       }
-
+    val siblings = students.filter(_._2.length > 1).flatMap(x => x._2.map(v => (v._2, x._2)))
 
     val ts = users.repartition(1000)
       .map {
@@ -71,12 +71,21 @@ object TeacherStudents {
           val me = x._2._1._1
           val teacher = x._2._1._2
           val students = x._2._2
-          (me, teacher, students)
+          (x._1, (me, teacher, students))
+      }
+      .leftOuterJoin(siblings)
+      .map {
+        x =>
+          val me = x._2._1._1
+          val teacher = x._2._1._2
+          val students = x._2._1._3
+          val siblings = x._2._2
+          (me, teacher, students, siblings)
       }
 
-    ts.take(10).foreach(println)
+    ts.filter(x => x._2.isDefined && x._3.isDefined && x._4.isDefined).take(10).foreach(println)
 
-    val sum = ts
+    val sum = ts.repartition(200)
       .mapPartitions {
         p =>
           var n = 0
@@ -117,6 +126,22 @@ object TeacherStudents {
                       s.setNickname(v._3)
                       s.setWxNickname(v._4)
                       qtt.addStudents(s)
+                  }
+                }
+
+                if (x._4.isDefined) {
+                  qtt.clearSiblings()
+                  x._4.get.foreach {
+                    v =>
+                      //排除自己
+                      if (v._2 != me._2) {
+                        val s = QttProfile.newBuilder()
+                        s.setDevid(v._1)
+                        s.setMemberId(v._2)
+                        s.setNickname(v._3)
+                        s.setWxNickname(v._4)
+                        qtt.addSiblings(s)
+                      }
                   }
                 }
 
