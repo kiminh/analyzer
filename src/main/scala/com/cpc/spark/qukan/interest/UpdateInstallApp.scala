@@ -13,6 +13,7 @@ import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.rdd.RDD
 import userprofile.Userprofile.{APPPackage, UserProfile}
+import com.redis.serialization.Parse.Implicits._
 
 
 /**
