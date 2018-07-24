@@ -44,7 +44,7 @@ object UpdateInstallApp {
       .filter(x => x != null && x.pkgs.length > 0)
       .map(x => (x.devid, x.pkgs.map(_.name)))
       .reduceByKey(_ ++ _)
-      .map(x => (x._1, (Seq[String](), Seq[String](), Seq[String](), for (i <- x._2.distinct)yield (i))))
+      .map(x => (x._1, (Seq[String](), Seq[String](), Seq[String](), for (i <- x._2.distinct)yield (Seq(i)))))
 
     println("origin statistic")
     println(qukanApps.count())
