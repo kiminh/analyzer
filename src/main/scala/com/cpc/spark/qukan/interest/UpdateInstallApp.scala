@@ -44,7 +44,7 @@ object UpdateInstallApp {
       .filter(x => x != null && x.pkgs.length > 0)
       .map(x => (x.devid, x.pkgs.map(_.name)))
       .reduceByKey(_ ++ _)
-      .map(x => (x._1, (Seq[String](), Seq[String](), Seq[String](), for (i <- x._2.distinct)yield (Seq(i)))))
+      .map(x => (x._1, (Seq[String](), Seq[String](), Seq[String](), x._2.distinct)))
 
     println("origin statistic")
     println(qukanApps.count())
@@ -79,13 +79,13 @@ object UpdateInstallApp {
           }
         }
         if (op_type == "APP_LIST_ADD") {
-          (did, (apps, Seq[String](), Seq[String](), Seq[String]()))
+          (did, (apps, Seq[String](), Seq[String](), List[String]()))
         } else if (op_type == "APP_LIST_REMOVE") {
-          (did, (Seq[String](), apps, Seq[String](), Seq[String]()))
+          (did, (Seq[String](), apps, Seq[String](), List[String]()))
         } else if (op_type == "APP_LIST_USE"){
-          (did, (Seq[String](), Seq[String](), apps, Seq[String]()))
+          (did, (Seq[String](), Seq[String](), apps, List[String]()))
         } else if (op_type == "APP_LIST_INSTALLED") {
-          (did, (Seq[String](), Seq[String](), Seq[String](), apps))
+          (did, (Seq[String](), Seq[String](), Seq[String](), apps.toList))
         } else {
           null
         }
