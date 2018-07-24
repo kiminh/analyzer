@@ -88,7 +88,7 @@ object saveUserAppInstalledInfo {
     println("new", added.count())
 
     //保存新增数据 redis
-    val sum = added.map(x => (x._1, x._2._1))
+    val sum = added.coalesce(200).map(x => (x._1, x._2._1))
       .mapPartitions {
         p =>
           var n = 0
