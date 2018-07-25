@@ -126,7 +126,7 @@ object TagUserByZfb {
                 if (conflict) {
                   age_m += 1
                 }
-                if (r._2 != user.getSex) {
+                if (r._2 != user.getSex && user.getSex != 0) {
                   sex_m += 1
                   user.setSex(r._2)
                 }
