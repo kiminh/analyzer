@@ -128,6 +128,7 @@ object UpdateInstallApp {
 
     //保存新增数据 redis
     val sum = added.map(x => (x._1, x._2._1))
+      .repartition(100)
       .mapPartitions {
         p =>
           var n = 0
