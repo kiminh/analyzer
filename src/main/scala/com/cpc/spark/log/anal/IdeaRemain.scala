@@ -19,8 +19,8 @@ object IdeaRemain {
 
     val days = args(0).toInt
     val cal = Calendar.getInstance()
-    var last: RDD[Int] = null
-    var ids: RDD[Int] = null
+    var last: RDD[(Int, Int)] = null
+    var ids: RDD[(Int, Int)] = null
     cal.add(Calendar.DATE, -days)
     for (d <- 1 to days) {
       cal.add(Calendar.DATE, 1)
@@ -31,11 +31,11 @@ object IdeaRemain {
         """.stripMargin.format(date)
       println(stmt)
 
-      ids = spark.sql(stmt).rdd.map(_.getInt(0)).distinct()
+      ids = spark.sql(stmt).rdd.map(_.getInt(0)).distinct().map(x => (x, 1))
       val num = ids.count()
-      var remain = 0
+      var remain = 0l
       if (last != null) {
-        remain = ids.map(x => (x, 1)).join(last.map(x => (x, 0))).count()
+        remain = ids.join(last).count()
       }
 
       last = ids
