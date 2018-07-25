@@ -60,9 +60,9 @@ object DailyReport {
     println("================================================")
     val res = spark.sql(stmt).rdd.map {
       r =>
-        val bid = r.getAs[Int](0)
-        val price = r.getAs[Int](1)
-        val thresh = r.getAs[Int](2)
+        val bid = r.getAs[Int](0).toLong
+        val price = r.getAs[Int](1).toLong
+        val thresh = r.getAs[Int](2).toLong
         val sid = r.getAs[String](3)
         val userid = r.getAs[Int](4)
         (userid, (bid, price, thresh, 1))
