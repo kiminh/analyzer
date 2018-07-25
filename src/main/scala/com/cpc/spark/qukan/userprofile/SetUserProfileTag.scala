@@ -217,6 +217,7 @@ object SetUserProfileTag {
     val tagList = Array[Int](201, 202, 203, 204, 205, 206, 207, 208, 209, 212, 216, 218, 219, 220, 221, 222,
       223, 224, 225, 226, 227, 228, 230, 231, 233, 234, 235)
     val isTest = args(0).toBoolean
+    val days = args(1).toInt
     val spark = SparkSession.builder()
       .appName("count userprofile tag")
       .enableHiveSupport()
@@ -225,7 +226,7 @@ object SetUserProfileTag {
 
     val cal = Calendar.getInstance()
     val today = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    cal.add(Calendar.DATE, -1)
+    cal.add(Calendar.DATE, -days)
     val yesterday = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
