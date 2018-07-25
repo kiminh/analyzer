@@ -69,7 +69,7 @@ object DailyReport {
         |    GROUP BY
         |        `date` ,userid) t ) tt
         |where
-        |    tt.rk <= 100;
+        |    tt.rk <= 100
       """.stripMargin
 
     spark.sql(stmt).toLocalIterator().foreach(println)
