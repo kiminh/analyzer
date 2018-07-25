@@ -27,7 +27,7 @@ object IdeaRemain {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       val stmt =
         """
-          |select ideaid from dl_cpc.cpc_union_log where `date` = "%s" and ideaid > 0
+          |select distinct ideaid from dl_cpc.cpc_union_log where `date` = "%s" and ideaid > 0
         """.stripMargin.format(date)
       println(stmt)
 
