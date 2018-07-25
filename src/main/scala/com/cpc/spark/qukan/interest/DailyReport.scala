@@ -54,7 +54,7 @@ object DailyReport {
     val stmt =
       """
         |select bid, price, ext["cvr_threshold"]["int_value"], searchid, userid from  dl_cpc.cpc_union_log
-        |where media_appsid in ("80000001","80000002") and `date` >= "%s" and isfill = 1
+        |where media_appsid in ("80000001","80000002") and `date` = "%s" and isfill = 1
       """.stripMargin.format(date)
     println(stmt)
     println("================================================")
@@ -74,7 +74,7 @@ object DailyReport {
           x =>
             println("%s   %8.2f   %s   %8.2f",x._1,x._2,x._3,x._4)
         }
-    
+
 
 
 //    val stmt2 =
