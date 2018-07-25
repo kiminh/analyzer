@@ -50,33 +50,31 @@ object DailyReport {
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -days)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+
     val stmt =
       """
-        |select tt.*
-        |from
-        |
-        |(SELECT
-        |    row_number() over (partition by `date` order by fill desc ) rk, *
-        |from
-        |    (SELECT
-        |        sum(bid) / count(searchid) as abid,
-        |        sum(price) as price,
-        |        sum(ext["cvr_threshold"]["int_value"]) / count(searchid) as athreshold,
-        |        count(searchid) as fill,
-        |        userid as userid,
-        |        `date` as `date`
-        |    FROM
-        |        dl_cpc.cpc_union_log
-        |    WHERE
-        |        media_appsid in ("80000001","80000002") and `date` >= "%s" and isfill = 1
-        |    GROUP BY
-        |        `date` ,userid) t ) tt
-        |where
-        |    tt.rk <= 100
+        |select bid, price, ext["cvr_threshold"]["int_value"], searchid, userid from  dl_cpc.cpc_union_log
+        |where media_appsid in ("80000001","80000002") and `date` >= "%s" and isfill = 1
       """.stripMargin.format(date)
     println(stmt)
     println("================================================")
-    spark.sql(stmt).toLocalIterator().foreach(println)
+    val res = spark.sql(stmt).rdd.map {
+      r =>
+        val bid = r.getAs[Int](0)
+        val price = r.getAs[Int](1)
+        val thresh = r.getAs[Int](2)
+        val sid = r.getAs[String](3)
+        val userid = r.getAs[Int](4)
+        (userid, (bid, price, thresh, 1))
+    }.reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4))
+        .sortBy(_._2._4, false)
+        .take(100)
+        .map(x => (x._1, 1d * x._2._1 / x._2._4, x._2._2, 1d * x._2._3 / x._2._4))
+        .foreach{
+          x =>
+            println("%s   %8.2f   %s   %8.2f",x._1,x._2,x._3,x._4)
+        }
+    
 
 
 //    val stmt2 =
