@@ -47,6 +47,9 @@ object DailyReport {
     import spark.implicits._
 
     //checkUVTag(spark, args)
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.DATE, -days)
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val stmt =
       """
         |select tt.*
@@ -65,13 +68,14 @@ object DailyReport {
         |    FROM
         |        dl_cpc.cpc_union_log
         |    WHERE
-        |        media_appsid in ("80000001","80000002") and `date` >= "2018-06-01" and isfill = 1
+        |        media_appsid in ("80000001","80000002") and `date` >= "%s" and isfill = 1
         |    GROUP BY
         |        `date` ,userid) t ) tt
         |where
         |    tt.rk <= 100
-      """.stripMargin
-
+      """.stripMargin.format(date)
+    println(stmt)
+    println("================================================")
     spark.sql(stmt).toLocalIterator().foreach(println)
 
 
