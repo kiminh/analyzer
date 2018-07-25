@@ -68,7 +68,7 @@ object DailyReport {
         (userid, (bid, price, thresh, 1))
     }.reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4))
         .sortBy(_._2._4, false)
-        .take(100)
+        .top(100)
         .map(x => (x._1, 1d * x._2._1 / x._2._4, x._2._2, 1d * x._2._3 / x._2._4))
         .foreach{
           x =>
