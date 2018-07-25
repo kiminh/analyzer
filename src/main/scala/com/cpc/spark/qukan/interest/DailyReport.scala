@@ -65,7 +65,7 @@ object DailyReport {
         |    FROM
         |        dl_cpc.cpc_union_log
         |    WHERE
-        |        media_appsid in ("80000001","80000002") and `date` = "2018-06-01" and isfill = 1
+        |        media_appsid in ("80000001","80000002") and `date` >= "2018-06-01" and isfill = 1
         |    GROUP BY
         |        `date` ,userid) t ) tt
         |where
