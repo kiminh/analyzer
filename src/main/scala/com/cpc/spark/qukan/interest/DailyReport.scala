@@ -72,7 +72,7 @@ object DailyReport {
         .map(x => (x._1, 1d * x._2._1 / x._2._4, x._2._2, 1d * x._2._3 / x._2._4))
         .foreach{
           x =>
-            println("%s   %8.2f   %s   %8.2f",x._1,x._2,x._3,x._4)
+            println("%s   %8.2f   %s   %8.2f".format(x._1,x._2,x._3,x._4))
         }
 
 
