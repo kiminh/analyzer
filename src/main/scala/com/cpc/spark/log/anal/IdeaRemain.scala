@@ -33,7 +33,7 @@ object IdeaRemain {
 
       ids = spark.sql(stmt).rdd.map(_.getInt(0)).distinct()
       val num = ids.count()
-      val remain = 0
+      var remain = 0
       if (last != null) {
         remain = ids.map(x => (x, 1)).join(last.map(x => (x, 0))).count()
       }
