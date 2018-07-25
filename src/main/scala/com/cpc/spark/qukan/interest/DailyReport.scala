@@ -46,7 +46,33 @@ object DailyReport {
       .getOrCreate()
     import spark.implicits._
 
-    checkUVTag(spark, args)
+    //checkUVTag(spark, args)
+    val stmt =
+      """
+        |select tt.*
+        |from
+        |
+        |(SELECT
+        |    row_number() over (partition by `date` order by fill desc ) rk, *
+        |from
+        |    (SELECT
+        |        sum(bid) / count(searchid) as abid,
+        |        sum(price) as price,
+        |        sum(ext["cvr_threshold"]["int_value"]) / count(searchid) as athreshold,
+        |        count(searchid) as fill,
+        |        userid as userid,
+        |        `date` as `date`
+        |    FROM
+        |        dl_cpc.cpc_union_log
+        |    WHERE
+        |        media_appsid in ("80000001","80000002") and `date` = "2018-06-01" and isfill = 1
+        |    GROUP BY
+        |        `date` ,userid) t ) tt
+        |where
+        |    tt.rk <= 100;
+      """.stripMargin
+
+    spark.sql(stmt).toLocalIterator().foreach(println)
 
 
 //    val stmt2 =
