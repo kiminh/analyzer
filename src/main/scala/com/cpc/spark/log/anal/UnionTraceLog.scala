@@ -42,7 +42,8 @@ object UnionTraceLog {
     val minute = args(3)
     prefix = args(4) //"" 空
     suffix = args(5) //"" 空
-    val unionTraceTbl = args(6) //union_trace_table
+    val unionTbl = args(6) //union_trace_table
+    val unionTraceTbl = args(7) //union_trace_table
 
     val datee = date.split("-")
     val cal = Calendar.getInstance()
@@ -62,7 +63,7 @@ object UnionTraceLog {
     import spark.implicits._
 
     //读取前一个小时的Unionlog
-    val unionData = prepareSourceString2(spark, "cpc_union_parsedlog", date, hour.toInt)
+    val unionData = prepareSourceString2(spark, unionTbl, date, hour.toInt)
 
     //读取1h40min的tracelog(前一个小时和当前前40min的tracelog)
     val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 10)
@@ -119,7 +120,7 @@ object UnionTraceLog {
   }
 
   def prepareSourceString2(ctx: SparkSession, src: String, date: String, hour: Int): Dataset[Row] = {
-    val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourPath(date, hour))
+    val input = "%s/%s/date=%s/hour=%s/*".format(srcRoot, src, date, hour)
     println(input) // /warehouse/dl_cpc.db/src_cpc_search_minute/{2018-06-26/08/00}
     val readData = ctx.read
       .parquet(input)
