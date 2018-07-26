@@ -61,17 +61,13 @@ object UnionTraceLog {
 
     import spark.implicits._
 
+    //读取前一个小时的Unionlog
     val unionData = prepareSourceString2(spark, "cpc_union_parsedlog", date, hour.toInt)
 
+    //读取1h40min的tracelog(前一个小时和当前前40min的tracelog)
     val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 10)
 
-//      .filter(
-//        r => {
-//          val millis = cal.getTimeInMillis
-//          val endmillis = millis + 1800000
-//          r.timestamp*1000 >= millis && r.timestamp*1000 < endmillis
-//        }
-//      )
+    //过滤isclick为1的unionlog,并转为pairrdd, (searchid, timestamp)
     if (traceRDD != null) {
       val click = unionData
         .as[UnionLog]
@@ -79,6 +75,7 @@ object UnionTraceLog {
         .filter(_.isclick > 0)
         .map(x => (x.searchid, x.timestamp))
 
+      //tracelog join unionlog
       val traceData = traceRDD
         .as[TraceLog]
         .rdd
@@ -90,6 +87,7 @@ object UnionTraceLog {
             x._2._1.copy(search_timestamp = x._2._2, date = date, hour = hour)
         }
 
+      //数据写入hive表
       spark.createDataFrame(traceData)
         .write
         .mode(SaveMode.Overwrite)
@@ -109,7 +107,7 @@ object UnionTraceLog {
 
 
   /**
-    * 获得数据
+    * 根据分区获得数据
     */
   def prepareSourceString(ctx: SparkSession, src: String, date: String, hour: Int, minute: Int, minutes: Int): Dataset[Row] = {
     val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourMinutePath(date, hour, minute, minutes))
@@ -130,6 +128,15 @@ object UnionTraceLog {
   }
 
 
+  /**
+    * 获得数据分区
+    *
+    * @param date
+    * @param hour
+    * @param minute
+    * @param minutes
+    * @return
+    */
   def getDateHourMinutePath(date: String, hour: Int, minute: Int, minutes: Int): String = {
     val cal = Calendar.getInstance()
     val parts = new Array[String](minutes)
