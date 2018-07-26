@@ -96,20 +96,20 @@ object SetUserProfileTag {
           }
           (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del)) ++ ret).iterator
       }.reduceByKey(_+_).toLocalIterator
-    sum.foreach(println)
+    //sum.foreach(println)
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     sum.foreach{
       x =>
         val key = x._1 + "_%s".format(date)
+        println(x)
         if (x._1.contains("uid")) {
-          val buffer = redis.get[Int](x._1)
+          val buffer = redis.get[Int](key)
+          println("get %s return %s".format(key, buffer))
           if (buffer != None) {
             val ret = buffer.get
             println("origin: %s".format(ret))
-            if (ret != null) {
-              redis.setex(key, 3600 * 24 * 30, (ret + x._2).toString)
-              println("set add %s as %s".format(key, (ret + x._2).toString))
-            }
+            redis.setex(key, 3600 * 24 * 30, (ret + x._2).toString)
+            println("set add %s as %s".format(key, (ret + x._2).toString))
           } else {
             redis.setex(key, 3600 * 24 * 30, x._2.toString)
             println("set new %s as %s".format(key, (x._2).toString))
@@ -198,7 +198,7 @@ object SetUserProfileTag {
       x =>
         val key = x._1 + "_%s_test".format(date)
         if (x._1.contains("uid")) {
-          val buffer = redis.get[Int](x._1)
+          val buffer = redis.get[Int](key)
           if (buffer != None) {
             val ret = buffer.get
             redis.setex(key, 3600 * 24 * 30, (ret + x._2).toString)
