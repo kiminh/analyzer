@@ -107,7 +107,7 @@ object TagUserByZfb {
                       if (w.getTag != in.getTag) {
                         conflict = true
                       }
-                      //user.removeInterestedWords(idx)
+                      idx += 1
                     } else {
                       idx += 1
                     }
