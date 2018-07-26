@@ -18,11 +18,12 @@ object UnionTraceLog {
 
   //时间格式
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH/mm")
-  val partitionPathFormat1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+  val partitionPathFormat1 = new SimpleDateFormat("yyyy-MM-dd/HH")
+  val partitionPathFormat_unionlog = new SimpleDateFormat("yyyy-MM-dd/HH")
 
 
   def main(args: Array[String]): Unit = {
-    //参数不对
+    //参数小于3个
     if (args.length < 3) {
       System.err.println(
         s"""
@@ -36,15 +37,12 @@ object UnionTraceLog {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     srcRoot = args(0)
-    val mergeTbl = args(1)
-    //    val hourBefore = args(2).toInt
-    val date = args(2)
-    val hour = args(3)
-    val minute = args(4)
-    prefix = args(5) //"" 空
-    suffix = args(6) //"" 空
-    val unionTraceTbl = args(7) //union_trace_table
-    //val addData = args(8)  //标记补充数据
+    val date = args(1)
+    val hour = args(2)
+    val minute = args(3)
+    prefix = args(4) //"" 空
+    suffix = args(5) //"" 空
+    val unionTraceTbl = args(6) //union_trace_table
 
     val datee = date.split("-")
     val cal = Calendar.getInstance()
@@ -52,33 +50,33 @@ object UnionTraceLog {
     cal.set(Calendar.MONTH, datee(1).toInt - 1)
     cal.set(Calendar.DAY_OF_MONTH, datee(2).toInt)
     cal.set(Calendar.HOUR_OF_DAY, hour.toInt)
-    cal.set(Calendar.MINUTE, minute.toInt)
     cal.set(Calendar.SECOND, 0)
 
 
     //获得sparksession
     val spark = SparkSession.builder()
-      .appName("union log %s partition = %s".format(mergeTbl, partitionPathFormat.format(cal.getTime)))
+      .appName("union trace log %s partition = %s".format(unionTraceTbl, partitionPathFormat1.format(cal.getTime)))
       .enableHiveSupport()
       .getOrCreate()
 
     import spark.implicits._
 
-    val unionData = prepareSourceString2(spark, "cpc_union_parsedlog", date, hour.toInt, 0)
+    val unionData = prepareSourceString2(spark, "cpc_union_parsedlog", date, hour.toInt)
 
-    val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 6)
+    val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 10)
 
+//      .filter(
+//        r => {
+//          val millis = cal.getTimeInMillis
+//          val endmillis = millis + 1800000
+//          r.timestamp*1000 >= millis && r.timestamp*1000 < endmillis
+//        }
+//      )
     if (traceRDD != null) {
       val click = unionData
         .as[UnionLog]
         .rdd
-        .filter(
-          r => {
-            val millis = cal.getTimeInMillis
-            val endmillis = millis + 1800000
-            r.timestamp*1000 >= millis && r.timestamp*1000 < endmillis
-          }
-        ).filter(_.isclick > 0)
+        .filter(_.isclick > 0)
         .map(x => (x.searchid, x.timestamp))
 
       val traceData = traceRDD
@@ -94,7 +92,7 @@ object UnionTraceLog {
 
       spark.createDataFrame(traceData)
         .write
-        .mode(SaveMode.Append)
+        .mode(SaveMode.Overwrite)
         .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(unionTraceTbl, date, hour))
 
       println("write trace_union_data to hive successfully")
@@ -122,8 +120,8 @@ object UnionTraceLog {
     readData
   }
 
-  def prepareSourceString2(ctx: SparkSession, src: String, date: String, hour: Int, hours: Int): Dataset[Row] = {
-    val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourPath(date, hour, hours))
+  def prepareSourceString2(ctx: SparkSession, src: String, date: String, hour: Int): Dataset[Row] = {
+    val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourPath(date, hour))
     println(input) // /warehouse/dl_cpc.db/src_cpc_search_minute/{2018-06-26/08/00}
     val readData = ctx.read
       .parquet(input)
@@ -150,9 +148,8 @@ object UnionTraceLog {
   }
 
 
-  def getDateHourPath(date: String, hour: Int, hours: Int): String = {
+  def getDateHourPath(date: String, hour: Int): String = {
     val cal = Calendar.getInstance()
-    val partitionPathFormat_unionlog = new SimpleDateFormat("yyyy-MM-dd/HH")
 
     cal.set(Calendar.YEAR, date.split("-")(0).toInt)
     cal.set(Calendar.MONTH, date.split("-")(1).toInt - 1)
