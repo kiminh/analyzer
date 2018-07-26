@@ -107,7 +107,7 @@ object TagUserByZfb {
                       if (w.getTag != in.getTag) {
                         conflict = true
                       }
-                      user.removeInterestedWords(idx)
+                      //user.removeInterestedWords(idx)
                     } else {
                       idx += 1
                     }
@@ -116,7 +116,7 @@ object TagUserByZfb {
                     }
                   }
                 }
-                user.addInterestedWords(in)
+                //user.addInterestedWords(in)
                 if (!has) {
                   if (in.getTag == 224) {
                     add_224 += 1
@@ -134,7 +134,7 @@ object TagUserByZfb {
                   age_r += 1
                 }
                 if (is_set) {
-                  //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
                 }
               }
           }
