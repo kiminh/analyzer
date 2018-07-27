@@ -63,7 +63,7 @@ object UnionTraceLog {
     import spark.implicits._
 
     //读取前一个小时的Unionlog
-    val unionData = prepareSourceString2(spark, unionTbl, date, hour.toInt)
+    val unionData = prepareSourceString2(spark, unionTbl, date, hour)
 
     //读取1h40min的tracelog(前一个小时和当前前40min的tracelog)
     val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 10)
@@ -156,7 +156,7 @@ object UnionTraceLog {
   }
 
 
-  def getDateHourPath(date: String, hour: Int): String = {
+  def getDateHourPath(date: String, hour: String): String = {
     val cal = Calendar.getInstance()
 
     cal.set(Calendar.YEAR, date.split("-")(0).toInt)
