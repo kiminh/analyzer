@@ -119,7 +119,7 @@ object UnionTraceLog {
     readData
   }
 
-  def prepareSourceString2(ctx: SparkSession, src: String, date: String, hour: Int): Dataset[Row] = {
+  def prepareSourceString2(ctx: SparkSession, src: String, date: String, hour: String): Dataset[Row] = {
     val input = "%s/%s/date=%s/hour=%s/*".format(srcRoot, src, date, hour)
     println(input) // /warehouse/dl_cpc.db/src_cpc_search_minute/{2018-06-26/08/00}
     val readData = ctx.read
@@ -162,7 +162,7 @@ object UnionTraceLog {
     cal.set(Calendar.YEAR, date.split("-")(0).toInt)
     cal.set(Calendar.MONTH, date.split("-")(1).toInt - 1)
     cal.set(Calendar.DAY_OF_MONTH, date.split("-")(2).toInt)
-    cal.set(Calendar.HOUR_OF_DAY, hour) //前一个小时 时间
+    cal.set(Calendar.HOUR_OF_DAY, hour.toInt) //前一个小时 时间
 
     val parts = partitionPathFormat_unionlog.format(cal.getTime) //yyyy-MM-dd/HH
 
