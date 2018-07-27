@@ -66,7 +66,7 @@ object UnionTraceLog {
     val unionData = prepareSourceString2(spark, unionTbl, date, hour)
 
     //读取1h40min的tracelog(前一个小时和当前前40min的tracelog)
-    val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 10)
+    val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 12)
 
     //过滤isclick为1的unionlog,并转为pairrdd, (searchid, timestamp)
     if (traceRDD != null) {
@@ -94,13 +94,22 @@ object UnionTraceLog {
         .mode(SaveMode.Overwrite)
         .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(unionTraceTbl, date, hour))
 
-      println("write trace_union_data to hive successfully")
+      println("~~~~~~write trace_union_data to hive successfully")
 
       spark.sql(
         """
           |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
           | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
         """.stripMargin.format(unionTraceTbl, date, hour, unionTraceTbl, date, hour))
+
+      if (unionData.take(1).length > 0) {
+        println("~~~~~~union trace done")
+        createMarkFile(spark, "new_union_trace_done", date, hour)
+      } else {
+        println("~~~~~~union trace log failed...")
+      }
+
+
     }
 
 
@@ -167,6 +176,18 @@ object UnionTraceLog {
     val parts = partitionPathFormat_unionlog.format(cal.getTime) //yyyy-MM-dd/HH
 
     "{" + parts + "}"
+  }
+
+  def createMarkFile(spark: SparkSession, markTable: String, date: String, hour: String): Unit = {
+    // 创建空rdd, 用于创建空文件
+    val empty = Seq("")
+    val emptyRdd = spark.sparkContext.parallelize(empty)
+
+    import spark.implicits._
+    emptyRdd.toDF
+      .write
+      .mode(SaveMode.Overwrite)
+      .text("/warehouse/cpc/%s/%s-%s.ok".format(markTable, date, hour))
   }
 
 }
