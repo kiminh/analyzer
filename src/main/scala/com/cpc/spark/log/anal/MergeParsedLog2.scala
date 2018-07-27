@@ -281,7 +281,7 @@ object MergeParsedLog2 {
       .write
       .mode(SaveMode.Append) //修改为Append
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(mergeTbl, date, hour))
-    println("write union_data to hive successfully")
+    println("~~~~~~write union_data to hive successfully")
 
     spark.sql(
       """
@@ -292,7 +292,7 @@ object MergeParsedLog2 {
 
     // 如果合并的RDD的元素大于0，创建标记文件，记录本次运行的开始时间
     if (unionData.take(1).length > 0) {
-      println("union done")
+      println("~~~~~~union done")
       if (minute.toInt == 45) {
         createMarkFile(spark, "new_union_done", date, hour)
       }
@@ -311,7 +311,7 @@ object MergeParsedLog2 {
       //        }))
       //      println("####### WriteTimeStampToHDFSFile:%s(%s %s:%s:00)".format(data, date, hour, minute))
     } else {
-      println("union log failed...")
+      println("~~~~~~union log failed...")
     }
 
 
