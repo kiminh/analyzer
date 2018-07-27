@@ -275,7 +275,7 @@ object MergeParsedLog2 {
           head.copy(motivation = motivation, motive_ext = motive_ext)
         } else
           rec._2.head
-    }.persist(StorageLevel.MEMORY_ONLY_SER)
+    }
 
     unionData.toDF
       .write
