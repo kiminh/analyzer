@@ -68,6 +68,7 @@ object OwnerStats {
         .take(20)
         .foreach(println)
 
+      d.unpersist()
     }
   }
 }
