@@ -122,16 +122,10 @@ object SetUserProfileTag {
   }
 
   def testSetUserProfileTag (in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
-    in.map {
-      x =>
-        ((x._2, x._3), 1)
-    }.reduceByKey(_+_)
-      .toLocalIterator
-      .foreach(println)
     val cal = Calendar.getInstance()
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val conf = ConfigFactory.load()
-    val sum = in.repartition(500)
+    val sum = in.repartition(200)
       .mapPartitions{
         p =>
           var del = 0
@@ -180,7 +174,7 @@ object SetUserProfileTag {
                     del += 1
                   }
                 }
-                //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
               if (isIns) {
                 ret = ret :+ ("uid_num_by_tag_%s".format(x._2), 1)
@@ -193,23 +187,26 @@ object SetUserProfileTag {
           (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del)) ++ ret).iterator
       }.reduceByKey(_+_).toLocalIterator
     sum.foreach(println)
-    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-    sum.foreach{
-      x =>
-        val key = x._1 + "_%s_test".format(date)
-        if (x._1.contains("uid")) {
-          val buffer = redis.get[Int](key)
-          if (buffer != None) {
-            val ret = buffer.get
-            redis.setex(key, 3600 * 24 * 30, (ret + x._2).toString)
-            println("set %s as %s".format(key, (ret + x._2).toString))
-          } else {
-            redis.setex(key, 3600 * 24 * 30, x._2.toString)
-            println("set %s as %s".format(key, (x._2).toString))
-          }
-        }
-
-    }
+//    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+//    sum.foreach{
+//      x =>
+//        val key = x._1 + "_%s".format(date)
+//        println(x)
+//        if (x._1.contains("uid")) {
+//          val buffer = redis.get[Int](key)
+//          println("get %s return %s".format(key, buffer))
+//          if (buffer != None) {
+//            val ret = buffer.get
+//            println("origin: %s".format(ret))
+//            redis.setex(key, 3600 * 24 * 30, (ret + x._2).toString)
+//            println("set add %s as %s".format(key, (ret + x._2).toString))
+//          } else {
+//            redis.setex(key, 3600 * 24 * 30, x._2.toString)
+//            println("set new %s as %s".format(key, (x._2).toString))
+//          }
+//        }
+//
+//    }
     sum.toArray[(String, Int)]
   }
 
