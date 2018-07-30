@@ -66,7 +66,7 @@ object GetHourReport {
          |from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and isfill = 1 and adslotid > 0 and adsrc <= 1
          |and (ext["charge_type"].int_value=1 or ext["charge_type"] is null)
        """.stripMargin.format(table, date, hour))
-      .rdd.coalesce(100).cache()
+      .rdd.cache()
 
     val chargeData = unionLog
       .map {
