@@ -65,7 +65,7 @@ object InsertReportSdkTrace {
           |WHERE cul.date="%s" AND cul.hour="%s" AND cul.ext["client_type"].string_value<>"NATIVESDK"
           |AND cul.media_appsid in ("80000001","80000002", "80000006", "800000062", "80000064", "80000066", "80000141")
           |AND cul.adslotid in("1024335","1024336","1024902","1025156","1025164","1026276","1026437","1026459","1026890",
-          |"1026966","1026992","1027423","1028214","1028626","7074294","7647654","1029077")
+          |"1026966","1026992","1027423","1028214","1028626","7074294","7647654","1029077") AND cul.adsrc=1
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
@@ -97,7 +97,7 @@ object InsertReportSdkTrace {
           |SELECT media_appsid,adslotid,adslot_type,isfill,isshow,isclick
           |FROM dl_cpc.cpc_union_log cul
           |WHERE cul.date="%s" AND cul.hour="%s"
-          |AND cul.ext["client_type"].string_value="NATIVESDK"
+          |AND cul.ext["client_type"].string_value="NATIVESDK" AND cul.adsrc=1
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
@@ -134,7 +134,7 @@ object InsertReportSdkTrace {
           |AND cul.media_appsid in ("80000001","80000002", "80000006", "800000062", "80000064", "80000066", "80000141")
           |AND cul.ext["adclass"].int_value=110110100
           |AND cul.adslotid in("1024335","1024336","1024902","1025156","1025164","1026276","1026437","1026459","1026890",
-          |"1026966","1026992","1027423","1028214","1028626","7074294","7647654","1029077")
+          |"1026966","1026992","1027423","1028214","1028626","7074294","7647654","1029077") AND cul.adsrc=1
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
@@ -171,7 +171,7 @@ object InsertReportSdkTrace {
           |AND cul.ext["adclass"].int_value=110110100
           |AND cul.adslotid in("1024335","1024336","1024902","1025156","1025164","1026276","1026437","1026459","1026890",
           |"1026966","1026992","1027423","1028214","1028626","7074294","7647654","1029077")
-          |AND cul.isclick>0
+          |AND cul.isclick>0 AND cul.adsrc=1
         """.stripMargin.format(argDay, argDay, argHour, argHour))
       .rdd
       .map {
@@ -204,7 +204,7 @@ object InsertReportSdkTrace {
           |FROM dl_cpc.cpc_union_log cul
           |WHERE cul.date="%s" AND cul.hour="%s"
           |AND cul.ext["client_type"].string_value="NATIVESDK"
-          |AND cul.ext["adclass"].int_value=110110100
+          |AND cul.ext["adclass"].int_value=110110100 AND cul.adsrc=1
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {
@@ -239,7 +239,7 @@ object InsertReportSdkTrace {
           |AND cutl.trace_type in("lpload","load","active5","disactive","active_auto")
           |AND cul.ext["client_type"].string_value="NATIVESDK"
           |AND cul.ext["adclass"].int_value=110110100
-          |AND cul.isclick>0
+          |AND cul.isclick>0 AND cul.adsrc=1
         """.stripMargin.format(argDay, argDay, argHour, argHour))
       .rdd
       .map {
