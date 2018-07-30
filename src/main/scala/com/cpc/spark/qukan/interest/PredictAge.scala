@@ -46,7 +46,7 @@ object PredictAge {
           val w_els = r.getAs[Seq[Row]]("els")
           val hour = r.getAs[Seq[Row]]("hour")
           val sum = r.getAs[Double]("sum")
-          val birth = r.getAs[String]("birth")
+          val birth = r.getAs[Int]("birth")
           var els = Seq[(Int, Double)]()
           val size = word_num + app_num + hour_num
 
