@@ -43,7 +43,7 @@ object GetNewUser2 {
 
     println("sql1" + sql1)
     println("sq2:"+sql2)
-    println("toDay [%s]".format(toDay))
+    println("toWeek [%s]".format(toWeek))
     println("unionDate [%s]".format(unionDate))
 
     val rdd1 = ctx.sql(sql1).rdd
