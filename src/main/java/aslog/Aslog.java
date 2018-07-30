@@ -1011,6 +1011,10 @@ public final class Aslog {
      * <code>YOUDAO = 13;</code>
      */
     YOUDAO(13),
+    /**
+     * <code>MOMO = 14;</code>
+     */
+    MOMO(14),
     ;
 
     /**
@@ -1069,6 +1073,10 @@ public final class Aslog {
      * <code>YOUDAO = 13;</code>
      */
     public static final int YOUDAO_VALUE = 13;
+    /**
+     * <code>MOMO = 14;</code>
+     */
+    public static final int MOMO_VALUE = 14;
 
 
     public final int getNumber() {
@@ -1098,6 +1106,7 @@ public final class Aslog {
         case 11: return WINQ;
         case 12: return VLION;
         case 13: return YOUDAO;
+        case 14: return MOMO;
         default: return null;
       }
     }
@@ -1460,6 +1469,10 @@ public final class Aslog {
      * <code>QTT = 6;</code>
      */
     QTT(6),
+    /**
+     * <code>BOBO = 7;</code>
+     */
+    BOBO(7),
     ;
 
     /**
@@ -1486,6 +1499,10 @@ public final class Aslog {
      * <code>QTT = 6;</code>
      */
     public static final int QTT_VALUE = 6;
+    /**
+     * <code>BOBO = 7;</code>
+     */
+    public static final int BOBO_VALUE = 7;
 
 
     public final int getNumber() {
@@ -1508,6 +1525,7 @@ public final class Aslog {
         case 4: return HZ;
         case 5: return FUN;
         case 6: return QTT;
+        case 7: return BOBO;
         default: return null;
       }
     }
@@ -26735,6 +26753,31 @@ public final class Aslog {
      */
     com.google.protobuf.ByteString
         getHostnameBytes();
+
+    /**
+     * <pre>
+     *abtest id
+     * </pre>
+     *
+     * <code>repeated int64 abtest_ids = 31;</code>
+     */
+    java.util.List<java.lang.Long> getAbtestIdsList();
+    /**
+     * <pre>
+     *abtest id
+     * </pre>
+     *
+     * <code>repeated int64 abtest_ids = 31;</code>
+     */
+    int getAbtestIdsCount();
+    /**
+     * <pre>
+     *abtest id
+     * </pre>
+     *
+     * <code>repeated int64 abtest_ids = 31;</code>
+     */
+    long getAbtestIds(int index);
   }
   /**
    * Protobuf type {@code aslog.NoticeLogBody}
@@ -26769,6 +26812,7 @@ public final class Aslog {
       lowacpfilter_ = java.util.Collections.emptyList();
       zerobid_ = java.util.Collections.emptyList();
       hostname_ = "";
+      abtestIds_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -27103,6 +27147,27 @@ public final class Aslog {
               hostname_ = bs;
               break;
             }
+            case 248: {
+              if (!((mutable_bitField0_ & 0x08000000) == 0x08000000)) {
+                abtestIds_ = new java.util.ArrayList<java.lang.Long>();
+                mutable_bitField0_ |= 0x08000000;
+              }
+              abtestIds_.add(input.readInt64());
+              break;
+            }
+            case 250: {
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              if (!((mutable_bitField0_ & 0x08000000) == 0x08000000) && input.getBytesUntilLimit() > 0) {
+                abtestIds_ = new java.util.ArrayList<java.lang.Long>();
+                mutable_bitField0_ |= 0x08000000;
+              }
+              while (input.getBytesUntilLimit() > 0) {
+                abtestIds_.add(input.readInt64());
+              }
+              input.popLimit(limit);
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -27143,6 +27208,9 @@ public final class Aslog {
         }
         if (((mutable_bitField0_ & 0x02000000) == 0x02000000)) {
           zerobid_ = java.util.Collections.unmodifiableList(zerobid_);
+        }
+        if (((mutable_bitField0_ & 0x08000000) == 0x08000000)) {
+          abtestIds_ = java.util.Collections.unmodifiableList(abtestIds_);
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -28029,6 +28097,40 @@ public final class Aslog {
       }
     }
 
+    public static final int ABTEST_IDS_FIELD_NUMBER = 31;
+    private java.util.List<java.lang.Long> abtestIds_;
+    /**
+     * <pre>
+     *abtest id
+     * </pre>
+     *
+     * <code>repeated int64 abtest_ids = 31;</code>
+     */
+    public java.util.List<java.lang.Long>
+        getAbtestIdsList() {
+      return abtestIds_;
+    }
+    /**
+     * <pre>
+     *abtest id
+     * </pre>
+     *
+     * <code>repeated int64 abtest_ids = 31;</code>
+     */
+    public int getAbtestIdsCount() {
+      return abtestIds_.size();
+    }
+    /**
+     * <pre>
+     *abtest id
+     * </pre>
+     *
+     * <code>repeated int64 abtest_ids = 31;</code>
+     */
+    public long getAbtestIds(int index) {
+      return abtestIds_.get(index);
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -28178,6 +28280,9 @@ public final class Aslog {
       if (((bitField0_ & 0x00008000) == 0x00008000)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 30, hostname_);
       }
+      for (int i = 0; i < abtestIds_.size(); i++) {
+        output.writeInt64(31, abtestIds_.get(i));
+      }
       unknownFields.writeTo(output);
     }
 
@@ -28323,6 +28428,15 @@ public final class Aslog {
       if (((bitField0_ & 0x00008000) == 0x00008000)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(30, hostname_);
       }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < abtestIds_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeInt64SizeNoTag(abtestIds_.get(i));
+        }
+        size += dataSize;
+        size += 2 * getAbtestIdsList().size();
+      }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
@@ -28442,6 +28556,8 @@ public final class Aslog {
         result = result && getHostname()
             .equals(other.getHostname());
       }
+      result = result && getAbtestIdsList()
+          .equals(other.getAbtestIdsList());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -28563,6 +28679,10 @@ public final class Aslog {
       if (hasHostname()) {
         hash = (37 * hash) + HOSTNAME_FIELD_NUMBER;
         hash = (53 * hash) + getHostname().hashCode();
+      }
+      if (getAbtestIdsCount() > 0) {
+        hash = (37 * hash) + ABTEST_IDS_FIELD_NUMBER;
+        hash = (53 * hash) + getAbtestIdsList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -28786,6 +28906,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x02000000);
         hostname_ = "";
         bitField0_ = (bitField0_ & ~0x04000000);
+        abtestIds_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x08000000);
         return this;
       }
 
@@ -28969,6 +29091,11 @@ public final class Aslog {
           to_bitField0_ |= 0x00008000;
         }
         result.hostname_ = hostname_;
+        if (((bitField0_ & 0x08000000) == 0x08000000)) {
+          abtestIds_ = java.util.Collections.unmodifiableList(abtestIds_);
+          bitField0_ = (bitField0_ & ~0x08000000);
+        }
+        result.abtestIds_ = abtestIds_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -29241,6 +29368,16 @@ public final class Aslog {
         if (other.hasHostname()) {
           bitField0_ |= 0x04000000;
           hostname_ = other.hostname_;
+          onChanged();
+        }
+        if (!other.abtestIds_.isEmpty()) {
+          if (abtestIds_.isEmpty()) {
+            abtestIds_ = other.abtestIds_;
+            bitField0_ = (bitField0_ & ~0x08000000);
+          } else {
+            ensureAbtestIdsIsMutable();
+            abtestIds_.addAll(other.abtestIds_);
+          }
           onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
@@ -32393,6 +32530,100 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private java.util.List<java.lang.Long> abtestIds_ = java.util.Collections.emptyList();
+      private void ensureAbtestIdsIsMutable() {
+        if (!((bitField0_ & 0x08000000) == 0x08000000)) {
+          abtestIds_ = new java.util.ArrayList<java.lang.Long>(abtestIds_);
+          bitField0_ |= 0x08000000;
+         }
+      }
+      /**
+       * <pre>
+       *abtest id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_ids = 31;</code>
+       */
+      public java.util.List<java.lang.Long>
+          getAbtestIdsList() {
+        return java.util.Collections.unmodifiableList(abtestIds_);
+      }
+      /**
+       * <pre>
+       *abtest id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_ids = 31;</code>
+       */
+      public int getAbtestIdsCount() {
+        return abtestIds_.size();
+      }
+      /**
+       * <pre>
+       *abtest id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_ids = 31;</code>
+       */
+      public long getAbtestIds(int index) {
+        return abtestIds_.get(index);
+      }
+      /**
+       * <pre>
+       *abtest id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_ids = 31;</code>
+       */
+      public Builder setAbtestIds(
+          int index, long value) {
+        ensureAbtestIdsIsMutable();
+        abtestIds_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *abtest id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_ids = 31;</code>
+       */
+      public Builder addAbtestIds(long value) {
+        ensureAbtestIdsIsMutable();
+        abtestIds_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *abtest id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_ids = 31;</code>
+       */
+      public Builder addAllAbtestIds(
+          java.lang.Iterable<? extends java.lang.Long> values) {
+        ensureAbtestIdsIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, abtestIds_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *abtest id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_ids = 31;</code>
+       */
+      public Builder clearAbtestIds() {
+        abtestIds_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x08000000);
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -32608,7 +32839,7 @@ public final class Aslog {
       "(\r\022\017\n\007newuser\030\010 \001(\r\022\021\n\treq_count\030\t \001(\r\022\023",
       "\n\013click_count\030\n \001(\r\022\020\n\010province\030\013 \001(\t\022\014\n" +
       "\004city\030\014 \001(\t\022\021\n\tmember_id\030\r \001(\t\022\017\n\007lx_typ" +
-      "e\030\016 \001(\005\022\022\n\nlx_package\030\017 \001(\005\"\241\005\n\rNoticeLo" +
+      "e\030\016 \001(\005\022\022\n\nlx_package\030\017 \001(\005\"\265\005\n\rNoticeLo" +
       "gBody\022\020\n\010searchid\030\001 \002(\t\022\021\n\ttimestamp\030\002 \002" +
       "(\r\022\033\n\005media\030\003 \001(\0132\014.aslog.Media\022\035\n\006adslo" +
       "t\030\004 \003(\0132\r.aslog.Adslot\022\035\n\006device\030\005 \001(\0132\r" +
@@ -32625,40 +32856,41 @@ public final class Aslog {
       "t\030\027 \001(\004\022\r\n\005https\030\030 \001(\010\022\021\n\tctrtarget\030\031 \001(" +
       "\t\022\025\n\rdupuserfilter\030\032 \003(\r\022\024\n\014dsp_strategy" +
       "\030\033 \001(\t\022\024\n\014lowacpfilter\030\034 \003(\r\022\017\n\007zerobid\030" +
-      "\035 \003(\r\022\020\n\010hostname\030\036 \001(\t*3\n\tMediaType\022\013\n\007",
-      "UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*\205\001\n" +
-      "\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_FE" +
-      "ED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLOT_SPLASH\020\004" +
-      "\022\017\n\013SLOT_BANNER\020\005\022\016\n\nSLOT_VIDEO\020\006\022\021\n\rSLO" +
-      "T_MOTIVATE\020\007*P\n\013NetworkType\022\017\n\013NET_UNKNO" +
-      "WN\020\000\022\014\n\010NET_WIFI\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G" +
-      "\020\003\022\n\n\006NET_4G\020\004*?\n\006OSType\022\016\n\nOS_UNKNOWN\020\000" +
-      "\022\016\n\nOS_ANDROID\020\001\022\n\n\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*" +
-      "\265\001\n\013BrowserType\022\022\n\016UnknownBrowser\020\000\022\016\n\nM" +
-      "QQBrowser\020\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser\020\003\022\020",
-      "\n\014BaiduBrowser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n\013Qvo" +
-      "dBrowser\020\006\022\023\n\017IEMobileBrowser\020\007\022\022\n\016Micro" +
-      "Messenger\020\010\022\n\n\006QQChat\020\t*\251\001\n\014DeviceIdType" +
-      "\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tD" +
-      "EVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\022\016\n\nDEVID_AAID" +
-      "\020\004\022\022\n\016DEVID_LSCOOKIE\020\005\022\023\n\017DEVID_ANDROIDI" +
-      "D\020\006\022\016\n\nDEVID_IMSI\020\007\022\016\n\nDEVID_TKID\020\010*\217\001\n\006" +
-      "AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_TEXT" +
-      "\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013AD_INTERACT\020\005" +
-      "\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_BANNER\020\007\022\014\n\010AD_VID",
-      "EO\020\010\022\017\n\013AD_MOTIVATE\020\t*\241\001\n\005AdSrc\022\007\n\003CPC\020\001" +
-      "\022\n\n\006INMOBI\020\002\022\013\n\007TANXSSP\020\003\022\016\n\nBOTTOMINIG\020" +
-      "\004\022\013\n\007HUZHONG\020\005\022\t\n\005FANCY\020\006\022\007\n\003GDT\020\007\022\014\n\010MO" +
-      "BVISTA\020\010\022\t\n\005VANKA\020\t\022\013\n\007IFLYTEK\020\n\022\010\n\004WINQ" +
-      "\020\013\022\t\n\005VLION\020\014\022\n\n\006YOUDAO\020\r*i\n\017Interaction" +
-      "Type\022\017\n\013NO_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DO" +
-      "WNLOAD\020\002\022\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MA" +
-      "IL\020\005\022\006\n\002GP\020\006*\203\001\n\rMaterialLevel\022\032\n\026MATERI" +
-      "AL_LEVEL_UNKNOWN\020\000\022\024\n\020MATERIAL_LEVEL_1\020\001" +
-      "\022\024\n\020MATERIAL_LEVEL_2\020\002\022\024\n\020MATERIAL_LEVEL",
-      "_3\020\003\022\024\n\020MATERIAL_LEVEL_4\020\004*M\n\nClientType" +
-      "\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022" +
-      "\006\n\002HZ\020\004\022\007\n\003FUN\020\005\022\007\n\003QTT\020\006"
+      "\035 \003(\r\022\020\n\010hostname\030\036 \001(\t\022\022\n\nabtest_ids\030\037 ",
+      "\003(\003*3\n\tMediaType\022\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007" +
+      "\n\003WEB\020\002\022\007\n\003WAP\020\003*\205\001\n\nAdslotType\022\r\n\tLIST_" +
+      "FEED\020\001\022\020\n\014CONTENT_FEED\020\002\022\021\n\rSLOT_INTERAC" +
+      "T\020\003\022\017\n\013SLOT_SPLASH\020\004\022\017\n\013SLOT_BANNER\020\005\022\016\n" +
+      "\nSLOT_VIDEO\020\006\022\021\n\rSLOT_MOTIVATE\020\007*P\n\013Netw" +
+      "orkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI\020\001\022\n" +
+      "\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?\n\006OS" +
+      "Type\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020\001\022\n\n\006" +
+      "OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType\022\022\n\016U" +
+      "nknownBrowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Chrom",
+      "e\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013" +
+      "MiuiBrowser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEMobi" +
+      "leBrowser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQCha" +
+      "t\020\t*\251\001\n\014DeviceIdType\022\021\n\rDEVID_UNKNOWN\020\000\022" +
+      "\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_" +
+      "IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCOOKIE" +
+      "\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nDEVID_IMSI\020\007\022" +
+      "\016\n\nDEVID_TKID\020\010*\217\001\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005" +
+      "IMAGE\020\002\022\r\n\tICON_TEXT\020\003\022\023\n\017THREE_ICON_TEX" +
+      "T\020\004\022\017\n\013AD_INTERACT\020\005\022\r\n\tAD_SPLASH\020\006\022\r\n\tA",
+      "D_BANNER\020\007\022\014\n\010AD_VIDEO\020\010\022\017\n\013AD_MOTIVATE\020" +
+      "\t*\253\001\n\005AdSrc\022\007\n\003CPC\020\001\022\n\n\006INMOBI\020\002\022\013\n\007TANX" +
+      "SSP\020\003\022\016\n\nBOTTOMINIG\020\004\022\013\n\007HUZHONG\020\005\022\t\n\005FA" +
+      "NCY\020\006\022\007\n\003GDT\020\007\022\014\n\010MOBVISTA\020\010\022\t\n\005VANKA\020\t\022" +
+      "\013\n\007IFLYTEK\020\n\022\010\n\004WINQ\020\013\022\t\n\005VLION\020\014\022\n\n\006YOU" +
+      "DAO\020\r\022\010\n\004MOMO\020\016*i\n\017InteractionType\022\017\n\013NO" +
+      "_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002\022\013" +
+      "\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP" +
+      "\020\006*\203\001\n\rMaterialLevel\022\032\n\026MATERIAL_LEVEL_U" +
+      "NKNOWN\020\000\022\024\n\020MATERIAL_LEVEL_1\020\001\022\024\n\020MATERI",
+      "AL_LEVEL_2\020\002\022\024\n\020MATERIAL_LEVEL_3\020\003\022\024\n\020MA" +
+      "TERIAL_LEVEL_4\020\004*W\n\nClientType\022\r\n\tNATIVE" +
+      "SDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007\n" +
+      "\003FUN\020\005\022\007\n\003QTT\020\006\022\010\n\004BOBO\020\007"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -32773,7 +33005,7 @@ public final class Aslog {
     internal_static_aslog_NoticeLogBody_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_NoticeLogBody_descriptor,
-        new java.lang.String[] { "Searchid", "Timestamp", "Media", "Adslot", "Device", "Ads", "Dspret", "Debug", "Client", "Network", "Exptags", "Location", "Sourceip", "Intertype", "Userprofile", "Dupplanfilter", "Lowcpmfilter", "Lowcvrfilter", "DspReqInfo", "Timecost", "Https", "Ctrtarget", "Dupuserfilter", "DspStrategy", "Lowacpfilter", "Zerobid", "Hostname", });
+        new java.lang.String[] { "Searchid", "Timestamp", "Media", "Adslot", "Device", "Ads", "Dspret", "Debug", "Client", "Network", "Exptags", "Location", "Sourceip", "Intertype", "Userprofile", "Dupplanfilter", "Lowcpmfilter", "Lowcvrfilter", "DspReqInfo", "Timecost", "Https", "Ctrtarget", "Dupuserfilter", "DspStrategy", "Lowacpfilter", "Zerobid", "Hostname", "AbtestIds", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)
