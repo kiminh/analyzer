@@ -64,10 +64,10 @@ object UnionTraceLog {
 
     //读取前一个小时的Unionlog
     //val unionData = prepareSourceString2(spark, unionTbl, date, hour)
-    val unionData=spark.sql(("select searchid, timestamp " +
-                            "from dl_cpc.cpc_union_parsedlog " +
-                            "where date=%s and hour=%s and isclick>0").format(date,hour))
-      .map(r=>(r.getAs[String](0),r.getAs[Int](1)))
+    val unionData = spark.sql(("select searchid, timestamp " +
+      "from dl_cpc.cpc_union_parsedlog " +
+      "where date=%s and hour=%s and isclick>0").format(date, hour))
+      .map(r => (r.getAs[String](0), r.getAs[Int](1)))
       .rdd
 
     //读取1h40min的tracelog(前一个小时和当前前40min的tracelog)
@@ -75,11 +75,11 @@ object UnionTraceLog {
 
     //过滤isclick为1的unionlog,并转为pairrdd, (searchid, timestamp)
     if (traceRDD != null) {
-//      val click = unionData
-//        .as[UnionLog]
-//        .rdd
-//        .filter(_.isclick > 0)
-//        .map(x => (x.searchid, x.timestamp))
+      //      val click = unionData
+      //        .as[UnionLog]
+      //        .rdd
+      //        .filter(_.isclick > 0)
+      //        .map(x => (x.searchid, x.timestamp))
 
       //tracelog join unionlog
       val traceData = traceRDD
