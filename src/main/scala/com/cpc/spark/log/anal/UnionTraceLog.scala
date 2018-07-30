@@ -74,10 +74,10 @@ object UnionTraceLog {
       .rdd
 
     if (unionData != null) {
-      println("~~~~~~size: " + unionData.take(1).size)
+      println("###### RDD Count: " + unionData.count())
       unionData.take(1).foreach(x => println(x))
     } else {
-      println("null")
+      println("###### null")
     }
 
     //读取1h40min的tracelog(前一个小时和当前前40min的tracelog)
