@@ -46,6 +46,7 @@ object PredictAge {
           val w_els = r.getAs[Seq[Row]]("els")
           val hour = r.getAs[Seq[Row]]("hour")
           val sum = r.getAs[Double]("sum")
+          val birth = r.getAs[String]("birth")
           var els = Seq[(Int, Double)]()
           val size = word_num + app_num + hour_num
 
@@ -74,7 +75,7 @@ object PredictAge {
             els = els :+ ((size + 2).toInt, apps.length.toDouble)
           }
           val vec = Vectors.sparse((size + 3).toInt, els)
-          if (apps != null) {
+          if (apps != null && birth == null) {
             (did, vec)
           } else {
             null
