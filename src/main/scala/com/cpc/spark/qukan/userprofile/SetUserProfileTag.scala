@@ -88,10 +88,6 @@ object SetUserProfileTag {
               }
               if (isIns) {
                 ret = ret :+ ("uid_num_by_tag_%s".format(x._2), 1)
-              }else if (isDel) {
-                ret = ret :+ ("uid_num_by_tag_%s".format(x._2), -1)
-              } else {
-                ret = ret :+ ("uid_num_by_tag_%s".format(x._2), 0)
               }
           }
           (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del)) ++ ret).iterator
