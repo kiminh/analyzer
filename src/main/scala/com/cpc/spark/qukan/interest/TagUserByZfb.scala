@@ -107,7 +107,7 @@ object TagUserByZfb {
                       if (w.getTag != in.getTag) {
                         conflict = true
                       }
-                      user.removeInterestedWords(idx)
+                      idx += 1
                     } else {
                       idx += 1
                     }
@@ -116,7 +116,7 @@ object TagUserByZfb {
                     }
                   }
                 }
-                user.addInterestedWords(in)
+                //user.addInterestedWords(in)
                 if (!has) {
                   if (in.getTag == 224) {
                     add_224 += 1
@@ -126,7 +126,7 @@ object TagUserByZfb {
                 if (conflict) {
                   age_m += 1
                 }
-                if (r._2 != user.getSex) {
+                if (r._2 != user.getSex && user.getSex != 0) {
                   sex_m += 1
                   user.setSex(r._2)
                 }
@@ -134,7 +134,7 @@ object TagUserByZfb {
                   age_r += 1
                 }
                 if (is_set) {
-                  //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
                 }
               }
           }

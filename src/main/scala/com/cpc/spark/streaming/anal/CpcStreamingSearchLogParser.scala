@@ -170,6 +170,7 @@ object CpcStreamingSearchLogParser {
         }
     }
       .filter(_ != null)
+      .repartition(800)
 
     base_data.print()
 
@@ -205,18 +206,14 @@ object CpcStreamingSearchLogParser {
               val topicKey = topics.split(",")(0)
 
               //获取log
-              val srcDataRdd = part.map {
+              val searchRDD = part.map {
                 x => x.field.getOrElse(topicKey, null).string_type
               }.filter(_ != null)
-
-
-              //根据不同类型的日志，调用不同的函数进行解析
-              val searchRDD = srcDataRdd
                 .flatMap(x => LogParser.parseSearchLog_v2(x))
                 .filter(_ != null)
 
-
-              spark.createDataFrame(searchRDD.coalesce(200))
+              spark.createDataFrame(searchRDD)
+                .coalesce(100)
                 .write
                 .mode(SaveMode.Append)
                 .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
@@ -229,7 +226,6 @@ object CpcStreamingSearchLogParser {
                 """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
               println(sqlStmt)
               spark.sql(sqlStmt)
-
 
 
             }
