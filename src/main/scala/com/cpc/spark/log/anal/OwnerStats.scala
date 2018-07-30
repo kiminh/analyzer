@@ -50,7 +50,7 @@ object OwnerStats {
         }
         .reduceByKey(_ + _)
         .sortByKey(false)
-        .take(100)
+        .take(20)
         .foreach {
           x =>
             println(x)
@@ -58,12 +58,12 @@ object OwnerStats {
 
       println("show")
       val show = d.map(x => (x._5, x._2)).reduceByKey(_ + _).sortByKey(false)
-        .take(100)
+        .take(20)
         .foreach(println)
 
       println("cost")
       val cost = d.map(x => (x._5, x._3 * x._4)).reduceByKey(_ + _).sortByKey(false)
-        .take(100)
+        .take(20)
         .foreach(println)
 
     }
