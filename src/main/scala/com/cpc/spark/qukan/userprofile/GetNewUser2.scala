@@ -31,8 +31,8 @@ object GetNewUser2 {
     val unionDate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     cal.add(Calendar.DATE, -6)
     val sevenDay = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    cal.add(Calendar.DATE, - 38)
-    val toDay = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    cal.add(Calendar.DATE, - 7)
+    val toWeek = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
     val sql1 = " SELECT field[\"device\"].string_type ,day from dl_lechuan.qukan_daily_new_user_p "
     val sql2 =  """
@@ -43,7 +43,7 @@ object GetNewUser2 {
 
     println("sql1" + sql1)
     println("sq2:"+sql2)
-    println("toDay [%s]".format(toDay))
+    println("toWeek [%s]".format(toWeek))
     println("unionDate [%s]".format(unionDate))
 
     val rdd1 = ctx.sql(sql1).rdd
@@ -70,6 +70,8 @@ object GetNewUser2 {
       case (uid, day) =>
         if (sevenDay > day) {
           Seq((uid, 228, true))
+        } else if (toWeek > day) {
+          Seq((uid, 236, true))
         } else {
           Seq()
         }
