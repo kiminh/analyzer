@@ -100,7 +100,7 @@ object GetHourReport {
           )
           (charge.key, charge)
       }
-      .reduceByKey((x, y) => x.sum(y))
+      .reduceByKey((x, y) => x.sum(y), 100)
       .map(_._2)
 
 
@@ -151,7 +151,7 @@ object GetHourReport {
           )
           (report.key, report)
       }
-      .reduceByKey((x, y) => x.sum(y))
+      .reduceByKey((x, y) => x.sum(y), 100)
       .map(_._2)
 
     clearReportHourData("report_media_geo_hourly", date, hour)
@@ -194,7 +194,7 @@ object GetHourReport {
           )
           (report.key, report)
       }
-      .reduceByKey((x, y) => x.sum(y))
+      .reduceByKey((x, y) => x.sum(y), 100)
       .map(_._2)
 
     clearReportHourData("report_media_os_hourly", date, hour)
@@ -307,7 +307,7 @@ object GetHourReport {
           )
           (report.key, report)
       }
-      .reduceByKey((x, y) => x.sum(y))
+      .reduceByKey((x, y) => x.sum(y), 100)
       .map(_._2)
 
     clearReportHourData("report_media_fill_hourly", date, hour)
@@ -400,7 +400,7 @@ object GetHourReport {
             exp_click = x.exp_click + y.exp_click,
             cvr_num = x.cvr_num + y.cvr_num
           )
-      }
+      }.coalesce(200)
       .map {
         x =>
           val ctr = x._2.copy(

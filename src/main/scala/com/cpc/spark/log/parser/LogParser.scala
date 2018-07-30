@@ -386,6 +386,7 @@ object LogParser {
       extString.update("user_city", user.getCity)
       extString.update("qtt_member_id", user.getMemberId)
       extString.update("hostname", notice.getHostname)
+      extString.update("exp_ids", notice.getAbtestIdsList.toArray().mkString(","))
       extInt.update("lx_type", user.getLxType.toLong)
       extInt.update("lx_package", user.getLxPackage.toLong)
       log = log.copy(
@@ -461,11 +462,11 @@ object LogParser {
     if (data != null) {
       val body = data.event
 
-//      val ext = mutable.Map[String, ExtValue]()
-//      ext.update("show_refer", ExtValue(string_value = data.refer))
-//      ext.update("show_ua", ExtValue(string_value = data.ua))
-//      ext.update("video_show_time", ExtValue(int_value = body.getShowTime)) //video_show_time
-//      ext.update("charge_type", ExtValue(int_value = body.getCharge.getType.getNumber))
+      //      val ext = mutable.Map[String, ExtValue]()
+      //      ext.update("show_refer", ExtValue(string_value = data.refer))
+      //      ext.update("show_ua", ExtValue(string_value = data.ua))
+      //      ext.update("video_show_time", ExtValue(int_value = body.getShowTime)) //video_show_time
+      //      ext.update("charge_type", ExtValue(int_value = body.getCharge.getType.getNumber))
 
       log = ShowLog(
         searchid = body.getSearchId,
@@ -473,13 +474,13 @@ object LogParser {
         ideaid = body.getAd.getUnitId,
         show_timestamp = data.timestamp,
         show_ip = data.ip,
-        show_refer=data.refer,
-        show_ua =data.ua,
-        video_show_time=body.getShowTime,
-        charge_type=body.getCharge.getType.getNumber,
-        show_network=body.getNetwork.getType.getNumber
+        show_refer = data.refer,
+        show_ua = data.ua,
+        video_show_time = body.getShowTime,
+        charge_type = body.getCharge.getType.getNumber,
+        show_network = body.getNetwork.getType.getNumber
 
-//        ext=ext
+        //        ext=ext
       )
     }
     log
@@ -557,13 +558,13 @@ object LogParser {
       if (event.getBody.getSearchId.length > 0) {
         val body = event.getBody
         val extra = event.getExtra
-//        val ext = mutable.Map[String, ExtValue]()
-//        ext.update("touch_x", ExtValue(int_value = extra.getTouchX))
-//        ext.update("touch_y", ExtValue(int_value = extra.getTouchY))
-//        ext.update("slot_width", ExtValue(int_value = extra.getWidth))
-//        ext.update("slot_height", ExtValue(int_value = extra.getHeight))
-//        ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
-//        ext.update("click_ua", ExtValue(string_value = body.getAction.getUserAgent))
+        //        val ext = mutable.Map[String, ExtValue]()
+        //        ext.update("touch_x", ExtValue(int_value = extra.getTouchX))
+        //        ext.update("touch_y", ExtValue(int_value = extra.getTouchY))
+        //        ext.update("slot_width", ExtValue(int_value = extra.getWidth))
+        //        ext.update("slot_height", ExtValue(int_value = extra.getHeight))
+        //        ext.update("antispam_predict", ExtValue(float_value = body.getAntispam.getPredict))
+        //        ext.update("click_ua", ExtValue(string_value = body.getAction.getUserAgent))
         log = ClickLog(
           searchid = body.getSearchId,
           isclick = 1,
@@ -572,15 +573,15 @@ object LogParser {
           antispam_score = body.getAntispam.getScore,
           antispam_rules = body.getAntispam.getRulesList.toArray.mkString(","),
           click_ip = LongToIPv4(body.getEventIp.toLong),
-          touch_x=extra.getTouchX,
-          touch_y=extra.getTouchY,
-          slot_width=extra.getWidth,
-          slot_height=extra.getHeight,
-          antispam_predict=body.getAntispam.getPredict,
-          click_ua=body.getAction.getUserAgent,
-          click_network=body.getNetwork.getType.getNumber
+          touch_x = extra.getTouchX,
+          touch_y = extra.getTouchY,
+          slot_width = extra.getWidth,
+          slot_height = extra.getHeight,
+          antispam_predict = body.getAntispam.getPredict,
+          click_ua = body.getAction.getUserAgent,
+          click_network = body.getNetwork.getType.getNumber
 
-//          ext = ext.toMap
+          //          ext = ext.toMap
         )
       }
     }
