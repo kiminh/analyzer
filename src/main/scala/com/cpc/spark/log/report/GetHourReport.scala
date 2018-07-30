@@ -523,6 +523,56 @@ object GetHourReport {
     println("cvr", cvrData.count())
     */
 
+    val userCharge = unionLog
+      .map {
+        x =>
+          var isclick = x.getAs[Int]("isclick")
+          var spam_click = x.getAs[Int]("spam_click")
+          var antispam_score = x.getAs[Int]("antispam_score")
+          var realCost = 0
+          if (isclick > 0 && antispam_score == 10000) {
+            realCost = x.getAs[Int]("price")
+          } else {
+            realCost = 0
+          }
+          val charge = MediaChargeReport( //adslotType = x.getAs[Int]("adslot_type")
+            //media_id = x.getAs[String]("media_appsid").toInt,
+            //adslot_id = x.getAs[String]("adslotid").toInt,
+            //unit_id = x.getAs[Int]("unitid"),
+            //idea_id = x.getAs[Int]("ideaid"),
+            //plan_id = x.getAs[Int]("planid"),
+            adslot_type = x.getAs[Int]("adslot_type"),
+            user_id = x.getAs[Int]("userid"),
+            //request = 1,
+            served_request = x.getAs[Int]("isfill"),
+            impression = x.getAs[Int]("isshow"),
+            click = isclick + spam_click,
+            //charged_click = isclick,
+            //spam_click = spam_click,
+            cash_cost = realCost,
+            date = x.getAs[String]("date"),
+            hour = x.getAs[String]("hour").toInt
+          )
+          (charge.key, charge)
+      }
+      .reduceByKey((x, y) => x.sum(y))
+      .map(_._2)
+      .map {
+        x =>
+          (x.user_id, x.adslot_type, x.date, x.hour, x.served_request, x.impression, x.click, x.cash_cost)
+      }
+      .toDF("user_id", "adslot_type", "date", "hour", "served_request", "impression", "click", "cost")
+
+
+    clearReportHourData("report_user_charge_hourly", date, hour)
+//    val userChargedata = ctx.createDataFrame(userCharge)
+    userCharge.write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_user_charge_hourly", mariadbProp)
+
+    println("userCharge", userCharge.count())
+
+
     unionLog.unpersist()
 
     ctx.stop()
