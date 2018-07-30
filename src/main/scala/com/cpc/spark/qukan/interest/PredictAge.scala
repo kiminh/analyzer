@@ -75,7 +75,7 @@ object PredictAge {
             els = els :+ ((size + 2).toInt, apps.length.toDouble)
           }
           val vec = Vectors.sparse((size + 3).toInt, els)
-          if (apps != null && birth == null) {
+          if (apps != null) {
             (did, vec)
           } else {
             null
