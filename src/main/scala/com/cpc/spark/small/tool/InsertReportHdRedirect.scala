@@ -28,10 +28,10 @@ object InsertReportHdRedirect {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val conf = ConfigFactory.load()
-    mariadbUrl = conf.getString("mariadb.union_write.url")
-    mariadbProp.put("user", conf.getString("mariadb.union_write.user"))
-    mariadbProp.put("password", conf.getString("mariadb.union_write.password"))
-    mariadbProp.put("driver", conf.getString("mariadb.union_write.driver"))
+    mariadbUrl = conf.getString("mariadb.url")
+    mariadbProp.put("user", conf.getString("mariadb.user"))
+    mariadbProp.put("password", conf.getString("mariadb.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     val ctx = SparkSession.builder()
       .appName("InsertHdRedirectLog date " + argDay + " ,hour " + argHour)
@@ -44,15 +44,33 @@ object InsertReportHdRedirect {
       .cache()
     var toResult = cfgLog.map(x => ((x.aid, x.redirect_url, x.hour), 1)).reduceByKey((x, y) => x + y).map {
       case ((adslotId, url, hour), count) =>
-        HdRedict(argDay, hour, adslotId, url, count)
+        ((argDay, hour, adslotId),HdRedict(argDay, hour, adslotId, url, count))
     }
-    println("count:" + toResult.count())
-    clearReportHourData("report_hd_redirect", argDay, argHour.toInt)
+    .reduceByKey{
+      (a,b)=>
+        val date = a.date
+        val hour  = a.hour
+        val adslotId = a.adslot_id
+        var pv = a.pv+b.pv
+        HdRedict(date, hour, adslotId, "", pv)
+    }
+    .map{
+      x=>
+        (x._2.adslot_id,x._2.date,x._2.hour.toInt,x._2.pv)
+    }
 
-    ctx.createDataFrame(toResult)
+    println("count:" + toResult.count())
+
+    val insertDataFrame =ctx.createDataFrame(toResult).toDF("adslot_id","date","hour","pv")
+
+    insertDataFrame.show(10)
+
+   clearReportHourData("report_hd_redirect_pv", argDay, argHour.toInt)
+
+    insertDataFrame
       .write
       .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "union.report_hd_redirect", mariadbProp)
+      .jdbc(mariadbUrl, "report.report_hd_redirect_pv", mariadbProp)
 
     ctx.stop()
   }
@@ -67,7 +85,7 @@ object InsertReportHdRedirect {
       val stmt = conn.createStatement()
       val sql =
         """
-          |delete from union.%s where `date` = "%s" AND hour="%d"
+          |delete from report.%s where `date` = "%s" AND hour="%d"
         """.stripMargin.format(tbl, date, hour)
       stmt.executeUpdate(sql);
     } catch {
