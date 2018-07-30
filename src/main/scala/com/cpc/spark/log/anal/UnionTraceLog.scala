@@ -70,6 +70,11 @@ object UnionTraceLog {
       .map(r => (r.getAs[String](0), r.getAs[Int](1)))
       .rdd
 
+    if (unionData != null) {
+      println("~~~~~~size: " + unionData.take(1).size)
+      unionData.take(1).foreach(x => println(x))
+    }
+
     //读取1h40min的tracelog(前一个小时和当前前40min的tracelog)
     val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 12)
 
