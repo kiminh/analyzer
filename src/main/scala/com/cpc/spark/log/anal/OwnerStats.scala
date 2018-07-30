@@ -26,7 +26,7 @@ object OwnerStats {
       val stmt =
         """
           |select ideaid, isshow, isclick, price, userid from dl_cpc.cpc_union_log
-          |where `date` = "%s" and adsrc = 1
+          |where `date` = "%s" and adsrc = 1 and isshow > 0
         """.stripMargin.format(date)
       println(stmt)
       val d = spark.sql(stmt).rdd
