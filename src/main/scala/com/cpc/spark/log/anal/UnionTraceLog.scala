@@ -64,16 +64,19 @@ object UnionTraceLog {
 
     //读取前一个小时的Unionlog
     //val unionData = prepareSourceString2(spark, unionTbl, date, hour)
-    val unionData = spark.sql(("select searchid, timestamp " +
-      "from dl_cpc.cpc_union_parsedlog " +
-      "where date=%s and hour=%s and isclick>0").format(date, hour))
-      .map(r => (r.getAs[String](0), r.getAs[Int](1)))
+    val unionData = spark.sql(
+      s"""
+         |select searchid,timestamp
+         |from dl_cpc.cpc_union_parsedlog
+         |where date='$date' and hour='$hour' and isclick > 0
+      """.stripMargin)
+      .map{r => (r.getAs[String](0), r.getAs[Int](1))}
       .rdd
 
     if (unionData != null) {
       println("~~~~~~size: " + unionData.take(1).size)
       unionData.take(1).foreach(x => println(x))
-    }else{
+    } else {
       println("null")
     }
 
