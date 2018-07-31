@@ -164,6 +164,7 @@ enum AdSrc {
 	WINQ = 11;
 	VLION = 12;
 	YOUDAO = 13;
+	MOMO = 14;
 };
 enum InteractionType {
 	NO_INTERACT = 0;
@@ -190,6 +191,7 @@ enum ClientType {
 	HZ          = 4;
 	FUN         = 5;
 	QTT         = 6;
+	BOBO        = 7;
 };
 
 message Client {
@@ -318,4 +320,5 @@ message NoticeLogBody {
 	repeated uint32 lowacpfilter = 28; //低于最低单价过滤
 	repeated uint32 zerobid = 29; //过滤价格计算为0广告
 	optional string	hostname = 30; //as主机名
+	repeated int64 abtest_ids = 31; //abtest id
 };

@@ -45,6 +45,7 @@ object InsertAdslotHot {
           |FROM dl_cpc.cpc_union_log
           |WHERE date="%s" AND hour="%s" AND (ext['touch_x'].int_value>0 OR ext['touch_y'].int_value>0)
           |AND (ext['slot_width'].int_value>0 AND ext['slot_height'].int_value>0)
+          |AND media_appsid not in("80000001","80000002","80000006","800000062","80000064","80000066","80000141")
         """.stripMargin.format(argDay, argHour))
       .rdd
       .map {

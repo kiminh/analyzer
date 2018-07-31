@@ -1,24 +1,30 @@
 package com.cpc.spark.log.anal
 
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import com.cpc.spark.log.anal.MergeLog.createSuccessMarkHDFSFile
 import com.cpc.spark.log.parser._
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
+import org.apache.spark.storage.StorageLevel
 
 import scala.collection.mutable
 
 
 /**
-  * deprecated  2018-07-18 11:58:00
-  *
   * /warehouse/dl_cpc.db/logparsed_cpc_search_minute
   * /warehouse/dl_cpc.db/logparsed_cpc_click_minute
   * /warehouse/dl_cpc.db/logparsed_cpc_show_minute
-  * (searchid,ideaid)
+  * 使用(searchid,ideaid)作为key进行join, 得到unionlog
+  *
+  *
+  * update:2018-07-18 12:15:00
+  * 每小时的15min和45min计算UnionLog
+  * 合并逻辑：取0-30min search、0-60min的show、0-60min的click使用(searchid,ideaid)作为key进行join
   */
 object MergeParsedLog {
 
@@ -28,7 +34,7 @@ object MergeParsedLog {
   var suffix = ""
 
   //时间格式
-  val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
+  val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH/mm")
 
   //当前日期
   var g_date = new Date()
@@ -49,15 +55,26 @@ object MergeParsedLog {
 
     srcRoot = args(0)
     val mergeTbl = args(1)
-    val hourBefore = args(2).toInt
-    prefix = args(3) //"" 空
-    suffix = args(4) //"" 空
+    //    val hourBefore = args(2).toInt
+    val date = args(2)
+    val hour = args(3)
+    val minute = args(4)
+    prefix = args(5) //"" 空
+    suffix = args(6) //"" 空
+    val unionTraceTbl = args(7) //union_trace_table
+    //val addData = args(8)  //标记补充数据
 
+    val datee = date.split("-")
     val cal = Calendar.getInstance()
-    g_date = cal.getTime //以后只用这个时间
-    cal.add(Calendar.HOUR, -hourBefore) //hourBefore前的 时间
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime) //年月日
-    val hour = new SimpleDateFormat("HH").format(cal.getTime) //小时
+    cal.set(Calendar.YEAR, datee(0).toInt)
+    cal.set(Calendar.MONTH, datee(1).toInt - 1)
+    cal.set(Calendar.DAY_OF_MONTH, datee(2).toInt)
+    cal.set(Calendar.HOUR_OF_DAY, hour.toInt)
+    cal.set(Calendar.MINUTE, minute.toInt)
+    cal.set(Calendar.SECOND, 0)
+    //    g_date = cal.getTime //以后只用这个时间
+    //    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime) //年月日
+    //    val hour = new SimpleDateFormat("HH").format(cal.getTime) //小时
 
     //获得sparksession
     val spark = SparkSession.builder()
@@ -70,7 +87,7 @@ object MergeParsedLog {
     /**
       * search
       */
-    var searchRDD = prepareSourceString(spark, prefix + "cpc_search" + suffix, hourBefore, 1)
+    val searchRDD = prepareSourceString(spark, prefix + "cpc_search" + suffix, date, hour.toInt, minute.toInt, 3)
 
     // RDD为空，退出
     if (searchRDD == null) {
@@ -87,19 +104,19 @@ object MergeParsedLog {
     val searchData2 = searchRDD
       .as[UnionLog]
       .rdd
-      .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), x)) //((searchid,ideaid), UnionLog)
-//      .reduceByKey((x, y) => x) //去重
+      .reduceByKey((x, y) => x) //去重
       .map { //覆盖时间，防止记日志的时间与flume推日志的时间不一致造成的在整点出现的数据丢失，下面的以search为准
       x =>
         var ulog = x._2.copy(date = date, hour = hour)
         (x._1, ulog) //Pair RDD
     }
 
+
     /**
       * show
       */
-    var showRDD = prepareSourceString(spark, prefix + "cpc_show" + suffix, hourBefore, 2)
+    val showRDD = prepareSourceString(spark, prefix + "cpc_show" + suffix, date, hour.toInt, minute.toInt, 6)
 
     /**
       * 获得每个广告 '本次播放最大时长' 的日志； 转为PairRDD
@@ -107,9 +124,9 @@ object MergeParsedLog {
     var showData2 = showRDD
       .as[ShowLog]
       .rdd
-      .filter(_ != null)
       .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(ShowLog))
       .reduceByKey((x, y) => x ++ y)
+      .filter(_._2.length < 1000)
       .map {
         x =>
           var headLog = x._2.head
@@ -127,7 +144,7 @@ object MergeParsedLog {
     /**
       * click
       */
-    var clickRDD = prepareSourceString(spark, prefix + "cpc_click" + suffix, hourBefore, 2)
+    val clickRDD = prepareSourceString(spark, prefix + "cpc_click" + suffix, date, hour.toInt, minute.toInt, 6)
 
     var clickData2: RDD[((String, Int), ClickLog)] = null
 
@@ -135,9 +152,9 @@ object MergeParsedLog {
       clickData2 = clickRDD
         .as[ClickLog]
         .rdd
-        .filter(_ != null)
         .map(x => ((x.searchid, x.ideaid), Seq(x))) //((searchid,ideaid), Seq(ClickLog))
         .reduceByKey((x, y) => x ++ y)
+        .filter(_._2.length < 1000)
         .map {
           x => //((searchid,ideaid),seq(ClickLog))
             var clicklog = x._2.head
@@ -263,10 +280,11 @@ object MergeParsedLog {
           rec._2.head
     }
 
-    spark.createDataFrame(unionData)
+    unionData.toDF
       .write
-      .mode(SaveMode.Overwrite)
+      .mode(SaveMode.Append) //修改为Append
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(mergeTbl, date, hour))
+    println("~~~~~~write union_data to hive successfully")
 
     spark.sql(
       """
@@ -274,9 +292,82 @@ object MergeParsedLog {
         | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
       """.stripMargin.format(mergeTbl, date, hour, mergeTbl, date, hour))
 
-    println("union done")
 
-    //    createSuccessMarkHDFSFile(date, hour, "union_done") //创建成功标记文件
+    // 如果合并的RDD的元素大于0，创建标记文件，记录本次运行的开始时间
+    if (unionData.take(1).length > 0) {
+      println("~~~~~~union done")
+      if (minute.toInt > 0) {
+        createMarkFile(spark, "new_union_done", date, hour)
+      }
+
+
+      //记录本次运行的开始时间
+      //      val data = Seq(writeTimeStampToHDFSFile(date, hour, minute))
+      //      val markRdd = spark.sparkContext.parallelize(data, 1)
+      //      markRdd.toDF()
+      //        .write
+      //        .mode(SaveMode.Overwrite)
+      //        .text("/user/cpc/new_union_done%s".format(if (addData != "") {
+      //          "_" + addData
+      //        } else {
+      //          ""
+      //        }))
+      //      println("####### WriteTimeStampToHDFSFile:%s(%s %s:%s:00)".format(data, date, hour, minute))
+    } else {
+      println("~~~~~~union log failed...")
+    }
+
+
+    /**
+      * cpc_union_trace_log
+      */
+    //    if(minute.toInt>45){
+    //      val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 6)
+    //
+    //      if (traceRDD != null) {
+    //        val click = unionData
+    //          .filter(_.isclick > 0)
+    //          .map(x => (x.searchid, x.timestamp))
+    //
+    //        val traceData = traceRDD
+    //          .as[TraceLog]
+    //          .rdd
+    //          .map(x => (x.searchid, x))
+    //          .filter(_._1 != "none")
+    //          .join(click)
+    //          .map {
+    //            x =>
+    //              x._2._1.copy(search_timestamp = x._2._2, date = date, hour = hour)
+    //          }
+    //
+    //        spark.createDataFrame(traceData)
+    //          .write
+    //          .mode(SaveMode.Append)
+    //          .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(unionTraceTbl, date, hour))
+    //
+    //        println("write trace_union_data to hive successfully")
+    //
+    //        //取消持久化
+    //        unionData.unpersist()
+    //
+    //        spark.sql(
+    //          """
+    //            |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+    //            | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+    //          """.stripMargin.format(unionTraceTbl, date, hour, unionTraceTbl, date, hour))
+    //
+    //        //如果合并的RDD的元素大于0，创建标记文件
+    //        if (traceData.take(1).length > 0) {
+    //          println("trace_join_union done")
+    //          if(minute.toInt==45){  //下半小时 跑完添加 标记文件
+    //            createMarkFile(spark, "new_union_trace_done", date, hour)
+    //          }
+    //
+    //        } else {
+    //          println("trace join unionlog failed...")
+    //        }
+    //      }
+    //    }
 
 
   }
@@ -285,25 +376,67 @@ object MergeParsedLog {
   /**
     * 获得数据
     */
-  def prepareSourceString(ctx: SparkSession, src: String, hourBefore: Int, hours: Int): Dataset[Row] = {
-    val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourPath(hourBefore, hours))
-    println(input) // /warehouse/dl_cpc.db/src_cpc_search_minute/{2018-06-26/08}/*
+  def prepareSourceString(ctx: SparkSession, src: String, date: String, hour: Int, minute: Int, minutes: Int): Dataset[Row] = {
+    val input = "%s/%s/%s/*".format(srcRoot, src, getDateHourMinutePath(date, hour, minute, minutes))
+    println(input) // /warehouse/dl_cpc.db/src_cpc_search_minute/{2018-06-26/08/00}
     val readData = ctx.read
       .parquet(input)
 
     readData
   }
 
-  //获取 {yyyy-MM-dd/HH,yyyy-MM-dd/HH}
-  def getDateHourPath(hourBefore: Int, hours: Int): String = {
+
+  def getDateHourMinutePath(date: String, hour: Int, minute: Int, minutes: Int): String = {
     val cal = Calendar.getInstance()
-    cal.setTime(g_date) //当前日期
-    val parts = new Array[String](hours)
-    cal.add(Calendar.HOUR, -hourBefore) //前一个小时 时间
-    for (h <- 0 until hours) {
-      parts(h) = partitionPathFormat.format(cal.getTime) //yyyy-MM-dd/HH
-      cal.add(Calendar.HOUR, 1)
+    val parts = new Array[String](minutes)
+    cal.set(Calendar.YEAR, date.split("-")(0).toInt)
+    cal.set(Calendar.MONTH, date.split("-")(1).toInt - 1)
+    cal.set(Calendar.DAY_OF_MONTH, date.split("-")(2).toInt)
+    cal.set(Calendar.HOUR_OF_DAY, hour) //前一个小时 时间
+    cal.set(Calendar.MINUTE, minute)
+    cal.set(Calendar.SECOND, 0)
+
+    for (h <- 0 until minutes) {
+      parts(h) = partitionPathFormat.format(cal.getTime) //yyyy-MM-dd/HH/mm
+      cal.add(Calendar.MINUTE, 10)
     }
     "{" + parts.mkString(",") + "}"
   }
+
+
+  def writeTimeStampToHDFSFile(date: String, hour: String, minute: String): String = {
+    val cal = Calendar.getInstance()
+    cal.set(Calendar.YEAR, date.split("-")(0).toInt)
+    cal.set(Calendar.MONTH, date.split("-")(1).toInt - 1)
+    cal.set(Calendar.DAY_OF_MONTH, date.split("-")(2).toInt)
+    cal.set(Calendar.HOUR_OF_DAY, hour.toInt) //不加30，shell已设置
+    cal.set(Calendar.MINUTE, minute.toInt)
+    cal.set(Calendar.SECOND, 0)
+
+    val timeStampp = cal.getTimeInMillis / 1000
+    val data = timeStampp.toString
+    data
+
+  }
+
+  /**
+    * 创建成功标记文件
+    *
+    * @param spark     SparkSession
+    * @param markTable 对该表创建标记文件
+    * @param date
+    * @param hour
+    */
+  def createMarkFile(spark: SparkSession, markTable: String, date: String, hour: String): Unit = {
+    // 创建空rdd, 用于创建空文件
+    val empty = Seq("")
+    val emptyRdd = spark.sparkContext.parallelize(empty)
+
+    import spark.implicits._
+    emptyRdd.toDF
+      .write
+      .mode(SaveMode.Overwrite)
+      .text("/warehouse/cpc/%s/%s-%s.ok".format(markTable, date, hour))
+  }
+
 }
