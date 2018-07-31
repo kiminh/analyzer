@@ -99,7 +99,7 @@ object UnionTraceLog {
 
       //数据写入hive表
       spark.createDataFrame(traceData)
-        .coalesce(50)
+        .coalesce(500)
         .write
         .mode(SaveMode.Overwrite)
         .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(unionTraceTbl, date, hour))
