@@ -280,7 +280,7 @@ object MergeParsedLog {
           rec._2.head
     }
 
-    unionData.coalesce(200)
+    unionData
       .toDF
       .write
       .mode(SaveMode.Append) //修改为Append
