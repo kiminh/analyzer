@@ -15,6 +15,7 @@ enum Strategy {
     StrategyLR = 1;
     StrategyXgboost = 2;
     StrategyLRXgboost = 3;
+    StrategyXgboostLR = 4;
 }
 
 message IRModel {
