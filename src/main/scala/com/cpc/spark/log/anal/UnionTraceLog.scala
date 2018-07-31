@@ -70,7 +70,7 @@ object UnionTraceLog {
          |from dl_cpc.cpc_union_parsedlog
          |where date='$date' and hour='$hour' and isclick > 0
       """.stripMargin)
-      .map{r => (r.getAs[String](0), r.getAs[Int](1))}
+      .map { r => (r.getAs[String](0), r.getAs[Int](1)) }
       .rdd
 
     //    if (unionData != null) {
@@ -96,7 +96,7 @@ object UnionTraceLog {
         .as[TraceLog]
         .rdd
         .map(x => (x.searchid, x))
-        .filter(_._1 != "none")
+        .filter(x => x._1 != "none" && x._1 != "")
         .join(unionData)
         .map {
           x =>
