@@ -116,7 +116,7 @@ object XgboostLrTrain {
     val BcWeights = spark.sparkContext.broadcast(lrmodel.weights)
 
     val fname = "ctr-portrait9-xglr-qtt-list.mlm"
-    val filename = s"/home/djq/xgboost_lr/$fname"
+    val filename = s"/home/cpc/djq/xgboost_lr/$fname"
     saveLrPbPack(filename , "xglr")
     println(filetime, filename)
 
