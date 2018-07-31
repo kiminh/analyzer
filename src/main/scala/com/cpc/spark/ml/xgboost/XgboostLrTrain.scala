@@ -117,7 +117,7 @@ object XgboostLrTrain {
 
     val fname = "ctr-portrait9-xglr-qtt-list.mlm"
     val filename = s"/home/cpc/djq/xgboost_lr/$fname"
-    saveLrPbPack(filename , "xglr")
+    saveLrPbPack(filename , "xglr", type1.toInt)
     println(filetime, filename)
 
     if (upload > 0) {
@@ -974,7 +974,7 @@ object XgboostLrTrain {
     pack.writeTo(new FileOutputStream(path))
   }
 
-  def saveLrPbPack(path: String, parser: String): Unit = {
+  def saveLrPbPack(path: String, parser: String, type1: Int): Unit = {
     val weights = mutable.Map[Int, Double]()
     lrmodel.weights.toSparse.foreachActive {
       case (i, d) =>
@@ -1003,12 +1003,24 @@ object XgboostLrTrain {
 //      appid = dictStr("appid")
     )
 
+    var type2 = "list"
+    if (type1 == 1) {
+      type2 = "list"
+    } else if (type1 == 2) {
+      type2 = "content"
+    } else if (type1 == 3) {
+      type2 = "interact"
+    } else {
+      type2 = "unknown"
+    }
+
     val pack = Pack(
       createTime = new Date().getTime,
       lr = Option(lr),
       ir = Option(ir),
       dict = Option(dictpb),
-      strategy = Strategy.StrategyLR
+      strategy = Strategy.StrategyLRXgboost,
+      gbmfile = s"ctr-portrait9-xglr-qtt-$type2.mlm"
     )
 
     pack.writeTo(new FileOutputStream(path))
