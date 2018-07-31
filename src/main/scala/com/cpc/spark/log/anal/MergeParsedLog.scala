@@ -281,6 +281,7 @@ object MergeParsedLog {
     }
 
     unionData.toDF
+      .coalesce(200)
       .write
       .mode(SaveMode.Append) //修改为Append
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(mergeTbl, date, hour))
