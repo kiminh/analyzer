@@ -238,7 +238,7 @@ object DailyReport {
     val sample = spark.read.parquet("/user/cpc/qtt-age-sample/p1").rdd.map{
       x =>
         if (x(1) != null && x(2) != null) {
-          (x.getAs[Int](1), x.getAs[Seq[String]](2).size, x.getAs[Seq[String]](2))
+          (x.getAs[Int](1), x.getAs[Seq[Row]](2).size, x.getAs[Seq[Row]](2))
         } else {
           null
         }
@@ -250,16 +250,16 @@ object DailyReport {
     sample.filter(_._1 < 22).flatMap{
       x =>
         x._3.map{
-          x =>
-            (x, 1)
+          r =>
+            (r.getAs[String](0), 1)
         }
     }.reduceByKey(_+_).sortBy(_._2, false).take(100).foreach(println)
     println("===============================================")
     sample.filter(_._1 >= 22).flatMap{
       x =>
         x._3.map{
-          x =>
-            (x, 1)
+          r =>
+            (r.getAs[String](0), 1)
         }
     }.reduceByKey(_+_).sortBy(_._2, false).take(100).foreach(println)
   }
