@@ -293,7 +293,7 @@ object MergeParsedLog2 {
     // 如果合并的RDD的元素大于0，创建标记文件，记录本次运行的开始时间
     if (unionData.take(1).length > 0) {
       println("~~~~~~union done")
-      if (minute.toInt > 45) {
+      if (minute.toInt > 0) {
         createMarkFile(spark, "new_union_done", date, hour)
       }
 
