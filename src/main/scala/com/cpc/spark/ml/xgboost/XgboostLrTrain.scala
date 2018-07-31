@@ -109,7 +109,7 @@ object XgboostLrTrain {
     auPRC = metrics.areaUnderPR
     auROC = metrics.areaUnderROC
     trainLog :+= "auPRC=%.6f auROC=%.6f".format(auPRC, auROC)
-    println(auPRC, auROC)
+    println(s"auPrc=$auPRC, auc=$auROC")
     lrmodel = lr
     runIr(spark, binNum.toInt, 0.95)
 
@@ -993,14 +993,14 @@ object XgboostLrTrain {
       meanSquareError = irError * irError
     )
     val dictpb = Dict(
-      planid = dict("planid"),
-      unitid = dict("unitid"),
-      ideaid = dict("ideaid"),
-      slotid = dict("slotid"),
-      adclass = dict("adclass"),
-      cityid = dict("cityid"),
-      mediaid = dict("mediaid"),
-      appid = dictStr("appid")
+//      planid = dict("planid"),
+//      unitid = dict("unitid"),
+//      ideaid = dict("ideaid"),
+//      slotid = dict("slotid"),
+//      adclass = dict("adclass"),
+//      cityid = dict("cityid"),
+//      mediaid = dict("mediaid"),
+//      appid = dictStr("appid")
     )
 
     val pack = Pack(
