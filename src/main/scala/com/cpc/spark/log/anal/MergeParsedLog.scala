@@ -281,6 +281,7 @@ object MergeParsedLog {
     }
 
     unionData.toDF
+      .coalesce(50)
       .write
       .mode(SaveMode.Append) //修改为Append
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(mergeTbl, date, hour))
@@ -297,7 +298,7 @@ object MergeParsedLog {
     if (unionData.take(1).length > 0) {
       println("~~~~~~union done")
       if (minute.toInt > 0) {
-        createMarkFile(spark, "new_union_done", date, hour)
+        createMarkFile(spark, "union_done", date, hour)
       }
 
 

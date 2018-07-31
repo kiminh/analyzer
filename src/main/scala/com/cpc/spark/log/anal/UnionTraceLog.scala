@@ -99,6 +99,7 @@ object UnionTraceLog {
 
       //数据写入hive表
       spark.createDataFrame(traceData)
+        .coalesce(50)
         .write
         .mode(SaveMode.Overwrite)
         .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(unionTraceTbl, date, hour))
@@ -113,13 +114,14 @@ object UnionTraceLog {
 
       if (unionData.take(1).length > 0) {
         println("~~~~~~union trace done")
-        createMarkFile(spark, "new_union_trace_done", date, hour)
+        createMarkFile(spark, "union_trace_done", date, hour)
       } else {
         println("~~~~~~union trace log failed...")
       }
 
-
     }
+
+    createMarkFile(spark, "merge_done", date, hour)
 
 
   }
