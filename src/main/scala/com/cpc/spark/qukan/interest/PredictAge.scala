@@ -46,7 +46,6 @@ object PredictAge {
           val w_els = r.getAs[Seq[Row]]("els")
           val hour = r.getAs[Seq[Row]]("hour")
           val sum = r.getAs[Double]("sum")
-          val birth = r.getAs[Int]("birth")
           var els = Seq[(Int, Double)]()
           val size = word_num + app_num + hour_num
 
@@ -75,7 +74,7 @@ object PredictAge {
             els = els :+ ((size + 2).toInt, apps.length.toDouble)
           }
           val vec = Vectors.sparse((size + 3).toInt, els)
-          if (apps != null && birth == null) {
+          if (apps != null && r(1) == null) {
             (did, vec)
           } else {
             null
@@ -113,6 +112,8 @@ object PredictAge {
         (did, score(1))
     }
     predict.take(10).foreach(println)
+    println(predict.filter(_._2 > m).count())
+    println(predict.filter(_._2 < f).count())
     val toSet = predict.flatMap {
       x =>
         if (x._2 > m) {
@@ -124,6 +125,7 @@ object PredictAge {
         }
     }
     println(toSet.count())
+    /*
     SetUserProfileTag.setUserProfileTag(toSet)
     val sum =  predict.repartition(500)
       .mapPartitions {
@@ -240,5 +242,6 @@ object PredictAge {
           }
       }
     println("total: %s, insert: %s, revert %s, both_taged %s count_224: %s count_225 %s young_new: %s new_user: %s".format(n3, n, n1, n2, n4, n5, n6, n7))
+    */
   }
 }
