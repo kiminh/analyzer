@@ -57,7 +57,9 @@ object XgboostLrTrain {
     trainLog :+= args.mkString(" ")
     println(args.mkString(" "))
     val type1 = args(0)
-    val upload = args(1)toInt   //upload to mlserver
+    val upload = args(1).toInt   //upload to mlserver
+    println(s"type=$type1")
+    println(s"upload=$upload")
 
 
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -72,7 +74,7 @@ object XgboostLrTrain {
       .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_test_${type1}_leaf", 50)
       .map { x => {
         val array = x.split("\t")
-        val label = array(0).toInt
+        val label = array(0).toDouble
         val vector1 = array(1).split("\\s+").map(x => {
           val array = x.split(":")
           (array(0).toInt, array(1).toDouble)
