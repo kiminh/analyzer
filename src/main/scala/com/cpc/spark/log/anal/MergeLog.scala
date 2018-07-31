@@ -269,7 +269,7 @@ object MergeLog {
       println(trace.first())
       val click = unionData.filter(_.isclick > 0).map(x => (x.searchid, x.timestamp))
       val trace1 = trace.map(x => (x.searchid, x))
-        .filter(_._1 != "none")
+        .filter(x => x._1 != "none" && x._1.trim.length > 0)
         .join(click)
         .map {
           x =>
