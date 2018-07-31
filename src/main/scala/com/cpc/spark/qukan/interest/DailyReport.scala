@@ -46,6 +46,8 @@ object DailyReport {
       .getOrCreate()
     import spark.implicits._
 
+
+    student_app(spark, args)
     //checkUVTag(spark, args)
     //daily_cost(spark, args)
 
@@ -232,4 +234,19 @@ object DailyReport {
           println("%s\t %8.2f\t %s\t %8.2f".format(x._1,x._2,x._3,x._4))
       }
   }
+  def student_app(spark : SparkSession, args : Array[String]): Unit ={
+    val sample = spark.read.parquet("/user/cpc/qtt-age-sample/p1").rdd.map{
+      x =>
+        if (x(1) != null && x(2) != null) {
+          (x.getAs[Int](1), x.getAs[Seq[String]](2).size)
+        } else {
+          null
+        }
+    }.filter(null)
+    println(sample.filter(x =>x._1 >= 22).count())
+    println(sample.filter(x =>x._1 >= 22  && x._2 > 10).count())
+    println(sample.filter(x =>x._1 < 22).count())
+    println(sample.filter(x =>x._1 < 22  && x._2 > 10).count())
+  }
+
 }
