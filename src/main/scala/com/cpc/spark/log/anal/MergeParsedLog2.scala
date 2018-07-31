@@ -19,12 +19,12 @@ import scala.collection.mutable
   * /warehouse/dl_cpc.db/logparsed_cpc_search_minute
   * /warehouse/dl_cpc.db/logparsed_cpc_click_minute
   * /warehouse/dl_cpc.db/logparsed_cpc_show_minute
-  * (searchid,ideaid)进行join
+  * 使用(searchid,ideaid)作为key进行join, 得到unionlog
   *
   *
   * update:2018-07-18 12:15:00
   * 每小时的15min和45min计算UnionLog
-  * 合并逻辑：取0-30min search、0-60min的show、0-60min的
+  * 合并逻辑：取0-30min search、0-60min的show、0-60min的click使用(searchid,ideaid)作为key进行join
   */
 object MergeParsedLog2 {
 
@@ -275,13 +275,13 @@ object MergeParsedLog2 {
           head.copy(motivation = motivation, motive_ext = motive_ext)
         } else
           rec._2.head
-    }.persist(StorageLevel.MEMORY_ONLY_SER)
+    }
 
     unionData.toDF
       .write
       .mode(SaveMode.Append) //修改为Append
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(mergeTbl, date, hour))
-    println("write union_data to hive successfully")
+    println("~~~~~~write union_data to hive successfully")
 
     spark.sql(
       """
@@ -292,8 +292,8 @@ object MergeParsedLog2 {
 
     // 如果合并的RDD的元素大于0，创建标记文件，记录本次运行的开始时间
     if (unionData.take(1).length > 0) {
-      println("union done")
-      if (minute.toInt == 45) {
+      println("~~~~~~union done")
+      if (minute.toInt > 45) {
         createMarkFile(spark, "new_union_done", date, hour)
       }
 
@@ -311,56 +311,61 @@ object MergeParsedLog2 {
       //        }))
       //      println("####### WriteTimeStampToHDFSFile:%s(%s %s:%s:00)".format(data, date, hour, minute))
     } else {
-      println("union log failed...")
+      println("~~~~~~union log failed...")
     }
 
 
     /**
       * cpc_union_trace_log
       */
-    val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 6)
-    if (traceRDD != null) {
-      val click = unionData
-        .filter(_.isclick > 0)
-        .map(x => (x.searchid, x.timestamp))
-      val traceData = traceRDD
-        .as[TraceLog]
-        .rdd
-        .map(x => (x.searchid, x))
-        .filter(_._1 != "none")
-        .join(click)
-        .map {
-          x =>
-            x._2._1.copy(search_timestamp = x._2._2, date = date, hour = hour)
-        }
+//    if(minute.toInt>45){
+//      val traceRDD = prepareSourceString(spark, prefix + "cpc_trace" + suffix, date, hour.toInt, minute.toInt, 6)
+//
+//      if (traceRDD != null) {
+//        val click = unionData
+//          .filter(_.isclick > 0)
+//          .map(x => (x.searchid, x.timestamp))
+//
+//        val traceData = traceRDD
+//          .as[TraceLog]
+//          .rdd
+//          .map(x => (x.searchid, x))
+//          .filter(_._1 != "none")
+//          .join(click)
+//          .map {
+//            x =>
+//              x._2._1.copy(search_timestamp = x._2._2, date = date, hour = hour)
+//          }
+//
+//        spark.createDataFrame(traceData)
+//          .write
+//          .mode(SaveMode.Append)
+//          .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(unionTraceTbl, date, hour))
+//
+//        println("write trace_union_data to hive successfully")
+//
+//        //取消持久化
+//        unionData.unpersist()
+//
+//        spark.sql(
+//          """
+//            |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+//            | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+//          """.stripMargin.format(unionTraceTbl, date, hour, unionTraceTbl, date, hour))
+//
+//        //如果合并的RDD的元素大于0，创建标记文件
+//        if (traceData.take(1).length > 0) {
+//          println("trace_join_union done")
+//          if(minute.toInt==45){  //下半小时 跑完添加 标记文件
+//            createMarkFile(spark, "new_union_trace_done", date, hour)
+//          }
+//
+//        } else {
+//          println("trace join unionlog failed...")
+//        }
+//      }
+//    }
 
-      spark.createDataFrame(traceData)
-        .write
-        .mode(SaveMode.Append)
-        .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(unionTraceTbl, date, hour))
-
-      println("write trace_union_data to hive successfully")
-
-      //取消持久化
-      unionData.unpersist()
-
-      spark.sql(
-        """
-          |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-          | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
-        """.stripMargin.format(unionTraceTbl, date, hour, unionTraceTbl, date, hour))
-
-      //如果合并的RDD的元素大于0，创建标记文件
-      if (traceData.take(1).length > 0) {
-        println("trace_join_union done")
-        if(minute.toInt==45){  //下半小时 跑完添加 标记文件
-          createMarkFile(spark, "new_union_trace_done", date, hour)
-        }
-
-      } else {
-        println("trace join unionlog failed...")
-      }
-    }
 
 
   }
