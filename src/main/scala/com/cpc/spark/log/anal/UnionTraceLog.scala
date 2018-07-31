@@ -67,7 +67,7 @@ object UnionTraceLog {
     val unionData = spark.sql(
       s"""
          |select searchid,timestamp
-         |from dl_cpc.cpc_union_parsedlog
+         |from dl_cpc.$unionTbl
          |where date='$date' and hour='$hour' and isclick > 0
       """.stripMargin)
       .map { r => (r.getAs[String](0), r.getAs[Int](1)) }
