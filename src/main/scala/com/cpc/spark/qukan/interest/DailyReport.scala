@@ -242,7 +242,7 @@ object DailyReport {
         } else {
           null
         }
-    }.filter(null)
+    }.filter(_ != null)
     println(sample.filter(x =>x._1 >= 22).count())
     println(sample.filter(x =>x._1 >= 22  && x._2 > 10).count())
     println(sample.filter(x =>x._1 < 22).count())
