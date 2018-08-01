@@ -1,9 +1,12 @@
 package com.cpc.spark.log.anal
 
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
 import com.cpc.spark.log.parser.{TraceLog, UnionLog}
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
 
@@ -113,14 +116,14 @@ object UnionTraceLog {
 
       if (unionData.take(1).length > 0) {
         println("~~~~~~union trace done")
-        createMarkFile(spark, "union_trace_done", date, hour)
+        createSuccessMarkHDFSFile("union_trace_done", date, hour)
       } else {
         println("~~~~~~union trace log failed...")
       }
 
     }
 
-    createMarkFile(spark, "merge_done", date, hour)
+    createSuccessMarkHDFSFile("merge_done", date, hour)
 
 
   }
@@ -188,6 +191,14 @@ object UnionTraceLog {
     "{" + parts + "}"
   }
 
+  /**
+    * 创建的是文件夹。 Deprecated
+    *
+    * @param spark
+    * @param markTable
+    * @param date
+    * @param hour
+    */
   def createMarkFile(spark: SparkSession, markTable: String, date: String, hour: String): Unit = {
     // 创建空rdd, 用于创建空文件
     val empty = Seq("")
@@ -199,5 +210,38 @@ object UnionTraceLog {
       .mode(SaveMode.Overwrite)
       .text("/warehouse/cpc/%s/%s-%s.ok".format(markTable, date, hour))
   }
+
+  /**
+    * 在hdfs上创建成功标记文件；unionlog, uniontracelog合并成功的标记文件
+    *
+    * @param mark
+    */
+  def createSuccessMarkHDFSFile(mark: String, date: String, hour: String): Unit = {
+    val fileName = "/warehouse/cpc/%s/%s-%s.ok".format(mark, date, hour)
+    val path = new Path(fileName)
+
+    //get object conf
+    val conf = new Configuration()
+    //get FileSystem
+    val fileSystem = FileSystem.newInstance(conf)
+
+    try {
+      val success = fileSystem.createNewFile(path)
+      if (success) {
+        println("Sreate HDFSFile Successfully")
+      }
+    } catch {
+      case e: IOException => e.printStackTrace()
+    } finally {
+      try {
+        if (fileSystem != null) {
+          fileSystem.close()
+        }
+      } catch {
+        case e: IOException => e.printStackTrace()
+      }
+    }
+  }
+
 
 }
