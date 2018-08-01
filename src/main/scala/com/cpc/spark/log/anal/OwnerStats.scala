@@ -32,7 +32,7 @@ object OwnerStats {
       .rdd
       .map {
         x =>
-          val sid = x.getInt(0)
+          val sid = x.getString(0)
           val dtu = x.getInt(1)
           val isshow = x.getInt(2)
           val isclick = x.getInt(3)
@@ -46,7 +46,7 @@ object OwnerStats {
       """.stripMargin).rdd
       .map {
         x =>
-          val sid = x.getInt(0)
+          val sid = x.getString(0)
           val tt = x.getString(1)
           if (tt == "active5") {
             (sid, (1, 0))
