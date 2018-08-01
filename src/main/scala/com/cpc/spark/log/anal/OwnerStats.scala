@@ -33,7 +33,7 @@ object OwnerStats {
       .map {
         x =>
           val sid = x.getString(0)
-          val dtu = x.getInt(1)
+          val dtu = x.getLong(1)
           val isshow = x.getInt(2)
           val isclick = x.getInt(3)
           val siteid = x.getLong(4)
