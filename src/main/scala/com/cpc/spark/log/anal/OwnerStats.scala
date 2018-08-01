@@ -36,7 +36,7 @@ object OwnerStats {
           val dtu = x.getInt(1)
           val isshow = x.getInt(2)
           val isclick = x.getInt(3)
-          val siteid = x.getInt(4)
+          val siteid = x.getLong(4)
           (sid, dtu, isshow, isclick, siteid)
       }
 
