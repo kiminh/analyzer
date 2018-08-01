@@ -125,7 +125,7 @@ object CpcStreamingShowLogParser {
         rdd.foreachPartition { iter =>
           try {
             val o: OffsetRange = offsetRanges(TaskContext.get.partitionId)
-            //offsetRedis.setTopicAndPartitionOffSet(o.topic, o.partition, o.fromOffset)
+            offsetRedis.setTopicAndPartitionOffSet(o.topic, o.partition, o.fromOffset)
           } catch {
             case t: Throwable =>
               t.printStackTrace()
@@ -231,17 +231,12 @@ object CpcStreamingShowLogParser {
         val currentBatchEndTime = new Date().getTime
         val costTime = (currentBatchEndTime - currentBatchStartTime) / 1000.0
 
-        val message = "CurrentTime:" + currentBatchEndTime + ";Topic:" + (topics.split(",")(0)) + ";ProcessingTime(seconds):" + costTime.toString
-        println("@@@@@@@@" + message)
-        val keyedMessage = new KeyedMessage[String, Array[Byte]](cpc_realtime_parsedlog_warning, message.getBytes)
-
-        if (producer == null) {
-          producer = com.cpc.spark.streaming.tools.KafkaUtils.getProducer(brokers)
-        }
-        producer.send(keyedMessage)
-      //        if (producer != null) {
-      //          producer.close()
-      //        }
+        val mapString: Seq[(String, String)] = Seq(("Topic", topics.split(",")(0)))
+        val mapFloat: Seq[(String, Float)] = Seq(("ProcessingTime", costTime.toFloat))
+        data2Kafka.clear()
+        data2Kafka.setMessage(currentBatchEndTime, null, mapFloat, null, mapString)
+        data2Kafka.sendMessage(brokers,cpc_realtime_parsedlog_warning)
+        data2Kafka.close()
 
 
     }
@@ -293,53 +288,8 @@ object CpcStreamingShowLogParser {
 
   }
 
-  /**
-    * 使用spark streaming从kafka中读取search、show、click等日志，写入hive表中
-    *   1. 获取field字段中的日志信息；
-    *   2. 调用日志解析函数进行解析
-    *
-    * @param part  DStream中的每个RDD
-    * @param topic SrcLog对象中field字段的key，用于获取日志信息
-    */
-  def getParsedSearchLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
-    //获取log
-    val srcDataRdd = part.map {
-      x => x.field.getOrElse(topic, null).string_type
-    }.filter(_ != null)
 
-    //根据不同类型的日志，调用不同的函数进行解析
-    val searchRDD = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
-    val parsedLog = searchRDD.filter(_ != null).coalesce(500, false)
 
-    //    if (topic == "cpc_search_new") { //search
-    //      val searchRDD = srcDataRdd.flatMap(x => LogParser.parseSearchLog_v2(x))
-    //      val parsedLog = searchRDD.filter(_ != null)
-    //
-    //    } else if (topic == "cpc_show_new") { //show
-    //      val parsedLog = srcDataRdd.map(x => LogParser.parseShowLog_v2(x))
-    //
-    //    } else if (topic == "cpc_click_new") { //click
-    //      val parsedLog = srcDataRdd.map { x => LogParser.parseClickLog_v2(x) }
-    //
-    //    } else {
-    //      System.err.println("Can not judge the key of the field.")
-    //      System.exit(1)
-    //    }
-
-    spark.createDataFrame(parsedLog)
-      .write
-      .mode(SaveMode.Append)
-      .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
-
-    val sqlStmt =
-      """
-        |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
-        |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
-        |
-                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
-    println(sqlStmt)
-    spark.sql(sqlStmt)
-  }
 
   def getParsedShowLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
 
@@ -376,29 +326,6 @@ object CpcStreamingShowLogParser {
     spark.sql(sqlStmt)
   }
 
-  def getParsedClickLog(part: RDD[SrcLog], topic: String, spark: SparkSession, table: String, key: (String, String, String)): Unit = {
-    //获取log
-    val srcDataRdd = part.map {
-      x => x.field.getOrElse(topic, null).string_type
-    }.filter(_ != null)
-
-    //根据不同类型的日志，调用不同的函数进行解析
-    val parsedLog = srcDataRdd.map(x => LogParser.parseClickLog_v2(x)).filter(_ != null).coalesce(200, false)
-
-    spark.createDataFrame(parsedLog)
-      .write
-      .mode(SaveMode.Append)
-      .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))
-
-    val sqlStmt =
-      """
-        |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
-        |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
-        |
-                """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
-    println(sqlStmt)
-    spark.sql(sqlStmt)
-  }
 
 
   case class SrcLog(

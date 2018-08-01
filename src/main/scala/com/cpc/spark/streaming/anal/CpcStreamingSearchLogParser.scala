@@ -142,7 +142,7 @@ object CpcStreamingSearchLogParser {
       }
     }
     getCurrentDate("end-offsetRanges")
-    val base_data = messages.map {
+    val base_data = messages.repartition(1000).map {
       case (k, v) =>
         try {
           val logdata = LogData.parseData(v)
@@ -211,7 +211,6 @@ object CpcStreamingSearchLogParser {
               }.filter(_ != null)
                 .flatMap(x => LogParser.parseSearchLog_v2(x))
                 .filter(_ != null)
-
 
               spark.createDataFrame(searchRDD)
                 .coalesce(100)
