@@ -62,7 +62,7 @@ object GetHourReport {
          |      ext['cvr_threshold'].int_value as cvr_threshold,
          |      ext['adclass'].int_value as adclass,
          |      ext['exp_cvr'].int_value as exp_cvr,
-         |      ext['exp_ctr'].int_value as exp_ctr
+         |      ext['exp_ctr'].int_value as exp_ctr,
          |      if(ext["charge_type"].int_value=2,"cpm","cpc") as charge_type,
          |      if(ext["charge_type"].int_value=2,price/1000,price) as charge_fee
          |from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and isfill = 1 and adslotid > 0 and adsrc <= 1
