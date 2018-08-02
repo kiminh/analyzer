@@ -984,7 +984,7 @@ object XgboostLrTrain {
       lr = Option(lr),
       //ir = Option(ir),
       dict = Option(dictpb),
-      strategy = Strategy.StrategyLRXgboost
+      strategy = Strategy.StrategyXgboostLR
     )
 
     pack.writeTo(new FileOutputStream(path))
@@ -1031,11 +1031,12 @@ object XgboostLrTrain {
     }
 
     val pack = Pack(
+      name = s"qtt-$type2-ctr-portrait11",
       createTime = new Date().getTime,
       lr = Option(lr),
       ir = Option(ir),
       dict = Option(dictpb),
-      strategy = Strategy.StrategyLRXgboost,
+      strategy = Strategy.StrategyXgboostLR,
       gbmfile = s"data/ctr-portrait9-qtt-$type2.gbm",
       gbmTreeLimit = 200,
       gbmTreeDepth = 10
