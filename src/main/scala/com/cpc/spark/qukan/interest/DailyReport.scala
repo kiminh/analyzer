@@ -47,8 +47,8 @@ object DailyReport {
     import spark.implicits._
 
 
-    student_app(spark, args)
-    //checkUVTag(spark, args)
+    //student_app(spark, args)
+    checkUVTag(spark, args)
     //daily_cost(spark, args)
 
 
@@ -178,6 +178,8 @@ object DailyReport {
           var young = 0
           var notYoung = 0
           var active = 0
+          var female = 0
+          var male = 0
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           p.foreach {
             r =>
@@ -185,6 +187,11 @@ object DailyReport {
                 val buffer = redis.get[Array[Byte]](key).orNull
                 if (buffer != null) {
                   val user = UserProfile.parseFrom(buffer).toBuilder
+                  if (user.getSex == 2) {
+                    female += 1
+                  } else if (user.getSex == 1) {
+                    male += 1
+                  }
                   for (i <- 0 until user.getInterestedWordsCount) {
                     val w = user.getInterestedWords(i)
                     if (w.getTag == 224) {
@@ -197,7 +204,7 @@ object DailyReport {
                   }
                 }
           }
-          Seq((0, young), (1, notYoung), (2,active)).iterator
+          Seq((0, young), (1, notYoung), (2,active), (3,female), (4,male)).iterator
       }
       .reduceByKey(_+_)
     sum.toLocalIterator.foreach(println)
