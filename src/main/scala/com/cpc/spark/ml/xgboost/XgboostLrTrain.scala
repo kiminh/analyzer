@@ -125,8 +125,15 @@ object XgboostLrTrain {
     auPRC = metrics.areaUnderPR
     auROC = metrics.areaUnderROC
     trainLog :+= "auPRC=%.6f auROC=%.6f".format(auPRC, auROC)
-    println(s"auPrc=$auPRC, auc=$auROC")
+    println(s"test: auPrc=$auPRC, auc=$auROC")
     lrmodel = lr
+
+    // train metrics
+    val xgbTrainResults = sampleTrain.map { r => (lr.predict(r.features), r.label) }
+    val metricsTrain = new BinaryClassificationMetrics(xgbTrainResults)
+    println(s"train: auPrc=${metricsTrain.areaUnderPR()}, auc=${metricsTrain.areaUnderROC()}")
+
+
     runIr(spark, binNum.toInt, 0.95)
 
     val BcWeights = spark.sparkContext.broadcast(lrmodel.weights)
