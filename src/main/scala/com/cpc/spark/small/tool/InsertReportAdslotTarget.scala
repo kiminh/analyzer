@@ -189,7 +189,7 @@ object InsertReportAdslotTarget {
           val student = x._2._6
           val load = x._2._7
           val active = x._2._8
-          val target_type = "sex"
+          val target_type = "student"
           var date = argDay
           val req = x._2._9
           val isfull = x._2._10

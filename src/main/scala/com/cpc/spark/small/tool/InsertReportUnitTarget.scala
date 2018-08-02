@@ -195,7 +195,7 @@ object InsertReportUnitTarget {
           val isStudent = x._2._6
           val load = x._2._7
           val active = x._2._8
-          val target_type = "sex"
+          val target_type = "student"
           var date = argDay
           (userid, planid, unitid, isshow, isclick, target_type, isStudent, load, active, date)
       }
