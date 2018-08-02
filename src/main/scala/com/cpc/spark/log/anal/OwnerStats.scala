@@ -23,8 +23,10 @@ object OwnerStats {
 
     val stmt =
       """
-        |select searchid, ext_int["lx_package"], isshow, isclick, ext_int["siteid"] from dl_cpc.cpc_union_log
-        |where `date` >= "2018-07-31" and isshow > 0 and adsrc <= 1 and ext_int["siteid"] in (30248, 30250)
+        |select searchid, ext_int["lx_package"], isshow, isclick, ext_int["siteid"],
+        |interests
+        |from dl_cpc.cpc_union_log
+        |where `date` in("2018-07-31", "2018-07-31")  and isshow > 0 and adsrc <= 1 and ext_int["siteid"] in (30248, 30250)
       """.stripMargin
 
     println(stmt)
@@ -37,7 +39,8 @@ object OwnerStats {
           val isshow = x.getInt(2)
           val isclick = x.getInt(3)
           val siteid = x.getLong(4)
-          (sid, dtu, isshow, isclick, siteid)
+          val isold = x.getString(5).contains("228=100")
+          (sid, dtu, isshow, isclick, siteid, if(isold) 1 else 2)
       }
 
     val tlog = spark.sql(
@@ -68,6 +71,7 @@ object OwnerStats {
           val isshow = p1._3
           val isclick = p1._4
           val siteid = p1._5
+          val isold = p1._6
           var a5 = 0
           var a7 = 0
           if (x._2._2.isDefined) {
@@ -80,7 +84,7 @@ object OwnerStats {
             }
           }
 
-          val key = (dtu, siteid)
+          val key = (isold, siteid)
           (key, (isshow, isclick, a5, a7))
       }
       .reduceByKey{
