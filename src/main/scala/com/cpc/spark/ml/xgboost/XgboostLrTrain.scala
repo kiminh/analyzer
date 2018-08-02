@@ -1036,7 +1036,7 @@ object XgboostLrTrain {
       ir = Option(ir),
       dict = Option(dictpb),
       strategy = Strategy.StrategyLRXgboost,
-      gbmfile = s"ctr-portrait9-qtt-$type2.gbm",
+      gbmfile = s"data/ctr-portrait9-qtt-$type2.gbm",
       gbmTreeLimit = 200,
       gbmTreeDepth = 10
     )
