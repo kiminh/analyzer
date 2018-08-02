@@ -71,7 +71,7 @@ object XgboostLrTrain {
       .getOrCreate()
 
     val qttListTestLeaf: RDD[LabeledPoint] = spark.sparkContext
-      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_test_${type1}_leaf", 50)
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_test_leaf_${type1}", 50)
       .map { x => {
         val array = x.split("\t")
         val label = array(0).toDouble
@@ -85,7 +85,7 @@ object XgboostLrTrain {
       }
 
     val qttListTrainLeaf: RDD[LabeledPoint] = spark.sparkContext
-      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_train_${type1}_leaf", 50)
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_train_leaf_${type1}", 50)
       .map { x => {
         val array = x.split("\t")
         val label = array(0).toDouble
