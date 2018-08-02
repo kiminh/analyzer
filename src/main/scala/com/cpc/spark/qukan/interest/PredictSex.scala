@@ -72,6 +72,7 @@ object PredictSex {
           var n = 0
           var n1 = 0
           var n2 = 0
+          var n3 = 0
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
 
           p.foreach {
@@ -85,6 +86,7 @@ object PredictSex {
                 var sex = 0
                 if (r._2 < f) {
                   sex = 2
+                  n3 += 1
                 } else if (r._2 > m) {
                   sex = 1
                 }
@@ -98,13 +100,14 @@ object PredictSex {
                 }
               }
           }
-          Seq((0, n), (1, n1), (2, n2)).iterator
+          Seq((0, n), (1, n1), (2, n2), (3, n3)).iterator
       }
 
     //统计数据
     var n = 0
     var n1 = 0
     var n2 = 0
+    var n3 = 0
     sum.reduceByKey((x, y) => x + y)
       .take(3)
       .foreach {
@@ -113,11 +116,13 @@ object PredictSex {
             n = x._2
           } else if (x._1 == 1) {
             n1 = x._2
-          } else {
+          } else if (x._1 == 2) {
             n2 = x._2
+          } else {
+            n3 = x._2
           }
       }
-    println("total: %s, hit: %s, update %s".format(n, n1, n2))
+    println("total: %s, hit: %s, update: %s female: %s".format(n, n1, n2,n3))
   }
 }
 
