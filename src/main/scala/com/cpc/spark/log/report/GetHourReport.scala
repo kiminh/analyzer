@@ -69,7 +69,7 @@ object GetHourReport {
        """.stripMargin.format(table, date, hour))
       .rdd.cache()
 
-    val unionLog = unionLog1.filter(x => x.getAs[String]("charge_type") == "cpm")
+    val unionLog = unionLog1.filter(x => x.getAs[String]("charge_type") == "cpc")
 
     val chargeData = unionLog1
       .map {
