@@ -70,7 +70,7 @@ object XgboostLrTrain {
       .enableHiveSupport()
       .getOrCreate()
 
-    val qttListLeaf: RDD[LabeledPoint] = spark.sparkContext
+    val qttListTestLeaf: RDD[LabeledPoint] = spark.sparkContext
       .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_test_${type1}_leaf", 50)
       .map { x => {
         val array = x.split("\t")
@@ -84,7 +84,23 @@ object XgboostLrTrain {
       }
       }
 
-    val Array(train, test) = qttListLeaf.randomSplit(Array(0.8, 0.2))
+    val qttListTrainLeaf: RDD[LabeledPoint] = spark.sparkContext
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_train_${type1}_leaf", 50)
+      .map { x => {
+        val array = x.split("\t")
+        val label = array(0).toDouble
+        val vector1 = array(1).split("\\s+").map(x => {
+          val array = x.split(":")
+          (array(0).toInt, array(1).toDouble)
+        })
+        val vec = Vectors.sparse(1000000, vector1)
+        LabeledPoint(label, vec)
+      }
+      }
+
+    //val Array(train, test) = qttListLeaf.randomSplit(Array(0.8, 0.2))
+    val train = qttListTrainLeaf
+    val test = qttListTestLeaf
 
     val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
     lbfgs.optimizer.setUpdater(new L1Updater())
@@ -1020,7 +1036,9 @@ object XgboostLrTrain {
       ir = Option(ir),
       dict = Option(dictpb),
       strategy = Strategy.StrategyLRXgboost,
-      gbmfile = s"ctr-portrait9-xglr-qtt-$type2.mlm"
+      gbmfile = s"ctr-portrait9-xglr-qtt-$type2.mlm",
+      gbmTreeLimit = 200,
+      gbmTreeDepth = 10
     )
 
     pack.writeTo(new FileOutputStream(path))
