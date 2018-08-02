@@ -67,12 +67,14 @@ object PredictSex {
     val conf = ConfigFactory.load()
     val sum = sample.map(x => (x._1, lr.predict(x._2)))
       .filter(x => x._2 < f || x._2 > m)
+      .repartition(100)
       .mapPartitions {
         p =>
           var n = 0
           var n1 = 0
           var n2 = 0
           var n3 = 0
+          var n4 = 0
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
 
           p.foreach {
@@ -89,6 +91,7 @@ object PredictSex {
                   n3 += 1
                 } else if (r._2 > m) {
                   sex = 1
+                  n4 += 1
                 }
                 up = UserProfile.parseFrom(buffer).toBuilder()
                 if (up.getSex != sex) {
@@ -109,7 +112,7 @@ object PredictSex {
     var n2 = 0
     var n3 = 0
     sum.reduceByKey((x, y) => x + y)
-      .take(3)
+      .take(4)
       .foreach {
         x =>
           if (x._1 == 0) {
