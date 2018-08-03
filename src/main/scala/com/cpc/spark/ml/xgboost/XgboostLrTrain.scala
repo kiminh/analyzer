@@ -139,11 +139,11 @@ object XgboostLrTrain {
     val BcWeights = spark.sparkContext.broadcast(lrmodel.weights)
 
     var type2 = "list"
-    if (type1 == 1) {
+    if (type1.toInt == 1) {
       type2 = "list"
-    } else if (type1 == 2) {
+    } else if (type1.toInt == 2) {
       type2 = "content"
-    } else if (type1 == 3) {
+    } else if (type1.toInt == 3) {
       type2 = "interact"
     } else {
       type2 = "unknown"
