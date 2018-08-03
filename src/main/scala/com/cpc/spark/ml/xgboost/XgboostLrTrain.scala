@@ -58,9 +58,18 @@ object XgboostLrTrain {
     println(args.mkString(" "))
     val type1 = args(0)
     val upload = args(1).toInt   //upload to mlserver
+    val version = args(2)
     println(s"type=$type1")
     println(s"upload=$upload")
+    if (version != "9" || version != "12") {
+      println(s"version is 9 or 12")
+      return -1
+    }
 
+    var size = 1000000
+    if (version == "12") {
+      size = 100000
+    }
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder()
@@ -79,7 +88,7 @@ object XgboostLrTrain {
           val array = x.split(":")
           (array(0).toInt, array(1).toDouble)
         })
-        val vec = Vectors.sparse(1000000, vector1)
+        val vec = Vectors.sparse(size, vector1)
         LabeledPoint(label, vec)
       }
       }
@@ -93,7 +102,7 @@ object XgboostLrTrain {
           val array = x.split(":")
           (array(0).toInt, array(1).toDouble)
         })
-        val vec = Vectors.sparse(1000000, vector1)
+        val vec = Vectors.sparse(size, vector1)
         LabeledPoint(label, vec)
       }
       }
@@ -149,9 +158,9 @@ object XgboostLrTrain {
       type2 = "unknown"
     }
 
-    val fname = s"ctr-portrait9-xglr-qtt-$type2.mlm"
+    val fname = s"ctr-portrait${version}-xglr-qtt-$type2.mlm"
     val filename = s"/home/cpc/djq/xgboost_lr/$fname"
-    saveLrPbPack(filename , "xglr", type1.toInt)
+    saveLrPbPack(filename , "xglr", type1.toInt, version)
     println(filetime, filename)
 
     if (upload > 0) {
@@ -1008,7 +1017,7 @@ object XgboostLrTrain {
     pack.writeTo(new FileOutputStream(path))
   }
 
-  def saveLrPbPack(path: String, parser: String, type1: Int): Unit = {
+  def saveLrPbPack(path: String, parser: String, type1: Int, version: String): Unit = {
     val weights = mutable.Map[Int, Double]()
     lrmodel.weights.toSparse.foreachActive {
       case (i, d) =>
@@ -1060,7 +1069,7 @@ object XgboostLrTrain {
       ir = Option(ir),
       dict = Option(dictpb),
       strategy = Strategy.StrategyXgboostLR,
-      gbmfile = s"data/ctr-portrait9-qtt-$type2.gbm",
+      gbmfile = s"data/ctr-portrait${version}-qtt-$type2.gbm",
       gbmTreeLimit = 200,
       gbmTreeDepth = 10
     )
