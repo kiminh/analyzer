@@ -71,7 +71,7 @@ object XgboostLrTrain {
       .getOrCreate()
 
     val qttListTestLeaf: RDD[LabeledPoint] = spark.sparkContext
-      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_test_${type1}_leaf", 50)
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_test_leaf_${type1}", 50)
       .map { x => {
         val array = x.split("\t")
         val label = array(0).toDouble
@@ -85,7 +85,7 @@ object XgboostLrTrain {
       }
 
     val qttListTrainLeaf: RDD[LabeledPoint] = spark.sparkContext
-      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_train_${type1}_leaf", 50)
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_train_leaf_${type1}", 50)
       .map { x => {
         val array = x.split("\t")
         val label = array(0).toDouble
@@ -125,8 +125,15 @@ object XgboostLrTrain {
     auPRC = metrics.areaUnderPR
     auROC = metrics.areaUnderROC
     trainLog :+= "auPRC=%.6f auROC=%.6f".format(auPRC, auROC)
-    println(s"auPrc=$auPRC, auc=$auROC")
+    println(s"test: auPrc=$auPRC, auc=$auROC")
     lrmodel = lr
+
+    // train metrics
+    val xgbTrainResults = sampleTrain.map { r => (lr.predict(r.features), r.label) }
+    val metricsTrain = new BinaryClassificationMetrics(xgbTrainResults)
+    println(s"train: auPrc=${metricsTrain.areaUnderPR()}, auc=${metricsTrain.areaUnderROC()}")
+
+
     runIr(spark, binNum.toInt, 0.95)
 
     val BcWeights = spark.sparkContext.broadcast(lrmodel.weights)
@@ -984,7 +991,7 @@ object XgboostLrTrain {
       lr = Option(lr),
       //ir = Option(ir),
       dict = Option(dictpb),
-      strategy = Strategy.StrategyLRXgboost
+      strategy = Strategy.StrategyXgboostLR
     )
 
     pack.writeTo(new FileOutputStream(path))
@@ -1031,12 +1038,13 @@ object XgboostLrTrain {
     }
 
     val pack = Pack(
+      name = s"qtt-$type2-ctr-portrait11",
       createTime = new Date().getTime,
       lr = Option(lr),
       ir = Option(ir),
       dict = Option(dictpb),
-      strategy = Strategy.StrategyLRXgboost,
-      gbmfile = s"ctr-portrait9-xglr-qtt-$type2.mlm",
+      strategy = Strategy.StrategyXgboostLR,
+      gbmfile = s"data/ctr-portrait9-qtt-$type2.gbm",
       gbmTreeLimit = 200,
       gbmTreeDepth = 10
     )
