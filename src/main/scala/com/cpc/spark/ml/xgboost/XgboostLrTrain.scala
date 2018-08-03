@@ -70,8 +70,8 @@ object XgboostLrTrain {
       .enableHiveSupport()
       .getOrCreate()
 
-    val qttListLeaf: RDD[LabeledPoint] = spark.sparkContext
-      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_test_${type1}_leaf", 50)
+    val qttListTestLeaf: RDD[LabeledPoint] = spark.sparkContext
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_test_leaf_${type1}", 50)
       .map { x => {
         val array = x.split("\t")
         val label = array(0).toDouble
@@ -84,7 +84,23 @@ object XgboostLrTrain {
       }
       }
 
-    val Array(train, test) = qttListLeaf.randomSplit(Array(0.8, 0.2))
+    val qttListTrainLeaf: RDD[LabeledPoint] = spark.sparkContext
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_train_leaf_${type1}", 50)
+      .map { x => {
+        val array = x.split("\t")
+        val label = array(0).toDouble
+        val vector1 = array(1).split("\\s+").map(x => {
+          val array = x.split(":")
+          (array(0).toInt, array(1).toDouble)
+        })
+        val vec = Vectors.sparse(1000000, vector1)
+        LabeledPoint(label, vec)
+      }
+      }
+
+    //val Array(train, test) = qttListLeaf.randomSplit(Array(0.8, 0.2))
+    val train = qttListTrainLeaf
+    val test = qttListTestLeaf
 
     val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
     lbfgs.optimizer.setUpdater(new L1Updater())
@@ -109,8 +125,15 @@ object XgboostLrTrain {
     auPRC = metrics.areaUnderPR
     auROC = metrics.areaUnderROC
     trainLog :+= "auPRC=%.6f auROC=%.6f".format(auPRC, auROC)
-    println(s"auPrc=$auPRC, auc=$auROC")
+    println(s"test: auPrc=$auPRC, auc=$auROC")
     lrmodel = lr
+
+    // train metrics
+    val xgbTrainResults = sampleTrain.map { r => (lr.predict(r.features), r.label) }
+    val metricsTrain = new BinaryClassificationMetrics(xgbTrainResults)
+    println(s"train: auPrc=${metricsTrain.areaUnderPR()}, auc=${metricsTrain.areaUnderROC()}")
+
+
     runIr(spark, binNum.toInt, 0.95)
 
     val BcWeights = spark.sparkContext.broadcast(lrmodel.weights)
@@ -968,7 +991,7 @@ object XgboostLrTrain {
       lr = Option(lr),
       //ir = Option(ir),
       dict = Option(dictpb),
-      strategy = Strategy.StrategyLRXgboost
+      strategy = Strategy.StrategyXgboostLR
     )
 
     pack.writeTo(new FileOutputStream(path))
@@ -1015,12 +1038,15 @@ object XgboostLrTrain {
     }
 
     val pack = Pack(
+      name = s"qtt-$type2-ctr-portrait11",
       createTime = new Date().getTime,
       lr = Option(lr),
       ir = Option(ir),
       dict = Option(dictpb),
-      strategy = Strategy.StrategyLRXgboost,
-      gbmfile = s"ctr-portrait9-xglr-qtt-$type2.mlm"
+      strategy = Strategy.StrategyXgboostLR,
+      gbmfile = s"data/ctr-portrait9-qtt-$type2.gbm",
+      gbmTreeLimit = 200,
+      gbmTreeDepth = 10
     )
 
     pack.writeTo(new FileOutputStream(path))

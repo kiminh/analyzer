@@ -58,7 +58,8 @@ object InsertReportSiteBuildingTarget {
                    stayinwx: Long = 0,
                    adslotid: Int = 0,
                    brand: String = "",
-                   browserType: Int = 0
+                   browserType: Int = 0,
+                   isStudent:Int=0//0未知，1学生，2非学生
                  )
 
 
@@ -92,44 +93,6 @@ object InsertReportSiteBuildingTarget {
       .getOrCreate()
 
     println("InsertReportSiteBuildingTarget is run day is %s".format(argDay))
-
-    //    var ideaData = ctx.read.jdbc(mariaAdvdbUrl,
-    //      """
-    //        |(
-    //        | SELECT DISTINCT(c.idea_id),i.clk_site_id,i.user_id
-    //        | FROM cost c
-    //        | INNER JOIN idea i ON i.id=c.idea_id
-    //        | WHERE c.date="%s" AND i.clk_site_id>0
-    //        |) xidea
-    //      """.stripMargin.format(argDay), mariaAdvdbProp)
-    //      .rdd
-    //      .map(
-    //        x =>
-    //          (x.get(0), x.get(1), x.get(2))
-    //      )
-    //      .map {
-    //        x =>
-    //          val ideaid = x._1.toString.toInt
-    //          val siteid = x._2.toString.toInt
-    //          val userid = x._3.toString.toInt
-    //          (UnionLogInfo("", userid, 0, ideaid, 0, 0, "", 0, siteid))
-    //      }
-    //      .cache()
-    //    println("ideaData count", ideaData.count())
-    //
-    //    var ideaMaps: Map[Int, UnionLogInfo] = Map()
-    //    ideaData
-    //      .map {
-    //        x =>
-    //          (x.ideaid, x)
-    //      }
-    //      .take(ideaData.count().toInt)
-    //      .foreach {
-    //        x =>
-    //          ideaMaps += (x._1 -> x._2)
-    //      }
-    //
-    //    val broadcastIdeaMaps = ctx.sparkContext.broadcast(ideaMaps)
 
     var brandMaps: Map[String, Int] = Map(
       "oppo" -> 1,
@@ -167,7 +130,7 @@ object InsertReportSiteBuildingTarget {
         """
           |SELECT searchid,ideaid,isshow,isclick,sex,age,os,province,ext['phone_level'].int_value,hour,
           |network,coin,ext['qukan_new_user'].int_value,adslot_type,media_appsid,adslotid,brand,ext_int["browser_type"],
-          |ext_int["siteid"]
+          |ext_int["siteid"],interests
           |FROM dl_cpc.cpc_union_log
           |WHERE date="%s" AND (isshow+isclick)>0 AND ext_int["siteid"]>0
         """.stripMargin.format(argDay))
@@ -206,9 +169,11 @@ object InsertReportSiteBuildingTarget {
           val browserType = x.get(17).toString.toInt
 
           val siteid = x.get(18).toString.toInt
+          val interests = x.get(19).toString
+          val isStudent = if(interests.contains("224=")) 1 else if(interests.contains("225=")) 2 else 0
 
           (searchid, (Info(siteid, ideaid, isshow, isclick, sex, age, os, province, phoneLevel, hour,
-            network, userLevel, qukanNewUser, adslotType, mediaId, 0, 0, 0, 0, adslotid, brand, browserType)))
+            network, userLevel, qukanNewUser, adslotType, mediaId, 0, 0, 0, 0, adslotid, brand, browserType,isStudent)))
       }
     //println("unionData count", unionData.count())
 
@@ -281,20 +246,36 @@ object InsertReportSiteBuildingTarget {
           val adslotid = if (a.ideaid != -1) a.adslotid else b.adslotid
           val brand = if (a.ideaid != -1) a.brand else b.brand
           val browserType = if (a.ideaid != -1) a.browserType else b.browserType
+          val isStudent = if(a.ideaid != -1) a.isStudent else b.isStudent
           Info(siteId, ideaid, isshow, isclick, sex, age, os, province, phoneLevel, hour, network, userLevel, qukanNewUser, adslotType,
-            mediaid, load, active, landpage_ok, stayinwx, adslotid, brand, browserType)
+            mediaid, load, active, landpage_ok, stayinwx, adslotid, brand, browserType,isStudent)
       }
       .map {
         x =>
           val info = x._2
           (0, Info(info.siteId, info.ideaid, info.isshow, info.isclick, info.sex, info.age, info.os, info.province, info.phoneLevel, info.hour,
             info.network, info.userLevel, info.qukanNewUser, info.adslotType, info.mediaid, info.load, info.active, info.landpage_ok, info.stayinwx,
-            info.adslotid, info.brand, info.browserType))
+            info.adslotid, info.brand, info.browserType,info.isStudent))
       }
       .filter(_._2.siteId > 0)
       .coalesce(300)
       .cache()
 
+    val inputStudentData = allData
+      .map {
+        x =>
+          val info = x._2
+          val siteId = info.siteId
+          val isshow = info.isshow
+          val isclick = info.isclick
+          val typeVal = info.isStudent
+          val load = info.load
+          val active = info.active
+          val landpage_ok = info.landpage_ok
+          val stayinwx = info.stayinwx
+          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
+      }
+    val studentData = getTargetData(inputStudentData, "student", argDay)
 
     val inputBrandData = allData
       .filter {
@@ -595,6 +576,7 @@ object InsertReportSiteBuildingTarget {
       .union(adslotIdData)
       .union(brandData)
       .union(browserTypeData)
+      .union(studentData)
       .coalesce(400)
 
 

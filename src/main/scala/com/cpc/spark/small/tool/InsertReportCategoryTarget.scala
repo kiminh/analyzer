@@ -37,7 +37,9 @@ object InsertReportCategoryTarget {
                            qu_adslot_type: Int = 0,
                            ext_adslot_type: Int = 0,
                            load: Int = 0,
-                           active: Int = 0) {
+                           active: Int = 0,
+                           isStudent:Int=0//0未知，1学生，2非学生
+                         ){
 
   }
 
@@ -63,7 +65,8 @@ object InsertReportCategoryTarget {
       .sql(
         """
           |SELECT searchid,media_appsid,adslotid,adslot_type,isshow,isclick,sex,age,os,province,ext['phone_level'].int_value,
-          |hour,ext["adclass"].int_value,isfill,price,network,coin,ext['qukan_new_user'].int_value,ext['city_level'].int_value
+          |hour,ext["adclass"].int_value,isfill,price,network,coin,ext['qukan_new_user'].int_value,ext['city_level'].int_value,
+          |interests
           |FROM dl_cpc.cpc_union_log
           |WHERE date="%s"
         """.stripMargin.format(argDay))
@@ -106,12 +109,14 @@ object InsertReportCategoryTarget {
 
           val qukan_new_user = x.getInt(17)
           val city_level = if (x.get(18) == null) 0 else x.getInt(18)
+          val interests = x.get(19).toString
+          val isStudent = if(interests.contains("224=")) 1 else if(interests.contains("225=")) 2 else 0
 
           val mtype = if (quMedia.filter(_ == mediaid).length > 0) 1 else 0
           val qu_adslot_type = if (mtype == 1) adslot_type else 0
           val ext_adslot_type = if (mtype == 0) adslot_type else 0
           val info = UnionLogInfo(searchid, mediaid, adslotid, adslot_type, isshow, isclick, sex, age, os, province, phone_level,
-            hour, adclass, req, isfull, price, network, user_level, city_level, qu_adslot_type, ext_adslot_type, load, active)
+            hour, adclass, req, isfull, price, network, user_level, city_level, qu_adslot_type, ext_adslot_type, load, active,isStudent)
           (info.searchid, (info))
       }
       .cache()
@@ -170,9 +175,10 @@ object InsertReportCategoryTarget {
           val ext_adslot_type = if (a.ext_adslot_type != -1) a.ext_adslot_type else b.ext_adslot_type
           val load = a.load + b.load
           val active = a.active + b.active
+          val isStudent = if(a.mediaid.length > 0) a.isStudent else b.isStudent
 
           val info = UnionLogInfo(a.searchid, mediaid, adslotid, adslot_type, isshow, isclick, sex, age, os, province, phone_level,
-            hour, adclass, req, isfull, price, network, user_level, city_level, qu_adslot_type, ext_adslot_type, load, active)
+            hour, adclass, req, isfull, price, network, user_level, city_level, qu_adslot_type, ext_adslot_type, load, active,isStudent)
           info
       }
       .filter {
@@ -182,6 +188,23 @@ object InsertReportCategoryTarget {
       .repartition(50)
       .cache()
     println("allData count", allData.count())
+
+    val inputStudentData = allData
+      .map {
+        x =>
+          val adclass = x._2.adclass
+          val isshow = x._2.isshow
+          val isclick = x._2.isclick
+          val target_value = x._2.isStudent
+          val load = x._2.load
+          val active = x._2.active
+          val req = x._2.req
+          val isfull = x._2.isfull
+          val price = x._2.price
+          ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
+      }
+    val studentData = getTargetData(inputStudentData, argDay, "student")
+    println("studentData count is", studentData.count())
 
     val inputMediaData = allData
       .map {
@@ -439,6 +462,7 @@ object InsertReportCategoryTarget {
       .union(cityLevelData)
       .union(quAdslotTypeData)
       .union(extAdslotType)
+      .union(studentData)
       .repartition(50)
       .cache()
 
