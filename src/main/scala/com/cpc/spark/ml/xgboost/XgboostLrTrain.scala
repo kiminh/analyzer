@@ -138,7 +138,18 @@ object XgboostLrTrain {
 
     val BcWeights = spark.sparkContext.broadcast(lrmodel.weights)
 
-    val fname = "ctr-portrait9-xglr-qtt-list.mlm"
+    var type2 = "list"
+    if (type1 == 1) {
+      type2 = "list"
+    } else if (type1 == 2) {
+      type2 = "content"
+    } else if (type1 == 3) {
+      type2 = "interact"
+    } else {
+      type2 = "unknown"
+    }
+
+    val fname = s"ctr-portrait9-xglr-qtt-$type2.mlm"
     val filename = s"/home/cpc/djq/xgboost_lr/$fname"
     saveLrPbPack(filename , "xglr", type1.toInt)
     println(filetime, filename)
@@ -1040,6 +1051,7 @@ object XgboostLrTrain {
     } else {
       type2 = "unknown"
     }
+    println(s"type2=$type2")
 
     val pack = Pack(
       name = s"qtt-$type2-ctr-portrait11",
