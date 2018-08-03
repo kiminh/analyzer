@@ -148,8 +148,8 @@ object DailyReport {
     val edate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val stmt =
       """
-        |select distinct uid from dl_cpc.cpc_union_log where `date` >= "%s" and `date` < "%s" and media_appsid  in ("80000001", "80000002")
-      """.stripMargin.format(sdate,edate)
+        |select distinct uid from dl_cpc.cpc_union_log where `date` = "%s"  and media_appsid  in ("80000001", "80000002") and adsrc = 1
+      """.stripMargin.format(sdate)
 
     val rs = spark.sql(stmt).rdd.map {
       r =>
@@ -185,6 +185,8 @@ object DailyReport {
             r =>
                 val key = r + "_UPDATA"
                 val buffer = redis.get[Array[Byte]](key).orNull
+                var is224 = false
+                var is225 = false
                 if (buffer != null) {
                   val user = UserProfile.parseFrom(buffer).toBuilder
                   if (user.getSex == 2) {
@@ -195,12 +197,18 @@ object DailyReport {
                   for (i <- 0 until user.getInterestedWordsCount) {
                     val w = user.getInterestedWords(i)
                     if (w.getTag == 224) {
-                      young += 1
+                      is224 = true
                     } else if (w.getTag == 225) {
-                      notYoung += 1
+                      is225 = true
                     } else if (w.getTag == 226) {
                       active += 1
                     }
+                  }
+                  if (is224) {
+                    young += 1
+                  }
+                  if (is225) {
+                    notYoung += 1
                   }
                 }
           }
