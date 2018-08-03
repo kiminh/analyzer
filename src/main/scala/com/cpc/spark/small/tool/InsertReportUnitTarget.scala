@@ -35,7 +35,7 @@ object InsertReportUnitTarget {
       .sql(
         """
           |SELECT searchid,userid,planid,unitid,isshow,isclick,sex,age,os,province,ext['phone_level'].int_value,hour,
-          |network,coin,ext['qukan_new_user'].int_value,adslot_type,media_appsid
+          |network,coin,ext['qukan_new_user'].int_value,adslot_type,media_appsid,interests
           |FROM dl_cpc.cpc_union_log
           |WHERE date="%s" AND userid>0 AND unitid>0 AND isshow>0
         """.stripMargin.format(argDay))
@@ -71,12 +71,14 @@ object InsertReportUnitTarget {
           val qukan_new_user = x.getInt(14)
           val adslotType = x.getInt(15)
           val mediaId = x.getString(16)
+          val interests = x.get(17).toString
+          val isStudent = if(interests.contains("224=")) 1 else if(interests.contains("225=")) 2 else 0
 
           val load = 0
           val active = 0
 
           (searchid, (userid, planid, unitid, isshow, isclick, sex, age, os, province, phone_level, hour,
-            network,user_level,qukan_new_user, load, active,adslotType,mediaId))
+            network,user_level,qukan_new_user, load, active,adslotType,mediaId,isStudent))
       }
       .cache()
     println("ideaData count", ideaData.count())
@@ -101,7 +103,7 @@ object InsertReportUnitTarget {
             case "disactive" => active -= 1
             case _ =>
           }
-          (searchid, (-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,-1,-1,-1, load, active,-1,""))
+          (searchid, (-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,-1,-1,-1, load, active,-1,"",0))
       }
       .cache()
     println("traceData count", traceData.count())
@@ -144,9 +146,10 @@ object InsertReportUnitTarget {
 
           val adslotType = if (a._17 != -1) a._17 else b._17
           val mediaId = if (a._18.length >0 ) a._18 else b._18
+          val isStudent = if (a._1 != -1 ) a._19 else b._19
 
           (userid, planid, unitid, isshow, isclick, sex, age, os, province, phone_level, hour, network,user_level,qukan_new_user,load, active,
-            adslotType,mediaId)
+            adslotType,mediaId,isStudent)
       }
       .filter {
         x =>
@@ -156,6 +159,50 @@ object InsertReportUnitTarget {
       .repartition(50)
       .cache()
     println("allData count", allData.count())
+
+    val studentData = allData
+      .map {
+        x =>
+          val userid = x._2._1
+          val planid = x._2._2
+          val unitid = x._2._3
+          val isshow = x._2._4
+          val isclick = x._2._5
+          val isStudent = x._2._6
+          val load = x._2._15
+          val active = x._2._16
+          ("%d-%d".format(unitid, isStudent), (userid, planid, unitid, isshow, isclick, isStudent, load, active))
+      }
+      .reduceByKey {
+        (a, b) =>
+          val userid = a._1
+          val planid = a._2
+          val unitid = a._3
+          val isshow = a._4 + b._4
+          val isclick = a._5 + b._5
+          val isStudent = a._6
+          val load = a._7 + b._7
+          val active = a._8 + b._8
+          (userid, planid, unitid, isshow, isclick, isStudent, load, active)
+      }
+      .map {
+        x =>
+          val userid = x._2._1
+          val planid = x._2._2
+          val unitid = x._2._3
+          val isshow = x._2._4
+          val isclick = x._2._5
+          val isStudent = x._2._6
+          val load = x._2._7
+          val active = x._2._8
+          val target_type = "student"
+          var date = argDay
+          (userid, planid, unitid, isshow, isclick, target_type, isStudent, load, active, date)
+      }
+      .repartition(50)
+      .cache()
+    println("studentData count", studentData.count())
+
 
     val sexData = allData
       .map {
@@ -647,6 +694,7 @@ object InsertReportUnitTarget {
       .union(qukanNewUserData)
       .union(adslotTypeData)
       .union(adslotTypeMediaData)
+      .union(studentData)
       .repartition(50)
       .cache()
 
