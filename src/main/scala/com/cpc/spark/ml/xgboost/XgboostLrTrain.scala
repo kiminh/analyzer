@@ -1015,6 +1015,10 @@ object XgboostLrTrain {
       predictions = irmodel.predictions.toSeq,
       meanSquareError = irError * irError
     )
+    println("ir boundaries:")
+    println(irmodel.boundaries.toSeq)
+    println("ir predictions:")
+    println(irmodel.predictions.toSeq)
     val dictpb = Dict(
 //      planid = dict("planid"),
 //      unitid = dict("unitid"),
