@@ -78,7 +78,7 @@ object GetHourReport {
           var spam_click = x.getAs[Int]("spam_click")
           var antispam_score = x.getAs[Int]("antispam_score")
           val chargeType = x.getAs[String]("charge_type")
-          var charge_fee = if (chargeType == "cpc" && isclick > 0 && antispam_score == 10000)
+          var charge_fee = if (chargeType == "cpc" && isclick > 0)
             x.getAs[Double]("charge_fee")
           else if (chargeType == "cpm")
             x.getAs[Double]("charge_fee")
