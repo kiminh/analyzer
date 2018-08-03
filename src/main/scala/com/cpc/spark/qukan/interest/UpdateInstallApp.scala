@@ -193,6 +193,7 @@ object UpdateInstallApp {
     println(all_list.count())
     println(all_list.filter(x => x._2._4.length > 5).count())
     println(all_list.filter(x => x._2._4.length > 10).count())
+    println(all_list.filter(x => x._2._3.size > 0).count())
     all_list.map(x => (x._1, x._2._4, x._2._1, x._2._2, x._2._3, date)).toDF("uid", "pkgs", "add_pkgs", "remove_pkgs", "used_pkgs", "load_date").coalesce(20).write.mode(SaveMode.Overwrite).parquet("/user/cpc/userInstalledApp/%s".format(date))
 
     val sql =
