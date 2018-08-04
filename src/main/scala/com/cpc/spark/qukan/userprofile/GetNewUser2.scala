@@ -68,12 +68,14 @@ object GetNewUser2 {
     all.take(10).foreach(println)
     val toSet = all.flatMap{
       case (uid, day) =>
-        if (sevenDay > day) {
-          Seq((uid, 228, true))
-        } else if (toWeek > day) {
-          Seq((uid, 236, true))
-        } else {
+        if (sevenDay <= day) {
           Seq()
+        } else {
+          if (toWeek > day) {
+            Seq((uid, 236, true), (uid, 228, true))
+          } else {
+            Seq((uid, 228, true))
+          }
         }
     }
     SetUserProfileTag.setUserProfileTag(toSet)
