@@ -61,7 +61,7 @@ object XgboostLrTrain {
     val version = args(2)
     println(s"type=$type1")
     println(s"upload=$upload")
-    if (version != "9" || version != "12") {
+    if (version != "9" && version != "12") {
       println(s"version is 9 or 12")
       return -1
     }
