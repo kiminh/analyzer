@@ -111,6 +111,9 @@ object XgboostLrTrain {
     val train = qttListTrainLeaf
     val test = qttListTestLeaf
 
+    println(s"train size = ${train.count()}")
+    println(s"test size = ${test.count()}")
+
     val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
     lbfgs.optimizer.setUpdater(new L1Updater())
     lbfgs.optimizer.setNumIterations(200)
