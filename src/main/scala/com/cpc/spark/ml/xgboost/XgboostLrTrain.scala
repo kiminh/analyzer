@@ -1062,8 +1062,13 @@ object XgboostLrTrain {
     }
     println(s"type2=$type2")
 
+    var depth = 10
+    if (version == "12") {
+      depth = 6
+    }
+
     val pack = Pack(
-      name = s"qtt-$type2-ctr-portrait11",
+      name = s"qtt-$type2-ctr-xglr-portrait${version}",
       createTime = new Date().getTime,
       lr = Option(lr),
       ir = Option(ir),
@@ -1071,7 +1076,7 @@ object XgboostLrTrain {
       strategy = Strategy.StrategyXgboostLR,
       gbmfile = s"data/ctr-portrait${version}-qtt-$type2.gbm",
       gbmTreeLimit = 200,
-      gbmTreeDepth = 10
+      gbmTreeDepth = depth
     )
 
     pack.writeTo(new FileOutputStream(path))
