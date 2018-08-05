@@ -62,7 +62,7 @@ object AdvChargeSnapShot {
       * 如果hive没数据，mysql数据直接写入hive，否则计算增量在写入hive
       */
     if (hiveCharge.take(1).isEmpty) {
-      
+
       if (mysqlCharge.take(1).length > 0) {
         mysqlCharge.write
           .mode(SaveMode.Overwrite)
@@ -105,7 +105,7 @@ object AdvChargeSnapShot {
         mysqlCharge("plan_id"),
         mysqlCharge("user_id"),
         mysqlCharge("date"),
-        mysqlCharge("request") - hiveCharge2("sum_request"),
+        (mysqlCharge("request") - hiveCharge2("sum_request")).cast(IntType),
         mysqlCharge("served_request") - hiveCharge2("sum_served_request"),
         mysqlCharge("activation") - hiveCharge2("sum_activation"),
         mysqlCharge("impression") - hiveCharge2("sum_impression"),
@@ -120,6 +120,7 @@ object AdvChargeSnapShot {
           "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
           "impression", "click", "fee", "cash_cost", "coupon_cost", "create_time", "modifid_time")
 
+      println("########"+joinCharge.printSchema())
       joinCharge.take(1).foreach(x => println("##### joinCharge:" + x))
 
       if (joinCharge.take(1).length > 0) {
