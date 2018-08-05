@@ -127,31 +127,29 @@ object AdvChargeSnapShot {
 
       val joinCharge2=joinCharge
         .select(
-          mysqlCharge("media_id"),
-          mysqlCharge("channel_id"),
-          mysqlCharge("adslot_id"),
-          mysqlCharge("adslot_type"),
-          mysqlCharge("idea_id"),
-          mysqlCharge("unit_id"),
-          mysqlCharge("plan_id"),
-          mysqlCharge("user_id"),
-          mysqlCharge("date"),
-          mysqlCharge("request") - hiveCharge2("sum_request"),
-          mysqlCharge("served_request") - hiveCharge2("sum_served_request"),
-          mysqlCharge("activation") - hiveCharge2("sum_activation"),
-          mysqlCharge("impression") - hiveCharge2("sum_impression"),
-          mysqlCharge("click") - hiveCharge2("sum_click"),
-          mysqlCharge("fee") - hiveCharge2("sum_fee"),
-          mysqlCharge("cash_cost") - hiveCharge2("sum_cash_cost"),
-          mysqlCharge("coupon_cost") - hiveCharge2("sum_coupon_cost"),
-          mysqlCharge("create_time"),
-          mysqlCharge("modifid_time")
+          "media_id",
+          "channel_id",
+          "adslot_id",
+          "adslot_type",
+          "idea_id",
+          "unit_id",
+          "plan_id",
+          "user_id",
+          "date",
+          "request - sum_request",
+          "served_request - sum_served_request",
+          "activation - sum_activation",
+          "impression - sum_impression",
+          "click - sum_click",
+          "fee - sum_fee",
+          "cash_cost - sum_cash_cost",
+          "coupon_cost - sum_coupon_cost",
+          "create_time",
+          "modifid_time"
       )
         .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id",
-        "unit_id", "plan_id", "user_id", "date", "request1", "served_request1", "activation1",
-        "impression1", "click1", "fee1", "cash_cost1", "coupon_cost1", "create_time1", "modifid_time1")
-
-
+        "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
+        "impression", "click", "fee", "cash_cost", "coupon_cost", "create_time", "modifid_time")
 
 
       joinCharge.take(1).foreach(x => println("##### joinCharge:" + x))
