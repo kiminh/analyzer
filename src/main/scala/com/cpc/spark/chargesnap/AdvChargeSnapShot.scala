@@ -62,13 +62,16 @@ object AdvChargeSnapShot {
       * 如果hive没数据，mysql数据直接写入hive，否则计算增量在写入hive
       */
     if (hiveCharge.take(1).isEmpty) {
+      
       if (mysqlCharge.take(1).length > 0) {
         mysqlCharge.write
           .mode(SaveMode.Overwrite)
           .parquet("/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s".format(hiveTable, datee, hour))
+        println("###### mysqlCharge write hive successfully")
       } else {
-        println("######mysqlCharge为空")
+        println("###### mysqlCharge为空")
       }
+
     } else {
 
       //分组累加当日每小时的请求数，填充数，广告激励数，展示数，点击数，请求费用数，消费现金，消费优惠券
@@ -80,7 +83,7 @@ object AdvChargeSnapShot {
           "plan_id", "user_id", "date", "sum_request", "sum_served_request", "sum_activation", "sum_impression",
           "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")
 
-      hiveCharge2.take(1).foreach(x => println("#####hiveCharge2:" + x))
+      hiveCharge2.take(1).foreach(x => println("##### hiveCharge2:" + x))
 
       /**
         * 进行left outer join
@@ -91,38 +94,40 @@ object AdvChargeSnapShot {
         .join(hiveCharge2, Seq("media_id", "channel_id", "adslot_id", "adslot_type",
           "idea_id", "unit_id", "plan_id", "user_id", "date"), "left_outer")
         .na.fill(0, Seq("sum_request", "sum_served_request", "sum_activation", "sum_impression",
-        "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost"))  //用0填充null
+        "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")) //用0填充null
         .select(
-          mysqlCharge("media_id"),
-          mysqlCharge("channel_id"),
-          mysqlCharge("adslot_id"),
-          mysqlCharge("adslot_type"),
-          mysqlCharge("idea_id"),
-          mysqlCharge("unit_id"),
-          mysqlCharge("plan_id"),
-          mysqlCharge("user_id"),
-          mysqlCharge("date"),
-          mysqlCharge("request") - hiveCharge2("sum_request"),
-          mysqlCharge("served_request") - hiveCharge2("sum_served_request"),
-          mysqlCharge("activation") - hiveCharge2("sum_activation"),
-          mysqlCharge("impression") - hiveCharge2("sum_impression"),
-          mysqlCharge("click") - hiveCharge2("sum_click"),
-          mysqlCharge("fee") - hiveCharge2("sum_fee"),
-          mysqlCharge("cash_cost") - hiveCharge2("sum_cash_cost"),
-          mysqlCharge("coupon_cost") - hiveCharge2("sum_coupon_cost"),
-          mysqlCharge("create_time"),
-          mysqlCharge("modifid_time")
-        )
+        mysqlCharge("media_id"),
+        mysqlCharge("channel_id"),
+        mysqlCharge("adslot_id"),
+        mysqlCharge("adslot_type"),
+        mysqlCharge("idea_id"),
+        mysqlCharge("unit_id"),
+        mysqlCharge("plan_id"),
+        mysqlCharge("user_id"),
+        mysqlCharge("date"),
+        mysqlCharge("request") - hiveCharge2("sum_request"),
+        mysqlCharge("served_request") - hiveCharge2("sum_served_request"),
+        mysqlCharge("activation") - hiveCharge2("sum_activation"),
+        mysqlCharge("impression") - hiveCharge2("sum_impression"),
+        mysqlCharge("click") - hiveCharge2("sum_click"),
+        mysqlCharge("fee") - hiveCharge2("sum_fee"),
+        mysqlCharge("cash_cost") - hiveCharge2("sum_cash_cost"),
+        mysqlCharge("coupon_cost") - hiveCharge2("sum_coupon_cost"),
+        mysqlCharge("create_time"),
+        mysqlCharge("modifid_time")
+      )
         .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id",
           "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
           "impression", "click", "fee", "cash_cost", "coupon_cost", "create_time", "modifid_time")
 
-      joinCharge.take(1).foreach(x => println("#####joinCharge:" + x))
+      joinCharge.take(1).foreach(x => println("##### joinCharge:" + x))
 
-      if (joinCharge.take(1).isEmpty) {
+      if (joinCharge.take(1).length > 0) {
         joinCharge.write
           .mode(SaveMode.Overwrite)
           .parquet("/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s".format(hiveTable, datee, hour))
+
+        println("###### joinCharge write hive successfully")
       } else {
         println("###### joinCharge为空")
       }
@@ -131,11 +136,11 @@ object AdvChargeSnapShot {
 
     spark.sql(
       """
-        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`thedate` = "%s", `thehour` = "%s")
         | LOCATION  '/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s'
       """.stripMargin.format(hiveTable, datee, hour, hiveTable, datee, hour))
 
-    println("~~~~~~write cahrge to hive successfully")
+    println("~~~~~~write charge to hive successfully")
   }
 
 
