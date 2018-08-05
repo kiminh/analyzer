@@ -27,7 +27,8 @@ object AdvChargeSnapShot {
     //获得SparkSession
     val spark = SparkSession
       .builder()
-      .appName("get charge snapshot")
+      .appName("get charge snapshot date = %s".format(datee))
+      .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
 
