@@ -35,7 +35,7 @@ object AdvChargeSnapShot {
       StructField("plan_id", DataTypes.IntegerType, true),
       StructField("user_id", DataTypes.IntegerType, true),
       StructField("date", DataTypes.StringType, true),
-      StructField("request", DataTypes.StringType, true),
+      StructField("request", DataTypes.IntegerType, true),
       StructField("served_request", DataTypes.IntegerType, true),
       StructField("activation", DataTypes.IntegerType, true),
       StructField("impression", DataTypes.IntegerType, true),
@@ -91,7 +91,8 @@ object AdvChargeSnapShot {
     if (hiveCharge.count() == 0) {
       println("##############")
       if (mysqlCharge.take(1).length > 0) {
-        mysqlCharge.write
+        spark.createDataFrame(mysqlCharge.rdd, schema)
+          .write
           .mode(SaveMode.Overwrite)
           .parquet("/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s".format(hiveTable, datee, hour))
         println("###### mysqlCharge write hive successfully")
