@@ -105,7 +105,7 @@ object AdvChargeSnapShot {
         mysqlCharge("plan_id"),
         mysqlCharge("user_id"),
         mysqlCharge("date"),
-        (mysqlCharge("request") - hiveCharge2("sum_request")).cast(IntType),
+        mysqlCharge("request") - hiveCharge2("sum_request"),
         mysqlCharge("served_request") - hiveCharge2("sum_served_request"),
         mysqlCharge("activation") - hiveCharge2("sum_activation"),
         mysqlCharge("impression") - hiveCharge2("sum_impression"),
