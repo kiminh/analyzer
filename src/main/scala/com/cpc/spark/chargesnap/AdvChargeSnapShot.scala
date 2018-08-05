@@ -79,13 +79,11 @@ object AdvChargeSnapShot {
       //分组累加当日每小时的请求数，填充数，广告激励数，展示数，点击数，请求费用数，消费现金，消费优惠券
       val hiveCharge2 = hiveCharge.groupBy("media_id", "channel_id", "adslot_id",
         "adslot_type", "idea_id", "unit_id", "plan_id", "user_id", "date")
-        .sum("request", "served_request", "activation", "impression", "click", "fee",
-          "cash_cost", "coupon_cost")
+        .sum("request", "served_request", "activation", "impression", "click",
+          "fee", "cash_cost", "coupon_cost")
         .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id", "unit_id",
-          "plan_id", "user_id", "date", "sum_request", "sum_served_request", "sum_activation", "sum_impression",
-          "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")
-
-      hiveCharge2.take(1).foreach(x => println("##### hiveCharge2:" + x))
+          "plan_id", "user_id", "date", "sum_request", "sum_served_request", "sum_activation",
+          "sum_impression", "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")
 
       /**
         * 进行left outer join
