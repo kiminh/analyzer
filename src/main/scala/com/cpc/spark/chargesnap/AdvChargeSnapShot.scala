@@ -148,8 +148,8 @@ object AdvChargeSnapShot {
           mysqlCharge("modifid_time")
       )
         .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id",
-        "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
-        "impression", "click", "fee", "cash_cost", "coupon_cost", "create_time", "modifid_time")
+        "unit_id", "plan_id", "user_id", "date", "request1", "served_request1", "activation1",
+        "impression1", "click1", "fee1", "cash_cost1", "coupon_cost1", "create_time1", "modifid_time1")
 
 
 
