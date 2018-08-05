@@ -54,7 +54,7 @@ object AdvChargeSnapShot {
       s"""
          |select *
          |from dl_cpc.$hiveTable
-         |where date='$datee'
+         |where thedate='$datee'
       """.stripMargin)
 
     /**
@@ -64,7 +64,7 @@ object AdvChargeSnapShot {
       if (mysqlCharge.take(1).length > 0) {
         mysqlCharge.write
           .mode(SaveMode.Overwrite)
-          .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(hiveTable, datee, hour))
+          .parquet("/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s".format(hiveTable, datee, hour))
       } else {
         println("######mysqlCharge为空")
       }
@@ -121,7 +121,7 @@ object AdvChargeSnapShot {
       if (joinCharge.take(1).isEmpty) {
         joinCharge.write
           .mode(SaveMode.Overwrite)
-          .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(hiveTable, datee, hour))
+          .parquet("/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s".format(hiveTable, datee, hour))
       } else {
         println("###### joinCharge为空")
       }
@@ -131,7 +131,7 @@ object AdvChargeSnapShot {
     spark.sql(
       """
         |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/warehouse/dl_cpc.db/%s/date=%s/hour=%s'
+        | LOCATION  '/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s'
       """.stripMargin.format(hiveTable, datee, hour, hiveTable, datee, hour))
 
     println("~~~~~~write cahrge to hive successfully")
