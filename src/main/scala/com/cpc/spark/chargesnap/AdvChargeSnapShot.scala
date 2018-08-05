@@ -35,7 +35,6 @@ object AdvChargeSnapShot {
       StructField("plan_id", DataTypes.IntegerType, true),
       StructField("user_id", DataTypes.IntegerType, true),
       StructField("date", DataTypes.StringType, true),
-
       StructField("request", DataTypes.StringType, true),
       StructField("served_request", DataTypes.IntegerType, true),
       StructField("activation", DataTypes.IntegerType, true),
@@ -44,7 +43,6 @@ object AdvChargeSnapShot {
       StructField("fee", DataTypes.IntegerType, true),
       StructField("cash_cost", DataTypes.IntegerType, true),
       StructField("coupon_cost", DataTypes.IntegerType, true),
-
       StructField("create_time", DataTypes.StringType, true),
       StructField("modifid_time", DataTypes.StringType, true)
     ))
@@ -71,10 +69,9 @@ object AdvChargeSnapShot {
       .option("user", user)
       .option("password", passwd)
       .option("dbtable", table)
-      .schema(schema)
       .load()
 
-    println("schema" + mysqlCharge.printSchema())
+    println("mysql schema" + mysqlCharge.printSchema())
     mysqlCharge.take(1).foreach(x => println("##### mysqlCharge:" + x))
 
     //从hive中获得当日charge数据
@@ -85,7 +82,7 @@ object AdvChargeSnapShot {
          |where thedate='$datee'
       """.stripMargin)
 
-    println("schema" + hiveCharge.printSchema())
+    println("hive schema" + hiveCharge.printSchema())
     hiveCharge.take(1).foreach(x => println("##### hiveCharge:" + x))
 
     /**
