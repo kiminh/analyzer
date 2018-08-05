@@ -2,7 +2,8 @@ package com.cpc.spark.chargesnap
 
 import java.util.Properties
 
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
 
 object AdvChargeSnapShot {
@@ -23,6 +24,30 @@ object AdvChargeSnapShot {
     val mysqlTable = args(1)
     val datee = args(2)
     val hour = args(3)
+
+    val schema = StructType(Array(
+      StructField("media_id", DataTypes.IntegerType, true),
+      StructField("channel_id", DataTypes.IntegerType, true),
+      StructField("adslot_id", DataTypes.IntegerType, true),
+      StructField("adslot_type", DataTypes.IntegerType, true),
+      StructField("idea_id", DataTypes.IntegerType, true),
+      StructField("unit_id", DataTypes.IntegerType, true),
+      StructField("plan_id", DataTypes.IntegerType, true),
+      StructField("user_id", DataTypes.IntegerType, true),
+      StructField("date", DataTypes.StringType, true),
+
+      StructField("request", DataTypes.StringType, true),
+      StructField("served_request", DataTypes.IntegerType, true),
+      StructField("activation", DataTypes.IntegerType, true),
+      StructField("impression", DataTypes.IntegerType, true),
+      StructField("click", DataTypes.IntegerType, true),
+      StructField("fee", DataTypes.IntegerType, true),
+      StructField("cash_cost", DataTypes.IntegerType, true),
+      StructField("coupon_cost", DataTypes.IntegerType, true),
+
+      StructField("create_time", DataTypes.StringType, true),
+      StructField("modifid_time", DataTypes.StringType, true)
+    ))
 
     //获得SparkSession
     val spark = SparkSession
@@ -46,8 +71,10 @@ object AdvChargeSnapShot {
       .option("user", user)
       .option("password", passwd)
       .option("dbtable", table)
+      .schema(schema)
       .load()
 
+    println("schema"+mysqlCharge.printSchema())
     mysqlCharge.take(1).foreach(x => println("##### mysqlCharge:" + x))
 
     //从hive中获得当日charge数据
@@ -58,7 +85,8 @@ object AdvChargeSnapShot {
          |where thedate='$datee'
       """.stripMargin)
 
-    mysqlCharge.take(1).foreach(x => println("##### hiveCharge:" + x))
+    println("schema"+hiveCharge.printSchema())
+    hiveCharge.take(1).foreach(x => println("##### hiveCharge:" + x))
 
     /**
       * 如果hive没数据，mysql数据直接写入hive，否则计算增量在写入hive
@@ -85,6 +113,8 @@ object AdvChargeSnapShot {
           "plan_id", "user_id", "date", "sum_request", "sum_served_request", "sum_activation",
           "sum_impression", "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")
 
+      println("hive2 schema"+hiveCharge2.printSchema())
+
       /**
         * 进行left outer join
         * 计算增量
@@ -95,36 +125,40 @@ object AdvChargeSnapShot {
           "idea_id", "unit_id", "plan_id", "user_id", "date"), "left_outer")
         .na.fill(0, Seq("sum_request", "sum_served_request", "sum_activation", "sum_impression",
         "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")) //用0填充null
-        .select(
-        mysqlCharge("media_id"),
-        mysqlCharge("channel_id"),
-        mysqlCharge("adslot_id"),
-        mysqlCharge("adslot_type"),
-        mysqlCharge("idea_id"),
-        mysqlCharge("unit_id"),
-        mysqlCharge("plan_id"),
-        mysqlCharge("user_id"),
-        mysqlCharge("date"),
-        mysqlCharge("request") - hiveCharge2("sum_request"),
-        mysqlCharge("served_request") - hiveCharge2("sum_served_request"),
-        mysqlCharge("activation") - hiveCharge2("sum_activation"),
-        mysqlCharge("impression") - hiveCharge2("sum_impression"),
-        mysqlCharge("click") - hiveCharge2("sum_click"),
-        mysqlCharge("fee") - hiveCharge2("sum_fee"),
-        mysqlCharge("cash_cost") - hiveCharge2("sum_cash_cost"),
-        mysqlCharge("coupon_cost") - hiveCharge2("sum_coupon_cost"),
-        mysqlCharge("create_time"),
-        mysqlCharge("modifid_time")
-      )
-        .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id",
-          "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
-          "impression", "click", "fee", "cash_cost", "coupon_cost", "create_time", "modifid_time")
+        .rdd.map{
+        r=>
+          Row(
+            r.getAs("media_id"),
+            r.getAs("channel_id"),
+            r.getAs("adslot_id"),
+            r.getAs("adslot_type"),
+            r.getAs("idea_id"),
+            r.getAs("unit_id"),
+            r.getAs("plan_id"),
+            r.getAs("user_id"),
+            r.getAs("date"),
+            r.getAs("request")-r.getAs("sum_request"),
+            r.getAs("served_request")-r.getAs("sum_served_request"),
+            r.getAs("activation")-r.getAs("sum_activation"),
+            r.getAs("impression")-r.getAs("sum_impression"),
+            r.getAs("click")-r.getAs("sum_click"),
+            r.getAs("fee")-r.getAs("sum_fee"),
+            r.getAs("sum_cash_cost")-r.getAs("sum_cash_cost"),
+            r.getAs("sum_coupon_cost")-r.getAs("sum_coupon_cost"),
+            r.getAs("create_time"),
+            r.getAs("modifid_time")
+          )
+      }
+//        .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id",
+//          "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
+//          "impression", "click", "fee", "cash_cost", "coupon_cost", "create_time", "modifid_time")
 
-      println("########" + joinCharge.printSchema())
+
       joinCharge.take(1).foreach(x => println("##### joinCharge:" + x))
 
       if (joinCharge.take(1).length > 0) {
-        joinCharge.write
+        spark.createDataFrame(joinCharge,schema)
+          .write
           .mode(SaveMode.Overwrite)
           .parquet("/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s".format(hiveTable, datee, hour))
 
@@ -134,6 +168,8 @@ object AdvChargeSnapShot {
       }
 
     }
+
+
 
     spark.sql(
       """
