@@ -91,7 +91,7 @@ object AdvChargeSnapShot {
     if (hiveCharge.count() == 0) {
       println("##############")
       if (mysqlCharge.take(1).length > 0) {
-        spark.createDataFrame(mysqlCharge.rdd, schema)
+        mysqlCharge
           .write
           .mode(SaveMode.Overwrite)
           .parquet("/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s".format(hiveTable, datee, hour))
@@ -155,7 +155,7 @@ object AdvChargeSnapShot {
       joinCharge.take(1).foreach(x => println("##### joinCharge:" + x))
 
       if (joinCharge.take(1).length > 0) {
-        spark.createDataFrame(joinCharge.rdd, schema)
+        joinCharge
           .write
           .mode(SaveMode.Overwrite)
           .parquet("/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s".format(hiveTable, datee, hour))
