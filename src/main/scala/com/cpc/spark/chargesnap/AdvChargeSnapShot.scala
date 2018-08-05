@@ -124,6 +124,8 @@ object AdvChargeSnapShot {
           "idea_id", "unit_id", "plan_id", "user_id", "date"), "left_outer")
         .na.fill(0, Seq("sum_request", "sum_served_request", "sum_activation", "sum_impression",
         "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")) //用0填充null
+
+      val joinCharge2=joinCharge
         .select(
           mysqlCharge("media_id"),
           mysqlCharge("channel_id"),
@@ -154,7 +156,7 @@ object AdvChargeSnapShot {
 
       joinCharge.take(1).foreach(x => println("##### joinCharge:" + x))
 
-      if (joinCharge.take(1).length > 0) {
+      if (joinCharge2.take(1).length > 0) {
         joinCharge
           .write
           .mode(SaveMode.Overwrite)
