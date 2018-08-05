@@ -126,7 +126,7 @@ object AdvChargeSnapShot {
         "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")) //用0填充null
 
       val joinCharge2=joinCharge
-        .select(
+        .selectExpr(
           "media_id",
           "channel_id",
           "adslot_id",
