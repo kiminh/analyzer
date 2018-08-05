@@ -61,7 +61,7 @@ object AdvChargeSnapShot {
     /**
       * 如果hive没数据，mysql数据直接写入hive，否则计算增量在写入hive
       */
-    if (hiveCharge.) {
+    if (hiveCharge.rdd.isEmpty) {
 
       if (mysqlCharge.take(1).length > 0) {
         mysqlCharge.write
