@@ -48,7 +48,7 @@ object AdvChargeSnapShot {
       .option("dbtable", table)
       .load()
 
-    mysqlCharge.take(1).foreach(x => println("#####mysqlCharge:" + x))
+    mysqlCharge.take(1).foreach(x => println("##### mysqlCharge:" + x))
 
     //从hive中获得当日charge数据
     val hiveCharge = spark.sql(
@@ -58,10 +58,13 @@ object AdvChargeSnapShot {
          |where thedate='$datee'
       """.stripMargin)
 
+    mysqlCharge.take(1).foreach(x => println("##### hiveCharge:" + x))
+
     /**
       * 如果hive没数据，mysql数据直接写入hive，否则计算增量在写入hive
       */
-    if (hiveCharge.count() == 0) {
+    if (hiveCharge.take(1).length == 0) {
+      println("##############")
       if (mysqlCharge.take(1).length > 0) {
         mysqlCharge.write
           .mode(SaveMode.Overwrite)
