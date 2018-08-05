@@ -126,7 +126,16 @@ object AdvChargeSnapShot {
         .na.fill(0, Seq("sum_request", "sum_served_request", "sum_activation", "sum_impression",
         "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")) //用0填充null
         .rdd.map{
-        r=>
+        r=>{
+          val request1=r.getAs("request")-r.getAs("sum_request")
+          val served_request1=r.getAs("served_request")-r.getAs("sum_served_request")
+          val activation1=r.getAs("activation")-r.getAs("sum_activation")
+          val impression1=r.getAs("impression")-r.getAs("sum_impression")
+          val click1=r.getAs("click")-r.getAs("sum_click")
+          val fee1=r.getAs("fee")-r.getAs("sum_fee")
+          val cash_cost1=r.getAs("cash_cost")-r.getAs("sum_cash_cost")
+          val coupon_cost1=r.getAs("coupon_cost")-r.getAs("sum_coupon_cost")
+
           Row(
             r.getAs("media_id"),
             r.getAs("channel_id"),
@@ -137,17 +146,19 @@ object AdvChargeSnapShot {
             r.getAs("plan_id"),
             r.getAs("user_id"),
             r.getAs("date"),
-            (r.getAs("request")-r.getAs("sum_request")),
-            (r.getAs("served_request")-r.getAs("sum_served_request")),
-            (r.getAs("activation")-r.getAs("sum_activation")),
-            (r.getAs("impression")-r.getAs("sum_impression")),
-            (r.getAs("click")-r.getAs("sum_click")),
-            (r.getAs("fee")-r.getAs("sum_fee")),
-            (r.getAs("sum_cash_cost")-r.getAs("sum_cash_cost")),
-            (r.getAs("sum_coupon_cost")-r.getAs("sum_coupon_cost")),
+            request1,
+            served_request1,
+            activation1,
+            impression1,
+            click1,
+            fee1,
+            cash_cost1,
+            coupon_cost1,
             r.getAs("create_time"),
             r.getAs("modifid_time")
           )
+        }
+
       }
 //        .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id",
 //          "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
