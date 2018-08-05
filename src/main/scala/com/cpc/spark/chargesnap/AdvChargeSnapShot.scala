@@ -72,11 +72,11 @@ object AdvChargeSnapShot {
 
       //分组累加当日每小时的请求数，填充数，广告激励数，展示数，点击数，请求费用数，消费现金，消费优惠券
       val hiveCharge2 = hiveCharge.groupBy("media_id", "channel_id", "adslot_id",
-        "adslot_type", "idea_id", "unit_id", "plan_id", "userid", "date")
+        "adslot_type", "idea_id", "unit_id", "plan_id", "user_id", "date")
         .sum("request", "served_request", "activation", "impression", "click", "fee",
           "cash_cost", "coupon_cost")
         .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id", "unit_id",
-          "plan_id", "userid", "date", "sum_request", "sum_served_request", "sum_activation", "sum_impression",
+          "plan_id", "user_id", "date", "sum_request", "sum_served_request", "sum_activation", "sum_impression",
           "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")
 
       hiveCharge2.take(1).foreach(x => println("#####hiveCharge2:" + x))
@@ -88,7 +88,7 @@ object AdvChargeSnapShot {
 
       val joinCharge = mysqlCharge
         .join(hiveCharge2, Seq("media_id", "channel_id", "adslot_id", "adslot_type",
-          "idea_id", "unit_id", "plan_id", "userid", "date"), "left_outer")
+          "idea_id", "unit_id", "plan_id", "user_id", "date"), "left_outer")
         .na.fill(0, Seq("sum_request", "sum_served_request", "sum_activation", "sum_impression",
         "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost"))  //用0填充null
         .select(
@@ -99,7 +99,7 @@ object AdvChargeSnapShot {
           mysqlCharge("idea_id"),
           mysqlCharge("unit_id"),
           mysqlCharge("plan_id"),
-          mysqlCharge("userid"),
+          mysqlCharge("user_id"),
           mysqlCharge("date"),
           mysqlCharge("request") - hiveCharge2("sum_request"),
           mysqlCharge("served_request") - hiveCharge2("sum_served_request"),
@@ -113,7 +113,7 @@ object AdvChargeSnapShot {
           mysqlCharge("modifid_time")
         )
         .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id",
-          "unit_id", "plan_id", "userid", "date", "request", "served_request", "activation",
+          "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
           "impression", "click", "fee", "cash_cost", "coupon_cost", "create_time", "modifid_time")
 
       joinCharge.take(1).foreach(x => println("#####joinCharge:" + x))
