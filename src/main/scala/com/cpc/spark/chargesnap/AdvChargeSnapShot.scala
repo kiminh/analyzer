@@ -63,7 +63,7 @@ object AdvChargeSnapShot {
     /**
       * 如果hive没数据，mysql数据直接写入hive，否则计算增量在写入hive
       */
-    if (hiveCharge.take(1).length == 0) {
+    if (hiveCharge.take(1).isEmpty) {
       println("##############")
       if (mysqlCharge.take(1).length > 0) {
         mysqlCharge.write
@@ -75,7 +75,7 @@ object AdvChargeSnapShot {
       }
 
     } else {
-
+      println("~~~~~~~~~~~~~~~~~~")
       //分组累加当日每小时的请求数，填充数，广告激励数，展示数，点击数，请求费用数，消费现金，消费优惠券
       val hiveCharge2 = hiveCharge.groupBy("media_id", "channel_id", "adslot_id",
         "adslot_type", "idea_id", "unit_id", "plan_id", "user_id", "date")
