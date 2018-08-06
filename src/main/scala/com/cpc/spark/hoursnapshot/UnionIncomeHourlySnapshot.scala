@@ -49,6 +49,7 @@ object UnionIncomeHourlySnapshot {
       .option("password", passwd)
       .option("dbtable", table)
       .load()
+      .repartition(5)
 
     println("mysql schema" + mysqlCharge.printSchema())
     mysqlCharge.take(1).foreach(x => println("##### mysqlCharge:" + x))
