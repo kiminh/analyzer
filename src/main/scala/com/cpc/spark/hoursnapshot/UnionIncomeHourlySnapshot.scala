@@ -106,6 +106,7 @@ object UnionIncomeHourlySnapshot {
       * 如果hive没数据，mysql数据直接写入hive，否则计算增量在写入hive
       */
     if (hiveCharge.count() == 0) {
+      println("##############")
       if (mysqlCharge.take(1).length > 0) {
         mysqlCharge
           .write
@@ -214,7 +215,7 @@ object UnionIncomeHourlySnapshot {
         | LOCATION  '/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s'
       """.stripMargin.format(hiveTable, datee, hour, hiveTable, datee, hour))
 
-    println("~~~~~~write charge to hive successfully")
+    println("~~~~~~write metadata to hive income successfully")
 
 
   }
