@@ -15,6 +15,7 @@ enum Strategy {
     StrategyLR = 1;
     StrategyXgboost = 2;
     StrategyLRXgboost = 3;
+    StrategyXgboostLR = 4;
 }
 
 message IRModel {
@@ -43,6 +44,7 @@ message Pack {
     uint32 gbm_tree_limit = 6;
     string gbmfile = 7;
     Strategy strategy = 8;
+    uint32 gbm_tree_depth = 9;
 }
 
 message ProtoPortrait {
