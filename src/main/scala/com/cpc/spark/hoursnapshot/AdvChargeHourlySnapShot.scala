@@ -63,7 +63,7 @@ object AdvChargeHourlySnapShot {
       """.stripMargin)
 
     println("hive schema" + hiveCharge.printSchema())
-    hiveCharge.take(1).foreach(x => println("##### hiveCharge:" + x))
+//    hiveCharge.take(1).foreach(x => println("##### hiveCharge:" + x))
 
     /**
       * 如果hive没数据，mysql数据直接写入hive，否则计算增量在写入hive
