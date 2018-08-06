@@ -168,7 +168,7 @@ object InsertReportUnitTarget {
           val unitid = x._2._3
           val isshow = x._2._4
           val isclick = x._2._5
-          val isStudent = x._2._6
+          val isStudent = x._2._19
           val load = x._2._15
           val active = x._2._16
           ("%d-%d".format(unitid, isStudent), (userid, planid, unitid, isshow, isclick, isStudent, load, active))
