@@ -114,7 +114,7 @@ object AdvChargeHourlySnapShot {
           "sum_impression", "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")
 
       println("hiveCharge2 schema" + hiveCharge2.printSchema())
-      hiveCharge2.take(1).foreach(x => println("##### mysqlCharge:" + x))
+      hiveCharge2.take(1).foreach(x => println("##### hiveCharge2:" + x))
 
       /**
         * 进行left outer join
