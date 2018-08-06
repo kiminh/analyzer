@@ -1,19 +1,14 @@
-package com.cpc.spark.chargesnap
+package com.cpc.spark.hoursnapshot
 
-import java.util.Properties
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
-import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
-import org.apache.spark.sql.{Row, SaveMode, SparkSession}
-
-
-object AdvChargeSnapShot {
+object UnionIncomeHourlySnapshot {
   def main(args: Array[String]): Unit = {
-
     //参数小于1个
     if (args.length < 1) {
       System.err.println(
         s"""
-           |usage: advchargesnapshot table date hour
+           |usage: UnionIncomeHourlySnapshot table date hour
          """.stripMargin
       )
       System.exit(1)
@@ -25,38 +20,16 @@ object AdvChargeSnapShot {
     val datee = args(2)
     val hour = args(3)
 
-    val schema = StructType(Array(
-      StructField("media_id", DataTypes.IntegerType, true),
-      StructField("channel_id", DataTypes.IntegerType, true),
-      StructField("adslot_id", DataTypes.IntegerType, true),
-      StructField("adslot_type", DataTypes.IntegerType, true),
-      StructField("idea_id", DataTypes.IntegerType, true),
-      StructField("unit_id", DataTypes.IntegerType, true),
-      StructField("plan_id", DataTypes.IntegerType, true),
-      StructField("user_id", DataTypes.IntegerType, true),
-      StructField("date", DataTypes.StringType, true),
-      StructField("request", DataTypes.IntegerType, true),
-      StructField("served_request", DataTypes.IntegerType, true),
-      StructField("activation", DataTypes.IntegerType, true),
-      StructField("impression", DataTypes.IntegerType, true),
-      StructField("click", DataTypes.IntegerType, true),
-      StructField("fee", DataTypes.IntegerType, true),
-      StructField("cash_cost", DataTypes.IntegerType, true),
-      StructField("coupon_cost", DataTypes.IntegerType, true),
-      StructField("create_time", DataTypes.StringType, true),
-      StructField("modifid_time", DataTypes.StringType, true)
-    ))
-
     //获得SparkSession
     val spark = SparkSession
       .builder()
-      .appName("get charge snapshot date = %s".format(datee))
+      .appName("get income snapshot date = %s".format(datee))
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
 
     //定义url, user, psssword, driver, table
-    val url = "jdbc:mysql://rr-2ze8n4bxmg3snxf7e.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+    val url = "jdbc:mysql://rr-2ze8n4bxmg3snxf7e.mysql.rds.aliyuncs.com:3306/union?useUnicode=true&characterEncoding=utf-8"
     val user = "rd"
     val passwd = "rdv587@123"
     val driver = "com.mysql.jdbc.Driver"
@@ -104,10 +77,9 @@ object AdvChargeSnapShot {
       println("~~~~~~~~~~~~~~~~~~")
 
       //分组累加当日每小时的请求数，填充数，广告激励数，展示数，点击数，请求费用数，消费现金，消费优惠券
-      val hiveCharge2 = hiveCharge.groupBy("media_id", "channel_id", "adslot_id",
-        "adslot_type", "idea_id", "unit_id", "plan_id", "user_id", "date")
-        .sum("request", "served_request", "activation", "impression", "click",
-          "fee", "cash_cost", "coupon_cost")
+      val hiveCharge2 = hiveCharge.groupBy("media_id", "channel_id", "adslot_id", "date","data_type")
+        .sum("request", "served_request", "impression", "click","impression2","click2","imp_media_income", "imp_channel_income",
+          "click_media_income","click_channel_income","media_income","channel_income","media_income2","rate","click2_media_income")
         .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id", "unit_id",
           "plan_id", "user_id", "date", "sum_request", "sum_served_request", "sum_activation",
           "sum_impression", "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")
@@ -146,37 +118,15 @@ object AdvChargeSnapShot {
           "coupon_cost - sum_coupon_cost",
           "create_time",
           "modifid_time"
-      )
+        )
         .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id",
-        "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
-        "impression", "click", "fee", "cash_cost", "coupon_cost", "create_time", "modifid_time")
+          "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
+          "impression", "click", "fee", "cash_cost", "coupon_cost", "create_time", "modifid_time")
 
 
       joinCharge.take(1).foreach(x => println("##### joinCharge:" + x))
 
-      if (joinCharge2.take(1).length > 0) {
-        joinCharge
-          .write
-          .mode(SaveMode.Overwrite)
-          .parquet("/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s".format(hiveTable, datee, hour))
 
-        println("###### joinCharge write hive successfully")
-      } else {
-        println("###### joinCharge为空")
-      }
-
-    }
-
-
-    spark.sql(
-      """
-        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`thedate` = "%s", `thehour` = "%s")
-        | LOCATION  '/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s'
-      """.stripMargin.format(hiveTable, datee, hour, hiveTable, datee, hour))
-
-    println("~~~~~~write charge to hive successfully")
 
   }
-
-
 }
