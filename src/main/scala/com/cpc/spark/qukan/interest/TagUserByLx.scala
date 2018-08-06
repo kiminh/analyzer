@@ -53,6 +53,7 @@ object TagUserByLx {
         (uid, 235, true)
     }
     println(lx.count())
+    lx.take(10).foreach(println)
     val ret = SetUserProfileTag.setUserProfileTag(lx)
 
   }
