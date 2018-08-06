@@ -2,6 +2,12 @@ package com.cpc.spark.hoursnapshot
 
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
+/**
+  * 从MySQL的union数据库的income表中，获得income表中每小时增量的快照存在hive表中；
+  * MySQL中的表  点击10s, 请求、展示80s更新一次；
+  * 增量快照：本小时的点击量-上一个小时的点击量；其它同理；
+  *
+  */
 object UnionIncomeHourlySnapshot {
   def main(args: Array[String]): Unit = {
     //参数小于1个
@@ -79,54 +85,98 @@ object UnionIncomeHourlySnapshot {
       //分组累加当日每小时的请求数，填充数，广告激励数，展示数，点击数，请求费用数，消费现金，消费优惠券
       val hiveCharge2 = hiveCharge.groupBy("media_id", "channel_id", "adslot_id", "date", "data_type")
         .sum("request", "served_request", "impression", "click", "impression2", "click2", "imp_media_income", "imp_channel_income",
-          "click_media_income", "click_channel_income", "media_income", "channel_income", "media_income2", "rate", "click2_media_income")
-        .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id", "unit_id",
-          "plan_id", "user_id", "date", "sum_request", "sum_served_request", "sum_activation",
-          "sum_impression", "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")
+          "click_media_income", "click_channel_income", "media_income", "channel_income", "media_income2", "click2_media_income",
+        "coupon","bd_income","settlement_income","settlement_click","settlement_impression","allocated_income","hd_click","hd_impression")
+        .toDF("media_id", "channel_id", "adslot_id", "date", "data_type","sum_request", "sum_served_request", "sum_impression",
+          "sum_click", "sum_impression2", "sum_click2", "sum_imp_media_income", "sum_imp_channel_income", "sum_click_media_income",
+          "sum_click_channel_income", "sum_media_income", "sum_channel_income", "sum_media_income2", "sum_click2_media_income",
+          "sum_coupon","sum_bd_income","sum_settlement_income","sum_settlement_click","sum_settlement_impression","sum_allocated_income",
+          "sum_hd_click","sum_hd_impression")
 
       println("hive2 schema" + hiveCharge2.printSchema())
 
       /**
-        * 进行left outer join
-        * 计算增量
+        *  1.进行left outer join;
+        *  2.用0填充null
         */
 
       val joinCharge = mysqlCharge
-        .join(hiveCharge2, Seq("media_id", "channel_id", "adslot_id", "adslot_type",
-          "idea_id", "unit_id", "plan_id", "user_id", "date"), "left_outer")
-        .na.fill(0, Seq("sum_request", "sum_served_request", "sum_activation", "sum_impression",
-        "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")) //用0填充null
+        .join(hiveCharge2, Seq("media_id", "channel_id", "adslot_id", "date", "data_type"), "left_outer")
+        .na.fill(0, Seq("sum_request", "sum_served_request", "sum_impression", "sum_click", "sum_impression2", "sum_click2",
+        "sum_imp_media_income", "sum_imp_channel_income", "sum_click_media_income", "sum_click_channel_income", "sum_media_income",
+        "sum_channel_income", "sum_media_income2", "sum_click2_media_income", "sum_coupon","sum_bd_income","sum_settlement_income",
+        "sum_settlement_click","sum_settlement_impression","sum_allocated_income", "sum_hd_click","sum_hd_impression"))
 
+      /**
+        * 计算增量
+        */
       val joinCharge2 = joinCharge
         .selectExpr(
           "media_id",
           "channel_id",
           "adslot_id",
-          "adslot_type",
-          "idea_id",
-          "unit_id",
-          "plan_id",
-          "user_id",
           "date",
+          "data_type",
           "request - sum_request",
           "served_request - sum_served_request",
-          "activation - sum_activation",
           "impression - sum_impression",
           "click - sum_click",
-          "fee - sum_fee",
-          "cash_cost - sum_cash_cost",
-          "coupon_cost - sum_coupon_cost",
+          "impression2 - sum_impression2",
+          "click2 - sum_click2",
+          "imp_media_income - sum_imp_media_income",
+          "imp_channel_income - sum_imp_channel_income",
+          "click_media_income - sum_click_media_income",
+          "click_channel_income - sum_click_channel_income",
+          "media_income - sum_media_income",
+          "channel_income - sum_channel_income",
           "create_time",
-          "modifid_time"
+          "modified_time",
+          "media_income2 - sum_media_income2",
+          "rate",
+          "has_push",
+          "settlement_type",
+          "click2_media_income - sum_click2_media_income",
+          "is_show",
+          "coupon - sum_coupon",
+          "bd_rate",
+          "bd_income - sum_bd_income",
+          "settlement_income - sum_settlement_income",
+          "settlement_click - sum_settlement_click",
+          "settlement_impression - sum_settlement_impression",
+          "allocated_income - sum_allocated_income",
+          "hd_click - sum_hd_click",
+          "hd_impression - sum_hd_impression"
         )
-        .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id",
-          "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
-          "impression", "click", "fee", "cash_cost", "coupon_cost", "create_time", "modifid_time")
+        .toDF("media_id", "channel_id", "adslot_id", "date", "data_type","request", "served_request", "impression",
+          "click", "impression2", "click2", "imp_media_income", "imp_channel_income", "click_media_income", "click_channel_income",
+          "media_income", "channel_income","create_time","modified_time", "media_income2", "rate", "has_push", "settlement_type",
+          "click2_media_income", "is_show","coupon","bd_rate","bd_income","settlement_income","settlement_click","settlement_impression",
+          "allocated_income","hd_click","hd_impression")
 
+      joinCharge2.take(1).foreach(x => println("##### joinCharge2:" + x))
 
-      joinCharge.take(1).foreach(x => println("##### joinCharge:" + x))
+      if (joinCharge2.take(1).length > 0) {
+        joinCharge2
+          .write
+          .mode(SaveMode.Overwrite)
+          .parquet("/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s".format(hiveTable, datee, hour))
 
+        println("###### joinCharge write hive successfully")
+      } else {
+        println("###### joinCharge为空")
+      }
 
     }
+
+
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.%s add if not exists PARTITION(`thedate` = "%s", `thehour` = "%s")
+        | LOCATION  '/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s'
+      """.stripMargin.format(hiveTable, datee, hour, hiveTable, datee, hour))
+
+    println("~~~~~~write charge to hive successfully")
+
+
   }
 }
