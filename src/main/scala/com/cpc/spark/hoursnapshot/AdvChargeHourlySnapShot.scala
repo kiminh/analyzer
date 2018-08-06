@@ -2,7 +2,7 @@ package com.cpc.spark.hoursnapshot
 
 import java.util.Properties
 
-import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
+import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
 
@@ -42,7 +42,7 @@ object AdvChargeHourlySnapShot {
     val table = "(select * from %s where date='%s') as tmp".format(mysqlTable, datee)
 
     //从mysql获得最新charge
-    val mysqlCharge = spark.read.format("jdbc")
+    val mysqlCharge_tmp = spark.read.format("jdbc")
       .option("url", url)
       .option("driver", driver)
       .option("user", user)
@@ -50,6 +50,9 @@ object AdvChargeHourlySnapShot {
       .option("dbtable", table)
       .load()
       .repartition(5)
+
+    val mysqlCharge = mysqlCharge_tmp.select(mysqlCharge_tmp.col("fee").cast(LongType),
+      mysqlCharge_tmp.col("cash_cost").cast(LongType), mysqlCharge_tmp.col("coupon_cost").cast(LongType))
 
     println("mysql schema" + mysqlCharge.printSchema())
     mysqlCharge.take(1).foreach(x => println("##### mysqlCharge:" + x))
@@ -63,7 +66,7 @@ object AdvChargeHourlySnapShot {
       """.stripMargin)
 
     println("hive schema" + hiveCharge.printSchema())
-//    hiveCharge.take(1).foreach(x => println("##### hiveCharge:" + x))
+    hiveCharge.take(1).foreach(x => println("##### hiveCharge:" + x))
 
     /**
       * 如果hive没数据，mysql数据直接写入hive，否则计算增量在写入hive
@@ -92,7 +95,8 @@ object AdvChargeHourlySnapShot {
           "plan_id", "user_id", "date", "sum_request", "sum_served_request", "sum_activation",
           "sum_impression", "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")
 
-      println("hive2 schema" + hiveCharge2.printSchema())
+      println("hiveCharge2 schema" + hiveCharge2.printSchema())
+      hiveCharge2.take(1).foreach(x => println("##### mysqlCharge:" + x))
 
       /**
         * 进行left outer join
@@ -105,7 +109,7 @@ object AdvChargeHourlySnapShot {
         .na.fill(0, Seq("sum_request", "sum_served_request", "sum_activation", "sum_impression",
         "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")) //用0填充null
 
-      val joinCharge2=joinCharge
+      val joinCharge2 = joinCharge
         .selectExpr(
           "media_id",
           "channel_id",
@@ -126,13 +130,13 @@ object AdvChargeHourlySnapShot {
           "coupon_cost - sum_coupon_cost",
           "create_time",
           "modifid_time"
-      )
+        )
         .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id",
-        "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
-        "impression", "click", "fee", "cash_cost", "coupon_cost", "create_time", "modifid_time")
+          "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
+          "impression", "click", "fee", "cash_cost", "coupon_cost", "create_time", "modifid_time")
 
-
-      joinCharge2.take(1).foreach(x => println("##### joinCharge:" + x))
+      println("joinCharge2 schema" + joinCharge2.printSchema())
+      joinCharge2.take(1).foreach(x => println("##### joinCharge2:" + x))
 
       if (joinCharge2.take(1).length > 0) {
         joinCharge2
