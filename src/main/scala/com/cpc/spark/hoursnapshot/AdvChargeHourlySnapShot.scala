@@ -152,6 +152,7 @@ object AdvChargeHourlySnapShot {
         .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id",
           "unit_id", "plan_id", "user_id", "date", "request", "served_request", "activation",
           "impression", "click", "fee", "cash_cost", "coupon_cost", "create_time", "modifid_time")
+        .cache()
 
       println("joinCharge2 schema" + joinCharge2.printSchema())
       joinCharge2.take(1).foreach(x => println("##### joinCharge2:" + x))
@@ -162,6 +163,7 @@ object AdvChargeHourlySnapShot {
           .mode(SaveMode.Overwrite)
           .parquet("/warehouse/dl_cpc.db/%s/thedate=%s/thehour=%s".format(hiveTable, datee, hour))
 
+        joinCharge2.unpersist()
         println("###### joinCharge write hive successfully")
       } else {
         println("###### joinCharge为空")
