@@ -47,6 +47,7 @@ message UserProfile {
     repeated InterestItem interestedWords = 12;  //感兴趣的词汇分类
 	string province = 13; //省份
 	string city = 14; //城市
+	map<int32, int32> interestsMap = 15; // 人群标签(Map格式)
     QttProfile qttProfile = 101;
 }
 
