@@ -125,7 +125,6 @@ object PredictAge {
         }
     }
     println(toSet.count())
-    /*
     SetUserProfileTag.setUserProfileTag(toSet)
     val sum =  predict.repartition(500)
       .mapPartitions {
@@ -242,6 +241,5 @@ object PredictAge {
           }
       }
     println("total: %s, insert: %s, revert %s, both_taged %s count_224: %s count_225 %s young_new: %s new_user: %s".format(n3, n, n1, n2, n4, n5, n6, n7))
-    */
   }
 }

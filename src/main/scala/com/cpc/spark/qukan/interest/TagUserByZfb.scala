@@ -72,7 +72,6 @@ object TagUserByZfb {
           Seq((x._1, 224, false), (x._1, 225, true))
         }
     }
-    /*
     val ret = SetUserProfileTag.setUserProfileTag(age)
     //ret.foreach(println)
 
@@ -156,7 +155,6 @@ object TagUserByZfb {
       }
       .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3,x._4 + y._4, x._5 + y._5, x._6 + y._6, x._7 + y._7))
     println("age_newupdate:" + sum._1+ " age_conflict:" + sum._2 + " sex_conflict:" + sum._3 + " age_both_taged:" + sum._4 + "add_244:" + sum._5 + " new_young:" + sum._6 + " newUser:" + sum._7)
-    */
   }
 
 }
