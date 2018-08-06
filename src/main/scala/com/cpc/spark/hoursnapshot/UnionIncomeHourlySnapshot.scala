@@ -77,9 +77,9 @@ object UnionIncomeHourlySnapshot {
       println("~~~~~~~~~~~~~~~~~~")
 
       //分组累加当日每小时的请求数，填充数，广告激励数，展示数，点击数，请求费用数，消费现金，消费优惠券
-      val hiveCharge2 = hiveCharge.groupBy("media_id", "channel_id", "adslot_id", "date","data_type")
-        .sum("request", "served_request", "impression", "click","impression2","click2","imp_media_income", "imp_channel_income",
-          "click_media_income","click_channel_income","media_income","channel_income","media_income2","rate","click2_media_income")
+      val hiveCharge2 = hiveCharge.groupBy("media_id", "channel_id", "adslot_id", "date", "data_type")
+        .sum("request", "served_request", "impression", "click", "impression2", "click2", "imp_media_income", "imp_channel_income",
+          "click_media_income", "click_channel_income", "media_income", "channel_income", "media_income2", "rate", "click2_media_income")
         .toDF("media_id", "channel_id", "adslot_id", "adslot_type", "idea_id", "unit_id",
           "plan_id", "user_id", "date", "sum_request", "sum_served_request", "sum_activation",
           "sum_impression", "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")
@@ -97,7 +97,7 @@ object UnionIncomeHourlySnapshot {
         .na.fill(0, Seq("sum_request", "sum_served_request", "sum_activation", "sum_impression",
         "sum_click", "sum_fee", "sum_cash_cost", "sum_coupon_cost")) //用0填充null
 
-      val joinCharge2=joinCharge
+      val joinCharge2 = joinCharge
         .selectExpr(
           "media_id",
           "channel_id",
@@ -127,6 +127,6 @@ object UnionIncomeHourlySnapshot {
       joinCharge.take(1).foreach(x => println("##### joinCharge:" + x))
 
 
-
+    }
   }
 }
