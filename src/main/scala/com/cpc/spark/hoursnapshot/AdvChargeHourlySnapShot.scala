@@ -42,7 +42,7 @@ object AdvChargeHourlySnapShot {
     val table = "(select * from %s where date='%s') as tmp".format(mysqlTable, datee)
 
     //从mysql获得最新charge
-    val mysqlCharge_tmp = spark.read.format("jdbc")
+    val mysqlCharge = spark.read.format("jdbc")
       .option("url", url)
       .option("driver", driver)
       .option("user", user)
@@ -51,8 +51,8 @@ object AdvChargeHourlySnapShot {
       .load()
       .repartition(5)
 
-    val mysqlCharge = mysqlCharge_tmp.select(mysqlCharge_tmp.col("fee").cast(LongType),
-      mysqlCharge_tmp.col("cash_cost").cast(LongType), mysqlCharge_tmp.col("coupon_cost").cast(LongType))
+//    val mysqlCharge = mysqlCharge_tmp.select(mysqlCharge_tmp.col("fee").cast(LongType),
+//      mysqlCharge_tmp.col("cash_cost").cast(LongType), mysqlCharge_tmp.col("coupon_cost").cast(LongType))
 
     println("mysql schema" + mysqlCharge.printSchema())
     mysqlCharge.take(1).foreach(x => println("##### mysqlCharge:" + x))
@@ -66,7 +66,7 @@ object AdvChargeHourlySnapShot {
       """.stripMargin)
 
     println("hive schema" + hiveCharge.printSchema())
-    hiveCharge.take(1).foreach(x => println("##### hiveCharge:" + x))
+    println("##### hiveCharge:" + hiveCharge.show(1))
 
     /**
       * 如果hive没数据，mysql数据直接写入hive，否则计算增量在写入hive
