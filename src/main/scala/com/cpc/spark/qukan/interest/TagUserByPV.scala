@@ -38,7 +38,7 @@ object TagUserByPV {
     val read = spark.sql(stmt).rdd.map{
       r =>
         val uid = r.getAs[String](0)
-        val read = r.getAs[Int](1)
+        val read = r.getAs[Long](1)
         (uid, read)
     }.reduceByKey(_+_)
     println(read.count())
@@ -51,7 +51,7 @@ object TagUserByPV {
     val ad = spark.sql(stmt2).rdd.map {
       r =>
         val uid = r.getAs[String](0)
-        val ad = r.getAs[Int](1)
+        val ad = r.getAs[Long](1)
         (uid, ad)
     }
     println(ad.count())
