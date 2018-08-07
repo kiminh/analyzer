@@ -66,19 +66,19 @@ object GetNewUser2 {
         (uid, day)
     }
     all.take(10).foreach(println)
-//    val toSet = all.flatMap{
-//      case (uid, day) =>
-//        if (sevenDay <= day) {
-//          Seq()
-//        } else {
-//          if (toWeek > day) {
-//            Seq((uid, 236, true), (uid, 228, true))
-//          } else {
-//            Seq((uid, 228, true))
-//          }
-//        }
-//    }
-//    SetUserProfileTag.setUserProfileTag(toSet)
+    val toSet = all.flatMap{
+      case (uid, day) =>
+        if (sevenDay <= day) {
+          Seq()
+        } else {
+          if (toWeek > day) {
+            Seq((uid, 236, true), (uid, 228, true))
+          } else {
+            Seq((uid, 228, true))
+          }
+        }
+    }
+    SetUserProfileTag.setUserProfileTag(toSet)
     val sum = all.repartition(200)
       .mapPartitions {
       p =>
