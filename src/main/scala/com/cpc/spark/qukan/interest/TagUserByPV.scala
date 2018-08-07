@@ -88,7 +88,7 @@ object TagUserByPV {
                 if (is235) {
                   Seq((r._1, 238, true),(r._1, 237, true))
                 } else {
-                  Seq((r._1, 237, true))
+                  Seq((r._1, 237, true),(r._1, 238, false))
                 }
               } else {
                 Seq((r._1, 237, false), (r._1, 238, false))
