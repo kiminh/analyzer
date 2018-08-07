@@ -6,6 +6,7 @@ import com.cpc.spark.ml.common.Utils
 import org.apache.spark.rdd.RDD
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
+import scala.collection.mutable.Map
 
 /**
   * Created by roydong on 15/12/2017.
@@ -16,8 +17,10 @@ object SaveFeatures {
 
   private var version = "v1"
   private var versionV2 = "v2"
+  private var versionV2_test = "v2_test"
+
   def main(args: Array[String]): Unit = {
-    if(args.length < 2){
+    if (args.length < 2) {
       System.err.println(
         s"""
            |Usage: SaveFeatures <date=string> <hour=string>
@@ -34,9 +37,10 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    saveDataFromLog(spark, date, hour)
+    //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)
-    saveCvrData(spark, date, hour, versionV2)
+//    saveCvrData(spark, date, hour, versionV2)
+    saveCvrData(spark, date, hour, versionV2_test)
     println("SaveFeatures_done")
   }
 
@@ -136,7 +140,7 @@ object SaveFeatures {
       s"""
          |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
         """.stripMargin.format(date, hour))
-//      .as[TraceLog]
+      //      .as[TraceLog]
       .rdd
       .map {
         x =>
@@ -146,9 +150,29 @@ object SaveFeatures {
       .map {
         x =>
           val convert = Utils.cvrPositiveV(x._2, version)
-          (x._1, convert)
+
+          //存储active行为数据
+          var active_map: Map[String, Int] = null
+          //active1,active2,active3,active4,active5,active6,disactive,active_auto,active_auto_download,active_auto_submit,active_wx,active_third
+          x._2.foreach(
+            x => {
+              x.getAs[String]("trace_type") match {
+                case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5" || s == "active6" || s == "disactive"
+                  || s == "active_auto" || s == "active_auto_download" || s == "active_auto_submit" || s == "active_wx" || s == "active_third")
+                => active_map += (s -> 1)
+                case _ =>
+              }
+            }
+          )
+
+          (x._1, convert, active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
+            active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
+            active_map.getOrElse("disactive", 0), active_map.getOrElse("active_auto", 0), active_map.getOrElse("active_auto_download", 0),
+            active_map.getOrElse("active_auto_submit", 0), active_map.getOrElse("active_wx", 0), active_map.getOrElse("active_third", 0))
       }
-      .toDF("searchid", "label")
+      .toDF("searchid", "label", "active1", "active2", "active3", "active4", "active5", "active6", "disactive",
+        "active_auto", "active_auto_download", "active_auto_submit", "active_wx", "active_third")
+
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
 
     val sqlStmt =
@@ -177,8 +201,8 @@ object SaveFeatures {
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
     spark.sql(
       """
-        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1_test add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2_test/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
   }
 }
