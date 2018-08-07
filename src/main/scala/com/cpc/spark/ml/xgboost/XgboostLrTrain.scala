@@ -80,7 +80,7 @@ object XgboostLrTrain {
       .getOrCreate()
 
     val qttListTestLeaf: RDD[LabeledPoint] = spark.sparkContext
-      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_test_leaf_${type1}", 50)
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_test_leaf_v${version}_${type1}", 50)
       .map { x => {
         val array = x.split("\t")
         val label = array(0).toDouble
@@ -94,7 +94,7 @@ object XgboostLrTrain {
       }
 
     val qttListTrainLeaf: RDD[LabeledPoint] = spark.sparkContext
-      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_train_leaf_${type1}", 50)
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_train_leaf_v${version}_${type1}", 50)
       .map { x => {
         val array = x.split("\t")
         val label = array(0).toDouble
@@ -116,7 +116,7 @@ object XgboostLrTrain {
 
     val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
     lbfgs.optimizer.setUpdater(new L1Updater())
-    lbfgs.optimizer.setNumIterations(200)
+    lbfgs.optimizer.setNumIterations(500)
     lbfgs.optimizer.setConvergenceTol(1e-8)
 
     import spark.implicits._
