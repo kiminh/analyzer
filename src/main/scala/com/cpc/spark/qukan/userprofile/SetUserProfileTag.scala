@@ -55,7 +55,6 @@ object SetUserProfileTag {
               if (buffer != null) {
                 hit += 1
                 val user = UserProfile.parseFrom(buffer).toBuilder
-                // old redis
                 val interest = InterestItem.newBuilder()
                   .setTag(x._2)
                   .setScore(100)
@@ -85,14 +84,6 @@ object SetUserProfileTag {
                     del += 1
                   }
                 }
-                // new redis
-                val interestsMap = user.getInterestsMapOrDefault(x._2, 0)
-                if (interestsMap == 0 && x._3 == true) {
-                  user.putInterestsMap(x._2, 100)
-                } else if (interestsMap == 100 && x._3 == false) {
-                  user.removeInterestsMap(x._2)
-                }
-
                 redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
               if (isIns) {
@@ -150,7 +141,6 @@ object SetUserProfileTag {
               if (buffer != null) {
                 hit += 1
                 val user = UserProfile.parseFrom(buffer).toBuilder
-                //old redis
                 val interest = InterestItem.newBuilder()
                   .setTag(x._2)
                   .setScore(100)
@@ -179,13 +169,6 @@ object SetUserProfileTag {
                   if (isDel) {
                     del += 1
                   }
-                }
-                // new redis
-                val interestsMap = user.getInterestsMapOrDefault(x._2, 0)
-                if (interestsMap == 0 && x._3 == true) {
-                  user.putInterestsMap(x._2, 100)
-                } else if (interestsMap == 100 && x._3 == false) {
-                  user.removeInterestsMap(x._2)
                 }
                 redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               }
