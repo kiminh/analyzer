@@ -152,7 +152,7 @@ object SaveFeatures {
           val convert = Utils.cvrPositiveV(x._2, version)
 
           //存储active行为数据
-          var active_map: Map[String, Int] = null
+          var active_map: Map[String, Int] = Map()
           //active1,active2,active3,active4,active5,active6,disactive,active_auto,active_auto_download,active_auto_submit,active_wx,active_third
           x._2.foreach(
             x => {
