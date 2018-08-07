@@ -66,19 +66,19 @@ object GetNewUser2 {
         (uid, day)
     }
     all.take(10).foreach(println)
-    val toSet = all.flatMap{
-      case (uid, day) =>
-        if (sevenDay <= day) {
-          Seq()
-        } else {
-          if (toWeek > day) {
-            Seq((uid, 236, true), (uid, 228, true))
-          } else {
-            Seq((uid, 228, true))
-          }
-        }
-    }
-    SetUserProfileTag.setUserProfileTag(toSet)
+//    val toSet = all.flatMap{
+//      case (uid, day) =>
+//        if (sevenDay <= day) {
+//          Seq()
+//        } else {
+//          if (toWeek > day) {
+//            Seq((uid, 236, true), (uid, 228, true))
+//          } else {
+//            Seq((uid, 228, true))
+//          }
+//        }
+//    }
+//    SetUserProfileTag.setUserProfileTag(toSet)
     val sum = all.repartition(200)
       .mapPartitions {
       p =>
@@ -99,6 +99,7 @@ object GetNewUser2 {
             val buffer = redis.get[Array[Byte]](key).getOrElse(null)
             if (buffer != null && day != null) {
               n1 += 1
+              val user = UserProfile.parseFrom(buffer).toBuilder
               user.setUserCreateTime(day)
               redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
 
