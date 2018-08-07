@@ -34,11 +34,11 @@ object TagUserByPV {
       """
         |select distinct device,read_pv_inner,day from bdm.qukan_daily_active_extend_p_all_bydevice where day >= "%s"
       """.stripMargin.format(sdate)
-
+    println(stmt)
     val read = spark.sql(stmt).rdd.map{
       r =>
         val uid = r.getAs[String](0)
-        val read = r.getAs[Int](2)
+        val read = r.getAs[Int](1)
         (uid, read)
     }.reduceByKey(_+_)
     println(read.count())
@@ -47,7 +47,7 @@ object TagUserByPV {
         |select distinct uid,count(distinct searchid) from dl_cpc.cpc_union_log
         |where `date` >= "%s" and `date` <= "%s" and media_appsid in ("80000001","80000002") and isclick = 1
       """.stripMargin.format(sdate, yesterday)
-
+    println(stmt2)
     val ad = spark.sql(stmt2).rdd.map {
       r =>
         val uid = r.getAs[String](0)
