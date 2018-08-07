@@ -75,7 +75,7 @@ object TagUserByPV {
               if (buffer != null) {
                 val user = UserProfile.parseFrom(buffer).toBuilder
                 for (i <- 0 until user.getInterestedWordsCount ) {
-                  val w = user.getInterestedWords(idx)
+                  val w = user.getInterestedWords(i)
                   if (w.getTag == 235) {
                     is235 = true
                   }
