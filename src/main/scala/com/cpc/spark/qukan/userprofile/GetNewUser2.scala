@@ -9,7 +9,7 @@ import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
-import userprofile.Userprofile.{UserProfile, InterestItem}
+import main.java.userprofile.Userprofile.{UserProfile, InterestItem}
 
 import scala.util.control.Breaks
 
@@ -97,7 +97,7 @@ object GetNewUser2 {
             val key = deviceid + "_UPDATA"
             var have = false
             val buffer = redis.get[Array[Byte]](key).getOrElse(null)
-            if (buffer != null) {
+            if (buffer != null && day != null) {
               n1 += 1
               user.setUserCreateTime(day)
               redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
