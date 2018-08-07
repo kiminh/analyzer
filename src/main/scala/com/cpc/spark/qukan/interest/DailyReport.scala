@@ -46,7 +46,9 @@ object DailyReport {
       .getOrCreate()
     import spark.implicits._
 
-    //checkUVTag(spark, args)
+
+    //student_app(spark, args)
+    checkUVTag(spark, args)
     //daily_cost(spark, args)
 
 
@@ -146,8 +148,8 @@ object DailyReport {
     val edate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val stmt =
       """
-        |select distinct uid from dl_cpc.cpc_union_log where `date` >= "%s" and `date` < "%s" and media_appsid  in ("80000001", "80000002")
-      """.stripMargin.format(sdate,edate)
+        |select distinct uid from dl_cpc.cpc_union_log where `date` = "%s"  and media_appsid  in ("80000001", "80000002") and adsrc = 1
+      """.stripMargin.format(sdate)
 
     val rs = spark.sql(stmt).rdd.map {
       r =>
@@ -176,26 +178,41 @@ object DailyReport {
           var young = 0
           var notYoung = 0
           var active = 0
+          var female = 0
+          var male = 0
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           p.foreach {
             r =>
                 val key = r + "_UPDATA"
                 val buffer = redis.get[Array[Byte]](key).orNull
+                var is224 = false
+                var is225 = false
                 if (buffer != null) {
                   val user = UserProfile.parseFrom(buffer).toBuilder
+                  if (user.getSex == 2) {
+                    female += 1
+                  } else if (user.getSex == 1) {
+                    male += 1
+                  }
                   for (i <- 0 until user.getInterestedWordsCount) {
                     val w = user.getInterestedWords(i)
                     if (w.getTag == 224) {
-                      young += 1
+                      is224 = true
                     } else if (w.getTag == 225) {
-                      notYoung += 1
+                      is225 = true
                     } else if (w.getTag == 226) {
                       active += 1
                     }
                   }
+                  if (is224) {
+                    young += 1
+                  }
+                  if (is225) {
+                    notYoung += 1
+                  }
                 }
           }
-          Seq((0, young), (1, notYoung), (2,active)).iterator
+          Seq((0, young), (1, notYoung), (2,active), (3,female), (4,male)).iterator
       }
       .reduceByKey(_+_)
     sum.toLocalIterator.foreach(println)
@@ -232,4 +249,34 @@ object DailyReport {
           println("%s\t %8.2f\t %s\t %8.2f".format(x._1,x._2,x._3,x._4))
       }
   }
+  def student_app(spark : SparkSession, args : Array[String]): Unit ={
+    val sample = spark.read.parquet("/user/cpc/qtt-age-sample/p1").rdd.map{
+      x =>
+        if (x(1) != null && x(2) != null) {
+          (x.getAs[Int](1), x.getAs[Seq[Row]](2).size, x.getAs[Seq[Row]](2))
+        } else {
+          null
+        }
+    }.filter(_ != null)
+    println(sample.filter(x =>x._1 >= 22).count())
+    println(sample.filter(x =>x._1 >= 22  && x._2 > 10).count())
+    println(sample.filter(x =>x._1 < 22).count())
+    println(sample.filter(x =>x._1 < 22  && x._2 > 10).count())
+    sample.filter(_._1 < 22).flatMap{
+      x =>
+        x._3.map{
+          r =>
+            (r.getAs[String](0), 1)
+        }
+    }.reduceByKey(_+_).sortBy(_._2, false).take(100).foreach(println)
+    println("===============================================")
+    sample.filter(_._1 >= 22).flatMap{
+      x =>
+        x._3.map{
+          r =>
+            (r.getAs[String](0), 1)
+        }
+    }.reduceByKey(_+_).sortBy(_._2, false).take(100).foreach(println)
+  }
+
 }

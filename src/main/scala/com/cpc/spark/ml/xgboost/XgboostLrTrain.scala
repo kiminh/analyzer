@@ -58,9 +58,18 @@ object XgboostLrTrain {
     println(args.mkString(" "))
     val type1 = args(0)
     val upload = args(1).toInt   //upload to mlserver
+    val version = args(2)
     println(s"type=$type1")
     println(s"upload=$upload")
+    if (version != "9" && version != "12") {
+      println(s"version is 9 or 12")
+      return -1
+    }
 
+    var size = 1000000
+    if (version == "12") {
+      size = 100000
+    }
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder()
@@ -79,7 +88,7 @@ object XgboostLrTrain {
           val array = x.split(":")
           (array(0).toInt, array(1).toDouble)
         })
-        val vec = Vectors.sparse(1000000, vector1)
+        val vec = Vectors.sparse(size, vector1)
         LabeledPoint(label, vec)
       }
       }
@@ -93,7 +102,7 @@ object XgboostLrTrain {
           val array = x.split(":")
           (array(0).toInt, array(1).toDouble)
         })
-        val vec = Vectors.sparse(1000000, vector1)
+        val vec = Vectors.sparse(size, vector1)
         LabeledPoint(label, vec)
       }
       }
@@ -101,6 +110,9 @@ object XgboostLrTrain {
     //val Array(train, test) = qttListLeaf.randomSplit(Array(0.8, 0.2))
     val train = qttListTrainLeaf
     val test = qttListTestLeaf
+
+    println(s"train size = ${train.count()}")
+    println(s"test size = ${test.count()}")
 
     val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
     lbfgs.optimizer.setUpdater(new L1Updater())
@@ -138,9 +150,20 @@ object XgboostLrTrain {
 
     val BcWeights = spark.sparkContext.broadcast(lrmodel.weights)
 
-    val fname = "ctr-portrait9-xglr-qtt-list.mlm"
+    var type2 = "list"
+    if (type1.toInt == 1) {
+      type2 = "list"
+    } else if (type1.toInt == 2) {
+      type2 = "content"
+    } else if (type1.toInt == 3) {
+      type2 = "interact"
+    } else {
+      type2 = "unknown"
+    }
+
+    val fname = s"ctr-portrait${version}-xglr-qtt-$type2.mlm"
     val filename = s"/home/cpc/djq/xgboost_lr/$fname"
-    saveLrPbPack(filename , "xglr", type1.toInt)
+    saveLrPbPack(filename , "xglr", type1.toInt, version)
     println(filetime, filename)
 
     if (upload > 0) {
@@ -997,7 +1020,7 @@ object XgboostLrTrain {
     pack.writeTo(new FileOutputStream(path))
   }
 
-  def saveLrPbPack(path: String, parser: String, type1: Int): Unit = {
+  def saveLrPbPack(path: String, parser: String, type1: Int, version: String): Unit = {
     val weights = mutable.Map[Int, Double]()
     lrmodel.weights.toSparse.foreachActive {
       case (i, d) =>
@@ -1015,6 +1038,10 @@ object XgboostLrTrain {
       predictions = irmodel.predictions.toSeq,
       meanSquareError = irError * irError
     )
+    println("ir boundaries:")
+    println(irmodel.boundaries.toSeq)
+    println("ir predictions:")
+    println(irmodel.predictions.toSeq)
     val dictpb = Dict(
 //      planid = dict("planid"),
 //      unitid = dict("unitid"),
@@ -1036,17 +1063,23 @@ object XgboostLrTrain {
     } else {
       type2 = "unknown"
     }
+    println(s"type2=$type2")
+
+    var depth = 10
+    if (version == "12") {
+      depth = 6
+    }
 
     val pack = Pack(
-      name = s"qtt-$type2-ctr-portrait11",
+      name = s"qtt-$type2-ctr-xglr-portrait${version}",
       createTime = new Date().getTime,
       lr = Option(lr),
       ir = Option(ir),
       dict = Option(dictpb),
       strategy = Strategy.StrategyXgboostLR,
-      gbmfile = s"data/ctr-portrait9-qtt-$type2.gbm",
+      gbmfile = s"data/ctr-portrait${version}-qtt-$type2.gbm",
       gbmTreeLimit = 200,
-      gbmTreeDepth = 10
+      gbmTreeDepth = depth
     )
 
     pack.writeTo(new FileOutputStream(path))

@@ -175,6 +175,7 @@ object InsertReportSiteBuildingTarget {
           (searchid, (Info(siteid, ideaid, isshow, isclick, sex, age, os, province, phoneLevel, hour,
             network, userLevel, qukanNewUser, adslotType, mediaId, 0, 0, 0, 0, adslotid, brand, browserType,isStudent)))
       }
+      .repartition(100)
     //println("unionData count", unionData.count())
 
 
@@ -217,6 +218,7 @@ object InsertReportSiteBuildingTarget {
           val siteid = x.get(4).toString.toInt
           (searchid, (Info(siteid, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, load, active, landpage_ok, stayinwx)))
       }
+      .repartition(100)
     //println("traceData count", traceData.count())
 
 
@@ -258,7 +260,7 @@ object InsertReportSiteBuildingTarget {
             info.adslotid, info.brand, info.browserType,info.isStudent))
       }
       .filter(_._2.siteId > 0)
-      .coalesce(300)
+      .repartition(100)
       .cache()
 
     val inputStudentData = allData
@@ -275,6 +277,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
+      .repartition(100)
     val studentData = getTargetData(inputStudentData, "student", argDay)
 
     val inputBrandData = allData
@@ -577,7 +580,7 @@ object InsertReportSiteBuildingTarget {
       .union(brandData)
       .union(browserTypeData)
       .union(studentData)
-      .coalesce(400)
+      .repartition(50)
 
 
     var insertDataFrame = ctx.createDataFrame(insertAllData)

@@ -28,8 +28,22 @@ object TagUserByZfb {
       .appName("Tag user by zfb")
       .enableHiveSupport()
       .getOrCreate()
+    import spark.implicits._
 
-    val zfb = spark.read.parquet("/user/cpc/qtt-zfb/%s".format(days)).rdd.map {
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.DATE, -1)
+    val sdate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val stmt =
+      """
+        |select distinct uid from dl_cpc.cpc_union_log where `date` = "%s" and media_appsid  in ("80000001", "80000002")
+      """.stripMargin.format(sdate)
+
+    val uv = spark.sql(stmt).rdd.map {
+      r =>
+        val did = r.getAs[String](0)
+        (did)
+    }.distinct().toDF("did")
+    val zfb = spark.read.parquet("/user/cpc/qtt-zfb/%s".format(days)).join(uv, Seq("did")).rdd.map {
       r =>
         val did = r.getAs[String]("did")
         val s_sex = r.getAs[String]("sex")
@@ -58,7 +72,6 @@ object TagUserByZfb {
           Seq((x._1, 224, false), (x._1, 225, true))
         }
     }
-
     val ret = SetUserProfileTag.setUserProfileTag(age)
     //ret.foreach(println)
 
@@ -142,7 +155,6 @@ object TagUserByZfb {
       }
       .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3,x._4 + y._4, x._5 + y._5, x._6 + y._6, x._7 + y._7))
     println("age_newupdate:" + sum._1+ " age_conflict:" + sum._2 + " sex_conflict:" + sum._3 + " age_both_taged:" + sum._4 + "add_244:" + sum._5 + " new_young:" + sum._6 + " newUser:" + sum._7)
-
   }
 
 }
