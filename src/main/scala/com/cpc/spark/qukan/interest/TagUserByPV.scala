@@ -57,7 +57,7 @@ object TagUserByPV {
     println(ad.count())
     val rs = ad.join(read).map {
       r =>
-        (r._1, 1d * r._2._2 / r._2._1)
+        (r._1, 1d * r._2._1 / r._2._2)
     }
     println(rs.count())
     println(rs.filter(_._2 > 0.5).count())
