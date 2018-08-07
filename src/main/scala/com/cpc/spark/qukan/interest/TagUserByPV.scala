@@ -45,7 +45,7 @@ object TagUserByPV {
     val stmt2 =
       """
         |select distinct uid,count(distinct searchid) from dl_cpc.cpc_union_log
-        |where `date` >= "%s" and `date` <= "%s" and media_appsid in ("80000001","80000002") and isclick = 1
+        |where `date` >= "%s" and `date` <= "%s" and media_appsid in ("80000001","80000002") and isclick = 1 group by uid
       """.stripMargin.format(sdate, yesterday)
     println(stmt2)
     val ad = spark.sql(stmt2).rdd.map {
