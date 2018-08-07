@@ -39,7 +39,7 @@ object SaveFeatures {
 
     //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)
-//    saveCvrData(spark, date, hour, versionV2)
+    //    saveCvrData(spark, date, hour, versionV2)
     saveCvrData(spark, date, hour, versionV2_test)
     println("SaveFeatures_done")
   }
@@ -157,8 +157,8 @@ object SaveFeatures {
           x._2.foreach(
             x => {
               x.getAs[String]("trace_type") match {
-                case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5" || s == "active6" || s == "disactive"
-                  || s == "active_auto" || s == "active_auto_download" || s == "active_auto_submit" || s == "active_wx" || s == "active_third")
+                case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
+                  || s == "active6" || s == "disactive" || s == "active_href")
                 => active_map += (s -> 1)
                 case _ =>
               }
@@ -167,11 +167,9 @@ object SaveFeatures {
 
           (x._1, convert, active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
             active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
-            active_map.getOrElse("disactive", 0), active_map.getOrElse("active_auto", 0), active_map.getOrElse("active_auto_download", 0),
-            active_map.getOrElse("active_auto_submit", 0), active_map.getOrElse("active_wx", 0), active_map.getOrElse("active_third", 0))
+            active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0))
       }
-      .toDF("searchid", "label", "active1", "active2", "active3", "active4", "active5", "active6", "disactive",
-        "active_auto", "active_auto_download", "active_auto_submit", "active_wx", "active_third")
+      .toDF("searchid", "label", "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href")
 
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
 
