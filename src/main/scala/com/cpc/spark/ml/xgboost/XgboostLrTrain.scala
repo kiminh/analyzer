@@ -118,7 +118,7 @@ object XgboostLrTrain {
 //    lbfgs.optimizer.setUpdater(new L1Updater())
     lbfgs.optimizer.setUpdater(new SquaredL2Updater())
     lbfgs.optimizer.setNumIterations(200)
-    lbfgs.optimizer.setConvergenceTol(1e-8)
+    lbfgs.optimizer.setConvergenceTol(1e-6)
     lbfgs.optimizer.setGradient(new LeastSquaresGradient())
 
 
