@@ -208,7 +208,11 @@ object SaveFeatures {
           x.getAs("date"), x.getAs("hour")
         )
       )
-      .toDF()
+      .toDF("searchid", "label", "sex", "age", "os", "isp", "network", "city",
+        "media_appsid", "phone_level", "timestamp", "adtype", "planid", "unitid", "ideaid", "adclass",
+        "adslotid", "adslot_type", "bookid", "brand_title", "user_req_ad_num", "user_req_num", "uid", "user_click_num",
+        "user_click_unit_num", "user_long_click_count",
+        "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href", "date", "hour")
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
