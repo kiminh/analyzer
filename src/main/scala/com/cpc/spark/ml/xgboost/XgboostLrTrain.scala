@@ -16,7 +16,7 @@ import org.apache.spark.ml.linalg.{Vector => MVec, Vectors => MVecs}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
-import org.apache.spark.mllib.optimization.{L1Updater, SquaredL2Updater}
+import org.apache.spark.mllib.optimization.{L1Updater, LeastSquaresGradient, SquaredL2Updater}
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel, LabeledPoint}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
@@ -119,6 +119,7 @@ object XgboostLrTrain {
     lbfgs.optimizer.setUpdater(new SquaredL2Updater())
     lbfgs.optimizer.setNumIterations(200)
     lbfgs.optimizer.setConvergenceTol(1e-8)
+    lbfgs.optimizer.setGradient(new LeastSquaresGradient())
 
 
     import spark.implicits._
