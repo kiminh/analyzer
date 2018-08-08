@@ -161,7 +161,7 @@ object PredictAge {
                 var age_239 = false
                 var age_240 = false
                 for (i <- 0 until user.getInterestedWordsCount) {
-                  val w = user.getInterestedWords(idx)
+                  val w = user.getInterestedWords(i)
                   if (w.getTag == 224) {
                     age_224 =  true
                   }
