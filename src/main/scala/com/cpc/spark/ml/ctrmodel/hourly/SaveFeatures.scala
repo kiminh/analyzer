@@ -5,7 +5,8 @@ import com.cpc.spark.log.parser.TraceLog
 import com.cpc.spark.ml.common.Utils
 import org.apache.spark.rdd.RDD
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
+
 import scala.collection.mutable.Map
 
 /**
@@ -194,6 +195,20 @@ object SaveFeatures {
     println("click log", clicklog.count())
 
     clicklog.join(cvrlog, Seq("searchid"))
+      .map(x =>
+        Row(x.getAs("searchid"), x.getAs("label"), x.getAs("sex"), x.getAs("age"),
+          x.getAs("os"), x.getAs("isp"), x.getAs("network"), x.getAs("city"),
+          x.getAs("media_appsid"), x.getAs("phone_level"), x.getAs("timestamp"), x.getAs("adtype"),
+          x.getAs("planid"), x.getAs("unitid"), x.getAs("ideaid"), x.getAs("adclass"),
+          x.getAs("adslotid"), x.getAs("adslot_type"), x.getAs("bookid"), x.getAs("brand_title"),
+          x.getAs("user_req_ad_num"), x.getAs("user_req_num"), x.getAs("uid"), x.getAs("user_click_num"),
+          x.getAs("user_click_unit_num"), x.getAs("user_long_click_count"),
+          x.getAs("active1"), x.getAs("active2"), x.getAs("active3"), x.getAs("active4"),
+          x.getAs("active5"), x.getAs("active6"), x.getAs("disactive"), x.getAs("active_href"),
+          x.getAs("date"), x.getAs("hour")
+        )
+      )
+      .toDF()
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
