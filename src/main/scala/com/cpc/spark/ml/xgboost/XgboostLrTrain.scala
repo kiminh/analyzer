@@ -116,11 +116,11 @@ object XgboostLrTrain {
 
     val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
 //    lbfgs.optimizer.setUpdater(new L1Updater())
-    lbfgs.optimizer.setUpdater(new SquaredL2Updater())
+//    lbfgs.optimizer.setUpdater(new SquaredL2Updater())
     lbfgs.optimizer.setNumIterations(200)
-    lbfgs.optimizer.setConvergenceTol(1e-8)
+    lbfgs.optimizer.setConvergenceTol(1e-10)
 //    lbfgs.optimizer.setGradient(new LeastSquaresGradient())
-    lbfgs.optimizer.setRegParam(1e-2)
+//    lbfgs.optimizer.setRegParam(1e-2)
 
 
     import spark.implicits._
