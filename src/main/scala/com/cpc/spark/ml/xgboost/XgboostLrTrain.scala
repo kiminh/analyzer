@@ -117,8 +117,8 @@ object XgboostLrTrain {
     val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
 //    lbfgs.optimizer.setUpdater(new L1Updater())
 //    lbfgs.optimizer.setUpdater(new SquaredL2Updater())
-    lbfgs.optimizer.setNumIterations(5)
-    lbfgs.optimizer.setConvergenceTol(1e-8)
+    lbfgs.optimizer.setNumIterations(1)
+    lbfgs.optimizer.setConvergenceTol(1e-10)
 //    lbfgs.optimizer.setGradient(new LeastSquaresGradient())
 //    lbfgs.optimizer.setRegParam(1e-2)
 
@@ -137,7 +137,7 @@ object XgboostLrTrain {
     lr.save(spark.sparkContext, "/user/cpc/xgboost_lr_model/" + filetime)
     lr.clearThreshold()
     xgbTestResults = sampleTest.map { r => (lr.predict(r.features), r.label) }
-    printXGBTestLog(xgbTestResults)
+    // printXGBTestLog(xgbTestResults)
     val metrics = new BinaryClassificationMetrics(xgbTestResults)
     auPRC = metrics.areaUnderPR
     auROC = metrics.areaUnderROC
