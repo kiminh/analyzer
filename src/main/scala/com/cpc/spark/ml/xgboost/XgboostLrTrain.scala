@@ -118,7 +118,7 @@ object XgboostLrTrain {
 //    lbfgs.optimizer.setUpdater(new L1Updater())
 //    lbfgs.optimizer.setUpdater(new SquaredL2Updater())
     lbfgs.optimizer.setNumIterations(200)
-    lbfgs.optimizer.setConvergenceTol(1e-10)
+    lbfgs.optimizer.setConvergenceTol(1e-8)
 //    lbfgs.optimizer.setGradient(new LeastSquaresGradient())
 //    lbfgs.optimizer.setRegParam(1e-2)
 
@@ -131,7 +131,7 @@ object XgboostLrTrain {
     val sampleTest = test
 
 
-    val lr = lbfgs.run(sampleTrain)
+    val lr = lbfgs.run(sampleTrain.repartition(2))
     val filetime = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     lr.save(spark.sparkContext, "/user/cpc/xgboost_lr_model/" + filetime)
     lr.clearThreshold()
@@ -146,7 +146,7 @@ object XgboostLrTrain {
 
     // train metrics
     val xgbTrainResults = sampleTrain.map { r => (lr.predict(r.features), r.label) }
-    val metricsTrain = new BinaryClassificationMetrics(xgbTrainResults)
+    val metricsTrain = new BinaryClassificationMetrics(xgbTrainResults.repartition(2))
     println(s"train: auPrc=${metricsTrain.areaUnderPR()}, auc=${metricsTrain.areaUnderROC()}")
 
 
