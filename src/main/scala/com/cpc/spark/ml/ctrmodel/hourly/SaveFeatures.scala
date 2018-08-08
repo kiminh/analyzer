@@ -18,7 +18,7 @@ object SaveFeatures {
 
   private var version = "v1"
   private var versionV2 = "v2"
-  private var versionV2_test = "v2_test"
+
 
   def main(args: Array[String]): Unit = {
     if (args.length < 2) {
@@ -38,10 +38,9 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    //saveDataFromLog(spark, date, hour)
+    saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)
-    //    saveCvrData(spark, date, hour, versionV2)
-    saveCvrData(spark, date, hour, versionV2_test)
+    saveCvrData(spark, date, hour, versionV2)
     println("SaveFeatures_done")
   }
 
@@ -200,8 +199,8 @@ object SaveFeatures {
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
     spark.sql(
       """
-        |ALTER TABLE dl_cpc.ml_cvr_feature_v1_test add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2_test/%s/%s'
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
   }
 }
