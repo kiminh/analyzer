@@ -97,74 +97,17 @@ object GetNewUser2 {
             val key = deviceid + "_UPDATA"
             var have = false
             val buffer = redis.get[Array[Byte]](key).getOrElse(null)
-            if (buffer != null) {
+            if (buffer != null && day != null) {
               n1 += 1
-              loop.breakable{
-                user = UserProfile.parseFrom(buffer).toBuilder
-                var idx = 0
-                while(idx < user.getInterestedWordsCount) {
-                  val w = user.getInterestedWords(idx)
-                  if (w.getTag == 228) {
-                    user.removeInterestedWords(idx)
-                    have = true
-                  } else {
-                    idx += 1
-                  }
-                  if (idx == user.getInterestedWordsCount) {
-                    loop.break()
-                  }
-                }
-              }
-              if (sevenDay > day) {
-                val in = InterestItem.newBuilder()
-                  .setTag(228)
-                  .setScore(100)
-                user.addInterestedWords(in)
-                n2 += 1
-                if (!have) {
-                  n4 += 1
-                }
-              }  else {
-                n3 += 1
-              }
-              //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+              val user = UserProfile.parseFrom(buffer).toBuilder
+              user.setUserCreateTime(day)
+              redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
 
             }
         }
-        Seq((0, n1), (1, n2), (2, n3),(3, n4),(4, n5)).iterator
-    }
-
-    //统计新增数据
-    var n1 = 0
-    var n2 = 0
-    var n3 = 0
-    var n4 = 0
-    var n5 = 0
-    sum.reduceByKey((x, y) => x + y)
-      .take(5)
-      .foreach {
-        x =>
-          if (x._1 == 0) {
-            n1 = x._2
-          } else if (x._1 == 1) {
-            n2 = x._2
-          } else if (x._1 == 2) {
-            n3 = x._2
-          } else if (x._1 == 3) {
-            n4 = x._2
-          } else if (x._1 == 4) {
-            n5 = x._2
-          }
-      }
-    redis = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
-    redis.select(3)
-
-    val key = "touched_uv_percent_old_or_new_user_2"
-    val key2 = "touched_uv_percent_old_or_new_user_1"
-
-    redis.set(key, "%.8f".format(n2.toDouble/n1.toDouble))
-    redis.set(key2, "%.8f".format(n3.toDouble/n1.toDouble))
-    println("total: %d new-7-user: %d old: %d update:%d".format(n1, n3, n2, n4))
+        Seq((0, n1)).iterator
+    }.reduceByKey(_+_)
+    println(sum.toLocalIterator)
     ctx.stop()
   }
 }

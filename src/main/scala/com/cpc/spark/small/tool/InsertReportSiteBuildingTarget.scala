@@ -175,7 +175,7 @@ object InsertReportSiteBuildingTarget {
           (searchid, (Info(siteid, ideaid, isshow, isclick, sex, age, os, province, phoneLevel, hour,
             network, userLevel, qukanNewUser, adslotType, mediaId, 0, 0, 0, 0, adslotid, brand, browserType,isStudent)))
       }
-      .repartition(100)
+      .repartition(50)
     //println("unionData count", unionData.count())
 
 
@@ -218,7 +218,7 @@ object InsertReportSiteBuildingTarget {
           val siteid = x.get(4).toString.toInt
           (searchid, (Info(siteid, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, load, active, landpage_ok, stayinwx)))
       }
-      .repartition(100)
+      .repartition(50)
     //println("traceData count", traceData.count())
 
 
@@ -260,7 +260,7 @@ object InsertReportSiteBuildingTarget {
             info.adslotid, info.brand, info.browserType,info.isStudent))
       }
       .filter(_._2.siteId > 0)
-      .repartition(100)
+      .repartition(50)
       .cache()
 
     val inputStudentData = allData
@@ -277,7 +277,6 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-      .repartition(100)
     val studentData = getTargetData(inputStudentData, "student", argDay)
 
     val inputBrandData = allData
@@ -287,7 +286,6 @@ object InsertReportSiteBuildingTarget {
           val adslotType = x._2.adslotType
           ((mediaId == 80000001) || (mediaId == 80000002)) && (adslotType == 1)
       }
-      .repartition(100)
       .map {
         x =>
           val info = x._2
@@ -323,7 +321,6 @@ object InsertReportSiteBuildingTarget {
           }
           ok
       }
-      .repartition(100)
       .map {
         x =>
           val info = x._2
@@ -544,7 +541,6 @@ object InsertReportSiteBuildingTarget {
           val mediaId = x._2.mediaid
           (mediaId == 80000001) || (mediaId == 80000002)
       }
-      .repartition(100)
       .map {
         x =>
           val info = x._2
@@ -558,12 +554,10 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-
-
     val quAdslotTypeData = getTargetData(inputQuAdslotTypeData, "adslot_type_media", argDay)
     //println("adslot_type_media count is", quAdslotTypeData.count())
 
-    unionData.unpersist()
+    //unionData.unpersist()
 
     val insertAllData = sexData
       .union(ageData)
@@ -586,7 +580,7 @@ object InsertReportSiteBuildingTarget {
     var insertDataFrame = ctx.createDataFrame(insertAllData)
       .toDF("site_id", "impression", "click", "target_type", "target_value", "load", "active", "date", "sdk_ok", "stayinwx")
       .repartition(50)
-    insertDataFrame.show(10)
+    //insertDataFrame.show(10)
 
 
     //report
@@ -607,7 +601,7 @@ object InsertReportSiteBuildingTarget {
       .jdbc(mariaAmateurdbUrl, "report.report_site_building_target", mariaAmateurdbProp)
     println("Amateur over!")
 
-    insertDataFrame.unpersist()
+    //insertDataFrame.unpersist()
 
   }
 
@@ -639,6 +633,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = x._2._8
           (siteId, isshow, isclick, targetType, typeVal, load, active, argDay, landpage_ok, stayinwx)
       }
+    .repartition(50)
   }
 
   def clearReportSiteBuildingTarget(date: String): Unit = {

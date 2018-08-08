@@ -74,8 +74,8 @@ object AnalHuDongLog {
     var hudongLog = spark.sql(
       """
         |SELECT trace_type, adslot_id
-        |FROM dl_cpc.cpc_all_trace_log
-        |WHERE date="%s" AND hour="%s"
+        |FROM dl_cpc.logparsed_cpc_trace_minute
+        |WHERE thedate="%s" AND thehour="%s"
       """.stripMargin.format(date, hour))
       .rdd
       .filter {
@@ -117,7 +117,7 @@ object AnalHuDongLog {
       val stmt = conn.createStatement()
       val sql =
         """
-          |delete from union.%s where `date` = "%s" and hour ="%s"
+          |delete from union.%s where `thedate` = "%s" and thehour ="%s"
         """.stripMargin.format(tbl, date, hour)
       stmt.executeUpdate(sql);
     } catch {
