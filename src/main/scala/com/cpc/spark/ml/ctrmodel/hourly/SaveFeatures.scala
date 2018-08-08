@@ -195,24 +195,6 @@ object SaveFeatures {
     println("click log", clicklog.count())
 
     clicklog.join(cvrlog, Seq("searchid"))
-      .map(x =>
-        Row(x.getAs[String]("searchid"), x.getAs[Int]("label"), x.getAs[Int]("sex"), x.getAs[Int]("age"),
-          x.getAs[Int]("os"), x.getAs[Int]("isp"), x.getAs[Int]("network"), x.getAs[Int]("city"),
-          x.getAs[String]("media_appsid"), x.getAs[Int]("phone_level"), x.getAs[Int]("timestamp"), x.getAs[Int]("adtype"),
-          x.getAs[Int]("planid"), x.getAs[Int]("unitid"), x.getAs[Int]("ideaid"), x.getAs[Int]("adclass"),
-          x.getAs[String]("adslotid"), x.getAs[Int]("adslot_type"), x.getAs[String]("bookid"), x.getAs[String]("brand_title"),
-          x.getAs[Int]("user_req_ad_num"), x.getAs[Int]("user_req_num"), x.getAs[String]("uid"), x.getAs[Int]("user_click_num"),
-          x.getAs[Int]("user_click_unit_num"), x.getAs[Int]("user_long_click_count"),
-          x.getAs[Int]("active1"), x.getAs[Int]("active2"), x.getAs[Int]("active3"), x.getAs[Int]("active4"),
-          x.getAs[Int]("active5"), x.getAs[Int]("active6"), x.getAs[Int]("disactive"), x.getAs[Int]("active_href"),
-          x.getAs[String]("date"), x.getAs[String]("hour")
-        )
-      )
-      .toDF("searchid", "label", "sex", "age", "os", "isp", "network", "city",
-        "media_appsid", "phone_level", "timestamp", "adtype", "planid", "unitid", "ideaid", "adclass",
-        "adslotid", "adslot_type", "bookid", "brand_title", "user_req_ad_num", "user_req_num", "uid", "user_click_num",
-        "user_click_unit_num", "user_long_click_count",
-        "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href", "date", "hour")
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
