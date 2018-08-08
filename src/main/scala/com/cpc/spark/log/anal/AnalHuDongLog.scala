@@ -74,7 +74,7 @@ object AnalHuDongLog {
     var hudongLog = spark.sql(
       """
         |SELECT trace_type, adslot_id
-        |FROM dl_cpc.cpc_all_trace_log
+        |FROM dl_cpc.logparsed_cpc_trace_minute
         |WHERE date="%s" AND hour="%s"
       """.stripMargin.format(date, hour))
       .rdd
