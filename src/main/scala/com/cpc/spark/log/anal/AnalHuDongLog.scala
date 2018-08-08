@@ -117,7 +117,7 @@ object AnalHuDongLog {
       val stmt = conn.createStatement()
       val sql =
         """
-          |delete from union.%s where `thedate` = "%s" and thehour ="%s"
+          |delete from union.%s where `date` = "%s" and hour ="%s"
         """.stripMargin.format(tbl, date, hour)
       stmt.executeUpdate(sql);
     } catch {
