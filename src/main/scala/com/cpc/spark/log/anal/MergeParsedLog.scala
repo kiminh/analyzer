@@ -298,7 +298,7 @@ object MergeParsedLog {
     if (unionData.take(1).length > 0) {
       println("~~~~~~union done")
       if (minute.toInt > 0) {
-        createMarkFile(spark, "new_union_done", date, hour)
+        createSuccessMarkHDFSFile("union_done", date, hour)
       }
 
 
@@ -421,7 +421,7 @@ object MergeParsedLog {
   }
 
   /**
-    * 创建成功标记文件
+    * 创建成功标记文件夹。 Deprecated
     *
     * @param spark     SparkSession
     * @param markTable 对该表创建标记文件
@@ -439,5 +439,39 @@ object MergeParsedLog {
       .mode(SaveMode.Overwrite)
       .text("/warehouse/cpc/%s/%s-%s.ok".format(markTable, date, hour))
   }
+
+  /**
+    * 在hdfs上创建成功标记文件；unionlog, uniontracelog合并成功的标记文件
+    *
+    * @param mark
+    */
+  def createSuccessMarkHDFSFile(mark: String, date: String, hour: String): Unit = {
+    val fileName = "/warehouse/cpc/%s/%s-%s.ok".format(mark, date, hour)
+    val path = new Path(fileName)
+
+    //get object conf
+    val conf = new Configuration()
+    //get FileSystem
+    val fileSystem = FileSystem.newInstance(conf)
+
+    try {
+      val success = fileSystem.createNewFile(path)
+      if (success) {
+        println("Sreate HDFSFile Successfully")
+      }
+    } catch {
+      case e: IOException => e.printStackTrace()
+    } finally {
+      try {
+        if (fileSystem != null) {
+          fileSystem.close()
+        }
+      } catch {
+        case e: IOException => e.printStackTrace()
+      }
+    }
+  }
+
+
 
 }

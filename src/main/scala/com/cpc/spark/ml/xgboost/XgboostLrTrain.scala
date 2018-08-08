@@ -16,7 +16,7 @@ import org.apache.spark.ml.linalg.{Vector => MVec, Vectors => MVecs}
 import org.apache.spark.mllib.classification.{LogisticRegressionModel, LogisticRegressionWithLBFGS}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
-import org.apache.spark.mllib.optimization.L1Updater
+import org.apache.spark.mllib.optimization.{L1Updater, LeastSquaresGradient, SquaredL2Updater}
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel, LabeledPoint}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
@@ -80,7 +80,7 @@ object XgboostLrTrain {
       .getOrCreate()
 
     val qttListTestLeaf: RDD[LabeledPoint] = spark.sparkContext
-      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_test_leaf_${type1}", 50)
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_test_leaf_v${version}_${type1}", 50)
       .map { x => {
         val array = x.split("\t")
         val label = array(0).toDouble
@@ -94,7 +94,7 @@ object XgboostLrTrain {
       }
 
     val qttListTrainLeaf: RDD[LabeledPoint] = spark.sparkContext
-      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_train_leaf_${type1}", 50)
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_train_leaf_v${version}_${type1}", 50)
       .map { x => {
         val array = x.split("\t")
         val label = array(0).toDouble
@@ -115,9 +115,13 @@ object XgboostLrTrain {
     println(s"test size = ${test.count()}")
 
     val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
-    lbfgs.optimizer.setUpdater(new L1Updater())
+//    lbfgs.optimizer.setUpdater(new L1Updater())
+//    lbfgs.optimizer.setUpdater(new SquaredL2Updater())
     lbfgs.optimizer.setNumIterations(200)
-    lbfgs.optimizer.setConvergenceTol(1e-8)
+    lbfgs.optimizer.setConvergenceTol(1e-10)
+//    lbfgs.optimizer.setGradient(new LeastSquaresGradient())
+//    lbfgs.optimizer.setRegParam(1e-2)
+
 
     import spark.implicits._
     val BcDict = spark.sparkContext.broadcast(dict)
