@@ -131,7 +131,8 @@ object XgboostLrTrain {
     val sampleTest = test
 
 
-    val lr = lbfgs.run(sampleTrain.repartition(2))
+    val pSize = 20
+    val lr = lbfgs.run(sampleTrain.repartition(pSize))
     val filetime = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     lr.save(spark.sparkContext, "/user/cpc/xgboost_lr_model/" + filetime)
     lr.clearThreshold()
@@ -146,7 +147,7 @@ object XgboostLrTrain {
 
     // train metrics
     val xgbTrainResults = sampleTrain.map { r => (lr.predict(r.features), r.label) }
-    val metricsTrain = new BinaryClassificationMetrics(xgbTrainResults.repartition(2))
+    val metricsTrain = new BinaryClassificationMetrics(xgbTrainResults.repartition(pSize))
     println(s"train: auPrc=${metricsTrain.areaUnderPR()}, auc=${metricsTrain.areaUnderROC()}")
 
 
