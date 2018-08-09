@@ -1,5 +1,8 @@
 package com.cpc.spark.qukan.userprofile
 
+import java.text.SimpleDateFormat
+import java.util.Date
+
 import org.apache.spark.sql.SparkSession
 
 /**
@@ -19,11 +22,13 @@ object PredictStudent_v3 {
     import spark.implicits._
     val tag = 241
 
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date())
+
     val devices = spark.sql(
-      """
-        |select device
-        |from rpt_qukan.jb_predict_student
-        |where predict > 0
+      s"""
+         |select device
+         |from rpt_qukan.jb_predict_student
+         |where predict > 0 and thedate='$date'
       """.stripMargin)
       .map { x =>
         (x.getAs[String]("device"), tag, true)
