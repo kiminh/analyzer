@@ -129,20 +129,16 @@ object PredictAge {
     val sum =  predict.repartition(500)
       .mapPartitions {
         p =>
-          var bbst = bst.value
-          var insert = 0
-          var revert = 0
-          var both_taged = 0
-          var total = 0
           var count_224 = 0
           var count_225 = 0
-          var new_user = 0
-          var young_new = 0
+          var count_239 = 0
+          var count_240 = 0
+          var both_stu = 0
+          var both_nostu = 0
           val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
           val loop = new Breaks
           p.foreach {
             r =>
-              total += 1
               val key = r._1 + "_UPDATA"
               val buffer = redis.get[Array[Byte]](key).getOrElse(null)
               var age = 0
@@ -154,7 +150,6 @@ object PredictAge {
                 count_224 += 1
               }
               if (buffer != null) {
-
                 val user = UserProfile.parseFrom(buffer).toBuilder
                 val in = InterestItem.newBuilder()
                   .setTag(age)
@@ -163,50 +158,38 @@ object PredictAge {
                 var conflict = false
                 var age_224 = false
                 var age_225 = false
-                if (user.getNewUser == 1) {
-                  new_user += 1
-                }
-                if (user.getNewUser == 1 && age == 224) {
-                  young_new += 1
-                }
-                loop.breakable {
-                  var idx = 0
-                  while (idx < user.getInterestedWordsCount) {
-                    val w = user.getInterestedWords(idx)
-                    if (w.getTag == 224 || w.getTag == 225) {
-                      if (w.getTag == 224) age_224 = true
-                      if (w.getTag == 225) age_225 = true
-                      has = true
-                      if (w.getTag != in.getTag) {
-                        conflict = true
-                      }
-                      user.removeInterestedWords(idx)
-                    } else {
-                      idx += 1
-                    }
-                    if (idx == user.getInterestedWordsCount) {
-                      loop.break()
-                    }
+                var age_239 = false
+                var age_240 = false
+                for (i <- 0 until user.getInterestedWordsCount) {
+                  val w = user.getInterestedWords(i)
+                  if (w.getTag == 224) {
+                    age_224 =  true
+                  }
+                  if (w.getTag == 225) {
+                    age_225 =  true
+                  }
+                  if (w.getTag == 239) {
+                    age_239 =  true
+                  }
+                  if (w.getTag == 240) {
+                    age_240 =  true
                   }
                 }
-                if (in.getTag != 0) {
-                  if (!has) {
-                    insert += 1
-                  } else if (conflict) {
-                    revert += 1
-                  }
-                  user.addInterestedWords(in)
+                if (age_239) {
+                  count_239 += 1
                 }
-                if (age_224 && age_225) {
-                  both_taged += 1
+                if (age_240) {
+                  count_240 += 1
                 }
-                if (is_set) {
-                  //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                if (age_224 && age_239) {
+                  both_stu += 1
+                }
+                if (age_225 && age_240) {
+                  both_nostu += 1
                 }
               }
           }
-          bbst = bbst + "%d ".format(insert) + "%d ".format(revert) + "%d ".format(both_taged) + "%d ".format(total)
-          Seq((0, insert), (1, revert), (2, both_taged), (3, total), (4, count_224), (5, count_225), (6, young_new), (7, new_user)).iterator
+          Seq((0, count_224), (1, count_225), (2, count_239), (3, count_240), (4, both_stu), (5, both_nostu)).iterator
       }
     println(st)
     //统计数据
@@ -216,10 +199,8 @@ object PredictAge {
     var n3 = 0
     var n4 = 0
     var n5 = 0
-    var n6 = 0
-    var n7 = 0
     sum.reduceByKey((x, y) => x + y)
-      .take(8)
+      .take(6)
       .foreach {
         x =>
           if (x._1 == 0) {
@@ -234,12 +215,8 @@ object PredictAge {
             n4 = x._2
           } else if (x._1 == 5){
             n5 = x._2
-          } else if (x._1 == 6){
-            n6 = x._2
-          } else {
-            n7 = x._2
           }
       }
-    println("total: %s, insert: %s, revert %s, both_taged %s count_224: %s count_225 %s young_new: %s new_user: %s".format(n3, n, n1, n2, n4, n5, n6, n7))
+    println("224:%s  225:%s  239:%s  240:%s  both_stu:%s  both_nostu:%s  ".format(n, n1, n2, n3, n4, n5))
   }
 }
