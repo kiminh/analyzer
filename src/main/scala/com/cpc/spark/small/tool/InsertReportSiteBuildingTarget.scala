@@ -264,6 +264,7 @@ object InsertReportSiteBuildingTarget {
       .cache()
 
     val inputStudentData = allData
+      //.repartition(50)
       .map {
         x =>
           val info = x._2
@@ -277,9 +278,11 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = info.stayinwx
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
-    val studentData = getTargetData(inputStudentData, "student", argDay)
+    //val studentData = getTargetData(inputStudentData, "student", argDay)
+    var insertAllData = getTargetData(inputStudentData, "student", argDay)
 
     val inputBrandData = allData
+      .repartition(50)
       .filter {
         x =>
           val mediaId = x._2.mediaid
@@ -302,9 +305,11 @@ object InsertReportSiteBuildingTarget {
 
     val brandData = getTargetData(inputBrandData, "brand", argDay)
     //println("brandData count is", brandData.count())
+    insertAllData = insertAllData.union(brandData)
 
 
     val inputBrowserTypeData = allData
+      //.repartition(50)
       .filter {
         x =>
           val mediaId = x._2.mediaid
@@ -337,9 +342,10 @@ object InsertReportSiteBuildingTarget {
 
     val browserTypeData = getTargetData(inputBrowserTypeData, "browser_type", argDay)
     //println("browserTypeData count is", browserTypeData.count())
-
+    insertAllData = insertAllData.union(browserTypeData)
 
     val inputAdslotIdData = allData
+      //.repartition(50)
       .map {
         x =>
           val info = x._2
@@ -354,9 +360,10 @@ object InsertReportSiteBuildingTarget {
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
     val adslotIdData = getTargetData(inputAdslotIdData, "adslot_id", argDay)
-
+    insertAllData = insertAllData.union(adslotIdData)
 
     val inputSexData = allData
+      //.repartition(50)
       .map {
         x =>
           val info = x._2
@@ -371,9 +378,10 @@ object InsertReportSiteBuildingTarget {
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
     val sexData = getTargetData(inputSexData, "sex", argDay)
-
+    insertAllData = insertAllData.union(sexData)
 
     val inputAgeData = allData
+      //.repartition(50)
       .map {
         x =>
           val info = x._2
@@ -388,8 +396,10 @@ object InsertReportSiteBuildingTarget {
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
     val ageData = getTargetData(inputAgeData, "age", argDay)
+    insertAllData = insertAllData.union(ageData)
 
     val inputOsData = allData
+      //.repartition(50)
       .map {
         x =>
           val info = x._2
@@ -404,8 +414,10 @@ object InsertReportSiteBuildingTarget {
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
     val osData = getTargetData(inputOsData, "os", argDay)
+    insertAllData = insertAllData.union(osData)
 
     val inputProvinceData = allData
+      //.repartition(50)
       .map {
         x =>
           val info = x._2
@@ -420,8 +432,10 @@ object InsertReportSiteBuildingTarget {
           ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
       }
     val provinceData = getTargetData(inputProvinceData, "province", argDay)
+    insertAllData = insertAllData.union(provinceData)
 
     val inputPhoneLevelData = allData
+      //.repartition(50)
       .map {
         x =>
           val info = x._2
@@ -438,9 +452,11 @@ object InsertReportSiteBuildingTarget {
 
     val phoneLevelData = getTargetData(inputPhoneLevelData, "phone_level", argDay)
     //println("phone_level count is", phoneLevelData.count())
+    insertAllData = insertAllData.union(phoneLevelData)
 
 
     val inputHourData = allData
+      //.repartition(50)
       .map {
         x =>
           val info = x._2
@@ -457,9 +473,11 @@ object InsertReportSiteBuildingTarget {
 
     val hourData = getTargetData(inputHourData, "hour", argDay)
     //println("hour count is", hourData.count())
+    insertAllData = insertAllData.union(hourData)
 
 
     val inputNetworkData = allData
+      //.repartition(50)
       .map {
         x =>
           val info = x._2
@@ -476,9 +494,11 @@ object InsertReportSiteBuildingTarget {
 
     val networkData = getTargetData(inputNetworkData, "network_type", argDay).cache()
     //println("network_type count is", networkData.count())
+    insertAllData = insertAllData.union(networkData)
 
 
     val inputUserLevelData = allData
+      //.repartition(50)
       .map {
         x =>
           val info = x._2
@@ -495,9 +515,10 @@ object InsertReportSiteBuildingTarget {
 
     val userLevelData = getTargetData(inputUserLevelData, "user_level", argDay)
     //println("user_level count is", userLevelData.count())
-
+    insertAllData = insertAllData.union(userLevelData)
 
     val inputQukanNewUserData = allData
+      //.repartition(50)
       .map {
         x =>
           val info = x._2
@@ -514,9 +535,10 @@ object InsertReportSiteBuildingTarget {
 
     val qukanNewUserData = getTargetData(inputQukanNewUserData, "user_orient", argDay)
     //println("user_orient count is", qukanNewUserData.count())
-
+    insertAllData = insertAllData.union(qukanNewUserData)
 
     val inputAdslotTypeData = allData
+      //.repartition(50)
       .map {
         x =>
           val info = x._2
@@ -533,9 +555,10 @@ object InsertReportSiteBuildingTarget {
 
     val adslotTypeData = getTargetData(inputAdslotTypeData, "adslot_type", argDay)
     //println("adslot_type count is", adslotTypeData.count())
-
+    insertAllData = insertAllData.union(adslotTypeData)
 
     val inputQuAdslotTypeData = allData
+      //.repartition(50)
       .filter {
         x =>
           val mediaId = x._2.mediaid
@@ -556,25 +579,26 @@ object InsertReportSiteBuildingTarget {
       }
     val quAdslotTypeData = getTargetData(inputQuAdslotTypeData, "adslot_type_media", argDay)
     //println("adslot_type_media count is", quAdslotTypeData.count())
+    insertAllData = insertAllData.union(quAdslotTypeData).repartition(50)
 
-    //unionData.unpersist()
+    allData.unpersist()
 
-    val insertAllData = sexData
-      .union(ageData)
-      .union(osData)
-      .union(provinceData)
-      .union(phoneLevelData)
-      .union(hourData)
-      .union(networkData)
-      .union(userLevelData)
-      .union(qukanNewUserData)
-      .union(adslotTypeData)
-      .union(quAdslotTypeData)
-      .union(adslotIdData)
-      .union(brandData)
-      .union(browserTypeData)
-      .union(studentData)
-      .repartition(50)
+//    val insertAllData = sexData
+//      .union(ageData)
+//      .union(osData)
+//      .union(provinceData)
+//      .union(phoneLevelData)
+//      .union(hourData)
+//      .union(networkData)
+//      .union(userLevelData)
+//      .union(qukanNewUserData)
+//      .union(adslotTypeData)
+//      .union(quAdslotTypeData)
+//      .union(adslotIdData)
+//      .union(brandData)
+//      .union(browserTypeData)
+//      .union(studentData)
+//      .repartition(50)
 
 
     var insertDataFrame = ctx.createDataFrame(insertAllData)
@@ -633,7 +657,7 @@ object InsertReportSiteBuildingTarget {
           val stayinwx = x._2._8
           (siteId, isshow, isclick, targetType, typeVal, load, active, argDay, landpage_ok, stayinwx)
       }
-    .repartition(50)
+    //.repartition(50)
   }
 
   def clearReportSiteBuildingTarget(date: String): Unit = {
