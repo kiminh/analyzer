@@ -67,9 +67,9 @@ object TagUserByZfb {
     val age = zfb.flatMap {
       x =>
         if (x._3 == 224) {
-          Seq((x._1, 224, true), (x._1, 225, false))
+          Seq((x._1, 224, true), (x._1, 225, false), (x._1, 239, true), (x._1, 240, false))
         } else {
-          Seq((x._1, 224, false), (x._1, 225, true))
+          Seq((x._1, 224, false), (x._1, 225, true), (x._1, 239, false), (x._1, 240, true))
         }
     }
     val ret = SetUserProfileTag.setUserProfileTag(age)
