@@ -1,5 +1,8 @@
 package com.cpc.spark.qukan.interest
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import org.apache.spark.ml.classification.LogisticRegressionModel
 import org.apache.spark.ml.linalg.Vectors
 import com.typesafe.config.ConfigFactory
@@ -12,11 +15,11 @@ import scala.util.control._
 import ml.dmlc.xgboost4j.scala.spark._
 
 import scala.collection.mutable
-import userprofile.Userprofile.{InterestItem, UserProfile}
 import com.cpc.spark.qukan.userprofile.SetUserProfileTag
+import userprofile.Userprofile.{InterestItem, UserProfile}
 
 /**
-  * Created by roydong on 11/06/2018.
+  * Created by myt on 11/06/2018.
   */
 object PredictAge {
   val words_fnum = 41e4
@@ -28,6 +31,10 @@ object PredictAge {
   def main(args: Array[String]): Unit = {
     val days = args(0).toInt
     val is_set = args(3).toBoolean
+    val cal = Calendar.getInstance()
+    cal.add(Calendar.DATE, -1)
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+
     val spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .config("spark.kryoserializer.buffer.max", "2047MB")
@@ -126,6 +133,8 @@ object PredictAge {
     }
     println(toSet.count())
     SetUserProfileTag.setUserProfileTag(toSet)
+    val rs = SetUserProfileTag.SetUserProfileTagInHiveDaily(toSet, date)
+    rs.foreach(println)
     val sum =  predict.repartition(500)
       .mapPartitions {
         p =>
