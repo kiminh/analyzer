@@ -58,7 +58,7 @@ object InsertReportApkDownTarget {
     val ctx = SparkSession
       .builder()
       .config("spark.debug.maxToStringFields", "2000")
-      .appName("InsertReportSiteBuildingTarget is run day is %s".format(argDay))
+      .appName("InsertReportApkDownTarget is run day is %s".format(argDay))
       .enableHiveSupport()
       .getOrCreate()
 
