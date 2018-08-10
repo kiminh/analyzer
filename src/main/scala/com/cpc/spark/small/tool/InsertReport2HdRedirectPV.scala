@@ -46,7 +46,7 @@ object InsertReport2HdRedirectPV {
     import ctx.implicits._
 
     var cfgLog = ctx.read
-      .parquet("/warehouse/dl_cpc.db/logparsed_cpc_cfg_minute/thedate=%s/thehour=%s/theminute=%s".format(argDay, argHour, argMinute))
+      .parquet("/warehouse/dl_cpc.db/logparsed_cpc_cfg_minute/%s/%s/%s".format(argDay, argHour, argMinute))
       .as[CfgLog2]
       .rdd
       .filter(x => x.log_type == "/hdjump" || x.log_type == "/reqhd")
