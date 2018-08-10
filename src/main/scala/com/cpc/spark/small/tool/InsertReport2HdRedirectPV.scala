@@ -51,6 +51,8 @@ object InsertReport2HdRedirectPV {
       .rdd
       .filter(x => x.log_type == "/hdjump" || x.log_type == "/reqhd")
 
+    cfgLog.take(1).foreach(x => println(x))
+
 
     val startDate = getTimeStampByDate(argDay, argHour, argMinute) / 1000
     val middleDate = getTimeStampByDate(argDay, argHour, (argMinute.toInt + 5).toString) / 1000
@@ -164,7 +166,10 @@ object InsertReport2HdRedirectPV {
                       hour: String = "",
                       //ext: collection.Map[String, ExtValue] = null,    2018-08-09 16
                       ip: String = "",
-                      ua: String = ""
+                      ua: String = "",
+                      thedate: String = "",
+                      thehour: String = "",
+                      theminute: String = ""
                     )
 
 }
