@@ -1,6 +1,7 @@
 package com.cpc.spark.small.tool
 
 import java.sql.DriverManager
+import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
 import com.typesafe.config.ConfigFactory
@@ -45,6 +46,8 @@ object InsertReport2HdRedirectPV {
       .getOrCreate()
     import ctx.implicits._
 
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+
     var cfgLog = ctx.read
       .parquet("/warehouse/dl_cpc.db/logparsed_cpc_cfg_minute/%s/%s/%s".format(argDay, argHour, argMinute))
       .as[CfgLog2]
@@ -58,7 +61,11 @@ object InsertReport2HdRedirectPV {
     val middleDate = getTimeStampByDate(argDay, argHour, (argMinute.toInt + 5).toString) / 1000
     val endDate = getTimeStampByDate(argDay, argHour, (argMinute.toInt + 10).toString) / 1000
 
+    val createTime1 = dateFormat.format(startDate * 1000)
+    val createTime2 = dateFormat.format(middleDate * 1000)
+
     println("startDate:" + startDate + "  middleDate:" + middleDate + "  endDate:" + endDate)
+    println("createTime1:" + createTime1 + "  createTime2:" + createTime2)
 
     //获得theminute分区的前5min数据
     val cfgLog1 = cfgLog
@@ -71,9 +78,9 @@ object InsertReport2HdRedirectPV {
       .filter(x => x.search_timestamp > middleDate && x.search_timestamp <= endDate)
 
     //前5min cfg计算pv数写入mysql
-    writeToMysql(ctx, cfgLog1, argDay)
+    writeToMysql(ctx, cfgLog1, argDay, createTime1)
     //后5min cfg计算pv数写入mysql
-    writeToMysql(ctx, cfgLog2, argDay)
+    writeToMysql(ctx, cfgLog2, argDay, createTime2)
 
     ctx.stop()
 
@@ -86,49 +93,31 @@ object InsertReport2HdRedirectPV {
     * @param cfgLog cfgRDD
     * @param argDay
     */
-  def writeToMysql(ctx: SparkSession, cfgLog: RDD[CfgLog2], argDay: String): Unit = {
+  def writeToMysql(ctx: SparkSession, cfgLog: RDD[CfgLog2], argDay: String, createTime: String): Unit = {
 
     var toResult = cfgLog
       .map(x => (x.aid, 1))
       .reduceByKey((x, y) => x + y)
       .map {
         case (adslotId, count) =>
-          (adslotId, argDay, count)
+          (adslotId, argDay, count, createTime)
       }
 
     println("count:" + toResult.count())
 
-    val insertDataFrame = ctx.createDataFrame(toResult).toDF("adslot_id", "date", "pv")
+    val insertDataFrame = ctx.createDataFrame(toResult).toDF("adslot_id", "date", "pv", "create_time")
 
     insertDataFrame.show(10)
 
     insertDataFrame
       .write
-      .mode(SaveMode.Append)
+      .mode(SaveMode.Overwrite)
       .jdbc(report2Url, "report2.report_hd_redirect_pv_minute", report2Prop)
 
     println("~~~~~~write to mysql successfully")
-    
+
   }
 
-
-  def clearReportHourData(tbl: String, date: String, hour: Int): Unit = {
-    try {
-      Class.forName(report2Prop.getProperty("driver"))
-      val conn = DriverManager.getConnection(
-        report2Url,
-        report2Prop.getProperty("user"),
-        report2Prop.getProperty("password"))
-      val stmt = conn.createStatement()
-      val sql =
-        """
-          |delete from report.%s where `date` = "%s" AND hour="%d"
-        """.stripMargin.format(tbl, date, hour)
-      stmt.executeUpdate(sql);
-    } catch {
-      case e: Exception => println("exception caught: " + e)
-    }
-  }
 
   /**
     * 根据日期获取时间戳
