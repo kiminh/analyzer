@@ -206,14 +206,11 @@ object SetUserProfileTag {
     sum.toArray[(String, Int)]
   }
   def SetUserProfileTagInHiveHourly (in : RDD[(String, Int, Boolean)], date : String, hour : String) : Array[(String, Int)] = {
-    val spark = SparkSession.builder()
-      .appName("count userprofile tag")
-      .enableHiveSupport()
-      .getOrCreate()
+    val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
     val rs = in.map(x => (x._2, Seq((x._1, x._3)))).reduceByKey(_++_).map {
       x =>
-        spark.sparkContext.parallelize(x._2).toDF("uid", "operation")
+        x._2.toDF("uid", "operation")
           .write.mode(SaveMode.Overwrite).parquet("/user/cpc/qtt-userprofiletag-hourly/%s-%s-%s".format(date, hour, x._1))
         val sql =
           """
@@ -227,10 +224,7 @@ object SetUserProfileTag {
     rs.toLocalIterator.toArray
   }
   def SetUserProfileTagInHiveDaily (in : RDD[(String, Int, Boolean)], date : String) : Array[(String, Int)] = {
-    val spark = SparkSession.builder()
-      .appName("count userprofile tag")
-      .enableHiveSupport()
-      .getOrCreate()
+    val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
     val rs = in.map(x => (x._2, Seq((x._1, x._3)))).reduceByKey(_++_).map {
       x =>
@@ -249,7 +243,7 @@ object SetUserProfileTag {
   }
   def main(args: Array[String]): Unit = {
     val tagList = Array[Int](201, 202, 203, 204, 205, 206, 207, 208, 209, 212, 216, 218, 219, 220, 221, 222,
-      223, 224, 225, 226, 227, 228, 230, 231, 233, 234, 235)
+      223, 224, 225, 226, 227, 228, 230, 231, 233, 234, 235, 236, 237, 238, 239, 240, 241)
     val isTest = args(0).toBoolean
     val days = args(1).toInt
     val spark = SparkSession.builder()
