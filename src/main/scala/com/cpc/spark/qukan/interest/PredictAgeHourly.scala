@@ -141,16 +141,6 @@ object PredictAgeHourly {
     predict.take(10).foreach(println)
     println(predict.filter(_._2 > m).count())
     println(predict.filter(_._2 < f).count())
-    val tag224 = predict.map {
-      x =>
-        if (x._2 > m) {
-          (x._1, 1)
-        } else if (x._2 < f) {
-          (x._1, 0)
-        } else {
-          null
-        }
-    }.filter(_ != null).toDF("")
     val toSet = predict.flatMap {
       x =>
         if (x._2 > m) {
