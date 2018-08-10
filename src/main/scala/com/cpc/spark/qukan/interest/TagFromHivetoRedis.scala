@@ -43,15 +43,16 @@ object TagFromHivetoRedis {
       if (op == 0) {
         stmt =
           """
-            |select uid, tag, operation from dl_cpc.cpc_userprofile_tag_hourly where `date` = "%s" and tag = %s"
+            |select uid, tag, operation from dl_cpc.cpc_userprofile_tag_hourly where `date` = "%s" and tag = %s
           """.stripMargin.format(date, i)
       } else if (op == 1){
         stmt =
           """
-            |select uid, tag, operation from dl_cpc.cpc_userprofile_tag_hourly where `date` = "%s" and `hour` = "%s" and tag = %s"
+            |select uid, tag, operation from dl_cpc.cpc_userprofile_tag_hourly where `date` = "%s" and `hour` = "%s" and tag = %s
           """.stripMargin.format(date, hour, i)
       }
       if (stmt != "") {
+        println(stmt)
         val rs = spark.sql(stmt).rdd.map{
           r =>
             (r.getAs[String](0), r.getAs[Int](1), r.getAs[Boolean](2))
