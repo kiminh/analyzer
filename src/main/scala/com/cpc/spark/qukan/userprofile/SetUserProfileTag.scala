@@ -208,7 +208,7 @@ object SetUserProfileTag {
   def SetUserProfileTagInHiveHourly (in : RDD[(String, Int, Boolean)], date : String, hour : String) : Array[(String, Int)] = {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val rs = in.map(x => (x._2, Seq((x._1, x._3)))).reduceByKey(_++_).map {
+    val rs = in.map(x => (x._2, Seq((x._1, x._3)))).reduceByKey(_++_).toLocalIterator.map {
       x =>
         x._2.toDF("uid", "operation")
           .write.mode(SaveMode.Overwrite).parquet("/user/cpc/qtt-userprofiletag-hourly/%s-%s-%s".format(date, hour, x._1))
@@ -221,7 +221,7 @@ object SetUserProfileTag {
         spark.sql(sql)
         (sql, x._2.size)
     }
-    rs.toLocalIterator.toArray
+    rs.toArray
   }
   def SetUserProfileTagInHiveDaily (in : RDD[(String, Int, Boolean)], date : String) : Array[(String, Int)] = {
     val spark = SparkSession.builder().getOrCreate()
