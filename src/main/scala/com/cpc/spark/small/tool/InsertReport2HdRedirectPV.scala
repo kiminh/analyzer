@@ -100,8 +100,6 @@ object InsertReport2HdRedirectPV {
 
     insertDataFrame.show(10)
 
-    //    clearReportHourData("report_hd_redirect_pv", argDay, argHour.toInt)
-
     insertDataFrame
       .write
       .mode(SaveMode.Append)
@@ -166,10 +164,7 @@ object InsertReport2HdRedirectPV {
                       hour: String = "",
                       //ext: collection.Map[String, ExtValue] = null,    2018-08-09 16
                       ip: String = "",
-                      ua: String = "",
-                      thedate: String = "",
-                      thehour: String = "",
-                      theminute: String = ""
+                      ua: String = ""
                     )
 
 }
