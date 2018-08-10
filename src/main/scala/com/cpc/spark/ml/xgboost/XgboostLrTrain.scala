@@ -80,7 +80,7 @@ object XgboostLrTrain {
       .getOrCreate()
 
     val qttListTestLeaf: RDD[LabeledPoint] = spark.sparkContext
-      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_test_leaf_v${version}_${type1}", 50)
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample-for-xglr/nosample_2018-08-07_${type1}", 50)
       .map { x => {
         val array = x.split("\t")
         val label = array(0).toDouble
@@ -93,8 +93,50 @@ object XgboostLrTrain {
       }
       }
 
-    val qttListTrainLeaf: RDD[LabeledPoint] = spark.sparkContext
-      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample/djq_ctr_sample_train_leaf_v${version}_${type1}", 50)
+    val qttListTrainLeaf1: RDD[LabeledPoint] = spark.sparkContext
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample-for-xglr/negsample_2018-08-03_${type1}", 50)
+      .map { x => {
+        val array = x.split("\t")
+        val label = array(0).toDouble
+        val vector1 = array(1).split("\\s+").map(x => {
+          val array = x.split(":")
+          (array(0).toInt, array(1).toDouble)
+        })
+        val vec = Vectors.sparse(size, vector1)
+        LabeledPoint(label, vec)
+      }
+      }
+
+    val qttListTrainLeaf2: RDD[LabeledPoint] = spark.sparkContext
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample-for-xglr/negsample_2018-08-04_${type1}", 50)
+      .map { x => {
+        val array = x.split("\t")
+        val label = array(0).toDouble
+        val vector1 = array(1).split("\\s+").map(x => {
+          val array = x.split(":")
+          (array(0).toInt, array(1).toDouble)
+        })
+        val vec = Vectors.sparse(size, vector1)
+        LabeledPoint(label, vec)
+      }
+      }
+
+    val qttListTrainLeaf3: RDD[LabeledPoint] = spark.sparkContext
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample-for-xglr/negsample_2018-08-05_${type1}", 50)
+      .map { x => {
+        val array = x.split("\t")
+        val label = array(0).toDouble
+        val vector1 = array(1).split("\\s+").map(x => {
+          val array = x.split(":")
+          (array(0).toInt, array(1).toDouble)
+        })
+        val vec = Vectors.sparse(size, vector1)
+        LabeledPoint(label, vec)
+      }
+      }
+
+    val qttListTrainLeaf4: RDD[LabeledPoint] = spark.sparkContext
+      .textFile(s"/user/cpc/qtt-portrait-ctr-model/sample-for-xglr/negsample_2018-08-06_${type1}", 50)
       .map { x => {
         val array = x.split("\t")
         val label = array(0).toDouble
@@ -108,7 +150,7 @@ object XgboostLrTrain {
       }
 
     //val Array(train, test) = qttListLeaf.randomSplit(Array(0.8, 0.2))
-    val train = qttListTrainLeaf
+    val train = qttListTrainLeaf1.union(qttListTrainLeaf2).union(qttListTrainLeaf3).union(qttListTrainLeaf4)
     val test = qttListTestLeaf
 
     println(s"train size = ${train.count()}")
@@ -117,7 +159,7 @@ object XgboostLrTrain {
     val lbfgs = new LogisticRegressionWithLBFGS().setNumClasses(2)
 //    lbfgs.optimizer.setUpdater(new L1Updater())
 //    lbfgs.optimizer.setUpdater(new SquaredL2Updater())
-    lbfgs.optimizer.setNumIterations(10)
+    lbfgs.optimizer.setNumIterations(1)
     lbfgs.optimizer.setConvergenceTol(1e-10)
 //    lbfgs.optimizer.setGradient(new LeastSquaresGradient())
 //    lbfgs.optimizer.setRegParam(1e-2)
@@ -132,7 +174,7 @@ object XgboostLrTrain {
 
 
 //    val pSize = 20
-    val lr = lbfgs.run(sampleTrain)
+    val lr = lbfgs.run(sampleTrain.union(sampleTrain))
     val filetime = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
     lr.save(spark.sparkContext, "/user/cpc/xgboost_lr_model/" + filetime)
     lr.clearThreshold()
