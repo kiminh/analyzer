@@ -5,7 +5,9 @@ import com.cpc.spark.log.parser.TraceLog
 import com.cpc.spark.ml.common.Utils
 import org.apache.spark.rdd.RDD
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
+
+import scala.collection.mutable.Map
 
 /**
   * Created by roydong on 15/12/2017.
@@ -16,8 +18,10 @@ object SaveFeatures {
 
   private var version = "v1"
   private var versionV2 = "v2"
+
+
   def main(args: Array[String]): Unit = {
-    if(args.length < 2){
+    if (args.length < 2) {
       System.err.println(
         s"""
            |Usage: SaveFeatures <date=string> <hour=string>
@@ -136,7 +140,7 @@ object SaveFeatures {
       s"""
          |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
         """.stripMargin.format(date, hour))
-//      .as[TraceLog]
+      //      .as[TraceLog]
       .rdd
       .map {
         x =>
@@ -146,9 +150,27 @@ object SaveFeatures {
       .map {
         x =>
           val convert = Utils.cvrPositiveV(x._2, version)
-          (x._1, convert)
+
+          //存储active行为数据
+          var active_map: Map[String, Int] = Map()
+          //active1,active2,active3,active4,active5,active6,disactive,active_auto,active_auto_download,active_auto_submit,active_wx,active_third
+          x._2.foreach(
+            x => {
+              x.getAs[String]("trace_type") match {
+                case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
+                  || s == "active6" || s == "disactive" || s == "active_href")
+                => active_map += (s -> 1)
+                case _ =>
+              }
+            }
+          )
+
+          (x._1, convert, active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
+            active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
+            active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0))
       }
-      .toDF("searchid", "label")
+      .toDF("searchid", "label", "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href")
+
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
 
     val sqlStmt =

@@ -1,5 +1,6 @@
 package com.cpc.spark.streaming.anal
 
+import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -11,6 +12,8 @@ import kafka.common.TopicAndPartition
 import kafka.message.MessageAndMetadata
 import kafka.producer.KeyedMessage
 import kafka.serializer.{DefaultDecoder, StringDecoder}
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
@@ -233,6 +236,14 @@ object CpcStreamingTraceLogParser {
                 """.stripMargin.format(table, key._1, key._2, key._3, table, key._1, key._2, key._3)
               println(sqlStmt)
               spark.sql(sqlStmt)
+
+
+              //每小时跑完创建ok文件
+              if (key._3.toInt == 50) {
+                createSuccessMarkHDFSFile("new_trace_done", key._1, key._2)
+              }
+
+
             }
         }
 
@@ -297,6 +308,38 @@ object CpcStreamingTraceLogParser {
       print("currentDate:" + hehe)
     }
 
+  }
+
+  /**
+    * 在hdfs上创建成功标记文件；unionlog, uniontracelog合并成功的标记文件
+    *
+    * @param mark
+    */
+  def createSuccessMarkHDFSFile(mark: String, date: String, hour: String): Unit = {
+    val fileName = "/warehouse/cpc/%s/%s-%s.ok".format(mark, date, hour)
+    val path = new Path(fileName)
+
+    //get object conf
+    val conf = new Configuration()
+    //get FileSystem
+    val fileSystem = FileSystem.newInstance(conf)
+
+    try {
+      val success = fileSystem.createNewFile(path)
+      if (success) {
+        println("Sreate HDFSFile Successfully")
+      }
+    } catch {
+      case e: IOException => e.printStackTrace()
+    } finally {
+      try {
+        if (fileSystem != null) {
+          fileSystem.close()
+        }
+      } catch {
+        case e: IOException => e.printStackTrace()
+      }
+    }
   }
 
 
