@@ -130,7 +130,7 @@ object PredictAge {
         } else {
           Seq()
         }
-    }
+    }.repartition(500)
     println(toSet.count())
     SetUserProfileTag.setUserProfileTag(toSet)
     val rs = SetUserProfileTag.SetUserProfileTagInHiveDaily(toSet, date)
