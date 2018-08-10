@@ -226,9 +226,9 @@ object SetUserProfileTag {
   def SetUserProfileTagInHiveDaily (in : RDD[(String, Int, Boolean)], date : String) : Array[(String, Int)] = {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val rs = in.map(x => (x._2, Seq((x._1, x._3)))).reduceByKey(_++_).map {
+    val rs = in.map(x => (x._2, Seq((x._1, x._3)))).reduceByKey(_++_).toLocalIterator.map {
       x =>
-        spark.sparkContext.parallelize(x._2).toDF("uid", "operation")
+        x._2.toDF("uid", "operation")
           .write.mode(SaveMode.Overwrite).parquet("/user/cpc/qtt-userprofiletag-daily/%s-%s".format(date, x._1))
         val sql =
           """
@@ -239,7 +239,7 @@ object SetUserProfileTag {
         spark.sql(sql)
         (sql, x._2.size)
     }
-    rs.toLocalIterator.toArray
+    rs.toArray
   }
   def main(args: Array[String]): Unit = {
     val tagList = Array[Int](201, 202, 203, 204, 205, 206, 207, 208, 209, 212, 216, 218, 219, 220, 221, 222,
