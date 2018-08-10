@@ -16,6 +16,7 @@ import ml.dmlc.xgboost4j.scala.spark._
 
 import scala.collection.mutable
 import com.cpc.spark.qukan.userprofile.SetUserProfileTag
+import userprofile.Userprofile.{InterestItem, UserProfile}
 
 /**
   * Created by myt on 11/06/2018.
