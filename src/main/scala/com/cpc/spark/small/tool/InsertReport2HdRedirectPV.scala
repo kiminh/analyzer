@@ -75,6 +75,8 @@ object InsertReport2HdRedirectPV {
     //后5min cfg计算pv数写入mysql
     writeToMysql(ctx, cfgLog2, argDay)
 
+    ctx.stop()
+
   }
 
   /**
@@ -106,8 +108,7 @@ object InsertReport2HdRedirectPV {
       .jdbc(report2Url, "report2.report_hd_redirect_pv_minute", report2Prop)
 
     println("~~~~~~write to mysql successfully")
-
-    ctx.stop()
+    
   }
 
 
