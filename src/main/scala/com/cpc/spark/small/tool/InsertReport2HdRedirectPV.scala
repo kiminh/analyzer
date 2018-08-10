@@ -34,10 +34,10 @@ object InsertReport2HdRedirectPV {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val conf = ConfigFactory.load()
-    report2Url = conf.getString("report2_write.url")
-    report2Prop.put("user", conf.getString("report2_write.user"))
-    report2Prop.put("password", conf.getString("report2_write.password"))
-    report2Prop.put("driver", conf.getString("report2_write.driver"))
+    report2Url = conf.getString("mariadb.report2_write.url")
+    report2Prop.put("user", conf.getString("mariadb.report2_write.user"))
+    report2Prop.put("password", conf.getString("mariadb.report2_write.password"))
+    report2Prop.put("driver", conf.getString("mariadb.report2_write.driver"))
 
     val ctx = SparkSession.builder()
       .appName("InsertReport2HdRedirectPVLog date " + argDay + " ,hour " + argHour + " ,minute " + argMinute)
@@ -55,6 +55,8 @@ object InsertReport2HdRedirectPV {
     val startDate = getTimeStampByDate(argDay, argHour, argMinute) / 1000
     val middleDate = getTimeStampByDate(argDay, argHour, (argMinute.toInt + 5).toString) / 1000
     val endDate = getTimeStampByDate(argDay, argHour, (argMinute.toInt + 10).toString) / 1000
+
+    println("startDate:" + startDate + "  middleDate:" + middleDate + "  endDate:" + endDate)
 
     //获得theminute分区的前5min数据
     val cfgLog1 = cfgLog
@@ -102,6 +104,8 @@ object InsertReport2HdRedirectPV {
       .write
       .mode(SaveMode.Append)
       .jdbc(report2Url, "report2.report_hd_redirect_pv_minute", report2Prop)
+
+    println("~~~~~~write to mysql successfully")
 
     ctx.stop()
   }
