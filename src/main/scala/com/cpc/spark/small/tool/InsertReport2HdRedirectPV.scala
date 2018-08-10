@@ -109,13 +109,34 @@ object InsertReport2HdRedirectPV {
 
     insertDataFrame.show(10)
 
+    //删除当前日期和create_time的数据，防止多次写入
+    clearReportHourData("report_hd_redirect_pv_minute", argDay, createTime)
+
     insertDataFrame
       .write
-      .mode(SaveMode.Overwrite)
+      .mode(SaveMode.Append)
       .jdbc(report2Url, "report2.report_hd_redirect_pv_minute", report2Prop)
 
     println("~~~~~~write to mysql successfully")
 
+  }
+
+  def clearReportHourData(tbl: String, date: String, createTime: String): Unit = {
+    try {
+      Class.forName(report2Prop.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        report2Url,
+        report2Prop.getProperty("user"),
+        report2Prop.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        """
+          |delete from report2.%s where `date` = "%s" AND create_time="%s"
+        """.stripMargin.format(tbl, date, createTime)
+      stmt.executeUpdate(sql);
+    } catch {
+      case e: Exception => println("exception caught: " + e)
+    }
   }
 
 
