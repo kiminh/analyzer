@@ -27,10 +27,6 @@ object TagFromHivetoRedis {
       223, 224, 225, 226, 227, 228, 230, 231, 233, 234, 235, 236, 237, 238, 239, 240, 241)
     val op = args(0).toInt
 
-    val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -2)
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-    val hour = new SimpleDateFormat("HH").format(cal.getTime)
 
     val spark = SparkSession.builder()
       .appName("TagFromHivetoRedis")
@@ -41,11 +37,20 @@ object TagFromHivetoRedis {
     for (i <- tagList ) {
       var stmt = ""
       if (op == 0) {
+        val cal = Calendar.getInstance()
+        cal.add(Calendar.DATE, -1)
+        val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+
         stmt =
           """
             |select uid, tag, operation from dl_cpc.cpc_userprofile_tag_hourly where `date` = "%s" and tag = %s
           """.stripMargin.format(date, i)
       } else if (op == 1){
+        val cal = Calendar.getInstance()
+        cal.add(Calendar.HOUR, -2)
+        val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+        val hour = new SimpleDateFormat("HH").format(cal.getTime)
+
         stmt =
           """
             |select uid, tag, operation from dl_cpc.cpc_userprofile_tag_hourly where `date` = "%s" and `hour` = "%s" and tag = %s
