@@ -43,7 +43,7 @@ object TagFromHivetoRedis {
 
         stmt =
           """
-            |select uid, tag, operation from dl_cpc.cpc_userprofile_tag_hourly where `date` = "%s" and tag = %s
+            |select uid, tag, operation from dl_cpc.cpc_userprofile_tag_daily where `date` = "%s" and tag = %s
           """.stripMargin.format(date, i)
       } else if (op == 1){
         val cal = Calendar.getInstance()
