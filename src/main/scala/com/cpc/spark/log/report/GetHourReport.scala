@@ -67,6 +67,7 @@ object GetHourReport {
          |      if(ext["charge_type"].int_value=2,price/1000,price) as charge_fee
          |from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and isfill = 1 and adslotid > 0 and adsrc <= 1
        """.stripMargin.format(table, date, hour))
+      .repartition(700)
       .cache()
 
     val unionLog = unionLog1.rdd.filter(x => x.getAs[String]("charge_type") == "cpc")
@@ -85,6 +86,7 @@ object GetHourReport {
          |   and m.ideaid>=0
          |   and adsrc <= 1
         """.stripMargin)
+      .repartition(300)
 
     val chargeData = unionLog1.select("unitid", "planid", "ideaid", "userid", "isfill", "isshow",
       "isclick", "charge_fee", "media_appsid", "adslotid", "adslot_type", "charge_type",
