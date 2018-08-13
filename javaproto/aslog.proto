@@ -165,6 +165,8 @@ enum AdSrc {
 	VLION = 12;
 	YOUDAO = 13;
 	MOMO = 14;
+	QUYUANSU = 15;
+	TOUTIAO = 16;
 };
 enum InteractionType {
 	NO_INTERACT = 0;
