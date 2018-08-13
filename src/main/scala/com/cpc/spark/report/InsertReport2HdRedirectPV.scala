@@ -1,4 +1,4 @@
-package com.cpc.spark.small.tool
+package com.cpc.spark.report
 
 import java.sql.DriverManager
 import java.text.SimpleDateFormat
