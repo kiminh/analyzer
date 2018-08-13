@@ -92,7 +92,7 @@ object GetHourReport {
           var spam_click = x.getAs[Int]("spam_click")
           val chargeType = x.getAs[String]("charge_type")
           var charge_fee = if (isclick > 0 || chargeType == "cpm")
-            x.getAs[Double]("charge_fee")
+            x.getAs[Int]("charge_fee")
           else 0D
 
           val charge = MediaChargeReport( //adslotType = x.getAs[Int]("adslot_type")
