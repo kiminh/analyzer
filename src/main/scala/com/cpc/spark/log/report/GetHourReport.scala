@@ -146,7 +146,7 @@ object GetHourReport {
           (charge.key, (charge, charge_fee))
       }
       .union(motive_data)
-      .reduceByKey((x, y) => (x._1.sum(y._1), x._2 + y._2))
+      .reduceByKey((x, y) => (x._1.sum(y._1), x._2 + y._2), 100)
       .map(x => x._2._1.copy(cash_cost = x._2._2.toInt))
 
 
