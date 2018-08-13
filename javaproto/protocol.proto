@@ -206,6 +206,11 @@ enum Dsp {
     VANKA_DSP = 9;
     IFLYTEK_DSP = 10;
     WINQ_DSP = 11;
+    VLION_DSP = 12;
+    YOUDAO_DSP = 13;
+    MOMO_DSP = 14;
+    QUYUANSU_DSP = 15;
+    TOUTIAO_DSP = 16;
 }
 
 // DSP计费相关字段
@@ -486,6 +491,7 @@ message Event {
             HZ          = 4;
             FUN         = 5;
             QTT         = 6;
+            BOBO        = 7;
         };
         // 客户端信息
         message Client {
