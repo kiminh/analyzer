@@ -67,20 +67,62 @@ object GetHourReport {
          |      if(ext["charge_type"].int_value=2,price/1000,price) as charge_fee
          |from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and isfill = 1 and adslotid > 0 and adsrc <= 1
        """.stripMargin.format(table, date, hour))
-      .rdd.cache()
+      .rdd
+      .cache()
 
     val unionLog = unionLog1.filter(x => x.getAs[String]("charge_type") == "cpc")
 
-    val chargeData = unionLog1
+    //激励广告数据（只加到charge表）
+    val motive_data = ctx.sql(
+      s"""
+         |select m.unitid,m.planid,m.ideaid,m.userid,
+         |       m.isfill,m.isshow,m.isclick,m.price as charge_fee,
+         |       media_appsid,adslotid,adslot_type,"cpc" as charge_type,
+         |       date,hour,0 as spam_click
+         |from dl_cpc.cpc_union_log
+         |lateral view explode(motivation) b as m
+         |where date='$date' and hour=$hour
+         |   and adslot_type=7
+         |   and m.ideaid>=0
+         |   and adsrc <= 1
+        """.stripMargin)
       .map {
         x =>
           var isclick = x.getAs[Int]("isclick")
           var spam_click = x.getAs[Int]("spam_click")
-          var antispam_score = x.getAs[Int]("antispam_score")
           val chargeType = x.getAs[String]("charge_type")
-          var charge_fee = if (chargeType == "cpc" && isclick > 0)
-            x.getAs[Double]("charge_fee")
-          else if (chargeType == "cpm")
+          var charge_fee = if (isclick > 0 || chargeType == "cpm")
+            x.getAs[Int]("charge_fee")
+          else 0D
+
+          val charge = MediaChargeReport( //adslotType = x.getAs[Int]("adslot_type")
+            media_id = x.getAs[String]("media_appsid").toInt,
+            adslot_id = x.getAs[String]("adslotid").toInt,
+            unit_id = x.getAs[Int]("unitid"),
+            idea_id = x.getAs[Int]("ideaid"),
+            plan_id = x.getAs[Int]("planid"),
+            adslot_type = x.getAs[Int]("adslot_type"),
+            user_id = x.getAs[Int]("userid"),
+            request = 1,
+            served_request = x.getAs[Int]("isfill"),
+            impression = x.getAs[Int]("isshow"),
+            click = isclick + spam_click,
+            charged_click = isclick,
+            spam_click = spam_click,
+            date = x.getAs[String]("date"),
+            hour = x.getAs[String]("hour").toInt
+          )
+          (charge.key, (charge, charge_fee))
+      }.rdd
+
+    val chargeData = unionLog1
+      .filter(_.getAs[Int]("adslot_type") != 7)
+      .map {
+        x =>
+          var isclick = x.getAs[Int]("isclick")
+          var spam_click = x.getAs[Int]("spam_click")
+          val chargeType = x.getAs[String]("charge_type")
+          var charge_fee = if (isclick > 0 || chargeType == "cpm")
             x.getAs[Double]("charge_fee")
           else 0D
 
@@ -103,7 +145,8 @@ object GetHourReport {
           )
           (charge.key, (charge, charge_fee))
       }
-      .reduceByKey((x, y) => (x._1.sum(y._1), x._2 + y._2))
+      .union(motive_data)
+      .reduceByKey((x, y) => (x._1.sum(y._1), x._2 + y._2), 100)
       .map(x => x._2._1.copy(cash_cost = x._2._2.toInt))
 
 
