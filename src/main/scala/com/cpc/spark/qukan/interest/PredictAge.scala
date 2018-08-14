@@ -126,13 +126,13 @@ object PredictAge {
         if (x._2 > m) {
           Seq((x._1, 225, true), (x._1, 224, false))
         } else if (x._2 < f){
-          Seq((x._1, 224, true), (x._1, 225, false))
+          Seq((x._1, 224, true), (x._1, 225, false), (x._1, 239, true))
         } else {
           Seq()
         }
     }.repartition(500)
     println(toSet.count())
-    //SetUserProfileTag.setUserProfileTag(toSet)
+    SetUserProfileTag.setUserProfileTag(toSet)
     val rs = SetUserProfileTag.SetUserProfileTagInHiveDaily(toSet, date)
     rs.foreach(println)
     val sum =  predict.repartition(500)
