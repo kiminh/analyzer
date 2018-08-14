@@ -208,36 +208,38 @@ object SetUserProfileTag {
   def SetUserProfileTagInHiveHourly (in : RDD[(String, Int, Boolean)], date : String, hour : String) : Array[(String, Int)] = {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val rs = in.map(x => (x._2, Seq((x._1, x._3)))).reduceByKey(_++_).toLocalIterator.map {
-      x =>
-        x._2.toDF("uid", "operation")
-          .write.mode(SaveMode.Overwrite).parquet("/user/cpc/qtt-userprofiletag-hourly/%s-%s-%s".format(date, hour, x._1))
+    val ft = in.map(x => x._2).distinct().toLocalIterator
+    val rs = ft.map{
+      tag =>
+        in.filter(_._2 == tag).map{x => (x._1, x._3)}.toDF("uid", "operation").coalesce(20)
+          .write.mode(SaveMode.Overwrite).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_hourly/%s/%s/%s".format(date, hour, tag))
         val sql =
           """
             |ALTER TABLE dl_cpc.cpc_userprofile_tag_hourly add if not exists PARTITION (`date` = "%s" , `hour` = "%s", `tag` = "%s")  LOCATION
-            |       '/user/cpc/qtt-userprofiletag-hourly/%s-%s-%s'
+            |       '/warehouse/dl_cpc.db/cpc_userprofile_tag_hourly/%s/%s/%s'
             |
-                """.stripMargin.format(date, hour, x._1, date, hour, x._1)
+                """.stripMargin.format(date, hour, tag, date, hour, tag)
         spark.sql(sql)
-        (sql, x._2.size)
+        (sql, in.filter(_._2 == tag).count().toInt)
     }
     rs.toArray
   }
   def SetUserProfileTagInHiveDaily (in : RDD[(String, Int, Boolean)], date : String) : Array[(String, Int)] = {
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
-    val rs = in.map(x => (x._2, Seq((x._1, x._3)))).reduceByKey(_++_).toLocalIterator.map {
-      x =>
-        x._2.toDF("uid", "operation")
-          .write.mode(SaveMode.Overwrite).parquet("/user/cpc/qtt-userprofiletag-daily/%s-%s".format(date, x._1))
+    val ft = in.map(x => x._2).distinct().toLocalIterator
+    val rs = ft.map{
+      tag =>
+        in.filter(_._2 == tag).map{x => (x._1, x._3)}.toDF("uid", "operation").coalesce(20)
+          .write.mode(SaveMode.Overwrite).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s".format(date, tag))
         val sql =
           """
             |ALTER TABLE dl_cpc.cpc_userprofile_tag_daily add if not exists PARTITION (`date` = "%s" , `tag` = "%s")  LOCATION
-            |       '/user/cpc/qtt-userprofiletag-daily/%s-%s'
+            |       '/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s'
             |
-                """.stripMargin.format(date, x._1, date, x._1)
+                """.stripMargin.format(date, tag, date, tag)
         spark.sql(sql)
-        (sql, x._2.size)
+        (sql, in.filter(_._2 == tag).count().toInt)
     }
     rs.toArray
   }

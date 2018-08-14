@@ -19,6 +19,7 @@ message AdFreq {
 	uint32 req_count = 2;
 	uint32 click_count = 3; //用户今天点击次数
 	repeated DspSrc dsps = 4; //此用户今日广告展示信息
+	int64 coin_timestamp = 5; //金币样式时间戳
 }
 
 message APPPackage {

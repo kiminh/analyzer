@@ -334,7 +334,7 @@ public final class Data {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasIntType()) {
         hash = (37 * hash) + INT_TYPE_FIELD_NUMBER;
         hash = (53 * hash) + getIntType();
@@ -1318,7 +1318,7 @@ public final class Data {
             return memoizedHashCode;
           }
           int hash = 41;
-          hash = (19 * hash) + getDescriptorForType().hashCode();
+          hash = (19 * hash) + getDescriptor().hashCode();
           if (hasKey()) {
             hash = (37 * hash) + KEY_FIELD_NUMBER;
             hash = (53 * hash) + getKey().hashCode();
@@ -1910,7 +1910,7 @@ public final class Data {
           return memoizedHashCode;
         }
         int hash = 41;
-        hash = (19 * hash) + getDescriptorForType().hashCode();
+        hash = (19 * hash) + getDescriptor().hashCode();
         if (getMapCount() > 0) {
           hash = (37 * hash) + MAP_FIELD_NUMBER;
           hash = (53 * hash) + getMapList().hashCode();
@@ -2631,7 +2631,7 @@ public final class Data {
         return memoizedHashCode;
       }
       int hash = 41;
-      hash = (19 * hash) + getDescriptorForType().hashCode();
+      hash = (19 * hash) + getDescriptor().hashCode();
       if (hasLogTimestamp()) {
         hash = (37 * hash) + LOG_TIMESTAMP_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
