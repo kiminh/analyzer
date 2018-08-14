@@ -210,12 +210,12 @@ object SetUserProfileTag {
     import spark.implicits._
     val rs = in.map(x => (x._2, Seq((x._1, x._3)))).reduceByKey(_++_).toLocalIterator.map {
       x =>
-        x._2.toDF("uid", "operation")
-          .write.mode(SaveMode.Overwrite).parquet("/user/cpc/qtt-userprofiletag-hourly/%s/%s/%s".format(date, hour, x._1))
+        x._2.toDF("uid", "operation").coalesce(20)
+          .write.mode(SaveMode.Overwrite).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_hourly/%s/%s/%s".format(date, hour, x._1))
         val sql =
           """
             |ALTER TABLE dl_cpc.cpc_userprofile_tag_hourly add if not exists PARTITION (`date` = "%s" , `hour` = "%s", `tag` = "%s")  LOCATION
-            |       '/user/cpc/qtt-userprofiletag-hourly/%s/%s/%s'
+            |       '/warehouse/dl_cpc.db/cpc_userprofile_tag_hourly/%s/%s/%s'
             |
                 """.stripMargin.format(date, hour, x._1, date, hour, x._1)
         spark.sql(sql)
@@ -228,12 +228,12 @@ object SetUserProfileTag {
     import spark.implicits._
     val rs = in.map(x => (x._2, Seq((x._1, x._3)))).reduceByKey(_++_).toLocalIterator.map {
       x =>
-        x._2.toDF("uid", "operation")
-          .write.mode(SaveMode.Overwrite).parquet("/user/cpc/qtt-userprofiletag-daily/%s/%s".format(date, x._1))
+        x._2.toDF("uid", "operation").coalesce(20)
+          .write.mode(SaveMode.Overwrite).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s".format(date, x._1))
         val sql =
           """
             |ALTER TABLE dl_cpc.cpc_userprofile_tag_daily add if not exists PARTITION (`date` = "%s" , `tag` = "%s")  LOCATION
-            |       '/user/cpc/qtt-userprofiletag-daily/%s/%s'
+            |       '/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s'
             |
                 """.stripMargin.format(date, x._1, date, x._1)
         spark.sql(sql)
