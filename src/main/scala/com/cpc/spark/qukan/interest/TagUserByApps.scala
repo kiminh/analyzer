@@ -113,6 +113,12 @@ object TagUserByApps {
     println("has vipshop app users", sum)
     vipUids.take(10).foreach(println)
 
+    //微博
+    val weiboUids = uidHasApps(userPkgs, "interest", "user_tag_by_apps.weibo.contains")
+    sum = tagUser(weiboUids, conf.getInt("user_tag_by_apps.weibo.tag_id"))
+    println("has weibo app users", sum)
+    weiboUids.take(10).foreach(println)
+
 /*
     //格斗游戏
     val game_gedou = uidHasApps(userPkgs, "user_tag_by_apps.game_gedou.contains")
@@ -206,6 +212,7 @@ object TagUserByApps {
     sum = tagUser(qicheUids, conf.getInt("user_tag_by_apps.qiche.tag_id"))
     println("has qiche app users", sum)
     qicheUids.take(10).foreach(println)
+
 
     //    val shoujiyinhangUids = getDistribution(userPkgs, "user_tag_by_apps.shoujiyinhang.contains")
     //    println("手机银行")
