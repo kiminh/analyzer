@@ -44,9 +44,7 @@ object TagFromHivetoRedis {
         ""
       }
     ).rdd.map {
-      x =>
-        val str = x.getAs[String](0).slice(-3,-1)
-        str
+      x =>x.getAs[String](0)
     }
     tagList.toLocalIterator.foreach(println)
     /*
