@@ -14,8 +14,8 @@ object GenDownloadTag {
            |SELECT searchid,uid,isclick,isshow  from dl_cpc.cpc_union_log WHERE `date`=date_add('$dateBaseValue', $dateAddValue) and interaction=2 and isshow=1 and uid is not null
          """.stripMargin
       println(sql1)
-      val sql2 = s"SELECT searchid,trace_op1 as iscvr from  dl_cpc.cpc_union_trace_log  WHERE `date`=date_add('$dateBaseValue', $dateAddValue)"
-
+      val sql2 = s"SELECT searchid,trace_op1 as iscvr  from  dl_cpc.cpc_union_trace_log  WHERE `date`=date_add('$dateBaseValue', $dateAddValue)"
+      println(sql2)
 
       val ctx=SparkSession.builder()
         .appName("master")
@@ -28,6 +28,7 @@ object GenDownloadTag {
 
       var unionTable = Table1.join(Table2,Seq("searchid"),"left_outer")
       var tableNameTemp =  s"test.cpc_downloadtag_"+dateAddValue.toString
+      ctx.sql(s"drop table if exists $tableNameTemp")
       unionTable.write.mode("overwrite").saveAsTable(tableNameTemp)
     }
     println("union begin")
