@@ -187,20 +187,30 @@ object TopCtrIdeaV2 {
     val max2 = topIdeaRDD.filter(_.mtype == 2).map(_.ctr_score).max()
     val max3 = topIdeaRDD.filter(_.mtype == 3).map(_.ctr_score).max()
     val max4 = topIdeaRDD.filter(_.mtype == 4).map(_.ctr_score).max()
-
     val max6 = topIdeaRDD.filter(_.mtype == 6).map(_.ctr_score).max()
     val max7 = topIdeaRDD.filter(_.mtype == 7).map(_.ctr_score).max()
     val max8 = topIdeaRDD.filter(_.mtype == 8).map(_.ctr_score).max()
     val max9 = topIdeaRDD.filter(_.mtype == 9).map(_.ctr_score).max()
 
-    println("type=1最大ctr_score: "+max1
-    +"type=2最大ctr_score: "+max2
-    +"type=3最大ctr_score: "+max3
-    +"type=4最大ctr_score: "+max4
-    +"type=6最大ctr_score: "+max6
-    +"type=7最大ctr_score: "+max7
-    +"type=8最大ctr_score: "+max8
-    +"type=9最大ctr_score: "+max9)
+    val max1show = topIdeaRDD.filter(_.ctr_score == max1).map(_.show)
+    val max2show = topIdeaRDD.filter(_.ctr_score == max2).map(_.show)
+    val max3show = topIdeaRDD.filter(_.ctr_score == max3).map(_.show)
+    val max4show = topIdeaRDD.filter(_.ctr_score == max4).map(_.show)
+    val max6show = topIdeaRDD.filter(_.ctr_score == max6).map(_.show)
+    val max7show = topIdeaRDD.filter(_.ctr_score == max7).map(_.show)
+    val max8show = topIdeaRDD.filter(_.ctr_score == max8).map(_.show)
+    val max9show = topIdeaRDD.filter(_.ctr_score == max9).map(_.show)
+
+    println("type=1最大ctr_score: "+max1+"; show: "+max1show.collect().toString)
+    println("type=2最大ctr_score: "+max2+"; show: "+max2show.collect().toString)
+    println("type=3最大ctr_score: "+max3+"; show: "+max3show.collect().toString)
+    println("type=4最大ctr_score: "+max4+"; show: "+max4show.collect().toString)
+
+    println("type=6最大ctr_score: "+max6+"; show: "+max6show.collect().toString)
+    println("type=7最大ctr_score: "+max7+"; show: "+max7show.collect().toString)
+    println("type=8最大ctr_score: "+max8+"; show: "+max8show.collect().toString)
+    println("type=9最大ctr_score: "+max9+"; show: "+max9show.collect().toString)
+
 
 
     //    import spark.implicits._
