@@ -43,8 +43,8 @@ object TagFromHivetoRedis {
       } else {
         ""
       }
-    )
-    tagList.rdd.toLocalIterator.foreach(println)
+    ).rdd.map(x => x.getAs[String](0).lastIndexOf(3, 3))
+    tagList.toLocalIterator.foreach(println)
     /*
     for (i <- tagList ) {
       var stmt = ""
