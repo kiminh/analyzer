@@ -44,7 +44,7 @@ object TagFromHivetoRedis {
         ""
       }
     ).rdd.map {
-      x =>x.getAs[String](0)
+      x =>x.getAs[String](0).slice(-3, -1)
     }
     tagList.toLocalIterator.foreach(println)
     /*
