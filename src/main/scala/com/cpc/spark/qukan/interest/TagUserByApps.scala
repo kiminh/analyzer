@@ -22,6 +22,8 @@ import userprofile.Userprofile.{InterestItem, UserProfile}
   */
 object TagUserByApps {
 
+  Logger.getRootLogger.setLevel(Level.WARN)
+
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       System.err.println(
@@ -31,8 +33,6 @@ object TagUserByApps {
         """.stripMargin)
       System.exit(1)
     }
-
-    Logger.getRootLogger.setLevel(Level.WARN)
 
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -args(0).toInt)
