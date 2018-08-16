@@ -23,8 +23,6 @@ import com.cpc.spark.qukan.userprofile.SetUserProfileTag
 
 object TagFromHivetoRedis {
   def main(args: Array[String]): Unit = {
-    val tagList = Array[Int](201, 202, 203, 204, 205, 206, 207, 208, 209, 212, 216, 218, 219, 220, 221, 222,
-      223, 224, 225, 226, 227, 228, 230, 231, 233, 234, 235, 236, 237, 238, 239, 240, 241)
     val op = args(0).toInt
     val date = args(1).toString
     val hour = {if (op == 0) {""} else {args(2).toString}}
@@ -36,6 +34,18 @@ object TagFromHivetoRedis {
       .getOrCreate()
     import spark.implicits._
 
+
+    var tagList = spark.sql(
+      if (op == 0) {
+        "show partitions  dl_cpc.cpc_userprofile_tag_daily partition(`date` = \"%s\")".format(date)
+      } else if (op == 1){
+        "show partitions  dl_cpc.cpc_userprofile_tag_hourly partition(`date` = \"%s\", `hour` = \"%s\")".format(date, hour)
+      } else {
+        ""
+      }
+    )
+    println(tagList)
+    /*
     for (i <- tagList ) {
       var stmt = ""
       if (op == 0) {
@@ -58,5 +68,6 @@ object TagFromHivetoRedis {
         SetUserProfileTag.setUserProfileTag(rs)
       }
     }
+    */
   }
 }
