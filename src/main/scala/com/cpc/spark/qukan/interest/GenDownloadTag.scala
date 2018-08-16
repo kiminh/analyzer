@@ -4,6 +4,7 @@ import com.cpc.spark.streaming.tools.SparkApp
 import org.apache.spark.sql.functions.col
 import com.cpc.spark.qukan.userprofile.SetUserProfileTag._
 object GenDownloadTag {
+
   def main(args: Array[String]): Unit = {
     val dateBaseValue = args(0)
     for(dateAddValue<- 0 to 2){
