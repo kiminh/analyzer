@@ -44,7 +44,7 @@ object TagFromHivetoRedis {
         ""
       }
     )
-    println(tagList)
+    tagList.rdd.toLocalIterator.foreach(println)
     /*
     for (i <- tagList ) {
       var stmt = ""
