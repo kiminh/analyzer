@@ -266,10 +266,7 @@ object TopCtrIdeaV2 {
     while (rs.next()) {
       ub.update(rs.getInt("id"), rs.getInt("belong"))
     }
-    val rsold = getAdDbResult("mariadb.adv_old", sql)
-    while (rsold.next()) {
-      ub.update(rsold.getInt("id"), rsold.getInt("belong"))
-    }
+
     ub.toMap
   }
 
