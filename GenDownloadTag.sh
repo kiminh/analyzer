@@ -19,8 +19,8 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.portrait.snapshotsample.GenDownloadTag \
-    target/scala-2.11/cpc-portrait-assembly-1.0.0.jar $1
+    --class com.cpc.spark.qukan.interest.GenDownloadTag \
+    target/scala-2.11/cpc-anal_2.11-0.1.jar $1
 
 
 
