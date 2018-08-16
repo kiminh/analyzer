@@ -252,16 +252,12 @@ object DailyReport {
   def student_app(spark : SparkSession, args : Array[String]): Unit ={
     val sample = spark.read.parquet("/user/cpc/qtt-age-sample/p1").rdd.map{
       x =>
-        if (x(1) != null && x(2) != null) {
+        if (x(2) != null) {
           (x.getAs[Int]("birth"), x.getAs[Seq[Row]]("apps").size, x.getAs[Seq[Row]]("apps"))
         } else {
           null
         }
     }.filter(_ != null)
-    println(sample.filter(x =>x._1 >= 22).count())
-    println(sample.filter(x =>x._1 >= 22  && x._2 > 10).count())
-    println(sample.filter(x =>x._1 < 22).count())
-    println(sample.filter(x =>x._1 < 22  && x._2 > 10).count())
     sample.flatMap{
       x =>
         x._3.map{
