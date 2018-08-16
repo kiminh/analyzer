@@ -28,6 +28,9 @@ object InterestedCategoryBJP {
       .getOrCreate()
     import spark.implicits._
 
+    println("no longer use")
+    System.exit(1)
+
 
     for (adclass <- topCates) {
       val cal = Calendar.getInstance()
