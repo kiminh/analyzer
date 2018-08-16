@@ -198,12 +198,12 @@ object TopCtrIdeaV2 {
       case e: Exception => println("truncate table failed : " + e);
     }
 
-    spark.createDataFrame(top)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report." + table, mariadbProp)
-
-    println("num", top.length)
+//    spark.createDataFrame(top)
+//      .write
+//      .mode(SaveMode.Append)
+//      .jdbc(mariadbUrl, "report." + table, mariadbProp)
+//
+//    println("num", top.length)
   }
 
   def getUserBelong(): Map[Int, Int] = {
