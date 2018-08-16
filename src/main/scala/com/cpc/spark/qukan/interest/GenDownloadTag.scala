@@ -9,12 +9,10 @@ object GenDownloadTag {
   def main(args: Array[String]): Unit = {
     val dateBaseValue = args(0)
     for(dateAddValue<- 0 to 2){
-      val sql1 =
-        s"""
-           |SELECT searchid,uid,isclick,isshow  from dl_cpc.cpc_union_log WHERE `date`=date_add('$dateBaseValue', $dateAddValue) and interaction=2 and isshow=1 and uid is not null
-         """.stripMargin
+      val sql1 = "SELECT searchid,uid,isclick,isshow  from dl_cpc.cpc_union_log WHERE `date`=date_add('$dateBaseValue', $dateAddValue) and interaction=2 and isshow=1 and uid is not null"
+
       println(sql1)
-      val sql2 = s"SELECT searchid,trace_op1 as iscvr  from  dl_cpc.cpc_union_trace_log  WHERE `date`=date_add('$dateBaseValue', $dateAddValue)"
+      val sql2 = s"SELECT searchid , trace_op1 as iscvr  from  dl_cpc.cpc_union_trace_log  WHERE `date`=date_add('$dateBaseValue', $dateAddValue)"
       println(sql2)
 
       val ctx=SparkSession.builder()
@@ -36,7 +34,7 @@ object GenDownloadTag {
       .appName("master")
       .enableHiveSupport()
       .getOrCreate()
-    var tableName = s"test.cpc_downloadtag_"+"0"
+    var tableName = s"dl_cpc.cpc_downloadtag_"+"0"
     var downloadTagTable = ctx.table(tableName)
     for(dateAddValue<- 1 to 2) {
       tableName = s"test.cpc_downloadtag_"+dateAddValue.toString
