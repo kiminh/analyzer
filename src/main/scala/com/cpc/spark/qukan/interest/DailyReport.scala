@@ -47,8 +47,8 @@ object DailyReport {
     import spark.implicits._
 
 
-    //student_app(spark, args)
-    checkUVTag(spark, args)
+    student_app(spark, args)
+    //checkUVTag(spark, args)
     //daily_cost(spark, args)
 
 
