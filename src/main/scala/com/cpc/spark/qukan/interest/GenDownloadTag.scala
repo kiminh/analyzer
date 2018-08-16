@@ -1,6 +1,4 @@
 package com.cpc.spark.qukan.interest
-
-
 import com.cpc.spark.udfs.myUdfs._
 import com.cpc.spark.streaming.tools.SparkApp
 import org.apache.spark.sql.functions.col
