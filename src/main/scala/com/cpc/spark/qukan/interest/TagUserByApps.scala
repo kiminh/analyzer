@@ -272,7 +272,7 @@ object TagUserByApps {
   }
 
   def tagUser(uids: RDD[String], tag: Int): (Int, Int) = {
-    val sum = SetUserProfileTag.setUserProfileTag(uids.map(x => (x, tag, true)))
+    val sum = SetUserProfileTag.SetUserProfileTagInHiveDaily(uids.map(x => (x, tag, true)))
     sum.foreach(println)
     (0, 0)
   }

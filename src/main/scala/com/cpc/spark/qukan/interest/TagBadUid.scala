@@ -107,7 +107,7 @@ object TagBadUid {
       .reduceByKey((x, y) => x.max(y))
 
     val stage = rs3.filter(x => x._2 >= threshold).map(x => (x._1, 226, true))
-    SetUserProfileTag.setUserProfileTag(stage)
+    SetUserProfileTag.SetUserProfileTagInHiveDaily(stage)
     for (i <- 3 to 10) {
       println(rs3.filter(x => x._2 >= i).map(x => x._1).count())
     }

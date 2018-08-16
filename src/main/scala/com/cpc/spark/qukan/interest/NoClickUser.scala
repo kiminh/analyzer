@@ -60,7 +60,7 @@ object NoClickUser {
     println("num", uidRDD.count())
     println(uidRDD.take(10).mkString(" "))
 
-    val sum = SetUserProfileTag.setUserProfileTag(uidRDD.rdd.map(x => (x.getString(0), 230, true)))
+    val sum = SetUserProfileTag.SetUserProfileTagInHiveDaily(uidRDD.rdd.map(x => (x.getString(0), 230, true)))
     sum.foreach(println)
   }
 }

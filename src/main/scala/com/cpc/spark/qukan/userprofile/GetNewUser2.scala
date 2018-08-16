@@ -78,7 +78,7 @@ object GetNewUser2 {
           }
         }
     }
-    SetUserProfileTag.setUserProfileTag(toSet)
+    SetUserProfileTag.SetUserProfileTagInHiveDaily(toSet)
     val sum = all.repartition(200)
       .mapPartitions {
       p =>

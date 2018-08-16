@@ -54,7 +54,7 @@ object TagUserByLx {
     }
     println(lx.count())
     lx.take(10).foreach(println)
-    val ret = SetUserProfileTag.setUserProfileTag(lx)
+    val ret = SetUserProfileTag.SetUserProfileTagInHiveDaily(lx)
 
   }
 

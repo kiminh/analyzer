@@ -34,6 +34,6 @@ object PredictStudent_v3 {
         (x.getAs[String]("device"), tag, true)
       }
 
-    SetUserProfileTag.setUserProfileTag(devices.rdd)
+    SetUserProfileTag.SetUserProfileTagInHiveDaily(devices.rdd)
   }
 }

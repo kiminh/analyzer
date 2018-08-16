@@ -152,7 +152,7 @@ object PredictAgeHourly {
         }
     }
     println(toSet.count())
-    val rs = SetUserProfileTag.SetUserProfileTagInHiveHourly(toSet, date, hour)
+    val rs = SetUserProfileTag.SetUserProfileTagInHiveHourly(toSet)
     rs.foreach(println)
   }
 }
