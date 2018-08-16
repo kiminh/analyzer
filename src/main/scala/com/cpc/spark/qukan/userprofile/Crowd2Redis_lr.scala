@@ -46,6 +46,13 @@ object Crowd2Redis_lr {
       val uids = predictions.filter(s"prediction>$u_threshold")
         .map(x => (x.getAs[String]("uid"), u_tag, true))
       SetUserProfileTag.setUserProfileTag(uids.rdd)
+      //删除相反的tag
+      if(d_threshold > 0 && d_tag > 0){
+        val uids_d = predictions.filter(s"prediction>$u_threshold")
+          .map(x => (x.getAs[String]("uid"), d_tag, false))
+        SetUserProfileTag.setUserProfileTag(uids_d.rdd)
+      }
+
       println(s"阈值>$u_threshold，tag $u_tag 设定完成")
     }
     if (d_threshold > 0 && d_tag > 0) {

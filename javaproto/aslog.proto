@@ -167,6 +167,7 @@ enum AdSrc {
 	MOMO = 14;
 	QUYUANSU = 15;
 	TOUTIAO = 16;
+	QIHU = 17;
 };
 enum InteractionType {
 	NO_INTERACT = 0;
