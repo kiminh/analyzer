@@ -3,6 +3,7 @@ import com.cpc.spark.udfs.myUdfs._
 import com.cpc.spark.streaming.tools.SparkApp
 import org.apache.spark.sql.functions.col
 import com.cpc.spark.qukan.userprofile.SetUserProfileTag._
+import org.apache.spark.sql.SparkSession
 object GenDownloadTag {
 
   def main(args: Array[String]): Unit = {
@@ -15,7 +16,14 @@ object GenDownloadTag {
       println(sql1)
       val sql2 = s"SELECT searchid,label as iscvr from  dl_cpc.ml_cvr_feature_v1 WHERE `date`=date_add('$dateBaseValue', $dateAddValue)"
 
-      val Table1 = SparkApp.spark.sql(sql1)
+
+      val ctx=SparkSession.builder()
+        .appName("master")
+        .enableHiveSupport()
+        .getOrCreate()
+
+
+      val Table1 = ctx.sql(sql1)
       val Table2 = SparkApp.spark.sql(sql2)
       var unionTable = Table1.join(Table2,Seq("searchid"),"left_outer")
       var tableNameTemp =  s"test.cpc_downloadtag_"+dateAddValue.toString
