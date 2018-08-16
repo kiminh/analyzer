@@ -23,28 +23,32 @@ object GenDownloadTag {
         .getOrCreate()
 
 
-      val Table1 = ctx.sql(sql1)
+      val Table1 = ctx.sql(sql2)
       val Table2 = ctx.sql(sql2)
 
       var unionTable = Table1.join(Table2,Seq("searchid"),"left_outer")
       var tableNameTemp =  s"test.cpc_downloadtag_"+dateAddValue.toString
       unionTable.write.mode("overwrite").saveAsTable(tableNameTemp)
     }
-
+    println("union begin")
+    val ctx=SparkSession.builder()
+      .appName("master")
+      .enableHiveSupport()
+      .getOrCreate()
     var tableName = s"test.cpc_downloadtag_"+"0"
-    var downloadTagTable = SparkApp.spark.table(tableName)
+    var downloadTagTable = ctx.table(tableName)
     for(dateAddValue<- 1 to 2) {
       tableName = s"test.cpc_downloadtag_"+dateAddValue.toString
-      downloadTagTable = downloadTagTable.union(SparkApp.spark.table(tableName))
+      downloadTagTable = downloadTagTable.union(ctx.table(tableName))
     }
     val tableNameTemp = "test.cpc_downloadtag"
     downloadTagTable.write.mode("overwrite").saveAsTable(tableNameTemp)
     println(downloadTagTable.count())
     downloadTagTable.show()
-
+    println("union done")
     val isshowNum = downloadTagTable.count().toDouble
-    val clickNumAll = SparkApp.spark.table(tableNameTemp).filter("isclick=1").count().toDouble
-    val iscvrNumAll = SparkApp.spark.table(tableNameTemp).filter("iscvr=1").count().toDouble
+    val clickNumAll = ctx.table(tableNameTemp).filter("isclick=1").count().toDouble
+    val iscvrNumAll = ctx.table(tableNameTemp).filter("iscvr=1").count().toDouble
     val ctrThres = clickNumAll/isshowNum
     val cvrThres = iscvrNumAll/clickNumAll
     println(ctrThres+"   "+cvrThres)
@@ -52,7 +56,7 @@ object GenDownloadTag {
     val sql3 = s"SELECT uid,sum(isclick) as clicknum ,sum(iscvr) as iscvrnum , sum(isshow) as showNum from test.cpc_downloadtag group by uid"
 
 
-    downloadTagTable=SparkApp.spark.sql(sql3)
+    downloadTagTable=ctx.sql(sql3)
     println(downloadTagTable.filter("clicknum is null").count())
     println(downloadTagTable.filter("iscvrnum is null").count())
     println(downloadTagTable.filter("showNum is null").count())
@@ -62,6 +66,7 @@ object GenDownloadTag {
     var resultRdd=downloadTagTable.select("uid","downloadtag")
       .withColumn("operation",operationTag()()).rdd
         .map(x=>(x.getAs[String](0),x.getAs[Int](1),x.getAs[Boolean](2)))
+    println("table done")
     SetUserProfileTagInHiveHourly(resultRdd)
 
     }
