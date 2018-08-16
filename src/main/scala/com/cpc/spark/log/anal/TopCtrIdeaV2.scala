@@ -156,7 +156,9 @@ object TopCtrIdeaV2 {
               title = ad._1, //title
               mtype = mtype, //type
               ctr_score = x.ctr,
-              from = "cpc_adv"
+              from = "cpc_adv",
+              show=x.show,
+              click=x.click
             )
 
             if (mtype == 4) { //视频
@@ -226,6 +228,11 @@ object TopCtrIdeaV2 {
 
     }
 
+    if(topIdeaData.length>0){
+      println("res: "+topIdeaData(0))
+    }
+
+
 
     val conf = ConfigFactory.load()
     val mariadbUrl = conf.getString("mariadb.url")
@@ -235,26 +242,26 @@ object TopCtrIdeaV2 {
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     //truncate table
-    try {
-      Class.forName(mariadbProp.getProperty("driver"))
-      val conn = DriverManager.getConnection(
-        mariadbUrl,
-        mariadbProp.getProperty("user"),
-        mariadbProp.getProperty("password"))
-      val stmt = conn.createStatement()
-      val sql =
-        """
-          |TRUNCATE TABLE report.%s
-        """.stripMargin.format(table)
-      stmt.executeUpdate(sql);
-    } catch {
-      case e: Exception => println("truncate table failed : " + e);
-    }
+//    try {
+//      Class.forName(mariadbProp.getProperty("driver"))
+//      val conn = DriverManager.getConnection(
+//        mariadbUrl,
+//        mariadbProp.getProperty("user"),
+//        mariadbProp.getProperty("password"))
+//      val stmt = conn.createStatement()
+//      val sql =
+//        """
+//          |TRUNCATE TABLE report.%s
+//        """.stripMargin.format(table)
+//      stmt.executeUpdate(sql);
+//    } catch {
+//      case e: Exception => println("truncate table failed : " + e);
+//    }
 
-    spark.createDataFrame(topIdeaData)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report." + table, mariadbProp)
+//    spark.createDataFrame(topIdeaData)
+//      .write
+//      .mode(SaveMode.Append)
+//      .jdbc(mariadbUrl, "report." + table, mariadbProp)
 
     println("num", topIdeaData.length)
   }
@@ -337,7 +344,9 @@ object TopCtrIdeaV2 {
                               mtype: Int = 0,
                               images: String = "",
                               ctr_score: Int = 0,
-                              from: String = ""
+                              from: String = "",
+                              click: Int = 0,
+                              show: Int = 0
                             )
 
 }
