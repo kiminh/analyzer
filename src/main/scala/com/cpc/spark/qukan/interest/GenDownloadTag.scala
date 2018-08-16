@@ -8,7 +8,10 @@ object GenDownloadTag {
   def main(args: Array[String]): Unit = {
     val dateBaseValue = args(0)
     for(dateAddValue<- 0 to 2){
-      val sql1 = s"SELECT searchid,uid,isclick,isshow  from dl_cpc.cpc_union_log WHERE `date`=date_add('$dateBaseValue', $dateAddValue) and interaction=2 and isshow=1 and uid is not null"
+      val sql1 =
+        s"""
+           |SELECT searchid,uid,isclick,isshow  from dl_cpc.cpc_union_log WHERE `date`=date_add('$dateBaseValue', $dateAddValue) and interaction=2 and isshow=1 and uid is not null
+         """.stripMargin
       println(sql1)
       val sql2 = s"SELECT searchid,label as iscvr from  dl_cpc.ml_cvr_feature_v1 WHERE `date`=date_add('$dateBaseValue', $dateAddValue)"
 
