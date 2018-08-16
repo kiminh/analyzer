@@ -47,9 +47,7 @@ object TagFromHivetoRedis {
       x =>
         val str = x.getAs[String](0)
         str.substring(str.length - 3, str.length)
-    }
-    tagList.toLocalIterator.foreach(println)
-    /*
+    }.toLocalIterator.toArray
     for (i <- tagList ) {
       var stmt = ""
       if (op == 0) {
@@ -72,6 +70,5 @@ object TagFromHivetoRedis {
         SetUserProfileTag.setUserProfileTag(rs)
       }
     }
-    */
   }
 }
