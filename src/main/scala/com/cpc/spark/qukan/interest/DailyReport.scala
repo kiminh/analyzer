@@ -47,8 +47,8 @@ object DailyReport {
     import spark.implicits._
 
 
-    //student_app(spark, args)
-    checkUVTag(spark, args)
+    student_app(spark, args)
+    //checkUVTag(spark, args)
     //daily_cost(spark, args)
 
 
@@ -252,31 +252,20 @@ object DailyReport {
   def student_app(spark : SparkSession, args : Array[String]): Unit ={
     val sample = spark.read.parquet("/user/cpc/qtt-age-sample/p1").rdd.map{
       x =>
-        if (x(1) != null && x(2) != null) {
-          (x.getAs[Int](1), x.getAs[Seq[Row]](2).size, x.getAs[Seq[Row]](2))
+        if (x(2) != null) {
+          (x.getAs[Int]("birth"), x.getAs[Seq[Row]]("apps").size, x.getAs[Seq[Row]]("apps"))
         } else {
           null
         }
     }.filter(_ != null)
-    println(sample.filter(x =>x._1 >= 22).count())
-    println(sample.filter(x =>x._1 >= 22  && x._2 > 10).count())
-    println(sample.filter(x =>x._1 < 22).count())
-    println(sample.filter(x =>x._1 < 22  && x._2 > 10).count())
-    sample.filter(_._1 < 22).flatMap{
+    sample.flatMap{
       x =>
         x._3.map{
           r =>
             (r.getAs[String](0), 1)
         }
-    }.reduceByKey(_+_).sortBy(_._2, false).take(100).foreach(println)
-    println("===============================================")
-    sample.filter(_._1 >= 22).flatMap{
-      x =>
-        x._3.map{
-          r =>
-            (r.getAs[String](0), 1)
-        }
-    }.reduceByKey(_+_).sortBy(_._2, false).take(100).foreach(println)
+    }.reduceByKey(_+_).sortBy(_._2, false).toLocalIterator.foreach(println)
+
   }
 
 }

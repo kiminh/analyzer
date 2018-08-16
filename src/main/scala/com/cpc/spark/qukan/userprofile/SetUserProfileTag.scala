@@ -205,7 +205,10 @@ object SetUserProfileTag {
 //    }
     sum.toArray[(String, Int)]
   }
-  def SetUserProfileTagInHiveHourly (in : RDD[(String, Int, Boolean)], date : String, hour : String) : Array[(String, Int)] = {
+  def SetUserProfileTagInHiveHourly (in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
+    val cal = Calendar.getInstance()
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val hour = new SimpleDateFormat("HH").format(cal.getTime)
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
     val ft = in.map(x => x._2).distinct().toLocalIterator
@@ -224,7 +227,9 @@ object SetUserProfileTag {
     }
     rs.toArray
   }
-  def SetUserProfileTagInHiveDaily (in : RDD[(String, Int, Boolean)], date : String) : Array[(String, Int)] = {
+  def SetUserProfileTagInHiveDaily (in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
+    val cal = Calendar.getInstance()
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val spark = SparkSession.builder().getOrCreate()
     import spark.implicits._
     val ft = in.map(x => x._2).distinct().toLocalIterator

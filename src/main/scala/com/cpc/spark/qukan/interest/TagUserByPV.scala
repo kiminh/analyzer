@@ -95,6 +95,6 @@ object TagUserByPV {
               }
           }
       }
-    SetUserProfileTag.setUserProfileTag(toSet)
+    SetUserProfileTag.SetUserProfileTagInHiveDaily(toSet)
   }
 }

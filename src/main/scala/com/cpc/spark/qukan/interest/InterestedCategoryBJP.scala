@@ -28,6 +28,9 @@ object InterestedCategoryBJP {
       .getOrCreate()
     import spark.implicits._
 
+    println("no longer use")
+    System.exit(1)
+
 
     for (adclass <- topCates) {
       val cal = Calendar.getInstance()
@@ -53,7 +56,7 @@ object InterestedCategoryBJP {
         println("day2", num2, ret2._1, ret2._2, ret2._1.toDouble / ret2._2.toDouble)
       }
 
-      val sum = SetUserProfileTag.setUserProfileTag(day2.map(x => (x._1, 206, true)))
+      val sum = SetUserProfileTag.SetUserProfileTagInHiveDaily(day2.map(x => (x._1, 206, true)))
       sum.foreach(println)
     }
   }

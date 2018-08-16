@@ -72,7 +72,7 @@ object TagUserByZfb {
           Seq((x._1, 224, false), (x._1, 225, true), (x._1, 239, false), (x._1, 240, true))
         }
     }
-    val ret = SetUserProfileTag.setUserProfileTag(age)
+    val ret = SetUserProfileTag.SetUserProfileTagInHiveDaily(age)
     //ret.foreach(println)
 
     val conf = ConfigFactory.load()

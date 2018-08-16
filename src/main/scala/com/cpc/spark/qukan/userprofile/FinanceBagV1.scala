@@ -36,6 +36,6 @@ object FinanceBagV1 {
     val predictions = model.transform(data)
     val uids = predictions.filter("prediction>0.15")
       .map(x => (x.getAs[String]("uid"), tag, true))
-    SetUserProfileTag.setUserProfileTag(uids.rdd)
+    SetUserProfileTag.SetUserProfileTagInHiveDaily(uids.rdd)
   }
 }

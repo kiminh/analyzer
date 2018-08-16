@@ -64,7 +64,7 @@ object PredictNoClickUser {
 
     //res.write.mode("overwrite").saveAsTable("test.noclicktest1")
 
-    SetUserProfileTag.setUserProfileTag(predict)
+    SetUserProfileTag.SetUserProfileTagInHiveDaily(predict)
 
 //    val conf = ConfigFactory.load()
 //    var count = 0

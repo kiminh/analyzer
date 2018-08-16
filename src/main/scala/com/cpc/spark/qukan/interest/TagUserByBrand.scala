@@ -95,6 +95,6 @@ object TagUserByBrand {
               }
           }
       }
-    SetUserProfileTag.setUserProfileTag(toSet)
+    SetUserProfileTag.SetUserProfileTagInHiveDaily(toSet)
   }
 }

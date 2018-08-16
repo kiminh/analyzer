@@ -22,6 +22,8 @@ import userprofile.Userprofile.{InterestItem, UserProfile}
   */
 object TagUserByApps {
 
+  Logger.getRootLogger.setLevel(Level.WARN)
+
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       System.err.println(
@@ -32,37 +34,43 @@ object TagUserByApps {
       System.exit(1)
     }
 
-    Logger.getRootLogger.setLevel(Level.WARN)
-
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -args(0).toInt)
     val day = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
     val spark = SparkSession.builder()
       .appName("tag user by installed apps [%s]".format(day))
+      .enableHiveSupport()
       .getOrCreate()
 
     var conf = ConfigFactory.load("interest")
 
     println("-----pkg usage-----", day)
-    //user app install info
-    val aiPath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(day)
-    val userPkgs = spark.read.orc(aiPath).rdd
-      .map(HdfsParser.parseInstallApp(_, x => true, null))
-      .filter(x => x != null && x.pkgs.length > 0)
-      .map(x => (x.devid, x.pkgs.map(_.name)))
-      .reduceByKey(_ ++ _)
-      .map(x => (x._1, x._2.distinct))
-      .cache()
-
+    val aiPath = "/user/cpc/userInstalledApp/%s".format(day)
+    val userPkgs = spark.read.parquet(aiPath).rdd
+    .map{ x =>
+      (x.getAs[String]("uid"), x.getAs[Seq[String]]("pkgs").toList)
+    }
     println("users", userPkgs.count())
 
-
+    //保健品
+    val clicklog = spark.sql(
+      """
+        |select distinct uid from dl_cpc.cpc_union_log where `date` = "%s"
+        |and round(ext['adclass'].int_value / 1e3,0) = %d and isclick = 1
+      """.stripMargin.format(day, 130104)).rdd
+      .map { u => u.getString(0)}
+    val baojianpinUids = uidHasApps(userPkgs, "interest", "user_tag_by_apps.baojianpin.contains")
+      .union(clicklog)
+      .distinct()
+    var sum = tagUser(baojianpinUids, conf.getInt("user_tag_by_apps.baojianpin.tag_id"))
+    println("has baojianpin app users", sum)
+    baojianpinUids.take(10).foreach(println)
 
 
     //借贷
     val loanUids = uidHasApps(userPkgs, "interest", "user_tag_by_apps.loans.contains")
-    var sum = tagUser(loanUids, conf.getInt("user_tag_by_apps.loans.tag_id"))
+    sum = tagUser(loanUids, conf.getInt("user_tag_by_apps.loans.tag_id"))
     println("has loans app users", sum)
     loanUids.take(10).foreach(println)
 
@@ -88,12 +96,6 @@ object TagUserByApps {
     sum = tagUser(qipaiUids, conf.getInt("user_tag_by_apps.qipai.tag_id"))
     println("has qipai app users", sum)
     qipaiUids.take(10).foreach(println)
-
-    //保健品
-    val baojianpinUids = uidHasApps(userPkgs, "interest", "user_tag_by_apps.baojianpin.contains")
-    sum = tagUser(baojianpinUids, conf.getInt("user_tag_by_apps.baojianpin.tag_id"))
-    println("has baojianpin app users", sum)
-    baojianpinUids.take(10).foreach(println)
 
     //医疗
     val yiliaoUids = uidHasApps(userPkgs, "interest", "user_tag_by_apps.yiliao.contains")
@@ -270,7 +272,7 @@ object TagUserByApps {
   }
 
   def tagUser(uids: RDD[String], tag: Int): (Int, Int) = {
-    val sum = SetUserProfileTag.setUserProfileTag(uids.map(x => (x, tag, true)))
+    val sum = SetUserProfileTag.SetUserProfileTagInHiveDaily(uids.map(x => (x, tag, true)))
     sum.foreach(println)
     (0, 0)
   }
