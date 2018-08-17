@@ -55,7 +55,7 @@ object TopCtrIdeaV2 {
           |select *,
           | ext['adclass'].int_value as adclass
           | from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
-          |and adslotid > 0 and adslot_type in (1,2)
+          |and adslotid > 0 and adslot_type in (1,2) and ideaid > 0
         """.stripMargin.format(date)
       println(stmt)
       val ulog = spark.sql(stmt)
@@ -111,6 +111,7 @@ object TopCtrIdeaV2 {
       }
       .filter(x => x.click > 0 && x.show > 1000)
       .toLocalIterator
+      .toSeq
 
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
