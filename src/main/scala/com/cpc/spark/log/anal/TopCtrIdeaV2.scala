@@ -56,7 +56,7 @@ object TopCtrIdeaV2 {
           |select adslot_type, ideaid, sum(isclick) as sum_click, sum(isshow) as sum_show
           |from dl_cpc.cpc_union_log where `date` = "%s" and hour="20" and isshow = 1
           |and adslotid > 0 and ideaid > 0
-          |group by adslot_type, ideaid ;
+          |group by adslot_type, ideaid
         """.stripMargin.format(date)
       println(stmt)
       val ulog = spark.sql(stmt)
