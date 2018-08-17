@@ -20,10 +20,11 @@ object GenDownloadTag {
         .enableHiveSupport()
         .getOrCreate()
 
-
+      println(111)
       val Table1 = ctx.sql(sql2)
+      println(222)
       val Table2 = ctx.sql(sql2)
-
+      println(333)
       var unionTable = Table1.join(Table2,Seq("searchid"),"left_outer")
       var tableNameTemp =  s"dl_cpc.cpc_downloadtag_"+dateAddValue.toString
       ctx.sql(s"drop table if exists $tableNameTemp")
