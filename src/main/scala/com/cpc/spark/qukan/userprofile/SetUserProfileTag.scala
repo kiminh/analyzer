@@ -241,6 +241,8 @@ object SetUserProfileTag {
         in.filter(_._2 == tag).map{x => (x._1, x._3)}.toDF("uid", "operation").coalesce(20)
           .write.mode(SaveMode.Overwrite).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s".format(date, tag))
         val sql =
+
+
           """
             |ALTER TABLE dl_cpc.cpc_userprofile_tag_daily add if not exists PARTITION (`date` = "%s" , `tag` = "%s")  LOCATION
             |       '/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s'
