@@ -227,6 +227,30 @@ object SetUserProfileTag {
     }
     rs.toArray
   }
+
+  def SetUserProfileTagInHiveHourly (in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
+    val cal = Calendar.getInstance()
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val hour = new SimpleDateFormat("HH").format(cal.getTime)
+    val spark = SparkSession.builder().getOrCreate()
+    import spark.implicits._
+    val ft = in.map(x => x._2).distinct().toLocalIterator
+    val rs = ft.map{
+      tag =>
+        in.filter(_._2 == tag).map{x => (x._1, x._3)}.toDF("uid", "operation").coalesce(20)
+          .write.mode(SaveMode.Overwrite).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_hourly/%s/%s/%s".format(date, hour, tag))
+        val sql =
+          """
+            |ALTER TABLE dl_cpc.cpc_userprofile_tag_hourly add if not exists PARTITION (`date` = "%s" , `hour` = "%s", `tag` = "%s")  LOCATION
+            |       '/warehouse/dl_cpc.db/cpc_userprofile_tag_hourly/%s/%s/%s'
+            |
+                """.stripMargin.format(date, hour, tag, date, hour, tag)
+        spark.sql(sql)
+        (sql, in.filter(_._2 == tag).count().toInt)
+    }
+    rs.toArray
+  }
+
   def SetUserProfileTagInHiveDaily (in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
     val cal = Calendar.getInstance()
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
