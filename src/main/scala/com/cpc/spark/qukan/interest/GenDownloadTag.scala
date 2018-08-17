@@ -66,7 +66,7 @@ object GenDownloadTag {
     val cvrThres = iscvrNumAll/clickNumAll
     println(ctrThres+"   "+cvrThres)
 
-    val sql3 = s"SELECT uid,sum(isclick) as clicknum ,sum(if iscvrint='1',1,0) as iscvrnum , sum(isshow) as showNum from test.cpc_downloadtag group by uid"
+    val sql3 = s"SELECT uid,sum(isclick) as clicknum ,sum(if (iscvrint='1',1,0)) as iscvrnum , sum(isshow) as showNum from test.cpc_downloadtag group by uid"
 
 
     downloadTagTable=ctx.sql(sql3)
