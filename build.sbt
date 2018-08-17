@@ -54,7 +54,6 @@ assemblyExcludedJars in assembly := {
     "mchange-commons-java-0.2.11.jar",
     "mysql-connector-java-5.1.41-bin.jar",
     "protobuf-java-3.0.2.jar",
-    "scala-redis_2.11-1.0.jar",
     "spark-redis-0.3.2.jar",
     "spark-streaming-kafka-0-8-assembly_2.11-2.1.0.jar",
     "xgboost4j-0.7.jar",
