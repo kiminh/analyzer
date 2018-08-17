@@ -218,29 +218,31 @@ object TopCtrIdeaV2 {
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     //truncate table
-    //    try {
-    //      Class.forName(mariadbProp.getProperty("driver"))
-    //      val conn = DriverManager.getConnection(
-    //        mariadbUrl,
-    //        mariadbProp.getProperty("user"),
-    //        mariadbProp.getProperty("password"))
-    //      val stmt = conn.createStatement()
-    //      val sql =
-    //        """
-    //          |TRUNCATE TABLE report.%s
-    //        """.stripMargin.format(table)
-    //      stmt.executeUpdate(sql);
-    //    } catch {
-    //      case e: Exception => println("truncate table failed : " + e);
-    //    }
+    try {
+      Class.forName(mariadbProp.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        mariadbUrl,
+        mariadbProp.getProperty("user"),
+        mariadbProp.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        """
+          |TRUNCATE TABLE report.%s
+        """.stripMargin.format(table)
+      stmt.executeUpdate(sql);
+    } catch {
+      case e: Exception => println("truncate table failed : " + e);
+    }
 
-    //    spark.createDataFrame(topIdeaData)
-    //      .write
-    //      .mode(SaveMode.Append)
-    //      .jdbc(mariadbUrl, "report." + table, mariadbProp)
-    println("@@@@@@@@@@@@@@@@@@@@@")
+    spark.createDataFrame(topIdeaData)
+      .drop("adslot_id")
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report." + table, mariadbProp)
+
+
     println("###### num: " + topIdeaData.length)
-    println("#####################")
+
   }
 
   def getUserBelong(): Map[Int, Int] = {
