@@ -45,8 +45,10 @@ object GenDownloadTag {
       tableName = s"test.cpc_downloadtag_"+dateAddValue.toString
       downloadTagTable = downloadTagTable.union(ctx.table(tableName))
     }
+    println("add column begin")
     downloadTagTable = downloadTagTable.withColumn("iscvrint",ChangeCvrStringToInt()(col("iscvr")))
 
+    println("add column done")
     val tableNameTemp = "test.cpc_downloadtag"
     ctx.sql(s"drop table if exists $tableNameTemp")
     downloadTagTable.write.mode("overwrite").saveAsTable(tableNameTemp)
