@@ -4,6 +4,7 @@ import java.sql.{DriverManager, ResultSet}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
+import com.cpc.spark.log.anal.TopCtrIdea.Adinfo
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.HashPartitioner
@@ -52,36 +53,27 @@ object TopCtrIdeaV2 {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       val stmt =
         """
-          |select adslot_type, ideaid, userid, ideaid, adslot_type, isclick, isshow,
-          | ext['adclass'].int_value as adclass
-          | from dl_cpc.cpc_union_log where `date` = "%s" and hour="20" and isshow = 1
+          |select adslot_type, ideaid, sum(isclick) as sum_click, sum(isshow) as sum_show
+          |from dl_cpc.cpc_union_log where `date` = "%s" and hour="20" and isshow = 1
           |and adslotid > 0 and ideaid > 0
+          |group by adslot_type, ideaid ;
         """.stripMargin.format(date)
       println(stmt)
       val ulog = spark.sql(stmt)
-        //        .as[UnionLog]
         .rdd
         .map {
           u =>
             val key = (u.getAs[Int]("adslot_type"), u.getAs[Int]("ideaid"))
-            val cls = u.getAs[Int]("adclass")
             val v = Adinfo(
-              user_id = u.getAs[Int]("userid"),
               idea_id = u.getAs[Int]("ideaid"),
               adslot_type = u.getAs[Int]("adslot_type"),
-              adclass = cls,
-              click = u.getAs[Int]("isclick"),
-              show = u.getAs[Int]("isshow"))
+              click = u.getAs[Int]("sum_click"),
+              show = u.getAs[Int]("sum_show"))
 
             (key, v)
         }
-        .reduceByKey { //计算当天的click,show
-          (x, y) =>
-            x.copy(
-              click = x.click + y.click,
-              show = x.show + y.show
-            )
-        }
+
+
       if (adctr == null) {
         adctr = ulog
       } else {
@@ -110,13 +102,13 @@ object TopCtrIdeaV2 {
           v.copy(ctr = ctr)
       }
       .filter(x => x.click > 0 && x.show > 1000)
-      .collect()
+      .toLocalIterator
       .toSeq
 
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
-    val titles = getIdeaTitle() //从adv.idea表读取推广创意id,title,image  Map[id, (title, Seq[image],type,video_id)]
-    val imgs = getIdaeImg() //从adv.resource表读取素材资源id, 远程下载地址,素材类型  Map[id, (remote_url, type)]
+    val titles = getIdeaTitle() //从adv.idea表读取数据  Map[id, (title, Seq[image],type,video_id,user_id,category)]
+    val imgs = getIdaeImg() //从adv.resource表读取素材资源  Map[id, (remote_url, type)]
 
     adinfo.take(3).foreach(x => println(x))
     println("adinfo length: "+adinfo.length)
@@ -127,20 +119,9 @@ object TopCtrIdeaV2 {
     val topIdeaRDD = adinfo
       .map {
         x => //Adinfo
-          val ad = titles.getOrElse(x.idea_id, null) //根据ideaid获得title和image  (title,image,type,video_id)
+          val ad = titles.getOrElse(x.idea_id, null) //根据ideaid获得  (title,image,type,video_id,user_id,category)
           if (ad != null) {
-            var mtype = 0
-            mtype = ad._3 match {
-              case 1 => 1 //小图
-              case 2 => 2 //大图
-              case 3 => 3 //组图
-              case 4 => 4 //视频
-              case 6 => 6 //文本, 没有图片和视频, image=0
-              case 7 => 7 //互动
-              case 8 => 8 //开屏
-              case 9 => 9 //横幅
-              case _ => -1
-            }
+            var mtype = ad._3  //type
 
             var img: Seq[(String, Int)] = Seq()
             if (mtype != 6) {
@@ -149,15 +130,16 @@ object TopCtrIdeaV2 {
             }
             val video = imgs.getOrElse(ad._4, null) //获得video的type和remote_url (remote_url,type)
 
-            val adclass = (x.adclass / 1000000) * 1000000 + 100100
+
+            val adclass = (ad._6 / 1000000) * 1000000 + 100100
 
             id += 1
             var topIdea = TopIdea(
               id = id,
-              user_id = x.user_id,
+              user_id = ad._5,
               idea_id = x.idea_id,
-              agent_id = ub.getOrElse(x.user_id, 0),
-              adclass = x.adclass,
+              agent_id = ub.getOrElse(ad._5, 0),
+              adclass = ad._6,
               adclass_1 = adclass,
               title = ad._1, //title
               mtype = mtype, //type
@@ -191,6 +173,7 @@ object TopCtrIdeaV2 {
 
     for (i <- type_num2) {
       var tmp = topIdeaRDD.filter(_.mtype == i)
+
 
       //计算占比
       var r = tmp.length / sum
@@ -272,13 +255,14 @@ object TopCtrIdeaV2 {
     ub.toMap
   }
 
-  def getIdeaTitle(): Map[Int, (String, String, Int, Int)] = {
-    var sql = "select id, title, image, type, video_id from idea where action_type = 1 and type in (1,2,3,4,6,7,8,9)"
-    val ideas = mutable.Map[Int, (String, String, Int, Int)]()
+  def getIdeaTitle(): Map[Int, (String, String, Int, Int, Int, Int)] = {
+    var sql = "select id, title, image, type, video_id, user_id, category from idea where action_type = 1 and type in (1,2,3,4,6,7,8,9)"
+    val ideas = mutable.Map[Int, (String, String, Int, Int, Int, Int)]()
     var rs = getAdDbResult("mariadb.adv", sql)
     while (rs.next()) {
       val idea = (rs.getString("title"), rs.getString("image"),
-        rs.getInt("type"), rs.getInt("video_id"))
+        rs.getInt("type"), rs.getInt("video_id"),
+        rs.getInt("user_id"), rs.getInt("category"))
       val id = rs.getInt("id")
       ideas.update(id, idea)
     }
