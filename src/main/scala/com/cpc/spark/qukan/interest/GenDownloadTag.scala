@@ -46,6 +46,7 @@ object GenDownloadTag {
       downloadTagTable = downloadTagTable.union(ctx.table(tableName))
     }
     println("add column begin")
+
     println(downloadTagTable.filter("iscvr is not null").count())
 
     downloadTagTable = downloadTagTable.withColumn("iscvrint",ChangeCvrStringToInt()(col("iscvr")))
