@@ -111,9 +111,9 @@ object TopCtrIdeaV2 {
     val imgs = getIdaeImg() //从adv.resource表读取素材资源  Map[id, (remote_url, type)]
 
     adinfo.take(3).foreach(x => println(x))
-    println("adinfo length: "+adinfo.length)
-    println("title length: "+titles.size)
-    println("imgs length: "+imgs.size)
+    println("adinfo length: " + adinfo.length)
+    println("title length: " + titles.size)
+    println("imgs length: " + imgs.size)
 
     var id = 0
     val topIdeaRDD = adinfo
@@ -121,7 +121,7 @@ object TopCtrIdeaV2 {
         x => //Adinfo
           val ad = titles.getOrElse(x.idea_id, null) //根据ideaid获得  (title,image,type,video_id,user_id,category)
           if (ad != null) {
-            var mtype = ad._3  //type
+            var mtype = ad._3 //type
 
             var img: Seq[(String, Int)] = Seq()
             if (mtype != 6) {
@@ -150,7 +150,7 @@ object TopCtrIdeaV2 {
             )
 
             if (mtype == 4) { //视频
-              topIdea = topIdea.copy(images = video.toString())
+              topIdea = topIdea.copy(images = video._1)
             } else { //除视频以外其它
               topIdea = topIdea.copy(images = img.map(_._1).mkString(" "))
             }
@@ -174,15 +174,16 @@ object TopCtrIdeaV2 {
     for (i <- type_num2) {
       var tmp = topIdeaRDD.filter(_.mtype == i)
 
+      if (tmp.nonEmpty) {
+        //计算占比
+        var r = tmp.length / sum
+        rate_map.put(i, r)
 
-      //计算占比
-      var r = tmp.length / sum
-      rate_map.put(i, r)
-
-      //计算最大ctr
-      var max_ctr = tmp.map(_.ctr_score).max
-      var max_ctr_show = tmp.filter(_.ctr_score == max_ctr).map(_.show).toString()
-      max_ctr_map.put(max_ctr, max_ctr_show)
+        //计算最大ctr
+        var max_ctr = tmp.map(_.ctr_score).max
+        var max_ctr_show = tmp.filter(_.ctr_score == max_ctr).map(_.show).toString()
+        max_ctr_map.put(max_ctr, max_ctr_show)
+      }
 
     }
 
