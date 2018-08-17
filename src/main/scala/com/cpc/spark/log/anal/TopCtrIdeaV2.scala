@@ -54,7 +54,7 @@ object TopCtrIdeaV2 {
       val stmt =
         """
           |select adslot_type, ideaid, sum(isclick) as sum_click, sum(isshow) as sum_show
-          |from dl_cpc.cpc_union_log where `date` = "%s" and hour="20" and isshow = 1
+          |from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
           |and adslotid > 0 and ideaid > 0
           |group by adslot_type, ideaid
         """.stripMargin.format(date)
@@ -193,7 +193,6 @@ object TopCtrIdeaV2 {
       println("type=1最大ctr_score: " + x + "; show: " + y)
     }
 
-    println("#####################")
 
     val type_num: Array[Int] = Array(1, 2, 3, 4, 6, 7, 8, 9)
     var topIdeaData = mutable.Seq[TopIdea]()
@@ -205,7 +204,6 @@ object TopCtrIdeaV2 {
       topIdeaData = topIdeaData ++ topIdeaRDD2
     }
 
-    println("#####################")
 
     if (topIdeaData.length > 0) {
       println("###### res: " + topIdeaData(0))
