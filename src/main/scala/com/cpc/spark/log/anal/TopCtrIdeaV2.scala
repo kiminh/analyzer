@@ -110,7 +110,7 @@ object TopCtrIdeaV2 {
           v.copy(ctr = ctr)
       }
       .filter(x => x.click > 0 && x.show > 1000)
-      .toLocalIterator
+      .collect()
       .toSeq
 
 
