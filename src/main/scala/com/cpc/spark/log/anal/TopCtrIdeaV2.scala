@@ -9,6 +9,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.storage.StorageLevel
 
 import scala.collection.mutable
 
@@ -83,7 +84,7 @@ object TopCtrIdeaV2 {
         }
       if (adctr == null) {
         adctr = ulog
-      }else{
+      } else {
         adctr = adctr.union(ulog) //合并
       }
 
@@ -109,16 +110,13 @@ object TopCtrIdeaV2 {
           v.copy(ctr = ctr)
       }
       .filter(x => x.click > 0 && x.show > 1000)
+      .toLocalIterator
 
-//    val max1 = adinfo.filter(_.adslot_type == 1).map(_.ctr).max() //列表页最大点击率
-//    val max2 = adinfo.filter(_.adslot_type == 2).map(_.ctr).max() //详情页最大点击率
-//    val rate = max1.toDouble / max2.toDouble
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
     val titles = getIdeaTitle() //从adv.idea表读取推广创意id,title,image  Map[id, (title, Seq[image],type,video_id)]
     val imgs = getIdaeImg() //从adv.resource表读取素材资源id, 远程下载地址,素材类型  Map[id, (remote_url, type)]
 
-    //println(max1, max2, rate)
     adinfo.take(3).foreach(x => println(x))
 
     var id = 0
@@ -140,7 +138,11 @@ object TopCtrIdeaV2 {
               case _ => -1
             }
 
-            val img = ad._2.map(x => imgs.getOrElse(x, null)).filter(_ != null) //获得image的type和remote_url (remote_url,type)
+            var img: Seq[(String, Int)] = Seq()
+            if (mtype != 6) {
+              img = ad._2.split(",").map(_.toInt).toSeq
+                .map(x => imgs.getOrElse(x, null)).filter(_ != null) //获得image的type和remote_url (remote_url,type)
+            }
             val video = imgs.getOrElse(ad._4, null) //获得video的type和remote_url (remote_url,type)
 
             val adclass = (x.adclass / 1000000) * 1000000 + 100100
@@ -156,7 +158,9 @@ object TopCtrIdeaV2 {
               title = ad._1, //title
               mtype = mtype, //type
               ctr_score = x.ctr,
-              from = "cpc_adv"
+              from = "cpc_adv",
+              show = x.show,
+              click = x.click
             )
 
             if (mtype == 4) { //视频
@@ -173,57 +177,50 @@ object TopCtrIdeaV2 {
       }
       .filter(_ != null)
 
-    val sum = topIdeaRDD.count().toInt //总元素个数
+
+    val sum = topIdeaRDD.length.toDouble //总元素个数
     println("总元素个数：" + sum)
 
-    val mtypeMap = topIdeaRDD.map(x => (x.mtype, 1))
-      .reduceByKey((x, y) => x + y)
-      .map(x => (x._1, x._2 / sum)).collectAsMap() //占比
-    println("占比：" + mtypeMap)
+    val type_num2: Array[Int] = Array(1, 2, 3, 4, 6, 7, 8, 9)
+    var rate_map: mutable.Map[Int, Double] = mutable.HashMap()
+    var max_ctr_map: mutable.Map[Int, String] = mutable.HashMap()
 
-    val max1 = topIdeaRDD.filter(_.mtype == 1).map(_.ctr_score).max()
-    val max2 = topIdeaRDD.filter(_.mtype == 2).map(_.ctr_score).max()
-    val max3 = topIdeaRDD.filter(_.mtype == 3).map(_.ctr_score).max()
-    val max4 = topIdeaRDD.filter(_.mtype == 4).map(_.ctr_score).max()
+    for (i <- type_num2) {
+      var tmp = topIdeaRDD.filter(_.mtype == i)
 
-    val max6 = topIdeaRDD.filter(_.mtype == 6).map(_.ctr_score).max()
-    val max7 = topIdeaRDD.filter(_.mtype == 7).map(_.ctr_score).max()
-    val max8 = topIdeaRDD.filter(_.mtype == 8).map(_.ctr_score).max()
-    val max9 = topIdeaRDD.filter(_.mtype == 9).map(_.ctr_score).max()
+      //计算占比
+      var r = tmp.length / sum
+      rate_map.put(i, r)
 
-    println("type=1最大ctr_score: "+max1
-    +"type=2最大ctr_score: "+max2
-    +"type=3最大ctr_score: "+max3
-    +"type=4最大ctr_score: "+max4
-    +"type=6最大ctr_score: "+max6
-    +"type=7最大ctr_score: "+max7
-    +"type=8最大ctr_score: "+max8
-    +"type=9最大ctr_score: "+max9)
+      //计算最大ctr
+      var max_ctr = tmp.map(_.ctr_score).max
+      var max_ctr_show = tmp.filter(_.ctr_score == max_ctr).map(_.show).toString()
+      max_ctr_map.put(max_ctr, max_ctr_show)
 
+    }
 
-    //    import spark.implicits._
-    //    val topIdeaRDD2 = topIdeaRDD.toDF("id", "agent_id", "user_id", "idea_id", "adclass", "adclass_1", "title", "mtype", "images", "ctr_score", "from")
-    //      .repartition($"mtype").foreachPartition(
-    //      p => {
-    //        val pRdd = spark.sparkContext.parallelize(p.toSeq)
-    //        val sortedParRdd = pRdd.sortBy(r => r.getAs[Int]("cty_score"), false)
-    //          .take(40000 * (mtypeMap.getOrElse(1, 0)))
-    //      }
-    //    )
+    println("占比：" + rate_map)
+
+    for ((x, y) <- max_ctr_map) {
+      println("type=1最大ctr_score: " + x + "; show: " + y)
+    }
+
+    println("#####################")
 
     val type_num: Array[Int] = Array(1, 2, 3, 4, 6, 7, 8, 9)
-    var topIdeaData: Array[TopIdea] = Array()
+    var topIdeaData = mutable.Seq[TopIdea]()
 
     for (i <- 0 until type_num.length) {
-      val topIdeaRDD2 = topIdeaRDD.filter(x => x.mtype == type_num(i)).sortBy(x => x.ctr_score, false)
-        .take(40000 * (mtypeMap.getOrElse(type_num(i), 0)))
+      val topIdeaRDD2 = topIdeaRDD.filter(x => x.mtype == type_num(i))
+        .toSeq.sortWith(_.ctr_score > _.ctr_score).take((40000 * (rate_map.getOrElse[Double](i, 0.0))).toInt)
 
-      if (topIdeaData == null) {
-        topIdeaData = topIdeaRDD2
-      }else{
-        topIdeaData = topIdeaData ++ topIdeaRDD2
-      }
+      topIdeaData = topIdeaData ++ topIdeaRDD2
+    }
 
+    println("#####################")
+
+    if (topIdeaData.length > 0) {
+      println("###### res: " + topIdeaData(0))
     }
 
 
@@ -235,28 +232,29 @@ object TopCtrIdeaV2 {
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     //truncate table
-    try {
-      Class.forName(mariadbProp.getProperty("driver"))
-      val conn = DriverManager.getConnection(
-        mariadbUrl,
-        mariadbProp.getProperty("user"),
-        mariadbProp.getProperty("password"))
-      val stmt = conn.createStatement()
-      val sql =
-        """
-          |TRUNCATE TABLE report.%s
-        """.stripMargin.format(table)
-      stmt.executeUpdate(sql);
-    } catch {
-      case e: Exception => println("truncate table failed : " + e);
-    }
+    //    try {
+    //      Class.forName(mariadbProp.getProperty("driver"))
+    //      val conn = DriverManager.getConnection(
+    //        mariadbUrl,
+    //        mariadbProp.getProperty("user"),
+    //        mariadbProp.getProperty("password"))
+    //      val stmt = conn.createStatement()
+    //      val sql =
+    //        """
+    //          |TRUNCATE TABLE report.%s
+    //        """.stripMargin.format(table)
+    //      stmt.executeUpdate(sql);
+    //    } catch {
+    //      case e: Exception => println("truncate table failed : " + e);
+    //    }
 
-    spark.createDataFrame(topIdeaData)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report." + table, mariadbProp)
-
-    println("num", topIdeaData.length)
+    //    spark.createDataFrame(topIdeaData)
+    //      .write
+    //      .mode(SaveMode.Append)
+    //      .jdbc(mariadbUrl, "report." + table, mariadbProp)
+    println("@@@@@@@@@@@@@@@@@@@@@")
+    println("###### num: " + topIdeaData.length)
+    println("#####################")
   }
 
   def getUserBelong(): Map[Int, Int] = {
@@ -266,19 +264,16 @@ object TopCtrIdeaV2 {
     while (rs.next()) {
       ub.update(rs.getInt("id"), rs.getInt("belong"))
     }
-    val rsold = getAdDbResult("mariadb.adv_old", sql)
-    while (rsold.next()) {
-      ub.update(rsold.getInt("id"), rsold.getInt("belong"))
-    }
+
     ub.toMap
   }
 
-  def getIdeaTitle(): Map[Int, (String, Seq[Int], Int, Int)] = {
-    var sql = "select id, title, type, image, video_id from idea where action_type = 1 and type in (1,2,3,4,6,7,8,9)"
-    val ideas = mutable.Map[Int, (String, Seq[Int], Int, Int)]()
+  def getIdeaTitle(): Map[Int, (String, String, Int, Int)] = {
+    var sql = "select id, title, image, type, video_id from idea where action_type = 1 and type in (1,2,3,4,6,7,8,9)"
+    val ideas = mutable.Map[Int, (String, String, Int, Int)]()
     var rs = getAdDbResult("mariadb.adv", sql)
     while (rs.next()) {
-      val idea = (rs.getString("title"), rs.getString("image").split(",").map(_.toInt).toSeq,
+      val idea = (rs.getString("title"), rs.getString("image"),
         rs.getInt("type"), rs.getInt("video_id"))
       val id = rs.getInt("id")
       ideas.update(id, idea)
@@ -340,7 +335,9 @@ object TopCtrIdeaV2 {
                               mtype: Int = 0,
                               images: String = "",
                               ctr_score: Int = 0,
-                              from: String = ""
+                              from: String = "",
+                              click: Int = 0,
+                              show: Int = 0
                             )
 
 }
