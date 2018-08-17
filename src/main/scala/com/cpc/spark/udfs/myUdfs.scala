@@ -230,8 +230,10 @@ object myUdfs {
   def ChangeCvrStringToInt() = udf((clickNum: String) => {
     if(clickNum == null)
       null
-    else
+    else if (clickNum == "REPORT_DOWNLOAD_PKGADDED")
       "1"
+    else
+      "0"
   })
   def downloadTag(ctrThres :Double,cvrThres :Double) = udf((clickNum: Int,iscvrNum: Int,showNum :Int) => {
 
