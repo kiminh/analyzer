@@ -267,7 +267,7 @@ object SetUserProfileTag {
     val stmt =
       """
         |select tag, count(distinct uid) from dl_cpc.cpc_userprofile_tag_daily where `date` = "%s" group by tag
-      """.stripMargin
+      """.stripMargin.format(yesterday)
     val tagList = spark.sql(stmt).rdd.map {
       r =>
         ("uid_num_by_tag_" + r.getAs[Int](0), r.getAs[Long](1).toString)
