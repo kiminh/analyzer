@@ -118,12 +118,15 @@ object TopCtrIdeaV2 {
     val imgs = getIdaeImg() //从adv.resource表读取素材资源id, 远程下载地址,素材类型  Map[id, (remote_url, type)]
 
     adinfo.take(3).foreach(x => println(x))
+    println("adinfo length: "+adinfo.size)
+    println("title length: "+titles.size)
+    println("imgs length: "+imgs.size)
 
     var id = 0
     val topIdeaRDD = adinfo
       .map {
         x => //Adinfo
-          val ad = titles.getOrElse(x.idea_id, null) //根据ideaid获得title和image  (title,Seq(image),type,video_id)
+          val ad = titles.getOrElse(x.idea_id, null) //根据ideaid获得title和image  (title,image,type,video_id)
           if (ad != null) {
             var mtype = 0
             mtype = ad._3 match {
