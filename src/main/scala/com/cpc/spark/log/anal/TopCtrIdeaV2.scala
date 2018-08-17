@@ -112,10 +112,6 @@ object TopCtrIdeaV2 {
       .filter(x => x.click > 0 && x.show > 1000)
 
 
-    //    val max1 = adinfo.filter(_.adslot_type == 1).map(_.ctr).max() //列表页最大点击率
-    //    val max2 = adinfo.filter(_.adslot_type == 2).map(_.ctr).max() //详情页最大点击率
-    //    val rate = max1.toDouble / max2.toDouble
-
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
     val titles = getIdeaTitle() //从adv.idea表读取推广创意id,title,image  Map[id, (title, Seq[image],type,video_id)]
     val imgs = getIdaeImg() //从adv.resource表读取素材资源id, 远程下载地址,素材类型  Map[id, (remote_url, type)]
@@ -212,7 +208,7 @@ object TopCtrIdeaV2 {
 
     for (i <- 0 until type_num.length) {
       val topIdeaRDD2 = topIdeaRDD.filter(x => x.mtype == type_num(i))
-        .toSeq.sortWith(_.ctr_score > _.ctr_score).take(40000 * (rate_map.getOrElse(i, 0).toInt))
+        .toSeq.sortWith(_.ctr_score > _.ctr_score).take((40000 * rate_map.getOrElse(i, 0)).toInt)
 
       topIdeaData = topIdeaData ++ topIdeaRDD2
     }
