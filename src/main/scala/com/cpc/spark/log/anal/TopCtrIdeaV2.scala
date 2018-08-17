@@ -141,6 +141,7 @@ object TopCtrIdeaV2 {
               agent_id = ub.getOrElse(ad._5, 0),
               adclass = ad._6,
               adclass_1 = adclass,
+              adslot_type=x.adslot_type,
               title = ad._1, //title
               mtype = mtype, //type
               ctr_score = x.ctr,
@@ -167,12 +168,12 @@ object TopCtrIdeaV2 {
     val sum = topIdeaRDD.length.toDouble //总元素个数
     println("总元素个数：" + sum)
 
-    val type_num2: Array[Int] = Array(1, 2, 3, 4, 6, 7, 8, 9)
+    val type_num2: Array[Int] = Array(1, 2, 3, 4, 5, 6, 7)
     var rate_map: mutable.Map[Int, Double] = mutable.HashMap()
-    var max_ctr_map: mutable.Map[Int, Seq[Int]] = mutable.HashMap()
+    var max_ctr_map: mutable.Map[Int, Int] = mutable.HashMap()
 
     for (i <- type_num2) {
-      var tmp = topIdeaRDD.filter(_.mtype == i)
+      var tmp = topIdeaRDD.filter(_.adslot_type == i)
 
       if (tmp.length > 0) {
         //计算占比
@@ -181,8 +182,7 @@ object TopCtrIdeaV2 {
 
         //计算最大ctr
         var max_ctr = tmp.map(_.ctr_score).max
-        var max_ctr_show = tmp.filter(_.ctr_score == max_ctr).map(_.show)
-        max_ctr_map.put(max_ctr, max_ctr_show)
+        max_ctr_map.put(i, max_ctr)
       }
 
     }
@@ -190,7 +190,7 @@ object TopCtrIdeaV2 {
     println("占比：" + rate_map)
 
     for ((x, y) <- max_ctr_map) {
-      println("type=1最大ctr_score: " + x + "; show: " + y)
+      println("adsoltid: " + x + "; max_ctr: " + y)
     }
 
 
@@ -318,6 +318,7 @@ object TopCtrIdeaV2 {
                               idea_id: Int = 0,
                               adclass: Int = 0,
                               adclass_1: Int = 0,
+                              adslot_type: Int = 0,
                               title: String = "",
                               mtype: Int = 0,
                               images: String = "",
