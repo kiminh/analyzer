@@ -235,7 +235,7 @@ object TopCtrIdeaV2 {
     }
 
     spark.createDataFrame(topIdeaData)
-      .drop("adslot_id", "show", "click")
+      .drop("adslot_type", "show", "click")
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report." + table, mariadbProp)
