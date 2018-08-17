@@ -102,9 +102,11 @@ object TagFromHivetoRedis {
                   }
                   //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
                 }
+                ret = ret :+ (x._1, toDel.length + toAdd.length)
             }
-            (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del))).iterator
+            (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del)) ++ ret).iterator
         }.reduceByKey(_+_).toLocalIterator
+      sum.foreach(println)
     }
   }
 }
