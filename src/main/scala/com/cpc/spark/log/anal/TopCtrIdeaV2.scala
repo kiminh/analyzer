@@ -54,8 +54,8 @@ object TopCtrIdeaV2 {
         """
           |select adslot_type, ideaid, userid, ideaid, adslot_type, isclick, isshow,
           | ext['adclass'].int_value as adclass
-          | from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
-          |and adslotid > 0 and adslot_type in (1,2) and ideaid > 0
+          | from dl_cpc.cpc_union_log where `date` = "%s" and hour="20" and isshow = 1
+          |and adslotid > 0 and ideaid > 0
         """.stripMargin.format(date)
       println(stmt)
       val ulog = spark.sql(stmt)
