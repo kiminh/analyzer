@@ -112,10 +112,11 @@ object FtrlSnapshot {
       lr = Option(lr),
       ir = Option(ir),
       dict = Option(dictpb),
-      strategy = Strategy.StrategyXgboostLR,
+      strategy = Strategy.StrategyXgboostFtrl,
       gbmfile = s"data/ctr-portrait9-qtt-list.gbm",
       gbmTreeLimit = 200,
-      gbmTreeDepth = 10
+      gbmTreeDepth = 10,
+      negSampleRatio = 0.2
     )
     pack.writeTo(new FileOutputStream(path))
   }
