@@ -169,7 +169,7 @@ object TopCtrIdeaV2 {
 
     val type_num2: Array[Int] = Array(1, 2, 3, 4, 6, 7, 8, 9)
     var rate_map: mutable.Map[Int, Double] = mutable.HashMap()
-    var max_ctr_map: mutable.Map[Int, String] = mutable.HashMap()
+    var max_ctr_map: mutable.Map[Int, Seq[Int]] = mutable.HashMap()
 
     for (i <- type_num2) {
       var tmp = topIdeaRDD.filter(_.mtype == i)
@@ -181,7 +181,7 @@ object TopCtrIdeaV2 {
 
         //计算最大ctr
         var max_ctr = tmp.map(_.ctr_score).max
-        var max_ctr_show = tmp.filter(_.ctr_score == max_ctr).map(_.show).toString()
+        var max_ctr_show = tmp.filter(_.ctr_score == max_ctr).map(_.show)
         max_ctr_map.put(max_ctr, max_ctr_show)
       }
 
