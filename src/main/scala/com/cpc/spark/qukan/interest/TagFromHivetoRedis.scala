@@ -101,6 +101,16 @@ object TagFromHivetoRedis {
                     user.addInterestedWords(interest)
                   }
                   redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                } else if (buffer == null) {
+                  val user = UserProfile.newBuilder().setDevid(x._1)
+                  for (i <- toAdd) {
+                    ins += 1
+                    val interest = InterestItem.newBuilder()
+                      .setTag(i)
+                      .setScore(100)
+                    user.addInterestedWords(interest)
+                  }
+                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
                 }
                 ret = ret :+ (x._1, toDel.length + toAdd.length)
             }
