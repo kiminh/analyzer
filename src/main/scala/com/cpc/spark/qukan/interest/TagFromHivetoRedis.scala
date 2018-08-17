@@ -70,8 +70,8 @@ object TagFromHivetoRedis {
               x =>
                 tot += 1
                 val key = x._1 + "_UPDATA"
-                val toDel = x._2.filter(p => p._1 == false).flatMap(x => x._2)
-                val toAdd = x._2.filter(p => p._1 == true).flatMap(x => x._2)
+                val toDel = x._2.filter(p => p._1 == false).flatMap(x => x._2).distinct
+                val toAdd = x._2.filter(p => p._1 == true).flatMap(x => x._2).distinct
                 val buffer = redis.get[Array[Byte]](key).orNull
                 if (buffer != null) {
                   hit += 1
@@ -100,11 +100,11 @@ object TagFromHivetoRedis {
                       .setScore(100)
                     user.addInterestedWords(interest)
                   }
-                  //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                  redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
                 }
                 ret = ret :+ (x._1, toDel.length + toAdd.length)
             }
-            (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del)) ++ ret).iterator
+            (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del))).iterator
         }.reduceByKey(_+_).toLocalIterator
       sum.foreach(println)
     }
