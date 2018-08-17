@@ -54,7 +54,7 @@ object GenDownloadTag {
     println("add column done")
     val tableNameTemp = "test.cpc_downloadtag"
     ctx.sql(s"drop table if exists $tableNameTemp")
-
+    downloadTagTable.write.mode("overwrite").saveAsTable(tableNameTemp)
     println(downloadTagTable.count())
     downloadTagTable.show()
     println("union done")
