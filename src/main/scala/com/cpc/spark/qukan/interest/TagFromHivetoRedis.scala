@@ -34,41 +34,77 @@ object TagFromHivetoRedis {
       .getOrCreate()
     import spark.implicits._
 
-
-    var tagList = spark.sql(
-      if (op == 0) {
-        "show partitions  dl_cpc.cpc_userprofile_tag_daily partition(`date` = \"%s\")".format(date)
-      } else if (op == 1){
-        "show partitions  dl_cpc.cpc_userprofile_tag_hourly partition(`date` = \"%s\", `hour` = \"%s\")".format(date, hour)
-      } else {
-        ""
-      }
-    ).rdd.map {
-      x =>
-        val str = x.getAs[String](0)
-        str.substring(str.length - 3, str.length)
-    }.toLocalIterator.toArray
-    for (i <- tagList ) {
-      var stmt = ""
-      if (op == 0) {
-        stmt =
-          """
-            |select uid, tag, operation from dl_cpc.cpc_userprofile_tag_daily where `date` = "%s" and tag = %s
-          """.stripMargin.format(date, i)
-      } else if (op == 1){
-        stmt =
-          """
-            |select uid, tag, operation from dl_cpc.cpc_userprofile_tag_hourly where `date` = "%s" and `hour` = "%s" and tag = %s
-          """.stripMargin.format(date, hour, i)
-      }
-      if (stmt != "") {
-        println(stmt)
-        val rs = spark.sql(stmt).rdd.map{
-          r =>
-            (r.getAs[String](0), r.getAs[Int](1), r.getAs[Boolean](2))
-        }
-        SetUserProfileTag.setUserProfileTag(rs)
-      }
+    var stmt = ""
+    if (op == 0) {
+      stmt =
+        """
+          |select uid, tag, operation from dl_cpc.cpc_userprofile_tag_daily where `date` = "%s"
+        """.stripMargin.format(date)
+    } else if (op == 1){
+      stmt =
+        """
+          |select uid, tag, operation from dl_cpc.cpc_userprofile_tag_hourly where `date` = "%s" and `hour` = "%s"
+        """.stripMargin.format(date, hour)
+    }
+    if (stmt != "") {
+      println(stmt)
+      val rs = spark.sql(stmt).rdd.map{
+        r =>
+          ((r.getAs[String](0), r.getAs[Boolean](2)), Seq(r.getAs[Int](1)))
+      }.reduceByKey(_++_)
+          .map(x => (x._1._1, Seq((x._1._2, x._2))))
+          .reduceByKey(_++_)
+      rs.take(3).foreach(println)
+      val conf = ConfigFactory.load()
+      val sum = rs.repartition(200)
+        .mapPartitions{
+          p =>
+            var del = 0
+            var ins = 0
+            var hit = 0
+            var tot = 0
+            val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+            val loop = new Breaks
+            var ret = Seq[(String, Int)]()
+            val cnt = p.foreach{
+              x =>
+                tot += 1
+                val key = x._1 + "_UPDATA"
+                val toDel = x._2.filter(p => p._1 == false).flatMap(x => x._2)
+                val toAdd = x._2.filter(p => p._1 == true).flatMap(x => x._2)
+                val buffer = redis.get[Array[Byte]](key).orNull
+                if (buffer != null) {
+                  hit += 1
+                  val user = UserProfile.parseFrom(buffer).toBuilder
+                  loop.breakable {
+                    var idx = 0
+                    while (idx < user.getInterestedWordsCount) {
+                      val w = user.getInterestedWords(idx)
+                      if (toDel.contains(w.getTag)) {
+                        user.removeInterestedWords(idx)
+                        del += 1
+                      } else if (toAdd.contains(w.getTag)){
+                        user.removeInterestedWords(idx)
+                      } else {
+                        idx += 1
+                      }
+                      if (idx == user.getInterestedWordsCount) {
+                        loop.break()
+                      }
+                    }
+                  }
+                  for (i <- toAdd) {
+                    ins += 1
+                    val interest = InterestItem.newBuilder()
+                      .setTag(i)
+                      .setScore(100)
+                    user.addInterestedWords(interest)
+                  }
+                  //redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+                }
+            }
+            (Seq(("total", tot), ("hit", hit), ("insert", ins), ("delete", del))).iterator
+        }.reduceByKey(_+_).toLocalIterator
     }
   }
 }
