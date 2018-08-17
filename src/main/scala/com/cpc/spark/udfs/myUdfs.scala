@@ -231,7 +231,7 @@ object myUdfs {
     if(clickNum == null)
       null
     else
-      1
+      "1"
   })
   def downloadTag(ctrThres :Double,cvrThres :Double) = udf((clickNum: Int,iscvrNum: Int,showNum :Int) => {
 
