@@ -110,6 +110,7 @@ object TopCtrIdeaV2 {
           v.copy(ctr = ctr)
       }
       .filter(x => x.click > 0 && x.show > 1000)
+      .toLocalIterator
 
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
@@ -175,7 +176,6 @@ object TopCtrIdeaV2 {
           }
       }
       .filter(_ != null)
-      .toLocalIterator
 
 
     val sum = topIdeaRDD.length.toDouble //总元素个数
