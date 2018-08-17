@@ -194,12 +194,12 @@ object TopCtrIdeaV2 {
     }
 
 
-    val type_num: Array[Int] = Array(1, 2, 3, 4, 6, 7, 8, 9)
+    val adslot_id: Array[Int] = Array(1, 2, 3, 4, 5, 6, 7)
     var topIdeaData = mutable.Seq[TopIdea]()
 
-    for (i <- 0 until type_num.length) {
-      val topIdeaRDD2 = topIdeaRDD.filter(x => x.mtype == type_num(i))
-        .toSeq.sortWith(_.ctr_score > _.ctr_score).take((40000 * (rate_map.getOrElse[Double](i, 0.0))).toInt)
+    for (i <- 0 until adslot_id.length) {
+      val topIdeaRDD2 = topIdeaRDD.filter(x => x.mtype == adslot_id(i))
+        .sortWith(_.ctr_score > _.ctr_score).take((80000 * (rate_map.getOrElse[Double](i, 0.0))).toInt)
 
       topIdeaData = topIdeaData ++ topIdeaRDD2
     }
