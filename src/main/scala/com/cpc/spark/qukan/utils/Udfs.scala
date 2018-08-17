@@ -100,5 +100,14 @@ object Udfs {
     calendar.setTime(dateFormat.parse(logtime))
     calendar.get(Calendar.DAY_OF_WEEK)
   })
+
+  def udfSnapshotToLeafFeatures: UserDefinedFunction = udf((feature: Map[Int, Float]) => {
+    var list = new ListBuffer[String]()
+    for ((k, v) <- feature) {
+      val leafId = k * Math.pow(2, 11) + v
+      list.append(s"${leafId.toInt}")
+    }
+    list.mkString(" ")
+  })
 }
 

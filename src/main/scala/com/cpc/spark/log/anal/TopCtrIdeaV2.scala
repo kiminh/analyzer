@@ -6,14 +6,17 @@ import java.util.{Calendar, Properties}
 
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.HashPartitioner
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.storage.StorageLevel
 
 import scala.collection.mutable
 
+
 /**
   * 在TopCtrIdeaV2基础上做修改
-  * 1. 添加推荐素材新类型：4-视频  6-本  7-互动  9-开屏  9-横幅
+  * 1. 添加推荐素材新类型：4-视频  6-文本  7-互动  9-开屏  9-横幅
   * 2. 删除就系统的数据：adv_old
   * 3. 删除ctr等比缩放
   */
@@ -81,8 +84,10 @@ object TopCtrIdeaV2 {
         }
       if (adctr == null) {
         adctr = ulog
+      } else {
+        adctr = adctr.union(ulog) //合并
       }
-      adctr = adctr.union(ulog) //合并
+
       cal.add(Calendar.DATE, 1)
     }
 
@@ -106,15 +111,17 @@ object TopCtrIdeaV2 {
       }
       .filter(x => x.click > 0 && x.show > 1000)
 
-    val max1 = adinfo.filter(_.adslot_type == 1).map(_.ctr).max() //列表页最大点击率
-    val max2 = adinfo.filter(_.adslot_type == 2).map(_.ctr).max() //详情页最大点击率
-    val rate = max1.toDouble / max2.toDouble
+
+    //    val max1 = adinfo.filter(_.adslot_type == 1).map(_.ctr).max() //列表页最大点击率
+    //    val max2 = adinfo.filter(_.adslot_type == 2).map(_.ctr).max() //详情页最大点击率
+    //    val rate = max1.toDouble / max2.toDouble
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
     val titles = getIdeaTitle() //从adv.idea表读取推广创意id,title,image  Map[id, (title, Seq[image],type,video_id)]
     val imgs = getIdaeImg() //从adv.resource表读取素材资源id, 远程下载地址,素材类型  Map[id, (remote_url, type)]
 
-    println(max1, max2, rate)
+    adinfo.take(3).foreach(x => println(x))
+
     var id = 0
     val topIdeaRDD = adinfo
       .map {
@@ -147,15 +154,17 @@ object TopCtrIdeaV2 {
               agent_id = ub.getOrElse(x.user_id, 0),
               adclass = x.adclass,
               adclass_1 = adclass,
-              title = ad._1, //
-              mtype = mtype, //
+              title = ad._1, //title
+              mtype = mtype, //type
               ctr_score = x.ctr,
-              from = "cpc_adv"
+              from = "cpc_adv",
+              show = x.show,
+              click = x.click
             )
 
-            if (mtype == 4) {
+            if (mtype == 4) { //视频
               topIdea = topIdea.copy(images = video.toString())
-            } else {
+            } else { //除视频以外其它
               topIdea = topIdea.copy(images = img.map(_._1).mkString(" "))
             }
 
@@ -166,12 +175,53 @@ object TopCtrIdeaV2 {
           }
       }
       .filter(_ != null)
+      .toLocalIterator
 
-    val sum = topIdeaRDD.count().toInt //总元素个数
 
-    val mtypeRdd = topIdeaRDD.map(x => (x.mtype, 1))
-      .reduceByKey((x, y) => x + y)
-      .map(x => (x._1, x._2 / sum))  //占比
+    val sum = topIdeaRDD.length.toDouble //总元素个数
+    println("总元素个数：" + sum)
+
+    val type_num2: Array[Int] = Array(1, 2, 3, 4, 6, 7, 8, 9)
+    var rate_map: mutable.Map[Int, Double] = mutable.HashMap()
+    var max_ctr_map: mutable.Map[Int, String] = mutable.HashMap()
+
+    for (i <- type_num2) {
+      var tmp = topIdeaRDD.filter(_.mtype == i)
+
+      //计算占比
+      var r = tmp.length / sum
+      rate_map.put(i, r)
+
+      //计算最大ctr
+      var max_ctr = tmp.map(_.ctr_score).max
+      var max_ctr_show = tmp.filter(_.ctr_score == max_ctr).map(_.show).toString()
+      max_ctr_map.put(max_ctr, max_ctr_show)
+
+    }
+
+    println("占比：" + rate_map)
+
+    for ((x, y) <- max_ctr_map) {
+      println("type=1最大ctr_score: " + x + "; show: " + y)
+    }
+
+    println("#####################")
+
+    val type_num: Array[Int] = Array(1, 2, 3, 4, 6, 7, 8, 9)
+    var topIdeaData = mutable.Seq[TopIdea]()
+
+    for (i <- 0 until type_num.length) {
+      val topIdeaRDD2 = topIdeaRDD.filter(x => x.mtype == type_num(i))
+        .toSeq.sortWith(_.ctr_score > _.ctr_score).take(40000 * (rate_map.getOrElse(i, 0).toInt))
+
+      topIdeaData = topIdeaData ++ topIdeaRDD2
+    }
+
+    println("#####################")
+
+    if (topIdeaData.length > 0) {
+      println("###### res: " + topIdeaData(0))
+    }
 
 
     val conf = ConfigFactory.load()
@@ -182,28 +232,29 @@ object TopCtrIdeaV2 {
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
     //truncate table
-    try {
-      Class.forName(mariadbProp.getProperty("driver"))
-      val conn = DriverManager.getConnection(
-        mariadbUrl,
-        mariadbProp.getProperty("user"),
-        mariadbProp.getProperty("password"))
-      val stmt = conn.createStatement()
-      val sql =
-        """
-          |TRUNCATE TABLE report.%s
-        """.stripMargin.format(table)
-      stmt.executeUpdate(sql);
-    } catch {
-      case e: Exception => println("truncate table failed : " + e);
-    }
+    //    try {
+    //      Class.forName(mariadbProp.getProperty("driver"))
+    //      val conn = DriverManager.getConnection(
+    //        mariadbUrl,
+    //        mariadbProp.getProperty("user"),
+    //        mariadbProp.getProperty("password"))
+    //      val stmt = conn.createStatement()
+    //      val sql =
+    //        """
+    //          |TRUNCATE TABLE report.%s
+    //        """.stripMargin.format(table)
+    //      stmt.executeUpdate(sql);
+    //    } catch {
+    //      case e: Exception => println("truncate table failed : " + e);
+    //    }
 
-//    spark.createDataFrame(top)
-//      .write
-//      .mode(SaveMode.Append)
-//      .jdbc(mariadbUrl, "report." + table, mariadbProp)
-//
-//    println("num", top.length)
+    //    spark.createDataFrame(topIdeaData)
+    //      .write
+    //      .mode(SaveMode.Append)
+    //      .jdbc(mariadbUrl, "report." + table, mariadbProp)
+    println("@@@@@@@@@@@@@@@@@@@@@")
+    println("###### num: " + topIdeaData.length)
+    println("#####################")
   }
 
   def getUserBelong(): Map[Int, Int] = {
@@ -213,10 +264,7 @@ object TopCtrIdeaV2 {
     while (rs.next()) {
       ub.update(rs.getInt("id"), rs.getInt("belong"))
     }
-    val rsold = getAdDbResult("mariadb.adv_old", sql)
-    while (rsold.next()) {
-      ub.update(rsold.getInt("id"), rsold.getInt("belong"))
-    }
+
     ub.toMap
   }
 
@@ -287,9 +335,12 @@ object TopCtrIdeaV2 {
                               mtype: Int = 0,
                               images: String = "",
                               ctr_score: Int = 0,
-                              from: String = ""
+                              from: String = "",
+                              click: Int = 0,
+                              show: Int = 0
                             )
 
 }
+
 
 
