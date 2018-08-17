@@ -174,7 +174,7 @@ object TopCtrIdeaV2 {
     for (i <- type_num2) {
       var tmp = topIdeaRDD.filter(_.mtype == i)
 
-      if (tmp.nonEmpty) {
+      if (tmp.length > 0) {
         //计算占比
         var r = tmp.length / sum
         rate_map.put(i, r)
