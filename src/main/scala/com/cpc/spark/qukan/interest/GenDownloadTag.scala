@@ -21,7 +21,7 @@ object GenDownloadTag {
         .getOrCreate()
 
       println(111)
-      val Table1 = ctx.sql(sql2)
+      val Table1 = ctx.sql(sql1)
       println(222)
       val Table2 = ctx.sql(sql2)
       println(333)
