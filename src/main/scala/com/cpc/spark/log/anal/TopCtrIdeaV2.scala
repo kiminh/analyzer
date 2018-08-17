@@ -141,7 +141,7 @@ object TopCtrIdeaV2 {
               agent_id = ub.getOrElse(ad._5, 0),
               adclass = ad._6,
               adclass_1 = adclass,
-              adslot_type=x.adslot_type,
+              adslot_type = x.adslot_type,
               title = ad._1, //title
               mtype = mtype, //type
               ctr_score = x.ctr,
@@ -235,7 +235,7 @@ object TopCtrIdeaV2 {
     }
 
     spark.createDataFrame(topIdeaData)
-      .drop("adslot_id")
+      .drop("adslot_id", "show", "click")
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report." + table, mariadbProp)
