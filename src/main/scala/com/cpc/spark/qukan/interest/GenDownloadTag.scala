@@ -83,7 +83,8 @@ object GenDownloadTag {
       .withColumn("operation",operationTag()()).rdd
         .map(x=>(x.getAs[String](0),x.getAs[Int](1),x.getAs[Boolean](2)))
     println("table done")
-    SetUserProfileTagInHiveHourly(resultRdd)
+    val result = SetUserProfileTagInHiveHourly(resultRdd)
+
 
     }
 
