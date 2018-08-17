@@ -12,6 +12,7 @@ jars=(
     "$cur/lib/config-1.2.1.jar"
 )
 
+
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
     --executor-memory 24g --driver-memory 8g \
@@ -21,6 +22,7 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.qukan.interest.GenDownloadTag \
     target/scala-2.11/cpc-anal_2.11-0.1.jar $1
+
 
 
 
