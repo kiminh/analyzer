@@ -26,8 +26,10 @@ object GenDownloadTag {
       val Table2 = ctx.sql(sql2)
       println(333)
       var unionTable = Table1.join(Table2,Seq("searchid"),"left_outer")
+      unionTable.show()
       var tableNameTemp =  s"dl_cpc.cpc_downloadtag_"+dateAddValue.toString
       ctx.sql(s"drop table if exists $tableNameTemp")
+      println(444)
       unionTable.write.mode("overwrite").saveAsTable(tableNameTemp)
     }
     println("union begin")
