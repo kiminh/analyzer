@@ -83,7 +83,7 @@ object GenDownloadTag {
         .map(x=>(x.getAs[String](0),x.getAs[Int](1),x.getAs[Boolean](2)))
     println("table done")
     val result = SetUserProfileTagInHiveDaily(resultRdd)
-
+    println("all done")
 
     }
 
