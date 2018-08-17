@@ -8,7 +8,7 @@ object GenDownloadTag {
 
   def main(args: Array[String]): Unit = {
     val dateBaseValue = args(0)
-    for(dateAddValue<- 0 to 1){
+    for(dateAddValue<- 0 to 2){
 
 
       val sql1 = s"SELECT searchid,uid,isclick,isshow  from dl_cpc.cpc_union_log WHERE `date`=date_add('$dateBaseValue', $dateAddValue) and interaction=2 and isshow=1 and uid is not null"
@@ -41,7 +41,7 @@ object GenDownloadTag {
       .getOrCreate()
     var tableName = s"dl_cpc.cpc_downloadtag_"+"0"
     var downloadTagTable = ctx.table(tableName)
-    for(dateAddValue<- 1 to 1) {
+    for(dateAddValue<- 1 to 2) {
       tableName = s"test.cpc_downloadtag_"+dateAddValue.toString
       downloadTagTable = downloadTagTable.union(ctx.table(tableName))
     }
