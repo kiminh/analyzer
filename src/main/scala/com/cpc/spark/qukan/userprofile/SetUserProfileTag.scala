@@ -266,7 +266,8 @@ object SetUserProfileTag {
     redis2save.select(3)
     val stmt =
       """
-        |select tag, count(distinct uid) from dl_cpc.cpc_userprofile_tag_daily where `date` = "%s" group by tag
+        |select tag, count(distinct uid) from dl_cpc.cpc_userprofile_tag_daily
+        |where `date` = "%s" and operation = true group by tag
       """.stripMargin.format(yesterday)
     val tagList = spark.sql(stmt).rdd.map {
       r =>
