@@ -23,6 +23,10 @@ object FtrlSnapshot {
     val hour = args(1)
     val upload = args(2).toInt
 
+    println(s"dt=$dt")
+    println(s"hour=$hour")
+    println(s"upload=$upload")
+
     val version = 15
 
     val spark = SparkSession.builder()
