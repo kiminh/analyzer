@@ -168,11 +168,11 @@ object TopCtrIdeaV2 {
     val sum = topIdeaRDD.length.toDouble //总元素个数
     println("总元素个数：" + sum)
 
-    val type_num2: Array[Int] = Array(1, 2, 3, 4, 5, 6, 7)
+    val adslot_type: Array[Int] = Array(1, 2, 3, 4, 5, 6, 7)
     var rate_map: mutable.Map[Int, Double] = mutable.HashMap()
     var max_ctr_map: mutable.Map[Int, Int] = mutable.HashMap()
 
-    for (i <- type_num2) {
+    for (i <- adslot_type) {
       var tmp = topIdeaRDD.filter(_.adslot_type == i)
 
       if (tmp.length > 0) {
@@ -188,17 +188,15 @@ object TopCtrIdeaV2 {
     }
 
     println("占比：" + rate_map)
-
     for ((x, y) <- max_ctr_map) {
       println("adsoltid: " + x + "; max_ctr: " + y)
     }
 
 
-    val adslot_id: Array[Int] = Array(1, 2, 3, 4, 5, 6, 7)
     var topIdeaData = mutable.Seq[TopIdea]()
 
-    for (i <- 0 until adslot_id.length) {
-      val topIdeaRDD2 = topIdeaRDD.filter(x => x.mtype == adslot_id(i))
+    for (i <- 0 until adslot_type.length) {
+      val topIdeaRDD2 = topIdeaRDD.filter(x => x.mtype == adslot_type(i))
         .sortWith(_.ctr_score > _.ctr_score).take((80000 * (rate_map.getOrElse[Double](i, 0.0))).toInt)
 
       topIdeaData = topIdeaData ++ topIdeaRDD2
