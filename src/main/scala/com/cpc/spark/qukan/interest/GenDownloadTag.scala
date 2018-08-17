@@ -57,12 +57,16 @@ object GenDownloadTag {
     println("union done")
     val isshowNum = downloadTagTable.count().toDouble
     val clickNumAll = ctx.table(tableNameTemp).filter("isclick=1").count().toDouble
-    val iscvrNumAll = ctx.table(tableNameTemp).filter("iscvrint=1").count().toDouble
+    val iscvrNumAll = ctx.table(tableNameTemp).filter("iscvrint='1'").count().toDouble
+
+    println("isshowNum  :"+isshowNum)
+    println("clickNumAll  :"+clickNumAll)
+    println("iscvrNumAll  :"+iscvrNumAll)
     val ctrThres = clickNumAll/isshowNum
     val cvrThres = iscvrNumAll/clickNumAll
     println(ctrThres+"   "+cvrThres)
 
-    val sql3 = s"SELECT uid,sum(isclick) as clicknum ,sum(if iscvrint="1",1,0) as iscvrnum , sum(isshow) as showNum from test.cpc_downloadtag group by uid"
+    val sql3 = s"SELECT uid,sum(isclick) as clicknum ,sum(if iscvrint='1',1,0) as iscvrnum , sum(isshow) as showNum from test.cpc_downloadtag group by uid"
 
 
     downloadTagTable=ctx.sql(sql3)
