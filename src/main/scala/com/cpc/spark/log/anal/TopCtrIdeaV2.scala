@@ -265,7 +265,7 @@ object TopCtrIdeaV2 {
   }
 
   def getIdeaTitle(): Map[Int, (String, Seq[Int], Int, Int)] = {
-    var sql = "select id, title, type, image, video_id from idea where action_type = 1 and type in (1,2,3,4,6,7,8,9)"
+    var sql = "select id, title, image, type, video_id from idea where action_type = 1 and type in (1,2,3,4,6,7,8,9)"
     val ideas = mutable.Map[Int, (String, Seq[Int], Int, Int)]()
     var rs = getAdDbResult("mariadb.adv", sql)
     while (rs.next()) {
