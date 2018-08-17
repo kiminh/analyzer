@@ -189,14 +189,14 @@ object TopCtrIdeaV2 {
 
     println("占比：" + rate_map)
     for ((x, y) <- max_ctr_map) {
-      println("adsoltid: " + x + "; max_ctr: " + y)
+      println("adslot_type: " + x + "; max_ctr: " + y)
     }
 
 
     var topIdeaData = mutable.Seq[TopIdea]()
 
     for (i <- 0 until adslot_type.length) {
-      val topIdeaRDD2 = topIdeaRDD.filter(x => x.mtype == adslot_type(i))
+      val topIdeaRDD2 = topIdeaRDD.filter(x => x.adslot_type == adslot_type(i))
         .sortWith(_.ctr_score > _.ctr_score).take((80000 * (rate_map.getOrElse[Double](i, 0.0))).toInt)
 
       topIdeaData = topIdeaData ++ topIdeaRDD2
