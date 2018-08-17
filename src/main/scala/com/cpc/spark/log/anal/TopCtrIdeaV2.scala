@@ -52,7 +52,7 @@ object TopCtrIdeaV2 {
       val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       val stmt =
         """
-          |select *,
+          |select adslot_type, ideaid, userid, ideaid, adslot_type, isclick, isshow,
           | ext['adclass'].int_value as adclass
           | from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
           |and adslotid > 0 and adslot_type in (1,2) and ideaid > 0
