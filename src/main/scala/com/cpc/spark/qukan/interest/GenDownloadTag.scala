@@ -41,10 +41,10 @@ object GenDownloadTag {
       .getOrCreate()
     var tableName = s"dl_cpc.cpc_downloadtag_"+"0"
     var downloadTagTable = ctx.table(tableName)
-    for(dateAddValue<- 1 to 2) {
+   /* for(dateAddValue<- 1 to 2) {
       tableName = s"test.cpc_downloadtag_"+dateAddValue.toString
       downloadTagTable = downloadTagTable.union(ctx.table(tableName))
-    }
+    }*/
     println("add column begin")
     println(downloadTagTable.count())
     println(downloadTagTable.filter("iscvr is not null").count())
