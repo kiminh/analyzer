@@ -46,7 +46,10 @@ object GenDownloadTag {
       downloadTagTable = downloadTagTable.union(ctx.table(tableName))
     }
     println("add column begin")
+    println(downloadTagTable.filter("iscvr is not null").count())
+
     downloadTagTable = downloadTagTable.withColumn("iscvrint",ChangeCvrStringToInt()(col("iscvr")))
+    println(downloadTagTable.filter("iscvrint='1'").count())
 
     println("add column done")
     val tableNameTemp = "test.cpc_downloadtag"
