@@ -215,7 +215,7 @@ object SetUserProfileTag {
     val rs = ft.map{
       tag =>
         in.filter(_._2 == tag).map{x => (x._1, x._3)}.toDF("uid", "operation").coalesce(20)
-          .write.mode(SaveMode.Append).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_hourly/%s/%s/%s".format(date, hour, tag))
+          .write.mode(SaveMode.Overwrite).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_hourly/%s/%s/%s".format(date, hour, tag))
         val sql =
           """
             |ALTER TABLE dl_cpc.cpc_userprofile_tag_hourly add if not exists PARTITION (`date` = "%s" , `hour` = "%s", `tag` = "%s")  LOCATION
@@ -236,7 +236,7 @@ object SetUserProfileTag {
     val rs = ft.map{
       tag =>
         in.filter(_._2 == tag).map{x => (x._1, x._3)}.toDF("uid", "operation").coalesce(20)
-          .write.mode(SaveMode.Append).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s".format(date, tag))
+          .write.mode(SaveMode.Overwrite).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s".format(date, tag))
         val sql =
           """
             |ALTER TABLE dl_cpc.cpc_userprofile_tag_daily add if not exists PARTITION (`date` = "%s" , `tag` = "%s")  LOCATION
@@ -244,6 +244,27 @@ object SetUserProfileTag {
             |
                 """.stripMargin.format(date, tag, date, tag)
         spark.sql(sql)
+        (sql, in.filter(_._2 == tag).count().toInt)
+    }
+    rs.toArray
+  }
+  def SetUserProfileTagInHiveDaily_Append (in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
+    val cal = Calendar.getInstance()
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val spark = SparkSession.builder().getOrCreate()
+    import spark.implicits._
+    val ft = in.map(x => x._2).distinct().toLocalIterator
+    val rs = ft.map{
+      tag =>
+        in.filter(_._2 == tag).map{x => (x._1, x._3)}.toDF("uid", "operation").coalesce(20)
+          .write.mode(SaveMode.Append).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s".format(date, tag))
+        val sql =
+          """
+            |APPEND TABLE dl_cpc.cpc_userprofile_tag_daily add if not exists PARTITION (`date` = "%s" , `tag` = "%s")  LOCATION
+            |       '/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s'
+            |
+                """.stripMargin.format(date, tag, date, tag)
+        //spark.sql(sql)
         (sql, in.filter(_._2 == tag).count().toInt)
     }
     rs.toArray
