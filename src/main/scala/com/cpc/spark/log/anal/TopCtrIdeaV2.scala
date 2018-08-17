@@ -208,7 +208,7 @@ object TopCtrIdeaV2 {
 
     for (i <- 0 until type_num.length) {
       val topIdeaRDD2 = topIdeaRDD.filter(x => x.mtype == type_num(i))
-        .toSeq.sortWith(_.ctr_score > _.ctr_score).take((40000 * rate_map.getOrElse(i, 0)).toInt)
+        .toSeq.sortWith(_.ctr_score > _.ctr_score).take((40000 * (rate_map.getOrElse(i, 0))).toInt)
 
       topIdeaData = topIdeaData ++ topIdeaRDD2
     }
