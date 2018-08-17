@@ -67,8 +67,8 @@ object TopCtrIdeaV2 {
             val v = Adinfo(
               idea_id = u.getAs[Int]("ideaid"),
               adslot_type = u.getAs[Int]("adslot_type"),
-              click = u.getAs[Int]("sum_click"),
-              show = u.getAs[Int]("sum_show"))
+              click = u.getAs[Long]("sum_click").toInt,
+              show = u.getAs[Long]("sum_show").toInt)
 
             (key, v)
         }
