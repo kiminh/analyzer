@@ -137,7 +137,11 @@ object TopCtrIdeaV2 {
               case _ => -1
             }
 
-            val img = ad._2.map(x => imgs.getOrElse(x, null)).filter(_ != null) //获得image的type和remote_url (remote_url,type)
+            var img: Seq[(String, Int)] = Seq()
+            if (mtype != 6) {
+              img = ad._2.split(",").map(_.toInt).toSeq
+                .map(x => imgs.getOrElse(x, null)).filter(_ != null) //获得image的type和remote_url (remote_url,type)
+            }
             val video = imgs.getOrElse(ad._4, null) //获得video的type和remote_url (remote_url,type)
 
             val adclass = (x.adclass / 1000000) * 1000000 + 100100
@@ -264,12 +268,12 @@ object TopCtrIdeaV2 {
     ub.toMap
   }
 
-  def getIdeaTitle(): Map[Int, (String, Seq[Int], Int, Int)] = {
+  def getIdeaTitle(): Map[Int, (String, String, Int, Int)] = {
     var sql = "select id, title, image, type, video_id from idea where action_type = 1 and type in (1,2,3,4,6,7,8,9)"
-    val ideas = mutable.Map[Int, (String, Seq[Int], Int, Int)]()
+    val ideas = mutable.Map[Int, (String, String, Int, Int)]()
     var rs = getAdDbResult("mariadb.adv", sql)
     while (rs.next()) {
-      val idea = (rs.getString("title"), rs.getString("image").split(",").map(_.toInt).toSeq,
+      val idea = (rs.getString("title"), rs.getString("image"),
         rs.getInt("type"), rs.getInt("video_id"))
       val id = rs.getInt("id")
       ideas.update(id, idea)
