@@ -74,9 +74,7 @@ object GenDownloadTag {
 
 
     downloadTagTable=ctx.sql(sql3)
-    println(downloadTagTable.filter("clicknum is null").count())
-    println(downloadTagTable.filter("iscvrnum is null").count())
-    println(downloadTagTable.filter("showNum is null").count())
+
     downloadTagTable.show()
     downloadTagTable = downloadTagTable.withColumn("downloadtag",downloadTag(ctrThres,cvrThres)(col("clicknum"),col("iscvrnum"),col("showNum")))
     downloadTagTable.show()
