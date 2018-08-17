@@ -118,7 +118,7 @@ object TopCtrIdeaV2 {
     val imgs = getIdaeImg() //从adv.resource表读取素材资源id, 远程下载地址,素材类型  Map[id, (remote_url, type)]
 
     adinfo.take(3).foreach(x => println(x))
-    println("adinfo length: "+adinfo.size)
+    println("adinfo length: "+adinfo.length)
     println("title length: "+titles.size)
     println("imgs length: "+imgs.size)
 
