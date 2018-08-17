@@ -51,13 +51,13 @@ object GenDownloadTag {
     println("add column done")
     val tableNameTemp = "test.cpc_downloadtag"
     ctx.sql(s"drop table if exists $tableNameTemp")
-    downloadTagTable.write.mode("overwrite").saveAsTable(tableNameTemp)
+
     println(downloadTagTable.count())
     downloadTagTable.show()
     println("union done")
     val isshowNum = downloadTagTable.count().toDouble
-    val clickNumAll = ctx.table(tableNameTemp).filter("isclick=1").count().toDouble
-    val iscvrNumAll = ctx.table(tableNameTemp).filter("iscvrint='1'").count().toDouble
+    val clickNumAll = downloadTagTable.filter("isclick=1").count().toDouble
+    val iscvrNumAll = downloadTagTable.filter("iscvrint='1'").count().toDouble
 
     println("isshowNum  :"+isshowNum)
     println("clickNumAll  :"+clickNumAll)
