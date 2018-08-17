@@ -226,6 +226,11 @@ object myUdfs {
   def operationTag() = udf(() => {
       true
   })
+
+  def ChangeCvrStringToInt() = udf((clickNum: String) => {
+    1
+
+  })
   def downloadTag(ctrThres :Double,cvrThres :Double) = udf((clickNum: Int,iscvrNum: Int,showNum :Int) => {
 
     var clickNum1=0.0
