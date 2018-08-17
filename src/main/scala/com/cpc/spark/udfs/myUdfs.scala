@@ -228,8 +228,10 @@ object myUdfs {
   })
 
   def ChangeCvrStringToInt() = udf((clickNum: String) => {
-    1
-
+    if(clickNum == null)
+      null
+    else
+      1
   })
   def downloadTag(ctrThres :Double,cvrThres :Double) = udf((clickNum: Int,iscvrNum: Int,showNum :Int) => {
 
@@ -265,13 +267,13 @@ object myUdfs {
 
 
     if(uidctr>=ctrThres && uidcvr>=cvrThres )
-      "11".toInt
+      "11"
     else if(uidctr>=ctrThres && uidcvr<cvrThres )
-      "10".toInt
+      "10"
     else if(uidctr<ctrThres && uidcvr>=cvrThres )
-      "01".toInt
+      "01"
     else
-      "00".toInt
+      "00"
   })
   def birthdayZfb() = udf((valueInf: String) => {
     if (valueInf == null) {
