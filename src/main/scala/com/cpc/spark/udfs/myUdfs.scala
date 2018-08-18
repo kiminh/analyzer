@@ -248,22 +248,13 @@ object myUdfs {
     var uidctr=0.0
     var uidcvr=0.0
 
-    if(clickNum==null)
-      clickNum1=0
-    else
-      clickNum1=clickNum
 
     if(iscvrNum==null)
       iscvrNum1=0
     else
       iscvrNum1=iscvrNum
-
-    if(showNum==0){
-      uidctr=0.0
-    }
-    else{
       uidctr = clickNum1/(showNum+0.0)
-    }
+
     if(clickNum1==0){
       uidcvr=0.0
     }
