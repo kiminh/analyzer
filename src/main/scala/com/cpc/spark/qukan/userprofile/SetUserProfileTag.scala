@@ -225,6 +225,7 @@ object SetUserProfileTag {
         spark.sql(sql)
         (sql, in.filter(_._2 == tag).count().toInt)
     }
+    rs.foreach(println)
     rs.toArray
   }
   def SetUserProfileTagInHiveDaily (in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
@@ -246,6 +247,7 @@ object SetUserProfileTag {
         spark.sql(sql)
         (sql, in.filter(_._2 == tag).count().toInt)
     }
+    rs.foreach(println)
     rs.toArray
   }
   def SetUserProfileTagInHiveDaily_Append (in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
@@ -267,6 +269,7 @@ object SetUserProfileTag {
         //spark.sql(sql)
         (sql, in.filter(_._2 == tag).count().toInt)
     }
+    rs.foreach(println)
     rs.toArray
   }
   def main(args: Array[String]): Unit = {

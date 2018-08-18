@@ -44,7 +44,7 @@ object PredictAgeHourly {
       .getOrCreate()
     import spark.implicits._
 
-    val stmt =
+    var stmt =
       """
         |select distinct uid as did from dl_cpc.cpc_union_log
         |where `date` = "%s" and `hour` = "%s" and media_appsid in ("80000001","80000002")
@@ -58,7 +58,11 @@ object PredictAgeHourly {
       x =>
         appids.update(x.getAs[String](0),(x.getAs[Int](1), x.getAs[Int](2)))
     }
-    val uidApp = spark.read.parquet("/user/cpc/userInstalledApp/%s".format(date)).rdd
+    stmt =
+      """
+        |select uid,pkgs from dl_cpc.cpc_user_installed_apps where `date` = "%s"
+      """.stripMargin.format(date)
+    val uidApp = spark.sql(stmt).rdd
       .map(x => (x.getAs[String]("uid"),x.getAs[mutable.WrappedArray[String]]("pkgs")))
       .reduceByKey(_ ++ _)
       .map(x => (x._1,x._2.distinct))
