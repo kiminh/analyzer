@@ -20,6 +20,7 @@ import scala.collection.mutable
   * 1. 添加推荐素材新类型：4-视频  6-文本  7-互动  9-开屏  9-横幅
   * 2. 删除就系统的数据：adv_old
   * 3. 删除ctr等比缩放
+  * 4. 根据adslot_type等比取80000数据
   */
 object TopCtrIdeaV2 {
 
@@ -107,7 +108,7 @@ object TopCtrIdeaV2 {
 
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
-    val titles = getIdeaTitle() //从adv.idea表读取数据  Map[id, (title, Seq[image],type,video_id,user_id,category)]
+    val titles = getIdeaTitle() //从adv.idea表读取数据  Map[id, (title, image,type,video_id,user_id,category)]
     val imgs = getIdaeImg() //从adv.resource表读取素材资源  Map[id, (remote_url, type)]
 
     adinfo.take(3).foreach(x => println(x))
@@ -190,6 +191,10 @@ object TopCtrIdeaV2 {
     println("占比：" + rate_map)
     for ((x, y) <- max_ctr_map) {
       println("adslot_type: " + x + "; max_ctr: " + y)
+    }
+
+    for (i <- adslot_type) {
+      println("adslot_type=" + i + "取 " + (80000 * (rate_map.getOrElse[Double](i, 0.0))).toInt + " 条")
     }
 
 
