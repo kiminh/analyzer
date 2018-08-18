@@ -66,27 +66,23 @@ object GenDownloadTag {
     val cvrThres = iscvrNumAll/clickNumAll
 
 
-    println(ctrThres)
-    println(cvrThres)
+
     val sql3 = s"SELECT uid,sum(isclick) as clicknum ,sum(if (iscvrint='1',1,0)) as iscvrnum , sum(isshow) as showNum from test.cpc_downloadtag group by uid"
 
 
     downloadTagTable=ctx.sql(sql3)
-    println(downloadTagTable.withColumn("ctr",calculatectr()(col("clicknum"),col("showNum")))
-        .filter(s"ctr>$ctrThres").count())
 
-    println(downloadTagTable
-      .filter(s"clicknum=0").count())
+
+
 
     downloadTagTable = downloadTagTable.withColumn("downloadtag",downloadTag(ctrThres,cvrThres)(col("clicknum"),col("iscvrnum"),col("showNum")))
 
-    println(downloadTagTable.filter("downloadtag=243").count())
-    println(downloadTagTable.filter("downloadtag=244").count())
-    /*var resultRdd=downloadTagTable.select("uid","downloadtag")
+
+    var resultRdd=downloadTagTable.select("uid","downloadtag")
       .withColumn("operation",operationTag()()).rdd
         .map(x=>(x.getAs[String](0),x.getAs[Int](1),x.getAs[Boolean](2)))
 
-    val result = SetUserProfileTagInHiveDaily(resultRdd)*/
+    val result = SetUserProfileTagInHiveDaily(resultRdd)
 
 
     }
