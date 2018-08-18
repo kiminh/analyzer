@@ -55,16 +55,20 @@ object GenDownloadTag {
     ctx.sql(s"drop table if exists $tableNameTemp")
     downloadTagTable.write.mode("overwrite").saveAsTable(tableNameTemp)
 
-    println(ctx.sql("select count(*) from test.cpc_downloadtag"))
+    println(ctx.sql("select count(*) from test.cpc_downloadtag where uid is not null"))
+    println(ctx.sql("select count(*) from test.cpc_downloadtag where isclick=1"))
     val isshowNum = downloadTagTable.count().toDouble
     val clickNumAll = downloadTagTable.filter("isclick=1").count().toDouble
     val iscvrNumAll = downloadTagTable.filter("iscvrint='1'").count().toDouble
+
 
 
     val ctrThres = clickNumAll/isshowNum
     val cvrThres = iscvrNumAll/clickNumAll
 
 
+    println(ctrThres)
+    println(cvrThres)
     val sql3 = s"SELECT uid,sum(isclick) as clicknum ,sum(if (iscvrint='1',1,0)) as iscvrnum , sum(isshow) as showNum from test.cpc_downloadtag group by uid"
 
 
