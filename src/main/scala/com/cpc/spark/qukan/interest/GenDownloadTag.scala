@@ -55,7 +55,7 @@ object GenDownloadTag {
     ctx.sql(s"drop table if exists $tableNameTemp")
     downloadTagTable.write.mode("overwrite").saveAsTable(tableNameTemp)
 
-    println(downloadTagTable.dropDuplicates("uid").count())
+    println(ctx.sql("select count(*) from test.cpc_downloadtag where `date`='2018-08-17'"))
     val isshowNum = downloadTagTable.count().toDouble
     val clickNumAll = downloadTagTable.filter("isclick=1").count().toDouble
     val iscvrNumAll = downloadTagTable.filter("iscvrint='1'").count().toDouble
