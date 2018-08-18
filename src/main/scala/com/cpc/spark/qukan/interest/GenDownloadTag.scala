@@ -55,8 +55,7 @@ object GenDownloadTag {
     ctx.sql(s"drop table if exists $tableNameTemp")
     downloadTagTable.write.mode("overwrite").saveAsTable(tableNameTemp)
 
-    println(ctx.sql("select count(*) from test.cpc_downloadtag where uid is not null"))
-    println(ctx.sql("select count(*) from test.cpc_downloadtag where isclick=1"))
+
     val isshowNum = downloadTagTable.count().toDouble
     val clickNumAll = downloadTagTable.filter("isclick=1").count().toDouble
     val iscvrNumAll = downloadTagTable.filter("iscvrint='1'").count().toDouble
@@ -76,10 +75,13 @@ object GenDownloadTag {
     println(downloadTagTable.withColumn("ctr",calculatectr()(col("clicknum"),col("showNum")))
         .filter(s"ctr>$ctrThres").count())
 
+    println(downloadTagTable
+      .filter(s"clicknum=0").count())
+
     downloadTagTable = downloadTagTable.withColumn("downloadtag",downloadTag(ctrThres,cvrThres)(col("clicknum"),col("iscvrnum"),col("showNum")))
 
-    println(downloadTagTable.filter("downloadtag=243").count())
-    println(downloadTagTable.filter("downloadtag=244").count())
+    println(downloadTagTable.filter("downloadtag='243'").count())
+    println(downloadTagTable.filter("downloadtag='244'").count())
     /*var resultRdd=downloadTagTable.select("uid","downloadtag")
       .withColumn("operation",operationTag()()).rdd
         .map(x=>(x.getAs[String](0),x.getAs[Int](1),x.getAs[Boolean](2)))
