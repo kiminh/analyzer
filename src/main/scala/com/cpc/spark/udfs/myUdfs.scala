@@ -265,9 +265,9 @@ object myUdfs {
 
 
     if(uidctr<ctrThres && uidcvr<cvrThres )
-    "244"
+    244
     else
-    "243"
+   243
   })
   def birthdayZfb() = udf((valueInf: String) => {
     if (valueInf == null) {

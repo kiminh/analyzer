@@ -80,8 +80,8 @@ object GenDownloadTag {
 
     downloadTagTable = downloadTagTable.withColumn("downloadtag",downloadTag(ctrThres,cvrThres)(col("clicknum"),col("iscvrnum"),col("showNum")))
 
-    println(downloadTagTable.filter("downloadtag='243'").count())
-    println(downloadTagTable.filter("downloadtag='244'").count())
+    println(downloadTagTable.filter("downloadtag=243").count())
+    println(downloadTagTable.filter("downloadtag=244").count())
     /*var resultRdd=downloadTagTable.select("uid","downloadtag")
       .withColumn("operation",operationTag()()).rdd
         .map(x=>(x.getAs[String](0),x.getAs[Int](1),x.getAs[Boolean](2)))
