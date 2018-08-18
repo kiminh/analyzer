@@ -236,7 +236,7 @@ object SetUserProfileTag {
     val rs = ft.map{
       tag =>
         in.filter(_._2 == tag).map{x => (x._1, x._3)}.toDF("uid", "operation").coalesce(20)
-          .write.mode(SaveMode.Overwrite).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s".format(date, tag))
+          .write.mode(SaveMode.Append).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s".format(date, tag))
         val sql =
           """
             |ALTER TABLE dl_cpc.cpc_userprofile_tag_daily add if not exists PARTITION (`date` = "%s" , `tag` = "%s")  LOCATION
@@ -248,9 +248,28 @@ object SetUserProfileTag {
     }
     rs.toArray
   }
+  def SetUserProfileTagInHiveDaily_Append (in : RDD[(String, Int, Boolean)]) : Array[(String, Int)] = {
+    val cal = Calendar.getInstance()
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    val spark = SparkSession.builder().getOrCreate()
+    import spark.implicits._
+    val ft = in.map(x => x._2).distinct().toLocalIterator
+    val rs = ft.map{
+      tag =>
+        in.filter(_._2 == tag).map{x => (x._1, x._3)}.toDF("uid", "operation").coalesce(20)
+          .write.mode(SaveMode.Append).parquet("/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s".format(date, tag))
+        val sql =
+          """
+            |APPEND TABLE dl_cpc.cpc_userprofile_tag_daily add if not exists PARTITION (`date` = "%s" , `tag` = "%s")  LOCATION
+            |       '/warehouse/dl_cpc.db/cpc_userprofile_tag_daily/%s/%s'
+            |
+                """.stripMargin.format(date, tag, date, tag)
+        //spark.sql(sql)
+        (sql, in.filter(_._2 == tag).count().toInt)
+    }
+    rs.toArray
+  }
   def main(args: Array[String]): Unit = {
-    val tagList = Array[Int](201, 202, 203, 204, 205, 206, 207, 208, 209, 212, 216, 218, 219, 220, 221, 222,
-      223, 224, 225, 226, 227, 228, 230, 231, 233, 234, 235, 236, 237, 238, 239, 240, 241)
     val isTest = args(0).toBoolean
     val days = args(1).toInt
     val spark = SparkSession.builder()
@@ -266,29 +285,19 @@ object SetUserProfileTag {
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     val redis2save = new RedisClient(conf.getString("touched_uv.redis.host"), conf.getInt("touched_uv.redis.port"))
     redis2save.select(3)
+    val stmt =
+      """
+        |select tag, count(distinct uid) from dl_cpc.cpc_userprofile_tag_daily
+        |where `date` = "%s" and operation = true group by tag
+      """.stripMargin.format(yesterday)
+    val tagList = spark.sql(stmt).rdd.map {
+      r =>
+        ("uid_num_by_tag_" + r.getAs[Int](0), r.getAs[Long](1).toString)
+    }.toLocalIterator
     tagList.foreach{
       x =>
-        val key = {
-          if (isTest) {
-            "uid_num_by_tag_" + x + "_%s_test".format(today)
-          } else {
-            "uid_num_by_tag_" + x + "_%s".format(yesterday)
-          }
-        }
-        val buffer = redis.get[Int](key)
-        println(key, buffer)
-        if (buffer != None) {
-          val ret = buffer.get
-          if (isTest) {
-            redis2save.setex("uid_num_by_tag_%s_test".format(x), 3600 * 24 * 30, ret.toString)
-            println("set %s as %s".format("uid_num_by_tag_%s_test".format(x), ret.toString))
-          } else if (!isTest){
-            redis2save.setex("uid_num_by_tag_%s".format(x), 3600 * 24 * 30, ret.toString)
-            println("set %s as %s".format("uid_num_by_tag_%s".format(x), ret.toString))
-          }
-        } else {
-          null
-        }
+        println(x._1, x._2)
+        redis2save.setex(x._1, 3600 * 24 * 30, x._2)
     }
 
   }
