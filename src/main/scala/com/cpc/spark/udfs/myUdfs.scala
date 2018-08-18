@@ -235,7 +235,11 @@ object myUdfs {
     else
       "0"
   })
-  def downloadTag(ctrThres :Double,cvrThres :Double) = udf((clickNum: Int,iscvrNum: Int,showNum :Int) => {
+  def calculatectr() = udf((clickNum: Int,showNum :Int) => {
+    clickNum/(showNum+0.0)
+  })
+
+    def downloadTag(ctrThres :Double,cvrThres :Double) = udf((clickNum: Int,iscvrNum: Int,showNum :Int) => {
 
     var clickNum1=0.0
     var iscvrNum1=0.0
