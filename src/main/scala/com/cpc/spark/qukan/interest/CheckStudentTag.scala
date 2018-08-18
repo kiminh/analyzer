@@ -76,7 +76,6 @@ object CheckStudentTag {
          }
        }
     }
-
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -10)
     val sdate = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
