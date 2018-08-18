@@ -73,7 +73,7 @@ object TagUserByZfb {
         }
     }
     val ret = SetUserProfileTag.SetUserProfileTagInHiveDaily(age)
-    //ret.foreach(println)
+    ret.foreach(println)
 
     val conf = ConfigFactory.load()
     val sum = zfb

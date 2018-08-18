@@ -132,7 +132,7 @@ object PredictAge {
         }
     }.repartition(500)
     println(toSet.count())
-    SetUserProfileTag.SetUserProfileTagInHiveDaily(toSet)
+    //SetUserProfileTag.SetUserProfileTagInHiveDaily(toSet)
     val rs = SetUserProfileTag.SetUserProfileTagInHiveDaily(toSet)
     rs.foreach(println)
     val sum =  predict.repartition(500)
