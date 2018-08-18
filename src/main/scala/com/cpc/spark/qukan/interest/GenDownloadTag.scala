@@ -55,6 +55,7 @@ object GenDownloadTag {
     ctx.sql(s"drop table if exists $tableNameTemp")
     downloadTagTable.write.mode("overwrite").saveAsTable(tableNameTemp)
 
+    println(downloadTagTable.dropDuplicates("uid").count())
     val isshowNum = downloadTagTable.count().toDouble
     val clickNumAll = downloadTagTable.filter("isclick=1").count().toDouble
     val iscvrNumAll = downloadTagTable.filter("iscvrint='1'").count().toDouble
@@ -72,11 +73,13 @@ object GenDownloadTag {
 
     downloadTagTable = downloadTagTable.withColumn("downloadtag",downloadTag(ctrThres,cvrThres)(col("clicknum"),col("iscvrnum"),col("showNum")))
 
-    var resultRdd=downloadTagTable.select("uid","downloadtag")
+    println(downloadTagTable.filter("downloadtag='243'").count())
+    println(downloadTagTable.filter("downloadtag='244'").count())
+    /*var resultRdd=downloadTagTable.select("uid","downloadtag")
       .withColumn("operation",operationTag()()).rdd
         .map(x=>(x.getAs[String](0),x.getAs[Int](1),x.getAs[Boolean](2)))
 
-    val result = SetUserProfileTagInHiveDaily(resultRdd)
+    val result = SetUserProfileTagInHiveDaily(resultRdd)*/
 
 
     }
