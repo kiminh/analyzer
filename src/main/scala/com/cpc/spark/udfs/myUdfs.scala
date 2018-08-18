@@ -248,12 +248,12 @@ object myUdfs {
     var uidcvr=0.0
 
 
-    if(iscvrNum==null)
+/*    if(iscvrNum==null)
       iscvrNum1=0
     else{
       iscvrNum1=iscvrNum
-    }
-
+    }*/
+      iscvrNum1=iscvrNum
       uidctr = clickNum/(showNum+0.0)
 
     if(clickNum==0){
@@ -266,7 +266,7 @@ object myUdfs {
 
     if(uidctr<ctrThres && uidcvr<cvrThres )
     "244"
-    else if(uidctr>=ctrThres && uidcvr>=cvrThres )
+    else
     "243"
   })
   def birthdayZfb() = udf((valueInf: String) => {
