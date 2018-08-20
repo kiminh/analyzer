@@ -250,7 +250,13 @@ object GetHourReport {
       .jdbc(mariadbUrl, "report.report_media_os_hourly", mariadbProp)
     println("os", osData.count())
 
-    val dsplog = ctx.read.parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
+    val dsplog = ctx.sql(
+      s"""
+         |select *
+         |from dl_cpc.$table
+         |where date='$date' and hour='$hour'
+      """.stripMargin)
+    //val dsplog = ctx.read.parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
     val dspdata = dsplog.rdd
       .flatMap {
         x =>
