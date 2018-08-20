@@ -25,28 +25,22 @@ object TopApps {
     val spark = SparkSession.builder().appName("save user installed apps " + date)
       .enableHiveSupport().getOrCreate()
 
-    val inpath = "/gobblin/source/lechuan/qukan/extend_report/%s".format(date)
-    val outpath = "/user/cpc/userInstalledApp/%s".format(date)
-
+    val inpath = "/user/cpc/userInstalledApp/%s".format(date)
     println("------save user installed apps %s------".format(date))
 
     import spark.implicits._
-    var pkgs = spark.read.orc(inpath)
+    val pkgs = spark.read.parquet(inpath)
       .rdd
-      .map(HdfsParser.parseInstallApp(_, x => true, null))
-      .filter(x => x != null && x.pkgs.length > 0)
-      .map(x => (x.devid, x.pkgs.map(_.name)))
-      .reduceByKey(_ ++ _)
-      .map(x => (x._1, x._2.distinct))
+      .map(x => (x.getString(0), x.getAs[Seq[String]]("pkgs")))
       .flatMap(_._2.map(x => (x, 1l)))
       .reduceByKey(_ + _)
       .sortBy(x => x._2, false)
-
 
     pkgs.toDF("pkg", "install_user_num")
       .write
       .mode(SaveMode.Overwrite)
       .saveAsTable("dl_cpc.top_apps")
   }
-
 }
+
+
