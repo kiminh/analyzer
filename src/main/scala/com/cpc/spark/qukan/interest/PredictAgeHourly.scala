@@ -60,7 +60,7 @@ object PredictAgeHourly {
     }
     stmt =
       """
-        |select uid,pkgs from dl_cpc.cpc_user_installed_apps where `date` = "%s"
+        |select uid,pkgs from dl_cpc.cpc_user_installed_apps where `load_date` = "%s"
       """.stripMargin.format(date)
     val uidApp = spark.sql(stmt).rdd
       .map(x => (x.getAs[String]("uid"),x.getAs[mutable.WrappedArray[String]]("pkgs")))
