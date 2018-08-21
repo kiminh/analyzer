@@ -12,8 +12,8 @@ import com.cpc.spark.qukan.parser.HdfsParser
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.rdd.RDD
-import userprofile.Userprofile.{APPPackage, UserProfile}
 import com.redis.serialization.Parse.Implicits._
+import org.yaml.snakeyaml.parser.ParserException
 
 
 /**
@@ -80,9 +80,9 @@ object UpdateInstallApp {
                 p = (package_name)
               } yield p
             } catch {
-              case e: Exception=> {
+              case e: ParserException=> {
                 println(in)
-                throw e
+                throw ParserException
               }
             }
 
