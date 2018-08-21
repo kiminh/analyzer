@@ -82,7 +82,7 @@ object UpdateInstallApp {
             } catch {
               case e: Exception=> {
                 println(in)
-                throw Exception
+                throw e
               }
             }
 
