@@ -56,13 +56,14 @@ object UpdateInstallApp {
         |select trace_op1, trace_op2, trace_op3 from dl_cpc.logparsed_cpc_trace_minute where `thedate` = "%s" and trace_type = "%s"
       """.stripMargin.format(date, "app_list")
     println(stmt)
-    val all_list = spark.sql(stmt).rdd.map {
+    val all_list = spark.sql(stmt).rdd.toLocalIterator.map {
       r =>
         val op_type = r.getAs[String](0)
         val did = r.getAs[String](1)
         val in_b64 = r.getAs[String](2)
         var in : String = ""
         var apps = Seq[String]()
+        var valid = true
         if (in_b64 != null) {
           val in_gzip = com.cpc.spark.streaming.tools.Encoding.base64Decoder(in_b64).toArray
           in = Gzip.decompress(in_gzip) match {
@@ -70,13 +71,21 @@ object UpdateInstallApp {
             case None => null
           }
           if (in != null) {
+            try{
               apps = for {
-              JArray(pkgs) <- parse(in)
-              JObject(pkg) <- pkgs
-              JField("name", JString(name)) <- pkg
-              JField("package_name", JString(package_name)) <- pkg
-              p = (package_name)
-            } yield p
+                JArray(pkgs) <- parse(in)
+                JObject(pkg) <- pkgs
+                JField("name", JString(name)) <- pkg
+                JField("package_name", JString(package_name)) <- pkg
+                p = (package_name)
+              } yield p
+            } catch {
+              case e: Exception=> {
+                println(in)
+                throw Exception
+              }
+            }
+
           }
         }
         if (op_type == "APP_LIST_ADD") {
