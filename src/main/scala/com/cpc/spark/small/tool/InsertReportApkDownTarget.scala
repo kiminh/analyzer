@@ -106,6 +106,143 @@ object InsertReportApkDownTarget {
     val broadcastBrandMaps = ctx.sparkContext.broadcast(brandMaps)
 
 
+    val motivationUnionData = ctx
+      .sql(
+        """
+          |SELECT searchid,m.planid,m.unitid,m.isshow,m.isclick,sex,age,os,province,ext['phone_level'].int_value,hour,
+          |network,coin,ext['qukan_new_user'].int_value,adslot_type,media_appsid,adslotid,brand,ext_int["browser_type"],
+          |interests,userid,m.ideaid
+          |FROM dl_cpc.cpc_union_log cul
+          |lateral view explode(motivation) b as m
+          |WHERE `date`="%s" AND (m.isshow+m.isclick)>0 AND ext["client_type"].string_value="NATIVESDK" AND cul.adsrc=1
+          |AND adslot_type=7 AND m.ideaid>0
+        """.stripMargin.format(argDay))
+      .rdd
+      .map {
+        x =>
+          val searchid = x.getString(0)
+          val planid = x.getInt(1)
+          val unitid = x.getInt(2)
+          val isshow = if (x.getInt(4) > 0) 1 else x.get(3).toString.toLong
+          val isclick = x.get(4).toString.toLong
+          val sex = x.getInt(5)
+          val age = x.getInt(6)
+          val os = x.getInt(7)
+          val province = x.getInt(8)
+          val phoneLevel = x.getInt(9)
+          val hour = x.getString(10).toInt
+          val network = x.getInt(11)
+          val coin = x.getInt(12)
+          //coin
+          var userLevel = 0
+          if (coin == 0) {
+            userLevel = 1
+          } else if (coin <= 60) {
+            userLevel = 2
+          } else if (coin <= 90) {
+            userLevel = 3
+          } else {
+            userLevel = 4
+          }
+
+          val qukanNewUser = x.getInt(13)
+          val adslotType = x.getInt(14)
+          val mediaId = x.getString(15).toInt
+          val adslotid = x.getString(16).toInt
+          val brand = if (x.get(17) != null) x.get(17).toString else ""
+          val browserType = x.get(18).toString.toInt
+
+          val interests = x.get(19).toString
+          val isStudent = if (interests.contains("224=")) 1 else if (interests.contains("225=")) 2 else 0
+          val userid = x.getInt(20)
+          val ideaid = x.getInt(21)
+
+          ((searchid, ideaid), (Info(searchid, planid, unitid, isshow, isclick, sex, age, os, province, phoneLevel, hour,
+            network, userLevel, qukanNewUser, adslotType, mediaId, adslotid, brand, browserType, isStudent, 0, 0, 0, "", userid)))
+      }
+      .repartition(50)
+//    println("motivationUnionData count", motivationUnionData.count())
+//    motivationUnionData.take(10).foreach(println)
+
+    val motivationTraceData = ctx.sql(
+      """
+        |select DISTINCT searchid,trace_type,trace_op1,opt["ideaid"]
+        |from dl_cpc.logparsed_cpc_trace_minute
+        |where trace_type="sdk_incite" and `thedate`="%s"
+        |and trace_op1 in("DOWNLOAD_START","DOWNLOAD_FINISH","INSTALL_FINISH") AND opt["ideaid"]>0
+      """.stripMargin.format(argDay))
+      .rdd
+      .map {
+        x =>
+          val searchid = x.getString(0)
+          val trace_type = x.getString(1)
+          var trace_op1 = x.getString(2)
+          val ideaid = x.get(3).toString.toInt
+          var start: Int = 0
+          var finish: Int = 0
+          var pkgadded: Int = 0
+          if (trace_op1 == "DOWNLOAD_START") {
+            start = 1
+          } else if (trace_op1 == "DOWNLOAD_FINISH") {
+            finish = 1
+          } else if (trace_op1 == "INSTALL_FINISH") {
+            pkgadded = 1
+          }
+          ((searchid, ideaid), (Info(searchid, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, start, finish, pkgadded, trace_type, 0)))
+      }
+      .repartition(50)
+
+//    println("motivationTraceData count", motivationTraceData.count())
+//    motivationTraceData.take(10).foreach(println)
+
+    val motivationAllData = motivationUnionData
+      .union(motivationTraceData)
+      .reduceByKey {
+        (a, b) =>
+          val searchid = if (a.planid != -1) a.searchid else b.searchid
+          val planid = if (a.planid != -1) a.planid else b.planid
+          val unitid = if (a.planid != -1) a.unitid else b.unitid
+          val isshow = if (a.planid != -1) a.isshow else b.isshow
+          val isclick = if (a.planid != -1) a.isclick else b.isclick
+          val sex = if (a.planid != -1) a.sex else b.sex
+          val age = if (a.planid != -1) a.age else b.age
+          val os = if (a.planid != -1) a.os else b.os
+          val province = if (a.planid != -1) a.province else b.province
+          val phoneLevel = if (a.planid != -1) a.phoneLevel else b.phoneLevel
+          val hour = if (a.planid != -1) a.hour else b.hour
+          val network = if (a.planid != -1) a.network else b.network
+          val userLevel = if (a.planid != -1) a.userLevel else b.userLevel
+          val qukanNewUser = if (a.planid != -1) a.qukanNewUser else b.qukanNewUser
+          val adslotType = if (a.planid != -1) a.adslotType else b.adslotType
+          val mediaid = if (a.planid != -1) a.mediaid else b.mediaid
+          val adslotid = if (a.planid != -1) a.adslotid else b.adslotid
+          val brand = if (a.planid != -1) a.brand else b.brand
+          val browserType = if (a.planid != -1) a.browserType else b.browserType
+          val isStudent = if (a.planid != -1) a.isStudent else b.isStudent
+          val start = a.start + b.start
+          val finish = a.finish + b.finish
+          val pkgadded = a.pkgadded + b.pkgadded
+          val traceType = "sdk_incite"
+          //if (a.traceType.length > 0) a.traceType else b.traceType
+          var userid = if (a.userid > 0) a.userid else b.userid
+
+          Info(searchid, planid, unitid, isshow, isclick, sex, age, os, province, phoneLevel, hour, network, userLevel, qukanNewUser, adslotType,
+            mediaid, adslotid, brand, browserType, isStudent, start, finish, pkgadded, traceType, userid)
+      }
+      .map {
+        x =>
+          val info = x._2
+          Info(info.searchid, info.planid, info.unitid, info.isshow, info.isclick, info.sex, info.age, info.os, info.province, info.phoneLevel, info.hour,
+            info.network, info.userLevel, info.qukanNewUser, info.adslotType, info.mediaid, info.adslotid, info.brand, info.browserType,
+            info.isStudent, info.start, info.finish, info.pkgadded, "sdk_incite", info.userid)
+      }
+      .filter { x => x.unitid > 0 && x.planid > 0 }
+      .repartition(50)
+      .cache()
+
+//    println("motivationAllData count", motivationAllData.count())
+//    motivationAllData.take(10).foreach(println)
+
     var siteData = ctx.read.jdbc(mariaAdvdbUrl,
       """
         |(
@@ -134,7 +271,7 @@ object InsertReportApkDownTarget {
           |FROM dl_cpc.cpc_union_log cul
           |WHERE date="%s" AND (isshow+isclick)>0 AND ext["client_type"].string_value="NATIVESDK" AND cul.adsrc=1
           |AND ext_int["siteid"]>0 AND ext_int["siteid"] in(%s)
-        """.stripMargin.format(argDay,siteData.mkString(",")))
+        """.stripMargin.format(argDay, siteData.mkString(",")))
       .rdd
       .map {
         x =>
@@ -191,7 +328,7 @@ object InsertReportApkDownTarget {
         |AND cul.ext["client_type"].string_value="NATIVESDK"
         |AND cul.isclick>0 AND cul.adsrc=1
         |AND cul.ext_int["siteid"]>0 AND cul.ext_int["siteid"] in (%s)
-      """.stripMargin.format(argDay, argDay,siteData.mkString(",")))
+      """.stripMargin.format(argDay, argDay, siteData.mkString(",")))
       .rdd
       .map {
         x =>
@@ -395,7 +532,9 @@ object InsertReportApkDownTarget {
       .repartition(50)
       .cache()
 
-    val allData = allDatax.union(siteAllData).repartition(50).cache()
+    val allDataxx = allDatax.union(siteAllData).repartition(50).cache()
+    val allData = allDataxx.union(motivationAllData).repartition(50).cache()
+
 
     val inputStudentData = allData
       .map {
@@ -761,7 +900,6 @@ object InsertReportApkDownTarget {
       .repartition(50)
 
     insertDataFrame.show(10)
-
 
     //report
     clearReportApkDownTarget(argDay)

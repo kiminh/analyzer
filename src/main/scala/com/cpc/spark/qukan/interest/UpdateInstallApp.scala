@@ -63,6 +63,7 @@ object UpdateInstallApp {
         val in_b64 = r.getAs[String](2)
         var in : String = ""
         var apps = Seq[String]()
+        var valid = true
         if (in_b64 != null) {
           val in_gzip = com.cpc.spark.streaming.tools.Encoding.base64Decoder(in_b64).toArray
           in = Gzip.decompress(in_gzip) match {
@@ -70,13 +71,17 @@ object UpdateInstallApp {
             case None => null
           }
           if (in != null) {
+            try{
               apps = for {
-              JArray(pkgs) <- parse(in)
-              JObject(pkg) <- pkgs
-              JField("name", JString(name)) <- pkg
-              JField("package_name", JString(package_name)) <- pkg
-              p = (package_name)
-            } yield p
+                JArray(pkgs) <- parse(in)
+                JObject(pkg) <- pkgs
+                JField("name", JString(name)) <- pkg
+                JField("package_name", JString(package_name)) <- pkg
+                p = (package_name)
+              } yield p
+            } catch {
+              case e: Exception => null
+            }
           }
         }
         if (op_type == "APP_LIST_ADD") {
@@ -194,7 +199,7 @@ object UpdateInstallApp {
     println(all_list.filter(x => x._2._4.length > 5).count())
     println(all_list.filter(x => x._2._4.length > 10).count())
     println(all_list.filter(x => x._2._3.size > 0).count())
-    all_list.map(x => (x._1, x._2._4, x._2._1, x._2._2, x._2._3, date)).toDF("uid", "pkgs", "add_pkgs", "remove_pkgs", "used_pkgs", "load_date").coalesce(20).write.mode(SaveMode.Overwrite).parquet("/user/cpc/userInstalledApp/%s".format(date))
+    all_list.map(x => (x._1, x._2._4, x._2._1, x._2._2, x._2._3, date)).toDF("uid", "pkgs", "add_pkgs", "remove_pkgs", "used_pkgs", "load_date").coalesce(100).write.mode(SaveMode.Overwrite).parquet("/user/cpc/userInstalledApp/%s".format(date))
 
     val sql =
       """
