@@ -106,7 +106,7 @@ object TopCtrIdeaV2 {
       .filter { x =>
         if (x.adslot_type == 1 || x.adslot_type == 2) {
           x.show > 1000
-        }else{
+        } else {
           true
         }
 
