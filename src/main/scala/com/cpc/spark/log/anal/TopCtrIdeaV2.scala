@@ -79,12 +79,11 @@ object TopCtrIdeaV2 {
       }
 
 
-
     /**
       * 计算ctr. ctr=click/show*1e6
       * 返回 Adinfo
       */
-    val adinfo2 = ulog
+    val adinfo = ulog
       .map {
         x =>
           val v = x._2 //Adinfo
@@ -92,17 +91,15 @@ object TopCtrIdeaV2 {
           v.copy(ctr = ctr)
       }
       .filter(x => x.click > 0 && x.show > 1000)
-
-    println("总条数： " + adinfo2.count())
-
-    val adinfo = adinfo2.toLocalIterator
+      .toLocalIterator
       .toSeq
+
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
     val titles = getIdeaTitle() //从adv.idea表读取数据  Map[id, (title, image,type,video_id,user_id,category)]
     val imgs = getIdaeImg() //从adv.resource表读取素材资源  Map[id, (remote_url, type)]
 
-
+    println("总条数： " + adinfo.size)
     println("title length: " + titles.size)
     println("imgs length: " + imgs.size)
 
@@ -156,18 +153,19 @@ object TopCtrIdeaV2 {
       .filter(_ != null)
 
 
-    val sum = topIdeaRDD.length.toDouble //总元素个数
+    val sum = topIdeaRDD.size.toDouble //总元素个数
     println("总元素个数：" + sum)
 
     val adslot_type: Array[Int] = Array(1, 2, 3, 4, 5, 6, 7)
-    var rate_map: mutable.Map[Int, Double] = mutable.HashMap()
-    var max_ctr_map: mutable.Map[Int, Int] = mutable.HashMap()
+    var rate_map: mutable.Map[Int, Double] = mutable.HashMap() //占比; k-adslot_type,v-占比
+    var max_ctr_map: mutable.Map[Int, Int] = mutable.HashMap() //最大ctr; k-adslot_type,v-最大ctr
+    var adslot_type_map: mutable.Map[Int, Int] = mutable.HashMap() //最大ctr; k-adslot_type,v-元素个数
 
     for (i <- adslot_type) {
       var tmp = topIdeaRDD.filter(_.adslot_type == i)
 
-
       println("adslot_type=" + i + "有 " + tmp.length + " 条")
+      adslot_type_map.put(i, tmp.length)
 
       if (tmp.length > 0) {
         //计算占比
@@ -193,9 +191,21 @@ object TopCtrIdeaV2 {
 
     var topIdeaData = mutable.Seq[TopIdea]()
 
+    var topIdeaRDD2: Seq[TopIdea] = Seq()
+
     for (i <- 0 until adslot_type.length) {
-      val topIdeaRDD2 = topIdeaRDD.filter(x => x.adslot_type == adslot_type(i))
-        .sortWith(_.ctr_score > _.ctr_score).take((80000 * (rate_map.getOrElse[Double](i, 0.0))).toInt)
+      val size = (80000 * (rate_map.getOrElse[Double](i, 0.0))).toInt //要取元素个数
+      val size2 = adslot_type_map.getOrElse[Int](i, 0) //总元素个数
+
+      //如果要取元素个数小于总元素个数，或总元素个数小于500，取所有
+      if (size > size2 && size2 < 500) {
+        topIdeaRDD2 = topIdeaRDD.filter(x => x.adslot_type == adslot_type(i))
+          .sortWith(_.ctr_score > _.ctr_score).take(size2)
+      } else {
+        topIdeaRDD2 = topIdeaRDD.filter(x => x.adslot_type == adslot_type(i))
+          .sortWith(_.ctr_score > _.ctr_score).take(size)
+      }
+
 
       println("adslot_type=" + adslot_type(i) + "已取出 " + topIdeaRDD2.length + " 条")
       topIdeaData = topIdeaData ++ topIdeaRDD2
