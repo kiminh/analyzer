@@ -213,6 +213,8 @@ object TopCtrIdeaV2 {
       val size = (80000 * (rate_map.getOrElse[Double](i, 0.0))).toInt //要取元素个数
       val size2 = adslot_type_map.getOrElse[Int](i, 0) //总元素个数
 
+      println("~~i:" + i + " rate_map:" + rate_map.getOrElse[Double](i, 0.0) + " adslot_type_map" + adslot_type_map)
+
       //如果要取元素个数小于总元素个数，或总元素个数小于500，取所有
       if (size > size2 && size2 < 500) {
         topIdeaRDD2 = topIdeaRDD.filter(x => x.adslot_type == adslot_type(i))
