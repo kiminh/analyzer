@@ -194,8 +194,7 @@ object TopCtrIdeaV2 {
     }
 
     println("占比：" + rate_map)
-    println("最大ctr：" + max_ctr_map)
-    println("元素个数：" + adslot_type_map)
+
     for ((x, y) <- max_ctr_map) {
       println("adslot_type: " + x + "; max_ctr: " + y)
     }
