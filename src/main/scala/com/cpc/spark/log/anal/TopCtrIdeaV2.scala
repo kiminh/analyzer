@@ -48,57 +48,43 @@ object TopCtrIdeaV2 {
     cal.add(Calendar.DATE, -dayBefore)
 
     //读取近10天广告信息。 ((adslot_type, ideaid), Adinfo)
-    var adctr: RDD[((Int, Int), Adinfo)] = null
-
-    for (i <- 0 until dayBefore) {
-      val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-      val stmt =
-        """
-          |select adslot_type, ideaid, sum(isclick) as sum_click, sum(isshow) as sum_show
-          |from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
-          |and adslotid > 0 and ideaid > 0
-          |group by adslot_type, ideaid
-          |having sum_show >1000
-        """.stripMargin.format(date)
-      println(stmt)
-      val ulog = spark.sql(stmt)
-        .rdd
-        .map {
-          u =>
-            val key = (u.getAs[Int]("adslot_type"), u.getAs[Int]("ideaid"))
-            val v = Adinfo(
-              idea_id = u.getAs[Int]("ideaid"),
-              adslot_type = u.getAs[Int]("adslot_type"),
-              click = u.getAs[Long]("sum_click").toInt,
-              show = u.getAs[Long]("sum_show").toInt)
-
-            (key, v)
-        }
+    //var adctr: RDD[((Int, Int), Adinfo)] = null
 
 
-      if (adctr == null) {
-        adctr = ulog
-      } else {
-        adctr = adctr.union(ulog) //合并
+    val dateStart = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    cal.add(Calendar.DATE, dayBefore - 1)
+    val dateEnd = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+
+    val stmt =
+      """
+        |select adslot_type, ideaid, sum(isclick) as sum_click, sum(isshow) as sum_show
+        |from dl_cpc.cpc_union_log where `date` >= "%s" and `date` <= "%s"
+        |and isshow = 1 and adslotid > 0 and ideaid > 0
+        |group by adslot_type, ideaid
+      """.stripMargin.format(dateStart, dateEnd)
+    println(stmt)
+
+    val ulog = spark.sql(stmt)
+      .rdd
+      .map {
+        u =>
+          val key = (u.getAs[Int]("adslot_type"), u.getAs[Int]("ideaid"))
+          val v = Adinfo(
+            idea_id = u.getAs[Int]("ideaid"),
+            adslot_type = u.getAs[Int]("adslot_type"),
+            click = u.getAs[Long]("sum_click").toInt,
+            show = u.getAs[Long]("sum_show").toInt)
+
+          (key, v)
       }
 
-      cal.add(Calendar.DATE, 1)
-    }
 
-    println("总条数： " + adctr.count())
 
     /**
       * 计算ctr. ctr=click/show*1e6
       * 返回 Adinfo
       */
-    val adinfo2 = adctr
-      .reduceByKey { //计算近10天的click,show
-        (x, y) =>
-          x.copy(
-            click = x.click + y.click,
-            show = x.show + y.show
-          )
-      }
+    val adinfo2 = ulog
       .map {
         x =>
           val v = x._2 //Adinfo
@@ -106,15 +92,11 @@ object TopCtrIdeaV2 {
           v.copy(ctr = ctr)
       }
       .filter(x => x.click > 0 && x.show > 1000)
-      .cache()
 
-    adinfo2.take(3).foreach(x => println(x))
+    println("总条数： " + adinfo2.count())
 
     val adinfo = adinfo2.toLocalIterator
       .toSeq
-
-    adinfo2.unpersist()
-
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
     val titles = getIdeaTitle() //从adv.idea表读取数据  Map[id, (title, image,type,video_id,user_id,category)]
