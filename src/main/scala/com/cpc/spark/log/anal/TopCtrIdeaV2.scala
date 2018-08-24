@@ -104,7 +104,7 @@ object TopCtrIdeaV2 {
           v.copy(ctr = ctr)
       }
       .filter(x => x.click > 0)
-      .coalesce(10)
+      .coalesce(5)
       .toLocalIterator
       .toSeq
 
@@ -210,8 +210,6 @@ object TopCtrIdeaV2 {
     for (i <- adslot_type) {
       val size = (80000 * (rate_map.getOrElse[Double](i, 0.0))).toInt //要取元素个数
       val size2 = adslot_type_map.getOrElse[Int](i, 0) //每个adslot_type总元素个数
-
-      println("~~~~~~i:" + i + "--rate_map:" + rate_map.getOrElse[Double](i, 0.0) + size2 + "--" + size)
 
       //如果要取元素个数小于总元素个数，或总元素个数小于500，取所有
       if (size > size2 && size2 < 500) {
