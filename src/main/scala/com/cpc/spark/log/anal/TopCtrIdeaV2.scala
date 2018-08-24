@@ -58,7 +58,6 @@ object TopCtrIdeaV2 {
           |from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
           |and adslotid > 0 and ideaid > 0
           |group by adslot_type, ideaid
-          |having sum_show >1000
         """.stripMargin.format(date)
       println(stmt)
       val ulog = spark.sql(stmt)
@@ -104,6 +103,14 @@ object TopCtrIdeaV2 {
           v.copy(ctr = ctr)
       }
       .filter(x => x.click > 0)
+      .filter { x =>
+        if (x.adslot_type == 1 || x.adslot_type == 2) {
+          x.show > 1000
+        }else{
+          true
+        }
+
+      }
       .coalesce(5)
       .toLocalIterator
       .toSeq
