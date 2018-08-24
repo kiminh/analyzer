@@ -58,6 +58,7 @@ object TopCtrIdeaV2 {
           |from dl_cpc.cpc_union_log where `date` = "%s" and isshow = 1
           |and adslotid > 0 and ideaid > 0
           |group by adslot_type, ideaid
+          |having sum_show >1000
         """.stripMargin.format(date)
       println(stmt)
       val ulog = spark.sql(stmt)
@@ -84,6 +85,8 @@ object TopCtrIdeaV2 {
       cal.add(Calendar.DATE, 1)
     }
 
+    println("总条数： " + adctr.count())
+
     /**
       * 计算ctr. ctr=click/show*1e6
       * 返回 Adinfo
@@ -107,7 +110,7 @@ object TopCtrIdeaV2 {
 
     adinfo2.take(3).foreach(x => println(x))
 
-    val adinfo=adinfo2.toLocalIterator
+    val adinfo = adinfo2.toLocalIterator
       .toSeq
 
     adinfo2.unpersist()
@@ -117,7 +120,7 @@ object TopCtrIdeaV2 {
     val titles = getIdeaTitle() //从adv.idea表读取数据  Map[id, (title, image,type,video_id,user_id,category)]
     val imgs = getIdaeImg() //从adv.resource表读取素材资源  Map[id, (remote_url, type)]
 
-    println("adinfo length: " + adinfo.length)
+//    println("adinfo length: " + adinfo.length)
     println("title length: " + titles.size)
     println("imgs length: " + imgs.size)
 
