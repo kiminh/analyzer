@@ -102,7 +102,7 @@ object TopCtrIdeaV2 {
     val titles = getIdeaTitle() //从adv.idea表读取数据  Map[id, (title, image,type,video_id,user_id,category)]
     val imgs = getIdaeImg() //从adv.resource表读取素材资源  Map[id, (remote_url, type)]
 
-//    println("adinfo length: " + adinfo.length)
+
     println("title length: " + titles.size)
     println("imgs length: " + imgs.size)
 
