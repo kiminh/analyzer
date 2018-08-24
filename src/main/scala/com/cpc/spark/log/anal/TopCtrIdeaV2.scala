@@ -173,7 +173,7 @@ object TopCtrIdeaV2 {
     val adslot_type: Array[Int] = Array(1, 2, 3, 4, 5, 6, 7)
     var rate_map: mutable.Map[Int, Double] = mutable.HashMap() //占比; k-adslot_type,v-占比
     var max_ctr_map: mutable.Map[Int, Int] = mutable.HashMap() //最大ctr; k-adslot_type,v-最大ctr
-    var adslot_type_map: mutable.Map[Int, Int] = mutable.HashMap() //最大ctr; k-adslot_type,v-元素个数
+    var adslot_type_map: mutable.Map[Int, Int] = mutable.HashMap() //每个adslot_type总元素个数; k-adslot_type,v-元素个数
 
     for (i <- adslot_type) {
       var tmp = topIdeaRDD.filter(_.adslot_type == i)
@@ -208,11 +208,11 @@ object TopCtrIdeaV2 {
 
     var topIdeaRDD2: Seq[TopIdea] = Seq()
 
-    for (i <- adslot_type) {
+    for (i <- 0 until adslot_type.length) {
       val size = (80000 * (rate_map.getOrElse[Double](i, 0.0))).toInt //要取元素个数
-      val size2 = adslot_type_map.getOrElse[Int](i, 0) //总元素个数
+      val size2 = adslot_type_map.getOrElse[Int](i, 0) //每个adslot_type总元素个数
 
-      println("~~i:" + i + " rate_map:" + rate_map.getOrElse[Double](i, 0.0) + " adslot_type_map" + adslot_type_map)
+      println("~~i:" + i + "--rate_map:" + rate_map.getOrElse[Double](i, 0.0) + size2 + "--" + size)
 
       //如果要取元素个数小于总元素个数，或总元素个数小于500，取所有
       if (size > size2 && size2 < 500) {
