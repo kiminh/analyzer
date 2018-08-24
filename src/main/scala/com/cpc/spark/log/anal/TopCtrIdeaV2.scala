@@ -91,8 +91,8 @@ object TopCtrIdeaV2 {
           v.copy(ctr = ctr)
       }
       .filter(x => x.click > 0 && x.show > 1000)
-      .collect().toSeq
-
+      .toLocalIterator
+      .toSeq
 
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
@@ -180,6 +180,8 @@ object TopCtrIdeaV2 {
     }
 
     println("占比：" + rate_map)
+    println("最大ctr：" + max_ctr_map)
+    println("元素个数：" + adslot_type_map)
     for ((x, y) <- max_ctr_map) {
       println("adslot_type: " + x + "; max_ctr: " + y)
     }
@@ -193,7 +195,7 @@ object TopCtrIdeaV2 {
 
     var topIdeaRDD2: Seq[TopIdea] = Seq()
 
-    for (i <- 0 until adslot_type.length) {
+    for (i <- adslot_type) {
       val size = (80000 * (rate_map.getOrElse[Double](i, 0.0))).toInt //要取元素个数
       val size2 = adslot_type_map.getOrElse[Int](i, 0) //总元素个数
 
