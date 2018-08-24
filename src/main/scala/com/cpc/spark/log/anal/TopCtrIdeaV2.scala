@@ -17,7 +17,7 @@ import scala.collection.mutable
 
 /**
   * 在TopCtrIdeaV2基础上做修改
-  * 1. 添加推荐素材新类型：4-视频  6-文本  7-互动  9-开屏  9-横幅
+  * 1. 添加推荐素材新类型：(已有：1为小图，2为长图，3组图)4为视频，6为文本 7互动 8开屏 9 横幅
   * 2. 删除就系统的数据：adv_old
   * 3. 删除ctr等比缩放
   * 4. 根据adslot_type等比取80000数据
@@ -176,6 +176,9 @@ object TopCtrIdeaV2 {
     for (i <- adslot_type) {
       var tmp = topIdeaRDD.filter(_.adslot_type == i)
 
+
+      println("adslot_type=" + i + "有 " + tmp.length + " 条")
+
       if (tmp.length > 0) {
         //计算占比
         var r = tmp.length / sum
@@ -260,6 +263,7 @@ object TopCtrIdeaV2 {
   }
 
   def getIdeaTitle(): Map[Int, (String, String, Int, Int, Int, Int)] = {
+    //荐素材类型: 1为小图，2为长图，3组图，4为视频，6为文本 7互动 8开屏 9 横幅
     var sql = "select id, title, image, type, video_id, user_id, category from idea where action_type = 1 and type in (1,2,3,4,6,7,8,9)"
     val ideas = mutable.Map[Int, (String, String, Int, Int, Int, Int)]()
     var rs = getAdDbResult("mariadb.adv", sql)
