@@ -88,7 +88,7 @@ object TopCtrIdeaV2 {
       * 计算ctr. ctr=click/show*1e6
       * 返回 Adinfo
       */
-    val adinfo = adctr
+    val adinfo2 = adctr
       .reduceByKey { //计算近10天的click,show
         (x, y) =>
           x.copy(
@@ -103,15 +103,20 @@ object TopCtrIdeaV2 {
           v.copy(ctr = ctr)
       }
       .filter(x => x.click > 0 && x.show > 1000)
-      .toLocalIterator
+      .cache()
+
+    adinfo2.take(3).foreach(x => println(x))
+
+    val adinfo=adinfo2.toLocalIterator
       .toSeq
+
+    adinfo2.unpersist()
 
 
     val ub = getUserBelong() //获取广告主id, 代理账户id  Map[id, belong]
     val titles = getIdeaTitle() //从adv.idea表读取数据  Map[id, (title, image,type,video_id,user_id,category)]
     val imgs = getIdaeImg() //从adv.resource表读取素材资源  Map[id, (remote_url, type)]
 
-    adinfo.take(3).foreach(x => println(x))
     println("adinfo length: " + adinfo.length)
     println("title length: " + titles.size)
     println("imgs length: " + imgs.size)
