@@ -197,7 +197,7 @@ object TopCtrIdeaV2 {
       val topIdeaRDD2 = topIdeaRDD.filter(x => x.adslot_type == adslot_type(i))
         .sortWith(_.ctr_score > _.ctr_score).take((80000 * (rate_map.getOrElse[Double](i, 0.0))).toInt)
 
-      println("adslot_type=" + adslot_type(i) + "要取出 " + topIdeaRDD2.length + " 条")
+      println("adslot_type=" + adslot_type(i) + "已取出 " + topIdeaRDD2.length + " 条")
       topIdeaData = topIdeaData ++ topIdeaRDD2
     }
 
