@@ -32,7 +32,6 @@ object DNNSample {
       .enableHiveSupport()
       .getOrCreate()
 
-    println("what1")
     genIntMap(spark, mediaIdMap, "mediaid", dateList)
     genIntMap(spark, planIdMap, "planid", dateList)
     genIntMap(spark, unitIdMap, "unitid", dateList)
@@ -40,9 +39,10 @@ object DNNSample {
     genIntMap(spark, adslotIdMap, "slotid", dateList)
     genIntMap(spark, cityMap, "cityid", dateList)
     genIntMap(spark, adclassMap, "adclass", dateList)
-    println("what2")
 
     // genStrMap(spark, brandMap, "brand", dateList)
+
+    println(s"max index = $currentMaxIdx")
 
 
     val sample = spark.sql(
@@ -80,7 +80,6 @@ object DNNSample {
 
   def genIntMap(spark: SparkSession, map: Map[Int, Int], name: String, dateList: List[String]): Unit = {
     println(name)
-    println(dateList)
     for (date <- dateList) {
       val path = "/user/cpc/lrmodel/feature_ids_v1/%s/%s".format(name, date)
       try {
@@ -99,25 +98,6 @@ object DNNSample {
     println(map)
   }
 
-//  def genStrMap(spark: SparkSession, map: Map[String, Int], name: String, dateList: List[String]): Unit = {
-//    println(name)
-//    println(dateList)
-//    for (date <- dateList) {
-//      val path = "/user/cpc/lrmodel/feature_ids_v1/%s/%s".format(name, date)
-//      try {
-//        val old = spark.read.parquet(path).rdd.map(x => x.getString(0)).collect()
-//        for (row <- old) {
-//          if (!map.contains(row)) {
-//            currentMaxIdx += 1
-//            map(row) = currentMaxIdx
-//          }
-//        }
-//      } catch {
-//        case e: Exception =>
-//      }
-//    }
-//    println(s"finish $name map")
-//    println(map)
-//  }
+
 
 }
