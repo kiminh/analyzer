@@ -32,6 +32,7 @@ object DNNSample {
       .enableHiveSupport()
       .getOrCreate()
 
+    println("what1")
     genIntMap(spark, mediaIdMap, "mediaid", dateList)
     genIntMap(spark, planIdMap, "planid", dateList)
     genIntMap(spark, unitIdMap, "unitid", dateList)
@@ -39,6 +40,7 @@ object DNNSample {
     genIntMap(spark, adslotIdMap, "slotid", dateList)
     genIntMap(spark, cityMap, "cityid", dateList)
     genIntMap(spark, adclassMap, "adclass", dateList)
+    println("what2")
 
     // genStrMap(spark, brandMap, "brand", dateList)
 
