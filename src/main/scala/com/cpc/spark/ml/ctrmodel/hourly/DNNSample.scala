@@ -86,9 +86,9 @@ object DNNSample {
       try {
         val old = spark.read.parquet(path).rdd.map(x => x.getInt(0)).collect()
         for (row <- old) {
-          if (!map.contains(old(0))) {
+          if (!map.contains(row(0))) {
             currentMaxIdx += 1
-            map(old(0)) = currentMaxIdx
+            map(row(0)) = currentMaxIdx
           }
         }
       } catch {
@@ -99,25 +99,25 @@ object DNNSample {
     println(map)
   }
 
-  def genStrMap(spark: SparkSession, map: Map[String, Int], name: String, dateList: List[String]): Unit = {
-    println(name)
-    println(dateList)
-    for (date <- dateList) {
-      val path = "/user/cpc/lrmodel/feature_ids_v1/%s/%s".format(name, date)
-      try {
-        val old = spark.read.parquet(path).rdd.map(x => x.getString(0)).collect()
-        for (row <- old) {
-          if (!map.contains(old(0))) {
-            currentMaxIdx += 1
-            map(old(0)) = currentMaxIdx
-          }
-        }
-      } catch {
-        case e: Exception =>
-      }
-    }
-    println(s"finish $name map")
-    println(map)
-  }
+//  def genStrMap(spark: SparkSession, map: Map[String, Int], name: String, dateList: List[String]): Unit = {
+//    println(name)
+//    println(dateList)
+//    for (date <- dateList) {
+//      val path = "/user/cpc/lrmodel/feature_ids_v1/%s/%s".format(name, date)
+//      try {
+//        val old = spark.read.parquet(path).rdd.map(x => x.getString(0)).collect()
+//        for (row <- old) {
+//          if (!map.contains(row(0))) {
+//            currentMaxIdx += 1
+//            map(old(0)) = currentMaxIdx
+//          }
+//        }
+//      } catch {
+//        case e: Exception =>
+//      }
+//    }
+//    println(s"finish $name map")
+//    println(map)
+//  }
 
 }
