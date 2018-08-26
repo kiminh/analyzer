@@ -94,6 +94,8 @@ object DNNSample {
   }
 
   def genStrMap(spark: SparkSession, map: Map[String, Int], name: String, dateList: List[String]): Unit = {
+    println(name)
+    println(dateList)
     for (date <- dateList) {
       val path = "/user/cpc/lrmodel/feature_ids_v1/%s/%s".format(name, date)
       try {
@@ -109,6 +111,7 @@ object DNNSample {
       }
     }
     println(s"finish $name map")
+    println(map)
   }
 
 }
