@@ -86,9 +86,9 @@ object DNNSample {
       try {
         val old = spark.read.parquet(path).rdd.map(x => x.getInt(0)).collect()
         for (row <- old) {
-          if (!map.contains(row(0))) {
+          if (!map.contains(row)) {
             currentMaxIdx += 1
-            map(row(0)) = currentMaxIdx
+            map(row) = currentMaxIdx
           }
         }
       } catch {
@@ -107,9 +107,9 @@ object DNNSample {
 //      try {
 //        val old = spark.read.parquet(path).rdd.map(x => x.getString(0)).collect()
 //        for (row <- old) {
-//          if (!map.contains(row(0))) {
+//          if (!map.contains(row)) {
 //            currentMaxIdx += 1
-//            map(old(0)) = currentMaxIdx
+//            map(row) = currentMaxIdx
 //          }
 //        }
 //      } catch {
