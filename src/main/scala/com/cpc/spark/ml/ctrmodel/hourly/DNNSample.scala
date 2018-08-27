@@ -24,6 +24,7 @@ object DNNSample {
   def main(args: Array[String]): Unit = {
 
     val date = args(0)
+    val hour = args(1)
     val dateList = List(date)
 
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -52,7 +53,7 @@ object DNNSample {
          |   planid, unitid, ideaid, adslotid,
          |   city, adclass
          | from dl_cpc.ml_ctr_feature_v1
-         | where `date` = '$date'
+         | where `date` = '$date' and hour ='$hour'
       """.stripMargin)
       .withColumn("mediaid-new", udfIntToIndex(mediaIdMap.toMap)(col("mediaid")))
       .withColumn("planid-new", udfIntToIndex(planIdMap.toMap)(col("planid")))
