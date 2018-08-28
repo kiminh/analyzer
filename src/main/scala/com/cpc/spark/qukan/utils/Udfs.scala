@@ -109,5 +109,13 @@ object Udfs {
     }
     list.mkString(" ")
   })
+
+  def udfIntToIndex(map: Map[Int, Int]): UserDefinedFunction = udf((value: Int) => {
+   if(map.contains(value)) {
+     map(value)
+   } else {
+     0
+   }
+  })
 }
 
