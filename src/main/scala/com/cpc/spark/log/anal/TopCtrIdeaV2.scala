@@ -17,7 +17,7 @@ import scala.collection.mutable
 
 /**
   * 在TopCtrIdeaV2基础上做修改
-  * 1. 添加推荐素材新类型：4-视频  6-文本  7-互动  9-开屏  9-横幅
+  * 1. 添加推荐素材新类型：(已有：1为小图，2为长图，3组图)4为视频，6为文本 7互动 8开屏 9 横幅
   * 2. 删除就系统的数据：adv_old
   * 3. 删除ctr等比缩放
   * 4. 根据adslot_type等比取80000数据
@@ -102,7 +102,16 @@ object TopCtrIdeaV2 {
         val ctr = (v.click.toDouble / v.show.toDouble * 1e6).toInt
           v.copy(ctr = ctr)
       }
-      .filter(x => x.click > 0 && x.show > 1000)
+      .filter(x => x.click > 0)
+      .filter { x =>
+        if (x.adslot_type == 1 || x.adslot_type == 2) {
+          x.show > 1000
+        } else {
+          true
+        }
+
+      }
+      .coalesce(5)
       .toLocalIterator
       .toSeq
 
@@ -111,8 +120,7 @@ object TopCtrIdeaV2 {
     val titles = getIdeaTitle() //从adv.idea表读取数据  Map[id, (title, image,type,video_id,user_id,category)]
     val imgs = getIdaeImg() //从adv.resource表读取素材资源  Map[id, (remote_url, type)]
 
-    adinfo.take(3).foreach(x => println(x))
-    println("adinfo length: " + adinfo.length)
+    println("总条数： " + adinfo.size)
     println("title length: " + titles.size)
     println("imgs length: " + imgs.size)
 
@@ -166,15 +174,19 @@ object TopCtrIdeaV2 {
       .filter(_ != null)
 
 
-    val sum = topIdeaRDD.length.toDouble //总元素个数
+    val sum = topIdeaRDD.size.toDouble //总元素个数
     println("总元素个数：" + sum)
 
     val adslot_type: Array[Int] = Array(1, 2, 3, 4, 5, 6, 7)
-    var rate_map: mutable.Map[Int, Double] = mutable.HashMap()
-    var max_ctr_map: mutable.Map[Int, Int] = mutable.HashMap()
+    var rate_map: mutable.Map[Int, Double] = mutable.HashMap() //占比; k-adslot_type,v-占比
+    var max_ctr_map: mutable.Map[Int, Int] = mutable.HashMap() //最大ctr; k-adslot_type,v-最大ctr
+    var adslot_type_map: mutable.Map[Int, Int] = mutable.HashMap() //每个adslot_type总元素个数; k-adslot_type,v-元素个数
 
     for (i <- adslot_type) {
       var tmp = topIdeaRDD.filter(_.adslot_type == i)
+
+      println("adslot_type=" + i + "有 " + tmp.length + " 条")
+      adslot_type_map.put(i, tmp.length)
 
       if (tmp.length > 0) {
         //计算占比
@@ -189,6 +201,7 @@ object TopCtrIdeaV2 {
     }
 
     println("占比：" + rate_map)
+
     for ((x, y) <- max_ctr_map) {
       println("adslot_type: " + x + "; max_ctr: " + y)
     }
@@ -199,11 +212,23 @@ object TopCtrIdeaV2 {
 
 
     var topIdeaData = mutable.Seq[TopIdea]()
+    var topIdeaRDD2: Seq[TopIdea] = Seq()
 
-    for (i <- 0 until adslot_type.length) {
-      val topIdeaRDD2 = topIdeaRDD.filter(x => x.adslot_type == adslot_type(i))
-        .sortWith(_.ctr_score > _.ctr_score).take((80000 * (rate_map.getOrElse[Double](i, 0.0))).toInt)
+    for (i <- adslot_type) {
+      val size = (80000 * (rate_map.getOrElse[Double](i, 0.0))).toInt //要取元素个数
+      val size2 = adslot_type_map.getOrElse[Int](i, 0) //每个adslot_type总元素个数
 
+      //如果要取元素个数小于总元素个数，或总元素个数小于500，取所有
+      if (size > size2 && size2 < 500) {
+        topIdeaRDD2 = topIdeaRDD.filter(x => x.adslot_type == i)
+          .sortWith(_.ctr_score > _.ctr_score).take(size2)
+      } else {
+        topIdeaRDD2 = topIdeaRDD.filter(x => x.adslot_type == i)
+          .sortWith(_.ctr_score > _.ctr_score).take(size)
+      }
+
+
+      println("adslot_type=" + i + "已取出 " + topIdeaRDD2.length + " 条")
       topIdeaData = topIdeaData ++ topIdeaRDD2
     }
 
@@ -260,6 +285,7 @@ object TopCtrIdeaV2 {
   }
 
   def getIdeaTitle(): Map[Int, (String, String, Int, Int, Int, Int)] = {
+    //荐素材类型: 1为小图，2为长图，3组图，4为视频，6为文本 7互动 8开屏 9 横幅
     var sql = "select id, title, image, type, video_id, user_id, category from idea where action_type = 1 and type in (1,2,3,4,6,7,8,9)"
     val ideas = mutable.Map[Int, (String, String, Int, Int, Int, Int)]()
     var rs = getAdDbResult("mariadb.adv", sql)

@@ -156,20 +156,29 @@ object SaveFeatures {
           //active1,active2,active3,active4,active5,active6,disactive,active_auto,active_auto_download,active_auto_submit,active_wx,active_third
           x._2.foreach(
             x => {
-              x.getAs[String]("trace_type") match {
+              val trace_type = x.getAs[String]("trace_type")
+              val trace_op1 = x.getAs[String]("trace_op1")
+
+              trace_type match {
                 case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
                   || s == "active6" || s == "disactive" || s == "active_href")
                 => active_map += (s -> 1)
                 case _ =>
               }
+
+              //增加下载激活字段,trace_op1=="REPORT_DOWNLOAD_PKGADDED"(包含apkdown和lpdown下载安装), 则installed记为1，否则为0
+              if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
+                active_map += ("installed" -> 1)
+              }
+
             }
           )
 
           (x._1, convert, active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
             active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
-            active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0))
+            active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0))
       }
-      .toDF("searchid", "label", "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href")
+      .toDF("searchid", "label", "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href", "installed")
 
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
 

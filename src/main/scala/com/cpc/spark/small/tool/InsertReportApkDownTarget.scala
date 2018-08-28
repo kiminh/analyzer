@@ -269,7 +269,7 @@ object InsertReportApkDownTarget {
           |network,coin,ext['qukan_new_user'].int_value,adslot_type,media_appsid,adslotid,brand,ext_int["browser_type"],
           |interests,userid
           |FROM dl_cpc.cpc_union_log cul
-          |WHERE date="%s" AND (isshow+isclick)>0 AND ext["client_type"].string_value="NATIVESDK" AND cul.adsrc=1
+          |WHERE date="%s" AND (isshow+isclick)>0 AND ext["client_type"].string_value="NATIVESDK" AND cul.adsrc=1 AND adslot_type<>7
           |AND ext_int["siteid"]>0 AND ext_int["siteid"] in(%s)
         """.stripMargin.format(argDay, siteData.mkString(",")))
       .rdd
@@ -326,7 +326,7 @@ object InsertReportApkDownTarget {
         |WHERE cutl.date="%s" AND cul.date="%s" AND cutl.trace_type in("apkdown")
         |AND cutl.trace_op1 in("REPORT_DOWNLOAD_START","REPORT_DOWNLOAD_FINISH","REPORT_DOWNLOAD_PKGADDED")
         |AND cul.ext["client_type"].string_value="NATIVESDK"
-        |AND cul.isclick>0 AND cul.adsrc=1
+        |AND cul.isclick>0 AND cul.adsrc=1 AND adslot_type<>7
         |AND cul.ext_int["siteid"]>0 AND cul.ext_int["siteid"] in (%s)
       """.stripMargin.format(argDay, argDay, siteData.mkString(",")))
       .rdd
@@ -404,7 +404,7 @@ object InsertReportApkDownTarget {
           |network,coin,ext['qukan_new_user'].int_value,adslot_type,media_appsid,adslotid,brand,ext_int["browser_type"],
           |interests,userid
           |FROM dl_cpc.cpc_union_log cul
-          |WHERE date="%s" AND (isshow+isclick)>0 AND ext["client_type"].string_value="NATIVESDK" AND cul.adsrc=1
+          |WHERE date="%s" AND (isshow+isclick)>0 AND ext["client_type"].string_value="NATIVESDK" AND cul.adsrc=1 AND adslot_type<>7
           |AND cul.interaction=2
         """.stripMargin.format(argDay))
       .rdd
@@ -462,7 +462,7 @@ object InsertReportApkDownTarget {
         |AND cutl.trace_op1 in("REPORT_DOWNLOAD_START","REPORT_DOWNLOAD_FINISH","REPORT_DOWNLOAD_PKGADDED")
         |AND cul.ext["client_type"].string_value="NATIVESDK"
         |AND cul.interaction=2
-        |AND cul.isclick>0 AND cul.adsrc=1
+        |AND cul.isclick>0 AND cul.adsrc=1 AND adslot_type<>7
       """.stripMargin.format(argDay, argDay))
       .rdd
       .map {
