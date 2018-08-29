@@ -63,7 +63,7 @@ object DNNSample {
 
     println(sql)
 
-    val sample0 = spark.sql(sql).limit(100000)
+    val sample0 = spark.sql(sql).limit(10000000)
     getStrMapByDataset(spark, uidMap, "uid", sample0)
 
     println(s"max index = $currentMaxIdx")
