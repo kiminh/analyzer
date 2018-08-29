@@ -2,7 +2,8 @@ package com.cpc.spark.ml.ctrmodel.hourly
 
 
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{SparkSession}
+import org.apache.spark.sql.{Dataset, Row, SparkSession}
+
 import scala.collection.mutable.Map
 import com.cpc.spark.qukan.utils.Udfs.udfIntToIndex
 import org.apache.spark.sql.functions.{col, concat_ws, lit, udf, when}
@@ -17,6 +18,8 @@ object DNNSample {
   var cityMap = Map[Int, Int]()
   var adclassMap = Map[Int, Int]()
   var brandMap = Map[String, Int]()
+
+  var uidMap = Map[String, Int]()
 
   var currentMaxIdx = 1
 
@@ -46,15 +49,24 @@ object DNNSample {
     println(s"max index = $currentMaxIdx")
 
 
-    val sample = spark.sql(
-      s"""
-         | select label,
-         |   media_appsid as mediaid,
-         |   planid, unitid, ideaid, adslotid,
-         |   city, adclass
-         | from dl_cpc.ml_ctr_feature_v1
-         | where `date` = '$date' and hour ='$hour'
-      """.stripMargin)
+    val sql =
+      """
+        | select label,
+        |   media_appsid as mediaid,
+        |   planid, unitid, ideaid, adslotid,
+        |   city, adclass
+        | from dl_cpc.ml_ctr_feature_v1
+        | where `date` = '$date' and hour ='$hour' and
+        | media_appsid in (80000001, 80000002)
+        | and adslot_type in (1)
+      """.stripMargin
+
+    println(sql)
+
+    val sample0 = spark.sql(sql).limit(10000)
+    getStrMapByDataset(spark, uidMap, "uid", sample0)
+
+    val sample = sample0
       .withColumn("mediaid-new", udfIntToIndex(mediaIdMap.toMap)(col("mediaid")))
       .withColumn("planid-new", udfIntToIndex(planIdMap.toMap)(col("planid")))
       .withColumn("unitid-new", udfIntToIndex(unitIdMap.toMap)(col("unitid")))
@@ -73,8 +85,8 @@ object DNNSample {
         col("adclass-new")
       )).select("sample")
 
-      sample.write.mode("overwrite").text(s"/user/cpc/dnn-sample/train")
-      sample.write.mode("overwrite").text(s"/user/cpc/dnn-sample/test")
+    sample.write.mode("overwrite").text(s"/user/cpc/dnn-sample/train")
+    sample.write.mode("overwrite").text(s"/user/cpc/dnn-sample/test")
 
   }
 
@@ -99,6 +111,18 @@ object DNNSample {
     println(map)
   }
 
+  def getStrMapByDataset(spark: SparkSession, map: Map[String, Int], colName: String, dataset: Dataset[Row]): Unit = {
+    println(colName)
+    val res = dataset.select(colName).distinct().collect()
+    for (row <- res) {
+      val id = row(0).toString
+      if (!map.contains(id)) {
+        currentMaxIdx += 1
+        map(id) = currentMaxIdx
+      }
+    }
+    println(s"finish $colName map")
+  }
 
 
 }
