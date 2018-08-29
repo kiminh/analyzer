@@ -117,5 +117,13 @@ object Udfs {
      0
    }
   })
+
+  def udfStrToIndex(map: Map[String, Int]): UserDefinedFunction = udf((value: String) => {
+    if(map.contains(value)) {
+      map(value)
+    } else {
+      0
+    }
+  })
 }
 

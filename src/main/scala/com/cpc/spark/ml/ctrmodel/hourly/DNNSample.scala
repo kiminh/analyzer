@@ -5,7 +5,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 
 import scala.collection.mutable.Map
-import com.cpc.spark.qukan.utils.Udfs.udfIntToIndex
+import com.cpc.spark.qukan.utils.Udfs._
 import org.apache.spark.sql.functions.{col, concat_ws, lit, udf, when}
 
 object DNNSample {
@@ -76,6 +76,7 @@ object DNNSample {
       .withColumn("adslotid-new", udfIntToIndex(adslotIdMap.toMap)(col("adslotid")))
       .withColumn("city-new", udfIntToIndex(cityMap.toMap)(col("city")))
       .withColumn("adclass-new", udfIntToIndex(adclassMap.toMap)(col("adclass")))
+      .withColumn("uid-new", udfStrToIndex(uidMap.toMap)(col("uid")))
       .withColumn("sample", concat_ws("\t",
         col("label"),
         col("mediaid-new"),
@@ -84,7 +85,8 @@ object DNNSample {
         col("ideaid-new"),
         col("adslotid-new"),
         col("city-new"),
-        col("adclass-new")
+        col("adclass-new"),
+        col("uid-new")
       )).select("sample")
 
     sample.write.mode("overwrite").text(s"/user/cpc/dnn-sample/train")
