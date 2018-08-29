@@ -50,7 +50,7 @@ object DNNSample {
 
 
     val sql =
-      """
+      s"""
         | select label,
         |   media_appsid as mediaid,
         |   planid, unitid, ideaid, adslotid,
@@ -63,7 +63,7 @@ object DNNSample {
 
     println(sql)
 
-    val sample0 = spark.sql(sql).limit(10000)
+    val sample0 = spark.sql(sql).limit(100000)
     getStrMapByDataset(spark, uidMap, "uid", sample0)
 
     println(s"max index = $currentMaxIdx")
