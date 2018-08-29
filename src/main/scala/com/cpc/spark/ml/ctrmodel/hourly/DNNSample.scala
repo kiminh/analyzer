@@ -67,6 +67,7 @@ object DNNSample {
     getStrMapByDataset(spark, uidMap, "uid", sample0)
 
     println(s"max index = $currentMaxIdx")
+    println(s"sample count = ${sample0.count()}")
 
     val sample = sample0
       .withColumn("mediaid-new", udfIntToIndex(mediaIdMap.toMap)(col("mediaid")))
