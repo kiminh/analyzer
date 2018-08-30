@@ -65,7 +65,7 @@ object DNNSample {
         |   planid, unitid, ideaid, adslotid,
         |   city, adclass, uid
         | from dl_cpc.ml_ctr_feature_v1
-        | where `date` = '$date' and hour ='$hour' and
+        | where `date` in ('${dateList.mkString("','")}') and
         | media_appsid in (80000001, 80000002)
         | and adslot_type in (1)
       """.stripMargin
