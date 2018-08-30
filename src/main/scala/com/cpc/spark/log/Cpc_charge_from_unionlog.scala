@@ -15,14 +15,17 @@ object Cpc_charge_from_unionlog {
       .enableHiveSupport()
       .getOrCreate()
 
+    val start = args(0).toLong
+    val end = args(1).toLong
+
     val message = spark.sql(
-      """
-        |SELECT thedate,thehour,field["cpc_click_new"].string_type as value
-        |from dl_cpc.src_cpc_click_minute
-        |WHERE thedate = "2018-08-30"
-        | and thehour in ("17", "18")
-        | and log_timestamp>=1535622300000
-        | and log_timestamp<=1535622600000
+      s"""
+         |SELECT thedate,thehour,field["cpc_click_new"].string_type as value
+         |from dl_cpc.src_cpc_click_minute
+         |WHERE thedate = "2018-08-30"
+         | and thehour in ("17", "18")
+         | and log_timestamp>=$start
+         | and log_timestamp<=$end
       """.stripMargin)
 
     val parserData = message.rdd.map { x =>
@@ -51,7 +54,7 @@ object Cpc_charge_from_unionlog {
         (media_id, adslot_id, adslot_type, idea_id, unit_id, plan_id, user_id, date, req, fill, imp, click, price, adSrc, dspMediaId, dspAdslotId)
     }
 
-    /*base_data.repartition(20).foreachPartition {
+    base_data.repartition(20).foreachPartition {
       data =>
         //getCurrentDate("start-conn")
         val startTime = System.currentTimeMillis()
@@ -127,7 +130,7 @@ object Cpc_charge_from_unionlog {
         conn2.close()
         dspConn.commit()
         dspConn.close()
-    }*/
+    }
 
     //测试
     base_data.collect().foreach {
