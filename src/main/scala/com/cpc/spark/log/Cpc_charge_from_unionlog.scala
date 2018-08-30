@@ -17,7 +17,7 @@ object Cpc_charge_from_unionlog {
 
     val message = spark.sql(
       """
-        |SELECT thedate,thehour,field["cpc_click_new"].string_type as valuels
+        |SELECT thedate,thehour,field["cpc_click_new"].string_type as value
         |from dl_cpc.src_cpc_click_minute
         |WHERE thedate = "2018-08-30"
         | and thehour in ("17", "18")
