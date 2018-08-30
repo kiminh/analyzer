@@ -4,9 +4,10 @@ package com.cpc.spark.ml.ctrmodel.hourly
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 
-import scala.collection.mutable.Map
+import scala.collection.mutable.{ListBuffer, Map}
 import com.cpc.spark.qukan.utils.Udfs._
 import org.apache.spark.sql.functions.{col, concat_ws, lit, udf, when}
+import com.cpc.spark.qukan.utils.SmallUtil
 
 object DNNSample {
 
@@ -28,7 +29,15 @@ object DNNSample {
 
     val date = args(0)
     val hour = args(1)
-    val dateList = List(date)
+    val dateListBuffer = new ListBuffer[String]()
+
+    for (i <- 0 until 7) {
+      val newday = SmallUtil.getDayBefore(date, i)
+      print("newday", newday)
+      dateListBuffer.append(newday)
+    }
+    val dateList = dateListBuffer.toList
+
 
     Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder()
