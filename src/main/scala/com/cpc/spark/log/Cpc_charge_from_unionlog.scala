@@ -54,7 +54,7 @@ object Cpc_charge_from_unionlog {
         (media_id, adslot_id, adslot_type, idea_id, unit_id, plan_id, user_id, date, req, fill, imp, click, price, adSrc, dspMediaId, dspAdslotId)
     }
 
-    /*base_data.repartition(20).foreachPartition {
+    base_data.repartition(20).foreachPartition {
       data =>
         //getCurrentDate("start-conn")
         val startTime = System.currentTimeMillis()
@@ -130,10 +130,10 @@ object Cpc_charge_from_unionlog {
         conn2.close()
         dspConn.commit()
         dspConn.close()
-    }*/
+    }
 
     //测试
-    base_data.collect().foreach {
+    /*base_data.collect().foreach {
       r =>
         var sql = ""
         if (r._14 == 1) {
@@ -144,6 +144,6 @@ object Cpc_charge_from_unionlog {
           sql = "call eval_dsp(" + r._14 + ",'" + r._15 + "','" + r._16 + "'," + r._1 + ",0," + r._2 + "," + r._3 + ",'" + r._8 + "'" + "," + r._9 + "," + r._10 + "," + r._11 + "," + r._12 + ")"
         }
         println(sql)
-    }
+    }*/
   }
 }
