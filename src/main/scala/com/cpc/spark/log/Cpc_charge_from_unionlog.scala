@@ -1,4 +1,4 @@
-package com.cpc.spark.streaming.anal
+package com.cpc.spark.log
 
 import java.sql.ResultSet
 
