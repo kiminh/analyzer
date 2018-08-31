@@ -116,8 +116,8 @@ object DNNSample {
           col("uid-new")
         )).select("sample")
 
-      sample.repartition(200).write.mode("overwrite").text(s"/user/cpc/dnn-sample/train$i")
-      sample.repartition(200).write.mode("overwrite").text(s"/user/cpc/dnn-sample/test$i")
+      sample.repartition(1000).write.mode("overwrite").text(s"/user/cpc/dnn-sample/train$i")
+      // sample.repartition(1000).write.mode("overwrite").text(s"/user/cpc/dnn-sample/test$i")
 
     }
 
