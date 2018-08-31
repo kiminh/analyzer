@@ -60,48 +60,66 @@ object DNNSample {
 
     val sql =
       s"""
-        | select label,
-        |   media_appsid as mediaid,
-        |   planid, unitid, ideaid, adslotid,
-        |   city, adclass, uid
-        | from dl_cpc.ml_ctr_feature_v1
-        | where `date` in ('${dateList.mkString("','")}') and
-        | media_appsid in (80000001, 80000002)
-        | and adslot_type in (1)
+         | select label,
+         |   media_appsid as mediaid,
+         |   planid, unitid, ideaid, adslotid,
+         |   city, adclass, uid
+         | from dl_cpc.ml_ctr_feature_v1
+         | where `date` in ('${dateList.mkString("','")}') and
+         | media_appsid in (80000001, 80000002)
+         | and adslot_type in (1)
       """.stripMargin
 
     println(sql)
 
     val sample0 = spark.sql(sql)
-      //.limit(100000000)
+    //.limit(100000000)
     getStrMapByDataset(spark, uidMap, "uid", sample0)
 
     println(s"max index = $currentMaxIdx")
     println(s"sample count = ${sample0.count()}")
 
-    val sample = sample0
-      .withColumn("mediaid-new", udfIntToIndex(mediaIdMap.toMap)(col("mediaid")))
-      .withColumn("planid-new", udfIntToIndex(planIdMap.toMap)(col("planid")))
-      .withColumn("unitid-new", udfIntToIndex(unitIdMap.toMap)(col("unitid")))
-      .withColumn("ideaid-new", udfIntToIndex(ideaIdMap.toMap)(col("ideaid")))
-      .withColumn("adslotid-new", udfIntToIndex(adslotIdMap.toMap)(col("adslotid")))
-      .withColumn("city-new", udfIntToIndex(cityMap.toMap)(col("city")))
-      .withColumn("adclass-new", udfIntToIndex(adclassMap.toMap)(col("adclass")))
-      .withColumn("uid-new", udfStrToIndex(uidMap.toMap)(col("uid")))
-      .withColumn("sample", concat_ws("\t",
-        col("label"),
-        col("mediaid-new"),
-        col("planid-new"),
-        col("unitid-new"),
-        col("ideaid-new"),
-        col("adslotid-new"),
-        col("city-new"),
-        col("adclass-new"),
-        col("uid-new")
-      )).select("sample")
+    for (i <- 0 until 7) {
+      val newday = SmallUtil.getDayBefore(date, i)
+      print("newday", newday)
+      val sql1 =
+        s"""
+           | select label,
+           |   media_appsid as mediaid,
+           |   planid, unitid, ideaid, adslotid,
+           |   city, adclass, uid
+           | from dl_cpc.ml_ctr_feature_v1
+           | where `date` in ('$newday') and
+           | media_appsid in (80000001, 80000002)
+           | and adslot_type in (1)
+      """.stripMargin
 
-    sample.repartition(200).write.mode("overwrite").text(s"/user/cpc/dnn-sample/train")
-    sample.repartition(200).write.mode("overwrite").text(s"/user/cpc/dnn-sample/test")
+      println("sql1", sql1)
+      val sample = spark.sql(sql1)
+        .withColumn("mediaid-new", udfIntToIndex(mediaIdMap.toMap)(col("mediaid")))
+        .withColumn("planid-new", udfIntToIndex(planIdMap.toMap)(col("planid")))
+        .withColumn("unitid-new", udfIntToIndex(unitIdMap.toMap)(col("unitid")))
+        .withColumn("ideaid-new", udfIntToIndex(ideaIdMap.toMap)(col("ideaid")))
+        .withColumn("adslotid-new", udfIntToIndex(adslotIdMap.toMap)(col("adslotid")))
+        .withColumn("city-new", udfIntToIndex(cityMap.toMap)(col("city")))
+        .withColumn("adclass-new", udfIntToIndex(adclassMap.toMap)(col("adclass")))
+        .withColumn("uid-new", udfStrToIndex(uidMap.toMap)(col("uid")))
+        .withColumn("sample", concat_ws("\t",
+          col("label"),
+          col("mediaid-new"),
+          col("planid-new"),
+          col("unitid-new"),
+          col("ideaid-new"),
+          col("adslotid-new"),
+          col("city-new"),
+          col("adclass-new"),
+          col("uid-new")
+        )).select("sample")
+
+      sample.repartition(200).write.mode("overwrite").text(s"/user/cpc/dnn-sample/train$i")
+      sample.repartition(200).write.mode("overwrite").text(s"/user/cpc/dnn-sample/test$i")
+
+    }
 
   }
 
