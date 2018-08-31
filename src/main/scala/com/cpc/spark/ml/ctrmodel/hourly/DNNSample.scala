@@ -79,7 +79,7 @@ object DNNSample {
     println(s"max index = $currentMaxIdx")
     println(s"sample count = ${sample0.count()}")
 
-    for (i <- 0 until 7) {
+    for (i <- 0 until 1) {
       val newday = SmallUtil.getDayBefore(date, i)
       print("newday", newday)
       val sql1 =
@@ -116,7 +116,7 @@ object DNNSample {
           col("uid-new")
         )).select("sample")
 
-      sample.repartition(1000).write.mode("overwrite").text(s"/user/cpc/dnn-sample/train$i")
+      sample.write.mode("overwrite").text(s"/user/cpc/dnn-sample/train$i")
       // sample.repartition(1000).write.mode("overwrite").text(s"/user/cpc/dnn-sample/test$i")
 
     }
