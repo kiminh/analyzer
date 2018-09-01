@@ -9,7 +9,7 @@ import kafka.producer.KeyedMessage
 import org.apache.spark.sql.SparkSession
 
 
-object Cpc_charge_from_unionlog {
+object CpcChargeFrom_Unionlog {
   def main(args: Array[String]) {
     val spark = SparkSession.builder()
       .enableHiveSupport()
