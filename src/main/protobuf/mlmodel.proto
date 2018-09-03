@@ -79,15 +79,15 @@ message AccessLog {
 }
 
 message DnnDict {
-    map<int32, int32> mediaIdMap = 1;
-    map<int32, int32> planIdMap = 2;
-    map<int32, int32> unitIdMap = 3;
-    map<int32, int32> ideaIdMap = 4;
-    map<int32, int32> adslotIdMap = 5;
-    map<int32, int32> cityMap = 6;
-    map<int32, int32> adclassMap = 7;
-    map<string, int32> brandMap = 8;
-    map<string, int32> uidMap = 9;
+    map<int32, int32> mediaIdDict = 1;
+    map<int32, int32> planIdDict = 2;
+    map<int32, int32> unitIdDict = 3;
+    map<int32, int32> ideaIdDict = 4;
+    map<int32, int32> adslotIdDict = 5;
+    map<int32, int32> cityDict = 6;
+    map<int32, int32> adclassDict = 7;
+    map<string, int32> brandDict = 8;
+    map<string, int32> uidDict = 9;
 }
 
 
