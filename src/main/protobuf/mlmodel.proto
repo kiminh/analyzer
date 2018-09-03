@@ -33,7 +33,7 @@ message Dict {
     map<int32, int32> slotid = 5;
     map<int32, int32> cityid = 6;
     map<int32, int32> mediaid = 7;
-    map<string,int32> appid = 8;
+    map<string, int32> appid = 8;
 }
 
 message Pack {
@@ -78,6 +78,17 @@ message AccessLog {
     int64 timestamp = 3;
 }
 
+message DnnDict {
+    map<int32, int32> mediaIdMap = 1;
+    map<int32, int32> planIdMap = 2;
+    map<int32, int32> unitIdMap = 3;
+    map<int32, int32> ideaIdMap = 4;
+    map<int32, int32> adslotIdMap = 5;
+    map<int32, int32> cityMap = 6;
+    map<int32, int32> adclassMap = 7;
+    map<string, int32> brandMap = 8;
+    map<string, int32> uidMap = 9;
+}
 
 
 
