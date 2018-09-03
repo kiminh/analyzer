@@ -11,7 +11,6 @@ import scala.collection.mutable.{ListBuffer, Map}
 import com.cpc.spark.qukan.utils.Udfs._
 import org.apache.spark.sql.functions.{col, concat_ws, lit, udf, when}
 import com.cpc.spark.qukan.utils.SmallUtil
-import lrmodel.lrmodel.Pack
 import mlmodel.mlmodel.DnnDict
 
 object DNNSample {
@@ -34,6 +33,8 @@ object DNNSample {
 
     val date = args(0)
     val hour = args(1)
+    val dictPath = args(2)
+    println(s"date=$date, hour=$hour, dictPath=$dictPath")
     val dateListBuffer = new ListBuffer[String]()
 
     val days = 1
@@ -125,20 +126,19 @@ object DNNSample {
       sample.write.mode("overwrite").text(s"/user/cpc/dnn-sample/train$i")
       // sample.repartition(1000).write.mode("overwrite").text(s"/user/cpc/dnn-sample/test$i")
 
-//      val pack = DnnDict(
-//        this.mediaIdMap.toMap,
-//        planIdMap = this.planIdMap,
-//        unitIdMap = unitIdMap,
-//        ideaIdMap = ideaIdMap,
-//        adslotIdMap = adslotIdMap,
-//        cityMap = cityMap,
-//        adclassMap = adclassMap,
-//        brandMap = brandMap,
-//        uidMap = uidMap
-//      )
-//
-//      pack.writeTo(new FileOutputStream(path))
+      val pack = DnnDict(
+        mediaIdDict = this.mediaIdMap.toMap,
+        planIdDict = this.planIdMap.toMap,
+        unitIdDict = unitIdMap.toMap,
+        ideaIdDict = ideaIdMap.toMap,
+        adslotIdDict = adslotIdMap.toMap,
+        cityDict = cityMap.toMap,
+        adclassDict = adclassMap.toMap,
+        brandDict = brandMap.toMap,
+        uidDict = uidMap.toMap
+      )
 
+      pack.writeTo(new FileOutputStream(dictPath))
     }
 
   }
