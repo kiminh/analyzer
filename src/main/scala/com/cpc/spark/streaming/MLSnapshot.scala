@@ -195,7 +195,7 @@ object MLSnapshot {
   }
 
   def parsePortrait(p: ProtoPortrait, vec: mutable.Map[Int, Float]): Unit = {
-    if (p.valueMap != null && p.valueMap.size > 0) {
+    if (p != null && p.valueMap != null && p.valueMap.size > 0) {
       for ((k, v) <- p.valueMap) {
         vec.update(k.toInt, v)
       }
