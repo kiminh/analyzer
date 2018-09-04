@@ -46,7 +46,12 @@ object MLSnapshot {
       .map{
         case (key, v) =>
           try {
-            val log = Event.parse_show_log(v.toString)
+
+            val logdata = LogData.parseData(v)
+            val log_timestamp = logdata.log.getLogTimestamp
+            val field = logdata.log.getField.getMap(0)
+            val rawlog = field.getValue.getStringType
+            val log = Event.parse_show_log(rawlog)
             val event = log.event
 
             val date = new SimpleDateFormat("yyyy-MM-dd").format(log.timestamp)
