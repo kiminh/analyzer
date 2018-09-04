@@ -43,6 +43,7 @@ object MLSnapshot {
 
     val base_data = KafkaUtils
       .createDirectStream[String, Array[Byte], StringDecoder, DefaultDecoder](ssc, kafkaParams, topicsSet)
+      .repartition(200)
       .map{
         case (key, v) =>
           try {
@@ -85,7 +86,7 @@ object MLSnapshot {
     val conf = ConfigFactory.load()
     base_data.foreachRDD {rdd =>
 
-      val snap = rdd.repartition(200).mapPartitions{p =>
+      val snap = rdd.mapPartitions{p =>
         val redis = new RedisClient(conf.getString("redis.ml_feature_ali.host"),
           conf.getInt("redis.ml_feature_ali.port"))
         redis.auth(conf.getString("redis.ml_feature_ali.auth"))
