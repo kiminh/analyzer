@@ -38,7 +38,7 @@ object MLSnapshot {
       .map{
         case (key, v) =>
           try {
-            val log = Event.parse_show_log(v)
+            val log = Event.parse_show_log(v.toString)
             val event = log.event
 
             /**
