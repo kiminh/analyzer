@@ -80,7 +80,7 @@ object MLSnapshot {
               null
           }
       }
-      .filter(_ != null)
+      .filter(x => x != null && x.ideaid > 0)
 
     val conf = ConfigFactory.load()
     base_data.foreachRDD {rdd =>
