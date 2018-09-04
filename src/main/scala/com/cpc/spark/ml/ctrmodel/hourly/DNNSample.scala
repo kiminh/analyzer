@@ -1,6 +1,9 @@
 package com.cpc.spark.ml.ctrmodel.hourly
 
 
+import java.io.FileOutputStream
+import java.util.Date
+
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 
@@ -8,6 +11,7 @@ import scala.collection.mutable.{ListBuffer, Map}
 import com.cpc.spark.qukan.utils.Udfs._
 import org.apache.spark.sql.functions.{col, concat_ws, lit, udf, when}
 import com.cpc.spark.qukan.utils.SmallUtil
+import mlmodel.mlmodel.DnnDict
 
 object DNNSample {
 
@@ -29,9 +33,12 @@ object DNNSample {
 
     val date = args(0)
     val hour = args(1)
+    val dictPath = args(2)
+    println(s"date=$date, hour=$hour, dictPath=$dictPath")
     val dateListBuffer = new ListBuffer[String]()
 
-    for (i <- 0 until 7) {
+    val days = 1
+    for (i <- 0 until days) {
       val newday = SmallUtil.getDayBefore(date, i)
       print("newday", newday)
       dateListBuffer.append(newday)
@@ -73,7 +80,7 @@ object DNNSample {
     println(sql)
 
     val sample0 = spark.sql(sql)
-    //.limit(100000000)
+      .limit(100000)
     getStrMapByDataset(spark, uidMap, "uid", sample0)
 
     println(s"max index = $currentMaxIdx")
@@ -119,6 +126,19 @@ object DNNSample {
       sample.write.mode("overwrite").text(s"/user/cpc/dnn-sample/train$i")
       // sample.repartition(1000).write.mode("overwrite").text(s"/user/cpc/dnn-sample/test$i")
 
+      val pack = DnnDict(
+        mediaIdDict = this.mediaIdMap.toMap,
+        planIdDict = this.planIdMap.toMap,
+        unitIdDict = unitIdMap.toMap,
+        ideaIdDict = ideaIdMap.toMap,
+        adslotIdDict = adslotIdMap.toMap,
+        cityDict = cityMap.toMap,
+        adclassDict = adclassMap.toMap,
+        brandDict = brandMap.toMap,
+        uidDict = uidMap.toMap
+      )
+
+      pack.writeTo(new FileOutputStream(dictPath))
     }
 
   }
