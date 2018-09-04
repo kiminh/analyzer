@@ -47,7 +47,6 @@ object MLSnapshot {
       .map{
         case (key, v) =>
           try {
-
             val logdata = LogData.parseData(v)
             val log_timestamp = logdata.log.getLogTimestamp
             val field = logdata.log.getField.getMap(0)
@@ -57,7 +56,6 @@ object MLSnapshot {
 
             val date = new SimpleDateFormat("yyyy-MM-dd").format(log.timestamp)
             val hour = new SimpleDateFormat("HH").format(log.timestamp)
-
             val ad = event.getAd
             val media = event.getMedia
 
@@ -66,7 +64,7 @@ object MLSnapshot {
               ideaid = ad.getUnitId,
               unitid = ad.getGroupId,
               planid = ad.getPlanId,
-              userid = ad.getUnitId,
+              userid = ad.getUserId,
               adclass = ad.getClass_,
               adtype = ad.getType.getNumber,
               interact = ad.getInteraction.getNumber,
@@ -93,7 +91,7 @@ object MLSnapshot {
         val portraits = mutable.Map[String, ProtoPortrait]()
         p.map{x =>
           val vec = mutable.Map[Int, Float]()
-          var key = "user%d".format(x.adtype)
+          var key = "user%d".format(x.userid)
           val up = getPortraitFromRedis(key, redis, portraits)
           parsePortrait(up, vec)
 
