@@ -63,6 +63,7 @@ object UpdateInstallApp {
         val in_b64 = r.getAs[String](2)
         var in : String = ""
         var apps = Seq[String]()
+        var valid = true
         if (in_b64 != null) {
           val in_gzip = com.cpc.spark.streaming.tools.Encoding.base64Decoder(in_b64).toArray
           in = Gzip.decompress(in_gzip) match {
@@ -70,13 +71,17 @@ object UpdateInstallApp {
             case None => null
           }
           if (in != null) {
+            try{
               apps = for {
-              JArray(pkgs) <- parse(in)
-              JObject(pkg) <- pkgs
-              JField("name", JString(name)) <- pkg
-              JField("package_name", JString(package_name)) <- pkg
-              p = (package_name)
-            } yield p
+                JArray(pkgs) <- parse(in)
+                JObject(pkg) <- pkgs
+                JField("name", JString(name)) <- pkg
+                JField("package_name", JString(package_name)) <- pkg
+                p = (package_name)
+              } yield p
+            } catch {
+              case e: Exception => null
+            }
           }
         }
         if (op_type == "APP_LIST_ADD") {
