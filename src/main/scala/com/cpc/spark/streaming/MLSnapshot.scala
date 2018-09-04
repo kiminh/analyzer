@@ -9,8 +9,15 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.kafka._
 import com.cpc.spark.common.{Event, LogData}
+import com.redis.RedisClient
+import com.redis.serialization.Parse.Implicits._
+import mlmodel.mlmodel.ProtoPortrait
+import com.typesafe.config.ConfigFactory
+
+import scala.collection.mutable
 
 object MLSnapshot {
+
   def main(args: Array[String]) {
     if (args.length < 3) {
       System.err.println(
@@ -19,6 +26,7 @@ object MLSnapshot {
         """.stripMargin)
       System.exit(1)
     }
+
     Logger.getRootLogger.setLevel(Level.WARN)
     val Array(brokers, topics, seconds) = args
     println(args.mkString(" "))
@@ -41,23 +49,14 @@ object MLSnapshot {
             val log = Event.parse_show_log(v.toString)
             val event = log.event
 
-            /**
-            uid#planid", "uid#unitid", "uid#ideaid", "uid#adclass", "
-            uid#adtype", "uid#interact", "uid#userid", "uid#slottype"
-              */
+            val date = new SimpleDateFormat("yyyy-MM-dd").format(log.timestamp)
+            val hour = new SimpleDateFormat("HH").format(log.timestamp)
+
             val ad = event.getAd
-            val ideaid = ad.getUnitId
-            val unitid = ad.getGroupId
-            val planid = ad.getPlanId
-            val userid = ad.getUserId
-            val adclass = ad.getClass_
-            val adtype = ad.getType.getNumber
-            val interact = ad.getInteraction.getNumber
             val media = event.getMedia
-            val slottype = media.getAdslotType.getNumber
-            val slotid = media.getAdslotId.toInt   //强转为int
 
             RawFeature(
+              searchid = event.getSearchId,
               ideaid = ad.getUnitId,
               unitid = ad.getGroupId,
               planid = ad.getPlanId,
@@ -67,7 +66,9 @@ object MLSnapshot {
               interact = ad.getInteraction.getNumber,
               slottype = media.getAdslotType.getNumber,
               slotid = media.getAdslotId.toInt,
-              uid = event.getDevice.getUid
+              uid = event.getDevice.getUid,
+              date = date,
+              hour = hour
             )
 
           } catch {
@@ -77,15 +78,158 @@ object MLSnapshot {
       }
       .filter(_ != null)
 
-    base_data.print()
-
     var date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
+    val conf = ConfigFactory.load()
+    base_data.foreachRDD {rdd =>
+      //get all ids
+      /*
+      val ideaids = rdd.map(_.ideaid).distinct().map(x => "i%d".format(x))
+      val planids = rdd.map(_.planid).distinct().map(x => "p%d".format(x))
+      val unitids = rdd.map(_.unitid).distinct().map(x => "un%d".format(x))
+      val userids = rdd.map(_.userid).distinct().map(x => "user%d".format(x))
+      val adclasses = rdd.map(_.adclass).distinct().map(x => "ac%d".format(x))
+      val adTypes = rdd.map(_.adtype).distinct().map(x => "at%d".format(x))
+      val interacts = rdd.map(_.interact).distinct().map(x => "it%d".format(x))
+
+      val slotTypes = rdd.map(_.slottype).distinct()
+      val slotids = rdd.map(_.slotid).distinct()
+      val uids = rdd.map(_.uid).distinct()
+      */
+
+      val snap = rdd.mapPartitions{p =>
+        val redis = new RedisClient(conf.getString("redis.ml_feature_ali.host"),
+          conf.getInt("redis.ml_feature_ali.port"))
+        redis.auth(conf.getInt("redis.ml_feature_ali.auth"))
+        val portraits: mutable.Map[String, ProtoPortrait] = _
+        p.map{x =>
+          val vec = mutable.Map[Int, Float]()
+
+          var key = "user%d".format(x.adtype)
+          val up = getPortraitFromRedis(key, redis, portraits)
+          parsePortrait(up, vec)
+
+          key = "i%d".format(x.ideaid)
+          var p = getPortraitFromRedis(key, redis, portraits)
+          parsePortrait(p, vec)
+          parseUserPortrait(up, "uid#ideaid%s".format(x.ideaid), x.ideaid, vec)
+
+          key = "p%d".format(x.planid)
+          p = getPortraitFromRedis(key, redis, portraits)
+          parsePortrait(p, vec)
+          parseUserPortrait(up, "uid#planid%s".format(x.planid), x.planid, vec)
+
+          key = "un%d".format(x.unitid)
+          p = getPortraitFromRedis(key, redis, portraits)
+          parsePortrait(p, vec)
+          parseUserPortrait(up, "uid#unitid%s".format(x.unitid), x.unitid, vec)
+
+          key = "ac%d".format(x.adclass)
+          p = getPortraitFromRedis(key, redis, portraits)
+          parsePortrait(p, vec)
+          parseUserPortrait(up, "uid#adclass%s".format(x.adclass), x.adclass, vec)
+
+          key = "it%d".format(x.interact)
+          p = getPortraitFromRedis(key, redis, portraits)
+          parsePortrait(p, vec)
+          parseUserPortrait(up, "uid#interact%s".format(x.interact), x.interact, vec)
+
+          key = "at%d".format(x.adtype)
+          p = getPortraitFromRedis(key, redis, portraits)
+          parsePortrait(p, vec)
+
+          parseUserPortrait(up, "uid#userid%s".format(x.userid), x.userid, vec)
+          parseUserPortrait(up, "uid#slottype%s".format(x.slottype), x.slottype, vec)
+
+          val rawInt = Map(
+            "ideaid" -> x.ideaid,
+            "planid" -> x.planid,
+            "unitid" -> x.unitid,
+            "userid" -> x.unitid,
+            "adclass" -> x.adclass,
+            "adtype" -> x.adtype,
+            "interact" -> x.interact,
+            "slotid" -> x.slotid
+          )
+
+          val rawString = Map(
+            "uid" -> x.uid
+          )
+
+          Snapshot(
+            searchid = x.searchid,
+            raw_int = rawInt,
+            raw_string = rawString,
+            feature_vector = vec,
+            date = x.date,
+            hour = x.hour
+          )
+        }
+      }
+
+      val spark = SparkSession.builder().config(ssc.sparkContext.getConf).getOrCreate()
+      val keys = snap.map{ x => (x.date, x.hour) }.distinct.toLocalIterator
+      keys.foreach {
+        key =>
+          val part = snap.filter(r => r.date == key._1 && r.hour == key._2)
+          val numbs = part.count()
+
+          date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
+          println("~~~~~~~~~ zyc_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
+          println(part.first())
+
+          if (numbs > 0) {
+            val table = "ml_snapshot"
+            spark.createDataFrame(part)
+              .write
+              .mode(SaveMode.Append)
+              .parquet("/warehouse/dl_cpc.db/%s/%s/%s".format(table, key._1, key._2))
+
+            val sqlStmt =
+              """
+                |ALTER TABLE dl_cpc.%s add if not exists PARTITION (`date` = "%s", hour = "%s")
+                | LOCATION '/warehouse/dl_cpc.db/%s/%s/%s'
+                |
+                """.stripMargin.format(table, key._1, key._2, table, key._1, key._2)
+            println(sqlStmt)
+            spark.sql(sqlStmt)
+          }
+      }
+
+    }
 
     ssc.start()
     ssc.awaitTermination()
   }
 
+  def parseUserPortrait(up: ProtoPortrait, key: String, id: Int, vec: mutable.Map[Int, Float]): Unit = {
+    if (up.subMap.isDefinedAt(key)) {
+      val sub = up.subMap.get(key).get
+      parsePortrait(sub, vec)
+    }
+  }
+
+  def parsePortrait(p: ProtoPortrait, vec: mutable.Map[Int, Float]): Unit = {
+    for ((k, v) <- p.valueMap) {
+      vec.update(k.toInt, v)
+    }
+  }
+
+  def getPortraitFromRedis(key: String, redis: RedisClient,
+                           portraits: mutable.Map[String, ProtoPortrait]): ProtoPortrait = {
+    if (!portraits.isDefinedAt(key)) {
+      val d = redis.get[Array[Byte]](key)
+      if (d.isDefined) {
+        val p = ProtoPortrait.parseFrom(d.get)
+        portraits.update(key, p)
+      } else {
+        portraits.update(key, null)
+      }
+    }
+    portraits(key)
+  }
+
   case class RawFeature(
+                       searchid: String = "",
                        ideaid: Int = 0,
                        unitid: Int = 0,
                        planid: Int = 0,
@@ -95,7 +239,9 @@ object MLSnapshot {
                        interact: Int = 0,
                        slottype: Int = 0,
                        slotid: Int = 0,
-                       uid: String = ""
+                       uid: String = "",
+                       date: String = "",
+                       hour: String = ""
                        )
 
   case class Snapshot(
