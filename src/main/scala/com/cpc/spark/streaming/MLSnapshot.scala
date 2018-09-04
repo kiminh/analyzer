@@ -70,7 +70,6 @@ object MLSnapshot {
               date = date,
               hour = hour
             )
-
           } catch {
             case e: Exception =>
               null
@@ -81,20 +80,6 @@ object MLSnapshot {
     var date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
     val conf = ConfigFactory.load()
     base_data.foreachRDD {rdd =>
-      //get all ids
-      /*
-      val ideaids = rdd.map(_.ideaid).distinct().map(x => "i%d".format(x))
-      val planids = rdd.map(_.planid).distinct().map(x => "p%d".format(x))
-      val unitids = rdd.map(_.unitid).distinct().map(x => "un%d".format(x))
-      val userids = rdd.map(_.userid).distinct().map(x => "user%d".format(x))
-      val adclasses = rdd.map(_.adclass).distinct().map(x => "ac%d".format(x))
-      val adTypes = rdd.map(_.adtype).distinct().map(x => "at%d".format(x))
-      val interacts = rdd.map(_.interact).distinct().map(x => "it%d".format(x))
-
-      val slotTypes = rdd.map(_.slottype).distinct()
-      val slotids = rdd.map(_.slotid).distinct()
-      val uids = rdd.map(_.uid).distinct()
-      */
 
       val snap = rdd.mapPartitions{p =>
         val redis = new RedisClient(conf.getString("redis.ml_feature_ali.host"),
@@ -103,7 +88,6 @@ object MLSnapshot {
         val portraits = mutable.Map[String, ProtoPortrait]()
         p.map{x =>
           val vec = mutable.Map[Int, Float]()
-
           var key = "user%d".format(x.adtype)
           val up = getPortraitFromRedis(key, redis, portraits)
           parsePortrait(up, vec)
@@ -178,7 +162,7 @@ object MLSnapshot {
           println(part.first())
 
           if (numbs > 0) {
-            val table = "ml_snapshot"
+            val table = "ml_snapshot_test"
             spark.createDataFrame(part)
               .write
               .mode(SaveMode.Append)
@@ -194,7 +178,6 @@ object MLSnapshot {
             spark.sql(sqlStmt)
           }
       }
-
     }
 
     ssc.start()
