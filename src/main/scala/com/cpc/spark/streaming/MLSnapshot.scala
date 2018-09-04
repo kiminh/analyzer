@@ -9,6 +9,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.kafka._
 import com.cpc.spark.common.{Event, LogData}
+import org.apache.spark.SparkConf
 
 object MLSnapshot {
   def main(args: Array[String]) {
@@ -23,13 +24,8 @@ object MLSnapshot {
     val Array(brokers, topics, seconds) = args
     println(args.mkString(" "))
 
-    val spark = SparkSession.builder()
-      .appName("ml snapshot from show log")
-      .enableHiveSupport()
-      .getOrCreate()
-
-    //val sparkConf = new SparkConf().setAppName("ml snapshot: topics = " + topics)
-    val ssc = new StreamingContext(spark.sparkContext.getConf, Seconds(seconds.toInt))
+    val sparkConf = new SparkConf().setAppName("ml snapshot from show log ")
+    val ssc = new StreamingContext(sparkConf, Seconds(seconds.toInt))
     val topicsSet = topics.split(",").toSet
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
 
