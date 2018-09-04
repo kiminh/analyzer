@@ -50,7 +50,7 @@ object MLSnapshot {
             val logdata = LogData.parseData(v)
             val log_timestamp = logdata.log.getLogTimestamp
             val field = logdata.log.getField.getMap(0)
-            val rawlog = field.getValue.getStringType
+            val rawlog = log_timestamp.toString + field.getValue.getStringType
             val log = Event.parse_show_log(rawlog)
             val event = log.event
 
