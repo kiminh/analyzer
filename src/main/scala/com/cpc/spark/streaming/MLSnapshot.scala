@@ -99,7 +99,7 @@ object MLSnapshot {
       val snap = rdd.mapPartitions{p =>
         val redis = new RedisClient(conf.getString("redis.ml_feature_ali.host"),
           conf.getInt("redis.ml_feature_ali.port"))
-        redis.auth(conf.getInt("redis.ml_feature_ali.auth"))
+        redis.auth(conf.getString("redis.ml_feature_ali.auth"))
         val portraits = mutable.Map[String, ProtoPortrait]()
         p.map{x =>
           val vec = mutable.Map[Int, Float]()
