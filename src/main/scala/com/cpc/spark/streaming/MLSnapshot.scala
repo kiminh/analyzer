@@ -188,9 +188,11 @@ object MLSnapshot {
   }
 
   def parseUserPortrait(up: ProtoPortrait, key: String, id: Int, vec: mutable.Map[Int, Float]): Unit = {
-    if (up.subMap.isDefinedAt(key)) {
-      val sub = up.subMap.get(key).get
-      parsePortrait(sub, vec)
+    if (up != null) {
+      if (up.subMap.isDefinedAt(key)) {
+        val sub = up.subMap.get(key).get
+        parsePortrait(sub, vec)
+      }
     }
   }
 
