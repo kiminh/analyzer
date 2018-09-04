@@ -167,7 +167,7 @@ object MLSnapshot {
         if (numbs > 0) {
           val table = "ml_snapshot_test"
           spark.createDataFrame(part)
-            .coalesce(10)
+            .coalesce(20)
             .write
             .mode(SaveMode.Append)
             .parquet("/warehouse/dl_cpc.db/%s/%s/%s".format(table, key._1, key._2))
