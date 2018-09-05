@@ -189,7 +189,7 @@ object DNNSample {
       if (dataset == null) {
         dataset = spark.sql(s"select '$k' as uid, $v as uid_new")
       } else {
-        dataset = dataset.union(spark.sql(s"select '$k' as uid, $v as uid-new"))
+        dataset = dataset.union(spark.sql(s"select '$k' as uid, $v as uid_new"))
       }
     }
     dataset
