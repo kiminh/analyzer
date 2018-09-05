@@ -43,7 +43,6 @@ object MLSnapshot {
 
     val base_data = KafkaUtils
       .createDirectStream[String, Array[Byte], StringDecoder, DefaultDecoder](ssc, kafkaParams, topicsSet)
-      .repartition(200)
       .map{
         case (key, v) =>
           try {
@@ -80,7 +79,8 @@ object MLSnapshot {
               null
           }
       }
-      .filter(x => x != null && x.ideaid > 0)
+      .filter(x => x != null && x.searchid.length > 0 && x.ideaid > 0)
+      .repartition(200)
 
     val conf = ConfigFactory.load()
     base_data.foreachRDD {rdd =>
