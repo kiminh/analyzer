@@ -54,8 +54,8 @@ object MLSnapshot {
             val log = Event.parse_show_log(rawlog)
             val event = log.event
 
-            val date = new SimpleDateFormat("yyyy-MM-dd").format(log.timestamp)
-            val hour = new SimpleDateFormat("HH").format(log.timestamp)
+            val date = new SimpleDateFormat("yyyy-MM-dd").format(log_timestamp)
+            val hour = new SimpleDateFormat("HH").format(log_timestamp)
             val ad = event.getAd
             val media = event.getMedia
 
