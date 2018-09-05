@@ -70,7 +70,7 @@ object TestPortraitXgboost {
       name = namespace,
       gbmfile = "data/%s.gbm".format(prefix),
       strategy = if (asOrBs != "bs") StrategyXgboost else StrategyXgboostBS,
-      featureNum = featureNumArg
+      xgFeatureNum = featureNumArg
     )
     pack.writeTo(new FileOutputStream(s"$filename.mlm"))
     val cmd = s"cp -f $cur/_tmp/$namespace-xgboost.gbm $filename.gbm"

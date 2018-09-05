@@ -48,7 +48,7 @@ message Pack {
     Strategy strategy = 8;
     uint32 gbm_tree_depth = 9;
     double negSampleRatio = 10;
-    int64 feature_num = 11;
+    int64 xg_feature_num = 11;
 }
 
 message ProtoPortrait {
