@@ -126,7 +126,7 @@ object DNNSample {
         col("adslotid-new"),
         col("city-new"),
         col("adclass-new"),
-        col("uid-new")
+        col("uid_new")
       )).select("sample")
 
       sample.write.mode("overwrite").text(s"/user/cpc/dnn-sample/train$i")
@@ -187,7 +187,7 @@ object DNNSample {
     var dataset: Dataset[Row] = null
     for ((k, v) <- map) {
       if (dataset == null) {
-        dataset = spark.sql(s"select '$k' as uid, $v as uid-new")
+        dataset = spark.sql(s"select '$k' as uid, $v as uid_new")
       } else {
         dataset = dataset.union(spark.sql(s"select '$k' as uid, $v as uid-new"))
       }
