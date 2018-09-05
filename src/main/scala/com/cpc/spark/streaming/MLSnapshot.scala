@@ -60,6 +60,12 @@ object MLSnapshot {
             val ad = event.getAd
             val media = event.getMedia
 
+            var uid = event.getDevice.getUid
+            //设备号过滤掉 ip
+            if (uid.contains(".") || uid.contains("000000")) {
+              uid = ""
+            }
+
             RawFeature(
               searchid = event.getSearchId,
               timestamp = log_timestamp,
@@ -72,7 +78,7 @@ object MLSnapshot {
               interact = ad.getInteraction.getNumber,
               slottype = media.getAdslotType.getNumber,
               slotid = media.getAdslotId.toInt,
-              uid = event.getDevice.getUid,
+              uid = uid,
               date = date,
               hour = hour
             )
@@ -212,16 +218,20 @@ object MLSnapshot {
 
   def getPortraitFromRedis(key: String, redis: RedisClient,
                            portraits: cmutable.HashMap[String, ProtoPortrait]): ProtoPortrait = {
-    if (!portraits.isDefinedAt(key)) {
-      val d = redis.get[Array[Byte]](key)
-      if (d.isDefined) {
-        val p = ProtoPortrait.parseFrom(d.get)
-        portraits.update(key, p)
-      } else {
-        portraits.update(key, null)
+    if (portraits.size > 100 * 10000 && key.startsWith("user")) {
+      null
+    } else {
+      if (!portraits.isDefinedAt(key)) {
+        val d = redis.get[Array[Byte]](key)
+        if (d.isDefined) {
+          val p = ProtoPortrait.parseFrom(d.get)
+          portraits.update(key, p)
+        } else {
+          portraits.update(key, null)
+        }
       }
+      portraits(key)
     }
-    portraits(key)
   }
 
   case class RawFeature(
