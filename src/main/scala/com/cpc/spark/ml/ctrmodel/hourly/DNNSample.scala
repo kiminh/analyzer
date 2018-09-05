@@ -82,7 +82,9 @@ object DNNSample {
     val sample0 = spark.sql(sql)
       .limit(100000)
     getStrMapByDataset(spark, uidMap, "uid", sample0)
+    val uidDataset = uidToDataset(spark, uidMap)
 
+    print(s"uidDataset count = ${uidDataset.count()}")
     println(s"max index = $currentMaxIdx")
     println(s"sample count = ${sample0.count()}")
 
@@ -177,5 +179,16 @@ object DNNSample {
     println(s"finish $colName map")
   }
 
+  def uidToDataset(spark: SparkSession, map: Map[String, Int]): Dataset[Row] = {
+    var dataset: Dataset[Row] = null
+    for ((k, v) <- map) {
+      if (dataset == null) {
+        dataset = spark.sql(s"select '$k' as uid, $v as uid_index")
+      } else {
+        dataset = dataset.union(spark.sql(s"select '$k' as uid, $v as uid_index"))
+      }
+    }
+    dataset
+  }
 
 }
