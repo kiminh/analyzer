@@ -31,6 +31,7 @@ object TestPortraitXgboost {
     val upload = args(3).toInt
     val featureNumArg = args(4).toInt
     val namespace = dataType + "-" + parser
+    println(s"cur=$cur, parser=$parser, dataType=$dataType, upload=$upload, featureNum=$featureNumArg")
     spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .appName("test xgboost pymodel and run IR")
