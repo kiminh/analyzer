@@ -98,7 +98,7 @@ object DNNSample {
     println(s"max index = $currentMaxIdx")
     println(s"sample count = ${sample0.count()}")
 
-    for (i <- 0 until 1) {
+    for (i <- 0 until days) {
       val newday = SmallUtil.getDayBefore(date, i)
       print("newday", newday)
       val sql1 =
