@@ -12,7 +12,7 @@ import com.cpc.spark.qukan.utils.Udfs._
 import org.apache.spark.sql.functions.{col, concat_ws, lit, udf, when}
 import com.cpc.spark.qukan.utils.SmallUtil
 import mlmodel.mlmodel.DnnDict
-import org.apache.spark.sql.types.{StringType, StructField, StructType}
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 
 object DNNSample {
 
@@ -187,7 +187,7 @@ object DNNSample {
   def uidToDataset(spark: SparkSession, map: Map[String, Int]): Dataset[Row] = {
 
     val rdd = spark.sparkContext.parallelize(map.toSeq).map(x=>Row(x._1, x._2))
-    val dfschema = StructType(Array(StructField("uid",StringType), StructField("uid_new",StringType)))
+    val dfschema = StructType(Array(StructField("uid",StringType), StructField("uid_new", IntegerType)))
     spark.createDataFrame(rdd, dfschema)
 
 //    var dataset: Dataset[Row] = null
