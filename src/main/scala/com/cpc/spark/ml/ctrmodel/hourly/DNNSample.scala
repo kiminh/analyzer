@@ -82,7 +82,11 @@ object DNNSample {
     val sample0 = spark.sql(sql)
       .limit(100000)
     getStrMapByDataset(spark, uidMap, "uid", sample0)
-    val uidDataset = uidToDataset(spark, uidMap)
+
+    val uidTableName = "dl_cpc.uid_map_temp"
+    val uidDataset1 = uidToDataset(spark, uidMap).write.mode("overwrite").saveAsTable("uidTableName")
+    println("finish uid map dataset")
+    val uidDataset = spark.table("uidTableName")
 
     print(s"uidDataset count = ${uidDataset.count()}")
     println(s"max index = $currentMaxIdx")
@@ -104,7 +108,7 @@ object DNNSample {
       """.stripMargin
 
       println("sql1", sql1)
-      val sample = spark.sql(sql1)
+      val sample = spark.sql(sql1).join(uidDataset, Seq("uid"), "leftouter")
         .withColumn("mediaid-new", udfIntToIndex(mediaIdMap.toMap)(col("mediaid")))
         .withColumn("planid-new", udfIntToIndex(planIdMap.toMap)(col("planid")))
         .withColumn("unitid-new", udfIntToIndex(unitIdMap.toMap)(col("unitid")))
@@ -112,18 +116,18 @@ object DNNSample {
         .withColumn("adslotid-new", udfIntToIndex(adslotIdMap.toMap)(col("adslotid")))
         .withColumn("city-new", udfIntToIndex(cityMap.toMap)(col("city")))
         .withColumn("adclass-new", udfIntToIndex(adclassMap.toMap)(col("adclass")))
-        .withColumn("uid-new", udfStrToIndex(uidMap.toMap)(col("uid")))
+        // .withColumn("uid-new", udfStrToIndex(uidMap.toMap)(col("uid")))
         .withColumn("sample", concat_ws("\t",
-          col("label"),
-          col("mediaid-new"),
-          col("planid-new"),
-          col("unitid-new"),
-          col("ideaid-new"),
-          col("adslotid-new"),
-          col("city-new"),
-          col("adclass-new"),
-          col("uid-new")
-        )).select("sample")
+        col("label"),
+        col("mediaid-new"),
+        col("planid-new"),
+        col("unitid-new"),
+        col("ideaid-new"),
+        col("adslotid-new"),
+        col("city-new"),
+        col("adclass-new"),
+        col("uid-new")
+      )).select("sample")
 
       sample.write.mode("overwrite").text(s"/user/cpc/dnn-sample/train$i")
       // sample.repartition(1000).write.mode("overwrite").text(s"/user/cpc/dnn-sample/test$i")
@@ -183,9 +187,9 @@ object DNNSample {
     var dataset: Dataset[Row] = null
     for ((k, v) <- map) {
       if (dataset == null) {
-        dataset = spark.sql(s"select '$k' as uid, $v as uid_index")
+        dataset = spark.sql(s"select '$k' as uid, $v as uid-new")
       } else {
-        dataset = dataset.union(spark.sql(s"select '$k' as uid, $v as uid_index"))
+        dataset = dataset.union(spark.sql(s"select '$k' as uid, $v as uid-new"))
       }
     }
     dataset
