@@ -14,7 +14,9 @@ import com.redis.serialization.Parse.Implicits._
 import mlmodel.mlmodel.ProtoPortrait
 import com.typesafe.config.ConfigFactory
 
-import scala.collection.mutable
+import scala.collection.{mutable => cmutable}
+import scala.collection.parallel.mutable
+
 
 object MLSnapshot {
 
@@ -89,9 +91,11 @@ object MLSnapshot {
         val redis = new RedisClient(conf.getString("redis.ml_feature_ali.host"),
           conf.getInt("redis.ml_feature_ali.port"))
         redis.auth(conf.getString("redis.ml_feature_ali.auth"))
-        val portraits = mutable.Map[String, ProtoPortrait]()
+        val portraits = mutable.ParHashMap[String, ProtoPortrait]()
+
+
         p.map{x =>
-          val vec = mutable.Map[Int, Float]()
+          val vec = cmutable.Map[Int, Float]()
           var key = "user%d".format(x.userid)
           val up = getPortraitFromRedis(key, redis, portraits)
           parsePortrait(up, vec)
