@@ -81,7 +81,6 @@ object DNNSample {
     println(sql)
 
     val sample0 = spark.sql(sql)
-      .limit(10000)
     getStrMapByDataset(spark, uidMap, "uid", sample0)
 
     val rdd = spark.sparkContext.parallelize(uidMap.toSeq).map(x=>Row(x._1, x._2))
