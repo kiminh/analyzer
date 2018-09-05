@@ -38,7 +38,7 @@ object DNNSample {
     println(s"date=$date, hour=$hour, dictFileName=$dictFileName")
     val dateListBuffer = new ListBuffer[String]()
 
-    val days = 1
+    val days = 7
     for (i <- 0 until days) {
       val newday = SmallUtil.getDayBefore(date, i)
       print("newday", newday)
