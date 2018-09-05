@@ -82,12 +82,18 @@ object DNNSample {
 
     val sample0 = spark.sql(sql)
       .limit(100000)
-    getStrMapByDataset(spark, uidMap, "uid", sample0)
+//    getStrMapByDataset(spark, uidMap, "uid", sample0)
 
-    val uidTableName = "dl_cpc.uid_map_temp"
-    val uidDataset1 = uidToDataset(spark, uidMap).write.mode("overwrite").saveAsTable("uidTableName")
-    println("finish uid map dataset")
-    val uidDataset = spark.table("uidTableName")
+    val rdd = spark.sparkContext.parallelize(uidMap.toSeq).map(x=>Row(x._1, x._2))
+    val dfschema = StructType(Array(StructField("uid",StringType), StructField("uid_new", IntegerType)))
+    val uidDataset = spark.createDataFrame(rdd, dfschema)
+
+
+//    val uidTableName = "dl_cpc.uid_map_temp"
+//    val uidDataset1 = uidToDataset(spark, uidMap).write.mode("overwrite").saveAsTable("uidTableName")
+//    println("finish uid map dataset")
+//    val uidDataset = spark.table("uidTableName")
+
 
     print(s"uidDataset count = ${uidDataset.count()}")
     println(s"max index = $currentMaxIdx")
