@@ -12,6 +12,7 @@ import com.cpc.spark.qukan.utils.Udfs._
 import org.apache.spark.sql.functions.{col, concat_ws, lit, udf, when}
 import com.cpc.spark.qukan.utils.SmallUtil
 import mlmodel.mlmodel.DnnDict
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
 
 object DNNSample {
 
@@ -184,15 +185,20 @@ object DNNSample {
   }
 
   def uidToDataset(spark: SparkSession, map: Map[String, Int]): Dataset[Row] = {
-    var dataset: Dataset[Row] = null
-    for ((k, v) <- map) {
-      if (dataset == null) {
-        dataset = spark.sql(s"select '$k' as uid, $v as uid_new")
-      } else {
-        dataset = dataset.union(spark.sql(s"select '$k' as uid, $v as uid_new"))
-      }
-    }
-    dataset
+
+    val rdd = spark.sparkContext.parallelize(map.toSeq).map(x=>Row(x._1, x._2))
+    val dfschema = StructType(Array(StructField("uid",StringType), StructField("uid_new",StringType)))
+    spark.createDataFrame(rdd, dfschema)
+
+//    var dataset: Dataset[Row] = null
+//    for ((k, v) <- map) {
+//      if (dataset == null) {
+//        dataset = spark.sql(s"select '$k' as uid, $v as uid_new")
+//      } else {
+//        dataset = dataset.union(spark.sql(s"select '$k' as uid, $v as uid_new"))
+//      }
+//    }
+//    dataset
   }
 
 }
