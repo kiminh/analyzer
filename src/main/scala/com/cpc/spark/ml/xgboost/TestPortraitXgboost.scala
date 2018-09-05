@@ -29,6 +29,7 @@ object TestPortraitXgboost {
     val parser = args(1)
     val dataType = args(2)
     val upload = args(3).toInt
+    val featureNum = args(4).toInt
     val namespace = dataType + "-" + parser
     spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -64,7 +65,8 @@ object TestPortraitXgboost {
       ir = Option(ir),
       name = namespace,
       gbmfile = "data/%s.gbm".format(prefix),
-      strategy = StrategyXgboost
+      strategy = StrategyXgboost,
+      feature_num = featureNum
     )
     pack.writeTo(new FileOutputStream(s"$filename.mlm"))
     val cmd = s"cp -f $cur/_tmp/$namespace-xgboost.gbm $filename.gbm"
