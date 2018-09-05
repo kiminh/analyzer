@@ -61,6 +61,7 @@ object MLSnapshot {
 
             RawFeature(
               searchid = event.getSearchId,
+              timestamp = log_timestamp,
               ideaid = ad.getUnitId,
               unitid = ad.getGroupId,
               planid = ad.getPlanId,
@@ -128,6 +129,7 @@ object MLSnapshot {
           parseUserPortrait(up, "uid#slottype%s".format(x.slottype), x.slottype, vec)
 
           val rawInt = Map(
+            "timestamp" -> (x.timestamp / 1000).toInt,
             "ideaid" -> x.ideaid,
             "planid" -> x.planid,
             "unitid" -> x.unitid,
@@ -220,6 +222,7 @@ object MLSnapshot {
 
   case class RawFeature(
                        searchid: String = "",
+                       timestamp: Long = 0,
                        ideaid: Int = 0,
                        unitid: Int = 0,
                        planid: Int = 0,
