@@ -6,6 +6,7 @@ import java.util.Date
 
 import com.cpc.spark.ml.common.Utils
 import com.typesafe.config.ConfigFactory
+import mlmodel.mlmodel.Strategy.StrategyXgboostBS
 import mlmodel.mlmodel.Strategy.StrategyXgboost
 import mlmodel.mlmodel.{IRModel, LRModel, Pack}
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel}
@@ -30,8 +31,10 @@ object TestPortraitXgboost {
     val dataType = args(2)
     val upload = args(3).toInt
     val featureNumArg = args(4).toInt
+    val asOrBs = args(5)
     val namespace = dataType + "-" + parser
-    println(s"cur=$cur, parser=$parser, dataType=$dataType, upload=$upload, featureNum=$featureNumArg")
+    println(s"cur=$cur, parser=$parser, dataType=$dataType, upload=$upload, " +
+      s"featureNum=$featureNumArg, as or bs=$asOrBs")
     spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .appName("test xgboost pymodel and run IR")
@@ -66,7 +69,7 @@ object TestPortraitXgboost {
       ir = Option(ir),
       name = namespace,
       gbmfile = "data/%s.gbm".format(prefix),
-      strategy = StrategyXgboost,
+      strategy = if (asOrBs != "bs") StrategyXgboost else StrategyXgboostBS,
       featureNum = featureNumArg
     )
     pack.writeTo(new FileOutputStream(s"$filename.mlm"))
