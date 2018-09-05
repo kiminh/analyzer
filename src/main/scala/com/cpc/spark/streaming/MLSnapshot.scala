@@ -193,7 +193,7 @@ object MLSnapshot {
     ssc.awaitTermination()
   }
 
-  def parseUserPortrait(up: ProtoPortrait, key: String, id: Int, vec: mutable.Map[Int, Float]): Unit = {
+  def parseUserPortrait(up: ProtoPortrait, key: String, id: Int, vec: cmutable.Map[Int, Float]): Unit = {
     if (up != null) {
       if (up.subMap.isDefinedAt(key)) {
         val sub = up.subMap.get(key).get
@@ -202,7 +202,7 @@ object MLSnapshot {
     }
   }
 
-  def parsePortrait(p: ProtoPortrait, vec: mutable.Map[Int, Float]): Unit = {
+  def parsePortrait(p: ProtoPortrait, vec: cmutable.Map[Int, Float]): Unit = {
     if (p != null && p.valueMap != null && p.valueMap.size > 0) {
       for ((k, v) <- p.valueMap) {
         vec.update(k.toInt, v)
@@ -211,7 +211,7 @@ object MLSnapshot {
   }
 
   def getPortraitFromRedis(key: String, redis: RedisClient,
-                           portraits: mutable.Map[String, ProtoPortrait]): ProtoPortrait = {
+                           portraits: mutable.ParHashMap[String, ProtoPortrait]): ProtoPortrait = {
     if (!portraits.isDefinedAt(key)) {
       val d = redis.get[Array[Byte]](key)
       if (d.isDefined) {
