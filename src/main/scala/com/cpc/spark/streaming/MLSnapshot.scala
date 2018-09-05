@@ -91,7 +91,7 @@ object MLSnapshot {
         val redis = new RedisClient(conf.getString("redis.ml_feature_ali.host"),
           conf.getInt("redis.ml_feature_ali.port"))
         redis.auth(conf.getString("redis.ml_feature_ali.auth"))
-        val portraits = mutable.ParHashMap[String, ProtoPortrait]()
+        val portraits = cmutable.HashMap[String, ProtoPortrait]()
 
 
         p.map{x =>
@@ -211,7 +211,7 @@ object MLSnapshot {
   }
 
   def getPortraitFromRedis(key: String, redis: RedisClient,
-                           portraits: mutable.ParHashMap[String, ProtoPortrait]): ProtoPortrait = {
+                           portraits: cmutable.HashMap[String, ProtoPortrait]): ProtoPortrait = {
     if (!portraits.isDefinedAt(key)) {
       val d = redis.get[Array[Byte]](key)
       if (d.isDefined) {
