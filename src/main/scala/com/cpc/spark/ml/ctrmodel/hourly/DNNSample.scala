@@ -33,8 +33,8 @@ object DNNSample {
 
     val date = args(0)
     val hour = args(1)
-    val dictPath = args(2)
-    println(s"date=$date, hour=$hour, dictPath=$dictPath")
+    val dictFileName = args(2)
+    println(s"date=$date, hour=$hour, dictFileName=$dictFileName")
     val dateListBuffer = new ListBuffer[String]()
 
     val days = 1
@@ -140,7 +140,7 @@ object DNNSample {
         uidDict = uidMap.toMap
       )
 
-      pack.writeTo(new FileOutputStream(dictPath))
+      pack.writeTo(new FileOutputStream(dictFileName))
     }
 
   }
