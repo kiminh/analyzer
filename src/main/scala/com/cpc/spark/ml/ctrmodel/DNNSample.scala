@@ -67,7 +67,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/home/cpc/dw/bin/dnnsample")
+      .save("/user/cpc/dw/dnnsample")
   }
 
   def getPathSeq(days: Int): mutable.Map[String,Seq[String]] ={
