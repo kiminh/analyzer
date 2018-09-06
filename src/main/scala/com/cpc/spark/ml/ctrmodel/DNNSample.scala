@@ -35,7 +35,12 @@ object DNNSample {
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
-    val spark: SparkSession = model.initSpark("cpc lr model")
+
+    val spark = SparkSession.builder()
+      .appName("dnn sample")
+      .enableHiveSupport()
+      .getOrCreate()
+    import spark.implicits._
 
     //按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
@@ -47,13 +52,23 @@ object DNNSample {
     val ulog = getData(spark,"ctrdata_v1",ctrPathSep).rdd
       .filter(_.getAs[Int]("ideaid") > 0)
       .map{row =>
-        getVectorParser1(row)
+        val vec = getVectorParser1(row)
+        var label = "1,0"
+        if (row.getAs[Int]("label") > 0) {
+          label = "0,1"
+        }
+        (label, vec.mkString(","))
       }
-      .take(100)
-      .foreach(println)
+      .toDF("label", "id")
+    println(ulog.count())
 
-    Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
+    ulog.write
+      .mode("overwrite")
+      .format("tfrecords")
+      .option("recordType", "Example")
+      .save("/home/cpc/dw/dnnsample")
   }
+
 
 
   def getPathSeq(days: Int): mutable.Map[String,Seq[String]] ={
