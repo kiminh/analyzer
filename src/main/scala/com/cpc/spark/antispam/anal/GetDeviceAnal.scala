@@ -39,8 +39,8 @@ object GetDeviceAnal {
     mariadbProp.put("password", conf.getString("mariadb.union_write.password"))
     mariadbProp.put("driver", conf.getString("mariadb.union_write.driver"))
 
-    var sql1 = "SELECT *,ext['device_ids'].string_value as device_ids from  dl_cpc.cpc_union_log where `date` ='%s'  and ext['device_ids'].string_value != '' ".format(date1)
-    var sql2 = "SELECT * from  dl_cpc.cpc_union_log where `date` ='%s'  and ext['device_ids'].string_value != '' ".format(date2)
+    var sql1 = "SELECT *, ext['device_ids'].string_value as device_ids from  dl_cpc.cpc_union_log where `date` ='%s'  and ext['device_ids'].string_value != '' ".format(date1)
+    var sql2 = "SELECT *, ext['device_ids'].string_value as device_ids from  dl_cpc.cpc_union_log where `date` ='%s'  and ext['device_ids'].string_value != '' ".format(date2)
 
     println("sql1:" + sql1)
     println("sql2:" + sql2)
