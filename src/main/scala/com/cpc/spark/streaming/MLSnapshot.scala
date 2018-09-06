@@ -103,8 +103,13 @@ object MLSnapshot {
         p.map{x =>
           val vec = cmutable.Map[Int, Float]()
           var key = "user%d".format(x.userid)
-          val up = getPortraitFromRedis(key, redis, portraits)
-          parsePortrait(up, vec)
+
+          var up: ProtoPortrait = null
+          val d = redis.get[Array[Byte]](key)
+          if (d.isDefined) {
+            up = ProtoPortrait.parseFrom(d.get)
+            parsePortrait(up, vec)
+          }
 
           key = "i%d".format(x.ideaid)
           var p = getPortraitFromRedis(key, redis, portraits)
