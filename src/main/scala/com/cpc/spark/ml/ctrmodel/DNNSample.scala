@@ -54,9 +54,9 @@ object DNNSample {
       .randomSplit(Array(0.1, 0.9), new Date().getTime)(0)
       .map{row =>
         val vec = getVectorParser1(row)
-        var label = Seq(1, 0)
+        var label = Seq(0, 1)
         if (row.getAs[Int]("label") > 0) {
-          label = Seq(0, 1)
+          label = Seq(1, 0)
         }
         (label, vec)
       }
