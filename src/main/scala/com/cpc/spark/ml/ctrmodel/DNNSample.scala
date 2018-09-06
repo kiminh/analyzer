@@ -44,7 +44,7 @@ object DNNSample {
     initFeatureDict(spark, ctrPathSep)
     val userAppIdx = getUidApp(spark, ctrPathSep).cache()
 
-    val ulog = getData(spark,"ctrdata_v1",ctrPathSep)
+    val ulog = getData(spark,"ctrdata_v1",ctrPathSep).rdd
       .filter(_.getAs[Int]("ideaid") > 0)
       .map{row =>
         getVectorParser1(row)
