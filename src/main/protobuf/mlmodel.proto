@@ -17,6 +17,7 @@ enum Strategy {
     StrategyLRXgboost = 3;
     StrategyXgboostLR = 4;
     StrategyXgboostFtrl = 5;
+    StrategyXgboostBS = 6;
 }
 
 message IRModel {
@@ -33,7 +34,7 @@ message Dict {
     map<int32, int32> slotid = 5;
     map<int32, int32> cityid = 6;
     map<int32, int32> mediaid = 7;
-    map<string,int32> appid = 8;
+    map<string, int32> appid = 8;
 }
 
 message Pack {
@@ -47,6 +48,7 @@ message Pack {
     Strategy strategy = 8;
     uint32 gbm_tree_depth = 9;
     double negSampleRatio = 10;
+    int64 xg_feature_num = 11;
 }
 
 message ProtoPortrait {
@@ -78,6 +80,17 @@ message AccessLog {
     int64 timestamp = 3;
 }
 
+message DnnDict {
+    map<int32, int32> mediaIdDict = 1;
+    map<int32, int32> planIdDict = 2;
+    map<int32, int32> unitIdDict = 3;
+    map<int32, int32> ideaIdDict = 4;
+    map<int32, int32> adslotIdDict = 5;
+    map<int32, int32> cityDict = 6;
+    map<int32, int32> adclassDict = 7;
+    map<string, int32> brandDict = 8;
+    map<string, int32> uidDict = 9;
+}
 
 
 
