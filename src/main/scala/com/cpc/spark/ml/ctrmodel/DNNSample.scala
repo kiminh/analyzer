@@ -51,6 +51,7 @@ object DNNSample {
 
     val ulog = getData(spark,"ctrdata_v1",ctrPathSep).rdd
       .filter(_.getAs[Int]("ideaid") > 0)
+      .randomSplit(Array(0.1, 0.9), new Date().getTime)(0)
       .map{row =>
         val vec = getVectorParser1(row)
         var label = Seq(1, 0)
