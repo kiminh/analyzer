@@ -182,7 +182,6 @@ object DNNSample {
     pathSep.map{
       x =>
         path = path :+ "/user/cpc/lrmodel/%s/%s/{%s}".format(dataVersion, x._1, x._2.mkString(","))
-        println(path)
     }
 
     path.foreach{
