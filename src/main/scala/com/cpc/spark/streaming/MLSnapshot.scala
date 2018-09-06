@@ -187,7 +187,6 @@ object MLSnapshot {
             """
               |ALTER TABLE dl_cpc.%s add if not exists PARTITION (`date` = "%s", hour = "%s")
               | LOCATION '/warehouse/dl_cpc.db/%s/%s/%s'
-              |
               """.stripMargin.format(table, key._1, key._2, table, key._1, key._2)
           println(sqlStmt)
           spark.sql(sqlStmt)
