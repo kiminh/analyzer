@@ -53,11 +53,11 @@ object DNNSample {
       .filter(_.getAs[Int]("ideaid") > 0)
       .map{row =>
         val vec = getVectorParser1(row)
-        var label = "1,0"
+        var label = Seq(1, 0)
         if (row.getAs[Int]("label") > 0) {
-          label = "0,1"
+          label = Seq(0, 1)
         }
-        (label, vec.mkString(","))
+        (label, vec)
       }
       .toDF("label", "id")
     println(ulog.count())
@@ -66,10 +66,8 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/home/cpc/dw/dnnsample")
+      .save("/home/cpc/dw/bin/dnnsample")
   }
-
-
 
   def getPathSeq(days: Int): mutable.Map[String,Seq[String]] ={
     var date = ""
@@ -88,7 +86,6 @@ object DNNSample {
     pathSep
   }
 
-
   def getUidApp(spark: SparkSession, pathSep: mutable.Map[String,Seq[String]]): DataFrame ={
     val inpath = "/user/cpc/userInstalledApp/{%s}".format(pathSep.keys.mkString(","))
     println(inpath)
@@ -106,7 +103,6 @@ object DNNSample {
     val userAppIdx = getUserAppIdx(spark, uidApp, ids)
 
     userAppIdx
-
   }
 
   //安装列表中top k的App
@@ -115,7 +111,7 @@ object DNNSample {
     uidApp
       .flatMap(x => x.getAs[WrappedArray[String]]("pkgs").map((_,1)))
       .reduceByKey(_ + _)
-      .sortBy(_._2,false)
+      .sortBy(_._2, false)
       .toLocalIterator
       .take(k)
       .foreach{
@@ -199,8 +195,6 @@ object DNNSample {
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     var els = Seq[Int]()
-
-    val label = x.getAs[Int]("label")
 
     els :+= hour
     els :+= x.getAs[Int]("sex")
