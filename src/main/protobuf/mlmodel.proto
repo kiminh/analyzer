@@ -17,6 +17,7 @@ enum Strategy {
     StrategyLRXgboost = 3;
     StrategyXgboostLR = 4;
     StrategyXgboostFtrl = 5;
+    StrategyXgboostBS = 6;
 }
 
 message IRModel {
@@ -47,6 +48,7 @@ message Pack {
     Strategy strategy = 8;
     uint32 gbm_tree_depth = 9;
     double negSampleRatio = 10;
+    int64 xg_feature_num = 11;
 }
 
 message ProtoPortrait {

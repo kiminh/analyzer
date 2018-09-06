@@ -12,6 +12,7 @@ import com.cpc.spark.qukan.utils.Udfs._
 import org.apache.spark.sql.functions.{col, concat_ws, lit, udf, when}
 import com.cpc.spark.qukan.utils.SmallUtil
 import mlmodel.mlmodel.DnnDict
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 
 object DNNSample {
 
@@ -33,11 +34,11 @@ object DNNSample {
 
     val date = args(0)
     val hour = args(1)
-    val dictPath = args(2)
-    println(s"date=$date, hour=$hour, dictPath=$dictPath")
+    val dictFileName = args(2)
+    println(s"date=$date, hour=$hour, dictFileName=$dictFileName")
     val dateListBuffer = new ListBuffer[String]()
 
-    val days = 1
+    val days = 7
     for (i <- 0 until days) {
       val newday = SmallUtil.getDayBefore(date, i)
       print("newday", newday)
@@ -80,13 +81,24 @@ object DNNSample {
     println(sql)
 
     val sample0 = spark.sql(sql)
-      .limit(100000)
     getStrMapByDataset(spark, uidMap, "uid", sample0)
 
+    val rdd = spark.sparkContext.parallelize(uidMap.toSeq).map(x=>Row(x._1, x._2))
+    val dfschema = StructType(Array(StructField("uid",StringType), StructField("uid_new", IntegerType)))
+    val uidDataset = spark.createDataFrame(rdd, dfschema)
+
+
+//    val uidTableName = "dl_cpc.uid_map_temp"
+//    val uidDataset1 = uidToDataset(spark, uidMap).write.mode("overwrite").saveAsTable("uidTableName")
+//    println("finish uid map dataset")
+//    val uidDataset = spark.table("uidTableName")
+
+
+    println(s"uidDataset count = ${uidDataset.count()}")
     println(s"max index = $currentMaxIdx")
     println(s"sample count = ${sample0.count()}")
 
-    for (i <- 0 until 1) {
+    for (i <- 0 until days) {
       val newday = SmallUtil.getDayBefore(date, i)
       print("newday", newday)
       val sql1 =
@@ -102,7 +114,7 @@ object DNNSample {
       """.stripMargin
 
       println("sql1", sql1)
-      val sample = spark.sql(sql1)
+      val sample = spark.sql(sql1).join(uidDataset, Seq("uid"), "leftouter")
         .withColumn("mediaid-new", udfIntToIndex(mediaIdMap.toMap)(col("mediaid")))
         .withColumn("planid-new", udfIntToIndex(planIdMap.toMap)(col("planid")))
         .withColumn("unitid-new", udfIntToIndex(unitIdMap.toMap)(col("unitid")))
@@ -110,18 +122,18 @@ object DNNSample {
         .withColumn("adslotid-new", udfIntToIndex(adslotIdMap.toMap)(col("adslotid")))
         .withColumn("city-new", udfIntToIndex(cityMap.toMap)(col("city")))
         .withColumn("adclass-new", udfIntToIndex(adclassMap.toMap)(col("adclass")))
-        .withColumn("uid-new", udfStrToIndex(uidMap.toMap)(col("uid")))
+        // .withColumn("uid-new", udfStrToIndex(uidMap.toMap)(col("uid")))
         .withColumn("sample", concat_ws("\t",
-          col("label"),
-          col("mediaid-new"),
-          col("planid-new"),
-          col("unitid-new"),
-          col("ideaid-new"),
-          col("adslotid-new"),
-          col("city-new"),
-          col("adclass-new"),
-          col("uid-new")
-        )).select("sample")
+        col("label"),
+        col("mediaid-new"),
+        col("planid-new"),
+        col("unitid-new"),
+        col("ideaid-new"),
+        col("adslotid-new"),
+        col("city-new"),
+        col("adclass-new"),
+        col("uid_new")
+      )).select("sample")
 
       sample.write.mode("overwrite").text(s"/user/cpc/dnn-sample/train$i")
       // sample.repartition(1000).write.mode("overwrite").text(s"/user/cpc/dnn-sample/test$i")
@@ -138,7 +150,7 @@ object DNNSample {
         uidDict = uidMap.toMap
       )
 
-      pack.writeTo(new FileOutputStream(dictPath))
+      pack.writeTo(new FileOutputStream(dictFileName))
     }
 
   }
@@ -177,5 +189,21 @@ object DNNSample {
     println(s"finish $colName map")
   }
 
+  def uidToDataset(spark: SparkSession, map: Map[String, Int]): Dataset[Row] = {
+
+    val rdd = spark.sparkContext.parallelize(map.toSeq).map(x=>Row(x._1, x._2))
+    val dfschema = StructType(Array(StructField("uid",StringType), StructField("uid_new", IntegerType)))
+    spark.createDataFrame(rdd, dfschema)
+
+//    var dataset: Dataset[Row] = null
+//    for ((k, v) <- map) {
+//      if (dataset == null) {
+//        dataset = spark.sql(s"select '$k' as uid, $v as uid_new")
+//      } else {
+//        dataset = dataset.union(spark.sql(s"select '$k' as uid, $v as uid_new"))
+//      }
+//    }
+//    dataset
+  }
 
 }
