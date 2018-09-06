@@ -176,7 +176,7 @@ object MLSnapshot {
         println(part.first())
 
         if (numbs > 0) {
-          val table = "ml_snapshot_test"
+          val table = "ml_snapshot_from_show"
           spark.createDataFrame(part)
             .coalesce(50)
             .write
@@ -218,7 +218,7 @@ object MLSnapshot {
 
   def getPortraitFromRedis(key: String, redis: RedisClient,
                            portraits: cmutable.HashMap[String, ProtoPortrait]): ProtoPortrait = {
-    if (portraits.size > 100 * 10000 && key.startsWith("user")) {
+    if (portraits.size > 500 * 10000 && key.startsWith("user")) {
       null
     } else {
       if (!portraits.isDefinedAt(key)) {
