@@ -93,7 +93,7 @@ object MLSnapshot {
     val conf = ConfigFactory.load()
     base_data.foreachRDD {rdd =>
 
-      val snap = rdd.randomSplit(Array(1, 0), new Date().getTime)(0).mapPartitions{p =>
+      val snap = rdd.mapPartitions{p =>
         val redis = new RedisClient(conf.getString("redis.ml_feature_ali.host"),
           conf.getInt("redis.ml_feature_ali.port"))
         redis.auth(conf.getString("redis.ml_feature_ali.auth"))
@@ -103,13 +103,8 @@ object MLSnapshot {
         p.map{x =>
           val vec = cmutable.Map[Int, Float]()
           var key = "user%d".format(x.userid)
-
-          var up: ProtoPortrait = null
-          val d = redis.get[Array[Byte]](key)
-          if (d.isDefined) {
-            up = ProtoPortrait.parseFrom(d.get)
-            parsePortrait(up, vec)
-          }
+          val up = getPortraitFromRedis(key, redis, portraits)
+          parsePortrait(up, vec)
 
           key = "i%d".format(x.ideaid)
           var p = getPortraitFromRedis(key, redis, portraits)
