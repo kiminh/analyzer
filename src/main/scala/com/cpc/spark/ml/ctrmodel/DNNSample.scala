@@ -41,8 +41,8 @@ object DNNSample {
     val ctrPathSep = getPathSeq(args(0).toInt)
     val cvrPathSep = getPathSeq(args(1).toInt)
 
-    initFeatureDict(spark, ctrPathSep)
-    val userAppIdx = getUidApp(spark, ctrPathSep).cache()
+    //initFeatureDict(spark, ctrPathSep)
+    //val userAppIdx = getUidApp(spark, ctrPathSep).cache()
 
     val ulog = getData(spark,"ctrdata_v1",ctrPathSep).rdd
       .filter(_.getAs[Int]("ideaid") > 0)
@@ -53,7 +53,6 @@ object DNNSample {
       .foreach(println)
 
     Utils.sendMail(trainLog.mkString("\n"), "TrainLog", Seq("rd@aiclk.com"))
-    userAppIdx.unpersist()
   }
 
 
