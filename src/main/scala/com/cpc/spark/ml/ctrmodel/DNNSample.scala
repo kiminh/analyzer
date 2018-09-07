@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.ctrmodel
 
-import java.io.FileInputStream
+import java.io.{FileInputStream, FileOutputStream}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
@@ -8,7 +8,7 @@ import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ml.train.LRIRModel
 import com.typesafe.config.ConfigFactory
-import lrmodel.lrmodel.Pack
+import mlmodel.mlmodel
 import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.classification.LogisticRegressionModel
@@ -83,6 +83,8 @@ object DNNSample {
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntest1")
+
+    savePbPack("dnnp1", "/home/cpc/dw/bin/dict.pb", dict.toMap)
   }
 
   def getPathSeq(days: Int): mutable.Map[String,Seq[String]] ={
@@ -308,6 +310,23 @@ object DNNSample {
     i += dict("ideaid").size + 1
 
     els
+  }
+
+  def savePbPack(parser: String, path: String, dict: Map[String, Map[Int, Int]]): Unit = {
+    val dictpb = mlmodel.Dict(
+      planid = dict("planid"),
+      unitid = dict("unitid"),
+      ideaid = dict("ideaid"),
+      slotid = dict("slotid"),
+      adclass = dict("adclass"),
+      cityid = dict("cityid"),
+      mediaid = dict("mediaid"),
+      appid = dictStr("appid")
+    )
+    val pack = mlmodel.Pack(
+      dict = Option(dictpb)
+    )
+    pack.writeTo(new FileOutputStream(path))
   }
 }
 
