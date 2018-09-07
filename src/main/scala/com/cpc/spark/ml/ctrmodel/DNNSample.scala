@@ -66,7 +66,7 @@ object DNNSample {
           hashed :+= (feature_names(i) + vec(i)).hashCode.toLong
         }
 
-        (label, vec, Seq(), Seq(), Seq(), hashed)
+        (label, vec, Seq[Int](), Seq[Int](), Seq[Int](), hashed)
       }
       .zipWithUniqueId()
       .toDF("label", "dense", "idx0", "idx1", "idx2", "id_arr", "sample_idx")
