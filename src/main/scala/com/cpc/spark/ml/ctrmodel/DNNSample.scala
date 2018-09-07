@@ -46,7 +46,7 @@ object DNNSample {
     val ctrPathSep = getPathSeq(args(0).toInt)
     val cvrPathSep = getPathSeq(args(1).toInt)
 
-    //initFeatureDict(spark, ctrPathSep)
+    initFeatureDict(spark, ctrPathSep)
     //val userAppIdx = getUidApp(spark, ctrPathSep).cache()
 
     val ulog = getData(spark,"ctrdata_v1",ctrPathSep).rdd
@@ -109,6 +109,7 @@ object DNNSample {
   //安装列表中top k的App
   def getTopApp(uidApp : RDD[Row], k : Int): Map[String,Int] ={
     val ids = mutable.Map[String,Int]()
+    maxIndex = 0
     uidApp
       .flatMap(x => x.getAs[WrappedArray[String]]("pkgs").map((_,1)))
       .reduceByKey(_ + _)
@@ -151,6 +152,7 @@ object DNNSample {
 
   def initFeatureDict(spark: SparkSession, pathSep: mutable.Map[String,Seq[String]]): Unit = {
     trainLog :+= "\n------dict size------"
+    maxIndex = 0
     for (name <- dictNames) {
       val pathTpl = "/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
       val ids = mutable.Map[Int, Int]()
@@ -225,8 +227,77 @@ object DNNSample {
     "mediaid", "slotid", "phone_level", "adclass",
     "adtype", "adslot_type", "planid", "unitid", "ideaid")
 
-  def convertSample(): Unit = {
 
+  def getVectorParser1(x: Row): Seq[Int] = {
+    val cal = Calendar.getInstance()
+    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
+    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
+    val hour = cal.get(Calendar.HOUR_OF_DAY)
+    var els = Seq[Int]()
+    var i = 0
+
+
+    els = els :+ hour + i
+    i += 24
+
+    //sex
+    els = els :+ x.getAs[Int]("sex") + i
+    i += 9
+
+    //age
+    els = els :+ x.getAs[Int]("age") + i
+    i += 100
+
+    //os 96 - 97 (2)
+    els = els :+ x.getAs[Int]("os") + i
+    i += 10
+
+
+    //net
+    els = els :+ x.getAs[Int]("network") + i
+    i += 10
+
+    els = els :+ dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i
+    i += dict("cityid").size + 1
+
+    //media id
+    els = els :+ dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i
+    i += dict("mediaid").size + 1
+
+    //ad slot id
+    els = els :+ dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i
+    i += dict("slotid").size + 1
+
+    //0 to 4
+    els = els :+ x.getAs[Int]("phone_level") + i
+    i += 10
+
+    //ad class
+    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
+    els = els :+ adcls + i
+    i += dict("adclass").size + 1
+
+    //adtype
+    els = els :+ x.getAs[Int]("adtype") + i
+    i += 10
+
+    //adslot_type
+    els = els :+ x.getAs[Int]("adslot_type") + i
+    i += 10
+
+    //planid
+    els = els :+ dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i
+    i += dict("planid").size + 1
+
+    //unitid
+    els = els :+ dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i
+    i += dict("unitid").size + 1
+
+    //ideaid
+    els = els :+ dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i
+    i += dict("ideaid").size + 1
+
+    els
   }
 }
 
