@@ -63,7 +63,7 @@ object DNNSample {
 
         var hash = Seq[Long]()
         for (i <- vec.indices) {
-          hash = hash :+ (feature_names(i) + vec(i).toString).hashCode()
+          hash = hash :+ (feature_names(i) + vec(i).toString).hashCode().toLong
         }
 
         (label, vec, hash)
