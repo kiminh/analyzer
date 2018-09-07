@@ -46,33 +46,35 @@ object DNNSample {
     val ctrPathSep = getPathSeq(args(0).toInt)
     val cvrPathSep = getPathSeq(args(1).toInt)
 
-    initFeatureDict(spark, ctrPathSep)
-    val userAppIdx = getUidApp(spark, ctrPathSep)
+    //initFeatureDict(spark, ctrPathSep)
+    //val userAppIdx = getUidApp(spark, ctrPathSep)
 
     val BcDict = spark.sparkContext.broadcast(dict)
     val ulog = getData(spark,"ctrdata_v1",ctrPathSep).rdd
       .filter(_.getAs[Int]("ideaid") > 0)
       .map{row =>
         dict = BcDict.value
-        val vec = getVectorParser2(row)
+        val vec = getVectorParser1(row)
         var label = Seq(0, 1)
         if (row.getAs[Int]("label") > 0) {
           label = Seq(1, 0)
         }
 
-        (label, vec)
+        var hash = Seq[Long]()
+        for (i <- vec.indices) {
+          hash = hash :+ (feature_names(i) + vec(i).toString).hashCode()
+        }
+
+        (label, vec, hash)
       }
-      .toDF("label", "id")
+      .zipWithUniqueId()
+      .map(x => (x._2, x._1._1, x._1._2, x._1._3))
+      .toDF("sample_idx", "label", "dence", "id")
       .repartition(100)
 
-    val Array(train, test) = ulog.randomSplit(Array(0.98, 0.02))
+    val Array(train, test) = ulog.randomSplit(Array(0.9, 0.1))
 
-    train.filter {
-      x =>
-        val label = x.getAs[Seq[Int]]("label")
-
-        label(0) == 1 || Random.nextInt(100) < 10
-    }
+    train
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -85,7 +87,7 @@ object DNNSample {
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntest1")
 
-    savePbPack("dnnp1", "/home/cpc/dw/bin/dict.pb", dict.toMap)
+    //savePbPack("dnnp1", "/home/cpc/dw/bin/dict.pb", dict.toMap)
   }
 
   def getPathSeq(days: Int): mutable.Map[String,Seq[String]] ={
