@@ -80,13 +80,13 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/dw/dnntrain1")
+      .save("/user/cpc/dw/dnntrain")
 
     test.write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/dw/dnntest1")
+      .save("/user/cpc/dw/dnntest")
 
     //savePbPack("dnnp1", "/home/cpc/dw/bin/dict.pb", dict.toMap)
   }
