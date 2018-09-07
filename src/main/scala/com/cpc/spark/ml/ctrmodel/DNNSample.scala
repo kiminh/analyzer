@@ -64,14 +64,22 @@ object DNNSample {
         (label, vec)
       }
       .toDF("label", "id")
+      .repartition(100)
     println(ulog.count())
 
-    ulog.repartition(100)
-      .write
+    val Array(train, test) = ulog.randomSplit(Array(0.8, 0.2))
+
+    train.write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/dw/dnnsample")
+      .save("/user/cpc/dw/dnntrain")
+
+    test.write
+      .mode("overwrite")
+      .format("tfrecords")
+      .option("recordType", "Example")
+      .save("/user/cpc/dw/dnntest")
   }
 
   def getPathSeq(days: Int): mutable.Map[String,Seq[String]] ={
