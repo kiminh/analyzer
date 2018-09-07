@@ -46,7 +46,7 @@ object RedisUtil {
     redis.disconnect
   }
 
-  def redisToFtrl(version: Int): Ftrl = {
+  def redisToFtrl(version: Int, featureSize: Int): Ftrl = {
     val redis = new RedisClient("192.168.80.20", 6390)
     var res = redis.get[String](s"ftrl-$version")
     redis.disconnect
@@ -56,7 +56,7 @@ object RedisUtil {
       val jsonStr = res.get
       // println(s"jsonstr = $jsonStr")
       val json = JSON.parseObject(jsonStr)
-      var ftrl = new Ftrl()
+      val ftrl = new Ftrl(featureSize)
       ftrl.w = json.getString("w").split(" ").map(_.toDouble)
       ftrl.n = json.getString("n").split(" ").map(_.toDouble)
       ftrl.z = json.getString("z").split(" ").map(_.toDouble)
@@ -77,7 +77,7 @@ object RedisUtil {
     redis.disconnect
   }
 
-  def redisToFtrlWithType(typename: String, version: Int): Ftrl = {
+  def redisToFtrlWithType(typename: String, version: Int, featureSize: Int): Ftrl = {
 
     val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
     redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
@@ -86,18 +86,9 @@ object RedisUtil {
     if (res == null || res.toString.trim == "" || res == None) {
       null
     } else {
-      val jsonStr = res.get
-      // println(s"jsonstr = $jsonStr")
-      val json = JSON.parseObject(jsonStr)
-      var ftrl = new Ftrl()
-      ftrl.w = json.getString("w").split(" ").map(_.toDouble)
-      ftrl.n = json.getString("n").split(" ").map(_.toDouble)
-      ftrl.z = json.getString("z").split(" ").map(_.toDouble)
-      ftrl.alpha = json.getDoubleValue("alpha")
-      ftrl.beta = json.getDoubleValue("beta")
-      ftrl.L1 = json.getDoubleValue("L1")
-      ftrl.L2 = json.getDoubleValue("L2")
-      ftrl
+      val ftrl = new Ftrl(featureSize)
+      ftrl.fromJsonString(res.get)
+      return ftrl
     }
   }
 

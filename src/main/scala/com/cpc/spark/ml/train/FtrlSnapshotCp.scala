@@ -3,19 +3,17 @@ package com.cpc.spark.ml.train
 import java.io.FileOutputStream
 import java.util.Date
 
+import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.qukan.utils.RedisUtil
+import com.cpc.spark.qukan.utils.Udfs.udfSnapshotToLeafFeatures
+import com.typesafe.config.ConfigFactory
+import mlmodel.mlmodel._
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.col
-import com.cpc.spark.qukan.utils.Udfs.udfSnapshotToLeafFeatures
-import com.typesafe.config.ConfigFactory
-import mlmodel.mlmodel._
-import com.cpc.spark.ml.common.{Utils => MUtils}
 
-import scala.collection.mutable
-
-object FtrlSnapshot {
+object FtrlSnapshotCp {
 
   def main(args: Array[String]): Unit = {
 
