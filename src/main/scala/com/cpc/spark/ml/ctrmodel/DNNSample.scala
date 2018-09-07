@@ -52,31 +52,27 @@ object DNNSample {
     val BcDict = spark.sparkContext.broadcast(dict)
     val ulog = getData(spark,"ctrdata_v1",ctrPathSep).rdd
       .filter(_.getAs[Int]("ideaid") > 0)
-      .randomSplit(Array(0.1, 0.9), new Date().getTime)(0)
       .map{row =>
         dict = BcDict.value
-        val vec = getVectorParser1(row)
+        val vec = getVectorParser2(row)
         var label = Seq(0, 1)
         if (row.getAs[Int]("label") > 0) {
           label = Seq(1, 0)
         }
 
-        var hashed = Seq[Long]()
-        for (i <- feature_names.indices) {
-          hashed :+= (feature_names(i) + vec(i)).hashCode.toLong
-        }
-
-        (label, vec, Seq[Int](), Seq[Int](), Seq[Int](), hashed)
+        (label, vec)
       }
-      .zipWithUniqueId()
-      .map(x => (x._2, x._1._1, x._1._2, x._1._3, x._1._4, x._1._5, x._1._6))
-      .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
+      .toDF("label", "id")
       .repartition(100)
-    println(ulog.count())
 
-    val Array(train, test) = ulog.randomSplit(Array(0.8, 0.2))
+    val Array(train, test) = ulog.randomSplit(Array(0.98, 0.02))
 
-    train.write
+    train.filter {
+      x =>
+        val label = x.getAs[Int]("label")
+        label < 1 && Random.nextInt(1000) < 10
+    }
+      .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
