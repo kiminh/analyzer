@@ -50,7 +50,6 @@ object DNNSample {
     //val userAppIdx = getUidApp(spark, ctrPathSep).cache()
 
     val BcDict = spark.sparkContext.broadcast(dict)
-
     val ulog = getData(spark,"ctrdata_v1",ctrPathSep).rdd
       .filter(_.getAs[Int]("ideaid") > 0)
       .randomSplit(Array(0.1, 0.9), new Date().getTime)(0)
@@ -61,10 +60,16 @@ object DNNSample {
         if (row.getAs[Int]("label") > 0) {
           label = Seq(1, 0)
         }
-        (label, vec)
+
+        var hashed = Seq[Long]()
+        for (i <- feature_names.indices) {
+          hashed :+= (feature_names(i) + vec(i)).hashCode.toLong
+        }
+
+        (label, vec, Seq(), Seq(), Seq(), hashed)
       }
-      .toDF("label", "id")
-      .repartition(100)
+      .zipWithUniqueId()
+      .toDF("label", "dense", "idx0", "idx1", "idx2", "id_arr", "sample_idx")
     println(ulog.count())
 
     val Array(train, test) = ulog.randomSplit(Array(0.8, 0.2))
@@ -204,7 +209,7 @@ object DNNSample {
   }
 
 
-  def getVectorParser1(x: Row): Seq[Long] = {
+  def getVectorParser1(x: Row): Seq[Int] = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
@@ -226,16 +231,11 @@ object DNNSample {
     els :+= x.getAs[Int]("planid")
     els :+= x.getAs[Int]("unitid")
     els :+= x.getAs[Int]("ideaid")
-
-    var hashed = Seq[Long]()
-    for (i <- feature_names.indices) {
-      hashed :+= (feature_names(i) + els(i)).hashCode.toLong
-    }
-    hashed
+    els
   }
 
   val feature_names = Seq(
-    "sex", "age", "os", "network", "cityid",
+    "hour", "sex", "age", "os", "network", "cityid",
     "mediaid", "slotid", "phone_level", "adclass",
     "adtype", "adslot_type", "planid", "unitid", "ideaid")
 
