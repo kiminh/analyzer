@@ -71,7 +71,7 @@ object DNNSample {
       x =>
         val label = x.getAs[Seq[Int]]("label")
 
-        label(1) == 0 && Random.nextInt(100) < 10
+        label(0) == 1 || Random.nextInt(100) < 10
     }
       .write
       .mode("overwrite")
