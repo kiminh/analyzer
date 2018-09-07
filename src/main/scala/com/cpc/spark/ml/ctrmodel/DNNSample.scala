@@ -66,7 +66,8 @@ object DNNSample {
       .toDF("label", "id")
     println(ulog.count())
 
-    ulog.write
+    ulog.repartition(50)
+      .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
