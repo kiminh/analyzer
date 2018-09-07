@@ -49,10 +49,13 @@ object DNNSample {
     initFeatureDict(spark, ctrPathSep)
     //val userAppIdx = getUidApp(spark, ctrPathSep).cache()
 
+    val BcDict = spark.sparkContext.broadcast(dict)
+
     val ulog = getData(spark,"ctrdata_v1",ctrPathSep).rdd
       .filter(_.getAs[Int]("ideaid") > 0)
       .randomSplit(Array(0.1, 0.9), new Date().getTime)(0)
       .map{row =>
+        dict = BcDict.value
         val vec = getVectorParser2(row)
         var label = Seq(0, 1)
         if (row.getAs[Int]("label") > 0) {
