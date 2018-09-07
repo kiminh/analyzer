@@ -52,7 +52,7 @@ object DNNSample {
     val BcDict = spark.sparkContext.broadcast(dict)
     val ulog = getData(spark,"ctrdata_v1",ctrPathSep).rdd
       .filter(_.getAs[Int]("ideaid") > 0)
-      .randomSplit(Array(0.5, 0.5), new Date().getTime)(0)
+      .randomSplit(Array(0.1, 0.9), new Date().getTime)(0)
       .map{row =>
         dict = BcDict.value
         val vec = getVectorParser1(row)
