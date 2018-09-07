@@ -55,7 +55,7 @@ object DNNSample {
       .randomSplit(Array(0.5, 0.5), new Date().getTime)(0)
       .map{row =>
         dict = BcDict.value
-        val vec = getVectorParser2(row)
+        val vec = getVectorParser1(row)
         var label = Seq(0, 1)
         if (row.getAs[Int]("label") > 0) {
           label = Seq(1, 0)
@@ -69,6 +69,7 @@ object DNNSample {
         (label, vec, Seq[Int](), Seq[Int](), Seq[Int](), hashed)
       }
       .zipWithUniqueId()
+      .map(x => (x._2, x._1._1, x._1._2, x._1._3, x._1._4, x._1._5, x._1._6))
       .toDF("label", "dense", "idx0", "idx1", "idx2", "id_arr", "sample_idx")
     println(ulog.count())
 
