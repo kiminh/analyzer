@@ -71,6 +71,7 @@ object DNNSample {
       .zipWithUniqueId()
       .map(x => (x._2, x._1._1, x._1._2, x._1._3, x._1._4, x._1._5, x._1._6))
       .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
+      .repartition(100)
     println(ulog.count())
 
     val Array(train, test) = ulog.randomSplit(Array(0.8, 0.2))
