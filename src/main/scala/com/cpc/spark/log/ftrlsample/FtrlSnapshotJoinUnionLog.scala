@@ -15,10 +15,10 @@ object FtrlSnapshotJoinUnionLog {
 
 
     val snapshot1 = spark.table("dl_cpc.ml_snapshot_from_show")
-      .filter(s"dt = '$dt' and hour = '$hour'")
+      .filter(s"`date` = '$dt' and hour = '$hour'")
 
     val unionlog1 = spark.table("dl_cpc.cpc_union_log")
-      .filter(s"dt = '$dt' and hour = '$hour'")
+      .filter(s"`date` = '$dt' and hour = '$hour'")
 
     val join = unionlog1.join(snapshot1, Seq("searchid"), "left")
         .filter("feature_vector is not null")
