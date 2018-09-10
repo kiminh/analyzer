@@ -75,7 +75,21 @@ object Utils {
   }
 
   def getCtrModelIdFromExpTags(expTags: String): String = {
-    return ""
+    val prefix = "ctrmodel="
+    expTags.split(",").foreach(
+      x =>
+        if (x.startsWith(prefix)) {
+          var model = x.substring(prefix.length)
+          if (model.startsWith("0-") || model.startsWith("1-")) {
+            model = model.substring(2)
+          }
+          if (model.endsWith("-uid")) {
+            model = model.substring(0, model.length - 4)
+          }
+          return model
+        }
+    )
+    return "<undefined>"
   }
 }
 

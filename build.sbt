@@ -19,6 +19,8 @@ PB.targets in Compile := Seq(
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
   "org.apache.spark" %% "spark-mllib" % "2.1.0" % "provided",
+  "org.apache.spark" %% "spark-core" % "2.1.0",
+  "org.apache.spark" %% "spark-sql" % "2.1.0",
   "org.json4s" %% "json4s-native" % "3.5.1",
   "com.hankcs" % "hanlp" % "portable-1.3.4",
   "com.github.jurajburian" %% "mailer" % "1.2.1",
