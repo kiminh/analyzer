@@ -51,6 +51,12 @@ message Pack {
     int64 xg_feature_num = 11;
 }
 
+message CalibrationConfig {
+    string name = 1;
+    IRModel ir = 2;
+    int64 timestamp = 3;
+}
+
 message ProtoPortrait {
     int64 id = 1;
     string sid = 2;
