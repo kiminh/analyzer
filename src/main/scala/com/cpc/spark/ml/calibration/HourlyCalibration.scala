@@ -47,10 +47,13 @@ object HourlyCalibration {
 
     // get union log
     val log = session.sql(
-      s"select isclick, ext['exp_ctr'].int_value as ectr, show_timestamp, exptags from dl_cpc.cpc_union_log" +
-        "where `date`>='$startDate' and hour >= '$startHour' and `date` <= $endDate and hour <= $'endHour'" +
-        "and media_appsid in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0" +
-        "and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0")
+      s"""
+         | select isclick, ext['exp_ctr'].int_value as ectr, show_timestamp, exptags from dl_cpc.cpc_union_log
+         | where `date`>='$startDate' and hour >= '$startHour' and `date` <= '$endDate' and hour <= '$endHour'
+         | and media_appsid in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0
+         | and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0
+       """.stripMargin)
+
 
     unionLogToConfig(log.rdd, session.sparkContext, softMode)
   }
