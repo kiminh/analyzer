@@ -66,7 +66,7 @@ object FtrlSnapshotJoinUnionLog {
     val rawData = spark.sql(sqlRequest)
     // 根据列名称抽取数据
     val cleanData = rawData.select(featureColumns.map(c => col(c)): _*)
-
+    println(rawData.count())
     // 获取结果RDD
     val resultRDD = getLibSVM(cleanData, spark)
 
@@ -85,7 +85,7 @@ object FtrlSnapshotJoinUnionLog {
 
     import sparkSession.implicits._
     // 读取原始数据表并进行结构转化
-
+    println("entering getLibSVM function")
     var featureMap = mutable.LinkedHashMap[String, String]()
     featureMap += ("sex" -> "50") //bs
     featureMap += ("age" -> "51") //bs
@@ -119,7 +119,7 @@ object FtrlSnapshotJoinUnionLog {
         finalData = finalData.withColumn(currentFeature, col(currentFeature).cast(types.StringType))
     }
     val finalDF = finalData.na.fill("null")
-
+    println(finalDF.first.getString(0))
     // 生成特征数据
     val feature = finalDF.map( row => {
       val currentRow =
@@ -148,7 +148,7 @@ object FtrlSnapshotJoinUnionLog {
     val mediaAppsid = finalDF.select(col("media_appsid")).map(_.getString(0)).rdd
 
     val resultRDD = libsvmResult zip isClick zip label zip adslotType zip mediaAppsid map {case((((x, y), z), a), b) => (x, y, z, a, b)}
-
+    println(resultRDD.first)
     resultRDD
 
   }
