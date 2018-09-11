@@ -65,7 +65,7 @@ object HourlyCalibration {
 
     val result = log.map( x => {
       val isClick = x.getInt(0).toDouble
-      val ectr = x.getInt(1).toDouble / 1e6d
+      val ectr = x.getLong(1).toDouble / 1e6d
       // TODO(huazhenhao) not used right now in the first version, should be used as weights
       // val showTimeStamp = x.getAs[Int]("show_timestamp")
       val model = x.getString(3)
