@@ -9,6 +9,8 @@ object FtrlSnapshotJoinUnionLog {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
+    import spark.implicits._
+
     val dt = args(0)
     val hour = args(1)
     val featureColumns = args(2).split(",").toSeq
@@ -63,7 +65,7 @@ object FtrlSnapshotJoinUnionLog {
     val cleanData = rawData.select(featureColumns.map(c => col(c)): _*)
 
     // 获取结果RDD
-    val resultRDD = getLibSVM(cleanData)
+    val resultRDD = getLibSVM(cleanData, spark)
 
     // 将结果RDD整理成Dataframe准备存储
     val resultDF = resultRDD.toDF("libsvm", "isclick", "adslot_type", "media_appsid")
@@ -75,7 +77,9 @@ object FtrlSnapshotJoinUnionLog {
 
   }
 
-  def getLibSVM(df: DataFrame) = {
+  def getLibSVM(df: DataFrame, sparkSession: SparkSession) = {
+
+    import sparkSession.implicits._
     // 读取原始数据表并进行结构转化
 
     // 获取dataframe列名
