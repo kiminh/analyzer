@@ -1,11 +1,11 @@
 package com.cpc.spark.common
 
 import javax.mail.internet.InternetAddress
-
 import com.github.jurajburian.mailer._
 import com.typesafe.config.ConfigFactory
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.spark.sql.SparkSession
 
 /**
   * Created by roydong on 09/08/2017.
@@ -59,6 +59,37 @@ object Utils {
     }
     mapCombination(n, 0, 0, comb)
     combs
+  }
+
+
+  def buildSparkSession(name : String, serializer: String = "org.apache.spark.serializer.KryoSerializer",
+                        buffer : String = "2047MB", enableHiveSupport : Boolean = true): SparkSession = {
+    val builder = SparkSession.builder()
+      .config("spark.serializer", serializer)
+      .config("spark.kryoserializer.buffer.max", buffer)
+      .appName(name)
+    if (enableHiveSupport) {
+      builder.enableHiveSupport()
+    }
+    return builder.getOrCreate()
+  }
+
+  def getCtrModelIdFromExpTags(expTags: String): String = {
+    val prefix = "ctrmodel="
+    expTags.split(",").foreach(
+      x =>
+        if (x.startsWith(prefix)) {
+          var model = x.substring(prefix.length)
+          if (model.startsWith("0-") || model.startsWith("1-")) {
+            model = model.substring(2)
+          }
+          if (model.endsWith("-uid")) {
+            model = model.substring(0, model.length - 4)
+          }
+          return model
+        }
+    )
+    return "undefined"
   }
 }
 

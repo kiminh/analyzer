@@ -24,7 +24,8 @@ object GetMediaLog {
         """.stripMargin)
       System.exit(1)
     }
-    val dayBefore = args(0).toInt
+    //val dayBefore = args(0).toInt
+    val date = args(0)
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val conf = ConfigFactory.load()
@@ -33,9 +34,9 @@ object GetMediaLog {
     mariadbProp.put("password", conf.getString("mariadb.union_write.password"))
     mariadbProp.put("driver", conf.getString("mariadb.union_write.driver"))
 
-    val cal = Calendar.getInstance()
-    cal.add(Calendar.DATE, -dayBefore)
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    //val cal = Calendar.getInstance()
+    //cal.add(Calendar.DATE, -dayBefore)
+    //val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
     val ctx = SparkSession.builder()
       .appName("media request anal" + date)

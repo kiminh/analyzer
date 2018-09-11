@@ -15,15 +15,17 @@ object CpcChargeFrom_Unionlog {
       .enableHiveSupport()
       .getOrCreate()
 
-    val start = args(0).toLong
-    val end = args(1).toLong
+    val date = args(0)
+    val hour = args(1)
+    val start = args(2).toLong
+    val end = args(3).toLong
 
     val message = spark.sql(
       s"""
          |SELECT thedate,thehour,field["cpc_click_new"].string_type as value
          |from dl_cpc.src_cpc_click_minute
-         |WHERE thedate = "2018-08-30"
-         | and thehour in ("17", "18")
+         |WHERE thedate = '$date'
+         | and thehour = $hour
          | and log_timestamp>=$start
          | and log_timestamp<=$end
       """.stripMargin)
