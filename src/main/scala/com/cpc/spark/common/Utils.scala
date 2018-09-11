@@ -89,7 +89,7 @@ object Utils {
           return model
         }
     )
-    return "<undefined>"
+    return "undefined"
   }
 }
 

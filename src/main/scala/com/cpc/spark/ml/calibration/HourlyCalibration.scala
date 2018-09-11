@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.calibration
 
-import java.io.FileOutputStream
+import java.io.{File, FileOutputStream}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -12,6 +12,7 @@ import com.cpc.spark.ml.common.{Utils => MUtils}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+
 
 object HourlyCalibration {
 
@@ -87,6 +88,8 @@ object HourlyCalibration {
           val filename = s"calibration-${modelName}.mlm"
           val localPath = localDir + filename
           if (saveToLocal) {
+            val outFile = new File(localPath)
+            outFile.getParentFile.mkdirs()
             config.writeTo(new FileOutputStream(localPath))
             if (softMode == 0) {
               val conf = ConfigFactory.load()

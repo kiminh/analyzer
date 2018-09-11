@@ -13,8 +13,8 @@ class TestUtils extends FlatSpec with Matchers {
     model should be ("modelC")
   }
 
-  it should "return <undefined> if not ctrmodel is found" in {
+  it should "return undefined if no ctrmodel is found" in {
     val model = Utils.getCtrModelIdFromExpTags("")
-    model should be ("<undefined>")
+    model should be ("undefined")
   }
 }
