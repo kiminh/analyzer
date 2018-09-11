@@ -49,7 +49,7 @@ object HourlyCalibration {
     // get union log
     val log = session.sql(
       s"""
-         | select isclick, ext['exp_ctr'].int_value as ectr, show_timestamp, exptags from dl_cpc.cpc_union_log
+         | select isclick, ext_int['raw_ctr'] as ectr, show_timestamp, ext_string['ctr_model_name'] from dl_cpc.cpc_union_log
          | where `date`>='$startDate' and hour >= '$startHour' and `date` <= '$endDate' and hour <= '$endHour'
          | and media_appsid in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0
          | and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0
@@ -68,7 +68,7 @@ object HourlyCalibration {
       val ectr = x.getInt(1).toDouble / 1e6d
       // TODO(huazhenhao) not used right now in the first version, should be used as weights
       // val showTimeStamp = x.getAs[Int]("show_timestamp")
-      val model = Utils.getCtrModelIdFromExpTags(x.getString(3))
+      val model = x.getString(3)
       (model, (ectr, isClick))
     }).groupByKey()
       .mapValues(binIterable(_, minBinSize, maxBinCount))
