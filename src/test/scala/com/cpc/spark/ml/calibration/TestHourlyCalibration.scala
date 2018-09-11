@@ -41,10 +41,10 @@ class TestHourlyCalibration extends FlatSpec with Matchers with BeforeAndAfter {
 
   "unionLogToConfig" should "generate correct config from union log rdd" in {
     val rdd = sc.parallelize(Seq(
-      Row(1, (1d * 1e6).toInt, "", "v1"),
-      Row(0, (0.5d * 1e6).toInt, "", "v1"),
-      Row(1, (0.8d * 1e6).toInt, "", "v1"),
-      Row(0, (0.2d * 1e6).toInt, "", "v1")))
+      Row(1, (1d * 1e6).toLong, "", "v1"),
+      Row(0, (0.5d * 1e6).toLong, "", "v1"),
+      Row(1, (0.8d * 1e6).toLong, "", "v1"),
+      Row(0, (0.2d * 1e6).toLong, "", "v1")))
     var result = HourlyCalibration.unionLogToConfig(rdd, sc, 1, false, 2, 4)
     result.size should be (1)
     result.head.name should be ("v1")
@@ -54,12 +54,12 @@ class TestHourlyCalibration extends FlatSpec with Matchers with BeforeAndAfter {
 
   it should "generate isotonic model" in {
     val rdd = sc.parallelize(Seq(
-      Row(1, (1d * 1e6).toInt, "", "v1"),
-      Row(0, (0.5d * 1e6).toInt, "", "v1"),
-      Row(1, (0.8d * 1e6).toInt, "", "v1"),
-      Row(0, (0.9d * 1e6).toInt, "", "v1"),
-      Row(0, (0.2d * 1e6).toInt, "", "v1"),
-      Row(1, (0.3d * 1e6).toInt, "", "v1")))
+      Row(1, (1d * 1e6).toLong, "", "v1"),
+      Row(0, (0.5d * 1e6).toLong, "", "v1"),
+      Row(1, (0.8d * 1e6).toLong, "", "v1"),
+      Row(0, (0.9d * 1e6).toLong, "", "v1"),
+      Row(0, (0.2d * 1e6).toLong, "", "v1"),
+      Row(1, (0.3d * 1e6).toLong, "", "v1")))
 
     val result = HourlyCalibration.unionLogToConfig(rdd, sc, 1, false, 3, 4)
     result.size should be (1)
