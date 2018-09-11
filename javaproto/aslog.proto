@@ -33,6 +33,7 @@ message Media {
 	optional SiteInfo	site = 5;
 	optional uint32		category = 6;
 	optional string     subaccountid = 7;
+	optional string     dtu_id = 8;
 };
 enum AdslotType {
 	LIST_FEED   = 1;
@@ -168,6 +169,7 @@ enum AdSrc {
 	QUYUANSU = 15;
 	TOUTIAO = 16;
 	QIHU = 17;
+	XINGU = 18;
 };
 enum InteractionType {
 	NO_INTERACT = 0;
@@ -257,6 +259,7 @@ message AdInfo {
 	optional uint64 lastcpm = 35; // 最终计算价格的cpm
 	optional int32 coin = 36; // 激励广告金币数
 	optional AppInfo app_info = 37; //下载类广告应用信息
+	optional uint64 cvr_old = 38; // 给cvr1.0和cvr2.0用 cvr * 10^6
 };
 
 message AdDspRet {
