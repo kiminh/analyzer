@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.calibration
 
-import java.io.{File, FileOutputStream}
+import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -85,20 +85,34 @@ object HourlyCalibration {
             name = modelName,
             ir = Option(irModel)
           )
-          val filename = s"calibration-${modelName}.mlm"
-          val localPath = localDir + filename
           if (saveToLocal) {
-            val outFile = new File(localPath)
-            outFile.getParentFile.mkdirs()
-            config.writeTo(new FileOutputStream(localPath))
+            val localPath = saveProtoToLocal(modelName, config)
+            saveFlatTextFileForDebug(modelName, config)
             if (softMode == 0) {
               val conf = ConfigFactory.load()
-              println(MUtils.updateMlcppOnlineData(localPath, destDir + filename, conf))
+              println(MUtils.updateMlcppOnlineData(localPath, destDir + s"calibration-$modelName.mlm", conf))
             }
           }
           config
       }.toList
     return result
+  }
+
+  def saveProtoToLocal(modelName: String, config: CalibrationConfig): String = {
+    val filename = s"calibration-$modelName.mlm"
+    val localPath = localDir + filename
+    val outFile = new File(localPath)
+    outFile.getParentFile.mkdirs()
+    config.writeTo(new FileOutputStream(localPath))
+    return localPath
+  }
+
+  def saveFlatTextFileForDebug(modelName: String, config: CalibrationConfig): Unit = {
+    val filename = s"calibration-flat-$modelName.txt"
+    val localPath = localDir + filename
+    val outFile = new File(localPath)
+    outFile.getParentFile.mkdirs()
+    new PrintWriter(localPath) { write(config.toString); close() }
   }
 
   // input: Seq<(<ectr, click>)
