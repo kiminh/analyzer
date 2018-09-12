@@ -8,13 +8,12 @@ object FtrlUnionLog {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
-    //    import spark.implicits._
-
     val dt = args(0)
     val hour = args(1)
     val featureColumns = args(2).split(",").toSeq
 
-    ftrlUnionLog(dt, hour, featureColumns, "test.tmp_libsvm_unionLog_table_20180911", spark)
+
+    ftrlUnionLog(dt, hour, featureColumns, "test.tmp_libsvm_unionLog_table_20180912", spark)
   }
 
   def ftrlUnionLog(date: String, hour:String, featureColumns: Seq[String], tableName: String, spark: SparkSession) ={
@@ -119,12 +118,12 @@ object FtrlUnionLog {
     val resultRDD = searchId zip feature zip isClick zip label zip adslotType zip mediaAppsid map {case(((((x, y), z), a), b), c) => (x, y, z, a, b, c)}
     println(resultRDD.first)
     // 将结果RDD整理成Dataframe准备存储
-    val resultDF = resultRDD.toDF("searchid", "libsvm", "isclick", "label", "adslot_type", "media_appsid")
+    val resultDF = resultRDD.toDF("searchid", "libsvm", "isclick", "iscvr", "adslot_type", "media_appsid")
     val result = resultDF.withColumn("date", lit(date)).withColumn("hour", lit(hour))
 
     // 存取dataframe
     // TODO：数据表名暂不确定
-    result.write.mode("append").partitionBy("date", "hour").saveAsTable(tableName)
+    result.write.mode("overwrite").partitionBy("date", "hour").saveAsTable(tableName)
 
     println("complete unionLog Function")
   }

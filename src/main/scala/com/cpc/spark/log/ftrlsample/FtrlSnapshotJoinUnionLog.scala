@@ -15,15 +15,13 @@ object FtrlSnapshotJoinUnionLog {
 
     ftrlJoinTable(dt, hour, "test.tmp_libsvm_table_20180912", spark)
   }
-
-
-
+  
   def ftrlJoinTable(date: String, hour: String, targetTable: String, spark: SparkSession) = {
     import spark.implicits._
 
     val snapshot1 = spark.table("dl_cpc.ml_snapshot_from_show").filter(s"`date` = '$date' and hour = '$hour'")
 
-    val unionlog1 = spark.table("test.tmp_libsvm_unionLog_table_20180911").filter(s"`date` = '$date' and hour = '$hour'")
+    val unionlog1 = spark.table("test.tmp_libsvm_unionLog_table_20180912").filter(s"`date` = '$date' and hour = '$hour'")
 
     val join = unionlog1.join(snapshot1, Seq("searchid"), "inner").filter("feature_vector is not null")
 
@@ -34,22 +32,12 @@ object FtrlSnapshotJoinUnionLog {
     )
     val unilogFeature = join.select(col("libsvm")).map(_.getString(0).trim).rdd
 
-//    val finalLibSvm = rawData.map(row => {
-//      val featureVector = row.getMap(0)
-//      val featureVectorString = featureVector.map((k: Int, v: Float) => k.toString() + ":" + v.toString())
-//      val finalFeatureVector = featureVectorString.reduce((x, y) => x + " " + y)
-//      val libsvm = row.getString(1)
-//      val currentRow = featureVector + " " + libsvm
-//      val currentResult = currentRow.replace("  ", " ")
-//      currentResult
-//    }).rdd
-
     val finalLibSvm = unilogFeature zip featureVector map { case(x, y) =>
       x + " " + y
     }
 
     val isClick = join.select(col("isclick")).map(_.getString(0)).rdd
-    val label = join.select(col("label")).map(_.getString(0)).rdd
+    val label = join.select(col("iscvr")).map(_.getString(0)).rdd
     // 生成adslot_type列
     val adslotType = join.select(col("adslot_type")).map(_.getString(0)).rdd
 
@@ -59,9 +47,11 @@ object FtrlSnapshotJoinUnionLog {
     val resultRDD = finalLibSvm zip isClick zip label zip adslotType zip mediaAppsid map { case ((((x, y), z), a), b) => (x, y, z, a, b) }
     println(resultRDD.first)
 
+    val resultDF = resultRDD.toDF("libsvm", "isclick", "iscvr", "adslot_type", "media_appsid")
+    val result = resultDF.withColumn("date", lit(date)).withColumn("hour", lit(hour))
     // 存取dataframe
     // TODO：数据表名暂不确定
-    //    result.write.mode("overwrite").partitionBy("date", "hour").saveAsTable(targetTable)
+    result.write.mode("overwrite").partitionBy("date", "hour").saveAsTable(targetTable)
 
     println("complete unionLog Function")
   }
