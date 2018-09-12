@@ -12,16 +12,19 @@ object FtrlSnapshotJoinUnionLog {
 
     val dt = args(0)
     val hour = args(1)
+    val sourceTabName = "test.tmp_libsvm_unionLog_table_" + dt + "_" + hour
+    val targetTabName = "test.tmp_libsvm_table_20180912"
 
-    ftrlJoinTable(dt, hour, "test.tmp_libsvm_table_20180912", spark)
+
+    ftrlJoinTable(dt, hour, sourceTabName, targetTabName, spark)
   }
 
-  def ftrlJoinTable(date: String, hour: String, targetTable: String, spark: SparkSession) = {
+  def ftrlJoinTable(date: String, hour: String, sourceTable: String, targetTable: String, spark: SparkSession) = {
     import spark.implicits._
 
     val snapshot1 = spark.table("dl_cpc.ml_snapshot_from_show").filter(s"`date` = '$date' and hour = '$hour'")
 
-    val unionlog1 = spark.table("test.tmp_libsvm_unionLog_table_20180912").filter(s"`date` = '$date' and hour = '$hour'")
+    val unionlog1 = spark.table(sourceTable).filter(s"`date` = '$date' and hour = '$hour'")
 
     val join = unionlog1.join(snapshot1, Seq("searchid"), "inner").filter("feature_vector is not null")
 
@@ -54,13 +57,21 @@ object FtrlSnapshotJoinUnionLog {
     result.write.mode("overwrite").partitionBy("date", "hour").saveAsTable(targetTable)
 
     println("complete unionLog Function")
+
+    spark.sql("DROP TABLE " + sourceTable)
+
   }
 
 }
 
+//real    5m1.178s
+//user    1m4.779s
+//sys     0m9.276s
+
+
 
 //TODO:
-// 1. seperate unionlog and snapshot in two different steps and save them in table separately
+// 1. seperate unionlog and snapshot in two different steps and save them in table separately: DONE
 // Some -> integer
 // Null value
 // 2. use udf

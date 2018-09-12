@@ -11,9 +11,9 @@ object FtrlUnionLog {
     val dt = args(0)
     val hour = args(1)
     val featureColumns = args(2).split(",").toSeq
+    val tabName = "test.tmp_libsvm_unionLog_table_" + dt + "_" + hour
 
-
-    ftrlUnionLog(dt, hour, featureColumns, "test.tmp_libsvm_unionLog_table_20180912", spark)
+    ftrlUnionLog(dt, hour, featureColumns, tabName, spark)
   }
 
   def ftrlUnionLog(date: String, hour:String, featureColumns: Seq[String], tableName: String, spark: SparkSession) ={
@@ -123,9 +123,14 @@ object FtrlUnionLog {
 
     // 存取dataframe
     // TODO：数据表名暂不确定
-    result.write.mode("overwrite").partitionBy("date", "hour").saveAsTable(tableName)
+    result.write.mode("overwrite").saveAsTable(tableName)
 
     println("complete unionLog Function")
   }
 
 }
+
+
+//real    6m22.437s
+//user    1m25.140s
+//sys     0m11.149s
