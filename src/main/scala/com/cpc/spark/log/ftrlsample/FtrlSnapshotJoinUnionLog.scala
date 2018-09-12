@@ -12,10 +12,10 @@ object FtrlSnapshotJoinUnionLog {
 
     val dt = args(0)
     val hour = args(1)
-    val featureColumns = args(2).split(",").toSeq
 
     ftrlJoinTable(dt, hour, "test.tmp_libsvm_table_20180912", spark)
   }
+
 
 
   def ftrlJoinTable(date: String, hour: String, targetTable: String, spark: SparkSession) = {
@@ -27,24 +27,34 @@ object FtrlSnapshotJoinUnionLog {
 
     val join = unionlog1.join(snapshot1, Seq("searchid"), "inner").filter("feature_vector is not null")
 
-    val rawData = join.select(col("feature_vector"), col("libsvm"))
+//    featureVector: org.apache.spark.sql.DataFrame = [feature_vector: map<int,float>]
+    val featureVectorRDD = join.select(col("feature_vector")).rdd
+    val featureVector = featureVectorRDD.map( row =>
+      {row.getMap[Int, Float](0).map(_.productIterator.mkString(":"))}.mkString(" ").trim
+    )
+    val unilogFeature = join.select(col("libsvm")).map(_.getString(0).trim).rdd
 
-    val finalLibSvm = rawData.map(row => {
-      val featureVector = row.getMap(0)
-      val featureVectorString = featureVector.reduce((k, v) => k.toString() + ":" + v.toString())
-      val libsvm = row.getString(1)
-      val currentRow = featureVector + " " + libsvm
-      val currentResult = currentRow.replace("  ", " ")
-      currentResult
-    }).rdd
+//    val finalLibSvm = rawData.map(row => {
+//      val featureVector = row.getMap(0)
+//      val featureVectorString = featureVector.map((k: Int, v: Float) => k.toString() + ":" + v.toString())
+//      val finalFeatureVector = featureVectorString.reduce((x, y) => x + " " + y)
+//      val libsvm = row.getString(1)
+//      val currentRow = featureVector + " " + libsvm
+//      val currentResult = currentRow.replace("  ", " ")
+//      currentResult
+//    }).rdd
 
-    val isClick = rawData.select(col("isclick")).map(_.getString(0)).rdd
-    val label = rawData.select(col("label")).map(_.getString(0)).rdd
+    val finalLibSvm = unilogFeature zip featureVector map { case(x, y) =>
+      x + " " + y
+    }
+
+    val isClick = join.select(col("isclick")).map(_.getString(0)).rdd
+    val label = join.select(col("label")).map(_.getString(0)).rdd
     // 生成adslot_type列
-    val adslotType = rawData.select(col("adslot_type")).map(_.getString(0)).rdd
+    val adslotType = join.select(col("adslot_type")).map(_.getString(0)).rdd
 
     // 生成media_appsid格式列
-    val mediaAppsid = rawData.select(col("media_appsid")).map(_.getString(0)).rdd
+    val mediaAppsid = join.select(col("media_appsid")).map(_.getString(0)).rdd
 
     val resultRDD = finalLibSvm zip isClick zip label zip adslotType zip mediaAppsid map { case ((((x, y), z), a), b) => (x, y, z, a, b) }
     println(resultRDD.first)
