@@ -14,7 +14,7 @@ object FtrlSnapshotJoinUnionLog {
     val hour = args(1)
     val sourceTabName = "test.tmp_libsvm_unionLog_table_" + dt.replace("-", "").toString + "_" + hour.toString
 //    dl_cpc.ftrl_rawsample_hourly
-    val targetTabName = "test.tmp_libsvm_table_20180912"
+    val targetTabName = "dl_cpc.ftrl_rawsample_hourly"
 
 
     ftrlJoinTable(dt, hour, sourceTabName, targetTabName, spark)
