@@ -1,20 +1,13 @@
-package com.cpc.spark.ml.ctrmodel
+package com.cpc.spark.ml.dnn
 
-import java.io.{FileInputStream, FileOutputStream}
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ml.train.LRIRModel
-import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel
-import mlserver.mlserver._
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.mllib.classification.LogisticRegressionModel
-import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
-import org.apache.spark.mllib.linalg.{Vector, Vectors}
-import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
@@ -22,10 +15,7 @@ import scala.collection.mutable
 import scala.collection.mutable.WrappedArray
 import scala.util.Random
 
-/**
-  * Created by zhaolei on 22/12/2017.
-  */
-object DNNSample {
+object DNNSampleSingle {
 
   private val days = 7
   private val daysCvr = 20
@@ -42,6 +32,8 @@ object DNNSample {
       .getOrCreate()
     import spark.implicits._
 
+    val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime)
+
     //按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
     val cvrPathSep = getPathSeq(args(1).toInt)
@@ -51,44 +43,47 @@ object DNNSample {
 
     val BcDict = spark.sparkContext.broadcast(dict)
     val ulog = getData(spark,"ctrdata_v1",ctrPathSep).rdd
-      .filter(_.getAs[Int]("ideaid") > 0)
-      .randomSplit(Array(0.2, 0.8), 122223L)(0)
+      .filter {x =>
+        val ideaid = x.getAs[Int]("ideaid")
+        val slottype = x.getAs[Int]("adslot_type")
+        val mediaid = x.getAs[String]("media_appsid").toInt
+        ideaid > 0 && slottype == 1 && Seq(80000001, 80000002).contains(mediaid)
+      }
+      .randomSplit(Array(0.02, 0.98), new Date().getTime)(0)
       .map{row =>
         dict = BcDict.value
-        val vec = getVectorParser1(row)
+        val vec = getVectorParser2(row)
         var label = Seq(0, 1)
         if (row.getAs[Int]("label") > 0) {
           label = Seq(1, 0)
         }
-
-        var hash = Seq[Long]()
-        for (i <- vec.indices) {
-          hash = hash :+ (feature_names(i) + vec(i).toString).hashCode().toLong
-        }
-
-        (label, vec, hash)
+        (label, vec)
       }
       .zipWithUniqueId()
-      .map(x => (x._2, x._1._1, x._1._2, x._1._3))
-      .toDF("sample_idx", "label", "dence", "id")
+      .map(x => (x._2, x._1._1, x._1._2))
+      .toDF("sample_idx", "label", "id")
       .repartition(100)
 
     val Array(train, test) = ulog.randomSplit(Array(0.9, 0.1))
 
-    train
+    train.filter{
+        x =>
+        val label = x.getAs[Seq[Int]]("label")
+        label(0) == 1 || Random.nextInt(1000) < 120
+      }
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/dw/dnntrain")
+      .save("/user/cpc/dw/dnntrain-" + date)
 
     test.write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/dw/dnntest")
+      .save("/user/cpc/dw/dnntest-" + date)
 
-    //savePbPack("dnnp1", "/home/cpc/dw/bin/dict.pb", dict.toMap)
+    savePbPack("dnnp1", "/home/cpc/dw/bin/dict.pb", dict.toMap)
   }
 
   def getPathSeq(days: Int): mutable.Map[String,Seq[String]] ={
@@ -211,37 +206,6 @@ object DNNSample {
 
     spark.read.parquet(path:_*)
   }
-
-
-  def getVectorParser1(x: Row): Seq[Int] = {
-    val cal = Calendar.getInstance()
-    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
-    var els = Seq[Int]()
-
-    els :+= hour
-    els :+= x.getAs[Int]("sex")
-    els :+= x.getAs[Int]("age")
-    els :+= x.getAs[Int]("os")
-    els :+= x.getAs[Int]("network")
-    els :+= x.getAs[Int]("city")
-    els :+= x.getAs[String]("media_appsid").toInt
-    els :+= x.getAs[String]("adslotid").toInt
-    els :+= x.getAs[Int]("phone_level")
-    els :+= x.getAs[Int]("adclass")
-    els :+= x.getAs[Int]("adtype")
-    els :+= x.getAs[Int]("adslot_type")
-    els :+= x.getAs[Int]("planid")
-    els :+= x.getAs[Int]("unitid")
-    els :+= x.getAs[Int]("ideaid")
-    els
-  }
-
-  val feature_names = Seq(
-    "hour", "sex", "age", "os", "network", "cityid",
-    "mediaid", "slotid", "phone_level", "adclass",
-    "adtype", "adslot_type", "planid", "unitid", "ideaid")
 
 
   def getVectorParser2(x: Row): Seq[Int] = {
