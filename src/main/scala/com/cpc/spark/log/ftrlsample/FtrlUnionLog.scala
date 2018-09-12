@@ -116,7 +116,7 @@ object FtrlUnionLog {
     val mediaAppsid = finalDF.select(col("media_appsid")).map(_.getString(0)).rdd
 
     val resultRDD = searchId zip feature zip isClick zip label zip adslotType zip mediaAppsid map {case(((((x, y), z), a), b), c) => (x, y, z, a, b, c)}
-    println(resultRDD.first)
+//    println(resultRDD.first)
     // 将结果RDD整理成Dataframe准备存储
     val resultDF = resultRDD.toDF("searchid", "libsvm", "isclick", "iscvr", "adslot_type", "media_appsid")
     val result = resultDF.withColumn("date", lit(date)).withColumn("hour", lit(hour))

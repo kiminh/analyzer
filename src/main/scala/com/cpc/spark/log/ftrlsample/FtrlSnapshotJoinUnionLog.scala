@@ -45,7 +45,7 @@ object FtrlSnapshotJoinUnionLog {
     val mediaAppsid = join.select(col("media_appsid")).map(_.getString(0)).rdd
 
     val resultRDD = finalLibSvm zip isClick zip label zip adslotType zip mediaAppsid map { case ((((x, y), z), a), b) => (x, y, z, a, b) }
-    println(resultRDD.first)
+//    println(resultRDD.first)
 
     val resultDF = resultRDD.toDF("libsvm", "isclick", "iscvr", "adslot_type", "media_appsid")
     val result = resultDF.withColumn("date", lit(date)).withColumn("hour", lit(hour))
