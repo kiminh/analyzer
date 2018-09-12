@@ -12,7 +12,7 @@ object FtrlSnapshotJoinUnionLog {
 
     val dt = args(0)
     val hour = args(1)
-    val sourceTabName = "test.tmp_libsvm_unionLog_table_" + dt + "_" + hour
+    val sourceTabName = "test.tmp_libsvm_unionLog_table_" + dt.replace("-", "").toString + "_" + hour.toString
     val targetTabName = "test.tmp_libsvm_table_20180912"
 
 

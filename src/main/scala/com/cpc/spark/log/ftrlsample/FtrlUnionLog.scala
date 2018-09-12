@@ -11,7 +11,7 @@ object FtrlUnionLog {
     val dt = args(0)
     val hour = args(1)
     val featureColumns = args(2).split(",").toSeq
-    val tabName = "test.tmp_libsvm_unionLog_table_" + dt + "_" + hour
+    val tabName = "test.tmp_libsvm_unionLog_table_" + dt.replace("-", "").toString + "_" + hour.toString
 
     ftrlUnionLog(dt, hour, featureColumns, tabName, spark)
   }
@@ -116,13 +116,13 @@ object FtrlUnionLog {
     val mediaAppsid = finalDF.select(col("media_appsid")).map(_.getString(0)).rdd
 
     val resultRDD = searchId zip feature zip isClick zip label zip adslotType zip mediaAppsid map {case(((((x, y), z), a), b), c) => (x, y, z, a, b, c)}
-//    println(resultRDD.first)
     // 将结果RDD整理成Dataframe准备存储
     val resultDF = resultRDD.toDF("searchid", "libsvm", "isclick", "iscvr", "adslot_type", "media_appsid")
     val result = resultDF.withColumn("date", lit(date)).withColumn("hour", lit(hour))
 
     // 存取dataframe
     // TODO：数据表名暂不确定
+    print(tableName)
     result.write.mode("overwrite").saveAsTable(tableName)
 
     println("complete unionLog Function")
