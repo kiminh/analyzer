@@ -39,7 +39,7 @@ object DNNSampleSingle {
     val cvrPathSep = getPathSeq(args(1).toInt)
 
     initFeatureDict(spark, ctrPathSep)
-    //val userAppIdx = getUidApp(spark, ctrPathSep)
+    val userAppIdx = getUidApp(spark, ctrPathSep)
 
     val BcDict = spark.sparkContext.broadcast(dict)
     val ulog = getData(spark,"ctrdata_v1",ctrPathSep).rdd
