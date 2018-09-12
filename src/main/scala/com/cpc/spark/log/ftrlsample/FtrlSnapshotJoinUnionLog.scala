@@ -15,7 +15,7 @@ object FtrlSnapshotJoinUnionLog {
 
     ftrlJoinTable(dt, hour, "test.tmp_libsvm_table_20180912", spark)
   }
-  
+
   def ftrlJoinTable(date: String, hour: String, targetTable: String, spark: SparkSession) = {
     import spark.implicits._
 
