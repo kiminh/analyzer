@@ -55,7 +55,7 @@ object FtrlSnapshotJoinUnionLog {
     val result = resultDF.withColumn("date", lit(date)).withColumn("hour", lit(hour))
     // 存取dataframe
     // TODO：数据表名暂不确定
-    result.write.mode("overwrite").partitionBy("date", "hour").saveAsTable(targetTable)
+    result.write.mode("overwrite").partitionBy("date", "hour").insertInto(targetTable)
     println("save into table: " + targetTable)
 
     println("complete unionLog Function")
