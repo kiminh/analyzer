@@ -64,7 +64,7 @@ object DNNSampleSingle {
       .toDF("sample_idx", "label", "id")
       .repartition(100)
 
-    val Array(train, test) = ulog.randomSplit(Array(0.9, 0.1))
+    val Array(train, test) = ulog.randomSplit(Array(0.95, 0.05))
 
     train.filter{
         x =>
