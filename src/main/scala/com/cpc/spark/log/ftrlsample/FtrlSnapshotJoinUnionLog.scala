@@ -13,6 +13,7 @@ object FtrlSnapshotJoinUnionLog {
     val dt = args(0)
     val hour = args(1)
     val sourceTabName = "test.tmp_libsvm_unionLog_table_" + dt.replace("-", "").toString + "_" + hour.toString
+//    dl_cpc.ftrl_rawsample_hourly
     val targetTabName = "test.tmp_libsvm_table_20180912"
 
 
@@ -55,6 +56,7 @@ object FtrlSnapshotJoinUnionLog {
     // 存取dataframe
     // TODO：数据表名暂不确定
     result.write.mode("overwrite").partitionBy("date", "hour").saveAsTable(targetTable)
+    println("save into table: " + targetTable)
 
     println("complete unionLog Function")
 

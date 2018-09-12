@@ -124,6 +124,7 @@ object FtrlUnionLog {
     // TODO：数据表名暂不确定
     print(tableName)
     result.write.mode("overwrite").saveAsTable(tableName)
+    println("save into table: " + tableName)
 
     println("complete unionLog Function")
   }
