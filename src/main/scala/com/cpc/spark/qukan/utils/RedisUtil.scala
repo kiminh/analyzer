@@ -52,7 +52,36 @@ object RedisUtil {
       null
     } else {
       val jsonStr = res.get
-//      println(s"jsonstr = $jsonStr")
+      // println(s"jsonstr = $jsonStr")
+      val json = JSON.parseObject(jsonStr)
+      var ftrl = new Ftrl()
+      ftrl.w = json.getString("w").split(" ").map(_.toDouble)
+      ftrl.n = json.getString("n").split(" ").map(_.toDouble)
+      ftrl.z = json.getString("z").split(" ").map(_.toDouble)
+      ftrl.alpha = json.getDoubleValue("alpha")
+      ftrl.beta = json.getDoubleValue("beta")
+      ftrl.L1 = json.getDoubleValue("L1")
+      ftrl.L2 = json.getDoubleValue("L2")
+      ftrl
+    }
+  }
+
+  def ftrlToRedisWithtype(ftrl: Ftrl, typename: String, version: Int): Unit = {
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    redis.setex(s"ftrl-$typename-$version", 7 * 24 * 60 * 60, ftrl.toJsonString())
+  }
+
+  def redisToFtrlWithType(typename: String, version: Int): Ftrl = {
+
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    var res = redis.get[String](s"ftrl-$typename-$version")
+    if (res == null || res.toString.trim == "" || res == None) {
+      null
+    } else {
+      val jsonStr = res.get
+      // println(s"jsonstr = $jsonStr")
       val json = JSON.parseObject(jsonStr)
       var ftrl = new Ftrl()
       ftrl.w = json.getString("w").split(" ").map(_.toDouble)

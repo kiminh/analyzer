@@ -14,7 +14,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.col
 
-object FtrlHourly {
+object FtrlNewHourly {
 
   def main(args: Array[String]): Unit = {
 
@@ -24,6 +24,9 @@ object FtrlHourly {
     val gbdtVersion = args(3).toInt
     val ftrlVersion = args(4).toInt
     val upload = args(5).toInt
+    val typearray = typename.split("-")
+    val adslot = typearray(0)
+    val ctrcvr = typearray(1)
 
     println(s"dt=$dt")
     println(s"hour=$hour")
@@ -31,10 +34,16 @@ object FtrlHourly {
     println(s"gbdtVersion=$gbdtVersion")
     println(s"ftrlVersion=$ftrlVersion")
     println(s"upload=$upload")
+    println(s"adslot=$adslot")
+    println(s"ctrcvr=$ctrcvr")
+
+    var inputname = s"/user/cpc/qtt-portrait-ftrl/sample_for_ftrl/ftrl-${dt}-${hour}-${typename}-${gbdtVersion}.svm"
+    println(s"inputname = $inputname")
 
     val spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .config("spark.kryoserializer.buffer.max", "2047MB")
+      .config("spark.driver.maxResultSize", "10g")
       .appName("ftrl hourly new ")
       .enableHiveSupport()
       .getOrCreate()
@@ -43,7 +52,7 @@ object FtrlHourly {
     // lr size
     var size = 500000
     val sample: RDD[LabeledPoint] = spark.sparkContext
-      .textFile(s"/user/cpc/qtt-portrait-ftrl/sample_for_ftrl/ftrl-${dt}-${hour}-${typename}-${gbdtVersion}.svm", 50)
+      .textFile(inputname, 50)
       .map { x => {
         val array = x.split("\t")
         val label = array(0).toDouble
@@ -55,9 +64,10 @@ object FtrlHourly {
         LabeledPoint(label, vec)
       }
       }
+    println(s"sample size = ${sample.count()}")
 
     var ftrlnew = new Ftrl()
-    var ftrlRedis = RedisUtil.redisToFtrl(ftrlVersion)
+    var ftrlRedis = RedisUtil.redisToFtrlWithType(typename, ftrlVersion)
     var ftrl = if (ftrlRedis != null) {
       println("from redis")
       ftrlRedis
@@ -68,13 +78,13 @@ object FtrlHourly {
     // val ftrl = ftrlnew
     ftrl.train(spark, sample)
     // ftrl.print()
-    RedisUtil.ftrlToRedis(ftrl, ftrlVersion)
+    RedisUtil.ftrlToRedisWithtype(ftrl, typename, ftrlVersion)
 
 
     // upload
-    val fname = s"ctr-portrait${ftrlVersion}-ftrl-qtt-list.mlm"
+    val fname = s"$ctrcvr-portrait${ftrlVersion}-ftrl-qtt-$adslot.mlm"
     val filename = s"/home/cpc/djq/xgboost_lr/$fname"
-    saveLrPbPack(ftrl, filename, "ftrl", gbdtVersion, ftrlVersion)
+    saveLrPbPack(ftrl, filename, "ftrl", gbdtVersion, ftrlVersion, adslot, ctrcvr)
     println(fname, filename)
 
     if (upload > 0) {
@@ -84,7 +94,8 @@ object FtrlHourly {
 
   }
 
-  def saveLrPbPack(ftrl: Ftrl, path: String, parser: String, gbdtVersion: Int, ftrlVersion: Int): Unit = {
+  def saveLrPbPack(ftrl: Ftrl, path: String, parser: String,
+                   gbdtVersion: Int, ftrlVersion: Int, adslot: String, ctrcvr: String): Unit = {
     val lr = LRModel(
       parser = parser,
       featureNum = ftrl.w.length,
@@ -96,13 +107,13 @@ object FtrlHourly {
 
     )
     val pack = Pack(
-      name = s"qtt-list-ctr-ftrl-portrait${ftrlVersion}",
+      name = s"qtt-$adslot-$ctrcvr-ftrl-portrait${ftrlVersion}",
       createTime = new Date().getTime,
       lr = Option(lr),
       ir = Option(ir),
       dict = Option(dictpb),
       strategy = Strategy.StrategyXgboostFtrl,
-      gbmfile = s"data/ctr-portrait${gbdtVersion}-qtt-list.gbm",
+      gbmfile = s"data/$ctrcvr-portrait${gbdtVersion}-qtt-$adslot.gbm",
       gbmTreeLimit = 200,
       gbmTreeDepth = 10,
       negSampleRatio = 0.2
