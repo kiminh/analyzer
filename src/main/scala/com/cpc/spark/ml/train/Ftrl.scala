@@ -78,7 +78,7 @@ class Ftrl {
 
   def train(spark:  SparkSession, data: RDD[LabeledPoint]): Unit = {
 
-    val res = data.repartition(1).collect()
+    val res = data.collect()
     var listBuffer = new ListBuffer[(Double, Double)]
     for (p <- res) {
       val x = p.features.toSparse.indices
