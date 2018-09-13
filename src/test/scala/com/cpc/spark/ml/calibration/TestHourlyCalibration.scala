@@ -22,21 +22,22 @@ class TestHourlyCalibration extends FlatSpec with Matchers with BeforeAndAfter {
   "binIterable" should "generate bins from unordered tuples" in {
     val input = List((1d, 1d), (0.5d, 0d), (0.8d, 1d), (0.2d, 0d))
     val result =  HourlyCalibration.binIterable(input, 1, 10)
-    result should be (List((0d, 0.2d, 1d), (0d, 0.5d, 1d), (1d, 0.8d, 1d), (1d, 1d, 1d)))
+    result._1 should be (List((0d, 0.2d, 1d), (0d, 0.5d, 1d), (1d, 0.8d, 1d), (1d, 1d, 1d)))
+    result._2 should be (4)
   }
 
   it should "merged and generate bins" in {
     val input = List((1d, 1d), (0.5d, 0d), (0.8d, 1d), (0.2d, 0d))
     val result =  HourlyCalibration.binIterable(input, 2, 4)
-    result should be (List((0d, 0.35d, 1d), (1d, 0.9d, 1d)))
+    result._1 should be (List((0d, 0.35d, 1d), (1d, 0.9d, 1d)))
+    result._2 should be (4)
   }
 
   it should "return a single bin when too many bins are needed from minBin" in {
     val input = List((1d, 1d), (0.5d, 0d), (0.8d, 1d), (0.2d, 0d))
-    var result =  HourlyCalibration.binIterable(input, 5, 2)
-    result should be (List((0.5d, 0.625d, 1d)))
-    result =  HourlyCalibration.binIterable(input, 3, 1)
-    result should be (List((0.5d, 0.625d, 1d)))
+    val result =  HourlyCalibration.binIterable(input, 5, 2)
+    result._1 should be (List((0.5d, 0.625d, 1d)))
+    result._2 should be (4)
   }
 
   "unionLogToConfig" should "generate correct config from union log rdd" in {

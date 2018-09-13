@@ -79,7 +79,9 @@ object HourlyCalibration {
       .map {
         x =>
           val modelName = x._1
-          val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(x._2))
+          val size = x._2._2
+          println(s"model: $modelName has data of size $size")
+          val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(x._2._1))
           val irModel = IRModel(
             boundaries = irFullModel.boundaries,
             predictions = irFullModel.predictions
@@ -119,9 +121,9 @@ object HourlyCalibration {
   }
 
   // input: Seq<(<ectr, click>)
-  // return: Seq(<ctr, ectr, weight>)
+  // return: (Seq(<ctr, ectr, weight>), total count)
   def binIterable(data: Iterable[(Double, Double)], minBinSize: Int, maxBinCount: Int)
-    : Seq[(Double, Double, Double)] = {
+    : (Seq[(Double, Double, Double)], Double) = {
     val dataList = data.toList
     val totalSize = dataList.size
     val binNumber = Math.min(Math.max(1, totalSize / minBinSize), maxBinCount)
@@ -147,6 +149,6 @@ object HourlyCalibration {
             eCtrSum = 0d
           }
       }
-    return bins
+    return (bins, dataList.size)
   }
 }
