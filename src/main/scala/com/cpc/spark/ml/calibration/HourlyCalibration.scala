@@ -46,11 +46,13 @@ object HourlyCalibration {
     // build spark session
     val session = Utils.buildSparkSession("hourlyCalibration")
 
+    val timeRangeSql = Utils.getTimeRangeSql(startDate, startHour, endDate, endHour)
+
     // get union log
     val log = session.sql(
       s"""
          | select isclick, ext_int['raw_ctr'] as ectr, show_timestamp, ext_string['ctr_model_name'] from dl_cpc.cpc_union_log
-         | where `date`>='$startDate' and hour >= '$startHour' and `date` <= '$endDate' and hour <= '$endHour'
+         | where $timeRangeSql
          | and media_appsid in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0
          | and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0
        """.stripMargin)
