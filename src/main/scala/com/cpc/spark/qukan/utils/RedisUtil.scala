@@ -43,11 +43,13 @@ object RedisUtil {
   def ftrlToRedis(ftrl: Ftrl, version: Int): Unit = {
     val redis = new RedisClient("192.168.80.20", 6390)
     redis.setex(s"ftrl-$version", 7 * 24 * 60 * 60, ftrl.toJsonString())
+    redis.disconnect
   }
 
   def redisToFtrl(version: Int): Ftrl = {
     val redis = new RedisClient("192.168.80.20", 6390)
     var res = redis.get[String](s"ftrl-$version")
+    redis.disconnect
     if (res == null || res.toString.trim == "" || res == None) {
       null
     } else {
@@ -70,6 +72,7 @@ object RedisUtil {
     val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
     redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
     redis.setex(s"ftrl-$typename-$version", 7 * 24 * 60 * 60, ftrl.toJsonString())
+    redis.disconnect
   }
 
   def redisToFtrlWithType(typename: String, version: Int): Ftrl = {
@@ -77,6 +80,7 @@ object RedisUtil {
     val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
     redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
     var res = redis.get[String](s"ftrl-$typename-$version")
+    redis.disconnect
     if (res == null || res.toString.trim == "" || res == None) {
       null
     } else {
