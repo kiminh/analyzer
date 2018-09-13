@@ -8,6 +8,7 @@ typename=$3
 gbdtVersion=$4
 ftrlVersion=$5
 upload=$6
+forceNew=$7
 #queue=root.cpc
 queue=root.develop.adhoc.cpc
 #queue=root.production.biz.cpc2
@@ -27,4 +28,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.ftrl.FtrlNewHourly \
-    ../../target/scala-2.11/cpc-anal_2.11-0.1.jar $date $hour $typename $gbdtVersion $ftrlVersion $upload
+    ../../target/scala-2.11/cpc-anal_2.11-0.1.jar $date $hour $typename $gbdtVersion $ftrlVersion $upload $forceNew

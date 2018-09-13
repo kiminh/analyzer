@@ -24,6 +24,7 @@ object FtrlNewHourly {
     val gbdtVersion = args(3).toInt
     val ftrlVersion = args(4).toInt
     val upload = args(5).toInt
+    val forceNew = args(6).toInt
     val typearray = typename.split("-")
     val adslot = typearray(0)
     val ctrcvr = typearray(1)
@@ -34,6 +35,7 @@ object FtrlNewHourly {
     println(s"gbdtVersion=$gbdtVersion")
     println(s"ftrlVersion=$ftrlVersion")
     println(s"upload=$upload")
+    println(s"forceNew=$forceNew")
     println(s"adslot=$adslot")
     println(s"ctrcvr=$ctrcvr")
 
@@ -68,7 +70,7 @@ object FtrlNewHourly {
 
     var ftrlnew = new Ftrl()
     var ftrlRedis = RedisUtil.redisToFtrlWithType(typename, ftrlVersion)
-    var ftrl = if (ftrlRedis != null) {
+    var ftrl = if (forceNew == 0 && ftrlRedis != null) {
       println("from redis")
       ftrlRedis
     } else {
