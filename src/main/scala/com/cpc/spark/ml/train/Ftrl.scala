@@ -80,17 +80,22 @@ class Ftrl {
 
     val res = data.collect()
     var listBuffer = new ListBuffer[(Double, Double)]
+    var posCount = 0
     for (p <- res) {
       val x = p.features.toSparse.indices
       val pre = predict(x)
       val label = p.label
       update(x, pre, p.label)
       listBuffer.append((pre, p.label))
+      if (p.label > 0) {
+        posCount += 1
+      }
     }
 
     val rdd = spark.sparkContext.parallelize[(Double, Double)](listBuffer)
     val metrics = new BinaryClassificationMetrics(rdd)
     val auROC = metrics.areaUnderROC
+    println(s"posCount=$posCount, totalCount=${listBuffer.size}")
     println(s"auc=$auROC")
   }
 
