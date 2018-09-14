@@ -58,7 +58,7 @@ object Utils {
       var name = node.getString("name")
       val ip = node.getString("ip")
       val cmd = s"scp $srcfile work@$ip:$destfile"
-      log :+ cmd
+      log = log :+ cmd
       log = log :+ "%s %s".format(name, ip)
       val ret = cmd !
     }
