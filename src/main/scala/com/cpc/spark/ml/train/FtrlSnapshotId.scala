@@ -1,5 +1,10 @@
 package com.cpc.spark.ml.train
 
+/**
+  * author: huazhenhao
+  * date: 9/14/18
+  */
+
 import java.util.Date
 
 import com.cpc.spark.common.Utils

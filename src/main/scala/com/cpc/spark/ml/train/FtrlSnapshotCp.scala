@@ -1,5 +1,10 @@
 package com.cpc.spark.ml.train
 
+/**
+  * author: huazhenhao
+  * date: 9/14/18
+  */
+
 import java.io.FileOutputStream
 import java.util.Date
 
@@ -48,15 +53,8 @@ object FtrlSnapshotCp {
     val features = spark.sql(featuresSql)
     val log = spark.table("dl_cpc.cpc_union_log").filter(dateRangeSql)
       .filter("media_appsid  in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0 " +
-        "and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0 "
-      )
+        "and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0 ")
 
-    val featureSearchid = features.select("searchid").distinct()
-    val featureSearchidCount = featureSearchid.count()
-    println(s"feature searchid count = $featureSearchidCount")
-    val logHasFeatureSearchId = log.join(featureSearchid, Seq("searchid"), "inner")
-    val logHasFeatureSearchIdCount = logHasFeatureSearchId.select("searchid").distinct().count()
-    println(s"log has feature searchid count = $logHasFeatureSearchIdCount")
     val join = log.join(features, Seq("searchid", "ideaid"), "inner")
     val joinCount = join.select("searchid").distinct().count()
     println(s"join count = $joinCount")
@@ -77,58 +75,7 @@ object FtrlSnapshotCp {
       LabeledPoint(label, vec)
     })
 
-    var ftrlnew = new Ftrl(ftrlFeatureSize)
-    var ftrlRedis = RedisUtil.redisToFtrl(version, ftrlFeatureSize)
-    var ftrl = if (ftrlRedis != null) {
-      println("from redis")
-      ftrlRedis
-    } else {
-      println("new")
-      ftrlnew
-    }
-    //    val ftrl = ftrlnew
+    val ftrl = new Ftrl(ftrlFeatureSize)
     ftrl.train(spark, sample)
-    // ftrl.print()
-    RedisUtil.ftrlToRedis(ftrl, version)
-
-
-    // upload
-    val fname = s"ctr-portrait${version}-ftrl-qtt-list.mlm"
-    val filename = s"/home/cpc/djq/xgboost_lr/$fname"
-    saveLrPbPack(ftrl, filename, "ftrl", version)
-    println(fname, filename)
-
-    if (upload) {
-      val conf = ConfigFactory.load()
-      println(MUtils.updateMlcppOnlineData(filename, s"/home/work/mlcpp/data/$fname", conf))
-    }
-
   }
-
-  def saveLrPbPack(ftrl: Ftrl, path: String, parser: String, version: Int): Unit = {
-    val lr = LRModel(
-      parser = parser,
-      featureNum = ftrl.w.length,
-      weights = ftrl.w.zipWithIndex.toMap.map(x => (x._2, x._1))
-    )
-    val ir = IRModel(
-    )
-    val dictpb = Dict(
-
-    )
-    val pack = Pack(
-      name = s"qtt-list-ctr-ftrl-portrait${version}",
-      createTime = new Date().getTime,
-      lr = Option(lr),
-      ir = Option(ir),
-      dict = Option(dictpb),
-      strategy = Strategy.StrategyXgboostFtrl,
-      gbmfile = s"data/ctr-portrait9-qtt-list.gbm",
-      gbmTreeLimit = 200,
-      gbmTreeDepth = 10,
-      negSampleRatio = 0.2
-    )
-    pack.writeTo(new FileOutputStream(path))
-  }
-
 }
