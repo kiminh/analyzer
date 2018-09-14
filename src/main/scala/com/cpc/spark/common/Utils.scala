@@ -4,7 +4,6 @@ import java.io.{File, FileOutputStream}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-import com.cpc.spark.ml.calibration.HourlyCalibration.localDir
 import javax.mail.internet.InternetAddress
 import com.github.jurajburian.mailer._
 import com.typesafe.config.ConfigFactory
