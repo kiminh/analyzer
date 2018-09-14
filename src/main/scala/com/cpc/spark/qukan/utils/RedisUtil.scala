@@ -49,22 +49,13 @@ object RedisUtil {
 
   def redisToFtrl(version: Int, featureSize: Int): Ftrl = {
     val redis = new RedisClient("192.168.80.20", 6390)
-    var res = redis.get[String](s"ftrl-$version")
+    val res = redis.get[String](s"ftrl-$version")
     redis.disconnect
     if (res == null || res.toString.trim == "" || res == None) {
       null
     } else {
-      val jsonStr = res.get
-      // println(s"jsonstr = $jsonStr")
-      val json = JSON.parseObject(jsonStr)
       val ftrl = new Ftrl(featureSize)
-      ftrl.w = json.getString("w").split(" ").map(_.toDouble)
-      ftrl.n = json.getString("n").split(" ").map(_.toDouble)
-      ftrl.z = json.getString("z").split(" ").map(_.toDouble)
-      ftrl.alpha = json.getDoubleValue("alpha")
-      ftrl.beta = json.getDoubleValue("beta")
-      ftrl.L1 = json.getDoubleValue("L1")
-      ftrl.L2 = json.getDoubleValue("L2")
+      ftrl.fromJsonString(res.get)
       ftrl
     }
   }

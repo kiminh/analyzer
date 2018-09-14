@@ -1,12 +1,14 @@
 package com.cpc.spark.common
 
-import java.io.{File, FileOutputStream}
+import java.io.{File, FileInputStream, FileOutputStream}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import javax.mail.internet.InternetAddress
 import com.github.jurajburian.mailer._
+import com.google.protobuf.CodedInputStream
 import com.typesafe.config.ConfigFactory
+import mlmodel.mlmodel.Pack
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
@@ -118,6 +120,10 @@ object Utils {
     val outFile = new File(localPath)
     outFile.getParentFile.mkdirs()
     obj.writeTo(new FileOutputStream(localPath))
+  }
+
+  def readPackFromFile(localPath: String): Pack = {
+    return new Pack().mergeFrom(CodedInputStream.newInstance(new FileInputStream(localPath)))
   }
 
   def getStartDateHour(endDate: String, endHour: String, hourRange: Int): (String, String) = {

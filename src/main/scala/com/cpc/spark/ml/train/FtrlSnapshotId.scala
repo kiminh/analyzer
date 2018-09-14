@@ -87,6 +87,9 @@ object FtrlSnapshotId {
 
     val ftrl = getModel(version, startFresh)
 
+    println("before training model info:")
+    printModelInfo(ftrl)
+
     val mergedDf = positive.union(negtive).withColumn("leaf_features", udfSnapshotToLeafFeatures(col("feature_vector")))
     val merged = addIdFeatures(mergedDf)
 
@@ -100,6 +103,9 @@ object FtrlSnapshotId {
     val ids = merged.map(x => x._2).flatMap(x => x).distinct().collect()
     updateDict(ftrl, ids)
 
+    println("after training model info:")
+    printModelInfo(ftrl)
+
     // save model file locally
     val name = s"ctr-qtt-list-$version"
     val filename = s"$LOCAL_DIR$name.mlm"
@@ -112,6 +118,11 @@ object FtrlSnapshotId {
       println(s"upload to redis: ${ret._1} with key: ${ret._2}")
       println(MUtils.updateMlcppOnlineData(filename, s"$DEST_DIR$name.mlm", ConfigFactory.load()))
     }
+  }
+
+  def printModelInfo(ftrl: Ftrl): Unit = {
+    println(s"adv map size: ${ftrl.dict.advertiserid.size}")
+    println(s"plan map size: ${ftrl.dict.planid.size}")
   }
 
   def addIdFeatures(df: DataFrame): RDD[(LabeledPoint, Seq[(Int, String)])] = {
