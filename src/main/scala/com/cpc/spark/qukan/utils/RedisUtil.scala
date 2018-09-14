@@ -37,13 +37,14 @@ object RedisUtil {
         v.disconnect
       }
     })
-
   }
 
-  def ftrlToRedis(ftrl: Ftrl, version: Int): Unit = {
+  def ftrlToRedis(ftrl: Ftrl, version: Int): (Boolean, String) = {
     val redis = new RedisClient("192.168.80.20", 6390)
-    redis.setex(s"ftrl-$version", 7 * 24 * 60 * 60, ftrl.toJsonString())
+    val key = s"ftrl-$version"
+    val success = redis.setex(key, 7 * 24 * 60 * 60, ftrl.toJsonString())
     redis.disconnect
+    return (success, key)
   }
 
   def redisToFtrl(version: Int, featureSize: Int): Ftrl = {

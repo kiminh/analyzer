@@ -1,5 +1,10 @@
 package com.cpc.spark.ml.train
 
+/**
+  * author: huazhenhao
+  * date: 9/14/18
+  */
+
 import java.util.Date
 
 import com.cpc.spark.common.Utils
@@ -103,7 +108,8 @@ object FtrlSnapshotId {
 
     // upload to redis and mlcpp machine
     if (upload) {
-      RedisUtil.ftrlToRedis(ftrl, version)
+      val ret = RedisUtil.ftrlToRedis(ftrl, version)
+      println(s"upload to redis: ${ret._1} with key: ${ret._2}")
       println(MUtils.updateMlcppOnlineData(filename, s"$DEST_DIR$name.mlm", ConfigFactory.load()))
     }
   }
