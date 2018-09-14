@@ -68,8 +68,8 @@ object FtrlNewHourly {
       }
     println(s"sample size = ${sample.count()}")
 
-    var ftrlnew = new Ftrl()
-    var ftrlRedis = RedisUtil.redisToFtrlWithType(typename, ftrlVersion)
+    var ftrlnew = new Ftrl(size)
+    var ftrlRedis = RedisUtil.redisToFtrlWithType(typename, ftrlVersion, size)
     var ftrl = if (forceNew == 0 && ftrlRedis != null) {
       println("from redis")
       ftrlRedis

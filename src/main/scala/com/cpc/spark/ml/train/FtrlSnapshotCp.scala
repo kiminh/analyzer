@@ -3,19 +3,17 @@ package com.cpc.spark.ml.train
 import java.io.FileOutputStream
 import java.util.Date
 
+import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.qukan.utils.RedisUtil
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.regression.LabeledPoint
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.col
 import com.cpc.spark.qukan.utils.Udfs.udfSnapshotToLeafFeatures
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel._
-import com.cpc.spark.ml.common.{Utils => MUtils}
+import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.regression.LabeledPoint
+import org.apache.spark.sql.functions.col
 
-import scala.collection.mutable
-
-object FtrlSnapshot {
+object FtrlSnapshotCp {
 
   def main(args: Array[String]): Unit = {
 
@@ -23,28 +21,34 @@ object FtrlSnapshot {
 
     val dt = args(0)
     val hour = args(1)
-    val upload = args(2).toInt
+    val hourRange = args(2).toInt
+    val upload = args(3).toBoolean
+    val startFresh = args(4).toBoolean
+    val devMode = args(5).toBoolean
 
     println(s"dt=$dt")
     println(s"hour=$hour")
+    println(s"hourRange=$hourRange")
     println(s"upload=$upload")
+    println(s"startFresh=$startFresh")
+    println(s"devMode=$devMode")
 
-    val version = 15
+    val (startDt, startHr) = Utils.getStartDateHour(dt, hour, hourRange)
+    println(s"startDate=$startDt")
+    println(s"startHour=$startHr")
 
-    val spark = SparkSession.builder()
-      .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-      .config("spark.kryoserializer.buffer.max", "2047MB")
-      .appName("ftrl hourly")
-      .enableHiveSupport()
-      .getOrCreate()
+    val version = 800015
 
+    val spark = Utils.buildSparkSession(name = "v800015_ctr")
 
-    val features = spark.sql(s"select *, raw_int['ideaid'] as ideaid from dl_cpc.ml_snapshot where `date`='$dt' and hour = '$hour'")
-    println(s"features count = ${features.count()}")
-    val log = spark.table("dl_cpc.cpc_union_log").filter(s"`date`='$dt' and hour = '$hour'")
+    val dateRangeSql = Utils.getTimeRangeSql(startDt, startHr, dt, hour)
+    val featuresSql = s"select *, raw_int['ideaid'] as ideaid from dl_cpc.ml_snapshot where $dateRangeSql"
+    println("feature sql:")
+    println(featuresSql)
+    val features = spark.sql(featuresSql)
+    val log = spark.table("dl_cpc.cpc_union_log").filter(dateRangeSql)
       .filter("media_appsid  in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0 " +
         "and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0 "
-        //        + "AND (ext['charge_type'] IS NULL OR ext['charge_type'].int_value = 1"
       )
 
     val featureSearchid = features.select("searchid").distinct()
@@ -94,7 +98,7 @@ object FtrlSnapshot {
     saveLrPbPack(ftrl, filename, "ftrl", version)
     println(fname, filename)
 
-    if (upload > 0) {
+    if (upload) {
       val conf = ConfigFactory.load()
       println(MUtils.updateMlcppOnlineData(filename, s"/home/work/mlcpp/data/$fname", conf))
     }
