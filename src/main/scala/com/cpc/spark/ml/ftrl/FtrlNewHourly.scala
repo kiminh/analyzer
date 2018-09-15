@@ -69,14 +69,20 @@ object FtrlNewHourly {
     println(s"sample size = ${sample.count()}")
 
     var ftrlnew = new Ftrl(size)
-    var ftrlRedis = RedisUtil.redisToFtrlWithType(typename, ftrlVersion, size)
-    var ftrl = if (forceNew == 0 && ftrlRedis != null) {
-      println("from redis")
-      ftrlRedis
+    var ftrl = if (forceNew == 0) {
+      var ftrlRedis = RedisUtil.redisToFtrlWithType(typename, ftrlVersion, size)
+      if (ftrlRedis != null) {
+        println("from redis")
+        ftrlRedis
+      } else {
+        println("new")
+        ftrlnew
+      }
     } else {
       println("new")
       ftrlnew
     }
+
     // val ftrl = ftrlnew
     ftrl.train(spark, sample)
     // ftrl.print()
