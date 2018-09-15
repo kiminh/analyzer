@@ -49,7 +49,7 @@ object DNNSampleSingle {
         val mediaid = x.getAs[String]("media_appsid").toInt
         ideaid > 0 && slottype == 1 && Seq(80000001, 80000002).contains(mediaid)
       }
-      .randomSplit(Array(0.2, 0.8), new Date().getTime)(0)
+      .randomSplit(Array(0.1, 0.9), new Date().getTime)(0)
       .map{row =>
         dict = BcDict.value
         val vec = getVectorParser2(row)
@@ -69,7 +69,7 @@ object DNNSampleSingle {
     train.filter{
         x =>
         val label = x.getAs[Seq[Int]]("label")
-        label(0) == 1 || Random.nextInt(1000) < 120
+        label(0) == 1 || Random.nextInt(1000) < 200
       }
       .write
       .mode("overwrite")
