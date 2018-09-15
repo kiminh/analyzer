@@ -48,7 +48,7 @@ object DNNSampleSingle {
       }
       .randomSplit(Array(0.1, 0.9), new Date().getTime)(0)
       .join(userAppIdx, Seq("uid"))
-      .rdd  
+      .rdd
       .map{row =>
         dict = BcDict.value
         val ret = getVectorParser2(row)
@@ -257,8 +257,7 @@ object DNNSampleSingle {
     els = els :+ dict("cityid").getOrElse(x.getAs[Int]("city"), 0)
     els = els :+ dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0)
     els = els :+ dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0)
-    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
-    els = els :+ adcls + i
+    els = els :+ dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
     els = els :+ dict("planid").getOrElse(x.getAs[Int]("planid"), 0)
     els = els :+ dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0)
     els = els :+ dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0)
