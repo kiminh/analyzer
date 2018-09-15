@@ -125,8 +125,30 @@ object HourlyCalibration {
 
   }
 
-  def computeCalibration(prob: Double, irModel: IRModel): Double = {
+  def binarySearch(num: Double, boundaries: Seq[Double]): Int = {
+    if (num < boundaries(0)) {
+      return 0
+    }
+    if (num >= boundaries.last) {
+      return boundaries.size
+    }
+    val mid = boundaries.size / 2
+    if (num < boundaries(mid)) {
+      return binarySearch(num, boundaries.slice(0, mid))
+    } else {
+      return binarySearch(num, boundaries.slice(mid, boundaries.size)) + mid
+    }
+  }
 
+  def computeCalibration(prob: Double, irModel: IRModel): Double = {
+    val index = binarySearch(prob, irModel.boundaries)
+    if (index == 0) {
+      return irModel.predictions(0)
+    }
+    if (index >= irModel.boundaries.size-1) {
+      return irModel.predictions.last
+    }
+    return irModel.predictions(index) + (irModel.predictions(index+1) - irModel.predictions(index)) * (prob - irModel.boundaries(index)) / (irModel.boundaries(index+1) - irModel.boundaries(index))
   }
 
   def saveProtoToLocal(modelName: String, config: CalibrationConfig): String = {
