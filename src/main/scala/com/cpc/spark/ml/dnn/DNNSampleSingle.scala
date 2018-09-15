@@ -39,8 +39,7 @@ object DNNSampleSingle {
     println("max id", maxIndex)
 
     val BcDict = spark.sparkContext.broadcast(dict)
-    val ulog = getData(spark,"ctrdata_v1",ctrPathSep).join(userAppIdx, Seq("uid"))
-      .rdd
+    val ulog = getData(spark,"ctrdata_v1",ctrPathSep)
       .filter {x =>
         val ideaid = x.getAs[Int]("ideaid")
         val slottype = x.getAs[Int]("adslot_type")
@@ -48,6 +47,8 @@ object DNNSampleSingle {
         ideaid > 0 && slottype == 1 && Seq(80000001, 80000002).contains(mediaid)
       }
       .randomSplit(Array(0.1, 0.9), new Date().getTime)(0)
+      .join(userAppIdx, Seq("uid"))
+      .rdd  
       .map{row =>
         dict = BcDict.value
         val ret = getVectorParser2(row)
