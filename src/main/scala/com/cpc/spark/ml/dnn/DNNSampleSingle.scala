@@ -73,17 +73,17 @@ object DNNSampleSingle {
 
     val Array(train, test) = ulog.randomSplit(Array(0.95, 0.05))
 
-    train.filter{
+    val resampled = train.filter{
         x =>
         val label = x.getAs[Seq[Int]]("label")
         label(0) == 1 || Random.nextInt(1000) < 200
       }
-      .write
+    resampled.write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntrain-" + date)
-    println(train.count())
+    println(resampled.count())
 
     test.write
       .mode("overwrite")
