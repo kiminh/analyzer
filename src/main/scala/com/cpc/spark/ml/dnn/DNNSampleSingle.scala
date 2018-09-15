@@ -64,6 +64,13 @@ object DNNSampleSingle {
       .toDF("sample_idx", "label", "id")
       .repartition(1000)
 
+    val clickiNum = ulog.filter{
+      x =>
+        val label = x.getAs[Seq[Int]]("label")
+        label(0) == 1
+    }.count()
+    println(ulog.count(), clickiNum)
+
     val Array(train, test) = ulog.randomSplit(Array(0.95, 0.05))
 
     train.filter{
@@ -76,12 +83,15 @@ object DNNSampleSingle {
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntrain-" + date)
+    println(train.count())
 
     test.write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntest-" + date)
+
+    println(test.count())
 
     savePbPack("dnnp1", "/home/cpc/dw/bin/dict.pb", dict.toMap)
   }
