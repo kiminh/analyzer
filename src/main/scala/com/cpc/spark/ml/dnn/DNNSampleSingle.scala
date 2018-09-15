@@ -17,11 +17,7 @@ import scala.util.Random
 
 object DNNSampleSingle {
 
-  private val days = 7
-  private val daysCvr = 20
   private var trainLog = Seq[String]()
-  private val model = new LRIRModel
-
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -254,8 +250,8 @@ object DNNSampleSingle {
     els = els :+ x.getAs[Int]("adtype") + i
     i += 10
 
-    els = els :+ x.getAs[Int]("adslot_type") + i
-    i += 10
+    //els = els :+ x.getAs[Int]("adslot_type") + i
+    //i += 10
 
     els = els :+ dict("cityid").getOrElse(x.getAs[Int]("city"), 0)
     els = els :+ dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0)
@@ -268,7 +264,7 @@ object DNNSampleSingle {
 
     val ids = x.getAs[Seq[Int]]("appIdx")
 
-    (els, ids)
+    (els, ids.slice(0, 100))
   }
 
   def savePbPack(parser: String, path: String, dict: Map[String, Map[Int, Int]]): Unit = {
