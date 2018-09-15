@@ -19,7 +19,7 @@ object HourlyCalibration {
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
   val MAX_BIN_COUNT = 200
-  val MIN_BIN_SIZE = 1000
+  val MIN_BIN_SIZE = 5000
 
   def main(args: Array[String]): Unit = {
 
@@ -90,7 +90,8 @@ object HourlyCalibration {
             boundaries = irFullModel.boundaries,
             predictions = irFullModel.predictions
           )
-          println(s"calibration result (ectr/ctr): ${computeCalibration(samples, irModel)}")
+          println(s"bin size: ${irFullModel.boundaries.length}")
+          println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
           val config = CalibrationConfig(
             name = modelName,
             ir = Option(irModel)
