@@ -1,11 +1,18 @@
 package com.cpc.spark.common
 
+import java.io.{File, FileInputStream, FileOutputStream}
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
 import javax.mail.internet.InternetAddress
 import com.github.jurajburian.mailer._
+import com.google.protobuf.CodedInputStream
 import com.typesafe.config.ConfigFactory
+import mlmodel.mlmodel.Pack
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
+import spire.math.ULong
 
 /**
   * Created by roydong on 09/08/2017.
@@ -90,6 +97,43 @@ object Utils {
         }
     )
     return "undefined"
+  }
+
+  def getTimeRangeSql(startDate: String, startHour: String, endDate: String, endHour: String): String = {
+    if (startDate.equals(endDate)) {
+      return s"(`date` = '$startDate' and hour <= '$endHour' and hour >= '$startHour')"
+    }
+    return s"((`date` = '$startDate' and hour >= '$startHour') " +
+      s"or (`date` = '$endDate' and hour <= '$endHour') " +
+      s"or (`date` > '$startDate' and `date` < '$endDate'))"
+  }
+
+  def djb2Hash(str: String): ULong = {
+    var hash = new ULong(5381)
+    str.foreach(c => {
+      hash = ((hash << 5) + hash) + new ULong(c) /* hash * 33 + c */
+    })
+    return hash
+  }
+
+  def saveProtoToFile[T <: com.trueaccord.scalapb.GeneratedMessage](obj: T, localPath: String): Unit = {
+    val outFile = new File(localPath)
+    outFile.getParentFile.mkdirs()
+    obj.writeTo(new FileOutputStream(localPath))
+  }
+
+  def readPackFromFile(localPath: String): Pack = {
+    return new Pack().mergeFrom(CodedInputStream.newInstance(new FileInputStream(localPath)))
+  }
+
+  def getStartDateHour(endDate: String, endHour: String, hourRange: Int): (String, String) = {
+    val endTime = LocalDateTime.parse(s"$endDate-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
+    val startTime = endTime.minusHours(Math.max(hourRange - 1, 0))
+
+    val startDate = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+    val startHour = startTime.format(DateTimeFormatter.ofPattern("HH"))
+
+    return (startDate, startHour)
   }
 }
 

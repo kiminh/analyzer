@@ -19,6 +19,8 @@ object FtrlSnapshot {
 
   def main(args: Array[String]): Unit = {
 
+    val ftrlFeatureSize = 500000
+
     val dt = args(0)
     val hour = args(1)
     val upload = args(2).toInt
@@ -61,18 +63,18 @@ object FtrlSnapshot {
     println(s"negtive count = ${negtive.count()}")
     val sample = positive.union(negtive).withColumn("leaf_features", udfSnapshotToLeafFeatures(col("feature_vector")))
       .rdd.map(x => {
-      val size = 500000
+
       val array = x.getAs[String]("leaf_features").split("\\s+")
       val label = x.getAs[Int]("isclick").toDouble
       val vector1 = array.map(x => {
         (x.toInt, 1.0)
       })
-      val vec = Vectors.sparse(size, vector1)
+      val vec = Vectors.sparse(ftrlFeatureSize, vector1)
       LabeledPoint(label, vec)
     })
 
-    var ftrlnew = new Ftrl()
-    var ftrlRedis = RedisUtil.redisToFtrl(version)
+    var ftrlnew = new Ftrl(ftrlFeatureSize)
+    var ftrlRedis = RedisUtil.redisToFtrl(version, ftrlFeatureSize)
     var ftrl = if (ftrlRedis != null) {
       println("from redis")
       ftrlRedis

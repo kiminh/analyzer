@@ -17,4 +17,9 @@ class TestUtils extends FlatSpec with Matchers {
     val model = Utils.getCtrModelIdFromExpTags("")
     model should be ("undefined")
   }
+
+  "djb2Hash" should "work" in {
+    Utils.djb2Hash("a").toInt should be (177670)
+    Utils.djb2Hash("ab").toInt should be (5863208)
+  }
 }
