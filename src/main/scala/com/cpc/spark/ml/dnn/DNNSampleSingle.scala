@@ -78,14 +78,14 @@ object DNNSampleSingle {
         val label = x.getAs[Seq[Int]]("label")
         label(0) == 1 || Random.nextInt(1000) < 200
       }
-    resampled.write
+    resampled.coalesce(100).write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntrain-" + date)
     println("train size", resampled.count())
 
-    test.write
+    test.coalesce(100).write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
