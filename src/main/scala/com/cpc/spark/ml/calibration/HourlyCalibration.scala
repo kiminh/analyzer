@@ -121,7 +121,7 @@ object HourlyCalibration {
       ectr += x._1
       calibrated += computeCalibration(x._1, irModel)
     })
-    return (ectr / click * imp, calibrated / click * imp)
+    return (ectr / click, calibrated / click)
 
   }
 
