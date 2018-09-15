@@ -135,6 +135,11 @@ object Utils {
 
     return (startDate, startHour)
   }
+
+  def sampleFixed[U](data: Iterable[U], size: Int): Array[U] = {
+    val shuffled = scala.util.Random.shuffle(data)
+    return shuffled.toArray.slice(0, Math.min(size, data.size))
+  }
 }
 
 
