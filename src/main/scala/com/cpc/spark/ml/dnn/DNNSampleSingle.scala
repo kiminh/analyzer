@@ -223,10 +223,10 @@ object DNNSampleSingle {
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     var els = Seq[Int]()
-    var i = 0
+    var i = 1
 
 
-    els = els :+ hour
+    els = els :+ hour + i
     i += 25
 
     //sex
@@ -264,7 +264,11 @@ object DNNSampleSingle {
 
     val ids = x.getAs[Seq[Int]]("appIdx")
 
-    (els, ids.slice(0, 100))
+    if (ids.length > 0) {
+      (els, ids.slice(0, 100))
+    } else {
+      (els, Seq(0))
+    }
   }
 
   def savePbPack(parser: String, path: String, dict: Map[String, Map[Int, Int]]): Unit = {
