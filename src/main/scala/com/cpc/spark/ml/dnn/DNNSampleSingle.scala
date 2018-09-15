@@ -40,9 +40,11 @@ object DNNSampleSingle {
 
     initFeatureDict(spark, ctrPathSep)
     val userAppIdx = getUidApp(spark, ctrPathSep)
+    println("max id", maxIndex)
 
     val BcDict = spark.sparkContext.broadcast(dict)
-    val ulog = getData(spark,"ctrdata_v1",ctrPathSep).rdd
+    val ulog = getData(spark,"ctrdata_v1",ctrPathSep).join(userAppIdx, Seq("uid"))
+      .rdd
       .filter {x =>
         val ideaid = x.getAs[Int]("ideaid")
         val slottype = x.getAs[Int]("adslot_type")
@@ -52,16 +54,18 @@ object DNNSampleSingle {
       .randomSplit(Array(0.1, 0.9), new Date().getTime)(0)
       .map{row =>
         dict = BcDict.value
-        val vec = getVectorParser2(row)
+        val ret = getVectorParser2(row)
+        val ids = ret._1
+        val apps = ret._2
         var label = Seq(0, 1)
         if (row.getAs[Int]("label") > 0) {
           label = Seq(1, 0)
         }
-        (label, vec)
+        (label, ids, apps)
       }
       .zipWithUniqueId()
-      .map(x => (x._2, x._1._1, x._1._2))
-      .toDF("sample_idx", "label", "id")
+      .map(x => (x._2, x._1._1, x._1._2, x._1._3))
+      .toDF("sample_idx", "label", "id", "app")
       .repartition(1000)
 
     val clickiNum = ulog.filter{
@@ -71,7 +75,7 @@ object DNNSampleSingle {
     }.count()
     println(ulog.count(), clickiNum)
 
-    val Array(train, test) = ulog.randomSplit(Array(0.95, 0.05))
+    val Array(train, test) = ulog.randomSplit(Array(0.97, 0.03))
 
     val resampled = train.filter{
         x =>
@@ -83,7 +87,7 @@ object DNNSampleSingle {
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntrain-" + date)
-    println(resampled.count())
+    println("train size", resampled.count())
 
     test.write
       .mode("overwrite")
@@ -91,7 +95,7 @@ object DNNSampleSingle {
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntest-" + date)
 
-    println(test.count())
+    println("test size", test.count())
 
     savePbPack("dnnp1", "/home/cpc/dw/bin/dict.pb", dict.toMap)
   }
@@ -124,7 +128,7 @@ object DNNSampleSingle {
       .map(x => (x._1,x._2.distinct))
       .toDF("uid","pkgs").rdd.cache()
 
-    val ids = getTopApp(uidApp, 1000)
+    val ids = getTopApp(uidApp, 5000)
     dictStr.update("appid",ids)
 
     val userAppIdx = getUserAppIdx(spark, uidApp, ids)
@@ -135,7 +139,6 @@ object DNNSampleSingle {
   //安装列表中top k的App
   def getTopApp(uidApp : RDD[Row], k : Int): Map[String,Int] ={
     val ids = mutable.Map[String,Int]()
-    maxIndex = 0
     uidApp
       .flatMap(x => x.getAs[WrappedArray[String]]("pkgs").map((_,1)))
       .reduceByKey(_ + _)
@@ -174,11 +177,10 @@ object DNNSampleSingle {
   )
   var dictStr = mutable.Map[String, Map[String, Int]]()
 
-  var maxIndex = 0
+  var maxIndex = 100
 
   def initFeatureDict(spark: SparkSession, pathSep: mutable.Map[String,Seq[String]]): Unit = {
     trainLog :+= "\n------dict size------"
-    maxIndex = 0
     for (name <- dictNames) {
       val pathTpl = "/user/cpc/lrmodel/feature_ids_v1/%s/{%s}"
       val ids = mutable.Map[Int, Int]()
@@ -218,7 +220,7 @@ object DNNSampleSingle {
   }
 
 
-  def getVectorParser2(x: Row): Seq[Int] = {
+  def getVectorParser2(x: Row): (Seq[Int], Seq[Int]) = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
@@ -227,67 +229,46 @@ object DNNSampleSingle {
     var i = 0
 
 
-    els = els :+ hour + i
-    i += 24
+    els = els :+ hour
+    i += 25
 
     //sex
     els = els :+ x.getAs[Int]("sex") + i
-    i += 9
+    i += 5
 
     //age
     els = els :+ x.getAs[Int]("age") + i
-    i += 100
+    i += 10
 
     //os 96 - 97 (2)
     els = els :+ x.getAs[Int]("os") + i
     i += 10
 
-
     //net
     els = els :+ x.getAs[Int]("network") + i
     i += 10
 
-    els = els :+ dict("cityid").getOrElse(x.getAs[Int]("city"), 0) + i
-    i += dict("cityid").size + 1
-
-    //media id
-    els = els :+ dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0) + i
-    i += dict("mediaid").size + 1
-
-    //ad slot id
-    els = els :+ dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0) + i
-    i += dict("slotid").size + 1
-
-    //0 to 4
     els = els :+ x.getAs[Int]("phone_level") + i
     i += 10
 
-    //ad class
-    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
-    els = els :+ adcls + i
-    i += dict("adclass").size + 1
-
-    //adtype
     els = els :+ x.getAs[Int]("adtype") + i
     i += 10
 
-    //adslot_type
     els = els :+ x.getAs[Int]("adslot_type") + i
     i += 10
 
-    //planid
-    els = els :+ dict("planid").getOrElse(x.getAs[Int]("planid"), 0) + i
-    i += dict("planid").size + 1
+    els = els :+ dict("cityid").getOrElse(x.getAs[Int]("city"), 0)
+    els = els :+ dict("mediaid").getOrElse(x.getAs[String]("media_appsid").toInt, 0)
+    els = els :+ dict("slotid").getOrElse(x.getAs[String]("adslotid").toInt, 0)
+    val adcls = dict("adclass").getOrElse(x.getAs[Int]("adclass"), 0)
+    els = els :+ adcls + i
+    els = els :+ dict("planid").getOrElse(x.getAs[Int]("planid"), 0)
+    els = els :+ dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0)
+    els = els :+ dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0)
 
-    //unitid
-    els = els :+ dict("unitid").getOrElse(x.getAs[Int]("unitid"), 0) + i
-    i += dict("unitid").size + 1
+    val ids = x.getAs[Seq[Int]]("appIdx")
 
-    //ideaid
-    els = els :+ dict("ideaid").getOrElse(x.getAs[Int]("ideaid"), 0) + i
-    i += dict("ideaid").size + 1
-
-    els
+    (els, ids)
   }
 
   def savePbPack(parser: String, path: String, dict: Map[String, Map[Int, Int]]): Unit = {
