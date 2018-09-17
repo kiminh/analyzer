@@ -138,6 +138,11 @@ object Utils {
     return (startDate, startHour)
   }
 
+//  def getDaysAgo(endDate: String, days: Int): String = {
+//    val time = LocalDateTime.parse(endDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+//    return time.minusDays(days)
+//  }
+
   def sampleFixed[U:ClassTag](data: Iterable[U], size: Int): Array[U] = {
     val shuffled = scala.util.Random.shuffle(data)
     return shuffled.toArray[U].slice(0, Math.min(size, data.size))
