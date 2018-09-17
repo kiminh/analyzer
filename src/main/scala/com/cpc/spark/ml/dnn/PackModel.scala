@@ -24,10 +24,10 @@ object PackModel {
   private var irError = 0d
 
   def main(args: Array[String]): Unit = {
-    val testfile = args(0)
-    val name = args(1)
-    val dictfile = args(2)
-    val onnxfile = args(3)
+    val testfile = args(0)   //测试结果   prediction label
+    val name = args(1)       //model 名称    qtt-list-dnn-rawid
+    val dictfile = args(2)    // dict protobuf
+    val onnxfile = args(3)     //tensorflow dump to onnx
     val upload = args(4).toInt
     spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
@@ -47,8 +47,9 @@ object PackModel {
       }
     }
     .filter(_ != null)
+    println("test num", results.count())
 
-    runIr(results, 1000, 0.95)
+    runIr(results, 500, 0.95)
     val ir = IRModel(
       boundaries = irmodel.boundaries.toSeq,
       predictions = irmodel.predictions.toSeq,
