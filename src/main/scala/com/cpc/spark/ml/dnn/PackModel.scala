@@ -62,7 +62,7 @@ object PackModel {
     irmodel.save(spark.sparkContext, "/user/cpc/xgboost_ir/"+filetime)
     val mlm = Pack.parseFrom(new FileInputStream(dictfile))
 
-    val filename = "/home/cpc/anal/xgboost_model/%s-%s".format(name, filetime)
+    val filename = "/home/cpc/anal/dnn_model/%s-%s".format(name, filetime)
     println(filename)
 
     val pack = mlm.copy(
