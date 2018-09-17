@@ -55,11 +55,11 @@ class Ftrl(size: Int) {
 
   def mapToJson[T, U](map: Map[T, U]): JSONObject = {
     val json = new JSONObject()
-    map.foreach( x => json.put(x._1.toString, x._2))
+    map.foreach(x => json.put(x._1.toString, x._2))
     return json
   }
 
-  def jsonToIntMap(json:JSONObject): Map[Int, Int] = {
+  def jsonToIntMap(json: JSONObject): Map[Int, Int] = {
     val map = mutable.Map[Int, Int]()
     val keyIt = json.keySet().iterator()
     while (keyIt.hasNext) {
@@ -130,9 +130,9 @@ class Ftrl(size: Int) {
     return auc
   }
 
-  def train(spark:  SparkSession, data: RDD[LabeledPoint]): Unit = {
+  def train(spark: SparkSession, data: RDD[LabeledPoint]): Unit = {
     var posCount = 0
-    val res = data.collect()
+    val res = shuffle(data.collect())
     val beforeAUC = predictAndAuc(spark, res)
     println(s"before training auc: $beforeAUC")
     for (p <- res) {
@@ -146,5 +146,14 @@ class Ftrl(size: Int) {
     println(s"posCount=$posCount, totalCount=${res.size}")
     val afterAUC = predictAndAuc(spark, res)
     println(s"after training auc=$afterAUC")
+  }
+
+  def shuffle[T](array: Array[T]): Array[T] = {
+    val rnd = new java.util.Random
+    for (n <- Iterator.range(array.length - 1, 0, -1)) {
+      val k = rnd.nextInt(n + 1)
+      val t = array(k); array(k) = array(n); array(n) = t
+    }
+    return array
   }
 }

@@ -14,6 +14,8 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
 import spire.math.ULong
 
+import scala.reflect.ClassTag
+
 /**
   * Created by roydong on 09/08/2017.
   */
@@ -134,6 +136,11 @@ object Utils {
     val startHour = startTime.format(DateTimeFormatter.ofPattern("HH"))
 
     return (startDate, startHour)
+  }
+
+  def sampleFixed[U:ClassTag](data: Iterable[U], size: Int): Array[U] = {
+    val shuffled = scala.util.Random.shuffle(data)
+    return shuffled.toArray[U].slice(0, Math.min(size, data.size))
   }
 }
 
