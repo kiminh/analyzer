@@ -37,7 +37,7 @@ object PackModel {
       .getOrCreate()
     val filetime = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
 
-    val results = spark.read.textFile("file://"+testfile).rdd.map{x =>
+    val results = spark.sparkContext.textFile(testfile).map{x =>
       val row = x.split(" ")
       if (row.length == 2) {
         val p = row(0).toDouble
