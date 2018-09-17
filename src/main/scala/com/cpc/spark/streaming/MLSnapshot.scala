@@ -228,7 +228,7 @@ object MLSnapshot {
 
   def getPortraitFromRedis(key: String, redis: RedisClient,
                            portraits: cmutable.HashMap[String, ProtoPortrait]): ProtoPortrait = {
-    if (portraits.size > 500 * 10000 && key.startsWith("user")) {
+    if (portraits.size > 700 * 10000 && key.startsWith("user")) {
       null
     } else {
       if (!portraits.isDefinedAt(key)) {
