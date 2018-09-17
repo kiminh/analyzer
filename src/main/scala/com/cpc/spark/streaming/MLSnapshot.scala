@@ -91,6 +91,7 @@ object MLSnapshot {
       .repartition(200)
 
     val conf = ConfigFactory.load()
+
     base_data.foreachRDD {rdd =>
 
       val snap = rdd.mapPartitions{p =>
@@ -102,41 +103,43 @@ object MLSnapshot {
 
         p.map{x =>
           val vec = cmutable.Map[Int, Float]()
+
           var key = "user%d".format(x.userid)
           val up = getPortraitFromRedis(key, redis, portraits)
           parsePortrait(up, vec)
+          parseUserPortrait(up, "uid#userid", x.userid, vec)
 
           key = "i%d".format(x.ideaid)
           var p = getPortraitFromRedis(key, redis, portraits)
           parsePortrait(p, vec)
-          parseUserPortrait(up, "uid#ideaid%s".format(x.ideaid), x.ideaid, vec)
+          parseUserPortrait(up, "uid#ideaid", x.ideaid, vec)
 
           key = "p%d".format(x.planid)
           p = getPortraitFromRedis(key, redis, portraits)
           parsePortrait(p, vec)
-          parseUserPortrait(up, "uid#planid%s".format(x.planid), x.planid, vec)
+          parseUserPortrait(up, "uid#planid", x.planid, vec)
 
           key = "un%d".format(x.unitid)
           p = getPortraitFromRedis(key, redis, portraits)
           parsePortrait(p, vec)
-          parseUserPortrait(up, "uid#unitid%s".format(x.unitid), x.unitid, vec)
+          parseUserPortrait(up, "uid#unitid", x.unitid, vec)
 
           key = "ac%d".format(x.adclass)
           p = getPortraitFromRedis(key, redis, portraits)
           parsePortrait(p, vec)
-          parseUserPortrait(up, "uid#adclass%s".format(x.adclass), x.adclass, vec)
+          parseUserPortrait(up, "uid#adclass", x.adclass, vec)
 
           key = "it%d".format(x.interact)
           p = getPortraitFromRedis(key, redis, portraits)
           parsePortrait(p, vec)
-          parseUserPortrait(up, "uid#interact%s".format(x.interact), x.interact, vec)
+          parseUserPortrait(up, "uid#interact", x.interact, vec)
 
           key = "at%d".format(x.adtype)
           p = getPortraitFromRedis(key, redis, portraits)
           parsePortrait(p, vec)
+          parseUserPortrait(up, "uid#adtype", x.adtype, vec)
 
-          parseUserPortrait(up, "uid#userid%s".format(x.userid), x.userid, vec)
-          parseUserPortrait(up, "uid#slottype%s".format(x.slottype), x.slottype, vec)
+          parseUserPortrait(up, "uid#slottype", x.slottype, vec)
 
           val rawInt = Map(
             "timestamp" -> (x.timestamp / 1000).toInt,
@@ -202,7 +205,11 @@ object MLSnapshot {
     if (up != null) {
       if (up.subMap.isDefinedAt(key)) {
         val sub = up.subMap.get(key).get
-        parsePortrait(sub, vec)
+        val idKey = s"$id"
+        if (sub.subMap.isDefinedAt(idKey)) {
+          val sub2 = sub.subMap.get(idKey).get
+          parsePortrait(sub2, vec)
+        }
       }
     }
   }
