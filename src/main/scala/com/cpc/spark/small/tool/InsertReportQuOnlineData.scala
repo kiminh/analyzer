@@ -65,21 +65,22 @@ object InsertReportQuOnlineData {
       .rdd
       .map {
         x =>
-          val date = x.get(0).toString
-          val create_time = x.get(1).toString
+          val date = if(x.get(0) != null) x.get(0).toString else ""
 
-          val daily_active_five = x.getLong(2)
-          val daily_active_day = x.getLong(3)
+          val create_time = if(x.get(1) != null) x.get(1).toString else ""
 
-          val read_pv_five = x.getLong(4)
-          val read_pv_day = x.getLong(5)
-          val read_uv_five = x.getLong(6)
-          val read_uv_day = x.getLong(7)
+          val daily_active_five = if(x.get(2) != null) x.getLong(2) else 0.toLong//x.getLong(2)
+        val daily_active_day = if(x.get(3) != null) x.getLong(3) else 0.toLong//x.getLong(3)
 
-          val info_flow_show_pv_five = x.getLong(8)
-          val info_flow_show_pv_day = x.getLong(9)
-          val info_flow_show_uv_five = x.getLong(10)
-          val info_flow_show_uv_day = x.getLong(11)
+          val read_pv_five = if(x.get(4) != null) x.getLong(4) else 0.toLong//x.getLong(4)
+        val read_pv_day = if(x.get(5) != null) x.getLong(5) else 0.toLong//x.getLong(5)
+        val read_uv_five = if(x.get(6) != null) x.getLong(6) else 0.toLong//x.getLong(6)
+        val read_uv_day = if(x.get(7) != null) x.getLong(7) else 0.toLong//x.getLong(7)
+
+          val info_flow_show_pv_five = if(x.get(8) != null) x.getLong(8) else 0.toLong//x.getLong(8)
+        val info_flow_show_pv_day = if(x.get(9) != null) x.getLong(9) else 0.toLong//x.getLong(9)
+        val info_flow_show_uv_five = if(x.get(10) != null) x.getLong(10) else 0.toLong//x.getLong(10)
+        val info_flow_show_uv_day = if(x.get(11) != null) x.getLong(11) else 0.toLong//x.getLong(11)
           Info(date, create_time, daily_active_five, daily_active_day, read_pv_five, read_pv_day, read_uv_five, read_uv_day,
             info_flow_show_pv_five, info_flow_show_pv_day, info_flow_show_uv_five, info_flow_show_uv_day)
       }
