@@ -37,7 +37,7 @@ object PackModel {
       .getOrCreate()
     val filetime = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
 
-    val results = spark.sparkContext.textFile(testfile).map{x =>
+    val txt = Source.fromFile(testfile).getLines().map {x =>
       val row = x.split(" ")
       if (row.length == 2) {
         val p = row(0).toDouble
@@ -48,6 +48,8 @@ object PackModel {
       }
     }
     .filter(_ != null)
+
+    val results = spark.sparkContext.parallelize(txt.toSeq)
     println("test num", results.count())
 
     runIr(results, 500, 0.95)
