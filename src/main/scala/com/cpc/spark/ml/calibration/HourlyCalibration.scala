@@ -19,7 +19,7 @@ object HourlyCalibration {
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
   val MAX_BIN_COUNT = 200
-  val MIN_BIN_SIZE = 5000
+  val MIN_BIN_SIZE = 10000
 
   def main(args: Array[String]): Unit = {
 
@@ -176,7 +176,7 @@ object HourlyCalibration {
     val dataList = data.toList
     val totalSize = dataList.size
     val binNumber = Math.min(Math.max(1, totalSize / minBinSize), maxBinCount)
-    val binSize = dataList.size / binNumber
+    val binSize = totalSize / binNumber
     var bins = Seq[(Double, Double, Double)]()
     var clickSum = 0d
     var showSum = 0d
@@ -198,6 +198,6 @@ object HourlyCalibration {
             eCtrSum = 0d
           }
       }
-    return (bins, dataList.size)
+    return (bins, totalSize)
   }
 }
