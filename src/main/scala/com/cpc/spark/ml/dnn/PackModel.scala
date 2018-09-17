@@ -24,8 +24,9 @@ object PackModel {
   private var irError = 0d
 
   def main(args: Array[String]): Unit = {
-    val testfile = args(0)   //测试结果   prediction label
-    val name = args(1)       //model 名称    qtt-list-dnn-rawid
+    println(args.mkString(" "))
+    val name = args(0)       //model 名称    qtt-list-dnn-rawid
+    val testfile = args(1)   //测试结果   prediction label
     val dictfile = args(2)    // dict protobuf
     val onnxfile = args(3)     //tensorflow dump to onnx
     val upload = args(4).toInt
