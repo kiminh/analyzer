@@ -37,6 +37,7 @@ message Dict {
     map<int32, int32> mediaid = 7;
     map<string, int32> appid = 8;
     map<int32, int32> advertiserid = 9;
+    map<string, int32> stringid = 10;
 }
 
 message Pack {

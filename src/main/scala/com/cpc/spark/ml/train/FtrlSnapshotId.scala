@@ -27,13 +27,13 @@ import scala.collection.mutable.ListBuffer
 object FtrlSnapshotId {
 
   val XGBOOST_FEATURE_SIZE = 500000
-  val ID_FEATURES_SIZE = 1000000
+  val ID_FEATURES_SIZE = 10000000
 
   val ADVERTISER_ID_NAME = "advertiser"
   val PLAN_ID_NAME = "plan"
 
-  val LOCAL_DIR = "/home/cpc/ftrl/v17/"
-  val DEST_DIR = "/home/work/mlcpp/model/v17/"
+  val LOCAL_DIR = "/home/cpc/ftrl/v20/"
+  val DEST_DIR = "/home/work/mlcpp/model/v20/"
 
   val DOWN_SAMPLE_RATE = 0.2
 
@@ -57,9 +57,9 @@ object FtrlSnapshotId {
     println(s"startDate=$startDt")
     println(s"startHour=$startHr")
 
-    val version = 17
+    val version = 20
 
-    val spark = Utils.buildSparkSession(name = "v17_ctr")
+    val spark = Utils.buildSparkSession(name = "v20_ctr")
 
     // get xgboost features
     val dateRangeSql = Utils.getTimeRangeSql(startDt, startHr, dt, hour)
@@ -90,7 +90,11 @@ object FtrlSnapshotId {
     println("before training model info:")
     printModelInfo(ftrl)
 
-    val mergedDf = positive.union(negtive).withColumn("leaf_features", udfSnapshotToLeafFeatures(col("feature_vector")))
+    // merge and add xgboost features
+    var mergedDf = positive.union(negtive).withColumn("leaf_features", udfSnapshotToLeafFeatures(col("feature_vector")))
+    // join user app
+    val userApps = spark.table("dl_cpc.cpc_user_installed_apps").filter(s"load_date='$dt'")
+    mergedDf = mergedDf.join(userApps, Seq("uid"), joinType = "left")
     val merged = addIdFeatures(mergedDf)
 
 
@@ -101,10 +105,13 @@ object FtrlSnapshotId {
 
     // update id map
     val ids = merged.map(x => x._2).flatMap(x => x).distinct().collect()
-    updateDict(ftrl, ids)
+    val stringIDs = merged.map(x => x._3).flatMap(x => x).distinct().collect()
+    updateDict(ftrl, ids, stringIDs)
 
     println("after training model info:")
     printModelInfo(ftrl)
+
+    println(checkCollision(ftrl))
 
     // save model file locally
     val name = s"ctr-qtt-list-$version"
@@ -123,22 +130,24 @@ object FtrlSnapshotId {
   def printModelInfo(ftrl: Ftrl): Unit = {
     println(s"adv map size: ${ftrl.dict.advertiserid.size}")
     println(s"plan map size: ${ftrl.dict.planid.size}")
+    println(s"string map size: ${ftrl.dict.stringid.size}")
   }
 
-  def addIdFeatures(df: DataFrame): RDD[(LabeledPoint, Seq[(Int, String)])] = {
+  def addIdFeatures(df: DataFrame): RDD[(LabeledPoint, Seq[(Int, String)], Seq[String])] = {
     return df.rdd.map(x => {
       val array = x.getAs[String]("leaf_features").split("\\s+")
       val label = x.getAs[Int]("isclick").toDouble
       val xgboostFeatures = array.map(x => {
         (x.toInt, 1.0)
       })
-      val ids = getAllIDFeatures(x)
-      val sparseIDFeatures = ids.map(a => {
-        val hashID = getHashedID(a._1, a._2, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)
-        (hashID, 1.0)
-      })
+      val allId = getAllIDFeatures(x)
+      val ids = allId._1
+      val stringIDs = allId._2
+      val idSet = ids.map(a => getHashedID(a._1, a._2, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)).toSet
+      val stringSet = stringIDs.map(a => getHashedID(a, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)).toSet
+      val sparseIDFeatures = (idSet ++ stringSet).map(a => (a, 1.0))
       val vec = Vectors.sparse(ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE, xgboostFeatures ++ sparseIDFeatures)
-      (LabeledPoint(label, vec), ids)
+      (LabeledPoint(label, vec), ids, stringIDs)
     })
   }
 
@@ -155,9 +164,10 @@ object FtrlSnapshotId {
     return ftrl
   }
 
-  def updateDict(ftrl: Ftrl, ids: Array[(Int, String)]): Unit = {
+  def updateDict(ftrl: Ftrl, ids: Array[(Int, String)], stringIDs: Array[String]): Unit = {
     val advertiserMutMap = mutable.Map[Int, Int]()
     val planMutMap = mutable.Map[Int, Int]()
+    val stringMap = mutable.Map[String, Int]()
     ids.foreach(x => {
       val id = x._1
       val name = x._2
@@ -169,28 +179,85 @@ object FtrlSnapshotId {
         planMutMap.put(id, hashedID)
       }
     })
+    stringIDs.foreach(x => {
+      stringMap.put(x, getHashedID(x, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE))
+    })
     ftrl.dict.planid.foreach( x => planMutMap.put(x._1, x._2))
     ftrl.dict.advertiserid.foreach( x => advertiserMutMap.put(x._1, x._2))
+    ftrl.dict.stringid.foreach(x => stringMap.put(x._1, x._2))
 
     ftrl.dict = Dict(
       advertiserid = advertiserMutMap.toMap,
-      planid = planMutMap.toMap
+      planid = planMutMap.toMap,
+      stringid = stringMap.toMap
     )
   }
 
-  def getAllIDFeatures(row: Row): Seq[(Int, String)] = {
+  def checkCollision(ftrl: Ftrl): String = {
+    var total = 0
+    var collision = 0
+    val idSet = scala.collection.mutable.Set[Int]()
+    ftrl.dict.planid.foreach( x => {
+      total += 1
+      val k = x._2
+      if (idSet.contains(k)) {
+        collision += 1
+      } else {
+        idSet.add(x._2)
+      }
+    })
+    ftrl.dict.advertiserid.foreach( x => {
+      total += 1
+      val k = x._2
+      if (idSet.contains(k)) {
+        collision += 1
+      } else {
+        idSet.add(x._2)
+      }
+    })
+    ftrl.dict.stringid.foreach( x => {
+      total += 1
+      val k = x._2
+      if (idSet.contains(k)) {
+        collision += 1
+      } else {
+        idSet.add(x._2)
+      }
+    })
+    return s"dict collision rate $collision / $total (${collision.toDouble / total}"
+  }
+
+  // return: (<typed id>, <notyped string>
+  def getAllIDFeatures(row: Row): (Seq[(Int, String)], Seq[String]) = {
     val originID = new ListBuffer[(Int, String)]()
     // advertiser id
     val advertiserID = row.getAs[Int]("userid")
-    originID += ((advertiserID, ADVERTISER_ID_NAME))
+    originID.append((advertiserID, ADVERTISER_ID_NAME))
     // plan id
     val planID = row.getAs[Int]("planid")
-    originID += ((planID, PLAN_ID_NAME))
-    return originID
+    originID.append((planID, PLAN_ID_NAME))
+
+    val stringID = new ListBuffer[String]()
+    // installed apps
+    if (row.getAs[Object]("pkgs") != null) {
+      val apps = row.getAs[mutable.WrappedArray[String]]("pkgs")
+      apps.foreach( x => {
+        stringID.append(x + "_installed")
+        // app cross advertiser id
+        stringID.append(x + "_installed" + advertiserID.toString + "_adv")
+      })
+    }
+
+
+    return (originID, stringID)
   }
 
   def getHashedID(id: Int, name: String, size: Int, offset: Int): Int = {
-    return (Utils.djb2Hash(name + id.toString) % ULong(size)).toInt + offset
+    return getHashedID(name + id.toString, size, offset)
+  }
+
+  def getHashedID(id: String, size: Int, offset: Int): Int = {
+    return (Utils.djb2Hash(id) % ULong(size)).toInt + offset
   }
 
   def saveLrPbPack(ftrl: Ftrl, path: String, parser: String, name: String): Unit = {

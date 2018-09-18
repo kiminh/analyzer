@@ -34,6 +34,7 @@ class Ftrl(size: Int) {
     json.put("dict_advertiser", mapToJson(dict.advertiserid))
     json.put("dict_plan", mapToJson(dict.planid))
     json.put("dict_idea", mapToJson(dict.ideaid))
+    json.put("dict_string", mapToJson(dict.stringid))
     json.toJSONString()
   }
 
@@ -49,7 +50,8 @@ class Ftrl(size: Int) {
     dict = Dict(
       planid = jsonToIntMap(json.getJSONObject("dict_plan")),
       advertiserid = jsonToIntMap(json.getJSONObject("dict_advertiser")),
-      ideaid = jsonToIntMap(json.getJSONObject("dict_idea"))
+      ideaid = jsonToIntMap(json.getJSONObject("dict_idea")),
+      stringid = jsonToStrMap(json.getJSONObject("dict_string"))
     )
   }
 
@@ -61,10 +63,26 @@ class Ftrl(size: Int) {
 
   def jsonToIntMap(json: JSONObject): Map[Int, Int] = {
     val map = mutable.Map[Int, Int]()
+    if (json == null) {
+      return map.toMap
+    }
     val keyIt = json.keySet().iterator()
     while (keyIt.hasNext) {
       val key = keyIt.next()
       map.put(key.toInt, json.getIntValue(key))
+    }
+    return map.toMap
+  }
+
+  def jsonToStrMap(json: JSONObject): Map[String, Int] = {
+    val map = mutable.Map[String, Int]()
+    if (json == null) {
+      return map.toMap
+    }
+    val keyIt = json.keySet().iterator()
+    while (keyIt.hasNext) {
+      val key = keyIt.next()
+      map.put(key.toString, json.getIntValue(key))
     }
     return map.toMap
   }
