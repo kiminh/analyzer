@@ -35,7 +35,6 @@ object DNNSampleSingle {
     initFeatureDict(spark, ctrPathSep)
     val userAppIdx = getUidApp(spark, ctrPathSep)
     println("max id", maxIndex)
-    savePbPack("dnn-rawid", "/home/cpc/dw/bin/dict.pb", dict.toMap)
 
     val BcDict = spark.sparkContext.broadcast(dict)
     val ulog = getData(spark,"ctrdata_v1",ctrPathSep)
@@ -62,7 +61,7 @@ object DNNSampleSingle {
         (label, ids, appids, raw, apps)
       }
       .zipWithUniqueId()
-      .map(x => (x._2, x._1._1, x._1._2, x._1._3))
+      .map(x => (x._2, x._1._1, x._1._2, x._1._3, x._1._4, x._1._5))
       .toDF("sample_idx", "label", "id", "app", "raw", "pkg")
       .repartition(1000)
 
@@ -80,13 +79,17 @@ object DNNSampleSingle {
         val label = x.getAs[Seq[Int]]("label")
         label(0) == 1 || Random.nextInt(1000) < 100
       }
+
     resampled.coalesce(100).write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntrain-" + date)
     println("train size", resampled.count())
+
     resampled.take(100).foreach(println)
+    savePbPack("dnn-rawid", "/home/cpc/dw/bin/dict.pb", dict.toMap)
+
 
     test.coalesce(100).write
       .mode("overwrite")
