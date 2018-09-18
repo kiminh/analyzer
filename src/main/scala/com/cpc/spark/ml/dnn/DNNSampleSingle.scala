@@ -268,7 +268,7 @@ object DNNSampleSingle {
     val at = x.getAs[Int]("adtype")
     raw = raw :+ at
     idx = idx :+ at + i
-    i += 10
+    i += 50
 
     //idx = idx :+ x.getAs[Int]("adslot_type") + i
     //i += 10
