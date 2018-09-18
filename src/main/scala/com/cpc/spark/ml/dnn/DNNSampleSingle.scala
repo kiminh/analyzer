@@ -80,7 +80,9 @@ object DNNSampleSingle {
         label(0) == 1 || Random.nextInt(1000) < 100
       }
 
-    resampled.coalesce(100).write
+    resampled.select("sample_idx", "label", "id", "app")
+      .coalesce(100)
+      .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
@@ -91,7 +93,9 @@ object DNNSampleSingle {
     savePbPack("dnn-rawid", "/home/cpc/dw/bin/dict.pb", dict.toMap)
 
 
-    test.coalesce(100).write
+    test.select("sample_idx", "label", "id", "app")
+      .coalesce(100)
+      .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
