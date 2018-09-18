@@ -183,7 +183,7 @@ object DNNSampleSingle {
   )
   var dictStr = mutable.Map[String, Map[String, Int]]()
 
-  var maxIndex = 100
+  var maxIndex = 200
 
   def initFeatureDict(spark: SparkSession, pathSep: mutable.Map[String,Seq[String]]): Unit = {
     trainLog :+= "\n------dict size------"
