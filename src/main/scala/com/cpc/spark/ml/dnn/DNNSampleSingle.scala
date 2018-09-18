@@ -305,7 +305,7 @@ object DNNSampleSingle {
     val appids = x.getAs[Seq[Int]]("appIdx")
 
     if (appids.length > 0) {
-      (raw, apps, idx, appids.slice(0, 100))
+      (raw, apps, idx, appids.slice(0, 200))
     } else {
       (raw, apps, idx, Seq(0))
     }

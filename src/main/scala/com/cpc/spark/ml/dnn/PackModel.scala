@@ -67,7 +67,8 @@ object PackModel {
 
     val pack = mlm.copy(
       ir = Option(ir),
-      onnxFile = "data/%s.onnx".format(name)
+      onnxFile = "data/%s.onnx".format(name),
+      strategy = mlmodel.mlmodel.Strategy.StrategyDNNRawID
     )
     pack.writeTo(new FileOutputStream(s"$filename.mlm"))
 
