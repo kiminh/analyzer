@@ -77,7 +77,7 @@ object DNNSampleSingle {
     val resampled = train.filter{
         x =>
         val label = x.getAs[Seq[Int]]("label")
-        label(0) == 1 || Random.nextInt(1000) < 100
+        label(0) == 1 || Random.nextInt(1000) < 50
       }
 
     resampled.select("sample_idx", "label", "id", "app")
@@ -309,7 +309,7 @@ object DNNSampleSingle {
     val appids = x.getAs[Seq[Int]]("appIdx")
 
     if (appids.length > 0) {
-      (raw, apps, idx, appids.slice(0, 200))
+      (raw, apps, idx, appids.slice(0, 500))
     } else {
       (raw, apps, idx, Seq(0))
     }
