@@ -34,7 +34,7 @@ object CalibrationCheck {
                  | select isclick, ext_int['raw_ctr'] as ectr, ext_string['ctr_model_name'] from dl_cpc.cpc_union_log
                  | where $timeRangeSql
                  | and media_appsid in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0
-                 | and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0
+                 | and ideaid > 0 and adsrc = 1 and adslot_type in (1, 2, 3) AND userid > 0
                  | and ext_string['ctr_model_name'] = '$modelName'
        """.stripMargin
     println(s"sql:\n$sql")
