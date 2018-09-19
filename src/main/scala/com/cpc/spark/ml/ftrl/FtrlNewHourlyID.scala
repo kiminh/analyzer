@@ -14,6 +14,7 @@ import com.cpc.spark.ml.train.Ftrl
 import com.cpc.spark.qukan.utils.RedisUtil
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel._
+import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
@@ -23,7 +24,7 @@ import org.apache.spark.sql.functions.col
 object FtrlNewHourlyID {
 
   val XGBOOST_FEATURE_SIZE = 500000
-  val ID_FEATURES_SIZE = 1000000
+  val ID_FEATURES_SIZE = 10000000
 
   val ADVERTISER_ID_NAME = "advertiser"
   val PLAN_ID_NAME = "plan"
@@ -59,30 +60,26 @@ object FtrlNewHourlyID {
     val inputName = s"/user/cpc/qtt-portrait-ftrl/sample_for_ftrl_with_id/ftrl-${dt}-${hour}-${typename}-${gbdtVersion}.svm"
     println(s"inputname = $inputName")
 
-    val spark = SparkSession.builder()
-      .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-      .config("spark.kryoserializer.buffer.max", "2047MB")
-      .config("spark.driver.maxResultSize", "10g")
-      .appName("ftrl hourly new ")
-      .enableHiveSupport()
-      .getOrCreate()
+    val spark = Utils.buildSparkSession(name = "full_id_ftrl")
 
+    val log = spark.table("dl_cpc.cpc_union_log")
+      .filter(s"`date` = '$dt' and hour = '$hour'")
+      .filter("media_appsid  in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0 " +
+        "and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0 ")
 
-    // lr size
-    val sample: RDD[LabeledPoint] = spark.sparkContext
+    val sample = spark.sparkContext
       .textFile(inputName, 50)
-      .map { x => {
+      .map(x => {
         val array = x.split("\t")
         val label = array(0).toDouble
-        val vector1 = array(1).split("\\s+").map(x => {
-          val array = x.split(":")
-          (array(0).toInt, array(1).toDouble)
-        })
-        val vec = Vectors.sparse(XGBOOST_FEATURE_SIZE, vector1)
-        LabeledPoint(label, vec)
-      }
-      }
+        (array(2), label, array(1))
+      }).
+
+
+
     println(s"sample size = ${sample.count()}")
+
+    val join = sample.join(log.rdd.map, Seq("searchid"), "inner")
 
     var ftrlnew = new Ftrl(XGBOOST_FEATURE_SIZE)
     var ftrl = if (startFresh) {
