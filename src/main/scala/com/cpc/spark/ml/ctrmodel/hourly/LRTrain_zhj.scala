@@ -46,10 +46,6 @@ object LRTrain_zhj {
 
     val userAppIdx = getUidApp(spark, ctrPathSep).cache()
 
-    val ulog = getData(spark, "ctrdata_v1", ctrPathSep)
-      .filter(_.getAs[Int]("ideaid") > 0)
-      .cache()
-
     //按分区取数据
     var cvrUlog = getData(spark, "cvrdata_v2", cvrPathSep).cache()
 
@@ -78,7 +74,6 @@ object LRTrain_zhj {
 
     cvrQttAll.unpersist()
 
-    ulog.unpersist()
     userAppIdx.unpersist()
   }
 
@@ -229,10 +224,10 @@ object LRTrain_zhj {
     trainLog :+= "protobuf pack %s".format(lrfilepath)
 
     trainLog :+= "\n-------update server data------"
-    /*if (destfile.length > 0) {
+    if (destfile.length > 0) {
       trainLog :+= MUtils.updateOnlineData(lrfilepath, destfile, ConfigFactory.load())
       MUtils.updateMlcppOnlineData(mlfilepath, "/home/work/mlcpp/data/" + destfile, ConfigFactory.load())
-    }*/
+    }
   }
 
   def formatSample(spark: SparkSession, parser: String, ulog: DataFrame): RDD[LabeledPoint] = {
