@@ -18,7 +18,7 @@ object HourlyCalibration {
 
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
-  val MAX_BIN_COUNT = 10
+  val MAX_BIN_COUNT = 2
   val MIN_BIN_SIZE = 10000
 
   def main(args: Array[String]): Unit = {
@@ -57,7 +57,7 @@ object HourlyCalibration {
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
-    
+
     unionLogToConfig(log.rdd, session.sparkContext, softMode)
   }
 
@@ -143,12 +143,12 @@ object HourlyCalibration {
   def computeCalibration(prob: Double, irModel: IRModel): Double = {
     val index = binarySearch(prob, irModel.boundaries)
     if (index == 0) {
-      return irModel.predictions(0)
+      return irModel.predictions(0) * (prob - irModel.boundaries(0))
     }
-    if (index >= irModel.boundaries.size-1) {
-      return irModel.predictions.last
-    }
-    return irModel.predictions(index) + (irModel.predictions(index+1) - irModel.predictions(index)) * (prob - irModel.boundaries(index)) / (irModel.boundaries(index+1) - irModel.boundaries(index))
+    return Math.min(1.0, irModel.predictions(index-1) +
+      (irModel.predictions(index) - irModel.predictions(index-1))
+        * (prob - irModel.boundaries(index-1))
+        / (irModel.boundaries(index) - irModel.boundaries(index-1)))
   }
 
   def saveProtoToLocal(modelName: String, config: CalibrationConfig): String = {
