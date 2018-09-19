@@ -141,9 +141,12 @@ object HourlyCalibration {
   }
 
   def computeCalibration(prob: Double, irModel: IRModel): Double = {
-    val index = binarySearch(prob, irModel.boundaries)
+    var index = binarySearch(prob, irModel.boundaries)
     if (index == 0) {
       return irModel.predictions(0) * (prob - irModel.boundaries(0))
+    }
+    if (index == irModel.boundaries.size) {
+      index = index - 1
     }
     return Math.min(1.0, irModel.predictions(index-1) +
       (irModel.predictions(index) - irModel.predictions(index-1))
