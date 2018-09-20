@@ -85,7 +85,7 @@ object FtrlSnapshotId {
     println(s"positive count = ${positive.count()}")
     println(s"negtive count = ${negtive.count()}")
 
-    val ftrl = getModel(version, startFresh)
+    val ftrl = getModel(version, startFresh, "list")
 
     println("before training model info:")
     printModelInfo(ftrl)
@@ -151,7 +151,7 @@ object FtrlSnapshotId {
     })
   }
 
-  def getModel(version: Int, startFresh: Boolean): Ftrl = {
+  def getModel(version: Int, startFresh: Boolean, typename: String): Ftrl = {
     val ftrlnew = new Ftrl(ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE)
     val ftrlRedis = RedisUtil.redisToFtrl(version, ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE)
     val ftrl = if (ftrlRedis != null && !startFresh) {
