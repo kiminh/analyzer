@@ -88,10 +88,7 @@ object DNNSampleSingle {
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntrain-" + date)
     println("train size", resampled.count())
-
-    resampled.take(100).foreach(println)
     savePbPack("dnn-rawid", "/home/cpc/dw/bin/dict.pb", dict.toMap)
-
 
     test.select("sample_idx", "label", "id", "app")
       .coalesce(100)
@@ -100,6 +97,7 @@ object DNNSampleSingle {
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntest-" + date)
+    test.take(10).foreach(println)
 
     println("test size", test.count())
 
