@@ -3,6 +3,7 @@ SELECT
     case 
         when exptags like "%ctr2model=1-v15%" then "v15"
         when exptags like "%ctr2model=1-v19%" then "v19"
+        when exptags like "%ctr2model=1-v9%" then "v9"
         ELSE "noctr"
     END AS ctrtag,
     case 
@@ -23,9 +24,7 @@ FROM
         from
             dl_cpc.cpc_union_log 
         WHERE 
-            `date` = "2018-09-19" 
-        and
-            `hour`="13"
+            `date` = "2018-09-19"
         and adslot_type!=3
     ) a
     left outer join
@@ -34,14 +33,15 @@ FROM
             searchid, 
             label as iscvr 
         from dl_cpc.ml_cvr_feature_v1
-        WHERE `date` = "2018-09-19" and `hour`="13"
+        WHERE `date` = "2018-09-19"
     ) b on a.searchid = b.searchid
 GROUP BY 
 case 
-    when exptags like "%ctr2model=1-v15%" then "v15"
-    when exptags like "%ctr2model=1-v19%" then "v19"
-    ELSE "noctr"  
-END,
+        when exptags like "%ctr2model=1-v15%" then "v15"
+        when exptags like "%ctr2model=1-v19%" then "v19"
+        when exptags like "%ctr2model=1-v9%" then "v9"
+        ELSE "noctr"
+    END,
 case 
     when round(ext["adclass"].int_value/1000) == 110110 then 'wz'
     else 'other'
@@ -83,4 +83,61 @@ v19     wz      16.096  109.126 1.344   2.613   0.035   0.21815350007202533     
 v15     wz      15.822  112.081 1.334   2.64    0.035   0.22254517204758997     4493.469756271126
 v15     other   74.84   450.258 1.43    7.139   0.102   0.13637487631352807     7332.728923625079
 
--- 2018-09-19 13
+
+
+
+
+-- 2018-09-19
+noctr   wz      13.153  264.425         1.247   2.716   0.034   0.25741287799855356     3884.809523809524
+v19     other   145.229 3059.549        1.944   9.708   0.189   0.12995642917547742     7694.88671198961
+noctr   other   159.714 3066.79         1.933   9.261   0.179   0.1120754887393037      8922.557565874888
+v19     wz      13.731  275.606         1.297   2.776   0.036   0.2622075335382076      3813.772954979896
+v9      other   151.392 3032.094        1.949   9.492   0.185   0.12217417526958305     8185.035812956815
+v15     wz      13.355  285.939         1.265   2.765   0.035   0.26192454251485975     3817.893468090211
+v15     other   151.053 3009.777        1.971   9.731   0.192   0.12699743047277728     7874.175062261253
+v9      wz      13.26   284.927         1.218   2.696   0.033   0.2476697161219938      4037.6353462101665
+
+
+SELECT
+    case 
+        when exptags like "%ctr2model=1-v15%" then "v15"
+        when exptags like "%ctr2model=1-v19%" then "v19"
+        when exptags like "%ctr2model=1-v9%" then "v9"
+        ELSE "noctr"
+    END AS ctrtag,
+    round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
+    round(sum(case WHEN isclick == 1 then price else 0 end)*10/count(distinct uid),3) as arpu,
+    round(sum(isclick)*100 / sum(isshow),3) as ctr,
+    round(sum(iscvr)*100 / sum(isclick),3) click_cvr_rate,
+    round(sum(iscvr)*100 / sum(isshow),3) as show_cvr_rate,
+    sum(iscvr)/sum(case WHEN isclick == 1 then price else 0 end)*1000 as roi,
+    sum(case WHEN isclick == 1 then price else 0 end)/sum(iscvr) as customer_cost
+FROM 
+    (
+        select 
+            * 
+        from
+            dl_cpc.cpc_union_log 
+        WHERE 
+            `date` = "2018-09-19"
+        and adslot_type!=3
+    ) a
+    left outer join
+    (
+        select 
+            searchid, 
+            label as iscvr 
+        from dl_cpc.ml_cvr_feature_v1
+        WHERE `date` = "2018-09-19"
+    ) b on a.searchid = b.searchid
+GROUP BY 
+case 
+        when exptags like "%ctr2model=1-v15%" then "v15"
+        when exptags like "%ctr2model=1-v19%" then "v19"
+        when exptags like "%ctr2model=1-v9%" then "v9"
+        ELSE "noctr"
+    END;
+v15     93.087  2967.756        1.674   7.515   0.126   0.13514647443981248     7399.37911177513
+noctr   98.845  3003.947        1.648   7.205   0.119   0.12010755285662959     8325.871073184577
+v9      93.304  2986.917        1.641   7.371   0.121   0.1296740642397913      7711.642307677002
+v19     93.71   3007.878        1.691   7.624   0.129   0.13754858597079023     7270.158343993152
