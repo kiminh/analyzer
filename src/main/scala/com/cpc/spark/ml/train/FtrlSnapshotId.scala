@@ -152,14 +152,14 @@ object FtrlSnapshotId {
   }
 
   def getModel(version: Int, startFresh: Boolean, typename: String): Ftrl = {
-    val ftrlnew = new Ftrl(ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE)
-    val ftrlRedis = RedisUtil.redisToFtrl(version, ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE)
+    val ftrlNew = new Ftrl(ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE)
+    val ftrlRedis = RedisUtil.redisToFtrlWithType(typename, version, ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE)
     val ftrl = if (ftrlRedis != null && !startFresh) {
       println("ftrl fetched from redis")
       ftrlRedis
     } else {
       println("new ftrl")
-      ftrlnew
+      ftrlNew
     }
     return ftrl
   }

@@ -5,22 +5,15 @@ package com.cpc.spark.ml.ftrl
   * date: 9/18/18
   */
 
-import java.io.FileOutputStream
-import java.util.Date
-
 import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
-import com.cpc.spark.ml.train.Ftrl
-import com.cpc.spark.ml.train.FtrlSnapshotId.getModel
+import com.cpc.spark.ml.train.FtrlSnapshotId.{saveLrPbPack, _}
 import com.cpc.spark.qukan.utils.RedisUtil
 import com.typesafe.config.ConfigFactory
-import mlmodel.mlmodel._
-import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object FtrlNewHourlyID {
 
@@ -61,7 +54,7 @@ object FtrlNewHourlyID {
     val inputName = s"/user/cpc/qtt-portrait-ftrl/sample_for_ftrl_with_id/ftrl-${dt}-${hour}-${typename}-${gbdtVersion}.svm"
     println(s"inputname = $inputName")
 
-    val spark = Utils.buildSparkSession(name = "full_id_ftrl")
+    val spark: SparkSession = Utils.buildSparkSession(name = "full_id_ftrl")
 
     import spark.implicits._
 
@@ -74,7 +67,7 @@ object FtrlNewHourlyID {
         (array(2), label, array(1))
       }).toDF("searchid", "label", "xgBoostFeatures")
 
-    println(s"sample size = ${sample.count()}")
+    println(s"xgBoost data size = ${sample.count()}")
 
     val log = spark.table("dl_cpc.cpc_union_log")
       .filter(s"`date` = '$dt' and hour = '$hour'")
@@ -82,69 +75,60 @@ object FtrlNewHourlyID {
         "and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0 ")
 
 
-    val join = sample.join(log, Seq("searchid"), "inner")
-    println(s"before sample join count = ${join.select("searchid").distinct().count()}")
+    var merged = sample.join(log, Seq("searchid"), "inner")
+    println(s"join with log size = ${merged.select("searchid").distinct().count()}")
 
-    val ftrl = getModel(ftrlVersion, startFresh)
-    var ftrlnew = new Ftrl(XGBOOST_FEATURE_SIZE)
-    var ftrl = if (startFresh) {
-      var ftrlRedis = RedisUtil.redisToFtrlWithType(typename, ftrlVersion, XGBOOST_FEATURE_SIZE)
-      if (ftrlRedis != null) {
-        println("from redis")
-        ftrlRedis
-      } else {
-        println("new")
-        ftrlnew
-      }
-    } else {
-      println("new")
-      ftrlnew
-    }
+    // join user app
+    val userApps = spark.table("dl_cpc.cpc_user_installed_apps").filter(s"load_date='$dt'")
+    merged = merged.join(userApps, Seq("uid"), joinType = "left")
 
-    // val ftrl = ftrlnew
-    ftrl.train(spark, sample)
-    // ftrl.print()
-    RedisUtil.ftrlToRedisWithtype(ftrl, typename, ftrlVersion, dt, hour)
+    val dataWithID = createFeatures(merged)
 
+    val samples = dataWithID.map(x => x._1)
 
-    // upload
-    val fname = s"$ctrcvr-portrait${ftrlVersion}-ftrl-qtt-$adslot.mlm"
-    val filename = s"/home/cpc/djq/xgboost_lr/$fname"
-    saveLrPbPack(ftrl, filename, "ftrl", gbdtVersion, ftrlVersion, adslot, ctrcvr)
-    println(fname, filename)
+    val ftrl = getModel(ftrlVersion, startFresh, typename)
+    ftrl.train(spark, samples)
+
+    val ids = dataWithID.map(x => x._2).flatMap(x => x).distinct().collect()
+    val stringIDs = dataWithID.map(x => x._3).flatMap(x => x).distinct().collect()
+    updateDict(ftrl, ids, stringIDs)
+
+    println("after training model info:")
+    printModelInfo(ftrl)
+
+    println(checkCollision(ftrl))
+
+    // save model file locally
+    val name = s"$ctrcvr-protrait$ftrlVersion-ftrl-id-qtt-$adslot.mlm"
+    val filename = s"$LOCAL_DIR$name.mlm"
+    saveLrPbPack(ftrl, filename, "ftrl", name)
+    println(s"Save model locally to $filename")
 
     if (upload) {
-      val conf = ConfigFactory.load()
-      println(MUtils.updateMlcppOnlineData(filename, s"/home/work/mlcpp/data/$fname", conf))
+      val ret = RedisUtil.ftrlToRedisWithType(ftrl, typename, ftrlVersion, dt, hour)
+      println(s"upload to redis with two keys: ${ret._1} and ${ret._2}")
+      println(MUtils.updateMlcppOnlineData(filename, s"$DEST_DIR$name.mlm", ConfigFactory.load()))
     }
-
   }
 
-  def saveLrPbPack(ftrl: Ftrl, path: String, parser: String,
-                   gbdtVersion: Int, ftrlVersion: Int, adslot: String, ctrcvr: String): Unit = {
-    val lr = LRModel(
-      parser = parser,
-      featureNum = ftrl.w.length,
-      weights = ftrl.w.zipWithIndex.toMap.map(x => (x._2, x._1))
-    )
-    val ir = IRModel(
-    )
-    val dictpb = Dict(
-
-    )
-    val pack = Pack(
-      name = s"qtt-$adslot-$ctrcvr-ftrl-portrait${ftrlVersion}",
-      createTime = new Date().getTime,
-      lr = Option(lr),
-      ir = Option(ir),
-      dict = Option(dictpb),
-      strategy = Strategy.StrategyXgboostFtrl,
-      gbmfile = s"data/$ctrcvr-portrait${gbdtVersion}-qtt-$adslot.gbm",
-      gbmTreeLimit = 200,
-      gbmTreeDepth = 10,
-      negSampleRatio = 0.2
-    )
-    pack.writeTo(new FileOutputStream(path))
+  def createFeatures(df: DataFrame): RDD[(LabeledPoint, Seq[(Int, String)], Seq[String])] = {
+    return df.rdd.map(x => {
+      // prepare xgboost features
+      val array = x.getAs[String]("xgBoostFeatures").split("\\s+")
+      val xgBoostFeatures = array.map(x => {
+        (x.toInt, 1.0)
+      })
+      // get label
+      val label = x.getAs[Double]("label")
+      // prepare id type features
+      val allId = getAllIDFeatures(x)
+      val ids = allId._1
+      val stringIDs = allId._2
+      val idSet = ids.map(a => getHashedID(a._1, a._2, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)).toSet
+      val stringSet = stringIDs.map(a => getHashedID(a, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)).toSet
+      val sparseIDFeatures = (idSet ++ stringSet).map(a => (a, 1.0))
+      val vec = Vectors.sparse(ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE, xgBoostFeatures ++ sparseIDFeatures)
+      (LabeledPoint(label, vec), ids, stringIDs)
+    })
   }
-
 }
