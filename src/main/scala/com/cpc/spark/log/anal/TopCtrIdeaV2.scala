@@ -21,6 +21,8 @@ import scala.collection.mutable
   * 2. 删除就系统的数据：adv_old
   * 3. 删除ctr等比缩放
   * 4. 根据adslot_type等比取80000数据
+  *
+  * created by zhy
   */
 object TopCtrIdeaV2 {
 
@@ -171,7 +173,7 @@ object TopCtrIdeaV2 {
             null
           }
       }
-      .filter(_ != null)
+      .filter(x => x != null && x.user_id != 1001028 && x.user_id != 1501897)  //推荐素材去掉test用户 1001028 1501897
 
 
     val sum = topIdeaRDD.size.toDouble //总元素个数
