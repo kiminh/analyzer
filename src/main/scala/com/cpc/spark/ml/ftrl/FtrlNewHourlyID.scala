@@ -32,11 +32,11 @@ object FtrlNewHourlyID {
 
     val dt = args(0)
     val hour = args(1)
-    val upload = args(3).toBoolean
-    val startFresh = args(4).toBoolean
-    val typename = args(5)
-    val gbdtVersion = args(6).toInt
-    val ftrlVersion = args(7).toInt
+    val upload = args(2).toBoolean
+    val startFresh = args(3).toBoolean
+    val typename = args(4)
+    val gbdtVersion = args(5).toInt
+    val ftrlVersion = args(6).toInt
     val typearray = typename.split("-")
     val adslot = typearray(0)
     val ctrcvr = typearray(1)
@@ -51,7 +51,7 @@ object FtrlNewHourlyID {
     println(s"adslot=$adslot")
     println(s"ctrcvr=$ctrcvr")
 
-    val inputName = s"/user/cpc/qtt-portrait-ftrl/sample_for_ftrl_with_id/ftrl-${dt}-${hour}-${typename}-${gbdtVersion}.svm"
+    val inputName = s"/user/cpc/qtt-portrait-ftrl/sample_for_ftrl_with_id/ftrl-with-id-${dt}-${hour}-${typename}-${gbdtVersion}.svm"
     println(s"inputname = $inputName")
 
     val spark: SparkSession = Utils.buildSparkSession(name = "full_id_ftrl")
