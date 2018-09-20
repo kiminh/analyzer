@@ -11,6 +11,7 @@ import java.util.Date
 import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ml.train.Ftrl
+import com.cpc.spark.ml.train.FtrlSnapshotId.getModel
 import com.cpc.spark.qukan.utils.RedisUtil
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel._
@@ -62,25 +63,29 @@ object FtrlNewHourlyID {
 
     val spark = Utils.buildSparkSession(name = "full_id_ftrl")
 
-    val log = spark.table("dl_cpc.cpc_union_log")
-      .filter(s"`date` = '$dt' and hour = '$hour'")
-      .filter("media_appsid  in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0 " +
-        "and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0 ")
+    import spark.implicits._
 
+    // id, label, features
     val sample = spark.sparkContext
       .textFile(inputName, 50)
       .map(x => {
         val array = x.split("\t")
         val label = array(0).toDouble
         (array(2), label, array(1))
-      }).
-
-
+      }).toDF("searchid", "label", "xgBoostFeatures")
 
     println(s"sample size = ${sample.count()}")
 
-    val join = sample.join(log.rdd.map, Seq("searchid"), "inner")
+    val log = spark.table("dl_cpc.cpc_union_log")
+      .filter(s"`date` = '$dt' and hour = '$hour'")
+      .filter("media_appsid  in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0 " +
+        "and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0 ")
 
+
+    val join = sample.join(log, Seq("searchid"), "inner")
+    println(s"before sample join count = ${join.select("searchid").distinct().count()}")
+
+    val ftrl = getModel(ftrlVersion, startFresh)
     var ftrlnew = new Ftrl(XGBOOST_FEATURE_SIZE)
     var ftrl = if (startFresh) {
       var ftrlRedis = RedisUtil.redisToFtrlWithType(typename, ftrlVersion, XGBOOST_FEATURE_SIZE)
