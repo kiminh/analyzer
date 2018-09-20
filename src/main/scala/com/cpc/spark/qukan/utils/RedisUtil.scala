@@ -62,7 +62,7 @@ object RedisUtil {
     }
   }
 
-  def ftrlToRedisWithtype(ftrl: Ftrl, typename: String, version: Int, date: String, hour: String): Unit = {
+  def ftrlToRedisWithType(ftrl: Ftrl, typename: String, version: Int, date: String, hour: String): (String, String) = {
     val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
     redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
     val key = s"ftrl-$typename-$version"
@@ -71,6 +71,7 @@ object RedisUtil {
     redis.setex(key, 7 * 24 * 60 * 60, ftrl.toJsonString())
     redis.setex(key2, 7 * 24 * 60 * 60, ftrl.toJsonString())
     redis.disconnect
+    return (key, key2)
   }
 
   def redisToFtrlWithType(typename: String, version: Int, featureSize: Int): Ftrl = {
