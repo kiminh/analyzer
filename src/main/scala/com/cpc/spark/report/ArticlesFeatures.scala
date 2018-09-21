@@ -85,7 +85,9 @@ object ArticlesFeatures {
 
     try {
       val a = JSON.parseObject[DocFeatures](result.body, classOf[DocFeatures])
+      println("~~~~~:"+a.features(0).feature)
       a.features(0).feature
+
     } catch {
       case _: Exception => null
     }
