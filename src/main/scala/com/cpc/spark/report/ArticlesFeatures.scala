@@ -50,7 +50,7 @@ object ArticlesFeatures {
       """.stripMargin
     println("sql" + sql)
 
-    spark.sql(sql)
+    val rdd1=spark.sql(sql)
       .repartition(20)
       .rdd
       .map {
@@ -64,6 +64,8 @@ object ArticlesFeatures {
       .map { x =>
         (x._1, x._2, x._3, (for (i <- x._4) yield i.featureName -> i.featureValue).toMap)
       }
+      println(rdd1.take(3).foreach(println(_)))
+      rdd1
       .toDF("doc_id", "title", "detail", "features")
       .write.mode("overwrite")
       .orc(s"/warehouse/dl_cpc.db/cpc_doc_features_from_algo/load_date=$date")
