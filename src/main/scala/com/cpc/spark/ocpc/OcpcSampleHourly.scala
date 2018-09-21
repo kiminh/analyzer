@@ -3,7 +3,7 @@ package com.cpc.spark.ocpc
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.lit
 
-package object OcpcSampleHourly {
+object OcpcSampleHourly {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     val dt = args(0)
@@ -57,3 +57,4 @@ package object OcpcSampleHourly {
     result.write.mode("overwrite").saveAsTable("test.temperate_roi_track")
   }
 }
+
