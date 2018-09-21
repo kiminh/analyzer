@@ -60,7 +60,7 @@ object ArticlesFeatures {
           val detail = x.getAs[String]("detail")
           (doc_id, title, detail, getDocFeature(doc_id))
       }
-    println(rdd1.take(3).foreach(x=>println("##"+x)))
+    println(rdd1.take(3).foreach(x=>println("##"+x+getDocFeature)))
       val rdd2=rdd1
       .filter(_._4 != null)
       .map { x =>
@@ -83,7 +83,7 @@ object ArticlesFeatures {
 
   def getDocFeature(docId: Long): Array[Feature] = {
     val id = Random.nextInt(2)
-    val data = "{\"GroupId\":8,\"DocId\":[\"" + docId + "\"]}"
+    val data = "{\"GroupId\":8,\"DocId\":[" + docId + "]}"
 
     val result = Http(urls(id)).postData(data).asString
 
