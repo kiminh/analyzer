@@ -60,7 +60,7 @@ object ArticlesFeatures {
           val detail = x.getAs[String]("detail")
           (doc_id, title, detail, getDocFeature(doc_id))
       }
-    println(rdd1.take(3).foreach(x=>println(x)))
+    println(rdd1.take(3).foreach(x=>println("##"+x)))
       val rdd2=rdd1
       .filter(_._4 != null)
       .map { x =>
@@ -89,7 +89,6 @@ object ArticlesFeatures {
 
     try {
       val a = JSON.parseObject[DocFeatures](result.body, classOf[DocFeatures])
-      println("~~~~~:" + a.features(0).feature)
       a.features(0).feature
 
     } catch {
