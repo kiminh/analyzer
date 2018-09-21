@@ -18,6 +18,7 @@ enum Strategy {
     StrategyXgboostLR = 4;
     StrategyXgboostFtrl = 5;
     StrategyXgboostBS = 6;
+    StrategyDNNRawID = 7;
 }
 
 message IRModel {
@@ -36,6 +37,7 @@ message Dict {
     map<int32, int32> mediaid = 7;
     map<string, int32> appid = 8;
     map<int32, int32> advertiserid = 9;
+    map<string, int32> stringid = 10;
 }
 
 message Pack {
@@ -50,6 +52,7 @@ message Pack {
     uint32 gbm_tree_depth = 9;
     double negSampleRatio = 10;
     int64 xg_feature_num = 11;
+    string onnx_file = 12;
 }
 
 message CalibrationConfig {
