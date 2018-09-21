@@ -55,6 +55,8 @@ object OcpcSampleHourly {
       .withColumn("hour", lit(hour))
 
     result.write.mode("overwrite").insertInto("test.temperate_roi_track")
+
+    println("successfully save data into table test.temperate_roi_track")
   }
 }
 
