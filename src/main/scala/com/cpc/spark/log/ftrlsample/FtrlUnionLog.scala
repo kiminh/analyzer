@@ -3,7 +3,9 @@ package com.cpc.spark.log.ftrlsample
 import org.apache.spark.sql.{Column, DataFrame, Row, SparkSession, types}
 import org.apache.spark.sql.functions._
 import scala.collection.mutable
-
+/*
+ *  Not used
+ * */
 object FtrlUnionLog {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
