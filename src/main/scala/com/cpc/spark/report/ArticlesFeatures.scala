@@ -46,7 +46,7 @@ object ArticlesFeatures {
       """
         | select distinct id, title, detail
         | from gobblin.qukan_content
-        | where substr(create_time,1,10) = '$date'
+        | where to_date(create_time) = '$date'
       """.stripMargin
     println("sql" + sql)
 
