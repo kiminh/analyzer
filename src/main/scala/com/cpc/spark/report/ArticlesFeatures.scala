@@ -60,13 +60,13 @@ object ArticlesFeatures {
           val detail = x.getAs[String]("detail")
           (doc_id, title, detail, getDocFeature(doc_id))
       }
-    println(rdd1.take(3).foreach(x=>println("##"+x+getDocFeature)))
+    println(rdd1.take(3).foreach(x=>println("##: "+x)))
       val rdd2=rdd1
       .filter(_._4 != null)
       .map { x =>
         (x._1, x._2, x._3, (for (i <- x._4) yield i.featureName -> i.featureValue).toMap)
       }
-      println(rdd2.take(3).foreach(x=>println("~~:"+x)))
+      println(rdd2.take(3).foreach(x=>println("~~: "+x)))
       rdd2
       .toDF("doc_id", "title", "detail", "features")
       .write.mode("overwrite")
