@@ -29,7 +29,7 @@ object OcpcSampleHourly {
          |        and adsrc = 1
          |        and adslot_type in (1,2,3)
          |      ) a
-         |      left outer join
+         |inner join
          |      (
          |        select searchid, label
          |        from dl_cpc.ml_cvr_feature_v1
@@ -54,7 +54,7 @@ object OcpcSampleHourly {
     val result = groupBy.withColumn("date", lit(dt))
       .withColumn("hour", lit(hour))
 
-    result.write.mode("overwrite").saveAsTable("test.temperate_roi_track")
+    result.write.mode("overwrite").partitionBy("date", "hour").saveAsTable("test.temperate_roi_track")
   }
 }
 
