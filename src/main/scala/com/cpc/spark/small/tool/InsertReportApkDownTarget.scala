@@ -5,6 +5,8 @@ import java.util.Properties
 
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.SparkContext
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
@@ -675,11 +677,68 @@ object InsertReportApkDownTarget {
       .repartition(50)
       .cache()
 
-    val allDatax1 =  lploadAllData.union(siteAllData).repartition(50).cache()
-    val allDataxx = allDatax.union(allDatax1).repartition(50).cache()
-    val allData = allDataxx.union(motivationAllData).repartition(50).cache()
+    clearReportApkDownTarget(argDay)
+
+    //-----
+    var insertDataFramelpload = ctx.createDataFrame(getInsertAllData(lploadAllData, argDay, broadcastBrandMaps))
+      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date")
+      .repartition(50)
+
+    insertDataFramelpload.show(10)
+
+    insertDataFramelpload
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariaReportdbUrl, "report.report_apk_down_target", mariaReportdbProp)
+    println("insertDataFramelpload over!")
 
 
+    //-----
+    var insertDataFrameSite = ctx.createDataFrame(getInsertAllData(siteAllData, argDay, broadcastBrandMaps))
+      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date")
+      .repartition(50)
+
+    insertDataFrameSite.show(10)
+
+    insertDataFrameSite
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariaReportdbUrl, "report.report_apk_down_target", mariaReportdbProp)
+    println("insertDataFrameSite over!")
+
+
+    //-----
+    var insertDataFrameallDatax = ctx.createDataFrame(getInsertAllData(allDatax, argDay, broadcastBrandMaps))
+      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date")
+      .repartition(50)
+
+    insertDataFrameallDatax.show(10)
+
+    insertDataFrameallDatax
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariaReportdbUrl, "report.report_apk_down_target", mariaReportdbProp)
+    println("insertDataFrameallDatax over!")
+
+    //-----
+    var insertDataFrameMotivation = ctx.createDataFrame(getInsertAllData(motivationAllData, argDay, broadcastBrandMaps))
+      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date")
+      .repartition(50)
+
+    insertDataFrameMotivation.show(10)
+
+    insertDataFrameMotivation
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariaReportdbUrl, "report.report_apk_down_target", mariaReportdbProp)
+    println("insertDataFrameMotivation over!")
+
+    println("report over!")
+
+
+  }
+
+  def getInsertAllData(allData: RDD[Info], argDay: String, broadcastBrandMaps: Broadcast[Map[String, Int]]) = {
     val inputStudentData = allData
       .map {
         x =>
@@ -1035,38 +1094,8 @@ object InsertReportApkDownTarget {
     val quAdslotTypeData = getTargetData(inputQuAdslotTypeData, "adslot_type_media", argDay)
     //println("quAdslotTypeData count is", quAdslotTypeData.count())
 
-    insertAllData = insertAllData.union(quAdslotTypeData).repartition(50)
-
-    //insertAllData.take(10).foreach(println)
-    // println("insertAllData count", insertAllData.count())
-    var insertDataFrame = ctx.createDataFrame(insertAllData)
-      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date")
-      .repartition(50)
-
-    insertDataFrame.show(10)
-
-    //report
-    clearReportApkDownTarget(argDay)
-
-    insertDataFrame
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariaReportdbUrl, "report.report_apk_down_target", mariaReportdbProp)
-    println("report over!")
-
-    //    //amateur
-    //    clearReportSiteBuildingTargetByAmateur(argDay)
-    //
-    //    insertDataFrame
-    //      .write
-    //      .mode(SaveMode.Append)
-    //      .jdbc(mariaAmateurdbUrl, "report.report_site_building_target", mariaAmateurdbProp)
-    //    println("Amateur over!")
-
-    //insertDataFrame.unpersist()
-
+    insertAllData.union(quAdslotTypeData).repartition(50)
   }
-
 
   def getTargetData(data: RDD[((Int, String, Int), (Int, Int, Int, Long, Long, String, Int, Long, Long, Long))],
                     targetType: String, argDay: String): (RDD[(Int, Int, Int, Long, Long, String, String, Int, Long, Long, Long, String)]) = {
