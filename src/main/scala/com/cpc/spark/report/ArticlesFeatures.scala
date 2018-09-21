@@ -43,10 +43,10 @@ object ArticlesFeatures {
 
     import spark.implicits._
     val sql =
-      """
-        | select distinct id, title, detail
-        | from gobblin.qukan_content
-        | where to_date(create_time) = '$date'
+      s"""
+         | select distinct id, title, detail
+         | from gobblin.qukan_content
+         | where to_date(create_time) = '$date'
       """.stripMargin
     println("sql" + sql)
 
@@ -85,7 +85,7 @@ object ArticlesFeatures {
 
     try {
       val a = JSON.parseObject[DocFeatures](result.body, classOf[DocFeatures])
-      println("~~~~~:"+a.features(0).feature)
+      println("~~~~~:" + a.features(0).feature)
       a.features(0).feature
 
     } catch {
