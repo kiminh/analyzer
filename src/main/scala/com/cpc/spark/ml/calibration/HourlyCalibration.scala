@@ -84,30 +84,32 @@ object HourlyCalibration {
           val samples = x._2._2
           val size = bins._2
           println(s"model: $modelName has data of size $size")
-          val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
-          val irModel = IRModel(
-            boundaries = irFullModel.boundaries,
-            predictions = irFullModel.predictions
-          )
-          println(s"bin size: ${irFullModel.boundaries.length}")
-          if (irFullModel.boundaries.length <= minBinCount) {
+          println(s"bin size: ${bins._1.size}")
+          if (bins._1.size <= minBinCount) {
             println("bin number too small, don't output the calibration")
-            return null
-          }
-          println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
-          val config = CalibrationConfig(
-            name = modelName,
-            ir = Option(irModel)
-          )
-          if (saveToLocal) {
-            val localPath = saveProtoToLocal(modelName, config)
-            saveFlatTextFileForDebug(modelName, config)
-            if (softMode == 0) {
-              val conf = ConfigFactory.load()
-              println(MUtils.updateMlcppOnlineData(localPath, destDir + s"calibration-$modelName.mlm", conf))
+            CalibrationConfig()
+          } else {
+            val irFullModel = irTrainer.setIsotonic(true).run(sc.parallelize(bins._1))
+            val irModel = IRModel(
+              boundaries = irFullModel.boundaries,
+              predictions = irFullModel.predictions
+            )
+            println(s"bin size: ${irFullModel.boundaries.length}")
+            println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
+            val config = CalibrationConfig(
+              name = modelName,
+              ir = Option(irModel)
+            )
+            if (saveToLocal) {
+              val localPath = saveProtoToLocal(modelName, config)
+              saveFlatTextFileForDebug(modelName, config)
+              if (softMode == 0) {
+                val conf = ConfigFactory.load()
+                println(MUtils.updateMlcppOnlineData(localPath, destDir + s"calibration-$modelName.mlm", conf))
+              }
             }
+            config
           }
-          config
       }.toList
     return result
   }
