@@ -6,6 +6,7 @@ import java.util.Calendar
 
 import com.redis.RedisClient
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 
 import com.cpc.spark.qukan.utils.RedisUtil
 
@@ -49,41 +50,21 @@ object OcpcSampleToRedis {
        """.stripMargin
 
     val base = spark.sql(sqlRequest)
-    base.createOrReplaceTempView("baseTable")
-    val redis = new RedisClient("192.168.80.20", 6390)
 
     // calculation for ratio: adslotid, uid
-    val sqlRequest1 =
-      s"""
-         |SELECT
-         |  adslotid,
-         |  uid,
-         |  concat(adslotid, "-", uid) id,
-         |  SUM(cvr_cnt) / SUM(total_cnt) historical_cvr
-         |FROM
-         |  baseTable
-         |GROUP BY adslotid, uid
-       """.stripMargin
+    val adslotData = base
+      .withColumn("id", concat_ws("-", col("adslotid"), col("uid")))
+      .groupBy("id")
+      .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"))
 
-    val adslotData = spark.sql(sqlRequest1)
 
     // calculation for bid and ROI: userid
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  userid,
-         |  SUM(cvr_cnt) / SUM(total_cnt) as historical_cvr,
-         |  SUM(cvr_cnt) * 1000 / SUM(cost) as historical_roi
-         |FROM
-         |  baseTable
-         |GROUP BY userid
-       """.stripMargin
-
-    val userData = spark.sql(sqlRequest2)
+    val userData = base
+      .groupBy("userid")
+      .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"), (sum("cvr_cnt")*1000/sum("cost")).alias("historical_roi"))
 
     // save into redis
     RedisUtil.toRedis(adslotData, "id", "historical_cvr", "adslotid-uid-hcvr-")
-
     RedisUtil.toRedis(userData, "userid", "historical_cvr", "userid-hcvr-")
     RedisUtil.toRedis(userData, "userid", "historical_roi", "userid-hroi-")
   }
