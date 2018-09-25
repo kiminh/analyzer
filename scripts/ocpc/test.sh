@@ -1,3 +1,3 @@
 #!/bin/bash
 
-sh test_ocpc.sh 2018-09-20 19
+sh test_ocpc_sample_hourly.sh 2018-09-25 12
