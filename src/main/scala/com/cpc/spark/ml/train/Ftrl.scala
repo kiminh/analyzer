@@ -1,12 +1,17 @@
 package com.cpc.spark.ml.train
 
+import java.io.BufferedOutputStream
+
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.ListBuffer
 import com.alibaba.fastjson.{JSON, JSONObject}
+import com.cpc.spark.ml.train.FtrlSnapshotId.ID_FEATURES_SIZE
+import com.cpc.spark.qukan.utils.RedisUtil
 import mlmodel.mlmodel.Dict
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
 
 import scala.collection.mutable
@@ -173,5 +178,29 @@ class Ftrl(size: Int) {
       val t = array(k); array(k) = array(n); array(n) = t
     }
     return array
+  }
+
+  def saveModelToHDFS(key: String, ctx: SparkSession): Unit = {
+    val fs = FileSystem.get(ctx.sparkContext.hadoopConfiguration)
+    val output = fs.create(new Path(key))
+    val os = new BufferedOutputStream(output)
+    os.write(this.toJsonString().getBytes("UTF-8"))
+    os.flush()
+    os.close()
+    println(s"save model to hdfs: $key")
+  }
+}
+
+object Ftrl {
+  def getModelFromHDFS(version: Int, startFresh: Boolean, key: String, ctx: SparkSession, size: Int): Ftrl = {
+    val ftrl = new Ftrl(size)
+    if (startFresh) {
+      println("new ftrl")
+      return ftrl
+    }
+    val json = ctx.sparkContext.textFile(key).collect().mkString("\n")
+    ftrl.fromJsonString(json)
+    println(s"ftrl fetched from hdfs: $key")
+    return ftrl
   }
 }
