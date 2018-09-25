@@ -59,14 +59,14 @@ object DNNSample {
         }
 
         val sparse = Sparse()
-        sparse.idx0 :+= 0
+        sparse.idx0 :+= 0L
 
         var appHashed = Seq[Long]()
         for (i <- apps.indices) {
           appHashed = appHashed :+ Murmur3Hash.stringHash("app:%s".format(apps(i)))
         }
 
-        sparse.idx1 :+= 0
+        sparse.idx1 :+= 0L
         sparse.idx2 ++= appHashed
 
         (label, hashed, sparse)
