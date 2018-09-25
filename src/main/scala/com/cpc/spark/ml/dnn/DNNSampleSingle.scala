@@ -21,7 +21,7 @@ object DNNSampleSingle {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val spark = SparkSession.builder()
-      .appName("dnn sample")
+      .appName("dnn sample single")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
