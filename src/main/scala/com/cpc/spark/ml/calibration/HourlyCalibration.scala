@@ -62,7 +62,7 @@ object HourlyCalibration {
   }
 
   def unionLogToConfig(log: RDD[Row], sc: SparkContext, softMode: Int, saveToLocal: Boolean = true,
-                       minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT): List[CalibrationConfig] = {
+                       minBinSize: Int = MIN_BIN_SIZE, maxBinCount : Int = MAX_BIN_COUNT, minBinCount: Int = 5): List[CalibrationConfig] = {
     val irTrainer = new IsotonicRegression()
 
     val result = log.map( x => {
@@ -90,6 +90,10 @@ object HourlyCalibration {
             predictions = irFullModel.predictions
           )
           println(s"bin size: ${irFullModel.boundaries.length}")
+          if (irFullModel.boundaries.length <= minBinCount) {
+            println("bin number too small, don't output the calibration")
+            return null
+          }
           println(s"calibration result (ectr/ctr) (before, after): ${computeCalibration(samples, irModel)}")
           val config = CalibrationConfig(
             name = modelName,
