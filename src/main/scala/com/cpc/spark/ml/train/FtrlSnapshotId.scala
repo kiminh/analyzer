@@ -17,7 +17,7 @@ import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel._
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row}
 import spire.math.ULong
 
 import scala.collection.mutable
@@ -85,7 +85,7 @@ object FtrlSnapshotId {
     println(s"positive count = ${positive.count()}")
     println(s"negtive count = ${negtive.count()}")
 
-    val ftrl = getModel(version, startFresh, "list")
+    val ftrl = Ftrl.getModel(version, startFresh, "list", XGBOOST_FEATURE_SIZE + ID_FEATURES_SIZE)
 
     println("before training model info:")
     printModelInfo(ftrl)
@@ -106,7 +106,7 @@ object FtrlSnapshotId {
     // update id map
     val ids = merged.map(x => x._2).flatMap(x => x).distinct().collect()
     val stringIDs = merged.map(x => x._3).flatMap(x => x).distinct().collect()
-    updateDict(ftrl, ids, stringIDs)
+    updateDict(ftrl, ids, stringIDs, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)
 
     println("after training model info:")
     printModelInfo(ftrl)
@@ -151,29 +151,14 @@ object FtrlSnapshotId {
     })
   }
 
-  def getModel(version: Int, startFresh: Boolean, typename: String): Ftrl = {
-    val ftrlNew = new Ftrl(ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE)
-    val ftrlRedis = RedisUtil.redisToFtrlWithType(typename, version, ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE)
-    val ftrl = if (ftrlRedis != null && !startFresh) {
-      println("ftrl fetched from redis")
-      ftrlRedis
-    } else {
-      println("new ftrl")
-      ftrlNew
-    }
-    return ftrl
-  }
-
-
-
-  def updateDict(ftrl: Ftrl, ids: Array[(Int, String)], stringIDs: Array[String]): Unit = {
+  def updateDict(ftrl: Ftrl, ids: Array[(Int, String)], stringIDs: Array[String], idFeatureSize: Int, xgFeatureSize: Int): Unit = {
     val advertiserMutMap = mutable.Map[Int, Int]()
     val planMutMap = mutable.Map[Int, Int]()
     val stringMap = mutable.Map[String, Int]()
     ids.foreach(x => {
       val id = x._1
       val name = x._2
-      val hashedID = getHashedID(id, name, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)
+      val hashedID = getHashedID(id, name, idFeatureSize, xgFeatureSize)
       if (name.equals(ADVERTISER_ID_NAME)) {
         advertiserMutMap.put(id, hashedID)
       }
@@ -182,7 +167,7 @@ object FtrlSnapshotId {
       }
     })
     stringIDs.foreach(x => {
-      stringMap.put(x, getHashedID(x, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE))
+      stringMap.put(x, getHashedID(x, idFeatureSize, xgFeatureSize))
     })
     ftrl.dict.planid.foreach( x => planMutMap.put(x._1, x._2))
     ftrl.dict.advertiserid.foreach( x => advertiserMutMap.put(x._1, x._2))

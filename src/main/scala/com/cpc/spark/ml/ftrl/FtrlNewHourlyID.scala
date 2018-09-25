@@ -7,18 +7,18 @@ package com.cpc.spark.ml.ftrl
 
 import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.common.{Utils => MUtils}
-import com.cpc.spark.ml.train.FtrlSnapshotId.{saveLrPbPack, _}
-import com.cpc.spark.qukan.utils.RedisUtil
+import com.cpc.spark.ml.train.{Ftrl, FtrlSnapshotId}
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
+import com.cpc.spark.ml.train.FtrlSnapshotId._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object FtrlNewHourlyID {
 
   val XGBOOST_FEATURE_SIZE = 500000
-  val ID_FEATURES_SIZE = 10000000
+  val ID_FEATURES_SIZE = 50000000 // 50M
 
   val ADVERTISER_ID_NAME = "advertiser"
   val PLAN_ID_NAME = "plan"
@@ -30,7 +30,7 @@ object FtrlNewHourlyID {
 
   val DOWN_SAMPLE_RATE = 0.2
 
-  // return (searchid, label, xgfeature, error
+  // return (searchid, label, xgfeature, error)
   def mapFunc(line: String): (String, Double, String, Int) = {
     val array = line.split("\t")
     if (array.length < 3) {
@@ -98,12 +98,12 @@ object FtrlNewHourlyID {
 
     val samples = dataWithID.map(x => x._1)
 
-    val ftrl = getModel(ftrlVersion, startFresh, typename)
+    val ftrl = Ftrl.getModel(ftrlVersion, startFresh, typename, XGBOOST_FEATURE_SIZE + ID_FEATURES_SIZE)
     ftrl.train(spark, samples)
 
     val ids = dataWithID.map(x => x._2).flatMap(x => x).distinct().collect()
     val stringIDs = dataWithID.map(x => x._3).flatMap(x => x).distinct().collect()
-    updateDict(ftrl, ids, stringIDs)
+    updateDict(ftrl, ids, stringIDs, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)
 
     println("after training model info:")
     printModelInfo(ftrl)
@@ -140,7 +140,7 @@ object FtrlNewHourlyID {
       val ids = allId._1
       val stringIDs = allId._2
       val idSet = ids.map(a => getHashedID(a._1, a._2, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)).toSet
-      val stringSet = stringIDs.map(a => getHashedID(a, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)).toSet
+      val stringSet = stringIDs.map(a => FtrlSnapshotId.getHashedID(a, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)).toSet
       val sparseIDFeatures = (idSet ++ stringSet).map(a => (a, 1.0))
       val vec = Vectors.sparse(ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE, xgBoostFeatures ++ sparseIDFeatures)
       (LabeledPoint(label, vec), ids, stringIDs)

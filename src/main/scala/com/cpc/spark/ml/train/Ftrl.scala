@@ -8,7 +8,6 @@ import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.ListBuffer
 import com.alibaba.fastjson.{JSON, JSONObject}
-import com.cpc.spark.ml.train.FtrlSnapshotId.ID_FEATURES_SIZE
 import com.cpc.spark.qukan.utils.RedisUtil
 import mlmodel.mlmodel.Dict
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -203,4 +202,19 @@ object Ftrl {
     println(s"ftrl fetched from hdfs: $key")
     return ftrl
   }
+
+  def getModel(version: Int, startFresh: Boolean, typename: String, size: Int): Ftrl = {
+    val ftrlNew = new Ftrl(size)
+    val ftrlRedis = RedisUtil.redisToFtrlWithType(typename, version, size)
+    val ftrl = if (ftrlRedis != null && !startFresh) {
+      println("ftrl fetched from redis")
+      ftrlRedis
+    } else {
+      println("new ftrl")
+      ftrlNew
+    }
+    return ftrl
+  }
+
+
 }
