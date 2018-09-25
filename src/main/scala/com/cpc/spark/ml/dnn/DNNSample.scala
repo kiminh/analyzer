@@ -89,8 +89,7 @@ object DNNSample {
         label(0) == 1 || Random.nextInt(1000) < 100
     }
 
-    resampled.select("sample_idx", "label", "id", "app")
-      .coalesce(100)
+    resampled.coalesce(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -98,8 +97,7 @@ object DNNSample {
       .save("/user/cpc/dw/dnntrain-" + date)
     println("train size", resampled.count())
 
-    test.select("sample_idx", "label", "id", "app")
-      .coalesce(100)
+    test.coalesce(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -211,7 +209,7 @@ object DNNSample {
     val ideaid = x.getAs[Int]("ideaid")
     raw = raw :+ ideaid
 
-    val apps = x.getAs[Seq[String]]("apps")
+    val apps = x.getAs[Seq[String]]("pkgs")
 
     if (apps.length > 0) {
       (raw, apps.slice(0, 500))
