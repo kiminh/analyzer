@@ -18,7 +18,7 @@ class TestFtrlSnapshotId extends FlatSpec with Matchers with BeforeAndAfter
     )
     val input = Array((2, "advertiser"), (11, "plan"))
     val strInput = Array("b")
-    FtrlSnapshotId.updateDict(ftrl, input, strInput)
+    FtrlSnapshotId.updateDict(ftrl, input, strInput, 1000, 1000)
     ftrl.dict.advertiserid.size should be (2)
     ftrl.dict.planid.size should be (2)
     ftrl.dict.advertiserid.contains(1) should be (true)
