@@ -24,6 +24,8 @@ object FtrlNewHourlyID {
   val PLAN_ID_NAME = "plan"
 
   val LOCAL_DIR = "/home/cpc/ftrl/"
+  val HDFS_MODEL_DIR = "hdfs:///user/cpc/qtt-ftrl-model/"
+  val HDFS_MODEL_HISTORY_DIR = "hdfs:///user/cpc/qtt-ftrl-model-history/"
   val DEST_DIR = "/home/work/mlcpp/model/"
 
   val DOWN_SAMPLE_RATE = 0.2
@@ -109,14 +111,16 @@ object FtrlNewHourlyID {
     println(checkCollision(ftrl))
 
     // save model file locally
-    val name = s"$ctrcvr-protrait$ftrlVersion-ftrl-id-qtt-$adslot.mlm"
+    val name = s"$ctrcvr-protrait$ftrlVersion-ftrl-id-qtt-$adslot"
     val filename = s"$LOCAL_DIR$name.mlm"
     saveLrPbPack(ftrl, filename, "ftrl", name)
     println(s"Save model locally to $filename")
 
     if (upload) {
-      val ret = RedisUtil.ftrlToRedisWithType(ftrl, typename, ftrlVersion, dt, hour)
-      println(s"upload to redis with two keys: ${ret._1} and ${ret._2}")
+      val currentHDFS = s"${HDFS_MODEL_DIR}ftrl-$typename-$ftrlVersion.mlm"
+      ftrl.saveModelToHDFS(currentHDFS, spark)
+      val historyHDFS = s"${HDFS_MODEL_HISTORY_DIR}ftrl-$typename-$ftrlVersion-$dt-$hour.mlm"
+      ftrl.saveModelToHDFS(historyHDFS, spark)
       println(MUtils.updateMlcppOnlineData(filename, s"$DEST_DIR$name.mlm", ConfigFactory.load()))
     }
   }

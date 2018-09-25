@@ -17,7 +17,7 @@ import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel._
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import spire.math.ULong
 
 import scala.collection.mutable
@@ -163,6 +163,8 @@ object FtrlSnapshotId {
     }
     return ftrl
   }
+
+
 
   def updateDict(ftrl: Ftrl, ids: Array[(Int, String)], stringIDs: Array[String]): Unit = {
     val advertiserMutMap = mutable.Map[Int, Int]()
