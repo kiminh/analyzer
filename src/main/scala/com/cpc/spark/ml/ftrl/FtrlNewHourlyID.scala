@@ -31,7 +31,7 @@ object FtrlNewHourlyID {
   // return (searchid, label, xgfeature, error
   def mapFunc(line: String): (String, Double, String, Int) = {
     val array = line.split("\t")
-    if (array.length <= 3) {
+    if (array.length < 3) {
       return ("", 0, "", 1)
     }
     val label = array(0).toDouble
