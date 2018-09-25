@@ -43,9 +43,9 @@ object OcpcSampleToRedis {
          |  SUM(total_cnt) as total_cnt
          |FROM
          |  test.temperate_roi_track
-         |WHERE $selectCondition1 OR
-         |$selectCondition2 OR
-         |$selectCondition3
+         |WHERE ($selectCondition1) OR
+         |($selectCondition2) OR
+         |($selectCondition3)
          |GROUP BY userid, adslotid, uid
        """.stripMargin
     println(sqlRequest)
