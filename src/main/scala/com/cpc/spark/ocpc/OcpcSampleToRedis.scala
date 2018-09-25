@@ -52,7 +52,7 @@ object OcpcSampleToRedis {
     // calculation for ratio: adslotid, uid
     val adslotData = base
       .groupBy("uid")
-      .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"))
+      .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"), sum("ctr_cnt").alias("ctr_cnt"))
 
     adslotData.write.mode("overwrite").saveAsTable("test.adslot_uid_historical_cvr")
     println("save to table: test.adslot_uid_historical_cvr")
@@ -60,7 +60,7 @@ object OcpcSampleToRedis {
     // calculation for bid and ROI: userid
     val userData = base
       .groupBy("userid")
-      .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"), (sum("cvr_cnt")*1000/sum("cost")).alias("historical_roi"))
+      .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"), (sum("cvr_cnt")*1000/sum("cost")).alias("historical_roi"), sum("ctr_cnt").alias("ctr_cnt"))
 
     userData.write.mode("overwrite").saveAsTable("test.userid_historical_cvr_roi")
     println("save to table: test.userid_historical_cvr_roi")

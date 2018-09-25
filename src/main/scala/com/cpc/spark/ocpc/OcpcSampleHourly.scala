@@ -50,6 +50,7 @@ object OcpcSampleHourly {
          |  adslotid,
          |  uid,
          |  SUM(CASE WHEN isclick == 1 then price else 0 end) as cost,
+         |  SUM(CASE WHEN isclick == 1 then 1 else 0 end) as ctr_cnt,
          |  SUM(CASE WHEN iscvr == 1 then 1 else 0 end) as cvr_cnt,
          |  SUM(CASE WHEN isshow == 1 then 1 else 0 end) as total_cnt
          |FROM
