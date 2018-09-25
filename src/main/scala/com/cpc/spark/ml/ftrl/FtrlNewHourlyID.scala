@@ -31,7 +31,7 @@ object FtrlNewHourlyID {
   // return (searchid, label, xgfeature, error
   def mapFunc(line: String): (String, Double, String, Int) = {
     val array = line.split("\t")
-    if (array.length != 3) {
+    if (array.length <= 3) {
       return ("", 0, "", 1)
     }
     val label = array(0).toDouble
@@ -74,13 +74,14 @@ object FtrlNewHourlyID {
       .map(mapFunc)
       .toDF("searchid", "label", "xgBoostFeatures", "hasError")
 
-    println(s"xgBoost data size = ${sample.filter(x => x.getAs[Int]("hasError") == 0).count()}")
-    println(s"xgBoost error data size = ${sample.filter(x => x.getAs[Int]("hasError") > 0).count()}")
+    println(s"xgBoost total data size = ${sample.count()}")
+    println(s"xgBoost filtered data size = ${sample.filter(x => x.getAs[Int]("hasError") > 0).count()}")
+    println(s"xgBoost correct data size = ${sample.filter(x => x.getAs[Int]("hasError") == 0).count()}")
 
     val log = spark.table("dl_cpc.cpc_union_log")
       .filter(s"`date` = '$dt' and hour = '$hour'")
       .filter("media_appsid  in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0 " +
-        "and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0 ")
+        "and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0")
 
     var merged = sample
       .filter(x => x.getAs[Int]("hasError") == 0)
@@ -125,7 +126,8 @@ object FtrlNewHourlyID {
       // prepare xgboost features
       val array = x.getAs[String]("xgBoostFeatures").split("\\s+")
       val xgBoostFeatures = array.map(x => {
-        (x.toInt, 1.0)
+        val vals = x.split(":")
+        (vals(0).toInt, 1.0)
       })
       // get label
       val label = x.getAs[Double]("label")
