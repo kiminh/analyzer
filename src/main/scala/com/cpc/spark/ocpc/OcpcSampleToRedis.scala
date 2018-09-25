@@ -33,7 +33,6 @@ object OcpcSampleToRedis {
       s"""
          |SELECT
          |  userid,
-         |  adslotid,
          |  uid,
          |  SUM(cost) as cost,
          |  SUM(cvr_cnt) as cvr_cnt,
@@ -51,8 +50,7 @@ object OcpcSampleToRedis {
 
     // calculation for ratio: adslotid, uid
     val adslotData = base
-      .withColumn("id", concat_ws("_", col("adslotid"), col("uid")))
-      .groupBy("id")
+      .groupBy("uid")
       .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"))
 
 //    adslotData.write.mode("overwrite").saveAsTable("test.adslot_uid_historical_cvr")
@@ -64,7 +62,7 @@ object OcpcSampleToRedis {
 
 //    userData.write.mode("overwrite").saveAsTable("test.userid_historical_cvr_roi")
     // save into redis
-    dataToRedis(adslotData, "id", "historical_cvr", "adslotid_uid-hcvr-")
+    dataToRedis(adslotData, "uid", "historical_cvr", "uid-hcvr-")
     dataToRedis(userData, "userid", "historical_cvr", "userid-hcvr-")
     dataToRedis(userData, "userid", "historical_roi", "userid-hroi-")
   }
@@ -80,7 +78,6 @@ object OcpcSampleToRedis {
         val kValue = record.get(0).toString
         val vValue = record.get(1)
         val kk = s"$prefix$kValue"
-        val id = (kk.toCharArray.map(_.toInt).sum) % 6;
         redis.setex(kk, 7 * 24 * 60 * 60, vValue)
       })
     })
