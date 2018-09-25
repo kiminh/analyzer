@@ -36,6 +36,7 @@ object OcpcSampleToRedis {
          |  userid,
          |  uid,
          |  SUM(cost) as cost,
+         |  SUM(ctr_cnt) as ctr_cnt,
          |  SUM(cvr_cnt) as cvr_cnt,
          |  SUM(total_cnt) as total_cnt
          |FROM
@@ -50,20 +51,26 @@ object OcpcSampleToRedis {
     val base = spark.sql(sqlRequest)
 
     // calculation for ratio: adslotid, uid
-    val adslotData = base
+//    val adslotData = base
+//      .groupBy("uid")
+//      .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"), sum("ctr_cnt").alias("ctr_cnt"))
+    val uidData = base
       .groupBy("uid")
-      .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"), sum("ctr_cnt").alias("ctr_cnt"))
+      .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"), sum("total_cnt").alias("total_cnt"))
 
-    adslotData.write.mode("overwrite").saveAsTable("test.adslot_uid_historical_cvr")
-    println("save to table: test.adslot_uid_historical_cvr")
+    uidData.write.mode("overwrite").saveAsTable("test.uid_historical_data")
+    println("save to table: test.uid_historical_data")
 
     // calculation for bid and ROI: userid
+//    val userData = base
+//      .groupBy("userid")
+//      .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"), (sum("cvr_cnt")*1000/sum("cost")).alias("historical_roi"), sum("ctr_cnt").alias("ctr_cnt"))
     val userData = base
       .groupBy("userid")
-      .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"), (sum("cvr_cnt")*1000/sum("cost")).alias("historical_roi"), sum("ctr_cnt").alias("ctr_cnt"))
+      .agg(sum("cost").alias("cost"), sum("cvr_cnt").alias("cvr_cnt"), sum("total_cnt").alias("total_cnt"))
 
-    userData.write.mode("overwrite").saveAsTable("test.userid_historical_cvr_roi")
-    println("save to table: test.userid_historical_cvr_roi")
+    userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
+    println("save to table: test.userid_historical_data")
     // save into redis
 //    dataToRedis(adslotData, "uid", "historical_cvr", "uid-hcvr-")
 //    dataToRedis(userData, "userid", "historical_cvr", "userid-hcvr-")
@@ -81,7 +88,7 @@ object OcpcSampleToRedis {
         val kValue = record.get(0).toString
         val vValue = record.get(1)
         val kk = s"$prefix$kValue"
-        redis.setex(kk, 7 * 24 * 60 * 60, vValue)
+        redis.setex(kk, 2 * 60 * 60, vValue)
       })
     })
     // disconnect
