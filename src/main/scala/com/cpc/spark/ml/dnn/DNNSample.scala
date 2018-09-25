@@ -30,7 +30,6 @@ object DNNSample {
 
     //按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
-    val cvrPathSep = getPathSeq(args(1).toInt)
 
     val userAppIdx = getUidApp(spark, ctrPathSep)
 
