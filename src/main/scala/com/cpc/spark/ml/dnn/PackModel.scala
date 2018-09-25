@@ -52,7 +52,7 @@ object PackModel {
     val results = spark.sparkContext.parallelize(txt.toSeq)
     println("test num", results.count())
 
-    runIr(results, 500, 0.95)
+    runIr(results, 20, 0.95)
     val ir = IRModel(
       boundaries = irmodel.boundaries.toSeq,
       predictions = irmodel.predictions.toSeq,

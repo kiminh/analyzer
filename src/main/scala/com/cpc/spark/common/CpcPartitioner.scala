@@ -9,6 +9,6 @@ class CpcPartitioner(num: Int) extends Partitioner {
 
   override def getPartition(key: Any): Int = {
     val k = key.asInstanceOf[(String, Int)]
-    (MurmurHash3.stringHash(k._1) % numPartitions + numPartitions + k._2) % numPartitions
+    (Murmur3Hash.stringHash(k._1) % numPartitions + numPartitions + k._2) % numPartitions
   }
 }

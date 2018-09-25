@@ -21,7 +21,7 @@ object DNNSampleSingle {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val spark = SparkSession.builder()
-      .appName("dnn sample")
+      .appName("dnn sample single")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
@@ -77,7 +77,7 @@ object DNNSampleSingle {
     val resampled = train.filter{
         x =>
         val label = x.getAs[Seq[Int]]("label")
-        label(0) == 1 || Random.nextInt(1000) < 50
+        label(0) == 1 || Random.nextInt(1000) < 100
       }
 
     resampled.select("sample_idx", "label", "id", "app")
@@ -88,10 +88,7 @@ object DNNSampleSingle {
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntrain-" + date)
     println("train size", resampled.count())
-
-    resampled.take(100).foreach(println)
     savePbPack("dnn-rawid", "/home/cpc/dw/bin/dict.pb", dict.toMap)
-
 
     test.select("sample_idx", "label", "id", "app")
       .coalesce(100)
@@ -100,6 +97,7 @@ object DNNSampleSingle {
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntest-" + date)
+    test.take(10).foreach(println)
 
     println("test size", test.count())
 
