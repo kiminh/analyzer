@@ -1,14 +1,11 @@
 package com.cpc.spark.ocpc
 
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Calendar
 
 import com.redis.RedisClient
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
-
-import com.cpc.spark.qukan.utils.RedisUtil
 
 object OcpcSampleToRedis {
   def main(args: Array[String]): Unit = {
@@ -54,21 +51,40 @@ object OcpcSampleToRedis {
 
     // calculation for ratio: adslotid, uid
     val adslotData = base
-      .withColumn("id", concat_ws("-", col("adslotid"), col("uid")))
+      .withColumn("id", concat_ws("_", col("adslotid"), col("uid")))
       .groupBy("id")
       .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"))
 
-    adslotData.write.mode("overwrite").saveAsTable("test.adslot_uid_historical_cvr")
+//    adslotData.write.mode("overwrite").saveAsTable("test.adslot_uid_historical_cvr")
 
     // calculation for bid and ROI: userid
     val userData = base
       .groupBy("userid")
       .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"), (sum("cvr_cnt")*1000/sum("cost")).alias("historical_roi"))
 
-    userData.write.mode("overwrite").saveAsTable("test.userid_historical_cvr_roi")
+//    userData.write.mode("overwrite").saveAsTable("test.userid_historical_cvr_roi")
     // save into redis
-//    RedisUtil.toRedis(adslotData, "id", "historical_cvr", "adslotid-uid-hcvr-")
-//    RedisUtil.toRedis(userData, "userid", "historical_cvr", "userid-hcvr-")
-//    RedisUtil.toRedis(userData, "userid", "historical_roi", "userid-hroi-")
+    dataToRedis(adslotData, "id", "historical_cvr", "adslotid_uid-hcvr-")
+    dataToRedis(userData, "userid", "historical_cvr", "userid-hcvr-")
+    dataToRedis(userData, "userid", "historical_roi", "userid-hroi-")
+  }
+
+
+  def dataToRedis(dataset: Dataset[Row], key: String, value: String, prefix: String): Unit = {
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    // get specific column from the dataframe
+    val data = dataset.select(key, value)
+    data.foreachPartition(iterator => {
+      iterator.foreach(record => {
+        val kValue = record.get(0).toString
+        val vValue = record.get(1)
+        val kk = s"$prefix$kValue"
+        val id = (kk.toCharArray.map(_.toInt).sum) % 6;
+        redis.setex(kk, 7 * 24 * 60 * 60, vValue)
+      })
+    })
+    // disconnect
+    redis.disconnect
   }
 }
