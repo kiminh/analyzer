@@ -58,16 +58,26 @@ object DNNSample {
           hashed = hashed :+ Murmur3Hash.stringHash("%s:%d".format(fnames(i), raw(i)))
         }
 
+        val sparse = Sparse()
+        sparse.idx0 :+= 0
+
+        var idx0 = Seq[Long]()
+        var idx1 = Seq[Long]()
+        var idx2 = Seq[Long]()
+
         var appHashed = Seq[Long]()
         for (i <- apps.indices) {
           appHashed = appHashed :+ Murmur3Hash.stringHash("app:%s".format(apps(i)))
         }
 
-        (label, hashed, appHashed)
+        sparse.idx1 :+= 0
+        sparse.idx2 ++= appHashed
+
+        (label, hashed, sparse)
       }
       .zipWithUniqueId()
       .map(x => (x._2, x._1._1, x._1._2, x._1._3))
-      .toDF("sample_idx", "label", "")
+      .toDF("sample_idx", "label", "dense", "sparse")
       .repartition(1000)
 
     val clickiNum = ulog.filter{
@@ -78,7 +88,6 @@ object DNNSample {
     println(ulog.count(), clickiNum)
 
     val Array(train, test) = ulog.randomSplit(Array(0.97, 0.03))
-
     val resampled = train.filter{
       x =>
         val label = x.getAs[Seq[Int]]("label")
@@ -215,6 +224,12 @@ object DNNSample {
       (raw, Seq(""))
     }
   }
+
+  case class Sparse(
+                   var idx0: Seq[Long] = Seq(),
+                   var idx1: Seq[Long] = Seq(),
+                   var idx2: Seq[Long] = Seq()
+                   )
 }
 
 
