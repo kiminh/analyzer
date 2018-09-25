@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.train
 
-import java.io.BufferedOutputStream
+import java.io.{BufferedOutputStream, ObjectInputStream, ObjectOutputStream}
 
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
@@ -26,7 +26,7 @@ class Ftrl(size: Int) {
   var dict: Dict = Dict()
 
 
-  def toJsonString(): String = {
+  def toJsonString: String = {
     val json = new JSONObject()
     json.put("alpha", alpha)
     json.put("beta", beta)
@@ -35,10 +35,10 @@ class Ftrl(size: Int) {
     json.put("n", n.mkString(" "))
     json.put("z", z.mkString(" "))
     json.put("w", w.mkString(" "))
-    json.put("dict_advertiser", mapToJson(dict.advertiserid))
-    json.put("dict_plan", mapToJson(dict.planid))
-    json.put("dict_idea", mapToJson(dict.ideaid))
-    json.put("dict_string", mapToJson(dict.stringid))
+//    json.put("dict_advertiser", mapToJson(dict.advertiserid))
+//    json.put("dict_plan", mapToJson(dict.planid))
+//    json.put("dict_idea", mapToJson(dict.ideaid))
+//    json.put("dict_string", mapToJson(dict.stringid))
     json.toJSONString()
   }
 
@@ -52,10 +52,10 @@ class Ftrl(size: Int) {
     L1 = json.getDoubleValue("L1")
     L2 = json.getDoubleValue("L2")
     dict = Dict(
-      planid = jsonToIntMap(json.getJSONObject("dict_plan")),
-      advertiserid = jsonToIntMap(json.getJSONObject("dict_advertiser")),
-      ideaid = jsonToIntMap(json.getJSONObject("dict_idea")),
-      stringid = jsonToStrMap(json.getJSONObject("dict_string"))
+//      planid = jsonToIntMap(json.getJSONObject("dict_plan")),
+//      advertiserid = jsonToIntMap(json.getJSONObject("dict_advertiser")),
+//      ideaid = jsonToIntMap(json.getJSONObject("dict_idea")),
+//      stringid = jsonToStrMap(json.getJSONObject("dict_string"))
     )
   }
 
@@ -179,19 +179,11 @@ class Ftrl(size: Int) {
     return array
   }
 
-  def saveModelToHDFS(key: String, ctx: SparkSession): Unit = {
-    val fs = FileSystem.get(ctx.sparkContext.hadoopConfiguration)
-    val output = fs.create(new Path(key))
-    val os = new BufferedOutputStream(output)
-    os.write(this.toJsonString().getBytes("UTF-8"))
-    os.flush()
-    os.close()
-    println(s"save model to hdfs: $key")
-  }
+
 }
 
 object Ftrl {
-  def getModelFromHDFS(version: Int, startFresh: Boolean, key: String, ctx: SparkSession, size: Int): Ftrl = {
+  def getModelFromHDFS(startFresh: Boolean, key: String, ctx: SparkSession, size: Int): Ftrl = {
     val ftrl = new Ftrl(size)
     if (startFresh) {
       println("new ftrl")
@@ -216,5 +208,34 @@ object Ftrl {
     return ftrl
   }
 
+  def saveModelToHDFS(key: String, ctx: SparkSession, ftrl: Ftrl): Unit = {
+    val fs = FileSystem.get(ctx.sparkContext.hadoopConfiguration)
+    val output = fs.create(new Path(key))
+    val os = new BufferedOutputStream(output)
+    os.write(ftrl.toJsonString.getBytes("UTF-8"))
+    os.flush()
+    os.close()
+    println(s"save model to hdfs: $key")
+  }
 
+//  def serializeToHDFS(key: String, ctx: SparkSession, ftrl: Ftrl): Unit = {
+//    val fs = FileSystem.get(ctx.sparkContext.hadoopConfiguration)
+//    val output = fs.create(new Path(key))
+//    val os = new ObjectOutputStream(output)
+//    os.writeObject(ftrl)
+//    os.close()
+//    println(s"save model to hdfs: $key")
+//  }
+//
+//  def getSerializableFromHDFS(startFresh: Boolean, key: String, ctx: SparkSession, size: Int): Ftrl = {
+//    if (startFresh) {
+//      println("new ftrl")
+//      return new Ftrl(size)
+//    }
+//    val fs = FileSystem.get(ctx.sparkContext.hadoopConfiguration)
+//    val is = new ObjectInputStream(fs.open(new Path(key)))
+//    val ftrl = is.readObject.asInstanceOf[Ftrl]
+//    println(s"ftrl fetched from hdfs: $key")
+//    return ftrl
+//  }
 }
