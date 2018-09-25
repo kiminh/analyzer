@@ -48,6 +48,7 @@ object OcpcSampleToRedis {
          |$selectCondition3
          |GROUP BY userid, adslotid, uid
        """.stripMargin
+    println(sqlRequest)
 
     val base = spark.sql(sqlRequest)
 
