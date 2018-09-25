@@ -13,9 +13,13 @@ object OcpcSampleHourly {
       s"""
          | select
          |  a.searchid,
+         |  a.adslotid,
+         |  a.uid,
          |  a.price,
          |  a.userid,
-         |  b.label
+         |  a.isclick,
+         |  a.isshow,
+         |  b.label as iscvr
          | from
          |      (
          |        select *
@@ -33,7 +37,7 @@ object OcpcSampleHourly {
          |      (
          |        select searchid, label
          |        from dl_cpc.ml_cvr_feature_v1
-         |        where $selectWhere and label=1
+         |        where $selectWhere
          |      ) b on a.searchid = b.searchid
       """.stripMargin
     println(sqlRequest)
@@ -43,11 +47,14 @@ object OcpcSampleHourly {
       s"""
          |Select
          |  userid,
-         |  SUM(price) as cost,
-         |  COUNT(*) as cvr_cnt
+         |  adslotid,
+         |  uid,
+         |  SUM(CASE WHEN isclick == 1 then price else 0 end) as cost,
+         |  SUM(CASE WHEN iscvr == 1 then 1 else 0 end) as cvr_cnt,
+         |  SUM(CASE WHEN isshow == 1 then 1 else 0 end) as total_cnt
          |FROM
          |  tmpTable
-         |GROUP BY userid
+         |GROUP BY userid, adslotid, uid
        """.stripMargin
 
     val groupBy = spark.sql(groupByRequesst)
