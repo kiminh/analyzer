@@ -28,6 +28,16 @@ object FtrlNewHourlyID {
 
   val DOWN_SAMPLE_RATE = 0.2
 
+  // return (searchid, label, xgfeature, error
+  def mapFunc(line: String): (String, Double, String, Int) = {
+    val array = line.split("\t")
+    if (array.length != 3) {
+      return ("", 0, "", 1)
+    }
+    val label = array(0).toDouble
+    return (array(2).trim, label, array(1), 0)
+  }
+
   def main(args: Array[String]): Unit = {
 
     val dt = args(0)
@@ -61,21 +71,20 @@ object FtrlNewHourlyID {
     // id, label, features
     val sample = spark.sparkContext
       .textFile(inputName, 50)
-      .map(x => {
-        val array = x.split("\t")
-        val label = array(0).toDouble
-        (array(2), label, array(1))
-      }).toDF("searchid", "label", "xgBoostFeatures")
+      .map(mapFunc)
+      .toDF("searchid", "label", "xgBoostFeatures", "hasError")
 
-    println(s"xgBoost data size = ${sample.count()}")
+    println(s"xgBoost data size = ${sample.filter(x => x.getAs[Int]("hasError") == 0).count()}")
+    println(s"xgBoost error data size = ${sample.filter(x => x.getAs[Int]("hasError") > 0).count()}")
 
     val log = spark.table("dl_cpc.cpc_union_log")
       .filter(s"`date` = '$dt' and hour = '$hour'")
       .filter("media_appsid  in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0 " +
         "and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0 ")
 
-
-    var merged = sample.join(log, Seq("searchid"), "inner")
+    var merged = sample
+      .filter(x => x.getAs[Int]("hasError") == 0)
+      .join(log, Seq("searchid"), "inner")
     println(s"join with log size = ${merged.select("searchid").distinct().count()}")
 
     // join user app
