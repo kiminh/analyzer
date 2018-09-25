@@ -35,7 +35,7 @@ class TestHourlyCalibration extends FlatSpec with Matchers with BeforeAndAfter
       Row(0, (0.5d * 1e6).toLong, "", "v1"),
       Row(1, (0.8d * 1e6).toLong, "", "v1"),
       Row(0, (0.2d * 1e6).toLong, "", "v1")))
-    var result = HourlyCalibration.unionLogToConfig(rdd, spark.sparkContext, 1, false, 2, 4)
+    var result = HourlyCalibration.unionLogToConfig(rdd, spark.sparkContext, 1, false, 2, 4, 0)
     result.size should be (1)
     result.head.name should be ("v1")
     result.head.ir.get.boundaries should be (Seq(0.35, 0.9))
@@ -51,7 +51,7 @@ class TestHourlyCalibration extends FlatSpec with Matchers with BeforeAndAfter
       Row(0, (0.2d * 1e6).toLong, "", "v1"),
       Row(1, (0.3d * 1e6).toLong, "", "v1")))
 
-    val result = HourlyCalibration.unionLogToConfig(rdd, spark.sparkContext, 1, false, 3, 4)
+    val result = HourlyCalibration.unionLogToConfig(rdd, spark.sparkContext, 1, false, 3, 4, 0)
     result.size should be (1)
     result.head.name should be ("v1")
     result.head.ir.get.boundaries.toList.head should be (0.333333333 +- 1e-4)
