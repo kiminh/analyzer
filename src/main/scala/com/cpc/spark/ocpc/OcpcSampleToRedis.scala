@@ -2,6 +2,7 @@ package com.cpc.spark.ocpc
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.zip
 
 import com.redis.RedisClient
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
@@ -53,18 +54,18 @@ object OcpcSampleToRedis {
       .groupBy("uid")
       .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"))
 
-//    adslotData.write.mode("overwrite").saveAsTable("test.adslot_uid_historical_cvr")
+    adslotData.write.mode("overwrite").saveAsTable("test.adslot_uid_historical_cvr")
 
     // calculation for bid and ROI: userid
     val userData = base
       .groupBy("userid")
       .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"), (sum("cvr_cnt")*1000/sum("cost")).alias("historical_roi"))
 
-//    userData.write.mode("overwrite").saveAsTable("test.userid_historical_cvr_roi")
+    userData.write.mode("overwrite").saveAsTable("test.userid_historical_cvr_roi")
     // save into redis
-    dataToRedis(adslotData, "uid", "historical_cvr", "uid-hcvr-")
-    dataToRedis(userData, "userid", "historical_cvr", "userid-hcvr-")
-    dataToRedis(userData, "userid", "historical_roi", "userid-hroi-")
+//    dataToRedis(adslotData, "uid", "historical_cvr", "uid-hcvr-")
+//    dataToRedis(userData, "userid", "historical_cvr", "userid-hcvr-")
+//    dataToRedis(userData, "userid", "historical_roi", "userid-hroi-")
   }
 
 
