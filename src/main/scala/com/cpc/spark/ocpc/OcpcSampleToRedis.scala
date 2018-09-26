@@ -116,7 +116,7 @@ object OcpcSampleToRedis {
 
 
   def savePbPack(dataset: Dataset[Row]): Unit = {
-    val useridData = UserOcpc()
+    val useridData = UserOcpc.toBuilder
     val filename = s"/home/cpc/wangjun/test_userid/UseridDataOcpc.pb"
 //    val test = dataset.first()
 //    val result = SingleUser(
@@ -141,8 +141,8 @@ object OcpcSampleToRedis {
         useridData.addUser(currentItem)
       })
     })
-//    val result = useridData.build()
-    useridData.writeTo(new FileOutputStream(filename))
+    val result = useridData.build()
+    result.writeTo(new FileOutputStream(filename))
     println("complete save data into protobuffer")
 
   }
