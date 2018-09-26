@@ -7,7 +7,7 @@ package com.cpc.spark.ml.train
 
 import java.util.Date
 
-import com.cpc.spark.common.Utils
+import com.cpc.spark.common.{Murmur3Hash, Utils}
 import com.cpc.spark.qukan.utils.RedisUtil
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
@@ -85,7 +85,7 @@ object FtrlSnapshotId {
     println(s"positive count = ${positive.count()}")
     println(s"negtive count = ${negtive.count()}")
 
-    val ftrl = getModel(version, startFresh)
+    val ftrl = Ftrl.getModel(version, startFresh, "list", XGBOOST_FEATURE_SIZE + ID_FEATURES_SIZE)
 
     println("before training model info:")
     printModelInfo(ftrl)
@@ -106,7 +106,7 @@ object FtrlSnapshotId {
     // update id map
     val ids = merged.map(x => x._2).flatMap(x => x).distinct().collect()
     val stringIDs = merged.map(x => x._3).flatMap(x => x).distinct().collect()
-    updateDict(ftrl, ids, stringIDs)
+    updateDict(ftrl, ids, stringIDs, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)
 
     println("after training model info:")
     printModelInfo(ftrl)
@@ -116,7 +116,7 @@ object FtrlSnapshotId {
     // save model file locally
     val name = s"ctr-qtt-list-$version"
     val filename = s"$LOCAL_DIR$name.mlm"
-    saveLrPbPack(ftrl, filename, "ftrl", name)
+    Ftrl.saveLrPbPack(ftrl, filename, "ftrl", name, mode = ID_FEATURES_SIZE, offset = XGBOOST_FEATURE_SIZE)
     println(s"Save model locally to $filename")
 
     // upload to redis and mlcpp machine
@@ -151,27 +151,14 @@ object FtrlSnapshotId {
     })
   }
 
-  def getModel(version: Int, startFresh: Boolean): Ftrl = {
-    val ftrlnew = new Ftrl(ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE)
-    val ftrlRedis = RedisUtil.redisToFtrl(version, ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE)
-    val ftrl = if (ftrlRedis != null && !startFresh) {
-      println("ftrl fetched from redis")
-      ftrlRedis
-    } else {
-      println("new ftrl")
-      ftrlnew
-    }
-    return ftrl
-  }
-
-  def updateDict(ftrl: Ftrl, ids: Array[(Int, String)], stringIDs: Array[String]): Unit = {
+  def updateDict(ftrl: Ftrl, ids: Array[(Int, String)], stringIDs: Array[String], idFeatureSize: Int, xgFeatureSize: Int): Unit = {
     val advertiserMutMap = mutable.Map[Int, Int]()
     val planMutMap = mutable.Map[Int, Int]()
     val stringMap = mutable.Map[String, Int]()
     ids.foreach(x => {
       val id = x._1
       val name = x._2
-      val hashedID = getHashedID(id, name, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)
+      val hashedID = getHashedID(id, name, idFeatureSize, xgFeatureSize)
       if (name.equals(ADVERTISER_ID_NAME)) {
         advertiserMutMap.put(id, hashedID)
       }
@@ -180,7 +167,7 @@ object FtrlSnapshotId {
       }
     })
     stringIDs.foreach(x => {
-      stringMap.put(x, getHashedID(x, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE))
+      stringMap.put(x, getHashedID(x, idFeatureSize, xgFeatureSize))
     })
     ftrl.dict.planid.foreach( x => planMutMap.put(x._1, x._2))
     ftrl.dict.advertiserid.foreach( x => advertiserMutMap.put(x._1, x._2))
@@ -257,30 +244,9 @@ object FtrlSnapshotId {
   }
 
   def getHashedID(id: String, size: Int, offset: Int): Int = {
-    return (Utils.djb2Hash(id) % ULong(size)).toInt + offset
+    return (Math.abs(Murmur3Hash.stringHash(id) % size) + offset).toInt
   }
 
-  def saveLrPbPack(ftrl: Ftrl, path: String, parser: String, name: String): Unit = {
-    val lr = LRModel(
-      parser = parser,
-      featureNum = ftrl.w.length,
-      weights = ftrl.w.zipWithIndex.toMap.map(x => (x._2, x._1))
-    )
-    val ir = IRModel(
-    )
-    val pack = Pack(
-      name = name,
-      createTime = new Date().getTime,
-      lr = Option(lr),
-      ir = Option(ir),
-      dict = Option(ftrl.dict),
-      strategy = Strategy.StrategyXgboostFtrl,
-      gbmfile = s"data/ctr-portrait9-qtt-list.gbm",
-      gbmTreeLimit = 200,
-      gbmTreeDepth = 10,
-      negSampleRatio = 0.2
-    )
-    Utils.saveProtoToFile(pack, path)
-  }
+
 
 }

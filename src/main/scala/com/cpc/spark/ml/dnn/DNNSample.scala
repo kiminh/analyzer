@@ -18,7 +18,6 @@ object DNNSample {
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
-
     val spark = SparkSession.builder()
       .appName("dnn sample")
       .enableHiveSupport()
