@@ -11,5 +11,5 @@ message SingleUser {
 
 
 message UserOcpc {
-    repeated SingleUser users = 1;
+    repeated SingleUser user = 1;
 }
