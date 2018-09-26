@@ -119,11 +119,16 @@ object OcpcSampleToRedis {
 //    UseridDataOcpc.Builder useridData = UseridDataOcpc.newBuilder();
     val filename = s"/home/cpc/wangjun/test_userid/UseridDataOcpc.pb"
     val test = dataset.first()
-    val result = SingleUser.newBuilder()
-    result.setUserid(test.get(0).toString)
-    result.setCost(test.get(1).toString)
-    result.setCtrcnt(test.get(2).toString)
-    result.setCvrcnt(test.get(3).toString)
+    val result = SingleUser(
+      userid = test.get(0).toString,
+      cost = test.get(1).toString,
+      ctrcnt = test.get(2).toString,
+      cvrcnt = test.get(3).toString
+    )
+//    result.setUserid(test.get(0).toString)
+//    result.setCost(test.get(1).toString)
+//    result.setCtrcnt(test.get(2).toString)
+//    result.setCvrcnt(test.get(3).toString)
 //
 //    dataset.foreachPartition(iterator => {
 //      iterator.foreach(record => {
