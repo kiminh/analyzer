@@ -34,7 +34,8 @@ object CalibrationCheck {
                  | select
                  |  isclick,
                  |  ext_int['raw_ctr'] as ectr,
-                 |  ext['exp_ctr'].int_value
+                 |  ext['exp_ctr'].int_value,
+                 |  searchid
                  | from dl_cpc.cpc_union_log
                  | where $timeRangeSql
                  | and media_appsid in ('80000001', '80000002')
@@ -48,15 +49,21 @@ object CalibrationCheck {
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
-    log.limit(10).rdd.toLocalIterator.foreach( x => {
+    log.limit(1000).rdd.toLocalIterator.foreach( x => {
       val isClick = x.getInt(0).toDouble
       val rawCtr = x.getLong(1).toDouble / 1e6d
       val onlineCtr = x.getInt(2).toDouble / 1e6d
+      val searchid = x.getString(3)
       val calibrated = HourlyCalibration.computeCalibration(rawCtr, irModel.ir.get)
-      println(s"rawCtr: $rawCtr")
-      println(s"onlineCtr: $onlineCtr")
-      println(s"calibrated: $calibrated")
-      println("======")
+
+      if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
+        println(s"rawCtr: $rawCtr")
+        println(s"onlineCtr: $onlineCtr")
+        println(s"calibrated: $calibrated")
+        println(s"searchid: $searchid")
+        println("======")
+      }
+
     })
     val result = log.rdd.map( x => {
       val isClick = x.getInt(0).toDouble
