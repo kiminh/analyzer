@@ -51,23 +51,17 @@ object OcpcSampleToRedis {
     val base = spark.sql(sqlRequest)
 
     // calculation for ratio: adslotid, uid
-//    val adslotData = base
-//      .groupBy("uid")
-//      .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"), sum("ctr_cnt").alias("ctr_cnt"))
     val uidData = base
       .groupBy("uid")
-      .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"), sum("total_cnt").alias("total_cnt"))
+      .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
 
     uidData.write.mode("overwrite").saveAsTable("test.uid_historical_data")
     println("save to table: test.uid_historical_data")
 
     // calculation for bid and ROI: userid
-//    val userData = base
-//      .groupBy("userid")
-//      .agg((sum("cvr_cnt")/sum("total_cnt")).alias("historical_cvr"), (sum("cvr_cnt")*1000/sum("cost")).alias("historical_roi"), sum("ctr_cnt").alias("ctr_cnt"))
     val userData = base
       .groupBy("userid")
-      .agg(sum("cost").alias("cost"), sum("cvr_cnt").alias("cvr_cnt"), sum("total_cnt").alias("total_cnt"))
+      .agg(sum("cost").alias("cost"), sum("cvr_cnt").alias("cvr_cnt"), sum("ctr_cnt").alias("ctr_cnt"))
 
     userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
     println("save to table: test.userid_historical_data")

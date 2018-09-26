@@ -13,7 +13,6 @@ object OcpcSampleHourly {
       s"""
          | select
          |  a.searchid,
-         |  a.adslotid,
          |  a.uid,
          |  a.price,
          |  a.userid,
@@ -33,7 +32,7 @@ object OcpcSampleHourly {
          |        and adsrc = 1
          |        and adslot_type in (1,2,3)
          |      ) a
-         |left join
+         |inner join
          |      (
          |        select searchid, label
          |        from dl_cpc.ml_cvr_feature_v1
@@ -47,7 +46,6 @@ object OcpcSampleHourly {
       s"""
          |Select
          |  userid,
-         |  adslotid,
          |  uid,
          |  SUM(CASE WHEN isclick == 1 then price else 0 end) as cost,
          |  SUM(CASE WHEN isclick == 1 then 1 else 0 end) as ctr_cnt,
