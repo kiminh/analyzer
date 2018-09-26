@@ -59,6 +59,7 @@ message HashParam {
     HashMethod method = 1;
     int64 mode = 2;
     int64 offset = 3;
+    int32 seed = 4;
 }
 
 message Pack {
