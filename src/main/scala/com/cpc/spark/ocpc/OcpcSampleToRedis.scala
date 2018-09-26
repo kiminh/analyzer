@@ -126,7 +126,7 @@ object OcpcSampleToRedis {
     println("size of the dataframe")
     println(dataset.count)
     var cnt = 1
-    for (record <- dataset) {
+    for (record <- dataset.collect()) {
       if (cnt % 100 == 0) {
         println("########### loop ###########")
         println(cnt)
