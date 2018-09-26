@@ -50,6 +50,7 @@ message UserProfile {
 	string city = 14; //城市
 	string userCreateTime = 15; // 账号创建日期
     QttProfile qttProfile = 101;
+	repeated SingleUser2 test=16;
 }
 
 message QttProfile {
@@ -65,12 +66,12 @@ message QttProfile {
 }
 
 
-//message SingleUser {
-//	string userid = 1;
-//	string cost = 2; // total cost group by userid
-//	string ctrcnt = 3; // ctr count group by userid
-//	string cvrcnt = 4; // cvr count group by userid
-//}
+message SingleUser2 {
+	string userid = 1;
+	string cost = 2; // total cost group by userid
+	string ctrcnt = 3; // ctr count group by userid
+	string cvrcnt = 4; // cvr count group by userid
+}
 //
 //
 //message UserOcpc {
