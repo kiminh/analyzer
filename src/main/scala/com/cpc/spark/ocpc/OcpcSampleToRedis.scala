@@ -132,7 +132,7 @@ object OcpcSampleToRedis {
         val costValue = record.get(1).toString
         val ctrCntValue = record.get(2).toString
         val cvrCntValue = record.get(3).toString
-        val currentItem = UseridSingleData(
+        val currentItem = SingleUser(
           userid = kValue,
           cost = costValue,
           ctrcnt = ctrCntValue,
@@ -141,8 +141,8 @@ object OcpcSampleToRedis {
         useridData.addUser(currentItem)
       })
     })
-    val result = useridData.build()
-    result.writeTo(new FileOutputStream(filename))
+//    val result = useridData.build()
+    useridData.writeTo(new FileOutputStream(filename))
     println("complete save data into protobuffer")
 
   }
