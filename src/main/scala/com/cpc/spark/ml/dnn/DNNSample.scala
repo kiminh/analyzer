@@ -13,7 +13,6 @@ import scala.collection.mutable.WrappedArray
 import scala.util.Random
 import com.cpc.spark.common.Murmur3Hash
 
-import util.hash.MurmurHash3
 
 object DNNSample {
 
@@ -63,7 +62,7 @@ object DNNSample {
 
         var hashed = Seq[Long]()
         for (i <- raw.indices) {
-          hashed = hashed :+ Murmur3Hash.stringHash("%s:%d".format(fnames(i), raw(i)))
+          hashed = hashed :+ Murmur3Hash.stringHash64("%s:%d".format(fnames(i), raw(i)), 702)
         }
 
         val sparse = Sparse()
@@ -71,7 +70,7 @@ object DNNSample {
 
         var appHashed = Seq[Long]()
         for (i <- apps.indices) {
-          appHashed = appHashed :+ Murmur3Hash.stringHash("app:%s".format(apps(i)))
+          appHashed = appHashed :+ Murmur3Hash.stringHash64("app:%s".format(apps(i)), 702)
         }
 
         sparse.idx1 :+= 0L
