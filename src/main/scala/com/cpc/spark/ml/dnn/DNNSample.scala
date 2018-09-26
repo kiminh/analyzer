@@ -21,53 +21,6 @@ object DNNSample {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
 
-    val rnd = Seq("2Iul8CyRC31gUZOw5l0HCeay5AlTDj",
-      "A+5dCdSXu5A18qG+fBmlXERin/mExnKBIc8z8iCQG8Y=",
-      "QhiYaeEtqKLBKDSjjX0jflNEzi7Mc",
-      "7tkS9tuY6D5xC5ORFrb3fTLEqea4RYoNwPpys6EzfvY=",
-      "qO7UDw0Y9A+xSn1aiopNte9p5K8vWjGLvyb4OoW2p6k=",
-      "xrYjb75xN+CQNjAZNaEoMTasM9o+aQmC2WXDrYJ/AjI=",
-      "KOnEG28TunVoAq9Ms49xUSnPhqdn82cOurPzgI7fmTk=",
-      "iKJ7abVqD2RumcdE0jXGNsUi0lHiXtNn4Kk8cz+Mk18=",
-      "18b5FsGV5LsVkOPmKn7buvASGIKaZG7N9MirwSwxWqw=",
-      "igvOdWF+cf47jXNoqJq7g1xO+VEkMLhxdyVHCC2ov2o=",
-      "+uHW+UCdRxYipjGzXhyvmWJIWeasDJhQ2iJ4UHARfYQ=",
-      "XYcIUrYw8YDpHVgKwe4Ma4eyyyElw/OGifDtmNy+ZVs=",
-      "kEez3Ow3k62+Qeea8hCERDX2RNGYXJU35OoLwVHqrX0=",
-      "IbWBG9yvQM9ro/S/PuZbnqglysDSy3TtzeqKPIOACco=",
-      "F97rYPupYhh3H7BiyoO8NiLzyY6vjLy7LaMcbuEQ2QY=",
-      "bLx2dGXP481I4H8nTZ43Xsu8QWc474L9/Ci+qiDNIUo=",
-      "aEKQ3frWR5Q8pQ2vyP4GmvCVyaEOwxZ5F+31OBUsyX0=",
-      "K9Sz5xpnZ9Yg4Z7Q7+YZRcbctVci",
-      "isOTU6UDeyJk7vWlwg06OhhBY3oN3j7vJ/iGqE1j7vo=",
-      "wfsnSseNdv59J4Mougdf7JkFgfMQJd3QOh+ZA5wqxao=",
-      "diwul4OmHsK2XLeENu/nhXJG+cq75i+nYXFbQYsvLqY=",
-      "pcLIparXy/OvorMjh8PpMqkkGxe9cuYzOxtkLFG0k2w=",
-      "GWKSPEBGmgNkQIeKb+ASbVucI1RxHwXLYfkXYjJlRQM=",
-      "V8O6vvxMut+JuaRibqTIRV58Ef7EMJRqph/o+Hf8Z8U=",
-      "gOq9p3NqxZnTzNBm5o/DEc3ODtCm1u9rCt49FIizQ00=",
-      "MI8h5zmBxnuE15miLcCqIbPa/Ubz7TLT5lW4glFjn+s=",
-      "f7KQl81oQNfEt6WXE5YNj6tT0IDbNqQTnNjGw+7U/sI=",
-      "GNbi7vC/L3gnnsJo/7U7BycxvsfEzYvgjZv14ktZSHU=",
-      "z8sUfnqkPkKtqY9waaZBDKpf8XpbGlv9ToN/m/b3ulc=",
-      "KMpbqCk8OTMxkDZtQ97IiVssjz0XQA1PwBeJ+dZs3uA=",
-      "Vn/o1TR4wnrP331ebtvS5IrOs0ikEquRa3Ra2kvZZ+M=",
-      "5ofLwqpCQU/0FhWo8UbeCqnFa2OnJjWgiCDN5XeDGDo=",
-      "3Kb4pajHf/Co/8gmgGbyITtG86nLhn1w5swEFjL9o2U=",
-      "xnW9bEPi58r5/7ph1o9priAbIM6c5m+13/99SvjG3m0=",
-      "tAQBQEcGKh8G+nQfK9OjD6TQXZK2vwfHIAvRYQzTVFs=",
-      "W+CrjyO1i2+wn+L9b2Id0wjUGBJG6iNsRluqm+e9GH8=",
-      "eB/QPntj1BdZnNDWlBE8d0+bU+CbBvJZwBjE+e3yHtE=",
-      "VU4xq67Cx4ZpziGS6l4lKHUPJ4z4ojpEowtkj0HX3uU=",
-      "IyOfz7xM4KjYouMzP/Qwnf/EyY4YdAQ781foahTZzrc=",
-      "crrwUUHnbt7j0ppDpZ2EMWTlQoz",
-      "xx6XboYw1qZ+xeSsDv0oSlPdJFO/gZ5XWOI3P760Xx4=",
-      "Uz9W4bwojMZv2D8L37sQyq4j8hWtwoRXwpuL2MUoc24=",
-      "aNrrDXNWACF4ErhyxbqG4Aj/UBZel1P/krlKKArJlyk=",
-      "4pjOEQL9rlnD/3Y1OQd2foweJokYDQar8OmovIx6D4s=")
-
-    rnd.map(x => Murmur3Hash.stringHash64(x, 110)).foreach(println)
-
     val spark = SparkSession.builder()
       .appName("dnn sample")
       .enableHiveSupport()
