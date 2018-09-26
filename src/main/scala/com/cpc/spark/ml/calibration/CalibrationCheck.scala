@@ -61,15 +61,20 @@ object CalibrationCheck {
     val result = log.rdd.map( x => {
       val isClick = x.getInt(0).toDouble
       val ectr = x.getLong(1).toDouble / 1e6d
-      val onlineCtr = x.getLong(2).toDouble / 1e6d
+      val onlineCtr = x.getInt(2).toDouble / 1e6d
       val calibrated = HourlyCalibration.computeCalibration(ectr, irModel.ir.get)
-      (isClick, ectr, calibrated, 1.0, onlineCtr)
-    }).reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5))
+      var mistake = 0
+      if (Math.abs(onlineCtr - calibrated) / calibrated > 0.2) {
+        mistake = 1
+      }
+      (isClick, ectr, calibrated, 1.0, onlineCtr, mistake)
+    }).reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5, x._6 + y._6))
     val ctr = result._1 / result._4
     val ectr = result._2 / result._4
     val calibrated_ctr = result._3 / result._4
     val onlineCtr = result._5 / result._4
     println(s"impression: ${result._4}")
+    println(s"mistake: ${result._6}")
     println(s"ctr: $ctr")
     println(s"ectr: $ectr")
     println(s"online ctr: $onlineCtr")
