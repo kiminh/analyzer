@@ -65,14 +65,14 @@ message QttProfile {
 }
 
 
-message SingleUser {
-	string userid = 1;
-	string cost = 2; // total cost group by userid
-	string ctrcnt = 3; // ctr count group by userid
-	string cvrcnt = 4; // cvr count group by userid
-}
-
-
-message UserOcpc {
-	repeated SingleUser users = 1;
-}
+//message SingleUser {
+//	string userid = 1;
+//	string cost = 2; // total cost group by userid
+//	string ctrcnt = 3; // ctr count group by userid
+//	string cvrcnt = 4; // cvr count group by userid
+//}
+//
+//
+//message UserOcpc {
+//	repeated SingleUser users = 1;
+//}
