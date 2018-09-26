@@ -7,7 +7,7 @@ import java.util.zip
 import com.redis.RedisClient
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
-import UseridDataOcpc.UseridDataOcpc._
+import UseridDataOcpc._
 import java.io.FileOutputStream
 
 
