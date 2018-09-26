@@ -13,12 +13,21 @@ import scala.collection.mutable.WrappedArray
 import scala.util.Random
 import com.cpc.spark.common.Murmur3Hash
 
+import util.hash.MurmurHash3
+
 object DNNSample {
 
   private var trainLog = Seq[String]()
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
+
+    val d = "dongwei".toCharArray.map(_.toByte)
+    val out = new MurmurHash3.LongPair
+    MurmurHash3.murmurhash3_x64_128(d, 0, d.length, 123, out)
+
+    println(d.length, out.val1, out.val2)
+
 
     val spark = SparkSession.builder()
       .appName("dnn sample")
