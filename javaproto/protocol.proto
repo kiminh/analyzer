@@ -211,6 +211,7 @@ enum Dsp {
     MOMO_DSP = 14;
     QUYUANSU_DSP = 15;
     TOUTIAO_DSP = 16;
+    QIHU_DSP = 17;
 }
 
 // DSP计费相关字段
