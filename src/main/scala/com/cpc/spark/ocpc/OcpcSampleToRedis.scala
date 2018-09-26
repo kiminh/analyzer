@@ -69,8 +69,8 @@ object OcpcSampleToRedis {
     userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
     println("save to table: test.userid_historical_data")
     // save into redis
-//    dataToRedis(adslotData, "uid", "data", "uid.data:")
-//    dataToRedis(userData, "userid", "data", "userid.data:")
+//    dataToRedis(adslotData, "uid", "data", "ocpc.uid:")
+//    dataToRedis(userData, "userid", "data", "ocpc.userid:")
 
   }
 
