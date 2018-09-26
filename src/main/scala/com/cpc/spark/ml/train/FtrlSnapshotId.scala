@@ -244,7 +244,7 @@ object FtrlSnapshotId {
   }
 
   def getHashedID(id: String, size: Int, offset: Int): Int = {
-    return (Math.abs(Murmur3Hash.stringHash(id) % size) + offset).toInt
+    return (Math.abs(Murmur3Hash.stringHash64(id, 0) % size) + offset).toInt
   }
 
 

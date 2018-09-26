@@ -1,6 +1,6 @@
 package com.cpc.spark.common
 
-import util.hash.MurmurHash3
+import cpcutil.hash.MurmurHash3
 
 /**
   * Created by roydong on 25/09/2018.
