@@ -151,6 +151,8 @@ object OcpcSampleToRedis {
     val useridData = UserOcpc(
       user = result
     )
+    println("length of the list")
+    println(result.size)
     useridData.writeTo(new FileOutputStream(filename))
     println("complete save data into protobuffer")
 
