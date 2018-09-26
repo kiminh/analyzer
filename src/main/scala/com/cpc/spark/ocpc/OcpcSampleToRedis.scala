@@ -147,7 +147,7 @@ object OcpcSampleToRedis {
       })
     })
 //    val result = useridData.build()
-    val result = list.toArray()
+    val result = list.toArray[SingleUser]
     val useridData = UserOcpc(
       user = result
     )
