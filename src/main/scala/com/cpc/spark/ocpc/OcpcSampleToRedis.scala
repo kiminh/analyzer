@@ -8,9 +8,9 @@ import com.redis.RedisClient
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 //import UseridDataOcpc._
-//import userprofile.Userprofile.SingleUser
+import userprofile.Userprofile.SingleUser2
 //import userprofile.Userprofile.{SingleUser, UserOcpc}
-import userocpc.UserOcpc.SingleUser
+//import userocpc.UserOcpc.SingleUser
 import java.io.FileOutputStream
 
 
@@ -118,7 +118,7 @@ object OcpcSampleToRedis {
 //    UseridDataOcpc.Builder useridData = UseridDataOcpc.newBuilder();
     val filename = s"/home/cpc/wangjun/test_userid/UseridDataOcpc.pb"
     val test = dataset.first()
-    val result = SingleUser.newBuilder()
+    val result = SingleUser2.newBuilder()
     result.setUserid(test.get(0).toString)
     result.setCost(test.get(1).toString)
     result.setCtrcnt(test.get(2).toString)
