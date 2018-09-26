@@ -1,6 +1,7 @@
 package com.cpc.spark.ml.train
 
 import java.io.{BufferedOutputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
+import java.util.Date
 
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
@@ -8,9 +9,10 @@ import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.ListBuffer
 import com.alibaba.fastjson.{JSON, JSONObject}
+import com.cpc.spark.common.Utils
 import com.cpc.spark.qukan.utils.RedisUtil
 import com.google.protobuf.CodedInputStream
-import mlmodel.mlmodel.{Dict, FtrlProto}
+import mlmodel.mlmodel._
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
 
@@ -256,4 +258,32 @@ object Ftrl {
     return ftrl
   }
 
+  def saveLrPbPack(ftrl: Ftrl, path: String, parser: String, name: String, mode: Int, offset: Int): Unit = {
+    val lr = LRModel(
+      parser = parser,
+      featureNum = ftrl.w.length,
+      weights = ftrl.w.zipWithIndex.toMap.map(x => (x._2, x._1))
+    )
+    val ir = IRModel(
+    )
+    val hashParam = HashParam(
+      method = HashMethod.MurMur3,
+      mode = mode.toLong,
+      offset = offset.toLong
+    )
+    val pack = Pack(
+      name = name,
+      createTime = new Date().getTime,
+      lr = Option(lr),
+      ir = Option(ir),
+      dict = Option(ftrl.dict),
+      strategy = Strategy.StrategyXgboostFtrl,
+      gbmfile = s"data/ctr-portrait9-qtt-list.gbm",
+      gbmTreeLimit = 200,
+      gbmTreeDepth = 10,
+      negSampleRatio = 0.2,
+      hashParam = Option(hashParam)
+    )
+    Utils.saveProtoToFile(pack, path)
+  }
 }

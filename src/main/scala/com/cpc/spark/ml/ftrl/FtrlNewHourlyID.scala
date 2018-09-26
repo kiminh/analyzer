@@ -115,7 +115,7 @@ object FtrlNewHourlyID {
     // save model file locally
     val name = s"$ctrcvr-protrait$ftrlVersion-ftrl-id-qtt-$adslot"
     val filename = s"$LOCAL_DIR$name.mlm"
-    saveLrPbPack(ftrl, filename, "ctr-ftrl-v1", name)
+    Ftrl.saveLrPbPack(ftrl, filename, "ctr-ftrl-v1", name, mode = ID_FEATURES_SIZE, offset = XGBOOST_FEATURE_SIZE)
     println(s"Save model locally to $filename")
 
     if (upload) {
