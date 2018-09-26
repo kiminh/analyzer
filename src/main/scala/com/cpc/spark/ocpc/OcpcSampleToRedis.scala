@@ -7,6 +7,9 @@ import java.util.zip
 import com.redis.RedisClient
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
+import UseridDataOcpc.UseridDataOcpc._
+import java.io.FileOutputStream
+
 
 object OcpcSampleToRedis {
   def main(args: Array[String]): Unit = {
@@ -56,7 +59,7 @@ object OcpcSampleToRedis {
       .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
       .withColumn("data", concat_ws(",", col("ctr_cnt"), col("cvr_cnt")))
 
-    uidData.write.mode("overwrite").saveAsTable("test.uid_historical_data")
+//    uidData.write.mode("overwrite").saveAsTable("test.uid_historical_data")
     println("save to table: test.uid_historical_data")
 
 
@@ -66,29 +69,70 @@ object OcpcSampleToRedis {
       .agg(sum("cost").alias("cost"), sum("cvr_cnt").alias("cvr_cnt"), sum("ctr_cnt").alias("ctr_cnt"))
       .withColumn("data", concat_ws(",", col("cost"), col("ctr_cnt"), col("cvr_cnt")))
 
-    userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
+//    userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
     println("save to table: test.userid_historical_data")
     // save into redis
 //    dataToRedis(adslotData, "uid", "data", "ocpc.uid:")
 //    dataToRedis(userData, "userid", "data", "ocpc.userid:")
+    savePbPack(userData.select("userid", "cost", "ctr_cnt", "cvr_cnt"))
 
   }
 
 
-  def dataToRedis(dataset: Dataset[Row], key: String, value: String, prefix: String): Unit = {
-    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
-    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
-    // get specific column from the dataframe
-    val data = dataset.select(key, value)
-    data.foreachPartition(iterator => {
+//  def dataToRedis(dataset: Dataset[Row], key: String, value: String, prefix: String): Unit = {
+//    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+//    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+//    // get specific column from the dataframe
+//    val data = dataset.select(key, value)
+//    data.foreachPartition(iterator => {
+//      iterator.foreach(record => {
+//        val kValue = record.get(0).toString
+//        val vValue = record.get(1)
+//        val kk = s"$prefix$kValue"
+//        redis.setex(kk, 24 * 60 * 60, vValue)
+//      })
+//    })
+//    // disconnect
+//    redis.disconnect
+//  }
+//
+//  def saveToProtoBuffer(dataset: Dataset[Row]): Unit ={
+//      case class useridData(userid: String, cost: String, ctrCnt: String, cvrCnt: String)
+//
+//      dataset.foreachPartition(iterator => {
+//        iterator.foreach(record => {
+//          val kValue = record.get(0).toString
+//          val costValue = record.get(1).toString
+//          val ctrCntValue = record.get(2).toString
+//          val cvrCntValue = record.get(3).toString
+//          val currentItem = useridData(kValue, costValue, ctrCntValue, cvrCntValue)
+//        })
+//      })
+//    }
+
+
+  def savePbPack(dataset: Dataset[Row]): Unit = {
+    UseridDataOcpc.Builder useridData = UseridDataOcpc.newBuilder();
+    val filename = s"/home/cpc/wangjun/test_userid/UseridDataOcpc.pb"
+
+    dataset.foreachPartition(iterator => {
       iterator.foreach(record => {
         val kValue = record.get(0).toString
-        val vValue = record.get(1)
-        val kk = s"$prefix$kValue"
-        redis.setex(kk, 2 * 60 * 60, vValue)
+        val costValue = record.get(1).toString
+        val ctrCntValue = record.get(2).toString
+        val cvrCntValue = record.get(3).toString
+        val currentItem = UseridSingleData(
+          userid = kValue,
+          cost = costValue,
+          ctrcnt = ctrCntValue,
+          cvrcnt = cvrCntValue
+        )
+        useridData.addUseridSingleData(currentItem)
       })
     })
-    // disconnect
-    redis.disconnect
+    val result = useridData.build()
+    result.writeTo(new FileOutputStream(filename))
+    println("complete save data into protobuffer")
+
   }
 }
