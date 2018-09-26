@@ -123,6 +123,8 @@ object OcpcSampleToRedis {
     var list = new ListBuffer[SingleUser]
 //    println(useridData.getClass.getMethods.map(_.getName))
     val filename = s"/home/cpc/wangjun/test_userid/UseridDataOcpc.pb"
+    println("size of the dataframe")
+    println(dataset.count)
 //    val test = dataset.first()
 //    val result = SingleUser(
 //      userid = test.get(0).toString,
