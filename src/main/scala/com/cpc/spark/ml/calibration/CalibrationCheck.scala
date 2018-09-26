@@ -51,7 +51,7 @@ object CalibrationCheck {
     log.limit(10).rdd.toLocalIterator.foreach( x => {
       val isClick = x.getInt(0).toDouble
       val rawCtr = x.getLong(1).toDouble / 1e6d
-      val onlineCtr = x.getLong(2).toDouble / 1e6d
+      val onlineCtr = x.getInt(2).toDouble / 1e6d
       val calibrated = HourlyCalibration.computeCalibration(rawCtr, irModel.ir.get)
       println(s"rawCtr: $rawCtr")
       println(s"onlineCtr: $onlineCtr")
