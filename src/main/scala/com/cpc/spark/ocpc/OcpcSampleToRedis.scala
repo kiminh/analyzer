@@ -125,7 +125,12 @@ object OcpcSampleToRedis {
     val filename = s"/home/cpc/wangjun/test_userid/UseridDataOcpc.pb"
     println("size of the dataframe")
     println(dataset.count)
+    var cnt = 1
     for (record <- dataset) {
+      if (cnt % 100 == 0) {
+        println("########### loop ###########")
+        println(cnt)
+      }
       val kValue = record.get(0).toString
       val costValue = record.get(1).toString
       val ctrCntValue = record.get(2).toString
@@ -137,6 +142,7 @@ object OcpcSampleToRedis {
         cvrcnt = cvrCntValue
       )
       list += currentItem
+      cnt = cnt + 1
     }
 //    val test = dataset.first()
 //    val result = SingleUser(
