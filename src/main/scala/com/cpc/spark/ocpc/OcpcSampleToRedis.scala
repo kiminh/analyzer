@@ -146,8 +146,8 @@ object OcpcSampleToRedis {
 //        useridData.addUseridSingleData(currentItem)
 //      })
 //    })
-    val result = useridData.build()
-    result.writeTo(new FileOutputStream(filename))
+//    val result = useridData.build()
+    useridData.writeTo(new FileOutputStream(filename))
     println("complete save data into protobuffer")
 
   }
