@@ -7,7 +7,9 @@ import java.util.zip
 import com.redis.RedisClient
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
-import UseridDataOcpc._
+//import UseridDataOcpc._
+import userprofile.Userprofile.UserIdOcpcProfile
+import userocpc.UserOcpc._
 import java.io.FileOutputStream
 
 
@@ -112,26 +114,32 @@ object OcpcSampleToRedis {
 
 
   def savePbPack(dataset: Dataset[Row]): Unit = {
-    UseridDataOcpc.Builder useridData = UseridDataOcpc.newBuilder();
+//    UseridDataOcpc.Builder useridData = UseridDataOcpc.newBuilder();
     val filename = s"/home/cpc/wangjun/test_userid/UseridDataOcpc.pb"
-
-    dataset.foreachPartition(iterator => {
-      iterator.foreach(record => {
-        val kValue = record.get(0).toString
-        val costValue = record.get(1).toString
-        val ctrCntValue = record.get(2).toString
-        val cvrCntValue = record.get(3).toString
-        val currentItem = UseridSingleData(
-          userid = kValue,
-          cost = costValue,
-          ctrcnt = ctrCntValue,
-          cvrcnt = cvrCntValue
-        )
-        useridData.addUseridSingleData(currentItem)
-      })
-    })
-    val result = useridData.build()
-    result.writeTo(new FileOutputStream(filename))
+    val test = dataset.first()
+    val result = SingleUser.newBuilder()
+    result.setUserid(test.get(0).toString)
+    result.setCost(test.get(1).toString)
+    result.setCtrcnt(test.get(2).toString)
+    result.setCvrcnt(test.get(3).toString)
+//
+//    dataset.foreachPartition(iterator => {
+//      iterator.foreach(record => {
+//        val kValue = record.get(0).toString
+//        val costValue = record.get(1).toString
+//        val ctrCntValue = record.get(2).toString
+//        val cvrCntValue = record.get(3).toString
+//        val currentItem = UseridSingleData(
+//          userid = kValue,
+//          cost = costValue,
+//          ctrcnt = ctrCntValue,
+//          cvrcnt = cvrCntValue
+//        )
+//        useridData.addUseridSingleData(currentItem)
+//      })
+//    })
+//    val result = useridData.build()
+//    result.writeTo(new FileOutputStream(filename))
     println("complete save data into protobuffer")
 
   }
