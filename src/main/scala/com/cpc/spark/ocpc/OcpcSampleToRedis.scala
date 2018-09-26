@@ -7,6 +7,8 @@ import java.util.zip
 import com.redis.RedisClient
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
+
+import scala.collection.mutable.ListBuffer
 //import UseridDataOcpc._
 //import userprofile.Userprofile.SingleUser2
 //import userprofile.Userprofile.{SingleUser, UserOcpc}
@@ -116,8 +118,10 @@ object OcpcSampleToRedis {
 
 
   def savePbPack(dataset: Dataset[Row]): Unit = {
-    val useridData = UserOcpc()
-    println(useridData.getClass.getMethods.map(_.getName))
+//    val useridData = UserOcpc.toBuild
+//    var list = new ListBuffer[SingleUser]
+    var list = new ListBuffer[SingleUser]
+//    println(useridData.getClass.getMethods.map(_.getName))
     val filename = s"/home/cpc/wangjun/test_userid/UseridDataOcpc.pb"
 //    val test = dataset.first()
 //    val result = SingleUser(
@@ -139,10 +143,14 @@ object OcpcSampleToRedis {
           ctrcnt = ctrCntValue,
           cvrcnt = cvrCntValue
         )
-        useridData.addUser(currentItem)
+        list += currentItem
       })
     })
 //    val result = useridData.build()
+    val result = list.toArray()
+    val useridData = UserOcpc(
+      user = result
+    )
     useridData.writeTo(new FileOutputStream(filename))
     println("complete save data into protobuffer")
 
