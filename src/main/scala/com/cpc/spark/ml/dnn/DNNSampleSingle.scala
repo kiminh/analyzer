@@ -44,7 +44,6 @@ object DNNSampleSingle {
         val mediaid = x.getAs[String]("media_appsid").toInt
         ideaid > 0 && slottype == 1 && Seq(80000001, 80000002).contains(mediaid)
       }
-      //.randomSplit(Array(0.1, 0.9), new Date().getTime)(0)
       .join(userAppIdx, Seq("uid"))
       .rdd
       .map{row =>
