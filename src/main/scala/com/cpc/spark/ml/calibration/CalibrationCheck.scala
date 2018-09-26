@@ -44,8 +44,9 @@ object CalibrationCheck {
                  | and ideaid > 0
                  | and adsrc = 1
                  | and adslot_type in (1)
-                 | AND userid > 0
+                 | and userid > 0
                  | and ext_string['ctr_model_name'] = '$modelName'
+                 | and exptags like "%ctrmodel=1-v15_cali%"
        """.stripMargin
     println(s"sql:\n$sql")
     val log = session.sql(sql)
