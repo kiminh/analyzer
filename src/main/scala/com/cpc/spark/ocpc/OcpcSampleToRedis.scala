@@ -125,6 +125,19 @@ object OcpcSampleToRedis {
     val filename = s"/home/cpc/wangjun/test_userid/UseridDataOcpc.pb"
     println("size of the dataframe")
     println(dataset.count)
+    for (record <- dataset) {
+      val kValue = record.get(0).toString
+      val costValue = record.get(1).toString
+      val ctrCntValue = record.get(2).toString
+      val cvrCntValue = record.get(3).toString
+      val currentItem = SingleUser(
+        userid = kValue,
+        cost = costValue,
+        ctrcnt = ctrCntValue,
+        cvrcnt = cvrCntValue
+      )
+      list += currentItem
+    }
 //    val test = dataset.first()
 //    val result = SingleUser(
 //      userid = test.get(0).toString,
@@ -133,21 +146,21 @@ object OcpcSampleToRedis {
 //      cvrcnt = test.get(3).toString
 //    )
 //    useridData.addUser(result)
-    dataset.foreachPartition(iterator => {
-      iterator.foreach(record => {
-        val kValue = record.get(0).toString
-        val costValue = record.get(1).toString
-        val ctrCntValue = record.get(2).toString
-        val cvrCntValue = record.get(3).toString
-        val currentItem = SingleUser(
-          userid = kValue,
-          cost = costValue,
-          ctrcnt = ctrCntValue,
-          cvrcnt = cvrCntValue
-        )
-        list += currentItem
-      })
-    })
+//    dataset.foreachPartition(iterator => {
+//      iterator.foreach(record => {
+//        val kValue = record.get(0).toString
+//        val costValue = record.get(1).toString
+//        val ctrCntValue = record.get(2).toString
+//        val cvrCntValue = record.get(3).toString
+//        val currentItem = SingleUser(
+//          userid = kValue,
+//          cost = costValue,
+//          ctrcnt = ctrCntValue,
+//          cvrcnt = cvrCntValue
+//        )
+//        list += currentItem
+//      })
+//    })
 //    val result = useridData.build()
     val result = list.toArray[SingleUser]
     val useridData = UserOcpc(
