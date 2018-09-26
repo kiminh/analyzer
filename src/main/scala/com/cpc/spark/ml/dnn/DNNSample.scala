@@ -4,7 +4,6 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import mlmodel.mlmodel
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
@@ -12,6 +11,7 @@ import scala.collection.mutable
 import scala.collection.mutable.WrappedArray
 import scala.util.Random
 import com.cpc.spark.common.Murmur3Hash
+import util.hash.MurmurHash3
 
 
 object DNNSample {
