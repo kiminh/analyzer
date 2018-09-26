@@ -116,7 +116,7 @@ object OcpcSampleToRedis {
 
 
   def savePbPack(dataset: Dataset[Row]): Unit = {
-//    UseridDataOcpc.Builder useridData = UseridDataOcpc.newBuilder();
+    val useridData = UserOcpc.newBuilder();
     val filename = s"/home/cpc/wangjun/test_userid/UseridDataOcpc.pb"
     val test = dataset.first()
     val result = SingleUser(
