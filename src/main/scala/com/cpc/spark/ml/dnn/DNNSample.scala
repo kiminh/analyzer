@@ -66,7 +66,7 @@ object DNNSample {
       "aNrrDXNWACF4ErhyxbqG4Aj/UBZel1P/krlKKArJlyk=",
       "4pjOEQL9rlnD/3Y1OQd2foweJokYDQar8OmovIx6D4s=")
 
-    rnd.foreach(x => Murmur3Hash.stringHash64(x, 110))
+    rnd.map(x => Murmur3Hash.stringHash64(x, 110)).foreach(println)
 
     val spark = SparkSession.builder()
       .appName("dnn sample")
