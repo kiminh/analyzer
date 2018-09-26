@@ -125,6 +125,7 @@ object OcpcSampleToRedis {
       ctrcnt = test.get(2).toString,
       cvrcnt = test.get(3).toString
     )
+    useridData.addUser(result)
 //    result.setUserid(test.get(0).toString)
 //    result.setCost(test.get(1).toString)
 //    result.setCtrcnt(test.get(2).toString)
