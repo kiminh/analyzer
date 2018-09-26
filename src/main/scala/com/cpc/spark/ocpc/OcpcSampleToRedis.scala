@@ -127,10 +127,6 @@ object OcpcSampleToRedis {
     println(dataset.count)
     var cnt = 1
     for (record <- dataset.collect()) {
-      if (cnt % 100 == 0) {
-        println("########### loop ###########")
-        println(cnt)
-      }
       val kValue = record.get(0).toString
       val costValue = record.get(1).toString
       val ctrCntValue = record.get(2).toString
@@ -142,6 +138,11 @@ object OcpcSampleToRedis {
         cvrcnt = cvrCntValue
       )
       list += currentItem
+      if (cnt % 100 == 0) {
+        println("########### loop ###########")
+        println(cnt)
+        println(kValue + ", " + costValue + ", " + ctrCntValue + ", " + cvrCntValue)
+      }
       cnt = cnt + 1
     }
 //    val test = dataset.first()
