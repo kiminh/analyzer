@@ -100,7 +100,7 @@ object FtrlNewHourlyID {
 
     val currentHDFS = s"${HDFS_MODEL_DIR}ftrl-$typename-$ftrlVersion.mlm"
 
-    val ftrl = Ftrl.getModelFromHDFS(startFresh, currentHDFS, spark, XGBOOST_FEATURE_SIZE + ID_FEATURES_SIZE)
+    val ftrl = Ftrl.getModelFromProtoOnHDFS(startFresh, currentHDFS, spark, XGBOOST_FEATURE_SIZE + ID_FEATURES_SIZE)
     ftrl.train(spark, samples)
 
     val ids = dataWithID.map(x => x._2).flatMap(x => x).distinct().collect()
@@ -115,13 +115,13 @@ object FtrlNewHourlyID {
     // save model file locally
     val name = s"$ctrcvr-protrait$ftrlVersion-ftrl-id-qtt-$adslot"
     val filename = s"$LOCAL_DIR$name.mlm"
-    saveLrPbPack(ftrl, filename, "ftrl", name)
+    saveLrPbPack(ftrl, filename, "ctr-ftrl-v1", name)
     println(s"Save model locally to $filename")
 
     if (upload) {
-      Ftrl.saveModelToHDFS(currentHDFS, spark, ftrl)
+      Ftrl.saveToProtoToHDFS(currentHDFS, spark, ftrl)
       val historyHDFS = s"${HDFS_MODEL_HISTORY_DIR}ftrl-$typename-$ftrlVersion-$dt-$hour.mlm"
-      Ftrl.saveModelToHDFS(historyHDFS, spark, ftrl)
+      Ftrl.saveToProtoToHDFS(historyHDFS, spark, ftrl)
       println(MUtils.updateMlcppOnlineData(filename, s"$DEST_DIR$name.mlm", ConfigFactory.load()))
     }
   }

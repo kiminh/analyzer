@@ -2,6 +2,17 @@ syntax = "proto3";
 
 package mlmodel;
 
+
+message FtrlProto {
+    double alpha = 1;
+    double beta = 2;
+    double L1 = 3;
+    double L2 = 4;
+    repeated double n = 5;
+    repeated double z = 6;
+    repeated double w = 7;
+}
+
 message LRModel {
     map<int32, double> weights = 1;
     string parser = 2;
