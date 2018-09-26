@@ -8,8 +8,9 @@ import com.redis.RedisClient
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 //import UseridDataOcpc._
-import userprofile.Userprofile._
-//import userocpc.UserOcpc._
+//import userprofile.Userprofile.SingleUser
+import userprofile.Userprofile.{SingleUser, UserOcpc}
+//import userocpc.UserOcpc.
 import java.io.FileOutputStream
 
 
