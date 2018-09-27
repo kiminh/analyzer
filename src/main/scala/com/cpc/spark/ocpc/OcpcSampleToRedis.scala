@@ -135,9 +135,10 @@ object OcpcSampleToRedis {
 //    redis.disconnect
 
 
-    dataset.repartition(5).foreachPartition(iterator => {
+    dataset.foreachPartition(iterator => {
       val conf = ConfigFactory.load()
       val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+
       iterator.foreach(record => {
         val uid = record.get(0).toString
         var key = uid + "_UPDATA"
@@ -154,6 +155,7 @@ object OcpcSampleToRedis {
             changeCnt.add(1)
         }
       })
+
       redis.disconnect
     })
     println("####################2")
