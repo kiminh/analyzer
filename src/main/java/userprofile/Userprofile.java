@@ -4611,18 +4611,36 @@ public final class Userprofile {
      * uid维度的最近几天点击总次数
      * </pre>
      *
-     * <code>int64 ctrcnt = 16;</code>
+     * <code>string ctrcnt = 16;</code>
      */
-    long getCtrcnt();
+    java.lang.String getCtrcnt();
+    /**
+     * <pre>
+     * uid维度的最近几天点击总次数
+     * </pre>
+     *
+     * <code>string ctrcnt = 16;</code>
+     */
+    com.google.protobuf.ByteString
+        getCtrcntBytes();
 
     /**
      * <pre>
      * uid维度的最近几天转化总次数
      * </pre>
      *
-     * <code>int64 cvrcnt = 17;</code>
+     * <code>string cvrcnt = 17;</code>
      */
-    long getCvrcnt();
+    java.lang.String getCvrcnt();
+    /**
+     * <pre>
+     * uid维度的最近几天转化总次数
+     * </pre>
+     *
+     * <code>string cvrcnt = 17;</code>
+     */
+    com.google.protobuf.ByteString
+        getCvrcntBytes();
 
     /**
      * <code>.userprofile.QttProfile qttProfile = 101;</code>
@@ -4664,8 +4682,8 @@ public final class Userprofile {
       province_ = "";
       city_ = "";
       userCreateTime_ = "";
-      ctrcnt_ = 0L;
-      cvrcnt_ = 0L;
+      ctrcnt_ = "";
+      cvrcnt_ = "";
     }
 
     @java.lang.Override
@@ -4784,14 +4802,16 @@ public final class Userprofile {
               userCreateTime_ = s;
               break;
             }
-            case 128: {
+            case 130: {
+              java.lang.String s = input.readStringRequireUtf8();
 
-              ctrcnt_ = input.readInt64();
+              ctrcnt_ = s;
               break;
             }
-            case 136: {
+            case 138: {
+              java.lang.String s = input.readStringRequireUtf8();
 
-              cvrcnt_ = input.readInt64();
+              cvrcnt_ = s;
               break;
             }
             case 810: {
@@ -5278,29 +5298,87 @@ public final class Userprofile {
     }
 
     public static final int CTRCNT_FIELD_NUMBER = 16;
-    private long ctrcnt_;
+    private volatile java.lang.Object ctrcnt_;
     /**
      * <pre>
      * uid维度的最近几天点击总次数
      * </pre>
      *
-     * <code>int64 ctrcnt = 16;</code>
+     * <code>string ctrcnt = 16;</code>
      */
-    public long getCtrcnt() {
-      return ctrcnt_;
+    public java.lang.String getCtrcnt() {
+      java.lang.Object ref = ctrcnt_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        ctrcnt_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * uid维度的最近几天点击总次数
+     * </pre>
+     *
+     * <code>string ctrcnt = 16;</code>
+     */
+    public com.google.protobuf.ByteString
+        getCtrcntBytes() {
+      java.lang.Object ref = ctrcnt_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        ctrcnt_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int CVRCNT_FIELD_NUMBER = 17;
-    private long cvrcnt_;
+    private volatile java.lang.Object cvrcnt_;
     /**
      * <pre>
      * uid维度的最近几天转化总次数
      * </pre>
      *
-     * <code>int64 cvrcnt = 17;</code>
+     * <code>string cvrcnt = 17;</code>
      */
-    public long getCvrcnt() {
-      return cvrcnt_;
+    public java.lang.String getCvrcnt() {
+      java.lang.Object ref = cvrcnt_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        cvrcnt_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * uid维度的最近几天转化总次数
+     * </pre>
+     *
+     * <code>string cvrcnt = 17;</code>
+     */
+    public com.google.protobuf.ByteString
+        getCvrcntBytes() {
+      java.lang.Object ref = cvrcnt_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        cvrcnt_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
     }
 
     public static final int QTTPROFILE_FIELD_NUMBER = 101;
@@ -5381,11 +5459,11 @@ public final class Userprofile {
       if (!getUserCreateTimeBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 15, userCreateTime_);
       }
-      if (ctrcnt_ != 0L) {
-        output.writeInt64(16, ctrcnt_);
+      if (!getCtrcntBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 16, ctrcnt_);
       }
-      if (cvrcnt_ != 0L) {
-        output.writeInt64(17, cvrcnt_);
+      if (!getCvrcntBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 17, cvrcnt_);
       }
       if (qttProfile_ != null) {
         output.writeMessage(101, getQttProfile());
@@ -5453,13 +5531,11 @@ public final class Userprofile {
       if (!getUserCreateTimeBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(15, userCreateTime_);
       }
-      if (ctrcnt_ != 0L) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt64Size(16, ctrcnt_);
+      if (!getCtrcntBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(16, ctrcnt_);
       }
-      if (cvrcnt_ != 0L) {
-        size += com.google.protobuf.CodedOutputStream
-          .computeInt64Size(17, cvrcnt_);
+      if (!getCvrcntBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(17, cvrcnt_);
       }
       if (qttProfile_ != null) {
         size += com.google.protobuf.CodedOutputStream
@@ -5511,10 +5587,10 @@ public final class Userprofile {
           .equals(other.getCity());
       result = result && getUserCreateTime()
           .equals(other.getUserCreateTime());
-      result = result && (getCtrcnt()
-          == other.getCtrcnt());
-      result = result && (getCvrcnt()
-          == other.getCvrcnt());
+      result = result && getCtrcnt()
+          .equals(other.getCtrcnt());
+      result = result && getCvrcnt()
+          .equals(other.getCvrcnt());
       result = result && (hasQttProfile() == other.hasQttProfile());
       if (hasQttProfile()) {
         result = result && getQttProfile()
@@ -5567,11 +5643,9 @@ public final class Userprofile {
       hash = (37 * hash) + USERCREATETIME_FIELD_NUMBER;
       hash = (53 * hash) + getUserCreateTime().hashCode();
       hash = (37 * hash) + CTRCNT_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          getCtrcnt());
+      hash = (53 * hash) + getCtrcnt().hashCode();
       hash = (37 * hash) + CVRCNT_FIELD_NUMBER;
-      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-          getCvrcnt());
+      hash = (53 * hash) + getCvrcnt().hashCode();
       if (hasQttProfile()) {
         hash = (37 * hash) + QTTPROFILE_FIELD_NUMBER;
         hash = (53 * hash) + getQttProfile().hashCode();
@@ -5739,9 +5813,9 @@ public final class Userprofile {
 
         userCreateTime_ = "";
 
-        ctrcnt_ = 0L;
+        ctrcnt_ = "";
 
-        cvrcnt_ = 0L;
+        cvrcnt_ = "";
 
         if (qttProfileBuilder_ == null) {
           qttProfile_ = null;
@@ -5979,11 +6053,13 @@ public final class Userprofile {
           userCreateTime_ = other.userCreateTime_;
           onChanged();
         }
-        if (other.getCtrcnt() != 0L) {
-          setCtrcnt(other.getCtrcnt());
+        if (!other.getCtrcnt().isEmpty()) {
+          ctrcnt_ = other.ctrcnt_;
+          onChanged();
         }
-        if (other.getCvrcnt() != 0L) {
-          setCvrcnt(other.getCvrcnt());
+        if (!other.getCvrcnt().isEmpty()) {
+          cvrcnt_ = other.cvrcnt_;
+          onChanged();
         }
         if (other.hasQttProfile()) {
           mergeQttProfile(other.getQttProfile());
@@ -7611,26 +7687,59 @@ public final class Userprofile {
         return this;
       }
 
-      private long ctrcnt_ ;
+      private java.lang.Object ctrcnt_ = "";
       /**
        * <pre>
        * uid维度的最近几天点击总次数
        * </pre>
        *
-       * <code>int64 ctrcnt = 16;</code>
+       * <code>string ctrcnt = 16;</code>
        */
-      public long getCtrcnt() {
-        return ctrcnt_;
+      public java.lang.String getCtrcnt() {
+        java.lang.Object ref = ctrcnt_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          ctrcnt_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * uid维度的最近几天点击总次数
        * </pre>
        *
-       * <code>int64 ctrcnt = 16;</code>
+       * <code>string ctrcnt = 16;</code>
        */
-      public Builder setCtrcnt(long value) {
-        
+      public com.google.protobuf.ByteString
+          getCtrcntBytes() {
+        java.lang.Object ref = ctrcnt_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          ctrcnt_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * uid维度的最近几天点击总次数
+       * </pre>
+       *
+       * <code>string ctrcnt = 16;</code>
+       */
+      public Builder setCtrcnt(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
         ctrcnt_ = value;
         onChanged();
         return this;
@@ -7640,35 +7749,86 @@ public final class Userprofile {
        * uid维度的最近几天点击总次数
        * </pre>
        *
-       * <code>int64 ctrcnt = 16;</code>
+       * <code>string ctrcnt = 16;</code>
        */
       public Builder clearCtrcnt() {
         
-        ctrcnt_ = 0L;
+        ctrcnt_ = getDefaultInstance().getCtrcnt();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * uid维度的最近几天点击总次数
+       * </pre>
+       *
+       * <code>string ctrcnt = 16;</code>
+       */
+      public Builder setCtrcntBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        ctrcnt_ = value;
         onChanged();
         return this;
       }
 
-      private long cvrcnt_ ;
+      private java.lang.Object cvrcnt_ = "";
       /**
        * <pre>
        * uid维度的最近几天转化总次数
        * </pre>
        *
-       * <code>int64 cvrcnt = 17;</code>
+       * <code>string cvrcnt = 17;</code>
        */
-      public long getCvrcnt() {
-        return cvrcnt_;
+      public java.lang.String getCvrcnt() {
+        java.lang.Object ref = cvrcnt_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          cvrcnt_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
       }
       /**
        * <pre>
        * uid维度的最近几天转化总次数
        * </pre>
        *
-       * <code>int64 cvrcnt = 17;</code>
+       * <code>string cvrcnt = 17;</code>
        */
-      public Builder setCvrcnt(long value) {
-        
+      public com.google.protobuf.ByteString
+          getCvrcntBytes() {
+        java.lang.Object ref = cvrcnt_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          cvrcnt_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * uid维度的最近几天转化总次数
+       * </pre>
+       *
+       * <code>string cvrcnt = 17;</code>
+       */
+      public Builder setCvrcnt(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
         cvrcnt_ = value;
         onChanged();
         return this;
@@ -7678,11 +7838,29 @@ public final class Userprofile {
        * uid维度的最近几天转化总次数
        * </pre>
        *
-       * <code>int64 cvrcnt = 17;</code>
+       * <code>string cvrcnt = 17;</code>
        */
       public Builder clearCvrcnt() {
         
-        cvrcnt_ = 0L;
+        cvrcnt_ = getDefaultInstance().getCvrcnt();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * uid维度的最近几天转化总次数
+       * </pre>
+       *
+       * <code>string cvrcnt = 17;</code>
+       */
+      public Builder setCvrcntBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        cvrcnt_ = value;
         onChanged();
         return this;
       }
@@ -10061,7 +10239,7 @@ public final class Userprofile {
       "r\030\013 \001(\005\0222\n\017interestedWords\030\014 \003(\0132\031.userp" +
       "rofile.InterestItem\022\020\n\010province\030\r \001(\t\022\014\n",
       "\004city\030\016 \001(\t\022\026\n\016userCreateTime\030\017 \001(\t\022\016\n\006c" +
-      "trcnt\030\020 \001(\003\022\016\n\006cvrcnt\030\021 \001(\003\022+\n\nqttProfil" +
+      "trcnt\030\020 \001(\t\022\016\n\006cvrcnt\030\021 \001(\t\022+\n\nqttProfil" +
       "e\030e \001(\0132\027.userprofile.QttProfile\"\372\001\n\nQtt" +
       "Profile\022\r\n\005devid\030\001 \001(\t\022\021\n\tmember_id\030\002 \001(" +
       "\003\022\020\n\010nickname\030\003 \001(\t\022\023\n\013wx_nickname\030\004 \001(\t" +
