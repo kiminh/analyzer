@@ -143,6 +143,8 @@ object DNNCtrDataPrepare {
 
     val Array(traindata, testdata) = data.randomSplit(Array(0.8, 0.2), 1030L)
 
+    traindata.take(10).foreach(println)
+
     traindata.repartition(50).write.mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
