@@ -83,12 +83,12 @@ object OcpcSampleToRedis {
 
 //    userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
     println("save to table: test.userid_historical_data")
-    val tmpData = uidData.filter(r=>r.get(0)=="860708032300094")
+    val tmpData = uidData.filter(r=>r.get(0)=="866504034997514")
     tmpData.foreach(x=>println(x))
     // save into redis
     savePbRedis(tmpData, spark)
 //    savePbPack(userData)
-    testPbRedis("860708032300094_UPDATA")
+    testPbRedis("866504034997514_UPDATA")
   }
 
 
