@@ -9,6 +9,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.streaming._
 import org.apache.spark.streaming.kafka._
 import com.cpc.spark.common.{Event, LogData}
+import com.cpc.spark.streaming.tools.Data2Kafka
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import mlmodel.mlmodel.ProtoPortrait
@@ -43,11 +44,20 @@ object MLSnapshot {
     val topicsSet = topics.split(",").toSet
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
 
+    //MLSnapshot报警日志发送的kafka topic
+    val cpc_mlsnapshot_warning = "cpc_realtime_parsedlog_warning"
+
+    //初始化DStream 每个batch的开始时间； 用于报警服务
+    var currentBatchStartTime = 0L
+
     val base_data = KafkaUtils
       .createDirectStream[String, Array[Byte], StringDecoder, DefaultDecoder](ssc, kafkaParams, topicsSet)
       .map{
         case (key, v) =>
           try {
+            //每个batch的开始时间
+            currentBatchStartTime = new Date().getTime
+
             val logdata = LogData.parseData(v)
             val log_timestamp = logdata.log.getLogTimestamp
             val field = logdata.log.getField.getMap(0)
@@ -88,7 +98,7 @@ object MLSnapshot {
           }
       }
       .filter(x => x != null && x.searchid.length > 0 && x.ideaid > 0)
-      .repartition(200)
+      .repartition(720)
 
     val conf = ConfigFactory.load()
 
@@ -185,7 +195,7 @@ object MLSnapshot {
         if (numbs > 0) {
           val table = "ml_snapshot_from_show"
           spark.createDataFrame(part)
-            .coalesce(50)
+            .coalesce(100)
             .write
             .mode(SaveMode.Append)
             .parquet("/warehouse/dl_cpc.db/%s/%s/%s".format(table, key._1, key._2))
@@ -199,6 +209,19 @@ object MLSnapshot {
           spark.sql(sqlStmt)
         }
       }
+      /**
+        * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
+        */
+      // 每个batch的结束时间
+      val currentBatchEndTime = new Date().getTime
+      val costTime = (currentBatchEndTime - currentBatchStartTime) / 1000.0
+
+      val data2Kafka = new Data2Kafka()
+      val mapString: Seq[(String, String)] = Seq(("Topic", "mlSnapshot_cpc_show_new"))
+      val mapFloat: Seq[(String, Float)] = Seq(("ProcessingTime", costTime.toFloat))
+      data2Kafka.setMessage(currentBatchEndTime, null, mapFloat, null, mapString)
+      data2Kafka.sendMessage(brokers, cpc_mlsnapshot_warning)
+      data2Kafka.close()
     }
 
     ssc.start()

@@ -1,4 +1,4 @@
-package com.cpc.spark.report
+package com.cpc.spark.streaming.test
 
 import java.text.SimpleDateFormat
 
