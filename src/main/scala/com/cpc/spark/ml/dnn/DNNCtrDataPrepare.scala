@@ -82,7 +82,7 @@ object DNNCtrDataPrepare {
       """.stripMargin)
 
     val mkSparseFeature = udf {
-      (apps: Seq[Int], ideaids: Seq[Int]) =>
+      (apps: Seq[BigInt], ideaids: Seq[BigInt]) =>
         val a = apps.zipWithIndex.map(x => (0, x._2, x._1))
         val b = ideaids.zipWithIndex.map(x => (1, x._2, x._1))
         val c = (a ++ b).map(x => (0, x._1, x._2, x._3))
@@ -124,7 +124,8 @@ object DNNCtrDataPrepare {
         $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("dense"),
         mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
       )
-      /*.rdd.zipWithIndex
+      /*生成带index的目标数据
+      .rdd.zipWithIndex
       .map { x =>
         val sparse = x._1.getAs[sparse]("sparse")
         (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Int]]("dense"),
