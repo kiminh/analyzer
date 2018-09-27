@@ -123,7 +123,7 @@ object DNNCtrDataPrepare {
 
         hashSeq("app", "string")($"pkgs").alias("apps"), hashSeq("ideaids", "int")($"ideaids").alias("ideaids"))
 
-      .select(array($"uid", $"hour", $"sex", $"os", $"network", $"city", $"adslotid", $"pl",
+      .select(array($"uid", $"hour", $"age", $"sex", $"os", $"network", $"city", $"adslotid", $"pl",
         $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("dense"),
         mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
       )
@@ -165,9 +165,9 @@ object DNNCtrDataPrepare {
     //.save(s"/user/dnn_1537324485/cpc_data/ctr/traindata/$date")
 
     testdata.rdd.zipWithIndex().map { x =>
-      (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
+      (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Int]]("dense"),
         x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
-        x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
+        x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Int]]("id_arr"))
     }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
       .repartition(50).write.mode("overwrite")
       .format("tfrecords")
