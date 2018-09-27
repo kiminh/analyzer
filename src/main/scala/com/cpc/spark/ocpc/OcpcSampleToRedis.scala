@@ -95,11 +95,11 @@ object OcpcSampleToRedis {
 
 
   def savePbRedis(dataset: Dataset[Row], spark: SparkSession): Unit = {
-    var cnt = spark.sparkContext.longAccumulator
-    var changeCnt = spark.sparkContext.longAccumulator
-    println("###############1")
-    println(cnt)
-    println(changeCnt)
+//    var cnt = spark.sparkContext.longAccumulator
+//    var changeCnt = spark.sparkContext.longAccumulator
+//    println("###############1")
+//    println(cnt)
+//    println(changeCnt)
 //    var resultList = new ListBuffer[String]
 
 //    var loopCnt = 1
@@ -126,7 +126,7 @@ object OcpcSampleToRedis {
         iterator.foreach(record => {
           val uid = record.get(0).toString
           var key = uid + "_UPDATA"
-          cnt.add(1)
+//          cnt.add(1)
           val ctrCnt = record.getLong(1)
           val cvrCnt = record.getLong(2)
           val buffer = redis.get[Array[Byte]](key).orNull
@@ -134,18 +134,15 @@ object OcpcSampleToRedis {
             var user = UserProfile.parseFrom(buffer).toBuilder
             user.setCtrcnt(ctrCnt)
             user.setCvrcnt(cvrCnt)
-            val result = redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-            if (result)
-              changeCnt.add(1)
+            redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
           }
         })
-
         redis.disconnect
       })
-    println("####################2")
-    println(s"complete partition loop")
-    println(cnt)
-    println(changeCnt)
+//    println("####################2")
+//    println(s"complete partition loop")
+//    println(cnt)
+//    println(changeCnt)
 //    returnValue
   }
 
