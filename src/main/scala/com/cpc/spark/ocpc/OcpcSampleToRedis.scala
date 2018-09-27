@@ -65,7 +65,8 @@ object OcpcSampleToRedis {
     // calculation for ratio: adslotid, uid
     val uidData = base
       .groupBy("uid")
-      .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt")).filter("uid='862821032053908' or uid='863332037509620' or uid='863292036062031'")
+      .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
+      .limit(10000)
 
 //    uidData.write.mode("overwrite").saveAsTable("test.uid_historical_data")
     println("save to table: test.uid_historical_data")
@@ -92,11 +93,14 @@ object OcpcSampleToRedis {
     println(conf.getString("redis.host"))
     println(conf.getInt("redis.port"))
 //    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+    var cnt = 0
     dataset.foreachPartition(iterator => {
       iterator.foreach(record => {
         val uid = record.get(0).toString
         var key = uid + "_UPDATA"
-        println(s"loop in dataframe: $key")
+        if (cnt % 1000 == 0)
+          println(s"loop in dataframe: $key")
+        cnt = cnt + 1
 //        val ctrCnt = record.getInt(1)
 //        val cvrCnt = record.getInt(2)
 //        val buffer = redis.get[Array[Byte]](key).orNull
