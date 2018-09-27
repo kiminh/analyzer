@@ -96,7 +96,7 @@ object OcpcSampleToRedis {
         var key = uid + "_UPDATA"
         val ctrCnt = record.getInt(1)
         val cvrCnt = record.getInt(2)
-        val buffer = redis.get[Array[Byte]](key).getOrElse(null)
+        val buffer = redis.get[Array[Byte]](key).orNull
         var user: UserProfile.Builder = null
         if (buffer != null) {
           user = UserProfile.parseFrom(buffer).toBuilder
@@ -139,7 +139,7 @@ object OcpcSampleToRedis {
       user = result
     )
     println("length of the array")
-    println(result.size)
+    println(result.length)
     useridData.writeTo(new FileOutputStream(filename))
     println("complete save data into protobuffer")
 
