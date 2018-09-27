@@ -107,8 +107,6 @@ object OcpcSampleToRedis {
       iterator.foreach(record => {
         val uid = record.get(0).toString
         var key = uid + "_UPDATA"
-//        if (cnt % 20 == 0)
-//          println(s"loop in dataframe: $key")
         cnt.add(1)
 //        val ctrCnt = record.getInt(1)
 //        val cvrCnt = record.getInt(2)
@@ -125,7 +123,8 @@ object OcpcSampleToRedis {
     println("####################2")
     println(s"complete partition loop")
     println(cnt)
-//    println(s"complete loop: $cnt")
+    val test = dataset.first()
+    println(test.get(0).toString)
     // disconnect
 //    redis.disconnect
   }
