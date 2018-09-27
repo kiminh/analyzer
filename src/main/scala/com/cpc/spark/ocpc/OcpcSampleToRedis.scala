@@ -69,7 +69,7 @@ object OcpcSampleToRedis {
       .groupBy("uid")
       .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
       .filter("ctr_cnt>0")
-      .limit(10)
+      .limit(20)
 
 //    uidData.write.mode("overwrite").saveAsTable("test.uid_historical_data")
     println("save to table: test.uid_historical_data")
@@ -84,9 +84,9 @@ object OcpcSampleToRedis {
 //    userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
     println("save to table: test.userid_historical_data")
     // save into redis
-//    savePbRedis(uidData, spark)
+    savePbRedis(uidData, spark)
 //    savePbPack(userData)
-    testPbRedis("868129020133342_UPDATA")
+//    testPbRedis("868129020133342_UPDATA")
   }
 
 
@@ -104,8 +104,8 @@ object OcpcSampleToRedis {
     println(changeCnt)
 
     var loopCnt = 1
-    val conf = ConfigFactory.load()
-    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+//    val conf = ConfigFactory.load()
+//    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     for (row <- dataset.collect()) {
       val uid = row.get(0).toString
       val ctrCnt = row.getLong(1)
@@ -114,40 +114,40 @@ object OcpcSampleToRedis {
       var key = uid + "_UPDATA"
       println(s"########### loop: $loopCnt")
       println(s"$key, $ctrCnt, $cvrCnt")
-      val buffer = redis.get[Array[Byte]](key).orNull
-      if (buffer != null) {
-        var user = UserProfile.parseFrom(buffer).toBuilder
-        user.setCtrcnt(ctrCnt)
-        user.setCvrcnt(cvrCnt)
-        val result = redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-        if (result)
-          changeCnt.add(1)
-      }
+//      val buffer = redis.get[Array[Byte]](key).orNull
+//      if (buffer != null) {
+//        var user = UserProfile.parseFrom(buffer).toBuilder
+//        user.setCtrcnt(ctrCnt)
+//        user.setCvrcnt(cvrCnt)
+//        val result = redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+//        if (result)
+//          changeCnt.add(1)
+//      }
     }
-    redis.disconnect
+//    redis.disconnect
 
 
-//    dataset.repartition(10).foreachPartition(iterator => {
-//      val conf = ConfigFactory.load()
-//      val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-//      iterator.foreach(record => {
-//        val uid = record.get(0).toString
-//        var key = uid + "_UPDATA"
-//        cnt.add(1)
-//        val ctrCnt = record.getLong(1)
-//        val cvrCnt = record.getLong(2)
-//        val buffer = redis.get[Array[Byte]](key).orNull
-//        if (buffer != null) {
-//          var user = UserProfile.parseFrom(buffer).toBuilder
-//          user.setCtrcnt(ctrCnt)
-//          user.setCvrcnt(cvrCnt)
-//          val result = redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-//          if (result)
-//            changeCnt.add(1)
-//        }
-//      })
-//      redis.disconnect
-//    })
+    dataset.repartition(5).foreachPartition(iterator => {
+      val conf = ConfigFactory.load()
+      val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+      iterator.foreach(record => {
+        val uid = record.get(0).toString
+        var key = uid + "_UPDATA"
+        cnt.add(1)
+        val ctrCnt = record.getLong(1)
+        val cvrCnt = record.getLong(2)
+        val buffer = redis.get[Array[Byte]](key).orNull
+        if (buffer != null) {
+          var user = UserProfile.parseFrom(buffer).toBuilder
+          user.setCtrcnt(ctrCnt)
+          user.setCvrcnt(cvrCnt)
+          val result = redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+          if (result)
+            changeCnt.add(1)
+        }
+      })
+      redis.disconnect
+    })
     println("####################2")
     println(s"complete partition loop")
     println(cnt)
