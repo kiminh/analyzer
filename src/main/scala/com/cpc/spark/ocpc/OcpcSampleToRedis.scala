@@ -84,9 +84,9 @@ object OcpcSampleToRedis {
 //    userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
     println("save to table: test.userid_historical_data")
     // save into redis
-    savePbRedis(uidData, spark)
+//    savePbRedis(uidData, spark)
 //    savePbPack(userData)
-//    testPbRedis("861142035752987_UPDATA")
+    testPbRedis("868129020133342_UPDATA")
   }
 
 
