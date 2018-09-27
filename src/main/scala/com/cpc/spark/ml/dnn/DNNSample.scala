@@ -36,14 +36,17 @@ object DNNSample {
         val ideaid = x.getAs[Int]("ideaid")
         val slottype = x.getAs[Int]("adslot_type")
         val mediaid = x.getAs[String]("media_appsid").toInt
-        ideaid > 0 && slottype == 1 && Seq(80000001, 80000002).contains(mediaid)
+        val uid = x.getAs[String]("uid")
+        val isip = uid.contains(".") && uid.contains("000000")
+        ideaid > 0 && slottype == 1 && Seq(80000001, 80000002).contains(mediaid) && !isip
       }
       .join(userAppIdx, Seq("uid"))
       .rdd
       .map{row =>
         val ret = getVectorParser(row)
         val raw = ret._1
-        val apps = ret._2
+        val uid = ret._2
+        val apps = ret._3
         var label = Seq(0, 1)
         if (row.getAs[Int]("label") > 0) {
           label = Seq(1, 0)
@@ -51,25 +54,29 @@ object DNNSample {
 
         var hashed = Seq[Long]()
         for (i <- raw.indices) {
-          hashed = hashed :+ Murmur3Hash.stringHash64("%s:%d".format(fnames(i), raw(i)), 702)
+          hashed = hashed :+ Murmur3Hash.stringHash64("%s:%d".format(fnames(i), raw(i)), 0)
         }
+        hashed = hashed :+ Murmur3Hash.stringHash64("uid:%s".format(uid), 0)
 
         val sparse = Sparse()
-        sparse.idx0 :+= 0L
 
-        var appHashed = Seq[Long]()
+        var idx0 = Seq[Long]()
+        var idx1 = Seq[Long]()
+        var idx2 = Seq[Long]()
+        var id_arr = Seq[Long]()
         for (i <- apps.indices) {
-          appHashed = appHashed :+ Murmur3Hash.stringHash64("app:%s".format(apps(i)), 702)
+          val id = Murmur3Hash.stringHash64("app:%s".format(apps(i)), 0)
+          idx0 = idx0 :+ 0
+          idx1 = idx1 :+ 0
+          idx2 = idx2 :+ i
+          id_arr = id_arr :+ id
         }
 
-        sparse.idx1 :+= 0L
-        sparse.idx2 ++= appHashed
-
-        (label, hashed, sparse)
+        (label, hashed, idx0, idx1, idx2, id_arr)
       }
       .zipWithUniqueId()
-      .map(x => (x._2, x._1._1, x._1._2, x._1._3))
-      .toDF("sample_idx", "label", "dense", "sparse")
+      .map(x => (x._2, x._1._1, x._1._2, x._1._3, x._1._4, x._1._5, x._1._6))
+      .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
       .repartition(1000)
 
     val clickiNum = ulog.filter{
@@ -155,7 +162,7 @@ object DNNSample {
     "adslotid", "adclass", "planid", "unitid", "ideaid"
   )
 
-  def getVectorParser(x: Row): (Seq[Int], Seq[String]) = {
+  def getVectorParser(x: Row): (Seq[Int], String, Seq[String]) = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
     val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
@@ -207,11 +214,12 @@ object DNNSample {
     raw = raw :+ ideaid
 
     val apps = x.getAs[Seq[String]]("pkgs")
+    val uid = x.getAs[String]("uid")
 
     if (apps.length > 0) {
-      (raw, apps.slice(0, 500))
+      (raw, uid, apps.slice(0, 500))
     } else {
-      (raw, Seq(""))
+      (raw, uid,  Seq(""))
     }
   }
 
