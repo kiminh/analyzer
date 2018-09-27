@@ -7,13 +7,9 @@ package com.cpc.spark.ml.ftrl
 
 import com.cpc.spark.common.{Murmur3Hash, Utils}
 import com.cpc.spark.ml.common.{Utils => MUtils}
-import com.cpc.spark.ml.train.{Ftrl, FtrlSnapshotId}
+import com.cpc.spark.ml.train.Ftrl
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
-//import com.cpc.spark.ml.train.FtrlSnapshotId.{ADVERTISER_ID_NAME, PLAN_ID_NAME, XGBOOST_FEATURE_SIZE, _}
-import mlmodel.mlmodel.Dict
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 import scala.collection.mutable

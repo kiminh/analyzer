@@ -4,6 +4,8 @@ import com.cpc.spark.common.SparkSessionTestWrapper
 import mlmodel.mlmodel.Dict
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 
+// This file should be deleted, keep it here for reference on future unit test
+
 class TestFtrlSnapshotId extends FlatSpec with Matchers with BeforeAndAfter
   with SparkSessionTestWrapper{
 
