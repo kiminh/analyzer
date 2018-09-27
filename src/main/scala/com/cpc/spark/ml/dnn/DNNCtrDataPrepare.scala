@@ -147,10 +147,10 @@ object DNNCtrDataPrepare {
     val Array(traindata, testdata) = data.randomSplit(Array(0.8, 0.2), 1030L)
 
     //println("traindata count = " + traindata.count)
-    traindata.take(10).foreach(println)
+    //traindata.show
 
     //println("testdata count = " + testdata.count)
-    testdata.take(10).foreach(println)
+    //testdata.show
 
     traindata.rdd.zipWithIndex().map { x =>
       (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
