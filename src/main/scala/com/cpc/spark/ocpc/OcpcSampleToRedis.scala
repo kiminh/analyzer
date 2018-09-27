@@ -97,6 +97,7 @@ object OcpcSampleToRedis {
 
     dataset.coalesce(50).foreachPartition(iterator => {
       var cnt = 0
+      println(iterator(0))
       iterator.foreach(record => {
         val uid = record.get(0).toString
         var key = uid + "_UPDATA"
