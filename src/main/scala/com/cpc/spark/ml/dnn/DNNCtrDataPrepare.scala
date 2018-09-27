@@ -94,6 +94,7 @@ object DNNCtrDataPrepare {
          |select uid,hour,sex,age,os,network,city,
          |      adslotid,phone_level,adclass,
          |      adtype,planid,unitid,ideaid,
+         |      row_number over(order by uid) as rn,
          |      if(label>0, array(1,0), array(0,1)) as label
          |from dl_cpc.ml_ctr_feature_v1
          |where date = '$date'
@@ -105,7 +106,9 @@ object DNNCtrDataPrepare {
       """.stripMargin)
       .join(app_data, Seq("uid"), "left")
       .join(click_data1, Seq("uid"), "left")
-      .select($"label", hash("uid")($"uid").alias("uid"), hash("age")($"age").alias("age"),
+      .select($"label", $"rn",
+
+        hash("uid")($"uid").alias("uid"), hash("age")($"age").alias("age"),
 
         hash("hour")($"hour").alias("hour"), hash("sex")($"sex").alias("sex"),
 
@@ -123,23 +126,25 @@ object DNNCtrDataPrepare {
 
       .select(array($"uid", $"hour", $"sex", $"os", $"network", $"city", $"adslotid", $"pl",
         $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("dense"),
-        mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
+        mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label", $"rn"
       )
       //生成带index的目标数据
-      .rdd.zipWithIndex
-      .map { x =>
-        val sparse = x._1.getAs[(Seq[Int], Seq[Int], Seq[Int], Seq[Long])]("sparse")
-        (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Int]]("dense"),
-          sparse._1, sparse._2, sparse._3, sparse._4)
-      }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
-
-      /*.select(
+      /*
+            .rdd.zipWithIndex
+            .map { x =>
+              val sparse = x._1.getAs[(Seq[Int], Seq[Int], Seq[Int], Seq[Long])]("sparse")
+              (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Int]]("dense"),
+                sparse._1, sparse._2, sparse._3, sparse._4)
+            }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
+      */
+      .select(
+      $"rn".alias("sample_idx"),
       $"label",
       $"dense",
       $"sparse".getField("_1").alias("idx0"),
       $"sparse".getField("_2").alias("idx1"),
       $"sparse".getField("_3").alias("idx2"),
-      $"sparse".getField("_4").alias("id_arr"))*/
+      $"sparse".getField("_4").alias("id_arr"))
       .persist()
 
     val Array(traindata, testdata) = data.randomSplit(Array(0.8, 0.2), 1030L)
