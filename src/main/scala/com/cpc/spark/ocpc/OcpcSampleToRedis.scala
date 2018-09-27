@@ -112,8 +112,8 @@ object OcpcSampleToRedis {
         val uid = record.get(0).toString
         var key = uid + "_UPDATA"
         cnt.add(1)
-        val ctrCnt = record.getInt(1)
-        val cvrCnt = record.getInt(2)
+        val ctrCnt = record.getLong(1)
+        val cvrCnt = record.getLong(2)
         val buffer = redis.get[Array[Byte]](key).orNull
         if (buffer != null) {
           var user = UserProfile.parseFrom(buffer).toBuilder

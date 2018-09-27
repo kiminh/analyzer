@@ -4611,18 +4611,18 @@ public final class Userprofile {
      * uid维度的最近几天点击总次数
      * </pre>
      *
-     * <code>int32 ctrcnt = 16;</code>
+     * <code>int64 ctrcnt = 16;</code>
      */
-    int getCtrcnt();
+    long getCtrcnt();
 
     /**
      * <pre>
      * uid维度的最近几天转化总次数
      * </pre>
      *
-     * <code>int32 cvrcnt = 17;</code>
+     * <code>int64 cvrcnt = 17;</code>
      */
-    int getCvrcnt();
+    long getCvrcnt();
 
     /**
      * <code>.userprofile.QttProfile qttProfile = 101;</code>
@@ -4664,8 +4664,8 @@ public final class Userprofile {
       province_ = "";
       city_ = "";
       userCreateTime_ = "";
-      ctrcnt_ = 0;
-      cvrcnt_ = 0;
+      ctrcnt_ = 0L;
+      cvrcnt_ = 0L;
     }
 
     @java.lang.Override
@@ -4786,12 +4786,12 @@ public final class Userprofile {
             }
             case 128: {
 
-              ctrcnt_ = input.readInt32();
+              ctrcnt_ = input.readInt64();
               break;
             }
             case 136: {
 
-              cvrcnt_ = input.readInt32();
+              cvrcnt_ = input.readInt64();
               break;
             }
             case 810: {
@@ -5278,28 +5278,28 @@ public final class Userprofile {
     }
 
     public static final int CTRCNT_FIELD_NUMBER = 16;
-    private int ctrcnt_;
+    private long ctrcnt_;
     /**
      * <pre>
      * uid维度的最近几天点击总次数
      * </pre>
      *
-     * <code>int32 ctrcnt = 16;</code>
+     * <code>int64 ctrcnt = 16;</code>
      */
-    public int getCtrcnt() {
+    public long getCtrcnt() {
       return ctrcnt_;
     }
 
     public static final int CVRCNT_FIELD_NUMBER = 17;
-    private int cvrcnt_;
+    private long cvrcnt_;
     /**
      * <pre>
      * uid维度的最近几天转化总次数
      * </pre>
      *
-     * <code>int32 cvrcnt = 17;</code>
+     * <code>int64 cvrcnt = 17;</code>
      */
-    public int getCvrcnt() {
+    public long getCvrcnt() {
       return cvrcnt_;
     }
 
@@ -5381,11 +5381,11 @@ public final class Userprofile {
       if (!getUserCreateTimeBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 15, userCreateTime_);
       }
-      if (ctrcnt_ != 0) {
-        output.writeInt32(16, ctrcnt_);
+      if (ctrcnt_ != 0L) {
+        output.writeInt64(16, ctrcnt_);
       }
-      if (cvrcnt_ != 0) {
-        output.writeInt32(17, cvrcnt_);
+      if (cvrcnt_ != 0L) {
+        output.writeInt64(17, cvrcnt_);
       }
       if (qttProfile_ != null) {
         output.writeMessage(101, getQttProfile());
@@ -5453,13 +5453,13 @@ public final class Userprofile {
       if (!getUserCreateTimeBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(15, userCreateTime_);
       }
-      if (ctrcnt_ != 0) {
+      if (ctrcnt_ != 0L) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(16, ctrcnt_);
+          .computeInt64Size(16, ctrcnt_);
       }
-      if (cvrcnt_ != 0) {
+      if (cvrcnt_ != 0L) {
         size += com.google.protobuf.CodedOutputStream
-          .computeInt32Size(17, cvrcnt_);
+          .computeInt64Size(17, cvrcnt_);
       }
       if (qttProfile_ != null) {
         size += com.google.protobuf.CodedOutputStream
@@ -5567,9 +5567,11 @@ public final class Userprofile {
       hash = (37 * hash) + USERCREATETIME_FIELD_NUMBER;
       hash = (53 * hash) + getUserCreateTime().hashCode();
       hash = (37 * hash) + CTRCNT_FIELD_NUMBER;
-      hash = (53 * hash) + getCtrcnt();
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getCtrcnt());
       hash = (37 * hash) + CVRCNT_FIELD_NUMBER;
-      hash = (53 * hash) + getCvrcnt();
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getCvrcnt());
       if (hasQttProfile()) {
         hash = (37 * hash) + QTTPROFILE_FIELD_NUMBER;
         hash = (53 * hash) + getQttProfile().hashCode();
@@ -5737,9 +5739,9 @@ public final class Userprofile {
 
         userCreateTime_ = "";
 
-        ctrcnt_ = 0;
+        ctrcnt_ = 0L;
 
-        cvrcnt_ = 0;
+        cvrcnt_ = 0L;
 
         if (qttProfileBuilder_ == null) {
           qttProfile_ = null;
@@ -5977,10 +5979,10 @@ public final class Userprofile {
           userCreateTime_ = other.userCreateTime_;
           onChanged();
         }
-        if (other.getCtrcnt() != 0) {
+        if (other.getCtrcnt() != 0L) {
           setCtrcnt(other.getCtrcnt());
         }
-        if (other.getCvrcnt() != 0) {
+        if (other.getCvrcnt() != 0L) {
           setCvrcnt(other.getCvrcnt());
         }
         if (other.hasQttProfile()) {
@@ -7609,15 +7611,15 @@ public final class Userprofile {
         return this;
       }
 
-      private int ctrcnt_ ;
+      private long ctrcnt_ ;
       /**
        * <pre>
        * uid维度的最近几天点击总次数
        * </pre>
        *
-       * <code>int32 ctrcnt = 16;</code>
+       * <code>int64 ctrcnt = 16;</code>
        */
-      public int getCtrcnt() {
+      public long getCtrcnt() {
         return ctrcnt_;
       }
       /**
@@ -7625,9 +7627,9 @@ public final class Userprofile {
        * uid维度的最近几天点击总次数
        * </pre>
        *
-       * <code>int32 ctrcnt = 16;</code>
+       * <code>int64 ctrcnt = 16;</code>
        */
-      public Builder setCtrcnt(int value) {
+      public Builder setCtrcnt(long value) {
         
         ctrcnt_ = value;
         onChanged();
@@ -7638,24 +7640,24 @@ public final class Userprofile {
        * uid维度的最近几天点击总次数
        * </pre>
        *
-       * <code>int32 ctrcnt = 16;</code>
+       * <code>int64 ctrcnt = 16;</code>
        */
       public Builder clearCtrcnt() {
         
-        ctrcnt_ = 0;
+        ctrcnt_ = 0L;
         onChanged();
         return this;
       }
 
-      private int cvrcnt_ ;
+      private long cvrcnt_ ;
       /**
        * <pre>
        * uid维度的最近几天转化总次数
        * </pre>
        *
-       * <code>int32 cvrcnt = 17;</code>
+       * <code>int64 cvrcnt = 17;</code>
        */
-      public int getCvrcnt() {
+      public long getCvrcnt() {
         return cvrcnt_;
       }
       /**
@@ -7663,9 +7665,9 @@ public final class Userprofile {
        * uid维度的最近几天转化总次数
        * </pre>
        *
-       * <code>int32 cvrcnt = 17;</code>
+       * <code>int64 cvrcnt = 17;</code>
        */
-      public Builder setCvrcnt(int value) {
+      public Builder setCvrcnt(long value) {
         
         cvrcnt_ = value;
         onChanged();
@@ -7676,11 +7678,11 @@ public final class Userprofile {
        * uid维度的最近几天转化总次数
        * </pre>
        *
-       * <code>int32 cvrcnt = 17;</code>
+       * <code>int64 cvrcnt = 17;</code>
        */
       public Builder clearCvrcnt() {
         
-        cvrcnt_ = 0;
+        cvrcnt_ = 0L;
         onChanged();
         return this;
       }
@@ -10059,7 +10061,7 @@ public final class Userprofile {
       "r\030\013 \001(\005\0222\n\017interestedWords\030\014 \003(\0132\031.userp" +
       "rofile.InterestItem\022\020\n\010province\030\r \001(\t\022\014\n",
       "\004city\030\016 \001(\t\022\026\n\016userCreateTime\030\017 \001(\t\022\016\n\006c" +
-      "trcnt\030\020 \001(\005\022\016\n\006cvrcnt\030\021 \001(\005\022+\n\nqttProfil" +
+      "trcnt\030\020 \001(\003\022\016\n\006cvrcnt\030\021 \001(\003\022+\n\nqttProfil" +
       "e\030e \001(\0132\027.userprofile.QttProfile\"\372\001\n\nQtt" +
       "Profile\022\r\n\005devid\030\001 \001(\t\022\021\n\tmember_id\030\002 \001(" +
       "\003\022\020\n\010nickname\030\003 \001(\t\022\023\n\013wx_nickname\030\004 \001(\t" +
