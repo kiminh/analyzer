@@ -110,7 +110,7 @@ object FtrlHourlyIDV22 {
     val dataWithID = createFeatures(merged)
 
     println("start model training")
-    ftrl.trainMoreEpochsWithDict(spark, dataWithID)
+    ftrl.trainWithDict(spark, dataWithID)
 
     println("after training model info:")
     printModelInfo(ftrl)
