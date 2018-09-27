@@ -83,16 +83,19 @@ object OcpcSampleToRedis {
 
 //    userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
     println("save to table: test.userid_historical_data")
-    val tmpData = uidData.filter(r=>r.get(0)=="866504034997514")
-    tmpData.foreach(x=>println(x))
+//    val tmpData = uidData.filter(r=>r.get(0)=="866504034997514")
+//    tmpData.foreach(x=>println(x))
     // save into redis
-    savePbRedis(tmpData, spark)
+    val tmpData = uidData.filter("ctr_cnt>0").limit(20)
+    val keys = savePbRedis(tmpData, spark)
 //    savePbPack(userData)
-    testPbRedis("866504034997514_UPDATA")
+    val keyList = keys.split(",")
+    for (key <- keyList)
+      testPbRedis(key)
   }
 
 
-  def savePbRedis(dataset: Dataset[Row], spark: SparkSession): Unit = {
+  def savePbRedis(dataset: Dataset[Row], spark: SparkSession): String = {
 //    import spark.implicits._
 //    val conf = ConfigFactory.load()
 //    println("test svaPbRedis function:")
@@ -104,6 +107,7 @@ object OcpcSampleToRedis {
     println("###############1")
     println(cnt)
     println(changeCnt)
+    var resultList = new ListBuffer[String]
 
     var loopCnt = 1
 //    val conf = ConfigFactory.load()
@@ -114,6 +118,7 @@ object OcpcSampleToRedis {
       val cvrCnt = row.getLong(2)
       loopCnt = loopCnt + 1
       var key = uid + "_UPDATA"
+      resultList += key
       println(s"########### loop: $loopCnt")
       println(s"$key, $ctrCnt, $cvrCnt")
 //      val buffer = redis.get[Array[Byte]](key).orNull
@@ -126,6 +131,7 @@ object OcpcSampleToRedis {
 //          changeCnt.add(1)
 //      }
     }
+    val returnValue = resultList.mkString(",")
 //    redis.disconnect
 
 
@@ -154,7 +160,7 @@ object OcpcSampleToRedis {
     println(s"complete partition loop")
     println(cnt)
     println(changeCnt)
-
+    returnValue
   }
 
   def testPbRedis(key: String): Unit ={
