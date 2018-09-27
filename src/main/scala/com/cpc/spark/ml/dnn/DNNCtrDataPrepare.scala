@@ -153,10 +153,12 @@ object DNNCtrDataPrepare {
     //println("testdata count = " + testdata.count)
     //testdata.show
 
+    traindata.write.mode("overwrite").parquet("/home/cpc/zhj/ctr/dnn/data/test")
+
     traindata.rdd.zipWithIndex().map { x =>
       (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Int]]("dense"),
         x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
-        x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Int]]("id_arr"))
+        x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
     }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
       .repartition(200).write.mode("overwrite")
       .format("tfrecords")
@@ -167,7 +169,7 @@ object DNNCtrDataPrepare {
     testdata.rdd.zipWithIndex().map { x =>
       (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Int]]("dense"),
         x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
-        x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Int]]("id_arr"))
+        x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
     }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
       .repartition(50).write.mode("overwrite")
       .format("tfrecords")
