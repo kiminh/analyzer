@@ -19,7 +19,7 @@ import org.apache.spark.sql.functions._
 object DNNCtrDataPrepare {
   def main(args: Array[String]): Unit = {
 
-    val date = args(0) //"2018-09-25"
+    val date = args(0) //"2018-09-26"
 
     val spark = SparkSession.builder()
       .enableHiveSupport()
@@ -81,6 +81,14 @@ object DNNCtrDataPrepare {
          |group by uid
       """.stripMargin)
 
+    val mkSparseFeature = udf {
+      (apps: Seq[Int], ideaids: Seq[Int]) =>
+        val a = apps.zipWithIndex.map(x => (0, x._2, x._1))
+        val b = ideaids.zipWithIndex.map(x => (1, x._2, x._1))
+        val c = (a ++ b).map(x => (0, x._1, x._2, x._3))
+        (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
+    }
+
     //合并数据
     val data = spark.sql(
       s"""
@@ -97,6 +105,7 @@ object DNNCtrDataPrepare {
       .join(app_data, Seq("uid"), "left")
       .join(click_data1, Seq("uid"), "left")
       .select($"label", hash("uid")($"uid").alias("uid"),
+
         hash("hour")($"hour").alias("hour"), hash("sex")($"sex").alias("sex"),
 
         hash("os")($"os").alias("os"), hash("network")($"network").alias("network"),
@@ -112,8 +121,16 @@ object DNNCtrDataPrepare {
         hashSeq("app", "string")($"pkgs").alias("apps"), hashSeq("ideaids", "int")($"ideaids").alias("ideaids"))
 
       .select(array($"uid", $"hour", $"sex", $"os", $"network", $"city", $"adslotid", $"pl",
-        $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("feature"),
-        $"apps", $"ideaids", $"label")
+        $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("dense"),
+        mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
+      )
+      .select(
+        $"label",
+        $"dense",
+        $"sparse".getField("_1").alias("idx0"),
+        $"sparse".getField("_2").alias("idx1"),
+        $"sparse".getField("_3").alias("idx2"),
+        $"sparse".getField("_4").alias("id_arr"))
       .persist()
 
     val Array(traindata, testdata) = data.randomSplit(Array(0.8, 0.2), 1030L)
@@ -122,7 +139,7 @@ object DNNCtrDataPrepare {
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"/home/cpc/zhj/ctr/dnn/data/traindata")
-      //.save(s"/user/dnn_1537324485/cpc_data/ctr/traindata/$date")
+    //.save(s"/user/dnn_1537324485/cpc_data/ctr/traindata/$date")
 
     testdata.repartition(10).write.mode("overwrite")
       .format("tfrecords")
@@ -190,7 +207,7 @@ object DNNCtrDataPrepare {
     */
   private def hash(prefix: String) = udf {
     num: String =>
-      if (num != null) Murmur3Hash.stringHash(prefix + num) else Murmur3Hash.stringHash(prefix)
+      if (num != null) Murmur3Hash.stringHash64(prefix + num, 1030) else Murmur3Hash.stringHash64(prefix, 1030)
   }
 
   /**
@@ -204,13 +221,13 @@ object DNNCtrDataPrepare {
     t match {
       case "int" => udf {
         seq: Seq[Int] =>
-          if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash(prefix + i)
-          else Seq(Murmur3Hash.stringHash(prefix))
+          if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
+          else Seq(Murmur3Hash.stringHash64(prefix, 1030))
       }
       case "string" => udf {
         seq: Seq[String] =>
-          if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash(prefix + i)
-          else Seq(Murmur3Hash.stringHash(prefix))
+          if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
+          else Seq(Murmur3Hash.stringHash64(prefix, 1030))
       }
     }
   }
