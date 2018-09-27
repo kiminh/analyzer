@@ -86,8 +86,8 @@ object OcpcSampleToRedis {
     println("save to table: test.userid_historical_data")
 
     // save into redis
-    val tmpData = uidData.filter("ctr_cnt>0").limit(20)
-//    val tmpData = spark.table("test.test_redis_table_20180927")
+//    val tmpData = uidData.filter("ctr_cnt>0").limit(20)
+    val tmpData = spark.table("test.test_redis_table_20180927")
     savePbRedis(tmpData, spark)
 //    savePbPack(userData)
 //    val keyList = keys.split(",")
@@ -150,13 +150,11 @@ object OcpcSampleToRedis {
             if (buffer != null) {
               user = UserProfile.parseFrom(buffer).toBuilder
               val u = user.build()
-              //if (u.getCtrcnt != ctrCnt)
-              user = user.setCtrcnt(1)
-              //if (u.getCvrcnt != cvrCnt)
-              user = user.setCvrcnt(1)
+              user = user.setCtrcnt(ctrCnt)
+              user = user.setCvrcnt(cvrCnt)
               ctrResultAcc.add(ctrCnt)
               cvrResultAcc.add(cvrCnt)
-              redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+              redis.setex(key, 3600 * 24 * 30, user.build().toByteArray)
               changeCnt.add(1)
             }
 //            val bufferNew = redis.get[Array[Byte]](key).orNull
@@ -171,46 +169,40 @@ object OcpcSampleToRedis {
       })
 
 
-    dataset.foreachPartition(iterator => {
-
-      val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-
-      iterator.foreach{
-        record => {
-          val uid = record.get(0).toString
-          var key = uid + "_UPDATA"
-          cnt.add(1)
-          //            val cnts = data.split(",")
-          val rowData = record.get(3).toString
-          val ctrCnt = rowData.split(",")(0).toLong
-          val cvrCnt = rowData.split(",")(1).toLong
-          //            val ctrCnt = record.getString(1).toLong
-          //            val cvrCnt = record.getString(2).toLong
-
-          val buffer = redis.get[Array[Byte]](key).orNull
-          var user: UserProfile.Builder = null
-          if (buffer != null) {
-            user = UserProfile.parseFrom(buffer).toBuilder
-            val u = user.build()
-            //if (u.getCtrcnt != ctrCnt)
-            user = user.setCtrcnt(1)
-            //if (u.getCvrcnt != cvrCnt)
-            user = user.setCvrcnt(1)
-            ctrResultAcc.add(ctrCnt)
-            cvrResultAcc.add(cvrCnt)
-            redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-            changeCnt.add(1)
-          }
-          //            val bufferNew = redis.get[Array[Byte]](key).orNull
-          //            var userNew: UserProfile.Builder = null
-          //            userNew = UserProfile.parseFrom(bufferNew).toBuilder
-          //            val uNew = userNew.build()
-          //            ctrResultAcc.add(uNew.getCtrcnt)
-          //            cvrResultAcc.add(uNew.getCvrcnt)
-        }
-      }
-      redis.disconnect
-    })
+//    dataset.foreachPartition(iterator => {
+//
+//      val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+//
+//      iterator.foreach{
+//        record => {
+//          val uid = record.get(0).toString
+//          var key = uid + "_UPDATA"
+//          cnt.add(1)
+//          val rowData = record.get(3).toString
+//          val ctrCnt = rowData.split(",")(0).toLong
+//          val cvrCnt = rowData.split(",")(1).toLong
+//          val buffer = redis.get[Array[Byte]](key).orNull
+//          var user: UserProfile.Builder = null
+//          if (buffer != null) {
+//            user = UserProfile.parseFrom(buffer).toBuilder
+//            val u = user.build()
+//            user = user.setCtrcnt(1)
+//            user = user.setCvrcnt(1)
+//            ctrResultAcc.add(ctrCnt)
+//            cvrResultAcc.add(cvrCnt)
+//            redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+//            changeCnt.add(1)
+//          }
+//          //            val bufferNew = redis.get[Array[Byte]](key).orNull
+//          //            var userNew: UserProfile.Builder = null
+//          //            userNew = UserProfile.parseFrom(bufferNew).toBuilder
+//          //            val uNew = userNew.build()
+//          //            ctrResultAcc.add(uNew.getCtrcnt)
+//          //            cvrResultAcc.add(uNew.getCvrcnt)
+//        }
+//      }
+//      redis.disconnect
+//    })
 
     println("####################2")
     println(s"complete partition loop")
