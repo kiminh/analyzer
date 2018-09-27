@@ -27,10 +27,14 @@ object OcpcRedisTest {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // calculate time period for historical data
-    val key = args(0)
+//    val key = args(0)
+    val dataset = spark.table("test.test_redis_table_20180927")
+    for (row <- dataset.collect()) {
+      val key = row.get(0).toString
+      val kValue = key + "_UPDATA"
+      testPbRedis(kValue)
+    }
 
-    val kValue = key + "_UPDATA"
-    testPbRedis(kValue)
   }
 
 
