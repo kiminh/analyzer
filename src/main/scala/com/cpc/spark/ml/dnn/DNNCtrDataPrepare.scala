@@ -124,13 +124,20 @@ object DNNCtrDataPrepare {
         $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("dense"),
         mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
       )
+      /*.rdd.zipWithIndex
+      .map { x =>
+        val sparse = x._1.getAs[sparse]("sparse")
+        (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Int]]("dense"),
+          sparse.idx0, sparse.idx1, sparse.idx2, sparse.id_arr)
+      }.toDF("label", "dense", "idx0", "idx1", "idx2", "id_arr")
+      */
       .select(
-        $"label",
-        $"dense",
-        $"sparse".getField("_1").alias("idx0"),
-        $"sparse".getField("_2").alias("idx1"),
-        $"sparse".getField("_3").alias("idx2"),
-        $"sparse".getField("_4").alias("id_arr"))
+      $"label",
+      $"dense",
+      $"sparse".getField("_1").alias("idx0"),
+      $"sparse".getField("_2").alias("idx1"),
+      $"sparse".getField("_3").alias("idx2"),
+      $"sparse".getField("_4").alias("id_arr"))
       .persist()
 
     val Array(traindata, testdata) = data.randomSplit(Array(0.8, 0.2), 1030L)
@@ -232,5 +239,6 @@ object DNNCtrDataPrepare {
     }
   }
 
+  case class sparse(idx0: Seq[Int], idx1: Seq[Int], idx2: Seq[Int], id_arr: Seq[Int])
 
 }
