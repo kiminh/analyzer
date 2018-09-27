@@ -147,9 +147,9 @@ object OcpcSampleToRedis {
               user = UserProfile.parseFrom(buffer).toBuilder
               val u = user.build()
               if (u.getCtrcnt != ctrCnt)
-                user.setCtrcnt(ctrCnt)
+                user = user.setCtrcnt(ctrCnt)
               if (u.getCvrcnt != cvrCnt)
-                user.setCvrcnt(cvrCnt)
+                user = user.setCvrcnt(cvrCnt)
               ctrResultAcc.add(user.getCtrcnt)
               cvrResultAcc.add(user.getCvrcnt)
               redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
