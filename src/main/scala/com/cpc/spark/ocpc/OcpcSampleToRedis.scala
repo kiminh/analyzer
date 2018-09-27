@@ -86,39 +86,39 @@ object OcpcSampleToRedis {
 
     // save into redis
     val tmpData = uidData.filter("ctr_cnt>0").limit(20)
-    val keys = savePbRedis(tmpData, spark)
+    savePbRedis(tmpData, spark)
 //    savePbPack(userData)
-    val keyList = keys.split(",")
-    for (key <- keyList)
-      testPbRedis(key)
+//    val keyList = keys.split(",")
+//    for (key <- keyList)
+//      testPbRedis(key)
   }
 
 
-  def savePbRedis(dataset: Dataset[Row], spark: SparkSession): String = {
+  def savePbRedis(dataset: Dataset[Row], spark: SparkSession): Unit = {
     var cnt = spark.sparkContext.longAccumulator
     var changeCnt = spark.sparkContext.longAccumulator
     println("###############1")
     println(cnt)
     println(changeCnt)
-    var resultList = new ListBuffer[String]
+//    var resultList = new ListBuffer[String]
 
-    var loopCnt = 1
-    for (row <- dataset.collect()) {
-      val uid = row.get(0).toString
-      val ctrCnt = row.getLong(1)
-      val cvrCnt = row.getLong(2)
-      loopCnt = loopCnt + 1
-      var key = uid + "_UPDATA"
-      resultList += key
-      println(s"########### loop: $loopCnt")
-      println(s"$key, $ctrCnt, $cvrCnt")
-
-    }
-    val returnValue = resultList.mkString(",")
+//    var loopCnt = 1
+//    for (row <- dataset.collect()) {
+//      val uid = row.get(0).toString
+//      val ctrCnt = row.getLong(1)
+//      val cvrCnt = row.getLong(2)
+//      loopCnt = loopCnt + 1
+//      var key = uid + "_UPDATA"
+//      resultList += key
+//      println(s"########### loop: $loopCnt")
+//      println(s"$key, $ctrCnt, $cvrCnt")
+//
+//    }
+//    val returnValue = resultList.mkString(",")
 //    println(returnValue)
 
 
-
+    dataset.write.mode("overwrite").saveAsTable("test.test_redis_table_20180927")
     dataset.foreachPartition(iterator => {
         val conf = ConfigFactory.load()
         val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
@@ -140,13 +140,13 @@ object OcpcSampleToRedis {
           }
         })
 
-//        redis.disconnect
+        redis.disconnect
       })
     println("####################2")
     println(s"complete partition loop")
     println(cnt)
     println(changeCnt)
-    returnValue
+//    returnValue
   }
 
   def testPbRedis(key: String): Unit ={
