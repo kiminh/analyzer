@@ -235,6 +235,25 @@ class Ftrl(size: Int) {
     println(s"after training auc: $afterAUC")
   }
 
+  def trainMoreEpochsWithDict(spark: SparkSession, data: RDD[(Array[Int], Double)]): Unit = {
+    val epoch = 5
+    var res = shuffle(data.collect())
+    println(s"before training auc on test set: ${predictAndAucWithDict(spark, res)}")
+    for (_ <- 1 to epoch) {
+      var logLossSum = 0d
+      for (p <- res) {
+        val x = p._1
+        val pre = predictWithDict(x)
+        updateWithDict(x, pre, p._2)
+        logLossSum += logLoss(p._2, pre)
+      }
+      println(s"logloss=${logLossSum/res.length}")
+      res = shuffle(data.collect())
+    }
+    val afterAUC = predictAndAucWithDict(spark, res)
+    println(s"after training auc: $afterAUC")
+  }
+
   def train(spark: SparkSession, data: RDD[LabeledPoint]): Unit = {
     var posCount = 0
     val res = shuffle(data.collect())
