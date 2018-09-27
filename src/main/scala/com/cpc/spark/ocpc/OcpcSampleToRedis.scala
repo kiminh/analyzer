@@ -86,7 +86,8 @@ object OcpcSampleToRedis {
     println("save to table: test.userid_historical_data")
 
     // save into redis
-    val tmpData = uidData.filter("ctr_cnt>0").limit(20)
+//    val tmpData = uidData.filter("ctr_cnt>0").limit(20)
+    val tmpData = spark.table("test.test_redis_table_20180927")
     savePbRedis(tmpData, spark)
 //    savePbPack(userData)
 //    val keyList = keys.split(",")
@@ -122,7 +123,7 @@ object OcpcSampleToRedis {
 //    val returnValue = resultList.mkString(",")
 //    println(returnValue)
 
-    dataset.write.mode("overwrite").saveAsTable("test.test_redis_table_20180927")
+//    dataset.write.mode("overwrite").saveAsTable("test.test_redis_table_20180927")
 
     val conf = ConfigFactory.load()
 
@@ -147,9 +148,9 @@ object OcpcSampleToRedis {
               user = UserProfile.parseFrom(buffer).toBuilder
               val u = user.build()
               if (u.getCtrcnt != ctrCnt)
-                user = user.setCtrcnt(ctrCnt)
+                user = user.setCtrcnt(1)
               if (u.getCvrcnt != cvrCnt)
-                user = user.setCvrcnt(cvrCnt)
+                user = user.setCvrcnt(1)
               redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
               changeCnt.add(1)
             }
