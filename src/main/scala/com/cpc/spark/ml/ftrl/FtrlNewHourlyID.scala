@@ -25,7 +25,7 @@ object FtrlNewHourlyID {
   val LOCAL_DIR = "/home/cpc/ftrl/"
   val HDFS_MODEL_DIR = "hdfs:///user/cpc/qtt-ftrl-model/"
   val HDFS_MODEL_HISTORY_DIR = "hdfs:///user/cpc/qtt-ftrl-model-history/"
-  val DEST_DIR = "/home/work/mlcpp/model/"
+  val DEST_DIR = "/home/work/mlcpp/data/"
 
   val DOWN_SAMPLE_RATE = 0.2
 
