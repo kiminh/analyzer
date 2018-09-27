@@ -151,8 +151,10 @@ object OcpcSampleToRedis {
               user = UserProfile.parseFrom(buffer).toBuilder
               val u = user.build()
               //if (u.getCtrcnt != ctrCnt)
+              user = user.setCtrcnt(1)
               user = user.setCtrcnt(ctrCnt)
               //if (u.getCvrcnt != cvrCnt)
+              user = user.setCvrcnt(1)
               user = user.setCvrcnt(cvrCnt)
               ctrResultAcc.add(ctrCnt)
               cvrResultAcc.add(cvrCnt)
