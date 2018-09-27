@@ -91,7 +91,7 @@ object FtrlHourlyIDV22 {
       s"""
         |select *,
         | ext['adclass'].int_value as ad_class_int,
-        | ext_int['exp_style'] as exp_style_int,
+        | ext_int['exp_style'] as exp_style_int
         | from dl_cpc.cpc_union_log
         |where `date` = '$dt' and hour = '$hour'
         |and media_appsid  in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0
