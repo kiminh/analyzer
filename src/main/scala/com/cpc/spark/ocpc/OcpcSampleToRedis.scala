@@ -5,8 +5,11 @@ import java.util.Calendar
 import java.util.zip
 
 import com.redis.RedisClient
+import com.redis.serialization.Parse.Implicits._
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
+import userprofile.Userprofile.UserProfile
 
 import scala.collection.mutable.ListBuffer
 //import UseridDataOcpc._
@@ -78,55 +81,47 @@ object OcpcSampleToRedis {
 //    userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
     println("save to table: test.userid_historical_data")
     // save into redis
-//    dataToRedis(adslotData, "uid", "data", "ocpc.uid:")
-//    dataToRedis(userData, "userid", "data", "ocpc.userid:")
+    savePbRedis(uidData, spark)
     savePbPack(userData.select("userid", "cost", "ctr_cnt", "cvr_cnt"))
 
   }
 
 
-//  def dataToRedis(dataset: Dataset[Row], key: String, value: String, prefix: String): Unit = {
-//    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
-//    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
-//    // get specific column from the dataframe
-//    val data = dataset.select(key, value)
-//    data.foreachPartition(iterator => {
-//      iterator.foreach(record => {
-//        val kValue = record.get(0).toString
-//        val vValue = record.get(1)
-//        val kk = s"$prefix$kValue"
-//        redis.setex(kk, 24 * 60 * 60, vValue)
-//      })
-//    })
-//    // disconnect
-//    redis.disconnect
-//  }
-//
-//  def saveToProtoBuffer(dataset: Dataset[Row]): Unit ={
-//      case class useridData(userid: String, cost: String, ctrCnt: String, cvrCnt: String)
-//
-//      dataset.foreachPartition(iterator => {
-//        iterator.foreach(record => {
-//          val kValue = record.get(0).toString
-//          val costValue = record.get(1).toString
-//          val ctrCntValue = record.get(2).toString
-//          val cvrCntValue = record.get(3).toString
-//          val currentItem = useridData(kValue, costValue, ctrCntValue, cvrCntValue)
-//        })
-//      })
-//    }
+  def savePbRedis(dataset: Dataset[Row], spark:SparkSession): Unit = {
+    val conf = ConfigFactory.load()
+    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+    dataset.foreachPartition(iterator => {
+      iterator.foreach(record => {
+        val uid = record.get(0).toString
+        var key = uid + "_UPDATA"
+        val ctrCnt = record.getInt(1)
+        val cvrCnt = record.getInt(2)
+        val buffer = redis.get[Array[Byte]](key).getOrElse(null)
+        var user: UserProfile.Builder = null
+        if (buffer != null) {
+          user = UserProfile.parseFrom(buffer).toBuilder
+          user.setCtrcnt(ctrCnt)
+          user.setCvrcnt(cvrCnt)
+        } else {
+          user = UserProfile.newBuilder()
+          user.setCtrcnt(ctrCnt)
+          user.setCvrcnt(cvrCnt)
+        }
+        redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+      })
+    })
+    // disconnect
+    redis.disconnect
+  }
 
 
   def savePbPack(dataset: Dataset[Row]): Unit = {
-//    val useridData = UserOcpc.toBuild
-//    var list = new ListBuffer[SingleUser]
     var list = new ListBuffer[SingleUser]
-//    println(useridData.getClass.getMethods.map(_.getName))
-    val filename = s"/home/cpc/wangjun/test_userid/UseridDataOcpc.pb"
+    val filename = s"/home/cpc/wangjun/ocpc_userid/UseridDataOcpc.pb"
     println("size of the dataframe")
     println(dataset.count)
-    var cnt = 1
     for (record <- dataset.collect()) {
+      // todo: use toInt to replace toString
       val kValue = record.get(0).toString
       val costValue = record.get(1).toString
       val ctrCntValue = record.get(2).toString
@@ -138,39 +133,7 @@ object OcpcSampleToRedis {
         cvrcnt = cvrCntValue
       )
       list += currentItem
-      if (cnt % 100 == 0) {
-        println("########### loop ###########")
-        println(cnt)
-        println(kValue + ", " + costValue + ", " + ctrCntValue + ", " + cvrCntValue)
-      }
-      cnt = cnt + 1
     }
-//    val test = dataset.first()
-//    val result = SingleUser(
-//      userid = test.get(0).toString,
-//      cost = test.get(1).toString,
-//      ctrcnt = test.get(2).toString,
-//      cvrcnt = test.get(3).toString
-//    )
-//    useridData.addUser(result)
-//    dataset.foreachPartition(iterator => {
-//      iterator.foreach(record => {
-//        val kValue = record.get(0).toString
-//        val costValue = record.get(1).toString
-//        val ctrCntValue = record.get(2).toString
-//        val cvrCntValue = record.get(3).toString
-//        val currentItem = SingleUser(
-//          userid = kValue,
-//          cost = costValue,
-//          ctrcnt = ctrCntValue,
-//          cvrcnt = cvrCntValue
-//        )
-//        list += currentItem
-//      })
-//    })
-//    val result = useridData.build()
-    println("length of the list")
-    println(list.size)
     val result = list.toArray[SingleUser]
     val useridData = UserOcpc(
       user = result
