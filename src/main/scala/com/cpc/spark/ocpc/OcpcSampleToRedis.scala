@@ -85,7 +85,7 @@ object OcpcSampleToRedis {
     // save into redis
 //    savePbRedis(uidData, spark)
 //    savePbPack(userData)
-    testPbRedis("99000709907658_UPDATA")
+    testPbRedis("863332037509620_UPDATA")
   }
 
 
