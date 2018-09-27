@@ -100,6 +100,7 @@ object OcpcSampleToRedis {
     var changeCnt = spark.sparkContext.longAccumulator
     var ctrValue = spark.sparkContext.longAccumulator
     var cvrValue = spark.sparkContext.longAccumulator
+    var saveValue = spark.sparkContext.longAccumulator
     println("###############1")
     println(cnt)
     println(changeCnt)
@@ -117,6 +118,7 @@ object OcpcSampleToRedis {
         if (uid == "861142035752987") {
           ctrValue.add(ctrCnt)
           cvrValue.add(cvrCnt)
+          saveValue.add(1)
         }
         val buffer = redis.get[Array[Byte]](key).orNull
         if (buffer != null) {
@@ -136,6 +138,7 @@ object OcpcSampleToRedis {
     println(changeCnt)
     println(ctrValue)
     println(cvrValue)
+    println(saveValue)
     val test = dataset.first()
     println(test.get(0).toString)
 
