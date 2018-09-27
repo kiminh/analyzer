@@ -19,6 +19,8 @@ import userocpc.userocpc._
 //import userocpc.User
 import java.io.FileOutputStream
 
+import org.apache.spark.TaskContext
+
 
 object OcpcSampleToRedis {
   def main(args: Array[String]): Unit = {
@@ -97,7 +99,7 @@ object OcpcSampleToRedis {
 
     dataset.coalesce(50).foreachPartition(iterator => {
       var cnt = 0
-      println(cnt)
+      println(TaskContext.getPartitionId)
       iterator.foreach(record => {
         val uid = record.get(0).toString
         var key = uid + "_UPDATA"
