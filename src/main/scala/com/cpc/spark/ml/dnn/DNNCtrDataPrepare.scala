@@ -145,7 +145,6 @@ object DNNCtrDataPrepare {
       $"sparse".getField("_2").alias("idx1"),
       $"sparse".getField("_3").alias("idx2"),
       $"sparse".getField("_4").alias("id_arr"))
-      .persist()
 
     val Array(traindata, testdata) = data.randomSplit(Array(0.8, 0.2), 1030L)
 
