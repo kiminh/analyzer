@@ -94,8 +94,9 @@ object OcpcSampleToRedis {
 //    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     println("size of dataset")
     println(dataset.count())
-    var cnt = 0
+
     dataset.coalesce(100).foreachPartition(iterator => {
+      var cnt = 0
       iterator.foreach(record => {
         val uid = record.get(0).toString
         var key = uid + "_UPDATA"
@@ -114,7 +115,7 @@ object OcpcSampleToRedis {
       })
       println(s"complete partition loop: $cnt")
     })
-    println(s"complete loop: $cnt")
+//    println(s"complete loop: $cnt")
     // disconnect
 //    redis.disconnect
   }
