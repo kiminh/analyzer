@@ -69,7 +69,7 @@ object OcpcSampleToRedis {
       .groupBy("uid")
       .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
       .filter("ctr_cnt>0")
-      .limit(1000)
+      .limit(10)
 
 //    uidData.write.mode("overwrite").saveAsTable("test.uid_historical_data")
     println("save to table: test.uid_historical_data")
@@ -103,7 +103,6 @@ object OcpcSampleToRedis {
     println(cnt)
     println(changeCnt)
 
-    val tmpData = dataset.limit(10)
     var loopCnt = 1
     val conf = ConfigFactory.load()
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
