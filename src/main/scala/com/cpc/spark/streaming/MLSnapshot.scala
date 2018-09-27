@@ -45,7 +45,7 @@ object MLSnapshot {
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
 
     //MLSnapshot报警日志发送的kafka topic
-    val cpc_mlsnapshot_warning = "cpc_mlsnapshot_warning"
+    val cpc_mlsnapshot_warning = "cpc_realtime_parsedlog_warning"
 
     //初始化DStream 每个batch的开始时间； 用于报警服务
     var currentBatchStartTime = 0L
@@ -217,7 +217,7 @@ object MLSnapshot {
       val costTime = (currentBatchEndTime - currentBatchStartTime) / 1000.0
 
       val data2Kafka = new Data2Kafka()
-      val mapString: Seq[(String, String)] = Seq(("Topic", topics.split(",")(0)))
+      val mapString: Seq[(String, String)] = Seq(("Topic", "mlSnapshot_cpc_show_new"))
       val mapFloat: Seq[(String, Float)] = Seq(("ProcessingTime", costTime.toFloat))
       data2Kafka.setMessage(currentBatchEndTime, null, mapFloat, null, mapString)
       data2Kafka.sendMessage(brokers, cpc_mlsnapshot_warning)
