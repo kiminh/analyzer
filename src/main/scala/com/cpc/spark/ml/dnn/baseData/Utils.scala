@@ -190,16 +190,26 @@ object Utils {
     val acc = new LongAccumulator
     spark.sparkContext.register(acc)
 
+    # 增加推到物理机上的redis集群
+    val acc_phy = new LongAccumulator
+    spark.sparkContext.register(acc_phy)
+
     spark.sql(sql).repartition(20)
       .rdd.map(x => (prefix + x.getString(0), Base64.decodeBase64(x.getString(1))))
       .foreachPartition {
         p => {
           val jedis = new JedisCluster(new HostAndPort("192.168.83.62", 7001))
+          # 物理机redis集群连接
+          val jedis_phy = new JedisCluster(new HostAndPort("192.168.86.106", 7001))
+
           p.foreach { rec =>
             val re = jedis.setex(rec._1.getBytes(), 3600 * 24 * 7, rec._2)
             if (re == "OK") acc.add(0L) else acc.add(1L)
+            val re_phy = jedis_phy.setex(rec._1.getBytes(), 3600 * 24 * 7, rec._2)
+            if (re_phy == "OK") acc_phy.add(0L) else acc_phy.add(1L)
           }
           jedis.close()
+          jedis_phy.close()
         }
       }
 
@@ -208,6 +218,13 @@ object Utils {
     val ratio = fail_num / total_num
     println(s"----- cluster -----")
     println(s"Total num = $total_num, Fail num = $fail_num, Fail ratio = $ratio")
+    println("---------------------")
+
+    val total_num_phy = acc_phy.count
+    val fail_num_phy = acc_phy.sum
+    val ratio_phy = total_num_phy / fail_num_phy
+    println(s"----- cluster -----")
+    println(s"Total num = $total_num_phy, Fail num = $fail_num_phy, Fail ratio = $ratio_phy")
     println("---------------------")
   }
 
