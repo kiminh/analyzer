@@ -90,11 +90,11 @@ object OcpcSampleToRedis {
 
 
   def savePbRedis(dataset: Dataset[Row], spark: SparkSession): Unit = {
-    val conf = ConfigFactory.load()
-    println("test svaPbRedis function:")
-    println(conf.getString("redis.host"))
-    println(conf.getInt("redis.port"))
-    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+//    val conf = ConfigFactory.load()
+//    println("test svaPbRedis function:")
+//    println(conf.getString("redis.host"))
+//    println(conf.getInt("redis.port"))
+//    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     println("size of dataset")
     println(dataset.count())
     var cnt = spark.sparkContext.longAccumulator
@@ -103,6 +103,11 @@ object OcpcSampleToRedis {
     println(cnt)
     println(changeCnt)
     dataset.repartition(50).foreachPartition(iterator => {
+      val conf = ConfigFactory.load()
+//      println("test svaPbRedis function:")
+//      println(conf.getString("redis.host"))
+//      println(conf.getInt("redis.port"))
+      val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
       iterator.foreach(record => {
         val uid = record.get(0).toString
         var key = uid + "_UPDATA"
@@ -118,7 +123,7 @@ object OcpcSampleToRedis {
           changeCnt.add(1)
         }
       })
-
+//      redis.disconnect
     })
     println("####################2")
     println(s"complete partition loop")
@@ -126,8 +131,7 @@ object OcpcSampleToRedis {
     println(changeCnt)
     val test = dataset.first()
     println(test.get(0).toString)
-    // disconnect
-    redis.disconnect
+
   }
 
 
