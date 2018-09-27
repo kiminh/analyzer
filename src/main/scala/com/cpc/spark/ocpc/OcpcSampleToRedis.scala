@@ -96,11 +96,15 @@ object OcpcSampleToRedis {
 
 
   def savePbRedis(dataset: Dataset[Row], spark: SparkSession): Unit = {
-//    var cnt = spark.sparkContext.longAccumulator
-//    var changeCnt = spark.sparkContext.longAccumulator
-//    println("###############1")
-//    println(cnt)
-//    println(changeCnt)
+    var cnt = spark.sparkContext.longAccumulator
+    var changeCnt = spark.sparkContext.longAccumulator
+    var cvrResultAcc = spark.sparkContext.longAccumulator
+    var ctrResultAcc = spark.sparkContext.longAccumulator
+    println("###############1")
+    println(cnt)
+    println(changeCnt)
+    println(ctrResultAcc)
+    println(cvrResultAcc)
 //    var resultList = new ListBuffer[String]
 
 //    var loopCnt = 1
@@ -119,20 +123,25 @@ object OcpcSampleToRedis {
 //    println(returnValue)
 
     dataset.write.mode("overwrite").saveAsTable("test.test_redis_table_20180927")
+
     val conf = ConfigFactory.load()
-    val data = dataset.select("uid", "data").rdd.map(row => (row.get(0), row.get(1)))
-    data.foreachPartition(iterator => {
+
+    val data = dataset.select("uid", "data")
+
+    dataset.foreachPartition(iterator => {
 
         val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
 
         iterator.foreach{
-          case(uid: String, data: String) => {
-            //          val uid = record.get(0).toString
+          record => {
+            val uid = record.get(0).toString
             var key = uid + "_UPDATA"
-            //          cnt.add(1)
-            val cnts = data.split(",")
-            val ctrCnt = cnts(0)
-            val cvrCnt = cnts(1)
+            cnt.add(1)
+//            val cnts = data.split(",")
+            val ctrCnt = record.getLong(1)
+            val cvrCnt = record.getLong(2)
+            ctrResultAcc.add(ctrCnt)
+            cvrResultAcc.add(cvrCnt)
             val buffer = redis.get[Array[Byte]](key).orNull
             var user: UserProfile.Builder = null
             if (buffer != null) {
@@ -143,16 +152,18 @@ object OcpcSampleToRedis {
               if (u.getCvrcnt != cvrCnt)
                 user.setCvrcnt(cvrCnt)
               redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+              changeCnt.add(1)
             }
           }
         }
         redis.disconnect
       })
-//    println("####################2")
-//    println(s"complete partition loop")
-//    println(cnt)
-//    println(changeCnt)
-//    returnValue
+    println("####################2")
+    println(s"complete partition loop")
+    println(cnt)
+    println(changeCnt)
+    println(ctrResultAcc)
+    println(cvrResultAcc)
   }
 
   def testPbRedis(key: String): Unit ={

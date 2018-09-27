@@ -49,8 +49,8 @@ message UserProfile {
 	string province = 13; //省份
 	string city = 14; //城市
 	string userCreateTime = 15; // 账号创建日期
-	string ctrcnt = 16; // uid维度的最近几天点击总次数
-	string cvrcnt = 17; // uid维度的最近几天转化总次数
+	int64 ctrcnt = 16; // uid维度的最近几天点击总次数
+	int64 cvrcnt = 17; // uid维度的最近几天转化总次数
     QttProfile qttProfile = 101;
 }
 
