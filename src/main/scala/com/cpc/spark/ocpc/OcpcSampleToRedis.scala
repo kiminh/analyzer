@@ -171,7 +171,7 @@ object OcpcSampleToRedis {
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     val buffer = redis.get[Array[Byte]](key).orNull
     if (buffer != null) {
-      var user = UserProfile.parseFrom(buffer).toBuilder
+      var user = UserProfile.parseFrom(buffer)
       println(user.getAge)
       println(user.getCtrcnt)
       println(user.getCvrcnt)
