@@ -84,9 +84,9 @@ object OcpcSampleToRedis {
 //    userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
     println("save to table: test.userid_historical_data")
     // save into redis
-//    savePbRedis(uidData, spark)
+    savePbRedis(uidData, spark)
 //    savePbPack(userData)
-    testPbRedis("861142035752987_UPDATA")
+//    testPbRedis("861142035752987_UPDATA")
   }
 
 
@@ -98,14 +98,15 @@ object OcpcSampleToRedis {
 //    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     var cnt = spark.sparkContext.longAccumulator
     var changeCnt = spark.sparkContext.longAccumulator
+    var ctrValue = spark.sparkContext.longAccumulator
+    var cvrValue = spark.sparkContext.longAccumulator
     println("###############1")
     println(cnt)
     println(changeCnt)
+    println(ctrValue)
+    println(cvrValue)
     dataset.repartition(50).foreachPartition(iterator => {
       val conf = ConfigFactory.load()
-//      println("test svaPbRedis function:")
-//      println(conf.getString("redis.host"))
-//      println(conf.getInt("redis.port"))
       val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
       iterator.foreach(record => {
         val uid = record.get(0).toString
@@ -113,6 +114,10 @@ object OcpcSampleToRedis {
         cnt.add(1)
         val ctrCnt = record.getLong(1)
         val cvrCnt = record.getLong(2)
+        if (uid == "861142035752987") {
+          ctrValue.add(ctrCnt)
+          cvrValue.add(cvrCnt)
+        }
         val buffer = redis.get[Array[Byte]](key).orNull
         if (buffer != null) {
           var user = UserProfile.parseFrom(buffer).toBuilder
@@ -123,12 +128,14 @@ object OcpcSampleToRedis {
             changeCnt.add(1)
         }
       })
-//      redis.disconnect
+      redis.disconnect
     })
     println("####################2")
     println(s"complete partition loop")
     println(cnt)
     println(changeCnt)
+    println(ctrValue)
+    println(cvrValue)
     val test = dataset.first()
     println(test.get(0).toString)
 
@@ -144,6 +151,7 @@ object OcpcSampleToRedis {
       println(user.getAge)
       println(user.getCtrcnt)
       println(user.getCvrcnt)
+      redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
     }
     redis.disconnect
   }
