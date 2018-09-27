@@ -19,6 +19,10 @@ object FtrlHourlyIDV22 {
 
   val ADVERTISER_ID_NAME = "advertiser"
   val PLAN_ID_NAME = "plan"
+  val UNIT_ID_NAME = "unit"
+  val IDEA_ID_NAME = "idea"
+  val AD_CLASS_NAME = "ad_class"
+  val CITY_ID_NAME = "city"
 
   val LOCAL_DIR = "/home/cpc/ftrl/"
   val HDFS_MODEL_DIR = "hdfs:///user/cpc/qtt-ftrl-model/"
@@ -83,10 +87,16 @@ object FtrlHourlyIDV22 {
     println(s"xgBoost filtered data size = ${sample.filter(x => x.getAs[Int]("hasError") > 0).count()}")
     println(s"xgBoost correct data size = ${sample.filter(x => x.getAs[Int]("hasError") == 0).count()}")
 
-    val log = spark.table("dl_cpc.cpc_union_log")
-      .filter(s"`date` = '$dt' and hour = '$hour'")
-      .filter("media_appsid  in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0 " +
-        "and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0")
+    val log = spark.sql(
+      s"""
+        |select *,
+        | ext['adclass'].int_value as ad_class_int,
+        | ext_int['exp_style'] as exp_style_int,
+        | from dl_cpc.cpc_union_log
+        |where `date` = '$dt' and hour = '$hour'
+        |and media_appsid  in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0
+        |and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0
+      """.stripMargin)
 
     var merged = sample
       .filter(x => x.getAs[Int]("hasError") == 0)
@@ -151,7 +161,25 @@ object FtrlHourlyIDV22 {
     // plan id
     val planID = row.getAs[Int]("planid")
     idFeatures.append(PLAN_ID_NAME + planID.toString)
-
+    // unit id
+    val unitID = row.getAs[Int]("unitid")
+    idFeatures.append("unit" + unitID.toString)
+    // idea id
+    val ideaID = row.getAs[Int]("ideaid")
+    idFeatures.append("idea" + ideaID.toString)
+    // adclass
+    idFeatures.append("ad_class" + row.getAs[Int]("ad_class_int").toString)
+    // cityid
+    idFeatures.append("city" + row.getAs[Int]("city").toString)
+    // user interest
+    val interestString = row.getAs[String]("interests")
+    interestString.split(",").foreach(x => {
+      val interestID = x.split("=")(0)
+      idFeatures.append("i_" + interestID.toString)
+      idFeatures.append("i_" + interestID.toString + "adv_" + advertiserID.toString)
+    })
+    // style
+    idFeatures.append("style" + row.getAs[Int]("exp_style_int"))
     // installed apps
     if (row.getAs[Object]("pkgs") != null) {
       val apps = row.getAs[mutable.WrappedArray[String]]("pkgs")
