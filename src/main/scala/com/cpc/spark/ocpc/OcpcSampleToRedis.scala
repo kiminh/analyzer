@@ -165,7 +165,7 @@ object OcpcSampleToRedis {
       println(user.getAge)
       println(user.getCtrcnt)
       println(user.getCvrcnt)
-      redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+//      redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
     }
     redis.disconnect
   }
