@@ -139,11 +139,11 @@ object OcpcSampleToRedis {
             var key = uid + "_UPDATA"
             cnt.add(1)
 //            val cnts = data.split(",")
-//            val data = record.get(3).toString
-//            val ctrCnt = data.split(",")(0).toLong
-//            val cvrCnt = data.split(",")(1).toLong
-            val ctrCnt = record.getString(1).toLong
-            val cvrCnt = record.getString(2).toLong
+            val rowData = record.get(3).toString
+            val ctrCnt = rowData.split(",")(0).toLong
+            val cvrCnt = rowData.split(",")(1).toLong
+//            val ctrCnt = record.getString(1).toLong
+//            val cvrCnt = record.getString(2).toLong
 
             val buffer = redis.get[Array[Byte]](key).orNull
             var user: UserProfile.Builder = null
