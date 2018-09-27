@@ -84,9 +84,9 @@ object OcpcSampleToRedis {
 //    userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
     println("save to table: test.userid_historical_data")
     // save into redis
-    savePbRedis(uidData, spark)
+//    savePbRedis(uidData, spark)
 //    savePbPack(userData)
-//    testPbRedis("863332037509620_UPDATA")
+    testPbRedis("861142035752987_UPDATA")
   }
 
 
@@ -96,8 +96,6 @@ object OcpcSampleToRedis {
 //    println(conf.getString("redis.host"))
 //    println(conf.getInt("redis.port"))
 //    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-    println("size of dataset")
-    println(dataset.count())
     var cnt = spark.sparkContext.longAccumulator
     var changeCnt = spark.sparkContext.longAccumulator
     println("###############1")
@@ -137,12 +135,13 @@ object OcpcSampleToRedis {
   }
 
   def testPbRedis(key: String): Unit ={
-    println("testPbRedis function")
+    println("testPbRedis function: " + key)
     val conf = ConfigFactory.load()
     val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     val buffer = redis.get[Array[Byte]](key).orNull
     if (buffer != null) {
       var user = UserProfile.parseFrom(buffer).toBuilder
+      println(user.getAge)
       println(user.getCtrcnt)
       println(user.getCvrcnt)
     }
