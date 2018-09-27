@@ -94,29 +94,26 @@ object OcpcSampleToRedis {
     println("test svaPbRedis function:")
     println(conf.getString("redis.host"))
     println(conf.getInt("redis.port"))
-//    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     println("size of dataset")
     println(dataset.count())
     var cnt = spark.sparkContext.longAccumulator
     println("###############1")
     println(cnt)
     dataset.repartition(50).foreachPartition(iterator => {
-
-
-      println(TaskContext.getPartitionId)
       iterator.foreach(record => {
         val uid = record.get(0).toString
         var key = uid + "_UPDATA"
         cnt.add(1)
-//        val ctrCnt = record.getInt(1)
-//        val cvrCnt = record.getInt(2)
-//        val buffer = redis.get[Array[Byte]](key).orNull
-//        if (buffer != null) {
-//          var user = UserProfile.parseFrom(buffer).toBuilder
-//          user.setCtrcnt(ctrCnt)
-//          user.setCvrcnt(cvrCnt)
-//          redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-//        }
+        val ctrCnt = record.getInt(1)
+        val cvrCnt = record.getInt(2)
+        val buffer = redis.get[Array[Byte]](key).orNull
+        if (buffer != null) {
+          var user = UserProfile.parseFrom(buffer).toBuilder
+          user.setCtrcnt(ctrCnt)
+          user.setCvrcnt(cvrCnt)
+          redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+        }
       })
 
     })
@@ -126,7 +123,7 @@ object OcpcSampleToRedis {
     val test = dataset.first()
     println(test.get(0).toString)
     // disconnect
-//    redis.disconnect
+    redis.disconnect
   }
 
 
