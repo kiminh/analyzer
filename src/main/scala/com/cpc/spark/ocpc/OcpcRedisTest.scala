@@ -31,7 +31,9 @@ object OcpcRedisTest {
     val dataset = spark.table("test.test_redis_table_20180927")
     for (row <- dataset.collect()) {
       val key = row.get(0).toString
+      val data = row.get(3).toString
       val kValue = key + "_UPDATA"
+      println(s"$key, $data")
       testPbRedis(kValue)
     }
 
