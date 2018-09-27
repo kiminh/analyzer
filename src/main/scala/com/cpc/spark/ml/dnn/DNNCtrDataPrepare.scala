@@ -85,7 +85,7 @@ object DNNCtrDataPrepare {
         val a = apps.zipWithIndex.map(x => (0, x._2, x._1))
         val b = ideaids.zipWithIndex.map(x => (1, x._2, x._1))
         val c = (a ++ b).map(x => (0, x._1, x._2, x._3))
-        (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
+        sparse(c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
     }
 
     //合并数据
@@ -247,6 +247,6 @@ object DNNCtrDataPrepare {
     }
   }
 
-  case class sparse(idx0: Seq[Int], idx1: Seq[Int], idx2: Seq[Int], id_arr: Seq[Int])
+  case class sparse(idx0: Seq[Int], idx1: Seq[Int], idx2: Seq[Int], id_arr: Seq[Long])
 
 }
