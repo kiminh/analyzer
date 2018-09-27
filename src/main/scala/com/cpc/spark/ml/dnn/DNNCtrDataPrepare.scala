@@ -76,7 +76,6 @@ object DNNCtrDataPrepare {
          |  and date <= '${getDay(date, 4)}'
          |  and ideaid > 0
          |  and adslot_type = 1
-         |  and label > 0
          |  and media_appsid in ('80000001','80000002')
          |group by uid
       """.stripMargin)
@@ -96,15 +95,17 @@ object DNNCtrDataPrepare {
          |      adslotid,phone_level,adclass,
          |      adtype,planid,unitid,ideaid,
          |      if(label>0, array(1,0), array(0,1)) as label
-         |from dl_cpc.ml_cvr_feature_v1
+         |from dl_cpc.ml_ctr_feature_v1
          |where date = '$date'
          |  and ideaid > 0
          |  and adslot_type = 1
          |  and media_appsid in ('80000001','80000002')
+         |  and uid not like "%\.%"
+         |  and uid not like "%000000%"
       """.stripMargin)
       .join(app_data, Seq("uid"), "left")
       .join(click_data1, Seq("uid"), "left")
-      .select($"label", hash("uid")($"uid").alias("uid"),
+      .select($"label", hash("uid")($"uid").alias("uid"), hash("age")($"age").alias("age"),
 
         hash("hour")($"hour").alias("hour"), hash("sex")($"sex").alias("sex"),
 
@@ -124,34 +125,34 @@ object DNNCtrDataPrepare {
         $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("dense"),
         mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
       )
-      /*生成带index的目标数据
+      //生成带index的目标数据
       .rdd.zipWithIndex
       .map { x =>
         val sparse = x._1.getAs[sparse]("sparse")
         (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Int]]("dense"),
           sparse.idx0, sparse.idx1, sparse.idx2, sparse.id_arr)
       }.toDF("label", "dense", "idx0", "idx1", "idx2", "id_arr")
-      */
-      .select(
+
+      /*.select(
       $"label",
       $"dense",
       $"sparse".getField("_1").alias("idx0"),
       $"sparse".getField("_2").alias("idx1"),
       $"sparse".getField("_3").alias("idx2"),
-      $"sparse".getField("_4").alias("id_arr"))
+      $"sparse".getField("_4").alias("id_arr"))*/
       .persist()
 
     val Array(traindata, testdata) = data.randomSplit(Array(0.8, 0.2), 1030L)
 
     traindata.take(10).foreach(println)
 
-    traindata.repartition(50).write.mode("overwrite")
+    traindata.repartition(200).write.mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"/home/cpc/zhj/ctr/dnn/data/traindata")
     //.save(s"/user/dnn_1537324485/cpc_data/ctr/traindata/$date")
 
-    testdata.repartition(10).write.mode("overwrite")
+    testdata.repartition(50).write.mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"/home/cpc/zhj/ctr/dnn/data/testdata")
