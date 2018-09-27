@@ -66,9 +66,9 @@ object DNNSample {
         var id_arr = Seq[Long]()
         for (i <- apps.indices) {
           val id = Murmur3Hash.stringHash64("app:%s".format(apps(i)), 0)
-          idx0 = idx0 :+ 0
-          idx1 = idx1 :+ 0
-          idx2 = idx2 :+ i
+          idx0 = idx0 :+ 0L
+          idx1 = idx1 :+ 0L
+          idx2 = idx2 :+ i.toLong
           id_arr = id_arr :+ id
         }
 
