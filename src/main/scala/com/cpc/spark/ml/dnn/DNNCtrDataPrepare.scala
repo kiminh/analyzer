@@ -82,7 +82,7 @@ object DNNCtrDataPrepare {
       """.stripMargin)
 
     val mkSparseFeature = udf {
-      (apps: Seq[BigInt], ideaids: Seq[BigInt]) =>
+      (apps: Seq[Long], ideaids: Seq[Long]) =>
         val a = apps.zipWithIndex.map(x => (0, x._2, x._1))
         val b = ideaids.zipWithIndex.map(x => (1, x._2, x._1))
         val c = (a ++ b).map(x => (0, x._1, x._2, x._3))
