@@ -43,9 +43,9 @@ object OcpcRedisTest {
     if (buffer != null) {
       user = UserProfile.parseFrom(buffer).toBuilder
       val u = user.build()
-      println(u.getAge)
-      println(u.getCtrcnt)
-      println(u.getCvrcnt)
+      println(user.getAge)
+      println(user.getCtrcnt)
+      println(user.getCvrcnt)
       //      redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
     }
     redis.disconnect
