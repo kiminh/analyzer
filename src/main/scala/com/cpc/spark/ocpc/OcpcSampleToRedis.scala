@@ -129,7 +129,7 @@ object OcpcSampleToRedis {
 
     val data = dataset.select("uid", "data")
 
-    dataset.foreachPartition(iterator => {
+    dataset.repartition(1).foreachPartition(iterator => {
 
         val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
 
