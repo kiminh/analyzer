@@ -68,6 +68,7 @@ object OcpcSampleToRedis {
     val uidData = base
       .groupBy("uid")
       .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
+      .filter("ctr_cnt>0")
       .limit(1000)
 
 //    uidData.write.mode("overwrite").saveAsTable("test.uid_historical_data")
@@ -83,9 +84,9 @@ object OcpcSampleToRedis {
 //    userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
     println("save to table: test.userid_historical_data")
     // save into redis
-//    savePbRedis(uidData, spark)
+    savePbRedis(uidData, spark)
 //    savePbPack(userData)
-    testPbRedis("863332037509620_UPDATA")
+//    testPbRedis("863332037509620_UPDATA")
   }
 
 
