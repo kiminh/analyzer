@@ -66,7 +66,6 @@ object OcpcSampleToRedis {
     val uidData = base
       .groupBy("uid")
       .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
-      .withColumn("data", concat_ws(",", col("ctr_cnt"), col("cvr_cnt")))
 
 //    uidData.write.mode("overwrite").saveAsTable("test.uid_historical_data")
     println("save to table: test.uid_historical_data")
@@ -76,42 +75,40 @@ object OcpcSampleToRedis {
     val userData = base
       .groupBy("userid")
       .agg(sum("cost").alias("cost"), sum("cvr_cnt").alias("cvr_cnt"), sum("ctr_cnt").alias("ctr_cnt"))
-      .withColumn("data", concat_ws(",", col("cost"), col("ctr_cnt"), col("cvr_cnt")))
+
 
 //    userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
     println("save to table: test.userid_historical_data")
     // save into redis
-    savePbRedis(uidData, spark)
-    savePbPack(userData.select("userid", "cost", "ctr_cnt", "cvr_cnt"))
+    savePbRedis(uidData)
+//    savePbPack(userData.select("userid", "cost", "ctr_cnt", "cvr_cnt"))
 
   }
 
 
-  def savePbRedis(dataset: Dataset[Row], spark:SparkSession): Unit = {
+  def savePbRedis(dataset: Dataset[Row]): Unit = {
     val conf = ConfigFactory.load()
-    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-    dataset.foreachPartition(iterator => {
-      iterator.foreach(record => {
-        val uid = record.get(0).toString
-        var key = uid + "_UPDATA"
-        val ctrCnt = record.getInt(1)
-        val cvrCnt = record.getInt(2)
-        val buffer = redis.get[Array[Byte]](key).orNull
-        var user: UserProfile.Builder = null
-        if (buffer != null) {
-          user = UserProfile.parseFrom(buffer).toBuilder
-          user.setCtrcnt(ctrCnt)
-          user.setCvrcnt(cvrCnt)
-        } else {
-          user = UserProfile.newBuilder()
-          user.setCtrcnt(ctrCnt)
-          user.setCvrcnt(cvrCnt)
-        }
-        redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-      })
-    })
-    // disconnect
-    redis.disconnect
+    println("test svaPbRedis function:")
+    println(conf.getString("redis.host"))
+    println(conf.getInt("redis.port"))
+//    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+//    dataset.foreachPartition(iterator => {
+//      iterator.foreach(record => {
+//        val uid = record.get(0).toString
+//        var key = uid + "_UPDATA"
+//        val ctrCnt = record.getInt(1)
+//        val cvrCnt = record.getInt(2)
+//        val buffer = redis.get[Array[Byte]](key).orNull
+//        if (buffer != null) {
+//          var user = UserProfile.parseFrom(buffer).toBuilder
+//          user.setCtrcnt(ctrCnt)
+//          user.setCvrcnt(cvrCnt)
+//          redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+//        }
+//      })
+//    })
+//    // disconnect
+//    redis.disconnect
   }
 
 
