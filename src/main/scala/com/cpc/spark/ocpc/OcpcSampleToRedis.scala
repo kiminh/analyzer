@@ -156,8 +156,9 @@ object OcpcSampleToRedis {
             val bufferNew = redis.get[Array[Byte]](key).orNull
             var userNew: UserProfile.Builder = null
             userNew = UserProfile.parseFrom(bufferNew).toBuilder
-            ctrResultAcc.add(userNew.getCtrcnt)
-            cvrResultAcc.add(userNew.getCvrcnt)
+            val uNew = user.build()
+            ctrResultAcc.add(uNew.getCtrcnt)
+            cvrResultAcc.add(uNew.getCvrcnt)
           }
         }
         redis.disconnect
