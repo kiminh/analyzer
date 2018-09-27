@@ -94,7 +94,7 @@ object OcpcSampleToRedis {
     println(conf.getInt("redis.port"))
 //    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
     var cnt = 0
-    dataset.foreachPartition(iterator => {
+    dataset.coalesce(100).foreachPartition(iterator => {
       iterator.foreach(record => {
         val uid = record.get(0).toString
         var key = uid + "_UPDATA"
