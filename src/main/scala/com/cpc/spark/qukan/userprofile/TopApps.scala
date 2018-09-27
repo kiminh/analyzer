@@ -40,6 +40,8 @@ object TopApps {
       .write
       .mode(SaveMode.Overwrite)
       .saveAsTable("dl_cpc.top_apps")
+
+    pkgs.take(100).foreach(println)
   }
 }
 

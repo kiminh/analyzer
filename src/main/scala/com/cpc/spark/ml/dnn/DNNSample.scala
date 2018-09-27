@@ -58,8 +58,6 @@ object DNNSample {
         }
         hashed = hashed :+ Murmur3Hash.stringHash64("uid:%s".format(uid), 0)
 
-        val sparse = Sparse()
-
         var idx0 = Seq[Long]()
         var idx1 = Seq[Long]()
         var idx2 = Seq[Long]()
@@ -222,12 +220,6 @@ object DNNSample {
       (raw, uid,  Seq(""))
     }
   }
-
-  case class Sparse(
-                   var idx0: Seq[Long] = Seq(),
-                   var idx1: Seq[Long] = Seq(),
-                   var idx2: Seq[Long] = Seq()
-                   )
 }
 
 
