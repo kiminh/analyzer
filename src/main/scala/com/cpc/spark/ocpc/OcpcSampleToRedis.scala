@@ -65,7 +65,7 @@ object OcpcSampleToRedis {
     // calculation for ratio: adslotid, uid
     val uidData = base
       .groupBy("uid")
-      .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
+      .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt")).filter("uid='862821032053908' or uid='863332037509620' or uid='863292036062031'")
 
 //    uidData.write.mode("overwrite").saveAsTable("test.uid_historical_data")
     println("save to table: test.uid_historical_data")
@@ -81,7 +81,7 @@ object OcpcSampleToRedis {
     println("save to table: test.userid_historical_data")
     // save into redis
     savePbRedis(uidData)
-//    savePbPack(userData.select("userid", "cost", "ctr_cnt", "cvr_cnt"))
+//    savePbPack(userData)
 
   }
 
@@ -92,10 +92,11 @@ object OcpcSampleToRedis {
     println(conf.getString("redis.host"))
     println(conf.getInt("redis.port"))
 //    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-//    dataset.foreachPartition(iterator => {
-//      iterator.foreach(record => {
-//        val uid = record.get(0).toString
-//        var key = uid + "_UPDATA"
+    dataset.foreachPartition(iterator => {
+      iterator.foreach(record => {
+        val uid = record.get(0).toString
+        var key = uid + "_UPDATA"
+        println(s"loop in dataframe: $key")
 //        val ctrCnt = record.getInt(1)
 //        val cvrCnt = record.getInt(2)
 //        val buffer = redis.get[Array[Byte]](key).orNull
@@ -105,9 +106,9 @@ object OcpcSampleToRedis {
 //          user.setCvrcnt(cvrCnt)
 //          redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
 //        }
-//      })
-//    })
-//    // disconnect
+      })
+    })
+    // disconnect
 //    redis.disconnect
   }
 
