@@ -58,8 +58,8 @@ object DNNCtrDataPrepare {
       s"""
          |select uid,collect_set(ideaid) as ideaids
          |from dl_cpc.ml_cvr_feature_v1
-         |where date > '${getDay(date, 3)}'
-         |  and date <= '$date'
+         |where date > '${getDay(date, 4)}'
+         |  and date < '$date'
          |  and ideaid > 0
          |  and adslot_type = 1
          |  and label > 0
@@ -72,7 +72,7 @@ object DNNCtrDataPrepare {
       s"""
          |select uid,collect_set(ideaid) as ideaids
          |from dl_cpc.ml_cvr_feature_v1
-         |where date > '${getDay(date, 7)}'
+         |where date > '${getDay(date, 8)}'
          |  and date <= '${getDay(date, 4)}'
          |  and ideaid > 0
          |  and adslot_type = 1
