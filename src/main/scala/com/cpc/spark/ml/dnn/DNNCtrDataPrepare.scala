@@ -166,8 +166,8 @@ object DNNCtrDataPrepare {
 
     testdata.rdd.zipWithIndex().map { x =>
       (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
-        x._1.getAs[Seq[Long]]("idx0"), x._1.getAs[Seq[Long]]("idx1"),
-        x._1.getAs[Seq[Long]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
+        x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
+        x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
     }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
       .repartition(50).write.mode("overwrite")
       .format("tfrecords")
