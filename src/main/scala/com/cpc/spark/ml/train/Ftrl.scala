@@ -1,12 +1,19 @@
 package com.cpc.spark.ml.train
 
+import java.io.{BufferedOutputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
+import java.util.Date
+
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
 
 import scala.collection.mutable.ListBuffer
 import com.alibaba.fastjson.{JSON, JSONObject}
-import mlmodel.mlmodel.Dict
+import com.cpc.spark.common.Utils
+import com.cpc.spark.qukan.utils.RedisUtil
+import com.google.protobuf.CodedInputStream
+import mlmodel.mlmodel._
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
 
 import scala.collection.mutable
@@ -22,12 +29,13 @@ class Ftrl(size: Int) {
   var dict: Dict = Dict()
 
 
-  def toJsonString(): String = {
+  def toJsonString: String = {
     val json = new JSONObject()
     json.put("alpha", alpha)
     json.put("beta", beta)
     json.put("L1", L1)
     json.put("L2", L2)
+
     json.put("n", n.mkString(" "))
     json.put("z", z.mkString(" "))
     json.put("w", w.mkString(" "))
@@ -173,5 +181,109 @@ class Ftrl(size: Int) {
       val t = array(k); array(k) = array(n); array(n) = t
     }
     return array
+  }
+
+
+}
+
+object Ftrl {
+  def getModelFromHDFS(startFresh: Boolean, key: String, ctx: SparkSession, size: Int): Ftrl = {
+    val ftrl = new Ftrl(size)
+    if (startFresh) {
+      println("new ftrl")
+      return ftrl
+    }
+    val json = ctx.sparkContext.textFile(key).collect().mkString("\n")
+    ftrl.fromJsonString(json)
+    println(s"ftrl fetched from hdfs: $key")
+    return ftrl
+  }
+
+  def getModel(version: Int, startFresh: Boolean, typename: String, size: Int): Ftrl = {
+    val ftrlNew = new Ftrl(size)
+    val ftrlRedis = RedisUtil.redisToFtrlWithType(typename, version, size)
+    val ftrl = if (ftrlRedis != null && !startFresh) {
+      println("ftrl fetched from redis")
+      ftrlRedis
+    } else {
+      println("new ftrl")
+      ftrlNew
+    }
+    return ftrl
+  }
+
+  def saveModelToHDFS(key: String, ctx: SparkSession, ftrl: Ftrl): Unit = {
+    val fs = FileSystem.get(ctx.sparkContext.hadoopConfiguration)
+    val output = fs.create(new Path(key))
+    val os = new BufferedOutputStream(output)
+    os.write(ftrl.toJsonString.getBytes("UTF-8"))
+    os.flush()
+    os.close()
+    println(s"save model to hdfs: $key")
+  }
+
+  def saveToProtoToHDFS(key: String, ctx: SparkSession, ftrl: Ftrl): Unit = {
+    val proto = new FtrlProto(
+      alpha = ftrl.alpha,
+      beta = ftrl.beta,
+      l1 = ftrl.L1,
+      l2 = ftrl.L2,
+      n = ftrl.n,
+      z = ftrl.z,
+      w = ftrl.w
+    )
+    val fs = FileSystem.get(ctx.sparkContext.hadoopConfiguration)
+    val os = new BufferedOutputStream(fs.create(new Path(key)))
+    proto.writeTo(os)
+    os.close()
+    println(s"save model proto to hdfs: $key")
+  }
+
+  def getModelFromProtoOnHDFS(startFresh: Boolean, key: String, ctx: SparkSession, size: Int): Ftrl = {
+    val ftrl = new Ftrl(size)
+    if (startFresh) {
+      println("new ftrl")
+      return ftrl
+    }
+    val fs = FileSystem.get(ctx.sparkContext.hadoopConfiguration)
+    val proto = new FtrlProto().mergeFrom(CodedInputStream.newInstance(fs.open(new Path(key))))
+    ftrl.alpha = proto.alpha
+    ftrl.beta = proto.beta
+    ftrl.L1 = proto.l1
+    ftrl.L2 = proto.l2
+    ftrl.n = proto.n.toArray
+    ftrl.z = proto.z.toArray
+    ftrl.w = proto.z.toArray
+    println(s"ftrl proto fetched from hdfs: $key")
+    return ftrl
+  }
+
+  def saveLrPbPack(ftrl: Ftrl, path: String, parser: String, name: String, mode: Int, offset: Int): Unit = {
+    val lr = LRModel(
+      parser = parser,
+      featureNum = ftrl.w.length,
+      weights = ftrl.w.zipWithIndex.toMap.map(x => (x._2, x._1))
+    )
+    val ir = IRModel(
+    )
+    val hashParam = HashParam(
+      method = HashMethod.MurMur3,
+      mode = mode.toLong,
+      offset = offset.toLong
+    )
+    val pack = Pack(
+      name = name,
+      createTime = new Date().getTime,
+      lr = Option(lr),
+      ir = Option(ir),
+      dict = Option(ftrl.dict),
+      strategy = Strategy.StrategyXgboostFtrl,
+      gbmfile = s"data/ctr-portrait9-qtt-list.gbm",
+      gbmTreeLimit = 200,
+      gbmTreeDepth = 10,
+      negSampleRatio = 0.2,
+      hashParam = Option(hashParam)
+    )
+    Utils.saveProtoToFile(pack, path)
   }
 }

@@ -4,7 +4,6 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import com.cpc.spark.common.CpcPartitioner
 import com.cpc.spark.log.parser._
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}

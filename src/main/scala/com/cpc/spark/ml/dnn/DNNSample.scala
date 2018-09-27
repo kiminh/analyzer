@@ -1,10 +1,8 @@
 package com.cpc.spark.ml.dnn
 
-import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import mlmodel.mlmodel
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
@@ -13,13 +11,13 @@ import scala.collection.mutable.WrappedArray
 import scala.util.Random
 import com.cpc.spark.common.Murmur3Hash
 
+
 object DNNSample {
 
   private var trainLog = Seq[String]()
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
-
     val spark = SparkSession.builder()
       .appName("dnn sample")
       .enableHiveSupport()
@@ -30,7 +28,6 @@ object DNNSample {
 
     //按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
-    val cvrPathSep = getPathSeq(args(1).toInt)
 
     val userAppIdx = getUidApp(spark, ctrPathSep)
 
@@ -41,7 +38,6 @@ object DNNSample {
         val mediaid = x.getAs[String]("media_appsid").toInt
         ideaid > 0 && slottype == 1 && Seq(80000001, 80000002).contains(mediaid)
       }
-      //.randomSplit(Array(0.1, 0.9), new Date().getTime)(0)
       .join(userAppIdx, Seq("uid"))
       .rdd
       .map{row =>
@@ -55,19 +51,25 @@ object DNNSample {
 
         var hashed = Seq[Long]()
         for (i <- raw.indices) {
-          hashed = hashed :+ Murmur3Hash.stringHash("%s:%d".format(fnames(i), raw(i)))
+          hashed = hashed :+ Murmur3Hash.stringHash64("%s:%d".format(fnames(i), raw(i)), 702)
         }
+
+        val sparse = Sparse()
+        sparse.idx0 :+= 0L
 
         var appHashed = Seq[Long]()
         for (i <- apps.indices) {
-          appHashed = appHashed :+ Murmur3Hash.stringHash("app:%s".format(apps(i)))
+          appHashed = appHashed :+ Murmur3Hash.stringHash64("app:%s".format(apps(i)), 702)
         }
 
-        (label, hashed, appHashed)
+        sparse.idx1 :+= 0L
+        sparse.idx2 ++= appHashed
+
+        (label, hashed, sparse)
       }
       .zipWithUniqueId()
       .map(x => (x._2, x._1._1, x._1._2, x._1._3))
-      .toDF("sample_idx", "label", "")
+      .toDF("sample_idx", "label", "dense", "sparse")
       .repartition(1000)
 
     val clickiNum = ulog.filter{
@@ -78,15 +80,13 @@ object DNNSample {
     println(ulog.count(), clickiNum)
 
     val Array(train, test) = ulog.randomSplit(Array(0.97, 0.03))
-
     val resampled = train.filter{
       x =>
         val label = x.getAs[Seq[Int]]("label")
         label(0) == 1 || Random.nextInt(1000) < 100
     }
 
-    resampled.select("sample_idx", "label", "id", "app")
-      .coalesce(100)
+    resampled.coalesce(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -94,8 +94,7 @@ object DNNSample {
       .save("/user/cpc/dw/dnntrain-" + date)
     println("train size", resampled.count())
 
-    test.select("sample_idx", "label", "id", "app")
-      .coalesce(100)
+    test.coalesce(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -207,7 +206,7 @@ object DNNSample {
     val ideaid = x.getAs[Int]("ideaid")
     raw = raw :+ ideaid
 
-    val apps = x.getAs[Seq[String]]("apps")
+    val apps = x.getAs[Seq[String]]("pkgs")
 
     if (apps.length > 0) {
       (raw, apps.slice(0, 500))
@@ -215,6 +214,12 @@ object DNNSample {
       (raw, Seq(""))
     }
   }
+
+  case class Sparse(
+                   var idx0: Seq[Long] = Seq(),
+                   var idx1: Seq[Long] = Seq(),
+                   var idx2: Seq[Long] = Seq()
+                   )
 }
 
 
