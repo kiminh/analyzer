@@ -103,7 +103,7 @@ object OcpcSampleToRedis {
       iterator.foreach(record => {
         val uid = record.get(0).toString
         var key = uid + "_UPDATA"
-        if (cnt % 200 == 0)
+        if (cnt % 20 == 0)
           println(s"loop in dataframe: $key")
         cnt = cnt + 1
 //        val ctrCnt = record.getInt(1)
