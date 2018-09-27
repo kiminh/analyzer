@@ -97,7 +97,7 @@ object OcpcSampleToRedis {
     println("size of dataset")
     println(dataset.count())
 
-    dataset.coalesce(50).foreachPartition(iterator => {
+    dataset.repartition(50).foreachPartition(iterator => {
       var cnt = 0
       println(TaskContext.getPartitionId)
       iterator.foreach(record => {
@@ -119,7 +119,7 @@ object OcpcSampleToRedis {
       println(s"complete partition loop: $cnt")
     })
 //    println(s"complete loop: $cnt")
-//     disconnect
+    // disconnect
 //    redis.disconnect
   }
 
