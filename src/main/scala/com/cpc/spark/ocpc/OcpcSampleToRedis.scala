@@ -66,7 +66,7 @@ object OcpcSampleToRedis {
     val uidData = base
       .groupBy("uid")
       .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
-      .limit(10000)
+      .limit(100000)
 
 //    uidData.write.mode("overwrite").saveAsTable("test.uid_historical_data")
     println("save to table: test.uid_historical_data")
@@ -93,12 +93,14 @@ object OcpcSampleToRedis {
     println(conf.getString("redis.host"))
     println(conf.getInt("redis.port"))
 //    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+    println("size of dataset")
+    println(dataset.count())
     var cnt = 0
     dataset.coalesce(100).foreachPartition(iterator => {
       iterator.foreach(record => {
         val uid = record.get(0).toString
         var key = uid + "_UPDATA"
-        if (cnt % 1000 == 0)
+        if (cnt % 200 == 0)
           println(s"loop in dataframe: $key")
         cnt = cnt + 1
 //        val ctrCnt = record.getInt(1)
@@ -111,7 +113,9 @@ object OcpcSampleToRedis {
 //          redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
 //        }
       })
+      println(s"complete partition loop: $cnt")
     })
+    println(s"complete loop: $cnt")
     // disconnect
 //    redis.disconnect
   }
