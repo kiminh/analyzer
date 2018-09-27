@@ -2,6 +2,17 @@ syntax = "proto3";
 
 package mlmodel;
 
+
+message FtrlProto {
+    double alpha = 1;
+    double beta = 2;
+    double L1 = 3;
+    double L2 = 4;
+    repeated double n = 5;
+    repeated double z = 6;
+    repeated double w = 7;
+}
+
 message LRModel {
     map<int32, double> weights = 1;
     string parser = 2;
@@ -40,6 +51,17 @@ message Dict {
     map<string, int32> stringid = 10;
 }
 
+enum HashMethod {
+    MurMur3 = 0;
+}
+
+message HashParam {
+    HashMethod method = 1;
+    int64 mode = 2;
+    int64 offset = 3;
+    int32 seed = 4;
+}
+
 message Pack {
     string name = 1;
     LRModel lr = 2;
@@ -53,6 +75,7 @@ message Pack {
     double negSampleRatio = 10;
     int64 xg_feature_num = 11;
     string onnx_file = 12;
+    HashParam hashParam = 13;
 }
 
 message CalibrationConfig {
@@ -90,17 +113,6 @@ message AccessLog {
     int64 timestamp = 3;
 }
 
-message DnnDict {
-    map<int32, int32> mediaIdDict = 1;
-    map<int32, int32> planIdDict = 2;
-    map<int32, int32> unitIdDict = 3;
-    map<int32, int32> ideaIdDict = 4;
-    map<int32, int32> adslotIdDict = 5;
-    map<int32, int32> cityDict = 6;
-    map<int32, int32> adclassDict = 7;
-    map<string, int32> brandDict = 8;
-    map<string, int32> uidDict = 9;
-}
 
 
 

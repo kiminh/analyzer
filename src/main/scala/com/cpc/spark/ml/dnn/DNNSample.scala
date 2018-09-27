@@ -1,6 +1,5 @@
 package com.cpc.spark.ml.dnn
 
-import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
@@ -20,14 +19,6 @@ object DNNSample {
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
-
-    val d = "dongwei".toCharArray.map(_.toByte)
-    val out = new MurmurHash3.LongPair
-    MurmurHash3.murmurhash3_x64_128(d, 0, d.length, 123, out)
-
-    println(d.length, out.val1, out.val2)
-
-
     val spark = SparkSession.builder()
       .appName("dnn sample")
       .enableHiveSupport()
@@ -48,7 +39,6 @@ object DNNSample {
         val mediaid = x.getAs[String]("media_appsid").toInt
         ideaid > 0 && slottype == 1 && Seq(80000001, 80000002).contains(mediaid)
       }
-      //.randomSplit(Array(0.1, 0.9), new Date().getTime)(0)
       .join(userAppIdx, Seq("uid"))
       .rdd
       .map{row =>

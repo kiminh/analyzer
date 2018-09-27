@@ -7,7 +7,7 @@ package com.cpc.spark.ml.train
 
 import java.util.Date
 
-import com.cpc.spark.common.Utils
+import com.cpc.spark.common.{Murmur3Hash, Utils}
 import com.cpc.spark.qukan.utils.RedisUtil
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.mllib.regression.LabeledPoint
@@ -116,7 +116,7 @@ object FtrlSnapshotId {
     // save model file locally
     val name = s"ctr-qtt-list-$version"
     val filename = s"$LOCAL_DIR$name.mlm"
-    saveLrPbPack(ftrl, filename, "ftrl", name)
+    Ftrl.saveLrPbPack(ftrl, filename, "ftrl", name, mode = ID_FEATURES_SIZE, offset = XGBOOST_FEATURE_SIZE)
     println(s"Save model locally to $filename")
 
     // upload to redis and mlcpp machine
@@ -234,8 +234,6 @@ object FtrlSnapshotId {
         stringID.append(x + "_installed" + advertiserID.toString + "_adv")
       })
     }
-
-
     return (originID, stringID)
   }
 
@@ -244,30 +242,6 @@ object FtrlSnapshotId {
   }
 
   def getHashedID(id: String, size: Int, offset: Int): Int = {
-    return (Utils.djb2Hash(id) % ULong(size)).toInt + offset
+    return (Math.abs(Murmur3Hash.stringHash64(id,0) % size) + offset).toInt
   }
-
-  def saveLrPbPack(ftrl: Ftrl, path: String, parser: String, name: String): Unit = {
-    val lr = LRModel(
-      parser = parser,
-      featureNum = ftrl.w.length,
-      weights = ftrl.w.zipWithIndex.toMap.map(x => (x._2, x._1))
-    )
-    val ir = IRModel(
-    )
-    val pack = Pack(
-      name = name,
-      createTime = new Date().getTime,
-      lr = Option(lr),
-      ir = Option(ir),
-      dict = Option(ftrl.dict),
-      strategy = Strategy.StrategyXgboostFtrl,
-      gbmfile = s"data/ctr-portrait9-qtt-list.gbm",
-      gbmTreeLimit = 200,
-      gbmTreeDepth = 10,
-      negSampleRatio = 0.2
-    )
-    Utils.saveProtoToFile(pack, path)
-  }
-
 }
