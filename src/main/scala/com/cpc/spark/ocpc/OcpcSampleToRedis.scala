@@ -123,7 +123,7 @@ object OcpcSampleToRedis {
 //    val returnValue = resultList.mkString(",")
 //    println(returnValue)
 
-    dataset.write.mode("overwrite").saveAsTable("test.test_redis_table_20180927")
+//    dataset.write.mode("overwrite").saveAsTable("test.test_redis_table_20180927")
 
     val conf = ConfigFactory.load()
 
