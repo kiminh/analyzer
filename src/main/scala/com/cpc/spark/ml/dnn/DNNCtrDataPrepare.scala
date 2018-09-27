@@ -131,7 +131,7 @@ object DNNCtrDataPrepare {
         val sparse = x._1.getAs[sparse]("sparse")
         (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Int]]("dense"),
           sparse.idx0, sparse.idx1, sparse.idx2, sparse.id_arr)
-      }.toDF("label", "dense", "idx0", "idx1", "idx2", "id_arr")
+      }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
 
       /*.select(
       $"label",
