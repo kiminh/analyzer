@@ -143,6 +143,7 @@ object DNNCtrDataPrepare {
       $"sparse".getField("_2").alias("idx1"),
       $"sparse".getField("_3").alias("idx2"),
       $"sparse".getField("_4").alias("id_arr"))
+      .persist()
 
     val Array(traindata, testdata) = data.randomSplit(Array(0.8, 0.2), 1030L)
 
@@ -156,7 +157,7 @@ object DNNCtrDataPrepare {
       (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
         x._1.getAs[Seq[Long]]("idx0"), x._1.getAs[Seq[Long]]("idx1"),
         x._1.getAs[Seq[Long]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
-    }.toDF("sample_idx", "idx0", "idx1", "idx2", "id_arr")
+    }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
       .repartition(200).write.mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
@@ -167,7 +168,7 @@ object DNNCtrDataPrepare {
       (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
         x._1.getAs[Seq[Long]]("idx0"), x._1.getAs[Seq[Long]]("idx1"),
         x._1.getAs[Seq[Long]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
-    }.toDF("sample_idx", "idx0", "idx1", "idx2", "id_arr")
+    }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
       .repartition(50).write.mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
