@@ -98,8 +98,10 @@ object OcpcSampleToRedis {
     println("size of dataset")
     println(dataset.count())
     var cnt = spark.sparkContext.longAccumulator
+    var changeCnt = spark.sparkContext.longAccumulator
     println("###############1")
     println(cnt)
+    println(changeCnt)
     dataset.repartition(50).foreachPartition(iterator => {
       iterator.foreach(record => {
         val uid = record.get(0).toString
@@ -113,6 +115,7 @@ object OcpcSampleToRedis {
           user.setCtrcnt(ctrCnt)
           user.setCvrcnt(cvrCnt)
           redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+          changeCnt.add(1)
         }
       })
 
@@ -120,6 +123,7 @@ object OcpcSampleToRedis {
     println("####################2")
     println(s"complete partition loop")
     println(cnt)
+    println(changeCnt)
     val test = dataset.first()
     println(test.get(0).toString)
     // disconnect
