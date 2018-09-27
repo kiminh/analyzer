@@ -86,9 +86,10 @@ object OcpcSampleToRedis {
     println("save to table: test.userid_historical_data")
 
     // save into redis
-//    val tmpData = uidData.filter("ctr_cnt>0").limit(20)
-    val tmpData = spark.table("test.test_redis_table_20180927")
-    savePbRedis(tmpData, spark)
+    val tmpData = uidData.filter("ctr_cnt>0").limit(20)
+    tmpData.write.mode("overwrite").saveAsTable("test.test_redis_table_20180927")
+//    val tmpData = spark.table("test.test_redis_table_20180927")
+    savePbRedis("test.test_redis_table_20180927", spark)
 //    savePbPack(userData)
 //    val keyList = keys.split(",")
 //    for (key <- keyList)
@@ -96,7 +97,7 @@ object OcpcSampleToRedis {
   }
 
 
-  def savePbRedis(dataset: Dataset[Row], spark: SparkSession): Unit = {
+  def savePbRedis(tableName: String, spark: SparkSession): Unit = {
     var cnt = spark.sparkContext.longAccumulator
     var changeCnt = spark.sparkContext.longAccumulator
     var cvrResultAcc = spark.sparkContext.longAccumulator
@@ -106,6 +107,7 @@ object OcpcSampleToRedis {
     println(changeCnt)
     println(ctrResultAcc)
     println(cvrResultAcc)
+    val dataset = spark.table(tableName)
 //    var resultList = new ListBuffer[String]
 
 //    var loopCnt = 1
@@ -127,7 +129,7 @@ object OcpcSampleToRedis {
 
     val conf = ConfigFactory.load()
 
-    val data = dataset.select("uid", "data")
+//    val data = dataset.select("uid", "data")
 
     dataset.foreachPartition(iterator => {
 
