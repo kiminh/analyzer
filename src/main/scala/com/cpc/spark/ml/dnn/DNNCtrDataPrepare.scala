@@ -139,11 +139,11 @@ object DNNCtrDataPrepare {
       */
       .select(
       $"label",
-      $"dense",
+      $"dense"/*,
       $"sparse".getField("_1").alias("idx0"),
       $"sparse".getField("_2").alias("idx1"),
       $"sparse".getField("_3").alias("idx2"),
-      $"sparse".getField("_4").alias("id_arr"))
+      $"sparse".getField("_4").alias("id_arr")*/)
       .persist()
 
     val Array(traindata, testdata) = data.randomSplit(Array(0.8, 0.2), 1030L)
@@ -252,15 +252,13 @@ object DNNCtrDataPrepare {
     t match {
       case "int" => udf {
         seq: Seq[Int] =>
-          val re = if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030).toDouble
-          else Seq(Murmur3Hash.stringHash64(prefix, 1030).toDouble)
-          Vectors.dense(re.toArray)
+          if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
+          else Seq(Murmur3Hash.stringHash64(prefix, 1030))
       }
       case "string" => udf {
         seq: Seq[String] =>
-          val re = if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030).toDouble
-          else Seq(Murmur3Hash.stringHash64(prefix, 1030).toDouble)
-          Vectors.dense(re.toArray)
+          if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
+          else Seq(Murmur3Hash.stringHash64(prefix, 1030))
       }
     }
   }
