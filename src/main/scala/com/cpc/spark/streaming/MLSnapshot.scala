@@ -58,7 +58,7 @@ object MLSnapshot {
         currentBatchStartTime = new Date().getTime
       }
 
-    val base_data=messages.repartition(100).map{
+    val base_data=messages.repartition(720).map{
         case (key, v) =>
           try {
             val logdata = LogData.parseData(v)
@@ -101,7 +101,6 @@ object MLSnapshot {
           }
       }
       .filter(x => x != null && x.searchid.length > 0 && x.ideaid > 0)
-      .repartition(720)
 
     val conf = ConfigFactory.load()
 
