@@ -161,11 +161,12 @@ class Ftrl(size: Int) {
     x foreach { x =>
       val sign = if (zDict.getOrElse(x, 0d) < 0) -1.0 else 1.0
 
-      if (sign * zDict.getOrElse(x, 0d) <= L1)
-        wDict.put(x, 0d)
-      else
+      if (sign * zDict.getOrElse(x, 0d) <= L1) {
+        wDict.remove(x)
+      }
+      else {
         wDict.put(x, (sign * L1 - zDict.getOrElse(x, 0d)) / ((beta + math.sqrt(nDict.getOrElse(x, 0d))) / alpha + L2))
-
+      }
       wTx = wTx + wDict.getOrElse(x, 0d)
     }
     return sigmoid(wTx)

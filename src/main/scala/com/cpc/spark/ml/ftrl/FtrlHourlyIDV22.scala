@@ -200,6 +200,7 @@ object FtrlHourlyIDV22 {
       val interestID = x.split("=")(0)
       idFeatures.append("i" + interestID.toString)
       idFeatures.append("i" + interestID.toString + "adv" + advertiserID.toString)
+      idFeatures.append("i" + interestID.toString + "unt" + unitID.toString)
     })
     if (interestString.length > 0) {
       namespace.append("i")
