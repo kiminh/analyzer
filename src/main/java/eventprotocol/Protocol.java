@@ -1571,6 +1571,14 @@ public final class Protocol {
      * <code>QIHU_DSP = 17;</code>
      */
     QIHU_DSP(17),
+    /**
+     * <code>XINGU_DSP = 18;</code>
+     */
+    XINGU_DSP(18),
+    /**
+     * <code>GANJIWANG_DSP = 19;</code>
+     */
+    GANJIWANG_DSP(19),
     ;
 
     /**
@@ -1645,6 +1653,14 @@ public final class Protocol {
      * <code>QIHU_DSP = 17;</code>
      */
     public static final int QIHU_DSP_VALUE = 17;
+    /**
+     * <code>XINGU_DSP = 18;</code>
+     */
+    public static final int XINGU_DSP_VALUE = 18;
+    /**
+     * <code>GANJIWANG_DSP = 19;</code>
+     */
+    public static final int GANJIWANG_DSP_VALUE = 19;
 
 
     public final int getNumber() {
@@ -1678,6 +1694,8 @@ public final class Protocol {
         case 15: return QUYUANSU_DSP;
         case 16: return TOUTIAO_DSP;
         case 17: return QIHU_DSP;
+        case 18: return XINGU_DSP;
+        case 19: return GANJIWANG_DSP;
         default: return null;
       }
     }
@@ -50680,25 +50698,26 @@ public final class Protocol {
       "ype\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI",
       "\020\003*\"\n\tGeoSource\022\n\n\006NATIVE\020\001\022\t\n\005BAIDU\020\002*1" +
       "\n\nChargeType\022\010\n\004FREE\020\000\022\007\n\003CPC\020\001\022\007\n\003CPM\020\002" +
-      "\022\007\n\003CPA\020\003*\216\002\n\003Dsp\022\013\n\007CPC_DSP\020\001\022\016\n\nINMOBI" +
+      "\022\007\n\003CPA\020\003*\260\002\n\003Dsp\022\013\n\007CPC_DSP\020\001\022\016\n\nINMOBI" +
       "_DSP\020\002\022\020\n\014TANX_SSP_DSP\020\003\022\r\n\tBOTTOMING\020\004\022" +
       "\017\n\013HUZHONG_DSP\020\005\022\r\n\tFANCY_DSP\020\006\022\013\n\007GDT_D" +
       "SP\020\007\022\020\n\014MOBVISTA_DSP\020\010\022\r\n\tVANKA_DSP\020\t\022\017\n" +
       "\013IFLYTEK_DSP\020\n\022\014\n\010WINQ_DSP\020\013\022\r\n\tVLION_DS" +
       "P\020\014\022\016\n\nYOUDAO_DSP\020\r\022\014\n\010MOMO_DSP\020\016\022\020\n\014QUY" +
       "UANSU_DSP\020\017\022\017\n\013TOUTIAO_DSP\020\020\022\014\n\010QIHU_DSP" +
-      "\020\021*\303\003\n\014AntispamRule\022\021\n\rDUP_SEARCH_ID\020\001\022\021",
-      "\n\rOUT_TIME_SPAN\020\002\022\014\n\010DUP_USER\020\003\022\021\n\rNEW_U" +
-      "SER_RATE\020\004\022\022\n\016INVALID_COOKIE\020\005\022\022\n\016INVALI" +
-      "D_REGION\020\006\022\016\n\nNEW_COOKIE\020\007\022\r\n\tNO_COOKIE\020" +
-      "\010\022\022\n\016NO_DEVICE_INFO\020\t\022\020\n\014NO_DEVICE_ID\020\n\022" +
-      "\013\n\007ON_MASK\020\013\022\n\n\006DUP_IP\020\014\022\022\n\016JS_CLICK_DEL" +
-      "TA\020\r\022\021\n\rSAME_POSITION\020\016\022\014\n\010NO_EXTRA\020\017\022\016\n" +
-      "\nNO_REFERER\020\020\022\023\n\017CK_DISPATCHTIME\020\021\022\n\n\006RA" +
-      "NDOM\020\022\022\010\n\004GIFT\020\023\022\016\n\nBAD_METHOD\020\024\022\022\n\016SERV" +
-      "ER_REQUEST\020\025\022\013\n\007MAX_CTR\020\026\022\013\n\007DIFF_UA\020\027\022\r" +
-      "\n\tMAX_CLICK\020\030\022\017\n\013TRAIN_MODEL\020\031\022\n\n\006IP_ISP",
-      "\020\032\022\014\n\010IP_BLACK\020\033"
+      "\020\021\022\r\n\tXINGU_DSP\020\022\022\021\n\rGANJIWANG_DSP\020\023*\303\003\n",
+      "\014AntispamRule\022\021\n\rDUP_SEARCH_ID\020\001\022\021\n\rOUT_" +
+      "TIME_SPAN\020\002\022\014\n\010DUP_USER\020\003\022\021\n\rNEW_USER_RA" +
+      "TE\020\004\022\022\n\016INVALID_COOKIE\020\005\022\022\n\016INVALID_REGI" +
+      "ON\020\006\022\016\n\nNEW_COOKIE\020\007\022\r\n\tNO_COOKIE\020\010\022\022\n\016N" +
+      "O_DEVICE_INFO\020\t\022\020\n\014NO_DEVICE_ID\020\n\022\013\n\007ON_" +
+      "MASK\020\013\022\n\n\006DUP_IP\020\014\022\022\n\016JS_CLICK_DELTA\020\r\022\021" +
+      "\n\rSAME_POSITION\020\016\022\014\n\010NO_EXTRA\020\017\022\016\n\nNO_RE" +
+      "FERER\020\020\022\023\n\017CK_DISPATCHTIME\020\021\022\n\n\006RANDOM\020\022" +
+      "\022\010\n\004GIFT\020\023\022\016\n\nBAD_METHOD\020\024\022\022\n\016SERVER_REQ" +
+      "UEST\020\025\022\013\n\007MAX_CTR\020\026\022\013\n\007DIFF_UA\020\027\022\r\n\tMAX_",
+      "CLICK\020\030\022\017\n\013TRAIN_MODEL\020\031\022\n\n\006IP_ISP\020\032\022\014\n\010" +
+      "IP_BLACK\020\033"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
