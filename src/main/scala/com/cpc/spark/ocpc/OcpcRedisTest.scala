@@ -32,9 +32,11 @@ object OcpcRedisTest {
     val dataset = spark.table("test.test_redis_table_20180928").orderBy(rand(randSeed)).limit(20)
     for (row <- dataset.collect()) {
       val key = row.get(0).toString
-      val data = row.get(3).toString
+      val ctrCnt = row.getLong(1)
+      val cvrCnt = row.getLong(2)
+//      val data = row.get(3).toString
       val kValue = key + "_UPDATA"
-      println(s"$key, $data")
+      println(s"$key, $ctrCnt, $cvrCnt")
       testPbRedis(kValue)
     }
 
