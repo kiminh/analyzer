@@ -206,7 +206,7 @@ object FtrlHourlyIDV22 {
       namespace.append("i_adv_")
     }
     // style
-    val styleID = row.getAs[Int]("exp_style_int")
+    val styleID = row.getAs[Long]("exp_style_int")
     idFeatures.append("stl" + styleID.toString)
     if (styleID != 0) {
       namespace.append("stl")
