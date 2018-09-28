@@ -93,7 +93,7 @@ object OcpcSampleToRedis {
     val dataset = spark.table(tableName)
     val conf = ConfigFactory.load()
 
-    dataset.coalesce(100).foreachPartition(iterator => {
+    dataset.repartition(50).foreachPartition(iterator => {
 
         val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
 
