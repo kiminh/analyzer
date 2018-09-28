@@ -242,6 +242,7 @@ object SaveFeatures {
          |    on a.searchid=b.searchid
         """.stripMargin.format(date, hour, date, hour))
       .rdd
+      .filter(x => x.getAs[String]("searchid") != null)
       .map {
         x =>
           (x.getAs[String]("search_id"), Seq(x))
