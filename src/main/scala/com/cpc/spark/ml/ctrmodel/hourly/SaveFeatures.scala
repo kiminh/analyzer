@@ -223,7 +223,8 @@ object SaveFeatures {
     import spark.implicits._
     val cvrlog = spark.sql(
       s"""
-         |select a.adslot_type
+         |select a.searchid as search_id
+         |       ,a.adslot_type
          |       ,a.ext["client_type"].string_value as client_type
          |       ,a.ext["adclass"].int_value  as adclass
          |       ,a.ext_int['siteid'] as siteid
@@ -243,7 +244,7 @@ object SaveFeatures {
       .rdd
       .map {
         x =>
-          (x.getAs[String]("searchid"), Seq(x))
+          (x.getAs[String]("search_id"), Seq(x))
       }
       .reduceByKey(_ ++ _)
       .map {
