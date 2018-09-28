@@ -44,6 +44,7 @@ object FtrlHourlyIDV22 {
     val gbdtVersion = args(5).toInt
     val ftrlVersion = args(6).toInt
     val l1 = args(7).toDouble
+    val profileDt = args(8).toString
     val typearray = typename.split("-")
     val adslot = typearray(0)
     val ctrcvr = typearray(1)
@@ -58,6 +59,7 @@ object FtrlHourlyIDV22 {
     println(s"adslot=$adslot")
     println(s"ctrcvr=$ctrcvr")
     println(s"l1=$l1")
+    println(s"profileDt=$profileDt")
 
 
     val inputName = s"/user/cpc/qtt-portrait-ftrl/sample_for_ftrl_with_id/ftrl-with-id-${dt}-${hour}-${typename}-${gbdtVersion}.svm"
@@ -83,15 +85,31 @@ object FtrlHourlyIDV22 {
     println(s"xgBoost filtered data size = ${sample.filter(x => x.getAs[Int]("hasError") > 0).count()}")
     println(s"xgBoost correct data size = ${sample.filter(x => x.getAs[Int]("hasError") == 0).count()}")
 
+    val userProfile = spark.sql(
+      s"""
+         | select *
+         | from dl_cpc.cpc_user_features_from_algo
+         | where
+       """.stripMargin
+    )
+
     val log = spark.sql(
       s"""
-        |select *,
+        |select * from
+        |(select *,
         | ext['adclass'].int_value as ad_class_int,
         | ext_int['exp_style'] as exp_style_int
         | from dl_cpc.cpc_union_log
         |where `date` = '$dt' and hour = '$hour'
         |and media_appsid  in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0
-        |and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0
+        |and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0) a
+        |left join (
+        | select
+        |   features['u_dy_6_readcate'].stringarrayvalue as rec_user_cate,
+        |   features['u_dy_5_readsourcename'].stringarrayvalue as rec_user_source
+        | from dl_cpc.cpc_user_features_from_algo
+        | where load_date='$profileDt'
+        |) on (a.ext_string['qtt_member_id'] = b.member_id)
       """.stripMargin)
 
     var merged = sample
@@ -223,6 +241,30 @@ object FtrlHourlyIDV22 {
       if (apps.nonEmpty) {
         namespace.append("ap")
         namespace.append("ap_adv_")
+      }
+    }
+    // rec_user_cate
+    if (row.getAs[Object]("rec_user_cate") != null) {
+      val categories = row.getAs[mutable.WrappedArray[String]]("rec_user_cate")
+      categories.foreach(x => {
+        idFeatures.append("ruc" + x)
+        idFeatures.append("ruc" + x + "adv" + advertiserID.toString)
+      })
+      if (categories.nonEmpty) {
+        namespace.append("ruc")
+        namespace.append("ruc_adv_")
+      }
+    }
+    // rec_user_source
+    if (row.getAs[Object]("rec_user_source") != null) {
+      val categories = row.getAs[mutable.WrappedArray[String]]("rec_user_source")
+      categories.foreach(x => {
+        idFeatures.append("rus" + x)
+        idFeatures.append("rus" + x + "adv" + advertiserID.toString)
+      })
+      if (categories.nonEmpty) {
+        namespace.append("rus")
+        namespace.append("rus_adv_")
       }
     }
     (idFeatures, namespace)
