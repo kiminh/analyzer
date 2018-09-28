@@ -223,12 +223,12 @@ object SaveFeatures {
     import spark.implicits._
     val cvrlog = spark.sql(
       s"""
-         |select adslot_type
-         |       ,ext["client_type"].string_value as client_type
-         |       ,ext["adclass"].int_value  as adclass
-         |       ,ext_int['siteid'] as siteid
-         |       ,adsrc
-         |       ,interaction
+         |select a.adslot_type
+         |       ,a.ext["client_type"].string_value as client_type
+         |       ,a.ext["adclass"].int_value  as adclass
+         |       ,a.ext_int['siteid'] as siteid
+         |       ,a.adsrc
+         |       ,a.interaction
          |       ,b.*
          |from (select * from dl_cpc.cpc_union_log
          |        where media_appsid in (80000001,80000002,80000006,80000064,80000066)
