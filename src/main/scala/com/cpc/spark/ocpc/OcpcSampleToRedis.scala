@@ -129,7 +129,7 @@ object OcpcSampleToRedis {
             val cvrCnt = record.getLong(2)
             ctrResultAcc.add(ctrCnt)
             cvrResultAcc.add(cvrCnt)
-            
+
             val buffer = redis.get[Array[Byte]](key).orNull
             var user: UserProfile.Builder = null
             if (buffer != null) {
