@@ -72,7 +72,8 @@ object OcpcSampleToRedis {
       .agg(sum("cost").alias("cost"), sum("cvr_cnt").alias("cvr_cnt"), sum("ctr_cnt").alias("ctr_cnt"))
 
     // save into redis
-    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
+    val tmpData = uidData.limit(10000)
+    tmpData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
     savePbRedis("test.uid_userporfile_ctr_cvr", spark)
     savePbPack(userData)
   }
@@ -92,7 +93,7 @@ object OcpcSampleToRedis {
     val dataset = spark.table(tableName)
     val conf = ConfigFactory.load()
 
-    dataset.foreachPartition(iterator => {
+    dataset.repartition(100).foreachPartition(iterator => {
 
         val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
 
