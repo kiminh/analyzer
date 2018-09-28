@@ -18,6 +18,7 @@ import scala.collection.mutable.ListBuffer
 import userocpc.userocpc._
 //import userocpc.User
 import java.io.FileOutputStream
+import org.apache.spark.sql.functions.rand
 
 import org.apache.spark.TaskContext
 
@@ -86,9 +87,8 @@ object OcpcSampleToRedis {
     println("save to table: test.userid_historical_data")
 
     // save into redis
-//    val tmpData = uidData.limit(1000)
-//    tmpData.write.mode("overwrite").saveAsTable("test.test_redis_table_20180928")
-//    val tmpData = spark.table("test.test_redis_table_20180927")
+    val tmpData = uidData.limit(1000)
+    tmpData.write.mode("overwrite").saveAsTable("test.test_redis_table_20180928")
     savePbRedis("test.test_redis_table_20180928", spark)
 //    savePbPack(userData)
 //    val keyList = keys.split(",")
