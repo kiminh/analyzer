@@ -127,7 +127,9 @@ object OcpcSampleToRedis {
 //            val cvrCnt = record.getString(2).toLong
             val ctrCnt = record.getLong(1)
             val cvrCnt = record.getLong(2)
-
+            ctrResultAcc.add(ctrCnt)
+            cvrResultAcc.add(cvrCnt)
+            
             val buffer = redis.get[Array[Byte]](key).orNull
             var user: UserProfile.Builder = null
             if (buffer != null) {
@@ -135,8 +137,7 @@ object OcpcSampleToRedis {
               val u = user.build()
               user = user.setCtrcnt(ctrCnt)
               user = user.setCvrcnt(cvrCnt)
-              ctrResultAcc.add(ctrCnt)
-              cvrResultAcc.add(cvrCnt)
+
               redis.setex(key, 3600 * 24 * 30, user.build().toByteArray)
               changeCnt.add(1)
             }
