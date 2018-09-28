@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.common
 
-import com.cpc.spark.log.parser.TraceLog
+import com.cpc.spark.log.parser.{ExtValue, TraceLog}
 import com.typesafe.config.Config
 import org.apache.spark.sql.Row
 
@@ -164,14 +164,14 @@ object Utils {
     }
 
 
-    if(version == "v1"){
+    if (version == "v1") {
       if (((stay >= 30 && click > 0) || active > 0) && disactive == 0) {
         1
       } else {
         0
       }
     }
-    else{
+    else {
       if ((installed > 0 || active > 0) && disactive == 0) {
         1
       } else {
@@ -179,5 +179,84 @@ object Utils {
       }
     }
   }
+
+  def cvrPositiveV2(traces: Seq[Row], version: String): Int = {
+
+    var report_user_stayinwx = 0
+    var active5 = 0
+    var disactive = 0
+    var active_href = 0
+    var report_download_pkgadded = 0
+    var active = 0
+    var installed = 0
+
+
+    var active_sdk_site_wz = 0 //建站sdk栏位网赚
+    var active_js_site_wz = 0 //建站非sdk栏位网赚
+    var active_js_nonsite_wz = 0 //非建站
+    var active_js_download = 0 //下载类
+    var other = 0 //非网赚非彩票非下载
+
+    traces.foreach {
+      r =>
+        val adsrc = r.getAs[Int]("adsrc")
+        val adclass = r.getAs[Int]("adclass")
+        val siteid = r.getAs[Int]("siteid")
+        val adslot_type = r.getAs[Int]("adslot_type")
+        val client_type = r.getAs[String]("client_type")
+        val interaction = r.getAs[Int]("interaction")
+
+
+        r.getAs[String]("trace_op1").toLowerCase match {
+          case "report_user_stayinwx" => report_user_stayinwx += 1
+          case "report_download_pkgadded" => report_download_pkgadded += 1
+          case "report_download_installed" => installed += 1
+          case _ =>
+        }
+
+        r.getAs[String]("trace_type") match {
+          case "active5" => active5 += 1
+          case "disactive" => disactive += 1
+          case "active_href" => active_href += 1
+          case s if s.startsWith("active") => active += 1
+          case _ =>
+        }
+
+
+        //第一类：建站：详情页、列表页等sdk栏位，网赚+彩票
+        if ((adsrc == 0 || adsrc == 1) && adclass == 110110100 && report_user_stayinwx > 0 && siteid > 0 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
+          active_sdk_site_wz += 1
+        }
+
+        //第二类：详情页、互动等其他非sdk栏位，网赚+彩票
+        if ((adsrc == 0 || adsrc == 1) && adclass == 110110100 && (active5 > 0 && disactive == 0) && siteid > 0 && (adslot_type == 2 || adslot_type == 3) && client_type != "NATIVESDK") {
+          active_js_site_wz += 1
+        }
+
+        //第三类：所有类型，3个栏位，网赚+彩票
+        if ((adsrc == 0 || adsrc == 1) && adclass == 110110100 && active_href > 0 && siteid <= 0 && (adslot_type == 1 || adslot_type == 2 || adslot_type == 3)) {
+          active_js_nonsite_wz += 1
+        }
+
+        //第四类：下载类：interation=2+sdk栏位（列表+详情）
+        if ((adsrc == 0 || adsrc == 1) && interaction == 2 && report_download_pkgadded > 0 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
+          active_js_download += 1
+        }
+
+        //第五类：其他(非网赚非下载类)+所有类型+所有栏位
+        if ((installed > 0 || active > 0) && disactive == 0) {
+          other += 1
+        }
+    }
+
+
+    if (active_sdk_site_wz > 0 || active_js_site_wz > 0 || active_js_nonsite_wz > 0 || active_js_download > 0) {
+      1
+    } else {
+      0
+    }
+  }
+
+
 }
 
