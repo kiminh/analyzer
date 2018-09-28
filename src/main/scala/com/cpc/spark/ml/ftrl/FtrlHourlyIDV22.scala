@@ -105,12 +105,15 @@ object FtrlHourlyIDV22 {
         |and ideaid > 0 and adsrc = 1 and adslot_type in (1) AND userid > 0) a
         |left join (
         | select
+        |   member_id,
         |   features['u_dy_6_readcate'].stringarrayvalue as rec_user_cate,
         |   features['u_dy_5_readsourcename'].stringarrayvalue as rec_user_source
         | from dl_cpc.cpc_user_features_from_algo
         | where load_date='$profileDt'
-        |) on (a.ext_string['qtt_member_id'] = b.member_id)
+        |) b on (a.ext_string['qtt_member_id'] = b.member_id)
       """.stripMargin)
+
+    println(log)
 
     var merged = sample
       .filter(x => x.getAs[Int]("hasError") == 0)
