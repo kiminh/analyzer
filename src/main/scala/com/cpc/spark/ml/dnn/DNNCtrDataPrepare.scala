@@ -164,7 +164,7 @@ object DNNCtrDataPrepare {
         x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
         x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
     }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
-      .repartition(200).write.mode("overwrite")
+      .repartition(50).write.mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"/home/cpc/zhj/ctr/dnn/data/traindata")
@@ -175,7 +175,7 @@ object DNNCtrDataPrepare {
         x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
         x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
     }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
-      .repartition(50).write.mode("overwrite")
+      .repartition(10).write.mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"/home/cpc/zhj/ctr/dnn/data/testdata")
