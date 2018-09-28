@@ -252,15 +252,15 @@ object DNNCtrDataPrepare {
     t match {
       case "int" => udf {
         seq: Seq[Int] =>
-          val re = if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
-          else Seq(Murmur3Hash.stringHash64(prefix, 1030))
-          re.toArray
+          val re = if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030).toDouble
+          else Seq(Murmur3Hash.stringHash64(prefix, 1030).toDouble)
+          Vectors.dense(re.toArray)
       }
       case "string" => udf {
         seq: Seq[String] =>
-          val re = if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
-          else Seq(Murmur3Hash.stringHash64(prefix, 1030))
-          re.toArray
+          val re = if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030).toDouble
+          else Seq(Murmur3Hash.stringHash64(prefix, 1030).toDouble)
+          Vectors.dense(re.toArray)
       }
     }
   }
