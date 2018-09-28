@@ -201,7 +201,7 @@ object Utils {
       r =>
         val adsrc = r.getAs[Int]("adsrc")
         val adclass = r.getAs[Int]("adclass")
-        val siteid = r.getAs[Int]("siteid")
+        val siteid = r.getAs[Long]("siteid")
         val adslot_type = r.getAs[Int]("adslot_type")
         val client_type = r.getAs[String]("client_type")
         val interaction = r.getAs[Int]("interaction")
