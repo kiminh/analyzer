@@ -17,13 +17,6 @@ import scala.collection.mutable.ListBuffer
 
 object FtrlHourlyIDV22 {
 
-  val ADVERTISER_ID_NAME = "advertiser"
-  val PLAN_ID_NAME = "plan"
-  val UNIT_ID_NAME = "unit"
-  val IDEA_ID_NAME = "idea"
-  val AD_CLASS_NAME = "ad_class"
-  val CITY_ID_NAME = "city"
-
   val LOCAL_DIR = "/home/cpc/ftrl/"
   val HDFS_MODEL_DIR = "hdfs:///user/cpc/qtt-ftrl-model/"
   val HDFS_MODEL_HISTORY_DIR = "hdfs:///user/cpc/qtt-ftrl-model-history/"
@@ -164,41 +157,74 @@ object FtrlHourlyIDV22 {
   // return: string formed id
   def getAllIDFeatures(row: Row): (Seq[String], Seq[String]) = {
     val idFeatures = new ListBuffer[String]()
+    val namespace = new ListBuffer[String]()
     // advertiser id
     val advertiserID = row.getAs[Int]("userid")
-    idFeatures.append(ADVERTISER_ID_NAME + advertiserID.toString)
+    idFeatures.append("adv" + advertiserID.toString)
+    if (advertiserID != 0) {
+      namespace.append("adv")
+    }
     // plan id
     val planID = row.getAs[Int]("planid")
-    idFeatures.append(PLAN_ID_NAME + planID.toString)
+    idFeatures.append("pl" + planID.toString)
+    if (planID != 0) {
+      namespace.append("pl")
+    }
     // unit id
     val unitID = row.getAs[Int]("unitid")
-    idFeatures.append("unit" + unitID.toString)
+    idFeatures.append("unt" + unitID.toString)
+    if (unitID != 0) {
+      namespace.append("unt")
+    }
     // idea id
     val ideaID = row.getAs[Int]("ideaid")
-    idFeatures.append("idea" + ideaID.toString)
+    idFeatures.append("id" + ideaID.toString)
+    if (ideaID != 0) {
+      namespace.append("id")
+    }
     // adclass
-    idFeatures.append("ad_class" + row.getAs[Int]("ad_class_int").toString)
+    val adclassID = row.getAs[Int]("ad_class_int")
+    idFeatures.append("adc" + adclassID.toString)
+    if (adclassID != 0) {
+      namespace.append("adc")
+    }
     // cityid
-    idFeatures.append("city" + row.getAs[Int]("city").toString)
+    val cityID = row.getAs[Int]("city")
+    idFeatures.append("ct" + cityID.toString)
+    if (cityID != 0) {
+      namespace.append("ct")
+    }
     // user interest
     val interestString = row.getAs[String]("interests")
     interestString.split(",").foreach(x => {
       val interestID = x.split("=")(0)
-      idFeatures.append("i_" + interestID.toString)
-      idFeatures.append("i_" + interestID.toString + "adv_" + advertiserID.toString)
+      idFeatures.append("i" + interestID.toString)
+      idFeatures.append("i" + interestID.toString + "adv" + advertiserID.toString)
     })
+    if (interestString.length > 0) {
+      namespace.append("i")
+      namespace.append("i_adv_")
+    }
     // style
-    idFeatures.append("style" + row.getAs[Int]("exp_style_int"))
+    val styleID = row.getAs[Int]("exp_style_int")
+    idFeatures.append("stl" + styleID.toString)
+    if (styleID != 0) {
+      namespace.append("stl")
+    }
     // installed apps
     if (row.getAs[Object]("pkgs") != null) {
       val apps = row.getAs[mutable.WrappedArray[String]]("pkgs")
       apps.foreach(x => {
-        idFeatures.append(x + "_installed")
+        idFeatures.append("ap" + x)
         // app cross advertiser id
-        idFeatures.append(x + "_installed" + advertiserID.toString + "_adv")
+        idFeatures.append("ap" + x + "adv" + advertiserID.toString )
       })
+      if (apps.nonEmpty) {
+        namespace.append("ap")
+        namespace.append("ap_adv_")
+      }
     }
-    (idFeatures, null)
+    (idFeatures, namespace)
   }
 
   def getRawHashedID(name: String): Int = {
