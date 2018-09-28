@@ -2,7 +2,6 @@ package com.cpc.spark.ocpc
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.zip
 
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
@@ -12,15 +11,10 @@ import org.apache.spark.sql.functions._
 import userprofile.Userprofile.UserProfile
 
 import scala.collection.mutable.ListBuffer
-//import UseridDataOcpc._
-//import userprofile.Userprofile.SingleUser2
-//import userprofile.Userprofile.{SingleUser, UserOcpc}
 import userocpc.userocpc._
-//import userocpc.User
 import java.io.FileOutputStream
-import org.apache.spark.sql.functions.rand
 
-import org.apache.spark.TaskContext
+
 
 
 object OcpcSampleToRedis {
@@ -70,11 +64,6 @@ object OcpcSampleToRedis {
       .groupBy("uid")
       .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
       .withColumn("data", concat_ws(",", col("ctr_cnt"), col("cvr_cnt")))
-//      .filter("ctr_cnt>0")
-//      .limit(20)
-
-//    uidData.write.mode("overwrite").saveAsTable("test.uid_historical_data")
-    println("save to table: test.uid_historical_data")
 
 
     // calculation for bid and ROI: userid
@@ -82,18 +71,10 @@ object OcpcSampleToRedis {
       .groupBy("userid")
       .agg(sum("cost").alias("cost"), sum("cvr_cnt").alias("cvr_cnt"), sum("ctr_cnt").alias("ctr_cnt"))
 
-
-//    userData.write.mode("overwrite").saveAsTable("test.userid_historical_data")
-    println("save to table: test.userid_historical_data")
-
     // save into redis
-    val tmpData = uidData.limit(1000)
-    tmpData.write.mode("overwrite").saveAsTable("test.test_redis_table_20180928")
-    savePbRedis("test.test_redis_table_20180928", spark)
-//    savePbPack(userData)
-//    val keyList = keys.split(",")
-//    for (key <- keyList)
-//      testPbRedis(key)
+    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
+    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+    savePbPack(userData)
   }
 
 
@@ -103,6 +84,7 @@ object OcpcSampleToRedis {
     var cvrResultAcc = spark.sparkContext.longAccumulator
     var ctrResultAcc = spark.sparkContext.longAccumulator
     println("###############1")
+    println(s"accumulator before partition loop: total loop cnt, redis save cnt, ctrcnt, cvrcnt")
     println(cnt)
     println(changeCnt)
     println(ctrResultAcc)
@@ -119,12 +101,6 @@ object OcpcSampleToRedis {
             val uid = record.get(0).toString
             var key = uid + "_UPDATA"
             cnt.add(1)
-//            val cnts = data.split(",")
-//            val rowData = record.get(3).toString
-//            val ctrCnt = rowData.split(",")(0).toLong
-//            val cvrCnt = rowData.split(",")(1).toLong
-//            val ctrCnt = record.getString(1).toLong
-//            val cvrCnt = record.getString(2).toLong
             val ctrCnt = record.getLong(1)
             val cvrCnt = record.getLong(2)
             ctrResultAcc.add(ctrCnt)
@@ -141,12 +117,6 @@ object OcpcSampleToRedis {
               redis.setex(key, 3600 * 24 * 30, user.build().toByteArray)
               changeCnt.add(1)
             }
-//            val bufferNew = redis.get[Array[Byte]](key).orNull
-//            var userNew: UserProfile.Builder = null
-//            userNew = UserProfile.parseFrom(bufferNew).toBuilder
-//            val uNew = userNew.build()
-//            ctrResultAcc.add(uNew.getCtrcnt)
-//            cvrResultAcc.add(uNew.getCvrcnt)
           }
         }
         redis.disconnect
@@ -154,26 +124,11 @@ object OcpcSampleToRedis {
 
 
     println("####################2")
-    println(s"complete partition loop")
+    println(s"accumulator after partition loop: total loop cnt, redis save cnt, ctrcnt, cvrcnt")
     println(cnt)
     println(changeCnt)
     println(ctrResultAcc)
     println(cvrResultAcc)
-  }
-
-  def testPbRedis(key: String): Unit ={
-    println("testPbRedis function: " + key)
-    val conf = ConfigFactory.load()
-    val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-    val buffer = redis.get[Array[Byte]](key).orNull
-    if (buffer != null) {
-      var user = UserProfile.parseFrom(buffer)
-      println(user.getAge)
-      println(user.getCtrcnt)
-      println(user.getCvrcnt)
-//      redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-    }
-    redis.disconnect
   }
 
 
@@ -183,7 +138,6 @@ object OcpcSampleToRedis {
     println("size of the dataframe")
     println(dataset.count)
     for (record <- dataset.collect()) {
-      // todo: use toInt to replace toString
       val kValue = record.get(0).toString
       val costValue = record.get(1).toString
       val ctrCntValue = record.get(2).toString

@@ -1,9 +1,5 @@
 package com.cpc.spark.ocpc
 
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.zip
-
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
@@ -12,15 +8,6 @@ import org.apache.spark.sql.functions._
 import userprofile.Userprofile.UserProfile
 import org.apache.spark.sql.functions.rand
 
-import scala.collection.mutable.ListBuffer
-//import UseridDataOcpc._
-//import userprofile.Userprofile.SingleUser2
-//import userprofile.Userprofile.{SingleUser, UserOcpc}
-import userocpc.userocpc._
-//import userocpc.User
-import java.io.FileOutputStream
-
-import org.apache.spark.TaskContext
 
 
 object OcpcRedisTest {
@@ -29,7 +16,7 @@ object OcpcRedisTest {
 
     // calculate time period for historical data
     val randSeed = args(0).toInt
-    val dataset = spark.table("test.test_redis_table_20180928").orderBy(rand(randSeed)).limit(20)
+    val dataset = spark.table("test.uid_userporfile_ctr_cvr").orderBy(rand(randSeed)).limit(20)
     for (row <- dataset.collect()) {
       val key = row.get(0).toString
       val ctrCnt = row.getLong(1)
