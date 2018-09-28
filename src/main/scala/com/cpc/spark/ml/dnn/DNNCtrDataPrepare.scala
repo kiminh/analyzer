@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
+import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
@@ -251,13 +252,15 @@ object DNNCtrDataPrepare {
     t match {
       case "int" => udf {
         seq: Seq[Int] =>
-          if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
+          val re = if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
           else Seq(Murmur3Hash.stringHash64(prefix, 1030))
+          re.toArray
       }
       case "string" => udf {
         seq: Seq[String] =>
-          if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
+          val re = if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
           else Seq(Murmur3Hash.stringHash64(prefix, 1030))
+          re.toArray
       }
     }
   }
