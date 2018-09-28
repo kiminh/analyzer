@@ -8,9 +8,9 @@ message FtrlProto {
     double beta = 2;
     double L1 = 3;
     double L2 = 4;
-    repeated double n = 5;
-    repeated double z = 6;
-    repeated double w = 7;
+    map<int32, double> n = 5;
+    map<int32, double> z = 6;
+    map<int32, double> w = 7;
 }
 
 message LRModel {

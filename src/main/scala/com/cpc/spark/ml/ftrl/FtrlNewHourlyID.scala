@@ -5,20 +5,19 @@ package com.cpc.spark.ml.ftrl
   * date: 9/18/18
   */
 
-import com.cpc.spark.common.Utils
+import com.cpc.spark.common.{Murmur3Hash, Utils}
 import com.cpc.spark.ml.common.{Utils => MUtils}
-import com.cpc.spark.ml.train.{Ftrl, FtrlSnapshotId}
+import com.cpc.spark.ml.train.Ftrl
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.mllib.regression.LabeledPoint
 import org.apache.spark.rdd.RDD
-import com.cpc.spark.ml.train.FtrlSnapshotId._
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 object FtrlNewHourlyID {
 
   val XGBOOST_FEATURE_SIZE = 500000
-  val ID_FEATURES_SIZE = 50000000 // 50M
 
   val ADVERTISER_ID_NAME = "advertiser"
   val PLAN_ID_NAME = "plan"
@@ -26,7 +25,7 @@ object FtrlNewHourlyID {
   val LOCAL_DIR = "/home/cpc/ftrl/"
   val HDFS_MODEL_DIR = "hdfs:///user/cpc/qtt-ftrl-model/"
   val HDFS_MODEL_HISTORY_DIR = "hdfs:///user/cpc/qtt-ftrl-model-history/"
-  val DEST_DIR = "/home/work/mlcpp/model/"
+  val DEST_DIR = "/home/work/mlcpp/data/"
 
   val DOWN_SAMPLE_RATE = 0.2
 
@@ -63,10 +62,16 @@ object FtrlNewHourlyID {
     println(s"adslot=$adslot")
     println(s"ctrcvr=$ctrcvr")
 
+
     val inputName = s"/user/cpc/qtt-portrait-ftrl/sample_for_ftrl_with_id/ftrl-with-id-${dt}-${hour}-${typename}-${gbdtVersion}.svm"
     println(s"inputname = $inputName")
 
     val spark: SparkSession = Utils.buildSparkSession(name = "full_id_ftrl")
+
+    val currentHDFS = s"${HDFS_MODEL_DIR}ftrl-$typename-$ftrlVersion.mlm"
+    val ftrl = Ftrl.getModelFromProtoOnHDFS(startFresh, currentHDFS, spark)
+    println("before training model info:")
+    printModelInfo(ftrl)
 
     import spark.implicits._
 
@@ -96,26 +101,16 @@ object FtrlNewHourlyID {
 
     val dataWithID = createFeatures(merged)
 
-    val samples = dataWithID.map(x => x._1)
-
-    val currentHDFS = s"${HDFS_MODEL_DIR}ftrl-$typename-$ftrlVersion.mlm"
-
-    val ftrl = Ftrl.getModelFromProtoOnHDFS(startFresh, currentHDFS, spark, XGBOOST_FEATURE_SIZE + ID_FEATURES_SIZE)
-    ftrl.train(spark, samples)
-
-    val ids = dataWithID.map(x => x._2).flatMap(x => x).distinct().collect()
-    val stringIDs = dataWithID.map(x => x._3).flatMap(x => x).distinct().collect()
-    updateDict(ftrl, ids, stringIDs, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)
+    println("start model training")
+    ftrl.trainWithDict(spark, dataWithID)
 
     println("after training model info:")
     printModelInfo(ftrl)
 
-    println(checkCollision(ftrl))
-
     // save model file locally
     val name = s"$ctrcvr-protrait$ftrlVersion-ftrl-id-qtt-$adslot"
     val filename = s"$LOCAL_DIR$name.mlm"
-    Ftrl.saveLrPbPack(ftrl, filename, "ctr-ftrl-v1", name, mode = ID_FEATURES_SIZE, offset = XGBOOST_FEATURE_SIZE)
+    Ftrl.saveLrPbPackWithDict(ftrl, filename, "ctr-ftrl-v1", name)
     println(s"Save model locally to $filename")
 
     if (upload) {
@@ -126,25 +121,52 @@ object FtrlNewHourlyID {
     }
   }
 
-  def createFeatures(df: DataFrame): RDD[(LabeledPoint, Seq[(Int, String)], Seq[String])] = {
-    return df.rdd.map(x => {
+  def printModelInfo(ftrl: Ftrl): Unit = {
+    println(s"Model dict size: ${ftrl.wDict.size}")
+  }
+
+  def createFeatures(df: DataFrame): RDD[(Array[Int], Double)] = {
+     df.rdd.map(x => {
       // prepare xgboost features
       val array = x.getAs[String]("xgBoostFeatures").split("\\s+")
       val xgBoostFeatures = array.map(x => {
         val vals = x.split(":")
-        (vals(0).toInt, 1.0)
+        vals(0).toInt
       })
       // get label
       val label = x.getAs[Double]("label")
-      // prepare id type features
+      // generate original string id
       val allId = getAllIDFeatures(x)
-      val ids = allId._1
-      val stringIDs = allId._2
-      val idSet = ids.map(a => getHashedID(a._1, a._2, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)).toSet
-      val stringSet = stringIDs.map(a => FtrlSnapshotId.getHashedID(a, ID_FEATURES_SIZE, XGBOOST_FEATURE_SIZE)).toSet
-      val sparseIDFeatures = (idSet ++ stringSet).map(a => (a, 1.0))
-      val vec = Vectors.sparse(ID_FEATURES_SIZE + XGBOOST_FEATURE_SIZE, xgBoostFeatures ++ sparseIDFeatures)
-      (LabeledPoint(label, vec), ids, stringIDs)
+      // get hashed id
+      val hashedID = allId.map(a => getRawHashedID(a))
+      // combine xgboost feature and hashed id
+      ((xgBoostFeatures.toSet ++ hashedID.toSet).toArray, label)
     })
+  }
+
+  // return: string formed id
+  def getAllIDFeatures(row: Row): Seq[String] = {
+    val idFeatures = new ListBuffer[String]()
+    // advertiser id
+    val advertiserID = row.getAs[Int]("userid")
+    idFeatures.append(ADVERTISER_ID_NAME + advertiserID.toString)
+    // plan id
+    val planID = row.getAs[Int]("planid")
+    idFeatures.append(PLAN_ID_NAME + planID.toString)
+
+    // installed apps
+    if (row.getAs[Object]("pkgs") != null) {
+      val apps = row.getAs[mutable.WrappedArray[String]]("pkgs")
+      apps.foreach(x => {
+        idFeatures.append(x + "_installed")
+        // app cross advertiser id
+        idFeatures.append(x + "_installed" + advertiserID.toString + "_adv")
+      })
+    }
+    idFeatures
+  }
+
+  def getRawHashedID(name: String): Int = {
+    Murmur3Hash.stringHash64(name, 0).toInt
   }
 }

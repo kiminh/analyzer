@@ -26,8 +26,21 @@ class Ftrl(size: Int) {
   var L1: Double = 0.0
   var L2: Double = 0.0
   var n, z, w = new Array[Double](size)
+  var nDict, zDict, wDict = mutable.Map[Int, Double]()
   var dict: Dict = Dict()
 
+  val TOLERANCE: Double = 1e-6d
+
+
+  def logLoss(y: Double, p: Double): Double = {
+    if (y == 1.0d) {
+      return -1.0 * Math.log(Math.max(p, TOLERANCE))
+    }
+    else if (y == 0.0d) {
+      return -1.0 * Math.log(Math.max(1d - p, 1d - TOLERANCE))
+    }
+    0d
+  }
 
   def toJsonString: String = {
     val json = new JSONObject()
@@ -133,6 +146,31 @@ class Ftrl(size: Int) {
     return 1.0 / (1.0 + math.exp(-wTx))
   }
 
+  def predictWithDict(x: Array[Int]): Double = {
+    var wTx = 0.0
+
+    x foreach { x =>
+      val sign = if (zDict.getOrElse(x, 0d) < 0) -1.0 else 1.0
+
+      if (sign * zDict.getOrElse(x, 0d) <= L1)
+        wDict.put(x, 0d)
+      else
+        wDict.put(x, (sign * L1 - zDict.getOrElse(x, 0d)) / ((beta + math.sqrt(nDict.getOrElse(x, 0d))) / alpha + L2))
+
+      wTx = wTx + wDict.getOrElse(x, 0d)
+    }
+    return 1.0 / (1.0 + math.exp(-wTx))
+  }
+
+  def predictNoUpdateWithDict(x: Array[Int]): Double = {
+    var wTx = 0.0
+
+    x foreach { x =>
+      wTx = wTx + wDict.getOrElse(x, 0d)
+    }
+    return 1.0 / (1.0 + math.exp(-wTx))
+  }
+
   def update(x: Array[Int], p: Double, y: Double): Unit = {
     val g = p - y
 
@@ -141,7 +179,16 @@ class Ftrl(size: Int) {
       z(x) = z(x) + g - sigma * w(x)
       n(x) = n(x) + g * g
     }
+  }
 
+  def updateWithDict(x: Array[Int], p: Double, y: Double): Unit = {
+    val g = p - y
+
+    x foreach { x =>
+      val sigma = (math.sqrt(nDict.getOrElse(x, 0d) + g * g) - math.sqrt(nDict.getOrElse(x, 0d))) / alpha
+      zDict.put(x, zDict.getOrElse(x, 0d) + g - sigma * wDict.getOrElse(x, 0d))
+      nDict.put(x, nDict.getOrElse(x, 0d) + g * g)
+    }
   }
 
   def predictAndAuc(session: SparkSession, instances: Array[LabeledPoint]): Double = {
@@ -156,9 +203,42 @@ class Ftrl(size: Int) {
     return auc
   }
 
+  def predictAndAucWithDict(session: SparkSession, instances: Array[(Array[Int], Double)]): Double = {
+    val listBuffer = new ListBuffer[(Double, Double)]
+    for (instance <- instances) {
+      val x = instance._1
+      val pre = predictWithDict(x)
+      listBuffer.append((pre, instance._2))
+    }
+    val metrics = new BinaryClassificationMetrics(session.sparkContext.parallelize(listBuffer))
+    val auc = metrics.areaUnderROC()
+    return auc
+  }
+
+  def trainWithDict(spark: SparkSession, data: RDD[(Array[Int], Double)]): Unit = {
+    var posCount = 0
+    val res = shuffle(data.collect())
+    println(s"before training auc on test set: ${predictAndAucWithDict(spark, res)}")
+    var logLossSum = 0d
+    for (p <- res) {
+      val x = p._1
+      val pre = predictWithDict(x)
+      updateWithDict(x, pre, p._2)
+      if (p._2 > 0) {
+        posCount += 1
+      }
+      logLossSum += logLoss(p._2, pre)
+    }
+    println(s"logloss=${logLossSum/res.length}")
+    println(s"posCount=$posCount, totalCount=${res.length}")
+    val afterAUC = predictAndAucWithDict(spark, res)
+    println(s"after training auc: $afterAUC")
+  }
+
   def train(spark: SparkSession, data: RDD[LabeledPoint]): Unit = {
     var posCount = 0
     val res = shuffle(data.collect())
+
     val beforeAUC = predictAndAuc(spark, res)
     println(s"before training auc: $beforeAUC")
     for (p <- res) {
@@ -182,8 +262,6 @@ class Ftrl(size: Int) {
     }
     return array
   }
-
-
 }
 
 object Ftrl {
@@ -228,9 +306,9 @@ object Ftrl {
       beta = ftrl.beta,
       l1 = ftrl.L1,
       l2 = ftrl.L2,
-      n = ftrl.n,
-      z = ftrl.z,
-      w = ftrl.w
+      n = ftrl.nDict.toMap,
+      z = ftrl.zDict.toMap,
+      w = ftrl.wDict.toMap
     )
     val fs = FileSystem.get(ctx.sparkContext.hadoopConfiguration)
     val os = new BufferedOutputStream(fs.create(new Path(key)))
@@ -239,8 +317,8 @@ object Ftrl {
     println(s"save model proto to hdfs: $key")
   }
 
-  def getModelFromProtoOnHDFS(startFresh: Boolean, key: String, ctx: SparkSession, size: Int): Ftrl = {
-    val ftrl = new Ftrl(size)
+  def getModelFromProtoOnHDFS(startFresh: Boolean, key: String, ctx: SparkSession): Ftrl = {
+    val ftrl = new Ftrl(1)
     if (startFresh) {
       println("new ftrl")
       return ftrl
@@ -251,14 +329,14 @@ object Ftrl {
     ftrl.beta = proto.beta
     ftrl.L1 = proto.l1
     ftrl.L2 = proto.l2
-    ftrl.n = proto.n.toArray
-    ftrl.z = proto.z.toArray
-    ftrl.w = proto.z.toArray
+    ftrl.nDict = mutable.Map() ++ proto.n.toSeq
+    ftrl.zDict = mutable.Map() ++ proto.z.toSeq
+    ftrl.wDict = mutable.Map() ++ proto.w.toSeq
     println(s"ftrl proto fetched from hdfs: $key")
     return ftrl
   }
 
-  def saveLrPbPack(ftrl: Ftrl, path: String, parser: String, name: String, mode: Int, offset: Int): Unit = {
+  def saveLrPbPack(ftrl: Ftrl, path: String, parser: String, name: String): Unit = {
     val lr = LRModel(
       parser = parser,
       featureNum = ftrl.w.length,
@@ -267,9 +345,7 @@ object Ftrl {
     val ir = IRModel(
     )
     val hashParam = HashParam(
-      method = HashMethod.MurMur3,
-      mode = mode.toLong,
-      offset = offset.toLong
+      method = HashMethod.MurMur3
     )
     val pack = Pack(
       name = name,
@@ -286,4 +362,33 @@ object Ftrl {
     )
     Utils.saveProtoToFile(pack, path)
   }
+
+
+  def saveLrPbPackWithDict(ftrl: Ftrl, path: String, parser: String, name: String): Unit = {
+    val lr = LRModel(
+      parser = parser,
+      featureNum = ftrl.wDict.size,
+      weights = ftrl.wDict.toMap
+    )
+    val ir = IRModel(
+    )
+    val hashParam = HashParam(
+      method = HashMethod.MurMur3
+    )
+    val pack = Pack(
+      name = name,
+      createTime = new Date().getTime,
+      lr = Option(lr),
+      ir = Option(ir),
+      dict = Option(ftrl.dict),
+      strategy = Strategy.StrategyXgboostFtrl,
+      gbmfile = s"data/ctr-portrait9-qtt-list.gbm",
+      gbmTreeLimit = 200,
+      gbmTreeDepth = 10,
+      negSampleRatio = 0.2,
+      hashParam = Option(hashParam)
+    )
+    Utils.saveProtoToFile(pack, path)
+  }
+
 }
