@@ -50,6 +50,7 @@ object FtrlHourlyIDV22 {
     val typename = args(4)
     val gbdtVersion = args(5).toInt
     val ftrlVersion = args(6).toInt
+    val l1 = args(7).toDouble
     val typearray = typename.split("-")
     val adslot = typearray(0)
     val ctrcvr = typearray(1)
@@ -63,6 +64,7 @@ object FtrlHourlyIDV22 {
     println(s"forceNew=$startFresh")
     println(s"adslot=$adslot")
     println(s"ctrcvr=$ctrcvr")
+    println(s"l1=$l1")
 
 
     val inputName = s"/user/cpc/qtt-portrait-ftrl/sample_for_ftrl_with_id/ftrl-with-id-${dt}-${hour}-${typename}-${gbdtVersion}.svm"
@@ -72,6 +74,7 @@ object FtrlHourlyIDV22 {
 
     val currentHDFS = s"${HDFS_MODEL_DIR}ftrl-$typename-$ftrlVersion.mlm"
     val ftrl = Ftrl.getModelFromProtoOnHDFS(startFresh, currentHDFS, spark)
+    ftrl.L1 = l1
     println("before training model info:")
     printModelInfo(ftrl)
 
@@ -107,7 +110,13 @@ object FtrlHourlyIDV22 {
     val userApps = spark.table("dl_cpc.cpc_user_installed_apps").filter(s"load_date='$dt'")
     merged = merged.join(userApps, Seq("uid"), joinType = "left")
 
-    val dataWithID = createFeatures(merged)
+    val allData = createFeatures(merged)
+
+    val nameSpaceCount = allData.map(x => x._3).flatMap(x => x).map(x => (x, 1d)).reduceByKey(_ + _).collect()
+    println("feature name space count:")
+    nameSpaceCount.foreach(x => println(s"${x._1}:${x._2}"))
+
+    val dataWithID = allData.map(x => (x._1, x._2))
 
     println("start model training")
     ftrl.trainWithDict(spark, dataWithID)
@@ -133,7 +142,7 @@ object FtrlHourlyIDV22 {
     println(s"Model dict size: ${ftrl.wDict.size}")
   }
 
-  def createFeatures(df: DataFrame): RDD[(Array[Int], Double)] = {
+  def createFeatures(df: DataFrame): RDD[(Array[Int], Double,  Seq[String])] = {
      df.rdd.map(x => {
       // prepare xgboost features
       val array = x.getAs[String]("xgBoostFeatures").split("\\s+")
@@ -144,16 +153,16 @@ object FtrlHourlyIDV22 {
       // get label
       val label = x.getAs[Double]("label")
       // generate original string id
-      val allId = getAllIDFeatures(x)
+      val (allId, allNameSpace) = getAllIDFeatures(x)
       // get hashed id
       val hashedID = allId.map(a => getRawHashedID(a))
       // combine xgboost feature and hashed id
-      ((xgBoostFeatures.toSet ++ hashedID.toSet).toArray, label)
+      ((xgBoostFeatures.toSet ++ hashedID.toSet).toArray, label, allNameSpace)
     })
   }
 
   // return: string formed id
-  def getAllIDFeatures(row: Row): Seq[String] = {
+  def getAllIDFeatures(row: Row): (Seq[String], Seq[String]) = {
     val idFeatures = new ListBuffer[String]()
     // advertiser id
     val advertiserID = row.getAs[Int]("userid")
@@ -189,7 +198,7 @@ object FtrlHourlyIDV22 {
         idFeatures.append(x + "_installed" + advertiserID.toString + "_adv")
       })
     }
-    idFeatures
+    (idFeatures, null)
   }
 
   def getRawHashedID(name: String): Int = {

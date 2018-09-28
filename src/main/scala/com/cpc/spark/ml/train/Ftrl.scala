@@ -146,6 +146,15 @@ class Ftrl(size: Int) {
     return 1.0 / (1.0 + math.exp(-wTx))
   }
 
+  def sigmoid(x: Double): Double = {
+    if (x <= -35.0d) {
+      return 0.000000000000001d;
+    } else if (x >= 35.0d) {
+      return 0.999999999999999d;
+    }
+    return 1.0d / (1.0d + math.exp(-x))
+  }
+
   def predictWithDict(x: Array[Int]): Double = {
     var wTx = 0.0
 
@@ -159,7 +168,7 @@ class Ftrl(size: Int) {
 
       wTx = wTx + wDict.getOrElse(x, 0d)
     }
-    return 1.0 / (1.0 + math.exp(-wTx))
+    return sigmoid(wTx)
   }
 
   def predictNoUpdateWithDict(x: Array[Int]): Double = {
