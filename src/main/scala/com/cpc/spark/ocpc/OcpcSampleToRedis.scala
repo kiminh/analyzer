@@ -75,7 +75,7 @@ object OcpcSampleToRedis {
     val tmpData = uidData.limit(10000)
     tmpData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
     savePbRedis("test.uid_userporfile_ctr_cvr", spark)
-    savePbPack(userData)
+//    savePbPack(userData)
   }
 
 
