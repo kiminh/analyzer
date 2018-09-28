@@ -4,7 +4,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
-import org.apache.spark.ml.linalg.Vectors
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
@@ -90,7 +89,7 @@ object DNNCtrDataPrepare {
     }
 
     //合并数据
-    val data = spark.sql(
+    val data1 = spark.sql(
       s"""
          |select uid,hour,sex,age,os,network,city,
          |      adslotid,phone_level,adclass,
@@ -145,6 +144,10 @@ object DNNCtrDataPrepare {
       $"sparse".getField("_3").alias("idx2"),
       $"sparse".getField("_4").alias("id_arr"))
       .persist()
+
+    val data_false = data1.where("label=array(0,1)")
+    val data = data1.where("label=array(1,0)")
+      .union(data_false.randomSplit(Array(0.9, 0.1), 1030L)(1))
 
     val Array(traindata, testdata) = data.randomSplit(Array(0.8, 0.2), 1030L)
 
