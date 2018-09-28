@@ -1,7 +1,7 @@
 #!/bin/bash
 
-h=0
-while [ ${h} -le 23 ]; do
+h=$2
+while [ ${h} -le $3 ]; do
     if ((${h}<10))
     then
         hour="0${h}"
