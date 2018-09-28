@@ -27,8 +27,7 @@ object OcpcRedisTest {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // calculate time period for historical data
-//    val key = args(0)
-    val dataset = spark.table("test.test_redis_table_20180927")
+    val dataset = spark.table("test.test_redis_table_20180928").limit(20)
     for (row <- dataset.collect()) {
       val key = row.get(0).toString
       val data = row.get(3).toString
