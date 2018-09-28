@@ -9,7 +9,7 @@ while [ ${h} -le 23 ]; do
         hour="${h}"
     fi
 
-    sh test_ocpc_sample_hourly.sh 2018-09-22 $hour
+    sh test_ocpc_sample_hourly.sh $1 $hour
     
     let h=h+1
 done
