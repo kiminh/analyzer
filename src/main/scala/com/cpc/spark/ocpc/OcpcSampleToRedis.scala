@@ -75,6 +75,7 @@ object OcpcSampleToRedis {
 //    val tmpData = uidData.limit(10000)
     uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
     savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
     savePbPack(userData)
   }
 
@@ -94,6 +95,8 @@ object OcpcSampleToRedis {
     println(cvrResultAcc)
     val dataset = spark.table(tableName)
     val conf = ConfigFactory.load()
+    println(conf.getString("redis.host"))
+    println(conf.getInt("redis.port"))
 
     dataset.foreachPartition(iterator => {
 
@@ -128,7 +131,6 @@ object OcpcSampleToRedis {
         redis.disconnect
       })
 
-
     println("####################2")
     println(s"accumulator before partition loop: total loop cnt, redis retrieve cnt, redis save cnt, ctrcnt, cvrcnt")
     println(cnt)
@@ -138,6 +140,58 @@ object OcpcSampleToRedis {
     println(cvrResultAcc)
   }
 
+  def testSavePbRedis(tableName: String, spark: SparkSession): Unit = {
+    var cnt = spark.sparkContext.longAccumulator
+    var cvrResultAcc = spark.sparkContext.longAccumulator
+    var ctrResultAcc = spark.sparkContext.longAccumulator
+    println("###############1")
+    println(s"accumulator before partition loop")
+    println(cnt)
+    println(ctrResultAcc)
+    println(cvrResultAcc)
+    val conf = ConfigFactory.load()
+    //    redis-cli -h 192.168.80.19 -p 6379
+    println(conf.getString("redis.host"))
+    println(conf.getInt("redis.port"))
+
+    val dataset = spark.table(tableName)
+    dataset.foreachPartition(iterator => {
+
+      val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+
+      iterator.foreach{
+        record => {
+          val uid = record.get(0).toString
+          var key = uid + "_UPDATA"
+          val ctrCnt = record.getLong(1)
+          val cvrCnt = record.getLong(2)
+
+          val buffer = redis.get[Array[Byte]](key).orNull
+          var user: UserProfile.Builder = null
+          if (buffer != null) {
+            cnt.add(1)
+            user = UserProfile.parseFrom(buffer).toBuilder
+            val currentCtr = user.getCtrcnt
+            val currentCvr = user.getCvrcnt
+            if (currentCtr == ctrCnt) {
+              ctrResultAcc.add(1)
+            }
+            if (currentCvr == cvrCnt) {
+              cvrResultAcc.add(1)
+            }
+          }
+        }
+      }
+      redis.disconnect
+    })
+
+
+    println("####################2")
+    println(s"accumulator before partition loop")
+    println(cnt)
+    println(ctrResultAcc)
+    println(cvrResultAcc)
+  }
 
   def savePbPack(dataset: Dataset[Row]): Unit = {
     var list = new ListBuffer[SingleUser]

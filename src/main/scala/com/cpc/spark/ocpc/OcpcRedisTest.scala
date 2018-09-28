@@ -62,6 +62,7 @@ object OcpcRedisTest {
     println(ctrResultAcc)
     println(cvrResultAcc)
     val conf = ConfigFactory.load()
+//    redis-cli -h 192.168.80.19 -p 6379
     println(conf.getString("redis.host"))
     println(conf.getInt("redis.port"))
     dataset.foreachPartition(iterator => {
