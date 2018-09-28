@@ -58,7 +58,7 @@ object MLSnapshot {
         currentBatchStartTime = new Date().getTime
       }
 
-    val base_data=messages.map{
+    val base_data=messages.repartition(100).map{
         case (key, v) =>
           try {
             val logdata = LogData.parseData(v)
