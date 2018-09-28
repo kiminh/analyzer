@@ -60,9 +60,9 @@ object OcpcSampleHourly {
     val result = groupBy.withColumn("date", lit(dt))
       .withColumn("hour", lit(hour))
 
-    result.write.mode("overwrite").insertInto("test.temperate_roi_track")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track")
 
-    println("successfully save data into table test.temperate_roi_track")
+    println("successfully save data into table dl_cpc.ocpc_uid_userid_track")
   }
 }
 
