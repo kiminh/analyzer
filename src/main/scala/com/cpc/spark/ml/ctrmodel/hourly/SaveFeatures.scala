@@ -232,8 +232,7 @@ object SaveFeatures {
          |       ,a.interaction
          |       ,b.*
          |from (select * from dl_cpc.cpc_union_log
-         |        where media_appsid in (80000001,80000002,80000006,80000064,80000066)
-         |        and `date` = "%s" and `hour` = "%s" ) a
+         |        where `date` = "%s" and `hour` = "%s" ) a
          |    left join
          |        (select *
          |            from dl_cpc.cpc_union_trace_log
@@ -251,7 +250,7 @@ object SaveFeatures {
       .map {
         x =>
           val convert = Utils.cvrPositiveV(x._2, version)
-          val convert2 = Utils.cvrPositiveV2(x._2, version)
+          val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version)
 
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
@@ -280,15 +279,15 @@ object SaveFeatures {
             }
           )
 
-          (x._1, convert, convert2,
+          (x._1, convert, convert2, label_type,
             active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
             active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
             active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
             active_map.getOrElse("report_user_stayinwx", 0))
       }
-      .toDF("searchid", "label", "label2", "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href", "installed", "report_user_stayinwx")
+      .toDF("searchid", "label", "label2", "label_type", "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href", "installed", "report_user_stayinwx")
 
-    cvrlog.filter(x=>x.getAs[String]("searchid")=="02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
+    cvrlog.filter(x => x.getAs[String]("searchid") == "02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
 
     val sqlStmt =
