@@ -56,23 +56,26 @@ object OcpcSampleToRedis {
 
     val base = spark.sql(sqlRequest)
 
-    // calculation for ratio: adslotid, uid
+    // calculation by uid
     val uidData = base
       .groupBy("uid")
       .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
       .withColumn("data", concat_ws(",", col("ctr_cnt"), col("cvr_cnt")))
 
 
-    // calculation for bid and ROI: userid
+    // calculation by userid
     val userData = base
       .groupBy("userid")
       .agg(sum("cost").alias("cost"), sum("cvr_cnt").alias("cvr_cnt"), sum("ctr_cnt").alias("ctr_cnt"))
 
-    // save into redis
-    val tmpData = uidData.limit(10000)
+    // save into redis and pb file
+    // write data into a temperary table
     uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
+    // save data into redis
     savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+    // check redis
     testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
+    // save data into pb file
     savePbPack(userData)
   }
 

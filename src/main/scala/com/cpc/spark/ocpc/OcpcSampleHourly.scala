@@ -6,6 +6,8 @@ import org.apache.spark.sql.functions.lit
 object OcpcSampleHourly {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+
+    // extract data from hive
     val dt = args(0)
     val hour = args(1)
     var selectWhere = s"`date`='$dt' and hour = '$hour'"
@@ -41,6 +43,8 @@ object OcpcSampleHourly {
       """.stripMargin
     println(sqlRequest)
     val base = spark.sql(sqlRequest)
+
+    // recalculation with groupby of userid and uid
     base.createOrReplaceTempView("tmpTable")
     val groupByRequesst =
       s"""
@@ -60,6 +64,7 @@ object OcpcSampleHourly {
     val result = groupBy.withColumn("date", lit(dt))
       .withColumn("hour", lit(hour))
 
+    // save data
     result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track")
 
     println("successfully save data into table dl_cpc.ocpc_uid_userid_track")

@@ -18,6 +18,7 @@ object OcpcRedisTest {
     val randSeed = args(0).toInt
     val totalData = spark.table("test.uid_userporfile_ctr_cvr")
 
+    // test 20 records from the temperary table randomly
 //    val dataset = totalData.orderBy(rand(randSeed)).limit(20)
 //    for (row <- dataset.collect()) {
 //      val key = row.get(0).toString
@@ -28,6 +29,7 @@ object OcpcRedisTest {
 //      testPbRedis(kValue)
 //    }
 
+    // test the complete temperary table
     testPbRedisTotal(totalData, spark)
 
   }
@@ -41,11 +43,9 @@ object OcpcRedisTest {
     var user: UserProfile.Builder = null
     if (buffer != null) {
       user = UserProfile.parseFrom(buffer).toBuilder
-//      val u = user.build()
       println(user.getAge)
       println(user.getCtrcnt)
       println(user.getCvrcnt)
-      //      redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
     }
     redis.disconnect
   }
@@ -62,7 +62,6 @@ object OcpcRedisTest {
     println(ctrResultAcc)
     println(cvrResultAcc)
     val conf = ConfigFactory.load()
-//    redis-cli -h 192.168.80.19 -p 6379
     println(conf.getString("redis.host"))
     println(conf.getInt("redis.port"))
     dataset.foreachPartition(iterator => {
@@ -97,7 +96,7 @@ object OcpcRedisTest {
 
 
     println("####################2")
-    println(s"accumulator before partition loop")
+    println(s"accumulator after partition loop")
     println(cnt)
     println(ctrResultAcc)
     println(cvrResultAcc)
