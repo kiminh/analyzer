@@ -103,7 +103,7 @@ object DNNCtrDataPrepare {
          |      adtype,planid,unitid,ideaid,
          |      if(label>0, array(1,0), array(0,1)) as label
          |from dl_cpc.ml_ctr_feature_v1
-         |where date = '$date' and hour=10
+         |where date = '$date'
          |  and ideaid > 0
          |  and adslot_type = 1
          |  and media_appsid in ('80000001','80000002')
@@ -162,9 +162,7 @@ object DNNCtrDataPrepare {
     //traindata.write.mode("overwrite").parquet("/home/cpc/zhj/ctr/dnn/data/test")
     testdata.persist()
 
-    val tr_false = traindata1.where("label=array(0,1)")
-    val traindata = traindata1.where("label=array(1,0)")
-      .filter{
+    val traindata = traindata1.filter{
         x =>
           val label = x.getAs[Seq[Int]]("label")
           label(0) == 1 || Random.nextInt(1000) < 100
