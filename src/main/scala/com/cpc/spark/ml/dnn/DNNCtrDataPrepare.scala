@@ -130,8 +130,8 @@ object DNNCtrDataPrepare {
         hashSeq("ideaids", "int")($"ideaids").alias("ideaids"))
       .select(array($"uid", $"hour", $"age", $"sex", $"os", $"network", $"city", $"adslotid", $"pl",
         $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("dense"),
-        //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
-        mkSparseFeature1($"apps").alias("sparse"), $"label"
+        mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
+        //mkSparseFeature1($"apps").alias("sparse"), $"label"
       )
       //生成带index的目标数据
       /*
