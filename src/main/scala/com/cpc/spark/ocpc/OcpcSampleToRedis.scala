@@ -28,14 +28,11 @@ object OcpcSampleToRedis {
     val date = sdf.parse(end_date)
     val calendar = Calendar.getInstance
     calendar.setTime(date)
-    calendar.add(Calendar.DATE, -1)
-    val dt1 = calendar.getTime
-    val date1 = sdf.format(dt1)
-    calendar.add(Calendar.DATE, -1)
-    val dt2 = calendar.getTime
-    val date2 = sdf.format(dt2)
-    val selectCondition1 = s"`date`='$date2' and hour > '$hour'"
-    val selectCondition2 = s"`date`='$date1'"
+    calendar.add(Calendar.DATE, -7)
+    val dt = calendar.getTime
+    val start_date = sdf.format(dt)
+    val selectCondition1 = s"`date`='$start_date' and hour > '$hour'"
+    val selectCondition2 = s"`date`>'$start_date' and `date`<'$end_date'"
     val selectCondition3 = s"`date`='$end_date' and hour <= '$hour'"
 
     // read data and set redis configuration
@@ -73,10 +70,10 @@ object OcpcSampleToRedis {
 
     // save into redis
 //    val tmpData = uidData.limit(10000)
-    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
-    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
-    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
-    savePbPack(userData)
+//    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
+//    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+//    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
+//    savePbPack(userData)
   }
 
 
