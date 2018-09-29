@@ -37,10 +37,10 @@ object DNNSample {
         val slottype = x.getAs[Int]("adslot_type")
         val mediaid = x.getAs[String]("media_appsid").toInt
         val uid = x.getAs[String]("uid")
-        val isip = uid.contains(".") && uid.contains("000000")
+        val isip = uid.contains(".") || uid.contains("000000")
         ideaid > 0 && slottype == 1 && Seq(80000001, 80000002).contains(mediaid) && !isip
       }
-      .join(userAppIdx, Seq("uid"))
+      .join(userAppIdx, Seq("uid"), "leftouter")
       .rdd
       .map{row =>
         val ret = getVectorParser(row)
@@ -214,7 +214,7 @@ object DNNSample {
     val apps = x.getAs[Seq[String]]("pkgs")
     val uid = x.getAs[String]("uid")
 
-    if (apps.length > 0) {
+    if (apps != null && apps.length > 0) {
       (raw, uid, apps.slice(0, 500))
     } else {
       (raw, uid,  Seq(""))
