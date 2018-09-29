@@ -88,6 +88,12 @@ object DNNCtrDataPrepare {
         (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
     }
 
+    val mkSparseFeature1 = udf {
+      apps: Seq[Long] =>
+        val c = apps.zipWithIndex.map(x => (0, 0, x._2, x._1))
+        (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
+    }
+
     //合并数据
     val data = spark.sql(
       s"""
@@ -124,7 +130,8 @@ object DNNCtrDataPrepare {
         hashSeq("ideaids", "int")($"ideaids").alias("ideaids"))
       .select(array($"uid", $"hour", $"age", $"sex", $"os", $"network", $"city", $"adslotid", $"pl",
         $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("dense"),
-        mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
+        //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
+        mkSparseFeature1($"apps").alias("sparse"), $"label"
       )
       //生成带index的目标数据
       /*
