@@ -146,20 +146,30 @@ class Ftrl(size: Int) {
     return 1.0 / (1.0 + math.exp(-wTx))
   }
 
+  def sigmoid(x: Double): Double = {
+    if (x <= -35.0d) {
+      return 0.000000000000001d;
+    } else if (x >= 35.0d) {
+      return 0.999999999999999d;
+    }
+    return 1.0d / (1.0d + math.exp(-x))
+  }
+
   def predictWithDict(x: Array[Int]): Double = {
     var wTx = 0.0
 
     x foreach { x =>
       val sign = if (zDict.getOrElse(x, 0d) < 0) -1.0 else 1.0
 
-      if (sign * zDict.getOrElse(x, 0d) <= L1)
-        wDict.put(x, 0d)
-      else
+      if (sign * zDict.getOrElse(x, 0d) <= L1) {
+        wDict.remove(x)
+      }
+      else {
         wDict.put(x, (sign * L1 - zDict.getOrElse(x, 0d)) / ((beta + math.sqrt(nDict.getOrElse(x, 0d))) / alpha + L2))
-
+      }
       wTx = wTx + wDict.getOrElse(x, 0d)
     }
-    return 1.0 / (1.0 + math.exp(-wTx))
+    return sigmoid(wTx)
   }
 
   def predictNoUpdateWithDict(x: Array[Int]): Double = {
@@ -231,6 +241,25 @@ class Ftrl(size: Int) {
     }
     println(s"logloss=${logLossSum/res.length}")
     println(s"posCount=$posCount, totalCount=${res.length}")
+    val afterAUC = predictAndAucWithDict(spark, res)
+    println(s"after training auc: $afterAUC")
+  }
+
+  def trainMoreEpochsWithDict(spark: SparkSession, data: RDD[(Array[Int], Double)]): Unit = {
+    val epoch = 5
+    var res = shuffle(data.collect())
+    println(s"before training auc on test set: ${predictAndAucWithDict(spark, res)}")
+    for (_ <- 1 to epoch) {
+      var logLossSum = 0d
+      for (p <- res) {
+        val x = p._1
+        val pre = predictWithDict(x)
+        updateWithDict(x, pre, p._2)
+        logLossSum += logLoss(p._2, pre)
+      }
+      println(s"logloss=${logLossSum/res.length}")
+      res = shuffle(data.collect())
+    }
     val afterAUC = predictAndAucWithDict(spark, res)
     println(s"after training auc: $afterAUC")
   }
