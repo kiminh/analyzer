@@ -84,7 +84,7 @@ object DNNSample {
     }.count()
     println(ulog.count(), clickiNum)
 
-    val Array(train, test) = ulog.randomSplit(Array(0.97, 0.03))
+    val Array(train, test) = ulog.randomSplit(Array(0.99, 0.01))
     val resampled = train.filter{
       x =>
         val label = x.getAs[Seq[Int]]("label")

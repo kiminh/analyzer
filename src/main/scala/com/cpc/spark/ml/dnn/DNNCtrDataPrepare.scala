@@ -7,6 +7,8 @@ import com.cpc.spark.common.Murmur3Hash
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
+import scala.util.Random
+
 
 /**
   * 获取dnn ctr训练的数据，生成tfrecord格式保存到 /user/dnn/ctr/traindata下
@@ -62,7 +64,6 @@ object DNNCtrDataPrepare {
          |  and date < '$date'
          |  and ideaid > 0
          |  and adslot_type = 1
-         |  and label > 0
          |  and media_appsid in ('80000001','80000002')
          |group by uid
       """.stripMargin)
@@ -163,8 +164,13 @@ object DNNCtrDataPrepare {
 
     val tr_false = traindata1.where("label=array(0,1)")
     val traindata = traindata1.where("label=array(1,0)")
-      .union(tr_false.randomSplit(Array(0.9, 0.1))(1))
+      .filter{
+        x =>
+          val label = x.getAs[Seq[Int]]("label")
+          label(0) == 1 || Random.nextInt(1000) < 100
+      }
       .persist()
+
 
     println("训练数据：total = %d, 正比例 = %.4f".format(traindata.count,
       traindata.where("label=array(1,0)").count.toDouble / traindata.count))
