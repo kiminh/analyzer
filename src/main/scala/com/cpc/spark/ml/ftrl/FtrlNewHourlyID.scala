@@ -117,7 +117,7 @@ object FtrlNewHourlyID {
       Ftrl.saveToProtoToHDFS(currentHDFS, spark, ftrl)
       val historyHDFS = s"${HDFS_MODEL_HISTORY_DIR}ftrl-$typename-$ftrlVersion-$dt-$hour.mlm"
       Ftrl.saveToProtoToHDFS(historyHDFS, spark, ftrl)
-      println(MUtils.updateMlcppOnlineData(filename, s"$DEST_DIR$name.mlm", ConfigFactory.load()))
+//      println(MUtils.updateMlcppOnlineData(filename, s"$DEST_DIR$name.mlm", ConfigFactory.load()))
     }
   }
 
