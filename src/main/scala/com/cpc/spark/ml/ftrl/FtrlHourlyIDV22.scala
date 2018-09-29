@@ -107,13 +107,12 @@ object FtrlHourlyIDV22 {
         | select
         |   member_id,
         |   features['u_dy_6_readcate'].stringarrayvalue as rec_user_cate,
-        |   features['u_dy_5_readsourcename'].stringarrayvalue as rec_user_source
+        |   features['u_dy_6_favocate5'].stringarrayvalue as rec_user_fav
         | from dl_cpc.cpc_user_features_from_algo
         | where load_date='$profileDt'
         |) b on (a.ext_string['qtt_member_id'] = b.member_id)
       """.stripMargin)
 
-    println(log)
 
     var merged = sample
       .filter(x => x.getAs[Int]("hasError") == 0)
@@ -229,9 +228,10 @@ object FtrlHourlyIDV22 {
     }
     // style
     val styleID = row.getAs[Long]("exp_style_int")
-    idFeatures.append("stl" + styleID.toString)
-    if (styleID != 0) {
-      namespace.append("stl")
+
+    if (styleID == 510127) {
+      idFeatures.append("is_jinbi")
+      namespace.append("is_jinbi")
     }
     // installed apps
     if (row.getAs[Object]("pkgs") != null) {
@@ -259,15 +259,15 @@ object FtrlHourlyIDV22 {
       }
     }
     // rec_user_source
-    if (row.getAs[Object]("rec_user_source") != null) {
-      val categories = row.getAs[mutable.WrappedArray[String]]("rec_user_source")
+    if (row.getAs[Object]("rec_user_fav") != null) {
+      val categories = row.getAs[mutable.WrappedArray[String]]("rec_user_fav")
       categories.foreach(x => {
-        idFeatures.append("rus" + x)
-        idFeatures.append("rus" + x + "adv" + advertiserID.toString)
+        idFeatures.append("ruf" + x)
+        idFeatures.append("ruf" + x + "adv" + advertiserID.toString)
       })
       if (categories.nonEmpty) {
-        namespace.append("rus")
-        namespace.append("rus_adv_")
+        namespace.append("ruf")
+        namespace.append("ruf_adv_")
       }
     }
     (idFeatures, namespace)
