@@ -159,7 +159,7 @@ object DNNCtrDataPrepare {
       .persist()
 
     println("训练数据：total = %d, 正比例 = %.4f".format(traindata.count,
-      traindata.where("label=array(1,0").count.toDouble / traindata.count))
+      traindata.where("label=array(1,0)").count.toDouble / traindata.count))
 
     testdata.persist()
     println("测试数据：total = %d, 正例 = %.4f".format(testdata.count,
