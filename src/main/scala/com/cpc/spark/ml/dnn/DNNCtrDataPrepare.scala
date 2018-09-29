@@ -102,7 +102,7 @@ object DNNCtrDataPrepare {
          |      adtype,planid,unitid,ideaid,
          |      if(label>0, array(1,0), array(0,1)) as label
          |from dl_cpc.ml_ctr_feature_v1
-         |where date = '$date'
+         |where date = '$date' and hour=10
          |  and ideaid > 0
          |  and adslot_type = 1
          |  and media_appsid in ('80000001','80000002')
@@ -130,8 +130,8 @@ object DNNCtrDataPrepare {
         hashSeq("ideaids", "int")($"ideaids").alias("ideaids"))
       .select(array($"uid", $"hour", $"age", $"sex", $"os", $"network", $"city", $"adslotid", $"pl",
         $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("dense"),
-        mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
-        //mkSparseFeature1($"apps").alias("sparse"), $"label"
+        //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
+        mkSparseFeature1($"apps").alias("sparse"), $"label"
       )
       //生成带index的目标数据
       /*
@@ -150,7 +150,7 @@ object DNNCtrDataPrepare {
       $"sparse".getField("_3").alias("idx2"),
       $"sparse".getField("_4").alias("id_arr"))
 
-    val Array(traindata1, testdata) = data.randomSplit(Array(0.97, 0.03), 1030L)
+    val Array(traindata1, testdata) = data.randomSplit(Array(0.99, 0.01), 1030L)
 
     //println("traindata count = " + traindata.count)
     //traindata.show
