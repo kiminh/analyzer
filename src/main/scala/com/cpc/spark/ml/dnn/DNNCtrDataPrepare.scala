@@ -110,8 +110,8 @@ object DNNCtrDataPrepare {
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
       """.stripMargin)
-      .join(app_data, Seq("uid"), "left")
-      .join(click_data1, Seq("uid"), "left")
+      .join(app_data, Seq("uid"))
+      .join(click_data1, Seq("uid"))
       .select($"label",
         hash("uid")($"uid").alias("uid"),
         hash("age")($"age").alias("age"),
