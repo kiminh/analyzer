@@ -240,9 +240,9 @@ object SaveFeatures {
          |            where `date` = "%s" and `hour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid
+         |where b.searchid is not null
         """.stripMargin.format(date, hour, date, hour))
       .rdd
-      .filter(x => x.getAs[String]("searchid") != null)
       .map {
         x =>
           (x.getAs[String]("search_id"), Seq(x))
