@@ -25,7 +25,8 @@ libraryDependencies ++= Seq(
   "io.grpc" % "grpc-netty" % com.trueaccord.scalapb.compiler.Version.grpcJavaVersion,
   "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion,
   "com.google.code.gson" % "gson" % "2.8.1",
-  "com.alibaba" % "fastjson" % "1.2.39"
+  "com.alibaba" % "fastjson" % "1.2.39",
+  "org.scalaj" %% "scalaj-http" % "2.3.0"
 )
 
 assemblyMergeStrategy in assembly := {

@@ -30,8 +30,6 @@ object DNNSampleSingle {
 
     //按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
-    val cvrPathSep = getPathSeq(args(1).toInt)
-
     initFeatureDict(spark, ctrPathSep)
     val userAppIdx = getUidApp(spark, ctrPathSep)
     println("max id", maxIndex)
