@@ -192,7 +192,7 @@ object OcpcSampleToRedis {
 
   def savePbPack(dataset: Dataset[Row]): Unit = {
     var list = new ListBuffer[SingleUser]
-    val filename = s"/home/cpc/wangjun/ocpc_userid/UseridDataOcpc.pb"
+    val filename = s"UseridDataOcpc.pb"
     println("size of the dataframe")
     println(dataset.count)
     for (record <- dataset.collect()) {
