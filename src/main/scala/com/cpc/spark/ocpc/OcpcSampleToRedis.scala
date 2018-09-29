@@ -132,12 +132,12 @@ object OcpcSampleToRedis {
       })
 
     println("####################2")
-    println(s"accumulator before partition loop: total loop cnt, redis retrieve cnt, redis save cnt, ctrcnt, cvrcnt")
-    println(cnt)
-    println(changeCnt)
-    println(succSetCnt)
-    println(ctrResultAcc)
-    println(cvrResultAcc)
+    println(s"accumulator after partition loop")
+    println("total loop cnt: " + cnt.value.toString)
+    println("redis retrieve cnt: " + changeCnt.value.toString)
+    println("redis save cnt: " + succSetCnt.value.toString)
+    println("ctrcnt: " + ctrResultAcc.value.toString)
+    println("cvrcnt: " + cvrResultAcc.value.toString)
   }
 
   def testSavePbRedis(tableName: String, spark: SparkSession): Unit = {
