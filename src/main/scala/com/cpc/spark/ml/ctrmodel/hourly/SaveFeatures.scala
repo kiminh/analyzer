@@ -288,7 +288,7 @@ object SaveFeatures {
       }
       .toDF("searchid", "label", "label2", "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href", "installed", "report_user_stayinwx")
 
-    cvrlog.filter(x=>x.getAs[String]("searchid")=="02c2cfe082a1aa43074b6841ac37a36efefd4e8d").foreach(x=>println("cvrlog:"+x))
+    cvrlog.filter(x=>x.getAs[String]("searchid")=="02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
 
     val sqlStmt =
