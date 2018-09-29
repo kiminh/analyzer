@@ -66,7 +66,10 @@ object HourlyCalibration {
     val irTrainer = new IsotonicRegression()
 
     val result = log.map( x => {
-      val isClick = x.getInt(0).toDouble
+      var isClick = 0d
+      if (x.get(0) != null) {
+        isClick = x.getInt(0).toDouble
+      }
       val ectr = x.getLong(1).toDouble / 1e6d
       // TODO(huazhenhao) not used right now in the first version, should be used as weights
       // val showTimeStamp = x.getAs[Int]("show_timestamp")
