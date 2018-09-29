@@ -69,11 +69,11 @@ object OcpcSampleToRedis {
       .agg(sum("cost").alias("cost"), sum("cvr_cnt").alias("cvr_cnt"), sum("ctr_cnt").alias("ctr_cnt"))
 
     // save into redis
-//    val tmpData = uidData.limit(10000)
-//    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
-//    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
-//    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
-//    savePbPack(userData)
+    val tmpData = uidData.limit(10000)
+    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
+    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
+    savePbPack(userData)
   }
 
 
