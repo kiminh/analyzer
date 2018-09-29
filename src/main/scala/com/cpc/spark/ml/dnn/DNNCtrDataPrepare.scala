@@ -96,7 +96,7 @@ object DNNCtrDataPrepare {
          |      adtype,planid,unitid,ideaid,
          |      if(label>0, array(1,0), array(0,1)) as label
          |from dl_cpc.ml_ctr_feature_v1
-         |where date <= '$date' and date > '${getDay(date, 3)}'
+         |where date = '$date'
          |  and ideaid > 0
          |  and adslot_type = 1
          |  and media_appsid in ('80000001','80000002')
@@ -152,6 +152,7 @@ object DNNCtrDataPrepare {
     //testdata.show
 
     //traindata.write.mode("overwrite").parquet("/home/cpc/zhj/ctr/dnn/data/test")
+    testdata.persist()
 
     val tr_false = traindata1.where("label=array(0,1)")
     val traindata = traindata1.where("label=array(1,0)")
@@ -161,8 +162,7 @@ object DNNCtrDataPrepare {
     println("训练数据：total = %d, 正比例 = %.4f".format(traindata.count,
       traindata.where("label=array(1,0)").count.toDouble / traindata.count))
 
-    testdata.persist()
-    println("测试数据：total = %d, 正例 = %.4f".format(testdata.count,
+    println("测试数据：total = %d, 正比例 = %.4f".format(testdata.count,
       testdata.where("label=array(1,0)").count.toDouble / testdata.count))
 
     traindata.rdd.zipWithIndex().map { x =>
@@ -181,7 +181,7 @@ object DNNCtrDataPrepare {
         x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
         x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
     }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
-      .repartition(10).write.mode("overwrite")
+      .repartition(50).write.mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"/home/cpc/zhj/ctr/dnn/data/testdata")
