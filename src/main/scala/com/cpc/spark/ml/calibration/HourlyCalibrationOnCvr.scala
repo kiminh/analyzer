@@ -51,7 +51,7 @@ object HourlyCalibrationOnCvr {
     // get union log
     val sql = s"""
                  |select iscvr, ecvr, time, model_name from
-                 |( select iscvr, ext_int['raw_cvr'] as ecvr, show_timestamp, ext_string['cvr_model_name'] as model_name
+                 |( select searchid, ext_int['raw_cvr'] as ecvr, show_timestamp as time, ext_string['cvr_model_name'] as model_name
                  | from dl_cpc.cpc_union_log
                  | where $timeRangeSql
                  | and media_appsid in ('80000001', '80000002') and isclick = 1 and ext['antispam'].int_value = 0
