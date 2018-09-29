@@ -96,7 +96,7 @@ object DNNCtrDataPrepare {
          |      adtype,planid,unitid,ideaid,
          |      if(label>0, array(1,0), array(0,1)) as label
          |from dl_cpc.ml_ctr_feature_v1
-         |where date = '$date'
+         |where date <= '$date' and date > '${getDay(date, 3)}'
          |  and ideaid > 0
          |  and adslot_type = 1
          |  and media_appsid in ('80000001','80000002')
@@ -106,23 +106,22 @@ object DNNCtrDataPrepare {
       .join(app_data, Seq("uid"), "left")
       .join(click_data1, Seq("uid"), "left")
       .select($"label",
-
-        hash("uid")($"uid").alias("uid"), hash("age")($"age").alias("age"),
-
-        hash("hour")($"hour").alias("hour"), hash("sex")($"sex").alias("sex"),
-
-        hash("os")($"os").alias("os"), hash("network")($"network").alias("network"),
-
-        hash("city")($"city").alias("city"), hash("adslotid")($"adslotid").alias("adslotid"),
-
-        hash("phone_level")($"phone_level").alias("pl"), hash("adclass")($"adclass").alias("adclass"),
-
-        hash("adtype")($"adtype").alias("adtype"), hash("planid")($"planid").alias("planid"),
-
-        hash("unitid")($"unitid").alias("unitid"), hash("ideaid")($"ideaid").alias("ideaid"),
-
-        hashSeq("app", "string")($"pkgs").alias("apps"), hashSeq("ideaids", "int")($"ideaids").alias("ideaids"))
-
+        hash("uid")($"uid").alias("uid"),
+        hash("age")($"age").alias("age"),
+        hash("hour")($"hour").alias("hour"),
+        hash("sex")($"sex").alias("sex"),
+        hash("os")($"os").alias("os"),
+        hash("network")($"network").alias("network"),
+        hash("city")($"city").alias("city"),
+        hash("adslotid")($"adslotid").alias("adslotid"),
+        hash("phone_level")($"phone_level").alias("pl"),
+        hash("adclass")($"adclass").alias("adclass"),
+        hash("adtype")($"adtype").alias("adtype"),
+        hash("planid")($"planid").alias("planid"),
+        hash("unitid")($"unitid").alias("unitid"),
+        hash("ideaid")($"ideaid").alias("ideaid"),
+        hashSeq("app", "string")($"pkgs").alias("apps"),
+        hashSeq("ideaids", "int")($"ideaids").alias("ideaids"))
       .select(array($"uid", $"hour", $"age", $"sex", $"os", $"network", $"city", $"adslotid", $"pl",
         $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("dense"),
         mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
@@ -143,7 +142,6 @@ object DNNCtrDataPrepare {
       $"sparse".getField("_2").alias("idx1"),
       $"sparse".getField("_3").alias("idx2"),
       $"sparse".getField("_4").alias("id_arr"))
-      .persist()
 
     val Array(traindata1, testdata) = data.randomSplit(Array(0.97, 0.03), 1030L)
 
@@ -158,6 +156,14 @@ object DNNCtrDataPrepare {
     val tr_false = traindata1.where("label=array(0,1)")
     val traindata = traindata1.where("label=array(1,0)")
       .union(tr_false.randomSplit(Array(0.9, 0.1))(1))
+      .persist()
+
+    println("训练数据：total = %d, 正比例 = %.4f".format(traindata.count,
+      traindata.where("label=array(1,0").count.toDouble / traindata.count))
+
+    testdata.persist()
+    println("测试数据：total = %d, 正例 = %.4f".format(testdata.count,
+      testdata.where("label=array(1,0)").count.toDouble / testdata.count))
 
     traindata.rdd.zipWithIndex().map { x =>
       (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
