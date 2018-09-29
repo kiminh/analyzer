@@ -19,15 +19,15 @@ object OcpcRedisTest {
     val totalData = spark.table("test.uid_userporfile_ctr_cvr")
 
     // test 20 records from the temperary table randomly
-//    val dataset = totalData.orderBy(rand(randSeed)).limit(20)
-//    for (row <- dataset.collect()) {
-//      val key = row.get(0).toString
-//      val ctrCnt = row.getLong(1)
-//      val cvrCnt = row.getLong(2)
-//      val kValue = key + "_UPDATA"
-//      println(s"$key, $ctrCnt, $cvrCnt")
-//      testPbRedis(kValue)
-//    }
+    val dataset = totalData.orderBy(rand(randSeed)).limit(20)
+    for (row <- dataset.collect()) {
+      val key = row.get(0).toString
+      val ctrCnt = row.getLong(1)
+      val cvrCnt = row.getLong(2)
+      val kValue = key + "_UPDATA"
+      println(s"$key, $ctrCnt, $cvrCnt")
+      testPbRedis(kValue)
+    }
 
     // test the complete temperary table
     testPbRedisTotal(totalData, spark)
