@@ -206,7 +206,7 @@ object OcpcSampleToRedisV1 {
 
   def savePbPack(dataset: Dataset[Row], threshold: Int): Unit = {
     var list = new ListBuffer[SingleUser]
-    val filename = s"UseridDataOcpc.pb"
+    val filename = s"UseridDataOcpcV1.pb"
     println("size of the dataframe")
     println(dataset.count)
     var exchangeCnt = 0
