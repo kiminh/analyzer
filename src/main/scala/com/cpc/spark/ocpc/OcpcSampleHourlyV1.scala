@@ -68,11 +68,11 @@ object OcpcSampleHourlyV1 {
       .withColumn("hour", lit(hour))
 
     // save data
-    result.write.mode("overwrite").insertInto("test.test_ocpc_uid_userid_track")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track")
 
 
 
-    println("successfully save data into table dl_cpc.ocpc_uid_userid_track_v1")
+    println("successfully save data into table dl_cpc.ocpc_uid_userid_track")
   }
 }
 
