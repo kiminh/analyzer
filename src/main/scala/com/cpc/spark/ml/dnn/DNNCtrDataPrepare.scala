@@ -166,6 +166,8 @@ object DNNCtrDataPrepare {
       .filter(x => x.getAs[Seq[Int]]("label").head == 1 || Random.nextInt(1000) < 100)
       .persist()
 
+
+    traindata.write.mode("overwrite").parquet("/home/cpc/zhj/ctr/dnn/data/test")
     println("train data no app num ：" + traindata.where("size(sparse._4)=0").count)
     println("test data no app num ：" + testdata.where("size(sparse._4)=0").count)
 
