@@ -25,7 +25,7 @@ object OcpcSampleToRedisV1 {
     // calculate time period for historical data
     val end_date = args(0)
     val hour = args(1)
-    val threshold = args(2).toInt    val threshold = args(2).toInt
+    val threshold = args(2).toInt
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val date = sdf.parse(end_date)
     val calendar = Calendar.getInstance
