@@ -115,8 +115,8 @@ object DNNCtrDataPrepare {
          |  and ideaid > 0
          |  and adslot_type = 1
          |  and media_appsid in ('80000001','80000002')
-         |  and uid not like "%.%"
-         |  and uid not like "%000000%"
+         |  and a.uid not like "%.%"
+         |  and a.uid not like "%000000%"
       """.stripMargin)
       .select($"label",
         hash("uid")($"uid").alias("uid"),
