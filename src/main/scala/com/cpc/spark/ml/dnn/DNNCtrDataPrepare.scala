@@ -127,7 +127,7 @@ object DNNCtrDataPrepare {
         hash("planid")($"planid").alias("planid"),
         hash("unitid")($"unitid").alias("unitid"),
         hash("ideaid")($"ideaid").alias("ideaid"),
-        hashSeq("app", "string")($"coalesce(pkgs,'app')").alias("apps"),
+        hashSeq("app", "string")($"coalesce(pkgs,array('app'))").alias("apps"),
         hashSeq("ideaids", "int")($"ideaids").alias("ideaids"))
       .select(array($"uid", $"hour", $"age", $"sex", $"os", $"network", $"city", $"adslotid", $"pl",
         $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("dense"),
