@@ -28,12 +28,13 @@ object DNNCtrDataPrepare {
     import spark.implicits._
 
     //获取app数据
-    val app_data = spark.sql(
+    spark.sql(
       s"""
          |select uid,pkgs
          |from dl_cpc.cpc_user_installed_apps
          |where load_date='$date'
       """.stripMargin)
+      .createOrReplaceTempView("app_data")
 
     /*val writer = new PrintWriter(new File("/home/cpc/zhj/app_map/map.txt"))
     val app_map = apps.select(explode($"pkgs").alias("pkg")).groupBy("pkg").count()
@@ -55,7 +56,7 @@ object DNNCtrDataPrepare {
         pkgs.map(pkg => m.getOrElse(pkg, -1)).filter(_ >= 0)
     }*/
     //获取最近3天广告点击数据
-    val click_data1 = spark.sql(
+    spark.sql(
       s"""
          |select uid,collect_set(ideaid) as ideaids
          |from dl_cpc.ml_cvr_feature_v1
@@ -67,6 +68,7 @@ object DNNCtrDataPrepare {
          |  and media_appsid in ('80000001','80000002')
          |group by uid
       """.stripMargin)
+      .createOrReplaceTempView("click_data1")
 
     //获取最近4到7天点击数据
     val click_data2 = spark.sql(
@@ -101,8 +103,14 @@ object DNNCtrDataPrepare {
          |select uid,hour,sex,age,os,network,city,
          |      adslotid,phone_level,adclass,
          |      adtype,planid,unitid,ideaid,
-         |      if(label>0, array(1,0), array(0,1)) as label
-         |from dl_cpc.ml_ctr_feature_v1
+         |      if(label>0, array(1,0), array(0,1)) as label,
+         |      coalesce(b.pkgs,array("app")) as pkgs,
+         |      coalesce(c.ideaids, array("ideaid")) as ideaids
+         |from dl_cpc.ml_ctr_feature_v1 a
+         |left join app_data b
+         |  on a.uid=b.uid
+         |left join click_data1 c
+         |  on c.uid=b.uid
          |where date = '$date' and hour=10
          |  and ideaid > 0
          |  and adslot_type = 1
@@ -110,8 +118,6 @@ object DNNCtrDataPrepare {
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
       """.stripMargin)
-      .join(app_data, Seq("uid"), "left")
-      .join(click_data1, Seq("uid"), "left")
       .select($"label",
         hash("uid")($"uid").alias("uid"),
         hash("age")($"age").alias("age"),
@@ -127,8 +133,8 @@ object DNNCtrDataPrepare {
         hash("planid")($"planid").alias("planid"),
         hash("unitid")($"unitid").alias("unitid"),
         hash("ideaid")($"ideaid").alias("ideaid"),
-        hashSeq("app", "string")($"coalesce(pkgs,array('app'))").alias("apps"),
-        hashSeq("ideaids", "int")($"ideaids").alias("ideaids"))
+        hashSeq("app", "string")($"pkgs").alias("apps"),
+        hashSeq("ideaid", "int")($"ideaids").alias("ideaids"))
       .select(array($"uid", $"hour", $"age", $"sex", $"os", $"network", $"city", $"adslotid", $"pl",
         $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
