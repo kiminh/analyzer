@@ -9,7 +9,6 @@ import org.apache.spark.sql.functions._
 
 import scala.util.Random
 
-
 /**
   * 获取dnn ctr训练的数据，生成tfrecord格式保存到 /user/dnn/ctr/traindata下
   * created time : 2018/9/25 15:15
@@ -113,26 +112,26 @@ object DNNCtrDataPrepare {
       .join(app_data, Seq("uid"))
       .join(click_data1, Seq("uid"))
       .select($"label",
-        hash("uid")($"uid").alias("uid"),
-        hash("age")($"age").alias("age"),
-        hash("hour")($"hour").alias("hour"),
-        hash("sex")($"sex").alias("sex"),
-        hash("os")($"os").alias("os"),
-        hash("network")($"network").alias("network"),
-        hash("city")($"city").alias("city"),
-        hash("adslotid")($"adslotid").alias("adslotid"),
-        hash("phone_level")($"phone_level").alias("pl"),
-        hash("adclass")($"adclass").alias("adclass"),
-        hash("adtype")($"adtype").alias("adtype"),
-        hash("planid")($"planid").alias("planid"),
-        hash("unitid")($"unitid").alias("unitid"),
-        hash("ideaid")($"ideaid").alias("ideaid"),
-        hashSeq("app", "string")($"pkgs").alias("apps"),
-        hashSeq("ideaids", "int")($"ideaids").alias("ideaids"))
-      .select(array($"uid", $"hour", $"age", $"sex", $"os", $"network", $"city", $"adslotid", $"pl",
-        $"adclass", $"adtype", $"planid", $"unitid", $"ideaid").alias("dense"),
+        hash("uid")($"uid").alias("uid1"),
+        hash("age")($"age").alias("age1"),
+        hash("hour")($"hour").alias("hour1"),
+        hash("sex")($"sex").alias("sex1"),
+        hash("os")($"os").alias("os1"),
+        hash("network")($"network").alias("network1"),
+        hash("city")($"city").alias("city1"),
+        hash("adslotid")($"adslotid").alias("adslotid1"),
+        hash("phone_level")($"phone_level").alias("pl1"),
+        hash("adclass")($"adclass").alias("adclass1"),
+        hash("adtype")($"adtype").alias("adtype1"),
+        hash("planid")($"planid").alias("planid1"),
+        hash("unitid")($"unitid").alias("unitid1"),
+        hash("ideaid")($"ideaid").alias("ideaid1"),
+        hashSeq("app", "string")($"pkgs").alias("apps1"),
+        hashSeq("ideaid", "int")($"ideaids").alias("ideaids1"))
+      .select(array($"uid1", $"hour1", $"age1", $"sex1", $"os1", $"network1", $"city1", $"adslotid1", $"pl1",
+        $"adclass1", $"adtype1", $"planid1", $"unitid1", $"ideaid1").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
-        mkSparseFeature1($"apps").alias("sparse"), $"label"
+        mkSparseFeature1($"apps1").alias("sparse"), $"label"
       )
       //生成带index的目标数据
       /*
@@ -162,13 +161,12 @@ object DNNCtrDataPrepare {
     //traindata.write.mode("overwrite").parquet("/home/cpc/zhj/ctr/dnn/data/test")
     testdata.persist()
 
-    val traindata = traindata1.filter{
-        x =>
-          val label = x.getAs[Seq[Int]]("label")
-          label(0) == 1 || Random.nextInt(1000) < 100
-      }
+    val traindata = traindata1
+      .filter(x => x.getAs[Seq[Int]]("label").head == 1 || Random.nextInt(1000) < 100)
       .persist()
 
+    println("train data no app num ：" + traindata.where("size(sparse._4)=0").count)
+    println("test data no app num ：" + testdata.where("size(sparse._4)=0").count)
 
     println("训练数据：total = %d, 正比例 = %.4f".format(traindata.count,
       traindata.where("label=array(1,0)").count.toDouble / traindata.count))
@@ -270,15 +268,15 @@ object DNNCtrDataPrepare {
     t match {
       case "int" => udf {
         seq: Seq[Int] =>
-          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
-          else Seq(Murmur3Hash.stringHash64(prefix, 0))
-          re.slice(0, 500)
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
+          else Seq(Murmur3Hash.stringHash64(prefix, 1030))
+          re.slice(0, 1000)
       }
       case "string" => udf {
         seq: Seq[String] =>
-          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
-          else Seq(Murmur3Hash.stringHash64(prefix, 0))
-          re.slice(0, 500)
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
+          else Seq(Murmur3Hash.stringHash64(prefix, 1030))
+          re.slice(0, 1000)
       }
     }
   }
