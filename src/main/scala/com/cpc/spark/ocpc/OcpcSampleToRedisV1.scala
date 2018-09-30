@@ -54,7 +54,7 @@ object OcpcSampleToRedisV1 {
          |WHERE ($selectCondition1) OR
          |($selectCondition2) OR
          |($selectCondition3)
-         |GROUP BY userid, uid
+         |GROUP BY userid, uid, adclass
        """.stripMargin
     println(sqlRequest)
 
