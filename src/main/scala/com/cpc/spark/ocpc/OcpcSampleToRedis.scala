@@ -66,7 +66,7 @@ object OcpcSampleToRedis {
     // calculation by userid
     val userData = base
       .groupBy("userid")
-      .agg(sum("cost").alias("cost"), sum("cvr_cnt").alias("cvr_cnt"), sum("ctr_cnt").alias("ctr_cnt"))
+      .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
 
     // save into redis and pb file
     // write data into a temperary table
