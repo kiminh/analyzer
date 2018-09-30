@@ -64,7 +64,6 @@ object DNNCtrDataPrepare {
          |  and date < '$date'
          |  and ideaid > 0
          |  and adslot_type = 1
-         |  and label > 0
          |  and media_appsid in ('80000001','80000002')
          |group by uid
       """.stripMargin)
@@ -104,8 +103,8 @@ object DNNCtrDataPrepare {
          |      adslotid,phone_level,adclass,
          |      adtype,planid,unitid,ideaid,
          |      if(label>0, array(1,0), array(0,1)) as label,
-         |      coalesce(b.pkgs,array("app")) as pkgs,
-         |      coalesce(c.ideaids, array("ideaid")) as ideaids
+         |      b.pkgs as pkgs,
+         |      c.ideaids as ideaids
          |from dl_cpc.ml_ctr_feature_v1 a
          |left join app_data b
          |  on a.uid=b.uid
@@ -279,13 +278,13 @@ object DNNCtrDataPrepare {
     t match {
       case "int" => udf {
         seq: Seq[Int] =>
-          val re = if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
           else Seq(Murmur3Hash.stringHash64(prefix, 1030))
           re.slice(0, 1000)
       }
       case "string" => udf {
         seq: Seq[String] =>
-          val re = if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
           else Seq(Murmur3Hash.stringHash64(prefix, 1030))
           re.slice(0, 1000)
       }
