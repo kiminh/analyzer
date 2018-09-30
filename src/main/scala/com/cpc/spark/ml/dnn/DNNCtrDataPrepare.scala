@@ -100,7 +100,7 @@ object DNNCtrDataPrepare {
     //合并数据
     val data = spark.sql(
       s"""
-         |select uid,hour,sex,age,os,network,city,
+         |select a.uid,hour,sex,age,os,network,city,
          |      adslotid,phone_level,adclass,
          |      adtype,planid,unitid,ideaid,
          |      if(label>0, array(1,0), array(0,1)) as label,
