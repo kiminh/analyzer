@@ -24,15 +24,22 @@ object DNNSample {
       .getOrCreate()
     import spark.implicits._
 
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime)
+    //val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime)
+    val date = "2018-09-29"
 
     //按分区取数据
     val ctrPathSep = getPathSeq(args(0).toInt)
 
     val userAppIdx = getUidApp(spark, ctrPathSep)
 
-    val ulog = getData(spark,"ctrdata_v1",ctrPathSep)
-      .filter {x =>
+    //val ulog = getData(spark,"ctrdata_v1",ctrPathSep)
+    val ulog = spark.sql(
+      s"""
+         |select *
+         |from dl_cpc.ml_ctr_feature_v1
+         |where date='$date'
+      """.stripMargin)
+      .filter { x =>
         val ideaid = x.getAs[Int]("ideaid")
         val slottype = x.getAs[Int]("adslot_type")
         val mediaid = x.getAs[String]("media_appsid").toInt
@@ -42,7 +49,7 @@ object DNNSample {
       }
       .join(userAppIdx, Seq("uid"), "leftouter")
       .rdd
-      .map{row =>
+      .map { row =>
         val ret = getVectorParser(row)
         val raw = ret._1
         val uid = ret._2
@@ -77,7 +84,7 @@ object DNNSample {
       .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
       .repartition(1000)
 
-    val clickiNum = ulog.filter{
+    val clickiNum = ulog.filter {
       x =>
         val label = x.getAs[Seq[Int]]("label")
         label(0) == 1
@@ -85,7 +92,7 @@ object DNNSample {
     println(ulog.count(), clickiNum)
 
     val Array(train, test) = ulog.randomSplit(Array(0.97, 0.03))
-    val resampled = train.filter{
+    val resampled = train.filter {
       x =>
         val label = x.getAs[Seq[Int]]("label")
         label(0) == 1 || Random.nextInt(1000) < 100
@@ -109,50 +116,50 @@ object DNNSample {
     println("test size", test.count())
   }
 
-  def getPathSeq(days: Int): mutable.Map[String,Seq[String]] ={
+  def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -(days * 24 + 2))
-    val pathSep = mutable.Map[String,Seq[String]]()
+    val pathSep = mutable.Map[String, Seq[String]]()
 
     for (n <- 1 to days * 24) {
       date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       hour = new SimpleDateFormat("HH").format(cal.getTime)
-      pathSep.update(date,(pathSep.getOrElse(date,Seq[String]()) :+ hour))
+      pathSep.update(date, (pathSep.getOrElse(date, Seq[String]()) :+ hour))
       cal.add(Calendar.HOUR, 1)
     }
 
     pathSep
   }
 
-  def getUidApp(spark: SparkSession, pathSep: mutable.Map[String,Seq[String]]): DataFrame ={
+  def getUidApp(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): DataFrame = {
     val inpath = "/user/cpc/userInstalledApp/{%s}".format(pathSep.keys.mkString(","))
     println(inpath)
 
     import spark.implicits._
     spark.read.parquet(inpath).rdd
-      .map(x => (x.getAs[String]("uid"),x.getAs[WrappedArray[String]]("pkgs")))
+      .map(x => (x.getAs[String]("uid"), x.getAs[WrappedArray[String]]("pkgs")))
       .reduceByKey(_ ++ _)
-      .map(x => (x._1,x._2.distinct))
-      .toDF("uid","pkgs")
+      .map(x => (x._1, x._2.distinct))
+      .toDF("uid", "pkgs")
   }
 
 
-  def getData(spark: SparkSession, dataVersion: String, pathSep: mutable.Map[String,Seq[String]]): DataFrame = {
+  def getData(spark: SparkSession, dataVersion: String, pathSep: mutable.Map[String, Seq[String]]): DataFrame = {
 
     var path = Seq[String]()
-    pathSep.map{
+    pathSep.map {
       x =>
         path = path :+ "/user/cpc/lrmodel/%s/%s/{%s}".format(dataVersion, x._1, x._2.mkString(","))
     }
 
-    path.foreach{
+    path.foreach {
       x =>
         println(x)
     }
 
-    spark.read.parquet(path:_*)
+    spark.read.parquet(path: _*)
   }
 
   val fnames = Seq(
@@ -163,7 +170,7 @@ object DNNSample {
   def getVectorParser(x: Row): (Seq[Int], String, Seq[String]) = {
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
+    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     var raw = Seq[Int]()
 
@@ -217,7 +224,7 @@ object DNNSample {
     if (apps != null && apps.length > 0) {
       (raw, uid, apps.slice(0, 500))
     } else {
-      (raw, uid,  Seq(""))
+      (raw, uid, Seq(""))
     }
   }
 }
