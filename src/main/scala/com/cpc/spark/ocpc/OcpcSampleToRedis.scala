@@ -87,12 +87,12 @@ object OcpcSampleToRedis {
     var cvrResultAcc = spark.sparkContext.longAccumulator
     var ctrResultAcc = spark.sparkContext.longAccumulator
     println("###############1")
-    println(s"accumulator before partition loop: total loop cnt, redis retrieve cnt, redis save cnt, ctrcnt, cvrcnt")
-    println(cnt)
-    println(changeCnt)
-    println(succSetCnt)
-    println(ctrResultAcc)
-    println(cvrResultAcc)
+    println(s"accumulator before partition loop")
+    println("total loop cnt: " + cnt.value.toString)
+    println("redis retrieve cnt: " + changeCnt.value.toString)
+    println("redis save cnt: " + succSetCnt.value.toString)
+    println("ctrcnt: " + ctrResultAcc.value.toString)
+    println("cvrcnt: " + cvrResultAcc.value.toString)
     val dataset = spark.table(tableName)
     val conf = ConfigFactory.load()
     println(conf.getString("redis.host"))
@@ -146,9 +146,9 @@ object OcpcSampleToRedis {
     var ctrResultAcc = spark.sparkContext.longAccumulator
     println("###############1")
     println(s"accumulator before partition loop")
-    println(cnt)
-    println(ctrResultAcc)
-    println(cvrResultAcc)
+    println("redis hit number: " + cnt.value.toString)
+    println("correct ctr number: " + ctrResultAcc.value.toString)
+    println("correct cvr number: " + cvrResultAcc.value.toString)
     val conf = ConfigFactory.load()
     //    redis-cli -h 192.168.80.19 -p 6379
     println(conf.getString("redis.host"))
@@ -187,10 +187,10 @@ object OcpcSampleToRedis {
 
 
     println("####################2")
-    println(s"accumulator before partition loop")
-    println(cnt)
-    println(ctrResultAcc)
-    println(cvrResultAcc)
+    println(s"accumulator after partition loop")
+    println("redis hit number: " + cnt.value.toString)
+    println("correct ctr number: " + ctrResultAcc.value.toString)
+    println("correct cvr number: " + cvrResultAcc.value.toString)
   }
 
   def savePbPack(dataset: Dataset[Row]): Unit = {

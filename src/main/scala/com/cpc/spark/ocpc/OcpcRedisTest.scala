@@ -58,9 +58,9 @@ object OcpcRedisTest {
     var ctrResultAcc = spark.sparkContext.longAccumulator
     println("###############1")
     println(s"accumulator before partition loop")
-    println(cnt)
-    println(ctrResultAcc)
-    println(cvrResultAcc)
+    println("redis hit number: " + cnt.value.toString)
+    println("correct ctr number: " + ctrResultAcc.value.toString)
+    println("correct cvr number: " + cvrResultAcc.value.toString)
     val conf = ConfigFactory.load()
     println(conf.getString("redis.host"))
     println(conf.getInt("redis.port"))
@@ -97,9 +97,9 @@ object OcpcRedisTest {
 
     println("####################2")
     println(s"accumulator after partition loop")
-    println(cnt)
-    println(ctrResultAcc)
-    println(cvrResultAcc)
+    println("redis hit number: " + cnt.value.toString)
+    println("correct ctr number: " + ctrResultAcc.value.toString)
+    println("correct cvr number: " + cvrResultAcc.value.toString)
   }
 }
 
