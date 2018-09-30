@@ -83,11 +83,11 @@ object OcpcSampleToRedisV1 {
     // save into redis and pb file
     // write data into a temperary table
     uidData.write.mode("overwrite").saveAsTable("test.test_uid_userporfile_ctr_cvr")
-    // save data into redis
-//    savePbRedis("test.test_uid_userporfile_ctr_cvr", spark)
-//    // check redis
-//    testSavePbRedis("test.test_uid_userporfile_ctr_cvr", spark)
-    // save data into pb file
+//     save data into redis
+    savePbRedis("test.test_uid_userporfile_ctr_cvr", spark)
+//     check redis
+    testSavePbRedis("test.test_uid_userporfile_ctr_cvr", spark)
+//     save data into pb file
     savePbPack(useridAdclassData, threshold)
   }
 
@@ -207,7 +207,7 @@ object OcpcSampleToRedisV1 {
 
   def savePbPack(dataset: Dataset[Row], threshold: Int): Unit = {
     var list = new ListBuffer[SingleUser]
-    val filename = s"UseridDataOcpcV1.pb"
+    val filename = s"UseridDataOcpc.pb"
     println("size of the dataframe")
     println(dataset.count)
     var exchangeCnt = 0
