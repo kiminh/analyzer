@@ -23,6 +23,7 @@ object OcpcSampleToRedisV1 {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // calculate time period for historical data
+    args.foreach(println)
     val end_date = args(0)
     val hour = args(1)
     val threshold = args(2).toInt
