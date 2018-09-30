@@ -1,3 +1,5 @@
+
+
 package com.cpc.spark.ocpc
 
 import org.apache.spark.sql.SparkSession
@@ -18,6 +20,7 @@ object OcpcSampleHourly {
          |  a.uid,
          |  a.price,
          |  a.userid,
+         |  a.ext['adclass'].int_value as adclass,
          |  a.isclick,
          |  a.isshow,
          |  b.label as iscvr
@@ -51,13 +54,14 @@ object OcpcSampleHourly {
          |Select
          |  userid,
          |  uid,
+         |  adclass,
          |  SUM(CASE WHEN isclick == 1 then price else 0 end) as cost,
          |  SUM(CASE WHEN isclick == 1 then 1 else 0 end) as ctr_cnt,
          |  SUM(CASE WHEN iscvr == 1 then 1 else 0 end) as cvr_cnt,
          |  SUM(CASE WHEN isshow == 1 then 1 else 0 end) as total_cnt
          |FROM
          |  tmpTable
-         |GROUP BY userid, uid
+         |GROUP BY userid, uid, adclass
        """.stripMargin
 
     val groupBy = spark.sql(groupByRequesst)
@@ -66,6 +70,7 @@ object OcpcSampleHourly {
 
     // save data
     result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track")
+
 
 
     println("successfully save data into table dl_cpc.ocpc_uid_userid_track")

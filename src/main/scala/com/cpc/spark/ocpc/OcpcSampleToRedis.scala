@@ -1,3 +1,5 @@
+
+
 package com.cpc.spark.ocpc
 
 import java.text.SimpleDateFormat
@@ -24,6 +26,8 @@ object OcpcSampleToRedis {
     // calculate time period for historical data
     val end_date = args(0)
     val hour = args(1)
+//    val threshold = args(2).toInt  //default: 20
+    val threshold = 20
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val date = sdf.parse(end_date)
     val calendar = Calendar.getInstance
@@ -41,6 +45,7 @@ object OcpcSampleToRedis {
          |SELECT
          |  userid,
          |  uid,
+         |  adclass,
          |  SUM(cost) as cost,
          |  SUM(ctr_cnt) as ctr_cnt,
          |  SUM(cvr_cnt) as cvr_cnt,
@@ -50,7 +55,7 @@ object OcpcSampleToRedis {
          |WHERE ($selectCondition1) OR
          |($selectCondition2) OR
          |($selectCondition3)
-         |GROUP BY userid, uid
+         |GROUP BY userid, uid, adclass
        """.stripMargin
     println(sqlRequest)
 
@@ -65,18 +70,26 @@ object OcpcSampleToRedis {
 
     // calculation by userid
     val userData = base
-      .groupBy("userid")
-      .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
+      .groupBy(col("userid"), col("adclass"))
+      .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
+
+    // calculate by adclass
+    val adclassData = base
+      .groupBy("adclass")
+      .agg(sum("ctr_cnt").alias("adclass_ctr_cnt"), sum("cvr_cnt").alias("adclass_cvr_cnt"))
+
+    // connect adclass and userid
+    val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
     // save into redis and pb file
     // write data into a temperary table
-    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
-    // save data into redis
-    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
-    // check redis
-    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
-    // save data into pb file
-    savePbPack(userData)
+    uidData.write.mode("overwrite").saveAsTable("test.test_uid_userporfile_ctr_cvr")
+    //     save data into redis
+    savePbRedis("test.test_uid_userporfile_ctr_cvr", spark)
+    //     check redis
+    testSavePbRedis("test.test_uid_userporfile_ctr_cvr", spark)
+    //     save data into pb file
+    savePbPack(useridAdclassData, threshold)
   }
 
 
@@ -100,36 +113,36 @@ object OcpcSampleToRedis {
 
     dataset.foreachPartition(iterator => {
 
-        val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+      val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
 
-        iterator.foreach{
-          record => {
-            val uid = record.get(0).toString
-            var key = uid + "_UPDATA"
-            cnt.add(1)
-            val ctrCnt = record.getLong(1)
-            val cvrCnt = record.getLong(2)
-            ctrResultAcc.add(ctrCnt)
-            cvrResultAcc.add(cvrCnt)
+      iterator.foreach{
+        record => {
+          val uid = record.get(0).toString
+          var key = uid + "_UPDATA"
+          cnt.add(1)
+          val ctrCnt = record.getLong(1)
+          val cvrCnt = record.getLong(2)
+          ctrResultAcc.add(ctrCnt)
+          cvrResultAcc.add(cvrCnt)
 
-            val buffer = redis.get[Array[Byte]](key).orNull
-            var user: UserProfile.Builder = null
-            if (buffer != null) {
-              user = UserProfile.parseFrom(buffer).toBuilder
-              val u = user.build()
-              user = user.setCtrcnt(ctrCnt)
-              user = user.setCvrcnt(cvrCnt)
+          val buffer = redis.get[Array[Byte]](key).orNull
+          var user: UserProfile.Builder = null
+          if (buffer != null) {
+            user = UserProfile.parseFrom(buffer).toBuilder
+            val u = user.build()
+            user = user.setCtrcnt(ctrCnt)
+            user = user.setCvrcnt(cvrCnt)
 
-              val isSuccess = redis.setex(key, 3600 * 24 * 30, user.build().toByteArray)
-              if (isSuccess) {
-                succSetCnt.add(1)
-              }
-              changeCnt.add(1)
+            val isSuccess = redis.setex(key, 3600 * 24 * 30, user.build().toByteArray)
+            if (isSuccess) {
+              succSetCnt.add(1)
             }
+            changeCnt.add(1)
           }
         }
-        redis.disconnect
-      })
+      }
+      redis.disconnect
+    })
 
     println("####################2")
     println(s"accumulator after partition loop")
@@ -193,16 +206,30 @@ object OcpcSampleToRedis {
     println("correct cvr number: " + cvrResultAcc.value.toString)
   }
 
-  def savePbPack(dataset: Dataset[Row]): Unit = {
+  def savePbPack(dataset: Dataset[Row], threshold: Int): Unit = {
     var list = new ListBuffer[SingleUser]
     val filename = s"UseridDataOcpc.pb"
     println("size of the dataframe")
     println(dataset.count)
+    var exchangeCnt = 0
     for (record <- dataset.collect()) {
       val kValue = record.get(0).toString
       val costValue = record.get(1).toString
-      val ctrCntValue = record.get(2).toString
-      val cvrCntValue = record.get(3).toString
+      val userCtr = record.getLong(2)
+      val userCvr = record.getLong(3)
+      val adClassCtr = record.getLong(4)
+      val adClassCvr = record.getLong(5)
+      var ctrCntValue: String = ""
+      var cvrCntValue: String = ""
+      if (userCvr < threshold) {
+        exchangeCnt = exchangeCnt + 1
+        ctrCntValue = adClassCtr.toString
+        cvrCntValue = adClassCvr.toString
+      } else {
+        ctrCntValue = userCtr.toString
+        cvrCntValue = userCvr.toString
+      }
+
       val currentItem = SingleUser(
         userid = kValue,
         cost = costValue,
@@ -211,6 +238,7 @@ object OcpcSampleToRedis {
       )
       list += currentItem
     }
+    println("Total number of replaced users is %d".format(exchangeCnt))
     val result = list.toArray[SingleUser]
     val useridData = UserOcpc(
       user = result
