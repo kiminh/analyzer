@@ -100,9 +100,7 @@ object DNNCtrDataPrepare {
          |select uid,hour,sex,age,os,network,city,
          |      adslotid,phone_level,adclass,
          |      adtype,planid,unitid,ideaid,
-         |      if(label>0, array(1,0), array(0,1)) as label,
-         |      b.pkgs as pkgs,
-         |      c.ideaids as ideaids
+         |      if(label>0, array(1,0), array(0,1)) as label
          |from dl_cpc.ml_ctr_feature_v1
          |where date = '$date'
          |  and ideaid > 0
