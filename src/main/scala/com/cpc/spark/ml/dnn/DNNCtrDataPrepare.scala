@@ -28,13 +28,12 @@ object DNNCtrDataPrepare {
     import spark.implicits._
 
     //获取app数据
-    spark.sql(
+    val app_data = spark.sql(
       s"""
          |select uid,pkgs
          |from dl_cpc.cpc_user_installed_apps
          |where load_date='$date'
       """.stripMargin)
-      .createOrReplaceTempView("app_data")
 
     /*val writer = new PrintWriter(new File("/home/cpc/zhj/app_map/map.txt"))
     val app_map = apps.select(explode($"pkgs").alias("pkg")).groupBy("pkg").count()
@@ -56,7 +55,7 @@ object DNNCtrDataPrepare {
         pkgs.map(pkg => m.getOrElse(pkg, -1)).filter(_ >= 0)
     }*/
     //获取最近3天广告点击数据
-    spark.sql(
+    val click_data1 = spark.sql(
       s"""
          |select uid,collect_set(ideaid) as ideaids
          |from dl_cpc.ml_cvr_feature_v1
@@ -67,7 +66,6 @@ object DNNCtrDataPrepare {
          |  and media_appsid in ('80000001','80000002')
          |group by uid
       """.stripMargin)
-      .createOrReplaceTempView("click_data1")
 
     //获取最近4到7天点击数据
     val click_data2 = spark.sql(
@@ -99,24 +97,22 @@ object DNNCtrDataPrepare {
     //合并数据
     val data = spark.sql(
       s"""
-         |select a.uid,hour,sex,age,os,network,city,
+         |select uid,hour,sex,age,os,network,city,
          |      adslotid,phone_level,adclass,
          |      adtype,planid,unitid,ideaid,
          |      if(label>0, array(1,0), array(0,1)) as label,
          |      b.pkgs as pkgs,
          |      c.ideaids as ideaids
-         |from dl_cpc.ml_ctr_feature_v1 a
-         |left join app_data b
-         |  on a.uid=b.uid
-         |left join click_data1 c
-         |  on c.uid=b.uid
-         |where date = '$date' and hour=10
+         |from dl_cpc.ml_ctr_feature_v1
+         |where date = '$date'
          |  and ideaid > 0
          |  and adslot_type = 1
          |  and media_appsid in ('80000001','80000002')
-         |  and a.uid not like "%.%"
-         |  and a.uid not like "%000000%"
+         |  and uid not like "%.%"
+         |  and uid not like "%000000%"
       """.stripMargin)
+      .join(app_data, Seq("uid"), "left")
+      .join(click_data1, Seq("uid"), "left")
       .select($"label",
         hash("uid")($"uid").alias("uid"),
         hash("age")($"age").alias("age"),
@@ -171,8 +167,6 @@ object DNNCtrDataPrepare {
       .filter(x => x.getAs[Seq[Int]]("label").head == 1 || Random.nextInt(1000) < 100)
       .persist()
 
-
-    traindata.write.mode("overwrite").parquet("/home/cpc/zhj/ctr/dnn/data/test")
     println("train data no app num ：" + traindata.where("size(sparse._4)=0").count)
     println("test data no app num ：" + testdata.where("size(sparse._4)=0").count)
 
@@ -187,7 +181,7 @@ object DNNCtrDataPrepare {
         x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
         x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
     }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
-      .repartition(50).write.mode("overwrite")
+      .repartition(100).write.mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"/home/cpc/zhj/ctr/dnn/data/traindata")
@@ -198,7 +192,7 @@ object DNNCtrDataPrepare {
         x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
         x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
     }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
-      .repartition(50).write.mode("overwrite")
+      .repartition(100).write.mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"/home/cpc/zhj/ctr/dnn/data/testdata")
