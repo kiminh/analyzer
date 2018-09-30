@@ -184,8 +184,7 @@ object DNNCtrDataPrepare {
       .repartition(100).write.mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/home/cpc/zhj/ctr/dnn/data/traindata")
-    //.save(s"/user/dnn_1537324485/cpc_data/ctr/traindata/$date")
+      .save("/user/cpc/dw/dnn/traindata")
 
     testdata.rdd.zipWithIndex().map { x =>
       (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
@@ -195,8 +194,7 @@ object DNNCtrDataPrepare {
       .repartition(100).write.mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/home/cpc/zhj/ctr/dnn/data/testdata")
-    //.save(s"/user/dnn_1537324485/cpc_data/ctr/testdata/$date")
+      .save("/user/cpc/dw/dnn/testdata")
 
     /*//获取广告点击数据
     data.where("label = array(1,0)")
@@ -258,7 +256,7 @@ object DNNCtrDataPrepare {
     */
   private def hash(prefix: String) = udf {
     num: String =>
-      if (num != null) Murmur3Hash.stringHash64(prefix + num, 1030) else Murmur3Hash.stringHash64(prefix, 1030)
+      if (num != null) Murmur3Hash.stringHash64(prefix + num, 0) else Murmur3Hash.stringHash64(prefix, 0)
   }
 
   /**
@@ -272,15 +270,15 @@ object DNNCtrDataPrepare {
     t match {
       case "int" => udf {
         seq: Seq[Int] =>
-          val re = if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
-          else Seq(Murmur3Hash.stringHash64(prefix, 1030))
-          re.slice(0, 1000)
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
+          else Seq(Murmur3Hash.stringHash64(prefix, 0))
+          re.slice(0, 500)
       }
       case "string" => udf {
         seq: Seq[String] =>
-          val re = if (seq != null) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 1030)
-          else Seq(Murmur3Hash.stringHash64(prefix, 1030))
-          re.slice(0, 1000)
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
+          else Seq(Murmur3Hash.stringHash64(prefix, 0))
+          re.slice(0, 500)
       }
     }
   }
