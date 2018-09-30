@@ -26,7 +26,7 @@ object OcpcSampleToRedisV1 {
     args.foreach(println)
     val end_date = args(0)
     val hour = args(1)
-    val threshold = args(2).toInt
+    val threshold = args(2).toInt  //default: 20
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val date = sdf.parse(end_date)
     val calendar = Calendar.getInstance
@@ -211,6 +211,7 @@ object OcpcSampleToRedisV1 {
     println("size of the dataframe")
     println(dataset.count)
     var exchangeCnt = 0
+    var loopCnt = 0
     for (record <- dataset.collect()) {
       val kValue = record.get(0).toString
       val costValue = record.get(1).toString
@@ -227,6 +228,15 @@ object OcpcSampleToRedisV1 {
       } else {
         ctrCntValue = userCtr.toString
         cvrCntValue = userCvr.toString
+      }
+      if (loopCnt % 20 == 0) {
+        println("################## loop: %d".format(loopCnt))
+        println("userCtr: " + userCtr.toString)
+        println("userCvr: " + userCvr.toString)
+        println("adclassCtr: " + adClassCtr.toString)
+        println("adclassCvr: " + adClassCvr.toString)
+        println("final ctr: " + ctrCntValue)
+        println("final cvr: " + cvrCntValue)
       }
 
       val currentItem = SingleUser(
