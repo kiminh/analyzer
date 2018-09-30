@@ -50,7 +50,7 @@ object OcpcSampleToRedisV1 {
          |  SUM(cvr_cnt) as cvr_cnt,
          |  SUM(total_cnt) as total_cnt
          |FROM
-         |  dl_cpc.ocpc_uid_userid_track
+         |  dl_cpc.ocpc_uid_userid_track_v1
          |WHERE ($selectCondition1) OR
          |($selectCondition2) OR
          |($selectCondition3)

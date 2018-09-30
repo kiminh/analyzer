@@ -72,7 +72,7 @@ object OcpcSampleHourlyV1 {
 
 
 
-    println("successfully save data into table dl_cpc.ocpc_uid_userid_track")
+    println("successfully save data into table dl_cpc.ocpc_uid_userid_track_v1")
   }
 }
 
