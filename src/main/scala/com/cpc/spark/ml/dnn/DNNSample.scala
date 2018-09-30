@@ -91,13 +91,8 @@ object DNNSample {
     }.count()
     println(ulog.count(), clickiNum)
 
-<<<<<<< HEAD
     val Array(train, test) = ulog.randomSplit(Array(0.99, 0.01))
     val resampled = train.filter{
-=======
-    val Array(train, test) = ulog.randomSplit(Array(0.97, 0.03))
-    val resampled = train.filter {
->>>>>>> origin/zhj_dev
       x =>
         val label = x.getAs[Seq[Int]]("label")
         label(0) == 1 || Random.nextInt(1000) < 100
