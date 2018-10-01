@@ -163,7 +163,7 @@ object DNNCtrDataPrepare {
       $"sparse".getField("_3").alias("idx2"),
       $"sparse".getField("_4").alias("id_arr"))
 
-    val Array(traindata, testdata) = data.randomSplit(Array(0.98, 0.02), 1030L)
+    val Array(traindata, testdata) = data.randomSplit(Array(0.99, 0.01), 1030L)
 
     //println("traindata count = " + traindata.count)
     //traindata.show
