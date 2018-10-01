@@ -22,17 +22,49 @@ object DNNSample {
       .appName("dnn sample")
       .enableHiveSupport()
       .getOrCreate()
+
+    val date = args(0)
+    val tdate = args(1)
+
+    val userAppIdx1 = getUidApp(spark, date)
+    val train = getSample(spark, userAppIdx1, date)
+
+    val userAppIdx2 = getUidApp(spark, tdate)
+    val test = getSample(spark, userAppIdx2, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
+
+    val clickiNum = train.filter {
+      x =>
+        val label = x.getAs[Seq[Int]]("label")
+        label(0) == 1
+    }.count()
+    println(train.count(), clickiNum)
+
+    val resampled = train.filter{
+      x =>
+        val label = x.getAs[Seq[Int]]("label")
+        label(0) == 1 || Random.nextInt(1000) < 100
+    }
+
+    resampled.repartition(100)
+      .write
+      .mode("overwrite")
+      .format("tfrecords")
+      .option("recordType", "Example")
+      .save("/user/cpc/dw/dnntrain-" + date)
+    println("train size", resampled.count())
+
+    test.repartition(100)
+      .write
+      .mode("overwrite")
+      .format("tfrecords")
+      .option("recordType", "Example")
+      .save("/user/cpc/dw/dnntest-" + tdate)
+    test.take(10).foreach(println)
+    println("test size", test.count())
+  }
+
+  def getSample(spark: SparkSession, userAppIdx: DataFrame, date: String): DataFrame = {
     import spark.implicits._
-
-    //val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime)
-    val date = "2018-09-29"
-
-    //按分区取数据
-    val ctrPathSep = getPathSeq(args(0).toInt)
-
-    val userAppIdx = getUidApp(spark, ctrPathSep)
-
-    //val ulog = getData(spark,"ctrdata_v1",ctrPathSep)
     val ulog = spark.sql(
       s"""
          |select *
@@ -83,37 +115,6 @@ object DNNSample {
       .map(x => (x._2, x._1._1, x._1._2, x._1._3, x._1._4, x._1._5, x._1._6))
       .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
       .repartition(1000)
-
-    val clickiNum = ulog.filter {
-      x =>
-        val label = x.getAs[Seq[Int]]("label")
-        label(0) == 1
-    }.count()
-    println(ulog.count(), clickiNum)
-
-    val Array(train, test) = ulog.randomSplit(Array(0.99, 0.01))
-    val resampled = train.filter{
-      x =>
-        val label = x.getAs[Seq[Int]]("label")
-        label(0) == 1 || Random.nextInt(1000) < 100
-    }
-
-    resampled.repartition(100)
-      .write
-      .mode("overwrite")
-      .format("tfrecords")
-      .option("recordType", "Example")
-      .save("/user/cpc/dw/dnntrain-" + date)
-    println("train size", resampled.count())
-
-    test.repartition(100)
-      .write
-      .mode("overwrite")
-      .format("tfrecords")
-      .option("recordType", "Example")
-      .save("/user/cpc/dw/dnntest-" + date)
-    test.take(10).foreach(println)
-    println("test size", test.count())
   }
 
   def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
@@ -133,13 +134,13 @@ object DNNSample {
     pathSep
   }
 
-  def getUidApp(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): DataFrame = {
-    val inpath = "/user/cpc/userInstalledApp/{%s}".format(pathSep.keys.mkString(","))
-    println(inpath)
-
+  def getUidApp(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
-    spark.read.parquet(inpath).rdd
-      .map(x => (x.getAs[String]("uid"), x.getAs[WrappedArray[String]]("pkgs")))
+    spark.sql(
+      """
+        |select * from dl_cpc.cpc_user_installed_apps where `date` = "%s"
+      """.stripMargin.format(date)).rdd
+      .map(x => (x.getAs[String]("uid"), x.getAs[Seq[String]]("pkgs")))
       .reduceByKey(_ ++ _)
       .map(x => (x._1, x._2.distinct))
       .toDF("uid", "pkgs")
