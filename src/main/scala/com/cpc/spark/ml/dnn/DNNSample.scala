@@ -26,6 +26,29 @@ object DNNSample {
     val date = args(0)
     val tdate = args(1)
 
+
+    val click_data1 = spark.sql(
+      s"""
+         |select uid,collect_set(ideaid) as click_ads
+         |from dl_cpc.ml_cvr_feature_v1
+         |where date = '$date'
+         |  and ideaid > 0
+         |  and adslot_type = 1
+         |  and media_appsid in ('80000001','80000002')
+         |group by uid
+      """.stripMargin)
+
+    val uid_show = spark.sql(
+      s"""
+         |select uid,collect_set(ideaid) as show_ads
+         |from dl_cpc.ml_ctr_feature_v1
+         |where date = '$date'
+         |  and ideaid > 0
+         |  and adslot_type = 1
+         |  and media_appsid in ('80000001','80000002')
+         |group by uid
+      """.stripMargin)
+
     val userAppIdx1 = getUidApp(spark, date)
     val train = getSample(spark, userAppIdx1, date).persist()
 
@@ -36,19 +59,16 @@ object DNNSample {
     }.count()
     println(train.count(), clickiNum)
 
-    val resampled = train.filter{
-      x =>
-        val label = x.getAs[Seq[Int]]("label")
-        label(0) == 1 || Random.nextInt(1000) < 500
-    }
-
-    resampled.repartition(50)
+    train.join(click_data1, Seq("uid"), "leftouter")
+      .join(uid_show, Seq("uid"), "leftouter")
+      .where("size(show_ads) > 10 or size(click_ads) > 0")
+      .repartition(50)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/dw/dnntrain-v1-" + date)
-    println("train size", resampled.count())
+      .save("/user/cpc/dw/dnntrain-v2-" + date)
+    println("train size", train.count())
 
     return
 
