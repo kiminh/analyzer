@@ -146,8 +146,7 @@ object FtrlNewHourlyID {
       // get hashed id
       val hashedID = allId.map(a => getRawHashedID(a))
       // combine xgboost feature and hashed id
-//      ((xgBoostFeatures.toSet ++ hashedID.toSet).toArray, label)
-       (hashedID.toArray, label)
+      ((xgBoostFeatures.toSet ++ hashedID.toSet).toArray, label)
     })
   }
 
