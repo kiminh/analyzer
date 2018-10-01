@@ -27,7 +27,7 @@ object DNNSample {
     val tdate = args(1)
 
     val userAppIdx1 = getUidApp(spark, date)
-    val train = getSample(spark, userAppIdx1, date)
+    val train = getSample(spark, userAppIdx1, date).persist()
 
     val clickiNum = train.filter {
       x =>
@@ -39,7 +39,7 @@ object DNNSample {
     val resampled = train.filter{
       x =>
         val label = x.getAs[Seq[Int]]("label")
-        label(0) == 1 || Random.nextInt(1000) < 200
+        label(0) == 1 || Random.nextInt(1000) < 500
     }
 
     resampled.repartition(50)
@@ -47,7 +47,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/dw/dnntrain-" + date)
+      .save("/user/cpc/dw/dnntrain-v1-" + date)
     println("train size", resampled.count())
 
     return
