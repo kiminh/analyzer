@@ -80,6 +80,17 @@ object DNNCtrDataPrepare {
          |group by uid
       """.stripMargin)
 
+    val uid_show = spark.sql(
+      s"""
+        |select uid,collect_set(ideaid) as show_ads
+        |from dl_cpc.ml_ctr_feature_v1
+        |where date = '$date'
+        |  and ideaid > 0
+        |  and adslot_type = 1
+        |  and media_appsid in ('80000001','80000002')
+        |group by uid
+      """.stripMargin)
+
     val mkSparseFeature = udf {
       (apps: Seq[Long], ideaids: Seq[Long]) =>
         val a = apps.zipWithIndex.map(x => (0, x._2, x._1))
@@ -109,8 +120,10 @@ object DNNCtrDataPrepare {
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
       """.stripMargin)
-      .join(app_data, Seq("uid"))
-      .join(click_data1, Seq("uid"))
+      .join(app_data, Seq("uid"), "leftouter")
+      .join(click_data1, Seq("uid"), "leftouter")
+      .join(uid_show, Seq("uid"), "leftouter")
+      .where("size(show_ads) >= 10 or size(ideads) > 0")
       .select($"label",
         hash("uid")($"uid").alias("uid1"),
         hash("age")($"age").alias("age1"),
@@ -150,7 +163,7 @@ object DNNCtrDataPrepare {
       $"sparse".getField("_3").alias("idx2"),
       $"sparse".getField("_4").alias("id_arr"))
 
-    val Array(traindata1, testdata) = data.randomSplit(Array(0.99, 0.01), 1030L)
+    val Array(traindata, testdata) = data.randomSplit(Array(0.98, 0.02), 1030L)
 
     //println("traindata count = " + traindata.count)
     //traindata.show
@@ -160,10 +173,6 @@ object DNNCtrDataPrepare {
 
     //traindata.write.mode("overwrite").parquet("/home/cpc/zhj/ctr/dnn/data/test")
     testdata.persist()
-
-    val traindata = traindata1
-      .filter(x => x.getAs[Seq[Int]]("label").head == 1 || Random.nextInt(1000) < 100)
-      .persist()
 
     println("train data no app num ：" + traindata.where("size(sparse._4)=0").count)
     println("test data no app num ：" + testdata.where("size(sparse._4)=0").count)
