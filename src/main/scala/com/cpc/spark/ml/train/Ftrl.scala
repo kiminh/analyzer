@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.train
 
-import java.io.{BufferedOutputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
+import java.io._
 import java.util.Date
 
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
@@ -346,6 +346,19 @@ object Ftrl {
     println(s"save model proto to hdfs: $key")
   }
 
+  def saveProtoToLocal(path: String, ftrl: Ftrl): Unit = {
+    val proto = new FtrlProto(
+      alpha = ftrl.alpha,
+      beta = ftrl.beta,
+      l1 = ftrl.L1,
+      l2 = ftrl.L2,
+      n = ftrl.nDict.toMap,
+      z = ftrl.zDict.toMap,
+      w = ftrl.wDict.toMap
+    )
+    Utils.saveProtoToFile(proto, path)
+  }
+
   def getModelFromProtoOnHDFS(startFresh: Boolean, key: String, ctx: SparkSession): Ftrl = {
     val ftrl = new Ftrl(1)
     if (startFresh) {
@@ -364,6 +377,25 @@ object Ftrl {
     println(s"ftrl proto fetched from hdfs: $key")
     return ftrl
   }
+
+  def getModelProtoFromLocal(startFresh: Boolean, path: String): Ftrl = {
+    val ftrl = new Ftrl(1)
+    if (startFresh) {
+      println("new ftrl")
+      return ftrl
+    }
+    val proto = new FtrlProto().mergeFrom(CodedInputStream.newInstance(new FileInputStream(path)))
+    ftrl.alpha = proto.alpha
+    ftrl.beta = proto.beta
+    ftrl.L1 = proto.l1
+    ftrl.L2 = proto.l2
+    ftrl.nDict = mutable.Map() ++ proto.n.toSeq
+    ftrl.zDict = mutable.Map() ++ proto.z.toSeq
+    ftrl.wDict = mutable.Map() ++ proto.w.toSeq
+    println(s"ftrl proto fetched from local: $path")
+    return ftrl
+  }
+
 
   def saveLrPbPack(ftrl: Ftrl, path: String, parser: String, name: String): Unit = {
     val lr = LRModel(

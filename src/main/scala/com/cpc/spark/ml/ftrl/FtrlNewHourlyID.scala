@@ -23,8 +23,10 @@ object FtrlNewHourlyID {
   val PLAN_ID_NAME = "plan"
 
   val LOCAL_DIR = "/home/cpc/ftrl/"
-  val HDFS_MODEL_DIR = "hdfs:///user/cpc/qtt-ftrl-model/"
-  val HDFS_MODEL_HISTORY_DIR = "hdfs:///user/cpc/qtt-ftrl-model-history/"
+//  val HDFS_MODEL_DIR = "hdfs:///user/cpc/qtt-ftrl-model/"
+  val LOCAL_FTRL_PARAM = "/home/cpc/ftrl_param/"
+//  val HDFS_MODEL_HISTORY_DIR = "hdfs:///user/cpc/qtt-ftrl-model-history/"
+  val LOCAL_FTRL_HISTORY = "/home/cpc/ftrl_history/"
   val DEST_DIR = "/home/work/mlcpp/data/"
 
   val DOWN_SAMPLE_RATE = 0.2
@@ -68,8 +70,9 @@ object FtrlNewHourlyID {
 
     val spark: SparkSession = Utils.buildSparkSession(name = "full_id_ftrl")
 
-    val currentHDFS = s"${HDFS_MODEL_DIR}ftrl-$typename-$ftrlVersion.mlm"
-    val ftrl = Ftrl.getModelFromProtoOnHDFS(startFresh, currentHDFS, spark)
+//    val currentHDFS = s"${HDFS_MODEL_DIR}ftrl-$typename-$ftrlVersion.mlm"
+    val currentPath = s"${LOCAL_FTRL_PARAM}ftrl-$typename-$ftrlVersion.mlm"
+    val ftrl = Ftrl.getModelProtoFromLocal(startFresh, currentPath)
     println("before training model info:")
     printModelInfo(ftrl)
 
@@ -114,9 +117,12 @@ object FtrlNewHourlyID {
     println(s"Save model locally to $filename")
 
     if (upload) {
-      Ftrl.saveToProtoToHDFS(currentHDFS, spark, ftrl)
-      val historyHDFS = s"${HDFS_MODEL_HISTORY_DIR}ftrl-$typename-$ftrlVersion-$dt-$hour.mlm"
-      Ftrl.saveToProtoToHDFS(historyHDFS, spark, ftrl)
+//      Ftrl.saveToProtoToHDFS(currentHDFS, spark, ftrl)
+      Ftrl.saveProtoToLocal(currentPath, ftrl)
+//      val historyHDFS = s"${HDFS_MODEL_HISTORY_DIR}ftrl-$typename-$ftrlVersion-$dt-$hour.mlm"
+      val historyPath = s"${LOCAL_FTRL_HISTORY}ftrl-$typename-$ftrlVersion-$dt-$hour.mlm"
+//      Ftrl.saveToProtoToHDFS(historyHDFS, spark, ftrl)
+      Ftrl.saveProtoToLocal(historyPath, ftrl)
       println(MUtils.updateMlcppOnlineData(filename, s"$DEST_DIR$name.mlm", ConfigFactory.load()))
     }
   }
