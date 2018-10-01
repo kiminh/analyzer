@@ -45,7 +45,7 @@ object DNNSample {
         label(0) == 1 || Random.nextInt(1000) < 100
     }
 
-    resampled.repartition(100)
+    resampled.repartition(50)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -53,7 +53,7 @@ object DNNSample {
       .save("/user/cpc/dw/dnntrain-" + date)
     println("train size", resampled.count())
 
-    test.repartition(100)
+    test.repartition(50)
       .write
       .mode("overwrite")
       .format("tfrecords")
