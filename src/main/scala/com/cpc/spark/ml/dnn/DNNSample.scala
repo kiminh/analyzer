@@ -26,12 +26,15 @@ object DNNSample {
     val date = args(0)
     val tdate = args(1)
 
+    /*
     val userAppIdx1 = getUidApp(spark, date)
     val train = getSample(spark, userAppIdx1, date)
+    */
 
     val userAppIdx2 = getUidApp(spark, tdate)
     val test = getSample(spark, userAppIdx2, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
 
+    /*
     val clickiNum = train.filter {
       x =>
         val label = x.getAs[Seq[Int]]("label")
@@ -52,6 +55,7 @@ object DNNSample {
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntrain-" + date)
     println("train size", resampled.count())
+    */
 
     test.repartition(50)
       .write
