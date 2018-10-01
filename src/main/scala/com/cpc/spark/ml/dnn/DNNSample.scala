@@ -139,7 +139,7 @@ object DNNSample {
     import spark.implicits._
     spark.sql(
       """
-        |select * from dl_cpc.cpc_user_installed_apps where `date` = "%s"
+        |select * from dl_cpc.cpc_user_installed_apps where `load_date` = "%s"
       """.stripMargin.format(date)).rdd
       .map(x => (x.getAs[String]("uid"), x.getAs[Seq[String]]("pkgs")))
       .reduceByKey(_ ++ _)
@@ -147,22 +147,6 @@ object DNNSample {
       .toDF("uid", "pkgs")
   }
 
-
-  def getData(spark: SparkSession, dataVersion: String, pathSep: mutable.Map[String, Seq[String]]): DataFrame = {
-
-    var path = Seq[String]()
-    pathSep.map {
-      x =>
-        path = path :+ "/user/cpc/lrmodel/%s/%s/{%s}".format(dataVersion, x._1, x._2.mkString(","))
-    }
-
-    path.foreach {
-      x =>
-        println(x)
-    }
-
-    spark.read.parquet(path: _*)
-  }
 
   val fnames = Seq(
     "hour", "sex", "age", "os", "net", "pl", "adtype", "city", "mediaid",
