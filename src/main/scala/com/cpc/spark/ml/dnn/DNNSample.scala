@@ -115,6 +115,7 @@ object DNNSample {
       .map(x => (x._2, x._1._1, x._1._2, x._1._3, x._1._4, x._1._5, x._1._6))
       .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
       .repartition(1000)
+    ulog
   }
 
   def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
