@@ -50,7 +50,7 @@ object DNNSample {
       """.stripMargin)
 
     val userAppIdx1 = getUidApp(spark, date)
-    val train = getSample(spark, userAppIdx1, date).persist()
+    val train = getSample(spark, userAppIdx1, uid_show, click_data1, date).persist()
 
     val clickiNum = train.filter {
       x =>
@@ -59,10 +59,7 @@ object DNNSample {
     }.count()
     println(train.count(), clickiNum)
 
-    train.join(click_data1, Seq("uid"), "leftouter")
-      .join(uid_show, Seq("uid"), "leftouter")
-      .where("size(show_ads) > 10 or size(click_ads) > 0")
-      .repartition(50)
+    train .repartition(50)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -70,8 +67,8 @@ object DNNSample {
       .save("/user/cpc/dw/dnntrain-v2-" + date)
     println("train size", train.count())
 
-    return
 
+    /*
     val userAppIdx2 = getUidApp(spark, tdate)
     val test = getSample(spark, userAppIdx2, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
 
@@ -83,9 +80,10 @@ object DNNSample {
       .save("/user/cpc/dw/dnntest-" + tdate)
     test.take(10).foreach(println)
     println("test size", test.count())
+    */
   }
 
-  def getSample(spark: SparkSession, userAppIdx: DataFrame, date: String): DataFrame = {
+  def getSample(spark: SparkSession, userAppIdx: DataFrame, uid_click: DataFrame, uid_show: DataFrame, date: String): DataFrame = {
     import spark.implicits._
     val ulog = spark.sql(
       s"""
@@ -102,6 +100,9 @@ object DNNSample {
         ideaid > 0 && slottype == 1 && Seq(80000001, 80000002).contains(mediaid) && !isip
       }
       .join(userAppIdx, Seq("uid"), "leftouter")
+      .join(uid_click, Seq("uid"), "leftouter")
+      .join(uid_show, Seq("uid"), "leftouter")
+      .where("size(show_ads) > 10 or size(click_ads) > 0")
       .rdd
       .map { row =>
         val ret = getVectorParser(row)
