@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.train
 
-import java.io.{BufferedOutputStream, FileOutputStream, ObjectInputStream, ObjectOutputStream}
+import java.io._
 import java.util.Date
 
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
@@ -10,6 +10,7 @@ import org.apache.spark.rdd.RDD
 import scala.collection.mutable.ListBuffer
 import com.alibaba.fastjson.{JSON, JSONObject}
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.ftrl.FtrlSerializable
 import com.cpc.spark.qukan.utils.RedisUtil
 import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel._
@@ -346,6 +347,19 @@ object Ftrl {
     println(s"save model proto to hdfs: $key")
   }
 
+  def saveProtoToLocal(path: String, ftrl: Ftrl): Unit = {
+    val proto = new FtrlProto(
+      alpha = ftrl.alpha,
+      beta = ftrl.beta,
+      l1 = ftrl.L1,
+      l2 = ftrl.L2,
+      n = ftrl.nDict.toMap,
+      z = ftrl.zDict.toMap,
+      w = ftrl.wDict.toMap
+    )
+    Utils.saveProtoToFile(proto, path)
+  }
+
   def getModelFromProtoOnHDFS(startFresh: Boolean, key: String, ctx: SparkSession): Ftrl = {
     val ftrl = new Ftrl(1)
     if (startFresh) {
@@ -364,6 +378,25 @@ object Ftrl {
     println(s"ftrl proto fetched from hdfs: $key")
     return ftrl
   }
+
+  def getModelProtoFromLocal(startFresh: Boolean, path: String): Ftrl = {
+    val ftrl = new Ftrl(1)
+    if (startFresh) {
+      println("new ftrl")
+      return ftrl
+    }
+    val proto = new FtrlProto().mergeFrom(CodedInputStream.newInstance(new FileInputStream(path)))
+    ftrl.alpha = proto.alpha
+    ftrl.beta = proto.beta
+    ftrl.L1 = proto.l1
+    ftrl.L2 = proto.l2
+    ftrl.nDict = mutable.Map() ++ proto.n.toSeq
+    ftrl.zDict = mutable.Map() ++ proto.z.toSeq
+    ftrl.wDict = mutable.Map() ++ proto.w.toSeq
+    println(s"ftrl proto fetched from local: $path")
+    return ftrl
+  }
+
 
   def saveLrPbPack(ftrl: Ftrl, path: String, parser: String, name: String): Unit = {
     val lr = LRModel(
@@ -418,6 +451,45 @@ object Ftrl {
       hashParam = Option(hashParam)
     )
     Utils.saveProtoToFile(pack, path)
+  }
+
+  def serializeLrToLocal(ftrl: Ftrl, path: String): Unit = {
+    val serializable = new FtrlSerializable()
+    serializable.alpha = ftrl.alpha
+    serializable.beta = ftrl.beta
+    serializable.L1 = ftrl.L1
+    serializable.L2 = ftrl.L2
+    serializable.nDict = ftrl.nDict.toMap
+    serializable.zDict = ftrl.zDict.toMap
+    serializable.wDict = ftrl.wDict.toMap
+
+    val outFile = new File(path)
+    outFile.getParentFile.mkdirs()
+
+    val oos = new ObjectOutputStream(new FileOutputStream(path))
+    oos.writeObject(serializable)
+    oos.close()
+    println(s"save to local: $path")
+  }
+
+  def deserializeFromLocal(startFresh: Boolean, path: String): Ftrl = {
+    if (startFresh) {
+      return new Ftrl(1)
+    }
+    println(s"fetching model from $path")
+    val ois = new ObjectInputStream(new FileInputStream(path))
+    val ftrlSerializable = ois.readObject.asInstanceOf[FtrlSerializable]
+    ois.close()
+
+    val ftrl = new Ftrl(1)
+    ftrl.alpha = ftrlSerializable.alpha
+    ftrl.beta = ftrlSerializable.beta
+    ftrl.L1 = ftrlSerializable.L1
+    ftrl.L2 = ftrlSerializable.L2
+    ftrl.wDict = mutable.Map() ++ ftrlSerializable.wDict
+    ftrl.zDict = mutable.Map() ++ ftrlSerializable.zDict
+    ftrl.nDict = mutable.Map() ++ ftrlSerializable.nDict
+    return ftrl
   }
 
 }
