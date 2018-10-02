@@ -118,11 +118,13 @@ object FtrlNewHourlyID {
 
     if (upload) {
 //      Ftrl.saveToProtoToHDFS(currentHDFS, spark, ftrl)
-      Ftrl.saveProtoToLocal(currentPath, ftrl)
+//      Ftrl.saveProtoToLocal(currentPath, ftrl)
+      Ftrl.serializeLrToLocal(ftrl, currentPath)
 //      val historyHDFS = s"${HDFS_MODEL_HISTORY_DIR}ftrl-$typename-$ftrlVersion-$dt-$hour.mlm"
       val historyPath = s"${LOCAL_FTRL_HISTORY}ftrl-$typename-$ftrlVersion-$dt-$hour.mlm"
 //      Ftrl.saveToProtoToHDFS(historyHDFS, spark, ftrl)
-      Ftrl.saveProtoToLocal(historyPath, ftrl)
+//      Ftrl.saveProtoToLocal(historyPath, ftrl)
+      Ftrl.serializeLrToLocal(ftrl, historyPath)
       println(MUtils.updateMlcppOnlineData(filename, s"$DEST_DIR$name.mlm", ConfigFactory.load()))
     }
   }

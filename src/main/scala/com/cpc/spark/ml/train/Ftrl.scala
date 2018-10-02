@@ -10,6 +10,7 @@ import org.apache.spark.rdd.RDD
 import scala.collection.mutable.ListBuffer
 import com.alibaba.fastjson.{JSON, JSONObject}
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.ftrl.FtrlSerializable
 import com.cpc.spark.qukan.utils.RedisUtil
 import com.google.protobuf.CodedInputStream
 import mlmodel.mlmodel._
@@ -450,6 +451,24 @@ object Ftrl {
       hashParam = Option(hashParam)
     )
     Utils.saveProtoToFile(pack, path)
+  }
+
+  def serializeLrToLocal(ftrl: Ftrl, path: String): Unit = {
+    val serializable = new FtrlSerializable()
+    serializable.alpha = ftrl.alpha
+    serializable.beta = ftrl.beta
+    serializable.L1 = ftrl.L1
+    serializable.L2 = ftrl.L2
+    serializable.nDict = ftrl.nDict.toMap
+    serializable.zDict = ftrl.zDict.toMap
+    serializable.wDict = ftrl.wDict.toMap
+
+    val outFile = new File(path)
+    outFile.getParentFile.mkdirs()
+
+    val oos = new ObjectOutputStream(new FileOutputStream(path))
+    oos.writeObject(serializable)
+    oos.close()
   }
 
 }
