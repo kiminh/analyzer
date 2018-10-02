@@ -476,6 +476,7 @@ object Ftrl {
     if (startFresh) {
       return new Ftrl(1)
     }
+    println(s"fetching model from $path")
     val ois = new ObjectInputStream(new FileInputStream(path))
     val ftrlSerializable = ois.readObject.asInstanceOf[FtrlSerializable]
     ois.close()
