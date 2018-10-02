@@ -72,7 +72,8 @@ object FtrlNewHourlyID {
 
 //    val currentHDFS = s"${HDFS_MODEL_DIR}ftrl-$typename-$ftrlVersion.mlm"
     val currentPath = s"${LOCAL_FTRL_PARAM}ftrl-$typename-$ftrlVersion.mlm"
-    val ftrl = Ftrl.getModelProtoFromLocal(startFresh, currentPath)
+//    val ftrl = Ftrl.getModelProtoFromLocal(startFresh, currentPath)
+    val ftrl = Ftrl.deserializeFromLocal(startFresh, currentPath)
     println("before training model info:")
     printModelInfo(ftrl)
 

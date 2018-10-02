@@ -469,6 +469,26 @@ object Ftrl {
     val oos = new ObjectOutputStream(new FileOutputStream(path))
     oos.writeObject(serializable)
     oos.close()
+    println(s"save to local: $path")
+  }
+
+  def deserializeFromLocal(startFresh: Boolean, path: String): Ftrl = {
+    if (startFresh) {
+      return new Ftrl(1)
+    }
+    val ois = new ObjectInputStream(new FileInputStream(path))
+    val ftrlSerializable = ois.readObject.asInstanceOf[FtrlSerializable]
+    ois.close()
+
+    val ftrl = new Ftrl(1)
+    ftrl.alpha = ftrlSerializable.alpha
+    ftrl.beta = ftrlSerializable.beta
+    ftrl.L1 = ftrlSerializable.L1
+    ftrl.L2 = ftrlSerializable.L2
+    ftrl.wDict = mutable.Map() ++ ftrlSerializable.wDict
+    ftrl.zDict = mutable.Map() ++ ftrlSerializable.zDict
+    ftrl.nDict = mutable.Map() ++ ftrlSerializable.nDict
+    return ftrl
   }
 
 }
