@@ -64,7 +64,7 @@ object DNNSample {
          |  ext['channel'].int_value as channel,
          |  ext['client_type'].string_value as sdk_type,
          |
-         |  adslot_type, adslot_id,
+         |  adslot_type, adslotid,
          |  ext['slot_width'].int_value as adslot_width,
          |  ext['slot_height'].int_value as adslot_height,
          |
@@ -95,7 +95,7 @@ object DNNSample {
         hash("f3")($"channel").alias("f3"),
         hash("f4")($"sdk_type").alias("f4"),
         hash("f5")($"adslot_type").alias("f5"),
-        hash("f6")($"adslot_id").alias("f6"),
+        hash("f6")($"adslotid").alias("f6"),
         hash("f7")($"slot_width").alias("f7"),
         hash("f8")($"slot_height").alias("f8"),
         hash("f9")($"adtype").alias("f9"),
