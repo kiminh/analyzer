@@ -60,7 +60,7 @@ object DNNSample {
 
     spark.sql(
       s"""
-         |select media_type, media_appsid as mediaid,
+         |select isclick, media_type, media_appsid as mediaid,
          |  ext['channel'].int_value as channel,
          |  ext['client_type'].string_value as sdk_type,
          |
@@ -80,7 +80,7 @@ object DNNSample {
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id
          |
          |from dl_cpc.cpc_union_log
-         |where date='$date' and ishow = 1 and ideaid > 0 and adslot_type = 1
+         |where date='$date' and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
@@ -89,7 +89,7 @@ object DNNSample {
       """.stripMargin)
       .join(userAppIdx, Seq("uid"), "leftouter")
       .repartition(1000)
-      .select($"label",
+      .select($"isclick".alias("label"),
         hash("f1")($"media_type").alias("f1"),
         hash("f2")($"mediaid").alias("f2"),
         hash("f3")($"channel").alias("f3"),
