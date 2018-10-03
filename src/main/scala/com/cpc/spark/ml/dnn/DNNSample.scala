@@ -58,7 +58,8 @@ object DNNSample {
 
     val userAppIdx = getUidApp(spark, date)
     val sql = s"""
-         |select isclick, media_type, media_appsid as mediaid,
+         |select if(isclick>0, array(1,0), array(0,1)) as label
+         |  media_type, media_appsid as mediaid,
          |  ext['channel'].int_value as channel,
          |  ext['client_type'].string_value as sdk_type,
          |
@@ -87,7 +88,7 @@ object DNNSample {
     spark.sql(sql)
       .join(userAppIdx, Seq("uid"), "leftouter")
       .repartition(1000)
-      .select($"isclick".alias("label"),
+      .select($"label",
         hash("f1")($"media_type").alias("f1"),
         hash("f2")($"mediaid").alias("f2"),
         hash("f3")($"channel").alias("f3"),
