@@ -65,8 +65,6 @@ object DNNSample {
          |  ext['client_type'].string_value as sdk_type,
          |
          |  adslot_type, adslotid,
-         |  ext['slot_width'].int_value as adslot_width,
-         |  ext['slot_height'].int_value as adslot_height,
          |
          |  adtype, interaction, bid, ideaid, unitid, planid, userid,
          |  ext_int['is_new_ad'] as is_new_ad, ext['adclass'].int_value as adclass,
@@ -96,8 +94,8 @@ object DNNSample {
         hash("f4")($"sdk_type").alias("f4"),
         hash("f5")($"adslot_type").alias("f5"),
         hash("f6")($"adslotid").alias("f6"),
-        hash("f7")($"slot_width").alias("f7"),
-        hash("f8")($"slot_height").alias("f8"),
+        //hash("f7")($"slot_width").alias("f7"),
+        //hash("f8")($"slot_height").alias("f8"),
         hash("f9")($"adtype").alias("f9"),
         hash("f10")($"interaction").alias("f10"),
         hash("f11")($"bid").alias("f11"),
