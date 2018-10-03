@@ -94,8 +94,8 @@ object DNNSample {
         hash("f4")($"sdk_type").alias("f4"),
         hash("f5")($"adslot_type").alias("f5"),
         hash("f6")($"adslotid").alias("f6"),
-        //hash("f7")($"slot_width").alias("f7"),
-        //hash("f8")($"slot_height").alias("f8"),
+        hash("f7")($"sex").alias("f7"),
+        hash("f8")($"dtu_id").alias("f8"),
         hash("f9")($"adtype").alias("f9"),
         hash("f10")($"interaction").alias("f10"),
         hash("f11")($"bid").alias("f11"),
@@ -115,16 +115,14 @@ object DNNSample {
         hash("f25")($"city_level").alias("f25"),
         hash("f26")($"uid").alias("f26"),
         hash("f27")($"age").alias("f27"),
-        hash("f28")($"sex").alias("f28"),
-        hash("f29")($"dtu_id").alias("f29"),
 
-        hashSeq("f30", "string")($"pkgs").alias("f30"))
+        hashSeq("m1", "string")($"pkgs").alias("m1"))
 
-      .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f9",
+      .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
-        $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27", $"f28", $"f29" ).alias("dense"),
+        $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
-        mkSparseFeature1($"f30").alias("sparse"), $"label")
+        mkSparseFeature1($"m1l).alias("sparse"), $"label")
 
       .select(
         $"label",
