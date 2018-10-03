@@ -58,7 +58,7 @@ object DNNSample {
 
     val userAppIdx = getUidApp(spark, date)
     val sql = s"""
-         |select if(isclick>0, array(1,0), array(0,1)) as label
+         |select if(isclick>0, array(1,0), array(0,1)) as label,
          |  media_type, media_appsid as mediaid,
          |  ext['channel'].int_value as channel,
          |  ext['client_type'].string_value as sdk_type,
