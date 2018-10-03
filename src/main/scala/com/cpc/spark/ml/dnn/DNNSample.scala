@@ -122,7 +122,7 @@ object DNNSample {
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
         $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
-        mkSparseFeature1($"m1l).alias("sparse"), $"label")
+        mkSparseFeature1($"m1").alias("sparse"), $"label")
 
       .select(
         $"label",
