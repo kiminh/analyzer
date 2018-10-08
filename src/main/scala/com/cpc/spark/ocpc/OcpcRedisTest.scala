@@ -19,15 +19,15 @@ object OcpcRedisTest {
     val totalData = spark.table("test.uid_userporfile_ctr_cvr")
 
     // test 20 records from the temperary table randomly
-//    val dataset = totalData.orderBy(rand(randSeed)).limit(20)
-//    for (row <- dataset.collect()) {
-//      val key = row.get(0).toString
-//      val ctrCnt = row.getLong(1)
-//      val cvrCnt = row.getLong(2)
-//      val kValue = key + "_UPDATA"
-//      println(s"$key, $ctrCnt, $cvrCnt")
-//      testPbRedis(kValue)
-//    }
+    val dataset = totalData.orderBy(rand(randSeed)).limit(20)
+    for (row <- dataset.collect()) {
+      val key = row.get(0).toString
+      val ctrCnt = row.getLong(1)
+      val cvrCnt = row.getLong(2)
+      val kValue = key + "_UPDATA"
+      println(s"$key, $ctrCnt, $cvrCnt")
+      testPbRedis(kValue)
+    }
 
     // test the complete temperary table
     testPbRedisTotal(totalData, spark)
@@ -58,9 +58,9 @@ object OcpcRedisTest {
     var ctrResultAcc = spark.sparkContext.longAccumulator
     println("###############1")
     println(s"accumulator before partition loop")
-    println(cnt)
-    println(ctrResultAcc)
-    println(cvrResultAcc)
+    println("redis hit number: " + cnt.value.toString)
+    println("correct ctr number: " + ctrResultAcc.value.toString)
+    println("correct cvr number: " + cvrResultAcc.value.toString)
     val conf = ConfigFactory.load()
     println(conf.getString("redis.host"))
     println(conf.getInt("redis.port"))
@@ -97,9 +97,9 @@ object OcpcRedisTest {
 
     println("####################2")
     println(s"accumulator after partition loop")
-    println(cnt)
-    println(ctrResultAcc)
-    println(cvrResultAcc)
+    println("redis hit number: " + cnt.value.toString)
+    println("correct ctr number: " + ctrResultAcc.value.toString)
+    println("correct cvr number: " + cvrResultAcc.value.toString)
   }
 }
 
