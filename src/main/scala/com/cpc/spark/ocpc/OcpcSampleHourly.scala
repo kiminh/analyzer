@@ -63,7 +63,7 @@ object OcpcSampleHourly {
          |  SUM(CASE WHEN isshow == 1 then 1 else 0 end) as total_cnt
          |FROM
          |  tmpTable
-         |GROUP BY userid, uid, adclass
+         |GROUP BY userid, uid, ideaid, adclass
        """.stripMargin
 
     val groupBy = spark.sql(groupByRequesst)
