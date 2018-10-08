@@ -80,7 +80,7 @@ object OcpcSampleToRedis {
       .agg(sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
 
     // connect adclass and userid
-    val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("ideaid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
+    val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("ideaid", "userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
 //    // save into redis and pb file
 //    // write data into a temperary table
@@ -90,7 +90,7 @@ object OcpcSampleToRedis {
 //    //     check redis
 //    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
     //     save data into pb file
-    savePbPack(useridAdclassData.select("ideaid", "userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt"), threshold)
+    savePbPack(useridAdclassData, threshold)
   }
 
 
