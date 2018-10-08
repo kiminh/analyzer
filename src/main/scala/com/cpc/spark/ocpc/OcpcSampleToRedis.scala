@@ -89,8 +89,7 @@ object OcpcSampleToRedis {
 
     // connect adclass and userid
     val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("ideaid", "userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
-    println("show useridAdclassData table")
-    useridAdclassData.show(10)
+
 //    // save into redis and pb file
 //    // write data into a temperary table
 //    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
@@ -99,7 +98,7 @@ object OcpcSampleToRedis {
 //    //     check redis
 //    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
     //     save data into pb file
-    savePbPack(userData.select("ideaid", "userid", "cost", "user_ctr_cnt", "user_cvr_cnt"), 0)
+    savePbPack(useridAdclassData.select("ideaid", "userid", "cost", "user_ctr_cnt", "user_cvr_cnt"), threshold)
   }
 
 
@@ -229,8 +228,8 @@ object OcpcSampleToRedis {
       val costValue = record.get(2).toString
       val userCtr = record.getLong(3)
       val userCvr = record.getLong(4)
-      val adClassCtr = 0
-      val adClassCvr = 0
+      val adClassCtr = record.getLong(5)
+      val adClassCvr = record.getLong(6)
       var ctrCntValue: String = ""
       var cvrCntValue: String = ""
       if (userCvr < threshold) {
