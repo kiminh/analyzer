@@ -8,6 +8,7 @@ package com.cpc.spark.ml.ftrl
 import com.cpc.spark.common.{Murmur3Hash, Utils}
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ml.train.Ftrl
+import com.cpc.spark.qukan.utils.RedisUtil
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
@@ -22,16 +23,8 @@ object FtrlNewHourlyID {
   val ADVERTISER_ID_NAME = "advertiser"
   val PLAN_ID_NAME = "plan"
 
-  val LOCAL_DIR = "/home/cpc/ftrl/"
-//  val HDFS_MODEL_DIR = "hdfs:///user/cpc/qtt-ftrl-model/"
-  val LOCAL_FTRL_PARAM = "/home/cpc/ftrl_param/"
-//  val HDFS_MODEL_HISTORY_DIR = "hdfs:///user/cpc/qtt-ftrl-model-history/"
-  val LOCAL_FTRL_HISTORY = "/home/cpc/ftrl_history/"
-  val DEST_DIR = "/home/work/mlcpp/data/"
-
   val DOWN_SAMPLE_RATE = 0.2
 
-  // return (searchid, label, xgfeature, error)
   def mapFunc(line: String): (String, Double, String, Int) = {
     val array = line.split("\t")
     if (array.length < 3) {
@@ -50,6 +43,7 @@ object FtrlNewHourlyID {
     val typename = args(4)
     val gbdtVersion = args(5).toInt
     val ftrlVersion = args(6).toInt
+    val l1 = args(7).toDouble
     val typearray = typename.split("-")
     val adslot = typearray(0)
     val ctrcvr = typearray(1)
@@ -59,6 +53,7 @@ object FtrlNewHourlyID {
     println(s"typename=$typename (list-ctr, content-ctr, interact-ctr, all-cvr)")
     println(s"gbdtVersion=$gbdtVersion")
     println(s"ftrlVersion=$ftrlVersion")
+    println(s"l1=$l1")
     println(s"upload=$upload")
     println(s"forceNew=$startFresh")
     println(s"adslot=$adslot")
@@ -68,14 +63,7 @@ object FtrlNewHourlyID {
     val inputName = s"/user/cpc/qtt-portrait-ftrl/sample_for_ftrl_with_id/ftrl-with-id-${dt}-${hour}-${typename}-${gbdtVersion}.svm"
     println(s"inputname = $inputName")
 
-    val spark: SparkSession = Utils.buildSparkSession(name = "full_id_ftrl")
-
-//    val currentHDFS = s"${HDFS_MODEL_DIR}ftrl-$typename-$ftrlVersion.mlm"
-    val currentPath = s"${LOCAL_FTRL_PARAM}ftrl-$typename-$ftrlVersion.mlm"
-//    val ftrl = Ftrl.getModelProtoFromLocal(startFresh, currentPath)
-    val ftrl = Ftrl.deserializeFromLocal(startFresh, currentPath)
-    println("before training model info:")
-    printModelInfo(ftrl)
+    val spark: SparkSession = Utils.buildSparkSession(name = "full_id_ftrl_21_redis")
 
     import spark.implicits._
 
@@ -103,30 +91,25 @@ object FtrlNewHourlyID {
     val userApps = spark.table("dl_cpc.cpc_user_installed_apps").filter(s"load_date='$dt'")
     merged = merged.join(userApps, Seq("uid"), joinType = "left")
 
-    val dataWithID = createFeatures(merged)
-
+    val ftrl = new Ftrl(1)
+    val dataWithID = createFeatures(merged).collect()
+    var nDict, zDict = mutable.Map[Int, Double]()
+    if (!startFresh) {
+      println("fetching n and z from redis...")
+      val (nMap, zMap) = Ftrl.getNZFromRedis(dataWithID, 21)
+      ftrl.L1 = l1
+      nDict = nMap
+      zDict = zMap
+    }
     println("start model training")
-    ftrl.trainWithDict(spark, dataWithID)
+    val wDict = ftrl.trainWithSubDict(spark, dataWithID, nDict, zDict)
 
     println("after training model info:")
-    printModelInfo(ftrl)
-
-    // save model file locally
-    val name = s"$ctrcvr-protrait$ftrlVersion-ftrl-id-qtt-$adslot"
-    val filename = s"$LOCAL_DIR$name.mlm"
-    Ftrl.saveLrPbPackWithDict(ftrl, filename, "ctr-ftrl-v1", name)
-    println(s"Save model locally to $filename")
+    println(s"batch feature size: ${wDict.size}")
 
     if (upload) {
-//      Ftrl.saveToProtoToHDFS(currentHDFS, spark, ftrl)
-//      Ftrl.saveProtoToLocal(currentPath, ftrl)
-      Ftrl.serializeLrToLocal(ftrl, currentPath)
-//      val historyHDFS = s"${HDFS_MODEL_HISTORY_DIR}ftrl-$typename-$ftrlVersion-$dt-$hour.mlm"
-      val historyPath = s"${LOCAL_FTRL_HISTORY}ftrl-$typename-$ftrlVersion-$dt-$hour.mlm"
-//      Ftrl.saveToProtoToHDFS(historyHDFS, spark, ftrl)
-//      Ftrl.saveProtoToLocal(historyPath, ftrl)
-      Ftrl.serializeLrToLocal(ftrl, historyPath)
-      println(MUtils.updateMlcppOnlineData(filename, s"$DEST_DIR$name.mlm", ConfigFactory.load()))
+      println("start saving weights to redis...")
+      RedisUtil.fullModelToRedis(21, wDict.toMap, nDict.toMap, zDict.toMap)
     }
   }
 

@@ -132,7 +132,7 @@ object FtrlHourlyIDV22 {
     val dataWithID = allData.map(x => (x._1, x._2))
 
     println("start model training")
-    ftrl.trainWithDict(spark, dataWithID)
+    ftrl.trainWithDict(spark, dataWithID.collect())
 
     println("after training model info:")
     printModelInfo(ftrl)
