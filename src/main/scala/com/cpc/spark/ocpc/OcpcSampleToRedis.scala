@@ -46,7 +46,7 @@ object OcpcSampleToRedis {
          |  userid,
          |  uid,
          |  ideaid,
-         |  adclass,
+         |  (case when adclass is null then 0 else adclass end) as adclass,
          |  SUM(cost) as cost,
          |  SUM(ctr_cnt) as ctr_cnt,
          |  SUM(cvr_cnt) as cvr_cnt,
