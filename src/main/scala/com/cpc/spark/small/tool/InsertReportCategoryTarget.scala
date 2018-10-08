@@ -68,7 +68,7 @@ object InsertReportCategoryTarget {
           |hour,ext["adclass"].int_value,isfill,price,network,coin,ext['qukan_new_user'].int_value,ext['city_level'].int_value,
           |interests
           |FROM dl_cpc.cpc_union_log
-          |WHERE date="%s"
+          |WHERE date="%s" AND ext["adclass"].int_value>0 AND (isshow+isclick)>1
         """.stripMargin.format(argDay))
       .rdd
       .map {
@@ -119,15 +119,18 @@ object InsertReportCategoryTarget {
             hour, adclass, req, isfull, price, network, user_level, city_level, qu_adslot_type, ext_adslot_type, load, active,isStudent)
           (info.searchid, (info))
       }
+      .repartition(50)
       .cache()
     println("unionLogData count", unionLogData.count())
 
     val traceData = ctx.sql(
       """
-        |SELECT DISTINCT searchid,trace_type,duration
-        |FROM dl_cpc.cpc_union_trace_log
-        |WHERE date="%s"
-      """.stripMargin.format(argDay))
+        |SELECT DISTINCT cutl.searchid,cutl.trace_type
+        |FROM dl_cpc.cpc_union_trace_log cutl
+        |LEFT JOIN dl_cpc.cpc_union_log cul ON cul.searchid=cutl.searchid
+        |WHERE cutl.date="%s" AND cul.date="%s" AND cul.ext["adclass"].int_value>0 AND cul.isclick>0
+        |AND cutl.trace_type IN("load","active1","active2","active3","active4","active5","disactive")
+      """.stripMargin.format(argDay,argDay))
       .rdd
       .map {
         x =>
@@ -135,17 +138,19 @@ object InsertReportCategoryTarget {
           val trace_type = x.getString(1)
           var load = 0
           var active = 0
+
           trace_type match {
             case "load" => load += 1
             case s if s.startsWith("active") => active += 1
-            //case "press" => active += 1
             case "disactive" => active -= 1
+            //            //case "press" => active += 1
             case _ =>
           }
 
           val info = UnionLogInfo(searchid, "", "", -1, 0, 0, -1, -1, -1, -1, -1, -1, -1, 0, 0, 0, -1, -1, -1, -1, -1, load, active)
           (info.searchid, (info))
       }
+      .repartition(50)
       .cache()
     println("traceData count", traceData.count())
 
@@ -204,7 +209,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val studentData = getTargetData(inputStudentData, argDay, "student")
-    println("studentData count is", studentData.count())
+    //println("studentData count is", studentData.count())
+    var insertData = studentData
 
     val inputMediaData = allData
       .map {
@@ -221,7 +227,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val mediaData = getTargetData(inputMediaData, argDay, "media")
-    println("mediaData count is", mediaData.count())
+    //println("mediaData count is", mediaData.count())
+    insertData = insertData.union(mediaData)
 
     val inputAdslotData = allData
       .map {
@@ -238,7 +245,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val adslotData = getTargetData(inputAdslotData, argDay, "adslot")
-    println("adslotData count is", adslotData.count())
+    //println("adslotData count is", adslotData.count())
+    insertData = insertData.union(adslotData)
 
     val inputAdslotTypeData = allData
       .map {
@@ -255,7 +263,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val adslotTypeData = getTargetData(inputAdslotTypeData, argDay, "adslot_type")
-    println("adslotTypeData count is", adslotTypeData.count())
+    //println("adslotTypeData count is", adslotTypeData.count())
+    insertData = insertData.union(adslotTypeData)
 
     val inputSexData = allData
       .map {
@@ -272,7 +281,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val sexData = getTargetData(inputSexData, argDay, "sex")
-    println("sexData count is", sexData.count())
+    //println("sexData count is", sexData.count())
+    insertData = insertData.union(sexData)
 
     val inputAgeData = allData
       .map {
@@ -289,7 +299,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val ageData = getTargetData(inputAgeData, argDay, "age")
-    println("ageData count is", ageData.count())
+    //println("ageData count is", ageData.count())
+    insertData = insertData.union(ageData)
 
     val inputOsData = allData
       .map {
@@ -306,7 +317,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val osData = getTargetData(inputOsData, argDay, "os")
-    println("osData count is", osData.count())
+    //println("osData count is", osData.count())
+    insertData = insertData.union(osData)
 
     val inputProvinceData = allData
       .map {
@@ -323,7 +335,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val provinceData = getTargetData(inputProvinceData, argDay, "province")
-    println("provinceData count is", provinceData.count())
+    //println("provinceData count is", provinceData.count())
+    insertData = insertData.union(provinceData)
 
     val inputPhoneLevelData = allData
       .map {
@@ -340,7 +353,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val phoneLevelData = getTargetData(inputPhoneLevelData, argDay, "phone_level")
-    println("phoneLevelData count is", phoneLevelData.count())
+    //println("phoneLevelData count is", phoneLevelData.count())
+    insertData = insertData.union(phoneLevelData)
 
     val inputHourData = allData
       .map {
@@ -357,7 +371,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val hourData = getTargetData(inputHourData, argDay, "hour")
-    println("hourData count is", hourData.count())
+    //println("hourData count is", hourData.count())
+    insertData = insertData.union(hourData)
 
     val inputNetworkData = allData
       .map {
@@ -374,8 +389,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val networkData = getTargetData(inputNetworkData, argDay, "network_type")
-    println("networkData count is", networkData.count())
-    networkData.take(100).foreach(println)
+    //println("networkData count is", networkData.count())
+    insertData = insertData.union(networkData)
 
     val inputUserLevelData = allData
       .map {
@@ -392,7 +407,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val userLevelData = getTargetData(inputUserLevelData, argDay, "user_level")
-    println("userLevelData count is", userLevelData.count())
+    //println("userLevelData count is", userLevelData.count())
+    insertData = insertData.union(userLevelData)
 
     val inputCityLevelData = allData
       .map {
@@ -409,7 +425,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val cityLevelData = getTargetData(inputCityLevelData, argDay, "city_level")
-    println("cityLevelData count is", cityLevelData.count())
+    //println("cityLevelData count is", cityLevelData.count())
+    insertData = insertData.union(cityLevelData)
 
     val inputQuAdslotTypeData = allData
       .filter(_._2.qu_adslot_type > 0)
@@ -427,7 +444,8 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val quAdslotTypeData = getTargetData(inputQuAdslotTypeData, argDay, "qu_adslot_type")
-    println("quAdslotTypeData count is", quAdslotTypeData.count())
+    //println("quAdslotTypeData count is", quAdslotTypeData.count())
+    insertData = insertData.union(quAdslotTypeData)
 
     val inputExtAdslotTypeData = allData
       .filter(_._2.ext_adslot_type > 0)
@@ -445,26 +463,27 @@ object InsertReportCategoryTarget {
           ("%d-%d".format(adclass, target_value), (adclass, isshow, isclick, target_value, load, active, req, isfull, price))
       }
     val extAdslotType = getTargetData(inputExtAdslotTypeData, argDay, "ext_adslot_type")
-    println("extAdslotType count is", extAdslotType.count())
+    //println("extAdslotType count is", extAdslotType.count())
+    insertData = insertData.union(extAdslotType)
     //UnionLogInfo(searchid, mediaid, adslotid, adslot_type, isshow, isclick, sex, age, os, province, phone_level,
     //  hour, adclass, req, isfull, price, network, user_level, city_level, qu_adslot_type, ext_adslot_type, load, active)
-    var insertData = mediaData
-      .union(adslotData)
-      .union(adslotTypeData)
-      .union(sexData)
-      .union(ageData)
-      .union(osData)
-      .union(provinceData)
-      .union(phoneLevelData)
-      .union(hourData)
-      .union(networkData)
-      .union(userLevelData)
-      .union(cityLevelData)
-      .union(quAdslotTypeData)
-      .union(extAdslotType)
-      .union(studentData)
-      .repartition(50)
-      .cache()
+//    var insertData = mediaData
+//      .union(adslotData)
+//      .union(adslotTypeData)
+//      .union(sexData)
+//      .union(ageData)
+//      .union(osData)
+//      .union(provinceData)
+//      .union(phoneLevelData)
+//      .union(hourData)
+//      .union(networkData)
+//      .union(userLevelData)
+//      .union(cityLevelData)
+//      .union(quAdslotTypeData)
+//      .union(extAdslotType)
+//      .union(studentData)
+//      .repartition(50)
+//      .cache()
 
     println("insertData count", insertData.count())
 
