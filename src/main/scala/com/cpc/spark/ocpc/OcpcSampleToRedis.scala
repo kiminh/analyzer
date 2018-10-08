@@ -81,6 +81,7 @@ object OcpcSampleToRedis {
 
     // connect adclass and userid
     val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("ideaid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
+    println(uidData.count)
     println(useridAdclassData.count)
 
     // save into redis and pb file
