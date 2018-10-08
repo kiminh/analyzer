@@ -61,20 +61,48 @@ object OcpcHistoryData {
     // connect adclass and userid
     val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
-    // save into redis and pb file
+    val df = useridAdclassData
+      .withColumn("ctr_cnt", when(col("user_cvr_cnt")<20, col("user_ctr_cnt")).otherwise(col("adclass_ctr_cnt")))
+      .withColumn("cvr_cnt", when(col("user_cvr_cnt")<20, col("user_cvr_cnt")).otherwise(col("adclass_cvr_cnt")))
+      .select("userid", "cost", "ctr_cnt", "cvr_cnt")
 
-    //     save data into pb file
-    saveDataHive(useridAdclassData, threshold)
-  }
+    df.write.mode("overwrite").saveAsTable("test.historical_ctr_cvr_data")
 
-  def saveDataHive(dataset: Dataset[Row], threshold: Int): Unit = {
-    val df = dataset
-      .withColumn("ctr", when(col("user_cvr_cnt")<20, col("user_ctr_cnt")).otherwise(col("adclass_ctr_cnt")))
-      .withColumn("cvr", when(col("user_cvr_cnt")<20, col("user_cvr_cnt")).otherwise(col("adclass_cvr_cnt")))
-      .select("userid", "cost", "ctr", "cvr")
 
-    df.write.mode("overwrite").saveAsTable("test.historical_union_log_data")
+    // step2
+    val sql2 =
+      s"""
+         |SELECT
+         |  a.searchid,
+         |  a.uid,
+         |  a.userid,
+         |  a.exp_ctr,
+         |  a.exp_cvr,
+         |  b.cost,
+         |  b.ctr as history_ctr_cnt,
+         |  b.cvr as history_cvr_cnt,
+         |  b.cvr / b.ctr as history_cvr
+         |FROM
+         |  (
+         |        select *
+         |        from dl_cpc.cpc_union_log
+         |        where `date`='$end_date' and hour = '$hour'
+         |        and isclick is not null
+         |        and media_appsid  in ("80000001", "80000002")
+         |        and isshow = 1
+         |        and ext['antispam'].int_value = 0
+         |        and ideaid > 0
+         |        and adsrc = 1
+         |        and adslot_type in (1,2,3)
+         |      ) a
+         |INNER JOIN
+         |  test.historical_ctr_cvr_data b
+         |ON
+         |  a.userid=b.userid
+       """.stripMargin
 
+    val resultDF = spark.sql(sql2)
+    resultDF.write.mode("overwrite").saveAsTable("test.historical_union_log_data")
   }
 
 }
