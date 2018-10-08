@@ -50,42 +50,14 @@ object OcpcHistoryData {
     base.createOrReplaceTempView("baseTable")
 
     // calculation by userid
-//    val userData = base
-//      .groupBy("userid", "adclass")
-//      .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
-    val userData = spark.sql(
-      s"""
-         |SELECT
-         |  userid,
-         |  adclass,
-         |  SUM(cost) as cost,
-         |  SUM(ctr_cnt) as user_ctr_cnt,
-         |  SUM(cvr_cnt) as user_cvr_cnt
-         |FROM
-         |  baseTable
-         |GROUP BY userid, adclass
-       """.stripMargin)
-
-    println("userdata table")
-    userData.show(10)
+    val userData = base
+      .groupBy("userid", "adclass")
+      .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
 
     // calculate by adclass
-//    val adclassData = base
-//      .groupBy("adclass")
-//      .agg(sum("ctr_cnt").alias("adclass_ctr_cnt"), sum("cvr_cnt").alias("adclass_cvr_cnt"))
-    val adclassData = spark.sql(
-      s"""
-         |SELECT
-         |  adclass,
-         |  SUM(ctr_cnt) AS adclass_ctr_cnt,
-         |  SUM(cvr_cnt) AS adclass_cvr_cnt
-         |FROM
-         |  baseTable
-         |GROUP BY adclass
-       """.stripMargin)
-
-    println("adclass Table:")
-    adclassData.show(10)
+    val adclassData = userData
+      .groupBy("adclass")
+      .agg(sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
 
     // connect adclass and userid
     val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
