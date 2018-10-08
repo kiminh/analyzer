@@ -66,6 +66,8 @@ object OcpcHistoryData {
       .withColumn("cvr_cnt", when(col("user_cvr_cnt")<20, col("user_cvr_cnt")).otherwise(col("adclass_cvr_cnt")))
       .select("userid", "cost", "ctr_cnt", "cvr_cnt")
 
+    df.show()
+
     df.write.mode("overwrite").saveAsTable("test.historical_ctr_cvr_data")
 
 
@@ -76,8 +78,8 @@ object OcpcHistoryData {
          |  a.searchid,
          |  a.uid,
          |  a.userid,
-         |  a.exp_ctr,
-         |  a.exp_cvr,
+         |  a.ext['exp_ctr'].int_value as exp_ctr,
+         |  a.ext['exp_cvr'].int_value as exp_cvr,
          |  b.cost,
          |  b.ctr as history_ctr_cnt,
          |  b.cvr as history_cvr_cnt,
