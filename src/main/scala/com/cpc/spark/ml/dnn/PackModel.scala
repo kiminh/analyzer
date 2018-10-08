@@ -51,8 +51,7 @@ object PackModel {
 
     if (upload == 1) {
       val conf = ConfigFactory.load()
-      println(Utils.updateMlcppOnlineData(onnxfile, s"/home/work/mlcpp/data/$name.onnx", conf))
-      println(Utils.updateMlcppOnlineData(filename+".mlm", s"/home/work/mlcpp/data/$name.mlm", conf))
+      println(Utils.updateMlcppModelData(filename+".mlm", s"/home/work/mlcpp/data/$name.mlm", conf))
     }
   }
 
