@@ -13,6 +13,7 @@ import com.cpc.spark.common.Utils
 import com.cpc.spark.ml.ftrl.FtrlSerializable
 import com.cpc.spark.qukan.utils.RedisUtil
 import com.google.protobuf.CodedInputStream
+import com.redis.RedisClient
 import mlmodel.mlmodel._
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.spark.sql.SparkSession
@@ -173,6 +174,25 @@ class Ftrl(size: Int) {
     return sigmoid(wTx)
   }
 
+  def predictWithSubDict(x: Array[Int], nMap: mutable.Map[Int, Double], zMap: mutable.Map[Int, Double],
+                         wMap: mutable.Map[Int, Double]): Double = {
+    var wTx = 0.0
+    var mw = 0.0
+    x foreach { x =>
+      val sign = if (zMap.getOrElse(x, 0d) < 0) -1.0 else 1.0
+
+      if (sign * zMap.getOrElse(x, 0d) <= L1) {
+        mw = 0.0
+      }
+      else {
+        mw = (sign * L1 - zMap.getOrElse(x, 0d)) / ((beta + math.sqrt(nMap.getOrElse(x, 0d))) / alpha + L2)
+      }
+      wMap.put(x, mw)
+      wTx = wTx + mw
+    }
+    return sigmoid(wTx)
+  }
+
   def predictNoUpdateWithDict(x: Array[Int]): Double = {
     var wTx = 0.0
 
@@ -202,6 +222,18 @@ class Ftrl(size: Int) {
     }
   }
 
+  def updateWithSubDict(x: Array[Int], p: Double, y: Double,
+                        nMap: mutable.Map[Int, Double], zMap: mutable.Map[Int, Double],
+                        wMap: mutable.Map[Int, Double]): Unit = {
+    val g = p - y
+
+    x foreach { x =>
+      val sigma = (math.sqrt(nMap.getOrElse(x, 0d) + g * g) - math.sqrt(nMap.getOrElse(x, 0d))) / alpha
+      zMap.put(x, zMap.getOrElse(x, 0d) + g - sigma * wMap.getOrElse(x, 0d))
+      nMap.put(x, nMap.getOrElse(x, 0d) + g * g)
+    }
+  }
+
   def predictAndAuc(session: SparkSession, instances: Array[LabeledPoint]): Double = {
     val listBuffer = new ListBuffer[(Double, Double)]
     for (instance <- instances) {
@@ -226,9 +258,23 @@ class Ftrl(size: Int) {
     return auc
   }
 
-  def trainWithDict(spark: SparkSession, data: RDD[(Array[Int], Double)]): Unit = {
+  def predictAndAucWithSubDict(session: SparkSession, instances: Array[(Array[Int], Double)],
+                               nMap: mutable.Map[Int, Double], zMap: mutable.Map[Int, Double],
+                               wMap: mutable.Map[Int, Double]): Double = {
+    val listBuffer = new ListBuffer[(Double, Double)]
+    for (instance <- instances) {
+      val x = instance._1
+      val pre = predictWithSubDict(x, nMap, zMap, wMap)
+      listBuffer.append((pre, instance._2))
+    }
+    val metrics = new BinaryClassificationMetrics(session.sparkContext.parallelize(listBuffer))
+    val auc = metrics.areaUnderROC()
+    return auc
+  }
+
+  def trainWithDict(spark: SparkSession, data: Array[(Array[Int], Double)]): Unit = {
     var posCount = 0
-    val res = shuffle(data.collect())
+    val res = shuffle(data)
     println(s"before training auc on test set: ${predictAndAucWithDict(spark, res)}")
     var logLossSum = 0d
     for (p <- res) {
@@ -244,6 +290,29 @@ class Ftrl(size: Int) {
     println(s"posCount=$posCount, totalCount=${res.length}")
     val afterAUC = predictAndAucWithDict(spark, res)
     println(s"after training auc: $afterAUC")
+  }
+
+  def trainWithSubDict(spark: SparkSession, data: Array[(Array[Int], Double)],
+                       nMap: mutable.Map[Int, Double], zMap: mutable.Map[Int, Double]): mutable.Map[Int, Double] = {
+    var posCount = 0
+    val res = shuffle(data)
+    val wMap = mutable.Map[Int, Double]()
+    println(s"before training auc on test set: ${predictAndAucWithSubDict(spark, res, nMap, zMap, wMap)}")
+    var logLossSum = 0d
+    for (p <- res) {
+      val x = p._1
+      val pre = predictWithSubDict(x, nMap, zMap, wMap)
+      updateWithSubDict(x, pre, p._2, nMap, zMap, wMap)
+      if (p._2 > 0) {
+        posCount += 1
+      }
+      logLossSum += logLoss(p._2, pre)
+    }
+    println(s"logloss=${logLossSum/res.length}")
+    println(s"posCount=$posCount, totalCount=${res.length}")
+    val afterAUC = predictAndAucWithSubDict(spark, res, nMap, zMap, wMap)
+    println(s"after training auc: $afterAUC")
+    return wMap
   }
 
   def trainMoreEpochsWithDict(spark: SparkSession, data: RDD[(Array[Int], Double)]): Unit = {
@@ -295,6 +364,31 @@ class Ftrl(size: Int) {
 }
 
 object Ftrl {
+
+  def getNZFromModel(data: Array[(Array[Int], Double)], ftrl: Ftrl): (mutable.Map[Int, Double], mutable.Map[Int, Double]) = {
+    val nMap = mutable.Map[Int, Double]()
+    val zMap = mutable.Map[Int, Double]()
+    data.foreach( x => {
+      x._1.foreach( i => {
+        nMap.put(i, ftrl.nDict.getOrElse(i, 0))
+        zMap.put(i, ftrl.zDict.getOrElse(i, 0))
+      })
+    })
+    println(s"batch model size: ${nMap.size}")
+    (nMap, zMap)
+  }
+
+  def getNZFromRedis(data: Array[(Array[Int], Double)], redisDB: Int): (mutable.Map[Int, Double], mutable.Map[Int, Double]) = {
+    val keySet = mutable.Set[Int]()
+    data.foreach( x => {
+      x._1.foreach( i => {
+        keySet.add(i)
+      })
+    })
+    println(s"batch model size: ${keySet.size}")
+    RedisUtil.getNZFromRedis(redisDB, keySet)
+  }
+
   def getModelFromHDFS(startFresh: Boolean, key: String, ctx: SparkSession, size: Int): Ftrl = {
     val ftrl = new Ftrl(size)
     if (startFresh) {

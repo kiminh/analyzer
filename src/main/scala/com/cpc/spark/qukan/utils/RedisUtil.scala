@@ -39,6 +39,43 @@ object RedisUtil {
     })
   }
 
+  def modelToRedis(dbID: Int, weights: Map[Int, Double]): Unit = {
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    redis.select(dbID)
+    for ((key, value) <- weights) {
+      // expire after 2 weeks
+      redis.setex(key, 14 * 24 * 60 * 60, value.toString)
+    }
+    redis.disconnect
+  }
+
+  def modelToRedisWithPrefix(dbID: Int, weights: Map[Int, Double], prefix: String): Unit = {
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    redis.select(dbID)
+    for ((key, value) <- weights) {
+      // expire after 2 weeks
+      redis.setex(s"$prefix$key", 14 * 24 * 60 * 60, value.toString)
+    }
+    redis.disconnect
+  }
+
+  def getNZFromRedis(dbID: Int, keySet : mutable.Set[Int]): (mutable.Map[Int, Double], mutable.Map[Int, Double])  = {
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    redis.select(dbID)
+    val nMap = mutable.Map[Int, Double]()
+    val zMap = mutable.Map[Int, Double]()
+    for (key <- keySet) {
+      // expire after 2 weeks
+      nMap.put(key, redis.get[Double](s"n$key").getOrElse(0.0))
+      zMap.put(key, redis.get[Double](s"z$key").getOrElse(0.0))
+    }
+    redis.disconnect
+    return (nMap, zMap)
+  }
+
   def ftrlToRedis(ftrl: Ftrl, version: Int): (Boolean, String) = {
     val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
     redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
