@@ -88,7 +88,6 @@ object OcpcSampleToRedis {
 
 
     // connect adclass and userid
-//    val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("ideaid", "userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
     val useridAdclassData = spark.sql(
       s"""
          |SELECT
@@ -106,17 +105,19 @@ object OcpcSampleToRedis {
          |    a.adclass=b.adclass
        """.stripMargin)
 
-    useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table")
+//    useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table")
 
-//    // save into redis and pb file
-//    // write data into a temperary table
-//    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
-//    //     save data into redis
-//    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
-//    //     check redis
-//    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
+    // save into redis and pb file
+    // write data into a temperary table
+    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
+
+    //     save data into redis
+    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+
+    //     check redis
+    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
+
     //     save data into pb file
-
     savePbPack(useridAdclassData)
   }
 
