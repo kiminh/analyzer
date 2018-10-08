@@ -26,26 +26,26 @@ object OcpcHistoryData {
     val selectCondition2 = s"`date`>'$start_date' and `date`<'$end_date'"
     val selectCondition3 = s"`date`='$end_date' and hour <= '$hour'"
 
-//    // read data and set redis configuration
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  userid,
-//         |  uid,
-//         |  adclass,
-//         |  SUM(cost) as cost,
-//         |  SUM(ctr_cnt) as ctr_cnt,
-//         |  SUM(cvr_cnt) as cvr_cnt,
-//         |  SUM(total_cnt) as total_cnt
-//         |FROM
-//         |  dl_cpc.ocpc_uid_userid_track
-//         |WHERE ($selectCondition1) OR
-//         |($selectCondition2) OR
-//         |($selectCondition3)
-//         |GROUP BY userid, uid, adclass
-//       """.stripMargin
-//    println(sqlRequest)
-//
+    // read data and set redis configuration
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  userid,
+         |  uid,
+         |  adclass,
+         |  SUM(cost) as cost,
+         |  SUM(ctr_cnt) as ctr_cnt,
+         |  SUM(cvr_cnt) as cvr_cnt,
+         |  SUM(total_cnt) as total_cnt
+         |FROM
+         |  dl_cpc.ocpc_uid_userid_track
+         |WHERE ($selectCondition1) OR
+         |($selectCondition2) OR
+         |($selectCondition3)
+         |GROUP BY userid, uid, adclass
+       """.stripMargin
+    println(sqlRequest)
+
 //    val base = spark.sql(sqlRequest)
 //
 //    // calculation by userid
