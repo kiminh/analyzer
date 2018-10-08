@@ -46,7 +46,7 @@ object OcpcSampleToRedis {
          |  userid,
          |  uid,
          |  ideaid,
-         |  (case when adclass is null then 0 else adclass end) as adclass,
+         |  adclass,
          |  SUM(cost) as cost,
          |  SUM(ctr_cnt) as ctr_cnt,
          |  SUM(cvr_cnt) as cvr_cnt,
@@ -74,13 +74,14 @@ object OcpcSampleToRedis {
       .groupBy("userid", "ideaid", "adclass")
       .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
 
-//    // calculate by adclass
-//    val adclassData = userData
-//      .groupBy("adclass")
-//      .agg(sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
-//
-//    // connect adclass and userid
-//    val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("ideaid", "userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
+    // calculate by adclass
+    val adclassData = userData
+      .groupBy("adclass")
+      .agg(sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
+
+
+    // connect adclass and userid
+    val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("ideaid", "userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
 //    // save into redis and pb file
 //    // write data into a temperary table
