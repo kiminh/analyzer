@@ -434,9 +434,6 @@ object Ftrl {
     )
     val ir = IRModel(
     )
-    val hashParam = HashParam(
-      method = HashMethod.MurMur3
-    )
     val pack = Pack(
       name = name,
       createTime = new Date().getTime,
@@ -447,8 +444,7 @@ object Ftrl {
       gbmfile = s"data/ctr-portrait9-qtt-list.gbm",
       gbmTreeLimit = 200,
       gbmTreeDepth = 10,
-      negSampleRatio = 0.2,
-      hashParam = Option(hashParam)
+      negSampleRatio = 0.2
     )
     Utils.saveProtoToFile(pack, path)
   }
