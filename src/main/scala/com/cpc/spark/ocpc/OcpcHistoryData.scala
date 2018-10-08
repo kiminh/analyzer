@@ -32,7 +32,7 @@ object OcpcHistoryData {
          |SELECT
          |  userid,
          |  uid,
-         |  case when adclass is null then -1 else adclass end,
+         |  adclass,
          |  SUM(cost) as cost,
          |  SUM(ctr_cnt) as ctr_cnt,
          |  SUM(cvr_cnt) as cvr_cnt,
