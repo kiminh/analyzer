@@ -37,7 +37,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/dw/dnntrain-" + date)
+      .save("/user/cpc/zhj/dnntrain-" + date)
     println("train size", train.count())
 
     val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
@@ -49,7 +49,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/dw/dnntest-" + tdate)
+      .save("/user/cpc/zhj/dnntest-" + tdate)
     test.take(10).foreach(println)
   }
 
