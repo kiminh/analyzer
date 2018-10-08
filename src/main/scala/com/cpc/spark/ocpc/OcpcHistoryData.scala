@@ -74,9 +74,8 @@ object OcpcHistoryData {
 
     useridAdclassData.show()
 
-//    useridAdclassData.write.mode("overwrite").saveAsTable("test.historical_ctr_cvr_data")
-//
-//
+    useridAdclassData.write.mode("overwrite").saveAsTable("test.historical_ctr_cvr_data")
+
 //    // step2
 //    val sql2 =
 //      s"""
