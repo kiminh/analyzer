@@ -15,10 +15,11 @@ import org.apache.spark.sql.functions._
 
 object DNNSample {
 
+  Logger.getRootLogger.setLevel(Level.WARN)
+
   private var trainLog = Seq[String]()
 
   def main(args: Array[String]): Unit = {
-    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder()
       .appName("dnn sample")
       .enableHiveSupport()
@@ -50,7 +51,6 @@ object DNNSample {
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntest-" + tdate)
     test.take(10).foreach(println)
-    println("test size", test.count())
   }
 
   def getSample(spark: SparkSession, date: String): DataFrame = {
