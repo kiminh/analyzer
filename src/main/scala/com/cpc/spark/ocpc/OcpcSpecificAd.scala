@@ -46,6 +46,9 @@ object OcpcSpecificAd {
     println(sqlRequest)
     val base = spark.sql(sqlRequest)
 
+    val columns = base.columns
+    columns.foreach(println)
+
     base.createOrReplaceTempView("tmpTable")
     val groupByRequesst =
       s"""
