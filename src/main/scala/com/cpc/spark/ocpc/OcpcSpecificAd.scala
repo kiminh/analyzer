@@ -52,15 +52,15 @@ object OcpcSpecificAd {
     base.createOrReplaceTempView("tmpTable")
     val groupByRequesst =
       s"""
-         |Select
-         |  userid,
+         |SELECT
          |  uid,
+         |  userid,
          |  ideaid,
          |  unitid,
-         |  planid,
+         |  planid
          |FROM
          |  tmpTable
-         |GROUP BY userid, uid, ideaid, unitid, planid
+         |GROUP BY uid, userid, ideaid, unitid, planid
        """.stripMargin
 
     val groupBy = spark.sql(groupByRequesst)
