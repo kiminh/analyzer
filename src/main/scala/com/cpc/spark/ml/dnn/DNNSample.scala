@@ -10,215 +10,198 @@ import scala.collection.mutable
 import scala.collection.mutable.WrappedArray
 import scala.util.Random
 import com.cpc.spark.common.Murmur3Hash
+import org.apache.spark.sql.functions._
 
 
 object DNNSample {
 
+  Logger.getRootLogger.setLevel(Level.WARN)
+
   private var trainLog = Seq[String]()
 
   def main(args: Array[String]): Unit = {
-    Logger.getRootLogger.setLevel(Level.WARN)
     val spark = SparkSession.builder()
       .appName("dnn sample")
       .enableHiveSupport()
       .getOrCreate()
-    import spark.implicits._
 
-    val date = new SimpleDateFormat("yyyy-MM-dd").format(new Date().getTime)
+    val date = args(0)
+    val tdate = args(1)
 
-    //按分区取数据
-    val ctrPathSep = getPathSeq(args(0).toInt)
+    val train = getSample(spark, date).persist()
+    val n = train.count()
+    println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
 
-    val userAppIdx = getUidApp(spark, ctrPathSep)
-
-    val ulog = getData(spark,"ctrdata_v1",ctrPathSep)
-      .filter {x =>
-        val ideaid = x.getAs[Int]("ideaid")
-        val slottype = x.getAs[Int]("adslot_type")
-        val mediaid = x.getAs[String]("media_appsid").toInt
-        val uid = x.getAs[String]("uid")
-        val isip = uid.contains(".") || uid.contains("000000")
-        ideaid > 0 && slottype == 1 && Seq(80000001, 80000002).contains(mediaid) && !isip
-      }
-      .join(userAppIdx, Seq("uid"), "leftouter")
-      .rdd
-      .map{row =>
-        val ret = getVectorParser(row)
-        val raw = ret._1
-        val uid = ret._2
-        val apps = ret._3
-        var label = Seq(0, 1)
-        if (row.getAs[Int]("label") > 0) {
-          label = Seq(1, 0)
-        }
-
-        var hashed = Seq[Long]()
-        for (i <- raw.indices) {
-          hashed = hashed :+ Murmur3Hash.stringHash64("%s:%d".format(fnames(i), raw(i)), 0)
-        }
-        hashed = hashed :+ Murmur3Hash.stringHash64("uid:%s".format(uid), 0)
-
-        var idx0 = Seq[Long]()
-        var idx1 = Seq[Long]()
-        var idx2 = Seq[Long]()
-        var id_arr = Seq[Long]()
-        for (i <- apps.indices) {
-          val id = Murmur3Hash.stringHash64("app:%s".format(apps(i)), 0)
-          idx0 = idx0 :+ 0L
-          idx1 = idx1 :+ 0L
-          idx2 = idx2 :+ i.toLong
-          id_arr = id_arr :+ id
-        }
-
-        (label, hashed, idx0, idx1, idx2, id_arr)
-      }
-      .zipWithUniqueId()
-      .map(x => (x._2, x._1._1, x._1._2, x._1._3, x._1._4, x._1._5, x._1._6))
-      .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
-      .repartition(1000)
-
-    val clickiNum = ulog.filter{
-      x =>
-        val label = x.getAs[Seq[Int]]("label")
-        label(0) == 1
-    }.count()
-    println(ulog.count(), clickiNum)
-
-    val Array(train, test) = ulog.randomSplit(Array(0.97, 0.03))
-    val resampled = train.filter{
-      x =>
-        val label = x.getAs[Seq[Int]]("label")
-        label(0) == 1 || Random.nextInt(1000) < 100
-    }
-
-    resampled.coalesce(100)
+    train .repartition(50)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/dw/dnntrain-" + date)
-    println("train size", resampled.count())
+    println("train size", train.count())
 
-    test.coalesce(100)
+    val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
+    val tn = test.count
+    println("测试数据：total = %d, 正比例 = %.4f".format(tn, test.where("label=array(1,0)").count.toDouble / tn))
+
+    test.repartition(50)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/dw/dnntest-" + date)
+      .save("/user/cpc/dw/dnntest-" + tdate)
     test.take(10).foreach(println)
-    println("test size", test.count())
   }
 
-  def getPathSeq(days: Int): mutable.Map[String,Seq[String]] ={
-    var date = ""
-    var hour = ""
-    val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -(days * 24 + 2))
-    val pathSep = mutable.Map[String,Seq[String]]()
-
-    for (n <- 1 to days * 24) {
-      date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
-      hour = new SimpleDateFormat("HH").format(cal.getTime)
-      pathSep.update(date,(pathSep.getOrElse(date,Seq[String]()) :+ hour))
-      cal.add(Calendar.HOUR, 1)
-    }
-
-    pathSep
-  }
-
-  def getUidApp(spark: SparkSession, pathSep: mutable.Map[String,Seq[String]]): DataFrame ={
-    val inpath = "/user/cpc/userInstalledApp/{%s}".format(pathSep.keys.mkString(","))
-    println(inpath)
-
+  def getSample(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
-    spark.read.parquet(inpath).rdd
-      .map(x => (x.getAs[String]("uid"),x.getAs[WrappedArray[String]]("pkgs")))
+
+    val userAppIdx = getUidApp(spark, date)
+    val sql = s"""
+         |select if(isclick>0, array(1,0), array(0,1)) as label,
+         |  media_type, media_appsid as mediaid,
+         |  ext['channel'].int_value as channel,
+         |  ext['client_type'].string_value as sdk_type,
+         |
+         |  adslot_type, adslotid,
+         |
+         |  adtype, interaction, bid, ideaid, unitid, planid, userid,
+         |  ext_int['is_new_ad'] as is_new_ad, ext['adclass'].int_value as adclass,
+         |  ext_int['siteid'] as site_id,
+         |
+         |  os, network, ext['phone_price'].int_value as phone_price,
+         |  ext['brand_title'].string_value as brand,
+         |
+         |  province, city, ext['city_level'].int_value as city_level,
+         |
+         |  uid, age, sex, ext_string['dtu_id'] as dtu_id
+         |
+         |from dl_cpc.cpc_union_log where `date`='$date'
+         |  and isshow = 1 and ideaid > 0 and adslot_type = 1
+         |  and media_appsid in ("80000001", "80000002")
+         |  and uid not like "%.%"
+         |  and uid not like "%000000%"
+         |
+      """.stripMargin
+    println(sql)
+
+    spark.sql(sql)
+      .join(userAppIdx, Seq("uid"), "leftouter")
+      .repartition(1000)
+      .select($"label",
+        hash("f1")($"media_type").alias("f1"),
+        hash("f2")($"mediaid").alias("f2"),
+        hash("f3")($"channel").alias("f3"),
+        hash("f4")($"sdk_type").alias("f4"),
+        hash("f5")($"adslot_type").alias("f5"),
+        hash("f6")($"adslotid").alias("f6"),
+        hash("f7")($"sex").alias("f7"),
+        hash("f8")($"dtu_id").alias("f8"),
+        hash("f9")($"adtype").alias("f9"),
+        hash("f10")($"interaction").alias("f10"),
+        hash("f11")($"bid").alias("f11"),
+        hash("f12")($"ideaid").alias("f12"),
+        hash("f13")($"unitid").alias("f13"),
+        hash("f14")($"planid").alias("f14"),
+        hash("f15")($"userid").alias("f15"),
+        hash("f16")($"is_new_ad").alias("f16"),
+        hash("f17")($"adclass").alias("f17"),
+        hash("f18")($"site_id").alias("f18"),
+        hash("f19")($"os").alias("f19"),
+        hash("f20")($"network").alias("f20"),
+        hash("f21")($"phone_price").alias("f21"),
+        hash("f22")($"brand").alias("f22"),
+        hash("f23")($"province").alias("f23"),
+        hash("f24")($"city").alias("f24"),
+        hash("f25")($"city_level").alias("f25"),
+        hash("f26")($"uid").alias("f26"),
+        hash("f27")($"age").alias("f27"),
+
+        hashSeq("m1", "string")($"pkgs").alias("m1"))
+
+      .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
+        $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
+        $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
+        //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
+        mkSparseFeature1($"m1").alias("sparse"), $"label")
+
+      .select(
+        $"label",
+        $"dense",
+        $"sparse".getField("_1").alias("idx0"),
+        $"sparse".getField("_2").alias("idx1"),
+        $"sparse".getField("_3").alias("idx2"),
+        $"sparse".getField("_4").alias("id_arr"))
+
+      .rdd.zipWithIndex()
+      .map { x =>
+        (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
+          x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
+          x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
+      }
+      .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
+  }
+
+
+  def getUidApp(spark: SparkSession, date: String): DataFrame = {
+    import spark.implicits._
+    spark.sql(
+      """
+        |select * from dl_cpc.cpc_user_installed_apps where `load_date` = "%s"
+      """.stripMargin.format(date)).rdd
+      .map(x => (x.getAs[String]("uid"), x.getAs[Seq[String]]("pkgs")))
       .reduceByKey(_ ++ _)
-      .map(x => (x._1,x._2.distinct))
-      .toDF("uid","pkgs")
+      .map(x => (x._1, x._2.distinct))
+      .toDF("uid", "pkgs")
   }
 
-
-  def getData(spark: SparkSession, dataVersion: String, pathSep: mutable.Map[String,Seq[String]]): DataFrame = {
-
-    var path = Seq[String]()
-    pathSep.map{
-      x =>
-        path = path :+ "/user/cpc/lrmodel/%s/%s/{%s}".format(dataVersion, x._1, x._2.mkString(","))
-    }
-
-    path.foreach{
-      x =>
-        println(x)
-    }
-
-    spark.read.parquet(path:_*)
+  /**
+    * 获取hash code
+    *
+    * @param prefix ：前缀
+    * @return
+    */
+  private def hash(prefix: String) = udf {
+    num: String =>
+      if (num != null) Murmur3Hash.stringHash64(prefix + num, 0) else Murmur3Hash.stringHash64(prefix, 0)
   }
 
-  val fnames = Seq(
-    "hour", "sex", "age", "os", "net", "pl", "adtype", "city", "mediaid",
-    "adslotid", "adclass", "planid", "unitid", "ideaid"
-  )
-
-  def getVectorParser(x: Row): (Seq[Int], String, Seq[String]) = {
-    val cal = Calendar.getInstance()
-    cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
-    var raw = Seq[Int]()
-
-    raw = raw :+ hour
-
-    val sex = x.getAs[Int]("sex")
-    raw = raw :+ sex
-
-    //age
-    val age = x.getAs[Int]("age")
-    raw = raw :+ age
-
-    //os 96 - 97 (2)
-    val os = x.getAs[Int]("os")
-    raw = raw :+ os
-
-    //net
-    val net = x.getAs[Int]("network")
-    raw = raw :+ net
-
-    val pl = x.getAs[Int]("phone_level")
-    raw = raw :+ pl
-
-    val at = x.getAs[Int]("adtype")
-    raw = raw :+ at
-
-    val cityid = x.getAs[Int]("city")
-    raw = raw :+ cityid
-
-    val mediaid = x.getAs[String]("media_appsid").toInt
-    raw = raw :+ mediaid
-
-    val slotid = x.getAs[String]("adslotid").toInt
-    raw = raw :+ slotid
-
-    val ac = x.getAs[Int]("adclass")
-    raw = raw :+ ac
-
-    val planid = x.getAs[Int]("planid")
-    raw = raw :+ planid
-
-    val unitid = x.getAs[Int]("unitid")
-    raw = raw :+ unitid
-
-    val ideaid = x.getAs[Int]("ideaid")
-    raw = raw :+ ideaid
-
-    val apps = x.getAs[Seq[String]]("pkgs")
-    val uid = x.getAs[String]("uid")
-
-    if (apps != null && apps.length > 0) {
-      (raw, uid, apps.slice(0, 500))
-    } else {
-      (raw, uid,  Seq(""))
+  /**
+    * 获取hash code
+    *
+    * @param prefix ：前缀
+    * @param t      ：类型
+    * @return
+    */
+  private def hashSeq(prefix: String, t: String) = {
+    t match {
+      case "int" => udf {
+        seq: Seq[Int] =>
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
+          else Seq(Murmur3Hash.stringHash64(prefix, 0))
+          re.slice(0, 1000)
+      }
+      case "string" => udf {
+        seq: Seq[String] =>
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
+          else Seq(Murmur3Hash.stringHash64(prefix, 0))
+          re.slice(0, 1000)
+      }
     }
+  }
+
+  private val mkSparseFeature = udf {
+    (apps: Seq[Long], ideaids: Seq[Long]) =>
+      val a = apps.zipWithIndex.map(x => (0, x._2, x._1))
+      val b = ideaids.zipWithIndex.map(x => (1, x._2, x._1))
+      val c = (a ++ b).map(x => (0, x._1, x._2, x._3))
+      (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
+  }
+
+  private val mkSparseFeature1 = udf {
+    apps: Seq[Long] =>
+      val c = apps.zipWithIndex.map(x => (0, 0, x._2, x._1))
+      (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
 }
 
