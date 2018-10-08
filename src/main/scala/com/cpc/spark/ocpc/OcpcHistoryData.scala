@@ -50,23 +50,25 @@ object OcpcHistoryData {
 
     // calculation by userid
     val userData = base
-      .groupBy(col("userid"), col("adclass"))
+      .groupBy("userid", "adclass")
       .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
 
+    userData.show(10)
+
     // calculate by adclass
-    val adclassData = base
-      .groupBy("adclass")
-      .agg(sum("ctr_cnt").alias("adclass_ctr_cnt"), sum("cvr_cnt").alias("adclass_cvr_cnt"))
+//    val adclassData = base
+//      .groupBy("adclass")
+//      .agg(sum("ctr_cnt").alias("adclass_ctr_cnt"), sum("cvr_cnt").alias("adclass_cvr_cnt"))
 
     // connect adclass and userid
-    val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
+//    val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
 ////    val df = useridAdclassData
 ////      .withColumn("ctr_cnt", when(col("user_cvr_cnt")<20, col("user_ctr_cnt")).otherwise(col("adclass_ctr_cnt")))
 ////      .withColumn("cvr_cnt", when(col("user_cvr_cnt")<20, col("user_cvr_cnt")).otherwise(col("adclass_cvr_cnt")))
 ////      .select("userid", "cost", "ctr_cnt", "cvr_cnt")
 
-    useridAdclassData.show()
+//    useridAdclassData.show()
 
 //    useridAdclassData.write.mode("overwrite").saveAsTable("test.historical_ctr_cvr_data")
 //
