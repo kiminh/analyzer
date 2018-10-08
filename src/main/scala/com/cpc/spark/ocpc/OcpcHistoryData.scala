@@ -61,14 +61,14 @@ object OcpcHistoryData {
     // connect adclass and userid
     val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
-    val df = useridAdclassData
-      .withColumn("ctr_cnt", when(col("user_cvr_cnt")<20, col("user_ctr_cnt")).otherwise(col("adclass_ctr_cnt")))
-      .withColumn("cvr_cnt", when(col("user_cvr_cnt")<20, col("user_cvr_cnt")).otherwise(col("adclass_cvr_cnt")))
-      .select("userid", "cost", "ctr_cnt", "cvr_cnt")
+//    val df = useridAdclassData
+//      .withColumn("ctr_cnt", when(col("user_cvr_cnt")<20, col("user_ctr_cnt")).otherwise(col("adclass_ctr_cnt")))
+//      .withColumn("cvr_cnt", when(col("user_cvr_cnt")<20, col("user_cvr_cnt")).otherwise(col("adclass_cvr_cnt")))
+//      .select("userid", "cost", "ctr_cnt", "cvr_cnt")
 
-    df.show()
+    useridAdclassData.show()
 
-    df.write.mode("overwrite").saveAsTable("test.historical_ctr_cvr_data")
+    useridAdclassData.write.mode("overwrite").saveAsTable("test.historical_ctr_cvr_data")
 
 
     // step2
@@ -98,7 +98,16 @@ object OcpcHistoryData {
          |        and adslot_type in (1,2,3)
          |      ) a
          |INNER JOIN
-         |  test.historical_ctr_cvr_data b
+         |  (
+         |    SELECT
+         |      userid,
+         |      cost,
+         |      (case when user_cvr_cnt < 20 then adclass_ctr_cnt
+         |        else user_ctr_cnt end) ctr_cnt,
+         |      (case when user_cvr_cnt < 20 then adclass_cvr_cnt
+         |        else user_cvr_cnt end) cvr_cnt
+         |    FROM
+         |      test.historical_ctr_cvr_data) b
          |ON
          |  a.userid=b.userid
        """.stripMargin
