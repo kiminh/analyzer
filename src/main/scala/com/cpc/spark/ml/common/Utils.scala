@@ -225,28 +225,19 @@ object Utils {
 
 
         //第一类：建站：详情页、列表页等sdk栏位，网赚+彩票
+        //第二类：详情页、互动等其他非sdk栏位(js)，网赚+彩票
+        //第三类：所有类型，3个栏位，网赚+彩票
+        //第四类：下载类：interation=2+sdk栏位（列表+详情）
+        //第五类：其他(非网赚非下载类)+所有类型+所有栏位
         if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
           label_type = 1
-        }
-
-        //第二类：详情页、互动等其他非sdk栏位(js)，网赚+彩票
-        if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && (adslot_type == 2 || adslot_type == 3) && client_type != "NATIVESDK") {
+        } else if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && (adslot_type == 2 || adslot_type == 3) && client_type != "NATIVESDK") {
           label_type = 2
-        }
-
-        //第三类：所有类型，3个栏位，网赚+彩票
-        if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid <= 0 && (adslot_type == 1 || adslot_type == 2 || adslot_type == 3)) {
+        } else if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid <= 0 && (adslot_type == 1 || adslot_type == 2 || adslot_type == 3)) {
           label_type = 3
-        }
-
-        //第四类：下载类：interation=2+sdk栏位（列表+详情）
-        if ((adsrc == 0 || adsrc == 1) && interaction == 2 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
+        } else if ((adsrc == 0 || adsrc == 1) && interaction == 2 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
           label_type = 4
-        }
-
-        //第五类：其他(非网赚非下载类)+所有类型+所有栏位
-        if ((installed > 0 || active > 0) && disactive == 0) {
-          other += 1
+        } else {
           label_type = 5
         }
 
@@ -258,6 +249,8 @@ object Utils {
           active_js_nonsite_wz += 1
         } else if (label_type == 4 && report_download_pkgadded > 0) {
           active_js_download += 1
+        } else if (label_type == 5 && ((installed > 0 || active > 0) && disactive == 0)) {
+          other += 1
         }
     }
 
