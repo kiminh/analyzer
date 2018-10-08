@@ -32,7 +32,7 @@ object DNNSample {
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
 
-    train .repartition(50)
+    train .repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -44,7 +44,7 @@ object DNNSample {
     val tn = test.count
     println("测试数据：total = %d, 正比例 = %.4f".format(tn, test.where("label=array(1,0)").count.toDouble / tn))
 
-    test.repartition(50)
+    test.repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
