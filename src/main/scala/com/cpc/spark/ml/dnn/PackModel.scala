@@ -37,38 +37,15 @@ object PackModel {
       .getOrCreate()
     val filetime = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
 
-    val txt = Source.fromFile(testfile).getLines().map {x =>
-      val row = x.split(" ")
-      if (row.length == 2) {
-        val p = row(0).toDouble
-        val label = row(1).toDouble
-        (p, label)
-      } else {
-        null
-      }
-    }
-    .filter(_ != null)
-
-    val results = spark.sparkContext.parallelize(txt.toSeq)
-    println("test num", results.count())
-
-    runIr(results, 20, 0.95)
-    val ir = IRModel(
-      boundaries = irmodel.boundaries.toSeq,
-      predictions = irmodel.predictions.toSeq,
-      meanSquareError = irError * irError
-    )
-
-    irmodel.save(spark.sparkContext, "/user/cpc/xgboost_ir/"+filetime)
-    val mlm = Pack.parseFrom(new FileInputStream(dictfile))
-
     val filename = "/home/cpc/anal/dnn_model/%s-%s".format(name, filetime)
     println(filename)
 
-    val pack = mlm.copy(
-      ir = Option(ir),
-      onnxFile = "data/%s.onnx".format(name),
-      strategy = mlmodel.mlmodel.Strategy.StrategyDNNRawID
+    val pack = Pack(
+      strategy = mlmodel.mlmodel.Strategy.StrategyDNNRawID,
+      dnnGraphFile = name + ".pb",
+      dnnIdxFile = name + ".idx",
+      dnnEmbedFile = name + ".embed",
+      dnnEmbedWidth = 10
     )
     pack.writeTo(new FileOutputStream(s"$filename.mlm"))
 
