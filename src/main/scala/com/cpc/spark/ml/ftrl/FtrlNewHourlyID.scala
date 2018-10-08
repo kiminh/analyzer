@@ -23,16 +23,13 @@ object FtrlNewHourlyID {
   val ADVERTISER_ID_NAME = "advertiser"
   val PLAN_ID_NAME = "plan"
 
-  val LOCAL_DIR = "/home/cpc/ftrl/"
-//  val HDFS_MODEL_DIR = "hdfs:///user/cpc/qtt-ftrl-model/"
-  val LOCAL_FTRL_PARAM = "/home/cpc/ftrl_param/"
-//  val HDFS_MODEL_HISTORY_DIR = "hdfs:///user/cpc/qtt-ftrl-model-history/"
-  val LOCAL_FTRL_HISTORY = "/home/cpc/ftrl_history/"
-  val DEST_DIR = "/home/work/mlcpp/data/"
+//  val LOCAL_DIR = "/home/cpc/ftrl/"
+//  val LOCAL_FTRL_PARAM = "/home/cpc/ftrl_param/"
+//  val LOCAL_FTRL_HISTORY = "/home/cpc/ftrl_history/"
+//  val DEST_DIR = "/home/work/mlcpp/data/"
 
   val DOWN_SAMPLE_RATE = 0.2
 
-  // return (searchid, label, xgfeature, error)
   def mapFunc(line: String): (String, Double, String, Int) = {
     val array = line.split("\t")
     if (array.length < 3) {
@@ -104,13 +101,15 @@ object FtrlNewHourlyID {
     val userApps = spark.table("dl_cpc.cpc_user_installed_apps").filter(s"load_date='$dt'")
     merged = merged.join(userApps, Seq("uid"), joinType = "left")
 
-    val dataWithID = createFeatures(merged).collect()
-    val (nDict, zDict) = Ftrl.getNZFromRedis(dataWithID, 21)
     val ftrl = new Ftrl(1)
-    ftrl.L1 = l1
-    ftrl.nDict = nDict
-    ftrl.zDict = zDict
-
+    val dataWithID = createFeatures(merged).collect()
+    var nDict, zDict = mutable.Map[Int, Double]()
+    if (!startFresh) {
+      val (nMap, zMap) = Ftrl.getNZFromRedis(dataWithID, 21)
+      ftrl.L1 = l1
+      nDict = nMap
+      zDict = zMap
+    }
     println("start model training")
     val wDict = ftrl.trainWithSubDict(spark, dataWithID, nDict, zDict)
 
