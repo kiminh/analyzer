@@ -32,24 +32,24 @@ object DNNSample {
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
 
-    train .repartition(50)
+    train .repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/dw/dnntrain-" + date)
+      .save("/user/cpc/zhj/dnntrain-" + date)
     println("train size", train.count())
 
     val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
     val tn = test.count
     println("测试数据：total = %d, 正比例 = %.4f".format(tn, test.where("label=array(1,0)").count.toDouble / tn))
 
-    test.repartition(50)
+    test.repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/dw/dnntest-" + tdate)
+      .save("/user/cpc/zhj/dnntest-" + tdate)
     test.take(10).foreach(println)
   }
 
