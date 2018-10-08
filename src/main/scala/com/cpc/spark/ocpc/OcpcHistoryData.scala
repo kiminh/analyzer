@@ -32,7 +32,7 @@ object OcpcHistoryData {
          |SELECT
          |  userid,
          |  uid,
-         |  adclass,
+         |  case when adclass is null then -1 else adclass end,
          |  SUM(cost) as cost,
          |  SUM(ctr_cnt) as ctr_cnt,
          |  SUM(cvr_cnt) as cvr_cnt,
@@ -47,19 +47,42 @@ object OcpcHistoryData {
     println(sqlRequest)
 
     val base = spark.sql(sqlRequest)
+    base.createOrReplaceTempView("baseTable")
 
     // calculation by userid
-    val userData = base
-      .groupBy("userid", "adclass")
-      .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
+//    val userData = base
+//      .groupBy("userid", "adclass")
+//      .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
+    val userData = spark.sql(
+      s"""
+         |SELECT
+         |  userid,
+         |  adclass,
+         |  SUM(cost) as cost,
+         |  SUM(ctr_cnt) as user_ctr_cnt,
+         |  SUM(cvr_cnt) as user_cvr_cnt
+         |FROM
+         |  baseTable
+         |GROUP BY userid, adclass
+       """.stripMargin)
 
     println("userdata table")
     userData.show(10)
 
     // calculate by adclass
-    val adclassData = base
-      .groupBy("adclass")
-      .agg(sum("ctr_cnt").alias("adclass_ctr_cnt"), sum("cvr_cnt").alias("adclass_cvr_cnt"))
+//    val adclassData = base
+//      .groupBy("adclass")
+//      .agg(sum("ctr_cnt").alias("adclass_ctr_cnt"), sum("cvr_cnt").alias("adclass_cvr_cnt"))
+    val adclassData = spark.sql(
+      s"""
+         |SELECT
+         |  adclass,
+         |  SUM(ctr_cnt) AS adclass_ctr_cnt,
+         |  SUM(cvr_cnt) AS adclass_cvr_cnt
+         |FROM
+         |  baseTable
+         |GROUP BY adclass
+       """.stripMargin)
 
     println("adclass Table:")
     adclassData.show(10)
@@ -73,53 +96,53 @@ object OcpcHistoryData {
 ////      .select("userid", "cost", "ctr_cnt", "cvr_cnt")
 
     useridAdclassData.show()
-    useridAdclassData.createOrReplaceTempView("historical_ctr_cvr_data")
+//    useridAdclassData.createOrReplaceTempView("historical_ctr_cvr_data")
 
-//    useridAdclassData.write.mode("overwrite").saveAsTable("test.historical_ctr_cvr_data")
+    useridAdclassData.write.mode("overwrite").saveAsTable("test.historical_ctr_cvr_data")
 
     // step2
-    val sql2 =
-      s"""
-         |SELECT
-         |  a.searchid,
-         |  a.uid,
-         |  a.userid,
-         |  a.ext['exp_ctr'].int_value as exp_ctr,
-         |  a.ext['exp_cvr'].int_value as exp_cvr,
-         |  b.cost,
-         |  b.ctr_cnt as history_ctr_cnt,
-         |  b.cvr_cnt as history_cvr_cnt,
-         |  b.cvr_cnt / b.ctr_cnt as history_cvr
-         |FROM
-         |  (
-         |        select *
-         |        from dl_cpc.cpc_union_log
-         |        where `date`='$end_date' and hour = '$hour'
-         |        and isclick is not null
-         |        and media_appsid  in ("80000001", "80000002")
-         |        and isshow = 1
-         |        and ext['antispam'].int_value = 0
-         |        and ideaid > 0
-         |        and adsrc = 1
-         |        and adslot_type in (1,2,3)
-         |      ) a
-         |INNER JOIN
-         |  (
-         |    SELECT
-         |      userid,
-         |      cost,
-         |      (case when user_cvr_cnt < 20 then adclass_ctr_cnt
-         |        else user_ctr_cnt end) ctr_cnt,
-         |      (case when user_cvr_cnt < 20 then adclass_cvr_cnt
-         |        else user_cvr_cnt end) cvr_cnt
-         |    FROM
-         |      historical_ctr_cvr_data) b
-         |ON
-         |  a.userid=b.userid
-       """.stripMargin
-
-    val resultDF = spark.sql(sql2)
-    resultDF.write.mode("overwrite").saveAsTable("test.historical_union_log_data")
+//    val sql2 =
+//      s"""
+//         |SELECT
+//         |  a.searchid,
+//         |  a.uid,
+//         |  a.userid,
+//         |  a.ext['exp_ctr'].int_value as exp_ctr,
+//         |  a.ext['exp_cvr'].int_value as exp_cvr,
+//         |  b.cost,
+//         |  b.ctr_cnt as history_ctr_cnt,
+//         |  b.cvr_cnt as history_cvr_cnt,
+//         |  b.cvr_cnt / b.ctr_cnt as history_cvr
+//         |FROM
+//         |  (
+//         |        select *
+//         |        from dl_cpc.cpc_union_log
+//         |        where `date`='$end_date' and hour = '$hour'
+//         |        and isclick is not null
+//         |        and media_appsid  in ("80000001", "80000002")
+//         |        and isshow = 1
+//         |        and ext['antispam'].int_value = 0
+//         |        and ideaid > 0
+//         |        and adsrc = 1
+//         |        and adslot_type in (1,2,3)
+//         |      ) a
+//         |INNER JOIN
+//         |  (
+//         |    SELECT
+//         |      userid,
+//         |      cost,
+//         |      (case when user_cvr_cnt < 20 then adclass_ctr_cnt
+//         |        else user_ctr_cnt end) ctr_cnt,
+//         |      (case when user_cvr_cnt < 20 then adclass_cvr_cnt
+//         |        else user_cvr_cnt end) cvr_cnt
+//         |    FROM
+//         |      historical_ctr_cvr_data) b
+//         |ON
+//         |  a.userid=b.userid
+//       """.stripMargin
+//
+//    val resultDF = spark.sql(sql2)
+//    resultDF.write.mode("overwrite").saveAsTable("test.historical_union_log_data")
 
 
 
