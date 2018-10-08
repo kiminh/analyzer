@@ -79,6 +79,8 @@ object OcpcSampleToRedis {
       .groupBy("adclass")
       .agg(sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
 
+    println("show adclassData table")
+    adclassData.show(10)
 
     // connect adclass and userid
     val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("ideaid", "userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
