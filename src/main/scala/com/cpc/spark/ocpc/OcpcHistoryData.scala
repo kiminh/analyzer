@@ -112,8 +112,11 @@ object OcpcHistoryData {
          |  a.userid=b.userid
        """.stripMargin
 
-    val resultDF = spark.sql(sql2)
-    resultDF.write.mode("overwrite").saveAsTable("test.historical_union_log_data")
+//    val resultDF = spark.sql(sql2)
+//    resultDF.write.mode("overwrite").saveAsTable("test.historical_union_log_data")
+
+
+
   }
 
 }
