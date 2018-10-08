@@ -46,8 +46,8 @@ object OcpcHistoryData {
        """.stripMargin
     println(sqlRequest)
 
-//    val base = spark.sql(sqlRequest)
-//
+    val base = spark.sql(sqlRequest)
+
 //    // calculation by userid
 //    val userData = base
 //      .groupBy(col("userid"), col("adclass"))
