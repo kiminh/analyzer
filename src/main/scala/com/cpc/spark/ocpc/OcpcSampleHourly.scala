@@ -18,6 +18,7 @@ object OcpcSampleHourly {
          | select
          |  a.searchid,
          |  a.uid,
+         |  a.ideaid,
          |  a.price,
          |  a.userid,
          |  a.ext['adclass'].int_value as adclass,
@@ -54,6 +55,7 @@ object OcpcSampleHourly {
          |Select
          |  userid,
          |  uid,
+         |  ideaid,
          |  adclass,
          |  SUM(CASE WHEN isclick == 1 then price else 0 end) as cost,
          |  SUM(CASE WHEN isclick == 1 then 1 else 0 end) as ctr_cnt,
