@@ -1,15 +1,11 @@
-
-
 package com.cpc.spark.ocpc
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.lit
 
-object OcpcSampleHourly {
+object OcpcSpecificAd {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
-
-    // extract data from hive
     val dt = args(0)
     val hour = args(1)
     var selectWhere = s"`date`='$dt' and hour = '$hour'"
@@ -20,6 +16,9 @@ object OcpcSampleHourly {
          |  a.uid,
          |  a.price,
          |  a.userid,
+         |  a.ideaid,
+         |  a.unitid,
+         |  a.planid,
          |  a.ext['adclass'].int_value as adclass,
          |  a.isclick,
          |  a.isshow,
@@ -47,21 +46,21 @@ object OcpcSampleHourly {
     println(sqlRequest)
     val base = spark.sql(sqlRequest)
 
-    // recalculation with groupby of userid and uid
+    val columns = base.columns
+    columns.foreach(println)
+
     base.createOrReplaceTempView("tmpTable")
     val groupByRequesst =
       s"""
-         |Select
-         |  userid,
+         |SELECT
          |  uid,
-         |  adclass,
-         |  SUM(CASE WHEN isclick == 1 then price else 0 end) as cost,
-         |  SUM(CASE WHEN isclick == 1 then 1 else 0 end) as ctr_cnt,
-         |  SUM(CASE WHEN iscvr == 1 then 1 else 0 end) as cvr_cnt,
-         |  SUM(CASE WHEN isshow == 1 then 1 else 0 end) as total_cnt
+         |  userid,
+         |  ideaid,
+         |  unitid,
+         |  planid
          |FROM
          |  tmpTable
-         |GROUP BY userid, uid, adclass
+         |GROUP BY uid, userid, ideaid, unitid, planid
        """.stripMargin
 
     val groupBy = spark.sql(groupByRequesst)
@@ -69,11 +68,8 @@ object OcpcSampleHourly {
       .withColumn("hour", lit(hour))
 
     // save data
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track")
+    result.write.mode("overwrite").insertInto("test.check_union_log")
 
-
-
-    println("successfully save data into table dl_cpc.ocpc_uid_userid_track")
+    println("successfully save data into table test.check_union_log")
   }
 }
-
