@@ -75,7 +75,7 @@ object OcpcSampleToRedis {
       .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
       .select("ideaid", "userid", "adclass", "cost", "user_ctr_cnt", "user_cvr_cnt")
 
-    userData.write.mode("overwrite").saveAsTable("test.ocpc_test_userdata")
+    userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
 
 
     // calculate by adclass
@@ -84,7 +84,7 @@ object OcpcSampleToRedis {
       .agg(sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
       .select("adclass", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
-    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_test_adclassdata")
+    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
 
 
     // connect adclass and userid
@@ -98,7 +98,8 @@ object OcpcSampleToRedis {
 //    //     check redis
 //    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
     //     save data into pb file
-    savePbPack(useridAdclassData.select("ideaid", "userid", "cost", "user_ctr_cnt", "user_cvr_cnt"), threshold)
+
+    savePbPack(useridAdclassData, threshold)
   }
 
 
