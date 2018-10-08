@@ -81,18 +81,16 @@ object OcpcSampleToRedis {
 
     // connect adclass and userid
     val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("ideaid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
-    println(uidData.count)
-    println(useridAdclassData.count)
 
-    // save into redis and pb file
-    // write data into a temperary table
+//    // save into redis and pb file
+//    // write data into a temperary table
 //    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
-    //     save data into redis
+//    //     save data into redis
 //    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
-    //     check redis
+//    //     check redis
 //    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
     //     save data into pb file
-//    savePbPack(useridAdclassData, threshold)
+    savePbPack(useridAdclassData.select("ideaid", "userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt"), threshold)
   }
 
 
@@ -214,14 +212,16 @@ object OcpcSampleToRedis {
     val filename = s"UseridDataOcpc.pb"
     println("size of the dataframe")
     println(dataset.count)
+    dataset.show(10)
     var exchangeCnt = 0
     for (record <- dataset.collect()) {
       val kValue = record.get(0).toString
-      val costValue = record.get(1).toString
-      val userCtr = record.getLong(2)
-      val userCvr = record.getLong(3)
-      val adClassCtr = record.getLong(4)
-      val adClassCvr = record.getLong(5)
+      val userId = record.get(1).toString
+      val costValue = record.get(2).toString
+      val userCtr = record.getLong(3)
+      val userCvr = record.getLong(4)
+      val adClassCtr = record.getLong(5)
+      val adClassCvr = record.getLong(6)
       var ctrCntValue: String = ""
       var cvrCntValue: String = ""
       if (userCvr < threshold) {
