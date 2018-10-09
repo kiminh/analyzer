@@ -69,6 +69,7 @@ object RedisUtil {
     val nMap = mutable.Map[Int, Double]()
     val zMap = mutable.Map[Int, Double]()
     val buffer = ArrayBuffer[Int]()
+    var counter = 0
     for (key <- keySet) {
       if (buffer.size >= 100) {
         val nList = redis.mget[String](buffer.map(x => s"n$x")).get
@@ -81,6 +82,17 @@ object RedisUtil {
         buffer.clear()
       }
       buffer.append(key)
+      counter += 1
+      if (counter % 100000 == 0) {
+        println(counter)
+      }
+    }
+    val nList = redis.mget[String](buffer.map(x => s"n$x")).get
+    val zList = redis.mget[String](buffer.map(x => s"z$x")).get
+    for (i <- buffer.indices) {
+      val k = buffer(i)
+      nMap.put(k, nList(i).getOrElse("0.0").toDouble)
+      zMap.put(k, zList(i).getOrElse("0.0").toDouble)
     }
     redis.disconnect
     (nMap, zMap)
