@@ -81,6 +81,27 @@ object OcpcHistoryData {
     resultDF.write.mode("overwrite").saveAsTable("test.historical_union_log_data")
 
 
+    val sql3 =
+      s"""
+         |SELECT
+         |    t.ideaid,
+         |    t.ratio - 1 as exp_value1,
+         |    t.roi_ratio - 1 as  exp_value2
+         |FROM
+         |    (SELECT
+         |        ideaid,
+         |        exp_cvr * 1.0 / 1000000 as pcvr,
+         |        history_cvr as hcvr,
+         |        (exp_cvr * 1.0 / (history_cvr * 1000000.0)) as ratio,
+         |        1.0 / cpa_cvr as roi,
+         |        1.0 / 13.0 as roi_given,
+         |        13.0 / cpa_cvr as roi_ratio
+         |    FROM
+         |        test.historical_union_log_data) t
+       """.stripMargin
+
+    val finalDF = spark.sql(sql3)
+    finalDF.write.mode("overwrite").saveAsTable("test.ocpc_historical_data")
 
   }
 
