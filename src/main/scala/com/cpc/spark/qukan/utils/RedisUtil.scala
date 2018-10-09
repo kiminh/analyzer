@@ -40,6 +40,13 @@ object RedisUtil {
     })
   }
 
+  def fullModelToRedis(dbID: Int, w: Map[Int, Double], n: Map[Int, Double], z: Map[Int, Double]): Unit = {
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    redis.select(dbID)
+//    redis.mset
+  }
+
   def modelToRedis(dbID: Int, weights: Map[Int, Double]): Unit = {
     val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
     redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
@@ -72,28 +79,38 @@ object RedisUtil {
     var counter = 0
     for (key <- keySet) {
       if (buffer.size >= 100) {
-        val nList = redis.mget[String](buffer.map(x => s"n$x")).get
-        val zList = redis.mget[String](buffer.map(x => s"z$x")).get
+        val nKeys = buffer.map(x => s"n$x")
+        val nList = redis.mget[String](nKeys.head, nKeys.tail:_*).getOrElse(List())
+        val zKeys = buffer.map(x => s"z$x")
+        val zList = redis.mget[String](zKeys.head, zKeys.tail:_*).getOrElse(List())
         for (i <- buffer.indices) {
-          val k = buffer(i)
-          nMap.put(k, nList(i).getOrElse("0.0").toDouble)
-          zMap.put(k, zList(i).getOrElse("0.0").toDouble)
+          if (nList.size > i) {
+            val k = buffer(i)
+            nMap.put(k, nList(i).getOrElse("0.0").toDouble)
+            zMap.put(k, zList(i).getOrElse("0.0").toDouble)
+            counter += 1
+          }
         }
         buffer.clear()
       }
       buffer.append(key)
-      counter += 1
       if (counter % 100000 == 0) {
         println(counter)
       }
     }
-    val nList = redis.mget[String](buffer.map(x => s"n$x")).get
-    val zList = redis.mget[String](buffer.map(x => s"z$x")).get
+    val nKeys = buffer.map(x => s"n$x")
+    val nList = redis.mget[String](nKeys.head, nKeys.tail:_*).getOrElse(List())
+    val zKeys = buffer.map(x => s"z$x")
+    val zList = redis.mget[String](zKeys.head, zKeys.tail:_*).getOrElse(List())
     for (i <- buffer.indices) {
-      val k = buffer(i)
-      nMap.put(k, nList(i).getOrElse("0.0").toDouble)
-      zMap.put(k, zList(i).getOrElse("0.0").toDouble)
+      if (nList.size > i) {
+        val k = buffer(i)
+        nMap.put(k, nList(i).getOrElse("0.0").toDouble)
+        zMap.put(k, zList(i).getOrElse("0.0").toDouble)
+        counter += 1
+      }
     }
+    println(s"total feature get: $counter")
     redis.disconnect
     (nMap, zMap)
   }
