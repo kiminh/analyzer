@@ -73,6 +73,7 @@ object OcpcHistoryData {
          |ON
          |  a.ideaid=b.ideaid
        """.stripMargin
+    println(sql2)
 
     val resultDF = spark.sql(sql2)
     resultDF.write.mode("overwrite").saveAsTable("test.historical_union_log_data")
