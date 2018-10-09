@@ -13,18 +13,6 @@ object OcpcHistoryData {
     // calculate time period for historical data
     val end_date = args(0)
     val hour = args(1)
-    //    val threshold = args(2).toInt  //default: 20
-    val threshold = 20
-    val sdf = new SimpleDateFormat("yyyy-MM-dd")
-    val date = sdf.parse(end_date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(date)
-    calendar.add(Calendar.DATE, -7)
-    val dt = calendar.getTime
-    val start_date = sdf.format(dt)
-    val selectCondition1 = s"`date`='$start_date' and hour > '$hour'"
-    val selectCondition2 = s"`date`>'$start_date' and `date`<'$end_date'"
-    val selectCondition3 = s"`date`='$end_date' and hour <= '$hour'"
 
     // read data and set redis configuration
     val sqlRequest =
