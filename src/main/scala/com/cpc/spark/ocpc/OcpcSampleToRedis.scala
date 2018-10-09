@@ -246,8 +246,17 @@ object OcpcSampleToRedis {
       val kValue = record.get(0).toString
       val userId = record.get(1).toString
       val costValue = record.get(3).toString
-      val ctrCntValue = record.get(4).toString
-      val cvrCntValue = record.get(5).toString
+      val ctrValue = record.getLong(4)
+      val cvrValue = record.getLong(5)
+      var ctrCntValue: String = ""
+      var cvrCntValue: String = ""
+      if (cvrValue == 0) {
+        cvrCntValue = "1"
+        ctrCntValue = "84"
+      } else {
+        cvrCntValue = cvrValue.toString
+        ctrCntValue = ctrValue.toString
+      }
 
       val currentItem = SingleUser(
         ideaid = kValue,
