@@ -259,13 +259,13 @@ object Utils {
 
         if (label_type == 1 && conversion_sdk_wechat > 0) {
           active_sdk_site_wz += 1
-        } else if (label_type == 2 && (active5 > 0 && disactive == 0)) {
+        } else if (label_type == 2 && active5 > 0 && disactive == 0) {
           active_js_site_wz += 1
         } else if (label_type == 3 && active_href > 0) {
           active_js_nonsite_wz += 1
         } else if (label_type == 4 && conversion_sdk_download > 0) {
           active_js_download += 1
-        } else if (label_type == 5 && (js_site_active_other > 0 && disactive == 0)) {
+        } else if (label_type == 5 && js_site_active_other > 0 && disactive == 0) {
           other += 1
         }
     }
