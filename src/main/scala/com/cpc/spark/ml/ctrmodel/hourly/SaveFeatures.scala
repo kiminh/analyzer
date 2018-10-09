@@ -305,7 +305,6 @@ object SaveFeatures {
         |       ext['click_unit_count'].int_value as user_click_unit_num,
         |       ext['long_click_count'].int_value as user_long_click_count
         |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isclick = 1
-        |and ext['antispam'].int_value = 0 and ideaid > 0 and unitid > 0
         |
       """.stripMargin.format(date, hour)
     println(sqlStmt)
