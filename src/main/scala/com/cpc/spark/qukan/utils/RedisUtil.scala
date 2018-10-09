@@ -7,6 +7,7 @@ import com.redis.serialization.Parse.Implicits._
 import org.apache.spark.sql.{Dataset, Row}
 
 import scala.collection.mutable
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 object RedisUtil {
 
@@ -37,6 +38,100 @@ object RedisUtil {
         v.disconnect
       }
     })
+  }
+
+  def fullModelToRedis(dbID: Int, w: Map[Int, Double], n: Map[Int, Double], z: Map[Int, Double]): Unit = {
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    redis.select(dbID)
+    val wBuffer = ArrayBuffer[(Int, String)]()
+    val nBuffer = ArrayBuffer[(String, String)]()
+    val zBuffer = ArrayBuffer[(String, String)]()
+    var counter = 0
+    for ((key, value) <- w) {
+      if (wBuffer.size >= 100) {
+        redis.mset(wBuffer:_*)
+        redis.mset(nBuffer:_*)
+        redis.mset(zBuffer:_*)
+        counter += wBuffer.size
+        wBuffer.clear()
+        zBuffer.clear()
+        nBuffer.clear()
+      }
+      wBuffer.append((key, value.toString))
+      nBuffer.append((s"n$key", n.getOrElse(key, 0.0).toString))
+      zBuffer.append((s"z$key", z.getOrElse(key, 0.0).toString))
+    }
+    redis.mset(wBuffer:_*)
+    redis.mset(nBuffer:_*)
+    redis.mset(zBuffer:_*)
+    counter += wBuffer.size
+    println(s"Save $counter features to redis")
+  }
+
+  def modelToRedis(dbID: Int, weights: Map[Int, Double]): Unit = {
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    redis.select(dbID)
+    for ((key, value) <- weights) {
+      // expire after 2 weeks
+      redis.setex(key, 14 * 24 * 60 * 60, value.toString)
+    }
+    redis.disconnect
+  }
+
+  def modelToRedisWithPrefix(dbID: Int, weights: Map[Int, Double], prefix: String): Unit = {
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    redis.select(dbID)
+    for ((key, value) <- weights) {
+      // expire after 2 weeks
+      redis.setex(s"$prefix$key", 14 * 24 * 60 * 60, value.toString)
+    }
+    redis.disconnect
+  }
+
+  def getNZFromRedis(dbID: Int, keySet : mutable.Set[Int]): (mutable.Map[Int, Double], mutable.Map[Int, Double])  = {
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    redis.select(dbID)
+    val nMap = mutable.Map[Int, Double]()
+    val zMap = mutable.Map[Int, Double]()
+    val buffer = ArrayBuffer[Int]()
+    var counter = 0
+    for (key <- keySet) {
+      if (buffer.size >= 100) {
+        val nKeys = buffer.map(x => s"n$x")
+        val nList = redis.mget[String](nKeys.head, nKeys.tail:_*).getOrElse(List())
+        val zKeys = buffer.map(x => s"z$x")
+        val zList = redis.mget[String](zKeys.head, zKeys.tail:_*).getOrElse(List())
+        for (i <- buffer.indices) {
+          if (nList.size > i) {
+            val k = buffer(i)
+            nMap.put(k, nList(i).getOrElse("0.0").toDouble)
+            zMap.put(k, zList(i).getOrElse("0.0").toDouble)
+            counter += 1
+          }
+        }
+        buffer.clear()
+      }
+      buffer.append(key)
+    }
+    val nKeys = buffer.map(x => s"n$x")
+    val nList = redis.mget[String](nKeys.head, nKeys.tail:_*).getOrElse(List())
+    val zKeys = buffer.map(x => s"z$x")
+    val zList = redis.mget[String](zKeys.head, zKeys.tail:_*).getOrElse(List())
+    for (i <- buffer.indices) {
+      if (nList.size > i) {
+        val k = buffer(i)
+        nMap.put(k, nList(i).getOrElse("0.0").toDouble)
+        zMap.put(k, zList(i).getOrElse("0.0").toDouble)
+        counter += 1
+      }
+    }
+    println(s"total feature get: $counter")
+    redis.disconnect
+    (nMap, zMap)
   }
 
   def ftrlToRedis(ftrl: Ftrl, version: Int): (Boolean, String) = {
