@@ -44,6 +44,7 @@ object OcpcHistoryData {
          |  a.ideaid,
          |  a.ext['exp_ctr'].int_value as exp_ctr,
          |  a.ext['exp_cvr'].int_value as exp_cvr,
+         |  a.bid,
          |  b.cost,
          |  b.ctr_cnt as history_ctr_cnt,
          |  b.cvr_cnt as history_cvr_cnt,
