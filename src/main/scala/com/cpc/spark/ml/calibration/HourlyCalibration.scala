@@ -18,6 +18,7 @@ object HourlyCalibration {
 
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
+  val newDestDir = "/home/cpc/model_server/calibration/"
   val MAX_BIN_COUNT = 20
   val MIN_BIN_SIZE = 10000
 
@@ -109,6 +110,7 @@ object HourlyCalibration {
               if (softMode == 0) {
                 val conf = ConfigFactory.load()
                 println(MUtils.updateMlcppOnlineData(localPath, destDir + s"calibration-$modelName.mlm", conf))
+                println(MUtils.updateMlcppModelData(localPath, newDestDir + s"calibration-$modelName.mlm", conf))
               }
             }
             config
