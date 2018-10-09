@@ -47,7 +47,9 @@ object OcpcHistoryData {
          |  b.cost,
          |  b.ctr_cnt as history_ctr_cnt,
          |  b.cvr_cnt as history_cvr_cnt,
-         |  b.cvr_cnt / b.ctr_cnt as history_cvr
+         |  b.cvr_cnt / b.ctr_cnt as history_cvr,
+         |  b.cost / b.ctr_cnt as cpa_ctr,
+         |  b.cost / b.cvr_cnt as cpa_cvr
          |FROM
          |  (
          |        select *
