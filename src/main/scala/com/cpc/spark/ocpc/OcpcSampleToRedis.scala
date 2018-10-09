@@ -105,20 +105,37 @@ object OcpcSampleToRedis {
          |    a.adclass=b.adclass
        """.stripMargin)
 
-//    useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table")
+    useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table")
+
+    val tmpTable = spark.sql(
+      s"""
+         |SELECT
+         |    a.ideaid,
+         |    a.userid,
+         |    a.adclass,
+         |    a.cost,
+         |    ctr_cnt,
+         |    cvr_cnt,
+         |    cvr_cnt * 1.0 / ctr_cnt as hcvr
+         |FROM
+         |    test.ocpc_pb_result_table
+       """.stripMargin
+    )
+
+    tmpTable.write.mode("overwrite").saveAsTable("test.ocpc_test_hcvr_hourly")
 
     // save into redis and pb file
     // write data into a temperary table
-    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
+//    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
 
     //     save data into redis
-    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
-
-    //     check redis
-    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
-
-    //     save data into pb file
-    savePbPack(useridAdclassData)
+//    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+//
+//    //     check redis
+//    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
+//
+//    //     save data into pb file
+//    savePbPack(useridAdclassData)
   }
 
 
