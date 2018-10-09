@@ -44,7 +44,29 @@ object RedisUtil {
     val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
     redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
     redis.select(dbID)
-//    redis.mset
+    val wBuffer = ArrayBuffer[(Int, String)]()
+    val nBuffer = ArrayBuffer[(String, String)]()
+    val zBuffer = ArrayBuffer[(String, String)]()
+    var counter = 0
+    for ((key, value) <- w) {
+      if (wBuffer.size >= 100) {
+        redis.mset(wBuffer:_*)
+        redis.mset(nBuffer:_*)
+        redis.mset(zBuffer:_*)
+        counter += wBuffer.size
+        wBuffer.clear()
+        zBuffer.clear()
+        nBuffer.clear()
+      }
+      wBuffer.append((key, value.toString))
+      nBuffer.append((s"n$key", n.getOrElse(key, 0.0).toString))
+      zBuffer.append((s"z$key", z.getOrElse(key, 0.0).toString))
+    }
+    redis.mset(wBuffer:_*)
+    redis.mset(nBuffer:_*)
+    redis.mset(zBuffer:_*)
+    counter += wBuffer.size
+    println(s"Save $counter features to redis")
   }
 
   def modelToRedis(dbID: Int, weights: Map[Int, Double]): Unit = {
@@ -94,9 +116,6 @@ object RedisUtil {
         buffer.clear()
       }
       buffer.append(key)
-      if (counter % 100000 == 0) {
-        println(counter)
-      }
     }
     val nKeys = buffer.map(x => s"n$x")
     val nList = redis.mget[String](nKeys.head, nKeys.tail:_*).getOrElse(List())

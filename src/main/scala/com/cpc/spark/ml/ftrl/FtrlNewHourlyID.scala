@@ -119,11 +119,7 @@ object FtrlNewHourlyID {
 
     if (upload) {
       println("start saving weights to redis...")
-      RedisUtil.modelToRedis(21, wDict.toMap)
-      println("start saving n to redis...")
-      RedisUtil.modelToRedisWithPrefix(21, nDict.toMap, "n")
-      println("start saving z to redis...")
-      RedisUtil.modelToRedisWithPrefix(21, zDict.toMap, "z")
+      RedisUtil.fullModelToRedis(21, wDict.toMap, nDict.toMap, zDict.toMap)
       //      Ftrl.saveToProtoToHDFS(currentHDFS, spark, ftrl)
       //      Ftrl.saveProtoToLocal(currentPath, ftrl)
       //      Ftrl.serializeLrToLocal(ftrl, currentPath)
