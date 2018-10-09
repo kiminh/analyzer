@@ -38,7 +38,7 @@ object InsertReportAdslotTarget {
           |SELECT searchid,media_appsid,adslotid,adslot_type,isshow,isclick,sex,age,os,province,ext['phone_level'].int_value,
           |hour,ext['os_version'].string_value,ext["adclass"].int_value,isfill,price,interests
           |FROM dl_cpc.cpc_union_log
-          |WHERE date="%s" and userid <>1501897
+          |WHERE date="%s" and userid <>1501897 AND (isshow+isclick)>1
         """.stripMargin.format(argDay))
       .rdd
       .map {
@@ -61,23 +61,25 @@ object InsertReportAdslotTarget {
           val isfull = x.getInt(14)
           val price = if (isclick > 0) x.getInt(15) else 0
           val interests = x.get(16).toString
-          val isStudent = if(interests.contains("224=")) 1 else if(interests.contains("225=")) 2 else 0
+          val isStudent = if (interests.contains("224=")) 1 else if (interests.contains("225=")) 2 else 0
 
           val load = 0
           val active = 0
 
           (searchid, (mediaid, adslotid, adslot_type, isshow, isclick, sex, age, os, province, phone_level, hour,
-            os_version, adclass, load, active, req, isfull, price,isStudent))
+            os_version, adclass, load, active, req, isfull, price, isStudent))
       }
       .cache()
     println("adslotData count", adslotData.count())
 
     val traceData = ctx.sql(
       """
-        |SELECT DISTINCT searchid,trace_type,duration
-        |FROM dl_cpc.cpc_union_trace_log
-        |WHERE date="%s"
-      """.stripMargin.format(argDay))
+        |SELECT DISTINCT cutl.searchid,cutl.trace_type,cutl.duration
+        |FROM dl_cpc.cpc_union_trace_log cutl
+        |LEFT JOIN dl_cpc.cpc_union_log cul ON cul.searchid=cutl.searchid
+        |WHERE cutl.date="%s" AND cul.date="%s" AND cul.ext["adclass"].int_value>0 AND cul.isclick>0
+        |AND cutl.trace_type IN("load","active1","active2","active3","active4","active5","disactive")
+      """.stripMargin.format(argDay,argDay))
       .rdd
       .map {
         x =>
@@ -92,7 +94,7 @@ object InsertReportAdslotTarget {
             case "disactive" => active -= 1
             case _ =>
           }
-          (searchid, ("", "", -1, -1, -1, -1, -1, -1, -1, -1, -1, "", -1, load, active, -1, -1, 0,0))
+          (searchid, ("", "", -1, -1, -1, -1, -1, -1, -1, -1, -1, "", -1, load, active, -1, -1, 0, 0))
       }
       .cache()
     println("traceData count", traceData.count())
@@ -135,9 +137,9 @@ object InsertReportAdslotTarget {
           val req = if (a._16 != -1) a._16 else b._16
           val isfull = if (a._17 != -1) a._17 else b._17
           val price = a._18 + b._18 //if (a._18 != -1) a._18 else b._18
-          val isStudent = if (a._1 != -1 ) a._19 else b._19
+        val isStudent = if (a._1 != -1) a._19 else b._19
           (mediaid, adslotid, adslot_type, isshow, isclick, sex, age, os, province, phone_level, hour, os_version,
-            adclass, load, active, req, isfull, price,isStudent)
+            adclass, load, active, req, isfull, price, isStudent)
       }
       .filter {
         x =>
@@ -198,8 +200,8 @@ object InsertReportAdslotTarget {
       }
       .repartition(50)
       .cache()
-    println("studentData count", studentData.count())
-
+    //println("studentData count", studentData.count())
+    var insertData = studentData
 
     val osVersionData = allData
       .map {
@@ -276,7 +278,8 @@ object InsertReportAdslotTarget {
       }
       .repartition(50)
       .cache()
-    println("osVersionData count", osVersionData.count())
+    //println("osVersionData count", osVersionData.count())
+    insertData = insertData.union(osVersionData)
 
     val sexData = allData
       .map {
@@ -328,7 +331,8 @@ object InsertReportAdslotTarget {
       }
       .repartition(50)
       .cache()
-    println("sexData count", sexData.count())
+    //println("sexData count", sexData.count())
+    insertData = insertData.union(sexData)
 
     val ageData = allData
       .map {
@@ -381,7 +385,8 @@ object InsertReportAdslotTarget {
       }
       .repartition(50)
       .cache()
-    println("ageData count", ageData.count())
+    //println("ageData count", ageData.count())
+    insertData = insertData.union(ageData)
 
     val osData = allData
       .map {
@@ -433,7 +438,8 @@ object InsertReportAdslotTarget {
       }
       .repartition(50)
       .cache()
-    println("osData count", osData.count())
+    //println("osData count", osData.count())
+    insertData = insertData.union(osData)
 
     val provinceData = allData
       .map {
@@ -485,7 +491,8 @@ object InsertReportAdslotTarget {
       }
       .repartition(50)
       .cache()
-    println("provinceData count", provinceData.count())
+    //println("provinceData count", provinceData.count())
+    insertData = insertData.union(provinceData)
 
     val phoneLevelData = allData
       .map {
@@ -537,7 +544,8 @@ object InsertReportAdslotTarget {
       }
       .repartition(50)
       .cache()
-    println("phoneLevelData count", phoneLevelData.count())
+    //println("phoneLevelData count", phoneLevelData.count())
+    insertData = insertData.union(phoneLevelData)
 
     val hourData = allData
       .map {
@@ -589,7 +597,8 @@ object InsertReportAdslotTarget {
       }
       .repartition(50)
       .cache()
-    println("hourData count", hourData.count())
+    //println("hourData count", hourData.count())
+    insertData = insertData.union(hourData)
 
     val categoryData = allData
       .map {
@@ -641,20 +650,21 @@ object InsertReportAdslotTarget {
       }
       .repartition(50)
       .cache()
-    println("categoryData count", categoryData.count())
+    //println("categoryData count", categoryData.count())
+    insertData = insertData.union(categoryData)
 
     //(mediaid, adslotid, adslot_type, isshow, isclick, sex, age, os, province, phone_level, hour, os_version, adclass, load, active,req,isfull,price)
-    val insertData = sexData
-      .union(ageData)
-      .union(osData)
-      .union(provinceData)
-      .union(phoneLevelData)
-      .union(hourData)
-      .union(categoryData)
-      .union(osVersionData)
-      .union(studentData)
-      .repartition(50)
-      .cache()
+    //    val insertData = sexData
+    //      .union(ageData)
+    //      .union(osData)
+    //      .union(provinceData)
+    //      .union(phoneLevelData)
+    //      .union(hourData)
+    //      .union(categoryData)
+    //      .union(osVersionData)
+    //      .union(studentData)
+    //      .repartition(50)
+    //      .cache()
 
     println("insertData count", insertData.count())
     //
