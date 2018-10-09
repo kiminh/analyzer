@@ -7,6 +7,7 @@ import com.redis.serialization.Parse.Implicits._
 import org.apache.spark.sql.{Dataset, Row}
 
 import scala.collection.mutable
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 object RedisUtil {
 
@@ -67,13 +68,22 @@ object RedisUtil {
     redis.select(dbID)
     val nMap = mutable.Map[Int, Double]()
     val zMap = mutable.Map[Int, Double]()
+    val buffer = ArrayBuffer[Int]()
     for (key <- keySet) {
-      // expire after 2 weeks
-      nMap.put(key, redis.get[Double](s"n$key").getOrElse(0.0))
-      zMap.put(key, redis.get[Double](s"z$key").getOrElse(0.0))
+      if (buffer.size >= 100) {
+        val nList = redis.mget[String](buffer.map(x => s"n$x")).get
+        val zList = redis.mget[String](buffer.map(x => s"z$x")).get
+        for (i <- buffer.indices) {
+          val k = buffer(i)
+          nMap.put(k, nList(i).getOrElse("0.0").toDouble)
+          zMap.put(k, zList(i).getOrElse("0.0").toDouble)
+        }
+        buffer.clear()
+      }
+      buffer.append(key)
     }
     redis.disconnect
-    return (nMap, zMap)
+    (nMap, zMap)
   }
 
   def ftrlToRedis(ftrl: Ftrl, version: Int): (Boolean, String) = {

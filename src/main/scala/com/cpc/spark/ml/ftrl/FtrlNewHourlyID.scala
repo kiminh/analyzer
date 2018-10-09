@@ -105,6 +105,7 @@ object FtrlNewHourlyID {
     val dataWithID = createFeatures(merged).collect()
     var nDict, zDict = mutable.Map[Int, Double]()
     if (!startFresh) {
+      println("fetching n and z from redis...")
       val (nMap, zMap) = Ftrl.getNZFromRedis(dataWithID, 21)
       ftrl.L1 = l1
       nDict = nMap
@@ -117,8 +118,11 @@ object FtrlNewHourlyID {
     println(s"batch feature size: ${wDict.size}")
 
     if (upload) {
+      println("start saving weights to redis...")
       RedisUtil.modelToRedis(21, wDict.toMap)
+      println("start saving n to redis...")
       RedisUtil.modelToRedisWithPrefix(21, nDict.toMap, "n")
+      println("start saving z to redis...")
       RedisUtil.modelToRedisWithPrefix(21, zDict.toMap, "z")
       //      Ftrl.saveToProtoToHDFS(currentHDFS, spark, ftrl)
       //      Ftrl.saveProtoToLocal(currentPath, ftrl)
