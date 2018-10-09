@@ -6,10 +6,8 @@ package com.cpc.spark.ml.ftrl
   */
 
 import com.cpc.spark.common.{Murmur3Hash, Utils}
-import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.cpc.spark.ml.train.Ftrl
 import com.cpc.spark.qukan.utils.RedisUtil
-import com.typesafe.config.ConfigFactory
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
