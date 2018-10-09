@@ -51,16 +51,6 @@ message Dict {
     map<string, int32> stringid = 10;
 }
 
-enum HashMethod {
-    MurMur3 = 0;
-}
-
-message HashParam {
-    HashMethod method = 1;
-    int64 mode = 2;
-    int64 offset = 3;
-    int32 seed = 4;
-}
 
 message Pack {
     string name = 1;
@@ -75,7 +65,10 @@ message Pack {
     double negSampleRatio = 10;
     int64 xg_feature_num = 11;
     string onnx_file = 12;
-    HashParam hashParam = 13;
+    string dnn_graph_file = 13;
+    string dnn_idx_file = 14;
+    string dnn_embed_file = 15;
+    uint32 dnn_embed_width = 16;
 }
 
 message CalibrationConfig {
