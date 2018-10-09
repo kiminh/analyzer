@@ -251,8 +251,10 @@ object OcpcSampleToRedis {
       var ctrCntValue: String = ""
       var cvrCntValue: String = ""
       if (cvrValue == 0) {
-        cvrCntValue = "1"
-        ctrCntValue = "84"
+        val cvr = 1
+        val ctr = ctrValue + 1
+        cvrCntValue = cvr.toString
+        ctrCntValue = ctr.toString
       } else {
         cvrCntValue = cvrValue.toString
         ctrCntValue = ctrValue.toString
