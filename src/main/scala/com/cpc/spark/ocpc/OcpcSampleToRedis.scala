@@ -110,10 +110,10 @@ object OcpcSampleToRedis {
     val tmpTable = spark.sql(
       s"""
          |SELECT
-         |    a.ideaid,
-         |    a.userid,
-         |    a.adclass,
-         |    a.cost,
+         |    ideaid,
+         |    userid,
+         |    adclass,
+         |    cost,
          |    ctr_cnt,
          |    cvr_cnt,
          |    cvr_cnt * 1.0 / ctr_cnt as hcvr
