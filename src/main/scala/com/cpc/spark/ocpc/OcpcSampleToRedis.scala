@@ -75,7 +75,7 @@ object OcpcSampleToRedis {
       .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
       .select("ideaid", "userid", "adclass", "cost", "user_ctr_cnt", "user_cvr_cnt")
 
-    userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata1")
+    userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
 
 
     // calculate by adclass
@@ -84,7 +84,7 @@ object OcpcSampleToRedis {
       .agg(sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
       .select("adclass", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
-    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata1")
+    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
 
 
     // connect adclass and userid
@@ -98,44 +98,27 @@ object OcpcSampleToRedis {
          |    (case when a.user_cvr_cnt<$threshold then b.adclass_ctr_cnt else a.user_ctr_cnt end) as ctr_cnt,
          |    (case when a.user_cvr_cnt<$threshold then b.adclass_cvr_cnt else a.user_cvr_cnt end) as cvr_cnt
          |FROM
-         |    test.ocpc_data_userdata1 a
+         |    test.ocpc_data_userdata a
          |INNER JOIN
-         |    test.ocpc_data_adclassdata1 b
+         |    test.ocpc_data_adclassdata b
          |ON
          |    a.adclass=b.adclass
        """.stripMargin)
 
-    useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table1")
-
-    val tmpTable = spark.sql(
-      s"""
-         |SELECT
-         |    ideaid,
-         |    userid,
-         |    adclass,
-         |    cost,
-         |    ctr_cnt,
-         |    cvr_cnt,
-         |    cvr_cnt * 1.0 / ctr_cnt as hcvr
-         |FROM
-         |    test.ocpc_pb_result_table1
-       """.stripMargin
-    )
-
-    tmpTable.write.mode("overwrite").saveAsTable("test.ocpc_test_hcvr_hourly")
+//    useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table")
 
     // save into redis and pb file
     // write data into a temperary table
-//    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
+    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
 
     //     save data into redis
-//    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
-//
-//    //     check redis
-//    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
-//
-//    //     save data into pb file
-//    savePbPack(useridAdclassData)
+    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+
+    //     check redis
+    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
+
+    //     save data into pb file
+    savePbPack(useridAdclassData)
   }
 
 
