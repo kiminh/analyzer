@@ -90,7 +90,7 @@ object DNNSample {
       .join(userAppIdx, Seq("uid"), "leftouter")
       .repartition(1000)
       .select($"label",
-        array($"media_type", $"mediaid").alias("raw_dense"),
+        $"media_type".alias("raw_dense"),
 
         hash("f1")($"media_type").alias("f1"),
         hash("f2")($"mediaid").alias("f2"),
@@ -144,7 +144,7 @@ object DNNSample {
         (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
           x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"),
-          x._1.getAs[Seq[Int]]("raw_dense"))
+          x._1.getAs[String]("raw_dense"))
       }
       .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr", "raw_dense")
   }
