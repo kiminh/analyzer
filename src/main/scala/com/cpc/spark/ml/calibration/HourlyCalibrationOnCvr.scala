@@ -1,17 +1,9 @@
 package com.cpc.spark.ml.calibration
 
-import java.io.{File, FileOutputStream, PrintWriter}
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import com.cpc.spark.common.Utils
-import com.cpc.spark.ml.common.{Utils => MUtils}
-import com.typesafe.config.ConfigFactory
-import mlmodel.mlmodel.{CalibrationConfig, IRModel}
-import org.apache.spark.SparkContext
-import org.apache.spark.mllib.regression.IsotonicRegression
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.Row
 
 
 object HourlyCalibrationOnCvr {
@@ -50,7 +42,7 @@ object HourlyCalibrationOnCvr {
 
     // get union log
     val sql = s"""
-                 |select if(iscvr is null, 0, 1), ecvr, time, model_name from
+                 |select if(iscvr is null, 0, iscvr), ecvr, time, model_name from
                  |( select searchid, ext_int['raw_cvr'] as ecvr, show_timestamp as time, ext_string['cvr_model_name'] as model_name
                  | from dl_cpc.cpc_union_log
                  | where $timeRangeSql
