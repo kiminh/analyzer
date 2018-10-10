@@ -48,6 +48,23 @@ object CalibrationCheckCvr {
 
     println(s"sql:\n$sql")
     val log = session.sql(sql)
+    var ct = 0
+    log.limit(1000).rdd.toLocalIterator.foreach( x => {
+      val isCvr = x.getInt(0).toDouble
+      val ecvr = x.getInt(1).toDouble / 1e6d
+      val rawCvr = x.getLong(2).toDouble / 1e6d
+      val calibrated = HourlyCalibration.computeCalibration(rawCvr, irModel.ir.get)
+
+      if (Math.abs(ecvr - calibrated) / calibrated > 0.2) {
+        println(s"isCvr: $isCvr")
+        println(s"onlineCvr: $ecvr")
+        println(s"calibrated: $calibrated")
+        println("======")
+        ct += 1
+      }
+    })
+    println(s"error ct: $ct")
+
     val result = log.rdd.map( x => {
       val isCvr = x.getInt(0).toDouble
       val ecvr = x.getInt(1).toDouble / 1e6d
