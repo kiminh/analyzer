@@ -16,7 +16,7 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 /**
   * Created on ${Date} ${Time}
   */
-object CpcChargeNewTest {
+object ConsumeKafkaTopic {
 
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
@@ -74,13 +74,14 @@ object CpcChargeNewTest {
         }
     }
       .filter(_ != null)
-    base_data.print()
+    //base_data.print()
 
 
     base_data.foreachRDD {
       rs =>
-        println("################################")
+        println("##batch start##############################")
         rs.take(10).foreach(x => println(x))
+        println("##batch end##############################")
     }
     ssc.start()
     ssc.awaitTermination()
