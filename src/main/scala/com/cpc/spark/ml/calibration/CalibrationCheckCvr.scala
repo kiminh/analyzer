@@ -51,7 +51,7 @@ object CalibrationCheckCvr {
     val result = log.rdd.map( x => {
       val isCvr = x.getInt(0).toDouble
       val ecvr = x.getInt(1).toDouble / 1e6d
-      val rawCvr = x.getInt(2).toDouble / 1e6d
+      val rawCvr = x.getLong(2).toDouble / 1e6d
       val calibrated = HourlyCalibration.computeCalibration(rawCvr, irModel.ir.get)
       (isCvr, ecvr, rawCvr, calibrated, 1.0)
     }).reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5))
