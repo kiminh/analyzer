@@ -6,6 +6,7 @@ message AppInfo {
 	optional string packagename = 1;
 	optional string version = 2;
 	optional string name = 3;
+	optional int32 versioncode = 4;
 };
 
 message SiteInfo {
@@ -13,6 +14,7 @@ message SiteInfo {
 	optional string urls = 2;
 	optional string title = 3;
 	optional string config = 4;
+	optional int64 content_id = 5;
 };
 enum MediaType {
 	UNKNOWN = 0;
@@ -170,6 +172,7 @@ enum AdSrc {
 	TOUTIAO = 16;
 	QIHU = 17;
 	XINGU = 18;
+	GANJIWANG = 19;
 };
 enum InteractionType {
 	NO_INTERACT = 0;
@@ -260,6 +263,14 @@ message AdInfo {
 	optional int32 coin = 36; // 激励广告金币数
 	optional AppInfo app_info = 37; //下载类广告应用信息
 	optional uint64 cvr_old = 38; // 给cvr1.0和cvr2.0用 cvr * 10^6
+	optional uint64 raw_ctr = 39; //ml原始ctr
+    optional uint64 raw_cvr = 40; //ml原始cvr
+    optional string ctr_model_name = 41;
+    optional string cvr_model_name = 42;
+    optional uint64 boost_cpm = 43; //冷启动cpm
+	optional uint64 is_new_ad = 44; //是否为新广告
+	optional uint64 boost_win = 45; //是否为通过boost赢得竞价
+	optional int64 content_id = 46; //文章id
 };
 
 message AdDspRet {
@@ -273,6 +284,9 @@ message Location {
 	optional uint32 city = 3;
 	optional uint32 isp = 4;
 	optional uint32 city_level = 5;
+	optional double lnt = 6; // 经度
+	optional double lat = 7; // 纬度
+	optional int64 locTime = 8; // 获取经纬度的时间
 }
 
 message InterestItem {
@@ -296,6 +310,8 @@ message UserProfile {
 	optional string member_id = 13; //趣头条用户id
 	optional int32 lx_type = 14; //0 未知, 1 内  2 外
 	optional int32 lx_package = 15;
+	optional uint32 long_req_count = 16; //同一用户20天内的请求次数
+	optional string user_create_time = 17; // 用户注册时间
 }
 
 message NoticeLogBody {
@@ -327,4 +343,5 @@ message NoticeLogBody {
 	repeated uint32 zerobid = 29; //过滤价格计算为0广告
 	optional string	hostname = 30; //as主机名
 	repeated int64 abtest_ids = 31; //abtest id
+	repeated int64 abtest_used_ids = 32; //abtest used id
 };
