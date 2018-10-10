@@ -31,7 +31,7 @@ object CalibrationCheckCvr {
 
     // get union log
    val sql = s"""
-                 |select if(iscvr is null, 0, 1), ecvr, raw_cvr from
+                 |select if(iscvr is null, 0, iscvr), ecvr, raw_cvr from
                  |( select searchid, ext_int['raw_cvr'] as raw_cvr, ext['exp_cvr'].int_value as ecvr
                  | from dl_cpc.cpc_union_log
                  | where $timeRangeSql
