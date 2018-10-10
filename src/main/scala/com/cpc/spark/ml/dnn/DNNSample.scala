@@ -144,7 +144,7 @@ object DNNSample {
         (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
           x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"),
-          x._1.getAs[String]("raw_dense"))
+          x._1.getAs[Int]("raw_dense"))
       }
       .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr", "raw_dense")
   }
