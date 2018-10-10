@@ -37,7 +37,7 @@ object CalibrationCheckCvr {
                  | where $timeRangeSql
                  | and media_appsid in ('80000001', '80000002') and isclick = 1 and ext['antispam'].int_value = 0
                  | and ideaid > 0 and adsrc = 1 and adslot_type in (1, 2, 3) AND userid > 0
-                 | and ext_string['ctr_model_name'] = '$modelName'
+                 | and ext_string['cvr_model_name'] = '$modelName'
                  | and exptags like "%calibration=on%"
                  | )
                  | a left join
