@@ -50,9 +50,11 @@ object CpcChargeNewTest {
         try {
           val logdata = LogData.parseData(v)
           val log_timestamp = logdata.log.getLogTimestamp
+          val timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(log_timestamp)
           val date = new SimpleDateFormat("yyyy-MM-dd").format(log_timestamp)
           val hour = new SimpleDateFormat("HH").format(log_timestamp)
           val minute = new SimpleDateFormat("mm").format(log_timestamp).charAt(0) + "0"
+          val second = new SimpleDateFormat("ss").format(log_timestamp).charAt(0) + "0"
 
           val field2 = scala.collection.mutable.Map[String, ExtValue]()
           val fieldCount = logdata.log.getField.getMapCount
@@ -64,7 +66,7 @@ object CpcChargeNewTest {
           }
 
           val field: collection.Map[String, ExtValue] = field2.toMap
-          SrcLog(logdata.log.getLogTimestamp, logdata.log.getIp, field, date, hour, minute)
+          SrcLog(logdata.log.getLogTimestamp, logdata.log.getIp, field, timestamp, date, hour, minute, second)
         } catch {
           case t: Throwable =>
             t.printStackTrace() // TODO: handle error
@@ -116,9 +118,11 @@ object CpcChargeNewTest {
                      log_timestamp: Long = 0,
                      ip: String = "",
                      field: collection.Map[String, ExtValue] = null,
+                     timestamp: String = "",
                      thedate: String = "",
                      thehour: String = "",
-                     theminute: String = ""
+                     theminute: String = "",
+                     thesecond: String = ""
                    )
 
   case class ExtValue(int_type: Int = 0, long_type: Long = 0, float_type: Float = 0, string_type: String = "")
