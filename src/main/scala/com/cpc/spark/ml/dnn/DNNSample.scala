@@ -32,12 +32,12 @@ object DNNSample {
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
 
-    train .repartition(100)
+    train.repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/dnntrain-" + date)
+      .save("/user/cpc/zhj/tmp/dnntrain-" + date)
     println("train size", train.count())
 
     val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
@@ -49,7 +49,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/dnntest-" + tdate)
+      .save("/user/cpc/zhj/tmp/dnntest-" + tdate)
     test.take(10).foreach(println)
   }
 
@@ -57,7 +57,8 @@ object DNNSample {
     import spark.implicits._
 
     val userAppIdx = getUidApp(spark, date)
-    val sql = s"""
+    val sql =
+      s"""
          |select if(isclick>0, array(1,0), array(0,1)) as label,
          |  media_type, media_appsid as mediaid,
          |  ext['channel'].int_value as channel,
@@ -76,7 +77,7 @@ object DNNSample {
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id
          |
-         |from dl_cpc.cpc_union_log where `date`='$date'
+         |from dl_cpc.cpc_union_log where `date`='$date' and hour=10
          |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
@@ -89,6 +90,8 @@ object DNNSample {
       .join(userAppIdx, Seq("uid"), "leftouter")
       .repartition(1000)
       .select($"label",
+        array($"media_type", $"mediaid").alias("raw_dense"),
+
         hash("f1")($"media_type").alias("f1"),
         hash("f2")($"mediaid").alias("f2"),
         hash("f3")($"channel").alias("f3"),
@@ -123,7 +126,9 @@ object DNNSample {
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
         $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
-        mkSparseFeature1($"m1").alias("sparse"), $"label")
+        mkSparseFeature1($"m1").alias("sparse"), $"label",
+        $"raw_dense"
+      )
 
       .select(
         $"label",
@@ -131,15 +136,17 @@ object DNNSample {
         $"sparse".getField("_1").alias("idx0"),
         $"sparse".getField("_2").alias("idx1"),
         $"sparse".getField("_3").alias("idx2"),
-        $"sparse".getField("_4").alias("id_arr"))
+        $"sparse".getField("_4").alias("id_arr"),
+        $"raw_dense")
 
       .rdd.zipWithIndex()
       .map { x =>
         (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
-          x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
+          x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"),
+          x._1.getAs[Seq[Int]]("raw_dense"))
       }
-      .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
+      .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr", "raw_dense")
   }
 
 
