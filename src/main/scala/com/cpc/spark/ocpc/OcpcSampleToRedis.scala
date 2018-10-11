@@ -81,8 +81,8 @@ object OcpcSampleToRedis {
     // calculate by adclass
     val adclassData = userData
       .groupBy("adclass")
-      .agg(sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
-      .select("adclass", "adclass_ctr_cnt", "adclass_cvr_cnt")
+      .agg(sum("cost").alias("adclass_cost"), sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
+      .select("adclass", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
     adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
 
@@ -96,7 +96,10 @@ object OcpcSampleToRedis {
          |    a.adclass,
          |    a.cost,
          |    (case when a.user_cvr_cnt<$threshold then b.adclass_ctr_cnt else a.user_ctr_cnt end) as ctr_cnt,
-         |    (case when a.user_cvr_cnt<$threshold then b.adclass_cvr_cnt else a.user_cvr_cnt end) as cvr_cnt
+         |    (case when a.user_cvr_cnt<$threshold then b.adclass_cvr_cnt else a.user_cvr_cnt end) as cvr_cnt,
+         |    b.adclass_cost,
+         |    b.adclass_ctr_cnt,
+         |    b.adclass_cvr_cnt
          |FROM
          |    test.ocpc_data_userdata a
          |INNER JOIN
@@ -105,7 +108,7 @@ object OcpcSampleToRedis {
          |    a.adclass=b.adclass
        """.stripMargin)
 
-//    useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table")
+    useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table")
 
     // save into redis and pb file
     // write data into a temperary table
@@ -248,6 +251,11 @@ object OcpcSampleToRedis {
       val costValue = record.get(3).toString
       val ctrValue = record.getLong(4)
       val cvrValue = record.getLong(5)
+      val adclassId = record.get(2).toString
+      val adclassCost = record.get(6).toString
+      val adclassCtr = record.getLong(7)
+      val adclassCvr = record.getLong(8)
+
       var ctrCntValue: String = ""
       var cvrCntValue: String = ""
       if (cvrValue == 0) {
@@ -260,12 +268,28 @@ object OcpcSampleToRedis {
         ctrCntValue = ctrValue.toString
       }
 
+      var adclassCtrCntValue: String = ""
+      var adclassCvrCntValue: String = ""
+      if (adclassCvr == 0) {
+        val cvr = 1
+        val ctr = adclassCvr + 1
+        adclassCtrCntValue = cvr.toString
+        adclassCtrCntValue = ctr.toString
+      } else {
+        adclassCtrCntValue = adclassCtr.toString
+        adclassCvrCntValue = adclassCvr.toString
+      }
+
       val currentItem = SingleUser(
         ideaid = kValue,
         userid = userId,
         cost = costValue,
         ctrcnt = ctrCntValue,
-        cvrcnt = cvrCntValue
+        cvrcnt = cvrCntValue,
+        adclass = adclassId,
+        adclass_cost = adclassCost,
+        adclass_ctrcnt = adclassCtrCntValue,
+        adclass_cvrcnt = adclassCvrCntValue
       )
       list += currentItem
     }
