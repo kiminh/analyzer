@@ -69,6 +69,14 @@ message Pack {
     string dnn_idx_file = 14;
     string dnn_embed_file = 15;
     uint32 dnn_embed_width = 16;
+    bool use_model_server = 17;
+    ModelServer model_server = 18;
+}
+
+message ModelServer {
+    string name = 1;
+    int32 redis_db = 2;
+    int64 data_expires = 3; //数据过期时间 second
 }
 
 message CalibrationConfig {

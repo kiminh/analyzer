@@ -30,11 +30,13 @@ object PackModel {
     val dictfile = args(2)    // dict protobuf
     val onnxfile = args(3)     //tensorflow dump to onnx
     val upload = args(4).toInt
+    /*
     spark = SparkSession.builder()
       .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
       .appName("test dnn model and run IR")
       .enableHiveSupport()
       .getOrCreate()
+    */
     val filetime = new SimpleDateFormat("yyyy-MM-dd-HH-mm").format(new Date().getTime)
 
     val filename = "/home/cpc/anal/dnn_model/%s-%s".format(name, filetime)
@@ -45,13 +47,14 @@ object PackModel {
       dnnGraphFile = name + ".pb",
       dnnIdxFile = name + ".idx",
       dnnEmbedFile = name + ".embed",
-      dnnEmbedWidth = 10
+      dnnEmbedWidth = 10,
+      createTime = new Date().getTime
     )
     pack.writeTo(new FileOutputStream(s"$filename.mlm"))
 
     if (upload == 1) {
       val conf = ConfigFactory.load()
-      println(Utils.updateMlcppModelData(filename+".mlm", s"/home/work/mlcpp/data/$name.mlm", conf))
+      println(Utils.updateMlcppModelData(filename+".mlm", s"/home/cpc/model_server/$name.mlm", conf))
     }
   }
 

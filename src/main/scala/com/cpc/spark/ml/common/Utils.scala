@@ -72,7 +72,7 @@ object Utils {
       val node = nodes.get(i)
       var name = node.getString("name")
       val ip = node.getString("ip")
-      val cmd = s"scp $srcfile cpc@$ip:$destfile"
+      val cmd = s"scp $srcfile cc@$ip:$destfile"
       log = log :+ cmd
       log = log :+ "%s %s".format(name, ip)
       val ret = cmd !
