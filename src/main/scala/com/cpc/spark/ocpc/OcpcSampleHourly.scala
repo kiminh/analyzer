@@ -18,6 +18,7 @@ object OcpcSampleHourly {
          | select
          |  a.searchid,
          |  a.uid,
+         |  a.ideaid,
          |  a.price,
          |  a.userid,
          |  a.ext['adclass'].int_value as adclass,
@@ -54,6 +55,7 @@ object OcpcSampleHourly {
          |Select
          |  userid,
          |  uid,
+         |  ideaid,
          |  adclass,
          |  SUM(CASE WHEN isclick == 1 then price else 0 end) as cost,
          |  SUM(CASE WHEN isclick == 1 then 1 else 0 end) as ctr_cnt,
@@ -61,7 +63,7 @@ object OcpcSampleHourly {
          |  SUM(CASE WHEN isshow == 1 then 1 else 0 end) as total_cnt
          |FROM
          |  tmpTable
-         |GROUP BY userid, uid, adclass
+         |GROUP BY userid, uid, ideaid, adclass
        """.stripMargin
 
     val groupBy = spark.sql(groupByRequesst)
