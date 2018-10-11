@@ -232,7 +232,7 @@ object SaveFeatures {
          |       ,b.*
          |from (select * from dl_cpc.cpc_union_log
          |        where `date` = "%s" and `hour` = "%s" ) a
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2  //过滤测试用户
+         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
          |         on a.userid = t2.id
          |    left join
          |        (select *
