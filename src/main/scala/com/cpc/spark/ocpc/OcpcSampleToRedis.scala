@@ -45,6 +45,7 @@ object OcpcSampleToRedis {
          |SELECT
          |  userid,
          |  uid,
+         |  ideaid,
          |  adclass,
          |  SUM(cost) as cost,
          |  SUM(ctr_cnt) as ctr_cnt,
@@ -55,7 +56,7 @@ object OcpcSampleToRedis {
          |WHERE ($selectCondition1) OR
          |($selectCondition2) OR
          |($selectCondition3)
-         |GROUP BY userid, uid, adclass
+         |GROUP BY userid, uid, ideaid, adclass
        """.stripMargin
     println(sqlRequest)
 
@@ -70,26 +71,54 @@ object OcpcSampleToRedis {
 
     // calculation by userid
     val userData = base
-      .groupBy(col("userid"), col("adclass"))
+      .groupBy("userid", "ideaid", "adclass")
       .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
+      .select("ideaid", "userid", "adclass", "cost", "user_ctr_cnt", "user_cvr_cnt")
+
+    userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
+
 
     // calculate by adclass
-    val adclassData = base
+    val adclassData = userData
       .groupBy("adclass")
-      .agg(sum("ctr_cnt").alias("adclass_ctr_cnt"), sum("cvr_cnt").alias("adclass_cvr_cnt"))
+      .agg(sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
+      .select("adclass", "adclass_ctr_cnt", "adclass_cvr_cnt")
+
+    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
+
 
     // connect adclass and userid
-    val useridAdclassData = userData.join(adclassData, Seq("adclass")).select("userid", "cost", "user_ctr_cnt", "user_cvr_cnt", "adclass_ctr_cnt", "adclass_cvr_cnt")
+    val useridAdclassData = spark.sql(
+      s"""
+         |SELECT
+         |    a.ideaid,
+         |    a.userid,
+         |    a.adclass,
+         |    a.cost,
+         |    (case when a.user_cvr_cnt<$threshold then b.adclass_ctr_cnt else a.user_ctr_cnt end) as ctr_cnt,
+         |    (case when a.user_cvr_cnt<$threshold then b.adclass_cvr_cnt else a.user_cvr_cnt end) as cvr_cnt
+         |FROM
+         |    test.ocpc_data_userdata a
+         |INNER JOIN
+         |    test.ocpc_data_adclassdata b
+         |ON
+         |    a.adclass=b.adclass
+       """.stripMargin)
+
+//    useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table")
 
     // save into redis and pb file
     // write data into a temperary table
     uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
+
     //     save data into redis
     savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+
     //     check redis
     testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
+
     //     save data into pb file
-    savePbPack(useridAdclassData, threshold)
+    savePbPack(useridAdclassData)
   }
 
 
@@ -206,39 +235,29 @@ object OcpcSampleToRedis {
     println("correct cvr number: " + cvrResultAcc.value.toString)
   }
 
-  def savePbPack(dataset: Dataset[Row], threshold: Int): Unit = {
+  def savePbPack(dataset: Dataset[Row]): Unit = {
     var list = new ListBuffer[SingleUser]
     val filename = s"UseridDataOcpc.pb"
     println("size of the dataframe")
     println(dataset.count)
-    var exchangeCnt = 0
+    dataset.show(10)
     for (record <- dataset.collect()) {
+
       val kValue = record.get(0).toString
-      val costValue = record.get(1).toString
-      val userCtr = record.getLong(2)
-      val userCvr = record.getLong(3)
-      val adClassCtr = record.getLong(4)
-      val adClassCvr = record.getLong(5)
-      var ctrCntValue: String = ""
-      var cvrCntValue: String = ""
-      if (userCvr < threshold) {
-        exchangeCnt = exchangeCnt + 1
-        ctrCntValue = adClassCtr.toString
-        cvrCntValue = adClassCvr.toString
-      } else {
-        ctrCntValue = userCtr.toString
-        cvrCntValue = userCvr.toString
-      }
+      val userId = record.get(1).toString
+      val costValue = record.get(3).toString
+      val ctrCntValue = record.get(4).toString
+      val cvrCntValue = record.get(5).toString
 
       val currentItem = SingleUser(
-        userid = kValue,
+        ideaid = kValue,
+        userid = userId,
         cost = costValue,
         ctrcnt = ctrCntValue,
         cvrcnt = cvrCntValue
       )
       list += currentItem
     }
-    println("Total number of replaced users is %d".format(exchangeCnt))
     val result = list.toArray[SingleUser]
     val useridData = UserOcpc(
       user = result

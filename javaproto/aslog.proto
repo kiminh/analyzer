@@ -270,7 +270,6 @@ message AdInfo {
     optional uint64 boost_cpm = 43; //冷启动cpm
 	optional uint64 is_new_ad = 44; //是否为新广告
 	optional uint64 boost_win = 45; //是否为通过boost赢得竞价
-	optional int64 content_id = 46; //文章id
 };
 
 message AdDspRet {
