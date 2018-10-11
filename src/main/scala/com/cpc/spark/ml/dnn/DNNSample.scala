@@ -32,7 +32,7 @@ object DNNSample {
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
 
-    train .repartition(100)
+    train.repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -57,7 +57,8 @@ object DNNSample {
     import spark.implicits._
 
     val userAppIdx = getUidApp(spark, date)
-    val sql = s"""
+    val sql =
+      s"""
          |select if(isclick>0, array(1,0), array(0,1)) as label,
          |  media_type, media_appsid as mediaid,
          |  ext['channel'].int_value as channel,
@@ -89,6 +90,7 @@ object DNNSample {
       .join(userAppIdx, Seq("uid"), "leftouter")
       .repartition(1000)
       .select($"label",
+
         hash("f1")($"media_type").alias("f1"),
         hash("f2")($"mediaid").alias("f2"),
         hash("f3")($"channel").alias("f3"),
@@ -123,7 +125,8 @@ object DNNSample {
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
         $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
-        mkSparseFeature1($"m1").alias("sparse"), $"label")
+        mkSparseFeature1($"m1").alias("sparse"), $"label"
+      )
 
       .select(
         $"label",
@@ -131,7 +134,8 @@ object DNNSample {
         $"sparse".getField("_1").alias("idx0"),
         $"sparse".getField("_2").alias("idx1"),
         $"sparse".getField("_3").alias("idx2"),
-        $"sparse".getField("_4").alias("id_arr"))
+        $"sparse".getField("_4").alias("id_arr")
+      )
 
       .rdd.zipWithIndex()
       .map { x =>
