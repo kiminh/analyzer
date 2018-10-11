@@ -167,7 +167,8 @@ object CpcStreamingLog3 {
         keys.foreach { //(日期，小时)
           key =>
             val part = rs.filter(r => r.thedate == key._1 && r.thehour == key._2 && r.theminute == key._3)
-            val numbs = part.take(1).length
+            val numbs = part.count()
+            val outFiles = (numbs / 1000000 + 1).toInt //用于动态减少输出文件数，logparsed_cpc_search_minute 2018-10-09 19 00共5000w数据，大小22g ,“最佳”1个文件1g
 
             date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
             println("~~~~~~~~~ zyc_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
@@ -176,6 +177,7 @@ object CpcStreamingLog3 {
               val table = conf.getString("topic2tbl." + topics.split(",")(0))
               spark.createDataFrame(part)
                 .toDF("log_timestamp", "ip", "field", "thedate", "thehour", "theminute")
+                .repartition(outFiles)
                 .write
                 .mode(SaveMode.Append)
                 .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(table, key._1, key._2, key._3))

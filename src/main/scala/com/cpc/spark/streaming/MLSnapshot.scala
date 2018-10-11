@@ -50,14 +50,17 @@ object MLSnapshot {
     //初始化DStream 每个batch的开始时间； 用于报警服务
     var currentBatchStartTime = 0L
 
-    val base_data = KafkaUtils
+    val messages = KafkaUtils
       .createDirectStream[String, Array[Byte], StringDecoder, DefaultDecoder](ssc, kafkaParams, topicsSet)
-      .map{
+
+    messages.foreachRDD { rdd =>
+        //每个batch的开始时间
+        currentBatchStartTime = new Date().getTime
+      }
+
+    val base_data=messages.repartition(720).map{
         case (key, v) =>
           try {
-            //每个batch的开始时间
-            currentBatchStartTime = new Date().getTime
-
             val logdata = LogData.parseData(v)
             val log_timestamp = logdata.log.getLogTimestamp
             val field = logdata.log.getField.getMap(0)
@@ -98,7 +101,6 @@ object MLSnapshot {
           }
       }
       .filter(x => x != null && x.searchid.length > 0 && x.ideaid > 0)
-      .repartition(720)
 
     val conf = ConfigFactory.load()
 

@@ -39,8 +39,8 @@ object SaveFeatures {
       .getOrCreate()
 
     saveDataFromLog(spark, date, hour)
-    //saveCvrData(spark, date, hour, version)
-    saveCvrData(spark, date, hour, versionV2)
+    //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
+    saveCvrDataV2(spark, date, hour, versionV2) //第二版cvr
     println("SaveFeatures_done")
   }
 
@@ -183,7 +183,7 @@ object SaveFeatures {
             active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
             active_map.getOrElse("report_user_stayinwx", 0))
       }
-      .toDF("searchid", "label", "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href", "installed","report_user_stayinwx")
+      .toDF("searchid", "label", "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href", "installed", "report_user_stayinwx")
 
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
 
@@ -216,6 +216,110 @@ object SaveFeatures {
         |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
         | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
+  }
+
+  def saveCvrDataV2(spark: SparkSession, date: String, hour: String, version: String): Unit = {
+    import spark.implicits._
+    val cvrlog = spark.sql(
+      s"""
+         |select a.searchid as search_id
+         |       ,a.adslot_type
+         |       ,a.ext["client_type"].string_value as client_type
+         |       ,a.ext["adclass"].int_value  as adclass
+         |       ,a.ext_int['siteid'] as siteid
+         |       ,a.adsrc
+         |       ,a.interaction
+         |       ,b.*
+         |from (select * from dl_cpc.cpc_union_log
+         |        where `date` = "%s" and `hour` = "%s" ) a
+         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
+         |         on a.userid = t2.id
+         |    left join
+         |        (select *
+         |            from dl_cpc.cpc_union_trace_log
+         |            where `date` = "%s" and `hour` = "%s"
+         |         ) b
+         |    on a.searchid=b.searchid
+         |where b.searchid is not null and t2.id is null
+        """.stripMargin.format(date, hour, date, date, hour))
+      .rdd
+      .map {
+        x =>
+          (x.getAs[String]("search_id"), Seq(x))
+      }
+      .reduceByKey(_ ++ _)
+      .map {
+        x =>
+          val convert = Utils.cvrPositiveV(x._2, version)
+          val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version)  //新cvr
+
+          //存储active行为数据
+          var active_map: Map[String, Int] = Map()
+          //active1,active2,active3,active4,active5,active6,disactive,active_auto,active_auto_download,active_auto_submit,active_wx,active_third
+          x._2.foreach(
+            x => {
+              val trace_type = x.getAs[String]("trace_type")
+              val trace_op1 = x.getAs[String]("trace_op1")
+
+              trace_type match {
+                case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
+                  || s == "active6" || s == "disactive" || s == "active_href")
+                => active_map += (s -> 1)
+                case _ =>
+              }
+
+              //增加下载激活字段,trace_op1=="REPORT_DOWNLOAD_PKGADDED"(包含apkdown和lpdown下载安装), 则installed记为1，否则为0
+              if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
+                active_map += ("installed" -> 1)
+              }
+
+              //REPORT_USER_STAYINWX：用户点击落地页里的加微信链接跳转到微信然后10秒内没有回来,表示已经转化，REPORT_USER_STAYINWX记为1，否则为0
+              if (trace_op1 == "REPORT_USER_STAYINWX") {
+                active_map += ("report_user_stayinwx" -> 1)
+              }
+            }
+          )
+
+          (x._1, convert, convert2, label_type,
+            active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
+            active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
+            active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
+            active_map.getOrElse("report_user_stayinwx", 0))
+      }
+      .toDF("searchid", "label", "label2", "label_type", "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href", "installed", "report_user_stayinwx")
+
+    //cvrlog.filter(x => x.getAs[String]("searchid") == "02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
+    println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
+
+    val sqlStmt =
+      """
+        |select searchid,sex,age,os,isp,network,
+        |       city,media_appsid,ext['phone_level'].int_value as phone_level,`timestamp`,adtype,
+        |       planid,unitid,ideaid,ext['adclass'].int_value as adclass,adslotid,
+        |       adslot_type,ext['pagenum'].int_value as pagenum,ext['bookid'].string_value as bookid,
+        |       ext['brand_title'].string_value as brand_title,
+        |       ext['user_req_ad_num'].int_value as user_req_ad_num,
+        |       ext['user_req_num'].int_value as user_req_num,uid,
+        |       ext['click_count'].int_value as user_click_num,
+        |       ext['click_unit_count'].int_value as user_click_unit_num,
+        |       ext['long_click_count'].int_value as user_long_click_count
+        |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isclick = 1
+        |
+      """.stripMargin.format(date, hour)
+    println(sqlStmt)
+    val clicklog = spark.sql(sqlStmt)
+    println("click log", clicklog.count())
+
+    clicklog.join(cvrlog, Seq("searchid"))
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
+      """.stripMargin.format(date, hour, date, hour))
+
   }
 }
 

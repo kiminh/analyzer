@@ -212,6 +212,8 @@ enum Dsp {
     QUYUANSU_DSP = 15;
     TOUTIAO_DSP = 16;
     QIHU_DSP = 17;
+    XINGU_DSP = 18;
+    GANJIWANG_DSP = 19;
 }
 
 // DSP计费相关字段

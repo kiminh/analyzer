@@ -39,10 +39,15 @@ object TopApps {
     pkgs.toDF("pkg", "install_user_num")
       .write
       .mode(SaveMode.Overwrite)
-      .saveAsTable("dl_cpc.top_apps")
+      .parquet("/warehouse/dl_cpc.db/top_apps/%s".format(date))
+
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.top_apps add if not exists PARTITION(`date` = "%s")
+        | LOCATION  '/warehouse/dl_cpc.db/top_apps/%s'
+      """.stripMargin.format(date, date))
 
     pkgs.take(100).foreach(println)
   }
 }
-
 
