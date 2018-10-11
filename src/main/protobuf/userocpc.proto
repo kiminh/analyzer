@@ -9,9 +9,9 @@ message SingleUser {
     string ctrcnt = 4; // ctr count group by userid
     string cvrcnt = 5; // cvr count group by userid
     string adclass = 6;
-    string adclass_cost = 7;
-    string adclass_ctrcnt = 8;
-    string adclass_cvrcnt = 9;
+    string adclassCost = 7;
+    string adclassCtrcnt = 8;
+    string adclassCvrcnt = 9;
 }
 
 

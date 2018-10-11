@@ -248,14 +248,14 @@ object OcpcSampleToRedis {
 
       val kValue = record.get(0).toString
       val userId = record.get(1).toString
+      val adclassId = record.get(2).toString
       val costValue = record.get(3).toString
       val ctrValue = record.getLong(4)
       val cvrValue = record.getLong(5)
-      val adclassId = record.get(2).toString
       val adclassCost = record.get(6).toString
       val adclassCtr = record.getLong(7)
       val adclassCvr = record.getLong(8)
-
+      // check ideaid's cvr
       var ctrCntValue: String = ""
       var cvrCntValue: String = ""
       if (cvrValue == 0) {
@@ -267,13 +267,13 @@ object OcpcSampleToRedis {
         cvrCntValue = cvrValue.toString
         ctrCntValue = ctrValue.toString
       }
-
+      // check adclass' cvr
       var adclassCtrCntValue: String = ""
       var adclassCvrCntValue: String = ""
       if (adclassCvr == 0) {
         val cvr = 1
-        val ctr = adclassCvr + 1
-        adclassCtrCntValue = cvr.toString
+        val ctr = adclassCtr + 1
+        adclassCvrCntValue = cvr.toString
         adclassCtrCntValue = ctr.toString
       } else {
         adclassCtrCntValue = adclassCtr.toString
@@ -287,9 +287,9 @@ object OcpcSampleToRedis {
         ctrcnt = ctrCntValue,
         cvrcnt = cvrCntValue,
         adclass = adclassId,
-        adclass_cost = adclassCost,
-        adclass_ctrcnt = adclassCtrCntValue,
-        adclass_cvrcnt = adclassCvrCntValue
+        adclassCost = adclassCost,
+        adclassCtrcnt = adclassCtrCntValue,
+        adclassCvrcnt = adclassCvrCntValue
       )
       list += currentItem
     }
