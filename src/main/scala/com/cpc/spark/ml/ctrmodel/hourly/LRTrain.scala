@@ -45,8 +45,9 @@ object LRTrain {
 
     val userAppIdx = getUidApp(spark, ctrPathSep).cache()
 
-    val ulog = getData(spark,"ctrdata_v1",ctrPathSep)
+    val ulog = getData(spark, "ctrdata_v1", ctrPathSep)
       .filter(_.getAs[Int]("ideaid") > 0)
+      .randomSplit(Array(0.5, 0.5))(0)
       .cache()
 
     trainLog :+= "ulog nums = %d".format(ulog.rdd.count)
@@ -84,7 +85,7 @@ object LRTrain {
       train(spark, "ctrparser3", "interact-all-ctrparser3-hourly", getLeftJoinData(interactAll, userAppIdx), "interact-all-ctrparser3-hourly.lrm", 4e8)
 
       //按分区取数据
-      var cvrUlog = getData(spark,"cvrdata_v2",cvrPathSep).cache()
+      var cvrUlog = getData(spark, "cvrdata_v2", cvrPathSep).randomSplit(Array(0.5, 0.5))(0).cache()
 
       //去掉长尾广告id
       var minIdeaNum = 50
@@ -122,17 +123,17 @@ object LRTrain {
   }
 
 
-  def getPathSeq(days: Int): mutable.Map[String,Seq[String]] ={
+  def getPathSeq(days: Int): mutable.Map[String, Seq[String]] = {
     var date = ""
     var hour = ""
     val cal = Calendar.getInstance()
     cal.add(Calendar.HOUR, -(days * 24 + 2))
-    val pathSep = mutable.Map[String,Seq[String]]()
+    val pathSep = mutable.Map[String, Seq[String]]()
 
     for (n <- 1 to days * 24) {
       date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
       hour = new SimpleDateFormat("HH").format(cal.getTime)
-      pathSep.update(date,(pathSep.getOrElse(date,Seq[String]()) :+ hour))
+      pathSep.update(date, (pathSep.getOrElse(date, Seq[String]()) :+ hour))
       cal.add(Calendar.HOUR, 1)
     }
 
@@ -140,19 +141,19 @@ object LRTrain {
   }
 
 
-  def getUidApp(spark: SparkSession, pathSep: mutable.Map[String,Seq[String]]): DataFrame ={
+  def getUidApp(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): DataFrame = {
     val inpath = "/user/cpc/userInstalledApp/{%s}".format(pathSep.keys.mkString(","))
     println(inpath)
 
     import spark.implicits._
     val uidApp = spark.read.parquet(inpath).rdd
-      .map(x => (x.getAs[String]("uid"),x.getAs[WrappedArray[String]]("pkgs")))
+      .map(x => (x.getAs[String]("uid"), x.getAs[WrappedArray[String]]("pkgs")))
       .reduceByKey(_ ++ _)
-      .map(x => (x._1,x._2.distinct))
-      .toDF("uid","pkgs").rdd.cache()
+      .map(x => (x._1, x._2.distinct))
+      .toDF("uid", "pkgs").rdd.cache()
 
     val ids = getTopApp(uidApp, 1000)
-    dictStr.update("appid",ids)
+    dictStr.update("appid", ids)
 
     val userAppIdx = getUserAppIdx(spark, uidApp, ids)
       .repartition(1000)
@@ -163,19 +164,19 @@ object LRTrain {
   }
 
   //安装列表中top k的App
-  def getTopApp(uidApp : RDD[Row], k : Int): Map[String,Int] ={
+  def getTopApp(uidApp: RDD[Row], k: Int): Map[String, Int] = {
     var idx = 0
-    val ids = mutable.Map[String,Int]()
+    val ids = mutable.Map[String, Int]()
     uidApp
-      .flatMap(x => x.getAs[WrappedArray[String]]("pkgs").map((_,1)))
+      .flatMap(x => x.getAs[WrappedArray[String]]("pkgs").map((_, 1)))
       .reduceByKey(_ + _)
-      .sortBy(_._2,false)
+      .sortBy(_._2, false)
       .toLocalIterator
       .take(k)
-      .foreach{
+      .foreach {
         id =>
           idx += 1
-          ids.update(id._1,idx)
+          ids.update(id._1, idx)
       }
     ids.toMap
   }
@@ -185,19 +186,19 @@ object LRTrain {
   }
 
   //用户安装列表对应的App idx
-  def getUserAppIdx(spark: SparkSession, uidApp : RDD[Row], ids : Map[String,Int]): DataFrame ={
+  def getUserAppIdx(spark: SparkSession, uidApp: RDD[Row], ids: Map[String, Int]): DataFrame = {
     import spark.implicits._
-    uidApp.map{
+    uidApp.map {
       x =>
         val k = x.getAs[String]("uid")
-        val v = x.getAs[WrappedArray[String]]("pkgs").map(p => (ids.getOrElse(p,0))).filter(_ > 0)
-        (k,v)
-    }.toDF("uid","appIdx")
+        val v = x.getAs[WrappedArray[String]]("pkgs").map(p => (ids.getOrElse(p, 0))).filter(_ > 0)
+        (k, v)
+    }.toDF("uid", "appIdx")
   }
 
   //用户安装列表特征合并到原有特征
-  def getLeftJoinData(data: DataFrame, userAppIdx: DataFrame): DataFrame ={
-    data.join(userAppIdx,Seq("uid"),"leftouter")
+  def getLeftJoinData(data: DataFrame, userAppIdx: DataFrame): DataFrame = {
+    data.join(userAppIdx, Seq("uid"), "leftouter")
   }
 
   def train(spark: SparkSession, parser: String, name: String, ulog: DataFrame, destfile: String, n: Double): Unit = {
@@ -312,7 +313,7 @@ object LRTrain {
   )
   var dictStr = mutable.Map[String, Map[String, Int]]()
 
-  def initFeatureDict(spark: SparkSession, pathSep: mutable.Map[String,Seq[String]]): Unit = {
+  def initFeatureDict(spark: SparkSession, pathSep: mutable.Map[String, Seq[String]]): Unit = {
 
     trainLog :+= "\n------dict size------"
     for (name <- dictNames) {
@@ -339,22 +340,22 @@ object LRTrain {
   }
 
 
-  def getData(spark: SparkSession, dataVersion: String, pathSep: mutable.Map[String,Seq[String]]): DataFrame = {
+  def getData(spark: SparkSession, dataVersion: String, pathSep: mutable.Map[String, Seq[String]]): DataFrame = {
     trainLog :+= "\n-------get ulog data------"
 
     var path = Seq[String]()
-    pathSep.map{
+    pathSep.map {
       x =>
         path = path :+ "/user/cpc/lrmodel/%s/%s/{%s}".format(dataVersion, x._1, x._2.mkString(","))
     }
 
-    path.foreach{
+    path.foreach {
       x =>
         trainLog :+= x
         println(x)
     }
 
-    spark.read.parquet(path:_*).coalesce(600)
+    spark.read.parquet(path: _*).coalesce(600)
   }
 
   /*
@@ -408,7 +409,7 @@ object LRTrain {
 
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
+    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     var els = Seq[(Int, Double)]()
     var i = 0
@@ -493,7 +494,7 @@ object LRTrain {
 
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
+    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     var els = Seq[(Int, Double)]()
     var i = 0
@@ -589,10 +590,10 @@ object LRTrain {
     //user_req_ad_num
     var uran_idx = 0
     val uran = x.getAs[Int]("user_req_ad_num")
-    if (uran >= 1 && uran <= 10 ){
+    if (uran >= 1 && uran <= 10) {
       uran_idx = uran
     }
-    if (uran > 10){
+    if (uran > 10) {
       uran_idx = 11
     }
     els = els :+ (uran_idx + i, 1d)
@@ -601,13 +602,13 @@ object LRTrain {
     //user_req_num
     var urn_idx = 0
     val urn = x.getAs[Int]("user_req_num")
-    if (urn >= 1 && urn <= 10){
+    if (urn >= 1 && urn <= 10) {
       urn_idx = 1
-    }else if(urn > 10 && urn <= 100){
+    } else if (urn > 10 && urn <= 100) {
       urn_idx = 2
-    }else if(urn > 100 && urn <= 1000){
+    } else if (urn > 100 && urn <= 1000) {
       urn_idx = 3
-    }else if(urn > 1000){
+    } else if (urn > 1000) {
       urn_idx = 4
     }
     els = els :+ (urn_idx + i, 1d)
@@ -627,7 +628,7 @@ object LRTrain {
 
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
+    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     var els = Seq[(Int, Double)]()
     var i = 0
@@ -725,10 +726,10 @@ object LRTrain {
     //20
     var uran_idx = 0
     val uran = x.getAs[Int]("user_req_ad_num")
-    if (uran >= 1 && uran <= 10 ){
+    if (uran >= 1 && uran <= 10) {
       uran_idx = uran
     }
-    if (uran > 10){
+    if (uran > 10) {
       uran_idx = 11
     }
     els = els :+ (uran_idx + i, 1d)
@@ -737,28 +738,28 @@ object LRTrain {
     //21
     var urn_idx = 0
     val urn = x.getAs[Int]("user_req_num")
-    if (urn >= 1 && urn <= 10){
+    if (urn >= 1 && urn <= 10) {
       urn_idx = 1
-    }else if(urn > 10 && urn <= 100){
+    } else if (urn > 10 && urn <= 100) {
       urn_idx = 2
-    }else if(urn > 100 && urn <= 1000){
+    } else if (urn > 100 && urn <= 1000) {
       urn_idx = 3
-    }else if(urn > 1000){
+    } else if (urn > 1000) {
       urn_idx = 4
     }
     els = els :+ (urn_idx + i, 1d)
     i += 5 + 1
 
     //22
-    if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0){
+    if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0) {
       els = els :+ (6 * (x.getAs[Int]("sex") - 1) + x.getAs[Int]("age") + i, 1d)
     }
     i += 2 * 6 + 1
 
     //23
     val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
-    if (appIdx != null){
-      val inxList = appIdx.map(p => (p + i,1d))
+    if (appIdx != null) {
+      val inxList = appIdx.map(p => (p + i, 1d))
       els = els ++ inxList
     }
     i += 1000 + 1
@@ -777,7 +778,7 @@ object LRTrain {
 
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
+    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     var els = Seq[(Int, Double)]()
     var i = 0
@@ -873,10 +874,10 @@ object LRTrain {
     //user_req_ad_num
     var uran_idx = 0
     val uran = x.getAs[Int]("user_req_ad_num")
-    if (uran >= 1 && uran <= 10 ){
+    if (uran >= 1 && uran <= 10) {
       uran_idx = uran
     }
-    if (uran > 10){
+    if (uran > 10) {
       uran_idx = 11
     }
     els = els :+ (uran_idx + i, 1d)
@@ -885,13 +886,13 @@ object LRTrain {
     //user_req_num
     var urn_idx = 0
     val urn = x.getAs[Int]("user_req_num")
-    if (urn >= 1 && urn <= 10){
+    if (urn >= 1 && urn <= 10) {
       urn_idx = 1
-    }else if(urn > 10 && urn <= 100){
+    } else if (urn > 10 && urn <= 100) {
       urn_idx = 2
-    }else if(urn > 100 && urn <= 1000){
+    } else if (urn > 100 && urn <= 1000) {
       urn_idx = 3
-    }else if(urn > 1000){
+    } else if (urn > 1000) {
       urn_idx = 4
     }
     els = els :+ (urn_idx + i, 1d)
@@ -925,7 +926,7 @@ object LRTrain {
 
     val cal = Calendar.getInstance()
     cal.setTimeInMillis(x.getAs[Int]("timestamp") * 1000L)
-    val week = cal.get(Calendar.DAY_OF_WEEK)   //1 to 7
+    val week = cal.get(Calendar.DAY_OF_WEEK) //1 to 7
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     var els = Seq[(Int, Double)]()
     var i = 0
@@ -1021,10 +1022,10 @@ object LRTrain {
     //user_req_ad_num
     var uran_idx = 0
     val uran = x.getAs[Int]("user_req_ad_num")
-    if (uran >= 1 && uran <= 10 ){
+    if (uran >= 1 && uran <= 10) {
       uran_idx = uran
     }
-    if (uran > 10){
+    if (uran > 10) {
       uran_idx = 11
     }
     els = els :+ (uran_idx + i, 1d)
@@ -1033,13 +1034,13 @@ object LRTrain {
     //user_req_num
     var urn_idx = 0
     val urn = x.getAs[Int]("user_req_num")
-    if (urn >= 1 && urn <= 10){
+    if (urn >= 1 && urn <= 10) {
       urn_idx = 1
-    }else if(urn > 10 && urn <= 100){
+    } else if (urn > 10 && urn <= 100) {
       urn_idx = 2
-    }else if(urn > 100 && urn <= 1000){
+    } else if (urn > 100 && urn <= 1000) {
       urn_idx = 3
-    }else if(urn > 1000){
+    } else if (urn > 1000) {
       urn_idx = 4
     }
     els = els :+ (urn_idx + i, 1d)
@@ -1060,15 +1061,15 @@ object LRTrain {
     i += 6
 
     //sex - age
-    if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0){
+    if (x.getAs[Int]("sex") > 0 && x.getAs[Int]("age") > 0) {
       els = els :+ (6 * (x.getAs[Int]("sex") - 1) + x.getAs[Int]("age") + i, 1d)
     }
     i += 2 * 6 + 1
 
     //user installed app
     val appIdx = x.getAs[WrappedArray[Int]]("appIdx")
-    if (appIdx != null){
-      val inxList = appIdx.map(p => (p + i,1d))
+    if (appIdx != null) {
+      val inxList = appIdx.map(p => (p + i, 1d))
       els = els ++ inxList
     }
     i += 1000 + 1
@@ -1100,34 +1101,34 @@ object LRTrain {
 
     import spark.implicits._
     val uidApp = spark.read.parquet("/user/cpc/userInstalledApp/%s/*".format(date)).rdd
-      .map(x => (x.getAs[String]("uid"),x.getAs[mutable.WrappedArray[String]]("pkgs")))
+      .map(x => (x.getAs[String]("uid"), x.getAs[mutable.WrappedArray[String]]("pkgs")))
       .reduceByKey(_ ++ _)
-      .map(x => (x._1,x._2.distinct))
-      .toDF("uid","pkgs").rdd
+      .map(x => (x._1, x._2.distinct))
+      .toDF("uid", "pkgs").rdd
     val appids = dictData.appid
     val userAppids = getUserAppIdx(spark, uidApp, appids)
 
     var qtt = spark.read.parquet("/user/cpc/lrmodel/ctrdata_v1/%s/*".format(date)).coalesce(200)
     if (dataType == "qtt-list") {
-      qtt = qtt.filter{
+      qtt = qtt.filter {
         x =>
           Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
             x.getAs[Int]("adslot_type") == 1 && x.getAs[Int]("ideaid") > 0
       }
     } else if (dataType == "qtt-content") {
-      qtt = qtt.filter{
+      qtt = qtt.filter {
         x =>
           Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
             x.getAs[Int]("adslot_type") == 2 && x.getAs[Int]("ideaid") > 0
       }
     } else if (dataType == "qtt-all") {
-      qtt = qtt.filter{
+      qtt = qtt.filter {
         x =>
           Seq("80000001", "80000002").contains(x.getAs[String]("media_appsid")) &&
             Seq(1, 2).contains(x.getAs[Int]("adslot_type")) && x.getAs[Int]("ideaid") > 0
       }
     } else {
-      qtt = qtt.filter{ x => x.getAs[Int]("ideaid") > 0 }
+      qtt = qtt.filter { x => x.getAs[Int]("ideaid") > 0 }
     }
     qtt = getLimitedData(spark, 1e7, qtt).join(userAppids, Seq("uid"), "leftouter").cache()
 
@@ -1167,6 +1168,7 @@ object LRTrain {
 
     ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0)
   }
+
   def printXGBTestLog(lrTestResults: RDD[(Double, Double)]): Unit = {
     val testSum = lrTestResults.count()
     if (testSum < 0) {
@@ -1195,31 +1197,31 @@ object LRTrain {
       }
 
     var log = "predict distribution %s %d(1) %d(0)\n".format(testSum, test1, test0)
-    lrTestResults  //(p, label)
+    lrTestResults //(p, label)
       .map {
       x =>
         val v = (x._1 * 100).toInt / 5
         ((v, x._2.toInt), 1)
-    }  //  ((预测值,lable),1)
-      .reduceByKey((x, y) => x + y)  //  ((预测值,lable),num)
+    } //  ((预测值,lable),1)
+      .reduceByKey((x, y) => x + y) //  ((预测值,lable),num)
       .map {
       x =>
         val key = x._1._1
         val label = x._1._2
         if (label == 0) {
-          (key, (x._2, 0))  //  (预测值,(num1,0))
+          (key, (x._2, 0)) //  (预测值,(num1,0))
         } else {
-          (key, (0, x._2))  //  (预测值,(0,num2))
+          (key, (0, x._2)) //  (预测值,(0,num2))
         }
     }
-      .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))  //  (预测值,(num1反,num2正))
+      .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2)) //  (预测值,(num1反,num2正))
       .sortByKey(false)
       .toLocalIterator
       .foreach {
         x =>
           val sum = x._2
           val pre = x._1.toDouble * 0.05
-          if (pre>0.2) {
+          if (pre > 0.2) {
             //isUpdateModel = true
           }
           log = log + "%.2f %d %.4f %.4f %d %.4f %.4f %.4f\n".format(
@@ -1227,10 +1229,10 @@ object LRTrain {
             sum._2, //正例数
             sum._2.toDouble / test1.toDouble, //该准确率下的正例数/总正例数
             sum._2.toDouble / testSum.toDouble, //该准确率下的正例数/总数
-            sum._1,  //反例数
+            sum._1, //反例数
             sum._1.toDouble / test0.toDouble, //该准确率下的反例数/总反例数
             sum._1.toDouble / testSum.toDouble, //该准确率下的反例数/总数
-            sum._2.toDouble / (sum._1 + sum._2).toDouble)  // 真实值
+            sum._2.toDouble / (sum._1 + sum._2).toDouble) // 真实值
       }
 
     println(log)

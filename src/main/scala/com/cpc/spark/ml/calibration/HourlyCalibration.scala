@@ -18,6 +18,7 @@ object HourlyCalibration {
 
   val localDir = "/home/cpc/scheduled_job/hourly_calibration/"
   val destDir = "/home/work/mlcpp/calibration/"
+  val newDestDir = "/home/cpc/model_server/calibration/"
   val MAX_BIN_COUNT = 20
   val MIN_BIN_SIZE = 10000
 
@@ -66,7 +67,10 @@ object HourlyCalibration {
     val irTrainer = new IsotonicRegression()
 
     val result = log.map( x => {
-      val isClick = x.getInt(0).toDouble
+      var isClick = 0d
+      if (x.get(0) != null) {
+        isClick = x.getInt(0).toDouble
+      }
       val ectr = x.getLong(1).toDouble / 1e6d
       // TODO(huazhenhao) not used right now in the first version, should be used as weights
       // val showTimeStamp = x.getAs[Int]("show_timestamp")
@@ -106,6 +110,7 @@ object HourlyCalibration {
               if (softMode == 0) {
                 val conf = ConfigFactory.load()
                 println(MUtils.updateMlcppOnlineData(localPath, destDir + s"calibration-$modelName.mlm", conf))
+                println(MUtils.updateMlcppModelData(localPath, newDestDir + s"calibration-$modelName.mlm", conf))
               }
             }
             config
