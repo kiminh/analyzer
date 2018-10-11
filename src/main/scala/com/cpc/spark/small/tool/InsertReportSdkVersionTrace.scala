@@ -53,7 +53,7 @@ object InsertReportSdkVersionTrace {
           |SELECT cul.searchid,adslotid,ext["client_version"].string_value,isfill,isshow,isclick
           |FROM dl_cpc.cpc_union_log cul
           |WHERE cul.date="%s" AND cul.hour="%s" AND cul.ext["client_type"].string_value="NATIVESDK"
-          |AND cul.adslotid in("1027423","1029077","1024335") AND cul.adsrc=1 AND ext["client_version"].string_value IS NOT NULL
+          |AND cul.adslotid in("1027423","1029077","1024335") AND cul.adsrc in(0,1) AND ext["client_version"].string_value IS NOT NULL
           |AND ext["client_version"].string_value <>"" AND ext["client_version"].string_value <>"0.0.0.0"
         """.stripMargin.format(argDay, argHour))
       .rdd
@@ -79,7 +79,7 @@ object InsertReportSdkVersionTrace {
     val reqDataByAll = unionLogDataByAll
       .map {
         x =>
-          Info(x._1, x._2, x._3, "requeset", "", x._4, argDay, argHour.toInt)
+          Info(x._1, x._2, x._3, "request", "", x._4, argDay, argHour.toInt)
       }
 
     var unionLogDataByAllx = reqDataByAll
@@ -95,14 +95,14 @@ object InsertReportSdkVersionTrace {
     val showDataByAll = unionLogDataByAll
       .map {
         x =>
-          Info(x._1, x._2, x._3, "impression", "", x._5, argDay, argHour.toInt)
+          Info(x._1, x._2, x._3, "impression", "", x._6, argDay, argHour.toInt)
       }
     unionLogDataByAllx = unionLogDataByAllx.union(showDataByAll)
 
     val clickDataByAll = unionLogDataByAll
       .map {
         x =>
-          Info(x._1, x._2, x._3, "click", "", x._5, argDay, argHour.toInt)
+          Info(x._1, x._2, x._3, "click", "", x._7, argDay, argHour.toInt)
       }
     unionLogDataByAllx = unionLogDataByAllx.union(clickDataByAll)
 
