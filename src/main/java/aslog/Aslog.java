@@ -1031,6 +1031,10 @@ public final class Aslog {
      * <code>XINGU = 18;</code>
      */
     XINGU(18),
+    /**
+     * <code>GANJIWANG = 19;</code>
+     */
+    GANJIWANG(19),
     ;
 
     /**
@@ -1109,6 +1113,10 @@ public final class Aslog {
      * <code>XINGU = 18;</code>
      */
     public static final int XINGU_VALUE = 18;
+    /**
+     * <code>GANJIWANG = 19;</code>
+     */
+    public static final int GANJIWANG_VALUE = 19;
 
 
     public final int getNumber() {
@@ -1143,6 +1151,7 @@ public final class Aslog {
         case 16: return TOUTIAO;
         case 17: return QIHU;
         case 18: return XINGU;
+        case 19: return GANJIWANG;
         default: return null;
       }
     }
@@ -1656,6 +1665,15 @@ public final class Aslog {
      */
     com.google.protobuf.ByteString
         getNameBytes();
+
+    /**
+     * <code>optional int32 versioncode = 4;</code>
+     */
+    boolean hasVersioncode();
+    /**
+     * <code>optional int32 versioncode = 4;</code>
+     */
+    int getVersioncode();
   }
   /**
    * Protobuf type {@code aslog.AppInfo}
@@ -1672,6 +1690,7 @@ public final class Aslog {
       packagename_ = "";
       version_ = "";
       name_ = "";
+      versioncode_ = 0;
     }
 
     @java.lang.Override
@@ -1718,6 +1737,11 @@ public final class Aslog {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000004;
               name_ = bs;
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              versioncode_ = input.readInt32();
               break;
             }
           }
@@ -1871,6 +1895,21 @@ public final class Aslog {
       }
     }
 
+    public static final int VERSIONCODE_FIELD_NUMBER = 4;
+    private int versioncode_;
+    /**
+     * <code>optional int32 versioncode = 4;</code>
+     */
+    public boolean hasVersioncode() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional int32 versioncode = 4;</code>
+     */
+    public int getVersioncode() {
+      return versioncode_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -1892,6 +1931,9 @@ public final class Aslog {
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 3, name_);
       }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeInt32(4, versioncode_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -1908,6 +1950,10 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x00000004) == 0x00000004)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, name_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(4, versioncode_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -1941,6 +1987,11 @@ public final class Aslog {
         result = result && getName()
             .equals(other.getName());
       }
+      result = result && (hasVersioncode() == other.hasVersioncode());
+      if (hasVersioncode()) {
+        result = result && (getVersioncode()
+            == other.getVersioncode());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -1963,6 +2014,10 @@ public final class Aslog {
       if (hasName()) {
         hash = (37 * hash) + NAME_FIELD_NUMBER;
         hash = (53 * hash) + getName().hashCode();
+      }
+      if (hasVersioncode()) {
+        hash = (37 * hash) + VERSIONCODE_FIELD_NUMBER;
+        hash = (53 * hash) + getVersioncode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -2088,6 +2143,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00000002);
         name_ = "";
         bitField0_ = (bitField0_ & ~0x00000004);
+        versioncode_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000008);
         return this;
       }
 
@@ -2124,6 +2181,10 @@ public final class Aslog {
           to_bitField0_ |= 0x00000004;
         }
         result.name_ = name_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.versioncode_ = versioncode_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -2180,6 +2241,9 @@ public final class Aslog {
           bitField0_ |= 0x00000004;
           name_ = other.name_;
           onChanged();
+        }
+        if (other.hasVersioncode()) {
+          setVersioncode(other.getVersioncode());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -2436,6 +2500,38 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private int versioncode_ ;
+      /**
+       * <code>optional int32 versioncode = 4;</code>
+       */
+      public boolean hasVersioncode() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional int32 versioncode = 4;</code>
+       */
+      public int getVersioncode() {
+        return versioncode_;
+      }
+      /**
+       * <code>optional int32 versioncode = 4;</code>
+       */
+      public Builder setVersioncode(int value) {
+        bitField0_ |= 0x00000008;
+        versioncode_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int32 versioncode = 4;</code>
+       */
+      public Builder clearVersioncode() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        versioncode_ = 0;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -2544,6 +2640,15 @@ public final class Aslog {
      */
     com.google.protobuf.ByteString
         getConfigBytes();
+
+    /**
+     * <code>optional int64 content_id = 5;</code>
+     */
+    boolean hasContentId();
+    /**
+     * <code>optional int64 content_id = 5;</code>
+     */
+    long getContentId();
   }
   /**
    * Protobuf type {@code aslog.SiteInfo}
@@ -2561,6 +2666,7 @@ public final class Aslog {
       urls_ = "";
       title_ = "";
       config_ = "";
+      contentId_ = 0L;
     }
 
     @java.lang.Override
@@ -2613,6 +2719,11 @@ public final class Aslog {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000008;
               config_ = bs;
+              break;
+            }
+            case 40: {
+              bitField0_ |= 0x00000010;
+              contentId_ = input.readInt64();
               break;
             }
           }
@@ -2808,6 +2919,21 @@ public final class Aslog {
       }
     }
 
+    public static final int CONTENT_ID_FIELD_NUMBER = 5;
+    private long contentId_;
+    /**
+     * <code>optional int64 content_id = 5;</code>
+     */
+    public boolean hasContentId() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>optional int64 content_id = 5;</code>
+     */
+    public long getContentId() {
+      return contentId_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -2832,6 +2958,9 @@ public final class Aslog {
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 4, config_);
       }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeInt64(5, contentId_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -2851,6 +2980,10 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(4, config_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(5, contentId_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -2889,6 +3022,11 @@ public final class Aslog {
         result = result && getConfig()
             .equals(other.getConfig());
       }
+      result = result && (hasContentId() == other.hasContentId());
+      if (hasContentId()) {
+        result = result && (getContentId()
+            == other.getContentId());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -2915,6 +3053,11 @@ public final class Aslog {
       if (hasConfig()) {
         hash = (37 * hash) + CONFIG_FIELD_NUMBER;
         hash = (53 * hash) + getConfig().hashCode();
+      }
+      if (hasContentId()) {
+        hash = (37 * hash) + CONTENT_ID_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getContentId());
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -3042,6 +3185,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00000004);
         config_ = "";
         bitField0_ = (bitField0_ & ~0x00000008);
+        contentId_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000010);
         return this;
       }
 
@@ -3082,6 +3227,10 @@ public final class Aslog {
           to_bitField0_ |= 0x00000008;
         }
         result.config_ = config_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.contentId_ = contentId_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -3143,6 +3292,9 @@ public final class Aslog {
           bitField0_ |= 0x00000008;
           config_ = other.config_;
           onChanged();
+        }
+        if (other.hasContentId()) {
+          setContentId(other.getContentId());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -3472,6 +3624,38 @@ public final class Aslog {
   }
   bitField0_ |= 0x00000008;
         config_ = value;
+        onChanged();
+        return this;
+      }
+
+      private long contentId_ ;
+      /**
+       * <code>optional int64 content_id = 5;</code>
+       */
+      public boolean hasContentId() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional int64 content_id = 5;</code>
+       */
+      public long getContentId() {
+        return contentId_;
+      }
+      /**
+       * <code>optional int64 content_id = 5;</code>
+       */
+      public Builder setContentId(long value) {
+        bitField0_ |= 0x00000010;
+        contentId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional int64 content_id = 5;</code>
+       */
+      public Builder clearContentId() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        contentId_ = 0L;
         onChanged();
         return this;
       }
@@ -16851,6 +17035,119 @@ public final class Aslog {
      * <code>optional uint64 cvr_old = 38;</code>
      */
     long getCvrOld();
+
+    /**
+     * <pre>
+     *ml原始ctr
+     * </pre>
+     *
+     * <code>optional uint64 raw_ctr = 39;</code>
+     */
+    boolean hasRawCtr();
+    /**
+     * <pre>
+     *ml原始ctr
+     * </pre>
+     *
+     * <code>optional uint64 raw_ctr = 39;</code>
+     */
+    long getRawCtr();
+
+    /**
+     * <pre>
+     *ml原始cvr
+     * </pre>
+     *
+     * <code>optional uint64 raw_cvr = 40;</code>
+     */
+    boolean hasRawCvr();
+    /**
+     * <pre>
+     *ml原始cvr
+     * </pre>
+     *
+     * <code>optional uint64 raw_cvr = 40;</code>
+     */
+    long getRawCvr();
+
+    /**
+     * <code>optional string ctr_model_name = 41;</code>
+     */
+    boolean hasCtrModelName();
+    /**
+     * <code>optional string ctr_model_name = 41;</code>
+     */
+    java.lang.String getCtrModelName();
+    /**
+     * <code>optional string ctr_model_name = 41;</code>
+     */
+    com.google.protobuf.ByteString
+        getCtrModelNameBytes();
+
+    /**
+     * <code>optional string cvr_model_name = 42;</code>
+     */
+    boolean hasCvrModelName();
+    /**
+     * <code>optional string cvr_model_name = 42;</code>
+     */
+    java.lang.String getCvrModelName();
+    /**
+     * <code>optional string cvr_model_name = 42;</code>
+     */
+    com.google.protobuf.ByteString
+        getCvrModelNameBytes();
+
+    /**
+     * <pre>
+     *冷启动cpm
+     * </pre>
+     *
+     * <code>optional uint64 boost_cpm = 43;</code>
+     */
+    boolean hasBoostCpm();
+    /**
+     * <pre>
+     *冷启动cpm
+     * </pre>
+     *
+     * <code>optional uint64 boost_cpm = 43;</code>
+     */
+    long getBoostCpm();
+
+    /**
+     * <pre>
+     *是否为新广告
+     * </pre>
+     *
+     * <code>optional uint64 is_new_ad = 44;</code>
+     */
+    boolean hasIsNewAd();
+    /**
+     * <pre>
+     *是否为新广告
+     * </pre>
+     *
+     * <code>optional uint64 is_new_ad = 44;</code>
+     */
+    long getIsNewAd();
+
+    /**
+     * <pre>
+     *是否为通过boost赢得竞价
+     * </pre>
+     *
+     * <code>optional uint64 boost_win = 45;</code>
+     */
+    boolean hasBoostWin();
+    /**
+     * <pre>
+     *是否为通过boost赢得竞价
+     * </pre>
+     *
+     * <code>optional uint64 boost_win = 45;</code>
+     */
+    long getBoostWin();
   }
   /**
    * Protobuf type {@code aslog.AdInfo}
@@ -16901,6 +17198,13 @@ public final class Aslog {
       lastcpm_ = 0L;
       coin_ = 0;
       cvrOld_ = 0L;
+      rawCtr_ = 0L;
+      rawCvr_ = 0L;
+      ctrModelName_ = "";
+      cvrModelName_ = "";
+      boostCpm_ = 0L;
+      isNewAd_ = 0L;
+      boostWin_ = 0L;
     }
 
     @java.lang.Override
@@ -17178,6 +17482,43 @@ public final class Aslog {
             case 304: {
               bitField1_ |= 0x00000008;
               cvrOld_ = input.readUInt64();
+              break;
+            }
+            case 312: {
+              bitField1_ |= 0x00000010;
+              rawCtr_ = input.readUInt64();
+              break;
+            }
+            case 320: {
+              bitField1_ |= 0x00000020;
+              rawCvr_ = input.readUInt64();
+              break;
+            }
+            case 330: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField1_ |= 0x00000040;
+              ctrModelName_ = bs;
+              break;
+            }
+            case 338: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField1_ |= 0x00000080;
+              cvrModelName_ = bs;
+              break;
+            }
+            case 344: {
+              bitField1_ |= 0x00000100;
+              boostCpm_ = input.readUInt64();
+              break;
+            }
+            case 352: {
+              bitField1_ |= 0x00000200;
+              isNewAd_ = input.readUInt64();
+              break;
+            }
+            case 360: {
+              bitField1_ |= 0x00000400;
+              boostWin_ = input.readUInt64();
               break;
             }
           }
@@ -18223,6 +18564,205 @@ public final class Aslog {
       return cvrOld_;
     }
 
+    public static final int RAW_CTR_FIELD_NUMBER = 39;
+    private long rawCtr_;
+    /**
+     * <pre>
+     *ml原始ctr
+     * </pre>
+     *
+     * <code>optional uint64 raw_ctr = 39;</code>
+     */
+    public boolean hasRawCtr() {
+      return ((bitField1_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <pre>
+     *ml原始ctr
+     * </pre>
+     *
+     * <code>optional uint64 raw_ctr = 39;</code>
+     */
+    public long getRawCtr() {
+      return rawCtr_;
+    }
+
+    public static final int RAW_CVR_FIELD_NUMBER = 40;
+    private long rawCvr_;
+    /**
+     * <pre>
+     *ml原始cvr
+     * </pre>
+     *
+     * <code>optional uint64 raw_cvr = 40;</code>
+     */
+    public boolean hasRawCvr() {
+      return ((bitField1_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <pre>
+     *ml原始cvr
+     * </pre>
+     *
+     * <code>optional uint64 raw_cvr = 40;</code>
+     */
+    public long getRawCvr() {
+      return rawCvr_;
+    }
+
+    public static final int CTR_MODEL_NAME_FIELD_NUMBER = 41;
+    private volatile java.lang.Object ctrModelName_;
+    /**
+     * <code>optional string ctr_model_name = 41;</code>
+     */
+    public boolean hasCtrModelName() {
+      return ((bitField1_ & 0x00000040) == 0x00000040);
+    }
+    /**
+     * <code>optional string ctr_model_name = 41;</code>
+     */
+    public java.lang.String getCtrModelName() {
+      java.lang.Object ref = ctrModelName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          ctrModelName_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string ctr_model_name = 41;</code>
+     */
+    public com.google.protobuf.ByteString
+        getCtrModelNameBytes() {
+      java.lang.Object ref = ctrModelName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        ctrModelName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int CVR_MODEL_NAME_FIELD_NUMBER = 42;
+    private volatile java.lang.Object cvrModelName_;
+    /**
+     * <code>optional string cvr_model_name = 42;</code>
+     */
+    public boolean hasCvrModelName() {
+      return ((bitField1_ & 0x00000080) == 0x00000080);
+    }
+    /**
+     * <code>optional string cvr_model_name = 42;</code>
+     */
+    public java.lang.String getCvrModelName() {
+      java.lang.Object ref = cvrModelName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          cvrModelName_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string cvr_model_name = 42;</code>
+     */
+    public com.google.protobuf.ByteString
+        getCvrModelNameBytes() {
+      java.lang.Object ref = cvrModelName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        cvrModelName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int BOOST_CPM_FIELD_NUMBER = 43;
+    private long boostCpm_;
+    /**
+     * <pre>
+     *冷启动cpm
+     * </pre>
+     *
+     * <code>optional uint64 boost_cpm = 43;</code>
+     */
+    public boolean hasBoostCpm() {
+      return ((bitField1_ & 0x00000100) == 0x00000100);
+    }
+    /**
+     * <pre>
+     *冷启动cpm
+     * </pre>
+     *
+     * <code>optional uint64 boost_cpm = 43;</code>
+     */
+    public long getBoostCpm() {
+      return boostCpm_;
+    }
+
+    public static final int IS_NEW_AD_FIELD_NUMBER = 44;
+    private long isNewAd_;
+    /**
+     * <pre>
+     *是否为新广告
+     * </pre>
+     *
+     * <code>optional uint64 is_new_ad = 44;</code>
+     */
+    public boolean hasIsNewAd() {
+      return ((bitField1_ & 0x00000200) == 0x00000200);
+    }
+    /**
+     * <pre>
+     *是否为新广告
+     * </pre>
+     *
+     * <code>optional uint64 is_new_ad = 44;</code>
+     */
+    public long getIsNewAd() {
+      return isNewAd_;
+    }
+
+    public static final int BOOST_WIN_FIELD_NUMBER = 45;
+    private long boostWin_;
+    /**
+     * <pre>
+     *是否为通过boost赢得竞价
+     * </pre>
+     *
+     * <code>optional uint64 boost_win = 45;</code>
+     */
+    public boolean hasBoostWin() {
+      return ((bitField1_ & 0x00000400) == 0x00000400);
+    }
+    /**
+     * <pre>
+     *是否为通过boost赢得竞价
+     * </pre>
+     *
+     * <code>optional uint64 boost_win = 45;</code>
+     */
+    public long getBoostWin() {
+      return boostWin_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -18364,6 +18904,27 @@ public final class Aslog {
       }
       if (((bitField1_ & 0x00000008) == 0x00000008)) {
         output.writeUInt64(38, cvrOld_);
+      }
+      if (((bitField1_ & 0x00000010) == 0x00000010)) {
+        output.writeUInt64(39, rawCtr_);
+      }
+      if (((bitField1_ & 0x00000020) == 0x00000020)) {
+        output.writeUInt64(40, rawCvr_);
+      }
+      if (((bitField1_ & 0x00000040) == 0x00000040)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 41, ctrModelName_);
+      }
+      if (((bitField1_ & 0x00000080) == 0x00000080)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 42, cvrModelName_);
+      }
+      if (((bitField1_ & 0x00000100) == 0x00000100)) {
+        output.writeUInt64(43, boostCpm_);
+      }
+      if (((bitField1_ & 0x00000200) == 0x00000200)) {
+        output.writeUInt64(44, isNewAd_);
+      }
+      if (((bitField1_ & 0x00000400) == 0x00000400)) {
+        output.writeUInt64(45, boostWin_);
       }
       unknownFields.writeTo(output);
     }
@@ -18527,6 +19088,32 @@ public final class Aslog {
       if (((bitField1_ & 0x00000008) == 0x00000008)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt64Size(38, cvrOld_);
+      }
+      if (((bitField1_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(39, rawCtr_);
+      }
+      if (((bitField1_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(40, rawCvr_);
+      }
+      if (((bitField1_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(41, ctrModelName_);
+      }
+      if (((bitField1_ & 0x00000080) == 0x00000080)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(42, cvrModelName_);
+      }
+      if (((bitField1_ & 0x00000100) == 0x00000100)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(43, boostCpm_);
+      }
+      if (((bitField1_ & 0x00000200) == 0x00000200)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(44, isNewAd_);
+      }
+      if (((bitField1_ & 0x00000400) == 0x00000400)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt64Size(45, boostWin_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -18725,6 +19312,41 @@ public final class Aslog {
         result = result && (getCvrOld()
             == other.getCvrOld());
       }
+      result = result && (hasRawCtr() == other.hasRawCtr());
+      if (hasRawCtr()) {
+        result = result && (getRawCtr()
+            == other.getRawCtr());
+      }
+      result = result && (hasRawCvr() == other.hasRawCvr());
+      if (hasRawCvr()) {
+        result = result && (getRawCvr()
+            == other.getRawCvr());
+      }
+      result = result && (hasCtrModelName() == other.hasCtrModelName());
+      if (hasCtrModelName()) {
+        result = result && getCtrModelName()
+            .equals(other.getCtrModelName());
+      }
+      result = result && (hasCvrModelName() == other.hasCvrModelName());
+      if (hasCvrModelName()) {
+        result = result && getCvrModelName()
+            .equals(other.getCvrModelName());
+      }
+      result = result && (hasBoostCpm() == other.hasBoostCpm());
+      if (hasBoostCpm()) {
+        result = result && (getBoostCpm()
+            == other.getBoostCpm());
+      }
+      result = result && (hasIsNewAd() == other.hasIsNewAd());
+      if (hasIsNewAd()) {
+        result = result && (getIsNewAd()
+            == other.getIsNewAd());
+      }
+      result = result && (hasBoostWin() == other.hasBoostWin());
+      if (hasBoostWin()) {
+        result = result && (getBoostWin()
+            == other.getBoostWin());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -18896,6 +19518,39 @@ public final class Aslog {
         hash = (37 * hash) + CVR_OLD_FIELD_NUMBER;
         hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
             getCvrOld());
+      }
+      if (hasRawCtr()) {
+        hash = (37 * hash) + RAW_CTR_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getRawCtr());
+      }
+      if (hasRawCvr()) {
+        hash = (37 * hash) + RAW_CVR_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getRawCvr());
+      }
+      if (hasCtrModelName()) {
+        hash = (37 * hash) + CTR_MODEL_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getCtrModelName().hashCode();
+      }
+      if (hasCvrModelName()) {
+        hash = (37 * hash) + CVR_MODEL_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getCvrModelName().hashCode();
+      }
+      if (hasBoostCpm()) {
+        hash = (37 * hash) + BOOST_CPM_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getBoostCpm());
+      }
+      if (hasIsNewAd()) {
+        hash = (37 * hash) + IS_NEW_AD_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getIsNewAd());
+      }
+      if (hasBoostWin()) {
+        hash = (37 * hash) + BOOST_WIN_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getBoostWin());
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -19096,6 +19751,20 @@ public final class Aslog {
         bitField1_ = (bitField1_ & ~0x00000010);
         cvrOld_ = 0L;
         bitField1_ = (bitField1_ & ~0x00000020);
+        rawCtr_ = 0L;
+        bitField1_ = (bitField1_ & ~0x00000040);
+        rawCvr_ = 0L;
+        bitField1_ = (bitField1_ & ~0x00000080);
+        ctrModelName_ = "";
+        bitField1_ = (bitField1_ & ~0x00000100);
+        cvrModelName_ = "";
+        bitField1_ = (bitField1_ & ~0x00000200);
+        boostCpm_ = 0L;
+        bitField1_ = (bitField1_ & ~0x00000400);
+        isNewAd_ = 0L;
+        bitField1_ = (bitField1_ & ~0x00000800);
+        boostWin_ = 0L;
+        bitField1_ = (bitField1_ & ~0x00001000);
         return this;
       }
 
@@ -19280,6 +19949,34 @@ public final class Aslog {
           to_bitField1_ |= 0x00000008;
         }
         result.cvrOld_ = cvrOld_;
+        if (((from_bitField1_ & 0x00000040) == 0x00000040)) {
+          to_bitField1_ |= 0x00000010;
+        }
+        result.rawCtr_ = rawCtr_;
+        if (((from_bitField1_ & 0x00000080) == 0x00000080)) {
+          to_bitField1_ |= 0x00000020;
+        }
+        result.rawCvr_ = rawCvr_;
+        if (((from_bitField1_ & 0x00000100) == 0x00000100)) {
+          to_bitField1_ |= 0x00000040;
+        }
+        result.ctrModelName_ = ctrModelName_;
+        if (((from_bitField1_ & 0x00000200) == 0x00000200)) {
+          to_bitField1_ |= 0x00000080;
+        }
+        result.cvrModelName_ = cvrModelName_;
+        if (((from_bitField1_ & 0x00000400) == 0x00000400)) {
+          to_bitField1_ |= 0x00000100;
+        }
+        result.boostCpm_ = boostCpm_;
+        if (((from_bitField1_ & 0x00000800) == 0x00000800)) {
+          to_bitField1_ |= 0x00000200;
+        }
+        result.isNewAd_ = isNewAd_;
+        if (((from_bitField1_ & 0x00001000) == 0x00001000)) {
+          to_bitField1_ |= 0x00000400;
+        }
+        result.boostWin_ = boostWin_;
         result.bitField0_ = to_bitField0_;
         result.bitField1_ = to_bitField1_;
         onBuilt();
@@ -19462,6 +20159,31 @@ public final class Aslog {
         }
         if (other.hasCvrOld()) {
           setCvrOld(other.getCvrOld());
+        }
+        if (other.hasRawCtr()) {
+          setRawCtr(other.getRawCtr());
+        }
+        if (other.hasRawCvr()) {
+          setRawCvr(other.getRawCvr());
+        }
+        if (other.hasCtrModelName()) {
+          bitField1_ |= 0x00000100;
+          ctrModelName_ = other.ctrModelName_;
+          onChanged();
+        }
+        if (other.hasCvrModelName()) {
+          bitField1_ |= 0x00000200;
+          cvrModelName_ = other.cvrModelName_;
+          onChanged();
+        }
+        if (other.hasBoostCpm()) {
+          setBoostCpm(other.getBoostCpm());
+        }
+        if (other.hasIsNewAd()) {
+          setIsNewAd(other.getIsNewAd());
+        }
+        if (other.hasBoostWin()) {
+          setBoostWin(other.getBoostWin());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -21696,6 +22418,398 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private long rawCtr_ ;
+      /**
+       * <pre>
+       *ml原始ctr
+       * </pre>
+       *
+       * <code>optional uint64 raw_ctr = 39;</code>
+       */
+      public boolean hasRawCtr() {
+        return ((bitField1_ & 0x00000040) == 0x00000040);
+      }
+      /**
+       * <pre>
+       *ml原始ctr
+       * </pre>
+       *
+       * <code>optional uint64 raw_ctr = 39;</code>
+       */
+      public long getRawCtr() {
+        return rawCtr_;
+      }
+      /**
+       * <pre>
+       *ml原始ctr
+       * </pre>
+       *
+       * <code>optional uint64 raw_ctr = 39;</code>
+       */
+      public Builder setRawCtr(long value) {
+        bitField1_ |= 0x00000040;
+        rawCtr_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *ml原始ctr
+       * </pre>
+       *
+       * <code>optional uint64 raw_ctr = 39;</code>
+       */
+      public Builder clearRawCtr() {
+        bitField1_ = (bitField1_ & ~0x00000040);
+        rawCtr_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private long rawCvr_ ;
+      /**
+       * <pre>
+       *ml原始cvr
+       * </pre>
+       *
+       * <code>optional uint64 raw_cvr = 40;</code>
+       */
+      public boolean hasRawCvr() {
+        return ((bitField1_ & 0x00000080) == 0x00000080);
+      }
+      /**
+       * <pre>
+       *ml原始cvr
+       * </pre>
+       *
+       * <code>optional uint64 raw_cvr = 40;</code>
+       */
+      public long getRawCvr() {
+        return rawCvr_;
+      }
+      /**
+       * <pre>
+       *ml原始cvr
+       * </pre>
+       *
+       * <code>optional uint64 raw_cvr = 40;</code>
+       */
+      public Builder setRawCvr(long value) {
+        bitField1_ |= 0x00000080;
+        rawCvr_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *ml原始cvr
+       * </pre>
+       *
+       * <code>optional uint64 raw_cvr = 40;</code>
+       */
+      public Builder clearRawCvr() {
+        bitField1_ = (bitField1_ & ~0x00000080);
+        rawCvr_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object ctrModelName_ = "";
+      /**
+       * <code>optional string ctr_model_name = 41;</code>
+       */
+      public boolean hasCtrModelName() {
+        return ((bitField1_ & 0x00000100) == 0x00000100);
+      }
+      /**
+       * <code>optional string ctr_model_name = 41;</code>
+       */
+      public java.lang.String getCtrModelName() {
+        java.lang.Object ref = ctrModelName_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            ctrModelName_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string ctr_model_name = 41;</code>
+       */
+      public com.google.protobuf.ByteString
+          getCtrModelNameBytes() {
+        java.lang.Object ref = ctrModelName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          ctrModelName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string ctr_model_name = 41;</code>
+       */
+      public Builder setCtrModelName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField1_ |= 0x00000100;
+        ctrModelName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string ctr_model_name = 41;</code>
+       */
+      public Builder clearCtrModelName() {
+        bitField1_ = (bitField1_ & ~0x00000100);
+        ctrModelName_ = getDefaultInstance().getCtrModelName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string ctr_model_name = 41;</code>
+       */
+      public Builder setCtrModelNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField1_ |= 0x00000100;
+        ctrModelName_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object cvrModelName_ = "";
+      /**
+       * <code>optional string cvr_model_name = 42;</code>
+       */
+      public boolean hasCvrModelName() {
+        return ((bitField1_ & 0x00000200) == 0x00000200);
+      }
+      /**
+       * <code>optional string cvr_model_name = 42;</code>
+       */
+      public java.lang.String getCvrModelName() {
+        java.lang.Object ref = cvrModelName_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            cvrModelName_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string cvr_model_name = 42;</code>
+       */
+      public com.google.protobuf.ByteString
+          getCvrModelNameBytes() {
+        java.lang.Object ref = cvrModelName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          cvrModelName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string cvr_model_name = 42;</code>
+       */
+      public Builder setCvrModelName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField1_ |= 0x00000200;
+        cvrModelName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string cvr_model_name = 42;</code>
+       */
+      public Builder clearCvrModelName() {
+        bitField1_ = (bitField1_ & ~0x00000200);
+        cvrModelName_ = getDefaultInstance().getCvrModelName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string cvr_model_name = 42;</code>
+       */
+      public Builder setCvrModelNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField1_ |= 0x00000200;
+        cvrModelName_ = value;
+        onChanged();
+        return this;
+      }
+
+      private long boostCpm_ ;
+      /**
+       * <pre>
+       *冷启动cpm
+       * </pre>
+       *
+       * <code>optional uint64 boost_cpm = 43;</code>
+       */
+      public boolean hasBoostCpm() {
+        return ((bitField1_ & 0x00000400) == 0x00000400);
+      }
+      /**
+       * <pre>
+       *冷启动cpm
+       * </pre>
+       *
+       * <code>optional uint64 boost_cpm = 43;</code>
+       */
+      public long getBoostCpm() {
+        return boostCpm_;
+      }
+      /**
+       * <pre>
+       *冷启动cpm
+       * </pre>
+       *
+       * <code>optional uint64 boost_cpm = 43;</code>
+       */
+      public Builder setBoostCpm(long value) {
+        bitField1_ |= 0x00000400;
+        boostCpm_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *冷启动cpm
+       * </pre>
+       *
+       * <code>optional uint64 boost_cpm = 43;</code>
+       */
+      public Builder clearBoostCpm() {
+        bitField1_ = (bitField1_ & ~0x00000400);
+        boostCpm_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private long isNewAd_ ;
+      /**
+       * <pre>
+       *是否为新广告
+       * </pre>
+       *
+       * <code>optional uint64 is_new_ad = 44;</code>
+       */
+      public boolean hasIsNewAd() {
+        return ((bitField1_ & 0x00000800) == 0x00000800);
+      }
+      /**
+       * <pre>
+       *是否为新广告
+       * </pre>
+       *
+       * <code>optional uint64 is_new_ad = 44;</code>
+       */
+      public long getIsNewAd() {
+        return isNewAd_;
+      }
+      /**
+       * <pre>
+       *是否为新广告
+       * </pre>
+       *
+       * <code>optional uint64 is_new_ad = 44;</code>
+       */
+      public Builder setIsNewAd(long value) {
+        bitField1_ |= 0x00000800;
+        isNewAd_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *是否为新广告
+       * </pre>
+       *
+       * <code>optional uint64 is_new_ad = 44;</code>
+       */
+      public Builder clearIsNewAd() {
+        bitField1_ = (bitField1_ & ~0x00000800);
+        isNewAd_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private long boostWin_ ;
+      /**
+       * <pre>
+       *是否为通过boost赢得竞价
+       * </pre>
+       *
+       * <code>optional uint64 boost_win = 45;</code>
+       */
+      public boolean hasBoostWin() {
+        return ((bitField1_ & 0x00001000) == 0x00001000);
+      }
+      /**
+       * <pre>
+       *是否为通过boost赢得竞价
+       * </pre>
+       *
+       * <code>optional uint64 boost_win = 45;</code>
+       */
+      public long getBoostWin() {
+        return boostWin_;
+      }
+      /**
+       * <pre>
+       *是否为通过boost赢得竞价
+       * </pre>
+       *
+       * <code>optional uint64 boost_win = 45;</code>
+       */
+      public Builder setBoostWin(long value) {
+        bitField1_ |= 0x00001000;
+        boostWin_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *是否为通过boost赢得竞价
+       * </pre>
+       *
+       * <code>optional uint64 boost_win = 45;</code>
+       */
+      public Builder clearBoostWin() {
+        bitField1_ = (bitField1_ & ~0x00001000);
+        boostWin_ = 0L;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -22370,6 +23484,57 @@ public final class Aslog {
      * <code>optional uint32 city_level = 5;</code>
      */
     int getCityLevel();
+
+    /**
+     * <pre>
+     * 经度
+     * </pre>
+     *
+     * <code>optional double lnt = 6;</code>
+     */
+    boolean hasLnt();
+    /**
+     * <pre>
+     * 经度
+     * </pre>
+     *
+     * <code>optional double lnt = 6;</code>
+     */
+    double getLnt();
+
+    /**
+     * <pre>
+     * 纬度
+     * </pre>
+     *
+     * <code>optional double lat = 7;</code>
+     */
+    boolean hasLat();
+    /**
+     * <pre>
+     * 纬度
+     * </pre>
+     *
+     * <code>optional double lat = 7;</code>
+     */
+    double getLat();
+
+    /**
+     * <pre>
+     * 获取经纬度的时间
+     * </pre>
+     *
+     * <code>optional int64 locTime = 8;</code>
+     */
+    boolean hasLocTime();
+    /**
+     * <pre>
+     * 获取经纬度的时间
+     * </pre>
+     *
+     * <code>optional int64 locTime = 8;</code>
+     */
+    long getLocTime();
   }
   /**
    * Protobuf type {@code aslog.Location}
@@ -22388,6 +23553,9 @@ public final class Aslog {
       city_ = 0;
       isp_ = 0;
       cityLevel_ = 0;
+      lnt_ = 0D;
+      lat_ = 0D;
+      locTime_ = 0L;
     }
 
     @java.lang.Override
@@ -22441,6 +23609,21 @@ public final class Aslog {
             case 40: {
               bitField0_ |= 0x00000010;
               cityLevel_ = input.readUInt32();
+              break;
+            }
+            case 49: {
+              bitField0_ |= 0x00000020;
+              lnt_ = input.readDouble();
+              break;
+            }
+            case 57: {
+              bitField0_ |= 0x00000040;
+              lat_ = input.readDouble();
+              break;
+            }
+            case 64: {
+              bitField0_ |= 0x00000080;
+              locTime_ = input.readInt64();
               break;
             }
           }
@@ -22543,6 +23726,75 @@ public final class Aslog {
       return cityLevel_;
     }
 
+    public static final int LNT_FIELD_NUMBER = 6;
+    private double lnt_;
+    /**
+     * <pre>
+     * 经度
+     * </pre>
+     *
+     * <code>optional double lnt = 6;</code>
+     */
+    public boolean hasLnt() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <pre>
+     * 经度
+     * </pre>
+     *
+     * <code>optional double lnt = 6;</code>
+     */
+    public double getLnt() {
+      return lnt_;
+    }
+
+    public static final int LAT_FIELD_NUMBER = 7;
+    private double lat_;
+    /**
+     * <pre>
+     * 纬度
+     * </pre>
+     *
+     * <code>optional double lat = 7;</code>
+     */
+    public boolean hasLat() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    /**
+     * <pre>
+     * 纬度
+     * </pre>
+     *
+     * <code>optional double lat = 7;</code>
+     */
+    public double getLat() {
+      return lat_;
+    }
+
+    public static final int LOCTIME_FIELD_NUMBER = 8;
+    private long locTime_;
+    /**
+     * <pre>
+     * 获取经纬度的时间
+     * </pre>
+     *
+     * <code>optional int64 locTime = 8;</code>
+     */
+    public boolean hasLocTime() {
+      return ((bitField0_ & 0x00000080) == 0x00000080);
+    }
+    /**
+     * <pre>
+     * 获取经纬度的时间
+     * </pre>
+     *
+     * <code>optional int64 locTime = 8;</code>
+     */
+    public long getLocTime() {
+      return locTime_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -22569,6 +23821,15 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
         output.writeUInt32(5, cityLevel_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeDouble(6, lnt_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeDouble(7, lat_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        output.writeInt64(8, locTime_);
       }
       unknownFields.writeTo(output);
     }
@@ -22597,6 +23858,18 @@ public final class Aslog {
       if (((bitField0_ & 0x00000010) == 0x00000010)) {
         size += com.google.protobuf.CodedOutputStream
           .computeUInt32Size(5, cityLevel_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(6, lnt_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeDoubleSize(7, lat_);
+      }
+      if (((bitField0_ & 0x00000080) == 0x00000080)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(8, locTime_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -22640,6 +23913,25 @@ public final class Aslog {
         result = result && (getCityLevel()
             == other.getCityLevel());
       }
+      result = result && (hasLnt() == other.hasLnt());
+      if (hasLnt()) {
+        result = result && (
+            java.lang.Double.doubleToLongBits(getLnt())
+            == java.lang.Double.doubleToLongBits(
+                other.getLnt()));
+      }
+      result = result && (hasLat() == other.hasLat());
+      if (hasLat()) {
+        result = result && (
+            java.lang.Double.doubleToLongBits(getLat())
+            == java.lang.Double.doubleToLongBits(
+                other.getLat()));
+      }
+      result = result && (hasLocTime() == other.hasLocTime());
+      if (hasLocTime()) {
+        result = result && (getLocTime()
+            == other.getLocTime());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -22670,6 +23962,21 @@ public final class Aslog {
       if (hasCityLevel()) {
         hash = (37 * hash) + CITY_LEVEL_FIELD_NUMBER;
         hash = (53 * hash) + getCityLevel();
+      }
+      if (hasLnt()) {
+        hash = (37 * hash) + LNT_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            java.lang.Double.doubleToLongBits(getLnt()));
+      }
+      if (hasLat()) {
+        hash = (37 * hash) + LAT_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            java.lang.Double.doubleToLongBits(getLat()));
+      }
+      if (hasLocTime()) {
+        hash = (37 * hash) + LOCTIME_FIELD_NUMBER;
+        hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+            getLocTime());
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -22799,6 +24106,12 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00000008);
         cityLevel_ = 0;
         bitField0_ = (bitField0_ & ~0x00000010);
+        lnt_ = 0D;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        lat_ = 0D;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        locTime_ = 0L;
+        bitField0_ = (bitField0_ & ~0x00000080);
         return this;
       }
 
@@ -22843,6 +24156,18 @@ public final class Aslog {
           to_bitField0_ |= 0x00000010;
         }
         result.cityLevel_ = cityLevel_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.lnt_ = lnt_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        result.lat_ = lat_;
+        if (((from_bitField0_ & 0x00000080) == 0x00000080)) {
+          to_bitField0_ |= 0x00000080;
+        }
+        result.locTime_ = locTime_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -22899,6 +24224,15 @@ public final class Aslog {
         }
         if (other.hasCityLevel()) {
           setCityLevel(other.getCityLevel());
+        }
+        if (other.hasLnt()) {
+          setLnt(other.getLnt());
+        }
+        if (other.hasLat()) {
+          setLat(other.getLat());
+        }
+        if (other.hasLocTime()) {
+          setLocTime(other.getLocTime());
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -23084,6 +24418,150 @@ public final class Aslog {
       public Builder clearCityLevel() {
         bitField0_ = (bitField0_ & ~0x00000010);
         cityLevel_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private double lnt_ ;
+      /**
+       * <pre>
+       * 经度
+       * </pre>
+       *
+       * <code>optional double lnt = 6;</code>
+       */
+      public boolean hasLnt() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <pre>
+       * 经度
+       * </pre>
+       *
+       * <code>optional double lnt = 6;</code>
+       */
+      public double getLnt() {
+        return lnt_;
+      }
+      /**
+       * <pre>
+       * 经度
+       * </pre>
+       *
+       * <code>optional double lnt = 6;</code>
+       */
+      public Builder setLnt(double value) {
+        bitField0_ |= 0x00000020;
+        lnt_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 经度
+       * </pre>
+       *
+       * <code>optional double lnt = 6;</code>
+       */
+      public Builder clearLnt() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        lnt_ = 0D;
+        onChanged();
+        return this;
+      }
+
+      private double lat_ ;
+      /**
+       * <pre>
+       * 纬度
+       * </pre>
+       *
+       * <code>optional double lat = 7;</code>
+       */
+      public boolean hasLat() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      /**
+       * <pre>
+       * 纬度
+       * </pre>
+       *
+       * <code>optional double lat = 7;</code>
+       */
+      public double getLat() {
+        return lat_;
+      }
+      /**
+       * <pre>
+       * 纬度
+       * </pre>
+       *
+       * <code>optional double lat = 7;</code>
+       */
+      public Builder setLat(double value) {
+        bitField0_ |= 0x00000040;
+        lat_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 纬度
+       * </pre>
+       *
+       * <code>optional double lat = 7;</code>
+       */
+      public Builder clearLat() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        lat_ = 0D;
+        onChanged();
+        return this;
+      }
+
+      private long locTime_ ;
+      /**
+       * <pre>
+       * 获取经纬度的时间
+       * </pre>
+       *
+       * <code>optional int64 locTime = 8;</code>
+       */
+      public boolean hasLocTime() {
+        return ((bitField0_ & 0x00000080) == 0x00000080);
+      }
+      /**
+       * <pre>
+       * 获取经纬度的时间
+       * </pre>
+       *
+       * <code>optional int64 locTime = 8;</code>
+       */
+      public long getLocTime() {
+        return locTime_;
+      }
+      /**
+       * <pre>
+       * 获取经纬度的时间
+       * </pre>
+       *
+       * <code>optional int64 locTime = 8;</code>
+       */
+      public Builder setLocTime(long value) {
+        bitField0_ |= 0x00000080;
+        locTime_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 获取经纬度的时间
+       * </pre>
+       *
+       * <code>optional int64 locTime = 8;</code>
+       */
+      public Builder clearLocTime() {
+        bitField0_ = (bitField0_ & ~0x00000080);
+        locTime_ = 0L;
         onChanged();
         return this;
       }
@@ -24059,6 +25537,49 @@ public final class Aslog {
      * <code>optional int32 lx_package = 15;</code>
      */
     int getLxPackage();
+
+    /**
+     * <pre>
+     *同一用户20天内的请求次数
+     * </pre>
+     *
+     * <code>optional uint32 long_req_count = 16;</code>
+     */
+    boolean hasLongReqCount();
+    /**
+     * <pre>
+     *同一用户20天内的请求次数
+     * </pre>
+     *
+     * <code>optional uint32 long_req_count = 16;</code>
+     */
+    int getLongReqCount();
+
+    /**
+     * <pre>
+     * 用户注册时间
+     * </pre>
+     *
+     * <code>optional string user_create_time = 17;</code>
+     */
+    boolean hasUserCreateTime();
+    /**
+     * <pre>
+     * 用户注册时间
+     * </pre>
+     *
+     * <code>optional string user_create_time = 17;</code>
+     */
+    java.lang.String getUserCreateTime();
+    /**
+     * <pre>
+     * 用户注册时间
+     * </pre>
+     *
+     * <code>optional string user_create_time = 17;</code>
+     */
+    com.google.protobuf.ByteString
+        getUserCreateTimeBytes();
   }
   /**
    * Protobuf type {@code aslog.UserProfile}
@@ -24087,6 +25608,8 @@ public final class Aslog {
       memberId_ = "";
       lxType_ = 0;
       lxPackage_ = 0;
+      longReqCount_ = 0;
+      userCreateTime_ = "";
     }
 
     @java.lang.Override
@@ -24197,6 +25720,17 @@ public final class Aslog {
             case 120: {
               bitField0_ |= 0x00002000;
               lxPackage_ = input.readInt32();
+              break;
+            }
+            case 128: {
+              bitField0_ |= 0x00004000;
+              longReqCount_ = input.readUInt32();
+              break;
+            }
+            case 138: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00008000;
+              userCreateTime_ = bs;
               break;
             }
           }
@@ -24689,6 +26223,83 @@ public final class Aslog {
       return lxPackage_;
     }
 
+    public static final int LONG_REQ_COUNT_FIELD_NUMBER = 16;
+    private int longReqCount_;
+    /**
+     * <pre>
+     *同一用户20天内的请求次数
+     * </pre>
+     *
+     * <code>optional uint32 long_req_count = 16;</code>
+     */
+    public boolean hasLongReqCount() {
+      return ((bitField0_ & 0x00004000) == 0x00004000);
+    }
+    /**
+     * <pre>
+     *同一用户20天内的请求次数
+     * </pre>
+     *
+     * <code>optional uint32 long_req_count = 16;</code>
+     */
+    public int getLongReqCount() {
+      return longReqCount_;
+    }
+
+    public static final int USER_CREATE_TIME_FIELD_NUMBER = 17;
+    private volatile java.lang.Object userCreateTime_;
+    /**
+     * <pre>
+     * 用户注册时间
+     * </pre>
+     *
+     * <code>optional string user_create_time = 17;</code>
+     */
+    public boolean hasUserCreateTime() {
+      return ((bitField0_ & 0x00008000) == 0x00008000);
+    }
+    /**
+     * <pre>
+     * 用户注册时间
+     * </pre>
+     *
+     * <code>optional string user_create_time = 17;</code>
+     */
+    public java.lang.String getUserCreateTime() {
+      java.lang.Object ref = userCreateTime_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          userCreateTime_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     * 用户注册时间
+     * </pre>
+     *
+     * <code>optional string user_create_time = 17;</code>
+     */
+    public com.google.protobuf.ByteString
+        getUserCreateTimeBytes() {
+      java.lang.Object ref = userCreateTime_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        userCreateTime_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -24745,6 +26356,12 @@ public final class Aslog {
       }
       if (((bitField0_ & 0x00002000) == 0x00002000)) {
         output.writeInt32(15, lxPackage_);
+      }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        output.writeUInt32(16, longReqCount_);
+      }
+      if (((bitField0_ & 0x00008000) == 0x00008000)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 17, userCreateTime_);
       }
       unknownFields.writeTo(output);
     }
@@ -24810,6 +26427,13 @@ public final class Aslog {
       if (((bitField0_ & 0x00002000) == 0x00002000)) {
         size += com.google.protobuf.CodedOutputStream
           .computeInt32Size(15, lxPackage_);
+      }
+      if (((bitField0_ & 0x00004000) == 0x00004000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(16, longReqCount_);
+      }
+      if (((bitField0_ & 0x00008000) == 0x00008000)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(17, userCreateTime_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -24900,6 +26524,16 @@ public final class Aslog {
         result = result && (getLxPackage()
             == other.getLxPackage());
       }
+      result = result && (hasLongReqCount() == other.hasLongReqCount());
+      if (hasLongReqCount()) {
+        result = result && (getLongReqCount()
+            == other.getLongReqCount());
+      }
+      result = result && (hasUserCreateTime() == other.hasUserCreateTime());
+      if (hasUserCreateTime()) {
+        result = result && getUserCreateTime()
+            .equals(other.getUserCreateTime());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -24970,6 +26604,14 @@ public final class Aslog {
       if (hasLxPackage()) {
         hash = (37 * hash) + LX_PACKAGE_FIELD_NUMBER;
         hash = (53 * hash) + getLxPackage();
+      }
+      if (hasLongReqCount()) {
+        hash = (37 * hash) + LONG_REQ_COUNT_FIELD_NUMBER;
+        hash = (53 * hash) + getLongReqCount();
+      }
+      if (hasUserCreateTime()) {
+        hash = (37 * hash) + USER_CREATE_TIME_FIELD_NUMBER;
+        hash = (53 * hash) + getUserCreateTime().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -25124,6 +26766,10 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x00002000);
         lxPackage_ = 0;
         bitField0_ = (bitField0_ & ~0x00004000);
+        longReqCount_ = 0;
+        bitField0_ = (bitField0_ & ~0x00008000);
+        userCreateTime_ = "";
+        bitField0_ = (bitField0_ & ~0x00010000);
         return this;
       }
 
@@ -25213,6 +26859,14 @@ public final class Aslog {
           to_bitField0_ |= 0x00002000;
         }
         result.lxPackage_ = lxPackage_;
+        if (((from_bitField0_ & 0x00008000) == 0x00008000)) {
+          to_bitField0_ |= 0x00004000;
+        }
+        result.longReqCount_ = longReqCount_;
+        if (((from_bitField0_ & 0x00010000) == 0x00010000)) {
+          to_bitField0_ |= 0x00008000;
+        }
+        result.userCreateTime_ = userCreateTime_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -25328,6 +26982,14 @@ public final class Aslog {
         }
         if (other.hasLxPackage()) {
           setLxPackage(other.getLxPackage());
+        }
+        if (other.hasLongReqCount()) {
+          setLongReqCount(other.getLongReqCount());
+        }
+        if (other.hasUserCreateTime()) {
+          bitField0_ |= 0x00010000;
+          userCreateTime_ = other.userCreateTime_;
+          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -26480,6 +28142,154 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private int longReqCount_ ;
+      /**
+       * <pre>
+       *同一用户20天内的请求次数
+       * </pre>
+       *
+       * <code>optional uint32 long_req_count = 16;</code>
+       */
+      public boolean hasLongReqCount() {
+        return ((bitField0_ & 0x00008000) == 0x00008000);
+      }
+      /**
+       * <pre>
+       *同一用户20天内的请求次数
+       * </pre>
+       *
+       * <code>optional uint32 long_req_count = 16;</code>
+       */
+      public int getLongReqCount() {
+        return longReqCount_;
+      }
+      /**
+       * <pre>
+       *同一用户20天内的请求次数
+       * </pre>
+       *
+       * <code>optional uint32 long_req_count = 16;</code>
+       */
+      public Builder setLongReqCount(int value) {
+        bitField0_ |= 0x00008000;
+        longReqCount_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *同一用户20天内的请求次数
+       * </pre>
+       *
+       * <code>optional uint32 long_req_count = 16;</code>
+       */
+      public Builder clearLongReqCount() {
+        bitField0_ = (bitField0_ & ~0x00008000);
+        longReqCount_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object userCreateTime_ = "";
+      /**
+       * <pre>
+       * 用户注册时间
+       * </pre>
+       *
+       * <code>optional string user_create_time = 17;</code>
+       */
+      public boolean hasUserCreateTime() {
+        return ((bitField0_ & 0x00010000) == 0x00010000);
+      }
+      /**
+       * <pre>
+       * 用户注册时间
+       * </pre>
+       *
+       * <code>optional string user_create_time = 17;</code>
+       */
+      public java.lang.String getUserCreateTime() {
+        java.lang.Object ref = userCreateTime_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            userCreateTime_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 用户注册时间
+       * </pre>
+       *
+       * <code>optional string user_create_time = 17;</code>
+       */
+      public com.google.protobuf.ByteString
+          getUserCreateTimeBytes() {
+        java.lang.Object ref = userCreateTime_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          userCreateTime_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       * 用户注册时间
+       * </pre>
+       *
+       * <code>optional string user_create_time = 17;</code>
+       */
+      public Builder setUserCreateTime(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00010000;
+        userCreateTime_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 用户注册时间
+       * </pre>
+       *
+       * <code>optional string user_create_time = 17;</code>
+       */
+      public Builder clearUserCreateTime() {
+        bitField0_ = (bitField0_ & ~0x00010000);
+        userCreateTime_ = getDefaultInstance().getUserCreateTime();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * 用户注册时间
+       * </pre>
+       *
+       * <code>optional string user_create_time = 17;</code>
+       */
+      public Builder setUserCreateTimeBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00010000;
+        userCreateTime_ = value;
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -27099,6 +28909,31 @@ public final class Aslog {
      * <code>repeated int64 abtest_ids = 31;</code>
      */
     long getAbtestIds(int index);
+
+    /**
+     * <pre>
+     *abtest used id
+     * </pre>
+     *
+     * <code>repeated int64 abtest_used_ids = 32;</code>
+     */
+    java.util.List<java.lang.Long> getAbtestUsedIdsList();
+    /**
+     * <pre>
+     *abtest used id
+     * </pre>
+     *
+     * <code>repeated int64 abtest_used_ids = 32;</code>
+     */
+    int getAbtestUsedIdsCount();
+    /**
+     * <pre>
+     *abtest used id
+     * </pre>
+     *
+     * <code>repeated int64 abtest_used_ids = 32;</code>
+     */
+    long getAbtestUsedIds(int index);
   }
   /**
    * Protobuf type {@code aslog.NoticeLogBody}
@@ -27134,6 +28969,7 @@ public final class Aslog {
       zerobid_ = java.util.Collections.emptyList();
       hostname_ = "";
       abtestIds_ = java.util.Collections.emptyList();
+      abtestUsedIds_ = java.util.Collections.emptyList();
     }
 
     @java.lang.Override
@@ -27489,6 +29325,27 @@ public final class Aslog {
               input.popLimit(limit);
               break;
             }
+            case 256: {
+              if (!((mutable_bitField0_ & 0x10000000) == 0x10000000)) {
+                abtestUsedIds_ = new java.util.ArrayList<java.lang.Long>();
+                mutable_bitField0_ |= 0x10000000;
+              }
+              abtestUsedIds_.add(input.readInt64());
+              break;
+            }
+            case 258: {
+              int length = input.readRawVarint32();
+              int limit = input.pushLimit(length);
+              if (!((mutable_bitField0_ & 0x10000000) == 0x10000000) && input.getBytesUntilLimit() > 0) {
+                abtestUsedIds_ = new java.util.ArrayList<java.lang.Long>();
+                mutable_bitField0_ |= 0x10000000;
+              }
+              while (input.getBytesUntilLimit() > 0) {
+                abtestUsedIds_.add(input.readInt64());
+              }
+              input.popLimit(limit);
+              break;
+            }
           }
         }
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -27532,6 +29389,9 @@ public final class Aslog {
         }
         if (((mutable_bitField0_ & 0x08000000) == 0x08000000)) {
           abtestIds_ = java.util.Collections.unmodifiableList(abtestIds_);
+        }
+        if (((mutable_bitField0_ & 0x10000000) == 0x10000000)) {
+          abtestUsedIds_ = java.util.Collections.unmodifiableList(abtestUsedIds_);
         }
         this.unknownFields = unknownFields.build();
         makeExtensionsImmutable();
@@ -28452,6 +30312,40 @@ public final class Aslog {
       return abtestIds_.get(index);
     }
 
+    public static final int ABTEST_USED_IDS_FIELD_NUMBER = 32;
+    private java.util.List<java.lang.Long> abtestUsedIds_;
+    /**
+     * <pre>
+     *abtest used id
+     * </pre>
+     *
+     * <code>repeated int64 abtest_used_ids = 32;</code>
+     */
+    public java.util.List<java.lang.Long>
+        getAbtestUsedIdsList() {
+      return abtestUsedIds_;
+    }
+    /**
+     * <pre>
+     *abtest used id
+     * </pre>
+     *
+     * <code>repeated int64 abtest_used_ids = 32;</code>
+     */
+    public int getAbtestUsedIdsCount() {
+      return abtestUsedIds_.size();
+    }
+    /**
+     * <pre>
+     *abtest used id
+     * </pre>
+     *
+     * <code>repeated int64 abtest_used_ids = 32;</code>
+     */
+    public long getAbtestUsedIds(int index) {
+      return abtestUsedIds_.get(index);
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -28603,6 +30497,9 @@ public final class Aslog {
       }
       for (int i = 0; i < abtestIds_.size(); i++) {
         output.writeInt64(31, abtestIds_.get(i));
+      }
+      for (int i = 0; i < abtestUsedIds_.size(); i++) {
+        output.writeInt64(32, abtestUsedIds_.get(i));
       }
       unknownFields.writeTo(output);
     }
@@ -28758,6 +30655,15 @@ public final class Aslog {
         size += dataSize;
         size += 2 * getAbtestIdsList().size();
       }
+      {
+        int dataSize = 0;
+        for (int i = 0; i < abtestUsedIds_.size(); i++) {
+          dataSize += com.google.protobuf.CodedOutputStream
+            .computeInt64SizeNoTag(abtestUsedIds_.get(i));
+        }
+        size += dataSize;
+        size += 2 * getAbtestUsedIdsList().size();
+      }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
@@ -28879,6 +30785,8 @@ public final class Aslog {
       }
       result = result && getAbtestIdsList()
           .equals(other.getAbtestIdsList());
+      result = result && getAbtestUsedIdsList()
+          .equals(other.getAbtestUsedIdsList());
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -29004,6 +30912,10 @@ public final class Aslog {
       if (getAbtestIdsCount() > 0) {
         hash = (37 * hash) + ABTEST_IDS_FIELD_NUMBER;
         hash = (53 * hash) + getAbtestIdsList().hashCode();
+      }
+      if (getAbtestUsedIdsCount() > 0) {
+        hash = (37 * hash) + ABTEST_USED_IDS_FIELD_NUMBER;
+        hash = (53 * hash) + getAbtestUsedIdsList().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -29229,6 +31141,8 @@ public final class Aslog {
         bitField0_ = (bitField0_ & ~0x04000000);
         abtestIds_ = java.util.Collections.emptyList();
         bitField0_ = (bitField0_ & ~0x08000000);
+        abtestUsedIds_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x10000000);
         return this;
       }
 
@@ -29417,6 +31331,11 @@ public final class Aslog {
           bitField0_ = (bitField0_ & ~0x08000000);
         }
         result.abtestIds_ = abtestIds_;
+        if (((bitField0_ & 0x10000000) == 0x10000000)) {
+          abtestUsedIds_ = java.util.Collections.unmodifiableList(abtestUsedIds_);
+          bitField0_ = (bitField0_ & ~0x10000000);
+        }
+        result.abtestUsedIds_ = abtestUsedIds_;
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -29698,6 +31617,16 @@ public final class Aslog {
           } else {
             ensureAbtestIdsIsMutable();
             abtestIds_.addAll(other.abtestIds_);
+          }
+          onChanged();
+        }
+        if (!other.abtestUsedIds_.isEmpty()) {
+          if (abtestUsedIds_.isEmpty()) {
+            abtestUsedIds_ = other.abtestUsedIds_;
+            bitField0_ = (bitField0_ & ~0x10000000);
+          } else {
+            ensureAbtestUsedIdsIsMutable();
+            abtestUsedIds_.addAll(other.abtestUsedIds_);
           }
           onChanged();
         }
@@ -32945,6 +34874,100 @@ public final class Aslog {
         onChanged();
         return this;
       }
+
+      private java.util.List<java.lang.Long> abtestUsedIds_ = java.util.Collections.emptyList();
+      private void ensureAbtestUsedIdsIsMutable() {
+        if (!((bitField0_ & 0x10000000) == 0x10000000)) {
+          abtestUsedIds_ = new java.util.ArrayList<java.lang.Long>(abtestUsedIds_);
+          bitField0_ |= 0x10000000;
+         }
+      }
+      /**
+       * <pre>
+       *abtest used id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_used_ids = 32;</code>
+       */
+      public java.util.List<java.lang.Long>
+          getAbtestUsedIdsList() {
+        return java.util.Collections.unmodifiableList(abtestUsedIds_);
+      }
+      /**
+       * <pre>
+       *abtest used id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_used_ids = 32;</code>
+       */
+      public int getAbtestUsedIdsCount() {
+        return abtestUsedIds_.size();
+      }
+      /**
+       * <pre>
+       *abtest used id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_used_ids = 32;</code>
+       */
+      public long getAbtestUsedIds(int index) {
+        return abtestUsedIds_.get(index);
+      }
+      /**
+       * <pre>
+       *abtest used id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_used_ids = 32;</code>
+       */
+      public Builder setAbtestUsedIds(
+          int index, long value) {
+        ensureAbtestUsedIdsIsMutable();
+        abtestUsedIds_.set(index, value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *abtest used id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_used_ids = 32;</code>
+       */
+      public Builder addAbtestUsedIds(long value) {
+        ensureAbtestUsedIdsIsMutable();
+        abtestUsedIds_.add(value);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *abtest used id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_used_ids = 32;</code>
+       */
+      public Builder addAllAbtestUsedIds(
+          java.lang.Iterable<? extends java.lang.Long> values) {
+        ensureAbtestUsedIdsIsMutable();
+        com.google.protobuf.AbstractMessageLite.Builder.addAll(
+            values, abtestUsedIds_);
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *abtest used id
+       * </pre>
+       *
+       * <code>repeated int64 abtest_used_ids = 32;</code>
+       */
+      public Builder clearAbtestUsedIds() {
+        abtestUsedIds_ = java.util.Collections.emptyList();
+        bitField0_ = (bitField0_ & ~0x10000000);
+        onChanged();
+        return this;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -33088,132 +35111,140 @@ public final class Aslog {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\025javaproto/aslog.proto\022\005aslog\"=\n\007AppInf" +
+      "\n\025javaproto/aslog.proto\022\005aslog\"R\n\007AppInf" +
       "o\022\023\n\013packagename\030\001 \001(\t\022\017\n\007version\030\002 \001(\t\022" +
-      "\014\n\004name\030\003 \001(\t\"G\n\010SiteInfo\022\016\n\006domain\030\001 \001(" +
-      "\t\022\014\n\004urls\030\002 \001(\t\022\r\n\005title\030\003 \001(\t\022\016\n\006config" +
-      "\030\004 \001(\t\"%\n\004Size\022\016\n\006height\030\001 \002(\r\022\r\n\005width\030" +
-      "\002 \002(\r\"\276\001\n\005Media\022\036\n\004type\030\001 \002(\0162\020.aslog.Me" +
-      "diaType\022\016\n\006appsid\030\002 \002(\t\022\021\n\tchannelid\030\003 \001" +
-      "(\t\022\033\n\003app\030\004 \001(\0132\016.aslog.AppInfo\022\035\n\004site\030" +
-      "\005 \001(\0132\017.aslog.SiteInfo\022\020\n\010category\030\006 \001(\r" +
-      "\022\024\n\014subaccountid\030\007 \001(\t\022\016\n\006dtu_id\030\010 \001(\t\"\305",
-      "\002\n\006Adslot\022\n\n\002id\030\001 \002(\t\022\037\n\004type\030\002 \002(\0162\021.as" +
-      "log.AdslotType\022\031\n\004size\030\003 \002(\0132\013.aslog.Siz" +
-      "e\022\020\n\010capacity\030\004 \002(\r\022\020\n\010inittime\030\005 \001(\004\022\r\n" +
-      "\005apseq\030\006 \001(\r\022\r\n\005apuid\030\007 \001(\t\022\021\n\tbuildtype" +
-      "\030\010 \001(\r\022\020\n\010floorbid\030\t \001(\002\022\016\n\006cpmbid\030\n \001(\002" +
-      "\022\017\n\007channel\030\013 \001(\t\022\017\n\007pagenum\030\014 \001(\005\022\016\n\006bo" +
-      "okid\030\r \001(\t\022\020\n\010discount\030\016 \001(\005\022\020\n\010flooracp" +
-      "\030\017 \001(\005\022\021\n\texp_style\030\020 \001(\005\022\023\n\013exp_feature" +
-      "\030\021 \001(\t\"7\n\007Network\022 \n\004type\030\001 \002(\0162\022.aslog." +
-      "NetworkType\022\n\n\002ip\030\002 \002(\t\"E\n\007Version\022\r\n\005ma",
-      "jor\030\001 \002(\r\022\r\n\005minor\030\002 \001(\r\022\r\n\005micro\030\003 \001(\r\022" +
-      "\r\n\005build\030\004 \001(\r\"K\n\010DeviceId\022!\n\004type\030\001 \002(\016" +
-      "2\023.aslog.DeviceIdType\022\n\n\002id\030\002 \002(\t\022\020\n\010ori" +
-      "ginal\030\003 \001(\010\"\336\002\n\006Device\022\031\n\002os\030\001 \002(\0162\r.asl" +
-      "og.OSType\022!\n\tosversion\030\002 \002(\0132\016.aslog.Ver" +
-      "sion\022\034\n\003ids\030\003 \003(\0132\017.aslog.DeviceId\022\r\n\005br" +
-      "and\030\004 \001(\t\022\r\n\005model\030\005 \001(\t\022\021\n\tuseragent\030\006 " +
-      "\001(\014\022\016\n\006cookie\030\007 \001(\014\022#\n\007browser\030\010 \001(\0162\022.a" +
-      "slog.BrowserType\022\021\n\tmatchimei\030\t \001(\t\022\013\n\003u" +
-      "id\030\n \001(\t\022\020\n\010screen_w\030\013 \001(\005\022\020\n\010screen_h\030\014",
-      " \001(\005\022\021\n\tmatchidfa\030\r \001(\t\022\022\n\nphoneprice\030\016 " +
-      "\001(\r\022\022\n\nphonelevel\030\017 \001(\r\022\023\n\013brand_title\030\020" +
-      " \001(\t\"n\n\006Client\022\037\n\004type\030\001 \002(\0162\021.aslog.Cli" +
-      "entType\022\037\n\007version\030\002 \001(\0132\016.aslog.Version" +
-      "\022\021\n\trequestId\030\003 \001(\t\022\017\n\007isValid\030\004 \001(\010\"\223\002\n" +
-      "\nDspReqInfo\022\031\n\003src\030\001 \002(\0162\014.aslog.AdSrc\022\022" +
-      "\n\ndspmediaid\030\002 \001(\t\022\021\n\tretAdsNum\030\003 \001(\005\022\020\n" +
-      "\010timecost\030\004 \001(\003\022\022\n\ntargetHost\030\005 \001(\t\022\022\n\ni" +
-      "oTimeCost\030\006 \001(\003\022\024\n\014materialTime\030\007 \001(\003\022\024\n" +
-      "\014showFreqTime\030\010 \001(\003\022\024\n\014reqBsAllTime\030\t \001(",
-      "\003\022\034\n\024blackMediaFilterTime\030\n \001(\003\022\024\n\014fixCl" +
-      "ickTime\030\013 \001(\003\022\023\n\013dspadslotid\030\014 \001(\t\"\376\005\n\006A" +
-      "dInfo\022\033\n\004type\030\001 \002(\0162\r.aslog.AdType\022\031\n\003sr" +
-      "c\030\002 \002(\0162\014.aslog.AdSrc\022+\n\013interaction\030\003 \002" +
-      "(\0162\026.aslog.InteractionType\022\014\n\004adid\030\004 \001(\r" +
-      "\022\017\n\007groupid\030\005 \001(\r\022\016\n\006planid\030\006 \001(\r\022\016\n\006use" +
-      "rid\030\007 \001(\r\022\013\n\003bid\030\010 \001(\r\022\r\n\005price\030\t \001(\r\022\013\n" +
-      "\003ctr\030\n \001(\004\022\013\n\003cpm\030\013 \001(\004\022\r\n\005class\030\014 \001(\r\022\020" +
-      "\n\010usertype\030\r \001(\005\022\020\n\010titlectr\030\016 \001(\004\022\016\n\006ex" +
-      "pcpm\030\017 \001(\004\022\013\n\003cvr\030\020 \001(\004\022\025\n\rcvr_threshold",
-      "\030\021 \001(\004\022\021\n\tcvr_thres\030\022 \001(\004\022\022\n\nmaterialid\030" +
-      "\023 \003(\r\022\024\n\014trigger_type\030\024 \001(\r\022\020\n\010discount\030" +
-      "\025 \002(\005\022\022\n\nshow_count\030\026 \001(\005\022\024\n\014dsp_media_i" +
-      "d\030\027 \001(\t\022\025\n\rdsp_adslot_id\030\030 \001(\t\022\020\n\010adid_s" +
-      "tr\030\031 \001(\t\022,\n\016material_level\030\032 \001(\0162\024.aslog" +
-      ".MaterialLevel\022\023\n\013click_count\030\033 \001(\005\022\030\n\020l" +
-      "ong_click_count\030\034 \001(\005\022\020\n\010real_bid\030\035 \001(\r\022" +
-      "\r\n\005title\030\036 \001(\t\022\014\n\004desc\030\037 \001(\t\022\020\n\010img_urls" +
-      "\030  \003(\t\022\021\n\tclick_url\030! \001(\t\022\016\n\006siteid\030\" \001(" +
-      "\005\022\017\n\007lastcpm\030# \001(\004\022\014\n\004coin\030$ \001(\005\022 \n\010app_",
-      "info\030% \001(\0132\016.aslog.AppInfo\022\017\n\007cvr_old\030& " +
-      "\001(\004\"4\n\010AdDspRet\022\031\n\003src\030\001 \002(\0162\014.aslog.AdS" +
-      "rc\022\r\n\005adnum\030\002 \002(\r\"\\\n\010Location\022\017\n\007country" +
-      "\030\001 \001(\r\022\020\n\010province\030\002 \001(\r\022\014\n\004city\030\003 \001(\r\022\013" +
-      "\n\003isp\030\004 \001(\r\022\022\n\ncity_level\030\005 \001(\r\"1\n\014Inter" +
-      "estItem\022\022\n\ninterestid\030\001 \001(\004\022\r\n\005score\030\002 \001" +
-      "(\004\"\247\002\n\013UserProfile\022&\n\tinterests\030\001 \003(\0132\023." +
-      "aslog.InterestItem\022\013\n\003age\030\002 \001(\r\022\013\n\003sex\030\003" +
-      " \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpcategory\030\005 \001(\r\022\020\n" +
-      "\010antispam\030\006 \001(\r\022\022\n\nshare_coin\030\007 \001(\r\022\017\n\007n",
-      "ewuser\030\010 \001(\r\022\021\n\treq_count\030\t \001(\r\022\023\n\013click" +
-      "_count\030\n \001(\r\022\020\n\010province\030\013 \001(\t\022\014\n\004city\030\014" +
-      " \001(\t\022\021\n\tmember_id\030\r \001(\t\022\017\n\007lx_type\030\016 \001(\005" +
-      "\022\022\n\nlx_package\030\017 \001(\005\"\265\005\n\rNoticeLogBody\022\020" +
-      "\n\010searchid\030\001 \002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033\n\005m" +
-      "edia\030\003 \001(\0132\014.aslog.Media\022\035\n\006adslot\030\004 \003(\013" +
-      "2\r.aslog.Adslot\022\035\n\006device\030\005 \001(\0132\r.aslog." +
-      "Device\022\032\n\003ads\030\006 \003(\0132\r.aslog.AdInfo\022\037\n\006ds" +
-      "pret\030\007 \003(\0132\017.aslog.AdDspRet\022\r\n\005debug\030\010 \001" +
-      "(\010\022\035\n\006client\030\t \001(\0132\r.aslog.Client\022\037\n\007net",
-      "work\030\n \001(\0132\016.aslog.Network\022\017\n\007exptags\030\013 " +
-      "\003(\t\022!\n\010location\030\014 \001(\0132\017.aslog.Location\022\020" +
-      "\n\010sourceip\030\r \001(\t\022\021\n\tintertype\030\016 \001(\r\022\'\n\013u" +
-      "serprofile\030\017 \001(\0132\022.aslog.UserProfile\022\025\n\r" +
-      "dupplanfilter\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021 \003(" +
-      "\r\022\024\n\014lowcvrfilter\030\022 \003(\r\022%\n\ndspReqInfo\030\026 " +
-      "\003(\0132\021.aslog.DspReqInfo\022\020\n\010timecost\030\027 \001(\004" +
-      "\022\r\n\005https\030\030 \001(\010\022\021\n\tctrtarget\030\031 \001(\t\022\025\n\rdu" +
-      "puserfilter\030\032 \003(\r\022\024\n\014dsp_strategy\030\033 \001(\t\022" +
-      "\024\n\014lowacpfilter\030\034 \003(\r\022\017\n\007zerobid\030\035 \003(\r\022\020",
-      "\n\010hostname\030\036 \001(\t\022\022\n\nabtest_ids\030\037 \003(\003*3\n\t" +
-      "MediaType\022\013\n\007UNKNOWN\020\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002" +
-      "\022\007\n\003WAP\020\003*\205\001\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022" +
-      "\020\n\014CONTENT_FEED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013" +
-      "SLOT_SPLASH\020\004\022\017\n\013SLOT_BANNER\020\005\022\016\n\nSLOT_V" +
-      "IDEO\020\006\022\021\n\rSLOT_MOTIVATE\020\007*P\n\013NetworkType" +
-      "\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010NET_WIFI\020\001\022\n\n\006NET_2" +
-      "G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NET_4G\020\004*?\n\006OSType\022\016\n" +
-      "\nOS_UNKNOWN\020\000\022\016\n\nOS_ANDROID\020\001\022\n\n\006OS_IOS\020" +
-      "\002\022\t\n\005OS_WP\020\003*\265\001\n\013BrowserType\022\022\n\016UnknownB",
-      "rowser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Chrome\020\002\022\r\n\t" +
-      "UCBrowser\020\003\022\020\n\014BaiduBrowser\020\004\022\017\n\013MiuiBro" +
-      "wser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEMobileBrows" +
-      "er\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQChat\020\t*\251\001\n" +
-      "\014DeviceIdType\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVI" +
-      "D_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\022" +
-      "\016\n\nDEVID_AAID\020\004\022\022\n\016DEVID_LSCOOKIE\020\005\022\023\n\017D" +
-      "EVID_ANDROIDID\020\006\022\016\n\nDEVID_IMSI\020\007\022\016\n\nDEVI" +
-      "D_TKID\020\010*\217\001\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002" +
-      "\022\r\n\tICON_TEXT\020\003\022\023\n\017THREE_ICON_TEXT\020\004\022\017\n\013",
-      "AD_INTERACT\020\005\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_BANNE" +
-      "R\020\007\022\014\n\010AD_VIDEO\020\010\022\017\n\013AD_MOTIVATE\020\t*\333\001\n\005A" +
-      "dSrc\022\007\n\003CPC\020\001\022\n\n\006INMOBI\020\002\022\013\n\007TANXSSP\020\003\022\016" +
-      "\n\nBOTTOMINIG\020\004\022\013\n\007HUZHONG\020\005\022\t\n\005FANCY\020\006\022\007" +
-      "\n\003GDT\020\007\022\014\n\010MOBVISTA\020\010\022\t\n\005VANKA\020\t\022\013\n\007IFLY" +
-      "TEK\020\n\022\010\n\004WINQ\020\013\022\t\n\005VLION\020\014\022\n\n\006YOUDAO\020\r\022\010" +
-      "\n\004MOMO\020\016\022\014\n\010QUYUANSU\020\017\022\013\n\007TOUTIAO\020\020\022\010\n\004Q" +
-      "IHU\020\021\022\t\n\005XINGU\020\022*i\n\017InteractionType\022\017\n\013N" +
-      "O_INTERACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002\022" +
-      "\013\n\007DIALING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002G",
-      "P\020\006*\203\001\n\rMaterialLevel\022\032\n\026MATERIAL_LEVEL_" +
-      "UNKNOWN\020\000\022\024\n\020MATERIAL_LEVEL_1\020\001\022\024\n\020MATER" +
-      "IAL_LEVEL_2\020\002\022\024\n\020MATERIAL_LEVEL_3\020\003\022\024\n\020M" +
-      "ATERIAL_LEVEL_4\020\004*W\n\nClientType\022\r\n\tNATIV" +
-      "ESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007" +
-      "\n\003FUN\020\005\022\007\n\003QTT\020\006\022\010\n\004BOBO\020\007"
+      "\014\n\004name\030\003 \001(\t\022\023\n\013versioncode\030\004 \001(\005\"[\n\010Si" +
+      "teInfo\022\016\n\006domain\030\001 \001(\t\022\014\n\004urls\030\002 \001(\t\022\r\n\005" +
+      "title\030\003 \001(\t\022\016\n\006config\030\004 \001(\t\022\022\n\ncontent_i" +
+      "d\030\005 \001(\003\"%\n\004Size\022\016\n\006height\030\001 \002(\r\022\r\n\005width" +
+      "\030\002 \002(\r\"\276\001\n\005Media\022\036\n\004type\030\001 \002(\0162\020.aslog.M" +
+      "ediaType\022\016\n\006appsid\030\002 \002(\t\022\021\n\tchannelid\030\003 " +
+      "\001(\t\022\033\n\003app\030\004 \001(\0132\016.aslog.AppInfo\022\035\n\004site" +
+      "\030\005 \001(\0132\017.aslog.SiteInfo\022\020\n\010category\030\006 \001(",
+      "\r\022\024\n\014subaccountid\030\007 \001(\t\022\016\n\006dtu_id\030\010 \001(\t\"" +
+      "\305\002\n\006Adslot\022\n\n\002id\030\001 \002(\t\022\037\n\004type\030\002 \002(\0162\021.a" +
+      "slog.AdslotType\022\031\n\004size\030\003 \002(\0132\013.aslog.Si" +
+      "ze\022\020\n\010capacity\030\004 \002(\r\022\020\n\010inittime\030\005 \001(\004\022\r" +
+      "\n\005apseq\030\006 \001(\r\022\r\n\005apuid\030\007 \001(\t\022\021\n\tbuildtyp" +
+      "e\030\010 \001(\r\022\020\n\010floorbid\030\t \001(\002\022\016\n\006cpmbid\030\n \001(" +
+      "\002\022\017\n\007channel\030\013 \001(\t\022\017\n\007pagenum\030\014 \001(\005\022\016\n\006b" +
+      "ookid\030\r \001(\t\022\020\n\010discount\030\016 \001(\005\022\020\n\010floorac" +
+      "p\030\017 \001(\005\022\021\n\texp_style\030\020 \001(\005\022\023\n\013exp_featur" +
+      "e\030\021 \001(\t\"7\n\007Network\022 \n\004type\030\001 \002(\0162\022.aslog",
+      ".NetworkType\022\n\n\002ip\030\002 \002(\t\"E\n\007Version\022\r\n\005m" +
+      "ajor\030\001 \002(\r\022\r\n\005minor\030\002 \001(\r\022\r\n\005micro\030\003 \001(\r" +
+      "\022\r\n\005build\030\004 \001(\r\"K\n\010DeviceId\022!\n\004type\030\001 \002(" +
+      "\0162\023.aslog.DeviceIdType\022\n\n\002id\030\002 \002(\t\022\020\n\010or" +
+      "iginal\030\003 \001(\010\"\336\002\n\006Device\022\031\n\002os\030\001 \002(\0162\r.as" +
+      "log.OSType\022!\n\tosversion\030\002 \002(\0132\016.aslog.Ve" +
+      "rsion\022\034\n\003ids\030\003 \003(\0132\017.aslog.DeviceId\022\r\n\005b" +
+      "rand\030\004 \001(\t\022\r\n\005model\030\005 \001(\t\022\021\n\tuseragent\030\006" +
+      " \001(\014\022\016\n\006cookie\030\007 \001(\014\022#\n\007browser\030\010 \001(\0162\022." +
+      "aslog.BrowserType\022\021\n\tmatchimei\030\t \001(\t\022\013\n\003",
+      "uid\030\n \001(\t\022\020\n\010screen_w\030\013 \001(\005\022\020\n\010screen_h\030" +
+      "\014 \001(\005\022\021\n\tmatchidfa\030\r \001(\t\022\022\n\nphoneprice\030\016" +
+      " \001(\r\022\022\n\nphonelevel\030\017 \001(\r\022\023\n\013brand_title\030" +
+      "\020 \001(\t\"n\n\006Client\022\037\n\004type\030\001 \002(\0162\021.aslog.Cl" +
+      "ientType\022\037\n\007version\030\002 \001(\0132\016.aslog.Versio" +
+      "n\022\021\n\trequestId\030\003 \001(\t\022\017\n\007isValid\030\004 \001(\010\"\223\002" +
+      "\n\nDspReqInfo\022\031\n\003src\030\001 \002(\0162\014.aslog.AdSrc\022" +
+      "\022\n\ndspmediaid\030\002 \001(\t\022\021\n\tretAdsNum\030\003 \001(\005\022\020" +
+      "\n\010timecost\030\004 \001(\003\022\022\n\ntargetHost\030\005 \001(\t\022\022\n\n" +
+      "ioTimeCost\030\006 \001(\003\022\024\n\014materialTime\030\007 \001(\003\022\024",
+      "\n\014showFreqTime\030\010 \001(\003\022\024\n\014reqBsAllTime\030\t \001" +
+      "(\003\022\034\n\024blackMediaFilterTime\030\n \001(\003\022\024\n\014fixC" +
+      "lickTime\030\013 \001(\003\022\023\n\013dspadslotid\030\014 \001(\t\"\211\007\n\006" +
+      "AdInfo\022\033\n\004type\030\001 \002(\0162\r.aslog.AdType\022\031\n\003s" +
+      "rc\030\002 \002(\0162\014.aslog.AdSrc\022+\n\013interaction\030\003 " +
+      "\002(\0162\026.aslog.InteractionType\022\014\n\004adid\030\004 \001(" +
+      "\r\022\017\n\007groupid\030\005 \001(\r\022\016\n\006planid\030\006 \001(\r\022\016\n\006us" +
+      "erid\030\007 \001(\r\022\013\n\003bid\030\010 \001(\r\022\r\n\005price\030\t \001(\r\022\013" +
+      "\n\003ctr\030\n \001(\004\022\013\n\003cpm\030\013 \001(\004\022\r\n\005class\030\014 \001(\r\022" +
+      "\020\n\010usertype\030\r \001(\005\022\020\n\010titlectr\030\016 \001(\004\022\016\n\006e",
+      "xpcpm\030\017 \001(\004\022\013\n\003cvr\030\020 \001(\004\022\025\n\rcvr_threshol" +
+      "d\030\021 \001(\004\022\021\n\tcvr_thres\030\022 \001(\004\022\022\n\nmaterialid" +
+      "\030\023 \003(\r\022\024\n\014trigger_type\030\024 \001(\r\022\020\n\010discount" +
+      "\030\025 \002(\005\022\022\n\nshow_count\030\026 \001(\005\022\024\n\014dsp_media_" +
+      "id\030\027 \001(\t\022\025\n\rdsp_adslot_id\030\030 \001(\t\022\020\n\010adid_" +
+      "str\030\031 \001(\t\022,\n\016material_level\030\032 \001(\0162\024.aslo" +
+      "g.MaterialLevel\022\023\n\013click_count\030\033 \001(\005\022\030\n\020" +
+      "long_click_count\030\034 \001(\005\022\020\n\010real_bid\030\035 \001(\r" +
+      "\022\r\n\005title\030\036 \001(\t\022\014\n\004desc\030\037 \001(\t\022\020\n\010img_url" +
+      "s\030  \003(\t\022\021\n\tclick_url\030! \001(\t\022\016\n\006siteid\030\" \001",
+      "(\005\022\017\n\007lastcpm\030# \001(\004\022\014\n\004coin\030$ \001(\005\022 \n\010app" +
+      "_info\030% \001(\0132\016.aslog.AppInfo\022\017\n\007cvr_old\030&" +
+      " \001(\004\022\017\n\007raw_ctr\030\' \001(\004\022\017\n\007raw_cvr\030( \001(\004\022\026" +
+      "\n\016ctr_model_name\030) \001(\t\022\026\n\016cvr_model_name" +
+      "\030* \001(\t\022\021\n\tboost_cpm\030+ \001(\004\022\021\n\tis_new_ad\030," +
+      " \001(\004\022\021\n\tboost_win\030- \001(\004\"4\n\010AdDspRet\022\031\n\003s" +
+      "rc\030\001 \002(\0162\014.aslog.AdSrc\022\r\n\005adnum\030\002 \002(\r\"\207\001" +
+      "\n\010Location\022\017\n\007country\030\001 \001(\r\022\020\n\010province\030" +
+      "\002 \001(\r\022\014\n\004city\030\003 \001(\r\022\013\n\003isp\030\004 \001(\r\022\022\n\ncity" +
+      "_level\030\005 \001(\r\022\013\n\003lnt\030\006 \001(\001\022\013\n\003lat\030\007 \001(\001\022\017",
+      "\n\007locTime\030\010 \001(\003\"1\n\014InterestItem\022\022\n\ninter" +
+      "estid\030\001 \001(\004\022\r\n\005score\030\002 \001(\004\"\331\002\n\013UserProfi" +
+      "le\022&\n\tinterests\030\001 \003(\0132\023.aslog.InterestIt" +
+      "em\022\013\n\003age\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001" +
+      "(\r\022\021\n\tpcategory\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022" +
+      "\022\n\nshare_coin\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\022\021\n\t" +
+      "req_count\030\t \001(\r\022\023\n\013click_count\030\n \001(\r\022\020\n\010" +
+      "province\030\013 \001(\t\022\014\n\004city\030\014 \001(\t\022\021\n\tmember_i" +
+      "d\030\r \001(\t\022\017\n\007lx_type\030\016 \001(\005\022\022\n\nlx_package\030\017" +
+      " \001(\005\022\026\n\016long_req_count\030\020 \001(\r\022\030\n\020user_cre",
+      "ate_time\030\021 \001(\t\"\316\005\n\rNoticeLogBody\022\020\n\010sear" +
+      "chid\030\001 \002(\t\022\021\n\ttimestamp\030\002 \002(\r\022\033\n\005media\030\003" +
+      " \001(\0132\014.aslog.Media\022\035\n\006adslot\030\004 \003(\0132\r.asl" +
+      "og.Adslot\022\035\n\006device\030\005 \001(\0132\r.aslog.Device" +
+      "\022\032\n\003ads\030\006 \003(\0132\r.aslog.AdInfo\022\037\n\006dspret\030\007" +
+      " \003(\0132\017.aslog.AdDspRet\022\r\n\005debug\030\010 \001(\010\022\035\n\006" +
+      "client\030\t \001(\0132\r.aslog.Client\022\037\n\007network\030\n" +
+      " \001(\0132\016.aslog.Network\022\017\n\007exptags\030\013 \003(\t\022!\n" +
+      "\010location\030\014 \001(\0132\017.aslog.Location\022\020\n\010sour" +
+      "ceip\030\r \001(\t\022\021\n\tintertype\030\016 \001(\r\022\'\n\013userpro",
+      "file\030\017 \001(\0132\022.aslog.UserProfile\022\025\n\rduppla" +
+      "nfilter\030\020 \003(\r\022\024\n\014lowcpmfilter\030\021 \003(\r\022\024\n\014l" +
+      "owcvrfilter\030\022 \003(\r\022%\n\ndspReqInfo\030\026 \003(\0132\021." +
+      "aslog.DspReqInfo\022\020\n\010timecost\030\027 \001(\004\022\r\n\005ht" +
+      "tps\030\030 \001(\010\022\021\n\tctrtarget\030\031 \001(\t\022\025\n\rdupuserf" +
+      "ilter\030\032 \003(\r\022\024\n\014dsp_strategy\030\033 \001(\t\022\024\n\014low" +
+      "acpfilter\030\034 \003(\r\022\017\n\007zerobid\030\035 \003(\r\022\020\n\010host" +
+      "name\030\036 \001(\t\022\022\n\nabtest_ids\030\037 \003(\003\022\027\n\017abtest" +
+      "_used_ids\030  \003(\003*3\n\tMediaType\022\013\n\007UNKNOWN\020" +
+      "\000\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*\205\001\n\nAdslotT",
+      "ype\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_FEED\020\002\022\021\n\r" +
+      "SLOT_INTERACT\020\003\022\017\n\013SLOT_SPLASH\020\004\022\017\n\013SLOT" +
+      "_BANNER\020\005\022\016\n\nSLOT_VIDEO\020\006\022\021\n\rSLOT_MOTIVA" +
+      "TE\020\007*P\n\013NetworkType\022\017\n\013NET_UNKNOWN\020\000\022\014\n\010" +
+      "NET_WIFI\020\001\022\n\n\006NET_2G\020\002\022\n\n\006NET_3G\020\003\022\n\n\006NE" +
+      "T_4G\020\004*?\n\006OSType\022\016\n\nOS_UNKNOWN\020\000\022\016\n\nOS_A" +
+      "NDROID\020\001\022\n\n\006OS_IOS\020\002\022\t\n\005OS_WP\020\003*\265\001\n\013Brow" +
+      "serType\022\022\n\016UnknownBrowser\020\000\022\016\n\nMQQBrowse" +
+      "r\020\001\022\n\n\006Chrome\020\002\022\r\n\tUCBrowser\020\003\022\020\n\014BaiduB" +
+      "rowser\020\004\022\017\n\013MiuiBrowser\020\005\022\017\n\013QvodBrowser",
+      "\020\006\022\023\n\017IEMobileBrowser\020\007\022\022\n\016MicroMessenge" +
+      "r\020\010\022\n\n\006QQChat\020\t*\251\001\n\014DeviceIdType\022\021\n\rDEVI" +
+      "D_UNKNOWN\020\000\022\016\n\nDEVID_IMEI\020\001\022\r\n\tDEVID_MAC" +
+      "\020\002\022\016\n\nDEVID_IDFA\020\003\022\016\n\nDEVID_AAID\020\004\022\022\n\016DE" +
+      "VID_LSCOOKIE\020\005\022\023\n\017DEVID_ANDROIDID\020\006\022\016\n\nD" +
+      "EVID_IMSI\020\007\022\016\n\nDEVID_TKID\020\010*\217\001\n\006AdType\022\010" +
+      "\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tICON_TEXT\020\003\022\023\n\017TH" +
+      "REE_ICON_TEXT\020\004\022\017\n\013AD_INTERACT\020\005\022\r\n\tAD_S" +
+      "PLASH\020\006\022\r\n\tAD_BANNER\020\007\022\014\n\010AD_VIDEO\020\010\022\017\n\013" +
+      "AD_MOTIVATE\020\t*\352\001\n\005AdSrc\022\007\n\003CPC\020\001\022\n\n\006INMO",
+      "BI\020\002\022\013\n\007TANXSSP\020\003\022\016\n\nBOTTOMINIG\020\004\022\013\n\007HUZ" +
+      "HONG\020\005\022\t\n\005FANCY\020\006\022\007\n\003GDT\020\007\022\014\n\010MOBVISTA\020\010" +
+      "\022\t\n\005VANKA\020\t\022\013\n\007IFLYTEK\020\n\022\010\n\004WINQ\020\013\022\t\n\005VL" +
+      "ION\020\014\022\n\n\006YOUDAO\020\r\022\010\n\004MOMO\020\016\022\014\n\010QUYUANSU\020" +
+      "\017\022\013\n\007TOUTIAO\020\020\022\010\n\004QIHU\020\021\022\t\n\005XINGU\020\022\022\r\n\tG" +
+      "ANJIWANG\020\023*i\n\017InteractionType\022\017\n\013NO_INTE" +
+      "RACT\020\000\022\013\n\007SURFING\020\001\022\014\n\010DOWNLOAD\020\002\022\013\n\007DIA" +
+      "LING\020\003\022\013\n\007MESSAGE\020\004\022\010\n\004MAIL\020\005\022\006\n\002GP\020\006*\203\001" +
+      "\n\rMaterialLevel\022\032\n\026MATERIAL_LEVEL_UNKNOW" +
+      "N\020\000\022\024\n\020MATERIAL_LEVEL_1\020\001\022\024\n\020MATERIAL_LE",
+      "VEL_2\020\002\022\024\n\020MATERIAL_LEVEL_3\020\003\022\024\n\020MATERIA" +
+      "L_LEVEL_4\020\004*W\n\nClientType\022\r\n\tNATIVESDK\020\001" +
+      "\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020" +
+      "\005\022\007\n\003QTT\020\006\022\010\n\004BOBO\020\007"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -33232,13 +35263,13 @@ public final class Aslog {
     internal_static_aslog_AppInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_AppInfo_descriptor,
-        new java.lang.String[] { "Packagename", "Version", "Name", });
+        new java.lang.String[] { "Packagename", "Version", "Name", "Versioncode", });
     internal_static_aslog_SiteInfo_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_aslog_SiteInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_SiteInfo_descriptor,
-        new java.lang.String[] { "Domain", "Urls", "Title", "Config", });
+        new java.lang.String[] { "Domain", "Urls", "Title", "Config", "ContentId", });
     internal_static_aslog_Size_descriptor =
       getDescriptor().getMessageTypes().get(2);
     internal_static_aslog_Size_fieldAccessorTable = new
@@ -33298,7 +35329,7 @@ public final class Aslog {
     internal_static_aslog_AdInfo_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_AdInfo_descriptor,
-        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", "Class_", "Usertype", "Titlectr", "Expcpm", "Cvr", "CvrThreshold", "CvrThres", "Materialid", "TriggerType", "Discount", "ShowCount", "DspMediaId", "DspAdslotId", "AdidStr", "MaterialLevel", "ClickCount", "LongClickCount", "RealBid", "Title", "Desc", "ImgUrls", "ClickUrl", "Siteid", "Lastcpm", "Coin", "AppInfo", "CvrOld", });
+        new java.lang.String[] { "Type", "Src", "Interaction", "Adid", "Groupid", "Planid", "Userid", "Bid", "Price", "Ctr", "Cpm", "Class_", "Usertype", "Titlectr", "Expcpm", "Cvr", "CvrThreshold", "CvrThres", "Materialid", "TriggerType", "Discount", "ShowCount", "DspMediaId", "DspAdslotId", "AdidStr", "MaterialLevel", "ClickCount", "LongClickCount", "RealBid", "Title", "Desc", "ImgUrls", "ClickUrl", "Siteid", "Lastcpm", "Coin", "AppInfo", "CvrOld", "RawCtr", "RawCvr", "CtrModelName", "CvrModelName", "BoostCpm", "IsNewAd", "BoostWin", });
     internal_static_aslog_AdDspRet_descriptor =
       getDescriptor().getMessageTypes().get(12);
     internal_static_aslog_AdDspRet_fieldAccessorTable = new
@@ -33310,7 +35341,7 @@ public final class Aslog {
     internal_static_aslog_Location_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_Location_descriptor,
-        new java.lang.String[] { "Country", "Province", "City", "Isp", "CityLevel", });
+        new java.lang.String[] { "Country", "Province", "City", "Isp", "CityLevel", "Lnt", "Lat", "LocTime", });
     internal_static_aslog_InterestItem_descriptor =
       getDescriptor().getMessageTypes().get(14);
     internal_static_aslog_InterestItem_fieldAccessorTable = new
@@ -33322,13 +35353,13 @@ public final class Aslog {
     internal_static_aslog_UserProfile_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_UserProfile_descriptor,
-        new java.lang.String[] { "Interests", "Age", "Sex", "Coin", "Pcategory", "Antispam", "ShareCoin", "Newuser", "ReqCount", "ClickCount", "Province", "City", "MemberId", "LxType", "LxPackage", });
+        new java.lang.String[] { "Interests", "Age", "Sex", "Coin", "Pcategory", "Antispam", "ShareCoin", "Newuser", "ReqCount", "ClickCount", "Province", "City", "MemberId", "LxType", "LxPackage", "LongReqCount", "UserCreateTime", });
     internal_static_aslog_NoticeLogBody_descriptor =
       getDescriptor().getMessageTypes().get(16);
     internal_static_aslog_NoticeLogBody_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_aslog_NoticeLogBody_descriptor,
-        new java.lang.String[] { "Searchid", "Timestamp", "Media", "Adslot", "Device", "Ads", "Dspret", "Debug", "Client", "Network", "Exptags", "Location", "Sourceip", "Intertype", "Userprofile", "Dupplanfilter", "Lowcpmfilter", "Lowcvrfilter", "DspReqInfo", "Timecost", "Https", "Ctrtarget", "Dupuserfilter", "DspStrategy", "Lowacpfilter", "Zerobid", "Hostname", "AbtestIds", });
+        new java.lang.String[] { "Searchid", "Timestamp", "Media", "Adslot", "Device", "Ads", "Dspret", "Debug", "Client", "Network", "Exptags", "Location", "Sourceip", "Intertype", "Userprofile", "Dupplanfilter", "Lowcpmfilter", "Lowcvrfilter", "DspReqInfo", "Timecost", "Https", "Ctrtarget", "Dupuserfilter", "DspStrategy", "Lowacpfilter", "Zerobid", "Hostname", "AbtestIds", "AbtestUsedIds", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

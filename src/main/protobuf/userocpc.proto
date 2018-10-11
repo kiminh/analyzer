@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package userocpc;
+
+message SingleUser {
+    string ideaid = 1;
+    string userid = 2;
+    string cost = 3; // total cost group by userid
+    string ctrcnt = 4; // ctr count group by userid
+    string cvrcnt = 5; // cvr count group by userid
+}
+
+
+message UserOcpc {
+    repeated SingleUser user = 1;
+}

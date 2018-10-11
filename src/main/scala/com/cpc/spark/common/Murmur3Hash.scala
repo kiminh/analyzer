@@ -7,6 +7,12 @@ import cpcutil.hash.MurmurHash3
   */
 
 object Murmur3Hash {
+
+  def stringHash32(str: String, seed: Int): Int = {
+    val d = str.toCharArray.map(_.toByte)
+    MurmurHash3.murmurhash3_x86_32(d, 0, d.length, seed)
+  }
+
   def stringHash64(str: String, seed: Int): Long = {
     val d = str.toCharArray.map(_.toByte)
     val out = new MurmurHash3.LongPair

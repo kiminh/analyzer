@@ -4607,6 +4607,24 @@ public final class Userprofile {
         getUserCreateTimeBytes();
 
     /**
+     * <pre>
+     * uid维度的最近几天点击总次数
+     * </pre>
+     *
+     * <code>int64 ctrcnt = 16;</code>
+     */
+    long getCtrcnt();
+
+    /**
+     * <pre>
+     * uid维度的最近几天转化总次数
+     * </pre>
+     *
+     * <code>int64 cvrcnt = 17;</code>
+     */
+    long getCvrcnt();
+
+    /**
      * <code>.userprofile.QttProfile qttProfile = 101;</code>
      */
     boolean hasQttProfile();
@@ -4646,6 +4664,8 @@ public final class Userprofile {
       province_ = "";
       city_ = "";
       userCreateTime_ = "";
+      ctrcnt_ = 0L;
+      cvrcnt_ = 0L;
     }
 
     @java.lang.Override
@@ -4762,6 +4782,16 @@ public final class Userprofile {
               java.lang.String s = input.readStringRequireUtf8();
 
               userCreateTime_ = s;
+              break;
+            }
+            case 128: {
+
+              ctrcnt_ = input.readInt64();
+              break;
+            }
+            case 136: {
+
+              cvrcnt_ = input.readInt64();
               break;
             }
             case 810: {
@@ -5247,6 +5277,32 @@ public final class Userprofile {
       }
     }
 
+    public static final int CTRCNT_FIELD_NUMBER = 16;
+    private long ctrcnt_;
+    /**
+     * <pre>
+     * uid维度的最近几天点击总次数
+     * </pre>
+     *
+     * <code>int64 ctrcnt = 16;</code>
+     */
+    public long getCtrcnt() {
+      return ctrcnt_;
+    }
+
+    public static final int CVRCNT_FIELD_NUMBER = 17;
+    private long cvrcnt_;
+    /**
+     * <pre>
+     * uid维度的最近几天转化总次数
+     * </pre>
+     *
+     * <code>int64 cvrcnt = 17;</code>
+     */
+    public long getCvrcnt() {
+      return cvrcnt_;
+    }
+
     public static final int QTTPROFILE_FIELD_NUMBER = 101;
     private userprofile.Userprofile.QttProfile qttProfile_;
     /**
@@ -5325,6 +5381,12 @@ public final class Userprofile {
       if (!getUserCreateTimeBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 15, userCreateTime_);
       }
+      if (ctrcnt_ != 0L) {
+        output.writeInt64(16, ctrcnt_);
+      }
+      if (cvrcnt_ != 0L) {
+        output.writeInt64(17, cvrcnt_);
+      }
       if (qttProfile_ != null) {
         output.writeMessage(101, getQttProfile());
       }
@@ -5391,6 +5453,14 @@ public final class Userprofile {
       if (!getUserCreateTimeBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(15, userCreateTime_);
       }
+      if (ctrcnt_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(16, ctrcnt_);
+      }
+      if (cvrcnt_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(17, cvrcnt_);
+      }
       if (qttProfile_ != null) {
         size += com.google.protobuf.CodedOutputStream
           .computeMessageSize(101, getQttProfile());
@@ -5441,6 +5511,10 @@ public final class Userprofile {
           .equals(other.getCity());
       result = result && getUserCreateTime()
           .equals(other.getUserCreateTime());
+      result = result && (getCtrcnt()
+          == other.getCtrcnt());
+      result = result && (getCvrcnt()
+          == other.getCvrcnt());
       result = result && (hasQttProfile() == other.hasQttProfile());
       if (hasQttProfile()) {
         result = result && getQttProfile()
@@ -5492,6 +5566,12 @@ public final class Userprofile {
       hash = (53 * hash) + getCity().hashCode();
       hash = (37 * hash) + USERCREATETIME_FIELD_NUMBER;
       hash = (53 * hash) + getUserCreateTime().hashCode();
+      hash = (37 * hash) + CTRCNT_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getCtrcnt());
+      hash = (37 * hash) + CVRCNT_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getCvrcnt());
       if (hasQttProfile()) {
         hash = (37 * hash) + QTTPROFILE_FIELD_NUMBER;
         hash = (53 * hash) + getQttProfile().hashCode();
@@ -5659,6 +5739,10 @@ public final class Userprofile {
 
         userCreateTime_ = "";
 
+        ctrcnt_ = 0L;
+
+        cvrcnt_ = 0L;
+
         if (qttProfileBuilder_ == null) {
           qttProfile_ = null;
         } else {
@@ -5728,6 +5812,8 @@ public final class Userprofile {
         result.province_ = province_;
         result.city_ = city_;
         result.userCreateTime_ = userCreateTime_;
+        result.ctrcnt_ = ctrcnt_;
+        result.cvrcnt_ = cvrcnt_;
         if (qttProfileBuilder_ == null) {
           result.qttProfile_ = qttProfile_;
         } else {
@@ -5892,6 +5978,12 @@ public final class Userprofile {
         if (!other.getUserCreateTime().isEmpty()) {
           userCreateTime_ = other.userCreateTime_;
           onChanged();
+        }
+        if (other.getCtrcnt() != 0L) {
+          setCtrcnt(other.getCtrcnt());
+        }
+        if (other.getCvrcnt() != 0L) {
+          setCvrcnt(other.getCvrcnt());
         }
         if (other.hasQttProfile()) {
           mergeQttProfile(other.getQttProfile());
@@ -7515,6 +7607,82 @@ public final class Userprofile {
   checkByteStringIsUtf8(value);
         
         userCreateTime_ = value;
+        onChanged();
+        return this;
+      }
+
+      private long ctrcnt_ ;
+      /**
+       * <pre>
+       * uid维度的最近几天点击总次数
+       * </pre>
+       *
+       * <code>int64 ctrcnt = 16;</code>
+       */
+      public long getCtrcnt() {
+        return ctrcnt_;
+      }
+      /**
+       * <pre>
+       * uid维度的最近几天点击总次数
+       * </pre>
+       *
+       * <code>int64 ctrcnt = 16;</code>
+       */
+      public Builder setCtrcnt(long value) {
+        
+        ctrcnt_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * uid维度的最近几天点击总次数
+       * </pre>
+       *
+       * <code>int64 ctrcnt = 16;</code>
+       */
+      public Builder clearCtrcnt() {
+        
+        ctrcnt_ = 0L;
+        onChanged();
+        return this;
+      }
+
+      private long cvrcnt_ ;
+      /**
+       * <pre>
+       * uid维度的最近几天转化总次数
+       * </pre>
+       *
+       * <code>int64 cvrcnt = 17;</code>
+       */
+      public long getCvrcnt() {
+        return cvrcnt_;
+      }
+      /**
+       * <pre>
+       * uid维度的最近几天转化总次数
+       * </pre>
+       *
+       * <code>int64 cvrcnt = 17;</code>
+       */
+      public Builder setCvrcnt(long value) {
+        
+        cvrcnt_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       * uid维度的最近几天转化总次数
+       * </pre>
+       *
+       * <code>int64 cvrcnt = 17;</code>
+       */
+      public Builder clearCvrcnt() {
+        
+        cvrcnt_ = 0L;
         onChanged();
         return this;
       }
@@ -9883,7 +10051,7 @@ public final class Userprofile {
       "\030\005 \001(\003\"d\n\nAPPPackage\022\023\n\013packagename\030\001 \001(" +
       "\t\022\017\n\007version\030\002 \001(\t\022\030\n\020firstInstallTime\030\003",
       " \001(\003\022\026\n\016lastUpdateTime\030\004 \001(\003\"*\n\014Interest" +
-      "Item\022\013\n\003tag\030\001 \001(\005\022\r\n\005score\030\002 \001(\005\"\225\003\n\013Use" +
+      "Item\022\013\n\003tag\030\001 \001(\005\022\r\n\005score\030\002 \001(\005\"\265\003\n\013Use" +
       "rProfile\022\r\n\005devid\030\001 \001(\t\022\013\n\003age\030\002 \001(\005\022\013\n\003" +
       "sex\030\003 \001(\005\022\014\n\004coin\030\004 \001(\005\022,\n\tinterests\030\005 \003" +
       "(\0132\031.userprofile.InterestItem\022+\n\ninstall" +
@@ -9892,15 +10060,16 @@ public final class Userprofile {
       "spam\030\t \001(\005\022\022\n\nshare_coin\030\n \001(\005\022\017\n\007newUse" +
       "r\030\013 \001(\005\0222\n\017interestedWords\030\014 \003(\0132\031.userp" +
       "rofile.InterestItem\022\020\n\010province\030\r \001(\t\022\014\n",
-      "\004city\030\016 \001(\t\022\026\n\016userCreateTime\030\017 \001(\t\022+\n\nq" +
-      "ttProfile\030e \001(\0132\027.userprofile.QttProfile" +
-      "\"\372\001\n\nQttProfile\022\r\n\005devid\030\001 \001(\t\022\021\n\tmember" +
-      "_id\030\002 \001(\003\022\020\n\010nickname\030\003 \001(\t\022\023\n\013wx_nickna" +
-      "me\030\004 \001(\t\022\017\n\007lx_type\030\005 \001(\005\022\022\n\nlx_package\030" +
-      "\006 \001(\005\022(\n\007teacher\030\013 \001(\0132\027.userprofile.Qtt" +
-      "Profile\022)\n\010students\030\014 \003(\0132\027.userprofile." +
-      "QttProfile\022)\n\010siblings\030\r \003(\0132\027.userprofi" +
-      "le.QttProfileb\006proto3"
+      "\004city\030\016 \001(\t\022\026\n\016userCreateTime\030\017 \001(\t\022\016\n\006c" +
+      "trcnt\030\020 \001(\003\022\016\n\006cvrcnt\030\021 \001(\003\022+\n\nqttProfil" +
+      "e\030e \001(\0132\027.userprofile.QttProfile\"\372\001\n\nQtt" +
+      "Profile\022\r\n\005devid\030\001 \001(\t\022\021\n\tmember_id\030\002 \001(" +
+      "\003\022\020\n\010nickname\030\003 \001(\t\022\023\n\013wx_nickname\030\004 \001(\t" +
+      "\022\017\n\007lx_type\030\005 \001(\005\022\022\n\nlx_package\030\006 \001(\005\022(\n" +
+      "\007teacher\030\013 \001(\0132\027.userprofile.QttProfile\022" +
+      ")\n\010students\030\014 \003(\0132\027.userprofile.QttProfi" +
+      "le\022)\n\010siblings\030\r \003(\0132\027.userprofile.QttPr" +
+      "ofileb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -9949,7 +10118,7 @@ public final class Userprofile {
     internal_static_userprofile_UserProfile_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_userprofile_UserProfile_descriptor,
-        new java.lang.String[] { "Devid", "Age", "Sex", "Coin", "Interests", "Installpkg", "Pcategory", "IncrCoin", "Antispam", "ShareCoin", "NewUser", "InterestedWords", "Province", "City", "UserCreateTime", "QttProfile", });
+        new java.lang.String[] { "Devid", "Age", "Sex", "Coin", "Interests", "Installpkg", "Pcategory", "IncrCoin", "Antispam", "ShareCoin", "NewUser", "InterestedWords", "Province", "City", "UserCreateTime", "Ctrcnt", "Cvrcnt", "QttProfile", });
     internal_static_userprofile_QttProfile_descriptor =
       getDescriptor().getMessageTypes().get(6);
     internal_static_userprofile_QttProfile_fieldAccessorTable = new
