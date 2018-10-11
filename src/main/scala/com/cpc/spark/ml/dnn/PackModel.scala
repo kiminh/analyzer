@@ -47,7 +47,8 @@ object PackModel {
       dnnGraphFile = name + ".pb",
       dnnIdxFile = name + ".idx",
       dnnEmbedFile = name + ".embed",
-      dnnEmbedWidth = 10
+      dnnEmbedWidth = 10,
+      createTime = new Date().getTime
     )
     pack.writeTo(new FileOutputStream(s"$filename.mlm"))
 
