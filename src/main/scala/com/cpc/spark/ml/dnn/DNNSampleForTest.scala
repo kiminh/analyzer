@@ -34,7 +34,7 @@ object DNNSampleForTest {
       .save("/user/cpc/zhj/tmp/dnntrain-" + date)
     println("train size", train.count())
 
-    val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
+    val test = getSample(spark, tdate, train = false).randomSplit(Array(0.97, 0.03), 123L)(1)
     val tn = test.count
     println("测试数据：total = %d, 正比例 = %.4f".format(tn, test.where("label=array(1,0)").count.toDouble / tn))
 
@@ -47,7 +47,7 @@ object DNNSampleForTest {
     test.take(10).foreach(println)
   }
 
-  def getSample(spark: SparkSession, date: String): DataFrame = {
+  def getSample(spark: SparkSession, date: String, train: Boolean = true): DataFrame = {
     import spark.implicits._
 
     val userAppIdx = getUidApp(spark, date)
@@ -90,51 +90,58 @@ object DNNSampleForTest {
       """.stripMargin
     println(sql)
 
-    spark.sql(sql)
+    val re = spark.sql(sql)
       .join(userAppIdx, Seq("uid"), "leftouter")
-      .repartition(1000)
-      .select($"label",
 
-        expr(s"array(${onehot_features.mkString(",")}) as raw_dense"),
-        expr(s"array(${multihot_features.mkString(",")}) as raw_sparse"),
-        $"rn".alias("sample_idx"),
+    val path = if (train) s"/user/cpc/zhj/tmp/sampletrain-$date" else
+      s"/user/cpc/zhj/tmp/sampletest- $date"
 
-        hash("f1")($"media_type").alias("f1"),
-        hash("f2")($"mediaid").alias("f2"),
-        hash("f3")($"channel").alias("f3"),
-        hash("f4")($"sdk_type").alias("f4"),
-        hash("f5")($"adslot_type").alias("f5"),
-        hash("f6")($"adslotid").alias("f6"),
-        hash("f7")($"sex").alias("f7"),
-        hash("f8")($"dtu_id").alias("f8"),
-        hash("f9")($"adtype").alias("f9"),
-        hash("f10")($"interaction").alias("f10"),
-        hash("f11")($"bid").alias("f11"),
-        hash("f12")($"ideaid").alias("f12"),
-        hash("f13")($"unitid").alias("f13"),
-        hash("f14")($"planid").alias("f14"),
-        hash("f15")($"userid").alias("f15"),
-        hash("f16")($"is_new_ad").alias("f16"),
-        hash("f17")($"adclass").alias("f17"),
-        hash("f18")($"site_id").alias("f18"),
-        hash("f19")($"os").alias("f19"),
-        hash("f20")($"network").alias("f20"),
-        hash("f21")($"phone_price").alias("f21"),
-        hash("f22")($"brand").alias("f22"),
-        hash("f23")($"province").alias("f23"),
-        hash("f24")($"city").alias("f24"),
-        hash("f25")($"city_level").alias("f25"),
-        hash("f26")($"uid").alias("f26"),
-        hash("f27")($"age").alias("f27"),
+    re.select(
+      expr(s"array(${onehot_features.mkString(",")}) as raw_dense"),
+      expr(s"array(${multihot_features.mkString(",")}) as raw_sparse"),
+      $"rn".alias("sample_idx")
+    ).write.mode("overwrite").parquet(path)
 
-        hashSeq("m1", "string")($"pkgs").alias("m1"))
+    re.select($"label",
+
+      $"rn".alias("sample_idx"),
+
+      hash("f1")($"media_type").alias("f1"),
+      hash("f2")($"mediaid").alias("f2"),
+      hash("f3")($"channel").alias("f3"),
+      hash("f4")($"sdk_type").alias("f4"),
+      hash("f5")($"adslot_type").alias("f5"),
+      hash("f6")($"adslotid").alias("f6"),
+      hash("f7")($"sex").alias("f7"),
+      hash("f8")($"dtu_id").alias("f8"),
+      hash("f9")($"adtype").alias("f9"),
+      hash("f10")($"interaction").alias("f10"),
+      hash("f11")($"bid").alias("f11"),
+      hash("f12")($"ideaid").alias("f12"),
+      hash("f13")($"unitid").alias("f13"),
+      hash("f14")($"planid").alias("f14"),
+      hash("f15")($"userid").alias("f15"),
+      hash("f16")($"is_new_ad").alias("f16"),
+      hash("f17")($"adclass").alias("f17"),
+      hash("f18")($"site_id").alias("f18"),
+      hash("f19")($"os").alias("f19"),
+      hash("f20")($"network").alias("f20"),
+      hash("f21")($"phone_price").alias("f21"),
+      hash("f22")($"brand").alias("f22"),
+      hash("f23")($"province").alias("f23"),
+      hash("f24")($"city").alias("f24"),
+      hash("f25")($"city_level").alias("f25"),
+      hash("f26")($"uid").alias("f26"),
+      hash("f27")($"age").alias("f27"),
+
+      hashSeq("m1", "string")($"pkgs").alias("m1"))
 
       .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
         $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         mkSparseFeature1($"m1").alias("sparse"), $"label",
-        $"raw_dense", $"raw_sparse", $"sample_idx"
+        $"sample_idx"
       )
 
       .select(
@@ -144,9 +151,7 @@ object DNNSampleForTest {
         $"sparse".getField("_1").alias("idx0"),
         $"sparse".getField("_2").alias("idx1"),
         $"sparse".getField("_3").alias("idx2"),
-        $"sparse".getField("_4").alias("id_arr"),
-        $"raw_dense",
-        $"raw_sparse"
+        $"sparse".getField("_4").alias("id_arr")
       )
   }
 
