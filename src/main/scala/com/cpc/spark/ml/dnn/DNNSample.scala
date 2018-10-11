@@ -77,7 +77,7 @@ object DNNSample {
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id
          |
-         |from dl_cpc.cpc_union_log where `date`='$date' and hour=10
+         |from dl_cpc.cpc_union_log where `date`='$date'
          |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
@@ -90,7 +90,6 @@ object DNNSample {
       .join(userAppIdx, Seq("uid"), "leftouter")
       .repartition(1000)
       .select($"label",
-        $"media_type".alias("raw_dense"),
 
         hash("f1")($"media_type").alias("f1"),
         hash("f2")($"mediaid").alias("f2"),
@@ -126,8 +125,7 @@ object DNNSample {
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
         $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
-        mkSparseFeature1($"m1").alias("sparse"), $"label",
-        $"raw_dense"
+        mkSparseFeature1($"m1").alias("sparse"), $"label"
       )
 
       .select(
@@ -136,17 +134,16 @@ object DNNSample {
         $"sparse".getField("_1").alias("idx0"),
         $"sparse".getField("_2").alias("idx1"),
         $"sparse".getField("_3").alias("idx2"),
-        $"sparse".getField("_4").alias("id_arr"),
-        $"raw_dense")
+        $"sparse".getField("_4").alias("id_arr")
+      )
 
       .rdd.zipWithIndex()
       .map { x =>
         (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
-          x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"),
-          x._1.getAs[Int]("raw_dense"))
+          x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
       }
-      .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr", "raw_dense")
+      .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
   }
 
 
