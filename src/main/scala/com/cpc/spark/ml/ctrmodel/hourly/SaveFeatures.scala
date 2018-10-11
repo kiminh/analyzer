@@ -17,7 +17,7 @@ object SaveFeatures {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   private var version = "v1"
-  private var versionV2 = "v2_test"
+  private var versionV2 = "v2"
 
 
   def main(args: Array[String]): Unit = {
@@ -38,9 +38,9 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    //saveDataFromLog(spark, date, hour)
-    //saveCvrData(spark, date, hour, version)
-    saveCvrDataV2(spark, date, hour, versionV2)
+    saveDataFromLog(spark, date, hour)
+    //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
+    saveCvrDataV2(spark, date, hour, versionV2) //第二版cvr
     println("SaveFeatures_done")
   }
 
@@ -150,7 +150,6 @@ object SaveFeatures {
       .map {
         x =>
           val convert = Utils.cvrPositiveV(x._2, version)
-          val convert2 = Utils.cvrPositiveV2(x._2, version)
 
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
@@ -233,7 +232,7 @@ object SaveFeatures {
          |       ,b.*
          |from (select * from dl_cpc.cpc_union_log
          |        where `date` = "%s" and `hour` = "%s" ) a
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
+         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2  //过滤测试用户
          |         on a.userid = t2.id
          |    left join
          |        (select *
@@ -252,7 +251,7 @@ object SaveFeatures {
       .map {
         x =>
           val convert = Utils.cvrPositiveV(x._2, version)
-          val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version)
+          val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version)  //新cvr
 
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
@@ -289,7 +288,7 @@ object SaveFeatures {
       }
       .toDF("searchid", "label", "label2", "label_type", "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href", "installed", "report_user_stayinwx")
 
-    cvrlog.filter(x => x.getAs[String]("searchid") == "02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
+    //cvrlog.filter(x => x.getAs[String]("searchid") == "02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
 
     val sqlStmt =
@@ -317,8 +316,8 @@ object SaveFeatures {
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
     spark.sql(
       """
-        |ALTER TABLE dl_cpc.ml_cvr_feature_v1_test add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2_test/%s/%s'
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
 
   }

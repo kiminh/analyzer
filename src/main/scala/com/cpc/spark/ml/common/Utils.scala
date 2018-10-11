@@ -195,6 +195,12 @@ object Utils {
     }
   }
 
+  /**
+    * 新cvr计算逻辑
+    * @param traces
+    * @param version
+    * @return
+    */
   def cvrPositiveV2(traces: Seq[Row], version: String): (Int, Int) = {
     var active5 = 0
     var disactive = 0
