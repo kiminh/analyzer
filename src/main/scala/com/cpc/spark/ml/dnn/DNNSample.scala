@@ -41,7 +41,7 @@ object DNNSample {
 
     val train = rawtrain.join(uid, Seq("uid"), "left")
       .select($"sample_idx", $"label",
-        getNewDense(25, default_hash_uid)($"dense", $"count" < 50).alias("dense"),
+        getNewDense(25, default_hash_uid)($"dense", $"count" < 10).alias("dense"),
         $"idx0", $"idx1", $"idx2", $"id_arr")
 
     val n = train.count()
@@ -52,7 +52,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/dnntrain-" + date)
+      .save("/user/cpc/zhj/longtail/dnntrain-" + date)
     println("train size", train.count())
 
     val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
@@ -64,7 +64,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/dnntest-" + tdate)
+      .save("/user/cpc/zhj/longtail/dnntest-" + tdate)
     test.take(10).foreach(println)
   }
 
