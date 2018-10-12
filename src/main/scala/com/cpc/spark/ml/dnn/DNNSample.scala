@@ -25,11 +25,21 @@ object DNNSample {
       .enableHiveSupport()
       .getOrCreate()
 
+    import spark.implicits._
     val date = args(0)
     val tdate = args(1)
 
-    val train = getSample(spark, date).persist()
-    val n = train.count()
+    val rawtrain = getSample(spark, date).persist()
+
+    val uid = rawtrain.select($"dense[26]".alias("uid"))
+      .groupBy("uid").count()
+      .where("count>10")
+
+    val train = rawtrain.join(uid, $"dense[26]" === $"uid")
+
+    train.printSchema()
+
+    /*val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
 
     train.repartition(100)
@@ -50,7 +60,7 @@ object DNNSample {
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/zhj/dnntest-" + tdate)
-    test.take(10).foreach(println)
+    test.take(10).foreach(println)*/
   }
 
   def getSample(spark: SparkSession, date: String): DataFrame = {
@@ -77,7 +87,7 @@ object DNNSample {
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id
          |
-         |from dl_cpc.cpc_union_log where `date`='$date'
+         |from dl_cpc.cpc_union_log where `date`='$date' and hour =10
          |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
