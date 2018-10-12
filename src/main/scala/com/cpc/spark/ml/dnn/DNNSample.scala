@@ -33,13 +33,14 @@ object DNNSample {
 
     rawtrain.printSchema()
 
-    /*val uid = rawtrain.select($"dense[25]".alias("uid"))
+    val uid = rawtrain.select("uid")
       .groupBy("uid").count()
       .where("count>50")
 
-    //    val train = rawtrain.join(uid, $"dense[25]" === $"uid")
-    val train = rawtrain.join(uid).where("dense[25] = uid")
-    train.printSchema()
+    uid.show(false)
+
+    val train = rawtrain.join(uid, Seq("uid"), "inner")
+      .select("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
 
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
@@ -62,7 +63,7 @@ object DNNSample {
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/zhj/dnntest-" + tdate)
-    test.take(10).foreach(println)*/
+    test.take(10).foreach(println)
   }
 
   def getSample(spark: SparkSession, date: String): DataFrame = {
@@ -89,7 +90,7 @@ object DNNSample {
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id
          |
-         |from dl_cpc.cpc_union_log where `date`='$date' and hour =10
+         |from dl_cpc.cpc_union_log where `date`='$date'
          |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
