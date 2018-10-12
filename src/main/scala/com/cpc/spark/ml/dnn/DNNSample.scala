@@ -31,11 +31,11 @@ object DNNSample {
 
     val rawtrain = getSample(spark, date).persist()
 
-    val uid = rawtrain.select($"dense[26]".alias("uid"))
+    val uid = rawtrain.select($"dense[25]".alias("uid"))
       .groupBy("uid").count()
-      .where("count>10")
+      .where("count>50")
 
-    val train = rawtrain.join(uid, $"dense[26]" === $"uid")
+    val train = rawtrain.join(uid, $"dense[25]" === $"uid")
 
     train.printSchema()
 
