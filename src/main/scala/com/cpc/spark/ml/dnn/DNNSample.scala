@@ -25,9 +25,12 @@ object DNNSample {
       .enableHiveSupport()
       .getOrCreate()
 
+    println("----------------------zhj_dev2----------------------")
     import spark.implicits._
     val date = args(0)
     val tdate = args(1)
+
+    val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
 
     val rawtrain = getSample(spark, date).withColumn("uid", $"dense" (25)).persist()
 
@@ -35,12 +38,11 @@ object DNNSample {
 
     val uid = rawtrain.select("uid")
       .groupBy("uid").count()
-      .where("count>50")
 
-    uid.show(false)
-
-    val train = rawtrain.join(uid, Seq("uid"), "inner")
-      .select("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
+    val train = rawtrain.join(uid, Seq("uid"), "left")
+      .select($"sample_idx", $"label",
+        getNewDense(25, default_hash_uid)($"dense", $"count" < 50).alias("dense"),
+        $"idx0", $"idx1", $"idx2", $"id_arr")
 
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
@@ -205,6 +207,12 @@ object DNNSample {
           re.slice(0, 1000)
       }
     }
+  }
+
+  private def getNewDense(p: Int, d: Long) = udf {
+    (dense: Seq[Long], f: Boolean) =>
+      if (f) dense(p) = d
+      dense
   }
 
   private val mkSparseFeature = udf {
