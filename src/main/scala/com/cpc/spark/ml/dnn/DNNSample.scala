@@ -29,9 +29,11 @@ object DNNSample {
     val date = args(0)
     val tdate = args(1)
 
-    val rawtrain = getSample(spark, date).persist()
+    val rawtrain = getSample(spark, date).withColumn("uid", $"dennse" (25)).persist()
 
-    val uid = rawtrain.select($"dense[25]".alias("uid"))
+    rawtrain.printSchema()
+
+    /*val uid = rawtrain.select($"dense[25]".alias("uid"))
       .groupBy("uid").count()
       .where("count>50")
 
@@ -60,7 +62,7 @@ object DNNSample {
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/zhj/dnntest-" + tdate)
-    test.take(10).foreach(println)
+    test.take(10).foreach(println)*/
   }
 
   def getSample(spark: SparkSession, date: String): DataFrame = {
