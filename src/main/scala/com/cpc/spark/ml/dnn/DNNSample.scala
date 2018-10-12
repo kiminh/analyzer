@@ -35,11 +35,11 @@ object DNNSample {
       .groupBy("uid").count()
       .where("count>50")
 
-    val train = rawtrain.join(uid, $"dense[25]" === $"uid")
-
+    //    val train = rawtrain.join(uid, $"dense[25]" === $"uid")
+    val train = rawtrain.join(uid).where("dense[25] = uid")
     train.printSchema()
 
-    /*val n = train.count()
+    val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
 
     train.repartition(100)
@@ -60,7 +60,7 @@ object DNNSample {
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/zhj/dnntest-" + tdate)
-    test.take(10).foreach(println)*/
+    test.take(10).foreach(println)
   }
 
   def getSample(spark: SparkSession, date: String): DataFrame = {
