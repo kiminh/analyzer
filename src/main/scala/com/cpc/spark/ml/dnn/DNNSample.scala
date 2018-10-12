@@ -29,7 +29,7 @@ object DNNSample {
     val date = args(0)
     val tdate = args(1)
 
-    val rawtrain = getSample(spark, date).withColumn("uid", $"dennse" (25)).persist()
+    val rawtrain = getSample(spark, date).withColumn("uid", $"dense" (25)).persist()
 
     rawtrain.printSchema()
 
