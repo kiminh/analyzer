@@ -209,10 +209,16 @@ object DNNSample {
     }
   }
 
+  /**
+    * 更具指定条件使用默认值更换dense特征中的值
+    *
+    * @param p :位置 0 ~ length-1
+    * @param d :默认值
+    * @return
+    */
   private def getNewDense(p: Int, d: Long) = udf {
     (dense: Seq[Long], f: Boolean) =>
-      if (f) dense(p) = d
-      dense
+      if (f) (dense.slice(0, p) :+ d) ++ dense.slice(p + 1, 1000) else dense
   }
 
   private val mkSparseFeature = udf {
