@@ -31,7 +31,7 @@ object DNNSample {
 
     val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
 
-    val rawtrain = getSample(spark, getDays(date, 0, 3)).withColumn("uid", $"dense" (25)).persist()
+    val rawtrain = getSample(spark, getDays(date, 0, 7)).withColumn("uid", $"dense" (25)).persist()
 
     rawtrain.printSchema()
 
@@ -46,19 +46,19 @@ object DNNSample {
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
 
-    train.repartition(100)
+    train.repartition(200)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/longtail/dnntrain-3days-" + date)
+      .save("/user/cpc/zhj/longtail/dnntrain-7days-" + date)
     println("train size", train.count())
 
     val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
     val tn = test.count
     println("测试数据：total = %d, 正比例 = %.4f".format(tn, test.where("label=array(1,0)").count.toDouble / tn))
 
-    test.repartition(100)
+    test.repartition(200)
       .write
       .mode("overwrite")
       .format("tfrecords")
