@@ -41,7 +41,7 @@ object DNNSample {
 
     val train = rawtrain.join(uid, Seq("uid"), "left")
       .select($"sample_idx", $"label",
-        getNewDense(25, default_hash_uid)($"dense", $"count" < 10).alias("dense"),
+        getNewDense(25, default_hash_uid)($"dense", $"count" < 4).alias("dense"),
         $"idx0", $"idx1", $"idx2", $"id_arr")
 
     val n = train.count()
