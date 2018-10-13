@@ -91,7 +91,7 @@ object DNNSample {
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id
          |
-         |from dl_cpc.cpc_union_log where `date` in ($date)
+         |from dl_cpc.cpc_union_log where `date` in ('$date')
          |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
@@ -178,7 +178,7 @@ object DNNSample {
       cal.add(Calendar.DATE, -1)
       re = re :+ format.format(cal.getTime)
     }
-    "'" + re.mkString("','") + "'"
+    re.mkString("','")
   }
 
   def getUidApp(spark: SparkSession, date: String): DataFrame = {
