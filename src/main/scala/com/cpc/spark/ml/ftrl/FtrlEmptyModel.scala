@@ -24,7 +24,7 @@ object FtrlEmptyModel {
 
 
   def main(args: Array[String]): Unit = {
-    val ftrl = Ftrl(1)
+    val ftrl = new Ftrl(1)
     Ftrl.saveLrPbPackWithDict(ftrl, "/home/cpc/ftrl/ctr-protrait21-ftrl-id-qtt-list-redis.mlm", "ctr-ftrl-v1", "ctr-protrait21-ftrl-id-qtt-list-redis")
   }
 }
