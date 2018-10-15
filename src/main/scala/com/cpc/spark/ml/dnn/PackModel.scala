@@ -35,7 +35,7 @@ object PackModel {
     redis.set("aa", args(5).toFloat)
 
 
-    println((redis.get[Float]("aa"), redis.get[String]("aa"), redis.get("aa")))
+    println((redis.get[Double]("aa"), redis.get[String]("aa"), redis.get("aa")))
 
 
     println(args.mkString(" "))
