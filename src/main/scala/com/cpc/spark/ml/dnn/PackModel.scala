@@ -11,6 +11,9 @@ import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegression
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
+import com.redis.RedisClient
+import com.redis.serialization.Parse.Implicits._
+
 import scala.io.Source
 import scala.sys.process._
 
@@ -24,6 +27,14 @@ object PackModel {
   private var irError = 0d
 
   def main(args: Array[String]): Unit = {
+
+    val conf = ConfigFactory.load()
+    val redis = new RedisClient(conf.getString("redis.ml_feature_ali.host"),
+      conf.getInt("redis.ml_feature_ali.port"))
+    redis.auth(conf.getString("redis.ml_feature_ali.auth"))
+    redis.set("aa", 1234)
+
+
     println(args.mkString(" "))
     val name = args(0)       //model 名称    qtt-list-dnn-rawid
     val testfile = args(1)   //测试结果   prediction label
