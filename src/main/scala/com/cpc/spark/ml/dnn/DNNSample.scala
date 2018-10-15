@@ -25,10 +25,24 @@ object DNNSample {
       .enableHiveSupport()
       .getOrCreate()
 
+    import spark.implicits._
     val date = args(0)
     val tdate = args(1)
 
-    val train = getSample(spark, date).persist()
+    val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
+
+    val rawtrain = getSample(spark, getDays(date, 0, 3)).withColumn("uid", $"dense" (25)).persist()
+
+    rawtrain.printSchema()
+
+    val uid = rawtrain.select("uid")
+      .groupBy("uid").count()
+
+    val train = rawtrain.join(uid, Seq("uid"), "left")
+      .select($"sample_idx", $"label",
+        getNewDense(25, default_hash_uid)($"dense", $"count" < 4).alias("dense"),
+        $"idx0", $"idx1", $"idx2", $"id_arr")
+
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
 
@@ -37,8 +51,10 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/dnntrain-" + date)
+      .save("/user/cpc/zhj/longtail/dnntrain-3-" + date)
     println("train size", train.count())
+
+    rawtrain.unpersist()
 
     val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
     val tn = test.count
@@ -49,7 +65,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/dnntest-" + tdate)
+      .save("/user/cpc/zhj/longtail/dnntest-" + tdate)
     test.take(10).foreach(println)
   }
 
@@ -77,7 +93,7 @@ object DNNSample {
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id
          |
-         |from dl_cpc.cpc_union_log where `date`='$date'
+         |from dl_cpc.cpc_union_log where `date` in ('$date')
          |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
@@ -146,6 +162,26 @@ object DNNSample {
       .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
   }
 
+  /**
+    * 获取时间序列
+    *
+    * @param startdate : 日期
+    * @param day1      ：日期之前day1天作为开始日期
+    * @param day2      ：日期序列数量
+    * @return
+    */
+  def getDays(startdate: String, day1: Int = 0, day2: Int): String = {
+    val format = new SimpleDateFormat("yyyy-MM-dd")
+    val cal = Calendar.getInstance()
+    cal.setTime(format.parse(startdate))
+    cal.add(Calendar.DATE, -day1)
+    var re = Seq(format.format(cal.getTime))
+    for (i <- 1 until day2) {
+      cal.add(Calendar.DATE, -1)
+      re = re :+ format.format(cal.getTime)
+    }
+    re.mkString("','")
+  }
 
   def getUidApp(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
@@ -192,6 +228,18 @@ object DNNSample {
           re.slice(0, 1000)
       }
     }
+  }
+
+  /**
+    * 更具指定条件使用默认值更换dense特征中的值
+    *
+    * @param p :位置 0 ~ length-1
+    * @param d :默认值
+    * @return
+    */
+  private def getNewDense(p: Int, d: Long) = udf {
+    (dense: Seq[Long], f: Boolean) =>
+      if (f) (dense.slice(0, p) :+ d) ++ dense.slice(p + 1, 1000) else dense
   }
 
   private val mkSparseFeature = udf {
