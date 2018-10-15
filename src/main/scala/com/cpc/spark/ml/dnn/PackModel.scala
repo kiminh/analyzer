@@ -32,7 +32,10 @@ object PackModel {
     val redis = new RedisClient(conf.getString("redis.ml_feature_ali.host"),
       conf.getInt("redis.ml_feature_ali.port"))
     redis.auth(conf.getString("redis.ml_feature_ali.auth"))
-    redis.set("aa", 1234)
+    redis.set("aa", args(5).toFloat)
+
+
+    println(redis.get[Float]("aa"), redis.get[String]("aa"), redis.get("aa"))
 
 
     println(args.mkString(" "))
