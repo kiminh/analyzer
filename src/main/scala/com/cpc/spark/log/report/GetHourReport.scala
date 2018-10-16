@@ -581,14 +581,14 @@ object GetHourReport {
           var isclick = x.getAs[Int]("isclick")
           var spam_click = x.getAs[Int]("spam_click")
           var antispam_score = x.getAs[Int]("antispam_score")
-          var realCost = 0
+          var realCost = 0L
           if (isclick > 0 && antispam_score == 10000) {
-            realCost = x.getAs[Int]("price")
+            realCost = x.getAs[Long]("price")
             if (realCost >= Int.MaxValue) {
               realCost = 1
             }
           } else {
-            realCost = 0
+            realCost = 0L
           }
           val charge = MediaChargeReport( //adslotType = x.getAs[Int]("adslot_type")
             //media_id = x.getAs[String]("media_appsid").toInt,
@@ -605,7 +605,7 @@ object GetHourReport {
             click = isclick,
             //charged_click = isclick,
             //spam_click = spam_click,
-            cash_cost = realCost,
+            cash_cost = realCost.toInt,
             date = x.getAs[String]("date"),
             hour = x.getAs[String]("hour").toInt
           )
