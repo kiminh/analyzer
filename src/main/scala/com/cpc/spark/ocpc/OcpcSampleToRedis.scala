@@ -108,20 +108,43 @@ object OcpcSampleToRedis {
          |    a.adclass=b.adclass
        """.stripMargin)
 
-    useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table")
+//    useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table")
+
+    useridAdclassData.createOrReplaceTempView("useridTable")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    userid,
+         |    adclass,
+         |    cost,
+         |    (case when cvr_cnt=0 then ctr_cnt+1 else ctr_cnt end) as ctr_cnt,
+         |    (case when cvr_cnt=0 then 1 else cvr_cnt end) as cvr_cnt,
+         |    adclass_cost,
+         |    (case when adclass_cvr_cnt=0 then adclass_ctr_cnt+1 else adclass_ctr_cnt end) as adclass_ctr_cnt,
+         |    (case when adclass_cvr_cnt=0 then 1 else adclass_cvr_cnt end) as adclass_cvr_cnt,
+         |    '$end_date' as date,
+         |    '$hour' as hour
+         |FROM
+         |    useridTable
+       """.stripMargin
+
+    val userFinalData = spark.sql(sqlRequest2)
+    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
     // save into redis and pb file
     // write data into a temperary table
     uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
 
-    //     save data into redis
-    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
-
-    //     check redis
-    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
+//    //     save data into redis
+//    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+//
+//    //     check redis
+//    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
 
     //     save data into pb file
-    savePbPack(useridAdclassData)
+    savePbPack(userFinalData)
   }
 
 
@@ -250,46 +273,46 @@ object OcpcSampleToRedis {
       val userId = record.get(1).toString
       val adclassId = record.get(2).toString
       val costValue = record.get(3).toString
-      val ctrValue = record.getLong(4)
-      val cvrValue = record.getLong(5)
+      val ctrValue = record.getLong(4).toString
+      val cvrValue = record.getLong(5).toString
       val adclassCost = record.get(6).toString
-      val adclassCtr = record.getLong(7)
-      val adclassCvr = record.getLong(8)
-      // check ideaid's cvr
-      var ctrCntValue: String = ""
-      var cvrCntValue: String = ""
-      if (cvrValue == 0) {
-        val cvr = 1
-        val ctr = ctrValue + 1
-        cvrCntValue = cvr.toString
-        ctrCntValue = ctr.toString
-      } else {
-        cvrCntValue = cvrValue.toString
-        ctrCntValue = ctrValue.toString
-      }
-      // check adclass' cvr
-      var adclassCtrCntValue: String = ""
-      var adclassCvrCntValue: String = ""
-      if (adclassCvr == 0) {
-        val cvr = 1
-        val ctr = adclassCtr + 1
-        adclassCvrCntValue = cvr.toString
-        adclassCtrCntValue = ctr.toString
-      } else {
-        adclassCtrCntValue = adclassCtr.toString
-        adclassCvrCntValue = adclassCvr.toString
-      }
+      val adclassCtr = record.getLong(7).toString
+      val adclassCvr = record.getLong(8).toString
+//      // check ideaid's cvr
+//      var ctrCntValue: String = ""
+//      var cvrCntValue: String = ""
+//      if (cvrValue == 0) {
+//        val cvr = 1
+//        val ctr = ctrValue + 1
+//        cvrCntValue = cvr.toString
+//        ctrCntValue = ctr.toString
+//      } else {
+//        cvrCntValue = cvrValue.toString
+//        ctrCntValue = ctrValue.toString
+//      }
+//      // check adclass' cvr
+//      var adclassCtrCntValue: String = ""
+//      var adclassCvrCntValue: String = ""
+//      if (adclassCvr == 0) {
+//        val cvr = 1
+//        val ctr = adclassCtr + 1
+//        adclassCvrCntValue = cvr.toString
+//        adclassCtrCntValue = ctr.toString
+//      } else {
+//        adclassCtrCntValue = adclassCtr.toString
+//        adclassCvrCntValue = adclassCvr.toString
+//      }
 
       val currentItem = SingleUser(
         ideaid = kValue,
         userid = userId,
         cost = costValue,
-        ctrcnt = ctrCntValue,
-        cvrcnt = cvrCntValue,
+        ctrcnt = ctrValue,
+        cvrcnt = cvrValue,
         adclass = adclassId,
         adclassCost = adclassCost,
-        adclassCtrcnt = adclassCtrCntValue,
-        adclassCvrcnt = adclassCvrCntValue
+        adclassCtrcnt = adclassCtr,
+        adclassCvrcnt = adclassCvr
       )
       list += currentItem
     }
