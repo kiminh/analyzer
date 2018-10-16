@@ -610,6 +610,7 @@ object GetHourReport {
       }
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
+      .filter(x => x.cash_cost < Int.MaxValue)  //过滤脏数据
       .map {
         x =>
           (x.user_id, x.adslot_type, x.date, x.hour, x.served_request, x.impression, x.click, x.cash_cost)
