@@ -51,7 +51,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/longtail/dnntrain-3-" + date)
+      .save("/user/cpc/zhj/all/dnntrain-3-" + date)
     println("train size", train.count())
 
     rawtrain.unpersist()
@@ -65,7 +65,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/longtail/dnntest-" + tdate)
+      .save("/user/cpc/zhj/all/dnntest-" + tdate)
     test.take(10).foreach(println)
   }
 
@@ -94,7 +94,7 @@ object DNNSample {
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id
          |
          |from dl_cpc.cpc_union_log where `date` in ('$date')
-         |  and isshow = 1 and ideaid > 0 and adslot_type = 1
+         |  and isshow = 1 and ideaid > 0 and adslot_type in (1, 2)
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
