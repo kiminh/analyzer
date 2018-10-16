@@ -584,7 +584,7 @@ object GetHourReport {
           var realCost = 0L
           if (isclick > 0 && antispam_score == 10000) {
             realCost = x.getAs[Long]("price")
-            if (realCost >= 10000) {
+            if (realCost >= 10000 || realCost < 0) {
               realCost = 1L
             }
           } else {
