@@ -98,6 +98,7 @@ object FtrlNewHourly {
     if (upload > 0) {
       val conf = ConfigFactory.load()
       println(MUtils.updateMlcppOnlineData(filename, s"/home/work/mlcpp/data/$fname", conf))
+      println(MUtils.updateMlcppModelData(filename, s"/home/cpc/model_server/data/$fname", conf))
     }
 
   }
