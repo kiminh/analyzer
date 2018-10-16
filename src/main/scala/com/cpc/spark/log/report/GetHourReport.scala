@@ -584,6 +584,9 @@ object GetHourReport {
           var realCost = 0
           if (isclick > 0 && antispam_score == 10000) {
             realCost = x.getAs[Int]("price")
+            if (realCost >= Int.MaxValue) {
+              realCost = 1
+            }
           } else {
             realCost = 0
           }
@@ -608,7 +611,6 @@ object GetHourReport {
           )
           ((charge.user_id, charge.adslot_type), charge)
       }
-      .filter(x => x._2.cash_cost < Int.MaxValue/10)  //过滤脏数据
       .reduceByKey((x, y) => x.sum(y))
       .map(_._2)
       .map {
