@@ -584,7 +584,7 @@ object GetHourReport {
           var realCost = 0
           if (isclick > 0 && antispam_score == 10000) {
             realCost = x.getAs[Int]("price")
-            if (realCost >= Int.MaxValue) {
+            if (realCost >= Int.MaxValue/100) {
               realCost = 1
             }
           } else {
