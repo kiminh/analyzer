@@ -94,6 +94,9 @@ object GetHourReport {
           var charge_fee = if (isclick > 0 || chargeType == "cpm")
             x.getAs[Int]("charge_fee")
           else 0D
+          if (charge_fee > 10000 || charge_fee < 0) {
+            charge_fee = 0
+          }
 
           val charge = MediaChargeReport( //adslotType = x.getAs[Int]("adslot_type")
             media_id = x.getAs[String]("media_appsid").toInt,
@@ -125,6 +128,10 @@ object GetHourReport {
           var charge_fee = if (isclick > 0 || chargeType == "cpm")
             x.getAs[Double]("charge_fee")
           else 0D
+
+          if (charge_fee > 10000 || charge_fee < 0) {
+            charge_fee = 0
+          }
 
           val charge = MediaChargeReport( //adslotType = x.getAs[Int]("adslot_type")
             media_id = x.getAs[String]("media_appsid").toInt,
@@ -174,6 +181,9 @@ object GetHourReport {
           } else {
             realCost = 0
           }
+          if (realCost > 10000 || realCost < 0) {
+            realCost = 0
+          }
           val report = MediaGeoReport(
             //media_id = x.media_appsid.toInt,
             //adslot_id = x.adslotid.toInt,
@@ -219,6 +229,10 @@ object GetHourReport {
           } else {
             realCost = 0
           }
+          if (realCost > 10000 || realCost < 0) {
+            realCost = 0
+          }
+
           val report = MediaOsReport(
             media_id = x.getAs[String]("media_appsid").toInt,
             adslot_id = x.getAs[String]("adslotid").toInt,
@@ -265,6 +279,10 @@ object GetHourReport {
           if (isclick > 0) {
             realCost = x.getAs[Int]("price")
           }
+          if (realCost > 10000 || realCost < 0) {
+            realCost = 0
+          }
+
           val report = ReqDspReport(
             media_id = x.getAs[String]("media_appsid").toInt,
             adslot_id = x.getAs[String]("adslotid").toInt,
@@ -343,6 +361,9 @@ object GetHourReport {
           } else {
             realCost = 0
           }
+          if (realCost > 10000 || realCost < 0) {
+            realCost = 0
+          }
           val report = MediaFillReport(
             media_id = x.getAs[String]("media_appsid").toInt,
             adslot_id = x.getAs[String]("adslotid").toInt,
@@ -382,6 +403,9 @@ object GetHourReport {
           if (isclick > 0 && antispam_score == 10000) {
             realCost = u.getAs[Int]("price")
           } else {
+            realCost = 0
+          }
+          if (realCost > 10000 || realCost < 0) {
             realCost = 0
           }
 
@@ -586,6 +610,9 @@ object GetHourReport {
             realCost = x.getAs[Int]("price")
           } else {
             realCost = 0
+          }
+          if (realCost >= 10000 || realCost < 0) {
+            realCost = 1
           }
           val charge = MediaChargeReport( //adslotType = x.getAs[Int]("adslot_type")
             //media_id = x.getAs[String]("media_appsid").toInt,
