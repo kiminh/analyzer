@@ -46,8 +46,17 @@ object HourlyCalibrationOnCvr {
                  |( select searchid, ext_int['raw_cvr'] as ecvr, show_timestamp as time, ext_string['cvr_model_name'] as model_name
                  | from dl_cpc.cpc_union_log
                  | where $timeRangeSql
-                 | and media_appsid in ('80000001', '80000002') and isclick = 1 and ext['antispam'].int_value = 0
-                 | and ideaid > 0 and adsrc = 1 and adslot_type in (1, 2, 3) AND userid > 0)
+                 | and media_appsid in ('80000001', '80000002')
+                 | and isclick = 1
+                 | and ext['antispam'].int_value = 0
+                 | and ideaid > 0
+                 | and adsrc = 1
+                 | and adslot_type in (1, 2, 3)
+                 | and userid > 0
+                 | and (ext["charge_type"] IS NULL
+                 |       OR ext["charge_type"].int_value = 1)
+                 | and round(ext["adclass"].int_value/1000) != 132101
+                 | )
                  | a left join
                  |(select searchid, label as iscvr from dl_cpc.ml_cvr_feature_v1
                  |WHERE $timeRangeSql
