@@ -12,7 +12,7 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import scala.collection.mutable
 import scala.collection.mutable.WrappedArray
 import scala.util.Random
-
+@deprecated
 object DNNSampleSingle {
 
   private var trainLog = Seq[String]()

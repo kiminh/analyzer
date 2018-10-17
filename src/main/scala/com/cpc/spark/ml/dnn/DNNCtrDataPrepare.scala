@@ -17,6 +17,7 @@ import scala.util.Random
   * @version 1.0
   *
   */
+@deprecated
 object DNNCtrDataPrepare {
   def main(args: Array[String]): Unit = {
 
