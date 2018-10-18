@@ -1,6 +1,8 @@
 package com.cpc.spark.ml.calibration
 
 import java.io.FileInputStream
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 import com.cpc.spark.common.Utils
 import com.google.protobuf.CodedInputStream
@@ -10,24 +12,32 @@ import mlmodel.mlmodel.CalibrationConfig
   * author: huazhenhao
   * date: 10/09/18
   */
-object CalibrationCheckCvr {
+object CalibrationCheckCvrFull {
   def main(args: Array[String]): Unit = {
     val modelPath = args(0)
     val dt = args(1)
     val hour = args(2)
-    val modelName = args(3)
+    val hourRange = args(3).toInt
+    val modelName = args(4)
 
 
     println(s"modelPath=$modelPath")
     println(s"dt=$dt")
     println(s"hour=$hour")
+    println(s"range=$hourRange")
     println(s"modelName=$modelName")
+
+    val endTime = LocalDateTime.parse(s"$dt-$hour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
+    val startTime = endTime.minusHours(Math.max(hourRange - 1, 0))
+
+    val startDate = startTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+    val startHour = startTime.format(DateTimeFormatter.ofPattern("HH"))
 
     val irModel = new CalibrationConfig().mergeFrom(CodedInputStream.newInstance(new FileInputStream(modelPath)))
     println(irModel.toString)
     val session = Utils.buildSparkSession("calibration_check")
 
-    val timeRangeSql = Utils.getTimeRangeSql(dt, hour, dt, hour)
+    val timeRangeSql = Utils.getTimeRangeSql(startDate, startHour, dt, hour)
 
     // get union log
    val sql = s"""
@@ -45,7 +55,6 @@ object CalibrationCheckCvr {
                  | and adsrc = 1
                  | and adslot_type in (1, 2, 3)
                  | and ext_string['cvr_model_name'] = '$modelName'
-                 | and exptags like "%calibration=on%"
                  | and userid > 0
                  | and (ext["charge_type"] IS NULL
                  |       OR ext["charge_type"].int_value = 1)
@@ -59,27 +68,16 @@ object CalibrationCheckCvr {
 
     println(s"sql:\n$sql")
     val log = session.sql(sql)
-    var ct = 0
-    log.limit(200).rdd.toLocalIterator.foreach( x => {
-      val isCvr = x.getInt(0).toDouble
-      val ecvr = x.getInt(1).toDouble / 1e6d
-      val rawCvr = x.getLong(2).toDouble / 1e6d
-      val calibrated = HourlyCalibration.computeCalibration(rawCvr, irModel.ir.get)
-
-      if (Math.abs(ecvr - calibrated) / calibrated > 0.2) {
-        println(s"isCvr: $isCvr")
-        println(s"onlineCvr: $ecvr")
-        println(s"calibrated: $calibrated")
-        println("======")
-        ct += 1
-      }
-    })
-    println(s"error ct: $ct")
-
     val result = log.rdd.map( x => {
       val isCvr = x.getInt(0).toDouble
-      val ecvr = x.getInt(1).toDouble / 1e6d
-      val rawCvr = x.getLong(2).toDouble / 1e6d
+      var ecvr = x.getInt(1).toDouble / 1e6d
+      if (ecvr < 0.0) {
+        ecvr = 0.0
+      }
+      var rawCvr = x.getLong(2).toDouble / 1e6d
+      if (rawCvr < 0.0) {
+        rawCvr = 0.0
+      }
       val calibrated = HourlyCalibration.computeCalibration(rawCvr, irModel.ir.get)
       (isCvr, ecvr, rawCvr, calibrated, 1.0)
     }).reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4, x._5 + y._5))
