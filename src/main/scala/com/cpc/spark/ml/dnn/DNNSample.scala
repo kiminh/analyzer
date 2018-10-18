@@ -51,7 +51,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/all/dnntrain-3-" + date)
+      .save("/user/cpc/zhj/longtail/dnntrain-3-" + date)
     println("train size", train.count())
 
     rawtrain.unpersist()
@@ -65,7 +65,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/all/dnntest-" + tdate)
+      .save("/user/cpc/zhj/longtail/dnntest-" + tdate)
     test.take(10).foreach(println)
   }
 
