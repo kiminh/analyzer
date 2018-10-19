@@ -54,6 +54,7 @@ object OcpcSampleToRedis {
          |FROM
          |  dl_cpc.ocpc_uid_userid_track
          |WHERE ($selectCondition1) OR
+         |
          |($selectCondition2) OR
          |($selectCondition3)
          |GROUP BY userid, uid, ideaid, adclass
@@ -128,21 +129,58 @@ object OcpcSampleToRedis {
          |    useridTable
        """.stripMargin
 
+
     val userFinalData = spark.sql(sqlRequest2)
     userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  a.ideaid,
+         |  a.userid,
+         |  a.adclass,
+         |  a.cost,
+         |  a.ctr_cnt,
+         |  a.cvr_cnt,
+         |  a.adclass_cost,
+         |  a.adclass_ctr_cnt,
+         |  a.adclass_cvr_cnt,
+         |  (case when b.k_value is null then 1.0 else b.k_value end) as k_value
+         |FROM
+         |  (SELECT
+         |    *
+         |   FROM
+         |    dl_cpc.ocpc_pb_result_table
+         |   WHERE
+         |    `date`='$end_date'
+         |   and
+         |    `hour`='$hour') a
+         |LEFT JOIN
+         |   test.ocpc_k_value_table b
+         |ON
+         |   a.ideaid=b.ideaid
+       """.stripMargin
+
+    val userFinalData2 = spark.sql(sqlRequest3)
+
+    userFinalData2.show(10)
+
+    userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 
     // save into redis and pb file
     // write data into a temperary table
     uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
 
+
+
     //     save data into redis
-    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+//    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
 
     //     check redis
-    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
+//    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
 
     //     save data into pb file
-    savePbPack(userFinalData)
+    savePbPack(userFinalData2)
   }
 
 
@@ -267,7 +305,7 @@ object OcpcSampleToRedis {
     dataset.show(10)
     for (record <- dataset.collect()) {
 
-      val kValue = record.get(0).toString
+      val ideaid = record.get(0).toString
       val userId = record.get(1).toString
       val adclassId = record.get(2).toString
       val costValue = record.get(3).toString
@@ -276,33 +314,10 @@ object OcpcSampleToRedis {
       val adclassCost = record.get(6).toString
       val adclassCtr = record.getLong(7).toString
       val adclassCvr = record.getLong(8).toString
-//      // check ideaid's cvr
-//      var ctrCntValue: String = ""
-//      var cvrCntValue: String = ""
-//      if (cvrValue == 0) {
-//        val cvr = 1
-//        val ctr = ctrValue + 1
-//        cvrCntValue = cvr.toString
-//        ctrCntValue = ctr.toString
-//      } else {
-//        cvrCntValue = cvrValue.toString
-//        ctrCntValue = ctrValue.toString
-//      }
-//      // check adclass' cvr
-//      var adclassCtrCntValue: String = ""
-//      var adclassCvrCntValue: String = ""
-//      if (adclassCvr == 0) {
-//        val cvr = 1
-//        val ctr = adclassCtr + 1
-//        adclassCvrCntValue = cvr.toString
-//        adclassCtrCntValue = ctr.toString
-//      } else {
-//        adclassCtrCntValue = adclassCtr.toString
-//        adclassCvrCntValue = adclassCvr.toString
-//      }
+      val k = record.get(9).toString
 
       val currentItem = SingleUser(
-        ideaid = kValue,
+        ideaid = ideaid,
         userid = userId,
         cost = costValue,
         ctrcnt = ctrValue,
@@ -310,7 +325,8 @@ object OcpcSampleToRedis {
         adclass = adclassId,
         adclassCost = adclassCost,
         adclassCtrcnt = adclassCtr,
-        adclassCvrcnt = adclassCvr
+        adclassCvrcnt = adclassCvr,
+        kvalue = k
       )
       list += currentItem
     }
