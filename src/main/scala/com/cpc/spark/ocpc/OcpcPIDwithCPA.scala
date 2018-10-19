@@ -107,7 +107,7 @@ object OcpcPIDwithCPA {
 
   def calculateK(spark:SparkSession): Unit = {
     import spark.implicits._
-    val filename1=" /user/cpc/wangjun/ocpc_k.txt"
+    val filename1="/user/cpc/wangjun/ocpc_k.txt"
     val data = spark.sparkContext.textFile(filename1)
 
     val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
