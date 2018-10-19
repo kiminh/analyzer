@@ -31,7 +31,7 @@ object DNNSample {
 
     val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
 
-    val rawtrain = getSample(spark, getDays(date, 0, 3)).withColumn("uid", $"dense" (25)).persist()
+    val rawtrain = getSample(spark, date).withColumn("uid", $"dense" (25)).persist()
 
     rawtrain.printSchema()
 
@@ -51,7 +51,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/longtail/dnntrain-3-" + date)
+      .save("/user/cpc/zhj/dnntrain-" + date)
     println("train size", train.count())
 
     rawtrain.unpersist()
@@ -65,7 +65,7 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/longtail/dnntest-" + tdate)
+      .save("/user/cpc/zhj/dnntest-" + tdate)
     test.take(10).foreach(println)
   }
 
@@ -93,7 +93,7 @@ object DNNSample {
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id
          |
-         |from dl_cpc.cpc_union_log where `date` in ('$date')
+         |from dl_cpc.cpc_union_log where `date` = '$date'
          |  and isshow = 1 and ideaid > 0 and adslot_type in (1, 2)
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
