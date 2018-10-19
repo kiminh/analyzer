@@ -12,15 +12,15 @@ object OcpcPIDwithCPA {
 
     val date = args(0).toString
     val hour = args(1).toString
-    testGenCPAratio(date, hour, spark)
+//    testGenCPAratio(date, hour, spark)
 
 
-//    val filename = "/user/cpc/wangjun/cpa_given.txt"
-//
-//    val dataset = testGenCPAgiven(filename, spark)
-//    dataset.show(10)
-//    genCPAratio(dataset, date, hour, spark)
-//    calculateK(spark)
+    val filename = "/user/cpc/wangjun/cpa_given.txt"
+
+    val dataset = testGenCPAgiven(filename, spark)
+    dataset.show(10)
+    genCPAratio(dataset, date, hour, spark)
+    calculateK(spark)
 
   }
 
@@ -189,7 +189,7 @@ object OcpcPIDwithCPA {
     import spark.implicits._
 
 
-    val dataDF = spark.table("test.test_new_pb_ocpc").select("ideaid", "k_value")
+    val dataDF = spark.table("test.ocpc_k_value_table").select("ideaid", "k_value")
     dataDF.show(10)
 
     val ratioDF = spark.table("test.ocpc_cpa_given_history_ratio")
