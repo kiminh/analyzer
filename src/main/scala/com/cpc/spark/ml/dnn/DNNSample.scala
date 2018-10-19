@@ -32,7 +32,7 @@ object DNNSample {
 
     val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
 
-    val rawtrain = getSample(spark, date).withColumn("uid", $"dense" (25)).persist(StorageLevel.DISK_ONLY)
+    val rawtrain = getSample(spark, date).withColumn("uid", $"dense" (25)).persist()
 
     rawtrain.printSchema()
 
