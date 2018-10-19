@@ -48,7 +48,7 @@ object OcpcPIDwithCPA {
   }
 
 
-  def genCPAhistory(dataFrame: DataFrame, date: String, hour: String, spark:SparkSession) = {
+  def genCPAhistory(CPAgiven: DataFrame, date: String, hour: String, spark:SparkSession) = {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
@@ -75,8 +75,29 @@ object OcpcPIDwithCPA {
        """.stripMargin
     println(sqlRequest)
 
-    val dataDF = spark.sql(sqlRequest)
-    dataDF.show(10)
+    val CPAhistory = spark.sql(sqlRequest)
+    CPAhistory.show(10)
+    CPAhistory.printSchema()
+
+    CPAgiven.createOrReplaceTempView("cpa_given_table")
+    CPAhistory.createOrReplaceTempView("cpa_history_table")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  a.ideaid,
+         |  (a.cpa_given * 1.0 / b.cpa_history) as ratio
+         |FROM
+         |  cpa_given_table a
+         |INNER JOIN
+         |  cpa_history_table b
+         |ON
+         |  a.ideaid=b.ideaid
+       """.stripMargin
+
+    val resultDF = spark.sql(sqlRequest2)
+    resultDF.show(10)
+
 
 
   }
