@@ -145,7 +145,7 @@ object OcpcSampleToRedis {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case when b.ratio is null then 1.0 else b.ratio end) as ratio
+         |  (case when b.k_value is null then 1.0 else b.k_value end) as k_value
          |FROM
          |  (SELECT
          |    *
@@ -156,13 +156,16 @@ object OcpcSampleToRedis {
          |   and
          |    `hour`='$hour') a
          |LEFT JOIN
-         |   test.ocpc_cpa_given_history_ratio b
+         |   test.ocpc_k_value_table b
          |ON
          |   a.ideaid=b.ideaid
        """.stripMargin
 
     val userFinalData2 = spark.sql(sqlRequest3)
 
+    userFinalData2.show(10)
+
+    userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 
     // save into redis and pb file
     // write data into a temperary table
@@ -302,7 +305,7 @@ object OcpcSampleToRedis {
     dataset.show(10)
     for (record <- dataset.collect()) {
 
-      val kValue = record.get(0).toString
+      val ideaid = record.get(0).toString
       val userId = record.get(1).toString
       val adclassId = record.get(2).toString
       val costValue = record.get(3).toString
@@ -311,10 +314,10 @@ object OcpcSampleToRedis {
       val adclassCost = record.get(6).toString
       val adclassCtr = record.getLong(7).toString
       val adclassCvr = record.getLong(8).toString
-      val ratio = record.getDouble(9)
+      val k = record.get(9).toString
 
       val currentItem = SingleUser(
-        ideaid = kValue,
+        ideaid = ideaid,
         userid = userId,
         cost = costValue,
         ctrcnt = ctrValue,
@@ -322,7 +325,8 @@ object OcpcSampleToRedis {
         adclass = adclassId,
         adclassCost = adclassCost,
         adclassCtrcnt = adclassCtr,
-        adclassCvrcnt = adclassCvr
+        adclassCvrcnt = adclassCvr,
+        kvalue = k
       )
       list += currentItem
     }
