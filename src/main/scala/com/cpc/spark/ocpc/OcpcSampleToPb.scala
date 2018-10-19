@@ -161,10 +161,6 @@ object OcpcSampleToPb {
 
     userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 
-    // save into redis and pb file
-    // write data into a temperary table
-    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
-
     // save data into pb file
     savePbPack(userFinalData2)
   }
