@@ -12,16 +12,19 @@ object OcpcPIDwithCPA {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val filename = "/user/cpc/wangjun/cpa_given.txt"
+    testGenCPAratio(date, hour, spark)
 
-    val dataset = testGenCPAgiven(filename, spark)
-    dataset.show(10)
-    genCPAratio(dataset, date, hour, spark)
-    calculateK(spark)
+
+//    val filename = "/user/cpc/wangjun/cpa_given.txt"
+//
+//    val dataset = testGenCPAgiven(filename, spark)
+//    dataset.show(10)
+//    genCPAratio(dataset, date, hour, spark)
+//    calculateK(spark)
 
   }
 
-  def testGenCPAgiven(filename: String, spark: SparkSession) = {
+  def testGenCPAgiven(filename: String, spark: SparkSession): DataFrame = {
     import spark.implicits._
     val data = spark.sparkContext.textFile(filename)
 
@@ -32,32 +35,75 @@ object OcpcPIDwithCPA {
     resultDF
   }
 
-
-  def genCPAratio(CPAgiven: DataFrame, date: String, hour: String, spark:SparkSession) = {
+  def testGenCPAratio(date: String, hour: String, spark:SparkSession): Unit = {
     // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
+    calendar.add(Calendar.HOUR, -4)
     val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-    val selectCondition1 = s"`date`='$date1' and hour >= '$hour'"
+    val tmpDate = dateConverter.format(yesterday)
+    val (date1, hour1) = tmpDate.split(" ")
+    val selectCondition1 = s"`date`='$date1' and hour >= '$hour1'"
     val selectCondition2 = s"`date`='$date' and `hour`<='$hour'"
 
     // read data and calculate cpa_history
     val sqlRequest =
       s"""
          |SELECT
-         |  ideaid,
-         |  SUM(cost)/SUM(cvr_cnt) AS cpa_history
+         |    t.ideaid,
+         |    (CASE WHEN t.cvr_total=0 then t.price_total * 10.0 else t.price_total * 1.0 / t.cvr_total end) as cpa_history
          |FROM
-         |  dl_cpc.ocpc_uid_userid_track
-         |WHERE
-         |  ($selectCondition1)
-         |OR
-         |  ($selectCondition2)
-         |GROUP BY ideaid
+         |    (SELECT
+         |        ideaid,
+         |        SUM(cost) as price_total,
+         |        SUM(cvr_cnt) as cvr_total
+         |    FROM
+         |        dl_cpc.ocpc_uid_userid_track
+         |    WHERE
+         |        ($selectCondition1)
+         |    OR
+         |        ($selectCondition2)
+         |    GROUP BY ideaid) t;
+       """.stripMargin
+    println(sqlRequest)
+  }
+
+
+  def genCPAratio(CPAgiven: DataFrame, date: String, hour: String, spark:SparkSession): Unit = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -4)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val (date1, hour1) = tmpDate.split(" ")
+    val selectCondition1 = s"`date`='$date1' and hour >= '$hour1'"
+    val selectCondition2 = s"`date`='$date' and `hour`<='$hour'"
+
+    // read data and calculate cpa_history
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    t.ideaid,
+         |    (CASE WHEN t.cvr_total=0 then t.price_total * 10.0 else t.price_total * 1.0 / t.cvr_total end) as cpa_history
+         |FROM
+         |    (SELECT
+         |        ideaid,
+         |        SUM(cost) as price_total,
+         |        SUM(cvr_cnt) as cvr_total
+         |    FROM
+         |        dl_cpc.ocpc_uid_userid_track
+         |    WHERE
+         |        ($selectCondition1)
+         |    OR
+         |        ($selectCondition2)
+         |    GROUP BY ideaid) t;
        """.stripMargin
     println(sqlRequest)
 
@@ -73,7 +119,7 @@ object OcpcPIDwithCPA {
       s"""
          |SELECT
          |  a.ideaid,
-         |  (a.cpa_given * 1.0 / b.cpa_history) as ratio
+         |  (CASE WHEN b.cpa_history != 0 then a.cpa_given * 1.0 / b.cpa_history else a.cpa_given * 10.0 end) as ratio
          |FROM
          |  cpa_given_table a
          |INNER JOIN
