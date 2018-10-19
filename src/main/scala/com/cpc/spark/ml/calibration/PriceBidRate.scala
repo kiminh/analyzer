@@ -36,7 +36,7 @@ object PriceBidRate {
     val sql = s"""
                  | select
                  |  ideaid,
-                 |  count(1),
+                 |  count(*),
                  |  avg(price/bid),
                  |  variance(price/bid)
                  | from dl_cpc.cpc_union_log
@@ -45,7 +45,7 @@ object PriceBidRate {
                  |  and ext['antispam'].int_value = 0
                  |  and ideaid > 0
                  |  and adsrc = 1
-                 |  and adslot_type in 1
+                 |  and adslot_type = 1
                  |  and userid > 0
                  |  and (ext["charge_type"] IS NULL
                  |    OR ext["charge_type"].int_value = 1)
