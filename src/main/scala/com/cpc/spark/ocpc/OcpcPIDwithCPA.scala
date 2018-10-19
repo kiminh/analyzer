@@ -4,8 +4,10 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.udfs.Udfs_wj.udfOcpcLogExtractCPA
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.{col, max}
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
 
 
 object OcpcPIDwithCPA {
@@ -14,29 +16,26 @@ object OcpcPIDwithCPA {
 
     val date = args(0).toString
     val hour = args(1).toString
-
-    genCPAgiven(date, hour, spark)
-
-    genCPAhistory(date, hour, spark)
+    val filename = "/user/cpc/wangjun/cpa_given.txt"
+//    genCPAgiven(date, hour, spark)
+    val dataset = testGenCPAgiven(filename, spark)
+    dataset.show(10)
+    genCPAhistory(dataset, date, hour, spark)
 
   }
 
-  def genCPAgiven(date: String, hour: String, spark:SparkSession) = {
+  def testGenCPAgiven(filename: String, spark: SparkSession) = {
+    import spark.implicits._
+//    filename=" /user/cpc/wangjun/cpa_given.txt"
+    val data = spark.sparkContext.textFile(filename)
 
-    val sqlRequest =
-      s"""
-          SELECT
-
-       """.stripMargin
-
-    val dataDF = spark.sql(sqlRequest)
-
-    dataDF.show(10)
-
-    dataDF
+    val resultRDD = data.map(_.split(","))
+    val resultDF = resultRDD.toDF("ideaid", "cpa_given")
+    resultDF
   }
 
-  def genCPAhistory(date: String, hour: String, spark:SparkSession) = {
+
+  def genCPAhistory(dataFrame: DataFrame, date: String, hour: String, spark:SparkSession) = {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
