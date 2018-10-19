@@ -14,38 +14,38 @@ object OcpcPIDwithCPA {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
 
-    import spark.implicits._
+//    import spark.implicits._
 
     val date = args(0).toString
     val hour = args(1).toString
     val filename = "/user/cpc/wangjun/cpa_given.txt"
 
+//    val data = spark.sparkContext.textFile(filename)
+//
+//    val resultRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+//    resultRDD.foreach(println)
+//
+//    val resultDF = resultRDD.toDF("ideaid", "cpa_given")
+//    resultDF.show(10)
+
+//    genCPAgiven(date, hour, spark)
+    val dataset = testGenCPAgiven(filename, spark)
+    dataset.show(10)
+    genCPAhistory(dataset, date, hour, spark)
+
+  }
+
+  def testGenCPAgiven(filename: String, spark: SparkSession) = {
+    import spark.implicits._
+//    filename=" /user/cpc/wangjun/cpa_given.txt"
     val data = spark.sparkContext.textFile(filename)
 
     val resultRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     resultRDD.foreach(println)
 
     val resultDF = resultRDD.toDF("ideaid", "cpa_given")
-    resultDF.show(10)
-
-//    genCPAgiven(date, hour, spark)
-//    val dataset = testGenCPAgiven(filename, spark)
-//    dataset.show(10)
-//    genCPAhistory(resultDF, date, hour, spark)
-
+    resultDF
   }
-
-//  def testGenCPAgiven(filename: String, spark: SparkSession) = {
-//    import spark.implicits._
-////    filename=" /user/cpc/wangjun/cpa_given.txt"
-//    val data = spark.sparkContext.textFile(filename)
-//
-//    val resultRDD = data.map(_.split(","))
-//    resultRDD.foreach(println)
-//
-//    val resultDF = resultRDD.toDF("ideaid", "cpa_given")
-//    resultDF
-//  }
 
 
   def genCPAhistory(dataFrame: DataFrame, date: String, hour: String, spark:SparkSession) = {
