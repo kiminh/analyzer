@@ -30,6 +30,8 @@ object OcpcPIDwithCPA {
     val data = spark.sparkContext.textFile(filename)
 
     val resultRDD = data.map(_.split(","))
+    resultRDD.foreach(println)
+
     val resultDF = resultRDD.toDF("ideaid", "cpa_given")
     resultDF
   }
