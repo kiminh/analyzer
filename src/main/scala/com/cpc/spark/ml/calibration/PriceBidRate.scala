@@ -12,9 +12,10 @@ import com.cpc.spark.qukan.utils.RedisUtil
   */
 object PriceBidRate {
   def main(args: Array[String]): Unit = {
-    val endDt = args(1)
-    val endHour = args(2)
-    val range = args(3).toInt
+    val endDt = args(0)
+    val endHour = args(1)
+    val range = args(2).toInt
+    val upload = args(3).toBoolean
 
     val endTime = LocalDateTime.parse(s"$endDt-$endHour", DateTimeFormatter.ofPattern("yyyy-MM-dd-HH"))
     val startTime = endTime.minusHours(Math.max(range - 1, 0))
@@ -63,7 +64,9 @@ object PriceBidRate {
       val avg = x.getAs[Double](2)
       if (count.intValue() > 100) {
         passed += 1
-        redis.set("i" + ideaid.toString, avg)
+        if (upload) {
+          redis.set("i" + ideaid.toString, avg)
+        }
       }
     })
     redis.disconnect
