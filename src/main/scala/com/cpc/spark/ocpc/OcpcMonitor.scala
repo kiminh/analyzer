@@ -68,10 +68,15 @@ object OcpcMonitor {
          |            `date` = '$day'
          |        and
          |            `hour` = '$hour'
-         |    ) b on a.searchid = b.searchid;
+         |    ) b on a.searchid = b.searchid
        """.stripMargin
 
-    val dataDF = spark.sql(sqlRequest).withColumn("cpa_given", udfOcpcLogExtractCPA()(col("ocpc_log"))).select("ideaid", "cpa_given").groupBy("ideaid").agg(max("cpa_given").alias("cpa_given"))
+    val dataDF = spark.sql(sqlRequest)
+      .withColumn("cpa_given", udfOcpcLogExtractCPA()(col("ocpc_log")))
+      .select("ideaid", "cpa_given")
+      .groupBy("ideaid")
+      .agg(max("cpa_given").alias("cpa_given"))
+
     dataDF.show(10)
 
   }
