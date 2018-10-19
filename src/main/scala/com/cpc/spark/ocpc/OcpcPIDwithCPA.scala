@@ -22,7 +22,7 @@ object OcpcPIDwithCPA {
 
     val data = spark.sparkContext.textFile(filename)
 
-    val resultRDD = data.map(_.split(","))
+    val resultRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     resultRDD.foreach(println)
 
     val resultDF = resultRDD.toDF("ideaid", "cpa_given")
@@ -31,7 +31,7 @@ object OcpcPIDwithCPA {
 //    genCPAgiven(date, hour, spark)
 //    val dataset = testGenCPAgiven(filename, spark)
 //    dataset.show(10)
-    genCPAhistory(resultDF, date, hour, spark)
+//    genCPAhistory(resultDF, date, hour, spark)
 
   }
 
