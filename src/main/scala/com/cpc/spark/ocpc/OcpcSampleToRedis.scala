@@ -145,11 +145,13 @@ object OcpcSampleToRedis {
     // write data into a temperary table
     uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
 
+
+
     //     save data into redis
-    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+//    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
 
     //     check redis
-    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
+//    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
 
     //     save data into pb file
     savePbPack(userFinalData)
