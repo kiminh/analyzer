@@ -37,7 +37,7 @@ object PriceBidRate {
                  | select
                  |  ideaid,
                  |  count(1),
-                 |  avg(price/bid)
+                 |  avg(price/bid),
                  |  variance(price/bid)
                  | from dl_cpc.cpc_union_log
                  | where $timeRangeSql
