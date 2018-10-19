@@ -129,17 +129,40 @@ object OcpcSampleToRedis {
          |    useridTable
        """.stripMargin
 
-    val hr = hour.toInt
 
+    val userFinalData = spark.sql(sqlRequest2)
+    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
     val sqlRequest3 =
       s"""
          |SELECT
-         |
+         |  a.ideaid,
+         |  a.userid,
+         |  a.adclass,
+         |  a.cost,
+         |  a.ctr_cnt,
+         |  a.cvr_cnt,
+         |  a.adclass_cost,
+         |  a.adclass_ctr_cnt,
+         |  a.adclass_cvr_cnt,
+         |  (case when b.ratio is null then 1.0 else b.ratio end) as ratio
+         |FROM
+         |  (SELECT
+         |    *
+         |   FROM
+         |    dl_cpc.ocpc_pb_result_table
+         |   WHERE
+         |    `date`='$end_date'
+         |   and
+         |    `hour`='$hour') a
+         |LEFT JOIN
+         |   test.ocpc_cpa_given_history_ratio b
+         |ON
+         |   a.ideaid=b.ideaid
        """.stripMargin
 
-    val userFinalData = spark.sql(sqlRequest2)
-    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
+    val userFinalData2 = spark.sql(sqlRequest3)
+
 
     // save into redis and pb file
     // write data into a temperary table
@@ -154,7 +177,7 @@ object OcpcSampleToRedis {
 //    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
 
     //     save data into pb file
-    savePbPack(userFinalData)
+    savePbPack(userFinalData2)
   }
 
 
@@ -288,6 +311,7 @@ object OcpcSampleToRedis {
       val adclassCost = record.get(6).toString
       val adclassCtr = record.getLong(7).toString
       val adclassCvr = record.getLong(8).toString
+      val ratio = record.getDouble(9)
 
       val currentItem = SingleUser(
         ideaid = kValue,

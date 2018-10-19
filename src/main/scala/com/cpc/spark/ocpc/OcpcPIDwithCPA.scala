@@ -32,6 +32,7 @@ object OcpcPIDwithCPA {
     val dataset = testGenCPAgiven(filename, spark)
     dataset.show(10)
     genCPAhistory(dataset, date, hour, spark)
+    calculateK(spark)
 
   }
 
@@ -102,6 +103,45 @@ object OcpcPIDwithCPA {
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_history_ratio")
 
+  }
+
+  def calculateK(spark:SparkSession): Unit = {
+    import spark.implicits._
+    val filename1=" /user/cpc/wangjun/ocpc_k.txt"
+    val data = spark.sparkContext.textFile(filename1)
+
+    val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+    dataRDD.foreach(println)
+
+    val dataDF = dataRDD.toDF("ideaid", "k_value")
+    dataDF.show(10)
+
+    val ratioDF = spark.table("test.ocpc_cpa_given_history_ratio")
+
+    dataDF.createOrReplaceTempView("k_table")
+    ratioDF.createOrReplaceTempView("ratio_table")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  a.ideaid,
+         |  (case when a.ratio>1.0 then b.k_value * 1.2
+         |        when a.ratio<1.0 then b.k_value / 1.2
+         |        else b.k_value end) as k_value
+         |FROM
+         |  ratio_table as a
+         |INNER JOIN
+         |  k_table b
+         |ON
+         |  a.ideaid=b.ideaid
+       """.stripMargin
+
+    println(sqlRequest)
+
+    val resultDF = spark.sql(sqlRequest)
+
+    println("final table of the k-value for ocpc:")
+    resultDF.show(10)
 
   }
 
