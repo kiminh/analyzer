@@ -84,7 +84,9 @@ object OcpcPIDwithCPA {
     calendar.add(Calendar.HOUR, -4)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
-    val (date1, hour1) = tmpDate.split(" ")
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
     val selectCondition1 = s"`date`='$date1' and hour >= '$hour1'"
     val selectCondition2 = s"`date`='$date' and `hour`<='$hour'"
 
