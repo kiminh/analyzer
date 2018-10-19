@@ -42,6 +42,8 @@ object FtrlNewHourlyID {
     val gbdtVersion = args(5).toInt
     val ftrlVersion = args(6).toInt
     val l1 = args(7).toDouble
+    val decayed = args(8).toBoolean
+    val redisID = args(9).toInt
     val typearray = typename.split("-")
     val adslot = typearray(0)
     val ctrcvr = typearray(1)
@@ -56,12 +58,14 @@ object FtrlNewHourlyID {
     println(s"forceNew=$startFresh")
     println(s"adslot=$adslot")
     println(s"ctrcvr=$ctrcvr")
+    println(s"decayed=$decayed")
+    println(s"redisID=$redisID")
 
 
     val inputName = s"/user/cpc/qtt-portrait-ftrl/sample_for_ftrl_with_id/ftrl-with-id-${dt}-${hour}-${typename}-${gbdtVersion}.svm"
     println(s"inputname = $inputName")
 
-    val spark: SparkSession = Utils.buildSparkSession(name = "full_id_ftrl_21_redis")
+    val spark: SparkSession = Utils.buildSparkSession(name = "full_id_ftrl_22")
 
     import spark.implicits._
 
@@ -94,11 +98,23 @@ object FtrlNewHourlyID {
     var nDict, zDict = mutable.Map[Int, Double]()
     if (!startFresh) {
       println("fetching n and z from redis...")
-      val (nMap, zMap) = Ftrl.getNZFromRedis(dataWithID, 21)
+      val (nMap, zMap) = Ftrl.getNZFromRedis(dataWithID, redisID)
       ftrl.L1 = l1
-      nDict = nMap
       zDict = zMap
+
+      if (decayed) {
+        println("decay n...")
+        for ((key, value) <- nMap) {
+          if (value > 1.0) {
+            val newValue = value * Math.exp(Math.log(0.5) / 24.0)
+            nDict.put(key, newValue)
+          }
+        }
+      } else {
+        nDict = nMap
+      }
     }
+
     println("start model training")
     val wDict = ftrl.trainWithSubDict(spark, dataWithID, nDict, zDict)
 
@@ -107,7 +123,7 @@ object FtrlNewHourlyID {
 
     if (upload) {
       println("start saving weights to redis...")
-      RedisUtil.fullModelToRedis(21, wDict.toMap, nDict.toMap, zDict.toMap)
+      RedisUtil.fullModelToRedis(redisID, wDict.toMap, nDict.toMap, zDict.toMap)
     }
   }
 
