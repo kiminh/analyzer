@@ -53,7 +53,7 @@ object DNNSample {
       .format("tfrecords")
       .option("recordType", "Example")
       .save("/user/cpc/zhj/dnntrain-" + date)
-    println("train size", train.count())
+    println("train size", n)
 
     rawtrain.unpersist()
 
