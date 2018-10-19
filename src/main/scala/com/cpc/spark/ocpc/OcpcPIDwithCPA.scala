@@ -95,9 +95,12 @@ object OcpcPIDwithCPA {
          |  a.ideaid=b.ideaid
        """.stripMargin
 
+    println(sqlRequest2)
+
     val resultDF = spark.sql(sqlRequest2)
     resultDF.show(10)
 
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_history_ratio")
 
 
   }
