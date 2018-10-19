@@ -58,7 +58,7 @@ object DNNSample {
     rawtrain.unpersist()
 
     //val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
-    val test = getSample(spark, tdate).sample(withReplacement = false, 0.03)
+    val test = getSample(spark, tdate).sample(withReplacement = false, 0.03).persist()
     val tn = test.count
     println("测试数据：total = %d, 正比例 = %.4f".format(tn, test.where("label=array(1,0)").count.toDouble / tn))
 
