@@ -69,6 +69,14 @@ object RedisUtil {
     println(s"Save $counter features to redis")
   }
 
+
+  def getRedisClient(dbID: Int): RedisClient = {
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    redis.select(dbID)
+    redis
+  }
+
   def modelToRedis(dbID: Int, weights: Map[Int, Double]): Unit = {
     val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
     redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
