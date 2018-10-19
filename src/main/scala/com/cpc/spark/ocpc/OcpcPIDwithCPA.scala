@@ -36,7 +36,7 @@ object OcpcPIDwithCPA {
          |    a.ideaid,
          |    a.exptags,
          |    a.price,
-         |    a.bid_ocpc.
+         |    a.bid_ocpc,
          |    a.ocpc_log,
          |    b.iscvr
          |FROM
