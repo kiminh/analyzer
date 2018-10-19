@@ -65,7 +65,8 @@ object SaveFeatures {
     println(stmt)
     val rows = spark.sql(stmt)
     println("num", rows.count())
-    rows.write
+    rows.repartition(10)
+      .write
       .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/lrmodel/ctrdata_%s/%s/%s".format(version, date, hour))
     spark.sql(
@@ -106,6 +107,7 @@ object SaveFeatures {
     val num = daily.count()
     daily.sortBy(x => x)
       .toDF()
+      .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
       .parquet(path)
@@ -128,6 +130,7 @@ object SaveFeatures {
     val num = daily.count()
     daily.sortBy(x => x)
       .toDF()
+      .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
       .parquet(path)
@@ -311,6 +314,7 @@ object SaveFeatures {
     println("click log", clicklog.count())
 
     clicklog.join(cvrlog, Seq("searchid"))
+      .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
