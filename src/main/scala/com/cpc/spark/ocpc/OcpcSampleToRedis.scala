@@ -54,6 +54,7 @@ object OcpcSampleToRedis {
          |FROM
          |  dl_cpc.ocpc_uid_userid_track
          |WHERE ($selectCondition1) OR
+         |
          |($selectCondition2) OR
          |($selectCondition3)
          |GROUP BY userid, uid, ideaid, adclass
@@ -126,6 +127,15 @@ object OcpcSampleToRedis {
          |    '$hour' as hour
          |FROM
          |    useridTable
+       """.stripMargin
+
+    val hr = hour.toInt
+
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |
        """.stripMargin
 
     val userFinalData = spark.sql(sqlRequest2)
@@ -276,30 +286,6 @@ object OcpcSampleToRedis {
       val adclassCost = record.get(6).toString
       val adclassCtr = record.getLong(7).toString
       val adclassCvr = record.getLong(8).toString
-//      // check ideaid's cvr
-//      var ctrCntValue: String = ""
-//      var cvrCntValue: String = ""
-//      if (cvrValue == 0) {
-//        val cvr = 1
-//        val ctr = ctrValue + 1
-//        cvrCntValue = cvr.toString
-//        ctrCntValue = ctr.toString
-//      } else {
-//        cvrCntValue = cvrValue.toString
-//        ctrCntValue = ctrValue.toString
-//      }
-//      // check adclass' cvr
-//      var adclassCtrCntValue: String = ""
-//      var adclassCvrCntValue: String = ""
-//      if (adclassCvr == 0) {
-//        val cvr = 1
-//        val ctr = adclassCtr + 1
-//        adclassCvrCntValue = cvr.toString
-//        adclassCtrCntValue = ctr.toString
-//      } else {
-//        adclassCtrCntValue = adclassCtr.toString
-//        adclassCvrCntValue = adclassCvr.toString
-//      }
 
       val currentItem = SingleUser(
         ideaid = kValue,
