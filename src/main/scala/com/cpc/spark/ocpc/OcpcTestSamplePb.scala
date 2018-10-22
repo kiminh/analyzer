@@ -65,8 +65,11 @@ object OcpcTestSamplePb {
 
     val ocpcUpdate = spark.sql(sqlRequest)
 
+    ocpcUpdate.show(10)
+
     val userDF = dataDF.join(ocpcUpdate, Seq("ideaid"), "left_outer").filter("update_date is null")
 
+    println("###########################")
     userDF.show(10)
 
   }
