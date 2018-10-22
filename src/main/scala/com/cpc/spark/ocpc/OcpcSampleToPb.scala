@@ -1,6 +1,5 @@
 
 
-
 package com.cpc.spark.ocpc
 
 import java.text.SimpleDateFormat
@@ -27,8 +26,6 @@ object OcpcSampleToPb {
     // calculate time period for historical data
     val end_date = args(0)
     val hour = args(1)
-    //    val threshold = args(2).toInt  //default: 20
-    val threshold = 20
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val date = sdf.parse(end_date)
     val calendar = Calendar.getInstance
@@ -63,6 +60,13 @@ object OcpcSampleToPb {
     println(sqlRequest)
 
     val base = spark.sql(sqlRequest)
+
+    // calculation by uid
+    val uidData = base
+      .groupBy("uid")
+      .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
+      .withColumn("data", concat_ws(",", col("ctr_cnt"), col("cvr_cnt")))
+
 
     // calculation by userid
     val userData = base
@@ -140,9 +144,9 @@ object OcpcSampleToPb {
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
          |  (case when b.k_value is null then 1.0
-         |        when b.k_value > 4 then 4.0
-         |        when b.k_value < 0.2 then 0.2
-         |        else b.k_value end) as k_value
+         |        when b.k_value > 2.0 then 2.0
+         |        when b.k_value < 0.5 then 0.5
+         |        else b.k_value end) as k_value as k_value
          |FROM
          |  (SELECT
          |    *
@@ -164,10 +168,135 @@ object OcpcSampleToPb {
 
     userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 
-    // save data into pb file
+    // save into redis and pb file
+    // write data into a temperary table
+    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
+
+
+
+    //     save data into redis
+    //    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+
+    //     check redis
+    //    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
+
+    //     save data into pb file
     savePbPack(userFinalData2)
   }
 
+
+  def savePbRedis(tableName: String, spark: SparkSession): Unit = {
+    var cnt = spark.sparkContext.longAccumulator
+    var changeCnt = spark.sparkContext.longAccumulator
+    var succSetCnt = spark.sparkContext.longAccumulator
+    var cvrResultAcc = spark.sparkContext.longAccumulator
+    var ctrResultAcc = spark.sparkContext.longAccumulator
+    println("###############1")
+    println(s"accumulator before partition loop")
+    println("total loop cnt: " + cnt.value.toString)
+    println("redis retrieve cnt: " + changeCnt.value.toString)
+    println("redis save cnt: " + succSetCnt.value.toString)
+    println("ctrcnt: " + ctrResultAcc.value.toString)
+    println("cvrcnt: " + cvrResultAcc.value.toString)
+    val dataset = spark.table(tableName)
+    val conf = ConfigFactory.load()
+    println(conf.getString("redis.host"))
+    println(conf.getInt("redis.port"))
+
+    dataset.foreachPartition(iterator => {
+
+      val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+
+      iterator.foreach{
+        record => {
+          val uid = record.get(0).toString
+          var key = uid + "_UPDATA"
+          cnt.add(1)
+          val ctrCnt = record.getLong(1)
+          val cvrCnt = record.getLong(2)
+          ctrResultAcc.add(ctrCnt)
+          cvrResultAcc.add(cvrCnt)
+
+          val buffer = redis.get[Array[Byte]](key).orNull
+          var user: UserProfile.Builder = null
+          if (buffer != null) {
+            user = UserProfile.parseFrom(buffer).toBuilder
+            val u = user.build()
+            user = user.setCtrcnt(ctrCnt)
+            user = user.setCvrcnt(cvrCnt)
+
+            val isSuccess = redis.setex(key, 3600 * 24 * 30, user.build().toByteArray)
+            if (isSuccess) {
+              succSetCnt.add(1)
+            }
+            changeCnt.add(1)
+          }
+        }
+      }
+      redis.disconnect
+    })
+
+    println("####################2")
+    println(s"accumulator after partition loop")
+    println("total loop cnt: " + cnt.value.toString)
+    println("redis retrieve cnt: " + changeCnt.value.toString)
+    println("redis save cnt: " + succSetCnt.value.toString)
+    println("ctrcnt: " + ctrResultAcc.value.toString)
+    println("cvrcnt: " + cvrResultAcc.value.toString)
+  }
+
+  def testSavePbRedis(tableName: String, spark: SparkSession): Unit = {
+    var cnt = spark.sparkContext.longAccumulator
+    var cvrResultAcc = spark.sparkContext.longAccumulator
+    var ctrResultAcc = spark.sparkContext.longAccumulator
+    println("###############1")
+    println(s"accumulator before partition loop")
+    println("redis hit number: " + cnt.value.toString)
+    println("correct ctr number: " + ctrResultAcc.value.toString)
+    println("correct cvr number: " + cvrResultAcc.value.toString)
+    val conf = ConfigFactory.load()
+    //    redis-cli -h 192.168.80.19 -p 6379
+    println(conf.getString("redis.host"))
+    println(conf.getInt("redis.port"))
+
+    val dataset = spark.table(tableName)
+    dataset.foreachPartition(iterator => {
+
+      val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+
+      iterator.foreach{
+        record => {
+          val uid = record.get(0).toString
+          var key = uid + "_UPDATA"
+          val ctrCnt = record.getLong(1)
+          val cvrCnt = record.getLong(2)
+
+          val buffer = redis.get[Array[Byte]](key).orNull
+          var user: UserProfile.Builder = null
+          if (buffer != null) {
+            cnt.add(1)
+            user = UserProfile.parseFrom(buffer).toBuilder
+            val currentCtr = user.getCtrcnt
+            val currentCvr = user.getCvrcnt
+            if (currentCtr == ctrCnt) {
+              ctrResultAcc.add(1)
+            }
+            if (currentCvr == cvrCnt) {
+              cvrResultAcc.add(1)
+            }
+          }
+        }
+      }
+      redis.disconnect
+    })
+
+
+    println("####################2")
+    println(s"accumulator after partition loop")
+    println("redis hit number: " + cnt.value.toString)
+    println("correct ctr number: " + ctrResultAcc.value.toString)
+    println("correct cvr number: " + cvrResultAcc.value.toString)
+  }
 
   def savePbPack(dataset: Dataset[Row]): Unit = {
     var list = new ListBuffer[SingleUser]

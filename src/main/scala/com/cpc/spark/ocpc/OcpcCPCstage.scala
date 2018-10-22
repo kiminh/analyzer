@@ -32,7 +32,7 @@ object OcpcCPCstage {
       s"""
          |SELECT
          |    t.ideaid,
-         |    t.ocpc_bid_update_time as update_time
+         |    from_unix(t.ocpc_bid_update_time) as update_time
          |FROM
          |    (SELECT
          |        ideaid,
@@ -49,7 +49,7 @@ object OcpcCPCstage {
 
     val updateTime = spark.sql(sqlRequest)
 
-
+    updateTime.write.saveAsTable("test.ocpc_cpa_given_update")
 
 
 

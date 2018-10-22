@@ -27,6 +27,6 @@ object OcpcTestMysql {
 
     data.printSchema()
 
-    data.select("bid", "ocpc_bid", "ocpc_bid_update_time").show(10)
+    data.select("ideas", "bid", "ocpc_bid", "ocpc_bid_update_time").show(10)
   }
 }
