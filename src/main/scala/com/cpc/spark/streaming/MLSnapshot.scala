@@ -99,13 +99,12 @@ object MLSnapshot {
                     case e: Exception =>
                         null
                 }
-        }
-          .filter(x => x != null && x.searchid.length > 0 && x.ideaid > 0)
+        }.filter(x => x != null && x.searchid.length > 0 && x.ideaid > 0)
 
         val conf = ConfigFactory.load()
 
         base_data.foreachRDD { rdd =>
-            val r = rdd.map(f => (f.uid, f)).partitionBy(new HashPartitioner(200)).map(f => f._2)
+            val r = rdd.map(f => (f.uid, f)).partitionBy(new HashPartitioner(200)).map(f => f._2).persist()
 
             val snap = r.mapPartitions { p =>
                 val redis = new RedisClient(conf.getString("redis.ml_feature_ali.host"),
@@ -131,7 +130,8 @@ object MLSnapshot {
                     parsePortrait(p, vec)
                     parseUserPortrait(up, "uid#planid", x.planid, vec)
 
-                    key = "un%d".format(x.unitid)
+                    key = "un%d".format(x.
+                    )
                     p = getPortraitFromRedis(key, redis, portraits)
                     parsePortrait(p, vec)
                     parseUserPortrait(up, "uid#unitid", x.unitid, vec)
