@@ -182,12 +182,12 @@ object MLSnapshot {
                         hour = x.hour
                     )
                 }
-            }
+            }.cache()
 
             val spark = SparkSession.builder().config(ssc.sparkContext.getConf).getOrCreate()
             val keys = snap.map { x => (x.date, x.hour) }.distinct.toLocalIterator
             keys.foreach { key =>
-                val part = snap.filter(r => r.date == key._1 && r.hour == key._2)
+                val part = snap.filter(r => r.date == key._1 && r.hour == key._2).cache()
                 val numbs = part.count()
 
                 val date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
