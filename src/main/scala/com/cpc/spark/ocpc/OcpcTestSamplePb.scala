@@ -64,9 +64,9 @@ object OcpcTestSamplePb {
          |    FROM
          |      test.ocpc_idea_update_time
          |    WHERE
-         |      `date` < '$date3'
+         |      `update_date` < '$date3'
          |    or
-         |      (`date`='$date3' and `hour`<'$hour')) b
+         |      (`update_date`='$date3' and `update_hour`<'$hour')) b
          |ON
          |    a.ideaid=b.ideaid
          |WHERE
