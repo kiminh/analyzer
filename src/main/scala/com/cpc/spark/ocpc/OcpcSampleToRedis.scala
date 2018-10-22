@@ -166,9 +166,7 @@ object OcpcSampleToRedis {
          |   (SELECT
          |      ideaid
          |    FROM
-         |      test.ocpc_idea_update_time
-         |    WHERE
-         |      c
+         |      test.ocpc_idea_update_time) c
          |
        """.stripMargin
 

@@ -37,7 +37,10 @@ object OcpcCPCstage {
          |SELECT
          |    t.ideaid,
          |    t.ocpc_bid as cpa_given,
-         |    from_unixtime(t.ocpc_bid_update_time) as update_time
+         |    from_unixtime(t.ocpc_bid_update_time) as update_time,
+         |    from_unixtime(t.ocpc_bid_update_time, 'yyyy-MM-dd') as update_date,
+         |    from_unixtime(t.ocpc_bid_update_time, 'HH') as update_hour
+         |
          |FROM
          |    (SELECT
          |        ideaid,
@@ -57,7 +60,7 @@ object OcpcCPCstage {
     println("########## updateTime #################")
     updateTime.show(10)
 
-    updateTime.write.mode("overwrite").saveAsTable("test.ocpc_idea_update_time")
+//    updateTime.write.mode("overwrite").saveAsTable("test.ocpc_idea_update_time")
 
   }
 }
