@@ -15,15 +15,7 @@ object OcpcTestMysql {
     val user = "cpcrw"
     val passwd = "zZdlz9qUB51awT8b"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select bid, ocpc_bid, ocpc_bid_update_time from adv_test.unit where is_ocpc=1 limit 100) as tmp"
-
-
-//    val mariadbProp = new Properties()
-//    mariadbProp.put("user", "root")
-//    mariadbProp.put("password", "cpcv587")
-//    mariadbProp.put("driver", "com.mysql.jdbc.Driver")
-
-//    val dataframe_mysql = spark.read.format("jdbc").option("url", "jdbc:mysql://192.168.66.11:3306/adv").option("driver", "com.mysql.jdbc.Driver").option("dbtable", "unit").option("user", "root").option("password", "cpcv587").load()
+    val table = "(select * from adv_test.unit where is_ocpc=1 limit 100) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -35,6 +27,6 @@ object OcpcTestMysql {
 
     data.printSchema()
 
-    data.show(10)
+    data.select("bid", "ocpc_bid", "ocpc_bid_update_time").show(10)
   }
 }
