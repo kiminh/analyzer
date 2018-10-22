@@ -139,7 +139,10 @@ object OcpcSampleToPb {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case when b.k_value is null then 1.0 else b.k_value end) as k_value
+         |  (case when b.k_value is null then 1.0
+         |        when b.k_value > 4 then 4.0
+         |        when b.k_value < 0.2 then 0.2
+         |        else b.k_value end) as k_value
          |FROM
          |  (SELECT
          |    *

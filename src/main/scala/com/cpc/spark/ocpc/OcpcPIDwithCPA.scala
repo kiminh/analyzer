@@ -151,7 +151,7 @@ object OcpcPIDwithCPA {
     import spark.implicits._
 
 
-    val dataDF = spark.table("test.ocpc_k_value_table").select("ideaid", "k_value")
+    val dataDF = spark.table("test.test_new_pb_ocpc").select("ideaid", "k_value")
     dataDF.show(10)
 
     val ratioDF = spark.table("test.ocpc_cpa_given_history_ratio")
