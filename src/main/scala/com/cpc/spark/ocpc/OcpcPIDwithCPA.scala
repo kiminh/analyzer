@@ -18,8 +18,8 @@ object OcpcPIDwithCPA {
     val dataset = testGenCPAgiven(filename, spark)
     dataset.show(10)
     genCPAratio(dataset, date, hour, spark)
-    testCalculateK(spark)
-//    calculateK(spark)
+//    testCalculateK(spark)
+    calculateK(spark)
 
   }
 
