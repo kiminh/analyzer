@@ -197,6 +197,7 @@ object Utils {
 
   /**
     * 新cvr计算逻辑
+    *
     * @param traces
     * @param version
     * @return
@@ -206,48 +207,47 @@ object Utils {
     var disactive = 0
     var active_href = 0
     var active = 0
-    //var report_download_pkgadded = 0
-    //var report_user_stayinwx = 0
+    var nosite_active = 0
+    var nosite_disactive = 0
+
     var conversion_sdk_wechat = 0
     var conversion_sdk_download = 0
     var js_site_active_other = 0
 
-    var label_type = 0 //类型，区分建站、sdk、js、下载类、非网赚非下载类
+    var label_type = 0 //广告类型，区分不同类型广告
 
-    var active_sdk_site_wz = 0 //建站sdk栏位网赚
-    var active_js_site_wz = 0 //建站非sdk栏位网赚
-    var active_js_nonsite_wz = 0 //非建站
-    var active_js_download = 0 //下载类
-    var other = 0 //非网赚非彩票非下载
+    var active_sdk_site_wz = 0 //加粉类：建站&sdk
+    var active_js_site_wz = 0 //加粉类：建站&非sdk
+    var active_js_nonsite_wz = 0 //加粉类：非建站
+    var active_js_download = 0 //直接下载类
+    var active_js_ldy_download = 0 //落地页下载类
+    var active_other_site = 0 //其他类建站
+    var active_other_nonsite = 0 //其他类非建站
+
 
     traces.foreach {
       r =>
-        //        r.getAs[String]("trace_op1").toLowerCase match {
-        //          case "report_user_stayinwx" => report_user_stayinwx += 1
-        //          case "report_download_pkgadded" => report_download_pkgadded += 1
-        //          case "report_download_installed" => installed += 1
-        //          case _ =>
-        //        }
-
         r.getAs[String]("trace_type") match {
           case "active5" => active5 += 1
           case "disactive" => disactive += 1
           case "active_href" => active_href += 1
           case s if s.startsWith("active") => active += 1
+          case s if s.startsWith("nosite-active") => nosite_active += 1
+          case "nosite-disactive" => nosite_disactive += 1
           case _ =>
         }
 
-        //第一类
+        //加粉类：建站&sdk
         if (r.getAs[String]("trace_op1").toLowerCase == "report_user_stayinwx" && r.getAs[String]("trace_type") == "lpload") {
           conversion_sdk_wechat += 1
         }
 
-        //第四类
+        //直接下载类、落地页下载类
         if (r.getAs[String]("trace_op1").toLowerCase == "report_download_pkgadded" && r.getAs[String]("trace_type") == "apkdown") {
           conversion_sdk_download += 1
         }
 
-        //第五类
+        //其它类：建站
         if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" || r.getAs[String]("trace_type").startsWith("active")) {
           js_site_active_other += 1
         }
@@ -261,11 +261,16 @@ object Utils {
         val adslot_type = r.getAs[Int]("adslot_type")
         val client_type = r.getAs[String]("client_type")
         val interaction = r.getAs[Int]("interaction")
-        //第一类：建站：详情页、列表页等sdk栏位，网赚+彩票
-        //第二类：详情页、互动等其他非sdk栏位(js)，网赚+彩票
-        //第三类：所有类型，3个栏位，网赚+彩票
-        //第四类：下载类：interation=2+sdk栏位（列表+详情）
-        //第五类：其他(非网赚非下载类)+所有类型+所有栏位
+
+        //判断广告类型
+        //第一类：建站&sdk：列表页、详情等sdk栏位,网赚+彩票 ：trace_op1 = “REPORT_USER_STAYINWX”
+        //第二类：建站&非sdk：详情页、互动位等其他非sdk栏位, 网赚+彩票 ：trace_type: active5-disactive
+        //第三类：非建站：对于所有类型(js+sdk+openapi), 3个栏位(表页、详情、互动), 网赚+彩票：trace_type = “active_href”
+        //第四类：直接下载类：interaction=2 +Sdk栏位(列表+详情): trace_op1 = “REPORT_DOWNLOAD_PKGADDED”
+        //第五类：落地页下载：interaction=1 +Sdk栏位(列表+详情):trace_op1 = “REPORT_DOWNLOAD_PKGADDED”
+        //第六、七类：其他类（落地页非下载非加粉类）
+        //建站：其他(非网赚非彩票非直接下载类)+所有类型(js+sdk+openapi)+所有栏位,即针对非以上1-4的情况的search_id/click 判断: trace_type: active1/active2/active3/active4/active5-disactive
+        //非建站：nosite_active1/nosite_active2/nosite_active3/nosite_active4/nosite_active5-nosite_disactive
         if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
           label_type = 1
         } else if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && (adslot_type == 2 || adslot_type == 3) && client_type != "NATIVESDK") {
@@ -274,10 +279,17 @@ object Utils {
           label_type = 3
         } else if ((adsrc == 0 || adsrc == 1) && interaction == 2 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
           label_type = 4
-        } else {
+        } else if ((adsrc == 0 || adsrc == 1) && interaction == 1 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
           label_type = 5
+        } else {
+          if (siteid > 0) {
+            label_type = 6 //其它类建站
+          } else {
+            label_type = 7 //其它类非建站
+          }
         }
 
+        //判断是否转化
         if (label_type == 1 && conversion_sdk_wechat > 0) {
           active_sdk_site_wz += 1
         } else if (label_type == 2 && active5 > 0 && disactive == 0) {
@@ -286,14 +298,19 @@ object Utils {
           active_js_nonsite_wz += 1
         } else if (label_type == 4 && conversion_sdk_download > 0) {
           active_js_download += 1
-        } else if (label_type == 5 && js_site_active_other > 0 && disactive == 0) {
-          other += 1
+        } else if (label_type == 5 && conversion_sdk_download > 0) {
+          active_js_ldy_download += 1
+        } else if (label_type == 6 && js_site_active_other > 0 && disactive == 0) {
+          active_other_site += 1
+        } else if (label_type == 7 && nosite_active > 0 && nosite_disactive == 0) {
+          active_other_nonsite += 1
         }
     }
 
 
-    if (active_sdk_site_wz > 0 || active_js_site_wz > 0 || active_js_nonsite_wz > 0 || active_js_download > 0 || other > 0) {
-      (1, label_type)
+    if (active_sdk_site_wz > 0 || active_js_site_wz > 0 || active_js_nonsite_wz > 0 || active_js_download > 0
+      || active_js_ldy_download > 0 || active_other_site > 0 || active_other_nonsite > 0) {
+      (1, label_type)  //1表示转化，0表示未转化；label_type: 广告类型
     } else {
       (0, label_type)
     }
