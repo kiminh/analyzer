@@ -68,7 +68,7 @@ object OcpcPIDwithCPA {
          |        ($selectCondition1)
          |    OR
          |        ($selectCondition2)
-         |    GROUP BY ideaid) t;
+         |    GROUP BY ideaid) t
        """.stripMargin
     println(sqlRequest)
 
