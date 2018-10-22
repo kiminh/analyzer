@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package mlmodel;
 
-
 message FtrlProto {
     double alpha = 1;
     double beta = 2;
@@ -114,6 +113,11 @@ message AccessLog {
     int64 timestamp = 3;
 }
 
+message IntArray {
+    repeated int64 value = 1;
+}
 
-
+message FloatArray {
+    repeated float value = 1;
+}
 
