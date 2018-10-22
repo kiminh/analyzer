@@ -170,7 +170,11 @@ object OcpcSampleToRedis {
 
     userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 
-    userFinalData2.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_pb_result_table_v1")
+    userFinalData2
+      .withColumn("date", lit(end_date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite")
+      .saveAsTable("dl_cpc.ocpc_pb_result_table_v1")
 
     // save into redis and pb file
     // write data into a temperary table
