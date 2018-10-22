@@ -35,7 +35,7 @@ object OcpcCPCstage {
       s"""
          |SELECT
          |    t.ideaid,
-         |    t.ocpc_bid as cpa_given
+         |    t.ocpc_bid as cpa_given,
          |    from_unixtime(t.ocpc_bid_update_time) as update_time
          |FROM
          |    (SELECT
