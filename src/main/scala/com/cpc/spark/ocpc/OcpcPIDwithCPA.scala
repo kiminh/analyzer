@@ -63,7 +63,7 @@ object OcpcPIDwithCPA {
          |        SUM(cost) as price_total,
          |        SUM(cvr_cnt) as cvr_total
          |    FROM
-         |        dl_cpc.ocpc_uid_userid_track
+         |        dl_cpc.ocpc_uid_userid_track_label2
          |    WHERE
          |        ($selectCondition1)
          |    OR
