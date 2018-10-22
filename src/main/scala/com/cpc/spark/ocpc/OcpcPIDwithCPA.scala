@@ -123,10 +123,10 @@ object OcpcPIDwithCPA {
       s"""
          |SELECT
          |  a.ideaid,
-         |  (case when b.ratio is null then b.k_value
-         |        when a.ratio>1.0 then b.k_value * 1.2
-         |        when a.ratio<1.0 then b.k_value / 1.2
-         |        else b.k_value end) as k_value
+         |  (case when b.ratio is null then a.k_value
+         |        when b.ratio>1.0 then a.k_value * 1.2
+         |        when b.ratio<1.0 then a.k_value / 1.2
+         |        else a.k_value end) as k_value
          |FROM
          |  k_table as a
          |LEFT JOIN
@@ -163,10 +163,10 @@ object OcpcPIDwithCPA {
       s"""
          |SELECT
          |  a.ideaid,
-         |  (case when b.ratio is null then b.k_value
-         |        when a.ratio>1.0 then b.k_value * 1.2
-         |        when a.ratio<1.0 then b.k_value / 1.2
-         |        else b.k_value end) as k_value
+         |  (case when b.ratio is null then a.k_value
+         |        when b.ratio>1.0 then a.k_value * 1.2
+         |        when b.ratio<1.0 then a.k_value / 1.2
+         |        else a.k_value end) as k_value
          |FROM
          |  k_table as a
          |LEFT JOIN
