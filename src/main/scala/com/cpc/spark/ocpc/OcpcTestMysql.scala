@@ -4,6 +4,7 @@ import java.util.Properties
 
 import com.github.jurajburian.mailer.Property
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.{col, explode, split}
 
 object OcpcTestMysql {
   def main(args: Array[String]): Unit = {
@@ -27,6 +28,10 @@ object OcpcTestMysql {
 
     data.printSchema()
 
-    data.select("ideas", "bid", "ocpc_bid", "ocpc_bid_update_time").show(10)
+    data
+      .select("ideas", "bid", "ocpc_bid", "ocpc_bid_update_time")
+      .withColumn("ideaid", explode(split(col("ideas"), "[,]")))
+      .select("ideaid", "bid", "bid", "ocpc_bid_update_time")
+      .show(20)
   }
 }

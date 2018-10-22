@@ -1,6 +1,7 @@
 package com.cpc.spark.ocpc
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 
 
 object OcpcCPCstage {
@@ -24,15 +25,17 @@ object OcpcCPCstage {
       .option("dbtable", table)
       .load()
 
-    val base = data.select("bid", "ocpc_bid", "ocpc_bid_update_time")
+    val base = data.select("ideas", "bid", "ocpc_bid", "ocpc_bid_update_time")
+
+    val ideaTable = base.withColumn("ideaid", explode(split(col("ideas"), "[,]")))
 
     base.createOrReplaceTempView("ideaid_update_time")
 
     val sqlRequest =
       s"""
          |SELECT
-         |    t.ideaid,
-         |    from_unix(t.ocpc_bid_update_time) as update_time
+         |    t.ideas,
+         |    from_unixtime(t.ocpc_bid_update_time) as update_time
          |FROM
          |    (SELECT
          |        ideaid,
@@ -49,7 +52,7 @@ object OcpcCPCstage {
 
     val updateTime = spark.sql(sqlRequest)
 
-    updateTime.write.saveAsTable("test.ocpc_cpa_given_update")
+
 
 
 
