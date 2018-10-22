@@ -28,6 +28,10 @@ object OcpcTestMysql {
 
     data.printSchema()
 
+    data.select("ideas", "bid", "ocpc_bid", "ocpc_bid_update_time").show(20)
+
+    println("############################")
+
     data
       .select("ideas", "bid", "ocpc_bid", "ocpc_bid_update_time")
       .withColumn("ideaid", explode(split(col("ideas"), "[,]")))
