@@ -96,7 +96,7 @@ object PriceBidRate {
     passed = 0
     session.sql(slotSQL).rdd.collect().map( x => {
       total += 1
-      val slotid = x.getAs[Number](0)
+      val slotid = x.getAs[String](0)
       val count = x.getAs[Number](1)
       val avg = x.getAs[Double](2)
       if (count.intValue() > 100) {
