@@ -1,10 +1,10 @@
 package com.cpc.spark.small.tool.streaming
 
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.{Date, Properties}
 
 import com.cpc.spark.common.LogData
-import com.cpc.spark.log.parser.LogParser
+import com.cpc.spark.log.parser.{LogParser, UnionLog}
 import com.cpc.spark.small.tool.streaming.tool.OffsetRedis
 import com.typesafe.config.ConfigFactory
 import kafka.common.TopicAndPartition
@@ -12,7 +12,7 @@ import kafka.message.MessageAndMetadata
 import kafka.serializer.{DefaultDecoder, StringDecoder}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.TaskContext
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.streaming.dstream.InputDStream
 import org.apache.spark.streaming.kafka.{HasOffsetRanges, KafkaCluster, KafkaUtils, OffsetRange}
 import org.apache.spark.streaming.kafka.KafkaCluster.LeaderOffset
@@ -21,30 +21,53 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 /**
   * Created by wanli on 2018/10/10.
   */
-object UserBidStreaming {
+object InsertReportUserBidMinute {
 
   /**
     * 创建一个offsetRedis对象
     * 调用方法设置Redis的key前缀
     */
   val offsetRedis = new OffsetRedis()
-  offsetRedis.setRedisKey("SMALL_TOOL_USERBID_KAFKA_OFFSET")
+  offsetRedis.setRedisKey("SMALL_TOOL_InsertReportUserBidMinute_KAFKA_OFFSET")
+
+  var mariaReport2dbUrl = ""
+  val mariaReport2dbProp = new Properties()
+
 
   def main(args: Array[String]): Unit = {
+    if (args.length < 3) {
+      System.err.println(
+        s"""
+           |Usage: small.tool.streaming.InsertReportUserBidMinute <brokers> <topics> <seconds>
+           |  <brokers> is a list of one or more Kafka brokers
+           |  <topics> is a list of one or more kafka topics to consume from
+           |  <seconds> is execute time Seconds
+        """.stripMargin)
+      System.exit(1)
+    }
 
     Logger.getRootLogger.setLevel(Level.WARN)
+    val Array(brokers, topics, seconds) = args
+
+    println("brokers:", brokers, "topics:", topics, "seconds:", seconds)
+
+    val conf = ConfigFactory.load()
+    mariaReport2dbUrl = conf.getString("mariadb.report2_write.url")
+    mariaReport2dbProp.put("user", conf.getString("mariadb.report2_write.user"))
+    mariaReport2dbProp.put("password", conf.getString("mariadb.report2_write.password"))
+    mariaReport2dbProp.put("driver", conf.getString("mariadb.report2_write.driver"))
 
     var spark = SparkSession
       .builder()
-      .appName("small.tool.streaming UserBidStreaming")
+      .appName("small.tool.streaming InsertReportUserBidMinute")
       .enableHiveSupport()
       .getOrCreate()
 
-    val ssc = new StreamingContext(spark.sparkContext, Seconds(1))
-    val topicsSet = "cpc_search_new".split(",").toSet
-    val brokers = "192.168.80.35:9092,192.168.80.36:9092,192.168.80.37:9092,192.168.80.88:9092,192.168.80.89:9092"
+    val ssc = new StreamingContext(spark.sparkContext, Seconds(seconds.toInt))
+    val topicsSet = topics.split(",").toSet
+    //"cpc_search_new"
+    //val brokers = "192.168.80.35:9092,192.168.80.36:9092,192.168.80.37:9092,192.168.80.88:9092,192.168.80.89:9092"
     val kafkaParams = Map[String, String]("metadata.broker.list" -> brokers)
-    var conf = ConfigFactory.load()
 
     var fromOffsets: Map[TopicAndPartition, Long] = Map()
     val messageHandler = (mmd: MessageAndMetadata[String, Array[Byte]]) => (mmd.topic, mmd.message())
@@ -99,6 +122,7 @@ object UserBidStreaming {
     var messages: InputDStream[(String, Array[Byte])] = null
 
     if (kafkaoffset == null || kafkaoffset.isEmpty) {
+      //if (true) {
       messages = KafkaUtils.createDirectStream[String, Array[Byte], StringDecoder, DefaultDecoder](ssc, kafkaParams, topicsSet)
       println("no offset")
     } else {
@@ -106,6 +130,7 @@ object UserBidStreaming {
       println("from offset")
     }
 
+    //messages.print()
 
     messages.foreachRDD {
       rdd => {
@@ -125,67 +150,109 @@ object UserBidStreaming {
       }
     }
 
-    val base_data = messages.repartition(1000).map {
-      case (k, v) =>
-        try {
-          val logdata = new LogData(v)
-          val log_timestamp = logdata.log.getLogTimestamp
-          val date = new SimpleDateFormat("yyyy-MM-dd").format(log_timestamp)
-          val hour = new SimpleDateFormat("HH").format(log_timestamp)
-          val minute = new SimpleDateFormat("mm").format(log_timestamp).charAt(0) + "0"
+    val base_data = messages
+      .map {
+        case (k, v) =>
+          try {
+            val logdata = new LogData(v)
+            val field2 = scala.collection.mutable.Map[String, ExtValue]()
+            val fieldCount = logdata.log.getField.getMapCount
 
-          val field2 = scala.collection.mutable.Map[String, ExtValue]()
-
-          val fieldCount = logdata.log.getField.getMapCount
-          for (i <- 0 until fieldCount) {
-            val field = logdata.log.getField.getMap(i)
-            val extValue = ExtValue(field.getValue.getIntType, field.getValue.getLongType, field.getValue.getFloatType, field.getValue.getStringType)
-            field2 += (field.getKey -> extValue)
-
-          }
-
-          val field: collection.Map[String, ExtValue] = field2.toMap
-          SrcLog(logdata.log.getLogTimestamp, logdata.log.getIp, field, date, hour, minute)
-
-        } catch {
-          case t: Throwable =>
-            t.printStackTrace() // TODO: handle error
-            null
-        }
-    }
-      .filter(_ != null)
-
-    base_data.print()
-
-    var date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
-
-    base_data.foreachRDD {
-      rs =>
-        val keys = rs.map {
-          x =>
-            (x.thedate, x.thehour, x.theminute)
-        }
-          .distinct().toLocalIterator
-
-
-        keys.foreach { //(日期，小时)
-          key =>
-            val part = rs.filter(r => r.thedate == key._1 && r.thehour == key._2 && r.theminute == key._3)
-            val numbs = part.take(1).length
-            if (numbs > 0) {
-              println("")
-              part.take(1).foreach(println)
-              println("")
+            for (i <- 0 until fieldCount) {
+              val field = logdata.log.getField.getMap(i)
+              val extValue = ExtValue(field.getValue.getIntType, field.getValue.getLongType, field.getValue.getFloatType, field.getValue.getStringType)
+              field2 += (field.getKey -> extValue)
             }
 
-          //            date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
-          //            println("~~~~~~~~~ zyc_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
-          //
-          //            if (numbs > 0) {
-          //
-          //            }
-        }
-    }
+            val field: collection.Map[String, ExtValue] = field2.toMap
+            field
+          } catch {
+            case t: Throwable =>
+              t.printStackTrace() // TODO: handle error
+              null
+          }
+      }
+      .filter(_ != null)
+      .map {
+        x =>
+          val s1 = x.getOrElse[ExtValue]("cpc_search_new", null)
+          if (s1 == null) {
+            null
+          } else {
+            s1.string_type
+          }
+      }
+      .filter(_ != null)
+
+    val allData = base_data
+      .map(x => LogParser.parseSearchLog(x))
+      .filter { x =>
+        (x != null) && (x.isfill > 0) && (x.adsrc == 1) &&
+          ((x.media_appsid == "80000001") || (x.media_appsid == "80000002") || (x.media_appsid == "80000006") ||
+            (x.media_appsid == "800000062") || (x.media_appsid == "80000064") || (x.media_appsid == "80000066") || (x.media_appsid == "80000141"))
+      }
+      .map {
+        x =>
+          val fm = new SimpleDateFormat("yyyy-MM-dd HH:mm")
+          val timeStr = fm.format(new Date(x.timestamp.toLong * 1000)) + ":00"
+
+          val dateStr = new SimpleDateFormat("yyyy-MM-dd").format(new Date(x.timestamp.toLong * 1000))
+
+          var cvrThresholdByUser = 0.toLong
+          if (x.ext_int.contains("cvr_threshold_by_user")) {
+            cvrThresholdByUser = x.ext_int("cvr_threshold_by_user")
+          }
+
+          var cvrRealBid = 0
+          if (x.ext.contains("cvr_real_bid")) {
+            cvrRealBid = x.ext("cvr_real_bid").int_value
+          }
+
+          var cvrType = "nocvr"
+          if (cvrThresholdByUser == 200) {
+            cvrType = "cvr2"
+          } else if (cvrThresholdByUser > 0) {
+            cvrType = "cvr1"
+          }
+
+          var userId = x.userid
+
+          ((timeStr, x.adslot_type, cvrType, userId), (1.toLong, x.bid.toLong, dateStr, cvrRealBid.toLong))
+      }
+      .reduceByKey {
+        (a, b) =>
+          (a._1 + b._1, a._2 + b._2, a._3, a._4 + b._4)
+      }
+      .map {
+        x =>
+          val dateTime = x._1._1
+          val adslotType = x._1._2
+          val cvrType = x._1._3
+          val userId = x._1._4
+          val isfill = x._2._1
+          val bid = x._2._2
+          val dateStr = x._2._3
+          val cvrRealBid = x._2._4
+          (dateTime, userId, adslotType, cvrType, isfill, bid, cvrRealBid, dateStr)
+      }
+      .foreachRDD {
+        rdd =>
+          val insertDataFrame = spark
+            .createDataFrame(rdd)
+            .toDF("create_time", "user_id", "adslot_type", "cvr_type", "served_request", "sum_bid", "sum_cvr_real_bid", "date")
+          insertDataFrame.show(5)
+
+          insertDataFrame
+            .write
+            .mode(SaveMode.Append)
+            .jdbc(mariaReport2dbUrl, "report2.report_user_bid_minute", mariaReport2dbProp)
+
+          val now: Date = new Date()
+          val dateFormat: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+          val date = dateFormat.format(now)
+          println("----------------------------", date, insertDataFrame.count())
+
+      }
 
     ssc.start()
     ssc.awaitTermination()
