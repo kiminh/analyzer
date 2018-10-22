@@ -162,13 +162,14 @@ object OcpcPIDwithCPA {
       s"""
          |SELECT
          |  a.ideaid,
-         |  (case when a.ratio>1.0 then b.k_value * 1.2
+         |  (case when b.ratio is null then b.k_value
+         |        when a.ratio>1.0 then b.k_value * 1.2
          |        when a.ratio<1.0 then b.k_value / 1.2
          |        else b.k_value end) as k_value
          |FROM
-         |  ratio_table as a
-         |INNER JOIN
-         |  k_table b
+         |  k_table as a
+         |LEFT JOIN
+         |  ratio_table as b
          |ON
          |  a.ideaid=b.ideaid
        """.stripMargin
