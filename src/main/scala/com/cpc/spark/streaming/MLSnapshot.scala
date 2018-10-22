@@ -104,7 +104,7 @@ object MLSnapshot {
         val conf = ConfigFactory.load()
 
         base_data.foreachRDD { rdd =>
-            val r = rdd.map(f => (f.uid, f)).partitionBy(new HashPartitioner(200)).map(f => f._2).persist()
+            val r = rdd.map(f => (f.uid, f)).partitionBy(new HashPartitioner(100)).map(f => f._2).persist()
 
             val snap = r.mapPartitions { p =>
                 val redis = new RedisClient(conf.getString("redis.ml_feature_ali.host"),
@@ -187,14 +187,14 @@ object MLSnapshot {
             val spark = SparkSession.builder().config(ssc.sparkContext.getConf).getOrCreate()
             val keys = snap.map { x => (x.date, x.hour) }.distinct.toLocalIterator
             keys.foreach { key =>
-                val part = snap.filter(r => r.date == key._1 && r.hour == key._2).cache()
-                val numbs = part.count()
+                val part = snap.filter(r => r.date == key._1 && r.hour == key._2)
+                //val numbs = part.count()
 
-                val date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
-                println("~~~~~~~~~ zyc_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
-                println(part.first())
+                //val date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
+                //println("~~~~~~~~~ zyc_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
+                //println(part.first())
 
-                if (numbs > 0) {
+                //if (numbs > 0) {
                     val table = "ml_snapshot_from_show_test"
                     spark.createDataFrame(part)
                       .coalesce(100)
@@ -209,7 +209,7 @@ object MLSnapshot {
                         """.stripMargin.format(table, key._1, key._2, table, key._1, key._2)
                     println(sqlStmt)
                     spark.sql(sqlStmt)
-                }
+                //}
             }
             /**
               * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
