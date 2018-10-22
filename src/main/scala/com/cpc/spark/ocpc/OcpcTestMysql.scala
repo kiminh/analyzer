@@ -15,7 +15,7 @@ object OcpcTestMysql {
     val user = "cpcrw"
     val passwd = "zZdlz9qUB51awT8b"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select * from adv_test.unit where is_ocpc=1 limit 100) as tmp"
+    val table = "(select * from adv_test.unit where is_ocpc=1 and ideas is not null limit 100) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
