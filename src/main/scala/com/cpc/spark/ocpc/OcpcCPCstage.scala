@@ -27,7 +27,13 @@ object OcpcCPCstage {
 
     val base = data.select("ideas", "bid", "ocpc_bid", "ocpc_bid_update_time")
 
+    println("########### data ###############")
+    data.show(10)
+
     val ideaTable = base.withColumn("ideaid", explode(split(col("ideas"), "[,]"))).select("ideaid", "ocpc_bid", "ocpc_bid_update_time")
+
+    println("####### ideaTable ###############")
+    ideaTable.show(10)
 
     base.createOrReplaceTempView("ideaid_update_time")
 
@@ -53,6 +59,7 @@ object OcpcCPCstage {
 
     val updateTime = spark.sql(sqlRequest)
 
+    println("########## updateTime #################")
     updateTime.show(10)
 
 
