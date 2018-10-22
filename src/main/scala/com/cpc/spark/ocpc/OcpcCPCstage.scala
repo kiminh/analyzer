@@ -24,15 +24,35 @@ object OcpcCPCstage {
       .option("dbtable", table)
       .load()
 
-    val dataFrame = data.select("bid", "ocpc_bid", "ocpc_bid_update_time")
+    val base = data.select("bid", "ocpc_bid", "ocpc_bid_update_time")
 
-    dataFrame.createOrReplaceTempView("ideaid_update_time")
+    base.createOrReplaceTempView("ideaid_update_time")
 
     val sqlRequest =
       s"""
          |SELECT
-         |  ideaid,
+         |    t.ideaid,
+         |    t.ocpc_bid_update_time as update_time
+         |FROM
+         |    (SELECT
+         |        ideaid,
+         |        ocpc_bid,
+         |        ocpc_bid_update_time,
+         |        row_number() over(partition by ideaid order by ocpc_bid_update_time desc) as seq
+         |    FROM
+         |        ideaid_update_time) t
+         |WHERE
+         |    t.seq=1
        """.stripMargin
+
+    println(sqlRequest)
+
+    val updateTime = spark.sql(sqlRequest)
+
+
+
+
+
 
   }
 }
