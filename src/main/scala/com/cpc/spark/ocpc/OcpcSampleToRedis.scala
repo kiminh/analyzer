@@ -148,7 +148,7 @@ object OcpcSampleToRedis {
          |  (case when b.k_value is null then 1.0
          |        when b.k_value > 2.0 then 2.0
          |        when b.k_value < 0.5 then 0.5
-         |        else b.k_value end) as k_value as k_value
+         |        else b.k_value end) as k_value
          |FROM
          |  (SELECT
          |    *
