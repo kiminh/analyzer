@@ -104,7 +104,7 @@ object MLSnapshot {
         val conf = ConfigFactory.load()
 
         base_data.foreachRDD { rdd =>
-            val r = rdd.map(f => (f.uid, f)).partitionBy(new HashPartitioner(200)).map(f => f._2)
+            val r = rdd.map(f => (f.uid, f)).partitionBy(new HashPartitioner(200)).map(f => f._2).persist()
 
             val snap = r.mapPartitions { p =>
                 val redis = new RedisClient(conf.getString("redis.ml_feature_ali.host"),
