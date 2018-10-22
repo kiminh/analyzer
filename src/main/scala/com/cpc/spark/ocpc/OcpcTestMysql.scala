@@ -15,7 +15,7 @@ object OcpcTestMysql {
     val user = "cpcrw"
     val passwd = "zZdlz9qUB51awT8b"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select * from adv_test.unit where is_ocpc=1 limit 100) as tmp"
+    val table = "(select bid, ocpc_bid, ocpc_bid_update_time from adv_test.unit where is_ocpc=1 limit 100) as tmp"
 
 
 //    val mariadbProp = new Properties()
