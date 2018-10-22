@@ -6,7 +6,7 @@ object OcpcTestMysql {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
-    val url = "jdbc:mysql://192.168.66.11:3306/adv?useUnicode=true&characterEncoding=utf-8"
+    val url = "192.168.66.11:3306/adv?useUnicode=true&characterEncoding=utf-8"
     val user = "root"
     val passwd = "cpcv587"
     val driver = "com.mysql.jdbc.Driver"
