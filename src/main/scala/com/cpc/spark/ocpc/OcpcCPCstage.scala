@@ -35,7 +35,7 @@ object OcpcCPCstage {
     println("####### ideaTable ###############")
     ideaTable.show(10)
 
-    base.createOrReplaceTempView("ideaid_update_time")
+    ideaTable.createOrReplaceTempView("ideaid_update_time")
 
     val sqlRequest =
       s"""
