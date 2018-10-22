@@ -27,13 +27,8 @@ object OcpcCPCstage {
 
     val base = data.select("ideas", "bid", "ocpc_bid", "ocpc_bid_update_time")
 
-    println("########### data ###############")
-    data.show(10)
 
     val ideaTable = base.withColumn("ideaid", explode(split(col("ideas"), "[,]"))).select("ideaid", "ocpc_bid", "ocpc_bid_update_time")
-
-    println("####### ideaTable ###############")
-    ideaTable.show(10)
 
     ideaTable.createOrReplaceTempView("ideaid_update_time")
 
@@ -62,9 +57,7 @@ object OcpcCPCstage {
     println("########## updateTime #################")
     updateTime.show(10)
 
-
-
-
+    updateTime.write.mode("overwrite").saveAsTable("test.ocpc_idea_update_time")
 
   }
 }
