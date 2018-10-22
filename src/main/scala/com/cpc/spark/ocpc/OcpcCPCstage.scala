@@ -60,7 +60,7 @@ object OcpcCPCstage {
     println("########## updateTime #################")
     updateTime.show(10)
 
-//    updateTime.write.mode("overwrite").saveAsTable("test.ocpc_idea_update_time")
+    updateTime.write.mode("overwrite").saveAsTable("test.ocpc_idea_update_time")
 
   }
 }

@@ -162,12 +162,6 @@ object OcpcSampleToRedis {
          |   test.ocpc_k_value_table b
          |ON
          |   a.ideaid=b.ideaid
-         |LEFT JOIN
-         |   (SELECT
-         |      ideaid
-         |    FROM
-         |      test.ocpc_idea_update_time) c
-         |
        """.stripMargin
 
     val userFinalData2 = spark.sql(sqlRequest3)
