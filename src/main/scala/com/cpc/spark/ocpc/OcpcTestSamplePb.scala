@@ -52,28 +52,20 @@ object OcpcTestSamplePb {
     val sqlRequest =
       s"""
          |SELECT
-         |  a.ideaid,
-         |  a.cpa_given,
-         |  a.date,
-         |  a.hour
+         |    ideaid,
+         |    update_date
          |FROM
-         |  test_ocpc_demo a
-         |LEFT JOIN
-         |   (SELECT
-         |      ideaid
-         |    FROM
-         |      test.ocpc_idea_update_time
-         |    WHERE
-         |      `update_date` < '$date3'
-         |    or
-         |      (`update_date`='$date3' and `update_hour`<'$hour')) b
-         |ON
-         |    a.ideaid=b.ideaid
+         |    test.ocpc_idea_update_time
          |WHERE
-         |    b.ideaid is not null
+         |    `update_date` > '$date3'
+         |or
+         |    (`update_date` = '$date3' and `update_hour` > '$hour')
        """.stripMargin
+    println(sqlRequest)
 
-    val userDF = spark.sql(sqlRequest)
+    val ocpcUpdate = spark.sql(sqlRequest)
+
+    val userDF = dataDF.join(ocpcUpdate, Seq("ideaid"), "left_outer").filter("update_date is null")
 
     userDF.show(10)
 
