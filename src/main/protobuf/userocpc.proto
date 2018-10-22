@@ -8,6 +8,11 @@ message SingleUser {
     string cost = 3; // total cost group by userid
     string ctrcnt = 4; // ctr count group by userid
     string cvrcnt = 5; // cvr count group by userid
+    string adclass = 6;
+    string adclassCost = 7;
+    string adclassCtrcnt = 8;
+    string adclassCvrcnt = 9;
+    string kvalue=10;
 }
 
 

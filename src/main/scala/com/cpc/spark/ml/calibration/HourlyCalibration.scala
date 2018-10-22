@@ -73,7 +73,6 @@ object HourlyCalibration {
       }
       val ectr = x.getLong(1).toDouble / 1e6d
       // TODO(huazhenhao) not used right now in the first version, should be used as weights
-      // val showTimeStamp = x.getAs[Int]("show_timestamp")
       val model = x.getString(3)
       (model, (ectr, isClick))
     }).groupByKey()
@@ -87,7 +86,8 @@ object HourlyCalibration {
           val bins = x._2._1
           val samples = x._2._2
           val size = bins._2
-          println(s"model: $modelName has data of size $size")
+          val positiveSize = bins._3
+          println(s"model: $modelName has data of size $size, of positive number of $positiveSize")
           println(s"bin size: ${bins._1.size}")
           if (bins._1.size <= minBinCount) {
             println("bin number too small, don't output the calibration")
@@ -152,17 +152,20 @@ object HourlyCalibration {
   }
 
   def computeCalibration(prob: Double, irModel: IRModel): Double = {
+    if (prob <= 0) {
+      return 0.0
+    }
     var index = binarySearch(prob, irModel.boundaries)
     if (index == 0) {
-      return irModel.predictions(0) * (prob - irModel.boundaries(0))
+      return Math.max(0.0, irModel.predictions(0) * (prob - irModel.boundaries(0)))
     }
     if (index == irModel.boundaries.size) {
       index = index - 1
     }
-    return Math.min(1.0, irModel.predictions(index-1) +
+    return Math.max(0.0, Math.min(1.0, irModel.predictions(index-1) +
       (irModel.predictions(index) - irModel.predictions(index-1))
         * (prob - irModel.boundaries(index-1))
-        / (irModel.boundaries(index) - irModel.boundaries(index-1)))
+        / (irModel.boundaries(index) - irModel.boundaries(index-1))))
   }
 
   def saveProtoToLocal(modelName: String, config: CalibrationConfig): String = {
@@ -185,21 +188,27 @@ object HourlyCalibration {
   // input: Seq<(<ectr, click>)
   // return: (Seq(<ctr, ectr, weight>), total count)
   def binIterable(data: Iterable[(Double, Double)], minBinSize: Int, maxBinCount: Int)
-    : (Seq[(Double, Double, Double)], Double) = {
+    : (Seq[(Double, Double, Double)], Double, Double) = {
     val dataList = data.toList
     val totalSize = dataList.size
     val binNumber = Math.min(Math.max(1, totalSize / minBinSize), maxBinCount)
     val binSize = totalSize / binNumber
     var bins = Seq[(Double, Double, Double)]()
+    var allClickSum = 0d
     var clickSum = 0d
     var showSum = 0d
     var eCtrSum = 0d
     var n = 0
     dataList.sorted.foreach {
         x =>
-          eCtrSum = eCtrSum + x._1
+          var ectr = 0.0
+          if (x._1 > 0) {
+            ectr = x._1
+          }
+          eCtrSum = eCtrSum + ectr
           if (x._2 > 1e-6) {
             clickSum = clickSum + 1
+            allClickSum = allClickSum + 1
           }
           showSum = showSum + 1
           if (showSum >= binSize) {
@@ -211,6 +220,6 @@ object HourlyCalibration {
             eCtrSum = 0d
           }
       }
-    return (bins, totalSize)
+    return (bins, totalSize, allClickSum)
   }
 }

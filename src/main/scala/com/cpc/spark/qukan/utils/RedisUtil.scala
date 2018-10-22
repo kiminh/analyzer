@@ -50,9 +50,17 @@ object RedisUtil {
     var counter = 0
     for ((key, value) <- w) {
       if (wBuffer.size >= 100) {
-        redis.mset(wBuffer:_*)
-        redis.mset(nBuffer:_*)
-        redis.mset(zBuffer:_*)
+        redis.pipeline( p => {
+          for ((key, value) <- wBuffer) {
+            p.setex(key, 3600 * 24 * 5, value)
+          }
+          for ((key, value) <- nBuffer) {
+            p.setex(key, 3600 * 24 * 5, value)
+          }
+          for ((key, value) <- zBuffer) {
+            p.setex(key, 3600 * 24 * 5, value)
+          }
+        })
         counter += wBuffer.size
         wBuffer.clear()
         zBuffer.clear()
@@ -62,11 +70,27 @@ object RedisUtil {
       nBuffer.append((s"n$key", n.getOrElse(key, 0.0).toString))
       zBuffer.append((s"z$key", z.getOrElse(key, 0.0).toString))
     }
-    redis.mset(wBuffer:_*)
-    redis.mset(nBuffer:_*)
-    redis.mset(zBuffer:_*)
+    redis.pipeline( p => {
+      for ((key, value) <- wBuffer) {
+        p.setex(key, 3600 * 24 * 5, value)
+      }
+      for ((key, value) <- nBuffer) {
+        p.setex(key, 3600 * 24 * 5, value)
+      }
+      for ((key, value) <- zBuffer) {
+        p.setex(key, 3600 * 24 * 5, value)
+      }
+    })
     counter += wBuffer.size
     println(s"Save $counter features to redis")
+  }
+
+
+  def getRedisClient(dbID: Int): RedisClient = {
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    redis.select(dbID)
+    redis
   }
 
   def modelToRedis(dbID: Int, weights: Map[Int, Double]): Unit = {

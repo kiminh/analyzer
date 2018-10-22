@@ -54,6 +54,7 @@ object OcpcSampleToRedis {
          |FROM
          |  dl_cpc.ocpc_uid_userid_track
          |WHERE ($selectCondition1) OR
+         |
          |($selectCondition2) OR
          |($selectCondition3)
          |GROUP BY userid, uid, ideaid, adclass
@@ -81,8 +82,8 @@ object OcpcSampleToRedis {
     // calculate by adclass
     val adclassData = userData
       .groupBy("adclass")
-      .agg(sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
-      .select("adclass", "adclass_ctr_cnt", "adclass_cvr_cnt")
+      .agg(sum("cost").alias("adclass_cost"), sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
+      .select("adclass", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
     adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
 
@@ -96,7 +97,10 @@ object OcpcSampleToRedis {
          |    a.adclass,
          |    a.cost,
          |    (case when a.user_cvr_cnt<$threshold then b.adclass_ctr_cnt else a.user_ctr_cnt end) as ctr_cnt,
-         |    (case when a.user_cvr_cnt<$threshold then b.adclass_cvr_cnt else a.user_cvr_cnt end) as cvr_cnt
+         |    (case when a.user_cvr_cnt<$threshold then b.adclass_cvr_cnt else a.user_cvr_cnt end) as cvr_cnt,
+         |    b.adclass_cost,
+         |    b.adclass_ctr_cnt,
+         |    b.adclass_cvr_cnt
          |FROM
          |    test.ocpc_data_userdata a
          |INNER JOIN
@@ -105,20 +109,78 @@ object OcpcSampleToRedis {
          |    a.adclass=b.adclass
        """.stripMargin)
 
-//    useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table")
+    useridAdclassData.createOrReplaceTempView("useridTable")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    userid,
+         |    adclass,
+         |    cost,
+         |    (case when cvr_cnt=0 then ctr_cnt+1 else ctr_cnt end) as ctr_cnt,
+         |    (case when cvr_cnt=0 then 1 else cvr_cnt end) as cvr_cnt,
+         |    adclass_cost,
+         |    (case when adclass_cvr_cnt=0 then adclass_ctr_cnt+1 else adclass_ctr_cnt end) as adclass_ctr_cnt,
+         |    (case when adclass_cvr_cnt=0 then 1 else adclass_cvr_cnt end) as adclass_cvr_cnt,
+         |    '$end_date' as date,
+         |    '$hour' as hour
+         |FROM
+         |    useridTable
+       """.stripMargin
+
+
+    val userFinalData = spark.sql(sqlRequest2)
+    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  a.ideaid,
+         |  a.userid,
+         |  a.adclass,
+         |  a.cost,
+         |  a.ctr_cnt,
+         |  a.cvr_cnt,
+         |  a.adclass_cost,
+         |  a.adclass_ctr_cnt,
+         |  a.adclass_cvr_cnt,
+         |  (case when b.k_value is null then 1.0 else b.k_value end) as k_value
+         |FROM
+         |  (SELECT
+         |    *
+         |   FROM
+         |    dl_cpc.ocpc_pb_result_table
+         |   WHERE
+         |    `date`='$end_date'
+         |   and
+         |    `hour`='$hour') a
+         |LEFT JOIN
+         |   test.ocpc_k_value_table b
+         |ON
+         |   a.ideaid=b.ideaid
+       """.stripMargin
+
+    val userFinalData2 = spark.sql(sqlRequest3)
+
+    userFinalData2.show(10)
+
+    userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 
     // save into redis and pb file
     // write data into a temperary table
     uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
 
+
+
     //     save data into redis
-    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
+//    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
 
     //     check redis
-    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
+//    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
 
     //     save data into pb file
-    savePbPack(useridAdclassData)
+    savePbPack(userFinalData2)
   }
 
 
@@ -243,18 +305,28 @@ object OcpcSampleToRedis {
     dataset.show(10)
     for (record <- dataset.collect()) {
 
-      val kValue = record.get(0).toString
+      val ideaid = record.get(0).toString
       val userId = record.get(1).toString
+      val adclassId = record.get(2).toString
       val costValue = record.get(3).toString
-      val ctrCntValue = record.get(4).toString
-      val cvrCntValue = record.get(5).toString
+      val ctrValue = record.getLong(4).toString
+      val cvrValue = record.getLong(5).toString
+      val adclassCost = record.get(6).toString
+      val adclassCtr = record.getLong(7).toString
+      val adclassCvr = record.getLong(8).toString
+      val k = record.get(9).toString
 
       val currentItem = SingleUser(
-        ideaid = kValue,
+        ideaid = ideaid,
         userid = userId,
         cost = costValue,
-        ctrcnt = ctrCntValue,
-        cvrcnt = cvrCntValue
+        ctrcnt = ctrValue,
+        cvrcnt = cvrValue,
+        adclass = adclassId,
+        adclassCost = adclassCost,
+        adclassCtrcnt = adclassCtr,
+        adclassCvrcnt = adclassCvr,
+        kvalue = k
       )
       list += currentItem
     }
