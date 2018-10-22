@@ -32,9 +32,6 @@ object OcpcTestMysql {
       .option("password", passwd)
       .option("dbtable", table)
       .load()
-//    val data = spark.read.jdbc(url, "unit", mariadbProp)
-
-//    val data = dataframe_mysql.select("bid", "ocpc_bid", "ocpc_bid_update_time")
 
     data.printSchema()
 
