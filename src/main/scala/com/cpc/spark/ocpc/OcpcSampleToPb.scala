@@ -142,6 +142,9 @@ object OcpcSampleToPb {
        """.stripMargin)
 
     useridAdclassData.createOrReplaceTempView("useridTable")
+    val tmpCount = useridAdclassData.count()
+    println("count before remove cvr<20: %d".format(tmpCount))
+
 
     val sqlRequest2 =
       s"""
@@ -165,7 +168,10 @@ object OcpcSampleToPb {
 
 
     val userFinalData = spark.sql(sqlRequest2)
-    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
+    val tmpCount1 = userFinalData.count()
+    println("count after remove cvr<20: %d".format(tmpCount1))
+
+//    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
     val sqlRequest3 =
       s"""
