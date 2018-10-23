@@ -97,8 +97,8 @@ object OcpcSampleToRedis {
          |    a.userid,
          |    a.adclass,
          |    a.cost,
-         |    (case when a.user_cvr_cnt<$threshold then b.adclass_ctr_cnt else a.user_ctr_cnt end) as ctr_cnt,
-         |    (case when a.user_cvr_cnt<$threshold then b.adclass_cvr_cnt else a.user_cvr_cnt end) as cvr_cnt,
+         |    a.ctr_cnt,
+         |    a.cvr_cnt,
          |    b.adclass_cost,
          |    b.adclass_ctr_cnt,
          |    b.adclass_cvr_cnt
@@ -326,19 +326,26 @@ object OcpcSampleToRedis {
       val adclassCvr = record.getLong(8).toString
       val k = record.get(9).toString
 
-      val currentItem = SingleUser(
-        ideaid = ideaid,
-        userid = userId,
-        cost = costValue,
-        ctrcnt = ctrValue,
-        cvrcnt = cvrValue,
-        adclass = adclassId,
-        adclassCost = adclassCost,
-        adclassCtrcnt = adclassCtr,
-        adclassCvrcnt = adclassCvr,
-        kvalue = k
-      )
-      list += currentItem
+      val tmpCost = adclassCost.toLong
+      if (tmpCost<0) {
+        println("#######################################")
+        println("negative cost")
+        println(record)
+      } else {
+        val currentItem = SingleUser(
+          ideaid = ideaid,
+          userid = userId,
+          cost = costValue,
+          ctrcnt = ctrValue,
+          cvrcnt = cvrValue,
+          adclass = adclassId,
+          adclassCost = adclassCost,
+          adclassCtrcnt = adclassCtr,
+          adclassCvrcnt = adclassCvr,
+          kvalue = k
+        )
+        list += currentItem
+      }
     }
     val result = list.toArray[SingleUser]
     val useridData = UserOcpc(

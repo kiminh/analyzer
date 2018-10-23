@@ -91,8 +91,8 @@ object OcpcTestSampleToRedis {
          |    a.userid,
          |    a.adclass,
          |    a.cost,
-         |    (case when a.user_cvr_cnt<$threshold then b.adclass_ctr_cnt else a.user_ctr_cnt end) as ctr_cnt,
-         |    (case when a.user_cvr_cnt<$threshold then b.adclass_cvr_cnt else a.user_cvr_cnt end) as cvr_cnt,
+         |    a.ctr_cnt,
+         |    a.cvr_cnt,
          |    b.adclass_cost,
          |    b.adclass_ctr_cnt,
          |    b.adclass_cvr_cnt
@@ -107,27 +107,7 @@ object OcpcTestSampleToRedis {
     useridAdclassData.createOrReplaceTempView("useridTable")
     useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_test_sum_total_value3")
 
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |    ideaid,
-         |    userid,
-         |    adclass,
-         |    cost,
-         |    (case when cvr_cnt=0 then ctr_cnt+1 else ctr_cnt end) as ctr_cnt,
-         |    (case when cvr_cnt=0 then 1 else cvr_cnt end) as cvr_cnt,
-         |    adclass_cost,
-         |    (case when adclass_cvr_cnt=0 then adclass_ctr_cnt+1 else adclass_ctr_cnt end) as adclass_ctr_cnt,
-         |    (case when adclass_cvr_cnt=0 then 1 else adclass_cvr_cnt end) as adclass_cvr_cnt,
-         |    '$end_date' as date,
-         |    '$hour' as hour
-         |FROM
-         |    useridTable
-       """.stripMargin
 
-
-    val userFinalData = spark.sql(sqlRequest2)
-    userFinalData.write.mode("overwrite").saveAsTable("test.ocpc_test_sum_total_value4")
 
   }
 
