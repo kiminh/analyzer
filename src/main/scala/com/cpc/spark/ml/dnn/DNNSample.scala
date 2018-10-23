@@ -324,7 +324,7 @@ object DNNSample {
   }
 
   private def mkSparseFeature_m(idx: Int = 0) = udf {
-    features: Seq[Seq[Long]] =>
+    features: Array[Seq[Long]] =>
       var i = idx
       var re = Seq[(Int, Int, Long)]()
       for (feature <- features) {
