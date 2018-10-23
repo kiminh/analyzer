@@ -16,7 +16,7 @@ import mlmodel.mlmodel.ProtoPortrait
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.HashPartitioner
 import scala.collection.{mutable => cmutable}
-import scala.collection.parallel.mutable
+import scala.collection.mutable
 
 
 object MLSnapshot {
@@ -104,7 +104,24 @@ object MLSnapshot {
         val conf = ConfigFactory.load()
 
         base_data.foreachRDD { rdd =>
-            val r = rdd.map(f => (f.uid, f)).partitionBy(new HashPartitioner(100)).map(f => f._2).persist()
+            val r = rdd.mapPartitions(f => {
+                val result = scala.collection.mutable.ListBuffer[(String,RawFeature)]()
+                val list = f.toIterator
+                list.foreach(x => {
+                    val tmp = (x.uid,x)
+                    result += tmp
+                })
+                result.toIterator
+            }).partitionBy(new HashPartitioner(100)).cache().mapPartitions(f => {
+                val result = scala.collection.mutable.ListBuffer[RawFeature]()
+                val list = f.toIterator
+                list.foreach(x => {
+                    val tmp = x._2
+                    result += tmp
+                })
+                result.toIterator
+            })
+            //val r = rdd.map(f => (f.uid, f)).partitionBy(new HashPartitioner(100)).map(f => f._2).cache()
 
             val snap = r.mapPartitions { p =>
                 val redis = new RedisClient(conf.getString("redis.ml_feature_ali.host"),
@@ -185,7 +202,26 @@ object MLSnapshot {
             }.cache()
 
             val spark = SparkSession.builder().config(ssc.sparkContext.getConf).getOrCreate()
-            val keys = snap.map { x => (x.date, x.hour) }.distinct.toLocalIterator
+            val keys = snap.mapPartitions(f => {
+                val result = scala.collection.mutable.ListBuffer[((String,String),Int)]()
+                val list = f.toIterator
+                list.foreach(f => {
+                    val tmp = ((f.date,f.hour),1)
+                    result += tmp
+                })
+                result.toIterator
+            }).reduceByKey((x,y) => x).mapPartitions(f => {
+                val result = scala.collection.mutable.ListBuffer[(String,String)]()
+                val list = f.toIterator
+                list.foreach(f => {
+                    val tmp = f._1
+                    result += tmp
+                })
+                result.toIterator
+            }).toLocalIterator
+            //val keys = snap.map(f => ((f.date,f.hour),1)).reduceByKey((x,y) => x).map(f => f._1).toLocalIterator
+
+            //val keys = snap.map { x => (x.date, x.hour) }.distinct.toLocalIterator
             keys.foreach { key =>
                 val part = snap.filter(r => r.date == key._1 && r.hour == key._2)
                 //val numbs = part.count()
@@ -215,15 +251,15 @@ object MLSnapshot {
               * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
               */
             // 每个batch的结束时间
-            val currentBatchEndTime = new Date().getTime
-            val costTime = (currentBatchEndTime - currentBatchStartTime) / 1000.0
-
-            val data2Kafka = new Data2Kafka()
-            val mapString: Seq[(String, String)] = Seq(("Topic", "mlSnapshot_cpc_show_new"))
-            val mapFloat: Seq[(String, Float)] = Seq(("ProcessingTime", costTime.toFloat))
-            data2Kafka.setMessage(currentBatchEndTime, null, mapFloat, null, mapString)
-            data2Kafka.sendMessage(brokers, cpc_mlsnapshot_warning)
-            data2Kafka.close()
+//            val currentBatchEndTime = new Date().getTime
+//            val costTime = (currentBatchEndTime - currentBatchStartTime) / 1000.0
+//
+//            val data2Kafka = new Data2Kafka()
+//            val mapString: Seq[(String, String)] = Seq(("Topic", "mlSnapshot_cpc_show_new"))
+//            val mapFloat: Seq[(String, Float)] = Seq(("ProcessingTime", costTime.toFloat))
+//            data2Kafka.setMessage(currentBatchEndTime, null, mapFloat, null, mapString)
+//            data2Kafka.sendMessage(brokers, cpc_mlsnapshot_warning)
+//            data2Kafka.close()
         }
 
         ssc.start()
