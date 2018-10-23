@@ -32,7 +32,7 @@ object DNNSample {
 
     val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
 
-    val rawtrain = getSample(spark, date, flag = true).withColumn("uid", $"dense" (25)).persist()
+    val rawtrain = getSample(spark, date, is_train = true).withColumn("uid", $"dense" (25)).persist()
 
     rawtrain.printSchema()
 
@@ -63,7 +63,7 @@ object DNNSample {
 
 
     //val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
-    val test = getSample(spark, tdate, flag = false).persist()
+    val test = getSample(spark, tdate, is_train = false).persist()
     val tn = test.count
     println("测试数据：total = %d, 正比例 = %.4f".format(tn, test.where("label=array(1,0)").count.toDouble / tn))
 
@@ -76,7 +76,7 @@ object DNNSample {
     test.take(10).foreach(println)
   }
 
-  def getSample(spark: SparkSession, date: String, flag: Boolean): DataFrame = {
+  def getSample(spark: SparkSession, date: String, is_train: Boolean): DataFrame = {
     import spark.implicits._
 
     val behavior_sql =
@@ -156,7 +156,7 @@ object DNNSample {
     println("--------------------------------")
 
     val re =
-      if (flag)
+      if (is_train)
         spark.sql(sql)
           .join(userAppIdx, Seq("uid"), "leftouter")
           .join(behavior_data, Seq("uid"), "leftouter")
