@@ -32,7 +32,7 @@ object DNNSample {
 
     val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
 
-    val rawtrain = getSample(spark, date).withColumn("uid", $"dense" (25)).persist()
+    val rawtrain = getSample(spark, date, flag = true).withColumn("uid", $"dense" (25)).persist()
 
     rawtrain.printSchema()
 
@@ -63,7 +63,7 @@ object DNNSample {
 
 
     //val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
-    val test = getSample(spark, tdate).sample(withReplacement = false, 0.03).persist()
+    val test = getSample(spark, tdate, flag = false).persist()
     val tn = test.count
     println("测试数据：total = %d, 正比例 = %.4f".format(tn, test.where("label=array(1,0)").count.toDouble / tn))
 
@@ -76,7 +76,7 @@ object DNNSample {
     test.take(10).foreach(println)
   }
 
-  def getSample(spark: SparkSession, date: String): DataFrame = {
+  def getSample(spark: SparkSession, date: String, flag: Boolean): DataFrame = {
     import spark.implicits._
 
     val behavior_sql =
@@ -155,42 +155,50 @@ object DNNSample {
     println(sql)
     println("--------------------------------")
 
-    spark.sql(sql)
-      .join(userAppIdx, Seq("uid"), "leftouter")
-      .join(behavior_data, Seq("uid"), "leftouter")
-      .select($"label",
+    val re =
+      if (flag)
+        spark.sql(sql)
+          .join(userAppIdx, Seq("uid"), "leftouter")
+          .join(behavior_data, Seq("uid"), "leftouter")
+      else
+        spark.sql(sql)
+          .join(userAppIdx, Seq("uid"), "leftouter")
+          .join(behavior_data, Seq("uid"), "leftouter")
+          .sample(withReplacement = false, 0.03)
 
-        hash("f1")($"media_type").alias("f1"),
-        hash("f2")($"mediaid").alias("f2"),
-        hash("f3")($"channel").alias("f3"),
-        hash("f4")($"sdk_type").alias("f4"),
-        hash("f5")($"adslot_type").alias("f5"),
-        hash("f6")($"adslotid").alias("f6"),
-        hash("f7")($"sex").alias("f7"),
-        hash("f8")($"dtu_id").alias("f8"),
-        hash("f9")($"adtype").alias("f9"),
-        hash("f10")($"interaction").alias("f10"),
-        hash("f11")($"bid").alias("f11"),
-        hash("f12")($"ideaid").alias("f12"),
-        hash("f13")($"unitid").alias("f13"),
-        hash("f14")($"planid").alias("f14"),
-        hash("f15")($"userid").alias("f15"),
-        hash("f16")($"is_new_ad").alias("f16"),
-        hash("f17")($"adclass").alias("f17"),
-        hash("f18")($"site_id").alias("f18"),
-        hash("f19")($"os").alias("f19"),
-        hash("f20")($"network").alias("f20"),
-        hash("f21")($"phone_price").alias("f21"),
-        hash("f22")($"brand").alias("f22"),
-        hash("f23")($"province").alias("f23"),
-        hash("f24")($"city").alias("f24"),
-        hash("f25")($"city_level").alias("f25"),
-        hash("f26")($"uid").alias("f26"),
-        hash("f27")($"age").alias("f27"),
+    re.select($"label",
 
-        array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7",
-          $"m8", $"m9", $"m10", $"m11", $"m12", $"m13").alias("raw_sparse")
-      )
+      hash("f1")($"media_type").alias("f1"),
+      hash("f2")($"mediaid").alias("f2"),
+      hash("f3")($"channel").alias("f3"),
+      hash("f4")($"sdk_type").alias("f4"),
+      hash("f5")($"adslot_type").alias("f5"),
+      hash("f6")($"adslotid").alias("f6"),
+      hash("f7")($"sex").alias("f7"),
+      hash("f8")($"dtu_id").alias("f8"),
+      hash("f9")($"adtype").alias("f9"),
+      hash("f10")($"interaction").alias("f10"),
+      hash("f11")($"bid").alias("f11"),
+      hash("f12")($"ideaid").alias("f12"),
+      hash("f13")($"unitid").alias("f13"),
+      hash("f14")($"planid").alias("f14"),
+      hash("f15")($"userid").alias("f15"),
+      hash("f16")($"is_new_ad").alias("f16"),
+      hash("f17")($"adclass").alias("f17"),
+      hash("f18")($"site_id").alias("f18"),
+      hash("f19")($"os").alias("f19"),
+      hash("f20")($"network").alias("f20"),
+      hash("f21")($"phone_price").alias("f21"),
+      hash("f22")($"brand").alias("f22"),
+      hash("f23")($"province").alias("f23"),
+      hash("f24")($"city").alias("f24"),
+      hash("f25")($"city_level").alias("f25"),
+      hash("f26")($"uid").alias("f26"),
+      hash("f27")($"age").alias("f27"),
+
+      array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7",
+        $"m8", $"m9", $"m10", $"m11", $"m12", $"m13").alias("raw_sparse")
+    )
 
       .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
@@ -328,7 +336,7 @@ object DNNSample {
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
 
-  private val default_hash = for (i <- 1 to 13) yield Seq((i-1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
+  private val default_hash = for (i <- 1 to 13) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
 
   private def mkSparseFeature_m = udf {
     features: Seq[Seq[Long]] =>
