@@ -96,6 +96,9 @@ object OcpcSampleToPb {
 
     val rawData = spark.sql(sqlRequestNew1)
 
+    println("##### records of flag = 0 ##############")
+    rawData.filter("flag=0").show(10)
+
     val base = rawData.filter("flag=1").select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
 
@@ -105,7 +108,7 @@ object OcpcSampleToPb {
       .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
       .select("ideaid", "userid", "adclass", "cost", "user_ctr_cnt", "user_cvr_cnt")
 
-    userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
+//    userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
 
 
     // calculate by adclass
@@ -114,7 +117,7 @@ object OcpcSampleToPb {
       .agg(sum("cost").alias("adclass_cost"), sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
       .select("adclass", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
-    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
+//    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
 
 
     // connect adclass and userid
@@ -201,9 +204,9 @@ object OcpcSampleToPb {
 
     userFinalData2.show(10)
 
-    userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
-
-    userFinalData2.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v1")
+//    userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
+//
+//    userFinalData2.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v1")
 
     // save data into pb file
     savePbPack(userFinalData2)
