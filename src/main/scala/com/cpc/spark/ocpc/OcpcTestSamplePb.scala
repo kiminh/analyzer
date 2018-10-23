@@ -80,7 +80,7 @@ object OcpcTestSamplePb {
          |  (case when b.update_hour is null then '$hour' else b.update_hour end) as update_hour,
          |  (case when b.update_date is null or b.update_hour is null then 1
          |        when b.update_date < date then 1
-         |        when b.update_date = date and b.update_hour < hour then 1
+         |        when b.update_date = date and b.update_hour <= hour then 1
          |        else 0 end) as flag
          |FROM
          |  base_table as a
@@ -100,7 +100,7 @@ object OcpcTestSamplePb {
 
     println("###### data ################### ")
     val data = rawData.filter("flag=1")
-    data.select("ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "totl_cnt").show(10)
+    data.select("ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt").show(10)
     println(data.count)
 
 
