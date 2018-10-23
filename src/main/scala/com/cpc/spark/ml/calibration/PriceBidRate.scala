@@ -121,7 +121,7 @@ object PriceBidRate {
     val globalSQL =
       s"""
          |select
-         |  avg(price/bid),
+         |  avg(price/bid)
          | from dl_cpc.cpc_union_log
          | where $timeRangeSql
          |  and isclick=1
@@ -142,7 +142,7 @@ object PriceBidRate {
       adslotidRate = slotIDMap.toMap,
       globalRate = globalAvg
     )
-    
+
     Utils.saveProtoToFile(config, LOCAL_PATH)
     if (upload) {
       val conf = ConfigFactory.load()
