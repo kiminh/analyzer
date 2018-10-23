@@ -4,6 +4,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
+import com.cpc.spark.udfs.Udfs_wj._
+import org.apache.spark.sql.functions._
 
 
 object OcpcPIDwithCPA {
@@ -27,7 +29,7 @@ object OcpcPIDwithCPA {
       // 计算K值
       calculateK(spark)
     } else {
-      println("entering test stage")
+      println("############## entering test stage ###################")
       checkKeffect(date, hour, spark)
     }
 
@@ -67,7 +69,7 @@ object OcpcPIDwithCPA {
       s"""
          |SELECT
          |    ideaid,
-         |    a.ext['adclass'].int_value as adclass,
+         |    ext['adclass'].int_value as adclass,
          |    ext_string['ocpc_log'] as ocpc_log,
          |    exp_tags,
          |    date,
@@ -83,11 +85,13 @@ object OcpcPIDwithCPA {
     rawData.write.mode("overwrite").saveAsTable("test.raw_data_check_k")
 
     // 抽取关键字段数据（ideaid, adclass, k）
-    val model1Data = rawData.filter("exptags like \"%ocpc_strategy:2%\"")
+    val model1Data = rawData.filter("exptags not like \"%ocpc_strategy:2%\"")
     model1Data.show(10)
+    val modelDataWithK1 = model1Data.withColumn("k_value", udfMode1OcpcLogExtractCPA1()(col("ocpc_log")))
 
-    val model2Data = rawData.filter("not exptags like \"%ocpc_strategy:2%\"")
+    val model2Data = rawData.filter("exptags like \"%ocpc_strategy:2%\"")
     model2Data.show(10)
+    val modelDataWithK2 = model2Data.withColumn("k_value", udfModelOcpcLogExtractCPA2()(col("ocpc_log")))
 
 
 

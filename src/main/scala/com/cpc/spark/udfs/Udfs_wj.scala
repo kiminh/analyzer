@@ -6,11 +6,13 @@ import org.apache.spark.sql.functions.udf
 object Udfs_wj{
   def udfMode1OcpcLogExtractCPA1() = udf((valueLog: String) => {
     val logs = valueLog.split(",")
-    logs(2)
+    logs(7)
+//    val kValue = logs(7).split(":")(1)
+//    kValue
   })
 
   def udfModelOcpcLogExtractCPA2() = udf((valueLog: String) => {
     val logs = valueLog.split(",")
-    logs(2)
+    logs(5)
   })
 }
