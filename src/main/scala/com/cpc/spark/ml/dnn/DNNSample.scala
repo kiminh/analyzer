@@ -94,6 +94,7 @@ object DNNSample {
          |       collect_list(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3
          |from dl_cpc.cpc_user_behaviors
          |where load_date in ('${getDays(date, 1, 3)}')
+         |    and rn <= 1000
          |group by uid
       """.stripMargin
 
