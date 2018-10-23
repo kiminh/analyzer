@@ -323,7 +323,7 @@ object DNNSample {
   }
 
   private val mkSparseFeature_m = udf {
-    features: Array[Seq[Long]] =>
+    features: Seq[Seq[Long]] =>
       var re = Seq[(Int, Int, Long)]()
       var i = 0
       for (feature <- features) {
