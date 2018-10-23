@@ -27,6 +27,7 @@ object OcpcPIDwithCPA {
       // 计算K值
       calculateK(spark)
     } else {
+      println("entering test stage")
       checkKeffect(date, hour, spark)
     }
 
@@ -67,7 +68,7 @@ object OcpcPIDwithCPA {
          |SELECT
          |    ideaid,
          |    adclass,
-         |    ocpc_log,
+         |    ext_string['ocpc_log'] as ocpc_log,
          |    exp_tags,
          |    date,
          |    hour
@@ -82,7 +83,11 @@ object OcpcPIDwithCPA {
     rawData.write.mode("overwrite").saveAsTable("test.raw_data_check_k")
 
     // 抽取关键字段数据（ideaid, adclass, k）
+    val model1Data = rawData.filter("exptags like \"%ocpc_strategy:2%\"")
+    model1Data.show(10)
 
+    val model2Data = rawData.filter("not exptags like \"%ocpc_strategy:2%\"")
+    model2Data.show(10)
 
 
   }
