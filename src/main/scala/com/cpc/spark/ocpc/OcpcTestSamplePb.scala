@@ -93,6 +93,7 @@ object OcpcTestSamplePb {
     println(sqlRequest2)
 
     val rawData = spark.sql(sqlRequest2)
+    rawData.printSchema()
 
     println("###### rawData #################")
     rawData.show(10)
@@ -106,6 +107,9 @@ object OcpcTestSamplePb {
 
     println("####################################")
     rawData.filter("`date`='2018-10-22'").show(10)
+
+    println("###################################")
+    rawData.filter("`date`='2018-10-22'").filter("ideaid=2204498").show(10)
 
 
 
