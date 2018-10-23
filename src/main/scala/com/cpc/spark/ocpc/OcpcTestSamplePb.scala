@@ -96,7 +96,16 @@ object OcpcTestSamplePb {
 
     println("###### rawData #################")
     rawData.show(10)
+    println(rawData.count)
 
+    println("###### data ################### ")
+    val data = rawData.filter("flag=1")
+    data.select("ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "totl_cnt").show(10)
+    println(data.count)
+
+
+    println("####################################")
+    rawData.filter("`date`='2018-10-22'").show(10)
 
 
 
