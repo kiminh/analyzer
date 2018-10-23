@@ -135,6 +135,7 @@ object OcpcSampleToRedis {
     userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
     // 根据中间表加入k值
+    // TODO: 将k值暂时固定为0.694, 需要后期调整
     val sqlRequest3 =
       s"""
          |SELECT
@@ -148,9 +149,9 @@ object OcpcSampleToRedis {
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
          |  (case when b.k_value is null then 1.0
-         |        when b.k_value > 2.0 then 2.0
-         |        when b.k_value < 0.2 then 0.2
-         |        else b.k_value end) as k_value
+         |        when b.k_value > 2.0 then 0.694
+         |        when b.k_value < 0.2 then 0.694
+         |        else 0.694 end) as k_value
          |FROM
          |  (SELECT
          |    *
