@@ -191,8 +191,8 @@ object DNNSample {
         $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
-        concatFeature_m(mkSparseFeature_m()($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7"),
-          mkSparseFeature_m(7)($"m8", $"m9", $"m10", $"m11", $"m12", $"m13")).alias("sparse"),
+        mkSparseFeature_m(array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7",
+          $"m8", $"m9", $"m10", $"m11", $"m12", $"m13")).alias("sparse"),
         $"label"
       )
 
@@ -323,9 +323,9 @@ object DNNSample {
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
 
-  private def mkSparseFeature_m(idx: Int = 0) = udf {
-    features: Array[Seq[Long]] =>
-      var i = idx
+  private def mkSparseFeature_m = udf {
+    features: Seq[Seq[Long]] =>
+      var i = 0
       var re = Seq[(Int, Int, Long)]()
       for (feature <- features) {
         re = re ++ feature.zipWithIndex.map(x => (i, x._2, x._1))
@@ -335,10 +335,7 @@ object DNNSample {
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
 
-  private val concatFeature_m = udf {
-    (f1: (Seq[Int], Seq[Int], Seq[Int], Seq[Long]), f2: (Seq[Int], Seq[Int], Seq[Int], Seq[Long])) =>
-      (f1._1 ++ f2._1, f1._2 ++ f2._2, f1._3 ++ f2._3, f1._4 ++ f2._4)
-  }
+
 }
 
 
