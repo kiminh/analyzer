@@ -78,9 +78,9 @@ object OcpcMonitor {
 
     dataDF.show(10)
 
-    dataDF.write.mode("overwrite").saveAsTable("test.ocpc_result_unionlog_table")
+//    dataDF.write.mode("overwrite").saveAsTable("test.ocpc_result_unionlog_table")
 
-//    dataDF.write.mode("append").insertInto("dl_cpc.ocpc_cpa_given_table")
+    dataDF.write.mode("append").insertInto("dl_cpc.ocpc_result_unionlog_table")
 
   }
 }

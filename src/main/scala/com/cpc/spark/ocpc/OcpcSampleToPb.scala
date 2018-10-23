@@ -56,8 +56,8 @@ object OcpcSampleToPb {
          |FROM
          |  dl_cpc.ocpc_uid_userid_track_label2
          |WHERE ($selectCondition1) OR
-         |($selectCondition2) OR
-         |($selectCondition3)
+         |      ($selectCondition2) OR
+         |      ($selectCondition3)
          |GROUP BY userid, ideaid, adclass, date, hour
        """.stripMargin
     println(sqlRequest)
