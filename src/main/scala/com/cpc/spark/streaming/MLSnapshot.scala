@@ -10,6 +10,7 @@ import org.apache.spark.streaming._
 import org.apache.spark.streaming.kafka._
 import com.cpc.spark.common.{Event, LogData}
 import com.cpc.spark.streaming.tools.Data2Kafka
+import redis.clients.jedis.JedisPool
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import mlmodel.mlmodel.ProtoPortrait
@@ -37,6 +38,7 @@ object MLSnapshot {
         val spark = SparkSession.builder()
           .appName("ml snapshot from show log")
           .enableHiveSupport()
+          .config("spark.serializer","org.apache.spark.serializer.KryoSerializer")
           .getOrCreate()
 
         //val sparkConf = new SparkConf().setAppName("ml snapshot: topics = " + topics)
@@ -48,15 +50,15 @@ object MLSnapshot {
         val cpc_mlsnapshot_warning = "cpc_realtime_parsedlog_warning"
 
         //初始化DStream 每个batch的开始时间； 用于报警服务
-        var currentBatchStartTime = 0L
+//        var currentBatchStartTime = 0L
 
         val messages = KafkaUtils
           .createDirectStream[String, Array[Byte], StringDecoder, DefaultDecoder](ssc, kafkaParams, topicsSet)
 
-        messages.foreachRDD { rdd =>
-            //每个batch的开始时间
-            currentBatchStartTime = new Date().getTime
-        }
+//        messages.foreachRDD { rdd =>
+//            //每个batch的开始时间
+//            currentBatchStartTime = new Date().getTime
+//        }
 
         val base_data = messages.map {
             case (key, v) =>
@@ -220,7 +222,7 @@ object MLSnapshot {
                 result.toIterator
             }).toLocalIterator
             //val keys = snap.map(f => ((f.date,f.hour),1)).reduceByKey((x,y) => x).map(f => f._1).toLocalIterator
-
+            System.out.println("******keys 's num is " + keys.length + " ******")
             //val keys = snap.map { x => (x.date, x.hour) }.distinct.toLocalIterator
             keys.foreach { key =>
                 val part = snap.filter(r => r.date == key._1 && r.hour == key._2)
