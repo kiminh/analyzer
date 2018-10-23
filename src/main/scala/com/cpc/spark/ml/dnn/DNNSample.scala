@@ -32,7 +32,7 @@ object DNNSample {
 
     val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
 
-    val rawtrain = getSample(spark, date).withColumn("uid", $"dense" (25)).persist()
+    val rawtrain = getSample(spark, date).withColumn("uid", $"dense" (25))
 
     rawtrain.printSchema()
 
@@ -44,18 +44,21 @@ object DNNSample {
         getNewDense(25, default_hash_uid)($"dense", $"count" < 4).alias("dense"),
         $"idx0", $"idx1", $"idx2", $"id_arr")
 
-    val n = train.count()
-    println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
+    /*val n = train.count()
+    println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))*/
 
     train.repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/dnntrain-" + date)
+      .save("/user/cpc/zhj/mfeatures/dnntrain-" + date)
+
+    val dnntrain=spark.read.format("tfrecords").option("recordType", "Example").load("/user/cpc/zhj/dnntrain-" + date)
+    val n = dnntrain.count()
+    println("训练数据：total = %d, 正比例 = %.4f".format(n, dnntrain.where("label=array(1,0)").count.toDouble / n))
     println("train size", n)
 
-    rawtrain.unpersist()
 
     //val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
     val test = getSample(spark, tdate).sample(withReplacement = false, 0.03).persist()
@@ -67,12 +70,38 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/dnntest-" + tdate)
+      .save("/user/cpc/zhj/mfeatures/dnntest-" + tdate)
     test.take(10).foreach(println)
   }
 
   def getSample(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
+
+    val behavior_sql =
+      s"""
+         |select uid,
+         |       collect_list(if(load_date='${getDay(date, 1)}',show_ideaid,null)) as s_ideaid_1,
+         |       collect_list(if(load_date='${getDay(date, 1)}',show_adclass,null)) as s_adclass_1,
+         |       collect_list(if(load_date='${getDay(date, 2)}',show_ideaid,null)) as s_ideaid_2,
+         |       collect_list(if(load_date='${getDay(date, 2)}',show_adclass,null)) as s_adclass_2,
+         |       collect_list(if(load_date='${getDay(date, 3)}',show_ideaid,null)) as s_ideaid_3,
+         |       collect_list(if(load_date='${getDay(date, 3)}',show_adclass,null)) as s_adclass_3,
+         |       collect_list(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
+         |       collect_list(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
+         |       collect_list(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
+         |       collect_list(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
+         |       collect_list(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
+         |       collect_list(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3
+         |from dl_cpc.cpc_user_behaviors
+         |where load_date in ('${getDays(date, 1, 3)}')
+         |group by uid
+      """.stripMargin
+
+    println("--------------------------------")
+    println(behavior_sql)
+    println("--------------------------------")
+
+    val behavior_data = spark.sql(behavior_sql)
 
     val userAppIdx = getUidApp(spark, date)
     val sql =
@@ -102,10 +131,13 @@ object DNNSample {
          |  and uid not like "%000000%"
          |
       """.stripMargin
+    println("--------------------------------")
     println(sql)
+    println("--------------------------------")
 
     spark.sql(sql)
       .join(userAppIdx, Seq("uid"), "leftouter")
+      .join(behavior_data, Seq("uid"), "leftouter")
       .repartition(1500)
       .select($"label",
 
@@ -137,13 +169,31 @@ object DNNSample {
         hash("f26")($"uid").alias("f26"),
         hash("f27")($"age").alias("f27"),
 
-        hashSeq("m1", "string")($"pkgs").alias("m1"))
+        hashSeq("m1", "string")($"pkgs").alias("m1"),
+
+        hashSeq("m1", "int")($"pkgs").alias("m1"),
+
+        hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
+        hashSeq("m3", "int")($"s_ideaid_2").alias("m3"),
+        hashSeq("m4", "int")($"s_ideaid_3").alias("m4"),
+        hashSeq("m5", "int")($"s_adclass_1").alias("m5"),
+        hashSeq("m6", "int")($"s_adclass_2").alias("m6"),
+        hashSeq("m7", "int")($"s_adclass_3").alias("m7"),
+        hashSeq("m8", "int")($"c_ideaid_1").alias("m8"),
+        hashSeq("m9", "int")($"c_ideaid_2").alias("m9"),
+        hashSeq("m10", "int")($"c_ideaid_3").alias("m10"),
+        hashSeq("m11", "int")($"c_adclass_1").alias("m11"),
+        hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
+        hashSeq("m13", "int")($"c_adclass_3").alias("m13")
+      )
 
       .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
         $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
-        mkSparseFeature1($"m1").alias("sparse"), $"label"
+        //mkSparseFeature1($"m1").alias("sparse"), $"label"
+        mkSparseFeature_m($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9",
+          $"m10", $"m11", $"m12", $"m13").alias("sparse"), $"label"
       )
 
       .select(
@@ -183,6 +233,21 @@ object DNNSample {
       re = re :+ format.format(cal.getTime)
     }
     re.mkString("','")
+  }
+
+  /**
+    * 获取时间
+    *
+    * @param startdate ：开始日期
+    * @param day       ：开始日期之前day天
+    * @return
+    */
+  def getDay(startdate: String, day: Int): String = {
+    val format = new SimpleDateFormat("yyyy-MM-dd")
+    val cal = Calendar.getInstance()
+    cal.setTime(format.parse(startdate))
+    cal.add(Calendar.DATE, -day)
+    format.format(cal.getTime)
   }
 
   def getUidApp(spark: SparkSession, date: String): DataFrame = {
@@ -255,6 +320,18 @@ object DNNSample {
   private val mkSparseFeature1 = udf {
     apps: Seq[Long] =>
       val c = apps.zipWithIndex.map(x => (0, 0, x._2, x._1))
+      (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
+  }
+
+  private val mkSparseFeature_m = udf {
+    features: Array[Seq[Long]] =>
+      var re = Seq[(Int, Int, Long)]()
+      var i = 0
+      for (feature <- features) {
+        re = re ++ feature.zipWithIndex.map(x => (i, x._2, x._1))
+        i = i + 1
+      }
+      val c = re.map(x => (0, x._1, x._2, x._3))
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
 }
