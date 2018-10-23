@@ -64,6 +64,16 @@ object OcpcTestSampleToRedis {
     base.write.mode("overwrite").saveAsTable("test.ocpc_test_sum_total_value")
     base.printSchema()
 
+    // calculation by userid
+    val userData = base
+      .groupBy("userid", "ideaid", "adclass")
+      .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
+      .select("ideaid", "userid", "adclass", "cost", "user_ctr_cnt", "user_cvr_cnt")
+
+    userData.printSchema()
+
+    userData.write.mode("overwrite").saveAsTable("test.ocpc_test_sum_total_value1")
+
 
   }
 
