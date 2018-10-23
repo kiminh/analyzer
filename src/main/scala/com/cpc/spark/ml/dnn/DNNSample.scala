@@ -326,16 +326,15 @@ object DNNSample {
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
 
+  private val default_hash = for (i <- 1 to 13) yield Seq((i, 0, Murmur3Hash.stringHash64("m" + i, 0)))
+
   private def mkSparseFeature_m = udf {
     features: Seq[Seq[Long]] =>
       var i = 0
       var re = Seq[(Int, Int, Long)]()
       for (feature <- features) {
-        val prefix = "m" + (i + 1)
         re = re ++
-          (if (feature != null) feature.zipWithIndex.map(x => (i, x._2, x._1))
-          else Seq((i, 0, Murmur3Hash.stringHash64(prefix, 0))))
-
+          (if (feature != null) feature.zipWithIndex.map(x => (i, x._2, x._1)) else default_hash(i))
         i = i + 1
       }
       val c = re.map(x => (0, x._1, x._2, x._3))
