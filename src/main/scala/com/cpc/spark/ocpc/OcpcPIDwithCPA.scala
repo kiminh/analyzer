@@ -67,7 +67,7 @@ object OcpcPIDwithCPA {
       s"""
          |SELECT
          |    ideaid,
-         |    adclass,
+         |    a.ext['adclass'].int_value as adclass,
          |    ext_string['ocpc_log'] as ocpc_log,
          |    exp_tags,
          |    date,
