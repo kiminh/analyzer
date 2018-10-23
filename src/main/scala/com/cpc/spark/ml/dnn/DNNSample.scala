@@ -54,10 +54,10 @@ object DNNSample {
       .option("recordType", "Example")
       .save("/user/cpc/zhj/mfeatures/dnntrain-" + date)
 
-    val dnntrain = spark.read.format("tfrecords").option("recordType", "Example").load("/user/cpc/zhj/mfeatures/dnntrain-" + date)
+    /*val dnntrain = spark.read.format("tfrecords").option("recordType", "Example").load("/user/cpc/zhj/mfeatures/dnntrain-" + date)
     val n = dnntrain.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, dnntrain.where("label=array(1,0)").count.toDouble / n))
-    println("train size", n)
+    println("train size", n)*/
 
 
     //val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
