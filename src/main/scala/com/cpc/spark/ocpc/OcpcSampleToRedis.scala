@@ -96,8 +96,8 @@ object OcpcSampleToRedis {
          |    a.userid,
          |    a.adclass,
          |    a.cost,
-         |    a.ctr_cnt,
-         |    a.cvr_cnt,
+         |    a.user_ctr_cnt as ctr_cnt,
+         |    a.user_cvr_cnt as cvr_cnt,
          |    b.adclass_cost,
          |    b.adclass_ctr_cnt,
          |    b.adclass_cvr_cnt
