@@ -171,8 +171,6 @@ object DNNSample {
 
         hashSeq("m1", "string")($"pkgs").alias("m1"),
 
-        hashSeq("m1", "int")($"pkgs").alias("m1"),
-
         hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
         hashSeq("m3", "int")($"s_ideaid_2").alias("m3"),
         hashSeq("m4", "int")($"s_ideaid_3").alias("m4"),
