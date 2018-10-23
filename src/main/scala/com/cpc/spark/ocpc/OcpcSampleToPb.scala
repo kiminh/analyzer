@@ -221,7 +221,7 @@ object OcpcSampleToPb {
          |ON
          |  a.ideaid=b.ideaid
          |WHERE
-         |  b.ideaid is null
+         |  b.ideaid is not null
        """.stripMargin
 
     val testData = spark.sql(sqlTest)
