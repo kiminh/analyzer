@@ -134,9 +134,10 @@ object OcpcPIDwithCPA {
          |  a.ideaid,
          |  a.adclass,
          |  a.k_value,
+         |  b.k_value,
          |  (case when b.percent is null then 0
-         |        when b.percent < 0.8 then 0
-         |        else 1 end) as flag
+         |        when b.percent < 0.5 then 0
+         |        else 1 end) flag
          |FROM
          |  previous_k_value_table as a
          |LEFT JOIN
@@ -146,7 +147,7 @@ object OcpcPIDwithCPA {
          |AND
          |  a.adclass=b.adclass
          |AND
-         |  a.k_value=b.k_value
+         |  abs(a.k_value - b.k_value) < 0.001
        """.stripMargin
 
     println(sqlRequest3)
