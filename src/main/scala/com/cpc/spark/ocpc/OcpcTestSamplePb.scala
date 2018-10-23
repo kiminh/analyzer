@@ -42,6 +42,7 @@ object OcpcTestSamplePb {
     val sqlRequest =
       s"""
          |SELECT
+         |  userid,
          |  ideaid,
          |  adclass,
          |  date,
@@ -62,6 +63,8 @@ object OcpcTestSamplePb {
     val base = spark.sql(sqlRequest)
 
     base.show(10)
+    println("################# baseTable ####################")
+    println(base.count)
 
     base.createOrReplaceTempView("base_table")
 
@@ -104,12 +107,8 @@ object OcpcTestSamplePb {
     data.select("ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt").show(10)
     println(data.count)
 
-
-    println("####################################")
-    rawData.filter("`date`='2018-10-22'").show(10)
-
     println("###################################")
-    rawData.filter("`date`='2018-10-22'").filter("ideaid='2204498'").show(10)
+    rawData.filter("ideaid='2204498'").show(10)
 
     println("############### flag = 0 ###################")
     rawData.filter("flag=0").show(10)

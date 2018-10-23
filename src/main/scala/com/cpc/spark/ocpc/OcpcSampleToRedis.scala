@@ -44,9 +44,10 @@ object OcpcSampleToRedis {
       s"""
          |SELECT
          |  userid,
-         |  uid,
          |  ideaid,
          |  adclass,
+         |  date,
+         |  hour,
          |  SUM(cost) as cost,
          |  SUM(ctr_cnt) as ctr_cnt,
          |  SUM(cvr_cnt) as cvr_cnt,
@@ -54,21 +55,50 @@ object OcpcSampleToRedis {
          |FROM
          |  dl_cpc.ocpc_uid_userid_track_label2
          |WHERE ($selectCondition1) OR
-         |
          |($selectCondition2) OR
          |($selectCondition3)
-         |GROUP BY userid, uid, ideaid, adclass
+         |GROUP BY ideaid, adclass, date, hour
        """.stripMargin
     println(sqlRequest)
 
-    val base = spark.sql(sqlRequest)
+    val rawBase = spark.sql(sqlRequest)
 
-    // calculation by uid
-    val uidData = base
-      .groupBy("uid")
-      .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
-      .withColumn("data", concat_ws(",", col("ctr_cnt"), col("cvr_cnt")))
+    rawBase.show(10)
 
+    rawBase.createOrReplaceTempView("base_table")
+
+    val sqlRequestNew1 =
+      s"""
+         |SELECT
+         |  a.ideaid,
+         |  a.adclass,
+         |  a.cost,
+         |  a.ctr_cnt,
+         |  a.cvr_cnt,
+         |  a.total_cnt,
+         |  a.date,
+         |  a.hour,
+         |  (case when b.update_date is null then '$start_date' else b.update_date end) as update_date,
+         |  (case when b.update_hour is null then '$hour' else b.update_hour end) as update_hour,
+         |  (case when b.update_date is null or b.update_hour is null then 1
+         |        when b.update_date < date then 1
+         |        when b.update_date = date and b.update_hour <= hour then 1
+         |        else 0 end) as flag
+         |FROM
+         |  base_table as a
+         |LEFT JOIN
+         |  test.ocpc_idea_update_time as b
+         |ON
+         |  a.ideaid=b.ideaid
+       """.stripMargin
+
+    println(sqlRequestNew1)
+
+    val rawData = spark.sql(sqlRequestNew1)
+    rawData.printSchema()
+
+
+    val base = rawData.filter("flag=1").select("ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
     // calculation by userid
     val userData = base
@@ -176,19 +206,8 @@ object OcpcSampleToRedis {
       .write.mode("overwrite")
       .saveAsTable("dl_cpc.ocpc_pb_result_table_v1")
 
-    // save into redis and pb file
-    // write data into a temperary table
-    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
 
-
-
-    //     save data into redis
-//    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
-
-    //     check redis
-//    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
-
-    //     save data into pb file
+    // save data into pb file
     savePbPack(userFinalData2)
   }
 
