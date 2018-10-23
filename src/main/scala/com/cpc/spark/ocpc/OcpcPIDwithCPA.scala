@@ -12,18 +12,78 @@ object OcpcPIDwithCPA {
 
     val date = args(0).toString
     val hour = args(1).toString
+    val isTest = args(2).toInt
 
-    val filename = "/user/cpc/wangjun/cpa_given.txt"
+    if (isTest == 1) {
+      val filename = "/user/cpc/wangjun/cpa_given.txt"
 
-    // 读取cpa_given的text文件
-    val dataset = testGenCPAgiven(filename, spark)
-    dataset.show(10)
-    // 计算CPA比值
-    genCPAratio(dataset, date, hour, spark)
-    // 初始化K值
-//    testCalculateK(spark)
-    // 计算K值
-    calculateK(spark)
+      // 读取cpa_given的text文件
+      val dataset = testGenCPAgiven(filename, spark)
+      dataset.show(10)
+      // 计算CPA比值
+      genCPAratio(dataset, date, hour, spark)
+      // 初始化K值
+      //    testCalculateK(spark)
+      // 计算K值
+      calculateK(spark)
+    } else {
+      checkKeffect(date, hour, spark)
+    }
+
+
+  }
+
+  def checkKeffect(date: String, hour: String, spark: SparkSession) ={
+    /**
+      * 读取历史数据：前四个小时的unionlog然后计算目前k值所占比例，比例低于阈值，返回0，否则返回1
+      * 算法：
+      * 1. 获取时间区间
+      * 2. 从unionlog中抽取相关字段数据
+      * 3. 抽取关键字段数据（ideaid, adclass, k）
+      * 4. 计算各个k值的相对数量
+      * 5. 从pb的历史数据表中抽取k值
+      * 6. 找到该k值的相对比例
+      * 7. 根据比例返回结果
+      */
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -4)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition1 = s"`date`='$date1' and `hour` >= '$hour1'"
+    val selectCondition2 = s"`date`='$date' and `hour`<='$hour'"
+
+    // 从unionlog中抽取相关字段数据
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    adclass,
+         |    ocpc_log,
+         |    exp_tags,
+         |    date,
+         |    hour
+         |FROM
+         |    dl_cpc.cpc_union_log
+         |WHERE
+         |    ($selectCondition1) OR ($selectCondition2)
+       """.stripMargin
+    println(sqlRequest)
+
+    val rawData = spark.sql(sqlRequest)
+    rawData.write.mode("overwrite").saveAsTable("test.raw_data_check_k")
+
+    // 抽取关键字段数据（ideaid, adclass, k）
+
+
 
   }
 
