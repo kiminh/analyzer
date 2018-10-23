@@ -63,6 +63,44 @@ object OcpcTestSamplePb {
 
     base.show(10)
 
+    base.createOrReplaceTempView("base_table")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  a.ideaid,
+         |  a.adclass,
+         |  a.cost,
+         |  a.ctr_cnt,
+         |  a.cvr_cnt,
+         |  a.total_cnt,
+         |  a.date,
+         |  a.hour,
+         |  (case when b.update_date is null then '$start_date' else b.update_date end) as update_date,
+         |  (case when b.update_hour is null then '$hour' else b.update_hour end) as update_hour,
+         |  (case when b.update_date is null or b.update_hour is null then 1
+         |        when b.update_date < date then 1
+         |        when b.update_date = date and b.update_hour < hour then 1
+         |        else 0 end) as flag
+         |FROM
+         |  base_table as a
+         |LEFT JOIN
+         |  test.ocpc_idea_update_time as b
+         |ON
+         |  a.ideaid=b.ideaid
+       """.stripMargin
+
+    println(sqlRequest2)
+
+    val rawData = spark.sql(sqlRequest2)
+
+    println("###### rawData #################")
+    rawData.show(10)
+
+
+
+
+
   }
 
 
