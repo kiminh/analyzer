@@ -143,7 +143,7 @@ object OcpcSampleToPb {
 
     useridAdclassData.createOrReplaceTempView("useridTable")
     val tmpCount = useridAdclassData.count()
-    println("count before remove cvr<20: %d".format(tmpCount))
+    println("count before remove cvr < 20: %d".format(tmpCount))
 
 
     val sqlRequest2 =
@@ -171,7 +171,7 @@ object OcpcSampleToPb {
     userFinalData.createOrReplaceTempView("user_final_data")
 
     val tmpCount1 = userFinalData.count()
-    println("count after remove cvr<20: %d".format(tmpCount1))
+    println("count after remove cvr < 20: %d".format(tmpCount1))
 
 //    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
@@ -194,14 +194,7 @@ object OcpcSampleToPb {
          |   '$end_date' as date,
          |   '$hour' as hour
          |FROM
-         |  (SELECT
-         |    *
-         |   FROM
-         |    user_final_data
-         |   WHERE
-         |    `date`='$end_date'
-         |   and
-         |    `hour`='$hour') a
+         |   user_final_data a
          |LEFT JOIN
          |   test.ocpc_k_value_table b
          |ON
@@ -214,7 +207,7 @@ object OcpcSampleToPb {
     userFinalData2.show(10)
 
     val tmpCount2 = userFinalData2.count()
-    println("count after remove cvr<20: %d".format(tmpCount2))
+    println("count after remove cvr < 20: %d".format(tmpCount2))
 
 
     val sqlTest =
