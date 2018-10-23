@@ -286,7 +286,8 @@ object DNNSample {
   private def hashSeq(prefix: String, t: String) = {
     t match {
       case "int" => udf {
-        seq: Seq[Int] =>
+        rawseq: Seq[Int] =>
+          val seq = if (rawseq != null) rawseq.filter(_ != null) else rawseq
           val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
           else Seq(Murmur3Hash.stringHash64(prefix, 0))
           re.slice(0, 1000)
