@@ -44,8 +44,7 @@ object OcpcMonitor {
          |        price,
          |        ext_int['bid_ocpc'] as bid_ocpc,
          |        ext_int['is_ocpc'] as is_ocpc,
-         |        ext_string['ocpc_log'] as ocpc_log,
-         |        hour
+         |        ext_string['ocpc_log'] as ocpc_log
          |    from
          |        dl_cpc.cpc_union_log
          |    WHERE
@@ -72,6 +71,8 @@ object OcpcMonitor {
          |            `hour` = '$hour'
          |    ) b on a.searchid = b.searchid
        """.stripMargin
+
+    println(sqlRequest)
 
     val dataDF = spark.sql(sqlRequest)
 
