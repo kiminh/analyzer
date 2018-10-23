@@ -286,8 +286,7 @@ object DNNSample {
   private def hashSeq(prefix: String, t: String) = {
     t match {
       case "int" => udf {
-        rawseq: Seq[Int] =>
-          val seq = if (rawseq != null) rawseq.filter(_ != null) else rawseq
+        seq: Seq[Int] =>
           val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
           else Seq(Murmur3Hash.stringHash64(prefix, 0))
           re.slice(0, 1000)
@@ -332,7 +331,11 @@ object DNNSample {
       var i = 0
       var re = Seq[(Int, Int, Long)]()
       for (feature <- features) {
-        re = re ++ feature.zipWithIndex.map(x => (i, x._2, x._1))
+        val prefix = "m" + (i + 1)
+        re = re ++
+          (if (feature != null) feature.zipWithIndex.map(x => (i, x._2, x._1))
+          else Seq((i, 0, Murmur3Hash.stringHash64(prefix, 0))))
+
         i = i + 1
       }
       val c = re.map(x => (0, x._1, x._2, x._3))
