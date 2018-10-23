@@ -127,7 +127,7 @@ object OcpcTestSampleToRedis {
 
 
     val userFinalData = spark.sql(sqlRequest2)
-    userFinalData.write.mode("overwrite").insertInto("test.ocpc_test_sum_total_value4")
+    userFinalData.write.mode("overwrite").saveAsTable("test.ocpc_test_sum_total_value4")
 
   }
 
