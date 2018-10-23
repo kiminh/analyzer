@@ -139,7 +139,6 @@ object DNNSample {
     spark.sql(sql)
       .join(userAppIdx, Seq("uid"), "leftouter")
       .join(behavior_data, Seq("uid"), "leftouter")
-      .repartition(1500)
       .select($"label",
 
         hash("f1")($"media_type").alias("f1"),
