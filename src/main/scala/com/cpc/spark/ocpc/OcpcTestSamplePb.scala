@@ -109,7 +109,7 @@ object OcpcTestSamplePb {
     rawData.filter("`date`='2018-10-22'").show(10)
 
     println("###################################")
-    rawData.filter("`date`='2018-10-22'").filter("ideaid=2204498").show(10)
+    rawData.filter("`date`='2018-10-22'").filter("ideaid='2204498'").show(10)
 
 
 
