@@ -26,7 +26,9 @@ object OcpcMonitor {
          |    a.price,
          |    a.bid_ocpc.
          |    a.ocpc_log,
-         |    b.iscvr
+         |    b.iscvr,
+         |    '$day' as date,
+         |    '$hour' as hour
          |FROM
          |    (select
          |        uid,
@@ -62,7 +64,7 @@ object OcpcMonitor {
          |    (
          |        select
          |            searchid,
-         |            label as iscvr
+         |            label2 as iscvr
          |        from dl_cpc.ml_cvr_feature_v1
          |        WHERE
          |            `date` = '$day'
@@ -72,16 +74,12 @@ object OcpcMonitor {
        """.stripMargin
 
     val dataDF = spark.sql(sqlRequest)
-      .withColumn("cpa_given", udfOcpcLogExtractCPA()(col("ocpc_log")))
-      .select("ideaid", "cpa_given")
-      .groupBy("ideaid")
-      .agg(max("cpa_given").alias("cpa_given"))
-      .withColumn("date", lit(day))
-      .withColumn("hour", lit(hour))
 
     dataDF.show(10)
 
-    dataDF.write.mode("append").insertInto("dl_cpc.ocpc_cpa_given_table")
+    dataDF.write.mode("overwrite").saveAsTable("test.ocpc_result_unionlog_table")
+
+//    dataDF.write.mode("append").insertInto("dl_cpc.ocpc_cpa_given_table")
 
   }
 }
