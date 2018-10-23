@@ -56,7 +56,7 @@ object OcpcTestSamplePb {
          |WHERE ($selectCondition1) OR
          |($selectCondition2) OR
          |($selectCondition3)
-         |GROUP BY ideaid, adclass, date, hour
+         |GROUP BY userid, ideaid, adclass, date, hour
        """.stripMargin
     println(sqlRequest)
 
