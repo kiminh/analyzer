@@ -186,8 +186,6 @@ object DNNSample {
         hash("f26")($"uid").alias("f26"),
         hash("f27")($"age").alias("f27"),
 
-        hashSeq("m1", "string")($"pkgs").alias("m1"),
-
         array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7",
           $"m8", $"m9", $"m10", $"m11", $"m12", $"m13").alias("raw_sparse")
       )
