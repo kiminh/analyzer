@@ -103,8 +103,24 @@ object DNNSample {
     println("--------------------------------")
 
     val behavior_data = spark.sql(behavior_sql)
+      .select(
+        hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
+        hashSeq("m3", "int")($"s_ideaid_2").alias("m3"),
+        hashSeq("m4", "int")($"s_ideaid_3").alias("m4"),
+        hashSeq("m5", "int")($"s_adclass_1").alias("m5"),
+        hashSeq("m6", "int")($"s_adclass_2").alias("m6"),
+        hashSeq("m7", "int")($"s_adclass_3").alias("m7"),
+        hashSeq("m8", "int")($"c_ideaid_1").alias("m8"),
+        hashSeq("m9", "int")($"c_ideaid_2").alias("m9"),
+        hashSeq("m10", "int")($"c_ideaid_3").alias("m10"),
+        hashSeq("m11", "int")($"c_adclass_1").alias("m11"),
+        hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
+        hashSeq("m13", "int")($"c_adclass_3").alias("m13")
+      )
 
     val userAppIdx = getUidApp(spark, date)
+      .select(hashSeq("m1", "string")($"pkgs").alias("m1"))
+
     val sql =
       s"""
          |select if(isclick>0, array(1,0), array(0,1)) as label,
@@ -171,18 +187,8 @@ object DNNSample {
 
         hashSeq("m1", "string")($"pkgs").alias("m1"),
 
-        hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
-        hashSeq("m3", "int")($"s_ideaid_2").alias("m3"),
-        hashSeq("m4", "int")($"s_ideaid_3").alias("m4"),
-        hashSeq("m5", "int")($"s_adclass_1").alias("m5"),
-        hashSeq("m6", "int")($"s_adclass_2").alias("m6"),
-        hashSeq("m7", "int")($"s_adclass_3").alias("m7"),
-        hashSeq("m8", "int")($"c_ideaid_1").alias("m8"),
-        hashSeq("m9", "int")($"c_ideaid_2").alias("m9"),
-        hashSeq("m10", "int")($"c_ideaid_3").alias("m10"),
-        hashSeq("m11", "int")($"c_adclass_1").alias("m11"),
-        hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
-        hashSeq("m13", "int")($"c_adclass_3").alias("m13")
+        array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7",
+          $"m8", $"m9", $"m10", $"m11", $"m12", $"m13").alias("raw_sparse")
       )
 
       .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
@@ -190,8 +196,7 @@ object DNNSample {
         $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
-        mkSparseFeature_m(array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7",
-          $"m8", $"m9", $"m10", $"m11", $"m12", $"m13")).alias("sparse"),
+        mkSparseFeature_m($"raw_sparse").alias("sparse"),
         $"label"
       )
 
