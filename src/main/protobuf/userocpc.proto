@@ -19,3 +19,9 @@ message SingleUser {
 message UserOcpc {
     repeated SingleUser user = 1;
 }
+
+message BidAdjustmentConfig {
+    map<int32, double> ideaRate = 1;
+    map<string, double> adslotidRate = 2;
+    double globalRate = 3;
+}
