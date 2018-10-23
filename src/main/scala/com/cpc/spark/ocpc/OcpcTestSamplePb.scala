@@ -111,6 +111,11 @@ object OcpcTestSamplePb {
     println("###################################")
     rawData.filter("`date`='2018-10-22'").filter("ideaid='2204498'").show(10)
 
+    println("############### flag = 0 ###################")
+    rawData.filter("flag=0").show(10)
+
+    println("############### flag = 1 ###################")
+    rawData.filter("flag=1").show(10)
 
 
 
