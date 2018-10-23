@@ -58,8 +58,8 @@ object OcpcPIDwithCPA {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition1 = s"`date`='$date1' and `hour` >= '$hour1'"
-    val selectCondition2 = s"`date`='$date' and `hour`<='$hour'"
+    val selectCondition1 = s"`date`='$date1' and `hour` >= '$hour1' and ext_int['is_ocpc']=1"
+    val selectCondition2 = s"`date`='$date' and `hour`<='$hour' and ext_int['is_ocpc']=1"
 
     // 从unionlog中抽取相关字段数据
     val sqlRequest =
