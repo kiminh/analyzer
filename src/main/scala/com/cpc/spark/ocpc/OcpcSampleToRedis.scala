@@ -204,7 +204,7 @@ object OcpcSampleToRedis {
       .withColumn("date", lit(end_date))
       .withColumn("hour", lit(hour))
       .write.mode("overwrite")
-      .saveAsTable("dl_cpc.ocpc_pb_result_table_v1")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v1")
 
 
     // save data into pb file
