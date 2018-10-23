@@ -169,7 +169,7 @@ object OcpcSampleToPb {
 
     val userFinalData = spark.sql(sqlRequest2)
     userFinalData.createOrReplaceTempView("user_final_data")
-    
+
     val tmpCount1 = userFinalData.count()
     println("count after remove cvr<20: %d".format(tmpCount1))
 
@@ -209,18 +209,37 @@ object OcpcSampleToPb {
        """.stripMargin
 
     val userFinalData2 = spark.sql(sqlRequest3)
+    userFinalData2.createOrReplaceTempView("user_final_data2")
 
     userFinalData2.show(10)
 
     val tmpCount2 = userFinalData2.count()
     println("count after remove cvr<20: %d".format(tmpCount2))
 
+
+    val sqlTest =
+      s"""
+         |SELECT
+         |  a.*
+         |FROM
+         |  user_final_data2 a
+         |LEFT JOIN
+         |  user_final_data b
+         |ON
+         |  a.ideaid=b.ideaid
+         |WHERE
+         |  b.ideaid is null
+       """.stripMargin
+
+    val testData = spark.sql(sqlTest)
+    testData.show(10)
+
 //    userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 //
 //    userFinalData2.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v1")
 
     // save data into pb file
-    savePbPack(userFinalData2)
+//    savePbPack(userFinalData2)
   }
 
 
