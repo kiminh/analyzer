@@ -168,6 +168,7 @@ object OcpcSampleToPb {
 
 
     val userFinalData = spark.sql(sqlRequest2)
+    userFinalData.createOrReplaceTempView("user_final_data")
     val tmpCount1 = userFinalData.count()
     println("count after remove cvr<20: %d".format(tmpCount1))
 
@@ -195,7 +196,7 @@ object OcpcSampleToPb {
          |  (SELECT
          |    *
          |   FROM
-         |    dl_cpc.ocpc_pb_result_table
+         |    user_final_data
          |   WHERE
          |    `date`='$end_date'
          |   and
