@@ -54,7 +54,6 @@ object OcpcSampleToRedis {
          |FROM
          |  dl_cpc.ocpc_uid_userid_track_label2
          |WHERE ($selectCondition1) OR
-         |
          |($selectCondition2) OR
          |($selectCondition3)
          |GROUP BY userid, uid, ideaid, adclass
@@ -62,6 +61,7 @@ object OcpcSampleToRedis {
     println(sqlRequest)
 
     val base = spark.sql(sqlRequest)
+
 
     // calculation by uid
     val uidData = base
@@ -75,6 +75,10 @@ object OcpcSampleToRedis {
       .groupBy("userid", "ideaid", "adclass")
       .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
       .select("ideaid", "userid", "adclass", "cost", "user_ctr_cnt", "user_cvr_cnt")
+
+
+
+
 
     userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
 
