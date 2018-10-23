@@ -164,6 +164,8 @@ object OcpcSampleToRedis {
          |   test.ocpc_k_value_table b
          |ON
          |   a.ideaid=b.ideaid
+         |and
+         |   a.adclass=b.adclass
        """.stripMargin
 
     val userFinalData2 = spark.sql(sqlRequest3)

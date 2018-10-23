@@ -21,9 +21,9 @@ object OcpcPIDwithCPA {
     // 计算CPA比值
     genCPAratio(dataset, date, hour, spark)
     // 初始化K值
-    testCalculateK(spark)
+//    testCalculateK(spark)
     // 计算K值
-//    calculateK(spark)
+    calculateK(spark)
 
   }
 
