@@ -30,7 +30,7 @@ object OcpcPIDwithCPA {
       calculateK(spark)
     } else {
       println("############## entering test stage ###################")
-      checkKeffect(date, hour, spark)
+      val testDF = checkKeffect(date, hour, spark)
     }
 
 
@@ -44,9 +44,7 @@ object OcpcPIDwithCPA {
       * 2. 从unionlog中抽取相关字段数据
       * 3. 抽取关键字段数据（ideaid, adclass, k）
       * 4. 计算各个k值的相对数量
-      * 5. 从pb的历史数据表中抽取k值
-      * 6. 找到该k值的相对比例
-      * 7. 根据比例返回结果
+      * 5. 从pb的历史数据表中抽取k值，找到该ideaid, adclass的k值的相对比例
       */
 
     // 取历史数据
@@ -87,14 +85,77 @@ object OcpcPIDwithCPA {
     // 抽取关键字段数据（ideaid, adclass, k）
     val model1Data = rawData.filter("exptags not like \"%ocpc_strategy:2%\"")
 //    model1Data.show(10)
-    val modelDataWithK1 = model1Data.withColumn("k_value", udfMode1OcpcLogExtractCPA1()(col("ocpc_log")))
+    val modelDataWithK1 = model1Data.withColumn("k_value", udfMode1OcpcLogExtractCPA1()(col("ocpc_log"))).select("ideaid", "adclass", "k_value", "date", "hour")
     modelDataWithK1.show(10)
 
     val model2Data = rawData.filter("exptags like \"%ocpc_strategy:2%\"")
 //    model2Data.show(10)
-    val modelDataWithK2 = model2Data.withColumn("k_value", udfModelOcpcLogExtractCPA2()(col("ocpc_log")))
+    val modelDataWithK2 = model2Data.withColumn("k_value", udfModelOcpcLogExtractCPA2()(col("ocpc_log"))).select("ideaid", "adclass", "k_value", "date", "hour")
     modelDataWithK2.show(10)
 
+    val modelData = modelDataWithK1.union(modelDataWithK2)
+
+    // 计算各个k值的相对数量
+    val groupbyData = modelData.groupBy("ideaid", "adclass", "k_value").count().alias("cnt")
+    val totalCount = modelData.groupBy("ideaid", "adclass").count().alias("total_cnt")
+    groupbyData.select("ideaid", "adclass", "k_value", "cnt").createOrReplaceTempView("groupby_k_cnt")
+    totalCount.select("ideaid", "adclass", "total_cnt").createOrReplaceTempView("groupby_totalcnt")
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  a.ideaid,
+         |  a.adclass,
+         |  a.k_value,
+         |  a.cnt * 1.0 / b.total_cnt as percent
+         |FROM
+         |  groupby_k_cnt as a
+         |INNER JOIN
+         |  groupby_totalcnt as b
+         |ON
+         |  a.ideaid=b.ideaid
+         |AND
+         |  a.adclass=b.adclass
+       """.stripMargin
+
+    println(sqlRequest2)
+
+    val percentData = spark.sql(sqlRequest2)
+
+    // 从pb的历史数据表中抽取k值
+    val dataDF = spark.table("test.test_new_pb_ocpc").select("ideaid", "adclass", "k_value")
+
+    percentData.createOrReplaceTempView("percent_k_value_table")
+    dataDF.createOrReplaceTempView("previous_k_value_table")
+
+    // 找到该ideaid, adclass的k值的相对比例,根据比例返回各自ideaid, adclass的flag，并生成结果表
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  a.ideaid,
+         |  a.adclass,
+         |  a.k_value,
+         |  (case when b.percent is null then 0
+         |        when b.percent < 0.8 then 0
+         |        else 1 end) as flag
+         |FROM
+         |  previous_k_value_table as a
+         |LEFT JOIN
+         |  percent_k_value_table b
+         |ON
+         |  a.ideaid=b.ideaid
+         |AND
+         |  a.adclass=b.adclass
+         |AND
+         |  a.k_value=b.k_value
+       """.stripMargin
+
+    println(sqlRequest3)
+
+    val resultDF = spark.sql(sqlRequest3)
+
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_percent_flag")
+
+    resultDF
 
 
   }
