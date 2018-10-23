@@ -74,6 +74,60 @@ object OcpcTestSampleToRedis {
 
     userData.write.mode("overwrite").saveAsTable("test.ocpc_test_sum_total_value1")
 
+    // calculate by adclass
+    val adclassData = userData
+      .groupBy("adclass")
+      .agg(sum("cost").alias("adclass_cost"), sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
+      .select("adclass", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt")
+
+    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_test_sum_total_value2")
+
+
+    // connect adclass and userid
+    val useridAdclassData = spark.sql(
+      s"""
+         |SELECT
+         |    a.ideaid,
+         |    a.userid,
+         |    a.adclass,
+         |    a.cost,
+         |    (case when a.user_cvr_cnt<$threshold then b.adclass_ctr_cnt else a.user_ctr_cnt end) as ctr_cnt,
+         |    (case when a.user_cvr_cnt<$threshold then b.adclass_cvr_cnt else a.user_cvr_cnt end) as cvr_cnt,
+         |    b.adclass_cost,
+         |    b.adclass_ctr_cnt,
+         |    b.adclass_cvr_cnt
+         |FROM
+         |    test.ocpc_data_userdata a
+         |INNER JOIN
+         |    test.ocpc_data_adclassdata b
+         |ON
+         |    a.adclass=b.adclass
+       """.stripMargin)
+
+    useridAdclassData.createOrReplaceTempView("useridTable")
+    useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_test_sum_total_value3")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    userid,
+         |    adclass,
+         |    cost,
+         |    (case when cvr_cnt=0 then ctr_cnt+1 else ctr_cnt end) as ctr_cnt,
+         |    (case when cvr_cnt=0 then 1 else cvr_cnt end) as cvr_cnt,
+         |    adclass_cost,
+         |    (case when adclass_cvr_cnt=0 then adclass_ctr_cnt+1 else adclass_ctr_cnt end) as adclass_ctr_cnt,
+         |    (case when adclass_cvr_cnt=0 then 1 else adclass_cvr_cnt end) as adclass_cvr_cnt,
+         |    '$end_date' as date,
+         |    '$hour' as hour
+         |FROM
+         |    useridTable
+       """.stripMargin
+
+
+    val userFinalData = spark.sql(sqlRequest2)
+    userFinalData.write.mode("overwrite").insertInto("test.ocpc_test_sum_total_value4")
 
   }
 

@@ -77,9 +77,6 @@ object OcpcSampleToRedis {
       .select("ideaid", "userid", "adclass", "cost", "user_ctr_cnt", "user_cvr_cnt")
 
 
-
-
-
     userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
 
 
