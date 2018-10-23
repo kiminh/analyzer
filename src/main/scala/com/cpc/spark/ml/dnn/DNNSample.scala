@@ -54,7 +54,7 @@ object DNNSample {
       .option("recordType", "Example")
       .save("/user/cpc/zhj/mfeatures/dnntrain-" + date)
 
-    val dnntrain=spark.read.format("tfrecords").option("recordType", "Example").load("/user/cpc/zhj/dnntrain-" + date)
+    val dnntrain = spark.read.format("tfrecords").option("recordType", "Example").load("/user/cpc/zhj/dnntrain-" + date)
     val n = dnntrain.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, dnntrain.where("label=array(1,0)").count.toDouble / n))
     println("train size", n)
@@ -130,7 +130,7 @@ object DNNSample {
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
-         |
+         |  and uid > 0
       """.stripMargin
     println("--------------------------------")
     println(sql)
@@ -191,8 +191,9 @@ object DNNSample {
         $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
-        mkSparseFeature_m($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9",
-          $"m10", $"m11", $"m12", $"m13").alias("sparse"), $"label"
+        concatFeature_m(mkSparseFeature_m()($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7"),
+          mkSparseFeature_m(7)($"m8", $"m9", $"m10", $"m11", $"m12", $"m13")).alias("sparse"),
+        $"label"
       )
 
       .select(
@@ -322,16 +323,21 @@ object DNNSample {
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
 
-  private val mkSparseFeature_m = udf {
+  private def mkSparseFeature_m(idx: Int = 0) = udf {
     features: Seq[Seq[Long]] =>
+      var i = idx
       var re = Seq[(Int, Int, Long)]()
-      var i = 0
       for (feature <- features) {
         re = re ++ feature.zipWithIndex.map(x => (i, x._2, x._1))
         i = i + 1
       }
       val c = re.map(x => (0, x._1, x._2, x._3))
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
+  }
+
+  private val concatFeature_m = udf {
+    (f1: (Seq[Int], Seq[Int], Seq[Int], Seq[Long]), f2: (Seq[Int], Seq[Int], Seq[Int], Seq[Long])) =>
+      (f1._1 ++ f2._1, f1._2 ++ f2._2, f1._3 ++ f2._3, f1._4 ++ f2._4)
   }
 }
 
