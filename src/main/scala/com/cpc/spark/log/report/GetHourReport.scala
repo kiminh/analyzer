@@ -443,9 +443,30 @@ object GetHourReport {
 
     //get cvr data
     val cvrlog = ctx.sql(
+      //      s"""
+      //         |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
+      //            """.stripMargin.format(date, hour))
       s"""
-         |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
-            """.stripMargin.format(date, hour))
+         |select a.searchid as search_id
+         |       ,a.adslot_type
+         |       ,a.ext["client_type"].string_value as client_type
+         |       ,a.ext["adclass"].int_value  as adclass
+         |       ,a.ext_int['siteid'] as siteid
+         |       ,a.adsrc
+         |       ,a.interaction
+         |       ,b.*
+         |from (select * from dl_cpc.cpc_union_log
+         |        where `date` = "%s" and `hour` = "%s" ) a
+         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
+         |         on a.userid = t2.id
+         |    left join
+         |        (select *
+         |            from dl_cpc.cpc_union_trace_log
+         |            where `date` = "%s" and `hour` = "%s"
+         |         ) b
+         |    on a.searchid=b.searchid
+         |where b.searchid is not null and t2.id is null
+        """.stripMargin.format(date, hour, date, date, hour))
       .rdd
       .map {
         x =>
