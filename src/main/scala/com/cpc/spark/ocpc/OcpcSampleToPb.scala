@@ -26,8 +26,6 @@ object OcpcSampleToPb {
     // calculate time period for historical data
     val end_date = args(0)
     val hour = args(1)
-    // val threshold = args(2).toInt
-    // default: 20
     val threshold = 20
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val date = sdf.parse(end_date)
@@ -46,7 +44,7 @@ object OcpcSampleToPb {
          |SELECT
          |  userid,
          |  ideaid,
-         |  adclass,
+         |  substr(adclass, 1, 6) as adclass,
          |  date,
          |  hour,
          |  SUM(cost) as cost,
@@ -66,6 +64,7 @@ object OcpcSampleToPb {
 
     rawBase.createOrReplaceTempView("base_table")
 
+    // 根据从mysql抽取的数据将每个ideaid的更新时间戳之前的用户记录剔除
     val sqlRequestNew1 =
       s"""
          |SELECT
@@ -102,25 +101,25 @@ object OcpcSampleToPb {
     val base = rawData.filter("flag=1").select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
 
-    // calculation by userid
+    // 按照ideaid和adclass来求和
     val userData = base
       .groupBy("userid", "ideaid", "adclass")
       .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
       .select("ideaid", "userid", "adclass", "cost", "user_ctr_cnt", "user_cvr_cnt")
 
-//    userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
+    userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
 
 
-    // calculate by adclass
+    // 按照adclass来求和
     val adclassData = userData
       .groupBy("adclass")
       .agg(sum("cost").alias("adclass_cost"), sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
       .select("adclass", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
-//    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
+    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
 
 
-    // connect adclass and userid
+    // 关联ideaid唯独和adclass维度的数据
     val useridAdclassData = spark.sql(
       s"""
          |SELECT
@@ -146,6 +145,7 @@ object OcpcSampleToPb {
     println("count before remove cvr < 20: %d".format(tmpCount))
 
 
+    // 过滤掉ideaid维度下cvr_cnt小于20的记录
     val sqlRequest2 =
       s"""
          |SELECT
@@ -166,7 +166,6 @@ object OcpcSampleToPb {
          |    user_cvr_cnt>=20
        """.stripMargin
 
-
     val userFinalData = spark.sql(sqlRequest2)
     userFinalData.createOrReplaceTempView("user_final_data")
     userFinalData.write.mode("overwrite").saveAsTable("test.ocpc_user_final_data")
@@ -174,7 +173,7 @@ object OcpcSampleToPb {
     val tmpCount1 = userFinalData.count()
     println("count after remove cvr < 20: %d".format(tmpCount1))
 
-//    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
+    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
     val sqlRequest3 =
       s"""

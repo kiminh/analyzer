@@ -15,18 +15,24 @@ object OcpcPIDwithCPA {
 
     val filename = "/user/cpc/wangjun/cpa_given.txt"
 
+    // 读取cpa_given的text文件
     val dataset = testGenCPAgiven(filename, spark)
     dataset.show(10)
+    // 计算CPA比值
     genCPAratio(dataset, date, hour, spark)
-//    testCalculateK(spark)
-    calculateK(spark)
+    // 初始化K值
+    testCalculateK(spark)
+    // 计算K值
+//    calculateK(spark)
 
   }
 
   def testGenCPAgiven(filename: String, spark: SparkSession): DataFrame = {
     import spark.implicits._
+    // 读取文件
     val data = spark.sparkContext.textFile(filename)
 
+    // 生成cpa_given的rdd
     val resultRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     resultRDD.foreach(println)
 
@@ -105,6 +111,7 @@ object OcpcPIDwithCPA {
 
   def testCalculateK(spark:SparkSession): Unit = {
     import spark.implicits._
+    // 读取ocpc的k值来初始化
     val filename1="/user/cpc/wangjun/ocpc_k.txt"
     val data = spark.sparkContext.textFile(filename1)
 
@@ -151,7 +158,7 @@ object OcpcPIDwithCPA {
     import spark.implicits._
 
 
-    val dataDF = spark.table("test.test_new_pb_ocpc").select("ideaid", "k_value")
+    val dataDF = spark.table("test.test_new_pb_ocpc").select("ideaid", "adclass", "k_value")
     dataDF.show(10)
 
     val ratioDF = spark.table("test.ocpc_cpa_given_history_ratio")
@@ -163,6 +170,7 @@ object OcpcPIDwithCPA {
       s"""
          |SELECT
          |  a.ideaid,
+         |  a.adclass,
          |  (case when b.ratio is null then a.k_value
          |        when b.ratio>1.0 then a.k_value * 1.2
          |        when b.ratio<1.0 then a.k_value / 1.2

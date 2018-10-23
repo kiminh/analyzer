@@ -107,7 +107,7 @@ object OcpcTestSampleToRedis {
     useridAdclassData.createOrReplaceTempView("useridTable")
     useridAdclassData.write.mode("overwrite").saveAsTable("test.ocpc_test_sum_total_value3")
 
-    
+
 
   }
 
