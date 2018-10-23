@@ -22,6 +22,7 @@ object OcpcMonitor {
          |    a.isclick,
          |    a.isshow,
          |    a.ideaid,
+         |    a.adclass,
          |    a.exptags,
          |    a.price,
          |    a.bid_ocpc,
@@ -40,6 +41,7 @@ object OcpcMonitor {
          |        isclick,
          |        isshow,
          |        ideaid,
+         |        ext['adclass'].int_value as adclass,
          |        exptags,
          |        price,
          |        ext_int['bid_ocpc'] as bid_ocpc,
@@ -78,7 +80,7 @@ object OcpcMonitor {
 
     dataDF.show(10)
 
-    dataDF.write.mode("append").insertInto("dl_cpc.ocpc_result_unionlog_table")
+    dataDF.write.mode("append").insertInto("dl_cpc.ocpc_result_unionlog_table_bak")
 
   }
 }
