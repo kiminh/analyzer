@@ -251,6 +251,7 @@ object SaveFeatures {
           (x.getAs[String]("search_id"), Seq(x))
       }
       .reduceByKey(_ ++ _)
+      .cache()
 
 
     //用户Api回传数据(如已经安装但未激活) cvr计算
@@ -331,6 +332,7 @@ object SaveFeatures {
 
     //cvrlog.filter(x => x.getAs[String]("searchid") == "02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
+    logRDD.unpersist()
 
     val sqlStmt =
       """
