@@ -164,12 +164,9 @@ object OcpcSampleToRedis {
 
 
     val userFinalData = spark.sql(sqlRequest2)
-    // TODO change save table
-//    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
-    userFinalData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table_new")
+    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
     // 根据中间表加入k值
-    // TODO: 将k值暂时固定为0.694, 需要后期调整
     val sqlRequest3 =
       s"""
          |SELECT
@@ -182,10 +179,10 @@ object OcpcSampleToRedis {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case when b.k_value is null then 0.694
-         |        when b.k_value > 2.0 then 0.694
-         |        when b.k_value < 0.2 then 0.694
-         |        else 0.694 end) as k_value
+         |  (case when b.k_value is null then 1.0
+         |        when b.k_value > 1.2 then 1.2
+         |        when b.k_value < 0.2 then 0.2
+         |        else b.k_value end) as k_value
          |FROM
          |  (SELECT
          |    *
@@ -211,12 +208,11 @@ object OcpcSampleToRedis {
 
     userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 
-    // TODO: comment the table
-//    userFinalData2
-//      .withColumn("date", lit(end_date))
-//      .withColumn("hour", lit(hour))
-//      .write.mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
+    userFinalData2
+      .withColumn("date", lit(end_date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
 
 
 
