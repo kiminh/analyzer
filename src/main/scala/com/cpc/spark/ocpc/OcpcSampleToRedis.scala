@@ -26,7 +26,6 @@ object OcpcSampleToRedis {
     // calculate time period for historical data
     val end_date = args(0)
     val hour = args(1)
-//    val threshold = args(2).toInt  //default: 20
     val threshold = 20
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val date = sdf.parse(end_date)
@@ -52,9 +51,8 @@ object OcpcSampleToRedis {
          |  SUM(cvr_cnt) as cvr_cnt,
          |  SUM(total_cnt) as total_cnt
          |FROM
-         |  dl_cpc.ocpc_uid_userid_track
+         |  dl_cpc.ocpc_uid_userid_track_label2
          |WHERE ($selectCondition1) OR
-         |
          |($selectCondition2) OR
          |($selectCondition3)
          |GROUP BY userid, uid, ideaid, adclass
@@ -63,23 +61,25 @@ object OcpcSampleToRedis {
 
     val base = spark.sql(sqlRequest)
 
-    // calculation by uid
+
+    // 按uid求和
     val uidData = base
       .groupBy("uid")
       .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
       .withColumn("data", concat_ws(",", col("ctr_cnt"), col("cvr_cnt")))
 
 
-    // calculation by userid
+    // 按ideaid求和
     val userData = base
       .groupBy("userid", "ideaid", "adclass")
       .agg(sum("cost").alias("cost"), sum("ctr_cnt").alias("user_ctr_cnt"), sum("cvr_cnt").alias("user_cvr_cnt"))
       .select("ideaid", "userid", "adclass", "cost", "user_ctr_cnt", "user_cvr_cnt")
 
+
     userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
 
 
-    // calculate by adclass
+    // 按adclass求和
     val adclassData = userData
       .groupBy("adclass")
       .agg(sum("cost").alias("adclass_cost"), sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
@@ -88,7 +88,7 @@ object OcpcSampleToRedis {
     adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
 
 
-    // connect adclass and userid
+    // 关联adclass和ideaid
     val useridAdclassData = spark.sql(
       s"""
          |SELECT
@@ -96,8 +96,8 @@ object OcpcSampleToRedis {
          |    a.userid,
          |    a.adclass,
          |    a.cost,
-         |    (case when a.user_cvr_cnt<$threshold then b.adclass_ctr_cnt else a.user_ctr_cnt end) as ctr_cnt,
-         |    (case when a.user_cvr_cnt<$threshold then b.adclass_cvr_cnt else a.user_cvr_cnt end) as cvr_cnt,
+         |    a.user_ctr_cnt as ctr_cnt,
+         |    a.user_cvr_cnt as cvr_cnt,
          |    b.adclass_cost,
          |    b.adclass_ctr_cnt,
          |    b.adclass_cvr_cnt
@@ -111,6 +111,7 @@ object OcpcSampleToRedis {
 
     useridAdclassData.createOrReplaceTempView("useridTable")
 
+    // 生成中间表
     val sqlRequest2 =
       s"""
          |SELECT
@@ -118,11 +119,11 @@ object OcpcSampleToRedis {
          |    userid,
          |    adclass,
          |    cost,
-         |    (case when cvr_cnt=0 then ctr_cnt+1 else ctr_cnt end) as ctr_cnt,
-         |    (case when cvr_cnt=0 then 1 else cvr_cnt end) as cvr_cnt,
+         |    ctr_cnt,
+         |    cvr_cnt,
          |    adclass_cost,
-         |    (case when adclass_cvr_cnt=0 then adclass_ctr_cnt+1 else adclass_ctr_cnt end) as adclass_ctr_cnt,
-         |    (case when adclass_cvr_cnt=0 then 1 else adclass_cvr_cnt end) as adclass_cvr_cnt,
+         |    adclass_ctr_cnt,
+         |    adclass_cvr_cnt,
          |    '$end_date' as date,
          |    '$hour' as hour
          |FROM
@@ -133,19 +134,24 @@ object OcpcSampleToRedis {
     val userFinalData = spark.sql(sqlRequest2)
     userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
+    // 根据中间表加入k值
+    // TODO: 将k值暂时固定为0.694, 需要后期调整
     val sqlRequest3 =
       s"""
          |SELECT
          |  a.ideaid,
          |  a.userid,
          |  a.adclass,
-         |  a.cost,
-         |  a.ctr_cnt,
-         |  a.cvr_cnt,
+         |  (case when a.cvr_cnt <= 20 then a.adclass_cost else a.cost end) as cost,
+         |  (case when a.cvr_cnt <= 20 then a.adclass_ctr_cnt else a.ctr_cnt end) as ctr_cnt,
+         |  (case when a.cvr_cnt <= 20 then a.adclass_cvr_cnt else a.cvr_cnt end) as cvr_cnt,
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case when b.k_value is null then 1.0 else b.k_value end) as k_value
+         |  (case when b.k_value is null then 1.0
+         |        when b.k_value > 2.0 then 0.694
+         |        when b.k_value < 0.2 then 0.694
+         |        else 0.694 end) as k_value
          |FROM
          |  (SELECT
          |    *
@@ -159,27 +165,30 @@ object OcpcSampleToRedis {
          |   test.ocpc_k_value_table b
          |ON
          |   a.ideaid=b.ideaid
+         |and
+         |   a.adclass=b.adclass
        """.stripMargin
+
+    println("sqlRequest3")
 
     val userFinalData2 = spark.sql(sqlRequest3)
 
     userFinalData2.show(10)
 
+
+    userFinalData2.filter("ideaid=2051175").show(10)
+
     userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 
-    // save into redis and pb file
-    // write data into a temperary table
-    uidData.write.mode("overwrite").saveAsTable("test.uid_userporfile_ctr_cvr")
+    userFinalData2
+      .withColumn("date", lit(end_date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
 
 
 
-    //     save data into redis
-//    savePbRedis("test.uid_userporfile_ctr_cvr", spark)
-
-    //     check redis
-//    testSavePbRedis("test.uid_userporfile_ctr_cvr", spark)
-
-    //     save data into pb file
+    // 保存pb文件
     savePbPack(userFinalData2)
   }
 
@@ -316,19 +325,26 @@ object OcpcSampleToRedis {
       val adclassCvr = record.getLong(8).toString
       val k = record.get(9).toString
 
-      val currentItem = SingleUser(
-        ideaid = ideaid,
-        userid = userId,
-        cost = costValue,
-        ctrcnt = ctrValue,
-        cvrcnt = cvrValue,
-        adclass = adclassId,
-        adclassCost = adclassCost,
-        adclassCtrcnt = adclassCtr,
-        adclassCvrcnt = adclassCvr,
-        kvalue = k
-      )
-      list += currentItem
+      val tmpCost = adclassCost.toLong
+      if (tmpCost<0) {
+        println("#######################################")
+        println("negative cost")
+        println(record)
+      } else {
+        val currentItem = SingleUser(
+          ideaid = ideaid,
+          userid = userId,
+          cost = costValue,
+          ctrcnt = ctrValue,
+          cvrcnt = cvrValue,
+          adclass = adclassId,
+          adclassCost = adclassCost,
+          adclassCtrcnt = adclassCtr,
+          adclassCvrcnt = adclassCvr,
+          kvalue = k
+        )
+        list += currentItem
+      }
     }
     val result = list.toArray[SingleUser]
     val useridData = UserOcpc(
