@@ -145,36 +145,41 @@ object Utils {
     var installed = 0
     traces.foreach {
       t =>
-        t.getAs[String]("trace_type") match {
-          case s if s.startsWith("active") => active += 1
+        if (t.getAs("trace_type") != null) {
+          t.getAs[String]("trace_type") match {
+            case s if s.startsWith("active") => active += 1
 
-          case "disactive" => disactive += 1
+            case "disactive" => disactive += 1
 
-          case "buttonClick" => click += 1
+            case "buttonClick" => click += 1
 
-          case "clickMonitor" => mclick += 1
+            case "clickMonitor" => mclick += 1
 
-          //case "inputFocus" => click += 1
+            //case "inputFocus" => click += 1
 
-          case "press" => click += 1
+            case "press" => click += 1
 
-          case "zombie" => zombie += 1
+            case "zombie" => zombie += 1
 
-          case "stay" =>
-            if (t.getAs[Int]("duration") > stay) {
-              stay = t.getAs[Int]("duration")
-            }
+            case "stay" =>
+              if (t.getAs[Int]("duration") > stay) {
+                stay = t.getAs[Int]("duration")
+              }
 
-          case _ =>
+            case _ =>
+          }
         }
+
     }
 
     traces.foreach {
       t =>
-        t.getAs[String]("trace_op1") match {
-          case "REPORT_DOWNLOAD_INSTALLED" => installed += 1
+        if (t.getAs("trace_op1") != null) {
+          t.getAs[String]("trace_op1") match {
+            case "REPORT_DOWNLOAD_INSTALLED" => installed += 1
 
-          case _ =>
+            case _ =>
+          }
         }
     }
 
@@ -227,29 +232,31 @@ object Utils {
 
     traces.foreach {
       r =>
-        r.getAs[String]("trace_type") match {
-          case "active5" => active5 += 1
-          case "disactive" => disactive += 1
-          case "active_href" => active_href += 1
-          case s if s.startsWith("active") => active += 1
-          case s if s.startsWith("nosite-active") => nosite_active += 1
-          case "nosite-disactive" => nosite_disactive += 1
-          case _ =>
-        }
+        if (r.getAs("trace_op1") != null && r.getAs("trace_type") != null) {
+          r.getAs[String]("trace_type") match {
+            case "active5" => active5 += 1
+            case "disactive" => disactive += 1
+            case "active_href" => active_href += 1
+            case s if s.startsWith("active") => active += 1
+            case s if s.startsWith("nosite-active") => nosite_active += 1
+            case "nosite-disactive" => nosite_disactive += 1
+            case _ =>
+          }
 
-        //加粉类：建站&sdk
-        if (r.getAs[String]("trace_op1").toLowerCase == "report_user_stayinwx" && r.getAs[String]("trace_type") == "lpload") {
-          conversion_sdk_wechat += 1
-        }
+          //加粉类：建站&sdk
+          if (r.getAs[String]("trace_op1").toLowerCase == "report_user_stayinwx" && r.getAs[String]("trace_type") == "lpload") {
+            conversion_sdk_wechat += 1
+          }
 
-        //直接下载类、落地页下载类
-        if (r.getAs[String]("trace_op1").toLowerCase == "report_download_pkgadded" && r.getAs[String]("trace_type") == "apkdown") {
-          conversion_sdk_download += 1
-        }
+          //直接下载类、落地页下载类
+          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_pkgadded" && r.getAs[String]("trace_type") == "apkdown") {
+            conversion_sdk_download += 1
+          }
 
-        //其它类：建站
-        if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" || r.getAs[String]("trace_type").startsWith("active")) {
-          js_site_active_other += 1
+          //其它类：建站
+          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" || r.getAs[String]("trace_type").startsWith("active")) {
+            js_site_active_other += 1
+          }
         }
     }
 
@@ -310,7 +317,7 @@ object Utils {
 
     if (active_sdk_site_wz > 0 || active_js_site_wz > 0 || active_js_nonsite_wz > 0 || active_js_download > 0
       || active_js_ldy_download > 0 || active_other_site > 0 || active_other_nonsite > 0) {
-      (1, label_type)  //1表示转化，0表示未转化；label_type: 广告类型
+      (1, label_type) //1表示转化，0表示未转化；label_type: 广告类型
     } else {
       (0, label_type)
     }

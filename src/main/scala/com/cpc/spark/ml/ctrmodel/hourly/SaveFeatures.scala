@@ -260,7 +260,7 @@ object SaveFeatures {
           var active_third = 0
           x._2.foreach(
             x => {
-              if (x.getAs[String]("trace_type") != null){
+              if (x.getAs("trace_type") != null) {
                 val trace_type = x.getAs[String]("trace_type")
                 if (trace_type == "active_third") {
                   active_third = 1
@@ -296,24 +296,27 @@ object SaveFeatures {
           //active1,active2,active3,active4,active5,active6,disactive,active_auto,active_auto_download,active_auto_submit,active_wx,active_third
           x._2.foreach(
             x => {
-              val trace_type = x.getAs[String]("trace_type")
-              val trace_op1 = x.getAs[String]("trace_op1")
+              if (x.getAs("trace_type") != null && x.getAs("trace_op1") != null){ //过滤 cpc_union_log有cpc_union_trace_log 没有的
+                val trace_type = x.getAs[String]("trace_type")
+                val trace_op1 = x.getAs[String]("trace_op1")
 
-              trace_type match {
-                case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
-                  || s == "active6" || s == "disactive" || s == "active_href")
-                => active_map += (s -> 1)
-                case _ =>
-              }
+                trace_type match {
+                  case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
+                    || s == "active6" || s == "disactive" || s == "active_href")
+                  => active_map += (s -> 1)
+                  case _ =>
+                }
 
-              //增加下载激活字段,trace_op1=="REPORT_DOWNLOAD_PKGADDED"(包含apkdown和lpdown下载安装), 则installed记为1，否则为0
-              if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
-                active_map += ("installed" -> 1)
-              }
+                //增加下载激活字段,trace_op1=="REPORT_DOWNLOAD_PKGADDED"(包含apkdown和lpdown下载安装), 则installed记为1，否则为0
+                if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
+                  active_map += ("installed" -> 1)
+                }
 
-              //REPORT_USER_STAYINWX：用户点击落地页里的加微信链接跳转到微信然后10秒内没有回来,表示已经转化，REPORT_USER_STAYINWX记为1，否则为0
-              if (trace_op1 == "REPORT_USER_STAYINWX") {
-                active_map += ("report_user_stayinwx" -> 1)
+                //REPORT_USER_STAYINWX：用户点击落地页里的加微信链接跳转到微信然后10秒内没有回来,表示已经转化，REPORT_USER_STAYINWX记为1，否则为0
+                if (trace_op1 == "REPORT_USER_STAYINWX") {
+                  active_map += ("report_user_stayinwx" -> 1)
+                }
+
               }
             }
           )
