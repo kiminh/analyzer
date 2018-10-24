@@ -24,16 +24,15 @@ object OcpcPIDwithCPA {
       dataset.show(10)
       // 计算CPA比值
       genCPAratio(dataset, date, hour, spark)
-      // 初始化K值
-      //    testCalculateK(spark)
 
       // 确认是否需要修改k值
-//      val kFlags = checkKeffect(date, hour, spark)
+      val kFlags = checkKeffect(date, hour, spark)
       // 计算K值
-      calculateK(spark)
+      calculateK(kFlags, spark)
     } else {
       println("############## entering test stage ###################")
-      val testDF = checkKeffect(date, hour, spark)
+      // 初始化K值
+      testCalculateK(date, hour, spark)
     }
 
 
@@ -252,7 +251,7 @@ object OcpcPIDwithCPA {
 
   }
 
-  def testCalculateK(spark:SparkSession): Unit = {
+  def testCalculateK(date: String, hour: String, spark:SparkSession): Unit = {
     import spark.implicits._
     // 读取ocpc的k值来初始化
     val filename1="/user/cpc/wangjun/ocpc_k.txt"
@@ -264,15 +263,16 @@ object OcpcPIDwithCPA {
     val dataDF = dataRDD.toDF("ideaid", "k_value")
     dataDF.show(10)
 
-    val ratioDF = spark.table("test.ocpc_cpa_given_history_ratio")
+//    val ratioDF = spark.table("test.ocpc_cpa_given_history_ratio")
 
     dataDF.createOrReplaceTempView("k_table")
-    ratioDF.createOrReplaceTempView("ratio_table")
+//    ratioDF.createOrReplaceTempView("ratio_table")
 
     val sqlRequest =
       s"""
          |SELECT
          |  a.ideaid,
+         |  c.adclass,
          |  (case when b.ratio is null then a.k_value
          |        when b.ratio>1.0 then a.k_value * 1.2
          |        when b.ratio<1.0 then a.k_value / 1.2
@@ -280,9 +280,13 @@ object OcpcPIDwithCPA {
          |FROM
          |  k_table as a
          |LEFT JOIN
-         |  ratio_table as b
+         |  test.ocpc_cpa_given_history_ratio as b
          |ON
          |  a.ideaid=b.ideaid
+         |LEFT JOIN
+         |  (SELECT * FROM dl_cpc.ocpc_pb_result_table WHERE `date`='$date' and `hour`='$hour') as c
+         |ON
+         |  a.ideaid=c.ideaid
        """.stripMargin
 
     println(sqlRequest)
@@ -297,7 +301,7 @@ object OcpcPIDwithCPA {
   }
 
 
-  def calculateK(spark:SparkSession): Unit = {
+  def calculateK(dataset: DataFrame, spark:SparkSession): Unit = {
     import spark.implicits._
 
 
@@ -308,7 +312,7 @@ object OcpcPIDwithCPA {
 
     dataDF.createOrReplaceTempView("k_table")
     ratioDF.createOrReplaceTempView("ratio_table")
-//    dataset.createOrReplaceTempView("k_flag_table")
+    dataset.createOrReplaceTempView("k_flag_table")
 
     val sqlRequest =
       s"""
@@ -316,8 +320,9 @@ object OcpcPIDwithCPA {
          |  a.ideaid,
          |  a.adclass,
          |  (case when b.ratio is null then a.k_value
-         |        when b.ratio>1.0 then a.k_value * 1.2
-         |        when b.ratio<1.0 then a.k_value / 1.2
+         |        when c.flag is null or c.flag = 0 then a.k_value
+         |        when b.ratio>1.0 and c.flag = 1 then a.k_value * 1.2
+         |        when b.ratio<1.0 and c.flag = 1 then a.k_value / 1.2
          |        else a.k_value end) as k_value
          |FROM
          |  k_table as a
@@ -327,6 +332,12 @@ object OcpcPIDwithCPA {
          |  a.ideaid=b.ideaid
          |and
          |  a.adclass=b.adclass
+         |LEFT JOIN
+         |  k_flag_table as c
+         |ON
+         |  a.ideaid=c.ideaid
+         |AND
+         |  a.adclass=c.adclass
        """.stripMargin
 
     println(sqlRequest)
