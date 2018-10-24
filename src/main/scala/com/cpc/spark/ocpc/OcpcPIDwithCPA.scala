@@ -258,7 +258,7 @@ object OcpcPIDwithCPA {
     val filename1="/user/cpc/wangjun/ocpc_k.txt"
     val data = spark.sparkContext.textFile(filename1)
 
-    val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toString))
+    val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toString.slice(0,5)))
 //    dataRDD.foreach(println)
 
     val dataDF = dataRDD.toDF("ideaid", "k_value")
