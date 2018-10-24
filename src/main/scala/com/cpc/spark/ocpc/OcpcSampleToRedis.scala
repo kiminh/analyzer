@@ -43,9 +43,10 @@ object OcpcSampleToRedis {
       s"""
          |SELECT
          |  userid,
-         |  uid,
          |  ideaid,
          |  adclass,
+         |  date,
+         |  hour,
          |  SUM(cost) as cost,
          |  SUM(ctr_cnt) as ctr_cnt,
          |  SUM(cvr_cnt) as cvr_cnt,
@@ -53,20 +54,51 @@ object OcpcSampleToRedis {
          |FROM
          |  dl_cpc.ocpc_uid_userid_track_label2
          |WHERE ($selectCondition1) OR
-         |($selectCondition2) OR
-         |($selectCondition3)
-         |GROUP BY userid, uid, ideaid, adclass
+         |      ($selectCondition2) OR
+         |      ($selectCondition3)
+         |GROUP BY userid, ideaid, adclass, date, hour
        """.stripMargin
     println(sqlRequest)
 
-    val base = spark.sql(sqlRequest)
+    val rawBase = spark.sql(sqlRequest)
 
+    rawBase.createOrReplaceTempView("base_table")
 
-    // 按uid求和
-    val uidData = base
-      .groupBy("uid")
-      .agg(sum("ctr_cnt").alias("ctr_cnt"), sum("cvr_cnt").alias("cvr_cnt"))
-      .withColumn("data", concat_ws(",", col("ctr_cnt"), col("cvr_cnt")))
+    // 根据从mysql抽取的数据将每个ideaid的更新时间戳之前的用户记录剔除
+    val sqlRequestNew1 =
+      s"""
+         |SELECT
+         |  a.userid,
+         |  a.ideaid,
+         |  a.adclass,
+         |  a.cost,
+         |  a.ctr_cnt,
+         |  a.cvr_cnt,
+         |  a.total_cnt,
+         |  a.date,
+         |  a.hour,
+         |  (case when b.update_date is null then '$start_date' else b.update_date end) as update_date,
+         |  (case when b.update_hour is null then '$hour' else b.update_hour end) as update_hour,
+         |  (case when b.update_date is null or b.update_hour is null then 1
+         |        when b.update_date < date then 1
+         |        when b.update_date = date and b.update_hour <= hour then 1
+         |        else 0 end) as flag
+         |FROM
+         |  base_table as a
+         |LEFT JOIN
+         |  test.ocpc_idea_update_time as b
+         |ON
+         |  a.ideaid=b.ideaid
+       """.stripMargin
+
+    println(sqlRequestNew1)
+
+    val rawData = spark.sql(sqlRequestNew1)
+
+    println("##### records of flag = 0 ##############")
+    rawData.filter("flag=0").show(10)
+
+    val base = rawData.filter("flag=1").select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
 
     // 按ideaid求和
@@ -132,7 +164,9 @@ object OcpcSampleToRedis {
 
 
     val userFinalData = spark.sql(sqlRequest2)
-    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
+    // TODO change save table
+//    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
+    userFinalData.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_table_new")
 
     // 根据中间表加入k值
     // TODO: 将k值暂时固定为0.694, 需要后期调整
@@ -142,9 +176,9 @@ object OcpcSampleToRedis {
          |  a.ideaid,
          |  a.userid,
          |  a.adclass,
-         |  (case when a.cvr_cnt <= 20 then a.adclass_cost else a.cost end) as cost,
-         |  (case when a.cvr_cnt <= 20 then a.adclass_ctr_cnt else a.ctr_cnt end) as ctr_cnt,
-         |  (case when a.cvr_cnt <= 20 then a.adclass_cvr_cnt else a.cvr_cnt end) as cvr_cnt,
+         |  a.cost,
+         |  a.ctr_cnt,
+         |  a.cvr_cnt,
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
@@ -156,7 +190,7 @@ object OcpcSampleToRedis {
          |  (SELECT
          |    *
          |   FROM
-         |    dl_cpc.ocpc_pb_result_table
+         |    test.ocpc_pb_result_table_new
          |   WHERE
          |    `date`='$end_date'
          |   and
@@ -171,7 +205,7 @@ object OcpcSampleToRedis {
 
     println("sqlRequest3")
 
-    val userFinalData2 = spark.sql(sqlRequest3)
+    val userFinalData2 = spark.sql(sqlRequest3).filter("cvr_cnt>=20")
 
     userFinalData2.show(10)
 
@@ -180,11 +214,12 @@ object OcpcSampleToRedis {
 
     userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 
-    userFinalData2
-      .withColumn("date", lit(end_date))
-      .withColumn("hour", lit(hour))
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
+    // TODO: comment the table
+//    userFinalData2
+//      .withColumn("date", lit(end_date))
+//      .withColumn("hour", lit(hour))
+//      .write.mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
 
 
 
