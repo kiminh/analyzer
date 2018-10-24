@@ -177,13 +177,14 @@ object OcpcPIDwithCPA {
   def testGenCPAgiven(filename: String, spark: SparkSession): DataFrame = {
     import spark.implicits._
     // 读取文件
-    val data = spark.sparkContext.textFile(filename)
+//    val data = spark.sparkContext.textFile(filename)
 
     // 生成cpa_given的rdd
-    val resultRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
-    resultRDD.foreach(println)
+//    val resultRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+//    resultRDD.foreach(println)
 
-    val resultDF = resultRDD.toDF("ideaid", "cpa_given")
+//    val resultDF = resultRDD.toDF("ideaid", "cpa_given")
+    val resultDF = spark.table("test.ocpc_idea_update_time").select("ideaid", "cpa_given")
     resultDF
   }
 
