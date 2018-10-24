@@ -96,17 +96,17 @@ object OcpcPIDwithCPA {
     val modelData = modelDataWithK1.union(modelDataWithK2)
 
     // 计算各个k值的相对数量
-    val groupbyData = modelData.groupBy("ideaid", "adclass", "k_value").count().alias("cnt")
-    val totalCount = modelData.groupBy("ideaid", "adclass").count().alias("total_cnt")
-    groupbyData.select("ideaid", "adclass", "k_value", "cnt").createOrReplaceTempView("groupby_k_cnt")
-    totalCount.select("ideaid", "adclass", "total_cnt").createOrReplaceTempView("groupby_totalcnt")
+    val groupbyData = modelData.groupBy("ideaid", "adclass", "k_value").count()
+    val totalCount = modelData.groupBy("ideaid", "adclass").count()
+    groupbyData.select("ideaid", "adclass", "k_value", "count").createOrReplaceTempView("groupby_k_cnt")
+    totalCount.select("ideaid", "adclass", "count").createOrReplaceTempView("groupby_totalcnt")
     val sqlRequest2 =
       s"""
          |SELECT
          |  a.ideaid,
          |  a.adclass,
          |  a.k_value,
-         |  a.cnt * 1.0 / b.total_cnt as percent
+         |  a.count * 1.0 / b.count as percent
          |FROM
          |  groupby_k_cnt as a
          |INNER JOIN
