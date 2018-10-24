@@ -259,7 +259,7 @@ object OcpcPIDwithCPA {
     val data = spark.sparkContext.textFile(filename1)
 
     val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toDouble))
-    dataRDD.foreach(println)
+//    dataRDD.foreach(println)
 
     val dataDF = dataRDD.toDF("ideaid", "k_value")
     dataDF.show(10)
@@ -287,7 +287,12 @@ object OcpcPIDwithCPA {
          |ON
          |  a.ideaid=b.ideaid
          |LEFT JOIN
-         |  test.ocpc_k_value_init as c
+         |  (SELECT
+         |      ideaid,
+         |      k_value
+         |   from
+         |      test.ocpc_k_value_init
+         |   group by ideaid, k_value) as c
          |ON
          |  a.ideaid=c.ideaid
        """.stripMargin
