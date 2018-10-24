@@ -273,19 +273,20 @@ object OcpcPIDwithCPA {
       s"""
          |SELECT
          |  a.ideaid,
-         |  c.adclass,
-         |  (case when b.ratio is null then a.k_value
-         |        when b.ratio>1.0 then a.k_value * 1.2
-         |        when b.ratio<1.0 then a.k_value / 1.2
-         |        else a.k_value end) as k_value
+         |  a.adclass,
+         |  (case when c.k_value is null then 1.0
+         |        when b.ratio is null and c.k_value is not null then c.k_value
+         |        when b.ratio>1.0 and c.k_value is not null then c.k_value * 1.2
+         |        when b.ratio<1.0 and c.k_value is not null then c.k_value / 1.2
+         |        else c.k_value end) as k_value
          |FROM
-         |  k_table as a
+         |  (SELECT * FROM dl_cpc.ocpc_pb_result_table WHERE `date`='$date' and `hour`='$hour') as a
          |LEFT JOIN
          |  test.ocpc_cpa_given_history_ratio as b
          |ON
          |  a.ideaid=b.ideaid
          |LEFT JOIN
-         |  (SELECT * FROM dl_cpc.ocpc_pb_result_table WHERE `date`='$date' and `hour`='$hour') as c
+         |  k_table as c
          |ON
          |  a.ideaid=c.ideaid
        """.stripMargin
