@@ -83,7 +83,7 @@ object OcpcPIDwithCPA {
     println(sqlRequest)
 
     val rawData = spark.sql(sqlRequest)
-    rawData.write.mode("overwrite").saveAsTable("test.test_raw_data_check_k")
+    rawData.write.mode("overwrite").saveAsTable("test.raw_data_check_k")
 
     // 抽取关键字段数据（ideaid, adclass, k）
     val model1Data = rawData.filter("exptags not like \"%ocpc_strategy:2%\"")
@@ -167,7 +167,7 @@ object OcpcPIDwithCPA {
 
     resultDF.filter("flag=0").show(10)
 
-    resultDF.write.mode("overwrite").saveAsTable("test.test_ocpc_k_value_percent_flag")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_percent_flag")
 
     resultDF
 
@@ -252,7 +252,7 @@ object OcpcPIDwithCPA {
     resultDF.show(10)
 
     // 将结果输出到临时表
-    resultDF.write.mode("overwrite").saveAsTable("test.test_ocpc_cpa_given_history_ratio")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_history_ratio")
 
   }
 
@@ -317,8 +317,6 @@ object OcpcPIDwithCPA {
     import spark.implicits._
 
 
-    val testDF = spark.table("test.test_new_pb_ocpc")
-
 
     val sqlRequest =
       s"""
@@ -327,8 +325,8 @@ object OcpcPIDwithCPA {
          |  a.adclass,
          |  (case when c.flag is null or c.flag = 0 then a.k_value
          |        when b.ratio is null then a.k_value
-         |        when b.ratio > 1.0 and c.flag = 1 then 0.699
-         |        when b.ratio < 1.0 and c.flag = 1 then 0.691
+         |        when b.ratio > 1.0 and c.flag = 1 then a.k_value * 1.2
+         |        when b.ratio < 1.0 and c.flag = 1 then a.k_value / 1.2
          |        else a.k_value end) as k_value
          |FROM
          |  test.test_new_pb_ocpc as a
@@ -351,11 +349,7 @@ object OcpcPIDwithCPA {
     println("final table of the k-value for ocpc:")
     resultDF.show(10)
 
-//    resultDF.filter("ideaid=2151105").show(10)
-
-    resultDF.write.mode("overwrite").saveAsTable("test.test_ocpc_k_value_table")
-
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
 
   }
 

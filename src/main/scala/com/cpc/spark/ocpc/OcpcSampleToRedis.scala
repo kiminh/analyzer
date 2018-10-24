@@ -182,7 +182,7 @@ object OcpcSampleToRedis {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case when b.k_value is null then 1.0
+         |  (case when b.k_value is null then 0.694
          |        when b.k_value > 2.0 then 0.694
          |        when b.k_value < 0.2 then 0.694
          |        else 0.694 end) as k_value
