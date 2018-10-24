@@ -136,7 +136,6 @@ object OcpcSampleToRedis {
 
     // 根据中间表加入k值
     // TODO: 将k值暂时固定为0.694, 需要后期调整
-    // TODO: 暂时去除按照adclass的关联关系
     val sqlRequest3 =
       s"""
          |SELECT
