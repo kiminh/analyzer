@@ -17,7 +17,7 @@ object SaveFeatures {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   private var version = "v1"
-  private var versionV2 = "v2"
+  private var versionV2 = "v2_test"
 
 
   def main(args: Array[String]): Unit = {
@@ -38,7 +38,7 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    saveDataFromLog(spark, date, hour)
+    //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
     saveCvrDataV2(spark, date, hour, versionV2) //第二版cvr
     println("SaveFeatures_done")
@@ -243,7 +243,7 @@ object SaveFeatures {
          |            where `date` = "%s" and `hour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid
-         |where b.searchid is not null and t2.id is null
+         |where t2.id is null
         """.stripMargin.format(date, hour, date, date, hour))
       .rdd
       .map {
@@ -260,14 +260,16 @@ object SaveFeatures {
           var active_third = 0
           x._2.foreach(
             x => {
-              val trace_type = x.getAs[String]("trace_type")
-              if (trace_type == "active_third") {
-                active_third = 1
+              if (x.getAs[String]("trace_type") != null){
+                val trace_type = x.getAs[String]("trace_type")
+                if (trace_type == "active_third") {
+                  active_third = 1
+                }
               }
             }
           )
           (x._1, active_third)
-    }.toDF("searchid", "label")
+      }.toDF("searchid", "label")
 
     userApiBackRDD
       .repartition(1)
@@ -287,6 +289,7 @@ object SaveFeatures {
         x =>
           val convert = Utils.cvrPositiveV(x._2, version)
           val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version) //新cvr
+
 
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
@@ -352,8 +355,8 @@ object SaveFeatures {
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
     spark.sql(
       """
-        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1_test add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2_test/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
 
   }
