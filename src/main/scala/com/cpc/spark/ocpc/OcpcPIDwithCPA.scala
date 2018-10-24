@@ -158,6 +158,8 @@ object OcpcPIDwithCPA {
 
     resultDF.show(10)
 
+    resultDF.filter("history_k is not null").show(10)
+
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_percent_flag")
 
     resultDF
