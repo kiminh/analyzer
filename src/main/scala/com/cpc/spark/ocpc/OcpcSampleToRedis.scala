@@ -209,9 +209,6 @@ object OcpcSampleToRedis {
 
     userFinalData2.show(10)
 
-
-    userFinalData2.filter("ideaid=2051175").show(10)
-
     userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 
     // TODO: comment the table

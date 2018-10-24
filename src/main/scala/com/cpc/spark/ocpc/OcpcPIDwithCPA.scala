@@ -312,11 +312,10 @@ object OcpcPIDwithCPA {
 
   }
 
-  // TODO: remove k flag function
+
+
   def calculateK(dataset: DataFrame, spark:SparkSession): Unit = {
     import spark.implicits._
-
-
 
     val sqlRequest =
       s"""
