@@ -39,7 +39,7 @@ object OcpcPIDwithCPA {
 
   }
 
-  def checkKeffect(date: String, hour: String, spark: SparkSession) ={
+  def checkKeffect(date: String, hour: String, spark: SparkSession): DataFrame ={
     /**
       * 读取历史数据：前四个小时的unionlog然后计算目前k值所占比例，比例低于阈值，返回0，否则返回1
       * 算法：
@@ -126,6 +126,8 @@ object OcpcPIDwithCPA {
 
     percentData.show(10)
 
+    percentData.filter("ideaid=2151105").show(10)
+
     // 从pb的历史数据表中抽取k值
     val dataDF = spark.table("test.test_new_pb_ocpc").select("ideaid", "adclass", "k_value")
 
@@ -162,6 +164,8 @@ object OcpcPIDwithCPA {
     resultDF.show(10)
 
     resultDF.filter("history_k is not null").show(10)
+
+    resultDF.filter("flag=0").show(10)
 
     resultDF.write.mode("overwrite").saveAsTable("test.test_ocpc_k_value_percent_flag")
 
@@ -313,6 +317,10 @@ object OcpcPIDwithCPA {
     import spark.implicits._
 
 
+    val testDF = spark.table("test.test_new_pb_ocpc")
+
+    testDF.filter("ideaid=2151105").show(10)
+
     val sqlRequest =
       s"""
          |SELECT
@@ -320,8 +328,8 @@ object OcpcPIDwithCPA {
          |  a.adclass,
          |  (case when c.flag is null or c.flag = 0 then a.k_value
          |        when b.ratio is null then a.k_value
-         |        when b.ratio > 1.0 and c.flag = 1 then a.k_value * 1.2
-         |        when b.ratio < 1.0 and c.flag = 1 then a.k_value / 1.2
+         |        when b.ratio > 1.0 and c.flag = 1 then 0.699
+         |        when b.ratio < 1.0 and c.flag = 1 then 0.691
          |        else a.k_value end) as k_value
          |FROM
          |  test.test_new_pb_ocpc as a
@@ -343,6 +351,8 @@ object OcpcPIDwithCPA {
 
     println("final table of the k-value for ocpc:")
     resultDF.show(10)
+
+    resultDF.filter("ideaid=2151105").show(10)
 
     resultDF.write.mode("overwrite").saveAsTable("test.test_ocpc_k_value_table")
 
