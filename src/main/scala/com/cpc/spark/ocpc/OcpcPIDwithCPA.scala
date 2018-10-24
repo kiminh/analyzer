@@ -313,33 +313,21 @@ object OcpcPIDwithCPA {
     import spark.implicits._
 
 
-    val dataDF = spark.table("test.test_new_pb_ocpc").select("ideaid", "adclass", "k_value")
-    dataDF.show(10)
-
-    val ratioDF = spark.table("test.ocpc_cpa_given_history_ratio")
-
-    dataDF.createOrReplaceTempView("k_table")
-    ratioDF.createOrReplaceTempView("ratio_table")
-//    dataset.createOrReplaceTempView("k_flag_table")
-
     val sqlRequest =
       s"""
          |SELECT
          |  a.ideaid,
          |  a.adclass,
          |  (case when b.ratio is null then a.k_value
-         |        when c.flag is null or c.flag = 0 then a.k_value
-         |        when b.ratio>1.0 and c.flag = 1 then a.k_value * 1.2
-         |        when b.ratio<1.0 and c.flag = 1 then a.k_value / 1.2
+         |        when b.ratio > 1.0 then a.k_value * 1.2
+         |        when b.ratio < 1.0 then a.k_value / 1.2
          |        else a.k_value end) as k_value
          |FROM
-         |  k_table as a
+         |  test.test_new_pb_ocpc as a
          |LEFT JOIN
-         |  ratio_table as b
+         |  test.ocpc_cpa_given_history_ratio as b
          |ON
          |  a.ideaid=b.ideaid
-         |and
-         |  a.adclass=b.adclass
        """.stripMargin
 
     println(sqlRequest)
