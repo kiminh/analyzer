@@ -8,13 +8,14 @@ object OcpcCPCstage {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
-    val url = "jdbc:mysql://rm-2zef52mz0p6mv5007.mysql.rds.aliyuncs.com:3306/adv_test?useUnicode=true&characterEncoding=utf-8"
+    // TODO: already changed the value for production database
+    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
     //    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
     //    val url = "jdbc:mysql://192.168.66.11:3306/union?useUnicode=true&characterEncoding=utf-8"
-    val user = "cpcrw"
-    val passwd = "zZdlz9qUB51awT8b"
+    val user = "adv_live_read"
+    val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select * from adv_test.unit where is_ocpc=1 and ideas is not null) as tmp"
+    val table = "(select * from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
 
 
     val data = spark.read.format("jdbc")

@@ -26,6 +26,9 @@ object OcpcPIDwithCPA {
       genCPAratio(dataset, date, hour, spark)
       // 初始化K值
       //    testCalculateK(spark)
+
+      // 确认是否需要修改k值
+//      val kFlags = checkKeffect(date, hour, spark)
       // 计算K值
       calculateK(spark)
     } else {
@@ -305,6 +308,7 @@ object OcpcPIDwithCPA {
 
     dataDF.createOrReplaceTempView("k_table")
     ratioDF.createOrReplaceTempView("ratio_table")
+//    dataset.createOrReplaceTempView("k_flag_table")
 
     val sqlRequest =
       s"""
@@ -321,6 +325,8 @@ object OcpcPIDwithCPA {
          |  ratio_table as b
          |ON
          |  a.ideaid=b.ideaid
+         |and
+         |  a.adclass=b.adclass
        """.stripMargin
 
     println(sqlRequest)
