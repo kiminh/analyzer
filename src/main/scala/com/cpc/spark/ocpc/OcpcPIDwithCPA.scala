@@ -126,7 +126,7 @@ object OcpcPIDwithCPA {
 
     percentData.show(10)
 
-    percentData.filter("ideaid=2151105").show(10)
+
 
     // 从pb的历史数据表中抽取k值
     val dataDF = spark.table("test.test_new_pb_ocpc").select("ideaid", "adclass", "k_value")
@@ -319,7 +319,6 @@ object OcpcPIDwithCPA {
 
     val testDF = spark.table("test.test_new_pb_ocpc")
 
-    testDF.filter("ideaid=2151105").show(10)
 
     val sqlRequest =
       s"""
@@ -352,7 +351,7 @@ object OcpcPIDwithCPA {
     println("final table of the k-value for ocpc:")
     resultDF.show(10)
 
-    resultDF.filter("ideaid=2151105").show(10)
+//    resultDF.filter("ideaid=2151105").show(10)
 
     resultDF.write.mode("overwrite").saveAsTable("test.test_ocpc_k_value_table")
 
