@@ -83,7 +83,7 @@ object OcpcPIDwithCPA {
     println(sqlRequest)
 
     val rawData = spark.sql(sqlRequest)
-    rawData.write.mode("overwrite").saveAsTable("test.raw_data_check_k")
+    rawData.write.mode("overwrite").saveAsTable("test.test_raw_data_check_k")
 
     // 抽取关键字段数据（ideaid, adclass, k）
     val model1Data = rawData.filter("exptags not like \"%ocpc_strategy:2%\"")
@@ -163,7 +163,7 @@ object OcpcPIDwithCPA {
 
     resultDF.filter("history_k is not null").show(10)
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_percent_flag")
+    resultDF.write.mode("overwrite").saveAsTable("test.test_ocpc_k_value_percent_flag")
 
     resultDF
 
@@ -248,7 +248,7 @@ object OcpcPIDwithCPA {
     resultDF.show(10)
 
     // 将结果输出到临时表
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_history_ratio")
+    resultDF.write.mode("overwrite").saveAsTable("test.test_ocpc_cpa_given_history_ratio")
 
   }
 
