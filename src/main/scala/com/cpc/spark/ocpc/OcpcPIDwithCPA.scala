@@ -99,7 +99,7 @@ object OcpcPIDwithCPA {
     val model2Data = rawData
       .filter("exptags like \"%ocpc_strategy:2%\"")
       .filter("ocpc_log is not null")
-      .filter("split(split(ocpc_log, \",\")[5], \":\")[0]='kValue' OR split(split(ocpc_log, \",\")[5], \":\")[0]='kvalue' OR split(t.ocpc_log, \",\")[5] is not null")
+      .filter("split(split(ocpc_log, \",\")[5], \":\")[0]='kValue' OR split(split(ocpc_log, \",\")[5], \":\")[0]='kvalue' OR split(ocpc_log, \",\")[5] is not null")
 
     model2Data.write.mode("overwrite").saveAsTable("test.ocpc_model_data_2")
 //    model2Data.show(10)
