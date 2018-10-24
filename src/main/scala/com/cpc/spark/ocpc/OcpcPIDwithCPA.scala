@@ -25,10 +25,11 @@ object OcpcPIDwithCPA {
       // 计算CPA比值
       genCPAratio(dataset, date, hour, spark)
 
+      // TODO: remove k flag function
       // 确认是否需要修改k值
-      val kFlags = checkKeffect(date, hour, spark)
+//      val kFlags = checkKeffect(date, hour, spark)
       // 计算K值
-      calculateK(kFlags, spark)
+      calculateK(spark)
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
@@ -300,8 +301,8 @@ object OcpcPIDwithCPA {
 
   }
 
-
-  def calculateK(dataset: DataFrame, spark:SparkSession): Unit = {
+  // TODO: remove k flag function
+  def calculateK(spark:SparkSession): Unit = {
     import spark.implicits._
 
 
@@ -312,7 +313,7 @@ object OcpcPIDwithCPA {
 
     dataDF.createOrReplaceTempView("k_table")
     ratioDF.createOrReplaceTempView("ratio_table")
-    dataset.createOrReplaceTempView("k_flag_table")
+//    dataset.createOrReplaceTempView("k_flag_table")
 
     val sqlRequest =
       s"""
@@ -332,12 +333,6 @@ object OcpcPIDwithCPA {
          |  a.ideaid=b.ideaid
          |and
          |  a.adclass=b.adclass
-         |LEFT JOIN
-         |  k_flag_table as c
-         |ON
-         |  a.ideaid=c.ideaid
-         |AND
-         |  a.adclass=c.adclass
        """.stripMargin
 
     println(sqlRequest)

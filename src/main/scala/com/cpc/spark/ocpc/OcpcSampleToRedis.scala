@@ -170,6 +170,8 @@ object OcpcSampleToRedis {
          |   a.adclass=b.adclass
        """.stripMargin
 
+    println("sqlRequest3")
+
     val userFinalData2 = spark.sql(sqlRequest3)
 
     userFinalData2.show(10)
