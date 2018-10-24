@@ -263,6 +263,7 @@ object OcpcPIDwithCPA {
 
     val dataDF = dataRDD.toDF("ideaid", "k_value")
     dataDF.show(10)
+    dataDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_init")
 
 //    val ratioDF = spark.table("test.ocpc_cpa_given_history_ratio")
 
@@ -286,7 +287,7 @@ object OcpcPIDwithCPA {
          |ON
          |  a.ideaid=b.ideaid
          |LEFT JOIN
-         |  k_table as c
+         |  test.ocpc_k_value_init as c
          |ON
          |  a.ideaid=c.ideaid
        """.stripMargin
