@@ -87,11 +87,13 @@ object OcpcPIDwithCPA {
 
     // 抽取关键字段数据（ideaid, adclass, k）
     val model1Data = rawData.filter("exptags not like \"%ocpc_strategy:2%\"")
+    model1Data.write.mode("overwrite").saveAsTable("test.ocpc_model_data_1")
 //    model1Data.show(10)
     val modelDataWithK1 = model1Data.withColumn("k_value", udfMode1OcpcLogExtractCPA1()(col("ocpc_log"))).select("ideaid", "adclass", "k_value", "date", "hour")
     modelDataWithK1.show(10)
 
     val model2Data = rawData.filter("exptags like \"%ocpc_strategy:2%\"")
+    model1Data.write.mode("overwrite").saveAsTable("test.ocpc_model_data_2")
 //    model2Data.show(10)
     val modelDataWithK2 = model2Data.withColumn("k_value", udfModelOcpcLogExtractCPA2()(col("ocpc_log"))).select("ideaid", "adclass", "k_value", "date", "hour")
     modelDataWithK2.show(10)
