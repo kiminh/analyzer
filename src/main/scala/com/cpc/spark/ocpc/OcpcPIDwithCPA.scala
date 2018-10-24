@@ -171,11 +171,11 @@ object OcpcPIDwithCPA {
 
     val resultDF = spark.sql(sqlRequest3)
 
-    resultDF.show(10)
-
-    resultDF.filter("history_k is not null").show(10)
-
-    resultDF.filter("flag=0").show(10)
+//    resultDF.show(10)
+//
+//    resultDF.filter("history_k is not null").show(10)
+//
+//    resultDF.filter("flag=0").show(10)
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_percent_flag")
 

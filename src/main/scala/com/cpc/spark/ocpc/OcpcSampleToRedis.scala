@@ -180,7 +180,7 @@ object OcpcSampleToRedis {
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
          |  (case when b.k_value is null then 1.0
-         |        when b.k_value > 1.2 then 1.2
+         |        when b.k_value > 1.0 then 1.0
          |        when b.k_value < 0.2 then 0.2
          |        else b.k_value end) as k_value
          |FROM
