@@ -27,9 +27,9 @@ object OcpcPIDwithCPA {
 
       // TODO: remove k flag function
       // 确认是否需要修改k值
-//      val kFlags = checkKeffect(date, hour, spark)
+      val kFlags = checkKeffect(date, hour, spark)
       // 计算K值
-      calculateK(spark)
+      calculateK(kFlags, spark)
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
@@ -309,7 +309,7 @@ object OcpcPIDwithCPA {
   }
 
   // TODO: remove k flag function
-  def calculateK(spark:SparkSession): Unit = {
+  def calculateK(dataset: DataFrame, spark:SparkSession): Unit = {
     import spark.implicits._
 
 
@@ -318,9 +318,10 @@ object OcpcPIDwithCPA {
          |SELECT
          |  a.ideaid,
          |  a.adclass,
-         |  (case when b.ratio is null then a.k_value
-         |        when b.ratio > 1.0 then a.k_value * 1.2
-         |        when b.ratio < 1.0 then a.k_value / 1.2
+         |  (case when c.flag is null or c.flag = 0 then a.k_value
+         |        when b.ratio is null then a.k_value
+         |        when b.ratio > 1.0 and c.flag = 1 then a.k_value * 1.2
+         |        when b.ratio < 1.0 and c.flag = 1 then a.k_value / 1.2
          |        else a.k_value end) as k_value
          |FROM
          |  test.test_new_pb_ocpc as a
@@ -328,6 +329,12 @@ object OcpcPIDwithCPA {
          |  test.ocpc_cpa_given_history_ratio as b
          |ON
          |  a.ideaid=b.ideaid
+         |LEFT JOIN
+         |  test.ocpc_k_value_percent_flag as c
+         |ON
+         |  a.ideaid=c.ideaid
+         |AND
+         |  a.adclass=c.adclass
        """.stripMargin
 
     println(sqlRequest)
@@ -337,7 +344,9 @@ object OcpcPIDwithCPA {
     println("final table of the k-value for ocpc:")
     resultDF.show(10)
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+    resultDF.write.mode("overwrite").saveAsTable("test.test_ocpc_k_value_table")
+
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
 
   }
 
