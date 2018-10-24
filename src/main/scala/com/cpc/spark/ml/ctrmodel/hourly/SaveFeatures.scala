@@ -261,7 +261,7 @@ object SaveFeatures {
           var active_third = 0
           x._2.foreach(
             x => {
-              if (x.getAs("trace_type") != null) {
+              if (x.getAs("trace_type") != "") {
                 val trace_type = x.getAs[String]("trace_type")
                 if (trace_type == "active_third") {
                   active_third = 1

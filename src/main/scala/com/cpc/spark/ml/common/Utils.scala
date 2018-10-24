@@ -145,7 +145,7 @@ object Utils {
     var installed = 0
     traces.foreach {
       t =>
-        if (t.getAs("trace_type") != null) {
+        if (t.getAs("trace_type") != "") {
           t.getAs[String]("trace_type") match {
             case s if s.startsWith("active") => active += 1
 
@@ -174,7 +174,7 @@ object Utils {
 
     traces.foreach {
       t =>
-        if (t.getAs("trace_op1") != null) {
+        if (t.getAs("trace_op1") != "") {
           t.getAs[String]("trace_op1") match {
             case "REPORT_DOWNLOAD_INSTALLED" => installed += 1
 
@@ -232,7 +232,7 @@ object Utils {
 
     traces.foreach {
       r =>
-        if (r.getAs("trace_op1") != null && r.getAs("trace_type") != null) {
+        if (r.getAs("trace_op1") != "" && r.getAs("trace_type") != "") {
           r.getAs[String]("trace_type") match {
             case "active5" => active5 += 1
             case "disactive" => disactive += 1
