@@ -261,7 +261,7 @@ object SaveFeatures {
           var active_third = 0
           x._2.foreach(
             x => {
-              if (x.getAs("trace_type") != "") {
+              if (!x.isNullAt(9)) { //trace_type为null时过滤
                 val trace_type = x.getAs[String]("trace_type")
                 if (trace_type == "active_third") {
                   active_third = 1
@@ -297,7 +297,7 @@ object SaveFeatures {
           //active1,active2,active3,active4,active5,active6,disactive,active_auto,active_auto_download,active_auto_submit,active_wx,active_third
           x._2.foreach(
             x => {
-              if (x.getAs("trace_type") != null && x.getAs("trace_op1") != null){ //过滤 cpc_union_log有cpc_union_trace_log 没有的
+              if ((!x.isNullAt(9)) && (!x.isNullAt(25))) { //过滤 cpc_union_log有cpc_union_trace_log 没有的
                 val trace_type = x.getAs[String]("trace_type")
                 val trace_op1 = x.getAs[String]("trace_op1")
 
