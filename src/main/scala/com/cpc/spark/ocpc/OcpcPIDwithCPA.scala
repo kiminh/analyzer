@@ -59,21 +59,21 @@ object OcpcPIDwithCPA {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition1 = s"`date`='$date1' and `hour` >= '$hour1' and ext_int['is_ocpc']=1"
-    val selectCondition2 = s"`date`='$date' and `hour`<='$hour' and ext_int['is_ocpc']=1"
+    val selectCondition1 = s"`date`='$date1' and `hour` >= '$hour1'"
+    val selectCondition2 = s"`date`='$date' and `hour`<='$hour'"
 
     // 从unionlog中抽取相关字段数据
     val sqlRequest =
       s"""
          |SELECT
          |    ideaid,
-         |    ext['adclass'].int_value as adclass,
-         |    ext_string['ocpc_log'] as ocpc_log,
+         |    adclass,
+         |    ocpc_log,
          |    exptags,
          |    date,
          |    hour
          |FROM
-         |    dl_cpc.cpc_union_log
+         |    dl_cpc.ocpc_result_unionlog_table_bak
          |WHERE
          |    ($selectCondition1) OR ($selectCondition2)
        """.stripMargin
