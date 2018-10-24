@@ -187,7 +187,7 @@ object OcpcSampleToRedis {
          |  (SELECT
          |    *
          |   FROM
-         |    test.ocpc_pb_result_table_new
+         |    dl_cpc.ocpc_pb_result_table
          |   WHERE
          |    `date`='$end_date'
          |   and
