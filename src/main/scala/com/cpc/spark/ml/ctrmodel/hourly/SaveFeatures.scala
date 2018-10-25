@@ -254,6 +254,7 @@ object SaveFeatures {
           (x.getAs[String]("search_id"), Seq(x))
       }
       .reduceByKey(_ ++ _)
+      .filter(x => x._1 != "none" && x._1 != "" && x._2.length > 0)
       .repartition(200)
       .cache()
 
