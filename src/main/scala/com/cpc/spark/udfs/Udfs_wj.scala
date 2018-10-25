@@ -14,7 +14,8 @@ object Udfs_wj{
 
   def udfModelOcpcLogExtractCPA2() = udf((valueLog: String) => {
     val logs = valueLog.split(",")
-    logs(5)
+    val kValue = logs(5).split(":")(1)
+    kValue
   })
 
   def udfCalculatePercent(totalCount: Long) = udf((valueCount: Long) => {
