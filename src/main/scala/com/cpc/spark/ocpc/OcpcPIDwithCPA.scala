@@ -364,7 +364,7 @@ object OcpcPIDwithCPA {
     println("final table of the k-value for ocpc:")
     resultDF.show(10)
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_bak")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
 
   }
 
