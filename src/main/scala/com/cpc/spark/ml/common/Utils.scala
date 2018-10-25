@@ -286,7 +286,7 @@ object Utils {
           label_type = 3
         } else if ((adsrc == 0 || adsrc == 1) && interaction == 2 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
           label_type = 4
-        } else if ((adsrc == 0 || adsrc == 1) && interaction == 1 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
+        } else if ((adsrc == 0 || adsrc == 1) && interaction == 1 && adclass.toString.substring(0, 3).toInt == 100 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
           label_type = 5
         } else {
           if (siteid > 0) {
