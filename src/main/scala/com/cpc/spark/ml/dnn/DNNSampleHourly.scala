@@ -57,6 +57,13 @@ object DNNSampleHourly {
       .save(s"/user/cpc/zhj/hourly/dnntrain-$date-$hour")
     println("train size", train.count())
     train.take(10).foreach(println)
+
+    train.sample(withReplacement = false, 0.1).repartition(100)
+      .write
+      .mode("overwrite")
+      .format("tfrecords")
+      .option("recordType", "Example")
+      .save(s"/user/cpc/zhj/hourly/dnntest-$date-$hour")
     rawtrain.unpersist()
   }
 
