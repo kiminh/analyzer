@@ -251,17 +251,15 @@ object SaveFeatures {
          |where t2.id is null
         """.stripMargin.format(date, hour, date, date, hour))
       .rdd
-      .repartition(200)
       .map {
         x =>
           (x.getAs[String]("search_id"), Seq(x))
       }
       .reduceByKey(_ ++ _)
-      .filter(x => x._1 != "none" && x._1 != "" && x._2.length > 0)
-      .cache()
+      .filter(x => x._1 != "none" && x._1 != "")
 
 
-    //    //用户Api回传数据(如已经安装但未激活) cvr计算
+    //用户Api回传数据(如已经安装但未激活) cvr计算
     val userApiBackRDD = logRDD
       .map {
         x =>
@@ -289,6 +287,8 @@ object SaveFeatures {
       }
       .filter(x => x._2 != -1) //过滤空值
       .toDF("searchid", "label", "uid", "userid", "ideaid")
+
+    println("user api back: "+userApiBackRDD.count())
 
     userApiBackRDD
       .repartition(1)
@@ -350,7 +350,6 @@ object SaveFeatures {
 
     //cvrlog.filter(x => x.getAs[String]("searchid") == "02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
-    logRDD.unpersist()
 
     val sqlStmt =
       """
