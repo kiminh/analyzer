@@ -53,10 +53,12 @@ object TouchedUV {
         //根据uid计算uv
         val uv = ulog.map(x => (x.getAs[String]("uid"), 1)).reduceByKey((x, y) => x).count()
 
-//        redis.set("%s_touched_uv_total".format(appType), uv)
+        redis.set("%s_touched_uv_total".format(appType), uv)
         System.out.println("%s_touched_uv_total is %s".format(appType,uv.toString))
 
-        val unionLog = ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0).coalesce(900).cache()
+//        val unionLog = ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0).coalesce(900).cache()
+
+        val unionLog = ulog.coalesce(900).cache()
         //省
         val province = unionLog.filter(_.getAs[Int]("province") > 0)
           .map(u => ((u.getAs[Int]("province"), u.getAs[String]("uid")), 1))
@@ -121,7 +123,7 @@ object TouchedUV {
                     val key = "%s_touched_uv_percent_%s_%d".format(appType, name, i)
                     n = n + v
                     val p = n / sum
-//                    redis.set(key, "%.8f".format(p))
+                    redis.set(key, "%.8f".format(p))
                     System.out.println(name, key, n, "%.8f".format(p))
             }
         } else {
@@ -129,7 +131,7 @@ object TouchedUV {
                   x =>
                       val p = x._2 / sum
                       val key = "%s_touched_uv_percent_%s_%d".format(appType, name, x._1)
-//                      redis.set(key, "%.8f".format(p))
+                      redis.set(key, "%.8f".format(p))
                       System.out.println(name, key, x._1, x._2, "%.8f".format(p))
             }
         }
