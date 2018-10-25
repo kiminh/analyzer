@@ -11,8 +11,14 @@ object OcpcTestFunction {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     val date = args(0).toString
     val hour = args(1).toString
+    val choice = args(2).toInt
 
-    accumulatePCVR(date, hour, spark)
+    if (choice == 1) {
+      accumulatePCVR(date, hour, spark)
+    } else {
+      calculateHPCVR(date, hour, spark)
+    }
+
 
   }
 
@@ -96,13 +102,11 @@ object OcpcTestFunction {
     val resultDF = spark.sql(sqlRequest2)
 
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr_test_20181025")
-
     resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pcvr_history")
 
   }
 
-  def caclulateHPCVR(endDate: String, hour: String, spark: SparkSession) ={
+  def calculateHPCVR(endDate: String, hour: String, spark: SparkSession): Unit ={
     // calculate time period for historical data
     val threshold = 20
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
