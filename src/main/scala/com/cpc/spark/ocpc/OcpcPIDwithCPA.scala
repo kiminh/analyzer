@@ -88,7 +88,7 @@ object OcpcPIDwithCPA {
     // 抽取关键字段数据（ideaid, adclass, k）
     val model1Data = rawData
       .filter("exptags not like \"%ocpc_strategy:2%\"")
-      .filter("ocpc_log is not null")
+      .filter("ocpc_log != ''")
       .filter("split(split(ocpc_log, \",\")[7], \":\")[0]='kValue' OR split(split(ocpc_log, \",\")[7], \":\")[0]='kvalue'")
 
     model1Data.write.mode("overwrite").saveAsTable("test.ocpc_model_data_1")
@@ -98,7 +98,7 @@ object OcpcPIDwithCPA {
 
     val model2Data = rawData
       .filter("exptags like \"%ocpc_strategy:2%\"")
-      .filter("ocpc_log is not null")
+      .filter("ocpc_log != ''")
       .filter("split(split(ocpc_log, \",\")[5], \":\")[0]='kValue' OR split(split(ocpc_log, \",\")[5], \":\")[0]='kvalue' OR split(ocpc_log, \",\")[5] is not null")
 
     model2Data.write.mode("overwrite").saveAsTable("test.ocpc_model_data_2")
@@ -119,6 +119,8 @@ object OcpcPIDwithCPA {
          |  a.ideaid,
          |  a.adclass,
          |  a.k_value,
+         |  a.count as single_count,
+         |  b.count as total_count,
          |  a.count * 1.0 / b.count as percent
          |FROM
          |  groupby_k_cnt as a
@@ -152,6 +154,8 @@ object OcpcPIDwithCPA {
          |  a.adclass,
          |  a.k_value as exact_k,
          |  b.k_value as history_k,
+         |  b.single_count,
+         |  b.total_count,
          |  b.percent,
          |  (case when b.percent is null then 0
          |        when b.percent < 0.5 then 0
