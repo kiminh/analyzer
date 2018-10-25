@@ -9,13 +9,15 @@ import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 import userprofile.Userprofile.UserProfile
 
 import scala.collection.mutable.ListBuffer
 import userocpc.userocpc._
 import java.io.FileOutputStream
-
+import org.apache.spark.sql.functions._
 
 
 
@@ -384,4 +386,33 @@ object OcpcSampleToRedis {
     println("complete save data into protobuffer")
 
   }
+
+  def readInnocence(spark: SparkSession) ={
+    import spark.implicits._
+
+    val filename = "/user/cpc/wangjun/ocpc_ideaid.txt"
+    val data = spark.sparkContext.textFile(filename)
+
+    val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+    //    dataRDD.foreach(println)
+
+    val dataDF = data.toDF("ideaid", "flag").createOrReplaceTempView("innocence_list")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  flag
+         |FROM
+         |  innocence_list
+         |GROUP BY ideaid, flag
+       """.stripMargin
+
+    val resultDF = spark.sql(sqlRequest)
+
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_innocence_idea_list")
+    resultDF
+  }
+
+
 }
