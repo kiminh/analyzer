@@ -1,6 +1,6 @@
 package com.cpc.spark.ocpc
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
 object OcpcTestFunction {
@@ -11,7 +11,7 @@ object OcpcTestFunction {
   }
 
 
-  def readInnocence(spark: SparkSession) ={
+  def readInnocence(spark: SparkSession): DataFrame ={
     import spark.implicits._
 
     val filename = "/user/cpc/wangjun/ocpc_ideaid.txt"
