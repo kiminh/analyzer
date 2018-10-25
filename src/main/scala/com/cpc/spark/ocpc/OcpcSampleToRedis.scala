@@ -168,6 +168,9 @@ object OcpcSampleToRedis {
     val userFinalData = spark.sql(sqlRequest2)
     userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
+    // read outsiders
+    readInnocence(spark)
+
     // 根据中间表加入k值
     val sqlRequest3 =
       s"""
@@ -184,7 +187,8 @@ object OcpcSampleToRedis {
          |  (case when b.k_value is null then 1.0
          |        when b.k_value > 1.0 then 1.0
          |        when b.k_value < 0.2 then 0.2
-         |        else b.k_value end) as k_value
+         |        else b.k_value end) as k_value,
+         |   (case when c.innocence_flag is not null then 1 else 0 end) innocence_flag
          |FROM
          |  (SELECT
          |    *
@@ -200,11 +204,15 @@ object OcpcSampleToRedis {
          |   a.ideaid=b.ideaid
          |and
          |   a.adclass=b.adclass
+         |LEFT JOIN
+         |   test.ocpc_innocence_idea_list as c
+         |on
+         |   a.ideaid=c.ideaid
        """.stripMargin
 
     println("sqlRequest3")
 
-    val userFinalData2 = spark.sql(sqlRequest3).filter("cvr_cnt>=20")
+    val userFinalData2 = spark.sql(sqlRequest3).filter("innocence_flag = 1 or cvr_cnt>=20").select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
 
     userFinalData2.show(10)
 
@@ -387,7 +395,7 @@ object OcpcSampleToRedis {
 
   }
 
-  def readInnocence(spark: SparkSession) ={
+  def readInnocence(spark: SparkSession): Unit ={
     import spark.implicits._
 
     val filename = "/user/cpc/wangjun/ocpc_ideaid.txt"
@@ -396,7 +404,7 @@ object OcpcSampleToRedis {
     val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     //    dataRDD.foreach(println)
 
-    val dataDF = data.toDF("ideaid", "flag").createOrReplaceTempView("innocence_list")
+    dataRDD.toDF("ideaid", "flag").createOrReplaceTempView("innocence_list")
 
     val sqlRequest =
       s"""
@@ -411,7 +419,6 @@ object OcpcSampleToRedis {
     val resultDF = spark.sql(sqlRequest)
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_innocence_idea_list")
-    resultDF
   }
 
 
