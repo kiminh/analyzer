@@ -331,9 +331,14 @@ object Utils {
           label_type = 5
           if (conversion_sdk_download > 0) {
             active_js_ldy_download += 1
-          } else if (nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0) || js_site_active_other > 0 || (active5 > 0 && disactive == 0)) {
+          } else if (siteid<=0 && (js_site_active_other > 0 || (active5 > 0 && disactive == 0)) ) {
+            // 测试
             active_other_site += 1
             label_type = 9
+          } else if (js_site_active_other > 0 || (active5 > 0 && disactive == 0) || nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0)) {
+            // 套户
+            active_other_site += 1
+            label_type = 10
           }
         }
 
@@ -347,7 +352,11 @@ object Utils {
             }
           } else {
             label_type = 7 //其它类非建站
-            if (nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0) || js_site_active_other > 0 || (active5 > 0 && disactive == 0)) {
+            if (siteid<=0 && (js_site_active_other > 0 || (active5 > 0 && disactive == 0)) ) {
+              // 测试
+              active_other_site += 1
+              label_type = 11
+            } else if (nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0) || js_site_active_other > 0 || (active5 > 0 && disactive == 0)) {
               active_other_nonsite += 1
             }
           }
