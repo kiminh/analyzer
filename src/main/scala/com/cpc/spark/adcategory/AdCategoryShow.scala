@@ -8,7 +8,7 @@ object AdCategoryShow {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // calculate time period for historical data
-    val date = "2018-10-24"
+    val date = args(0)
 
     // read data and set redis configuration
     val sqlRequest =
@@ -20,7 +20,7 @@ object AdCategoryShow {
          |(
          |  select c.*,c.ext_int["category"] as category
          |  from dl_cpc.cpc_union_log c
-         |  WHERE `date` = "$date" AND `hour`='20'
+         |  WHERE `date` = "$date"
          |  and isshow = 1
          |  and ext['antispam'].int_value = 0
          |  and adsrc = 1
