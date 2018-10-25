@@ -53,7 +53,6 @@ object OcpcTestFunction {
          |  ideaid,
          |  ext['adclass'].int_value as adclass,
          |  ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
-         |  '' as ext,
          |  '$date' as `date`,
          |  '$hour' as `hour`
          |FROM
@@ -69,10 +68,32 @@ object OcpcTestFunction {
          |and adsrc = 1
          |and adslot_type in (1,2,3)
          |and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
+         |and isclick=1
        """.stripMargin
 
+    println(sqlRequest)
+
     val rawTable = spark.sql(sqlRequest)
-    rawTable.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr_test_20181025")
+    rawTable.createOrReplaceTempView("raw_table")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  adclass,
+         |  AVG(exp_cvr) as pcvr,
+         |  COUNT(1) as cnt
+         |FROM
+         |  raw_table
+         |GROUP BY ideaid, adclass
+       """.stripMargin
+
+    println(sqlRequest2)
+
+    val resultDF = spark.sql(sqlRequest2)
+
+
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr_test_20181025")
 
 
 
