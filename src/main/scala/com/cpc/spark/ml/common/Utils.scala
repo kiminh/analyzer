@@ -251,14 +251,14 @@ object Utils {
           }
 
           //直接下载类、落地页下载类
-          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_pkgadded" ) {
+          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_pkgadded") {
             conversion_sdk_download += 1
           }
 
 
           //其它类：建站
           if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" ||
-            (r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type")!= "active5"))) {
+            (r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type") != "active5"))) {
             js_site_active_other += 1
           }
         }
@@ -282,23 +282,23 @@ object Utils {
         //第六、七类：其他类（落地页非下载非加粉类）
         //建站：其他(非网赚非彩票非直接下载类)+所有类型(js+sdk+openapi)+所有栏位,即针对非以上1-4的情况的search_id/click 判断: trace_type: active1/active2/active3/active4/active5-disactive
         //非建站：nosite_active1/nosite_active2/nosite_active3/nosite_active4/nosite_active5-nosite_disactive
-//        if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
-//          label_type = 1
-//        } else if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && (adslot_type == 2 || adslot_type == 3) && client_type != "NATIVESDK") {
-//          label_type = 2
-//        } else if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid <= 0 && (adslot_type == 1 || adslot_type == 2 || adslot_type == 3)) {
-//          label_type = 3
-//        } else if ((adsrc == 0 || adsrc == 1) && interaction == 2 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
-//          label_type = 4
-//        } else if ((adsrc == 0 || adsrc == 1) && interaction == 1 && (adclass.toString.substring(0, 3).toInt == 100) && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
-//          label_type = 5
-//        } else {
-//          if (siteid > 0) {
-//            label_type = 6 //其它类建站
-//          } else {
-//            label_type = 7 //其它类非建站
-//          }
-//        }
+        //        if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
+        //          label_type = 1
+        //        } else if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && (adslot_type == 2 || adslot_type == 3) && client_type != "NATIVESDK") {
+        //          label_type = 2
+        //        } else if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid <= 0 && (adslot_type == 1 || adslot_type == 2 || adslot_type == 3)) {
+        //          label_type = 3
+        //        } else if ((adsrc == 0 || adsrc == 1) && interaction == 2 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
+        //          label_type = 4
+        //        } else if ((adsrc == 0 || adsrc == 1) && interaction == 1 && (adclass.toString.substring(0, 3).toInt == 100) && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
+        //          label_type = 5
+        //        } else {
+        //          if (siteid > 0) {
+        //            label_type = 6 //其它类建站
+        //          } else {
+        //            label_type = 7 //其它类非建站
+        //          }
+        //        }
 
         if ((adclass == 110110100 || adclass == 125100100) && siteid > 0 && client_type == "NATIVESDK") {
           label_type = 1
@@ -318,7 +318,7 @@ object Utils {
         } else if (interaction == 2 && client_type == "NATIVESDK") {
           label_type = 4
           if (conversion_sdk_download > 0) {
-              active_js_download += 1
+            active_js_download += 1
           }
         }
         // 直接下载非sdk
@@ -326,11 +326,14 @@ object Utils {
           label_type = 8
         }
 
-          // 非直接下载 sdk
+        // 非直接下载 sdk
         else if ((adclass.toString.length > 3 && adclass.toString.substring(0, 3).toInt == 100) && client_type == "NATIVESDK") {
           label_type = 5
           if (conversion_sdk_download > 0) {
             active_js_ldy_download += 1
+          } else if (nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0) || js_site_active_other > 0 || (active5 > 0 && disactive == 0)) {
+            active_other_site += 1
+            label_type = 9
           }
         }
 
@@ -339,32 +342,32 @@ object Utils {
         else {
           if (siteid > 0) {
             label_type = 6 //其它类建站
-            if (js_site_active_other > 0 || (active5>0 && disactive == 0)) {
+            if (js_site_active_other > 0 || (active5 > 0 && disactive == 0)) {
               active_other_site += 1
             }
           } else {
             label_type = 7 //其它类非建站
-            if (nosite_active > 0 || (nosite_active5>0 && nosite_disactive == 0)) {
+            if (nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0) || js_site_active_other > 0 || (active5 > 0 && disactive == 0)) {
               active_other_nonsite += 1
             }
           }
         }
 
-//        if (label_type == 1 && conversion_sdk_wechat > 0) {
-//          active_sdk_site_wz += 1
-//        } else if (label_type == 2 && active5 > 0 && disactive == 0) {
-//          active_js_site_wz += 1
-//        } else if (label_type == 3 && active_href > 0) {
-//          active_js_nonsite_wz += 1
-//        } else if (label_type == 4 && conversion_sdk_download > 0) {
-//          active_js_download += 1
-//        } else if (label_type == 5 && conversion_sdk_download > 0) {
-//          active_js_ldy_download += 1
-//        } else if (label_type == 6 && js_site_active_other > 0 && disactive == 0) {
-//          active_other_site += 1
-//        } else if (label_type == 7 && nosite_active > 0 && nosite_disactive == 0) {
-//          active_other_nonsite += 1
-//        }
+      //        if (label_type == 1 && conversion_sdk_wechat > 0) {
+      //          active_sdk_site_wz += 1
+      //        } else if (label_type == 2 && active5 > 0 && disactive == 0) {
+      //          active_js_site_wz += 1
+      //        } else if (label_type == 3 && active_href > 0) {
+      //          active_js_nonsite_wz += 1
+      //        } else if (label_type == 4 && conversion_sdk_download > 0) {
+      //          active_js_download += 1
+      //        } else if (label_type == 5 && conversion_sdk_download > 0) {
+      //          active_js_ldy_download += 1
+      //        } else if (label_type == 6 && js_site_active_other > 0 && disactive == 0) {
+      //          active_other_site += 1
+      //        } else if (label_type == 7 && nosite_active > 0 && nosite_disactive == 0) {
+      //          active_other_nonsite += 1
+      //        }
     }
 
 
