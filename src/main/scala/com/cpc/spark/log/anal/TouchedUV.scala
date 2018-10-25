@@ -26,7 +26,6 @@ object TouchedUV {
 
         val date = args(0).trim
         val appType = args(1).trim
-        val rate = args(2).toFloat
         //加载配置
         val conf = ConfigFactory.load()
         //获取redis
