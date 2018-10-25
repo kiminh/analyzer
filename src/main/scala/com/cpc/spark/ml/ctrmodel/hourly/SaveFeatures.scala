@@ -232,6 +232,9 @@ object SaveFeatures {
          |       ,a.ext_int['siteid'] as siteid
          |       ,a.adsrc
          |       ,a.interaction
+         |       ,a.uid
+         |       ,a.userid
+         |       ,a.ideaid
          |       ,b.*
          |from (select * from dl_cpc.cpc_union_log
          |        where `date` = "%s" and `hour` = "%s" ) a
@@ -260,10 +263,17 @@ object SaveFeatures {
       .map {
         x =>
           var active_third = 0
+          var uid = ""
+          var userid = 0
+          var ideaid = 0
           x._2.foreach(
             x => {
               if (!x.isNullAt(9)) { //trace_type为null时过滤
                 val trace_type = x.getAs[String]("trace_type")
+                val uid = x.getAs[String]("uid")
+                val userid = x.getAs[Int]("userid")
+                val ideaid = x.getAs[Int]("ideaid")
+
                 if (trace_type == "active_third") {
                   active_third = 1
                 }
@@ -272,10 +282,10 @@ object SaveFeatures {
               }
             }
           )
-          (x._1, active_third)
+          (x._1, active_third, uid, userid, ideaid)
       }
       .filter(x => x._2 != -1) //过滤空值
-      .toDF("searchid", "label")
+      .toDF("searchid", "label", "uid", "userid", "ideaid")
 
     userApiBackRDD
       .repartition(1)
