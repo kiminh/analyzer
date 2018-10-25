@@ -122,7 +122,7 @@ object TouchedUV {
                     n = n + v
                     val p = n / sum
 //                    redis.set(key, "%.8f".format(p))
-                    System.out.println(name, key, n, "%.3f".format(p))
+                    System.out.println(name, key, n, "%.8f".format(p))
             }
         } else {
             cond.toLocalIterator.foreach {
@@ -130,7 +130,7 @@ object TouchedUV {
                       val p = x._2 / sum
                       val key = "%s_touched_uv_percent_%s_%d".format(appType, name, x._1)
 //                      redis.set(key, "%.8f".format(p))
-                      System.out.println(name, key, x._1, x._2, "%.3f".format(p))
+                      System.out.println(name, key, x._1, x._2, "%.8f".format(p))
             }
         }
     }
