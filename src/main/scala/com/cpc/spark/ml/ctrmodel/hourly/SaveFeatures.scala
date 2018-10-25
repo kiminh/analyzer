@@ -288,7 +288,7 @@ object SaveFeatures {
       .filter(x => x._2 != -1) //过滤空值
       .toDF("searchid", "label", "uid", "userid", "ideaid")
 
-    println("user api back: "+userApiBackRDD.count())
+    //println("user api back: "+userApiBackRDD.count())
 
     userApiBackRDD
       .repartition(1)
