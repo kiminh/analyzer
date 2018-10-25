@@ -60,7 +60,8 @@ object Behavior2Redis {
           group = group ++ Array.tabulate(f.length)(x => i)
           hashcode = hashcode ++ f
         }
-        redis.set(uid, DnnMultiHot(group, hashcode).toByteArray)
+        //redis.set(uid, DnnMultiHot(group, hashcode).toByteArray)
+        println(uid, DnnMultiHot(group, hashcode).toString)
       }
 
       redis.disconnect
