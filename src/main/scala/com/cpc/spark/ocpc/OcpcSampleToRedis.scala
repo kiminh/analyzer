@@ -424,4 +424,21 @@ object OcpcSampleToRedis {
   }
 
 
+  def getHpcvr(endDate: String, hour: String, dataset:DataFrame, spark: SparkSession) = {
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val date = sdf.parse(endDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(date)
+    calendar.add(Calendar.DATE, -1)
+    val dt = calendar.getTime
+    val startDate = sdf.format(dt)
+    val selectCondition1 = s"`date`='$startDate' and hour > '$hour'"
+    val selectCondition2 = s"`date`='$endDate' and hour <= '$hour'"
+
+    val data = spark.table("dl_cpc.cpc_union_log").filter(selectCondition1).filter(selectCondition2)
+
+
+  }
+
+
 }

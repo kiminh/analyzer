@@ -1,12 +1,18 @@
 package com.cpc.spark.ocpc
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
 object OcpcTestFunction {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
-    val df = readInnocence(spark)
+    val date = args(0).toString
+    val hour = args(1).toString
+
+    getHpcvr(date, hour, spark)
 
   }
 
@@ -37,4 +43,41 @@ object OcpcTestFunction {
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_innocence_idea_list")
     resultDF
   }
+
+  def getHpcvr(date: String, hour: String, spark: SparkSession): Unit = {
+    import spark.implicits._
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  ext['adclass'].int_value as adclass,
+         |  ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |  '' as ext,
+         |  '$date' as `date`,
+         |  '$hour' as `hour`
+         |FROM
+         |    dl_cpc.cpc_union_log
+         |WHERE
+         |    `date` = '$date'
+         |and
+         |    `hour` = '$hour'
+         |and
+         |    media_appsid  in ("80000001", "80000002")
+         |and
+         |    ext['antispam'].int_value = 0
+         |and adsrc = 1
+         |and adslot_type in (1,2,3)
+         |and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
+       """.stripMargin
+
+    val rawTable = spark.sql(sqlRequest)
+    rawTable.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr_test_20181025")
+
+
+
+  }
+
+
+
 }
