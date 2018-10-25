@@ -17,7 +17,7 @@ object SaveFeatures {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   private var version = "v1"
-  private var versionV2 = "v2"
+  private var versionV2 = "v2_test"
 
 
   def main(args: Array[String]): Unit = {
@@ -38,7 +38,7 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    saveDataFromLog(spark, date, hour)
+    //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
     saveCvrDataV2(spark, date, hour, versionV2) //第二版cvr
     println("SaveFeatures_done")
@@ -225,7 +225,9 @@ object SaveFeatures {
     import spark.implicits._
     val logRDD = spark.sql(
       s"""
-         |select a.searchid as search_id
+         |select  b.trace_type as flag1
+         |       ,b.trace_op1 as flag2
+         |       ,a.searchid as search_id
          |       ,a.adslot_type
          |       ,a.ext["client_type"].string_value as client_type
          |       ,a.ext["adclass"].int_value  as adclass
@@ -249,13 +251,13 @@ object SaveFeatures {
          |where t2.id is null
         """.stripMargin.format(date, hour, date, date, hour))
       .rdd
+      .repartition(1000)
       .map {
         x =>
           (x.getAs[String]("search_id"), Seq(x))
       }
       .reduceByKey(_ ++ _)
       .filter(x => x._1 != "none" && x._1 != "" && x._2.length > 0)
-      .repartition(200)
       .cache()
 
 
@@ -269,7 +271,7 @@ object SaveFeatures {
           var ideaid = 0
           x._2.foreach(
             x => {
-              if (!x.isNullAt(9)) { //trace_type为null时过滤
+              if (!x.isNullAt(0)) { //trace_type为null时过滤
                 val trace_type = x.getAs[String]("trace_type")
                 val uid = x.getAs[String]("uid")
                 val userid = x.getAs[Int]("userid")
@@ -313,7 +315,7 @@ object SaveFeatures {
           //active1,active2,active3,active4,active5,active6,disactive,active_auto,active_auto_download,active_auto_submit,active_wx,active_third
           x._2.foreach(
             x => {
-              if ((!x.isNullAt(9)) && (!x.isNullAt(25))) { //过滤 cpc_union_log有cpc_union_trace_log 没有的
+              if ((!x.isNullAt(0)) && (!x.isNullAt(1))) { //过滤 cpc_union_log有cpc_union_trace_log 没有的
                 val trace_type = x.getAs[String]("trace_type")
                 val trace_op1 = x.getAs[String]("trace_op1")
 
@@ -376,8 +378,8 @@ object SaveFeatures {
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
     spark.sql(
       """
-        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1_test add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2_test/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
 
   }

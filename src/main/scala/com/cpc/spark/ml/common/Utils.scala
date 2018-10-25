@@ -145,7 +145,7 @@ object Utils {
     var installed = 0
     traces.foreach {
       t =>
-        if (!t.isNullAt(9)) { //trace_type为null时过滤
+        if (!t.isNullAt(0)) { //trace_type为null时过滤
           t.getAs[String]("trace_type") match {
             case s if s.startsWith("active") => active += 1
 
@@ -174,7 +174,7 @@ object Utils {
 
     traces.foreach {
       t =>
-        if (!t.isNullAt(25)) { //trace_op1为null时过滤
+        if (!t.isNullAt(1)) { //trace_op1为null时过滤
           t.getAs[String]("trace_op1") match {
             case "REPORT_DOWNLOAD_INSTALLED" => installed += 1
 
@@ -232,7 +232,7 @@ object Utils {
 
     traces.foreach {
       r =>
-        if ((!r.isNullAt(9)) && (!r.isNullAt(25))) { //trace_type和trace_op1为null时过滤
+        if ((!r.isNullAt(0)) && (!r.isNullAt(1))) { //trace_type和trace_op1为null时过滤
           r.getAs[String]("trace_type") match {
             case "active5" => active5 += 1
             case "disactive" => disactive += 1
