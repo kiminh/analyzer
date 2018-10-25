@@ -69,6 +69,8 @@ object OcpcSampleToRedis {
     // read outsiders
     readInnocence(spark)
 
+    // TODO: 清楚按照时间戳截取逻辑
+
     // 根据从mysql抽取的数据将每个ideaid的更新时间戳之前的用户记录剔除
     val sqlRequestNew1 =
       s"""
