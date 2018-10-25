@@ -152,6 +152,7 @@ object OcpcPIDwithCPA {
          |  a.adclass,
          |  a.k_value as exact_k,
          |  b.k_value as history_k,
+         |  b.percent,
          |  (case when b.percent is null then 0
          |        when b.percent < 0.5 then 0
          |        else 1 end) flag
