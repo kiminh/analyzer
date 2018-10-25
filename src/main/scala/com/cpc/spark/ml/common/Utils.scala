@@ -238,8 +238,8 @@ object Utils {
             case "disactive" => disactive += 1
             case "active_href" => active_href += 1
             case s if s.startsWith("active") => active += 1
-            case s if s.startsWith("nosite-active") => nosite_active += 1
-            case "nosite-disactive" => nosite_disactive += 1
+            case s if s.startsWith("nosite_active") => nosite_active += 1
+            case "nosite_disactive" => nosite_disactive += 1
             case _ =>
           }
 
@@ -249,9 +249,10 @@ object Utils {
           }
 
           //直接下载类、落地页下载类
-          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_pkgadded" && r.getAs[String]("trace_type") == "apkdown") {
+          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_pkgadded" ) {
             conversion_sdk_download += 1
           }
+
 
           //其它类：建站
           if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" || r.getAs[String]("trace_type").startsWith("active")) {
