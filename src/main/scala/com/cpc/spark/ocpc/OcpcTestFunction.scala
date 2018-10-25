@@ -12,7 +12,7 @@ object OcpcTestFunction {
     val date = args(0).toString
     val hour = args(1).toString
 
-    getHpcvr(date, hour, spark)
+    accumulatePCVR(date, hour, spark)
 
   }
 
@@ -44,7 +44,7 @@ object OcpcTestFunction {
     resultDF
   }
 
-  def getHpcvr(date: String, hour: String, spark: SparkSession): Unit = {
+  def accumulatePCVR(date: String, hour: String, spark: SparkSession): Unit = {
     import spark.implicits._
 
     val sqlRequest =
@@ -82,7 +82,10 @@ object OcpcTestFunction {
          |  ideaid,
          |  adclass,
          |  AVG(exp_cvr) as pcvr,
-         |  COUNT(1) as cnt
+         |  COUNT(1) as cnt,
+         |  SUM(exp_cvr) as total_cvr,
+         |  '$date' as date,
+         |  '$hour' as hour
          |FROM
          |  raw_table
          |GROUP BY ideaid, adclass
@@ -95,6 +98,43 @@ object OcpcTestFunction {
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr_test_20181025")
 
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pcvr_history")
+
+  }
+
+  def caclulateHPCVR(endDate: String, hour: String, spark: SparkSession) ={
+    // calculate time period for historical data
+    val threshold = 20
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val date = sdf.parse(endDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(date)
+    calendar.add(Calendar.DATE, -7)
+    val dt = calendar.getTime
+    val startDate = sdf.format(dt)
+    val selectCondition1 = s"`date`='$startDate' and hour > '$hour'"
+    val selectCondition2 = s"`date`>'$startDate' and `date`<'$endDate'"
+    val selectCondition3 = s"`date`='$endDate' and hour <= '$hour'"
+
+    // read data and set redis configuration
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  adclass,
+         |  SUM(total_cvr) * 1.0 / SUM(cnt) as hpcvr
+         |FROM
+         |  dl_cpc.ocpc_pcvr_history
+         |WHERE ($selectCondition1) OR
+         |      ($selectCondition2) OR
+         |      ($selectCondition3)
+         |GROUP BY ideaid, adclass
+       """.stripMargin
+    println(sqlRequest)
+
+    val rawTable = spark.sql(sqlRequest)
+
+    rawTable.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr_test_20181025_total")
 
 
   }
