@@ -255,34 +255,38 @@ object SaveFeatures {
       .cache()
 
 
-//    //用户Api回传数据(如已经安装但未激活) cvr计算
-//    val userApiBackRDD = logRDD
-//      .map {
-//        x =>
-//          var active_third = 0
-//          x._2.foreach(
-//            x => {
-//              if (!x.isNullAt(9)) { //trace_type为null时过滤
-//                val trace_type = x.getAs[String]("trace_type")
-//                if (trace_type == "active_third") {
-//                  active_third = 1
-//                }
-//              }
-//            }
-//          )
-//          (x._1, active_third)
-//      }.toDF("searchid", "label")
-//
-//    userApiBackRDD
-//      .repartition(1)
-//      .write
-//      .mode(SaveMode.Overwrite)
-//      .parquet("/user/cpc/lrmodel/cvrdata_userapiback/%s/%s".format(date, hour))
-//    spark.sql(
-//      """
-//        |ALTER TABLE dl_cpc.ml_cvr_feature_v2 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-//        | LOCATION  '/user/cpc/lrmodel/cvrdata_userapiback/%s/%s'
-//      """.stripMargin.format(date, hour, date, hour))
+    //    //用户Api回传数据(如已经安装但未激活) cvr计算
+    val userApiBackRDD = logRDD
+      .map {
+        x =>
+          var active_third = 0
+          x._2.foreach(
+            x => {
+              if (!x.isNullAt(9)) { //trace_type为null时过滤
+                val trace_type = x.getAs[String]("trace_type")
+                if (trace_type == "active_third") {
+                  active_third = 1
+                }
+              } else {
+                active_third = -1
+              }
+            }
+          )
+          (x._1, active_third)
+      }
+      .filter(x => x._2 != -1) //过滤空值
+      .toDF("searchid", "label")
+
+    userApiBackRDD
+      .repartition(1)
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet("/user/cpc/lrmodel/cvrdata_userapiback/%s/%s".format(date, hour))
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v2 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_userapiback/%s/%s'
+      """.stripMargin.format(date, hour, date, hour))
 
 
     //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算
