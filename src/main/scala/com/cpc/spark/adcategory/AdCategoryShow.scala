@@ -1,9 +1,6 @@
 package com.cpc.spark.adcategory
 
-import com.cpc.spark.log.anal.ConditionTouchedUV.redis
-import com.cpc.spark.qukan.utils.RedisUtil
 import com.redis.RedisClient
-import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 
 object AdCategoryShow {
@@ -42,21 +39,21 @@ object AdCategoryShow {
 
     val dataset = spark.sql(sqlRequest)
 
-//    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
-//    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
 
-    dataset.collect().foreach {
+    dataset.foreach {
         record => {
           val id = record.get(0).toString
           var key = "ad_category_" + id
           val show = record.getLong(1)
           println(key,show)
-//
-//    redis.setex(key, 3600 * 24 * 30, show)
+
+    redis.setex(key, 3600 * 24 * 30, show)
 
           }
         }
-//    redis.disconnect
+    redis.disconnect
   }
 }
 
