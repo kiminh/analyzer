@@ -248,7 +248,7 @@ object SaveFeatures {
          |            where `date` = "%s" and `hour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid
-         |where t2.id is null
+         |where b.searchid is not null and t2.id is null
         """.stripMargin.format(date, hour, date, date, hour))
       .rdd
       .map {
