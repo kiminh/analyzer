@@ -9,7 +9,6 @@ object AdCategoryShow {
 
     // calculate time period for historical data
     val date = "2018-10-24"
-    val hour = "12"
 
     // read data and set redis configuration
     val sqlRequest =
@@ -42,7 +41,7 @@ object AdCategoryShow {
     val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
     redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
 
-    dataset.foreach {
+    dataset.collect().foreach {
         record => {
           val id = record.get(0).toString
           var key = "ad_category_" + id
