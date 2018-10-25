@@ -18,7 +18,7 @@ object PriceBidRate {
   def main(args: Array[String]): Unit = {
 
     val LOCAL_PATH = "/home/cpc/price_rate/rate.pb"
-    val DEST_PATH = "/home/work/mlcpp/price_rate/rate.pb"
+    val DEST_PATH = "/home/work/mlcpp/data/rate.pb"
 
 
     val endDt = args(0)
