@@ -61,7 +61,8 @@ object OcpcMonitor {
          |    and adslot_type in (1,2,3)
          |    and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
          |    AND ext_int['is_ocpc']=1
-         |    AND ext_string['ocpc_log'] != '') a
+         |    AND ext_string['ocpc_log'] != ''
+         |    AND ext_string['ocpc_log'] is not null) a
          |left outer join
          |    (
          |        select
