@@ -43,8 +43,11 @@ object Behavior2Redis {
          |where load_date in ('${getDays(date, 1, 3)}')
          |    and rn <= 1000
          |group by uid
-         |limit 100
       """.stripMargin)
+      .persist()
+
+    data.write.mode("overwrite")
+      .parquet("/user/cpc/zhj/behavior")
 
     val conf = ConfigFactory.load()
     data.coalesce(20).foreachPartition { p =>

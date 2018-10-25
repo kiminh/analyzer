@@ -13,9 +13,8 @@ import com.cpc.spark.common.Murmur3Hash
 import org.apache.spark.sql.functions._
 import org.apache.spark.storage.StorageLevel
 
-
+@deprecated
 object DNNSample {
-
   Logger.getRootLogger.setLevel(Level.WARN)
 
   private var trainLog = Seq[String]()
@@ -28,11 +27,11 @@ object DNNSample {
 
     import spark.implicits._
     val date = args(0)
-    val tdate = args(1)
+    val hour = args(1)
 
     val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
 
-    val rawtrain = getSample(spark, date, is_train = true).withColumn("uid", $"dense" (25)).persist()
+    val rawtrain = getSample(spark, date, hour).withColumn("uid", $"dense" (25)).persist()
 
     rawtrain.printSchema()
 
@@ -41,89 +40,27 @@ object DNNSample {
 
     val train = rawtrain.join(uid, Seq("uid"), "left")
       .select($"sample_idx", $"label",
-        getNewDense(25, default_hash_uid)($"dense", $"count" < 4).alias("dense"),
+        getNewDense(25, default_hash_uid)($"dense", $"count" < 2).alias("dense"),
         $"idx0", $"idx1", $"idx2", $"id_arr")
 
+    val n = train.count()
+    println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
+
+    train.repartition(100)
+      .write
+      .mode("overwrite")
+      .format("tfrecords")
+      .option("recordType", "Example")
+      .save(s"/user/cpc/zhj/hourly/dnntrain-$date-$hour")
+    println("train size", train.count())
+    train.take(10).foreach(println)
     rawtrain.unpersist()
-
-    /*val n = train.count()
-    println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))*/
-
-    train.repartition(1000)
-      .write
-      .mode("overwrite")
-      .format("tfrecords")
-      .option("recordType", "Example")
-      .save("/user/cpc/zhj/mfeatures/dnntrain-" + date)
-
-    /*val dnntrain = spark.read.format("tfrecords").option("recordType", "Example").load("/user/cpc/zhj/mfeatures/dnntrain-" + date)
-    val n = dnntrain.count()
-    println("训练数据：total = %d, 正比例 = %.4f".format(n, dnntrain.where("label=array(1,0)").count.toDouble / n))
-    println("train size", n)*/
-
-
-    //val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
-    val test = getSample(spark, tdate, is_train = false).persist()
-    val tn = test.count
-    println("测试数据：total = %d, 正比例 = %.4f".format(tn, test.where("label=array(1,0)").count.toDouble / tn))
-
-    test.repartition(100)
-      .write
-      .mode("overwrite")
-      .format("tfrecords")
-      .option("recordType", "Example")
-      .save("/user/cpc/zhj/mfeatures/dnntest-" + tdate)
-    test.take(10).foreach(println)
   }
 
-  def getSample(spark: SparkSession, date: String, is_train: Boolean): DataFrame = {
+  def getSample(spark: SparkSession, date: String, hour: String): DataFrame = {
     import spark.implicits._
 
-    val behavior_sql =
-      s"""
-         |select uid,
-         |       collect_list(if(load_date='${getDay(date, 1)}',show_ideaid,null)) as s_ideaid_1,
-         |       collect_list(if(load_date='${getDay(date, 1)}',show_adclass,null)) as s_adclass_1,
-         |       collect_list(if(load_date='${getDay(date, 2)}',show_ideaid,null)) as s_ideaid_2,
-         |       collect_list(if(load_date='${getDay(date, 2)}',show_adclass,null)) as s_adclass_2,
-         |       collect_list(if(load_date='${getDay(date, 3)}',show_ideaid,null)) as s_ideaid_3,
-         |       collect_list(if(load_date='${getDay(date, 3)}',show_adclass,null)) as s_adclass_3,
-         |       collect_list(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
-         |       collect_list(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
-         |       collect_list(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
-         |       collect_list(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
-         |       collect_list(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
-         |       collect_list(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3
-         |from dl_cpc.cpc_user_behaviors
-         |where load_date in ('${getDays(date, 1, 3)}')
-         |    and rn <= 1000
-         |group by uid
-      """.stripMargin
-
-    println("--------------------------------")
-    println(behavior_sql)
-    println("--------------------------------")
-
-    val behavior_data = spark.sql(behavior_sql)
-      .select(
-        $"uid",
-        hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
-        hashSeq("m3", "int")($"s_ideaid_2").alias("m3"),
-        hashSeq("m4", "int")($"s_ideaid_3").alias("m4"),
-        hashSeq("m5", "int")($"s_adclass_1").alias("m5"),
-        hashSeq("m6", "int")($"s_adclass_2").alias("m6"),
-        hashSeq("m7", "int")($"s_adclass_3").alias("m7"),
-        hashSeq("m8", "int")($"c_ideaid_1").alias("m8"),
-        hashSeq("m9", "int")($"c_ideaid_2").alias("m9"),
-        hashSeq("m10", "int")($"c_ideaid_3").alias("m10"),
-        hashSeq("m11", "int")($"c_adclass_1").alias("m11"),
-        hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
-        hashSeq("m13", "int")($"c_adclass_3").alias("m13")
-      )
-
     val userAppIdx = getUidApp(spark, date)
-      .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))
-
     val sql =
       s"""
          |select if(isclick>0, array(1,0), array(0,1)) as label,
@@ -149,64 +86,50 @@ object DNNSample {
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
-         |  and uid > 0
+         |
       """.stripMargin
-    println("--------------------------------")
     println(sql)
-    println("--------------------------------")
 
-    val re =
-      if (is_train)
-        spark.sql(sql)
-          .join(userAppIdx, Seq("uid"), "leftouter")
-          .join(behavior_data, Seq("uid"), "leftouter")
-      else
-        spark.sql(sql)
-          .join(userAppIdx, Seq("uid"), "leftouter")
-          .join(behavior_data, Seq("uid"), "leftouter")
-          .sample(withReplacement = false, 0.03)
+    spark.sql(sql)
+      .join(userAppIdx, Seq("uid"), "leftouter")
+      .repartition(1000)
+      .select($"label",
 
-    re.select($"label",
+        hash("f1")($"media_type").alias("f1"),
+        hash("f2")($"mediaid").alias("f2"),
+        hash("f3")($"channel").alias("f3"),
+        hash("f4")($"sdk_type").alias("f4"),
+        hash("f5")($"adslot_type").alias("f5"),
+        hash("f6")($"adslotid").alias("f6"),
+        hash("f7")($"sex").alias("f7"),
+        hash("f8")($"dtu_id").alias("f8"),
+        hash("f9")($"adtype").alias("f9"),
+        hash("f10")($"interaction").alias("f10"),
+        hash("f11")($"bid").alias("f11"),
+        hash("f12")($"ideaid").alias("f12"),
+        hash("f13")($"unitid").alias("f13"),
+        hash("f14")($"planid").alias("f14"),
+        hash("f15")($"userid").alias("f15"),
+        hash("f16")($"is_new_ad").alias("f16"),
+        hash("f17")($"adclass").alias("f17"),
+        hash("f18")($"site_id").alias("f18"),
+        hash("f19")($"os").alias("f19"),
+        hash("f20")($"network").alias("f20"),
+        hash("f21")($"phone_price").alias("f21"),
+        hash("f22")($"brand").alias("f22"),
+        hash("f23")($"province").alias("f23"),
+        hash("f24")($"city").alias("f24"),
+        hash("f25")($"city_level").alias("f25"),
+        hash("f26")($"uid").alias("f26"),
+        hash("f27")($"age").alias("f27"),
 
-      hash("f1")($"media_type").alias("f1"),
-      hash("f2")($"mediaid").alias("f2"),
-      hash("f3")($"channel").alias("f3"),
-      hash("f4")($"sdk_type").alias("f4"),
-      hash("f5")($"adslot_type").alias("f5"),
-      hash("f6")($"adslotid").alias("f6"),
-      hash("f7")($"sex").alias("f7"),
-      hash("f8")($"dtu_id").alias("f8"),
-      hash("f9")($"adtype").alias("f9"),
-      hash("f10")($"interaction").alias("f10"),
-      hash("f11")($"bid").alias("f11"),
-      hash("f12")($"ideaid").alias("f12"),
-      hash("f13")($"unitid").alias("f13"),
-      hash("f14")($"planid").alias("f14"),
-      hash("f15")($"userid").alias("f15"),
-      hash("f16")($"is_new_ad").alias("f16"),
-      hash("f17")($"adclass").alias("f17"),
-      hash("f18")($"site_id").alias("f18"),
-      hash("f19")($"os").alias("f19"),
-      hash("f20")($"network").alias("f20"),
-      hash("f21")($"phone_price").alias("f21"),
-      hash("f22")($"brand").alias("f22"),
-      hash("f23")($"province").alias("f23"),
-      hash("f24")($"city").alias("f24"),
-      hash("f25")($"city_level").alias("f25"),
-      hash("f26")($"uid").alias("f26"),
-      hash("f27")($"age").alias("f27"),
-
-      array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7",
-        $"m8", $"m9", $"m10", $"m11", $"m12", $"m13").alias("raw_sparse")
-    )
+        hashSeq("m1", "string")($"pkgs").alias("m1"))
 
       .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
         $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
-        //mkSparseFeature1($"m1").alias("sparse"), $"label"
-        mkSparseFeature_m($"raw_sparse").alias("sparse"),
-        $"label"
+        mkSparseFeature1($"m1").alias("sparse"), $"label"
       )
 
       .select(
@@ -218,7 +141,7 @@ object DNNSample {
         $"sparse".getField("_4").alias("id_arr")
       )
 
-      .rdd.zipWithUniqueId()
+      .rdd.zipWithIndex()
       .map { x =>
         (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
@@ -246,21 +169,6 @@ object DNNSample {
       re = re :+ format.format(cal.getTime)
     }
     re.mkString("','")
-  }
-
-  /**
-    * 获取时间
-    *
-    * @param startdate ：开始日期
-    * @param day       ：开始日期之前day天
-    * @return
-    */
-  def getDay(startdate: String, day: Int): String = {
-    val format = new SimpleDateFormat("yyyy-MM-dd")
-    val cal = Calendar.getInstance()
-    cal.setTime(format.parse(startdate))
-    cal.add(Calendar.DATE, -day)
-    format.format(cal.getTime)
   }
 
   def getUidApp(spark: SparkSession, date: String): DataFrame = {
@@ -335,23 +243,6 @@ object DNNSample {
       val c = apps.zipWithIndex.map(x => (0, 0, x._2, x._1))
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
-
-  private val default_hash = for (i <- 1 to 13) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
-
-  private def mkSparseFeature_m = udf {
-    features: Seq[Seq[Long]] =>
-      var i = 0
-      var re = Seq[(Int, Int, Long)]()
-      for (feature <- features) {
-        re = re ++
-          (if (feature != null) feature.zipWithIndex.map(x => (i, x._2, x._1)) else default_hash(i))
-        i = i + 1
-      }
-      val c = re.map(x => (0, x._1, x._2, x._3))
-      (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
-  }
-
-
 }
 
 
