@@ -67,16 +67,17 @@ object Behavior2Redis {
       redis.disconnect
     }*/
     data.collect.foreach { rec =>
-        var group = Seq[Int]()
-        var hashcode = Seq[Long]()
-        val uid = "dnnu" + rec.getString(0)
-        for (i <- 1 to 12) {
-          val f = rec.getAs[Seq[Int]](i).map(_.toLong)
-          group = group ++ Array.tabulate(f.length)(x => i)
-          hashcode = hashcode ++ f
-        }
-        //redis.set(uid, DnnMultiHot(group, hashcode).toByteArray)
-        println(uid, DnnMultiHot(group, hashcode).toString)
+      var group = Seq[Int]()
+      var hashcode = Seq[Long]()
+      val uid = "dnnu" + rec.getString(0)
+      for (i <- 1 to 12) {
+        val f = rec.getAs[Seq[Int]](i).map(_.toLong)
+        group = group ++ Array.tabulate(f.length)(x => i)
+        hashcode = hashcode ++ f
+      }
+      //redis.set(uid, DnnMultiHot(group, hashcode).toByteArray)
+      println(uid, DnnMultiHot(group, hashcode).toString)
+    }
   }
 
   /**
