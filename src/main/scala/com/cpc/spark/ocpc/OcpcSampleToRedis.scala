@@ -66,6 +66,9 @@ object OcpcSampleToRedis {
 
     rawBase.createOrReplaceTempView("base_table")
 
+    // read outsiders
+    readInnocence(spark)
+
     // 根据从mysql抽取的数据将每个ideaid的更新时间戳之前的用户记录剔除
     val sqlRequestNew1 =
       s"""
@@ -81,7 +84,8 @@ object OcpcSampleToRedis {
          |  a.hour,
          |  (case when b.update_date is null then '$start_date' else b.update_date end) as update_date,
          |  (case when b.update_hour is null then '$hour' else b.update_hour end) as update_hour,
-         |  (case when b.update_date is null or b.update_hour is null then 1
+         |  (case when c.flag is not null then 1
+         |        when b.update_date is null or b.update_hour is null then 1
          |        when b.update_date < date then 1
          |        when b.update_date = date and b.update_hour <= hour then 1
          |        else 0 end) as flag
@@ -91,6 +95,10 @@ object OcpcSampleToRedis {
          |  test.ocpc_idea_update_time as b
          |ON
          |  a.ideaid=b.ideaid
+         |LEFT JOIN
+         |   test.ocpc_innocence_idea_list as c
+         |on
+         |   a.ideaid=c.ideaid
        """.stripMargin
 
     println(sqlRequestNew1)
@@ -168,8 +176,7 @@ object OcpcSampleToRedis {
     val userFinalData = spark.sql(sqlRequest2)
     userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
-    // read outsiders
-    readInnocence(spark)
+
 
     // 根据中间表加入k值
     val sqlRequest3 =
@@ -187,8 +194,7 @@ object OcpcSampleToRedis {
          |  (case when b.k_value is null then 1.0
          |        when b.k_value > 1.0 then 1.0
          |        when b.k_value < 0.2 then 0.2
-         |        else b.k_value end) as k_value,
-         |   (case when c.innocence_flag is not null then 1 else 0 end) innocence_flag
+         |        else b.k_value end) as k_value
          |FROM
          |  (SELECT
          |    *
@@ -204,15 +210,11 @@ object OcpcSampleToRedis {
          |   a.ideaid=b.ideaid
          |and
          |   a.adclass=b.adclass
-         |LEFT JOIN
-         |   test.ocpc_innocence_idea_list as c
-         |on
-         |   a.ideaid=c.ideaid
        """.stripMargin
 
     println("sqlRequest3")
 
-    val userFinalData2 = spark.sql(sqlRequest3).filter("innocence_flag = 1 or cvr_cnt>=20").select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
+    val userFinalData2 = spark.sql(sqlRequest3).filter("cvr_cnt>=20")
 
     userFinalData2.show(10)
 
