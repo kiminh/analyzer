@@ -317,7 +317,7 @@ object Utils {
           if (conversion_sdk_download > 0) {
               active_js_download += 1
           }
-        } else if (interaction == 1 && (adclass.toString.substring(0, 3).toInt == 100) && client_type == "NATIVESDK") {
+        } else if (interaction == 1 && (adclass.toString.length > 3 && adclass.toString.substring(0, 3).toInt == 100) && client_type == "NATIVESDK") {
           label_type = 5
           if (conversion_sdk_download > 0) {
             active_js_ldy_download += 1
