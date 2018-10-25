@@ -214,7 +214,7 @@ object OcpcTestObject {
          |   a.adclass=b.adclass
        """.stripMargin
 
-    println("sqlRequest3")
+    println(sqlRequest3)
 
     val userFinalData2 = spark.sql(sqlRequest3).filter("cvr_cnt>=20")
 
@@ -248,7 +248,7 @@ object OcpcTestObject {
          |  b.hpcvr
          |FROM
          |  test.test_new_pb_ocpc_bak as a
-         |LEFT JOIN
+         |INNER JOIN
          |  test.test_ocpc_hpcvr_total as b
          |ON
          |  a.ideaid=b.ideaid

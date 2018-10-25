@@ -230,40 +230,40 @@ object OcpcSampleToRedis {
 
 
     // TODO 增加hpcvr的数据
-    calculateHPCVR(end_date, hour, spark)
-
-    val sqlRequest4 =
-      s"""
-         |SELECT
-         |  a.ideaid,
-         |  a.userid,
-         |  a.adclass,
-         |  a.cost,
-         |  a.ctr_cnt,
-         |  a.cvr_cnt,
-         |  a.adclass_cost,
-         |  a.adclass_ctr_cnt,
-         |  a.adclass_cvr_cnt,
-         |  a.k_value,
-         |  b.hpcvr
-         |FROM
-         |  test.test_new_pb_ocpc as a
-         |LEFT JOIN
-         |  test.ocpc_hpcvr_total as b
-         |ON
-         |  a.ideaid=b.ideaid
-         |AND
-         |  a.adclass=b.adclass
-       """.stripMargin
-
-    println(sqlRequest4)
-
-    val finalData = spark.sql(sqlRequest4)
-
-    finalData.write.mode("overwrite").saveAsTable("test.test.test_new_pb_ocpc_with_pcvr")
+//    calculateHPCVR(end_date, hour, spark)
+//
+//    val sqlRequest4 =
+//      s"""
+//         |SELECT
+//         |  a.ideaid,
+//         |  a.userid,
+//         |  a.adclass,
+//         |  a.cost,
+//         |  a.ctr_cnt,
+//         |  a.cvr_cnt,
+//         |  a.adclass_cost,
+//         |  a.adclass_ctr_cnt,
+//         |  a.adclass_cvr_cnt,
+//         |  a.k_value,
+//         |  b.hpcvr
+//         |FROM
+//         |  test.test_new_pb_ocpc as a
+//         |INNER JOIN
+//         |  test.ocpc_hpcvr_total as b
+//         |ON
+//         |  a.ideaid=b.ideaid
+//         |AND
+//         |  a.adclass=b.adclass
+//       """.stripMargin
+//
+//    println(sqlRequest4)
+//
+//    val finalData = spark.sql(sqlRequest4)
+//
+//    finalData.write.mode("overwrite").saveAsTable("test.test.test_new_pb_ocpc_with_pcvr")
 
     // 保存pb文件
-    savePbPack(finalData)
+    savePbPack(userFinalData2)
   }
 
 
@@ -398,7 +398,6 @@ object OcpcSampleToRedis {
       val adclassCtr = record.getLong(7).toString
       val adclassCvr = record.getLong(8).toString
       val k = record.get(9).toString
-      val hpcvr = record.getDouble(10)
 
       val tmpCost = adclassCost.toLong
       if (tmpCost<0) {
@@ -416,8 +415,7 @@ object OcpcSampleToRedis {
           adclassCost = adclassCost,
           adclassCtrcnt = adclassCtr,
           adclassCvrcnt = adclassCvr,
-          kvalue = k,
-          hpcvr = hpcvr
+          kvalue = k
         )
         list += currentItem
       }
