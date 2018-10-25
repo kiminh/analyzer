@@ -50,7 +50,7 @@ object AdCategoryShow {
           val id = record.get(0).toString
           var key = "ad_category_" + id
           val show = record.getLong(1)
-          println("$key","$show")
+          println(key,show)
 //
 //    redis.setex(key, 3600 * 24 * 30, show)
 
