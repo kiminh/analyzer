@@ -48,12 +48,13 @@ object Behavior2Redis {
 
     val conf = ConfigFactory.load()
     data.coalesce(20).foreachPartition { p =>
-      val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+      val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
+      redis.auth(conf.getString("ali_redis.auth"))
 
       p.foreach { rec =>
         var group = Seq[Int]()
         var hashcode = Seq[Long]()
-        val uid = rec.getString(0)
+        val uid = "dnnu" + rec.getString(0)
         for (i <- 1 to 12) {
           val f = rec.getAs[Seq[Int]](i).map(_.toLong)
           group = group ++ Array.tabulate(f.length)(x => i)
