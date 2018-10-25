@@ -50,15 +50,15 @@ object MLSnapshot {
         val cpc_mlsnapshot_warning = "cpc_realtime_parsedlog_warning"
 
         //初始化DStream 每个batch的开始时间； 用于报警服务
-//        var currentBatchStartTime = 0L
+        var currentBatchStartTime = 0L
 
         val messages = KafkaUtils
           .createDirectStream[String, Array[Byte], StringDecoder, DefaultDecoder](ssc, kafkaParams, topicsSet)
 
-//        messages.foreachRDD { rdd =>
-//            //每个batch的开始时间
-//            currentBatchStartTime = new Date().getTime
-//        }
+        messages.foreachRDD { rdd =>
+            //每个batch的开始时间
+            currentBatchStartTime = new Date().getTime
+        }
 
         val base_data = messages.map {
             case (key, v) =>
@@ -253,15 +253,15 @@ object MLSnapshot {
               * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
               */
             // 每个batch的结束时间
-//            val currentBatchEndTime = new Date().getTime
-//            val costTime = (currentBatchEndTime - currentBatchStartTime) / 1000.0
-//
-//            val data2Kafka = new Data2Kafka()
-//            val mapString: Seq[(String, String)] = Seq(("Topic", "mlSnapshot_cpc_show_new"))
-//            val mapFloat: Seq[(String, Float)] = Seq(("ProcessingTime", costTime.toFloat))
-//            data2Kafka.setMessage(currentBatchEndTime, null, mapFloat, null, mapString)
-//            data2Kafka.sendMessage(brokers, cpc_mlsnapshot_warning)
-//            data2Kafka.close()
+            val currentBatchEndTime = new Date().getTime
+            val costTime = (currentBatchEndTime - currentBatchStartTime) / 1000.0
+
+            val data2Kafka = new Data2Kafka()
+            val mapString: Seq[(String, String)] = Seq(("Topic", "mlSnapshot_cpc_show_new"))
+            val mapFloat: Seq[(String, Float)] = Seq(("ProcessingTime", costTime.toFloat))
+            data2Kafka.setMessage(currentBatchEndTime, null, mapFloat, null, mapString)
+            data2Kafka.sendMessage(brokers, cpc_mlsnapshot_warning)
+            data2Kafka.close()
         }
 
         ssc.start()
