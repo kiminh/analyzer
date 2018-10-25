@@ -251,7 +251,7 @@ object SaveFeatures {
          |where t2.id is null
         """.stripMargin.format(date, hour, date, date, hour))
       .rdd
-      .repartition(1000)
+      .repartition(200)
       .map {
         x =>
           (x.getAs[String]("search_id"), Seq(x))
