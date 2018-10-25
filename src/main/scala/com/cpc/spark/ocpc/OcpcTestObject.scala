@@ -304,8 +304,8 @@ object OcpcTestObject {
           adclassCost = adclassCost,
           adclassCtrcnt = adclassCtr,
           adclassCvrcnt = adclassCvr,
-          kvalue = k,
-          hpcvr = hpcvr
+          kvalue = k
+//          hpcvr = hpcvr
         )
         list += currentItem
       }
