@@ -14,11 +14,9 @@ object AdCategoryShow {
     val sqlRequest =
       s"""
          |select
-         |  category,
+         |  ext_int["category"] as category,
          |  sum(isshow) as imp
          |FROM
-         |(
-         |  select c.*,c.ext_int["category"] as category
          |  from dl_cpc.cpc_union_log c
          |  WHERE `date` = "$date"
          |  and isshow = 1
@@ -32,7 +30,7 @@ object AdCategoryShow {
          |       OR ext["charge_type"].int_value = 1)
          |) a
          |  GROUP BY
-         |  category
+         |  ext_int["category"]
        """.stripMargin
     println(sqlRequest)
 
