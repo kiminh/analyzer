@@ -46,13 +46,19 @@ object TouchedUV {
             case "miRead" =>
                 "select uid,province,city,sex,age,coin,os,network,ext['share_coin'].int_value as share_coin ,ext['phone_level'].int_value as phone_level  from dl_cpc.cpc_union_log where `date` = \"%s\" and media_appsid in (\"80001098\", \"80001292\") and isshow=1 and ideaid>0"
                   .format(date)
+            case _ => ""
+        }
+        if (sql=="") {
+            System.exit(1)
         }
         //uid,province,city,sex,age,coin,os,network
         val ulog = spark.sql(sql).rdd
         //根据uid计算uv
         val uv = ulog.map(x => (x.getAs[String]("uid"), 1)).reduceByKey((x, y) => x).count()
-
-        redis.set("%s_touched_uv_total".format(appType), uv)
+        if (appType=="qtt")
+            redis.set("touched_uv_total", uv)
+        else
+            redis.set("%s_touched_uv_total".format(appType), uv)
         System.out.println("%s_touched_uv_total is %s".format(appType,uv.toString))
 
 //        val unionLog = ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0).coalesce(900).cache()
@@ -119,7 +125,12 @@ object TouchedUV {
             var n = 0d
             coins.foreach {
                 case (i, v) =>
-                    val key = "%s_touched_uv_percent_%s_%d".format(appType, name, i)
+                    val key = appType match {
+                        case "qtt" => "touched_uv_percent_%s_%d".format(name, i)
+                        case "miRead" => "%s_touched_uv_percent_%s_%d".format(appType, name, i)
+                        case _ => "touched_uv_percent_%s_%d".format(name, i)
+                    }
+                    //val key = "%s_touched_uv_percent_%s_%d".format(appType, name, i)
                     n = n + v
                     val p = n / sum
                     redis.set(key, "%.8f".format(p))
@@ -129,7 +140,12 @@ object TouchedUV {
             cond.toLocalIterator.foreach {
                   x =>
                       val p = x._2 / sum
-                      val key = "%s_touched_uv_percent_%s_%d".format(appType, name, x._1)
+                      val key = appType match {
+                          case "qtt" => "touched_uv_percent_%s_%d".format(name, x._1)
+                          case "miRead" => "%s_touched_uv_percent_%s_%d".format(appType, name, x._1)
+                          case _ => "touched_uv_percent_%s_%d".format(name, x._1)
+                      }
+                      //val key = "%s_touched_uv_percent_%s_%d".format(appType, name, x._1)
                       redis.set(key, "%.8f".format(p))
                       System.out.println(name, key, x._1, x._2, "%.8f".format(p))
             }
