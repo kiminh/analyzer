@@ -227,13 +227,13 @@ object MLSnapshot {
             val kk = snap.map { x => (x.date, x.hour) }.distinct.collect()
             System.out.println(keys,kk)
             for (k1 <- kk){
-                System.out.println(kk.mkString("|"))
+                System.out.println(k1._1,k1._2)
             }
             System.out.println("******keys 's num is " + keys.length + " ******")
             for (k <- keys){
                 System.out.println(k._1,k._2)
             }
-            keys.foreach { key =>
+            kk.foreach { key =>
                 System.out.println(key._1,key._2)
                 val part = snap.filter(r => r.date == key._1 && r.hour == key._2)
                 val numbs = part.count()
