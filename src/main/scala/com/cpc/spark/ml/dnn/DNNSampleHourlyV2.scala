@@ -115,6 +115,8 @@ object DNNSampleHourlyV2 {
 
 
     spark.sql(sql)
+      .join(userAppIdx, Seq("uid"), "leftouter")
+      .join(behavior_data, Seq("uid"), "leftouter")
       .select($"label",
 
         hash("f1")($"media_type").alias("f1"),
