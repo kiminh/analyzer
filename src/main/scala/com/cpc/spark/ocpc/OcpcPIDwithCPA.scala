@@ -25,7 +25,6 @@ object OcpcPIDwithCPA {
       // 计算CPA比值
       genCPAratio(dataset, date, hour, spark)
 
-      // TODO: remove k flag function
       // 确认是否需要修改k值
       val kFlags = checkKeffect(date, hour, spark)
       // 计算K值
