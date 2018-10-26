@@ -307,7 +307,7 @@ object SaveFeatures {
       .map {
         x =>
           val convert = Utils.cvrPositiveV(x._2, version)
-          val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version) //新cvr
+          //val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version) //新cvr
 
 
           //存储active行为数据
