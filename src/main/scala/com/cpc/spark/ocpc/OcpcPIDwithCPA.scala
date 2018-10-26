@@ -139,6 +139,8 @@ object OcpcPIDwithCPA {
 
     percentData.show(10)
 
+    percentData.write.mode("overwrite").saveAsTable("test.ocpc_k_value_percent")
+
 
 
     // 从pb的历史数据表中抽取k值
