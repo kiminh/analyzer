@@ -245,7 +245,7 @@ object Utils {
             case _ =>
           }
 
-          
+
 
           //加粉类：建站&sdk
           if (r.getAs[String]("trace_op1").toLowerCase == "report_user_stayinwx" && r.getAs[String]("trace_type") == "lpload") {
