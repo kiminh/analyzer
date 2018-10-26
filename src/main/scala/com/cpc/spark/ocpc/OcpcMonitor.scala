@@ -135,7 +135,9 @@ object OcpcMonitor {
          |    AVG(price) as price,
          |    COUNT(isshow) as show_cnt,
          |    SUM(isclick) as ctr_cnt,
-         |    SUM(iscvr) as cvr_cnt
+         |    SUM(iscvr) as cvr_cnt,
+         |    '$date' as date,
+         |    '$hour' as hour
          |FROM
          |    dl_cpc.ocpc_result_unionlog_table_bak
          |WHERE
@@ -154,6 +156,8 @@ object OcpcMonitor {
     data.show(10)
 
     data.write.mode("overwrite").saveAsTable("test.ocpc_hourly_performance_report")
+
+//    data.write.mode("overwrite").insertInto("dl_cpc.ocpc_hourly_performance_report")
 
   }
 
