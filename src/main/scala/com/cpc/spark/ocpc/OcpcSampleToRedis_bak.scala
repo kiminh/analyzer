@@ -21,7 +21,7 @@ import org.apache.spark.sql.functions._
 
 
 
-object OcpcSampleToRedis {
+object OcpcSampleToRedis_bak {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
@@ -69,7 +69,7 @@ object OcpcSampleToRedis {
     // read outsiders
     readInnocence(spark)
 
-    // TODO: 清楚按照时间戳截取逻辑
+    // TODO: 清除按照时间戳截取逻辑
 
     // 根据从mysql抽取的数据将每个ideaid的更新时间戳之前的用户记录剔除
     val sqlRequestNew1 =
@@ -94,11 +94,11 @@ object OcpcSampleToRedis {
          |FROM
          |  base_table as a
          |LEFT JOIN
-         |  test.ocpc_idea_update_time as b
+         |  dl_cpc.ocpc_idea_update_time as b
          |ON
          |  a.ideaid=b.ideaid
          |LEFT JOIN
-         |   test.ocpc_innocence_idea_list as c
+         |   dl_cpc.ocpc_innocence_idea_list as c
          |on
          |   a.ideaid=c.ideaid
        """.stripMargin
@@ -120,6 +120,7 @@ object OcpcSampleToRedis {
       .select("ideaid", "userid", "adclass", "cost", "user_ctr_cnt", "user_cvr_cnt")
 
 
+    // TODO 临时表不能移除！
     userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
 
 
@@ -129,6 +130,7 @@ object OcpcSampleToRedis {
       .agg(sum("cost").alias("adclass_cost"), sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
       .select("adclass", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
+    // TODO: 临时表不能移除！
     adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
 
 
@@ -153,9 +155,9 @@ object OcpcSampleToRedis {
          |    a.adclass=b.adclass
        """.stripMargin)
 
-    useridAdclassData.createOrReplaceTempView("useridTable")
+    useridAdclassData.createOrReplaceTempView("userid_table")
 
-    // 生成中间表
+    // TODO 生成中间表步骤可以在未来移出
     val sqlRequest2 =
       s"""
          |SELECT
@@ -171,7 +173,7 @@ object OcpcSampleToRedis {
          |    '$end_date' as date,
          |    '$hour' as hour
          |FROM
-         |    useridTable
+         |    userid_table
        """.stripMargin
 
 
@@ -179,8 +181,9 @@ object OcpcSampleToRedis {
     userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
 
+    calculateHPCVR(end_date, hour, spark)
 
-    // 根据中间表加入k值
+    // 根据中间表加入k值和hpcvr
     val sqlRequest3 =
       s"""
          |SELECT
@@ -198,28 +201,23 @@ object OcpcSampleToRedis {
          |        when b.k_value < 0.2 then 0.2
          |        else b.k_value end) as k_value
          |FROM
-         |  (SELECT
-         |    ideaid,
-         |    userid,
-         |    adclass,
-         |    cost,
-         |    ctr_cnt,
-         |    adclass_cost,
-         |    adclass_ctr_cnt,
-         |    adclass_cvr_cnt,
-         |    cast(k_value as double) as k_value
-         |   FROM
-         |    dl_cpc.ocpc_pb_result_table
-         |   WHERE
-         |    `date`='$end_date'
-         |   and
-         |    `hour`='$hour') a
+         |  userid_table as a
          |LEFT JOIN
-         |   test.ocpc_k_value_table b
+         |   (SELECT
+         |      ideaid,
+         |      adclass,
+         |      k_value
+         |    FROM
+         |      dl_cpc.ocpc_k_value_table
+         |    WHERE
+         |       `date`='$end_date'
+         |    AND
+         |       `hour`='$hour') as b
          |ON
          |   a.ideaid=b.ideaid
          |and
          |   a.adclass=b.adclass
+         |
        """.stripMargin
 
     println(sqlRequest3)
@@ -228,7 +226,6 @@ object OcpcSampleToRedis {
 
     userFinalData2.show(10)
 
-    userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 
     userFinalData2
       .withColumn("date", lit(end_date))
@@ -238,7 +235,7 @@ object OcpcSampleToRedis {
 
 
 
-    calculateHPCVR(end_date, hour, spark)
+
 
     val sqlRequest4 =
       s"""
@@ -255,7 +252,19 @@ object OcpcSampleToRedis {
          |  (case when a.k_value is null then 0.694 else a.k_value end) as k_value,
          |  b.hpcvr
          |FROM
-         |  test.test_new_pb_ocpc as a
+         |  (SELECT
+         |     ideaid,
+         |     userid,
+         |     adclass,
+         |     cost,
+         |     ctr_cnt,
+         |     cvr_cnt,
+         |     adclass_cost,
+         |     adclass_ctr_cnt,
+         |     adclass_cvr_cnt
+         |     k_value
+         |   FROM
+         |     dl_cpc.ocpc_pb_result_table_v1_new as a
          |INNER JOIN
          |  test.ocpc_hpcvr_total as b
          |ON
@@ -470,11 +479,11 @@ object OcpcSampleToRedis {
 
     val resultDF = spark.sql(sqlRequest)
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_innocence_idea_list")
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_innocence_idea_list")
   }
 
 
-  def calculateHPCVR(endDate: String, hour: String, spark: SparkSession): Unit ={
+  def calculateHPCVR(endDate: String, hour: String, spark: SparkSession): DataFrame ={
     // calculate time period for historical data
     val threshold = 20
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
@@ -506,9 +515,13 @@ object OcpcSampleToRedis {
 
     val rawTable = spark.sql(sqlRequest)
 
+    // TODO 移出临时表
     rawTable.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr_total")
+
+    rawTable
 
   }
 
 
 }
+
