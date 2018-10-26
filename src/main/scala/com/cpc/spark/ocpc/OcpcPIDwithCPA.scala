@@ -91,20 +91,22 @@ object OcpcPIDwithCPA {
       .filter("ocpc_log != ''")
       .filter("split(split(ocpc_log, \",\")[7], \":\")[0]='kValue' OR split(split(ocpc_log, \",\")[7], \":\")[0]='kvalue'")
 
-    model1Data.write.mode("overwrite").saveAsTable("test.ocpc_model_data_1")
+
 //    model1Data.show(10)
     val modelDataWithK1 = model1Data.withColumn("k_value", udfMode1OcpcLogExtractCPA1()(col("ocpc_log"))).select("ideaid", "adclass", "k_value", "date", "hour")
     modelDataWithK1.show(10)
+    modelDataWithK1.write.mode("overwrite").saveAsTable("test.ocpc_model_data_1")
 
     val model2Data = rawData
       .filter("exptags like \"%ocpc_strategy:2%\"")
       .filter("ocpc_log != ''")
       .filter("split(split(ocpc_log, \",\")[5], \":\")[0]='kValue' OR split(split(ocpc_log, \",\")[5], \":\")[0]='kvalue' OR split(ocpc_log, \",\")[5] is not null")
 
-    model2Data.write.mode("overwrite").saveAsTable("test.ocpc_model_data_2")
+
 //    model2Data.show(10)
     val modelDataWithK2 = model2Data.withColumn("k_value", udfModelOcpcLogExtractCPA2()(col("ocpc_log"))).select("ideaid", "adclass", "k_value", "date", "hour")
     modelDataWithK2.show(10)
+    modelDataWithK2.write.mode("overwrite").saveAsTable("test.ocpc_model_data_2")
 
     val modelData = modelDataWithK1.union(modelDataWithK2)
 

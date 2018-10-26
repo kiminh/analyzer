@@ -397,7 +397,7 @@ object OcpcSampleToRedis {
       val adclassCost = record.get(6).toString
       val adclassCtr = record.getLong(7).toString
       val adclassCvr = record.getLong(8).toString
-      val k = record.get(9).toString
+      val k = record.getAs[Double]("k_value").toString
 
       val tmpCost = adclassCost.toLong
       if (tmpCost<0) {
