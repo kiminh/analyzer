@@ -204,6 +204,7 @@ object OcpcSampleToRedis {
          |    adclass,
          |    cost,
          |    ctr_cnt,
+         |    cvr_cnt,
          |    adclass_cost,
          |    adclass_ctr_cnt,
          |    adclass_cvr_cnt,
