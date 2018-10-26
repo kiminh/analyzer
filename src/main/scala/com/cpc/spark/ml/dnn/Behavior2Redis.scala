@@ -22,7 +22,7 @@ object Behavior2Redis {
       .enableHiveSupport()
       .getOrCreate()
 
-    val date = args(0)
+    val date = args(0) //today
 
     val data = spark.sql(
       s"""
@@ -51,8 +51,9 @@ object Behavior2Redis {
 
     val conf = ConfigFactory.load()
     data.coalesce(20).foreachPartition { p =>
-      val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
-      redis.auth(conf.getString("ali_redis.auth"))
+      val redis = new RedisClient("192.168.80.18", 6382)
+      //val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
+      //redis.auth(conf.getString("ali_redis.auth"))
 
       p.foreach { rec =>
         var group = Seq[Int]()
