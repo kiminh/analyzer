@@ -54,7 +54,7 @@ object DNNSampleHourlyV2 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/zhj/hourly/dnntrain-$date-$hour")
+      .save(s"/user/cpc/zhj/test/dnntrain-$date-$hour")
     train.take(10).foreach(println)
     rawtrain.unpersist()
   }
