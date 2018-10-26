@@ -224,6 +224,11 @@ object MLSnapshot {
             //val keys = snap.map(f => ((f.date,f.hour),1)).reduceByKey((x,y) => x).map(f => f._1).toLocalIterator
 //            System.out.println("******keys 's num is " + keys.length + " ******")
             val keys = snap.map { x => (x.date, x.hour) }.distinct.toLocalIterator
+            val kk = snap.map { x => (x.date, x.hour) }.distinct.collect()
+            System.out.println(keys,kk)
+            for (k1 <- kk){
+                System.out.println(kk.mkString("|"))
+            }
             System.out.println("******keys 's num is " + keys.length + " ******")
             for (k <- keys){
                 System.out.println(k._1,k._2)
