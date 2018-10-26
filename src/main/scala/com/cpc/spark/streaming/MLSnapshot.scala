@@ -38,7 +38,7 @@ object MLSnapshot {
         val spark = SparkSession.builder()
           .appName("ml snapshot from show log")
           .enableHiveSupport()
-//          .config("spark.serializer","org.apache.spark.serializer.KryoSerializer")
+          .config("spark.serializer","org.apache.spark.serializer.KryoSerializer")
           .getOrCreate()
 
         //val sparkConf = new SparkConf().setAppName("ml snapshot: topics = " + topics)
@@ -202,64 +202,52 @@ object MLSnapshot {
                     )
                 }
             }.cache()
-            System.out.println("snap num is ",snap.count())
+
             val spark = SparkSession.builder().config(ssc.sparkContext.getConf).getOrCreate()
-//            val keys = snap.mapPartitions(f => {
-//                val result = scala.collection.mutable.ListBuffer[((String,String),Int)]()
-//                val list = f.toIterator
-//                list.foreach(f => {
-//                    val tmp = ((f.date,f.hour),1)
-//                    result += tmp
-//                })
-//                result.toIterator
-//            }).reduceByKey((x,y) => x).mapPartitions(f => {
-//                val result = scala.collection.mutable.ListBuffer[(String,String)]()
-//                val list = f.toIterator
-//                list.foreach(f => {
-//                    val tmp = f._1
-//                    result += tmp
-//                })
-//                result.toIterator
-//            }).toLocalIterator
+            val keys = snap.mapPartitions(f => {
+                val result = scala.collection.mutable.ListBuffer[((String,String),Int)]()
+                val list = f.toIterator
+                list.foreach(f => {
+                    val tmp = ((f.date,f.hour),1)
+                    result += tmp
+                })
+                result.toIterator
+            }).reduceByKey((x,y) => x).mapPartitions(f => {
+                val result = scala.collection.mutable.ListBuffer[(String,String)]()
+                val list = f.toIterator
+                list.foreach(f => {
+                    val tmp = f._1
+                    result += tmp
+                })
+                result.toIterator
+            }).collect
             //val keys = snap.map(f => ((f.date,f.hour),1)).reduceByKey((x,y) => x).map(f => f._1).toLocalIterator
-//            System.out.println("******keys 's num is " + keys.length + " ******")
-            val keys = snap.map { x => (x.date, x.hour) }.distinct.toLocalIterator
-            val kk = snap.map { x => (x.date, x.hour) }.distinct.collect()
-            System.out.println(keys,kk)
-            for (k1 <- kk){
-                System.out.println("collect")
-                System.out.println(k1._1,k1._2)
-            }
             System.out.println("******keys 's num is " + keys.length + " ******")
-            for (k <- keys){
-                System.out.println("toLocalIterator")
-                System.out.println(k._1,k._2)
-            }
-            kk.foreach { key =>
-                System.out.println(key._1,key._2)
+            //val keys = snap.map { x => (x.date, x.hour) }.distinct.toLocalIterator
+            keys.foreach { key =>
                 val part = snap.filter(r => r.date == key._1 && r.hour == key._2)
-                val numbs = part.count()
+                //val numbs = part.count()
 
                 //val date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
                 //println("~~~~~~~~~ zyc_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
                 //println(part.first())
-                System.out.println("numbs is " , numbs)
-                if (numbs > 0) {
-                    val table = "ml_snapshot_from_show_test"
-                    spark.createDataFrame(part)
-                      .coalesce(100)
-                      .write
-                      .mode(SaveMode.Append)
-                      .parquet("/warehouse/dl_cpc.db/%s/%s/%s".format(table, key._1, key._2))
 
-                    val sqlStmt =
-                        """
-                          |ALTER TABLE dl_cpc.%s add if not exists PARTITION (`date` = "%s", hour = "%s")
-                          | LOCATION '/warehouse/dl_cpc.db/%s/%s/%s'
-                        """.stripMargin.format(table, key._1, key._2, table, key._1, key._2)
-                    println(sqlStmt)
-                    spark.sql(sqlStmt)
-                }
+                //if (numbs > 0) {
+                val table = "ml_snapshot_from_show"
+                spark.createDataFrame(part)
+                  .coalesce(100)
+                  .write
+                  .mode(SaveMode.Append)
+                  .parquet("/warehouse/dl_cpc.db/%s/%s/%s".format(table, key._1, key._2))
+
+                val sqlStmt =
+                    """
+                      |ALTER TABLE dl_cpc.%s add if not exists PARTITION (`date` = "%s", hour = "%s")
+                      | LOCATION '/warehouse/dl_cpc.db/%s/%s/%s'
+                    """.stripMargin.format(table, key._1, key._2, table, key._1, key._2)
+                println(sqlStmt)
+                spark.sql(sqlStmt)
+                //}
             }
             /**
               * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
