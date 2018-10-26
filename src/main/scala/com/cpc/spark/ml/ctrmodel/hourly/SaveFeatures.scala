@@ -246,7 +246,7 @@ object SaveFeatures {
          |            where `date` = "%s" and `hour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid
-        """.stripMargin.format(date, hour, date, date, hour))
+        """.stripMargin.format(date, hour, date, hour))
       .rdd
       .map {
         x =>
