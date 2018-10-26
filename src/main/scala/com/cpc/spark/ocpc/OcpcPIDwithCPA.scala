@@ -339,14 +339,14 @@ object OcpcPIDwithCPA {
          |SELECT
          |  a.ideaid,
          |  a.adclass,
-         |  (case when a.k_value is null then 1.0
+         |  (case when a.k_value is null then 0.694
          |        when c.flag is null or c.flag = 0 then a.k_value
          |        when b.ratio is null then a.k_value
          |        when b.ratio > 1.0 and c.flag = 1 then a.k_value * 1.2
          |        when b.ratio < 1.0 and c.flag = 1 then a.k_value / 1.2
          |        else a.k_value end) as k_value
          |FROM
-         |  test.test_new_pb_ocpc as a
+         |  test.new_pb_ocpc_with_pcvr as a
          |LEFT JOIN
          |  test.ocpc_cpa_given_history_ratio as b
          |ON
