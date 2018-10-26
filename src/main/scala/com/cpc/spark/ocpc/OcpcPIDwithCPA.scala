@@ -340,7 +340,8 @@ object OcpcPIDwithCPA {
          |SELECT
          |  a.ideaid,
          |  a.adclass,
-         |  (case when c.flag is null or c.flag = 0 then a.k_value
+         |  (case when a.k_value is null then 1.0
+         |        when c.flag is null or c.flag = 0 then a.k_value
          |        when b.ratio is null then a.k_value
          |        when b.ratio > 1.0 and c.flag = 1 then a.k_value * 1.2
          |        when b.ratio < 1.0 and c.flag = 1 then a.k_value / 1.2
