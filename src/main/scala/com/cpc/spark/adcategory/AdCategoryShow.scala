@@ -17,7 +17,7 @@ object AdCategoryShow {
          |  ext_int["category"] as category,
          |  sum(isshow) as imp
          |FROM
-         |  from dl_cpc.cpc_union_log c
+         |  from dl_cpc.cpc_union_log
          |  WHERE `date` = "$date"
          |  and isshow = 1
          |  and ext['antispam'].int_value = 0
@@ -28,7 +28,6 @@ object AdCategoryShow {
          |  AND userid > 0
          |  AND (ext["charge_type"] IS NULL
          |       OR ext["charge_type"].int_value = 1)
-         |) a
          |  GROUP BY
          |  ext_int["category"]
        """.stripMargin
