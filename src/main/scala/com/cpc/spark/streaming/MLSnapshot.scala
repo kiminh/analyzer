@@ -231,7 +231,7 @@ object MLSnapshot {
                 //val date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
                 //println("~~~~~~~~~ zyc_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
                 //println(part.first())
-
+                System.out.println("numbs is " , numbs)
                 if (numbs > 0) {
                     val table = "ml_snapshot_from_show_test"
                     spark.createDataFrame(part)
