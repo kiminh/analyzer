@@ -25,7 +25,7 @@ object OcpcSampleToRedis {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
-    // calculate time period for historical data
+    // 计算日期周期
     val end_date = args(0)
     val hour = args(1)
     val threshold = 20
@@ -40,7 +40,7 @@ object OcpcSampleToRedis {
     val selectCondition2 = s"`date`>'$start_date' and `date`<'$end_date'"
     val selectCondition3 = s"`date`='$end_date' and hour <= '$hour'"
 
-    // read data and set redis configuration
+    // 累积计算最近一周数据
     val sqlRequest =
       s"""
          |SELECT
@@ -214,7 +214,7 @@ object OcpcSampleToRedis {
          |   a.adclass=b.adclass
        """.stripMargin
 
-    println("sqlRequest3")
+    println(sqlRequest3)
 
     val userFinalData2 = spark.sql(sqlRequest3).filter("cvr_cnt>=20")
 
@@ -261,6 +261,12 @@ object OcpcSampleToRedis {
     val finalData = spark.sql(sqlRequest4)
 
     finalData.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
+
+    finalData
+      .withColumn("date", lit(end_date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v2")
 
     // 保存pb文件
     savePbPack(finalData)
