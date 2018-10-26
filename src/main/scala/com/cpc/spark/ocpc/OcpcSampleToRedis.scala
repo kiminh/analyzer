@@ -229,7 +229,7 @@ object OcpcSampleToRedis {
       .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
 
 
-    // TODO 增加hpcvr的数据
+
     calculateHPCVR(end_date, hour, spark)
 
     val sqlRequest4 =
@@ -244,7 +244,7 @@ object OcpcSampleToRedis {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case a.k_value is null then 0.694 else a.k_value end) as k_value,
+         |  (case when a.k_value is null then 0.694 else a.k_value end) as k_value,
          |  b.hpcvr
          |FROM
          |  test.test_new_pb_ocpc as a
