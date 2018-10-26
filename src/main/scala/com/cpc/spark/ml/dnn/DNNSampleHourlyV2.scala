@@ -100,7 +100,9 @@ object DNNSampleHourlyV2 {
          |
          |  province, city, ext['city_level'].int_value as city_level,
          |
-         |  uid, age, sex, ext_string['dtu_id'] as dtu_id
+         |  uid, age, sex, ext_string['dtu_id'] as dtu_id,
+         |
+         |  hour
          |
          |from dl_cpc.cpc_union_log where `date` = '$date' and hour = $hour
          |  and isshow = 1 and ideaid > 0 and adslot_type in (1, 2)
@@ -146,6 +148,7 @@ object DNNSampleHourlyV2 {
         hash("f25")($"city_level").alias("f25"),
         hash("f26")($"uid").alias("f26"),
         hash("f27")($"age").alias("f27"),
+        hash("f28")($"hour").alias("f28"),
 
         array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7",
           $"m8", $"m9", $"m10", $"m11", $"m12", $"m13").alias("raw_sparse")
@@ -153,7 +156,7 @@ object DNNSampleHourlyV2 {
 
       .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
-        $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
+        $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27", $"f28").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
         mkSparseFeature_m($"raw_sparse").alias("sparse"),
