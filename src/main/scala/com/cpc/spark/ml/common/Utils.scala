@@ -244,6 +244,7 @@ object Utils {
             case "nosite_disactive" => nosite_disactive += 1
             case _ =>
           }
+          
 
           //加粉类：建站&sdk
           if (r.getAs[String]("trace_op1").toLowerCase == "report_user_stayinwx" && r.getAs[String]("trace_type") == "lpload") {
