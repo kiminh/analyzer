@@ -142,7 +142,7 @@ object OcpcPIDwithCPA {
 
 
     // 从pb的历史数据表中抽取k值
-    val dataDF = spark.table("test.test_new_pb_ocpc").select("ideaid", "adclass", "k_value")
+    val dataDF = spark.table("test.new_pb_ocpc_with_pcvr").select("ideaid", "adclass", "k_value")
 
     percentData.createOrReplaceTempView("percent_k_value_table")
     dataDF.createOrReplaceTempView("previous_k_value_table")
