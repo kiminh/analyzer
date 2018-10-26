@@ -114,7 +114,7 @@ object MLSnapshot {
                     result += tmp
                 })
                 result.toIterator
-            }).partitionBy(new HashPartitioner(100)).cache().mapPartitions(f => {
+            }).partitionBy(new HashPartitioner(500)).cache().mapPartitions(f => {
                 val result = scala.collection.mutable.ListBuffer[RawFeature]()
                 val list = f.toIterator
                 list.foreach(x => {
@@ -233,7 +233,7 @@ object MLSnapshot {
                 //println(part.first())
 
                 //if (numbs > 0) {
-                val table = "ml_snapshot_from_show"
+                val table = "ml_snapshot_from_show_test"
                 spark.createDataFrame(part)
                   .coalesce(100)
                   .write
