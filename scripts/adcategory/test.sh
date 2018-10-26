@@ -3,6 +3,7 @@
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
 queue=root.develop.adhoc.cpc
+date=`date +"%Y-%m-%d" -d "-1day"`
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -18,4 +19,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.adcategory.AdCategoryShow \
-    /home/cpc/wangyao/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar
+    /home/cpc/wangyao/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar {$date}
