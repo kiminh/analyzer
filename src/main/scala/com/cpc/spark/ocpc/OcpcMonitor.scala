@@ -155,9 +155,9 @@ object OcpcMonitor {
 
     data.show(10)
 
-    data.write.mode("overwrite").saveAsTable("test.ocpc_hourly_performance_report")
+//    data.write.mode("overwrite").saveAsTable("test.ocpc_hourly_performance_report")
 
-//    data.write.mode("overwrite").insertInto("dl_cpc.ocpc_hourly_performance_report")
+    data.write.mode("overwrite").insertInto("dl_cpc.ocpc_hourly_performance_report")
 
   }
 
