@@ -268,12 +268,11 @@ object SaveFeatures {
           var ideaid = 0
           x._2.foreach(
             x => {
+              uid = x.getAs[String]("uid")
+              userid = x.getAs[Int]("userid")
+              ideaid = x.getAs[Int]("ideaid")
               if (!x.isNullAt(0)) { //trace_type为null时过滤
                 val trace_type = x.getAs[String]("trace_type")
-                val uid = x.getAs[String]("uid")
-                val userid = x.getAs[Int]("userid")
-                val ideaid = x.getAs[Int]("ideaid")
-
                 if (trace_type == "active_third") {
                   active_third = 1
                 }
