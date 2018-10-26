@@ -14,7 +14,7 @@ object OcpcMonitor {
     val date = args(0).toString
     val hour = args(1).toString
 
-//    getBaseData(date, hour, spark)
+    getBaseData(date, hour, spark)
     getHoursReport(date, hour, spark)
 
 
