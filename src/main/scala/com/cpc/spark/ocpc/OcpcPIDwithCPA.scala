@@ -348,7 +348,7 @@ object OcpcPIDwithCPA {
          |        when b.ratio < 1.0 and c.flag = 1 then a.k_value / 1.2
          |        else a.k_value end) as k_value
          |FROM
-         |  (SELECT ideaid, adclass, cast(k_value as double) as k_value FROM test.new_pb_ocpc_with_pcvr) as a
+         |  (SELECT ideaid, adclass, cast(MIN(k_value) as double) as k_value FROM test.new_pb_ocpc_with_pcvr group by ideaid, adclass) as a
          |LEFT JOIN
          |  test.ocpc_cpa_given_history_ratio as b
          |ON
