@@ -46,7 +46,7 @@ object Behavior2Redis {
       """.stripMargin)
       .persist()
 
-    data.write.mode("overwrite")
+    data.coalesce(20).write.mode("overwrite")
       .parquet("/user/cpc/zhj/behavior")
 
     val conf = ConfigFactory.load()
