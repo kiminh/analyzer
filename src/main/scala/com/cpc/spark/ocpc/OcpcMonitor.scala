@@ -145,7 +145,7 @@ object OcpcMonitor {
          |        when exptags like "%ocpc_strategy:2%" then "v2"
          |        else "v1"
          |    end),
-         |    ideaid;
+         |    ideaid
        """.stripMargin
     println(sqlRequest)
 
