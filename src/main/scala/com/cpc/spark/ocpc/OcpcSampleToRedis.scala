@@ -207,8 +207,7 @@ object OcpcSampleToRedis {
          |    cvr_cnt,
          |    adclass_cost,
          |    adclass_ctr_cnt,
-         |    adclass_cvr_cnt,
-         |    cast(k_value as double) as k_value
+         |    adclass_cvr_cnt
          |   FROM
          |    dl_cpc.ocpc_pb_result_table
          |   WHERE
@@ -216,7 +215,7 @@ object OcpcSampleToRedis {
          |   and
          |    `hour`='$hour') a
          |LEFT JOIN
-         |   test.ocpc_k_value_table b
+         |   (SELECT ideaid, adclass, cast(k_value as double) as k_value FROM test.ocpc_k_value_table) as b
          |ON
          |   a.ideaid=b.ideaid
          |and
