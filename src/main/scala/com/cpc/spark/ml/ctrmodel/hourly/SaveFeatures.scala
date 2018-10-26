@@ -249,7 +249,7 @@ object SaveFeatures {
          |         ) b
          |    on a.searchid=b.searchid
          | where t2.id is null and a.searchid is not null and a.searchid != ""
-        """.stripMargin.format(date, hour, date, hour))
+        """.stripMargin.format(date, hour, date, date, hour))
       .rdd
       .map {
         x =>
