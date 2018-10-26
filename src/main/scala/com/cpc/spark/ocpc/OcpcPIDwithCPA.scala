@@ -354,7 +354,20 @@ object OcpcPIDwithCPA {
          |ON
          |  a.ideaid=b.ideaid
          |LEFT JOIN
-         |  test.ocpc_k_value_percent_flag as c
+         |  (SELECT
+         |      t.ideaid,
+         |      t.adclass,
+         |      t.flag
+         |  FROM
+         |      (SELECT
+         |          ideaid,
+         |          adclass,
+         |          flag,
+         |          row_number() over(partition by ideaid, adclass order by exact_k) as seq
+         |      FROM
+         |          test.ocpc_k_value_percent_flag) t
+         |      WHERE
+         |          t.seq=1) as c
          |ON
          |  a.ideaid=c.ideaid
          |AND
