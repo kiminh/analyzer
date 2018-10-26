@@ -38,7 +38,7 @@ object MLSnapshot {
         val spark = SparkSession.builder()
           .appName("ml snapshot from show log")
           .enableHiveSupport()
-          .config("spark.serializer","org.apache.spark.serializer.KryoSerializer")
+//          .config("spark.serializer","org.apache.spark.serializer.KryoSerializer")
           .getOrCreate()
 
         //val sparkConf = new SparkConf().setAppName("ml snapshot: topics = " + topics)
