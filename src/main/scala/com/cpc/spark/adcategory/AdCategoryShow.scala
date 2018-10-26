@@ -17,7 +17,7 @@ object AdCategoryShow {
          |  ext_int["category"] as category,
          |  sum(isshow) as imp
          |FROM
-         |  from dl_cpc.cpc_union_log
+         |  dl_cpc.cpc_union_log
          |  WHERE `date` = "$date"
          |  and isshow = 1
          |  and ext['antispam'].int_value = 0
