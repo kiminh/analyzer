@@ -179,7 +179,7 @@ object OcpcPIDwithCPA {
 
     val resultDF = spark.sql(sqlRequest3)
 
-//    resultDF.show(10)
+    resultDF.show(10)
 //
 //    resultDF.filter("history_k is not null").show(10)
 //
