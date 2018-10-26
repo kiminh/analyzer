@@ -21,6 +21,7 @@ object ConditionTouchedUV {
     var interestids = Seq(110, 125, 201, 202, 203, 204, 205, 206, 207, 208, 209)
 
 
+
     def main(args: Array[String]): Unit = {
         if (args.length < 1) {
             System.err.println(
@@ -51,7 +52,7 @@ object ConditionTouchedUV {
         val uv = ulog.map(x => (x.getAs[String]("uid"), 1)).reduceByKey((x, y) => x).count()
         redis.set("touched_uv_total", uv)
         println("uv", uv)
-        ulog = ulog.randomSplit(Array(rate, 1 - rate), new Date().getTime)(0).coalesce(900)
+        ulog = ulog.randomSplit(Array(rate, 1-rate), new Date().getTime)(0).coalesce(900)
 
         ulog.cache()
 
@@ -83,8 +84,7 @@ object ConditionTouchedUV {
                   } else {
                       lvl = 4
                   }
-                  ((lvl, u.getAs[String]("uid")), 1)
-          })
+                  ((lvl, u.getAs[String]("uid")), 1)})
 
         calcCondPercent("os", ulog.filter(_.getAs[Int]("os") > 0).map(u => ((u.getAs[Int]("os"), u.getAs[String]("uid")), 1)))
         calcCondPercent("net", ulog.filter(_.getAs[Int]("network") > 0).map(u => ((u.getAs[Int]("network"), u.getAs[String]("uid")), 1)))
@@ -134,5 +134,4 @@ object ConditionTouchedUV {
         }
     }
 }
-
 
