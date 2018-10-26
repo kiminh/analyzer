@@ -8,7 +8,7 @@ import com.cpc.spark.udfs.Udfs_wj._
 import org.apache.spark.sql.functions._
 
 
-object OcpcPIDwithCPA {
+object OcpcPIDwithCPA_bak {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
 
@@ -52,16 +52,25 @@ object OcpcPIDwithCPA {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
+    val endTime = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -4)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition1 = s"`date`='$date1' and `hour` >= '$hour1'"
+    calendar.setTime(endTime)
+
+    calendar.add(Calendar.HOUR, -1)
+    val prevTime = calendar.getTime
+    val tmpDate1 = dateConverter.format(prevTime)
+    val tmpDateValue1 = tmpDate1.split(" ")
+    val date1 = tmpDateValue1(0)
+    val hour1 = tmpDateValue1(1)
+
+    calendar.add(Calendar.HOUR, -3)
+    val prevTime2 = calendar.getTime
+    val tmpDate2 = dateConverter.format(prevTime2)
+    val tmpDateValue2 = tmpDate2.split(" ")
+    val date2 = tmpDateValue2(0)
+    val hour2 = tmpDateValue2(1)
+
+    val selectCondition1 = s"`date`='$date2' and `hour` >= '$hour2'"
     val selectCondition2 = s"`date`='$date' and `hour`<='$hour'"
 
     // 从unionlog中抽取相关字段数据
@@ -164,7 +173,16 @@ object OcpcPIDwithCPA {
          |        when b.percent < 0.5 then 0
          |        else 1 end) flag
          |FROM
-         |  previous_k_value_table as a
+         |  (SELECT
+         |    ideaid,
+         |    adclass
+         |    k_value
+         |   FROM
+         |    dl_cpc.ocpc_pb_result_table_v2
+         |   WHERE
+         |     `date`='$date1'
+         |   and
+         |      `hour`='$hour1') as a
          |LEFT JOIN
          |  percent_k_value_table b
          |ON
@@ -180,10 +198,6 @@ object OcpcPIDwithCPA {
     val resultDF = spark.sql(sqlRequest3)
 
     resultDF.show(10)
-    //
-    //    resultDF.filter("history_k is not null").show(10)
-    //
-    //    resultDF.filter("flag=0").show(10)
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_percent_flag")
 
@@ -193,16 +207,7 @@ object OcpcPIDwithCPA {
   }
 
   def testGenCPAgiven(filename: String, spark: SparkSession): DataFrame = {
-    import spark.implicits._
-    // 读取文件
-    //    val data = spark.sparkContext.textFile(filename)
-
-    // 生成cpa_given的rdd
-    //    val resultRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
-    //    resultRDD.foreach(println)
-
-    //    val resultDF = resultRDD.toDF("ideaid", "cpa_given")
-    val resultDF = spark.table("test.ocpc_idea_update_time").select("ideaid", "cpa_given")
+    val resultDF = spark.table("dl_cpc.ocpc_idea_update_time").select("ideaid", "cpa_given")
     resultDF
   }
 
@@ -275,61 +280,58 @@ object OcpcPIDwithCPA {
 
   }
 
-  def testCalculateK(date: String, hour: String, spark:SparkSession): Unit = {
-    import spark.implicits._
-    // 读取ocpc的k值来初始化
-    val filename1="/user/cpc/wangjun/ocpc_k.txt"
-    val data = spark.sparkContext.textFile(filename1)
-
-    val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toString.slice(0,5)))
-    //    dataRDD.foreach(println)
-
-    val dataDF = dataRDD.toDF("ideaid", "k_value")
-    dataDF.show(10)
-    dataDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_init")
-
-    //    val ratioDF = spark.table("test.ocpc_cpa_given_history_ratio")
-
-    dataDF.createOrReplaceTempView("k_table")
-    //    ratioDF.createOrReplaceTempView("ratio_table")
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  a.ideaid,
-         |  a.adclass,
-         |  (case when c.k_value is null then 1.0
-         |        when b.ratio is null and c.k_value is not null then c.k_value
-         |        when b.ratio>1.0 and c.k_value is not null then c.k_value * 1.2
-         |        when b.ratio<1.0 and c.k_value is not null then c.k_value / 1.2
-         |        else c.k_value end) as k_value
-         |FROM
-         |  (SELECT ideaid, adclass, cast(k_value as double) as k_value FROM dl_cpc.ocpc_pb_result_table WHERE `date`='$date' and `hour`='$hour') as a
-         |LEFT JOIN
-         |  test.ocpc_cpa_given_history_ratio as b
-         |ON
-         |  a.ideaid=b.ideaid
-         |LEFT JOIN
-         |  (SELECT
-         |      ideaid,
-         |      k_value
-         |   from
-         |      test.ocpc_k_value_init
-         |   group by ideaid, k_value) as c
-         |ON
-         |  a.ideaid=c.ideaid
-       """.stripMargin
-
-    println(sqlRequest)
-
-    val resultDF = spark.sql(sqlRequest)
-
-    println("final table of the k-value for ocpc:")
-    resultDF.show(10)
-
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
-
-  }
+  //  def testCalculateK(date: String, hour: String, spark:SparkSession): Unit = {
+  //    import spark.implicits._
+  //    // 读取ocpc的k值来初始化
+  //    val filename1="/user/cpc/wangjun/ocpc_k.txt"
+  //    val data = spark.sparkContext.textFile(filename1)
+  //
+  //    val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toString.slice(0,5)))
+  ////    dataRDD.foreach(println)
+  //
+  //    val dataDF = dataRDD.toDF("ideaid", "k_value")
+  //    dataDF.show(10)
+  //    dataDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_init")
+  //
+  //    dataDF.createOrReplaceTempView("k_table")
+  //
+  //    val sqlRequest =
+  //      s"""
+  //         |SELECT
+  //         |  a.ideaid,
+  //         |  a.adclass,
+  //         |  (case when c.k_value is null then 1.0
+  //         |        when b.ratio is null and c.k_value is not null then c.k_value
+  //         |        when b.ratio>1.0 and c.k_value is not null then c.k_value * 1.2
+  //         |        when b.ratio<1.0 and c.k_value is not null then c.k_value / 1.2
+  //         |        else c.k_value end) as k_value
+  //         |FROM
+  //         |  (SELECT * FROM dl_cpc.ocpc_pb_result_table WHERE `date`='$date' and `hour`='$hour') as a
+  //         |LEFT JOIN
+  //         |  test.ocpc_cpa_given_history_ratio as b
+  //         |ON
+  //         |  a.ideaid=b.ideaid
+  //         |LEFT JOIN
+  //         |  (SELECT
+  //         |      ideaid,
+  //         |      k_value
+  //         |   from
+  //         |      test.ocpc_k_value_init
+  //         |   group by ideaid, k_value) as c
+  //         |ON
+  //         |  a.ideaid=c.ideaid
+  //       """.stripMargin
+  //
+  //    println(sqlRequest)
+  //
+  //    val resultDF = spark.sql(sqlRequest)
+  //
+  //    println("final table of the k-value for ocpc:")
+  //    resultDF.show(10)
+  //
+  //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+  //
+  //  }
 
 
 
@@ -348,7 +350,7 @@ object OcpcPIDwithCPA {
          |        when b.ratio < 1.0 and c.flag = 1 then a.k_value / 1.2
          |        else a.k_value end) as k_value
          |FROM
-         |  (SELECT ideaid, adclass, cast(k_value as double) as k_value FROM test.new_pb_ocpc_with_pcvr) as a
+         |  test.new_pb_ocpc_with_pcvr as a
          |LEFT JOIN
          |  test.ocpc_cpa_given_history_ratio as b
          |ON
@@ -373,3 +375,4 @@ object OcpcPIDwithCPA {
   }
 
 }
+
