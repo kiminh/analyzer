@@ -226,13 +226,13 @@ object MLSnapshot {
             //val keys = snap.map { x => (x.date, x.hour) }.distinct.toLocalIterator
             keys.foreach { key =>
                 val part = snap.filter(r => r.date == key._1 && r.hour == key._2)
-                //val numbs = part.count()
+                val numbs = part.count()
 
                 //val date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
                 //println("~~~~~~~~~ zyc_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
                 //println(part.first())
 
-                //if (numbs > 0) {
+                if (numbs > 0) {
                     val table = "ml_snapshot_from_show"
                     spark.createDataFrame(part)
                       .coalesce(100)
@@ -247,7 +247,7 @@ object MLSnapshot {
                         """.stripMargin.format(table, key._1, key._2, table, key._1, key._2)
                     println(sqlStmt)
                     spark.sql(sqlStmt)
-                //}
+                }
             }
             /**
               * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
