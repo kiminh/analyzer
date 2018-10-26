@@ -46,10 +46,10 @@ object Behavior2Redis {
       """.stripMargin)
       .persist()
 
-    data.coalesce(20).write.mode("overwrite")
-      .parquet("/user/cpc/zhj/behavior")
+   // data.coalesce(20).write.mode("overwrite")
+    //  .parquet("/user/cpc/zhj/behavior")
 
-    val conf = ConfigFactory.load()
+    //val conf = ConfigFactory.load()
     data.coalesce(20).foreachPartition { p =>
       val redis = new RedisClient("192.168.80.18", 6382)
       //val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
