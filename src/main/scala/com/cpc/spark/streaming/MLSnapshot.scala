@@ -233,7 +233,7 @@ object MLSnapshot {
                 //println(part.first())
 
                 if (numbs > 0) {
-                    val table = "ml_snapshot_from_show"
+                    val table = "ml_snapshot_from_show_test"
                     spark.createDataFrame(part)
                       .coalesce(100)
                       .write
