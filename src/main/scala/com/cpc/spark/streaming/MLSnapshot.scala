@@ -204,26 +204,27 @@ object MLSnapshot {
             }.cache()
             System.out.println("snap num is ",snap.count())
             val spark = SparkSession.builder().config(ssc.sparkContext.getConf).getOrCreate()
-            val keys = snap.mapPartitions(f => {
-                val result = scala.collection.mutable.ListBuffer[((String,String),Int)]()
-                val list = f.toIterator
-                list.foreach(f => {
-                    val tmp = ((f.date,f.hour),1)
-                    result += tmp
-                })
-                result.toIterator
-            }).reduceByKey((x,y) => x).mapPartitions(f => {
-                val result = scala.collection.mutable.ListBuffer[(String,String)]()
-                val list = f.toIterator
-                list.foreach(f => {
-                    val tmp = f._1
-                    result += tmp
-                })
-                result.toIterator
-            }).toLocalIterator
+//            val keys = snap.mapPartitions(f => {
+//                val result = scala.collection.mutable.ListBuffer[((String,String),Int)]()
+//                val list = f.toIterator
+//                list.foreach(f => {
+//                    val tmp = ((f.date,f.hour),1)
+//                    result += tmp
+//                })
+//                result.toIterator
+//            }).reduceByKey((x,y) => x).mapPartitions(f => {
+//                val result = scala.collection.mutable.ListBuffer[(String,String)]()
+//                val list = f.toIterator
+//                list.foreach(f => {
+//                    val tmp = f._1
+//                    result += tmp
+//                })
+//                result.toIterator
+//            }).toLocalIterator
             //val keys = snap.map(f => ((f.date,f.hour),1)).reduceByKey((x,y) => x).map(f => f._1).toLocalIterator
+//            System.out.println("******keys 's num is " + keys.length + " ******")
+            val keys = snap.map { x => (x.date, x.hour) }.distinct.toLocalIterator
             System.out.println("******keys 's num is " + keys.length + " ******")
-            //val keys = snap.map { x => (x.date, x.hour) }.distinct.toLocalIterator
             for (k <- keys){
                 System.out.println(k._1,k._2)
             }
