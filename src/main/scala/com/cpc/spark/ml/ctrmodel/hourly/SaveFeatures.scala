@@ -240,12 +240,15 @@ object SaveFeatures {
          |       ,b.*
          |from (select * from dl_cpc.cpc_union_log
          |        where `date` = "%s" and `hour` = "%s" ) a
+         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
+         |        on a.userid = t2.id
          |    left join
          |        (select *
          |            from dl_cpc.cpc_union_trace_log
          |            where `date` = "%s" and `hour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid
+         | where t2.id is null and a.searchid is not null and a.searchid != ""
         """.stripMargin.format(date, hour, date, hour))
       .rdd
       .map {
@@ -253,50 +256,49 @@ object SaveFeatures {
           (x.getAs[String]("search_id"), Seq(x))
       }
       .reduceByKey(_ ++ _)
-      .filter(x => x._1 != "none" && x._1 != "")
 
 
     //用户Api回传数据(如已经安装但未激活) cvr计算
-//    val userApiBackRDD = logRDD
-//      .map {
-//        x =>
-//          var active_third = 0
-//          var uid = ""
-//          var userid = 0
-//          var ideaid = 0
-//          x._2.foreach(
-//            x => {
-//              if (!x.isNullAt(0)) { //trace_type为null时过滤
-//                val trace_type = x.getAs[String]("trace_type")
-//                val uid = x.getAs[String]("uid")
-//                val userid = x.getAs[Int]("userid")
-//                val ideaid = x.getAs[Int]("ideaid")
-//
-//                if (trace_type == "active_third") {
-//                  active_third = 1
-//                }
-//              } else {
-//                active_third = -1
-//              }
-//            }
-//          )
-//          (x._1, active_third, uid, userid, ideaid)
-//      }
-//      .filter(x => x._2 != -1) //过滤空值
-//      .toDF("searchid", "label", "uid", "userid", "ideaid")
+    val userApiBackRDD = logRDD
+      .map {
+        x =>
+          var active_third = 0
+          var uid = ""
+          var userid = 0
+          var ideaid = 0
+          x._2.foreach(
+            x => {
+              if (!x.isNullAt(0)) { //trace_type为null时过滤
+                val trace_type = x.getAs[String]("trace_type")
+                val uid = x.getAs[String]("uid")
+                val userid = x.getAs[Int]("userid")
+                val ideaid = x.getAs[Int]("ideaid")
 
-    //println("user api back: "+userApiBackRDD.count())
+                if (trace_type == "active_third") {
+                  active_third = 1
+                }
+              } else {
+                active_third = -1
+              }
+            }
+          )
+          (x._1, active_third, uid, userid, ideaid)
+      }
+      .filter(x => x._2 != -1) //过滤空值
+      .toDF("searchid", "label", "uid", "userid", "ideaid")
 
-//    userApiBackRDD
-//      .repartition(1)
-//      .write
-//      .mode(SaveMode.Overwrite)
-//      .parquet("/user/cpc/lrmodel/cvrdata_userapiback/%s/%s".format(date, hour))
-//    spark.sql(
-//      """
-//        |ALTER TABLE dl_cpc.ml_cvr_feature_v2 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-//        | LOCATION  '/user/cpc/lrmodel/cvrdata_userapiback/%s/%s'
-//      """.stripMargin.format(date, hour, date, hour))
+    println("user api back: " + userApiBackRDD.count())
+
+    userApiBackRDD
+      .repartition(1)
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet("/user/cpc/lrmodel/cvrdata_userapiback/%s/%s".format(date, hour))
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v2 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_userapiback/%s/%s'
+      """.stripMargin.format(date, hour, date, hour))
 
 
     //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算

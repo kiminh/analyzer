@@ -209,10 +209,11 @@ object Utils {
     */
   def cvrPositiveV2(traces: Seq[Row], version: String): (Int, Int) = {
     var active5 = 0
+    var active3 = 0
     var nosite_active5 = 0
     var disactive = 0
     var active_href = 0
-    //var active = 0
+
     var nosite_active = 0
     var nosite_disactive = 0
 
@@ -236,12 +237,11 @@ object Utils {
         if ((!r.isNullAt(0)) && (!r.isNullAt(1))) { //trace_type和trace_op1为null时过滤
           r.getAs[String]("trace_type") match {
             case "active5" => active5 += 1
-            case "nosite_active5" => nosite_active5 += 1
+            case "active3" => active3 += 1
             case "disactive" => disactive += 1
             case "active_href" => active_href += 1
-            //case s if s.startsWith("active") => active += 1
-            case s if s.startsWith("nosite_active") => nosite_active += 1
             case "nosite_disactive" => nosite_disactive += 1
+            case "nosite_active5" => nosite_active5 += 1
             case _ =>
           }
 
@@ -262,6 +262,11 @@ object Utils {
           if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" ||
             (r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type") != "active5"))) {
             js_site_active_other += 1
+          }
+
+          //其它类：非建站
+          if (r.getAs[String]("trace_type").startsWith("nosite_active") && (r.getAs[String]("trace_type") != "nosite_active5")) {
+            nosite_active += 1
           }
         }
     }
@@ -333,7 +338,7 @@ object Utils {
           label_type = 5
           if (conversion_sdk_download > 0) {
             active_js_ldy_download += 1
-          } else if (siteid<=0 && (js_site_active_other > 0 || (active5 > 0 && disactive == 0)) ) {
+          } else if (siteid <= 0 && active3 > 0) { //(js_site_active_other > 0 || (active5 > 0 && disactive == 0))
             // 测试
             active_other_site += 1
             label_type = 9
@@ -354,7 +359,7 @@ object Utils {
             }
           } else {
             label_type = 7 //其它类非建站
-            if (siteid<=0 && (js_site_active_other > 0 || (active5 > 0 && disactive == 0)) ) {
+            if (siteid <= 0 && active3 > 0) { //(js_site_active_other > 0 || (active5 > 0 && disactive == 0))
               // 测试
               active_other_site += 1
               label_type = 11
