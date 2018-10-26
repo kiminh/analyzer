@@ -225,6 +225,7 @@ object MLSnapshot {
             System.out.println("******keys 's num is " + keys.length + " ******")
             //val keys = snap.map { x => (x.date, x.hour) }.distinct.toLocalIterator
             keys.foreach { key =>
+                System.out.println(key._1,key._2)
                 val part = snap.filter(r => r.date == key._1 && r.hour == key._2)
                 val numbs = part.count()
 
