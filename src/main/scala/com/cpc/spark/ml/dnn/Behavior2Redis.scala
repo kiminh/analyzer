@@ -46,14 +46,13 @@ object Behavior2Redis {
       """.stripMargin)
       .persist()
 
-   // data.coalesce(20).write.mode("overwrite")
-    //  .parquet("/user/cpc/zhj/behavior")
+    data.coalesce(20).write.mode("overwrite")
+      .parquet("/user/cpc/zhj/behavior")
 
-    //val conf = ConfigFactory.load()
+    val conf = ConfigFactory.load()
     data.coalesce(20).foreachPartition { p =>
-      val redis = new RedisClient("192.168.80.18", 6382)
-      //val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
-      //redis.auth(conf.getString("ali_redis.auth"))
+      val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
+      redis.auth(conf.getString("ali_redis.auth"))
 
       p.foreach { rec =>
         var group = Seq[Int]()
@@ -64,7 +63,7 @@ object Behavior2Redis {
           group = group ++ Array.tabulate(f.length)(x => i)
           hashcode = hashcode ++ f
         }
-        redis.set(uid, DnnMultiHot(group, hashcode).toByteArray)
+        redis.setex(uid, 3600 * 24 * 7, DnnMultiHot(group, hashcode).toByteArray)
       }
 
       redis.disconnect
