@@ -8,6 +8,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
 import scala.collection.mutable.Map
+import scala.sys.process._
 
 /**
   * Created by roydong on 15/12/2017.
@@ -378,6 +379,9 @@ object SaveFeatures {
         | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
 
+    //输出标记文件
+    s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !
+    
   }
 }
 
