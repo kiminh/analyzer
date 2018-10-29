@@ -49,6 +49,8 @@ object Behavior2Redis {
     data.coalesce(20).write.mode("overwrite")
       .parquet("/user/cpc/zhj/behavior")
 
+    println("dnn v2 用户行为特征总数：" + data.count())
+
     val conf = ConfigFactory.load()
     data.coalesce(20).foreachPartition { p =>
       val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
