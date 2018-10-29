@@ -259,13 +259,14 @@ object Utils {
 
 
           //其它类：建站
-          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" ||
-            (r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type") != "active5"))) {
+          if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
+            r.getAs[String]("trace_type") == "active3" || r.getAs[String]("trace_type") == "active4") {
             js_site_active_other += 1
           }
 
           //其它类：非建站
-          if (r.getAs[String]("trace_type").startsWith("nosite_active") && (r.getAs[String]("trace_type") != "nosite_active5")) {
+          if (r.getAs[String]("trace_type") == "nosite_active1" || r.getAs[String]("trace_type") == "nosite_active2" ||
+            r.getAs[String]("trace_type") == "nosite_active3" || r.getAs[String]("trace_type4") == "nosite_active4") {
             nosite_active += 1
           }
         }

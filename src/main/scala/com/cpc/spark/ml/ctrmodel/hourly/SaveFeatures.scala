@@ -381,7 +381,7 @@ object SaveFeatures {
 
     //输出标记文件
     s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !
-    
+
   }
 }
 
