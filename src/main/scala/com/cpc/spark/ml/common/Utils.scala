@@ -266,7 +266,7 @@ object Utils {
 
           //其它类：非建站
           if (r.getAs[String]("trace_type") == "nosite_active1" || r.getAs[String]("trace_type") == "nosite_active2" ||
-            r.getAs[String]("trace_type") == "nosite_active3" || r.getAs[String]("trace_type4") == "nosite_active4") {
+            r.getAs[String]("trace_type") == "nosite_active3" || r.getAs[String]("trace_type") == "nosite_active4") {
             nosite_active += 1
           }
         }
