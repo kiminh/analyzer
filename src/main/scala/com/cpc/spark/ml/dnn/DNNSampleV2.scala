@@ -34,7 +34,7 @@ object DNNSampleV2 {
 
     val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
 
-    val rawtrain = getSample(spark, date, is_train = true).withColumn("uid", $"dense" (25)).persist()
+    val rawtrain = getSample(spark, date, is_train = true).withColumn("uid", $"dense" (25))
 
     rawtrain.printSchema()
 
@@ -45,8 +45,6 @@ object DNNSampleV2 {
       .select($"sample_idx", $"label",
         getNewDense(25, default_hash_uid)($"dense", $"count" < 4).alias("dense"),
         $"idx0", $"idx1", $"idx2", $"id_arr")
-
-    rawtrain.unpersist()
 
     /*val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))*/
@@ -148,7 +146,7 @@ object DNNSampleV2 {
          |  hour
          |
          |from dl_cpc.cpc_union_log where `date` = '$date'
-         |  and isshow = 1 and ideaid > 0 and adslot_type = 1
+         |  and isshow = 1 and ideaid > 0 and adslot_type in (1, 2)
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
