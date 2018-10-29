@@ -15,6 +15,7 @@ object OcpcDataAlert {
 //    if (check1) {
 //      System.exit(1)
 //    }
+    println("cannot find data")
     System.exit(1)
   }
 
