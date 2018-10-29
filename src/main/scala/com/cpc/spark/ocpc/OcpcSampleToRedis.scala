@@ -17,6 +17,8 @@ import userprofile.Userprofile.UserProfile
 import scala.collection.mutable.ListBuffer
 import userocpc.userocpc._
 import java.io.FileOutputStream
+
+import com.cpc.spark.common.Utils.getTimeRangeSql
 import org.apache.spark.sql.functions._
 
 
@@ -39,6 +41,7 @@ object OcpcSampleToRedis {
     val selectCondition1 = s"`date`='$start_date' and hour > '$hour'"
     val selectCondition2 = s"`date`>'$start_date' and `date`<'$end_date'"
     val selectCondition3 = s"`date`='$end_date' and hour <= '$hour'"
+    val selectCondition = getTimeRangeSql(start_date, hour, end_date, hour)
 
     // 累积计算最近一周数据
     val sqlRequest =
@@ -55,9 +58,7 @@ object OcpcSampleToRedis {
          |  SUM(total_cnt) as total_cnt
          |FROM
          |  dl_cpc.ocpc_uid_userid_track_label2
-         |WHERE ($selectCondition1) OR
-         |      ($selectCondition2) OR
-         |      ($selectCondition3)
+         |WHERE $selectCondition
          |GROUP BY userid, ideaid, adclass, date, hour
        """.stripMargin
     println(sqlRequest)

@@ -2,6 +2,8 @@ package com.cpc.spark.ocpc
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
+
+import com.cpc.spark.common.Utils.getTimeRangeSql
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
 import com.cpc.spark.udfs.Udfs_wj._
@@ -61,8 +63,7 @@ object OcpcPIDwithCPA {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition1 = s"`date`='$date1' and `hour` >= '$hour1'"
-    val selectCondition2 = s"`date`='$date' and `hour`<='$hour'"
+    val selectCondition = getTimeRangeSql(date1, hour1, date, hour)
 
     // 从unionlog中抽取相关字段数据
     val sqlRequest =
@@ -77,7 +78,7 @@ object OcpcPIDwithCPA {
          |FROM
          |    dl_cpc.ocpc_result_unionlog_table_bak
          |WHERE
-         |    ($selectCondition1) OR ($selectCondition2)
+         |    $selectCondition
        """.stripMargin
     println(sqlRequest)
 
@@ -222,6 +223,7 @@ object OcpcPIDwithCPA {
     val hour1 = tmpDateValue(1)
     val selectCondition1 = s"`date`='$date1' and hour >= '$hour1'"
     val selectCondition2 = s"`date`='$date' and `hour`<='$hour'"
+    val selectCondition = getTimeRangeSql(date1, hour1, date, hour)
 
     // read data and calculate cpa_history
     val sqlRequest =
@@ -237,9 +239,7 @@ object OcpcPIDwithCPA {
          |    FROM
          |        dl_cpc.ocpc_uid_userid_track_label2
          |    WHERE
-         |        ($selectCondition1)
-         |    OR
-         |        ($selectCondition2)
+         |        $selectCondition
          |    GROUP BY ideaid) t
        """.stripMargin
     println(sqlRequest)

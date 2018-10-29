@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import org.apache.spark.sql.SparkSession
+import com.cpc.spark.common.Utils._
 import com.cpc.spark.udfs.Udfs_wj._
 import org.apache.spark.sql.functions._
 
@@ -113,8 +114,10 @@ object OcpcMonitor {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition1 = s"`date`='$date1' and `hour` >= '$hour1'"
-    val selectCondition2 = s"`date`='$date' and `hour`<='$hour'"
+//    val selectCondition1 = s"`date`='$date1' and `hour` >= '$hour1'"
+//    val selectCondition2 = s"`date`='$date' and `hour`<='$hour'"
+
+    val selectCondition = getTimeRangeSql(date1, hour1, date, hour)
 
     val sqlRequest =
       s"""
@@ -141,7 +144,7 @@ object OcpcMonitor {
          |FROM
          |    dl_cpc.ocpc_result_unionlog_table_bak
          |WHERE
-         |    ($selectCondition1) OR ($selectCondition2)
+         |    $selectCondition
          |GROUP BY
          |    (case
          |        when exptags like "%ocpc_strategy:2%" then "v2"
