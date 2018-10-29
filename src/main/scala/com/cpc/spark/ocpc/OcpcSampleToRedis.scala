@@ -17,6 +17,8 @@ import userprofile.Userprofile.UserProfile
 import scala.collection.mutable.ListBuffer
 import userocpc.userocpc._
 import java.io.FileOutputStream
+
+import com.cpc.spark.common.Utils.getTimeRangeSql
 import org.apache.spark.sql.functions._
 
 
@@ -25,7 +27,7 @@ object OcpcSampleToRedis {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
-    // calculate time period for historical data
+    // 计算日期周期
     val end_date = args(0)
     val hour = args(1)
     val threshold = 20
@@ -36,11 +38,9 @@ object OcpcSampleToRedis {
     calendar.add(Calendar.DATE, -7)
     val dt = calendar.getTime
     val start_date = sdf.format(dt)
-    val selectCondition1 = s"`date`='$start_date' and hour > '$hour'"
-    val selectCondition2 = s"`date`>'$start_date' and `date`<'$end_date'"
-    val selectCondition3 = s"`date`='$end_date' and hour <= '$hour'"
+    val selectCondition = getTimeRangeSql(start_date, hour, end_date, hour)
 
-    // read data and set redis configuration
+    // 累积计算最近一周数据
     val sqlRequest =
       s"""
          |SELECT
@@ -55,9 +55,7 @@ object OcpcSampleToRedis {
          |  SUM(total_cnt) as total_cnt
          |FROM
          |  dl_cpc.ocpc_uid_userid_track_label2
-         |WHERE ($selectCondition1) OR
-         |      ($selectCondition2) OR
-         |      ($selectCondition3)
+         |WHERE $selectCondition
          |GROUP BY userid, ideaid, adclass, date, hour
        """.stripMargin
     println(sqlRequest)
@@ -67,51 +65,52 @@ object OcpcSampleToRedis {
     rawBase.createOrReplaceTempView("base_table")
 
     // read outsiders
-    readInnocence(spark)
+//    readInnocence(spark)
+//
+//    // TODO: 清楚按照时间戳截取逻辑
+//
+//    // 根据从mysql抽取的数据将每个ideaid的更新时间戳之前的用户记录剔除
+//    val sqlRequestNew1 =
+//      s"""
+//         |SELECT
+//         |  a.userid,
+//         |  a.ideaid,
+//         |  a.adclass,
+//         |  a.cost,
+//         |  a.ctr_cnt,
+//         |  a.cvr_cnt,
+//         |  a.total_cnt,
+//         |  a.date,
+//         |  a.hour,
+//         |  (case when b.update_date is null then '$start_date' else b.update_date end) as update_date,
+//         |  (case when b.update_hour is null then '$hour' else b.update_hour end) as update_hour,
+//         |  (case when c.flag is not null then 1
+//         |        when b.update_date is null or b.update_hour is null then 1
+//         |        when b.update_date < date then 1
+//         |        when b.update_date = date and b.update_hour <= hour then 1
+//         |        else 0 end) as flag
+//         |FROM
+//         |  base_table as a
+//         |LEFT JOIN
+//         |  test.ocpc_idea_update_time as b
+//         |ON
+//         |  a.ideaid=b.ideaid
+//         |LEFT JOIN
+//         |   test.ocpc_innocence_idea_list as c
+//         |on
+//         |   a.ideaid=c.ideaid
+//       """.stripMargin
+//
+//    println(sqlRequestNew1)
+//
+//    val rawData = spark.sql(sqlRequestNew1)
+//
+//    println("##### records of flag = 0 ##############")
+//    rawData.filter("flag=0").show(10)
+//
+//    val base = rawData.filter("flag=1").select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
-    // TODO: 清楚按照时间戳截取逻辑
-
-    // 根据从mysql抽取的数据将每个ideaid的更新时间戳之前的用户记录剔除
-    val sqlRequestNew1 =
-      s"""
-         |SELECT
-         |  a.userid,
-         |  a.ideaid,
-         |  a.adclass,
-         |  a.cost,
-         |  a.ctr_cnt,
-         |  a.cvr_cnt,
-         |  a.total_cnt,
-         |  a.date,
-         |  a.hour,
-         |  (case when b.update_date is null then '$start_date' else b.update_date end) as update_date,
-         |  (case when b.update_hour is null then '$hour' else b.update_hour end) as update_hour,
-         |  (case when c.flag is not null then 1
-         |        when b.update_date is null or b.update_hour is null then 1
-         |        when b.update_date < date then 1
-         |        when b.update_date = date and b.update_hour <= hour then 1
-         |        else 0 end) as flag
-         |FROM
-         |  base_table as a
-         |LEFT JOIN
-         |  test.ocpc_idea_update_time as b
-         |ON
-         |  a.ideaid=b.ideaid
-         |LEFT JOIN
-         |   test.ocpc_innocence_idea_list as c
-         |on
-         |   a.ideaid=c.ideaid
-       """.stripMargin
-
-    println(sqlRequestNew1)
-
-    val rawData = spark.sql(sqlRequestNew1)
-
-    println("##### records of flag = 0 ##############")
-    rawData.filter("flag=0").show(10)
-
-    val base = rawData.filter("flag=1").select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
-
+    val base = rawBase.select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
     // 按ideaid求和
     val userData = base
@@ -199,7 +198,15 @@ object OcpcSampleToRedis {
          |        else b.k_value end) as k_value
          |FROM
          |  (SELECT
-         |    *
+         |    ideaid,
+         |    userid,
+         |    adclass,
+         |    cost,
+         |    ctr_cnt,
+         |    cvr_cnt,
+         |    adclass_cost,
+         |    adclass_ctr_cnt,
+         |    adclass_cvr_cnt
          |   FROM
          |    dl_cpc.ocpc_pb_result_table
          |   WHERE
@@ -207,14 +214,14 @@ object OcpcSampleToRedis {
          |   and
          |    `hour`='$hour') a
          |LEFT JOIN
-         |   test.ocpc_k_value_table b
+         |   (SELECT ideaid, adclass, cast(k_value as double) as k_value FROM test.ocpc_k_value_table) as b
          |ON
          |   a.ideaid=b.ideaid
          |and
          |   a.adclass=b.adclass
        """.stripMargin
 
-    println("sqlRequest3")
+    println(sqlRequest3)
 
     val userFinalData2 = spark.sql(sqlRequest3).filter("cvr_cnt>=20")
 
@@ -261,6 +268,12 @@ object OcpcSampleToRedis {
     val finalData = spark.sql(sqlRequest4)
 
     finalData.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
+
+    finalData
+      .withColumn("date", lit(end_date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v2")
 
     // 保存pb文件
     savePbPack(finalData)
@@ -397,7 +410,7 @@ object OcpcSampleToRedis {
       val adclassCost = record.get(6).toString
       val adclassCtr = record.getLong(7).toString
       val adclassCvr = record.getLong(8).toString
-      val k = record.get(10).toString
+      val k = record.get(9).toString
       val hpcvr = record.getAs[Double]("hpcvr")
 
       val tmpCost = adclassCost.toLong
@@ -470,9 +483,7 @@ object OcpcSampleToRedis {
     calendar.add(Calendar.DATE, -7)
     val dt = calendar.getTime
     val startDate = sdf.format(dt)
-    val selectCondition1 = s"`date`='$startDate' and hour > '$hour'"
-    val selectCondition2 = s"`date`>'$startDate' and `date`<'$endDate'"
-    val selectCondition3 = s"`date`='$endDate' and hour <= '$hour'"
+    val selectCondition = getTimeRangeSql(startDate, hour, endDate, hour)
 
     // read data and set redis configuration
     val sqlRequest =
@@ -483,9 +494,7 @@ object OcpcSampleToRedis {
          |  SUM(total_cvr) * 1.0 / SUM(cnt) as hpcvr
          |FROM
          |  dl_cpc.ocpc_pcvr_history
-         |WHERE ($selectCondition1) OR
-         |      ($selectCondition2) OR
-         |      ($selectCondition3)
+         |WHERE $selectCondition
          |GROUP BY ideaid, adclass
        """.stripMargin
     println(sqlRequest)
