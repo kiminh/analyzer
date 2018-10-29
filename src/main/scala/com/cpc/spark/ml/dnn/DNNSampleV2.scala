@@ -56,7 +56,7 @@ object DNNSampleV2 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/daily/dnntrain-" + date)
+      .save("/user/cpc/zhj/ctr_v2/dnntrain-" + date)
 
     /*val dnntrain = spark.read.format("tfrecords").option("recordType", "Example").load("/user/cpc/zhj/mfeatures/dnntrain-" + date)
     val n = dnntrain.count()
@@ -74,7 +74,7 @@ object DNNSampleV2 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/daily/dnntest-" + tdate)
+      .save("/user/cpc/zhj/ctr_v2/dnntest-" + tdate)
     test.take(10).foreach(println)
   }
 
