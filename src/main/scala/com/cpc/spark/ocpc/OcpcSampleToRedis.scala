@@ -489,6 +489,7 @@ object OcpcSampleToRedis {
     val selectCondition1 = s"`date`='$startDate' and hour > '$hour'"
     val selectCondition2 = s"`date`>'$startDate' and `date`<'$endDate'"
     val selectCondition3 = s"`date`='$endDate' and hour <= '$hour'"
+    val selectCondition = getTimeRangeSql(startDate, hour, endDate, hour)
 
     // read data and set redis configuration
     val sqlRequest =
@@ -499,9 +500,7 @@ object OcpcSampleToRedis {
          |  SUM(total_cvr) * 1.0 / SUM(cnt) as hpcvr
          |FROM
          |  dl_cpc.ocpc_pcvr_history
-         |WHERE ($selectCondition1) OR
-         |      ($selectCondition2) OR
-         |      ($selectCondition3)
+         |WHERE $selectCondition
          |GROUP BY ideaid, adclass
        """.stripMargin
     println(sqlRequest)
