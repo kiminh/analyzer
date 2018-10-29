@@ -34,7 +34,7 @@ object DNNSampleHourlyV2 {
 
     val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
 
-    val rawtrain = getSample(spark, date, hour, is_train = true).withColumn("uid", $"dense" (25)).persist()
+    val rawtrain = getSample(spark, date, hour, is_train = true).withColumn("uid", $"dense" (25))
 
     rawtrain.printSchema()
 
@@ -45,6 +45,7 @@ object DNNSampleHourlyV2 {
       .select($"sample_idx", $"label",
         getNewDense(25, default_hash_uid)($"dense", $"count" < 4).alias("dense"),
         $"idx0", $"idx1", $"idx2", $"id_arr")
+      .persist()
 
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
@@ -54,9 +55,17 @@ object DNNSampleHourlyV2 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/zhj/test/dnntrain-$date-$hour")
+      .save(s"/user/cpc/zhj/hourly_v2/dnntrain-$date-$hour")
     train.take(10).foreach(println)
-    rawtrain.unpersist()
+
+    train.sample(withReplacement = false, 0.1).repartition(100)
+      .write
+      .mode("overwrite")
+      .format("tfrecords")
+      .option("recordType", "Example")
+      .save(s"/user/cpc/zhj/hourly_v2/dnntest-$date-$hour")
+
+    train.unpersist()
   }
 
   def getSample(spark: SparkSession, date: String, hour: String, is_train: Boolean): DataFrame = {

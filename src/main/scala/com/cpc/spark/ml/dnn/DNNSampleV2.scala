@@ -56,13 +56,12 @@ object DNNSampleV2 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/ctr_v2/dnntrain-" + date)
+      .save("/user/cpc/zhj/daily_v2/dnntrain-" + date)
 
     /*val dnntrain = spark.read.format("tfrecords").option("recordType", "Example").load("/user/cpc/zhj/mfeatures/dnntrain-" + date)
     val n = dnntrain.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, dnntrain.where("label=array(1,0)").count.toDouble / n))
     println("train size", n)*/
-
 
     //val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
     val test = getSample(spark, tdate, is_train = false).persist()
@@ -74,7 +73,7 @@ object DNNSampleV2 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/ctr_v2/dnntest-" + tdate)
+      .save("/user/cpc/zhj/daily_v2/dnntest-" + tdate)
     test.take(10).foreach(println)
   }
 

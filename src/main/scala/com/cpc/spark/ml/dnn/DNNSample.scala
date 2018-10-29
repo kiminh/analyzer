@@ -13,7 +13,7 @@ import com.cpc.spark.common.Murmur3Hash
 import org.apache.spark.sql.functions._
 import org.apache.spark.storage.StorageLevel
 
-@deprecated
+
 object DNNSample {
   Logger.getRootLogger.setLevel(Level.WARN)
 

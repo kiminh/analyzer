@@ -16,7 +16,7 @@ import org.apache.spark.sql.functions.{array, udf}
   * @version 1.0
   *
   */
-@deprecated
+
 object DNNSampleHourly {
   Logger.getRootLogger.setLevel(Level.WARN)
 
@@ -34,7 +34,7 @@ object DNNSampleHourly {
 
     val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
 
-    val rawtrain = getSample(spark, date, hour).withColumn("uid", $"dense" (25)).persist()
+    val rawtrain = getSample(spark, date, hour).withColumn("uid", $"dense" (25))
 
     rawtrain.printSchema()
 
@@ -45,6 +45,7 @@ object DNNSampleHourly {
       .select($"sample_idx", $"label",
         getNewDense(25, default_hash_uid)($"dense", $"count" < 2).alias("dense"),
         $"idx0", $"idx1", $"idx2", $"id_arr")
+      .persist()
 
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
@@ -64,7 +65,8 @@ object DNNSampleHourly {
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"/user/cpc/zhj/hourly/dnntest-$date-$hour")
-    rawtrain.unpersist()
+
+    train.unpersist()
   }
 
   def getSample(spark: SparkSession, date: String, hour: String): DataFrame = {
