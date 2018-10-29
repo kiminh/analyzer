@@ -11,12 +11,13 @@ object OcpcDataAlert {
     val hour = args(1).toString
 
     // 如果小时级数据量小于500，则异常退出
-//    val check1 = alertDataCount(date, hour, spark)
-//    if (check1) {
-//      System.exit(1)
-//    }
-    println("cannot find data")
-    System.exit(1)
+    val check1 = alertDataCount(date, hour, spark)
+    if (check1) {
+      println("##################################################")
+      println("cannot find data in table dl_cpc.ocpc_result_unionlog_table_bak")
+      println("##################################################")
+      System.exit(1)
+    }
   }
 
   def alertDataCount(date: String, hour: String, spark: SparkSession):Boolean ={
@@ -32,6 +33,7 @@ object OcpcDataAlert {
          |AND
          |  `hour` = '$hour'
        """.stripMargin
+    println(sqlRequest)
     val data = spark.sql(sqlRequest)
     val dataCount = data.count()
 
