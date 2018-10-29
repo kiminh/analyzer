@@ -40,7 +40,7 @@ object AnalCfgLog {
     cal.add(Calendar.HOUR, -hourBefore)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
     val hour = new SimpleDateFormat("HH").format(cal.getTime)
-    val table = "cpc_cfg_log"
+    val table = "cpc_cfg_log_test"
     val spark = SparkSession.builder()
       .appName("cpc anal cfg log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
       .enableHiveSupport()
@@ -52,7 +52,7 @@ object AnalCfgLog {
       spark.stop()
       System.exit(1)
     }
-    val cfglog = cfgData.map(x => LogParser.parseCfgLog(x)).filter(x => x != null).map(x => x.copy(date = date, hour = hour))
+    val cfglog = cfgData.map(x => LogParser.parseCfgLog_v2(x)).filter(x => x != null).map(x => x.copy(date = date, hour = hour))
     //clear dir
     //    Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
     //    spark.createDataFrame(cfglog)
