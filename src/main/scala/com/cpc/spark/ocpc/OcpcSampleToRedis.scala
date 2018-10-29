@@ -67,51 +67,52 @@ object OcpcSampleToRedis {
     rawBase.createOrReplaceTempView("base_table")
 
     // read outsiders
-    readInnocence(spark)
+//    readInnocence(spark)
+//
+//    // TODO: 清楚按照时间戳截取逻辑
+//
+//    // 根据从mysql抽取的数据将每个ideaid的更新时间戳之前的用户记录剔除
+//    val sqlRequestNew1 =
+//      s"""
+//         |SELECT
+//         |  a.userid,
+//         |  a.ideaid,
+//         |  a.adclass,
+//         |  a.cost,
+//         |  a.ctr_cnt,
+//         |  a.cvr_cnt,
+//         |  a.total_cnt,
+//         |  a.date,
+//         |  a.hour,
+//         |  (case when b.update_date is null then '$start_date' else b.update_date end) as update_date,
+//         |  (case when b.update_hour is null then '$hour' else b.update_hour end) as update_hour,
+//         |  (case when c.flag is not null then 1
+//         |        when b.update_date is null or b.update_hour is null then 1
+//         |        when b.update_date < date then 1
+//         |        when b.update_date = date and b.update_hour <= hour then 1
+//         |        else 0 end) as flag
+//         |FROM
+//         |  base_table as a
+//         |LEFT JOIN
+//         |  test.ocpc_idea_update_time as b
+//         |ON
+//         |  a.ideaid=b.ideaid
+//         |LEFT JOIN
+//         |   test.ocpc_innocence_idea_list as c
+//         |on
+//         |   a.ideaid=c.ideaid
+//       """.stripMargin
+//
+//    println(sqlRequestNew1)
+//
+//    val rawData = spark.sql(sqlRequestNew1)
+//
+//    println("##### records of flag = 0 ##############")
+//    rawData.filter("flag=0").show(10)
+//
+//    val base = rawData.filter("flag=1").select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
-    // TODO: 清楚按照时间戳截取逻辑
-
-    // 根据从mysql抽取的数据将每个ideaid的更新时间戳之前的用户记录剔除
-    val sqlRequestNew1 =
-      s"""
-         |SELECT
-         |  a.userid,
-         |  a.ideaid,
-         |  a.adclass,
-         |  a.cost,
-         |  a.ctr_cnt,
-         |  a.cvr_cnt,
-         |  a.total_cnt,
-         |  a.date,
-         |  a.hour,
-         |  (case when b.update_date is null then '$start_date' else b.update_date end) as update_date,
-         |  (case when b.update_hour is null then '$hour' else b.update_hour end) as update_hour,
-         |  (case when c.flag is not null then 1
-         |        when b.update_date is null or b.update_hour is null then 1
-         |        when b.update_date < date then 1
-         |        when b.update_date = date and b.update_hour <= hour then 1
-         |        else 0 end) as flag
-         |FROM
-         |  base_table as a
-         |LEFT JOIN
-         |  test.ocpc_idea_update_time as b
-         |ON
-         |  a.ideaid=b.ideaid
-         |LEFT JOIN
-         |   test.ocpc_innocence_idea_list as c
-         |on
-         |   a.ideaid=c.ideaid
-       """.stripMargin
-
-    println(sqlRequestNew1)
-
-    val rawData = spark.sql(sqlRequestNew1)
-
-    println("##### records of flag = 0 ##############")
-    rawData.filter("flag=0").show(10)
-
-    val base = rawData.filter("flag=1").select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
-
+    val base = rawBase.filter("flag=1").select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
     // 按ideaid求和
     val userData = base
