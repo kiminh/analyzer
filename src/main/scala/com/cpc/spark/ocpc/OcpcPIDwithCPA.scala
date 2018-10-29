@@ -221,8 +221,6 @@ object OcpcPIDwithCPA {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition1 = s"`date`='$date1' and hour >= '$hour1'"
-    val selectCondition2 = s"`date`='$date' and `hour`<='$hour'"
     val selectCondition = getTimeRangeSql(date1, hour1, date, hour)
 
     // read data and calculate cpa_history

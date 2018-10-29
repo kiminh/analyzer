@@ -38,9 +38,6 @@ object OcpcSampleToRedis {
     calendar.add(Calendar.DATE, -7)
     val dt = calendar.getTime
     val start_date = sdf.format(dt)
-    val selectCondition1 = s"`date`='$start_date' and hour > '$hour'"
-    val selectCondition2 = s"`date`>'$start_date' and `date`<'$end_date'"
-    val selectCondition3 = s"`date`='$end_date' and hour <= '$hour'"
     val selectCondition = getTimeRangeSql(start_date, hour, end_date, hour)
 
     // 累积计算最近一周数据
@@ -486,9 +483,6 @@ object OcpcSampleToRedis {
     calendar.add(Calendar.DATE, -7)
     val dt = calendar.getTime
     val startDate = sdf.format(dt)
-    val selectCondition1 = s"`date`='$startDate' and hour > '$hour'"
-    val selectCondition2 = s"`date`>'$startDate' and `date`<'$endDate'"
-    val selectCondition3 = s"`date`='$endDate' and hour <= '$hour'"
     val selectCondition = getTimeRangeSql(startDate, hour, endDate, hour)
 
     // read data and set redis configuration
