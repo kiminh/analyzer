@@ -554,7 +554,7 @@ object LogParser {
         hour = hour,
         ip = body.getIp,
         ua = body.getUa,
-        deviceId = deviceId
+        deviceid = deviceId
       )
     }
     log
