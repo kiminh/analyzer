@@ -359,7 +359,7 @@ object Utils {
         else {
           if (siteid > 0) {
             label_type = 6 //其它类建站
-            if (js_site_active_other6 > 0 || (active5 > 0 && disactive == 0)) {
+            if (js_site_active_other > 0 || (active5 > 0 && disactive == 0)) {
               active_other_site += 1
             }
           } else {
