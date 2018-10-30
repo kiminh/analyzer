@@ -25,7 +25,7 @@ object OcpcTraceAdType {
          |    ideaid,
          |    timestamp,
          |    ext['adclass'].int_value as adclass,
-         |    ext['siteid'] as siteid
+         |    ext_int['siteid'] as siteid
          |FROM
          |    dl_cpc.cpc_union_log
          |WHERE
