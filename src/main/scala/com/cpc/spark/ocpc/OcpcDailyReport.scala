@@ -13,7 +13,6 @@ object OcpcDailyReport {
       .getOrCreate()
 
     val date = args(0).toString
-    val hour = args(1).toString
 
     val rawCompleteData = getCompleteRawTable(date, spark)
     getDailyReport(rawCompleteData, date, spark)
