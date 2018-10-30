@@ -4,6 +4,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 import com.cpc.spark.common.Utils
+import com.cpc.spark.ml.calibration.HourlyCalibration.newDestDir
 import com.cpc.spark.ml.common.{Utils => MUtils}
 import com.typesafe.config.ConfigFactory
 import userocpc.userocpc.BidAdjustmentConfig
@@ -19,6 +20,7 @@ object PriceBidRate {
 
     val LOCAL_PATH = "/home/cpc/price_rate/rate.pb"
     val DEST_PATH = "/home/work/mlcpp/data/rate.pb"
+    val NEW_DEST_PATH = "/home/cpc/model_server/data/rate.pb"
 
 
     val endDt = args(0)
@@ -147,6 +149,7 @@ object PriceBidRate {
     if (upload) {
       val conf = ConfigFactory.load()
       println(MUtils.updateMlcppOnlineData(LOCAL_PATH, DEST_PATH, conf))
+      println(MUtils.updateMlcppModelData(LOCAL_PATH, NEW_DEST_PATH, conf))
     }
 
   }

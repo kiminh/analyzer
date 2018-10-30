@@ -12,7 +12,8 @@ message SingleUser {
     string adclassCost = 7;
     string adclassCtrcnt = 8;
     string adclassCvrcnt = 9;
-    string kvalue=10;
+    string kvalue = 10;
+    double hpcvr = 11;
 }
 
 
