@@ -3,10 +3,13 @@ package com.cpc.spark.ml.dnn
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.common.Murmur3Hash
+import com.cpc.spark.ml.dnn.DNNSampleV2.hashSeq
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.DnnMultiHot
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions.udf
 
 /**
   * 统计每天的用户行为存入redis
@@ -22,7 +25,8 @@ object Behavior2Redis {
       .enableHiveSupport()
       .getOrCreate()
 
-    val date = args(0)
+    import spark.implicits._
+    val date = args(0) //today
 
     val data = spark.sql(
       s"""
@@ -43,8 +47,30 @@ object Behavior2Redis {
          |where load_date in ('${getDays(date, 1, 3)}')
          |    and rn <= 1000
          |group by uid
-         |limit 100
       """.stripMargin)
+      .select(
+        $"uid",
+        hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
+        hashSeq("m3", "int")($"s_ideaid_2").alias("m3"),
+        hashSeq("m4", "int")($"s_ideaid_3").alias("m4"),
+        hashSeq("m5", "int")($"s_adclass_1").alias("m5"),
+        hashSeq("m6", "int")($"s_adclass_2").alias("m6"),
+        hashSeq("m7", "int")($"s_adclass_3").alias("m7"),
+        hashSeq("m8", "int")($"c_ideaid_1").alias("m8"),
+        hashSeq("m9", "int")($"c_ideaid_2").alias("m9"),
+        hashSeq("m10", "int")($"c_ideaid_3").alias("m10"),
+        hashSeq("m11", "int")($"c_adclass_1").alias("m11"),
+        hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
+        hashSeq("m13", "int")($"c_adclass_3").alias("m13")
+      )
+      .persist()
+
+    println("dnn v2 用户行为特征总数：" + data.count())
+
+    data.coalesce(20).write.mode("overwrite")
+      .parquet("/user/cpc/zhj/behavior")
+
+
 
     val conf = ConfigFactory.load()
     data.coalesce(20).foreachPartition { p =>
@@ -54,13 +80,13 @@ object Behavior2Redis {
       p.foreach { rec =>
         var group = Seq[Int]()
         var hashcode = Seq[Long]()
-        val uid = "dnnu" + rec.getString(0)
+        val uid = "d1_" + rec.getString(0)
         for (i <- 1 to 12) {
-          val f = rec.getAs[Seq[Int]](i).map(_.toLong)
+          val f = rec.getAs[Seq[Long]](i)
           group = group ++ Array.tabulate(f.length)(x => i)
           hashcode = hashcode ++ f
         }
-        redis.set(uid, DnnMultiHot(group, hashcode).toByteArray)
+        redis.setex(uid, 3600 * 24 * 7, DnnMultiHot(group, hashcode).toByteArray)
       }
 
       redis.disconnect
@@ -101,5 +127,29 @@ object Behavior2Redis {
     cal.setTime(format.parse(startdate))
     cal.add(Calendar.DATE, -day)
     format.format(cal.getTime)
+  }
+
+  /**
+    * 获取hash code
+    *
+    * @param prefix ：前缀
+    * @param t      ：类型
+    * @return
+    */
+  private def hashSeq(prefix: String, t: String) = {
+    t match {
+      case "int" => udf {
+        seq: Seq[Int] =>
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
+          else Seq(Murmur3Hash.stringHash64(prefix, 0))
+          re.slice(0, 1000)
+      }
+      case "string" => udf {
+        seq: Seq[String] =>
+          val re = if (seq != null && seq.nonEmpty) for (i <- seq) yield Murmur3Hash.stringHash64(prefix + i, 0)
+          else Seq(Murmur3Hash.stringHash64(prefix, 0))
+          re.slice(0, 1000)
+      }
+    }
   }
 }
