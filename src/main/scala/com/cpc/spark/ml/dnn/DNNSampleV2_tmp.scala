@@ -116,7 +116,7 @@ object DNNSampleV2_tmp {
          |  hour
          |
          |from dl_cpc.cpc_union_log where `date` = '$date'
-         |  and isshow = 1 and ideaid > 0 and adslot_type = 1
+         |  and isshow = 1 and ideaid > 0 and adslot_type in (1,2)
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
