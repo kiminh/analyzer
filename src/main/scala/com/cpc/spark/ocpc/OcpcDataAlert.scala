@@ -18,6 +18,8 @@ object OcpcDataAlert {
       println("##################################################")
       System.exit(1)
     }
+
+    // TODO 检测其他相关数据累积程序的数据量
   }
 
   def alertDataCount(date: String, hour: String, spark: SparkSession):Boolean ={
