@@ -10,8 +10,7 @@ object OcpcLogParserByID {
     val spark = SparkSession.builder().appName("OcpcMonitor").enableHiveSupport().getOrCreate()
 
     val day = args(0).toString
-    val hour = args(1).toString
-    val ideaid = args(2).toString
+    val ideaid = args(1).toString
 
     val sqlRequest =
       s"""
@@ -25,8 +24,6 @@ object OcpcLogParserByID {
          |  dl_cpc.ocpc_result_unionlog_table_bak
          |WHERE
          |  `date`='$day'
-         |AND
-         |  `hour`='$hour'
          |AND
          |  ideaid='$ideaid'
        """.stripMargin
