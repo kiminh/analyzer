@@ -32,20 +32,8 @@ object DNNSampleHourlyV2 {
     val date = args(0)
     val hour = args(1)
 
-    val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
 
-    val rawtrain = getSample(spark, date, hour, is_train = true).withColumn("uid", $"dense" (25))
-
-    rawtrain.printSchema()
-
-    val uid = rawtrain.select("uid")
-      .groupBy("uid").count()
-
-    val train = rawtrain.join(uid, Seq("uid"), "left")
-      .select($"sample_idx", $"label",
-        getNewDense(25, default_hash_uid)($"dense", $"count" < 4).alias("dense"),
-        $"idx0", $"idx1", $"idx2", $"id_arr")
-      .persist()
+    val train = getSample(spark, date, hour, is_train = true).withColumn("uid", $"dense" (25)).persist()
 
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
