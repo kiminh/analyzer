@@ -59,7 +59,14 @@ object InsertReportSiteBuildingTarget {
                    adslotid: Int = 0,
                    brand: String = "",
                    browserType: Int = 0,
-                   isStudent:Int=0//0未知，1学生，2非学生
+                   isStudent: Int = 0, //0未知，1学生，2非学生,
+                   active1: Long = 0,
+                   active2: Long = 0,
+                   activexc: Long = 0,
+                   activexd: Long = 0,
+                   activexf: Long = 0,
+                   activexg: Long = 0,
+                   activexh: Long = 0
                  )
 
 
@@ -170,10 +177,10 @@ object InsertReportSiteBuildingTarget {
 
           val siteid = x.get(18).toString.toInt
           val interests = x.get(19).toString
-          val isStudent = if(interests.contains("224=")) 1 else if(interests.contains("225=")) 2 else 0
+          val isStudent = if (interests.contains("224=")) 1 else if (interests.contains("225=")) 2 else 0
 
           (searchid, (Info(siteid, ideaid, isshow, isclick, sex, age, os, province, phoneLevel, hour,
-            network, userLevel, qukanNewUser, adslotType, mediaId, 0, 0, 0, 0, adslotid, brand, browserType,isStudent)))
+            network, userLevel, qukanNewUser, adslotType, mediaId, 0, 0, 0, 0, adslotid, brand, browserType, isStudent)))
       }
       .repartition(50)
     //println("unionData count", unionData.count())
@@ -205,6 +212,9 @@ object InsertReportSiteBuildingTarget {
             case _ =>
           }
 
+          val active1 = if (trace_type == "active1") 1 else 0
+          val active2 = if (trace_type == "active2") 1 else 0
+
           var traceOp1 = x.getString(3)
           var landpage_ok = 0
           var stayinwx = 0
@@ -216,7 +226,8 @@ object InsertReportSiteBuildingTarget {
             }
           }
           val siteid = x.get(4).toString.toInt
-          (searchid, (Info(siteid, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, load, active, landpage_ok, stayinwx)))
+
+          (searchid, (Info(siteid, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, load, active, landpage_ok, stayinwx, 0, "", 0, 0, active1, active2)))
       }
       .repartition(50)
     //println("traceData count", traceData.count())
@@ -248,16 +259,18 @@ object InsertReportSiteBuildingTarget {
           val adslotid = if (a.ideaid != -1) a.adslotid else b.adslotid
           val brand = if (a.ideaid != -1) a.brand else b.brand
           val browserType = if (a.ideaid != -1) a.browserType else b.browserType
-          val isStudent = if(a.ideaid != -1) a.isStudent else b.isStudent
+          val isStudent = if (a.ideaid != -1) a.isStudent else b.isStudent
+          val active1 = a.active1 + b.active1
+          val active2 = a.active2 + b.active2
           Info(siteId, ideaid, isshow, isclick, sex, age, os, province, phoneLevel, hour, network, userLevel, qukanNewUser, adslotType,
-            mediaid, load, active, landpage_ok, stayinwx, adslotid, brand, browserType,isStudent)
+            mediaid, load, active, landpage_ok, stayinwx, adslotid, brand, browserType, isStudent, active1, active2)
       }
       .map {
         x =>
           val info = x._2
           (0, Info(info.siteId, info.ideaid, info.isshow, info.isclick, info.sex, info.age, info.os, info.province, info.phoneLevel, info.hour,
             info.network, info.userLevel, info.qukanNewUser, info.adslotType, info.mediaid, info.load, info.active, info.landpage_ok, info.stayinwx,
-            info.adslotid, info.brand, info.browserType,info.isStudent))
+            info.adslotid, info.brand, info.browserType, info.isStudent, info.active1, info.active2))
       }
       .filter(_._2.siteId > 0)
       .repartition(50)
@@ -266,18 +279,20 @@ object InsertReportSiteBuildingTarget {
     val inputStudentData = allData
       //.repartition(50)
       .map {
-        x =>
-          val info = x._2
-          val siteId = info.siteId
-          val isshow = info.isshow
-          val isclick = info.isclick
-          val typeVal = info.isStudent
-          val load = info.load
-          val active = info.active
-          val landpage_ok = info.landpage_ok
-          val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
-      }
+      x =>
+        val info = x._2
+        val siteId = info.siteId
+        val isshow = info.isshow
+        val isclick = info.isclick
+        val typeVal = info.isStudent
+        val load = info.load
+        val active = info.active
+        val landpage_ok = info.landpage_ok
+        val stayinwx = info.stayinwx
+        val active1 = info.active1
+        val active2 = info.active2
+        ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
+    }
     //val studentData = getTargetData(inputStudentData, "student", argDay)
     var insertAllData = getTargetData(inputStudentData, "student", argDay)
 
@@ -300,7 +315,9 @@ object InsertReportSiteBuildingTarget {
           val active = info.active
           val landpage_ok = info.landpage_ok
           val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
+          val active1 = info.active1
+          val active2 = info.active2
+          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
       }
 
     val brandData = getTargetData(inputBrandData, "brand", argDay)
@@ -311,21 +328,21 @@ object InsertReportSiteBuildingTarget {
     val inputBrowserTypeData = allData
       //.repartition(50)
       .filter {
-        x =>
-          val mediaId = x._2.mediaid
-          var ok = true
-          mediaId match {
-            case 80000001 => ok = false
-            case 80000002 => ok = false
-            case 80000006 => ok = false
-            case 800000062 => ok = false
-            case 80000064 => ok = false
-            case 80000066 => ok = false
-            case 80000141 => ok = false
-            case _ =>
-          }
-          ok
-      }
+      x =>
+        val mediaId = x._2.mediaid
+        var ok = true
+        mediaId match {
+          case 80000001 => ok = false
+          case 80000002 => ok = false
+          case 80000006 => ok = false
+          case 800000062 => ok = false
+          case 80000064 => ok = false
+          case 80000066 => ok = false
+          case 80000141 => ok = false
+          case _ =>
+        }
+        ok
+    }
       .map {
         x =>
           val info = x._2
@@ -337,7 +354,9 @@ object InsertReportSiteBuildingTarget {
           val active = info.active
           val landpage_ok = info.landpage_ok
           val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
+          val active1 = info.active1
+          val active2 = info.active2
+          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
       }
 
     val browserTypeData = getTargetData(inputBrowserTypeData, "browser_type", argDay)
@@ -347,108 +366,121 @@ object InsertReportSiteBuildingTarget {
     val inputAdslotIdData = allData
       //.repartition(50)
       .map {
-        x =>
-          val info = x._2
-          val siteId = info.siteId
-          val isshow = info.isshow
-          val isclick = info.isclick
-          val typeVal = info.adslotid
-          val load = info.load
-          val active = info.active
-          val landpage_ok = info.landpage_ok
-          val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
-      }
+      x =>
+        val info = x._2
+        val siteId = info.siteId
+        val isshow = info.isshow
+        val isclick = info.isclick
+        val typeVal = info.adslotid
+        val load = info.load
+        val active = info.active
+        val landpage_ok = info.landpage_ok
+        val stayinwx = info.stayinwx
+        val active1 = info.active1
+        val active2 = info.active2
+        ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
+    }
     val adslotIdData = getTargetData(inputAdslotIdData, "adslot_id", argDay)
     insertAllData = insertAllData.union(adslotIdData)
 
     val inputSexData = allData
       //.repartition(50)
       .map {
-        x =>
-          val info = x._2
-          val siteId = info.siteId
-          val isshow = info.isshow
-          val isclick = info.isclick
-          val typeVal = info.sex
-          val load = info.load
-          val active = info.active
-          val landpage_ok = info.landpage_ok
-          val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
-      }
+      x =>
+        val info = x._2
+        val siteId = info.siteId
+        val isshow = info.isshow
+        val isclick = info.isclick
+        val typeVal = info.sex
+        val load = info.load
+        val active = info.active
+        val landpage_ok = info.landpage_ok
+        val stayinwx = info.stayinwx
+        val active1 = info.active1
+        val active2 = info.active2
+        ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
+    }
     val sexData = getTargetData(inputSexData, "sex", argDay)
     insertAllData = insertAllData.union(sexData)
+
 
     val inputAgeData = allData
       //.repartition(50)
       .map {
-        x =>
-          val info = x._2
-          val siteId = info.siteId
-          val isshow = info.isshow
-          val isclick = info.isclick
-          val typeVal = info.age
-          val load = info.load
-          val active = info.active
-          val landpage_ok = info.landpage_ok
-          val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
-      }
+      x =>
+        val info = x._2
+        val siteId = info.siteId
+        val isshow = info.isshow
+        val isclick = info.isclick
+        val typeVal = info.age
+        val load = info.load
+        val active = info.active
+        val landpage_ok = info.landpage_ok
+        val stayinwx = info.stayinwx
+        val active1 = info.active1
+        val active2 = info.active2
+        ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
+    }
     val ageData = getTargetData(inputAgeData, "age", argDay)
     insertAllData = insertAllData.union(ageData)
 
     val inputOsData = allData
       //.repartition(50)
       .map {
-        x =>
-          val info = x._2
-          val siteId = info.siteId
-          val isshow = info.isshow
-          val isclick = info.isclick
-          val typeVal = info.os
-          val load = info.load
-          val active = info.active
-          val landpage_ok = info.landpage_ok
-          val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
-      }
+      x =>
+        val info = x._2
+        val siteId = info.siteId
+        val isshow = info.isshow
+        val isclick = info.isclick
+        val typeVal = info.os
+        val load = info.load
+        val active = info.active
+        val landpage_ok = info.landpage_ok
+        val stayinwx = info.stayinwx
+        val active1 = info.active1
+        val active2 = info.active2
+        ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
+    }
     val osData = getTargetData(inputOsData, "os", argDay)
     insertAllData = insertAllData.union(osData)
 
     val inputProvinceData = allData
       //.repartition(50)
       .map {
-        x =>
-          val info = x._2
-          val siteId = info.siteId
-          val isshow = info.isshow
-          val isclick = info.isclick
-          val typeVal = info.province
-          val load = info.load
-          val active = info.active
-          val landpage_ok = info.landpage_ok
-          val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
-      }
+      x =>
+        val info = x._2
+        val siteId = info.siteId
+        val isshow = info.isshow
+        val isclick = info.isclick
+        val typeVal = info.province
+        val load = info.load
+        val active = info.active
+        val landpage_ok = info.landpage_ok
+        val stayinwx = info.stayinwx
+        val active1 = info.active1
+        val active2 = info.active2
+        ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
+    }
     val provinceData = getTargetData(inputProvinceData, "province", argDay)
     insertAllData = insertAllData.union(provinceData)
 
     val inputPhoneLevelData = allData
       //.repartition(50)
       .map {
-        x =>
-          val info = x._2
-          val siteId = info.siteId
-          val isshow = info.isshow
-          val isclick = info.isclick
-          val typeVal = info.phoneLevel
-          val load = info.load
-          val active = info.active
-          val landpage_ok = info.landpage_ok
-          val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
-      }
+      x =>
+        val info = x._2
+        val siteId = info.siteId
+        val isshow = info.isshow
+        val isclick = info.isclick
+        val typeVal = info.phoneLevel
+        val load = info.load
+        val active = info.active
+        val landpage_ok = info.landpage_ok
+        val stayinwx = info.stayinwx
+        val active1 = info.active1
+        val active2 = info.active2
+        ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
+    }
 
     val phoneLevelData = getTargetData(inputPhoneLevelData, "phone_level", argDay)
     //println("phone_level count is", phoneLevelData.count())
@@ -458,18 +490,20 @@ object InsertReportSiteBuildingTarget {
     val inputHourData = allData
       //.repartition(50)
       .map {
-        x =>
-          val info = x._2
-          val siteId = info.siteId
-          val isshow = info.isshow
-          val isclick = info.isclick
-          val typeVal = info.hour
-          val load = info.load
-          val active = info.active
-          val landpage_ok = info.landpage_ok
-          val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
-      }
+      x =>
+        val info = x._2
+        val siteId = info.siteId
+        val isshow = info.isshow
+        val isclick = info.isclick
+        val typeVal = info.hour
+        val load = info.load
+        val active = info.active
+        val landpage_ok = info.landpage_ok
+        val stayinwx = info.stayinwx
+        val active1 = info.active1
+        val active2 = info.active2
+        ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
+    }
 
     val hourData = getTargetData(inputHourData, "hour", argDay)
     //println("hour count is", hourData.count())
@@ -479,18 +513,20 @@ object InsertReportSiteBuildingTarget {
     val inputNetworkData = allData
       //.repartition(50)
       .map {
-        x =>
-          val info = x._2
-          val siteId = info.siteId
-          val isshow = info.isshow
-          val isclick = info.isclick
-          val typeVal = info.network
-          val load = info.load
-          val active = info.active
-          val landpage_ok = info.landpage_ok
-          val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
-      }
+      x =>
+        val info = x._2
+        val siteId = info.siteId
+        val isshow = info.isshow
+        val isclick = info.isclick
+        val typeVal = info.network
+        val load = info.load
+        val active = info.active
+        val landpage_ok = info.landpage_ok
+        val stayinwx = info.stayinwx
+        val active1 = info.active1
+        val active2 = info.active2
+        ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
+    }
 
     val networkData = getTargetData(inputNetworkData, "network_type", argDay).cache()
     //println("network_type count is", networkData.count())
@@ -500,18 +536,20 @@ object InsertReportSiteBuildingTarget {
     val inputUserLevelData = allData
       //.repartition(50)
       .map {
-        x =>
-          val info = x._2
-          val siteId = info.siteId
-          val isshow = info.isshow
-          val isclick = info.isclick
-          val typeVal = info.userLevel
-          val load = info.load
-          val active = info.active
-          val landpage_ok = info.landpage_ok
-          val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
-      }
+      x =>
+        val info = x._2
+        val siteId = info.siteId
+        val isshow = info.isshow
+        val isclick = info.isclick
+        val typeVal = info.userLevel
+        val load = info.load
+        val active = info.active
+        val landpage_ok = info.landpage_ok
+        val stayinwx = info.stayinwx
+        val active1 = info.active1
+        val active2 = info.active2
+        ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
+    }
 
     val userLevelData = getTargetData(inputUserLevelData, "user_level", argDay)
     //println("user_level count is", userLevelData.count())
@@ -520,18 +558,20 @@ object InsertReportSiteBuildingTarget {
     val inputQukanNewUserData = allData
       //.repartition(50)
       .map {
-        x =>
-          val info = x._2
-          val siteId = info.siteId
-          val isshow = info.isshow
-          val isclick = info.isclick
-          val typeVal = info.qukanNewUser
-          val load = info.load
-          val active = info.active
-          val landpage_ok = info.landpage_ok
-          val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
-      }
+      x =>
+        val info = x._2
+        val siteId = info.siteId
+        val isshow = info.isshow
+        val isclick = info.isclick
+        val typeVal = info.qukanNewUser
+        val load = info.load
+        val active = info.active
+        val landpage_ok = info.landpage_ok
+        val stayinwx = info.stayinwx
+        val active1 = info.active1
+        val active2 = info.active2
+        ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
+    }
 
     val qukanNewUserData = getTargetData(inputQukanNewUserData, "user_orient", argDay)
     //println("user_orient count is", qukanNewUserData.count())
@@ -540,18 +580,20 @@ object InsertReportSiteBuildingTarget {
     val inputAdslotTypeData = allData
       //.repartition(50)
       .map {
-        x =>
-          val info = x._2
-          val siteId = info.siteId
-          val isshow = info.isshow
-          val isclick = info.isclick
-          val typeVal = info.adslotType
-          val load = info.load
-          val active = info.active
-          val landpage_ok = info.landpage_ok
-          val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
-      }
+      x =>
+        val info = x._2
+        val siteId = info.siteId
+        val isshow = info.isshow
+        val isclick = info.isclick
+        val typeVal = info.adslotType
+        val load = info.load
+        val active = info.active
+        val landpage_ok = info.landpage_ok
+        val stayinwx = info.stayinwx
+        val active1 = info.active1
+        val active2 = info.active2
+        ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
+    }
 
     val adslotTypeData = getTargetData(inputAdslotTypeData, "adslot_type", argDay)
     //println("adslot_type count is", adslotTypeData.count())
@@ -560,10 +602,10 @@ object InsertReportSiteBuildingTarget {
     val inputQuAdslotTypeData = allData
       //.repartition(50)
       .filter {
-        x =>
-          val mediaId = x._2.mediaid
-          (mediaId == 80000001) || (mediaId == 80000002)
-      }
+      x =>
+        val mediaId = x._2.mediaid
+        (mediaId == 80000001) || (mediaId == 80000002)
+    }
       .map {
         x =>
           val info = x._2
@@ -575,7 +617,9 @@ object InsertReportSiteBuildingTarget {
           val active = info.active
           val landpage_ok = info.landpage_ok
           val stayinwx = info.stayinwx
-          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx))
+          val active1 = info.active1
+          val active2 = info.active2
+          ((siteId, typeVal), (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2))
       }
     val quAdslotTypeData = getTargetData(inputQuAdslotTypeData, "adslot_type_media", argDay)
     //println("adslot_type_media count is", quAdslotTypeData.count())
@@ -583,28 +627,29 @@ object InsertReportSiteBuildingTarget {
 
     allData.unpersist()
 
-//    val insertAllData = sexData
-//      .union(ageData)
-//      .union(osData)
-//      .union(provinceData)
-//      .union(phoneLevelData)
-//      .union(hourData)
-//      .union(networkData)
-//      .union(userLevelData)
-//      .union(qukanNewUserData)
-//      .union(adslotTypeData)
-//      .union(quAdslotTypeData)
-//      .union(adslotIdData)
-//      .union(brandData)
-//      .union(browserTypeData)
-//      .union(studentData)
-//      .repartition(50)
+    //    val insertAllData = sexData
+    //      .union(ageData)
+    //      .union(osData)
+    //      .union(provinceData)
+    //      .union(phoneLevelData)
+    //      .union(hourData)
+    //      .union(networkData)
+    //      .union(userLevelData)
+    //      .union(qukanNewUserData)
+    //      .union(adslotTypeData)
+    //      .union(quAdslotTypeData)
+    //      .union(adslotIdData)
+    //      .union(brandData)
+    //      .union(browserTypeData)
+    //      .union(studentData)
+    //      .repartition(50)
 
 
     var insertDataFrame = ctx.createDataFrame(insertAllData)
-      .toDF("site_id", "impression", "click", "target_type", "target_value", "load", "active", "date", "sdk_ok", "stayinwx")
+      .toDF("site_id", "impression", "click", "target_type", "target_value", "load", "active", "date", "sdk_ok",
+        "stayinwx", "activexa", "activexb", "activexc", "activexd", "activexf", "activexg", "activexh")
       .repartition(50)
-    //insertDataFrame.show(10)
+    //insertDataFrame.show(100)
 
 
     //report
@@ -629,8 +674,8 @@ object InsertReportSiteBuildingTarget {
 
   }
 
-  def getTargetData(data: RDD[((Int, Int), (Int, Long, Long, Int, Long, Long, Long, Long))],
-                    target_type: String, argDay: String): (RDD[(Int, Long, Long, String, Int, Long, Long, String, Long, Long)]) = {
+  def getTargetData(data: RDD[((Int, Int), (Int, Long, Long, Int, Long, Long, Long, Long, Long, Long))],
+                    target_type: String, argDay: String): (RDD[(Int, Long, Long, String, Int, Long, Long, String, Long, Long, Long, Long, Long, Long, Long, Long, Long)]) = {
     data
       .reduceByKey {
         (a, b) =>
@@ -642,7 +687,9 @@ object InsertReportSiteBuildingTarget {
           val active = a._6 + b._6
           val landpage_ok = a._7 + b._7
           val stayinwx = a._8 + b._8
-          (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx)
+          val active1 = a._9 + b._9
+          val active2 = a._10 + b._10
+          (siteId, isshow, isclick, typeVal, load, active, landpage_ok, stayinwx, active1, active2)
       }
       .map {
         x =>
@@ -655,7 +702,9 @@ object InsertReportSiteBuildingTarget {
           val targetType = target_type
           val landpage_ok = x._2._7
           val stayinwx = x._2._8
-          (siteId, isshow, isclick, targetType, typeVal, load, active, argDay, landpage_ok, stayinwx)
+          val active1 = x._2._9
+          val active2 = x._2._10
+          (siteId, isshow, isclick, targetType, typeVal, load, active, argDay, landpage_ok, stayinwx, active1, active2, 0, 0, 0, 0, 0)
       }
     //.repartition(50)
   }
