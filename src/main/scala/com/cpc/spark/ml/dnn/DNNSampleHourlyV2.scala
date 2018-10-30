@@ -60,21 +60,6 @@ object DNNSampleHourlyV2 {
     import spark.implicits._
 
     val behavior_data = spark.read.parquet("/user/cpc/zhj/behavior")
-      .select(
-        $"uid",
-        hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
-        hashSeq("m3", "int")($"s_ideaid_2").alias("m3"),
-        hashSeq("m4", "int")($"s_ideaid_3").alias("m4"),
-        hashSeq("m5", "int")($"s_adclass_1").alias("m5"),
-        hashSeq("m6", "int")($"s_adclass_2").alias("m6"),
-        hashSeq("m7", "int")($"s_adclass_3").alias("m7"),
-        hashSeq("m8", "int")($"c_ideaid_1").alias("m8"),
-        hashSeq("m9", "int")($"c_ideaid_2").alias("m9"),
-        hashSeq("m10", "int")($"c_ideaid_3").alias("m10"),
-        hashSeq("m11", "int")($"c_adclass_1").alias("m11"),
-        hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
-        hashSeq("m13", "int")($"c_adclass_3").alias("m13")
-      )
 
     val userAppIdx = getUidApp(spark, date)
       .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))
