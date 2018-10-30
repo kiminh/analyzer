@@ -33,7 +33,7 @@ object DNNSampleHourlyV2 {
     val hour = args(1)
 
 
-    val train = getSample(spark, date, hour, is_train = true).withColumn("uid", $"dense" (25)).persist()
+    val train = getSample(spark, date, hour).persist()
 
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
@@ -56,7 +56,7 @@ object DNNSampleHourlyV2 {
     train.unpersist()
   }
 
-  def getSample(spark: SparkSession, date: String, hour: String, is_train: Boolean): DataFrame = {
+  def getSample(spark: SparkSession, date: String, hour: String): DataFrame = {
     import spark.implicits._
 
     val behavior_data = spark.read.parquet("/user/cpc/zhj/behavior")
