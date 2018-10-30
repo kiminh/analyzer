@@ -65,11 +65,12 @@ object Behavior2Redis {
       )
       .persist()
 
+    println("dnn v2 用户行为特征总数：" + data.count())
 
     data.coalesce(20).write.mode("overwrite")
       .parquet("/user/cpc/zhj/behavior")
 
-    println("dnn v2 用户行为特征总数：" + data.count())
+
 
     val conf = ConfigFactory.load()
     data.coalesce(20).foreachPartition { p =>
