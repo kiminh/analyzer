@@ -11,10 +11,10 @@ import scala.collection.mutable.WrappedArray
 import scala.util.Random
 import com.cpc.spark.common.Murmur3Hash
 import org.apache.spark.sql.functions._
+import org.apache.spark.storage.StorageLevel
 
 
 object DNNSample {
-
   Logger.getRootLogger.setLevel(Level.WARN)
 
   private var trainLog = Seq[String]()
@@ -27,11 +27,11 @@ object DNNSample {
 
     import spark.implicits._
     val date = args(0)
-    val tdate = args(1)
+    val hour = args(1)
 
     val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
 
-    val rawtrain = getSample(spark, getDays(date, 0, 3)).withColumn("uid", $"dense" (25)).persist()
+    val rawtrain = getSample(spark, date, hour).withColumn("uid", $"dense" (25)).persist()
 
     rawtrain.printSchema()
 
@@ -40,7 +40,7 @@ object DNNSample {
 
     val train = rawtrain.join(uid, Seq("uid"), "left")
       .select($"sample_idx", $"label",
-        getNewDense(25, default_hash_uid)($"dense", $"count" < 4).alias("dense"),
+        getNewDense(25, default_hash_uid)($"dense", $"count" < 2).alias("dense"),
         $"idx0", $"idx1", $"idx2", $"id_arr")
 
     val n = train.count()
@@ -51,25 +51,13 @@ object DNNSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/longtail/dnntrain-3-" + date)
+      .save(s"/user/cpc/zhj/daily/dnntrain-$date-$hour")
     println("train size", train.count())
-
+    train.take(10).foreach(println)
     rawtrain.unpersist()
-
-    val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
-    val tn = test.count
-    println("测试数据：total = %d, 正比例 = %.4f".format(tn, test.where("label=array(1,0)").count.toDouble / tn))
-
-    test.repartition(100)
-      .write
-      .mode("overwrite")
-      .format("tfrecords")
-      .option("recordType", "Example")
-      .save("/user/cpc/zhj/longtail/dnntest-" + tdate)
-    test.take(10).foreach(println)
   }
 
-  def getSample(spark: SparkSession, date: String): DataFrame = {
+  def getSample(spark: SparkSession, date: String, hour: String): DataFrame = {
     import spark.implicits._
 
     val userAppIdx = getUidApp(spark, date)
@@ -93,8 +81,8 @@ object DNNSample {
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id
          |
-         |from dl_cpc.cpc_union_log where `date` in ('$date')
-         |  and isshow = 1 and ideaid > 0 and adslot_type in (1, 2)
+         |from dl_cpc.cpc_union_log where `date` = '$date'
+         |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"

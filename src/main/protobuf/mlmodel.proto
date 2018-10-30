@@ -113,8 +113,13 @@ message AccessLog {
     int64 timestamp = 3;
 }
 
+
 message IntArray {
     repeated int64 value = 1;
+}
+message DnnMultiHot {
+    repeated uint32 group = 1;
+    repeated uint64 hashcode = 2;
 }
 
 message FloatArray {
