@@ -14,8 +14,8 @@ object OcpcDailyReport {
 
     val date = args(0).toString
 
-    val rawCompleteData = getCompleteRawTable(date, spark)
-    getDailyReport(rawCompleteData, date, spark)
+//    val rawCompleteData = getCompleteRawTable(date, spark)
+    getDailyReport(date, spark)
 
   }
 
@@ -76,10 +76,9 @@ object OcpcDailyReport {
     rawData
   }
 
-  def getDailyReport(dataset: DataFrame, date: String, spark: SparkSession): Unit ={
-    dataset.createOrReplaceTempView("raw_table")
-
-    val sqlRequest =
+  def getDailyReport(date: String, spark: SparkSession): Unit ={
+    // 读取unionlog和cvr历史数据进行统计
+    val sqlRequest1 =
       s"""
          |SELECT
          |    ideaid,
@@ -92,19 +91,61 @@ object OcpcDailyReport {
          |    sum(iscvr) * 1.0 / sum(isclick) as click_cvr,
          |    sum(iscvr) * 1.0 / sum(isshow) as show_cvr,
          |    AVG(price) as price,
+         |    sum(case WHEN isclick == 1 then price else 0 end) as total_cost,
          |    COUNT(isshow) as show_cnt,
          |    SUM(isclick) as ctr_cnt,
-         |    SUM(iscvr) as cvr_cnt,
-         |    '$date' as date
+         |    SUM(iscvr) as cvr_cnt
          |FROM
-         |    raw_table
+         |    dl_cpc.ocpc_result_unionlog_table_bak
+         |WHERE
+         |    `date`='$date'
          |GROUP BY
          |    ideaid
        """.stripMargin
 
-    println(sqlRequest)
+    println(sqlRequest1)
+    val data1 = spark.sql(sqlRequest1)
 
+    // 读取pb历史数据进行统计
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    AVG(k_value) avg_k,
+         |    STDDEV(k_value) stddev_k,
+         |    COUNT(1) as k_cnt
+         |FROM
+         |    dl_cpc.ocpc_pb_result_table_v2
+         |WHERE
+         |    `date`='$date'
+         |GROUP BY ideaid
+       """.stripMargin
+
+    println(sqlRequest2)
+    val data2 = spark.sql(sqlRequest2)
+
+    data1.createOrReplaceTempView("statistic_data1")
+    data2.createOrReplaceTempView("statistic_data2")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    t1.*,
+         |    t2.avg_k,
+         |    t2.stddev_k,
+         |    t2.k_cnt,
+         |    '$date' as date
+         |FROM
+         |    statistic_data1 as t1
+         |LEFT JOIN
+         |    statistic_data2 as t2
+         |ON
+         |    t1.ideaid=t2.ideaid
+       """.stripMargin
+
+    println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
+
 
     println("############# resultDF ###############")
     resultDF.show(10)
