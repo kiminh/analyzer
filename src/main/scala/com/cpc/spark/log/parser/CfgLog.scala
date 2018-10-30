@@ -17,6 +17,6 @@ case class CfgLog(
                    ext: collection.Map[String, ExtValue] = null,
                    ip: String = "",
                    ua: String = "",
-                   deviceId:String=""
+                   deviceid:String=""
                  )
 

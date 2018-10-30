@@ -6,6 +6,7 @@ import com.cpc.spark.ml.common.Utils
 import org.apache.spark.rdd.RDD
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
+import org.apache.spark.storage.StorageLevel
 
 import scala.collection.mutable.Map
 import scala.sys.process._
@@ -240,7 +241,7 @@ object SaveFeatures {
          |       ,a.ideaid
          |       ,b.*
          |from (select * from dl_cpc.cpc_union_log
-         |        where `date` = "%s" and `hour` = "%s" ) a
+         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" ) a
          |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
          |        on a.userid = t2.id
          |    left join
@@ -249,7 +250,7 @@ object SaveFeatures {
          |            where `date` = "%s" and `hour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid
-         | where t2.id is null and a.searchid is not null and a.searchid != ""
+         | where t2.id is null
         """.stripMargin.format(date, hour, date, date, hour))
       .rdd
       .map {
@@ -257,6 +258,7 @@ object SaveFeatures {
           (x.getAs[String]("search_id"), Seq(x))
       }
       .reduceByKey(_ ++ _)
+      .persist(StorageLevel.MEMORY_AND_DISK)
 
 
     //用户Api回传数据(如已经安装但未激活) cvr计算
@@ -348,6 +350,7 @@ object SaveFeatures {
 
     //cvrlog.filter(x => x.getAs[String]("searchid") == "02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
+    logRDD.unpersist()
 
     val sqlStmt =
       """
