@@ -541,9 +541,54 @@ object OcpcSampleToRedis {
     typeData
   }
 
-//  def filterDataByType(dataset: DataFrame, spark:SparkSession) ={
-//
-//
-//  }
+  def filterDataByType(rawData: DataFrame, date:String, hour: String, spark:SparkSession) ={
+    val typeData = checkAdType(date, hour, spark)
+
+    val joinData = rawData.join(typeData, Seq("ideaid", "adclass"), "left_outer").select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "type_flag")
+
+    joinData.createOrReplaceTempView("join_table")
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    adclass,
+         |    type_flag,
+         |    SUM(cost) as total_cost,
+         |    SUM(ctr_cnt) as total_ctr,
+         |    SUM(cvr_cnt) as total_cvr
+         |FROM
+         |    join_table
+         |GROUP BY adclass, type_flag
+       """.stripMargin
+
+    println(sqlRequest1)
+    val groupbyData = spark.sql(sqlRequest1)
+    groupbyData.createOrReplaceTempView("groupby_table")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |    a.ideaid,
+         |    a.userid,
+         |    a.adclass,
+         |    a.cost,
+         |    a.ctr_cnt,
+         |    a.cvr_cnt,
+         |    a.adclass_cost,
+         |    a.adclass_ctr_cnt,
+         |    a.adclass_cvr_cnt,
+         |    a.k_value,
+         |    a.type_flag
+         |FROM
+         |    join_table as a
+         |LEFT JOIN
+         |    groupby_table as b
+         |ON
+         |    a.ideaid=b.ideaid
+         |AND
+         |    a.adclass=b.adclass
+       """.stripMargin
+
+  }
 
 }

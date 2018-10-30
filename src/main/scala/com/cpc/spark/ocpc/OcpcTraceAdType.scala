@@ -52,12 +52,12 @@ object OcpcTraceAdType {
     println(rawData.count)
     rawData.show(10)
 
-    rawData
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .write
-      .mode("overwrite")
-      .saveAsTable("test.ocpc_track_ad_type_hourly")
+//    rawData
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .write
+//      .mode("overwrite")
+//      .saveAsTable("test.ocpc_track_ad_type_hourly")
 
 
     rawData
