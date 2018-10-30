@@ -505,5 +505,45 @@ object OcpcSampleToRedis {
 
   }
 
+  def checkAdType(endDate: String, hour: String, spark: SparkSession) ={
+    // 计算时间区间
+    val threshold = 20
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val date = sdf.parse(endDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(date)
+    calendar.add(Calendar.DATE, -7)
+    val dt = calendar.getTime
+    val startDate = sdf.format(dt)
+    val selectCondition = getTimeRangeSql(startDate, hour, endDate, hour)
+
+    // 汇总近七天数据并找到每个ideaid，adclass的最新数据的类型
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    adclass,
+         |    (case when siteid>0 then 1 else 0 end) as type_flag,
+         |    row_number() over(partition by ideaid, adclass ORDER BY timestamp DESC) as seq
+         |FROM
+         |    test.ocpc_track_ad_type_hourly
+         |WHERE
+         |    $selectCondition
+       """.stripMargin
+
+    println(sqlRequest1)
+    val rawData = spark.sql(sqlRequest1)
+
+    val typeData = rawData.filter("seq=1").select("ideaid", "adclass", "type_flag")
+
+    // 存储数据
+    typeData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_type")
+    typeData
+  }
+
+//  def filterDataByType(dataset: DataFrame, spark:SparkSession) ={
+//
+//
+//  }
 
 }
