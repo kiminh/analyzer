@@ -82,7 +82,7 @@ object Behavior2Redis {
         var hashcode = Seq[Long]()
         val uid = "d1_" + rec.getString(0)
         for (i <- 1 to 12) {
-          val f = rec.getAs[Seq[Int]](i).map(_.toLong)
+          val f = rec.getAs[Seq[Long]](i)
           group = group ++ Array.tabulate(f.length)(x => i)
           hashcode = hashcode ++ f
         }
