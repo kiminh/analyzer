@@ -217,6 +217,7 @@ object Utils {
     var nosite_active = 0
     var nosite_disactive = 0
 
+    var installed = 0
     var conversion_sdk_wechat = 0
     var conversion_sdk_download = 0
     var js_site_active_other = 0
@@ -257,6 +258,10 @@ object Utils {
             conversion_sdk_download += 1
           }
 
+          //REPORT_DOWNLOAD_INSTALLED
+          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed") {
+            installed += 1
+          }
 
           //其它类：建站
           if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
@@ -339,11 +344,12 @@ object Utils {
           label_type = 5
           if (conversion_sdk_download > 0) {
             active_js_ldy_download += 1
-          } else if (siteid <= 0 && (active3 > 0 || active_href > 0)) { //(js_site_active_other > 0 || (active5 > 0 && disactive == 0))
+          } else if (siteid <= 0 && active3 > 0) {
             // 测试
             active_other_site += 1
             label_type = 9
-          } else if (js_site_active_other > 0 || (active5 > 0 && disactive == 0) || active_href > 0 || nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0)) {
+          } else if (js_site_active_other > 0 || (active5 > 0 && disactive == 0) || active_href > 0 || installed > 0 ||
+            nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0)) {
             // 套户
             active_other_site += 1
             label_type = 10
@@ -360,11 +366,12 @@ object Utils {
             }
           } else {
             label_type = 7 //其它类非建站
-            if (siteid <= 0 && (active3 > 0 || active_href > 0)) { //(js_site_active_other > 0 || (active5 > 0 && disactive == 0))
+            if (siteid <= 0 && active3 > 0) {
               // 测试
               active_other_site += 1
               label_type = 11
-            } else if (nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0) || js_site_active_other > 0 || (active5 > 0 && disactive == 0) || active_href > 0) {
+            } else if (nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0) ||
+              js_site_active_other > 0 || (active5 > 0 && disactive == 0) || active_href > 0 || installed > 0) {
               active_other_nonsite += 1
             }
           }
