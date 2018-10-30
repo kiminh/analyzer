@@ -220,6 +220,7 @@ object Utils {
     var conversion_sdk_wechat = 0
     var conversion_sdk_download = 0
     var js_site_active_other = 0
+    var js_site_active_other6 = 0
 
     var label_type = 0 //广告类型，区分不同类型广告
 
@@ -230,7 +231,6 @@ object Utils {
     var active_js_ldy_download = 0 //落地页下载类
     var active_other_site = 0 //其他类建站
     var active_other_nonsite = 0 //其他类非建站
-    var js_site_active_other6 = 0
 
 
     traces.foreach {
@@ -259,20 +259,14 @@ object Utils {
           }
 
           //其它类：建站
-          if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
-            r.getAs[String]("trace_type") == "active3" || r.getAs[String]("trace_type") == "active4") {
-            js_site_active_other6 += 1
-          }
-
-          //其它类：非建站
-          //          if (r.getAs[String]("trace_type") == "nosite_active1" || r.getAs[String]("trace_type") == "nosite_active2" ||
-          //            r.getAs[String]("trace_type") == "nosite_active3" || r.getAs[String]("trace_type") == "nosite_active4") {
-          //            nosite_active += 1
-          //          }
-
           if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" ||
             (r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type") != "active5"))) {
             js_site_active_other += 1
+          }
+
+          if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
+            r.getAs[String]("trace_type") == "active3" || r.getAs[String]("trace_type") == "active4") {
+            js_site_active_other6 += 1
           }
 
           //其它类：非建站
