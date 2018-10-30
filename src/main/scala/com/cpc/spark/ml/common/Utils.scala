@@ -217,7 +217,6 @@ object Utils {
     var nosite_active = 0
     var nosite_disactive = 0
 
-    var motivate = 0
     var conversion_sdk_wechat = 0
     var conversion_sdk_download = 0
     var js_site_active_other = 0
@@ -231,8 +230,7 @@ object Utils {
     var active_js_ldy_download = 0 //落地页下载类
     var active_other_site = 0 //其他类建站
     var active_other_nonsite = 0 //其他类非建站
-    var js_site_active_other_test = 0 //测试
-    var active_motivate = 0 //激励下载
+    var js_site_active_other6 = 0
 
 
     traces.foreach {
@@ -260,26 +258,25 @@ object Utils {
             conversion_sdk_download += 1
           }
 
-          //激励下载转化定义  OPEN_APP
-          if (r.getAs[String]("trace_op1").toLowerCase == "open_app") {
-            motivate += 1
-          }
-
           //其它类：建站
           if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
             r.getAs[String]("trace_type") == "active3" || r.getAs[String]("trace_type") == "active4") {
-            js_site_active_other += 1
-          }
-
-          //测试
-          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" ||
-            (r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type") != "active5"))) {
-            js_site_active_other_test += 1
+            js_site_active_other6 += 1
           }
 
           //其它类：非建站
-          if (r.getAs[String]("trace_type") == "nosite_active1" || r.getAs[String]("trace_type") == "nosite_active2" ||
-            r.getAs[String]("trace_type") == "nosite_active3" || r.getAs[String]("trace_type") == "nosite_active4") {
+          //          if (r.getAs[String]("trace_type") == "nosite_active1" || r.getAs[String]("trace_type") == "nosite_active2" ||
+          //            r.getAs[String]("trace_type") == "nosite_active3" || r.getAs[String]("trace_type") == "nosite_active4") {
+          //            nosite_active += 1
+          //          }
+
+          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" ||
+            (r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type") != "active5"))) {
+            js_site_active_other += 1
+          }
+
+          //其它类：非建站
+          if (r.getAs[String]("trace_type").startsWith("nosite_active") && (r.getAs[String]("trace_type") != "nosite_active5")) {
             nosite_active += 1
           }
         }
@@ -352,41 +349,32 @@ object Utils {
           label_type = 5
           if (conversion_sdk_download > 0) {
             active_js_ldy_download += 1
-          } else if (siteid <= 0 && active3 > 0) {
+          } else if (siteid <= 0 && active3 > 0) { //(js_site_active_other > 0 || (active5 > 0 && disactive == 0))
             // 测试
             active_other_site += 1
             label_type = 9
-          } else if (js_site_active_other_test > 0 || (active5 > 0 && disactive == 0) ||
-            nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0)) {
+          } else if (js_site_active_other > 0 || (active5 > 0 && disactive == 0) || nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0)) {
             // 套户
             active_other_site += 1
             label_type = 10
           }
         }
 
-        //激励下载
-        else if (adslot_type == 7) {
-          label_type = 12
-          if (motivate > 0) {
-            active_motivate += 1
-          }
-        }
 
         // review， 落地页下载非sdk，其它
         else {
           if (siteid > 0) {
             label_type = 6 //其它类建站
-            if (js_site_active_other > 0 || (active5 > 0 && disactive == 0)) {
+            if (js_site_active_other6 > 0 || (active5 > 0 && disactive == 0)) {
               active_other_site += 1
             }
           } else {
             label_type = 7 //其它类非建站
-            if (siteid <= 0 && active3 > 0) {
+            if (siteid <= 0 && active3 > 0) { //(js_site_active_other > 0 || (active5 > 0 && disactive == 0))
               // 测试
               active_other_site += 1
               label_type = 11
-            } else if (nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0) ||
-              js_site_active_other_test > 0 || (active5 > 0 && disactive == 0)) {
+            } else if (nosite_active > 0 || (nosite_active5 > 0 && nosite_disactive == 0) || js_site_active_other > 0 || (active5 > 0 && disactive == 0)) {
               active_other_nonsite += 1
             }
           }
@@ -411,7 +399,7 @@ object Utils {
 
 
     if (active_sdk_site_wz > 0 || active_js_site_wz > 0 || active_js_nonsite_wz > 0 || active_js_download > 0
-      || active_js_ldy_download > 0 || active_other_site > 0 || active_other_nonsite > 0 || active_motivate > 0) {
+      || active_js_ldy_download > 0 || active_other_site > 0 || active_other_nonsite > 0) {
       (1, label_type) //1表示转化，0表示未转化；label_type: 广告类型
     } else {
       (0, label_type)
