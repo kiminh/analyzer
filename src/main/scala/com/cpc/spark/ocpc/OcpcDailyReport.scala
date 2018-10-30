@@ -151,7 +151,7 @@ object OcpcDailyReport {
     resultDF.show(10)
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_daily_report")
-//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_daily_report")
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_daily_report")
   }
 
 }
