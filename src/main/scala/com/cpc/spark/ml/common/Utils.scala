@@ -221,6 +221,7 @@ object Utils {
     var conversion_sdk_download = 0
     var js_site_active_other = 0
     var js_site_active_other_test = 0
+    var motivate = 0
 
     var label_type = 0 //广告类型，区分不同类型广告
 
@@ -231,6 +232,7 @@ object Utils {
     var active_js_ldy_download = 0 //落地页下载类
     var active_other_site = 0 //其他类建站
     var active_other_nonsite = 0 //其他类非建站
+    var active_motivate = 0 //激励下载
 
 
     traces.foreach {
@@ -264,6 +266,7 @@ object Utils {
             js_site_active_other_test += 1
           }
 
+          //落地页套户、其他类非建站
           if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
             r.getAs[String]("trace_type") == "active3" || r.getAs[String]("trace_type") == "active4") {
             js_site_active_other += 1
@@ -272,6 +275,11 @@ object Utils {
           //其它类：非建站
           if (r.getAs[String]("trace_type").startsWith("nosite_active") && (r.getAs[String]("trace_type") != "nosite_active5")) {
             nosite_active += 1
+          }
+
+          //激励下载转化定义  OPEN_APP
+          if (r.getAs[String]("trace_op1").toLowerCase == "open_app") {
+            motivate += 1
           }
         }
     }
@@ -354,6 +362,13 @@ object Utils {
           }
         }
 
+        //激励下载
+        else if (adslot_type == 7) {
+          label_type = 12
+          if (motivate > 0) {
+            active_motivate += 1
+          }
+        }
 
         // review， 落地页下载非sdk，其它
         else {
