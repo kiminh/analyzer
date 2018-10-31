@@ -589,6 +589,9 @@ object OcpcSampleToRedis {
          |    a.adclass=b.adclass
        """.stripMargin
 
+    println(sqlRequest2)
+    
+
   }
 
 }
