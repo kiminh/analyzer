@@ -98,7 +98,10 @@ object OcpcTestObject {
   def filterDataByType(rawData: DataFrame, date:String, hour: String, spark:SparkSession): Unit ={
     val typeData = checkAdType(date, hour, spark)
 
-    val joinData = rawData.join(typeData, Seq("ideaid", "adclass"), "left_outer").select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "type_flag")
+    val joinData = rawData
+      .join(typeData, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "type_flag")
+      .withColumn("new_type_flag", when(col("type_flag").isNull, 0).otherwise(col("type_flag")))
 
     joinData.createOrReplaceTempView("join_table")
 
