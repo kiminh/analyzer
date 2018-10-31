@@ -369,7 +369,7 @@ object Utils {
             label_type = 10
           }
         }
-          
+
 
         // review， 落地页下载非sdk，其它
         else {
@@ -409,7 +409,7 @@ object Utils {
 
 
     if (active_sdk_site_wz > 0 || active_js_site_wz > 0 || active_js_nonsite_wz > 0 || active_js_download > 0
-      || active_js_ldy_download > 0 || active_other_site > 0 || active_other_nonsite > 0) {
+      || active_js_ldy_download > 0 || active_other_site > 0 || active_other_nonsite > 0 || active_motivate > 0) {
       (1, label_type) //1表示转化，0表示未转化；label_type: 广告类型
     } else {
       (0, label_type)
