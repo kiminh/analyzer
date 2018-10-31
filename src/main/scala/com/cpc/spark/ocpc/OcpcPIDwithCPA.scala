@@ -8,6 +8,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
 import com.cpc.spark.udfs.Udfs_wj._
 import org.apache.spark.sql.functions._
+import sun.java2d.loops.DrawGlyphListAA
 
 
 object OcpcPIDwithCPA {
@@ -390,6 +391,26 @@ object OcpcPIDwithCPA {
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
 
+  }
+
+  def calculateKv2(dataset: DataFrame, spark: SparkSession) = {
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    adclass,
+         |    cast(MIN(k_value) as double) as k_value
+         |FROM
+         |    test.new_pb_ocpc_with_pcvr
+         |group by ideaid, adclass
+       """.stripMargin
+    println(sqlRequest1)
+    val kvalueData = spark.sql(sqlRequest1)
+
+    val sqlRequest2 =
+      s"""
+         |
+       """.stripMargin
   }
 
 }

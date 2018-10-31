@@ -11,10 +11,10 @@ object OcpcDataAlert {
     val hour = args(1).toString
 
     // 如果小时级数据量小于500，则异常退出
-    val check1 = alertDataCount(date, hour, spark)
-    if (check1) {
+    val check1 = alertDataCount(date, hour, spark).toInt
+    if (check1<500) {
       println("##################################################")
-      println("cannot find data in table dl_cpc.ocpc_result_unionlog_table_bak")
+      println(s"number of records in table dl_cpc.ocpc_result_unionlog_table_bak at $date-$hour: %d".format(check1))
       println("##################################################")
       System.exit(1)
     }
@@ -22,7 +22,7 @@ object OcpcDataAlert {
     // TODO 检测其他相关数据累积程序的数据量
   }
 
-  def alertDataCount(date: String, hour: String, spark: SparkSession):Boolean ={
+  def alertDataCount(date: String, hour: String, spark: SparkSession): Int ={
     // 检测monitor程序获得的小时级数据量，如果小于500则返回true，否则返回false
     val sqlRequest =
       s"""
@@ -37,13 +37,9 @@ object OcpcDataAlert {
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
-    val dataCount = data.count()
+    val dataCount = data.count().toInt
 
-    if (dataCount < 500) {
-      true
-    } else {
-      false
-    }
+    dataCount
 
   }
 
