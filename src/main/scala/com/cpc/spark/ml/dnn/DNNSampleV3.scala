@@ -163,15 +163,15 @@ object DNNSampleV3 {
         hashSeq("m26", "int")($"c_city_1").alias("m26"),
         hashSeq("m27", "int")($"c_city_2").alias("m27"),
         hashSeq("m28", "int")($"c_city_3").alias("m28"),
-        hashSeq("m29", "int")($"c_adslotid_1").alias("m29"),
-        hashSeq("m30", "int")($"c_adslotid_2").alias("m30"),
-        hashSeq("m31", "int")($"c_adslotid_3").alias("m31"),
+        hashSeq("m29", "string")($"c_adslotid_1").alias("m29"),
+        hashSeq("m30", "string")($"c_adslotid_2").alias("m30"),
+        hashSeq("m31", "string")($"c_adslotid_3").alias("m31"),
         hashSeq("m32", "int")($"c_phone_level_1").alias("m32"),
         hashSeq("m33", "int")($"c_phone_level_2").alias("m33"),
         hashSeq("m34", "int")($"c_phone_level_3").alias("m34"),
-        hashSeq("m35", "int")($"c_brand_title_1").alias("m35"),
-        hashSeq("m36", "int")($"c_brand_title_2").alias("m36"),
-        hashSeq("m37", "int")($"c_brand_title_3").alias("m37")
+        hashSeq("m35", "string")($"c_brand_title_1").alias("m35"),
+        hashSeq("m36", "string")($"c_brand_title_2").alias("m36"),
+        hashSeq("m37", "string")($"c_brand_title_3").alias("m37")
 
       )
 
