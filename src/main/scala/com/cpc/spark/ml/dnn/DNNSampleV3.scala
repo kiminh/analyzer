@@ -109,7 +109,7 @@ object DNNSampleV3 {
          |       collect_set(if(load_date='${getDay(date, 2)}',click_city,null)) as c_city_2,
          |       collect_set(if(load_date='${getDay(date, 2)}',click_adslotid,null)) as c_adslotid_2,
          |       collect_set(if(load_date='${getDay(date, 2)}',click_phone_level,null)) as c_phone_level_2,
-         |       collect_set(if(load_date='${getDay(date, 2)}',click_brand_title,null)) as c_brand_brand_title_2,
+         |       collect_set(if(load_date='${getDay(date, 2)}',click_brand_title,null)) as c_brand_title_2,
          |
          |       collect_set(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
          |       collect_set(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3,
