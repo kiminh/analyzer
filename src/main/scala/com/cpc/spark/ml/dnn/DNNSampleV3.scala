@@ -9,8 +9,9 @@ import org.apache.spark.sql.functions.{array, udf}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**
-  * 增加用户展现和广告点击的 multi-hot 特征
-  * created time : 2018/10/25 19:54
+  * dnn ctr v3   共28个dense，37个multi hot特征，
+  * 新增24个multi hot特征
+  * created time : 2018/10/31 11:01
   *
   * @author zhj
   * @version 1.0
@@ -196,7 +197,7 @@ object DNNSampleV3 {
          |  hour
          |
          |from dl_cpc.cpc_union_log where `date` = '$date'
-         |  and isshow = 1 and ideaid > 0 and adslot_type in (1, 2)
+         |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
