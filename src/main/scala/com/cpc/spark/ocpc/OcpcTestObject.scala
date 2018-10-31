@@ -102,6 +102,8 @@ object OcpcTestObject {
 
     joinData.createOrReplaceTempView("join_table")
 
+    joinData.write.mode("overwrite").saveAsTable("test.ocpc_adclass_join_table")
+
     val sqlRequest1 =
       s"""
          |SELECT
