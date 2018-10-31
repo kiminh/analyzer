@@ -226,6 +226,37 @@ object SaveFeatures {
 
   def saveCvrDataV2(spark: SparkSession, date: String, hour: String, yesterday: String, version: String): Unit = {
     import spark.implicits._
+
+    //激励下载
+    val motivateRDD = spark.sql(
+      s"""
+         |select  b.trace_op1 as flag1
+         |        ,a.searchid
+         |        ,b.opt['ideaid'] as ideaid
+         |        ,b.trace_op1
+         |from (select * from dl_cpc.cpc_motivation_log
+         |        where `date` = "%s" and `hour` = "%s" and a.searchid is not null and a.searchid != "") a
+         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
+         |        on a.userid = t2.id
+         |    left join
+         |        (select *
+         |            from dl_cpc.cpc_union_trace_log
+         |            where `date` = "%s" and `hour` = "%s"
+         |         ) b
+         |    on a.searchid=b.searchid and a.ideaid=b.
+         | where t2.id is null
+       """.stripMargin.format(date, hour, yesterday, date, hour))
+      .rdd
+      .map {
+        x =>
+          ((x.getAs[String]("searchid"), x.getAs[String]("ideaid")), Seq(x))
+      }
+      .reduceByKey(_ ++ _)
+      .map { x =>
+        val (convert, label_type) = Utils.cvrPositiveV3(x._2, version)
+      }
+    println("motivate: "+motivateRDD.count())
+
     val logRDD = spark.sql(
       s"""
          |select  b.trace_type as flag1

@@ -404,6 +404,38 @@ object Utils {
 
   }
 
+  /**
+    * 激励下载转化
+    *
+    * @param traces
+    * @param version
+    * @return
+    */
+  def cvrPositiveV3(traces: Seq[Row], version: String): (Int, Int) = {
+    var motivate = 0
+    var label_type = 0
+
+    var active_motivate = 0
+
+    traces.foreach {
+      r =>
+        if (!r.isNullAt(0)) { //trace_op1为null时过滤
+          //激励转化
+          if (r.getAs[String]("trace_op1").toLowerCase == "open_app") {
+            motivate += 1
+          }
+
+        }
+    }
+
+    if (active_motivate > 0) {
+      (1, 12)
+    } else {
+      (0, 12)
+    }
+
+  }
+
 
 }
 
