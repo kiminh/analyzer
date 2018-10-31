@@ -103,7 +103,7 @@ object OcpcTestObject {
       .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "type_flag")
       .withColumn("new_type_flag", when(col("type_flag").isNull, 0).otherwise(col("type_flag")))
 
-    joinData.createOrReplaceTempView("join_table")
+//    joinData.createOrReplaceTempView("join_table")
 
     joinData.write.mode("overwrite").saveAsTable("test.ocpc_adclass_join_table")
 
@@ -111,45 +111,29 @@ object OcpcTestObject {
       s"""
          |SELECT
          |    adclass,
-         |    type_flag,
+         |    new_type_flag,
          |    SUM(cost) as total_cost,
          |    SUM(ctr_cnt) as total_ctr,
          |    SUM(cvr_cnt) as total_cvr
          |FROM
          |    join_table
-         |GROUP BY adclass, type_flag
+         |GROUP BY adclass, new_type_flag
        """.stripMargin
 
     println(sqlRequest1)
     val groupbyData = spark.sql(sqlRequest1)
-    groupbyData.createOrReplaceTempView("groupby_table")
+//    groupbyData.createOrReplaceTempView("groupby_table")
     groupbyData.write.mode("overwrite").saveAsTable("test.ocpc_type_groupby_data")
 
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |    a.ideaid,
-         |    a.userid,
-         |    a.adclass,
-         |    a.cost,
-         |    a.ctr_cnt,
-         |    a.cvr_cnt,
-         |    a.adclass_cost,
-         |    a.adclass_ctr_cnt,
-         |    a.adclass_cvr_cnt,
-         |    a.k_value,
-         |    a.type_flag
-         |FROM
-         |    join_table as a
-         |LEFT JOIN
-         |    groupby_table as b
-         |ON
-         |    a.ideaid=b.ideaid
-         |AND
-         |    a.adclass=b.adclass
-       """.stripMargin
+    val joinData2 = joinData
+      .join(groupbyData, Seq("ideaid", "adclass", "new_type_flag"), "left_outer")
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "new_type_flag", "total_cost", "total_ctr", "total_cvr")
+      .withColumn("new_cost", when(col("cvr_cnt")<20, col("total_cost")).otherwise(col("cost")))
+      .withColumn("new_ctr_cnt", when(col("cvr_cnt")<20, col("total_ctr")).otherwise(col("ctr_cnt")))
+      .withColumn("new_cvr_cnt", when(col("cvr_cnt")<20, col("total_cvr")).otherwise("cvr_cnt"))
 
-    println(sqlRequest2)
+
+    joinData2.write.mode("overwrite").saveAsTable("test.ocpc_final_join_table")
 
 
   }
