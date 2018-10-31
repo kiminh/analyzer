@@ -188,6 +188,12 @@ object OcpcPIDwithCPA {
     //    resultDF.filter("flag=0").show(10)
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_percent_flag")
+    resultDF
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_k_value_percent_flag")
 
     resultDF
 
@@ -390,6 +396,7 @@ object OcpcPIDwithCPA {
     resultDF.show(10)
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+
 
   }
 

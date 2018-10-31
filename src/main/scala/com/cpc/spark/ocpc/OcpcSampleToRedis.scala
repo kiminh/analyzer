@@ -197,7 +197,7 @@ object OcpcSampleToRedis {
          |  (case when b.k_value is null then 0.694
          |        when b.k_value > 1.2 then 1.2
          |        when b.k_value < 0.2 then 0.2
-         |        else b.k_value end) as old_k_value,
+         |        else b.k_value end) as k_value,
          |  a.new_type_flag as type_flag
          |FROM
          |  (SELECT
@@ -226,7 +226,6 @@ object OcpcSampleToRedis {
     val userFinalData2 = spark
       .sql(sqlRequest3)
       .filter("cvr_cnt>=20")
-      .withColumn("k_value", when(col("type_flag")===1, col("old_k_value")*0.8).otherwise(col("old_k_value")))
 
     userFinalData2.show(10)
 
