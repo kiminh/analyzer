@@ -128,9 +128,9 @@ object OcpcTestObject {
     val joinData2 = joinData
       .join(groupbyData, Seq("adclass", "new_type_flag"), "left_outer")
       .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "new_type_flag", "total_cost", "total_ctr", "total_cvr")
-      .withColumn("new_cost", when(col("cvr_cnt")<20, col("total_cost")).otherwise(col("cost")))
-      .withColumn("new_ctr_cnt", when(col("cvr_cnt")<20, col("total_ctr")).otherwise(col("ctr_cnt")))
-      .withColumn("new_cvr_cnt", when(col("cvr_cnt")<20, col("total_cvr")).otherwise("cvr_cnt"))
+      .withColumn("new_cost", when(col("cvr_cnt")<20 and col("new_type_flag")===1, col("total_cost")).otherwise(col("cost")))
+      .withColumn("new_ctr_cnt", when(col("cvr_cnt")<20 and col("new_type_flag")===1, col("total_ctr")).otherwise(col("ctr_cnt")))
+      .withColumn("new_cvr_cnt", when(col("cvr_cnt")<20 and col("new_type_flag")===1, col("total_cvr")).otherwise(col("cvr_cnt")))
 
 
     joinData2.write.mode("overwrite").saveAsTable("test.ocpc_final_join_table")
