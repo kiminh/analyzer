@@ -33,6 +33,7 @@ object SaveFeatures {
     }
     val date = args(0)
     val hour = args(1)
+    val yesterday = args(2)
 
     val spark = SparkSession.builder()
       .appName("Save features from UnionLog [%s/%s/%s]".format(version, date, hour))

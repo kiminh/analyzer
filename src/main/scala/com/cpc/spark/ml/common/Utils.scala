@@ -320,34 +320,34 @@ object Utils {
         //          }
         //        }
 
-        if ((adclass == 110110100 || adclass == 125100100) && siteid > 0 && client_type == "NATIVESDK") {
+        if (adslot_type != 7 && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && client_type == "NATIVESDK") {
           label_type = 1
           if (conversion_sdk_wechat > 0) {
             active_sdk_site_wz += 1
           }
-        } else if ((adclass == 110110100 || adclass == 125100100) && siteid > 0 && client_type != "NATIVESDK") {
+        } else if (adslot_type != 7 && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && client_type != "NATIVESDK") {
           label_type = 2
           if (active5 > 0 && disactive == 0) {
             active_js_site_wz += 1
           }
-        } else if ((adclass == 110110100 || adclass == 125100100) && siteid <= 0) {
+        } else if (adslot_type != 7 && (adclass == 110110100 || adclass == 125100100) && siteid <= 0) {
           label_type = 3
           if (active_href > 0) {
             active_js_nonsite_wz += 1
           }
-        } else if (interaction == 2 && client_type == "NATIVESDK") {
+        } else if (adslot_type != 7 && interaction == 2 && client_type == "NATIVESDK") {
           label_type = 4
           if (conversion_sdk_download > 0) {
             active_js_download += 1
           }
         }
         // 直接下载非sdk
-        else if (interaction == 2 && client_type != "NATIVESDK") {
+        else if (adslot_type != 7 && interaction == 2 && client_type != "NATIVESDK") {
           label_type = 8
         }
 
         // 非直接下载 sdk
-        else if ((adclass.toString.length > 3 && adclass.toString.substring(0, 3).toInt == 100) && client_type == "NATIVESDK") {
+        else if (adslot_type != 7 && (adclass.toString.length > 3 && adclass.toString.substring(0, 3).toInt == 100) && client_type == "NATIVESDK") {
           label_type = 5
           if (conversion_sdk_download > 0) {
             active_js_ldy_download += 1
