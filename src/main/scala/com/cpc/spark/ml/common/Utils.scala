@@ -259,7 +259,8 @@ object Utils {
           }
 
           //其它类：建站
-          if ((r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type") != "active5"))) {
+          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" ||
+            (r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type") != "active5"))) {
             js_site_active_other_test += 1
           }
 
