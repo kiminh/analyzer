@@ -103,7 +103,7 @@ object OcpcTestObject {
       .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "type_flag")
       .withColumn("new_type_flag", when(col("type_flag").isNull, 0).otherwise(col("type_flag")))
 
-//    joinData.createOrReplaceTempView("join_table")
+    joinData.createOrReplaceTempView("join_table")
 
     joinData.write.mode("overwrite").saveAsTable("test.ocpc_adclass_join_table")
 
