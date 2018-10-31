@@ -6,6 +6,7 @@ import org.apache.spark.sql.functions.col
 
 
 object OcpcLogParserByID {
+  // 解析ocpc_log字段，并按照日期和ideaid生成临时表
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("OcpcMonitor").enableHiveSupport().getOrCreate()
 

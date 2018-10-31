@@ -1,5 +1,3 @@
-
-
 package com.cpc.spark.ocpc
 
 import java.text.SimpleDateFormat
@@ -24,6 +22,7 @@ import org.apache.spark.sql.functions._
 
 
 object OcpcTestObject {
+  // 测试程序，用来测试新的函数有没有bug
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
