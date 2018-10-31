@@ -20,7 +20,8 @@ object DNNSampleV3 {
 
   Logger.getRootLogger.setLevel(Level.WARN)
 
-  private var trainLog = Seq[String]()
+  //multi hot 特征默认hash code
+  private val default_hash = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
 
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
@@ -56,12 +57,6 @@ object DNNSampleV3 {
       .option("recordType", "Example")
       .save("/user/cpc/zhj/daily_v3/dnntrain-" + date)
 
-    /*val dnntrain = spark.read.format("tfrecords").option("recordType", "Example").load("/user/cpc/zhj/mfeatures/dnntrain-" + date)
-    val n = dnntrain.count()
-    println("训练数据：total = %d, 正比例 = %.4f".format(n, dnntrain.where("label=array(1,0)").count.toDouble / n))
-    println("train size", n)*/
-
-    //val test = getSample(spark, tdate).randomSplit(Array(0.97, 0.03), 123L)(1)
     val test = getSample(spark, tdate, is_train = false).persist()
     val tn = test.count
     println("测试数据：total = %d, 正比例 = %.4f".format(tn, test.where("label=array(1,0)").count.toDouble / tn))
@@ -300,7 +295,7 @@ object DNNSampleV3 {
     cal.setTime(format.parse(startdate))
     cal.add(Calendar.DATE, -day1)
     var re = Seq(format.format(cal.getTime))
-    for (i <- 1 until day2) {
+    for (_ <- 1 until day2) {
       cal.add(Calendar.DATE, -1)
       re = re :+ format.format(cal.getTime)
     }
@@ -380,22 +375,6 @@ object DNNSampleV3 {
     (dense: Seq[Long], f: Boolean) =>
       if (f) (dense.slice(0, p) :+ d) ++ dense.slice(p + 1, 1000) else dense
   }
-
-  private val mkSparseFeature = udf {
-    (apps: Seq[Long], ideaids: Seq[Long]) =>
-      val a = apps.zipWithIndex.map(x => (0, x._2, x._1))
-      val b = ideaids.zipWithIndex.map(x => (1, x._2, x._1))
-      val c = (a ++ b).map(x => (0, x._1, x._2, x._3))
-      (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
-  }
-
-  private val mkSparseFeature1 = udf {
-    apps: Seq[Long] =>
-      val c = apps.zipWithIndex.map(x => (0, 0, x._2, x._1))
-      (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
-  }
-
-  private val default_hash = for (i <- 1 to 13) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
 
   private def mkSparseFeature_m = udf {
     features: Seq[Seq[Long]] =>
