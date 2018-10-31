@@ -54,7 +54,8 @@ object OcpcTestObject {
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
 
-    filterDataByType(rawData, date, hour, spark)
+    val finalData = filterDataByType(rawData, date, hour, spark)
+    finalData.show(10)
   }
 
 
@@ -91,11 +92,11 @@ object OcpcTestObject {
     val typeData = rawData.filter("seq=1").select("ideaid", "adclass", "type_flag")
 
     // 存储数据
-    typeData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_type")
+//    typeData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_type")
     typeData
   }
 
-  def filterDataByType(rawData: DataFrame, date:String, hour: String, spark:SparkSession): Unit ={
+  def filterDataByType(rawData: DataFrame, date:String, hour: String, spark:SparkSession): DataFrame ={
     val typeData = checkAdType(date, hour, spark)
 
     val joinData = rawData
@@ -105,7 +106,7 @@ object OcpcTestObject {
 
     joinData.createOrReplaceTempView("join_table")
 
-    joinData.write.mode("overwrite").saveAsTable("test.ocpc_adclass_join_table")
+//    joinData.write.mode("overwrite").saveAsTable("test.ocpc_adclass_join_table")
 
     val sqlRequest1 =
       s"""
@@ -122,8 +123,8 @@ object OcpcTestObject {
 
     println(sqlRequest1)
     val groupbyData = spark.sql(sqlRequest1)
-//    groupbyData.createOrReplaceTempView("groupby_table")
-    groupbyData.write.mode("overwrite").saveAsTable("test.ocpc_type_groupby_data")
+////    groupbyData.createOrReplaceTempView("groupby_table")
+//    groupbyData.write.mode("overwrite").saveAsTable("test.ocpc_type_groupby_data")
 
     val joinData2 = joinData
       .join(groupbyData, Seq("adclass", "new_type_flag"), "left_outer")
@@ -134,6 +135,7 @@ object OcpcTestObject {
 
 
     joinData2.write.mode("overwrite").saveAsTable("test.ocpc_final_join_table")
+    joinData2
 
 
   }
