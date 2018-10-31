@@ -228,7 +228,7 @@ object SaveFeatures {
     import spark.implicits._
 
     //激励下载
-    val motivateRDD = spark.sql(
+    /*val motivateRDD = spark.sql(
       s"""
          |select  b.trace_op1 as flag1
          |        ,a.searchid
@@ -256,7 +256,7 @@ object SaveFeatures {
         val (convert, label_type) = Utils.cvrPositiveV3(x._2, version)
       }
     println("motivate: "+motivateRDD.count())
-
+*/
     val logRDD = spark.sql(
       s"""
          |select  b.trace_type as flag1
