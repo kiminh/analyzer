@@ -91,8 +91,6 @@ object OcpcTestObject {
 
     val typeData = rawData.filter("seq=1").select("ideaid", "adclass", "type_flag")
 
-    // 存储数据
-//    typeData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_type")
     typeData
   }
 
@@ -105,8 +103,6 @@ object OcpcTestObject {
       .withColumn("new_type_flag", when(col("type_flag").isNull, 0).otherwise(col("type_flag")))
 
     joinData.createOrReplaceTempView("join_table")
-
-//    joinData.write.mode("overwrite").saveAsTable("test.ocpc_adclass_join_table")
 
     val sqlRequest1 =
       s"""
@@ -123,8 +119,6 @@ object OcpcTestObject {
 
     println(sqlRequest1)
     val groupbyData = spark.sql(sqlRequest1)
-////    groupbyData.createOrReplaceTempView("groupby_table")
-//    groupbyData.write.mode("overwrite").saveAsTable("test.ocpc_type_groupby_data")
 
     val joinData2 = joinData
       .join(groupbyData, Seq("adclass", "new_type_flag"), "left_outer")

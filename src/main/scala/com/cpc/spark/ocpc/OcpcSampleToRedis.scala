@@ -177,6 +177,8 @@ object OcpcSampleToRedis {
     val userFinalData = spark.sql(sqlRequest2)
     userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
+    val userFinalData3 = filterDataByType(userFinalData, end_date, hour, spark)
+    userFinalData3.write.mode("overwrite").saveAsTable("test.ocpc_new_cvr_table")
 
 
     // 根据中间表加入k值
@@ -195,24 +197,22 @@ object OcpcSampleToRedis {
          |  (case when b.k_value is null then 0.694
          |        when b.k_value > 1.2 then 1.2
          |        when b.k_value < 0.2 then 0.2
-         |        else b.k_value end) as k_value
+         |        else b.k_value end) as old_k_value,
+         |  a.new_type_flag as type_flag
          |FROM
          |  (SELECT
          |    ideaid,
          |    userid,
          |    adclass,
-         |    cost,
-         |    ctr_cnt,
-         |    cvr_cnt,
+         |    new_cost as cost,
+         |    new_ctr_cnt as ctr_cnt,
+         |    new_cvr_cnt as cvr_cnt,
          |    adclass_cost,
          |    adclass_ctr_cnt,
-         |    adclass_cvr_cnt
+         |    adclass_cvr_cnt,
+         |    new_type_flag
          |   FROM
-         |    dl_cpc.ocpc_pb_result_table
-         |   WHERE
-         |    `date`='$end_date'
-         |   and
-         |    `hour`='$hour') a
+         |    test.ocpc_new_cvr_table) a
          |LEFT JOIN
          |   (SELECT ideaid, adclass, cast(k_value as double) as k_value FROM test.ocpc_k_value_table) as b
          |ON
@@ -223,13 +223,17 @@ object OcpcSampleToRedis {
 
     println(sqlRequest3)
 
-    val userFinalData2 = spark.sql(sqlRequest3).filter("cvr_cnt>=20")
+    val userFinalData2 = spark
+      .sql(sqlRequest3)
+      .filter("cvr_cnt>=20")
+      .withColumn("k_value", when(col("type_flag")===1, col("old_k_value")*0.8).otherwise(col("old_k_value")))
 
     userFinalData2.show(10)
 
     userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 
     userFinalData2
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
       .withColumn("date", lit(end_date))
       .withColumn("hour", lit(hour))
       .write.mode("overwrite")
@@ -505,7 +509,7 @@ object OcpcSampleToRedis {
 
   }
 
-  def checkAdType(endDate: String, hour: String, spark: SparkSession) ={
+  def checkAdType(endDate: String, hour: String, spark: SparkSession): DataFrame ={
     // 计算时间区间
     val threshold = 20
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
@@ -526,7 +530,7 @@ object OcpcSampleToRedis {
          |    (case when siteid>0 then 1 else 0 end) as type_flag,
          |    row_number() over(partition by ideaid, adclass ORDER BY timestamp DESC) as seq
          |FROM
-         |    test.ocpc_track_ad_type_hourly
+         |    dl_cpc.ocpc_track_ad_type_hourly
          |WHERE
          |    $selectCondition
        """.stripMargin
@@ -536,15 +540,16 @@ object OcpcSampleToRedis {
 
     val typeData = rawData.filter("seq=1").select("ideaid", "adclass", "type_flag")
 
-    // 存储数据
-    typeData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_type")
     typeData
   }
 
-  def filterDataByType(rawData: DataFrame, date:String, hour: String, spark:SparkSession) ={
+  def filterDataByType(rawData: DataFrame, date:String, hour: String, spark:SparkSession): DataFrame ={
     val typeData = checkAdType(date, hour, spark)
 
-    val joinData = rawData.join(typeData, Seq("ideaid", "adclass"), "left_outer").select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "type_flag")
+    val joinData = rawData
+      .join(typeData, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "type_flag")
+      .withColumn("new_type_flag", when(col("type_flag").isNull, 0).otherwise(col("type_flag")))
 
     joinData.createOrReplaceTempView("join_table")
 
@@ -552,45 +557,29 @@ object OcpcSampleToRedis {
       s"""
          |SELECT
          |    adclass,
-         |    type_flag,
+         |    new_type_flag,
          |    SUM(cost) as total_cost,
          |    SUM(ctr_cnt) as total_ctr,
          |    SUM(cvr_cnt) as total_cvr
          |FROM
          |    join_table
-         |GROUP BY adclass, type_flag
+         |GROUP BY adclass, new_type_flag
        """.stripMargin
 
     println(sqlRequest1)
     val groupbyData = spark.sql(sqlRequest1)
-    groupbyData.createOrReplaceTempView("groupby_table")
 
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |    a.ideaid,
-         |    a.userid,
-         |    a.adclass,
-         |    a.cost,
-         |    a.ctr_cnt,
-         |    a.cvr_cnt,
-         |    a.adclass_cost,
-         |    a.adclass_ctr_cnt,
-         |    a.adclass_cvr_cnt,
-         |    a.k_value,
-         |    a.type_flag
-         |FROM
-         |    join_table as a
-         |LEFT JOIN
-         |    groupby_table as b
-         |ON
-         |    a.ideaid=b.ideaid
-         |AND
-         |    a.adclass=b.adclass
-       """.stripMargin
+    val joinData2 = joinData
+      .join(groupbyData, Seq("adclass", "new_type_flag"), "left_outer")
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "new_type_flag", "total_cost", "total_ctr", "total_cvr")
+      .withColumn("new_cost", when(col("cvr_cnt")<20 and col("new_type_flag")===1, col("total_cost")).otherwise(col("cost")))
+      .withColumn("new_ctr_cnt", when(col("cvr_cnt")<20 and col("new_type_flag")===1, col("total_ctr")).otherwise(col("ctr_cnt")))
+      .withColumn("new_cvr_cnt", when(col("cvr_cnt")<20 and col("new_type_flag")===1, col("total_cvr")).otherwise(col("cvr_cnt")))
 
-    println(sqlRequest2)
-    
+
+    joinData2.write.mode("overwrite").saveAsTable("test.ocpc_final_join_table")
+    joinData2
+
 
   }
 
