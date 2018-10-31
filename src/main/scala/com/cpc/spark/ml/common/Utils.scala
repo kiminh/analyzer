@@ -221,7 +221,6 @@ object Utils {
     var conversion_sdk_download = 0
     var js_site_active_other = 0
     var js_site_active_other_test = 0
-    var motivate = 0
 
     var label_type = 0 //广告类型，区分不同类型广告
 
@@ -232,7 +231,6 @@ object Utils {
     var active_js_ldy_download = 0 //落地页下载类
     var active_other_site = 0 //其他类建站
     var active_other_nonsite = 0 //其他类非建站
-    var active_motivate = 0 //激励下载
 
 
     traces.foreach {
@@ -266,7 +264,7 @@ object Utils {
             js_site_active_other_test += 1
           }
 
-          //落地页套户、其他类非建站
+          //落地页套户、其他类非建站测试
           if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
             r.getAs[String]("trace_type") == "active3" || r.getAs[String]("trace_type") == "active4") {
             js_site_active_other += 1
@@ -277,10 +275,6 @@ object Utils {
             nosite_active += 1
           }
 
-          //激励下载转化定义  OPEN_APP
-          if (r.getAs[String]("trace_op1").toLowerCase == "open_app") {
-            motivate += 1
-          }
         }
     }
 
@@ -320,15 +314,7 @@ object Utils {
         //          }
         //        }
 
-        //激励下载
-        if (adslot_type == 7) {
-          label_type = 12
-          if (motivate > 0) {
-            active_motivate += 1
-          }
-        }
-
-        else if ((adclass == 110110100 || adclass == 125100100) && siteid > 0 && client_type == "NATIVESDK") {
+        if ((adclass == 110110100 || adclass == 125100100) && siteid > 0 && client_type == "NATIVESDK") {
           label_type = 1
           if (conversion_sdk_wechat > 0) {
             active_sdk_site_wz += 1
@@ -355,7 +341,7 @@ object Utils {
         }
 
         // 非直接下载 sdk
-        else if (adslot_type != 7 && (adclass.toString.length > 3 && adclass.toString.substring(0, 3).toInt == 100) && client_type == "NATIVESDK") {
+        else if ((adclass.toString.length > 3 && adclass.toString.substring(0, 3).toInt == 100) && client_type == "NATIVESDK") {
           label_type = 5
           if (conversion_sdk_download > 0) {
             active_js_ldy_download += 1
@@ -409,7 +395,7 @@ object Utils {
 
 
     if (active_sdk_site_wz > 0 || active_js_site_wz > 0 || active_js_nonsite_wz > 0 || active_js_download > 0
-      || active_js_ldy_download > 0 || active_other_site > 0 || active_other_nonsite > 0 || active_motivate > 0) {
+      || active_js_ldy_download > 0 || active_other_site > 0 || active_other_nonsite > 0) {
       (1, label_type) //1表示转化，0表示未转化；label_type: 广告类型
     } else {
       (0, label_type)
