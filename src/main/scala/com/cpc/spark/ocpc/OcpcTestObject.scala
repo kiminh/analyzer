@@ -126,7 +126,7 @@ object OcpcTestObject {
     groupbyData.write.mode("overwrite").saveAsTable("test.ocpc_type_groupby_data")
 
     val joinData2 = joinData
-      .join(groupbyData, Seq("ideaid", "adclass", "new_type_flag"), "left_outer")
+      .join(groupbyData, Seq("adclass", "new_type_flag"), "left_outer")
       .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "new_type_flag", "total_cost", "total_ctr", "total_cvr")
       .withColumn("new_cost", when(col("cvr_cnt")<20, col("total_cost")).otherwise(col("cost")))
       .withColumn("new_ctr_cnt", when(col("cvr_cnt")<20, col("total_ctr")).otherwise(col("ctr_cnt")))
