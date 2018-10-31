@@ -243,7 +243,7 @@ object SaveFeatures {
          |            from dl_cpc.cpc_union_trace_log
          |            where `date` = "%s" and `hour` = "%s"
          |         ) b
-         |    on a.searchid=b.searchid and a.ideaid=b.
+         |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
          | where t2.id is null
        """.stripMargin.format(date, hour, yesterday, date, hour))
       .rdd
