@@ -34,6 +34,7 @@ object SaveFeatures {
     val date = args(0)
     val hour = args(1)
     val yesterday = args(2)
+    println("day: " + date, " yesterday: " + yesterday)
 
     val spark = SparkSession.builder()
       .appName("Save features from UnionLog [%s/%s/%s]".format(version, date, hour))
@@ -42,7 +43,7 @@ object SaveFeatures {
 
     //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
-    saveCvrDataV2(spark, date, hour, versionV2) //第二版cvr
+    saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
     println("SaveFeatures_done")
   }
 
@@ -223,7 +224,7 @@ object SaveFeatures {
       """.stripMargin.format(date, hour, date, hour))
   }
 
-  def saveCvrDataV2(spark: SparkSession, date: String, hour: String, version: String): Unit = {
+  def saveCvrDataV2(spark: SparkSession, date: String, hour: String, yesterday: String, version: String): Unit = {
     import spark.implicits._
     val logRDD = spark.sql(
       s"""
@@ -251,7 +252,7 @@ object SaveFeatures {
          |         ) b
          |    on a.searchid=b.searchid
          | where t2.id is null and a.searchid is not null and a.searchid != ""
-        """.stripMargin.format(date, hour, date, date, hour))
+        """.stripMargin.format(date, hour, yesterday, date, hour))
       .rdd
       .map {
         x =>

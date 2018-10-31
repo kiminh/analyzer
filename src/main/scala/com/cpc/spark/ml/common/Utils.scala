@@ -320,29 +320,37 @@ object Utils {
         //          }
         //        }
 
-        if (adslot_type != 7 && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && client_type == "NATIVESDK") {
+        //激励下载
+        if (adslot_type == 7) {
+          label_type = 12
+          if (motivate > 0) {
+            active_motivate += 1
+          }
+        }
+
+        else if ((adclass == 110110100 || adclass == 125100100) && siteid > 0 && client_type == "NATIVESDK") {
           label_type = 1
           if (conversion_sdk_wechat > 0) {
             active_sdk_site_wz += 1
           }
-        } else if (adslot_type != 7 && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && client_type != "NATIVESDK") {
+        } else if ((adclass == 110110100 || adclass == 125100100) && siteid > 0 && client_type != "NATIVESDK") {
           label_type = 2
           if (active5 > 0 && disactive == 0) {
             active_js_site_wz += 1
           }
-        } else if (adslot_type != 7 && (adclass == 110110100 || adclass == 125100100) && siteid <= 0) {
+        } else if ((adclass == 110110100 || adclass == 125100100) && siteid <= 0) {
           label_type = 3
           if (active_href > 0) {
             active_js_nonsite_wz += 1
           }
-        } else if (adslot_type != 7 && interaction == 2 && client_type == "NATIVESDK") {
+        } else if (interaction == 2 && client_type == "NATIVESDK") {
           label_type = 4
           if (conversion_sdk_download > 0) {
             active_js_download += 1
           }
         }
         // 直接下载非sdk
-        else if (adslot_type != 7 && interaction == 2 && client_type != "NATIVESDK") {
+        else if (interaction == 2 && client_type != "NATIVESDK") {
           label_type = 8
         }
 
@@ -361,14 +369,7 @@ object Utils {
             label_type = 10
           }
         }
-
-        //激励下载
-        else if (adslot_type == 7) {
-          label_type = 12
-          if (motivate > 0) {
-            active_motivate += 1
-          }
-        }
+          
 
         // review， 落地页下载非sdk，其它
         else {
