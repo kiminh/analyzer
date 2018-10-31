@@ -24,7 +24,8 @@ object OcpcLogParserByID {
          |  bid_ocpc,
          |  isshow,
          |  isclick,
-         |  iscvr
+         |  iscvr,
+         |  hour
          |FROM
          |  dl_cpc.ocpc_result_unionlog_table_bak
          |WHERE
