@@ -16,7 +16,12 @@ object OcpcLogParserByID {
       s"""
          |SELECT
          |  ideaid,
+         |  exp_ctr,
+         |  exp_cvr,
+         |  exptags,
          |  ocpc_log,
+         |  price,
+         |  bid_ocpc,
          |  isshow,
          |  isclick,
          |  iscvr
