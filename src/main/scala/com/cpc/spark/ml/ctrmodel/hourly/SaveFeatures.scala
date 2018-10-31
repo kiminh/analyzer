@@ -241,15 +241,13 @@ object SaveFeatures {
          |       ,b.*
          |from (select * from dl_cpc.cpc_union_log
          |        where `date` = "%s" and `hour` = "%s" ) a
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
-         |        on a.userid = t2.id
          |    left join
          |        (select *
          |            from dl_cpc.cpc_union_trace_log
          |            where `date` = "%s" and `hour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid
-         | where t2.id is null and a.searchid is not null and a.searchid != ""
+         | where  a.searchid is not null and a.searchid != ""
         """.stripMargin.format(date, hour, date, date, hour))
       .rdd
       .map {
