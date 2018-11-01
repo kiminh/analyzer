@@ -625,9 +625,9 @@ object OcpcPIDwithCPA {
          |  ctr_cnt,
          |  cvr_cnt,
          |  (case when cpa_given is null then 1.0
-         |        when hourly_ctr_cnt<10 or hourly_ctr_cnt is null then 1.2
+         |        when '$hour'>'05' and (hourly_ctr_cnt<10 or hourly_ctr_cnt is null) then 1.2
          |        when hourly_ctr_cnt>=10 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
-         |        when hourly_ctr_cnt>=10 and cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
+         |        when cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
          |        else 1.0 end) as cpa_ratio
          |FROM
          |  join_table
