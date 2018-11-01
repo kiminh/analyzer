@@ -232,7 +232,7 @@ object SaveFeatures {
       s"""
          |select  b.trace_op1 as flag1
          |        ,a.searchid
-         |        ,b.opt['ideaid'] as ideaid
+         |        ,a.ideaid
          |        ,b.trace_op1
          |from (select * from dl_cpc.cpc_motivation_log
          |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "") a
