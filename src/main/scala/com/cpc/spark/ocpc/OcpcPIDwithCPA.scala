@@ -17,11 +17,11 @@ object OcpcPIDwithCPA {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val isTest = args(2).toInt
+    val onDuty = args(2).toInt
 
-    if (isTest == 1) {
+    if (onDuty == 1) {
       val resultDF = calculateKv2(date, hour, spark)
-//      resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+      resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
@@ -698,4 +698,6 @@ object OcpcPIDwithCPA {
     resultDF
   }
 
+  /*******************************************************************/
+  // TODO: 下一阶段优化目标，考虑24小时的cpa表现，按权重计算
 }
