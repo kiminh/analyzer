@@ -567,9 +567,9 @@ object OcpcPIDwithCPA {
     // TODO case
     /**
       * 计算前6个小时每个广告创意的cpa_given/cpa_real的比值
-      * case1：前6个小时ctr_cnt<30，可能出价过低，需要提高k值，所以比值应该大于1
-      * case2：前6个小时ctr_cnt>=30但是没有cvr_cnt，可能出价过高，需要降低k值，所以比值应该小于1
-      * case3：前6个小时ctr_cnt>=30且有cvr_cnt，按照定义计算比值即可
+      * case1：hourly_ctr_cnt<30，可能出价过低，需要提高k值，所以比值应该大于1
+      * case2：hourly_ctr_cnt>=30但是没有cvr_cnt，可能出价过高，需要降低k值，所以比值应该小于1
+      * case3：hourly_ctr_cnt>=30且有cvr_cnt，按照定义计算比值即可
       */
 
     // 获得cpa_given
@@ -587,15 +587,23 @@ object OcpcPIDwithCPA {
     // TODO 删除临时表
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_cost_ctr_cvr")
 
+    // 计算单个小时的ctr_cnt和cvr_cnt
+    val singleHour = historyData
+      .filter(s"hour='$hour'")
+      .groupBy("ideaid", "adclass").agg(sum("isclick").alias("hourly_ctr_cnt"), sum(col("iscvr")).alias("hourly_cvr_cnt"))
+      .select("ideaid", "adclass", "hourly_ctr_cnt", "hourly_cvr_cnt")
+
     // 计算cpa_ratio
     val joinData = baseData
       .join(cpaGiven, Seq("ideaid"), "left_outer")
       .select("ideaid", "adclass", "cpa_given")
       .join(rawData, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "cpa_given", "total_cost", "ctr_cnt", "cvr_cnt")
+      .join(singleHour, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "adclass", "cpa_given", "total_cost", "ctr_cnt", "cvr_cnt", "hourly_ctr_cnt", "hourly_cvr_cnt")
+
+
     joinData.createOrReplaceTempView("join_table")
-
-
 
 //    val joinData = cpaGiven
 //      .join(rawData, Seq("ideaid"), "left_outer")
@@ -603,6 +611,8 @@ object OcpcPIDwithCPA {
 //    joinData.createOrReplaceTempView("join_table")
     // TODO 删除临时表
     joinData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_total_cost")
+
+
 
     // case1, case2, case3
     val sqlRequest =
@@ -615,9 +625,9 @@ object OcpcPIDwithCPA {
          |  ctr_cnt,
          |  cvr_cnt,
          |  (case when cpa_given is null then 1.0
-         |        when ctr_cnt<30 or ctr_cnt is null then 0.8
-         |        when ctr_cnt>=30 and (cvr_cnt=0 or cvr_cnt is null) then 1.2
-         |        when ctr_cnt>=30 and cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
+         |        when hourly_ctr_cnt<30 or hourly_ctr_cnt is null then 1.2
+         |        when hourly_ctr_cnt>=30 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
+         |        when hourly_ctr_cnt>=30 and cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
          |        else 1.0 end) as cpa_ratio
          |FROM
          |  join_table
