@@ -25,12 +25,14 @@ object Udfs_wj{
 
   def udfStringToMap() = udf((valueLog: String) =>{
     var result = mutable.LinkedHashMap[String, String]()
-    val logs = valueLog.split(",")
-    for (log <- logs) {
-      val splits = log.split(":")
-      val key = splits(0)
-      val value = splits(1)
-      result += (key -> value)
+    if (valueLog != null && valueLog != "") {
+      val logs = valueLog.split(",")
+      for (log <- logs) {
+        val splits = log.split(":")
+        val key = splits(0)
+        val value = splits(1)
+        result += (key -> value)
+      }
     }
     result
   })
