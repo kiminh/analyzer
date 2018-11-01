@@ -588,7 +588,7 @@ object OcpcPIDwithCPA {
     val joinData = baseData
       .join(cpaGiven, Seq("ideaid"), "left_outer")
       .select("ideaid", "adclass", "cpa_given")
-      .join(rawData, Seq("ideaid"), "left_outer")
+      .join(rawData, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "cpa_given", "total_cost", "ctr_cnt", "cvr_cnt")
     joinData.createOrReplaceTempView("join_table")
 
