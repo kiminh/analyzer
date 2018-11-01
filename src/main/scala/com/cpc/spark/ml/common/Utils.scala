@@ -247,7 +247,6 @@ object Utils {
           }
 
 
-
           //加粉类：建站&sdk
           if (r.getAs[String]("trace_op1").toLowerCase == "report_user_stayinwx") {
             conversion_sdk_wechat += 1
@@ -258,13 +257,13 @@ object Utils {
             conversion_sdk_download += 1
           }
 
-          //其它类：建站
+          //落地页套户、其他类非建站测试
           if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" ||
             (r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type") != "active5"))) {
             js_site_active_other_test += 1
           }
 
-          //落地页套户、其他类非建站测试
+          //其它类：建站
           if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
             r.getAs[String]("trace_type") == "active3" || r.getAs[String]("trace_type") == "active4") {
             js_site_active_other += 1
@@ -412,7 +411,7 @@ object Utils {
     * @return
     */
   def cvrPositiveV3(traces: Seq[Row], version: String): (Int, Int) = {
-    var motivate = 0
+
     var label_type = 0
 
     var active_motivate = 0
@@ -422,7 +421,7 @@ object Utils {
         if (!r.isNullAt(0)) { //trace_op1为null时过滤
           //激励转化
           if (r.getAs[String]("trace_op1").toLowerCase == "open_app") {
-            motivate += 1
+            active_motivate += 1
           }
 
         }
