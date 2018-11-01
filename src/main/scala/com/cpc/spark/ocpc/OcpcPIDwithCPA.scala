@@ -21,7 +21,7 @@ object OcpcPIDwithCPA {
 
     if (isTest == 1) {
       val resultDF = calculateKv2(date, hour, spark)
-      resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+//      resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
