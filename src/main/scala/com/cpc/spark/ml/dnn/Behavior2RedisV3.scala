@@ -83,7 +83,7 @@ object Behavior2RedisV3 {
       .parquet("/user/cpc/zhj/behaviorV3")
 
 
-    /*val conf = ConfigFactory.load()
+    val conf = ConfigFactory.load()
     data.coalesce(20).foreachPartition { p =>
       val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
       redis.auth(conf.getString("ali_redis.auth"))
@@ -101,7 +101,7 @@ object Behavior2RedisV3 {
       }
 
       redis.disconnect
-    }*/
+    }
   }
 
   /**
