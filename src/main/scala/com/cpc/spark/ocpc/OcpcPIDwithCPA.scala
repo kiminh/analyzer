@@ -564,11 +564,12 @@ object OcpcPIDwithCPA {
   }
 
   def getCPAratio(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
+    // TODO case
     /**
       * 计算前6个小时每个广告创意的cpa_given/cpa_real的比值
-      * case1：前6个小时有cvr_cnt，按照定义计算比值即可
-      * case2：前6个小时有ctr_cnt没有cvr_cnt，可能出价过高，需要降低k值，所以比值应该小于1
-      * case3: 前6个小时没有ctr_cnt，可能出价过低，需要提高k值，所以比值应该大于1
+      * case1：前6个小时ctr_cnt<30，可能出价过低，需要提高k值，所以比值应该大于1
+      * case2：前6个小时ctr_cnt>=30但是没有cvr_cnt，可能出价过高，需要降低k值，所以比值应该小于1
+      * case3：前6个小时ctr_cnt>=30且有cvr_cnt，按照定义计算比值即可
       */
 
     // 获得cpa_given
@@ -614,9 +615,9 @@ object OcpcPIDwithCPA {
          |  ctr_cnt,
          |  cvr_cnt,
          |  (case when cpa_given is null then 1.0
-         |        when cvr_cnt>0 and total_cost>0 then cpa_given * cvr_cnt * 1.0 / total_cost
-         |        when (cvr_cnt=0 or cvr_cnt is null) and total_cost>0 then 0.8
-         |        when (cvr_cnt=0 or cvr_cnt is null) and (total_cost=0 or total_cost is null) then 1.2
+         |        when ctr_cnt<30 or ctr_cnt is null then 0.8
+         |        when ctr_cnt>=30 and (cvr_cnt=0 or cvr_cnt is null) then 1.2
+         |        when ctr_cnt>=30 and cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
          |        else 1.0 end) as cpa_ratio
          |FROM
          |  join_table
