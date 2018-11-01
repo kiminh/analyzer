@@ -446,7 +446,7 @@ object OcpcPIDwithCPA {
       s"""
          |SELECT
          |  ideaid,
-         |  adclass,
+         |  adclass
          |FROM
          |  dl_cpc.ocpc_uid_userid_track_label2
          |WHERE $selectCondition
