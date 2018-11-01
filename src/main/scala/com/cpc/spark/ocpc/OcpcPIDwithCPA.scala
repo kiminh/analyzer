@@ -541,7 +541,7 @@ object OcpcPIDwithCPA {
     // case2
     // table name for previous calculation: test.new_pb_ocpc_with_pcvr
     val case2 = spark
-      .sql("test.new_pb_ocpc_with_pcvr")
+      .table("test.new_pb_ocpc_with_pcvr")
       .withColumn("kvalue2", col("kvalue"))
       .select("ideaid", "adclass", "kvalue2")
 
