@@ -20,11 +20,13 @@ object OcpcPIDwithCPA {
     val isTest = args(2).toInt
 
     if (isTest == 1) {
-      calculateKv1(date, hour, spark)
+      val resultDF = calculateKv2(date, hour, spark)
+      resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
-      val testKstrat = calculateKv2(date, hour, spark)
+//      val testKstrat = calculateKv2(date, hour, spark)
+      calculateKv1(date, hour, spark)
     }
 
 
@@ -582,7 +584,7 @@ object OcpcPIDwithCPA {
         sum(col("isclick")).alias("ctr_cnt"),
         sum(col("iscvr")).alias("cvr_cnt"))
     // TODO 删除临时表
-    rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideai_cost_ctr_cvr")
+    rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_cost_ctr_cvr")
 
     // 计算cpa_ratio
     val joinData = baseData
@@ -633,7 +635,7 @@ object OcpcPIDwithCPA {
       * 根据新的K基准值和cpa_ratio来在分段函数中重新定义k值
       * case1：0.9 <= cpa_ratio <= 1.1，k基准值
       * case2：0.8 <= cpa_ratio < 0.9，k / 1.1
-      * case2：1.1 < cpa_ratio <= 1.2，k * 1.2
+      * case2：1.1 < cpa_ratio <= 1.2，k * 1.1
       * case3：0.6 <= cpa_ratio < 0.8，k / 1.2
       * case3：1.2 < cpa_ratio <= 1.4，k * 1.2
       * case4：0.4 <= cpa_ratio < 0.6，k / 1.4
