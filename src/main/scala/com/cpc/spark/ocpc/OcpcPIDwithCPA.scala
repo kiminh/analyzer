@@ -413,10 +413,20 @@ object OcpcPIDwithCPA {
       */
 
     val baseData = getBaseTable(date, hour, spark)
+    println("################ baseData #################")
+    baseData.show(10)
     val historyData = getHistoryData(date, hour, 6, spark)
+    println("################# historyData ####################")
+    historyData.show(10)
     val avgK = getAvgK(baseData, historyData, date, hour, 6, spark)
+    println("################# avgK table #####################")
+    avgK.show(10)
     val cpaRatio = getCPAratio(historyData, date, hour, 6, spark)
+    println("################# cpaRatio table #######################")
+    cpaRatio.show(10)
     val newK = updateKv2(baseData, avgK, cpaRatio, spark)
+    println("################# final result ####################")
+    newK.show(10)
     newK
   }
 
