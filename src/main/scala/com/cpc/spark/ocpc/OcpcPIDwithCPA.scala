@@ -567,9 +567,9 @@ object OcpcPIDwithCPA {
     // TODO case
     /**
       * 计算前6个小时每个广告创意的cpa_given/cpa_real的比值
-      * case1：hourly_ctr_cnt<30，可能出价过低，需要提高k值，所以比值应该大于1
-      * case2：hourly_ctr_cnt>=30但是没有cvr_cnt，可能出价过高，需要降低k值，所以比值应该小于1
-      * case3：hourly_ctr_cnt>=30且有cvr_cnt，按照定义计算比值即可
+      * case1：hourly_ctr_cnt<10，可能出价过低，需要提高k值，所以比值应该大于1
+      * case2：hourly_ctr_cnt>=10但是没有cvr_cnt，可能出价过高，需要降低k值，所以比值应该小于1
+      * case3：hourly_ctr_cnt>=10且有cvr_cnt，按照定义计算比值即可
       */
 
     // 获得cpa_given
@@ -625,9 +625,9 @@ object OcpcPIDwithCPA {
          |  ctr_cnt,
          |  cvr_cnt,
          |  (case when cpa_given is null then 1.0
-         |        when hourly_ctr_cnt<30 or hourly_ctr_cnt is null then 1.2
-         |        when hourly_ctr_cnt>=30 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
-         |        when hourly_ctr_cnt>=30 and cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
+         |        when hourly_ctr_cnt<10 or hourly_ctr_cnt is null then 1.2
+         |        when hourly_ctr_cnt>=10 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
+         |        when hourly_ctr_cnt>=10 and cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
          |        else 1.0 end) as cpa_ratio
          |FROM
          |  join_table
