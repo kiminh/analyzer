@@ -421,7 +421,7 @@ object OcpcPIDwithCPA {
     val avgK = getAvgK(baseData, historyData, date, hour, 6, spark)
     println("################# avgK table #####################")
     avgK.show(10)
-    val cpaRatio = getCPAratio(historyData, date, hour, 6, spark)
+    val cpaRatio = getCPAratio(baseData, historyData, date, hour, 6, spark)
     println("################# cpaRatio table #######################")
     cpaRatio.show(10)
     val newK = updateKv2(baseData, avgK, cpaRatio, spark)
@@ -561,7 +561,7 @@ object OcpcPIDwithCPA {
 
   }
 
-  def getCPAratio(historyData: DataFrame, date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
+  def getCPAratio(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
     /**
       * 计算前6个小时每个广告创意的cpa_given/cpa_real的比值
       * case1：前6个小时有cvr_cnt，按照定义计算比值即可
@@ -585,10 +585,19 @@ object OcpcPIDwithCPA {
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideai_cost_ctr_cvr")
 
     // 计算cpa_ratio
-    val joinData = cpaGiven
+    val joinData = baseData
+      .join(cpaGiven, Seq("ideaid"), "left_outer")
+      .select("ideaid", "adclass", "cpa_given")
       .join(rawData, Seq("ideaid"), "left_outer")
       .select("ideaid", "adclass", "cpa_given", "total_cost", "ctr_cnt", "cvr_cnt")
     joinData.createOrReplaceTempView("join_table")
+
+
+
+//    val joinData = cpaGiven
+//      .join(rawData, Seq("ideaid"), "left_outer")
+//      .select("ideaid", "adclass", "cpa_given", "total_cost", "ctr_cnt", "cvr_cnt")
+//    joinData.createOrReplaceTempView("join_table")
     // TODO 删除临时表
     joinData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_total_cost")
 
