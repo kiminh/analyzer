@@ -40,39 +40,20 @@ object Behavior2RedisV3 {
          |
          |       collect_set(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
          |       collect_set(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
-         |       collect_set(if(load_date='${getDay(date, 1)}',click_userid,null)) as c_userid_1,
-         |       collect_set(if(load_date='${getDay(date, 1)}',click_planid,null)) as c_planid_1,
-         |       collect_set(if(load_date='${getDay(date, 1)}',click_adtype,null)) as c_adtype_1,
-         |       collect_set(if(load_date='${getDay(date, 1)}',click_interaction,null)) as c_interaction_1,
-         |       collect_set(if(load_date='${getDay(date, 1)}',click_city,null)) as c_city_1,
-         |       collect_set(if(load_date='${getDay(date, 1)}',click_adslotid,null)) as c_adslotid_1,
-         |       collect_set(if(load_date='${getDay(date, 1)}',click_phone_level,null)) as c_phone_level_1,
-         |       collect_set(if(load_date='${getDay(date, 1)}',click_brand_title,null)) as c_brand_title_1,
          |
          |       collect_set(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
          |       collect_set(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
-         |       collect_set(if(load_date='${getDay(date, 2)}',click_userid,null)) as c_userid_2,
-         |       collect_set(if(load_date='${getDay(date, 2)}',click_planid,null)) as c_planid_2,
-         |       collect_set(if(load_date='${getDay(date, 2)}',click_adtype,null)) as c_adtype_2,
-         |       collect_set(if(load_date='${getDay(date, 2)}',click_interaction,null)) as c_interaction_2,
-         |       collect_set(if(load_date='${getDay(date, 2)}',click_city,null)) as c_city_2,
-         |       collect_set(if(load_date='${getDay(date, 2)}',click_adslotid,null)) as c_adslotid_2,
-         |       collect_set(if(load_date='${getDay(date, 2)}',click_phone_level,null)) as c_phone_level_2,
-         |       collect_set(if(load_date='${getDay(date, 2)}',click_brand_title,null)) as c_brand_title_2,
          |
          |       collect_set(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
          |       collect_set(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3,
-         |       collect_set(if(load_date='${getDay(date, 3)}',click_userid,null)) as c_userid_3,
-         |       collect_set(if(load_date='${getDay(date, 3)}',click_planid,null)) as c_planid_3,
-         |       collect_set(if(load_date='${getDay(date, 3)}',click_adtype,null)) as c_adtype_3,
-         |       collect_set(if(load_date='${getDay(date, 3)}',click_interaction,null)) as c_interaction_3,
-         |       collect_set(if(load_date='${getDay(date, 3)}',click_city,null)) as c_city_3,
-         |       collect_set(if(load_date='${getDay(date, 3)}',click_adslotid,null)) as c_adslotid_3,
-         |       collect_set(if(load_date='${getDay(date, 3)}',click_phone_level,null)) as c_phone_level_3,
-         |       collect_set(if(load_date='${getDay(date, 3)}',click_brand_title,null)) as c_brand_title_3
+         |
+         |       collect_set(if(load_date>='${getDay(date, 7)}'
+         |                  and load_date<='${getDay(date, 4)}',click_ideaid,null)) as c_ideaid_4_7,
+         |       collect_list(if(load_date>='${getDay(date, 7)}'
+         |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7
          |
          |from dl_cpc.cpc_user_behaviors
-         |where load_date in ('${getDays(date, 1, 3)}')
+         |where load_date in ('${getDays(date, 1, 7)}')
          |    and rn <= 1000
          |group by uid
       """.stripMargin)
@@ -91,31 +72,8 @@ object Behavior2RedisV3 {
         hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
         hashSeq("m13", "int")($"c_adclass_3").alias("m13"),
 
-        //d3新加特征
-        hashSeq("m14", "int")($"c_userid_1").alias("m14"),
-        hashSeq("m15", "int")($"c_userid_2").alias("m15"),
-        hashSeq("m16", "int")($"c_userid_3").alias("m16"),
-        hashSeq("m17", "int")($"c_planid_1").alias("m17"),
-        hashSeq("m18", "int")($"c_planid_2").alias("m18"),
-        hashSeq("m19", "int")($"c_planid_3").alias("m19"),
-        hashSeq("m20", "int")($"c_adtype_1").alias("m20"),
-        hashSeq("m21", "int")($"c_adtype_2").alias("m21"),
-        hashSeq("m22", "int")($"c_adtype_3").alias("m22"),
-        hashSeq("m23", "int")($"c_interaction_1").alias("m23"),
-        hashSeq("m24", "int")($"c_interaction_2").alias("m24"),
-        hashSeq("m25", "int")($"c_interaction_3").alias("m25"),
-        hashSeq("m26", "int")($"c_city_1").alias("m26"),
-        hashSeq("m27", "int")($"c_city_2").alias("m27"),
-        hashSeq("m28", "int")($"c_city_3").alias("m28"),
-        hashSeq("m29", "string")($"c_adslotid_1").alias("m29"),
-        hashSeq("m30", "string")($"c_adslotid_2").alias("m30"),
-        hashSeq("m31", "string")($"c_adslotid_3").alias("m31"),
-        hashSeq("m32", "int")($"c_phone_level_1").alias("m32"),
-        hashSeq("m33", "int")($"c_phone_level_2").alias("m33"),
-        hashSeq("m34", "int")($"c_phone_level_3").alias("m34"),
-        hashSeq("m35", "string")($"c_brand_title_1").alias("m35"),
-        hashSeq("m36", "string")($"c_brand_title_2").alias("m36"),
-        hashSeq("m37", "string")($"c_brand_title_3").alias("m37")
+        hashSeq("m14", "int")($"c_adclass_4_7").alias("m14"),
+        hashSeq("m15", "int")($"c_adclass_4_7").alias("m15")
       )
       .persist()
 
