@@ -60,7 +60,7 @@ object DNNSampleHourlyV3 {
   def getSample(spark: SparkSession, date: String, hour: String): DataFrame = {
     import spark.implicits._
 
-    val behavior_data = spark.read.parquet("/user/cpc/zhj/behavior3")
+    val behavior_data = spark.read.parquet("/user/cpc/zhj/behaviorV3")
 
     val userAppIdx = getUidApp(spark, date)
       .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))
