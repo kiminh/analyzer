@@ -20,22 +20,11 @@ object OcpcPIDwithCPA {
     val isTest = args(2).toInt
 
     if (isTest == 1) {
-      val filename = "/user/cpc/wangjun/cpa_given.txt"
-
-      // 读取cpa_given的text文件
-      val dataset = testGenCPAgiven(filename, spark)
-      dataset.show(10)
-      // 计算CPA比值
-      genCPAratio(dataset, date, hour, spark)
-
-      // 确认是否需要修改k值
-      val kFlags = checkKeffect(date, hour, spark)
-      // 计算K值
-      calculateK(kFlags, spark)
+      calculateKv1(date, hour, spark)
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
-      testCalculateK(date, hour, spark)
+      val testKstrat = calculateKv2(date, hour, spark)
     }
 
 
@@ -400,24 +389,280 @@ object OcpcPIDwithCPA {
 
   }
 
-  def calculateKv2(dataset: DataFrame, spark: SparkSession) = {
-    val sqlRequest1 =
+  def calculateKv1(date: String, hour: String, spark: SparkSession) ={
+    val filename = "/user/cpc/wangjun/cpa_given.txt"
+
+    // 读取cpa_given的text文件
+    val dataset = testGenCPAgiven(filename, spark)
+    dataset.show(10)
+    // 计算CPA比值
+    genCPAratio(dataset, date, hour, spark)
+
+    // 确认是否需要修改k值
+    val kFlags = checkKeffect(date, hour, spark)
+    // 计算K值
+    calculateK(kFlags, spark)
+
+  }
+
+  /*******************************************************************************/
+  def calculateKv2(date: String, hour: String, spark: SparkSession) :DataFrame = {
+    /**
+      * 计算新版k值
+      * 基于前6个小时的平均k值和那段时间的cpa_ratio，按照更加详细的分段函数对k值进行计算
+      */
+
+    val baseData = getBaseTable(date, hour, spark)
+    val historyData = getHistoryData(date, hour, 6, spark)
+    val avgK = getAvgK(baseData, historyData, date, hour, 6, spark)
+    val cpaRatio = getCPAratio(historyData, date, hour, 6, spark)
+    val newK = updateKv2(baseData, avgK, cpaRatio, spark)
+    newK
+  }
+
+  def getBaseTable(endDate: String, hour: String, spark: SparkSession) :DataFrame ={
+    // 计算日期周期
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val date = dateConverter.parse(endDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(date)
+    calendar.add(Calendar.DATE, -7)
+    val dt = calendar.getTime
+    val startDate = dateConverter.format(dt)
+    val selectCondition = getTimeRangeSql(startDate, hour, endDate, hour)
+
+    // 累积计算最近一周数据
+    val sqlRequest =
       s"""
          |SELECT
-         |    ideaid,
-         |    adclass,
-         |    cast(MIN(k_value) as double) as k_value
+         |  ideaid,
+         |  adclass,
          |FROM
-         |    test.new_pb_ocpc_with_pcvr
-         |group by ideaid, adclass
+         |  dl_cpc.ocpc_uid_userid_track_label2
+         |WHERE $selectCondition
+         |GROUP BY ideaid, adclass
        """.stripMargin
-    println(sqlRequest1)
-    val kvalueData = spark.sql(sqlRequest1)
+    println(sqlRequest)
+    val baseData = spark.sql(sqlRequest)
+
+    // TODO 删除临时表
+    baseData.write.mode("overwrite").saveAsTable("test.ocpc_base_table_hourly")
+    baseData
+
+  }
+
+  def getHistoryData(date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
+    /**
+      * 按照给定的时间区间获取从OcpcMonitor程序的结果表获取历史数据
+      */
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourCnt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  ideaid,
+         |  adclass,
+         |  isshow,
+         |  isclick,
+         |  iscvr,
+         |  price,
+         |  ocpc_log,
+         |  hour
+         |FROM
+         |  dl_cpc.ocpc_result_unionlog_table_bak
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+    resultDF
+  }
+
+  def getAvgK(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
+    /**
+      * 计算修正前的k基准值
+      * case1：前6个小时有isclick=1的数据，统计这批数据的k均值作为基准值
+      * case2：前6个小时没有isclick=1的数据，将前一个小时的数据作为基准值
+      * case3: 在主表（7*24）中存在，但是不属于前两种情况的，初始值0.694
+      */
+
+    historyData
+      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+      .createOrReplaceTempView("raw_table")
 
     val sqlRequest2 =
       s"""
-         |
+         |SELECT
+         |  searchid,
+         |  ideaid,
+         |  adclass,
+         |  isshow,
+         |  isclick,
+         |  iscvr,
+         |  ocpc_log,
+         |  ocpc_log_dict['kvalue'] as kvalue,
+         |  hour
+         |FROM
+         |  raw_table
        """.stripMargin
+    println(sqlRequest2)
+    val rawData = spark.sql(sqlRequest2)
+
+    // case1
+    val case1 = rawData
+      .filter("isclick=1")
+      .groupBy("ideaid", "adclass")
+      .agg(avg(col("kvalue")).alias("kvalue1")).select("ideaid", "adclass", "kvalue1")
+
+    // case2
+    // table name for previous calculation: test.new_pb_ocpc_with_pcvr
+    val case2 = spark
+      .sql("test.new_pb_ocpc_with_pcvr")
+      .withColumn("kvalue2", col("kvalue"))
+      .select("ideaid", "adclass", "kvalue2")
+
+    // 优先case1，然后case2，最后case3
+    val resultDF = baseData
+      .join(case1, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "adclass", "kvalue1")
+      .join(case2, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "adclass", "kvalue1", "kvalue2")
+      .withColumn("kvalue_new", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
+      .withColumn("kvalue", when(col("kvalue_new").isNull, 0.694).otherwise(col("kvalue_new")))
+
+    resultDF.show(10)
+    // TODO 删除临时表
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_avg_k_value")
+    resultDF
+
+  }
+
+  def getCPAratio(historyData: DataFrame, date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
+    /**
+      * 计算前6个小时每个广告创意的cpa_given/cpa_real的比值
+      * case1：前6个小时有cvr_cnt，按照定义计算比值即可
+      * case2：前6个小时有ctr_cnt没有cvr_cnt，可能出价过高，需要降低k值，所以比值应该小于1
+      * case3: 前6个小时没有ctr_cnt，可能出价过低，需要提高k值，所以比值应该大于1
+      */
+
+    // 获得cpa_given
+    val cpaGiven = spark.table("test.ocpc_idea_update_time").select("ideaid", "cpa_given")
+
+    // 按ideaid和adclass统计每一个广告创意的数据
+    val rawData = historyData
+      .withColumn("cost",
+        when(col("isclick")===1,col("price")).otherwise(0))
+      .groupBy("ideaid", "adclass")
+      .agg(
+        sum(col("cost")).alias("total_cost"),
+        sum(col("isclick")).alias("ctr_cnt"),
+        sum(col("iscvr")).alias("cvr_cnt"))
+    // TODO 删除临时表
+    rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideai_cost_ctr_cvr")
+
+    // 计算cpa_ratio
+    val joinData = cpaGiven
+      .join(rawData, Seq("ideaid"), "left_outer")
+      .select("ideaid", "adclass", "cpa_given", "total_cost", "ctr_cnt", "cvr_cnt")
+    joinData.createOrReplaceTempView("join_table")
+    // TODO 删除临时表
+    joinData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_total_cost")
+
+    // case1, case2, case3
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  adclass,
+         |  cpa_given,
+         |  total_cost,
+         |  ctr_cnt,
+         |  cvr_cnt,
+         |  (case when cvr_cnt>0 and total_cost>0 then cpa_given * cvr_cnt * 1.0 / total_cost
+         |        when cvr_cnt=0 and total_cost>0 then 0.8
+         |        when cvr_cnt=0 and total_cost=0 then 1.2
+         |        else 1.0 end) as cpa_ratio
+         |FROM
+         |  join_table
+       """.stripMargin
+    println(sqlRequest)
+    val cpaRatio = spark.sql(sqlRequest)
+    //TODO 删除临时表
+    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v2")
+
+    cpaRatio
+
+  }
+
+  def updateKv2(baseData: DataFrame, kValue: DataFrame, cpaRatio: DataFrame, spark: SparkSession) :DataFrame ={
+    /**
+      * 根据新的K基准值和cpa_ratio来在分段函数中重新定义k值
+      * case1：0.9 <= cpa_ratio <= 1.1，k基准值
+      * case2：0.8 <= cpa_ratio < 0.9，k / 1.1
+      * case2：1.1 < cpa_ratio <= 1.2，k * 1.2
+      * case3：0.6 <= cpa_ratio < 0.8，k / 1.2
+      * case3：1.2 < cpa_ratio <= 1.4，k * 1.2
+      * case4：0.4 <= cpa_ratio < 0.6，k / 1.4
+      * case5：1.4 < cpa_ratio <= 1.6，k * 1.4
+      * case6：cpa_ratio < 0.4，k / 1.6
+      * case7：cpa_ratio > 1.6，k * 1.6
+      *
+      * 上下限依然是0.2 到1.2
+      */
+
+    // 关联得到基础表
+    val rawData = baseData
+      .join(kValue, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "adclass", "kvalue")
+      .join(cpaRatio, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "adclass", "kvalue", "cpa_ratio")
+    rawData.createOrReplaceTempView("raw_table")
+    // TODO 删除临时表
+    rawData.write.mode("overwrite").saveAsTable("test.ocpc_k_value_raw_table")
+
+    // 按照分段函数修改k值
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  adclass,
+         |  kvalue as prev_k,
+         |  cpa_ratio,
+         |  (case when kvalue is null then 0.694
+         |        when cpa_ratio is null then cast(kvalue as double)
+         |        when cpa_ratio between 0.9 and 1.1 then cast(kvalue as double)
+         |        when cpa_ratio<0.9 and cpa_ratio>=0.8 then cast(kvalue as double) / 1.1
+         |        when cpa_ratio>1.1 and cpa_ratio<=1.2 then cast(kvalue as double) * 1.1
+         |        when cpa_ratio<0.8 and cpa_ratio>=0.6 then cast(kvalue as double) / 1.2
+         |        when cpa_ratio>1.2 and cpa_ratio<=1.4 then cast(kvalue as double) * 1.2
+         |        when cpa_ratio<0.6 and cpa_ratio>=0.4 then cast(kvalue as double) / 1.4
+         |        when cpa_ratio>1.4 and cpa_ratio<=1.6 then cast(kvalue as double) * 1.4
+         |        when cpa_ratio<0.4 then cast(kvalue as double) / 1.6
+         |        when cpa_ratio>1.6 then cast(kvalue as double) * 1.6
+         |        else cast(kvalue as double) end) as k_value
+         |FROM
+         |  raw_table
+       """.stripMargin
+
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+    // TODO 删除临时表
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_update_k_v2")
+    resultDF
   }
 
 }

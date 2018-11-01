@@ -92,6 +92,7 @@ object OcpcDailyReport {
          |  isshow,
          |  isclick,
          |  iscvr,
+         |  exp_cvr,
          |  hour
          |FROM
          |  dl_cpc.ocpc_result_unionlog_table_bak

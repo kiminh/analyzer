@@ -33,6 +33,7 @@ object OcpcLogParser {
   def logParser(dataset: DataFrame): Unit = {
     val newData = dataset.withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
 
-    newData.write.mode("overwrite").saveAsTable("test.ocpc_log_parser_20181025")
+//    newData.write.mode("overwrite").saveAsTable("test.ocpc_log_parser_20181025")
+    newData
   }
 }
