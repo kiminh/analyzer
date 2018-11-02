@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Utils.getTimeRangeSql
+import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
 import com.cpc.spark.udfs.Udfs_wj._
@@ -481,7 +482,7 @@ object OcpcPIDwithCPA {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql(date1, hour1, date, hour)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
 
     val sqlRequest =
       s"""
