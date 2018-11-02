@@ -23,7 +23,7 @@ object Udfs_wj{
     percent
   })
 
-  def udfStringToMap() = udf((valueLog: String) =>{
+  def udfStringToMap() = udf((valueLog: String) => {
     var result = mutable.LinkedHashMap[String, String]()
     if (valueLog != null && valueLog != "") {
       val logs = valueLog.split(",")
@@ -33,7 +33,9 @@ object Udfs_wj{
         val value = splits(1)
         result += (key -> value)
       }
+      result
+    } else {
+      null
     }
-    result
   })
 }

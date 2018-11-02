@@ -13,10 +13,11 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_unionlog (
     exptags string,
     cpa_given int,
     ocpc_log string,
+    iscvr int,
     ocpc_log_dict map<string, string>
 )
 PARTITIONED BY (dt string, hour string)
-STORED AS PARQUET
+STORED AS PARQUET;
 
 
 

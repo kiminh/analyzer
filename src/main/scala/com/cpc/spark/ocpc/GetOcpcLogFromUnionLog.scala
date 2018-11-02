@@ -59,8 +59,14 @@ object GetOcpcLogFromUnionLog {
 
     println(sqlRequest)
 
-    val df = spark.sql(sqlRequest)
-    df.withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+    var df = spark.sql(sqlRequest)
+    df = df.withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+    // switch the last column with the last but three
+    val cols = df.columns
+    val last = cols(cols.length - 1)
+    cols(cols.length - 1) = cols(cols.length - 3)
+    cols(cols.length - 3) = last
+    df = df.select(cols.head, cols.tail: _*)
 
     println(s"output size: ${df.count()}")
     println("first 10 rows: ")
