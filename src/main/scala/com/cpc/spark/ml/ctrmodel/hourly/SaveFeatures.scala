@@ -271,9 +271,33 @@ object SaveFeatures {
         | LOCATION  '/user/cpc/lrmodel/cvrdata_motivate/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
 
+
     //用户Api回传数据(如已经安装但未激活) cvr计算
-    /*
-    val userApiBackRDD = logRDD
+    val userApiBackRDD = spark.sql(
+      s"""
+         |select   b.trace_type as flag1
+         |        ,a.searchid
+         |        ,a.uid
+         |        ,a.userid
+         |        ,a.ideaid
+         |        ,b.trace_type
+         |from (select * from dl_cpc.cpc_motivation_log
+         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick > 0) a
+         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
+         |        on a.userid = t2.id
+         |    left join
+         |        (select *
+         |            from dl_cpc.cpc_union_trace_logv2
+         |            where `date` = "%s" and ` hour` = "%s"
+         |         ) b
+         |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
+         | where t2.id is null
+       """.stripMargin.format(date, hour, yesterday, date, hour))
+      .rdd
+      .map {
+        x =>
+          (x.getAs[String]("searchid"), Seq(x))
+      }
       .map {
         x =>
           var active_third = 0
@@ -299,8 +323,9 @@ object SaveFeatures {
       }
       .filter(x => x._2 != -1) //过滤空值
       .toDF("searchid", "label", "uid", "userid", "ideaid")
-    */
-    /*
+
+    println("user api back: " + userApiBackRDD.count())
+
     userApiBackRDD
       .repartition(1)
       .write
@@ -312,9 +337,7 @@ object SaveFeatures {
         | LOCATION  '/user/cpc/lrmodel/cvrdata_userapiback/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
 
-    println("user api back: " + userApiBackRDD.count())
-    */
-
+/*
     //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算
     val cvrlog = spark.sql(
       s"""
@@ -427,7 +450,7 @@ object SaveFeatures {
 
     //输出标记文件
     s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !
-
+*/
   }
 }
 
