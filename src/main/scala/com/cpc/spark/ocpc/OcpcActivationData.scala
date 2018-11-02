@@ -42,7 +42,7 @@ object OcpcActivationData {
          |      ) a
          |left join
          |      (
-         |        select searchid as label
+         |        select searchid, searchid as label
          |        from dl_cpc.cpc_union_trace_logV2
          |        where $selectWhere
          |      ) b on a.searchid = b.searchid
