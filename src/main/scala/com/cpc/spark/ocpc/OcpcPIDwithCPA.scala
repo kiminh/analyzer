@@ -23,7 +23,7 @@ object OcpcPIDwithCPA {
     // TODO ideaid与userid的名称
     if (onDuty == 1) {
       val result = mergeData(date, hour, spark)
-      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_test")
+      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
@@ -61,7 +61,8 @@ object OcpcPIDwithCPA {
          |        when a.ideaid='2279126' then c.k_value
          |        when a.ideaid='1685410' then c.k_value
          |        when a.ideaid='1685411' then c.k_value
-         |        when a.ideaid='2051175' then c.k_value
+         |        when a.ideaid='2279124' then c.k_value
+         |        when a.ideaid='2279092' then c.k_value
          |        else b.k_value end) as k_value
          |FROM
          |  base_table as a
