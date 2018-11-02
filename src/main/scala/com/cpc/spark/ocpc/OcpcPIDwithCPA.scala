@@ -750,7 +750,7 @@ object OcpcPIDwithCPA {
         sum(col("weighted_cost")).alias("total_cost"),
         sum(col("weighted_cvr_cnt")).alias("cvr_cnt"))
     // TODO 删除临时表
-    rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_cost_ctr_cvr")
+    rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_cost_ctr_cvr_v3")
 
     // 获得cpa_given
     val cpaGiven = spark.table("test.ocpc_idea_update_time").select("ideaid", "cpa_given")
@@ -773,7 +773,7 @@ object OcpcPIDwithCPA {
     joinData.createOrReplaceTempView("join_table")
 
     // TODO 删除临时表
-    joinData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_total_cost")
+    joinData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_total_cost_v3")
 
     // case1, case2, case3
     val sqlRequest =
