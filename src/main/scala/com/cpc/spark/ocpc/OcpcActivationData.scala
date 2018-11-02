@@ -13,7 +13,7 @@ object OcpcActivationData {
     getDataHourly(date, hour, spark)
 
   }
-  def getDataHourly(date: String, hour: String, spark: SparkSession) = {
+  def getDataHourly(date: String, hour: String, spark: SparkSession) :Unit = {
     var selectWhere = s"`date`='$date' and hour = '$hour'"
     var sqlRequest =
       s"""
