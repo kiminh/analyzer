@@ -18,11 +18,11 @@ object OcpcPIDwithCPA {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val onDuty = args(2).toInt // onDuty=1表示部署执行，onDuty!=1表示测试新代码
+    val onDuty = args(2).toInt // onDuty=1表示部署模型，onDuty!=1表示测试新代码
 
+    // TODO ideaid与userid的名称
     if (onDuty == 1) {
-      val resultDF = calculateKv2(date, hour, spark)
-      resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
@@ -31,6 +31,39 @@ object OcpcPIDwithCPA {
       val testKstrat = calculateKv3(date, hour, spark)
     }
 
+
+  }
+
+
+  def mergeData(userData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame = {
+    // 计算日期周期
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val tmpDate = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(tmpDate)
+    calendar.add(Calendar.DATE, -7)
+    val dt = calendar.getTime
+    val startDate = dateConverter.format(dt)
+    val selectCondition = getTimeRangeSql(startDate, hour, date, hour)
+
+    // 累积计算最近一周数据
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  userid,
+         |  ideaid
+         |FROM
+         |  dl_cpc.ocpc_uid_userid_track_label2
+         |WHERE $selectCondition
+         |GROUP BY userid, ideaid
+       """.stripMargin
+    println(sqlRequest)
+    val baseData = spark.sql(sqlRequest)
+
+    val resultDF1 = calculateKv2(date, hour, spark)
+    resultDF1.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table1")
+    val resultDF2 = calculateKv3(date, hour, spark)
+    resultDF2.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table2")
 
   }
 
@@ -627,7 +660,7 @@ object OcpcPIDwithCPA {
          |  ctr_cnt,
          |  cvr_cnt,
          |  (case when cpa_given is null then 1.0
-         |        when '$hour'>'05' and (hourly_ctr_cnt<10 or hourly_ctr_cnt is null) then 1.2
+         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then 1.2
          |        when hourly_ctr_cnt>=10 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
          |        when cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
          |        else 1.0 end) as cpa_ratio
@@ -708,28 +741,23 @@ object OcpcPIDwithCPA {
       * 基于前6个小时的平均k值和那段时间的cpa_ratio，按照更加详细的分段函数对k值进行计算
       */
 
-//    val baseData = getBaseTable(date, hour, spark)
-//    println("################ baseData #################")
-//    baseData.show(10)
-//    val historyData = getHistoryData(date, hour, 24, spark)
-//    println("################# historyData ####################")
-//    historyData.show(10)
-//    val avgK = getAvgK(baseData, historyData, date, hour, spark)
-//    println("################# avgK table #####################")
-//    avgK.show(10)
-//    val cpaRatio = getCPAratioV3(baseData, historyData, date, hour, spark)
-//    println("################# cpaRatio table #######################")
-//    cpaRatio.show(10)
-//    val newK = updateKv2(baseData, avgK, cpaRatio, spark)
-//    println("################# final result ####################")
-//    newK.show(10)
-//    newK
-
     val baseData = getBaseTable(date, hour, spark)
+    println("################ baseData #################")
+    baseData.show(10)
     val historyData = getHistoryData(date, hour, 24, spark)
+    println("################# historyData ####################")
+    historyData.show(10)
+    val avgK = getAvgK(baseData, historyData, date, hour, spark)
+    println("################# avgK table #####################")
+    avgK.show(10)
     val cpaRatio = getCPAratioV3(baseData, historyData, date, hour, spark)
-    historyData.write.mode("overwrite").saveAsTable("test.ocpc_history_data")
-    historyData
+    println("################# cpaRatio table #######################")
+    cpaRatio.show(10)
+    val newK = updateKv2(baseData, avgK, cpaRatio, spark)
+    println("################# final result ####################")
+    newK.show(10)
+    newK
+
   }
 
   def getCPAratioV3(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame = {
@@ -792,7 +820,7 @@ object OcpcPIDwithCPA {
          |  total_cost,
          |  cvr_cnt,
          |  (case when cpa_given is null then 1.0
-         |        when '$hour'>'05' and (hourly_ctr_cnt<10 or hourly_ctr_cnt is null) then 1.2
+         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then 1.2
          |        when hourly_ctr_cnt>=10 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
          |        when cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
          |        else 1.0 end) as cpa_ratio
