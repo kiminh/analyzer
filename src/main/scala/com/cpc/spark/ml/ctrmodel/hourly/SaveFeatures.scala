@@ -337,7 +337,7 @@ object SaveFeatures {
         | LOCATION  '/user/cpc/lrmodel/cvrdata_userapiback/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
 
-/*
+
     //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算
     val cvrlog = spark.sql(
       s"""
@@ -450,7 +450,7 @@ object SaveFeatures {
 
     //输出标记文件
     s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !
-*/
+
   }
 }
 
