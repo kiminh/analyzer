@@ -49,6 +49,7 @@ object OcpcPIDwithCPA {
     resultDF1.createOrReplaceTempView("result_table1")
     resultDF2.createOrReplaceTempView("result_table2")
 
+    // TODO 2051175 test case
     val sqlRequest =
       s"""
          |SELECT
@@ -58,6 +59,9 @@ object OcpcPIDwithCPA {
          |  c.k_value as model3_k,
          |  (case when a.ideaid='2279129' then c.k_value
          |        when a.ideaid='2279126' then c.k_value
+         |        when a.ideaid='1685410' then c.k_value
+         |        when a.ideaid='1685411' then c.k_value
+         |        when a.ideaid='2051175' then c.k_value
          |        else b.k_value end) as k_value
          |FROM
          |  base_table as a
