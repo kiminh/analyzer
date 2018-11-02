@@ -53,7 +53,7 @@ object OcpcActivationData {
     val resultDF = base
       .groupBy("ideaid", "adclass")
       .agg(
-        sum(col("ishow")).alias("show_cnt"),
+        sum(col("isshow")).alias("show_cnt"),
         sum(col("isclick")).alias("ctr_cnt"),
         sum(col("isact")).alias("act_cnt"))
       .withColumn("date", lit(date))
