@@ -22,7 +22,8 @@ object OcpcPIDwithCPA {
 
     // TODO ideaid与userid的名称
     if (onDuty == 1) {
-
+      val result = mergeData(date, hour, spark)
+      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_test")
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
@@ -35,35 +36,48 @@ object OcpcPIDwithCPA {
   }
 
 
-  def mergeData(userData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame = {
+  def mergeData(date: String, hour: String, spark: SparkSession) :DataFrame = {
+
+    val baseData = getBaseTable(date, hour, spark)
     // 计算日期周期
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val tmpDate = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(tmpDate)
-    calendar.add(Calendar.DATE, -7)
-    val dt = calendar.getTime
-    val startDate = dateConverter.format(dt)
-    val selectCondition = getTimeRangeSql(startDate, hour, date, hour)
-
-    // 累积计算最近一周数据
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  userid,
-         |  ideaid
-         |FROM
-         |  dl_cpc.ocpc_uid_userid_track_label2
-         |WHERE $selectCondition
-         |GROUP BY userid, ideaid
-       """.stripMargin
-    println(sqlRequest)
-    val baseData = spark.sql(sqlRequest)
-
     val resultDF1 = calculateKv2(date, hour, spark)
     resultDF1.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table1")
     val resultDF2 = calculateKv3(date, hour, spark)
     resultDF2.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table2")
+
+    baseData.createOrReplaceTempView("base_table")
+    resultDF1.createOrReplaceTempView("result_table1")
+    resultDF2.createOrReplaceTempView("result_table2")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  a.ideaid,
+         |  a.adclass,
+         |  b.k_value as model2_k,
+         |  c.k_value as model3_k,
+         |  (case when a.ideaid='2279129' then c.k_value
+         |        when a.ideaid='2279126' then c.k_value
+         |        else b.k_value end) as k_value
+         |FROM
+         |  base_table as a
+         |LEFT JOIN
+         |  result_table1 as b
+         |ON
+         |  a.ideaid=b.ideaid
+         |AND
+         |  a.adclass=b.adclass
+         |LEFT JOIN
+         |  result_table2 as c
+         |ON
+         |  a.ideaid=c.ideaid
+         |AND
+         |  a.adclass=c.adclass
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+    resultDF
+
 
   }
 
