@@ -235,13 +235,13 @@ object SaveFeatures {
          |        ,a.ideaid
          |        ,b.trace_op1
          |from (select * from dl_cpc.cpc_motivation_log
-         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "") a
+         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick > 0) a
          |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
          |        on a.userid = t2.id
          |    left join
          |        (select *
          |            from dl_cpc.logparsed_cpc_trace_minute
-         |            where `thedate` = "%s" and `thehour` = "%s" and isclick > 0
+         |            where `thedate` = "%s" and `thehour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
          | where t2.id is null
