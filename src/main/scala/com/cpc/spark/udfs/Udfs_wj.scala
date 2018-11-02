@@ -34,4 +34,23 @@ object Udfs_wj{
     }
     result
   })
+
+  def udfCalculateWeightByHour(hour: String) = udf((valueHour: String) => {
+    val currentHour = hour.toInt + 1
+    val tableHour = valueHour.toInt
+    var diff = 0
+    if (tableHour < currentHour) {
+      diff = currentHour - tableHour
+    } else {
+      diff = 24 - (tableHour - currentHour)
+    }
+    val numerator = 1 / math.sqrt(diff.toDouble)
+    var denominator = 0.0
+    for (i <- 1 to 24) {
+      denominator += 1 / math.sqrt(i.toDouble)
+    }
+    val result = numerator.toDouble / denominator
+    result
+
+  })
 }
