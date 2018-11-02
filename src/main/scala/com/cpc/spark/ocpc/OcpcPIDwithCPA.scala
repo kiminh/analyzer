@@ -26,7 +26,8 @@ object OcpcPIDwithCPA {
       println("############## entering test stage ###################")
       // 初始化K值
 //      val testKstrat = calculateKv2(date, hour, spark)
-      calculateKv1(date, hour, spark)
+//      calculateKv1(date, hour, spark)
+      val testKstrat = calculateKv3(date, hour, spark)
     }
 
 
@@ -420,10 +421,10 @@ object OcpcPIDwithCPA {
     val historyData = getHistoryData(date, hour, 6, spark)
     println("################# historyData ####################")
     historyData.show(10)
-    val avgK = getAvgK(baseData, historyData, date, hour, 6, spark)
+    val avgK = getAvgK(baseData, historyData, date, hour, spark)
     println("################# avgK table #####################")
     avgK.show(10)
-    val cpaRatio = getCPAratio(baseData, historyData, date, hour, 6, spark)
+    val cpaRatio = getCPAratio(baseData, historyData, date, hour, spark)
     println("################# cpaRatio table #######################")
     cpaRatio.show(10)
     val newK = updateKv2(baseData, avgK, cpaRatio, spark)
@@ -504,7 +505,7 @@ object OcpcPIDwithCPA {
     resultDF
   }
 
-  def getAvgK(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
+  def getAvgK(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
     /**
       * 计算修正前的k基准值
       * case1：前6个小时有isclick=1的数据，统计这批数据的k均值作为基准值
@@ -563,7 +564,7 @@ object OcpcPIDwithCPA {
 
   }
 
-  def getCPAratio(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
+  def getCPAratio(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
     // TODO case
     /**
       * 计算前6个小时每个广告创意的cpa_given/cpa_real的比值
@@ -700,4 +701,106 @@ object OcpcPIDwithCPA {
 
   /*******************************************************************/
   // TODO: 下一阶段优化目标，考虑24小时的cpa表现，按权重计算
+  def calculateKv3(date: String, hour: String, spark: SparkSession) :DataFrame ={
+    /**
+      * 计算新版k值
+      * 基于前6个小时的平均k值和那段时间的cpa_ratio，按照更加详细的分段函数对k值进行计算
+      */
+
+    val baseData = getBaseTable(date, hour, spark)
+    println("################ baseData #################")
+    baseData.show(10)
+    val historyData = getHistoryData(date, hour, 24, spark)
+    println("################# historyData ####################")
+    historyData.show(10)
+    val avgK = getAvgK(baseData, historyData, date, hour, spark)
+    println("################# avgK table #####################")
+    avgK.show(10)
+    val cpaRatio = getCPAratioV3(baseData, historyData, date, hour, spark)
+    println("################# cpaRatio table #######################")
+    cpaRatio.show(10)
+    val newK = updateKv2(baseData, avgK, cpaRatio, spark)
+    println("################# final result ####################")
+    newK.show(10)
+    newK
+  }
+
+  def getCPAratioV3(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame = {
+    /**
+      * 按照权值在24h的时间窗口内计算cpa_ratio
+      * case1：hourly_ctr_cnt<10，可能出价过低，需要提高k值，所以比值应该大于1
+      * case2：hourly_ctr_cnt>=10但是没有cvr_cnt，可能出价过高，需要降低k值，所以比值应该小于1
+      * case3：hourly_ctr_cnt>=10且有cvr_cnt，按照定义计算比值即可
+      */
+
+    // 按ideaid和adclass统计每一个广告创意的加权数据
+    val rawData = historyData
+      .withColumn("cost",
+        when(col("isclick")===1, col("price")).otherwise(0))
+      .groupBy("ideaid", "adclass", "hour")
+      .agg(
+        sum(col("cost")).alias("cost"),
+        sum(col("isclick")).alias("ctr_cnt"),
+        sum(col("iscvr")).alias("cvr_cnt"))
+      .withColumn("weight", udfCalculateWeightByHour(hour)(col("hour")))
+      .withColumn("weighted_cost", col("cost") * col("weight"))
+      .withColumn("weighted_cvr_cnt", col("cvr_cnt") * col("weight"))
+      .groupBy("ideaid", "adclass")
+      .agg(
+        sum(col("weighted_cost")).alias("total_cost"),
+        sum(col("weighted_cvr_cnt")).alias("cvr_cnt"))
+    // TODO 删除临时表
+    rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_cost_ctr_cvr")
+
+    // 获得cpa_given
+    val cpaGiven = spark.table("test.ocpc_idea_update_time").select("ideaid", "cpa_given")
+
+    // 计算单个小时的ctr_cnt和cvr_cnt
+    val singleHour = historyData
+      .filter(s"hour='$hour'")
+      .groupBy("ideaid", "adclass").agg(sum("isclick").alias("hourly_ctr_cnt"), sum(col("iscvr")).alias("hourly_cvr_cnt"))
+      .select("ideaid", "adclass", "hourly_ctr_cnt", "hourly_cvr_cnt")
+
+    // 计算cpa_ratio
+    val joinData = baseData
+      .join(cpaGiven, Seq("ideaid"), "left_outer")
+      .select("ideaid", "adclass", "cpa_given")
+      .join(rawData, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "adclass", "cpa_given", "total_cost", "cvr_cnt")
+      .join(singleHour, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "adclass", "cpa_given", "total_cost", "ctr_cnt", "cvr_cnt", "hourly_ctr_cnt", "hourly_cvr_cnt")
+
+    joinData.createOrReplaceTempView("join_table")
+
+    // TODO 删除临时表
+    joinData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_total_cost")
+
+    // case1, case2, case3
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  adclass,
+         |  cpa_given,
+         |  total_cost,
+         |  ctr_cnt,
+         |  cvr_cnt,
+         |  (case when cpa_given is null then 1.0
+         |        when '$hour'>'05' and (hourly_ctr_cnt<10 or hourly_ctr_cnt is null) then 1.2
+         |        when hourly_ctr_cnt>=10 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
+         |        when cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
+         |        else 1.0 end) as cpa_ratio
+         |FROM
+         |  join_table
+       """.stripMargin
+    println(sqlRequest)
+    val cpaRatio = spark.sql(sqlRequest)
+    //TODO 删除临时表
+    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v3")
+
+    cpaRatio
+
+
+  }
+
 }
