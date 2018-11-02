@@ -41,9 +41,9 @@ object OcpcPIDwithCPA {
     val baseData = getBaseTable(date, hour, spark)
     // 计算日期周期
     val resultDF1 = calculateKv2(date, hour, spark)
-    resultDF1.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table1")
+//    resultDF1.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table1")
     val resultDF2 = calculateKv3(date, hour, spark)
-    resultDF2.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table2")
+//    resultDF2.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table2")
 
     baseData.createOrReplaceTempView("base_table")
     resultDF1.createOrReplaceTempView("result_table1")
@@ -469,19 +469,19 @@ object OcpcPIDwithCPA {
 
     val baseData = getBaseTable(date, hour, spark)
     println("################ baseData #################")
-    baseData.show(10)
+//    baseData.show(10)
     val historyData = getHistoryData(date, hour, 6, spark)
     println("################# historyData ####################")
-    historyData.show(10)
+//    historyData.show(10)
     val avgK = getAvgK(baseData, historyData, date, hour, spark)
     println("################# avgK table #####################")
-    avgK.show(10)
+//    avgK.show(10)
     val cpaRatio = getCPAratio(baseData, historyData, date, hour, spark)
     println("################# cpaRatio table #######################")
-    cpaRatio.show(10)
+//    cpaRatio.show(10)
     val newK = updateKv2(baseData, avgK, cpaRatio, spark)
     println("################# final result ####################")
-    newK.show(10)
+//    newK.show(10)
     newK
   }
 
@@ -761,19 +761,19 @@ object OcpcPIDwithCPA {
 
     val baseData = getBaseTable(date, hour, spark)
     println("################ baseData #################")
-    baseData.show(10)
+//    baseData.show(10)
     val historyData = getHistoryData(date, hour, 24, spark)
     println("################# historyData ####################")
-    historyData.show(10)
+//    historyData.show(10)
     val avgK = getAvgK(baseData, historyData, date, hour, spark)
     println("################# avgK table #####################")
-    avgK.show(10)
+//    avgK.show(10)
     val cpaRatio = getCPAratioV3(baseData, historyData, date, hour, spark)
     println("################# cpaRatio table #######################")
-    cpaRatio.show(10)
+//    cpaRatio.show(10)
     val newK = updateKv2(baseData, avgK, cpaRatio, spark)
     println("################# final result ####################")
-    newK.show(10)
+//    newK.show(10)
     newK
 
   }
