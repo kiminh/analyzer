@@ -17,7 +17,7 @@ object OcpcPIDwithCPA {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val onDuty = args(2).toInt
+    val onDuty = args(2).toInt // onDuty=1表示部署执行，onDuty!=1表示测试新代码
 
     if (onDuty == 1) {
       val resultDF = calculateKv2(date, hour, spark)
@@ -768,7 +768,7 @@ object OcpcPIDwithCPA {
       .join(rawData, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "cpa_given", "total_cost", "cvr_cnt")
       .join(singleHour, Seq("ideaid", "adclass"), "left_outer")
-      .select("ideaid", "adclass", "cpa_given", "total_cost", "ctr_cnt", "cvr_cnt", "hourly_ctr_cnt", "hourly_cvr_cnt")
+      .select("ideaid", "adclass", "cpa_given", "total_cost", "cvr_cnt", "hourly_ctr_cnt", "hourly_cvr_cnt")
 
     joinData.createOrReplaceTempView("join_table")
 
@@ -783,7 +783,6 @@ object OcpcPIDwithCPA {
          |  adclass,
          |  cpa_given,
          |  total_cost,
-         |  ctr_cnt,
          |  cvr_cnt,
          |  (case when cpa_given is null then 1.0
          |        when '$hour'>'05' and (hourly_ctr_cnt<10 or hourly_ctr_cnt is null) then 1.2
