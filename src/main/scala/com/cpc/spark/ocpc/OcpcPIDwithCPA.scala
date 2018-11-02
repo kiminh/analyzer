@@ -707,22 +707,28 @@ object OcpcPIDwithCPA {
       * 基于前6个小时的平均k值和那段时间的cpa_ratio，按照更加详细的分段函数对k值进行计算
       */
 
+//    val baseData = getBaseTable(date, hour, spark)
+//    println("################ baseData #################")
+//    baseData.show(10)
+//    val historyData = getHistoryData(date, hour, 24, spark)
+//    println("################# historyData ####################")
+//    historyData.show(10)
+//    val avgK = getAvgK(baseData, historyData, date, hour, spark)
+//    println("################# avgK table #####################")
+//    avgK.show(10)
+//    val cpaRatio = getCPAratioV3(baseData, historyData, date, hour, spark)
+//    println("################# cpaRatio table #######################")
+//    cpaRatio.show(10)
+//    val newK = updateKv2(baseData, avgK, cpaRatio, spark)
+//    println("################# final result ####################")
+//    newK.show(10)
+//    newK
+
     val baseData = getBaseTable(date, hour, spark)
-    println("################ baseData #################")
-    baseData.show(10)
     val historyData = getHistoryData(date, hour, 24, spark)
-    println("################# historyData ####################")
-    historyData.show(10)
-    val avgK = getAvgK(baseData, historyData, date, hour, spark)
-    println("################# avgK table #####################")
-    avgK.show(10)
     val cpaRatio = getCPAratioV3(baseData, historyData, date, hour, spark)
-    println("################# cpaRatio table #######################")
-    cpaRatio.show(10)
-    val newK = updateKv2(baseData, avgK, cpaRatio, spark)
-    println("################# final result ####################")
-    newK.show(10)
-    newK
+    historyData.write.mode("overwrite").saveAsTable("test.ocpc_history_data")
+    historyData
   }
 
   def getCPAratioV3(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame = {
