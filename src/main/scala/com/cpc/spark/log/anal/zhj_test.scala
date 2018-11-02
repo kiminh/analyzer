@@ -46,8 +46,8 @@ object zhj_test {
     val table = args(1)
     val traceTbl = args(2)
     val hourBefore = args(3).toInt
-    prefix = args(4) //src_
-    suffix = args(5) //_minute
+    prefix = "src_"
+    suffix = "_minute"
     val allTraceTbl = args(6) //cpc_all_trace_log
 
 
@@ -65,9 +65,9 @@ object zhj_test {
     val showData = prepareSourceString(spark, "cpc_show_new")
 
     showData
-      .map(x => parseShowLog(x)) //(log)
-      .filter { x => x._4 == "1026276" || x._5 == "1026276" }
-      .filter(_._2 == "80000008")
+      .map(x => (x, parseShowLog(x))) //(log)
+      .filter { x => x._2._4 == "1026276" || x._2._5 == "1026276" }
+      .filter(_._2._2 == "80000008")
       .collect()
       .foreach(println)
 
