@@ -230,9 +230,11 @@ object SaveFeatures {
     //激励下载转化  取有点击的
     val motivateRDD = spark.sql(
       s"""
-         |select  b.trace_op1 as flag1
+         |select   b.trace_type as flag1
+         |        ,b.trace_op1 as flag2
          |        ,a.searchid
          |        ,a.ideaid
+         |        ,b.trace_type
          |        ,b.trace_op1
          |from (select * from dl_cpc.cpc_motivation_log
          |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick > 0) a
@@ -330,16 +332,16 @@ object SaveFeatures {
          |       ,a.ideaid
          |       ,b.*
          |from (select * from dl_cpc.cpc_union_log
-         |        where `date` = "%s" and `hour` = "%s" ) a
+         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick > 0) a
          |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
          |        on a.userid = t2.id
          |    left join
          |        (select *
-         |            from dl_cpc.cpc_union_trace_log
-         |            where `date` = "%s" and `hour` = "%s"
+         |            from dl_cpc.logparsed_cpc_trace_minute
+         |            where `thedate` = "%s" and `thehour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid
-         | where t2.id is null and a.searchid is not null and a.searchid != ""
+         | where t2.id is null
             """.stripMargin.format(date, hour, yesterday, date, hour))
       .rdd
       .map {

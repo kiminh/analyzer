@@ -418,9 +418,9 @@ object Utils {
 
     traces.foreach {
       r =>
-        if (!r.isNullAt(0)) { //trace_op1为null时过滤
+        if ((!r.isNullAt(0)) && (!r.isNullAt(1))) { //trace_type和trace_op1为null时过滤
           //激励转化
-          if (r.getAs[String]("trace_op1").toLowerCase == "open_app") {
+          if (r.getAs[String]("trace_type") == "sdk_incite" && r.getAs[String]("trace_op1").toLowerCase == "open_app") {
             active_motivate += 1
           }
 
