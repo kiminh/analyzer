@@ -64,7 +64,7 @@ object GetTraceReport {
       s"""
          |select tr.searchid, un.userid as user_id
          |,un.planid as plan_id ,un.unitid as unit_id ,
-         |un.ideaid as idea_id, tr.date as date,tr.hour,
+         |un.ideaid as idea_id, tr.thedate as date,tr.thehour,
          |tr.trace_type as trace_type,tr.trace_op1 as trace_op1 ,tr.duration as duration, tr.auto
          |from dl_cpc.logparsed_cpc_trace_minute as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
          |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1
@@ -100,8 +100,8 @@ object GetTraceReport {
           trace.getAs[Int]("plan_id"),
           trace.getAs[Int]("unit_id"),
           trace.getAs[Int]("idea_id"),
-          trace.getAs[String]("thedate"),
-          trace.getAs[String]("thehour"),
+          trace.getAs[String]("date"),
+          trace.getAs[String]("hour"),
           trace.getAs[String]("trace_type"),
           trace_op1,
           trace.getAs[Int]("duration"),
