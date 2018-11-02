@@ -14,7 +14,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   */
 object GetTraceReport {
 
-  var mariadbUrl  = ""
+  var mariadbUrl = ""
 
   val mariadbProp = new Properties()
 
@@ -46,11 +46,11 @@ object GetTraceReport {
     val conf = ConfigFactory.load()
     mariadbUrl = conf.getString("mariadb.url")
     mariadbProp.put("user", conf.getString("mariadb.user"))
-    mariadbProp.put("password",conf.getString("mariadb.password"))
+    mariadbProp.put("password", conf.getString("mariadb.password"))
     mariadbProp.put("driver", conf.getString("mariadb.driver"))
 
-    mariadb_amateur_url=conf.getString("mariadb.amateur_write.url")
-    mariadb_amateur_prop.put("user",conf.getString("mariadb.amateur_write.user"))
+    mariadb_amateur_url = conf.getString("mariadb.amateur_write.url")
+    mariadb_amateur_prop.put("user", conf.getString("mariadb.amateur_write.user"))
     mariadb_amateur_prop.put("password", conf.getString("mariadb.amateur_write.password"))
     mariadb_amateur_prop.put("driver", conf.getString("mariadb.amateur_write.driver"))
 
@@ -60,41 +60,55 @@ object GetTraceReport {
       .getOrCreate()
 
 
+    //    val traceReport = ctx.sql(
+    //      s"""
+    //         |select tr.searchid, un.userid as user_id
+    //         |,un.planid as plan_id ,un.unitid as unit_id ,
+    //         |un.ideaid as idea_id, tr.date as date,tr.hour,
+    //         |tr.trace_type as trace_type,tr.trace_op1 as trace_op1 ,tr.duration as duration, tr.auto
+    //         |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
+    //         |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1
+    //       """.stripMargin.format(date, hour, date, hour))
+    //      //      .as[TraceReportLog]
+    //      .rdd.cache()
+
     val traceReport = ctx.sql(
       s"""
          |select tr.searchid, un.userid as user_id
          |,un.planid as plan_id ,un.unitid as unit_id ,
          |un.ideaid as idea_id, tr.date as date,tr.hour,
          |tr.trace_type as trace_type,tr.trace_op1 as trace_op1 ,tr.duration as duration, tr.auto
-         |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
-         |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1
+         |from dl_cpc.logparsed_cpc_trace_minute as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
+         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s"
        """.stripMargin.format(date, hour, date, hour))
-      //      .as[TraceReportLog]
       .rdd.cache()
-    val sql1 = "select ideaid , sum(isshow) as show, sum(isclick) as click from dl_cpc.cpc_union_log where `date` = \"%s\" and `hour` =\"%s\" group by ideaid ".format(date, hour)
-    val unionRdd = ctx.sql(sql1).rdd.map{
-      x =>
-        val ideaid : Int =  x(0).toString().toInt
-        val show : Int = x(1).toString().toInt
-        val click : Int = x(2).toString().toInt
 
-        (ideaid,(show, click))
+
+    val sql1 = "select ideaid , sum(isshow) as show, sum(isclick) as click from dl_cpc.cpc_union_log where `date` = \"%s\" and `hour` =\"%s\" group by ideaid ".format(date, hour)
+    val unionRdd = ctx.sql(sql1).rdd.map {
+      x =>
+        val ideaid: Int = x(0).toString().toInt
+        val show: Int = x(1).toString().toInt
+        val click: Int = x(2).toString().toInt
+
+        (ideaid, (show, click))
     }
 
     val traceData = traceReport.filter {
       trace =>
+        //trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type").length < 100 && trace.getAs[String]("trace_type").length > 1
         trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type").length < 100 && trace.getAs[String]("trace_type").length > 1
     }.map {
       trace =>
         val trace_type = trace.getAs[String]("trace_type")
         var trace_op1 = ""
-        if(trace_type == "apkdown" || trace_type == "lpload" || trace_type == "sdk_incite"){
+        if (trace_type == "apkdown" || trace_type == "lpload" || trace_type == "sdk_incite") {
           trace_op1 = trace.getAs[String]("trace_op1")
         }
-        ((trace.getAs[String]("searchid"), trace_type, trace_op1,trace.getAs[Int]("duration"), trace.getAs[Int]("auto")), trace)
+        ((trace.getAs[String]("searchid"), trace_type, trace_op1, trace.getAs[Int]("duration"), trace.getAs[Int]("auto")), trace)
     }.reduceByKey {
       case (x, y) => x //去重
-    }.map{
+    }.map {
       case ((searchid, trace_type, trace_op1, duration, auto), trace) =>
         ((trace.getAs[Int]("user_id"),
           trace.getAs[Int]("plan_id"),
@@ -108,13 +122,13 @@ object GetTraceReport {
           trace.getAs[Int]("auto")), 1)
     }.reduceByKey {
       case (x, y) => (x + y)
-    }.map{
+    }.map {
       case ((user_id, plan_id, unit_id, idea_id, date, hour, trace_type, trace_op1, duration, auto), count) =>
-        (idea_id, (user_id, plan_id, unit_id, date, hour, trace_type,trace_op1, duration, auto, count))
+        (idea_id, (user_id, plan_id, unit_id, date, hour, trace_type, trace_op1, duration, auto, count))
     }
     val toResult = traceData.join(unionRdd).map {
-      case   (idea_id, ((user_id, plan_id, unit_id, date, hour, trace_type, trace_op1, duration, auto, count),(impression, click))) =>
-        AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, trace_op1, duration, auto , count, impression, click)
+      case (idea_id, ((user_id, plan_id, unit_id, date, hour, trace_type, trace_op1, duration, auto, count), (impression, click))) =>
+        AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, trace_op1, duration, auto, count, impression, click)
     }
 
 
@@ -134,6 +148,7 @@ object GetTraceReport {
     ctx.stop()
     println("GetTraceReport_done")
   }
+
   def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
     try {
       Class.forName(mariadbProp.getProperty("driver"));
@@ -151,6 +166,7 @@ object GetTraceReport {
       case e: Exception => println("exception caught: " + e);
     }
   }
+
   def clearReportHourData2(tbl: String, date: String, hour: String): Unit = {
     try {
       Class.forName(mariadb_amateur_prop.getProperty("driver"));
