@@ -52,13 +52,16 @@ object OcpcActivationData {
 
     val resultDF = base
       .groupBy("ideaid", "adclass")
-      .agg(sum(col("isact")).alias("act_cnt"))
+      .agg(
+        sum(col("ishow")).alias("show_cnt"),
+        sum(col("isclick")).alias("ctr_cnt"),
+        sum(col("isact")).alias("act_cnt"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_adclass_label3_track")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_adclass_label3_track")
 
-    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_ideaid_adclass_label3_track")
+//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_ideaid_adclass_label3_track")
 
   }
 }
