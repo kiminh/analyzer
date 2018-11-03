@@ -51,6 +51,30 @@ object Udfs_wj{
     }
     val result = numerator.toDouble / denominator
     result
+  })
 
+  def udfHourToTimespan() = udf((valHour: String) => {
+    val intHour = valHour.toInt
+    var result = ""
+    if (intHour >= 0 && intHour < 6) {
+      result = "t1"
+    } else if (intHour >= 6 & intHour <= 19) {
+      result = "t2"
+    } else {
+      result = "t3"
+    }
+    result
+  })
+
+  def udfTimespanToWeight() = udf((valTimespan: String) => {
+    var result = 0.1
+    if (valTimespan == "t1") {
+      result = 0.4
+    } else if (valTimespan == "t2") {
+      result = 0.4
+    } else {
+      result = 0.2
+    }
+    result
   })
 }
