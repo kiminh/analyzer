@@ -28,7 +28,11 @@ object OcpcPcvrCalibration {
 
     // 前一段时间的ctr和cvr数据
     val historyData1 = getCompleteData(date, hour, 24 * 7, spark)
-    val baseData = historyData1.select("ideaid", "adclass").distinct()
+    val baseData = historyData1
+      .select("ideaid", "adclass", "hour")
+      .withColumn("timespan", udfHourToTimespan()(col("hour")))
+      .select("ideaid", "adclass", "timespan")
+      .distinct()
 
     val ctrcvrData = historyData1
       .withColumn("timespan", udfHourToTimespan()(col("hour")))
