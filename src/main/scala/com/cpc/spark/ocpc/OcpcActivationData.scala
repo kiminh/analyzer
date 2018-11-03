@@ -21,7 +21,6 @@ object OcpcActivationData {
          |  ideaid,
          |  ext['adclass'].int_value as adclass,
          |  isclick,
-         |  isshow,
          |  iscvr as isact
          |FROM
          |  dl_cpc.cpc_api_union_log
@@ -34,10 +33,9 @@ object OcpcActivationData {
     val resultDF = base
       .groupBy("ideaid", "adclass")
       .agg(
-        sum(col("isshow")).alias("show_cnt"),
         sum(col("isclick")).alias("ctr_cnt"),
         sum(col("isact")).alias("cvr_cnt"))
-      .select("ideaid", "adclass", "show_cnt", "ctr_cnt", "cvr_cnt")
+      .select("ideaid", "adclass", "ctr_cnt", "cvr_cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
