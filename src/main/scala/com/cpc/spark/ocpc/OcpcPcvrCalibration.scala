@@ -71,7 +71,8 @@ object OcpcPcvrCalibration {
 
     val resultDF = rawData
       .groupBy("ideaid", "adclass")
-      .agg(sum(col("weight_cali_value")).alias("cali_value"))
+      .agg(sum(col("weight_cali_value")).alias("base_cali_value"))
+      .withColumn("cali_value", when(col("base_cali_value")===0, 1.0).otherwise(col("base_calie_value")))
       .select("ideaid", "adclass", "cali_value")
     // TODO 删除临时表
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_new_calibration_value2")
