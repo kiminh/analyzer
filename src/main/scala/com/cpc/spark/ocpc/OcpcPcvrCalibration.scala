@@ -43,7 +43,7 @@ object OcpcPcvrCalibration {
     val historyData2 = getPcvrData(date, hour, 24 * 7, spark)
     val pcvrData = historyData2
       .withColumn("timespan", udfHourToTimespan()(col("hour")))
-      .select("ideaid", "adclass", "timespan", "hpcvr", "cnt")
+      .select("ideaid", "adclass", "timespan", "total_cvr", "cnt")
       .groupBy("ideaid", "adclass", "timespan")
       .agg(
         sum(col("total_cvr")).alias("total_cvr"),
