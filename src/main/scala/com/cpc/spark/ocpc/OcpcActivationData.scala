@@ -18,10 +18,13 @@ object OcpcActivationData {
     var sqlRequest =
       s"""
          |SELECT
-         |  trace_click_count as ideaid,
-         |  1 as label
+         |  ideaid,
+         |  ext['adclass'].int_value as adclass,
+         |  isclick,
+         |  isshow,
+         |  iscvr as isact
          |FROM
-         |  dl_cpc.cpc_union_trace_logV2
+         |  dl_cpc.cpc_api_union_log
          |WHERE
          |  $selectWhere
       """.stripMargin
@@ -29,9 +32,12 @@ object OcpcActivationData {
     val base = spark.sql(sqlRequest)
 
     val resultDF = base
-      .groupBy("ideaid")
-      .agg(sum(col("label")).alias("cvr_cnt"))
-      .select("ideaid", "cvr_cnt")
+      .groupBy("ideaid", "adclass")
+      .agg(
+        sum(col("isshow")).alias("show_cnt"),
+        sum(col("isclick")).alias("ctr_cnt"),
+        sum(col("isact")).alias("cvr_cnt"))
+      .select("ideaid", "adclass", "show_cnt", "ctr_cnt", "cvr_cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
