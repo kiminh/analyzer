@@ -410,8 +410,8 @@ object OcpcSampleToRedis {
     println("size of the dataframe")
     println(dataset.count)
     dataset.show(10)
+    var cnt = 0
     for (record <- dataset.collect()) {
-
       val ideaid = record.get(0).toString
       val userId = record.get(1).toString
       val adclassId = record.get(2).toString
@@ -424,6 +424,10 @@ object OcpcSampleToRedis {
       val k = record.get(9).toString
       val hpcvr = record.getAs[Double]("hpcvr")
       val caliValue = record.getAs[Double]("cali_value")
+      if (cnt % 500 == 0) {
+        println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue")
+      }
+      cnt += 1
 
       val tmpCost = adclassCost.toLong
       if (tmpCost<0) {
