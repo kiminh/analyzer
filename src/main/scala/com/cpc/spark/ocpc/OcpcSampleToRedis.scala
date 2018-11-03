@@ -267,7 +267,7 @@ object OcpcSampleToRedis {
          |AND
          |  a.adclass=b.adclass
          |INNER JOIN
-         |  ocpc_new_calibration_value as c
+         |  test.ocpc_new_calibration_value as c
          |ON
          |  a.ideaid=c.ideaid
          |AND
