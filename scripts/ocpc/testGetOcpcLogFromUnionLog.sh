@@ -2,7 +2,7 @@
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
-queue=root.production.algo.cpc
+queue=root.develop.adhoc.cpc
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -10,8 +10,8 @@ jars=(
     "$cur/lib/config-1.2.1.jar"
 )
 
-date="2018-11-01"
-hour="11"
+date=$1
+hour=$2
 
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
