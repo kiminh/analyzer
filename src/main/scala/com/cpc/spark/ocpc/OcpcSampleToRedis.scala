@@ -256,7 +256,8 @@ object OcpcSampleToRedis {
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
          |  (case when a.k_value is null then 0.694 else a.k_value end) as k_value,
-         |  b.hpcvr
+         |  b.hpcvr,
+         |  (case when c.cali_value is null or c.cali_value=0 then 1.0 else c.cali_value) as cali_value
          |FROM
          |  test.test_new_pb_ocpc as a
          |INNER JOIN
@@ -265,6 +266,12 @@ object OcpcSampleToRedis {
          |  a.ideaid=b.ideaid
          |AND
          |  a.adclass=b.adclass
+         |INNER JOIN
+         |  ocpc_new_calibration_value as c
+         |ON
+         |  a.ideaid=c.ideaid
+         |AND
+         |  a.adclass=c.adclass
        """.stripMargin
 
     println(sqlRequest4)
@@ -277,7 +284,7 @@ object OcpcSampleToRedis {
       .withColumn("date", lit(end_date))
       .withColumn("hour", lit(hour))
       .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pb_result_table_v2")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v3")
 
     // 保存pb文件
     savePbPack(finalData)
@@ -416,6 +423,7 @@ object OcpcSampleToRedis {
       val adclassCvr = record.getLong(8).toString
       val k = record.get(9).toString
       val hpcvr = record.getAs[Double]("hpcvr")
+      val caliValue = record.getAs[Double]("cali_value")
 
       val tmpCost = adclassCost.toLong
       if (tmpCost<0) {
@@ -434,7 +442,8 @@ object OcpcSampleToRedis {
           adclassCtrcnt = adclassCtr,
           adclassCvrcnt = adclassCvr,
           kvalue = k,
-          hpcvr = hpcvr
+          hpcvr = hpcvr,
+          calibration = caliValue
         )
         list += currentItem
       }
