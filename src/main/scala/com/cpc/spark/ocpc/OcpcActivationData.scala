@@ -18,10 +18,12 @@ object OcpcActivationData {
     var sqlRequest =
       s"""
          |SELECT
-         |  a.trace_click_count as ideaid,
+         |  trace_click_count as ideaid,
          |  1 as label
          |FROM
          |  dl_cpc.cpc_union_trace_logV2
+         |WHERE
+         |  $selectWhere
       """.stripMargin
     println(sqlRequest)
     val base = spark.sql(sqlRequest)
