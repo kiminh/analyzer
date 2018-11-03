@@ -257,7 +257,7 @@ object OcpcSampleToRedis {
          |  a.adclass_cvr_cnt,
          |  (case when a.k_value is null then 0.694 else a.k_value end) as k_value,
          |  b.hpcvr,
-         |  (case when c.cali_value is null or c.cali_value=0 then 1.0 else c.cali_value) as cali_value
+         |  (case when c.cali_value is null or c.cali_value=0 then 1.0 else c.cali_value end) as cali_value
          |FROM
          |  test.test_new_pb_ocpc as a
          |INNER JOIN
