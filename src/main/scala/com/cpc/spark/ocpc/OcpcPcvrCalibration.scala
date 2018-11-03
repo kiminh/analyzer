@@ -13,25 +13,66 @@ object OcpcPcvrCalibration {
     val date = args(0).toString
     val hour = args(1).toString
 
-    val historyData = getCompleteData(date, hour, 24 * 7, spark)
-    val result = calibrationV1(historyData, spark)
+
+    val result = calibrationV1(date, hour, spark)
     result.write.mode("overwrite").saveAsTable("test.ocpc_new_calibration_value")
   }
 
-  def calibrationV1(historyData: DataFrame,spark: SparkSession) :DataFrame = {
-    val resultDF = historyData
+  def calibrationV1(date: String, hour: String,spark: SparkSession) :DataFrame = {
+    /**
+      * 对pcvr进行校准：按时间段分别计算进行校准
+      * t1: 0 ~ 5
+      * t2: 6 ~ 19
+      * t3: 20 ~ 23
+      */
+
+    // 前一段时间的ctr和cvr数据
+    val historyData1 = getCompleteData(date, hour, 24 * 7, spark)
+    val baseData = historyData1.select("ideaid", "adclass").distinct()
+
+    val ctrcvrData = historyData1
       .withColumn("timespan", udfHourToTimespan()(col("hour")))
       .select("ideaid", "adclass", "timespan", "ctr_cnt", "cvr_cnt")
       .groupBy("ideaid", "adclass", "timespan")
       .agg(
         sum(col("ctr_cnt")).alias("ctr_cnt"),
         sum(col("cvr_cnt")).alias("cvr_cnt"))
+      .select("ideaid", "adclass", "timespan", "ctr_cnt", "cvr_cnt")
+
+    // 前一段时间的pcvr数据
+    val historyData2 = getPcvrData(date, hour, 24 * 7, spark)
+    val pcvrData = historyData2
+      .withColumn("timespan", udfHourToTimespan()(col("hour")))
+      .select("ideaid", "adclass", "timespan", "hpcvr", "cnt")
+      .groupBy("ideaid", "adclass", "timespan")
+      .agg(
+        sum(col("total_cvr")).alias("total_cvr"),
+        sum(col("cnt")).alias("cnt"))
+      .select("ideaid", "adclass", "timespan", "total_cvr", "cnt")
+
+    // 关联数据
+    val rawData = baseData
+      .join(ctrcvrData, Seq("ideaid", "adclass", "timespan"), "left_outer")
+      .select("ideaid", "adclass", "timespan", "ctr_cnt", "cvr_cnt")
+      .join(pcvrData, Seq("ideaid", "adclass", "timespan"), "left_outer")
+      .select("ideaid", "adclass", "timespan", "ctr_cnt", "cvr_cnt", "total_cvr", "cnt")
       .withColumn("weight", udfTimespanToWeight()(col("timespan")))
-      .withColumn("weighted_ctr", col("ctr_cnt") * col("weight"))
-      .withColumn("weighted_cvr", col("cvr_cnt") * col("weight"))
+      .withColumn("hcvr", col("cvr_cnt") * 1.0 / col("ctr_cnt"))
+      .withColumn("hpcvr", col("total_cvr") * 1.0 / col("cnt"))
+      .withColumn("raw_cali_value", col("hcvr") / col("hpcvr"))
+      .withColumn("weight_cali_value", col("raw_cali_value") * col("weight"))
+
+    // TODO 删除临时表
+    rawData.write.mode("overwrite").saveAsTable("test.ocpc_new_calibration_value1")
+
+    val resultDF = rawData
+      .groupBy("ideaid", "adclass")
+      .agg(sum(col("weight_cali_value")).alias("cali_value"))
+      .select("ideaid", "adclass", "cali_value")
+    // TODO 删除临时表
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_new_calibration_value2")
 
     resultDF
-
   }
 
 }
