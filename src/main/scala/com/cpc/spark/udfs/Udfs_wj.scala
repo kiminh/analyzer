@@ -23,16 +23,20 @@ object Udfs_wj{
     percent
   })
 
-  def udfStringToMap() = udf((valueLog: String) =>{
+  def udfStringToMap() = udf((valueLog: String) => {
     var result = mutable.LinkedHashMap[String, String]()
-    val logs = valueLog.split(",")
-    for (log <- logs) {
-      val splits = log.split(":")
-      val key = splits(0)
-      val value = splits(1)
-      result += (key -> value)
+    if (valueLog != null && valueLog != "") {
+      val logs = valueLog.split(",")
+      for (log <- logs) {
+        val splits = log.split(":")
+        val key = splits(0)
+        val value = splits(1)
+        result += (key -> value)
+      }
+      result
+    } else {
+      null
     }
-    result
   })
 
   def udfCalculateWeightByHour(hour: String) = udf((valueHour: String) => {
