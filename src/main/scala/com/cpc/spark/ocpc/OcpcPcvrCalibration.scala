@@ -14,6 +14,8 @@ object OcpcPcvrCalibration {
     val hour = args(1).toString
 
 
+//    val result = calibrationV1(date, hour, spark)
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_new_calibration_value")
     val result = calibrationV2(date, hour, spark)
     result.write.mode("overwrite").saveAsTable("test.ocpc_new_calibration_value_test")
   }
@@ -126,15 +128,19 @@ object OcpcPcvrCalibration {
       .withColumn("weight", udfTimespanToWeightV2(hour)(col("timespan")))
       .withColumn("hcvr", col("cvr_cnt") * 1.0 / col("ctr_cnt"))
       .withColumn("hpcvr", col("total_cvr") * 1.0 / col("cnt"))
-      .withColumn("raw_cali_value", col("hcvr") / col("hpcvr"))
-      .withColumn("weight_cali_value", col("raw_cali_value") * col("weight"))
+      .withColumn("cali_hcvr", col("weight") * col("hcvr"))
+      .withColumn("cali_hpcvr", col("weight") * col("hpcvr"))
+
 
     // TODO 删除临时表
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_new_calibration_value1_v2")
 
     val resultDF = rawData
       .groupBy("ideaid", "adclass")
-      .agg(sum(col("weight_cali_value")).alias("base_cali_value"))
+      .agg(
+        sum(col("cali_hcvr")).alias("cali_hcvr"),
+        sum(col("cali_hpcvr")).alias("cali_hpcvr"))
+      .withColumn("base_cali_value", col("cali_hcvr")/col("cali_hpcvr"))
       .withColumn("cali_value", when(col("base_cali_value")===0, 1.0).otherwise(col("base_cali_value")))
       .select("ideaid", "adclass", "cali_value")
     // TODO 删除临时表
