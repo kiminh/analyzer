@@ -1,5 +1,8 @@
 package com.cpc.spark.ocpc
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.cpc.spark.ocpc.OcpcUtils._
 import org.apache.spark.sql.functions._
@@ -91,6 +94,20 @@ object OcpcPcvrCalibration {
       * 对应时段内，权重为0.6，其他时段权重各为0.2
       */
 
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, 3)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+
+
     // 前一段时间的ctr和cvr数据
     val historyData1 = getCompleteData(date, hour, 24 * 7, spark)
     val baseData = historyData1
@@ -125,7 +142,7 @@ object OcpcPcvrCalibration {
       .select("ideaid", "adclass", "timespan", "ctr_cnt", "cvr_cnt")
       .join(pcvrData, Seq("ideaid", "adclass", "timespan"), "left_outer")
       .select("ideaid", "adclass", "timespan", "ctr_cnt", "cvr_cnt", "total_cvr", "cnt")
-      .withColumn("weight", udfTimespanToWeightV2(hour)(col("timespan")))
+      .withColumn("weight", udfTimespanToWeightV2(hour1)(col("timespan")))
       .withColumn("hcvr", col("cvr_cnt") * 1.0 / col("ctr_cnt"))
       .withColumn("hpcvr", col("total_cvr") * 1.0 / col("cnt"))
       .withColumn("cali_hcvr", col("weight") * col("hcvr"))
