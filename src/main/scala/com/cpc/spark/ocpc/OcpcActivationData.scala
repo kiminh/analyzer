@@ -26,6 +26,13 @@ object OcpcActivationData {
          |  dl_cpc.cpc_api_union_log
          |WHERE
          |  $selectWhere
+         |AND isclick is not null
+         |and media_appsid  in ("80000001", "80000002")
+         |and isshow = 1
+         |and ext['antispam'].int_value = 0
+         |and ideaid > 0
+         |and adsrc = 1
+         |and adslot_type in (1,2,3)
       """.stripMargin
     println(sqlRequest)
     val base = spark.sql(sqlRequest)
