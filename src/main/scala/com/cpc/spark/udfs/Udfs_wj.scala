@@ -77,4 +77,23 @@ object Udfs_wj{
     }
     result
   })
+
+  def udfTimespanToWeightV2(hour: String) = udf((valTimespan: String) => {
+    val trueHour = hour.toInt
+    var hourTag = ""
+    if (trueHour <= 5) {
+      hourTag = "t1"
+    } else if (trueHour > 6 && trueHour <= 19) {
+      hourTag = "t2"
+    } else {
+      hourTag = "t3"
+    }
+    var result = 0.2
+    if (hourTag == valTimespan) {
+      result = 0.6
+    } else {
+      result = 0.2
+    }
+    result
+  })
 }
