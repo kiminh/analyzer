@@ -40,7 +40,7 @@ object CalcCvrAucGaucHourly {
                |and (ext['charge_type'] IS NULL OR ext['charge_type'].int_value = 1)
              """.stripMargin
         val union = spark.sql(unionSql)
-          .filter("exptags like %cvrmodel%")
+          .filter("exptags like '%cvrmodel%'")
           .withColumn("exptag",getExptag(col("exptags")))
           .drop("exptags")
 
