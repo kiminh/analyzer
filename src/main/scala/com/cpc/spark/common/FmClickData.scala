@@ -10,6 +10,6 @@ object FmClickData {
   }
 }
 
-class LogData(data :Array[Byte] ){
+class FmClickData(data :Array[Byte] ){
 
 }
