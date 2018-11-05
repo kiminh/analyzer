@@ -67,7 +67,7 @@ object CalcCvrAucGaucHourly {
         for (adslot_type <- 1 to 3) {
             for (exp <- exptag) {
                 val unionJoincvrFilter = unionJoincvr
-                  .filter(s"adslot_type = $adslot_type and exptag = '$exp'")
+                  .filter(s"exptag = '$exp' and adslot_type = $adslot_type")
                   .coalesce(400)
                   .cache()
                 val ScoreAndLabel = unionJoincvrFilter
