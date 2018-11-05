@@ -1,5 +1,5 @@
 syntax = "proto3";
-package data;
+package mlevent;
 
 enum ActionType {
     IMPRESSION = 0;
