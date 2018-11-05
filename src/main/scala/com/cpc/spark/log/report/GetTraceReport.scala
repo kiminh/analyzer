@@ -60,6 +60,9 @@ object GetTraceReport {
       .getOrCreate()
 
 
+    /**
+      * 新增用户api回传数据，表名：dl_cpc.cpc_union_trace_logV2
+      */
     val traceReport = ctx.sql(
       s"""
          |select tr.searchid
@@ -73,7 +76,10 @@ object GetTraceReport {
          |      ,tr.trace_op1 as trace_op1
          |      ,tr.duration as duration
          |      ,tr.auto
-         |from dl_cpc.logparsed_cpc_trace_minute as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
+         |from (select trace_type,trace_op1,duration,auto,thedate,thehour dl_cpc.logparsed_cpc_trace_minute
+         |union
+         |select trace_type, trace_op1,duration,auto,thedate,thehour dl_cpc.cpc_union_trace_logV2
+         |) as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
          |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1
        """.stripMargin.format(date, hour, date, hour))
       //      .as[TraceReportLog]

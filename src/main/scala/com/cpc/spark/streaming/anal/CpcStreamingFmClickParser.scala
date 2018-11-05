@@ -3,7 +3,7 @@ package com.cpc.spark.streaming.anal
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.cpc.spark.common.LogData
+import com.cpc.spark.common.{FmClickData, LogData}
 import com.cpc.spark.streaming.tools.OffsetRedis
 import kafka.common.TopicAndPartition
 import kafka.message.MessageAndMetadata
@@ -122,7 +122,22 @@ object CpcStreamingFmClickParser {
     messages.map {
       case (k, v) =>
         try {
-//          val logData = FmClickData
+          val logData = FmClickData.parseData(v)
+          val timestamp = logData.log.getTimestamp
+          val date = new SimpleDateFormat("yyyy-MM-dd").format(timestamp)
+          val hour = new SimpleDateFormat("HH").format(timestamp)
+          val minute = new SimpleDateFormat("mm").format(timestamp).charAt(0) + "0"
+
+          val insertionID = logData.log.getInsertionID
+          val requestID = logData.log.getRequestID
+          val userID = logData.log.getUserID
+
+          val actionMap = collection.Map[Int, Int]()
+//          val actionMapCount = logData.log.getActionMapCount
+//          for (i <- 0 until actionMapCount) {
+//            val actionMapTmp = logData.log.ge
+//
+//          }
 
 
         } catch {
@@ -172,5 +187,13 @@ object CpcStreamingFmClickParser {
       print("currentDate:" + hehe)
     }
   }
+
+  case class FmClickLog(
+                         var timestamp: Long = 0,
+                         var insertionID: String = "", // unique key for each ad insertion
+                         var requestID: String = "",
+                         var userID: String = "", // client user ID (not advertiser ID)
+                         var actionMap: collection.Map[Int, Int] = null
+                       )
 
 }
