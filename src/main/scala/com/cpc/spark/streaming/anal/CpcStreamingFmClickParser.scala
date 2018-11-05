@@ -122,7 +122,7 @@ object CpcStreamingFmClickParser {
     messages.map {
       case (k, v) =>
         try {
-          val logData = FmClickData
+//          val logData = FmClickData
 
 
         } catch {
