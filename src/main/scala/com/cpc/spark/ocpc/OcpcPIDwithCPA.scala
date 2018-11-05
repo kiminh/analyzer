@@ -22,9 +22,8 @@ object OcpcPIDwithCPA {
 
     // TODO ideaid与userid的名称
     if (onDuty == 1) {
-//      val result = mergeData(date, hour, spark)
       val result = calculateKv3(date, hour, spark)
-//      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
