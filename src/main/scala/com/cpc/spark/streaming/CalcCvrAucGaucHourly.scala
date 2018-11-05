@@ -55,11 +55,13 @@ object CalcCvrAucGaucHourly {
 
         val unionJoincvr = union.join(cvr,Seq("searchid")).cache()
 
+        unionJoincvr.show(2)
+
         val exptag = unionJoincvr.select("exptag")
           .distinct()
           .collect()
           .map(x => x.getAs[String]("exptag"))
-
+        println(exptag.mkString(" "))
         val aucGaucBuffer = ListBuffer[AucGauc]()
 
         for (adslot_type <- 1 to 3) {
