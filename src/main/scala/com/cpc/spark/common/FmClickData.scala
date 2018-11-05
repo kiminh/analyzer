@@ -12,5 +12,5 @@ object FmClickData {
 }
 
 class LogData(data :Array[Byte] ){
-  val log =
+
 }
