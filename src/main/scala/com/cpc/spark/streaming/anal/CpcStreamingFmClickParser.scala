@@ -121,7 +121,7 @@ object CpcStreamingFmClickParser {
 
     messages.map {
       case (k, v) =>
-        try {
+        try {/*
           val logData = FmClickData.parseData(v)
           val timestamp = logData.log.getTimestamp
           val date = new SimpleDateFormat("yyyy-MM-dd").format(timestamp)
@@ -134,7 +134,7 @@ object CpcStreamingFmClickParser {
 
           val actionMap = collection.Map[Int, Int]()
 
-
+*/
 
 
         } catch {
