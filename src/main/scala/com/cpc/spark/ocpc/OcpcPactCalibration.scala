@@ -17,7 +17,7 @@ object OcpcPactCalibration {
     val date = args(0).toString
     val hour = args(1).toString
 
-    val result = calibrationV2(date, hour, spark)
+    val result = calibrationV0(date, hour, spark)
     result.write.mode("overwrite").saveAsTable("test.ocpc_new_calibration_value_cvr3")
   }
 
