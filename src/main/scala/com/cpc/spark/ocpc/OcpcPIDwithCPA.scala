@@ -24,7 +24,7 @@ object OcpcPIDwithCPA {
     if (onDuty == 1) {
 //      val result = mergeData(date, hour, spark)
       val result = calculateKv3(date, hour, spark)
-      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+//      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
@@ -721,36 +721,18 @@ object OcpcPIDwithCPA {
       .select("ideaid", "adclass", "kvalue")
       .join(cpaRatio, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "kvalue", "cpa_ratio")
+      .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
+      .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
+
     rawData.createOrReplaceTempView("raw_table")
     // TODO 删除临时表
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_k_value_raw_table")
 
-    // 按照分段函数修改k值
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  ideaid,
-         |  adclass,
-         |  kvalue as prev_k,
-         |  cpa_ratio,
-         |  (case when kvalue is null then 0.694
-         |        when cpa_ratio is null then cast(kvalue as double)
-         |        when cpa_ratio between 0.9 and 1.1 then cast(kvalue as double)
-         |        when cpa_ratio<0.9 and cpa_ratio>=0.8 then cast(kvalue as double) / 1.1
-         |        when cpa_ratio>1.1 and cpa_ratio<=1.2 then cast(kvalue as double) * 1.1
-         |        when cpa_ratio<0.8 and cpa_ratio>=0.6 then cast(kvalue as double) / 1.2
-         |        when cpa_ratio>1.2 and cpa_ratio<=1.4 then cast(kvalue as double) * 1.2
-         |        when cpa_ratio<0.6 and cpa_ratio>=0.4 then cast(kvalue as double) / 1.4
-         |        when cpa_ratio>1.4 and cpa_ratio<=1.6 then cast(kvalue as double) * 1.4
-         |        when cpa_ratio<0.4 then cast(kvalue as double) / 1.6
-         |        when cpa_ratio>1.6 then cast(kvalue as double) * 1.6
-         |        else cast(kvalue as double) end) as k_value
-         |FROM
-         |  raw_table
-       """.stripMargin
+    val resultDF = rawData
+      .select("ideaid", "adclass", "updated_k")
+      .withColumn("kvalue", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
+      .select("ideaid", "adclass", "kvalue", "updated_k")
 
-    println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
     // TODO 删除临时表
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_update_k_v2")
     resultDF
@@ -843,7 +825,7 @@ object OcpcPIDwithCPA {
          |  total_cost,
          |  cvr_cnt,
          |  (case when cpa_given is null then 1.0
-         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then 1.2
+         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then -1
          |        when hourly_ctr_cnt>=10 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
          |        when cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
          |        else 1.0 end) as cpa_ratio

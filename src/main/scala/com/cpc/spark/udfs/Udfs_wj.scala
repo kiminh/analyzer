@@ -96,4 +96,81 @@ object Udfs_wj{
     }
     result
   })
+
+  def udfSetRatioCase() = udf((valueRatio: Double) =>{
+    /**
+      * 根据新的K基准值和cpa_ratio来在分段函数中重新定义k值
+      *
+      * case1: ratio < 0, t1
+      * case2: ratio < 0.4, t2
+      * case3: 0.4 <= ratio < 0.6, t3
+      * case4: 0.6 <= ratio < 0.8, t4
+      * case5: 0.8 <= ratio < 0.9, t5
+      * case6: 0.9 <= ratio <= 1.1, t6
+      * case7: 1.1 < ratio <= 1.2, t7
+      * case8: 1.2 < ratio <= 1.4, t8
+      * case9: 1.4 < ratio <= 1.6, t9
+      * case10: ratio > 1.6, t10
+      *
+      */
+    var ratioCase = 0
+    if (valueRatio < 0) {
+      ratioCase = 1
+    } else if (valueRatio >=0 && valueRatio < 0.4) {
+      ratioCase = 2
+    } else if (valueRatio >= 0.4 && valueRatio < 0.6) {
+      ratioCase = 3
+    } else if (valueRatio >= 0.6 && valueRatio < 0.8) {
+      ratioCase = 4
+    } else if (valueRatio >= 0.8 && valueRatio < 0.9 ) {
+      ratioCase = 5
+    } else if (valueRatio >= 0.9 && valueRatio <= 1.1) {
+      ratioCase = 6
+    } else if (valueRatio > 1.1 && valueRatio <= 1.2) {
+      ratioCase = 7
+    } else if (valueRatio > 1.2 && valueRatio <= 1.4) {
+      ratioCase = 8
+    } else if (valueRatio > 1.4 && valueRatio <= 1.6) {
+      ratioCase = 9
+    } else if (valueRatio > 1.6){
+      ratioCase = 10
+    } else {
+      ratioCase = 11
+    }
+    ratioCase
+  })
+
+
+  def udfUpdateK() = udf((valueTag: Int, valueK: Double) => {
+    /**
+      * 根据新的K基准值和cpa_ratio来在分段函数中重新定义k值
+      * t1: k * 1.2 or k
+      * t2: k / 1.6
+      * t3: k / 1.4
+      * t4: k / 1.2
+      * t5: k / 1.1
+      * t6: k
+      * t7: k * 1.1
+      * t8: k * 1.2
+      * t9: k * 1.4
+      * t10: k * 1.6
+      *
+      * 上下限依然是0.2 到1.2
+      */
+    val result = valueTag match {
+      case 1 if valueK >= 1.2 => valueK
+      case 1 if valueK < 1.2 => valueK * 1.2
+      case 2 => valueK / 1.6
+      case 3 => valueK / 1.4
+      case 4 => valueK / 1.2
+      case 5 => valueK / 1.1
+      case 6 => valueK
+      case 7 => valueK * 1.1
+      case 8 => valueK * 1.2
+      case 9 => valueK * 1.4
+      case 10 => valueK * 1.6
+      case _ => valueK
+    }
+    result
+  })
 }

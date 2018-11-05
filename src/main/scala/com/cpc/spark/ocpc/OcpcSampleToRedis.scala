@@ -196,7 +196,7 @@ object OcpcSampleToRedis {
          |  a.adclass_cvr_cnt,
          |  (case when b.k_value is null and a.new_type_flag=1 then 0.694 * 0.8
          |        when b.k_value is null and a.new_type_flag!=1 then 0.694
-         |        when b.k_value > 1.2 then 1.2
+         |        when b.k_value > 1.4 then 1.4
          |        when b.k_value < 0.2 then 0.2
          |        else b.k_value end) as k_value,
          |  a.new_type_flag as type_flag
