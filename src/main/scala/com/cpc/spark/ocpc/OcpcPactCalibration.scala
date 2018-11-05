@@ -51,7 +51,8 @@ object OcpcPactCalibration {
       .select("ideaid", "adclass", "ctr_cnt", "cvr_cnt", "total_cvr", "cnt")
       .withColumn("hcvr", col("cvr_cnt")/col("ctr_cnt"))
       .withColumn("hpcvr", col("total_cvr")/col("cnt"))
-      .withColumn("cali_value", col("hcvr")/col("hpcvr"))
+      .withColumn("base_cali_value", col("hcvr")/col("hpcvr"))
+      .withColumn("cali_value", when(col("base_cali_value").isNull, 1.0).otherwise(col("base_cali_value")))
 
     // TODO 删除临时表
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_new_calibration_value1_cvr3")
