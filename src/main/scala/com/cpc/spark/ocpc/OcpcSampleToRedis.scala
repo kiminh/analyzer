@@ -257,7 +257,8 @@ object OcpcSampleToRedis {
          |  a.adclass_cvr_cnt,
          |  (case when a.k_value is null then 0.694 else a.k_value end) as k_value,
          |  b.hpcvr,
-         |  (case when c.cali_value is null or c.cali_value=0 then 1.0 else c.cali_value end) as cali_value
+         |  (case when c.cali_value is null or c.cali_value=0 then 1.0 else c.cali_value end) as cali_value,
+         |  (case when d.cali_value is null or d.cali_value=0 then 1.0 else d.cali_value end) as cvr3_cali
          |FROM
          |  test.test_new_pb_ocpc as a
          |INNER JOIN
@@ -272,6 +273,12 @@ object OcpcSampleToRedis {
          |  a.ideaid=c.ideaid
          |AND
          |  a.adclass=c.adclass
+         |LEFT JOIN
+         |  test.ocpc_new_calibration_value_cvr3 as d
+         |ON
+         |  a.ideaid=d.ideaid
+         |AND
+         |  a.adclass=d.adclass
        """.stripMargin
 
     println(sqlRequest4)
@@ -284,7 +291,7 @@ object OcpcSampleToRedis {
       .withColumn("date", lit(end_date))
       .withColumn("hour", lit(hour))
       .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pb_result_table_v3")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v4")
 
     // 保存pb文件
     savePbPack(finalData)
@@ -411,6 +418,7 @@ object OcpcSampleToRedis {
     println(dataset.count)
     dataset.show(10)
     var cnt = 0
+    // TODO add new column into pb file
     for (record <- dataset.collect()) {
       val ideaid = record.get(0).toString
       val userId = record.get(1).toString
