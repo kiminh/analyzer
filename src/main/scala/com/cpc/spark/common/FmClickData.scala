@@ -1,6 +1,6 @@
 package com.cpc.spark.common
 
-
+import mlevent.Mlevent
 
 
 /**
@@ -13,5 +13,5 @@ object FmClickData {
 }
 
 class FmClickData(data: Array[Byte]) {
-//  val log = Mlevent.AdActionEvent.parseFrom(data)
+  val log = Mlevent.AdActionEvent.parseFrom(data)
 }

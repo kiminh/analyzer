@@ -3,7 +3,7 @@ package com.cpc.spark.streaming.anal
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.cpc.spark.common.{FmClickData, LogData}
+import com.cpc.spark.common.FmClickData
 import com.cpc.spark.streaming.tools.OffsetRedis
 import kafka.common.TopicAndPartition
 import kafka.message.MessageAndMetadata
@@ -121,7 +121,7 @@ object CpcStreamingFmClickParser {
 
     messages.map {
       case (k, v) =>
-        try {/*
+        try {
           val logData = FmClickData.parseData(v)
           val timestamp = logData.log.getTimestamp
           val date = new SimpleDateFormat("yyyy-MM-dd").format(timestamp)
@@ -133,12 +133,9 @@ object CpcStreamingFmClickParser {
           val userID = logData.log.getUserID
 
           val actionMap = collection.Map[Int, Int]()
-//          val actionMapCount = logData.log.getActionMapCount
-//          for (i <- 0 until actionMapCount) {
-//            val actionMapTmp = logData.log.ge
-//
-//          }
-*/
+          val actionMapCount = logData.log.getActionMapMap
+
+
 
         } catch {
           case t: Throwable =>

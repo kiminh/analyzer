@@ -70,17 +70,17 @@ object GetTraceReport {
          |      ,un.planid as plan_id
          |      ,un.unitid as unit_id
          |      ,un.ideaid as idea_id
-         |      ,tr.thedate as date
-         |      ,tr.thehour as hour
+         |      ,tr.date
+         |      ,tr.hour
          |      ,tr.trace_type as trace_type
          |      ,tr.trace_op1 as trace_op1
          |      ,tr.duration as duration
          |      ,tr.auto
-         |from (select trace_type,trace_op1,duration,auto,thedate,thehour dl_cpc.logparsed_cpc_trace_minute
+         |from (select searchid, trace_type, trace_op1, duration, auto, date, hour from dl_cpc.cpc_union_trace_log
          |union
-         |select trace_type, trace_op1,duration,auto,thedate,thehour dl_cpc.cpc_union_trace_logV2
+         |select searchid, trace_type, trace_op1, duration, auto, thedate as date, thehour as hour from dl_cpc.cpc_union_trace_logV2
          |) as tr left join dl_cpc.cpc_union_log as un on tr.searchid = un.searchid
-         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1
+         |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1
        """.stripMargin.format(date, hour, date, hour))
       //      .as[TraceReportLog]
       .rdd.cache()
