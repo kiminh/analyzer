@@ -133,7 +133,7 @@ object CpcStreamingFmClickParser {
           val userID = logData.log.getUserID
 
           val actionMap = collection.Map[Int, Int]()
-          val actionMapCount = logData.log.getActionMapMap
+
 
 
 
