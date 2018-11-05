@@ -418,7 +418,7 @@ object OcpcSampleToRedis {
     println(dataset.count)
     dataset.show(10)
     var cnt = 0
-    // TODO add new column into pb file
+
     for (record <- dataset.collect()) {
       val ideaid = record.get(0).toString
       val userId = record.get(1).toString
