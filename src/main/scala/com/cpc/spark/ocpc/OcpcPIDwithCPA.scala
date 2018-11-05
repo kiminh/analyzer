@@ -729,8 +729,8 @@ object OcpcPIDwithCPA {
 
     val resultDF = rawData
       .select("ideaid", "adclass", "updated_k")
-      .withColumn("kvalue", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
-      .select("ideaid", "adclass", "kvalue", "updated_k")
+      .withColumn("k_value", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
+      .select("ideaid", "adclass", "k_value", "updated_k")
 
     // TODO 删除临时表
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_update_k_v2")
