@@ -1,6 +1,5 @@
 package com.cpc.spark.common
 
-import data.Mlevent
 
 /**
   * Created on ${Date} ${Time}
