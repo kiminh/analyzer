@@ -194,8 +194,9 @@ object OcpcSampleToRedis {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case when b.k_value is null then 0.694
-         |        when b.k_value > 1.2 then 1.2
+         |  (case when b.k_value is null and a.new_type_flag=1 then 0.694 * 0.8
+         |        when b.k_value is null and a.new_type_flag!=1 then 0.694
+         |        when b.k_value > 1.4 then 1.4
          |        when b.k_value < 0.2 then 0.2
          |        else b.k_value end) as k_value,
          |  a.new_type_flag as type_flag
@@ -255,7 +256,9 @@ object OcpcSampleToRedis {
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
          |  (case when a.k_value is null then 0.694 else a.k_value end) as k_value,
-         |  b.hpcvr
+         |  b.hpcvr,
+         |  (case when c.cali_value is null or c.cali_value=0 then 1.0 else c.cali_value end) as cali_value,
+         |  (case when d.cali_value is null or d.cali_value=0 then 1.0 else d.cali_value end) as cvr3_cali
          |FROM
          |  test.test_new_pb_ocpc as a
          |INNER JOIN
@@ -264,6 +267,18 @@ object OcpcSampleToRedis {
          |  a.ideaid=b.ideaid
          |AND
          |  a.adclass=b.adclass
+         |INNER JOIN
+         |  test.ocpc_new_calibration_value as c
+         |ON
+         |  a.ideaid=c.ideaid
+         |AND
+         |  a.adclass=c.adclass
+         |LEFT JOIN
+         |  test.ocpc_new_calibration_value_cvr3 as d
+         |ON
+         |  a.ideaid=d.ideaid
+         |AND
+         |  a.adclass=d.adclass
        """.stripMargin
 
     println(sqlRequest4)
@@ -276,7 +291,7 @@ object OcpcSampleToRedis {
       .withColumn("date", lit(end_date))
       .withColumn("hour", lit(hour))
       .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pb_result_table_v2")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v4")
 
     // 保存pb文件
     savePbPack(finalData)
@@ -402,8 +417,9 @@ object OcpcSampleToRedis {
     println("size of the dataframe")
     println(dataset.count)
     dataset.show(10)
-    for (record <- dataset.collect()) {
+    var cnt = 0
 
+    for (record <- dataset.collect()) {
       val ideaid = record.get(0).toString
       val userId = record.get(1).toString
       val adclassId = record.get(2).toString
@@ -415,6 +431,12 @@ object OcpcSampleToRedis {
       val adclassCvr = record.getLong(8).toString
       val k = record.get(9).toString
       val hpcvr = record.getAs[Double]("hpcvr")
+      val caliValue = record.getAs[Double]("cali_value")
+      val cvr3Cali = record.getAs[Double]("cvr3_cali")
+      if (cnt % 500 == 0) {
+        println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali")
+      }
+      cnt += 1
 
       val tmpCost = adclassCost.toLong
       if (tmpCost<0) {
@@ -433,7 +455,9 @@ object OcpcSampleToRedis {
           adclassCtrcnt = adclassCtr,
           adclassCvrcnt = adclassCvr,
           kvalue = k,
-          hpcvr = hpcvr
+          hpcvr = hpcvr,
+          calibration = caliValue,
+          cvr3Cali = cvr3Cali
         )
         list += currentItem
       }

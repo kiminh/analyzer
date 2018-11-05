@@ -14,6 +14,8 @@ message SingleUser {
     string adclassCvrcnt = 9;
     string kvalue = 10;
     double hpcvr = 11;
+    double calibration = 12;
+    double cvr3Cali = 13;
 }
 
 
