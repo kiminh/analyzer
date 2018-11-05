@@ -69,8 +69,8 @@ object OcpcAccPact {
     val resultDF = spark.sql(sqlRequest2)
 
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pcvr3_history")
-//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pcvr3_history")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pcvr3_history")
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pcvr3_history")
 
   }
 
