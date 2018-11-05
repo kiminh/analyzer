@@ -150,25 +150,25 @@ object Udfs_wj{
       * t4: k / 1.2
       * t5: k / 1.1
       * t6: k
-      * t7: k * 1.1
-      * t8: k * 1.2
-      * t9: k * 1.4
-      * t10: k * 1.6
+      * t7: k * 1.05
+      * t8: k * 1.1
+      * t9: k * 1.2
+      * t10: k * 1.3
       *
       * 上下限依然是0.2 到1.2
       */
     val result = valueTag match {
       case 1 if valueK >= 1.2 => valueK
-      case 1 if valueK < 1.2 => valueK * 1.2
+      case 1 if valueK < 1.2 => valueK * 1.05
       case 2 => valueK / 1.6
       case 3 => valueK / 1.4
       case 4 => valueK / 1.2
       case 5 => valueK / 1.1
       case 6 => valueK
-      case 7 => valueK * 1.1
-      case 8 => valueK * 1.2
-      case 9 => valueK * 1.4
-      case 10 => valueK * 1.6
+      case 7 => valueK * 1.05
+      case 8 => valueK * 1.1
+      case 9 => valueK * 1.2
+      case 10 => valueK * 1.3
       case _ => valueK
     }
     result
