@@ -16,6 +16,7 @@ case class CfgLog(
                    hour: String = "",
                    ext: collection.Map[String, ExtValue] = null,
                    ip: String = "",
-                   ua: String = ""
+                   ua: String = "",
+                   deviceid:String=""
                  )
 
