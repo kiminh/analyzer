@@ -182,9 +182,7 @@ object CpcStreamingFmClickParser {
             }
 
         }
-    }
-
-
+              
     /**
       * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
       */
