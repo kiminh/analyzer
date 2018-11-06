@@ -790,6 +790,9 @@ object OcpcPIDwithCPA {
         sum(col("weighted_cost")).alias("total_cost"),
         sum(col("weighted_cvr_cnt")).alias("total_cvr_cnt"))
 
+    // TODO
+    baseData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_base_table")
+
     val cvr3Data = getActivationData(date, hour, spark)
     val rawData = baseData
       .join(cvr3Data, Seq("ideaid", "adclass"), "left_outer")
