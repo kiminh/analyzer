@@ -316,9 +316,9 @@ object DNNSampleV4 {
   }
 
   private def mkClickFeature = udf {
-    features: Seq[Seq[Long]] =>
+    features: Seq[Seq[Double]] =>
       var i = 1
-      var re = Seq[(Int, Long)]()
+      var re = Seq[(Int, Double)]()
       for (feature <- features) {
         re = re ++ (if (feature != null) feature.map(x => (i, x)) else null)
         i = i + 1
