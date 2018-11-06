@@ -152,7 +152,7 @@ object CpcStreamingFmClickParser {
     base_data.foreachRDD {
       rs =>
         val keys = rs.map { x => (x.thedate, x.thehour, x.theminute) }.distinct().toLocalIterator
-        val spark = SparkSession.builder().config(ssc.sparkContext.getConf).getOrCreate()
+        val spark = SparkSession.builder().config(ssc.sparkContext.getConf).enableHiveSupport().getOrCreate()
 
         keys.foreach {
           key =>
@@ -182,70 +182,70 @@ object CpcStreamingFmClickParser {
             }
 
         }
-              
-    /**
-      * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
-      */
-    // 每个batch的结束时间
-    /*
-    val currentBatchEndTime = new Date().getTime
-    val costTime = (currentBatchEndTime - currentBatchStartTime) / 1000.0
 
-    val mapString: Seq[(String, String)] = Seq(("Topic", "fm_click"))
-    val mapFloat: Seq[(String, Float)] = Seq(("ProcessingTime", costTime.toFloat))
-    val data2Kafka = new Data2Kafka()
-    data2Kafka.setMessage(currentBatchEndTime, null, mapFloat, null, mapString)
-    data2Kafka.sendMessage(brokers, "cpc_fm_warning")
-    data2Kafka.close()
-    */
+      /**
+        * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
+        */
+      // 每个batch的结束时间
+      /*
+      val currentBatchEndTime = new Date().getTime
+      val costTime = (currentBatchEndTime - currentBatchStartTime) / 1000.0
+
+      val mapString: Seq[(String, String)] = Seq(("Topic", "fm_click"))
+      val mapFloat: Seq[(String, Float)] = Seq(("ProcessingTime", costTime.toFloat))
+      val data2Kafka = new Data2Kafka()
+      data2Kafka.setMessage(currentBatchEndTime, null, mapFloat, null, mapString)
+      data2Kafka.sendMessage(brokers, "cpc_fm_warning")
+      data2Kafka.close()
+      */
+    }
+
+
+    ssc.start()
+    ssc.awaitTermination()
+
   }
 
 
-  ssc.start()
-  ssc.awaitTermination()
+  def getKafkaTopicAndPartitionOffset(topicsSet: Set[String], kafkaParams: Map[String, String]): Map[TopicAndPartition, Long] = {
+    var kafkaCluster = new KafkaCluster(kafkaParams)
+    var topicAndPartitions = Set[TopicAndPartition]()
+    var fromOffsets: Map[TopicAndPartition, Long] = Map()
+    val partitions: Either[KafkaCluster.Err, Set[TopicAndPartition]] = kafkaCluster.getPartitions(topicsSet)
+    partitions match {
+      case Left(x) => System.err.println("kafka getPartitions error" + x);
+        System.exit(1)
+      case Right(x) =>
+        for (partition <- x) {
+          topicAndPartitions += partition
+        }
+    }
+    println("***************from kafka TopicAndPartition*******************")
+    println(topicAndPartitions)
+    val consumerOffset: Either[KafkaCluster.Err, Map[TopicAndPartition, LeaderOffset]] = kafkaCluster.getLatestLeaderOffsets(topicAndPartitions)
+    consumerOffset match {
+      case Left(x) => System.err.println("kafka getConsumerOffsets error" + x);
+        System.exit(1)
+      case Right(x) =>
+        x.foreach(
+          tp => {
+            fromOffsets += (tp._1 -> tp._2.offset)
+          }
+        )
+    }
+    fromOffsets
+  }
 
-}
-
-
-def getKafkaTopicAndPartitionOffset (topicsSet: Set[String], kafkaParams: Map[String, String] ): Map[TopicAndPartition, Long] = {
-  var kafkaCluster = new KafkaCluster (kafkaParams)
-  var topicAndPartitions = Set[TopicAndPartition] ()
-  var fromOffsets: Map[TopicAndPartition, Long] = Map ()
-  val partitions: Either[KafkaCluster.Err, Set[TopicAndPartition]] = kafkaCluster.getPartitions (topicsSet)
-  partitions match {
-  case Left (x) => System.err.println ("kafka getPartitions error" + x);
-  System.exit (1)
-  case Right (x) =>
-  for (partition <- x) {
-  topicAndPartitions += partition
-}
-}
-  println ("***************from kafka TopicAndPartition*******************")
-  println (topicAndPartitions)
-  val consumerOffset: Either[KafkaCluster.Err, Map[TopicAndPartition, LeaderOffset]] = kafkaCluster.getLatestLeaderOffsets (topicAndPartitions)
-  consumerOffset match {
-  case Left (x) => System.err.println ("kafka getConsumerOffsets error" + x);
-  System.exit (1)
-  case Right (x) =>
-  x.foreach (
-  tp => {
-  fromOffsets += (tp._1 -> tp._2.offset)
-}
-  )
-}
-  fromOffsets
-}
-
-  def getCurrentDate (message: String) {
-  var now: Date = new Date ()
-  var dateFormat: SimpleDateFormat = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss")
-  var hehe = dateFormat.format (now)
-  if (message.length () > 0) {
-  println ("currentDate:" + message + ":" + hehe)
-} else {
-  print ("currentDate:" + hehe)
-}
-}
+  def getCurrentDate(message: String) {
+    var now: Date = new Date()
+    var dateFormat: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    var hehe = dateFormat.format(now)
+    if (message.length() > 0) {
+      println("currentDate:" + message + ":" + hehe)
+    } else {
+      print("currentDate:" + hehe)
+    }
+  }
 
   case class FmClickLog(
                          var timestamp: Long = 0,
