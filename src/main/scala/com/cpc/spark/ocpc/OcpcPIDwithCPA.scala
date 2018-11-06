@@ -23,8 +23,7 @@ object OcpcPIDwithCPA {
     // TODO ideaid与userid的名称
     if (onDuty == 1) {
       val result = calculateKv3(date, hour, spark)
-      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_test")
-//      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
@@ -699,7 +698,7 @@ object OcpcPIDwithCPA {
 
   }
 
-  def updateKv2(baseData: DataFrame, kValue: DataFrame, cpaRatio: DataFrame, spark: SparkSession) :DataFrame ={
+  def updateKv2(baseData: DataFrame, kValue: DataFrame, cpaRatio: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
     /**
       * 根据新的K基准值和cpa_ratio来在分段函数中重新定义k值
       * case1：0.9 <= cpa_ratio <= 1.1，k基准值
@@ -728,10 +727,15 @@ object OcpcPIDwithCPA {
     // TODO 删除临时表
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_k_value_raw_table")
 
+    val cvr3Data = getActivationData(date, hour, spark)
+
     val resultDF = rawData
       .select("ideaid", "adclass", "updated_k")
-      .withColumn("k_value", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
-      .select("ideaid", "adclass", "k_value", "updated_k")
+      .withColumn("new_k_value", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
+      .select("ideaid", "adclass", "new_k_value", "updated_k")
+      .join(cvr3Data, Seq("ideaid"), "left_outer")
+      .withColumn("k_value", when(col("flag").isNull, col("new_k_value")).otherwise(col("0.694")))
+
 
     // TODO 删除临时表
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_update_k_v2")
@@ -758,7 +762,7 @@ object OcpcPIDwithCPA {
     val cpaRatio = getCPAratioV3(baseData, historyData, date, hour, spark)
     println("################# cpaRatio table #######################")
 //    cpaRatio.show(10)
-    val newK = updateKv2(baseData, avgK, cpaRatio, spark)
+    val newK = updateKv2(baseData, avgK, cpaRatio, date, hour, spark)
     println("################# final result ####################")
 //    newK.show(10)
     newK
@@ -774,7 +778,7 @@ object OcpcPIDwithCPA {
       */
 
     // 按ideaid和adclass统计每一个广告创意的加权数据
-    val baseData = historyData
+    val rawData = historyData
       .withColumn("cost",
         when(col("isclick")===1, col("price")).otherwise(0))
       .groupBy("ideaid", "adclass", "hour")
@@ -788,17 +792,7 @@ object OcpcPIDwithCPA {
       .groupBy("ideaid", "adclass")
       .agg(
         sum(col("weighted_cost")).alias("total_cost"),
-        sum(col("weighted_cvr_cnt")).alias("total_cvr_cnt"))
-
-    // TODO
-    baseData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_base_table")
-
-    val cvr3Data = getActivationData(date, hour, spark)
-    val rawData = baseData
-      .join(cvr3Data, Seq("ideaid", "adclass"), "left_outer")
-      .select("ideaid", "adclass", "total_cost", "total_cvr_cnt", "cvr3_cnt")
-      .withColumn("cvr_cnt",
-        when(col("cvr3_cnt").isNull, col("total_cvr_cnt")).otherwise(col("cvr3_cnt")))
+        sum(col("weighted_cvr_cnt")).alias("cvr_cnt"))
 
     // TODO 删除临时表
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_cost_ctr_cvr_v3")
@@ -866,23 +860,7 @@ object OcpcPIDwithCPA {
       .select("ideaid", "flag")
       .distinct()
 
-    val historyData = getActData(date, hour, 24, spark)
-
-    val rawData = historyData
-      .groupBy("ideaid", "adclass")
-      .agg(sum(col("cvr_cnt")).alias("base_cvr3_cnt"))
-      .select("ideaid", "adclass", "base_cvr3_cnt")
-
-    val resultDF = cvr3List
-      .join(rawData, Seq("ideaid"), "left_outer")
-      .select("ideaid", "adclass", "base_cvr3_cnt")
-      .withColumn("cvr3_cnt", when(col("base_cvr3_cnt").isNull, 0).otherwise(col("base_cvr3_cnt")))
-      .select("ideaid", "adclass", "cvr3_cnt", "base_cvr3_cnt")
-
-    // TODO 删除临时表
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cvr3_cnt_ideaids_check_k")
-
-    resultDF
+    cvr3List
   }
 
   def getAvgKV3(historyData: DataFrame, hour: String, spark: SparkSession) = {
