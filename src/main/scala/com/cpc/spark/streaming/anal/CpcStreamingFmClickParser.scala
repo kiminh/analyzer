@@ -119,30 +119,33 @@ object CpcStreamingFmClickParser {
     }
     getCurrentDate("end-offsetRanges")
 
-    messages.map {
+    val base_data = messages.map {
       case (k, v) =>
-        try {/*
+        try {
           val logData = FmClickData.parseData(v)
-          val timestamp = logData.log.getTimestamp
+          val timestamp = logData.log.timestamp
           val date = new SimpleDateFormat("yyyy-MM-dd").format(timestamp)
           val hour = new SimpleDateFormat("HH").format(timestamp)
           val minute = new SimpleDateFormat("mm").format(timestamp).charAt(0) + "0"
 
-          val insertionID = logData.log.getInsertionID
-          val requestID = logData.log.getRequestID
-          val userID = logData.log.getUserID
+          val insertionID = logData.log.insertionID
+          val requestID = logData.log.requestID
+          val userID = logData.log.userID
+          val actionMap: collection.Map[Int, Int] = logData.log.actionMap
 
-          val actionMap = collection.Map[Int, Int]()
-
-*/
-
-
+          FmClickLog(timestamp, insertionID, requestID, userID, actionMap, date, hour, minute)
         } catch {
           case t: Throwable =>
             t.printStackTrace()
             null
         }
-    }
+    }.filter(_ != null)
+
+    base_data.print(5)
+
+
+    ssc.start()
+    ssc.awaitTermination()
 
   }
 
@@ -190,7 +193,10 @@ object CpcStreamingFmClickParser {
                          var insertionID: String = "", // unique key for each ad insertion
                          var requestID: String = "",
                          var userID: String = "", // client user ID (not advertiser ID)
-                         var actionMap: collection.Map[Int, Int] = null
+                         var actionMap: collection.Map[Int, Int] = null,
+                         var thedate: String = "",
+                         var thehour: String = "",
+                         var theminute: String = ""
                        )
 
 }
