@@ -19,6 +19,7 @@ import userocpc.userocpc._
 import java.io.FileOutputStream
 
 import com.cpc.spark.common.Utils.getTimeRangeSql
+import com.cpc.spark.ocpc.OcpcUtils.getActData
 import org.apache.spark.sql.functions._
 
 
@@ -178,7 +179,14 @@ object OcpcSampleToRedis {
     userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
     val userFinalData3 = filterDataByType(userFinalData, end_date, hour, spark)
-    userFinalData3.write.mode("overwrite").saveAsTable("test.ocpc_new_cvr_table")
+
+    val cvr3Data = getCvr3List(end_date, hour, spark)
+
+    val userFinalData4 = userFinalData3.join(cvr3Data, Seq("ideaid", "adclass"), "left_outer")
+
+
+    userFinalData4.write.mode("overwrite").saveAsTable("test.ocpc_new_cvr_table")
+
 
 
     // 根据中间表加入k值
@@ -190,7 +198,7 @@ object OcpcSampleToRedis {
          |  a.adclass,
          |  a.cost,
          |  a.ctr_cnt,
-         |  a.cvr_cnt,
+         |  (case when a.cvr3_cnt is not null then a.cvr3_cnt else a.cvr_cnt end) as cvr_cnt,
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
@@ -211,7 +219,8 @@ object OcpcSampleToRedis {
          |    adclass_cost,
          |    adclass_ctr_cnt,
          |    adclass_cvr_cnt,
-         |    new_type_flag
+         |    new_type_flag,
+         |    cvr3_cnt
          |   FROM
          |    test.ocpc_new_cvr_table) a
          |LEFT JOIN
@@ -605,5 +614,42 @@ object OcpcSampleToRedis {
 
 
   }
+
+  def getCvr3List(date: String, hour: String, spark: SparkSession) :DataFrame = {
+    import spark.implicits._
+
+    val filename = "/user/cpc/wangjun/cvr3ideaid.txt"
+    val data = spark.sparkContext.textFile(filename)
+
+    val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+    //    dataRDD.foreach(println)
+
+    val cvr3List = dataRDD
+      .toDF("ideaid", "flag")
+      .select("ideaid", "flag")
+      .distinct()
+
+    val historyData = getActData(date, hour, 24 * 7, spark)
+    val rawData = historyData
+      .groupBy("ideaid", "adclass")
+      .agg(sum(col("cvr_cnt")).alias("base_cvr3_cnt"))
+      .select("ideaid", "adclass", "base_cvr3_cnt")
+
+    val resultDF = cvr3List
+      .join(rawData, Seq("ideaid"), "left_outer")
+      .select("ideaid", "adclass", "base_cvr3_cnt")
+      .withColumn("cvr3_cnt", when(col("base_cvr3_cnt").isNull, 0).otherwise(col("base_cvr3_cnt")))
+      .select("ideaid", "adclass", "cvr3_cnt", "base_cvr3_cnt")
+
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cvr3_cnt_ideaids")
+
+    resultDF
+
+
+
+  }
+
+
+
 
 }

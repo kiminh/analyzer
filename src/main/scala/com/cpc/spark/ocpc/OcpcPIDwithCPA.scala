@@ -838,7 +838,67 @@ object OcpcPIDwithCPA {
 
     cpaRatio
 
+  }
 
+  def getAvgKV3(historyData: DataFrame, hour: String, spark: SparkSession) = {
+    /**
+      * 计算修正前的k基准值
+      * case1：前24个小时有isclick=1的数据，统计这批数据的k均值作为基准值
+      * case2：前24个小时没有isclick=1的数据，将前一个小时的数据作为基准值
+      * case3: 在主表（7*24）中存在，但是不属于前两种情况的，初始值0.694
+      */
+
+    historyData
+      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+      .createOrReplaceTempView("raw_table")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  ideaid,
+         |  adclass,
+         |  isshow,
+         |  isclick,
+         |  iscvr,
+         |  ocpc_log,
+         |  ocpc_log_dict['kvalue'] as kvalue,
+         |  hour
+         |FROM
+         |  raw_table
+       """.stripMargin
+    println(sqlRequest2)
+    val rawData = spark.sql(sqlRequest2)
+
+//    // case1
+//    val case1 = rawData
+//      .filter("isclick=1")
+//      .withColumn("weight", udfCalculateWeightByHour(hour)(col("hour")))
+//      .withColumn("weighted_k", col("weight") * col("kvalue"))
+//      .groupBy("ideaid", "adclass")
+//      .agg(sum(col("weighted_k")).alias("kvalue1"))
+//      .select("ideaid", "adclass", "kvalue1")
+//
+//    // case2
+//    // table name for previous calculation: test.new_pb_ocpc_with_pcvr
+//    val case2 = spark
+//      .table("test.new_pb_ocpc_with_pcvr")
+//      .withColumn("kvalue2", col("k_value"))
+//      .select("ideaid", "adclass", "kvalue2")
+//
+//    // 优先case1，然后case2，最后case3
+//    val resultDF = baseData
+//      .join(case1, Seq("ideaid", "adclass"), "left_outer")
+//      .select("ideaid", "adclass", "kvalue1")
+//      .join(case2, Seq("ideaid", "adclass"), "left_outer")
+//      .select("ideaid", "adclass", "kvalue1", "kvalue2")
+//      .withColumn("kvalue_new", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
+//      .withColumn("kvalue", when(col("kvalue_new").isNull, 0.694).otherwise(col("kvalue_new")))
+//
+//    resultDF.show(10)
+//    // TODO 删除临时表
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_avg_k_value")
+//    resultDF
   }
 
 }
