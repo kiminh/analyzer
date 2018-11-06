@@ -483,7 +483,7 @@ object OcpcPIDwithCPA {
     val cpaRatio = getCPAratio(baseData, historyData, date, hour, spark)
     println("################# cpaRatio table #######################")
 //    cpaRatio.show(10)
-    val newK = updateKv2(baseData, avgK, cpaRatio, spark)
+    val newK = updateKv2(baseData, avgK, cpaRatio, date, hour, spark)
     println("################# final result ####################")
 //    newK.show(10)
     newK
