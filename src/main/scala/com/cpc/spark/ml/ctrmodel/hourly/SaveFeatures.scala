@@ -226,7 +226,7 @@ object SaveFeatures {
 
   def saveCvrDataV2(spark: SparkSession, date: String, hour: String, yesterday: String, version: String): Unit = {
     import spark.implicits._
-/*
+
     //激励下载转化  取有点击的
     val motivateRDD = spark.sql(
       s"""
@@ -336,7 +336,7 @@ object SaveFeatures {
         |ALTER TABLE dl_cpc.ml_cvr_feature_v2 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
         | LOCATION  '/user/cpc/lrmodel/cvrdata_userapiback/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
-*/
+
 
     //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算
     val cvrlog = spark.sql(
@@ -361,7 +361,7 @@ object SaveFeatures {
          |    left join
          |        (select *
          |            from dl_cpc.logparsed_cpc_trace_minute
-         |            where `thedate` = "%s" and `thehour` = "%s"
+         |            where `thedate` = "%s" and `thehour` >= "%s" and `thehour` <= "18"
          |         ) b
          |    on a.searchid=b.searchid
          | where t2.id is null
@@ -429,7 +429,9 @@ object SaveFeatures {
         |       ext['user_req_num'].int_value as user_req_num,uid,
         |       ext['click_count'].int_value as user_click_num,
         |       ext['click_unit_count'].int_value as user_click_unit_num,
-        |       ext['long_click_count'].int_value as user_long_click_count
+        |       ext['long_click_count'].int_value as user_long_click_count,
+        |       ext['exp_ctr'].int_value as exp_ctr,
+        |       ext['exp_cvr'].int_value as exp_cvr
         |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isclick = 1
         |
           """.stripMargin.format(date, hour)
