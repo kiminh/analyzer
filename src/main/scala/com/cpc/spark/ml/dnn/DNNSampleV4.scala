@@ -80,7 +80,7 @@ object DNNSampleV4 {
          |       collect_set(if(load_date>='${getDay(date, 7)}'
          |                  and load_date<='${getDay(date, 4)}',click_ideaid,null)) as c_ideaid_4_7,
          |       collect_list(if(load_date>='${getDay(date, 7)}'
-         |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7
+         |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7,
          |
          |
          |       collect_list(if(load_date>='${getDay(date, 7)}'
