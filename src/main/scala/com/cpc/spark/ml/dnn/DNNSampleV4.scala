@@ -346,7 +346,7 @@ object DNNSampleV4 {
       for (v <- arr) {
         map = map ++ Map(v -> (map.getOrElse(v, 0) + 1))
       }
-      (for (m <- map) yield (m._1, Math.log(m._2 + 1.0))).slice(0, 1000)
+      (for (m <- map) yield m._1 -> Math.log(m._2 + 1.0)).slice(0, 1000)
   }
 
   private def getKeys = udf {
@@ -359,7 +359,10 @@ object DNNSampleV4 {
 
   private def getHashValue(idx: Int) = udf {
     (v: Int, m: Map[Int, Double]) =>
-      if (m.nonEmpty && m.contains(v)) Murmur3Hash.stringHash64("f" + idx + v, 0)
+      if (m != null) {
+        if (m.nonEmpty && m.contains(v)) Murmur3Hash.stringHash64("f" + idx + v, 0)
+        else Murmur3Hash.stringHash64("f" + idx, 0)
+      }
       else Murmur3Hash.stringHash64("f" + idx, 0)
   }
 
