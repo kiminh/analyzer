@@ -53,6 +53,9 @@ object CalcCvrAucGaucHourly {
 
         val cvr = spark.sql(cvrSql)
 
+        println("union 's num is " + union.count())
+        println("cvr 's num is " + cvr.count())
+
         val unionJoincvr = union.join(cvr,Seq("searchid")).cache()
 
         unionJoincvr.show(2)
@@ -73,7 +76,7 @@ object CalcCvrAucGaucHourly {
                 val ScoreAndLabel = unionJoincvrFilter
                   .select($"score",$"label")
                   .rdd
-                  .map(x => (x.getAs[Double]("score"), x.getAs[Double]("label")))
+                  .map(x => (x.getAs[Int]("score").toDouble, x.getAs[Int]("label").toDouble))
 
                 val ScoreAndLabelNum = ScoreAndLabel.count()
                 if (ScoreAndLabelNum > 0) {
@@ -84,23 +87,23 @@ object CalcCvrAucGaucHourly {
                       .select($"uid",$"score",$"label")
                       .rdd
                       .map(x => (x.getAs[String]("uid"),
-                        (x.getAs[Double]("score"), x.getAs[Double]("label"))))
+                        (x.getAs[Int]("score"), x.getAs[Int]("label"))))
                       .combineByKey(
                           x => List(x),
-                          (x: List[(Double, Double)], y: (Double, Double)) => y :: x,
-                          (x: List[(Double, Double)], y: List[(Double, Double)]) => x ::: y
+                          (x: List[(Int, Int)], y: (Int, Int)) => y :: x,
+                          (x: List[(Int, Int)], y: List[(Int, Int)]) => x ::: y
                       )
                       .mapValues(x => {
                           val label = x.map(x => x._2)
-                          val max = label.max.toInt
+                          val max = label.max
                           val pos = Array.fill(max)(0)
                           val neg = Array.fill(max)(0)
                           val n = label.sum //正样本数
                           val m = x.length - n  //负样本数
 
                           for ((s,l) <- x){
-                              if (s.toInt == 0) neg(l.toInt) += 1
-                              else pos(l.toInt) += 1
+                              if (s == 0) neg(l) += 1
+                              else pos(l) += 1
                           }
 
                           var negSum = 0
@@ -136,6 +139,8 @@ object CalcCvrAucGaucHourly {
         val aucGauc = aucGaucBuffer.toList.toDF()
 
         aucGauc.write.mode("overwrite").insertInto("dl_cpc.cpc_cvr_auc_gauc_hourly_log1")
+
+        spark.stop()
     }
 
     def getExptag = udf((exptags:String) => {
