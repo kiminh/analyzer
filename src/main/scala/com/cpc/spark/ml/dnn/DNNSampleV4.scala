@@ -359,13 +359,12 @@ object DNNSampleV4 {
 
   private def getHashValue(idx: Int) = udf {
     (v: Int, m: Map[Int, Double]) =>
-      /*if (m != null) {
+      if (m != null) {
         if (m.nonEmpty && m.contains(v))
           Murmur3Hash.stringHash64("f" + idx + v, 0)
         else Murmur3Hash.stringHash64("f" + idx, 0)
       }
-      else Murmur3Hash.stringHash64("f" + idx, 0)*/
-      1
+      else Murmur3Hash.stringHash64("f" + idx, 0)
   }
 
   private def getFloatValue = udf {
