@@ -24,7 +24,7 @@ object AutoPutCoin {
         val p = 0.7
 
         val spark = SparkSession.builder()
-          .appName("")
+          .appName(s"AutoPutCoin date = $date, hour = $hour")
           .enableHiveSupport()
           .getOrCreate()
 
@@ -49,11 +49,11 @@ object AutoPutCoin {
             s"""
                |select ideaid,ext["exp_cvr"].int_value as exp_cvr
                |from dl_cpc.cpc_api_union_log
-               |where $datehour
+               |where ($datehour)
                |and iscvr = 1
                |and media_appsid in ('80000001','80000002')
                |and ideaid > 0
-               |adslot_type in (1, 2, 3)
+               |and adslot_type in (1, 2, 3)
              """.stripMargin
 
         val apiUnionLog = spark.sql(apiUnionLogSql)
@@ -64,7 +64,7 @@ object AutoPutCoin {
             s"""
                |select distinct searchid
                |from dl_cpc.ml_cvr_feature_v1
-               |where $datehour
+               |where ($datehour)
                |and label2 = 1
              """.stripMargin
 
@@ -73,11 +73,11 @@ object AutoPutCoin {
         val unionLogSql =
             s"""
                |select searchid, ideaid,ext["exp_cvr"].int_value as exp_cvr1
-               |where $datehour
+               |where ($datehour)
                |and iscvr = 1
                |and media_appsid in ('80000001','80000002')
                |and ideaid > 0
-               |adslot_type in (1, 2, 3)
+               |and adslot_type in (1, 2, 3)
              """.stripMargin
 
         val unionLog = spark.sql(unionLogSql)
