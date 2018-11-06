@@ -73,12 +73,16 @@ object CalcCvrAucGaucHourly {
                   .filter(s"exptag = '$exp' and adslot_type = $adslot_type")
                   .coalesce(400)
                   .cache()
+
                 val ScoreAndLabel = unionJoincvrFilter
                   .select($"score",$"label")
                   .rdd
                   .map(x => (x.getAs[Int]("score").toDouble, x.getAs[Int]("label").toDouble))
 
                 val ScoreAndLabelNum = ScoreAndLabel.count()
+
+                System.out.println("adslot_type = %d , exp = %s , unionJoincvrFilter 's num is %d , ScoreAndLabelNum = %d".format(adslot_type,
+                    exp, unionJoincvrFilter.count(), ScoreAndLabelNum))
                 if (ScoreAndLabelNum > 0) {
                     val metrics = new BinaryClassificationMetrics(ScoreAndLabel)
                     val aucROC = metrics.areaUnderROC
@@ -123,6 +127,7 @@ object CalcCvrAucGaucHourly {
 
                     val gaucROC = if (sum > 1e-6) auc / sum else 0.0
 
+                    println(s"auc = $auc , sum = $sum , gaucROC = $gaucROC")
                     aucGaucBuffer += AucGauc(auc = aucROC,
                         gauc = gaucROC,
                         adslot = adslot_type,
