@@ -5,6 +5,7 @@ import java.util.Properties
 
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
@@ -56,13 +57,24 @@ object GetTraceReportV3 {
       .enableHiveSupport()
       .getOrCreate()
 
-    saveTraceReport(ctx, date, hour)
-    saveTraceReport_Moivation(ctx, date, hour) //应用商城（激励下载）
-    saveTraceReport_ApiCallBack(ctx, date, hour) //用户api回传
+    val traceReport = saveTraceReport(ctx, date, hour)
+    val traceReport_Motivate = saveTraceReport_Moivation(ctx, date, hour) //应用商城（激励下载）
+    val traceReport_ApiCallBack = saveTraceReport_ApiCallBack(ctx, date, hour) //用户api回传
 
+    val traceReport1 = traceReport
+      .union(traceReport_Motivate)
+      .union(traceReport_ApiCallBack)
+
+    val a = traceReport1
+
+    clearReportHourData("report_trace", date, hour)
+    clearReportHourData2("report_trace", date, hour)
+
+
+    println("GetTraceReport_done")
   }
 
-  def saveTraceReport(ctx: SparkSession, date: String, hour: String): Unit = {
+  def saveTraceReport(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
     val traceReport = ctx.sql(
       s"""
          |select tr.searchid, un.userid as user_id
@@ -121,25 +133,12 @@ object GetTraceReportV3 {
         AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, trace_op1, duration, auto, count, impression, click)
     }
 
-
     println("count:" + toResult.count())
-    clearReportHourData("report_trace", date, hour)
-    ctx.createDataFrame(toResult)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_trace", mariadbProp)
+    toResult
 
-    clearReportHourData2("report_trace", date, hour)
-    ctx.createDataFrame(toResult)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadb_amateur_url, "report.report_trace", mariadb_amateur_prop)
-
-    ctx.stop()
-    println("GetTraceReport_done")
   }
 
-  def saveTraceReport_Moivation(ctx: SparkSession, date: String, hour: String): Unit = {
+  def saveTraceReport_Moivation(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
     val traceReport = ctx.sql(
       s"""
          |select tr.searchid
@@ -153,12 +152,12 @@ object GetTraceReportV3 {
          |      ,tr.trace_op1 as trace_op1
          |      ,tr.duration as duration
          |      ,tr.auto
-         |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_motivation_log as un on tr.searchid = un.searchid and tr.opt['ideaid']=un.ideaid
-         |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1
+         |from dl_cpc.logparsed_cpc_trace_minute as tr left join dl_cpc.cpc_motivation_log as un on tr.searchid = un.searchid and tr.opt['ideaid']=un.ideaid
+         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1
        """.stripMargin.format(date, hour, date, hour))
       .rdd
 
-    val sql1 = "select ideaid , sum(isshow) as show, sum(isclick) as click from dl_cpc.cpc_union_log where `date` = \"%s\" and `hour` =\"%s\" group by ideaid ".format(date, hour)
+    val sql1 = "select ideaid , sum(isshow) as show, sum(isclick) as click from dl_cpc.cpc_motivation_log where `date` = \"%s\" and `hour` =\"%s\" group by ideaid ".format(date, hour)
     val unionRdd = ctx.sql(sql1).rdd.map {
       x =>
         val ideaid: Int = x(0).toString().toInt
@@ -204,29 +203,18 @@ object GetTraceReportV3 {
         AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, trace_op1, duration, auto, count, impression, click)
     }
 
-
     println("count:" + toResult.count())
-    ctx.createDataFrame(toResult)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_trace", mariadbProp)
-
-    ctx.createDataFrame(toResult)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadb_amateur_url, "report.report_trace", mariadb_amateur_prop)
-
-    ctx.stop()
-    println("GetTraceReport_done")
+    toResult
   }
 
   /**
     * 用户api回传
+    *
     * @param ctx
     * @param date
     * @param hour
     */
-  def saveTraceReport_ApiCallBack(ctx: SparkSession, date: String, hour: String): Unit = {
+  def saveTraceReport_ApiCallBack(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
     val traceReport = ctx.sql(
       s"""
          |select tr.searchid
@@ -291,8 +279,12 @@ object GetTraceReportV3 {
         AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, trace_op1, duration, auto, count, impression, click)
     }
 
-
     println("count:" + toResult.count())
+    toResult
+
+  }
+
+  def writeToTraceReport(ctx: SparkSession, toResult: RDD[AdvTraceReport]): Unit = {
     ctx.createDataFrame(toResult)
       .write
       .mode(SaveMode.Append)
@@ -304,9 +296,7 @@ object GetTraceReportV3 {
       .jdbc(mariadb_amateur_url, "report.report_trace", mariadb_amateur_prop)
 
     ctx.stop()
-    println("GetTraceReport_done")
   }
-
 
   def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
     try {
