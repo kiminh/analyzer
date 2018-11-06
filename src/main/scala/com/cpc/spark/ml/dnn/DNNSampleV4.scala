@@ -65,9 +65,9 @@ object DNNSampleV4 {
          |       collect_list(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
          |
          |       collect_list(if(load_date>='${getDay(date, 7)}'
-         |                  and load_date<='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_2_7,
+         |                  and load_date<='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1_7,
          |       collect_list(if(load_date>='${getDay(date, 7)}'
-         |                  and load_date<='${getDay(date, 1)}',click_adclass,null)) as c_adclass_2_7
+         |                  and load_date<='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1_7
          |from dl_cpc.cpc_user_behaviors
          |where load_date in ('${getDays(date, 1, 7)}')
          |group by uid
@@ -82,8 +82,8 @@ object DNNSampleV4 {
         $"uid",
         mkCount($"c_ideaid_1").alias("c1_ideaid_count"),
         mkCount($"c_adclass_1").alias("c1_adclass_count"),
-        mkCount($"c_ideaid_2_7").alias("c27_ideaid_count"),
-        mkCount($"c_adclass_2_7").alias("c27_adclass_count")
+        mkCount($"c_ideaid_1_7").alias("c17_ideaid_count"),
+        mkCount($"c_adclass_1_7").alias("c17_adclass_count")
       ).persist()
 
     raw_behavior.show(10)
@@ -93,16 +93,16 @@ object DNNSampleV4 {
         $"uid",
         hashSeq("m2", "int")(getKeys($"c1_ideaid_count")).alias("m2"),
         hashSeq("m3", "int")(getKeys($"c1_adclass_count")).alias("m3"),
-        hashSeq("m4", "int")(getKeys($"c27_ideaid_count")).alias("m4"),
-        hashSeq("m5", "int")(getKeys($"c27_adclass_count")).alias("m5"),
+        hashSeq("m4", "int")(getKeys($"c17_ideaid_count")).alias("m4"),
+        hashSeq("m5", "int")(getKeys($"c17_adclass_count")).alias("m5"),
         $"c1_ideaid_count",
         $"c1_adclass_count",
-        $"c27_ideaid_count",
-        $"c27_adclass_count",
+        $"c17_ideaid_count",
+        $"c17_adclass_count",
         getValues($"c1_ideaid_count").alias("cv1"),
         getValues($"c1_adclass_count").alias("cv2"),
-        getValues($"c27_ideaid_count").alias("cv3"),
-        getValues($"c27_adclass_count").alias("cv4")
+        getValues($"c17_ideaid_count").alias("cv3"),
+        getValues($"c17_adclass_count").alias("cv4")
       )
 
     val userAppIdx = getUidApp(spark, date)
@@ -185,15 +185,15 @@ object DNNSampleV4 {
 
       getHashValue(29)($"ideaid", $"c1_ideaid_count").alias("f29"),
       getHashValue(30)($"adclass", $"c1_adclass_count").alias("f30"),
-      getHashValue(31)($"ideaid", $"c27_ideaid_count").alias("f31"),
-      getHashValue(32)($"adclass", $"c27_adclass_count").alias("f32"),
+      getHashValue(31)($"ideaid", $"c17_ideaid_count").alias("f31"),
+      getHashValue(32)($"adclass", $"c17_adclass_count").alias("f32"),
 
       array($"m1", $"m2", $"m3", $"m4", $"m5").alias("raw_sparse"),
 
       getFloatValue($"ideaid", $"c1_ideaid_count").alias("c1"),
       getFloatValue($"adclass", $"c1_adclass_count").alias("c2"),
-      getFloatValue($"ideaid", $"c27_ideaid_count").alias("c3"),
-      getFloatValue($"adclass", $"c27_adclass_count").alias("c4"),
+      getFloatValue($"ideaid", $"c17_ideaid_count").alias("c3"),
+      getFloatValue($"adclass", $"c17_adclass_count").alias("c4"),
 
       array($"cv1", $"cv2", $"cv3", $"cv4").alias("float_sparse")
     )
