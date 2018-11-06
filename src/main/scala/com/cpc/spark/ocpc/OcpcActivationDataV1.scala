@@ -3,7 +3,7 @@ package com.cpc.spark.ocpc
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
-object OcpcActivationData {
+object OcpcActivationDataV1 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("OcpcMonitor").enableHiveSupport().getOrCreate()
 
@@ -42,15 +42,17 @@ object OcpcActivationData {
     val resultDF = base
       .groupBy("ideaid", "adclass")
       .agg(
+        sum(col("price")).alias("cost"),
         sum(col("isclick")).alias("ctr_cnt"),
         sum(col("isact")).alias("cvr_cnt"))
-      .select("ideaid", "adclass", "ctr_cnt", "cvr_cnt")
+      .select("ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_adclass_label3_track")
+    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_adclass_label3_track")
 
-    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_ideaid_adclass_label3_track")
+//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_ideaid_adclass_label3_track_v1")
 
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_adclass_label3_track_v1")
   }
 }
