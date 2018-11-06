@@ -68,8 +68,8 @@ object DNNSampleV4 {
          |       collect_set(if(load_date='${getDay(date, 3)}',show_ideaid,null)) as s_ideaid_3,
          |       collect_set(if(load_date='${getDay(date, 3)}',show_adclass,null)) as s_adclass_3,
          |
-         |       collect_set(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
-         |       collect_set(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
+         |       collect_list(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
+         |       collect_list(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
          |
          |       collect_set(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
          |       collect_set(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
@@ -98,9 +98,9 @@ object DNNSampleV4 {
 
     val raw_behavior = spark.sql(behavior_sql)
       .withColumn("c1_ideaid_count", mkCount($"c_ideaid_1"))
-      .withColumn("c1_adclass_count", $"c_ideaid_1")
-      .withColumn("c17_ideaid_count", $"c_ideaid_1_7")
-      .withColumn("c17_adclass_count", $"c_adclass_1_7")
+      .withColumn("c1_adclass_count", mkCount($"c_ideaid_1"))
+      .withColumn("c17_ideaid_count", mkCount($"c_ideaid_1_7"))
+      .withColumn("c17_adclass_count", mkCount($"c_adclass_1_7"))
       .withColumn("m2", hashSeq("m2", "int")($"s_ideaid_1"))
       .withColumn("m3", hashSeq("m3", "int")($"s_ideaid_2"))
       .withColumn("m4", hashSeq("m4", "int")($"s_ideaid_3"))
