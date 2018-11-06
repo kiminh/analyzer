@@ -99,15 +99,15 @@ object CalcCvrAucGaucHourly {
                       )
                       .mapValues(x => {
                           val label = x.map(x => x._2)
-                          val max = label.max + 1
+                          val max = x.map(x => x._1).max + 2
                           val pos = Array.fill(max)(0)
                           val neg = Array.fill(max)(0)
                           val n = label.sum //正样本数
                           val m = x.length - n  //负样本数
 
                           for ((s,l) <- x){
-                              if (s == 0) neg(l) += 1
-                              else pos(l) += 1
+                              if (l == 0) neg(s) += 1
+                              else pos(s) += 1
                           }
 
                           var negSum = 0
