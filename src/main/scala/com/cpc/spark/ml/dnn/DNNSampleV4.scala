@@ -39,7 +39,7 @@ object DNNSampleV4 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/daily_v4_list/dnntrain-" + date)
+      .save("/user/cpc/zhj/daily_v4_list_test/dnntrain-" + date)
 
     val test = getSample(spark, tdate, is_train = false).persist()
     val tn = test.count
@@ -50,7 +50,7 @@ object DNNSampleV4 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/daily_v4_list/dnntest-" + tdate)
+      .save("/user/cpc/zhj/daily_v4_list_test/dnntest-" + tdate)
 
     test.take(10).foreach(println)
   }
@@ -155,7 +155,7 @@ object DNNSampleV4 {
          |
          |  hour
          |
-         |from dl_cpc.cpc_union_log where `date` = '$date' and hour=10
+         |from dl_cpc.cpc_union_log where `date` = '$date'
          |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
