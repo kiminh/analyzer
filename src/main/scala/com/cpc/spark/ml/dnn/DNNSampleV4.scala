@@ -233,7 +233,7 @@ object DNNSampleV4 {
           x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"),
           x._1.getAs[Seq[Double]]("f_dense"),
           x._1.getAs[Seq[Int]]("f_idx0"), x._1.getAs[Seq[Int]]("f_idx1"),
-          x._1.getAs[Seq[Int]]("f_idx2"), x._1.getAs[Seq[Long]]("f_id_arr"))
+          x._1.getAs[Seq[Int]]("f_idx2"), x._1.getAs[Seq[Double]]("f_id_arr"))
       }
       .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr",
         "f_dense", "f_idx0", "f_idx1", "f_idx2", "f_id_arr")
