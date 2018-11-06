@@ -242,8 +242,8 @@ object SaveFeatures {
          |        on a.userid = t2.id
          |    left join
          |        (select *
-         |            from dl_cpc.cpc_union_trace_log
-         |            where `date` = "%s" and `hour` = "%s"
+         |            from dl_cpc.logparsed_cpc_trace_minute
+         |            where `thedate` = "%s" and `thehour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
          | where t2.id is null
