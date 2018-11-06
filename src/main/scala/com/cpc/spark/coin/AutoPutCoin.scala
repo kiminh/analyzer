@@ -85,8 +85,9 @@ object AutoPutCoin {
         println("unionLog 's count is " + unionLog.rdd.count())
         val cols = Array("ideaid", "exp_cvr1")
 
-        val unionLogFilter = unionLog.join(mlFeature,Seq("searchid"),"inner")
-          .select(cols.map(col):_*)
+        val unionLogFilter = unionLog.join(mlFeature,Seq("searchid"),"inner").select("ideaid", "exp_cvr1")
+        //  .select(cols.map(col):_*)
+        unionLogFilter.show(2)
         println("unionLogFilter 's count is " + unionLogFilter.rdd.count())
         val unionNth = getNth(unionLogFilter, p)
         println("unionNth 's count is " + unionNth.count())
