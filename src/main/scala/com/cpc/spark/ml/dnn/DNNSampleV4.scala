@@ -337,11 +337,11 @@ object DNNSampleV4 {
   }
 
   private def getKeys = udf {
-    m: Map[Int, Int] => m.keys
+    m: Map[Int, Int] => m.keys.toSeq
   }
 
   private def getValues = udf {
-    m: Map[Int, Int] => m.values
+    m: Map[Int, Int] => m.values.toSeq
   }
 
   private def getValue = udf {
