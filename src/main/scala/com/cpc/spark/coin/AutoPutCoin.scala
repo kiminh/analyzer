@@ -31,7 +31,7 @@ object AutoPutCoin {
         val datehourlist = scala.collection.mutable.ListBuffer[String]()
         val cal = Calendar.getInstance()
         cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour, minute)
-        for (t <- 0 to 24*7) {
+        for (t <- 0 to 24*1) {
             if (t > 0) {
                 cal.add(Calendar.HOUR, -1)
             }
