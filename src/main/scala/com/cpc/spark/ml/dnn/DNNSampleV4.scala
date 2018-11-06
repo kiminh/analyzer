@@ -359,11 +359,17 @@ object DNNSampleV4 {
 
   private def getHashValue(idx: Int) = udf {
     (v: Int, m: Map[Int, Double]) =>
-      if (m != null && m.nonEmpty && m.contains(v)) Murmur3Hash.stringHash64("f" + idx + v, 0)
-      else Murmur3Hash.stringHash64("f" + idx, 0)
+      /*if (m != null) {
+        if (m.nonEmpty && m.contains(v))
+          Murmur3Hash.stringHash64("f" + idx + v, 0)
+        else Murmur3Hash.stringHash64("f" + idx, 0)
+      }
+      else Murmur3Hash.stringHash64("f" + idx, 0)*/
+      1
   }
 
   private def getFloatValue = udf {
-    (v: Int, m: Map[Int, Double]) => m.getOrElse(v, 0.0)
+    (v: Int, m: Map[Int, Double]) =>
+      if (m != null) m.getOrElse(v, 0.0) else 0.0
   }
 }
