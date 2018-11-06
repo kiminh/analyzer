@@ -155,7 +155,7 @@ object DNNSampleV4 {
          |
          |  hour
          |
-         |from dl_cpc.cpc_union_log where `date` = '$date'
+         |from dl_cpc.cpc_union_log where `date` = '$date' and hour=10
          |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
