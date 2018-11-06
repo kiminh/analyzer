@@ -5,22 +5,24 @@ import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.{array, udf}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**
-  * 小时增量训练dnn ctr模型数据准备
-  * created time : 2018/10/17 16:18
+  * dnn ctr v3  小时任务
+  * 共28个dense，15个multi hot特征，
+  * created time : 2018/11/01 14:34
   *
   * @author zhj
   * @version 1.0
   *
   */
-@deprecated
-object DNNSampleHourly {
+object DNNSampleHourlyV3 {
+
   Logger.getRootLogger.setLevel(Level.WARN)
 
-  private var trainLog = Seq[String]()
+  //multi hot 特征默认hash code
+  private val default_hash = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
 
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
@@ -32,20 +34,7 @@ object DNNSampleHourly {
     val date = args(0)
     val hour = args(1)
 
-    val default_hash_uid = Murmur3Hash.stringHash64("f26", 0)
-
-    val rawtrain = getSample(spark, date, hour).withColumn("uid", $"dense" (25))
-
-    rawtrain.printSchema()
-
-    val uid = rawtrain.select("uid")
-      .groupBy("uid").count()
-
-    val train = rawtrain.join(uid, Seq("uid"), "left")
-      .select($"sample_idx", $"label",
-        getNewDense(25, default_hash_uid)($"dense", $"count" < 2).alias("dense"),
-        $"idx0", $"idx1", $"idx2", $"id_arr")
-      .persist()
+    val train = getSample(spark, date, hour).persist()
 
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
@@ -55,8 +44,7 @@ object DNNSampleHourly {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/zhj/hourly/dnntrain-$date-$hour")
-    println("train size", train.count())
+      .save(s"/user/cpc/zhj/hourly_v3/dnntrain-$date-$hour")
     train.take(10).foreach(println)
 
     train.sample(withReplacement = false, 0.1).repartition(100)
@@ -64,7 +52,7 @@ object DNNSampleHourly {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/zhj/hourly/dnntest-$date-$hour")
+      .save(s"/user/cpc/zhj/hourly_v3/dnntest-$date-$hour")
 
     train.unpersist()
   }
@@ -72,7 +60,11 @@ object DNNSampleHourly {
   def getSample(spark: SparkSession, date: String, hour: String): DataFrame = {
     import spark.implicits._
 
+    val behavior_data = spark.read.parquet("/user/cpc/zhj/behaviorV3")
+
     val userAppIdx = getUidApp(spark, date)
+      .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))
+
     val sql =
       s"""
          |select if(isclick>0, array(1,0), array(0,1)) as label,
@@ -91,20 +83,24 @@ object DNNSampleHourly {
          |
          |  province, city, ext['city_level'].int_value as city_level,
          |
-         |  uid, age, sex, ext_string['dtu_id'] as dtu_id
+         |  uid, age, sex, ext_string['dtu_id'] as dtu_id,
          |
-         |from dl_cpc.cpc_union_log where `date` = '$date' and hour=$hour
-         |  and isshow = 1 and ideaid > 0 and adslot_type in (1, 2)
+         |  hour
+         |
+         |from dl_cpc.cpc_union_log where `date` = '$date' and hour = $hour
+         |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
-         |
+         |  and uid > 0
       """.stripMargin
+    println("--------------------------------")
     println(sql)
+    println("--------------------------------")
 
     spark.sql(sql)
       .join(userAppIdx, Seq("uid"), "leftouter")
-      .repartition(1000)
+      .join(behavior_data, Seq("uid"), "leftouter")
       .select($"label",
 
         hash("f1")($"media_type").alias("f1"),
@@ -134,14 +130,19 @@ object DNNSampleHourly {
         hash("f25")($"city_level").alias("f25"),
         hash("f26")($"uid").alias("f26"),
         hash("f27")($"age").alias("f27"),
+        hash("f28")($"hour").alias("f28"),
 
-        hashSeq("m1", "string")($"pkgs").alias("m1"))
+        array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
+          $"m11", $"m12", $"m13", $"m14", $"m15").alias("raw_sparse")
+      )
 
       .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
-        $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27").alias("dense"),
+        $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27", $"f28").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
-        mkSparseFeature1($"m1").alias("sparse"), $"label"
+        //mkSparseFeature1($"m1").alias("sparse"), $"label"
+        mkSparseFeature_m($"raw_sparse").alias("sparse"),
+        $"label"
       )
 
       .select(
@@ -153,7 +154,7 @@ object DNNSampleHourly {
         $"sparse".getField("_4").alias("id_arr")
       )
 
-      .rdd.zipWithIndex()
+      .rdd.zipWithUniqueId()
       .map { x =>
         (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
@@ -176,11 +177,26 @@ object DNNSampleHourly {
     cal.setTime(format.parse(startdate))
     cal.add(Calendar.DATE, -day1)
     var re = Seq(format.format(cal.getTime))
-    for (i <- 1 until day2) {
+    for (_ <- 1 until day2) {
       cal.add(Calendar.DATE, -1)
       re = re :+ format.format(cal.getTime)
     }
     re.mkString("','")
+  }
+
+  /**
+    * 获取时间
+    *
+    * @param startdate ：开始日期
+    * @param day       ：开始日期之前day天
+    * @return
+    */
+  def getDay(startdate: String, day: Int): String = {
+    val format = new SimpleDateFormat("yyyy-MM-dd")
+    val cal = Calendar.getInstance()
+    cal.setTime(format.parse(startdate))
+    cal.add(Calendar.DATE, -day)
+    format.format(cal.getTime)
   }
 
   def getUidApp(spark: SparkSession, date: String): DataFrame = {
@@ -230,29 +246,18 @@ object DNNSampleHourly {
     }
   }
 
-  /**
-    * 更具指定条件使用默认值更换dense特征中的值
-    *
-    * @param p :位置 0 ~ length-1
-    * @param d :默认值
-    * @return
-    */
-  private def getNewDense(p: Int, d: Long) = udf {
-    (dense: Seq[Long], f: Boolean) =>
-      if (f) (dense.slice(0, p) :+ d) ++ dense.slice(p + 1, 1000) else dense
-  }
-
-  private val mkSparseFeature = udf {
-    (apps: Seq[Long], ideaids: Seq[Long]) =>
-      val a = apps.zipWithIndex.map(x => (0, x._2, x._1))
-      val b = ideaids.zipWithIndex.map(x => (1, x._2, x._1))
-      val c = (a ++ b).map(x => (0, x._1, x._2, x._3))
+  private def mkSparseFeature_m = udf {
+    features: Seq[Seq[Long]] =>
+      var i = 0
+      var re = Seq[(Int, Int, Long)]()
+      for (feature <- features) {
+        re = re ++
+          (if (feature != null) feature.zipWithIndex.map(x => (i, x._2, x._1)) else default_hash(i))
+        i = i + 1
+      }
+      val c = re.map(x => (0, x._1, x._2, x._3))
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
 
-  private val mkSparseFeature1 = udf {
-    apps: Seq[Long] =>
-      val c = apps.zipWithIndex.map(x => (0, 0, x._2, x._1))
-      (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
-  }
+
 }
