@@ -514,6 +514,7 @@ object OcpcPIDwithCPA {
     println(sqlRequest)
     val baseData = spark.sql(sqlRequest)
 
+
     // TODO 删除临时表
     baseData.write.mode("overwrite").saveAsTable("test.ocpc_base_table_hourly")
     baseData
@@ -734,7 +735,7 @@ object OcpcPIDwithCPA {
       .withColumn("new_k_value", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
       .select("ideaid", "adclass", "new_k_value", "updated_k")
       .join(cvr3Data, Seq("ideaid"), "left_outer")
-      .withColumn("k_value", when(col("flag").isNull, col("new_k_value")).otherwise(col("0.694")))
+      .withColumn("k_value", when(col("flag").isNull, col("new_k_value")).otherwise(0.694))
 
 
     // TODO 删除临时表
