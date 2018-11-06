@@ -4,11 +4,13 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.cpc.spark.common.FmClickData
-import com.cpc.spark.streaming.tools.OffsetRedis
+import com.cpc.spark.streaming.anal.CpcStreamingSearchLogParser.currentBatchStartTime
+import com.cpc.spark.streaming.tools.{Data2Kafka, OffsetRedis}
 import kafka.common.TopicAndPartition
 import kafka.message.MessageAndMetadata
 import kafka.serializer.{DefaultDecoder, StringDecoder}
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.{SparkConf, TaskContext}
 import org.apache.spark.streaming.dstream.InputDStream
 import org.apache.spark.streaming.kafka.KafkaCluster.LeaderOffset
@@ -103,6 +105,8 @@ object CpcStreamingFmClickParser {
 
     messages.foreachRDD {
       rdd => {
+        currentBatchStartTime = new Date().getTime //每个batch的开始时间
+
         val offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
         rdd.foreachPartition { iter =>
           try {
@@ -143,50 +147,107 @@ object CpcStreamingFmClickParser {
 
     base_data.print(5)
 
+    var date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
 
-    ssc.start()
-    ssc.awaitTermination()
+    base_data.foreachRDD {
+      rs =>
+        val keys = rs.map { x => (x.thedate, x.thehour, x.theminute) }.distinct().toLocalIterator
+        val spark = SparkSession.builder().config(ssc.sparkContext.getConf).getOrCreate()
 
-  }
+        keys.foreach {
+          key =>
+            val part = rs.filter(r => r.thedate == key._1 && r.thehour == key._2 && r.theminute == key._3)
+            val numbs = part.count()
+            val clickOutFiles = (numbs / 1000000 + 1).toInt //用于动态减少search输出文件数；logparsed_cpc_search_minute 2018-10-09 19 00大约50w数据，大小40m,预设1个文件1g
 
+            date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
+            println("~~~~~~~~~ fm_click_log ~~~~~~ on time:%s  batch-size:%d".format(date, numbs))
 
-  def getKafkaTopicAndPartitionOffset(topicsSet: Set[String], kafkaParams: Map[String, String]): Map[TopicAndPartition, Long] = {
-    var kafkaCluster = new KafkaCluster(kafkaParams)
-    var topicAndPartitions = Set[TopicAndPartition]()
-    var fromOffsets: Map[TopicAndPartition, Long] = Map()
-    val partitions: Either[KafkaCluster.Err, Set[TopicAndPartition]] = kafkaCluster.getPartitions(topicsSet)
-    partitions match {
-      case Left(x) => System.err.println("kafka getPartitions error" + x); System.exit(1)
-      case Right(x) =>
-        for (partition <- x) {
-          topicAndPartitions += partition
+            if (numbs > 0) {
+              //fm_click持久化
+              val df = spark.createDataFrame(part)
+                .repartition(clickOutFiles)
+                .write
+                .mode(SaveMode.Append)
+                .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(outTable, key._1, key._2, key._3))
+
+              val sqlStmt =
+                """
+                  |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
+                  |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
+                  |
+                    """.stripMargin.format(outTable, key._1, key._2, key._3, outTable, key._1, key._2, key._3)
+              println(sqlStmt)
+              spark.sql(sqlStmt)
+            }
+
         }
     }
-    println("***************from kafka TopicAndPartition*******************")
-    println(topicAndPartitions)
-    val consumerOffset: Either[KafkaCluster.Err, Map[TopicAndPartition, LeaderOffset]] = kafkaCluster.getLatestLeaderOffsets(topicAndPartitions)
-    consumerOffset match {
-      case Left(x) => System.err.println("kafka getConsumerOffsets error" + x); System.exit(1)
-      case Right(x) =>
-        x.foreach(
-          tp => {
-            fromOffsets += (tp._1 -> tp._2.offset)
-          }
-        )
-    }
-    fromOffsets
+
+
+    /**
+      * 报警日志写入kafka的topic: cpc_realtime_parsedlog_warning
+      */
+    // 每个batch的结束时间
+    /*
+    val currentBatchEndTime = new Date().getTime
+    val costTime = (currentBatchEndTime - currentBatchStartTime) / 1000.0
+
+    val mapString: Seq[(String, String)] = Seq(("Topic", "fm_click"))
+    val mapFloat: Seq[(String, Float)] = Seq(("ProcessingTime", costTime.toFloat))
+    val data2Kafka = new Data2Kafka()
+    data2Kafka.setMessage(currentBatchEndTime, null, mapFloat, null, mapString)
+    data2Kafka.sendMessage(brokers, "cpc_fm_warning")
+    data2Kafka.close()
+    */
   }
 
-  def getCurrentDate(message: String) {
-    var now: Date = new Date()
-    var dateFormat: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-    var hehe = dateFormat.format(now)
-    if (message.length() > 0) {
-      println("currentDate:" + message + ":" + hehe)
-    } else {
-      print("currentDate:" + hehe)
-    }
-  }
+
+  ssc.start()
+  ssc.awaitTermination()
+
+}
+
+
+def getKafkaTopicAndPartitionOffset (topicsSet: Set[String], kafkaParams: Map[String, String] ): Map[TopicAndPartition, Long] = {
+  var kafkaCluster = new KafkaCluster (kafkaParams)
+  var topicAndPartitions = Set[TopicAndPartition] ()
+  var fromOffsets: Map[TopicAndPartition, Long] = Map ()
+  val partitions: Either[KafkaCluster.Err, Set[TopicAndPartition]] = kafkaCluster.getPartitions (topicsSet)
+  partitions match {
+  case Left (x) => System.err.println ("kafka getPartitions error" + x);
+  System.exit (1)
+  case Right (x) =>
+  for (partition <- x) {
+  topicAndPartitions += partition
+}
+}
+  println ("***************from kafka TopicAndPartition*******************")
+  println (topicAndPartitions)
+  val consumerOffset: Either[KafkaCluster.Err, Map[TopicAndPartition, LeaderOffset]] = kafkaCluster.getLatestLeaderOffsets (topicAndPartitions)
+  consumerOffset match {
+  case Left (x) => System.err.println ("kafka getConsumerOffsets error" + x);
+  System.exit (1)
+  case Right (x) =>
+  x.foreach (
+  tp => {
+  fromOffsets += (tp._1 -> tp._2.offset)
+}
+  )
+}
+  fromOffsets
+}
+
+  def getCurrentDate (message: String) {
+  var now: Date = new Date ()
+  var dateFormat: SimpleDateFormat = new SimpleDateFormat ("yyyy-MM-dd HH:mm:ss")
+  var hehe = dateFormat.format (now)
+  if (message.length () > 0) {
+  println ("currentDate:" + message + ":" + hehe)
+} else {
+  print ("currentDate:" + hehe)
+}
+}
 
   case class FmClickLog(
                          var timestamp: Long = 0,
