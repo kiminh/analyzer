@@ -34,10 +34,9 @@ object OcpcActivationDataV1 {
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)
-         |and islick=1
       """.stripMargin
     println(sqlRequest)
-    val base = spark.sql(sqlRequest)
+    val base = spark.sql(sqlRequest).filter("isclick=1")
 
     val resultDF = base
       .groupBy("ideaid", "adclass")

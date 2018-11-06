@@ -20,7 +20,6 @@ object OcpcActivationData {
          |SELECT
          |  ideaid,
          |  ext['adclass'].int_value as adclass,
-         |  price,
          |  isclick,
          |  iscvr as isact
          |FROM
@@ -34,7 +33,6 @@ object OcpcActivationData {
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)
-         |and islick=1
       """.stripMargin
     println(sqlRequest)
     val base = spark.sql(sqlRequest)
