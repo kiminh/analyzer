@@ -226,7 +226,7 @@ object SaveFeatures {
 
   def saveCvrDataV2(spark: SparkSession, date: String, hour: String, yesterday: String, version: String): Unit = {
     import spark.implicits._
-
+/*
     //激励下载转化  取有点击的
     val motivateRDD = spark.sql(
       s"""
@@ -336,7 +336,7 @@ object SaveFeatures {
         |ALTER TABLE dl_cpc.ml_cvr_feature_v2 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
         | LOCATION  '/user/cpc/lrmodel/cvrdata_userapiback/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
-
+*/
 
     //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算
     val cvrlog = spark.sql(
@@ -355,13 +355,13 @@ object SaveFeatures {
          |       ,a.ideaid
          |       ,b.*
          |from (select * from dl_cpc.cpc_union_log
-         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "") a
+         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick > 0) a
          |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
          |        on a.userid = t2.id
          |    left join
          |        (select *
-         |            from dl_cpc.cpc_union_trace_log
-         |            where `date` = "%s" and `hour` = "%s"
+         |            from dl_cpc.logparsed_cpc_trace_minute
+         |            where `thedate` = "%s" and `thehour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid
          | where t2.id is null
