@@ -21,7 +21,8 @@ import org.apache.spark.sql.functions.{array, udf}
   */
 object DNNSampleV4 {
 
-  private val default_hash = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
+  //multihot 默认hash
+  private val default_hash = for (i <- 1 to 50) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
 
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
@@ -64,9 +65,9 @@ object DNNSampleV4 {
          |       collect_list(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
          |
          |       collect_list(if(load_date>='${getDay(date, 7)}'
-         |                  and load_date<='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2_7,
+         |                  and load_date<='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_2_7,
          |       collect_list(if(load_date>='${getDay(date, 7)}'
-         |                  and load_date<='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2_7
+         |                  and load_date<='${getDay(date, 1)}',click_adclass,null)) as c_adclass_2_7
          |from dl_cpc.cpc_user_behaviors
          |where load_date in ('${getDays(date, 1, 7)}')
          |group by uid
@@ -182,24 +183,31 @@ object DNNSampleV4 {
       hash("f27")($"age").alias("f27"),
       hash("f28")($"hour").alias("f28"),
 
-      getValue($"ideaid", $"c1_ideaid_count").alias("c1"),
-      getValue($"adclass", $"c1_adclass_count").alias("c2"),
-      getValue($"ideaid", $"c27_ideaid_count").alias("c3"),
-      getValue($"adclass", $"c27_adclass_count").alias("c4"),
+      getHashValue(29)($"ideaid", $"c1_ideaid_count").alias("f29"),
+      getHashValue(30)($"adclass", $"c1_adclass_count").alias("f30"),
+      getHashValue(31)($"ideaid", $"c27_ideaid_count").alias("f31"),
+      getHashValue(32)($"adclass", $"c27_adclass_count").alias("f32"),
 
-      array($"cv1", $"cv2", $"cv3", $"cv4").alias("cv"),
+      array($"m1", $"m2", $"m3", $"m4", $"m5").alias("raw_sparse"),
 
-      array($"m1", $"m2", $"m3", $"m4", $"m5").alias("raw_sparse")
+      getFloatValue($"ideaid", $"c1_ideaid_count").alias("c1"),
+      getFloatValue($"adclass", $"c1_adclass_count").alias("c2"),
+      getFloatValue($"ideaid", $"c27_ideaid_count").alias("c3"),
+      getFloatValue($"adclass", $"c27_adclass_count").alias("c4"),
+
+      array($"cv1", $"cv2", $"cv3", $"cv4").alias("float_sparse")
     )
 
       .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
-        $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27", $"f28").alias("dense"),
-
-        array($"c1", $"c2", $"c3", $"c4").alias("click"),
-        mkClickFeature($"cv").alias("cv"),
+        $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27", $"f28", $"f29",
+        $"f30", $"f31", $"f32").alias("dense"),
 
         mkSparseFeature_m($"raw_sparse").alias("sparse"),
+
+        array($"c1", $"c2", $"c3", $"c4").alias("f_dense"),
+        mkFloatSparseFeature_m($"float_sparse").alias("f_sparse"),
+
         $"label"
       )
 
@@ -211,9 +219,11 @@ object DNNSampleV4 {
         $"sparse".getField("_3").alias("idx2"),
         $"sparse".getField("_4").alias("id_arr"),
 
-        $"click",
-        $"cv._1".alias("cv_idx"),
-        $"cv._2".alias("cv")
+        $"f_dense",
+        $"f_sparse._1".alias("f_idx0"),
+        $"f_sparse._2".alias("f_idx1"),
+        $"f_sparse._3".alias("f_idx2"),
+        $"f_sparse._4".alias("f_id_arr")
       )
 
       .rdd.zipWithUniqueId()
@@ -221,10 +231,12 @@ object DNNSampleV4 {
         (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
           x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"),
-          x._1.getAs[Seq[Double]]("click"),
-          x._1.getAs[Seq[Int]]("cv_idx"), x._1.getAs[Seq[Double]]("cv"))
+          x._1.getAs[Seq[Double]]("f_dense"),
+          x._1.getAs[Seq[Int]]("f_idx0"), x._1.getAs[Seq[Int]]("f_idx1"),
+          x._1.getAs[Seq[Int]]("f_idx2"), x._1.getAs[Seq[Long]]("f_id_arr"))
       }
-      .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr", "click", "cv_idx", "cv")
+      .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr",
+        "f_dense", "f_idx0", "f_idx1", "f_idx2", "f_id_arr")
   }
 
   def getDays(startdate: String, day1: Int = 0, day2: Int): String = {
@@ -315,16 +327,17 @@ object DNNSampleV4 {
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
 
-  private def mkClickFeature = udf {
+  private def mkFloatSparseFeature_m = udf {
     features: Seq[Seq[Double]] =>
-      var i = 1
-      var re = Seq[(Int, Double)]()
+      var i = 0
+      var re = Seq[(Int, Int, Double)]()
       for (feature <- features) {
-        re = re ++ (if (feature != null) feature.map(x => (i, x)) else null)
+        re = re ++
+          (if (feature != null && feature.nonEmpty) feature.zipWithIndex.map(x => (i, x._2, x._1)) else Seq((i, 0, 0.0)))
         i = i + 1
       }
-      val c = re.map(x => (x._1, x._2))
-      (c.map(_._1), c.map(_._2))
+      val c = re.map(x => (0, x._1, x._2, x._3))
+      (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
 
   private def mkCount = udf {
@@ -344,8 +357,13 @@ object DNNSampleV4 {
     m: Map[Int, Double] => m.values.toSeq
   }
 
-  private def getValue = udf {
-    (v: Int, m: Map[Int, Double]) => m.getOrElse(v, 0.0)
+  private def getHashValue(idx: Int) = udf {
+    (v: Int, m: Map[Int, Double]) =>
+      if (m.nonEmpty && m.contains(v)) Murmur3Hash.stringHash64("f" + idx + v, 0)
+      else Murmur3Hash.stringHash64("f" + idx, 0)
   }
 
+  private def getFloatValue = udf {
+    (v: Int, m: Map[Int, Double]) => m.getOrElse(v, 0.0)
+  }
 }
