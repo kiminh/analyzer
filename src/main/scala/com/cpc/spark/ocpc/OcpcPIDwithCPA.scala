@@ -718,9 +718,13 @@ object OcpcPIDwithCPA {
 
     // 关联得到基础表
     baseData.write.mode("overwrite").saveAsTable("test.ocpc_base_table")
-    val rawData = baseData
+    val rawData1 = baseData
       .join(kValue, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "kvalue")
+
+    rawData1.write.mode("overwrite").saveAsTable("test.ocpc_debug_table1")
+
+    val rawData = rawData1
       .join(cpaRatio, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "kvalue", "cpa_ratio")
       .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
