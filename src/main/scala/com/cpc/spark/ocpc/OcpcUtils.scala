@@ -156,7 +156,7 @@ object OcpcUtils {
          |SELECT
          |  ideaid,
          |  adclass,
-         |  total_cost,
+         |  cost,
          |  ctr_cnt,
          |  cvr_cnt,
          |  hour
