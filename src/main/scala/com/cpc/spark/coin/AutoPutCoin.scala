@@ -81,10 +81,11 @@ object AutoPutCoin {
 
         val mlFeatureNth = getNth(mlFeature, p)
 
+
         val Nth = mlFeatureNth.join(apiUnionNth)
           .map(x => coin(ideaid = x._1,
               label_exp_cvr = x._2._1,
-              api_exp_cvr = x._2._1,
+              api_exp_cvr = x._2._2,
               date = date,
               hour = hour.toString))
           .toDS()
