@@ -198,7 +198,7 @@ object OcpcSampleToRedis {
          |  a.adclass,
          |  a.cost,
          |  a.ctr_cnt,
-         |  (case when a.cvr3_cnt is not null then a.cvr3_cnt else a.cvr_cnt end) as cvr_cnt,
+         |  a.cvr_cnt,
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
@@ -207,6 +207,7 @@ object OcpcSampleToRedis {
          |        when b.k_value > 1.4 then 1.4
          |        when b.k_value < 0.2 then 0.2
          |        else b.k_value end) as k_value,
+         |  (case when a.cvr3_cnt is null then 0 else a.cvr3_cnt) as cvr3_cnt,
          |  a.new_type_flag as type_flag
          |FROM
          |  (SELECT
@@ -220,7 +221,7 @@ object OcpcSampleToRedis {
          |    adclass_ctr_cnt,
          |    adclass_cvr_cnt,
          |    new_type_flag,
-         |    cvr3_cnt
+         |    cast(cvr3_cnt as bigint) as cvr3_cnt
          |   FROM
          |    test.ocpc_new_cvr_table) a
          |LEFT JOIN
@@ -267,7 +268,8 @@ object OcpcSampleToRedis {
          |  (case when a.k_value is null then 0.694 else a.k_value end) as k_value,
          |  b.hpcvr,
          |  (case when c.cali_value is null or c.cali_value=0 then 1.0 else c.cali_value end) as cali_value,
-         |  (case when d.cali_value is null or d.cali_value=0 then 1.0 else d.cali_value end) as cvr3_cali
+         |  (case when d.cali_value is null or d.cali_value=0 then 1.0 else d.cali_value end) as cvr3_cali,
+         |  a.cvr3_cnt
          |FROM
          |  test.test_new_pb_ocpc as a
          |INNER JOIN
@@ -293,14 +295,15 @@ object OcpcSampleToRedis {
     println(sqlRequest4)
 
     val finalData = spark.sql(sqlRequest4)
+    // TODO 删除临时表
+    finalData.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_bak")
+//    finalData.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
 
-    finalData.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
-
-    finalData
-      .withColumn("date", lit(end_date))
-      .withColumn("hour", lit(hour))
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pb_result_table_v4")
+//    finalData
+//      .withColumn("date", lit(end_date))
+//      .withColumn("hour", lit(hour))
+//      .write.mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_pb_result_table_v4")
 
     // 保存pb文件
     savePbPack(finalData)
@@ -442,8 +445,9 @@ object OcpcSampleToRedis {
       val hpcvr = record.getAs[Double]("hpcvr")
       val caliValue = record.getAs[Double]("cali_value")
       val cvr3Cali = record.getAs[Double]("cvr3_cali")
+      val cvr3Cnt = record.getAs[Long]("cvr3_cnt")
       if (cnt % 500 == 0) {
-        println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali")
+        println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali, cvr3Cnt:$cvr3Cali")
       }
       cnt += 1
 
@@ -466,7 +470,8 @@ object OcpcSampleToRedis {
           kvalue = k,
           hpcvr = hpcvr,
           calibration = caliValue,
-          cvr3Cali = cvr3Cali
+          cvr3Cali = cvr3Cali,
+          cvr3Cnt = cvr3Cnt
         )
         list += currentItem
       }
