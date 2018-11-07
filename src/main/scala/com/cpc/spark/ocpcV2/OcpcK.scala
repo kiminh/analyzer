@@ -70,14 +70,17 @@ object OcpcK {
   def fitPoints(pointsWithCount: List[(Double, Double, Int)]): List[Double] = {
     println(pointsWithCount)
     var obs: WeightedObservedPoints = new WeightedObservedPoints();
-    if (pointsWithCount.size <= 1) {
-      obs.add(0.0, 0.0);
-    }
+    var count = 0
     for ((x, y, n) <- pointsWithCount) {
       for (i <- 1 to n) {
         obs.add(x, y);
       }
+      count = count + n
       println("sample", x, y)
+    }
+
+    for (i <- 0 to count / 5) {
+      obs.add(0.0, 0.0);
     }
 
     // Instantiate a third-degree polynomial fitter.
