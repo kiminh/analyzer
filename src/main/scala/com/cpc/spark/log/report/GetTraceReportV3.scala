@@ -206,11 +206,11 @@ object GetTraceReportV3 {
         val trace_type = trace.getAs[String]("trace_type")
         var trace_op1 = trace.getAs[String]("trace_op1")
 
-        ((trace.getAs[String]("searchid"), trace.getAs[Int]("ideaid"), trace_type, trace_op1, trace.getAs[Int]("duration"), trace.getAs[Int]("auto")), trace)
+        ((trace.getAs[String]("searchid"), trace.getAs[Int]("idea_id"), trace_type, trace_op1, trace.getAs[Int]("duration"), trace.getAs[Int]("auto")), trace)
     }.reduceByKey {
       case (x, y) => x //去重
     }.map {
-      case ((searchid, ideaid, trace_type, trace_op1, duration, auto), trace) =>
+      case ((searchid, idea_id, trace_type, trace_op1, duration, auto), trace) =>
         ((trace.getAs[Int]("user_id"),
           trace.getAs[Int]("plan_id"),
           trace.getAs[Int]("unit_id"),
