@@ -74,6 +74,7 @@ object OcpcK {
       for (i <- 1 to n) {
         obs.add(x, y);
       }
+      println("sample", x, y)
     }
 
     // Instantiate a third-degree polynomial fitter.
