@@ -736,7 +736,7 @@ object OcpcPIDwithCPA {
       .withColumn("new_k_value", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
       .select("ideaid", "adclass", "new_k_value", "updated_k")
       .join(cvr3Data, Seq("ideaid"), "left_outer")
-      .withColumn("k_value", when(col("flag").isNull, col("new_k_value")).otherwise(1.0))
+      .withColumn("k_value", col("new_k_value"))
 
 
     // TODO 删除临时表
