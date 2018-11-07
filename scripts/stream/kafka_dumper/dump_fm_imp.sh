@@ -20,4 +20,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=20' \
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.streaming.dump.DumpFmImpression \
-    $cur/lib/dump-fm-click.jar
+    $cur/custom/dump-fm-imp.jar
