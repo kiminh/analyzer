@@ -26,8 +26,8 @@ object OcpcK {
         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0))/ocpc_log_dict['cpagiven'] as ratio2,
         |  sum(if(isclick=1,price,0))/sum(COALESCE(label3,0))/ocpc_log_dict['cpagiven'] as ratio3,
         |  sum(isclick) clickCnt,
-        |  sum(COALESCE(label2,0) cvr2Cnt,
-        |  sum(COALESCE(label3,0) cvr3Cnt
+        |  sum(COALESCE(label2,0)) cvr2Cnt,
+        |  sum(COALESCE(label3,0)) cvr3Cnt
         |from
         |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1) a
         |  left outer join
