@@ -311,6 +311,7 @@ object SaveFeatures2 {
       """.stripMargin.format(date, hour)
         println(sqlStmt)
         val clicklog = spark.sql(sqlStmt)
+        clicklog.show(5)
         println("click log", clicklog.count())
 
         clicklog.join(cvrlog, Seq("searchid"))
