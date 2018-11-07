@@ -75,7 +75,7 @@ object OcpcK {
     }
 
     // Instantiate a third-degree polynomial fitter.
-    var fitter: PolynomialCurveFitter = PolynomialCurveFitter.create(2);
+    var fitter: PolynomialCurveFitter = PolynomialCurveFitter.create(1);
 
 
     var res = mutable.ListBuffer[Double]()
