@@ -12,7 +12,7 @@ object OcpcCPCstage {
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
+    val table = "(select ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
 
 
     val data = spark.read.format("jdbc")
