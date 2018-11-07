@@ -45,6 +45,7 @@ object OcpcCPCstage {
          |        ideaid,
          |        ocpc_bid,
          |        ocpc_bid_update_time,
+         |        conversion_goal,
          |        row_number() over(partition by ideaid order by ocpc_bid_update_time desc) as seq
          |    FROM
          |        ideaid_update_time) t
