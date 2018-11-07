@@ -81,6 +81,7 @@ object AutoPutCoin {
 
         val mlFeatureNth = getNth(mlFeature, p)
 
+        println("mlFeatureNth 's count is " + mlFeatureNth.count())
 
         val Nth = mlFeatureNth.fullOuterJoin(apiUnionNth)
             .map(x => {
@@ -111,9 +112,10 @@ object AutoPutCoin {
             )
           .toDS()
 
-        Nth.write.mode("overwrite").insertInto("test.coin2")
 
         println("Nth 's count is " + Nth.count())
+
+        Nth.write.mode("overwrite").insertInto("test.coin2")
 
         spark.stop()
     }
