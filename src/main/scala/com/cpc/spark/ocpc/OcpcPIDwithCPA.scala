@@ -853,7 +853,7 @@ object OcpcPIDwithCPA {
 
     val cpaRatio = cpaRatioCvr2
       .join(cpaRatioCvr3, Seq("ideaid", "adclass"), "left_outer")
-      .withColumn("cpa_ratio", when(col("flag").isNotNull && col("cpa_ratio_cvr3")>=0, col("cpa_ratio_cvr2")).otherwise(col("cpa_ratio_cvr2")))
+      .withColumn("cpa_ratio", when(col("flag").isNotNull && col("cpa_ratio_cvr3")>=0, col("cpa_ratio_cvr3")).otherwise(col("cpa_ratio_cvr2")))
 
     //TODO 删除临时表
     cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v3")
