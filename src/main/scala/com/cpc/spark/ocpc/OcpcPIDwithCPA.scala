@@ -23,7 +23,8 @@ object OcpcPIDwithCPA {
     // TODO ideaid与userid的名称
     if (onDuty == 1) {
       val result = calculateKv3(date, hour, spark)
-      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+//      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_bak")
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
@@ -807,8 +808,7 @@ object OcpcPIDwithCPA {
       .groupBy("ideaid", "adclass").agg(sum("isclick").alias("hourly_ctr_cnt"), sum(col("iscvr")).alias("hourly_cvr_cnt"))
       .select("ideaid", "adclass", "hourly_ctr_cnt", "hourly_cvr_cnt")
 
-    // cvr3
-//    val cvr3Data = getAPIcvr3V3(date, hour, spark)
+
 
     // 计算cpa_ratio
     val joinData = baseData
@@ -837,12 +837,19 @@ object OcpcPIDwithCPA {
          |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then -1
          |        when hourly_ctr_cnt>=10 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
          |        when cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
-         |        else 1.0 end) as cpa_ratio
+         |        else 1.0 end) as cpa_ratio_cvr2
          |FROM
          |  join_table
        """.stripMargin
     println(sqlRequest)
-    val cpaRatio = spark.sql(sqlRequest)
+    val cpaRatioCvr2 = spark.sql(sqlRequest)
+
+    val cpaRatioCvr3 = getAPIcvr3V3(date, hour, spark)
+
+    val cpaRatio = cpaRatioCvr2
+      .join(cpaRatioCvr3, Seq("ideaid", "adclass"), "left_outer")
+      .withColumn("cpa_ratio", when(col("flag").isNotNull && col("cpa_ratio_cvr2")>=0, col("cpa_ratio_cvr2")).otherwise(col("cpa_ratio_cvr3")))
+
     //TODO 删除临时表
     cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v3")
 
@@ -864,24 +871,39 @@ object OcpcPIDwithCPA {
       .select("ideaid", "flag")
       .distinct()
 
-    cvr3List
+    val cpaData = spark.table("test.ocpc_idea_update_time")
+
+    val resultDF = cvr3List
+      .join(cpaData, Seq("ideaid"), "left_outer")
+      .select("ideaid", "cpa_given", "flag")
+
+    resultDF
   }
 
-//  def getAPIcvr3V3(date: String, hour: String, spark: SparkSession) :DataFrame = {
-//    val cvr3List = getActivationData(date, hour, spark)
-//
-//    val cvr3Data = getActData(date, hour, 24, spark)
-//
-//    val rawData = cvr3Data
-//      .groupBy("ideaid", "adclass")
-//      .agg(
-//        sum(col("cvr3_cost")).alias("total_cost"),
-//        sum(col("cvr3_cvr_cnt")).alias("cvr_cnt"))
-//      .select("ideaid", "adclass", "cvr3_cost", "cvr3_cvr_cnt")
-//
-//    val resutDF = cvr3List
-//
-////    resultDF
-//  }
+  //TODO 给api回传模型做反馈机制
+  def getAPIcvr3V3(date: String, hour: String, spark: SparkSession) :DataFrame = {
+    val cvr3List = getActivationData(date, hour, spark)
+
+    val cvr3Data = getActData(date, hour, 24, spark)
+
+    val rawData = cvr3Data
+      .groupBy("ideaid", "adclass")
+      .agg(
+        sum(col("cvr3_cost")).alias("total_cost"),
+        sum(col("cvr3_cvr_cnt")).alias("cvr_cnt"))
+      .select("ideaid", "adclass", "cvr3_cost", "cvr3_cvr_cnt")
+
+    val resultDF = cvr3List
+      .join(rawData, Seq("ideaid"), "left_outer")
+      .select("ideaid", "adclass", "cvr3_cost", "cvr3_cvr_cnt", "cpa_given")
+      .withColumn("cpa_real", col("cvr3_cost") / col("cvr3_cvr_cnt"))
+      .withColumn("cpa_ratio", col("cpa_given") / col("cpa_real"))
+      .withColumn("cpa_ratio_cvr3", when(col("cpa_ratio").isNull, 1).otherwise("cpa_ratio"))
+
+    // TODO 删除临时表
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_with_cvr3_k")
+    val finalDF = resultDF.select("ideaid", "adclass", "flag", "cpa_ratio_cvr3")
+    finalDF
+  }
 
 }
