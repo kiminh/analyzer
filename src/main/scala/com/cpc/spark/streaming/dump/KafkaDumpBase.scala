@@ -26,7 +26,7 @@ abstract class KafkaDumpBase[K <: scala.Product] (
                        val outputDirName: String,
                        val numPerPartition: Int  = 1000000,
                        val brokers: String = "192.168.80.35:9092,192.168.80.36:9092,192.168.80.37:9092,192.168.80.88:9092,192.168.80.89:9092",
-                       val batchDurationSeconds: Int = 600) {
+                       val batchDurationSeconds: Int = 600) extends java.io.Serializable {
 
   val offsetRedis = new OffsetRedis()
   offsetRedis.setRedisKey(redisOffsetKey)
