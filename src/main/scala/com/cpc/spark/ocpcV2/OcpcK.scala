@@ -16,8 +16,8 @@ object OcpcK {
     // val hour = args(1).toString
     // val onDuty = args(2).toInt
 
-    val dtCondition = "`date` = '2018-11-05' and hour in ('15','16')"
-    val dtCondition2 = "`dt` = '2018-11-05' and hour in ('15','16')"
+    val dtCondition = "`date` = '2018-11-05' "
+    val dtCondition2 = "`dt` = '2018-11-05' "
 
     val statSql =
       s"""
