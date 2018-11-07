@@ -1,6 +1,7 @@
 cur=/data/cpc/dw
 SPARK_HOME=/usr/lib/spark-current
-queue=root.develop.adhoc.cpc
+#queue=root.develop.adhoc.cpc
+queue=root.production.algo.cpc
 
 
 jars=(
