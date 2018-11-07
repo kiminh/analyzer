@@ -260,7 +260,7 @@ object GetTraceReportV3 {
          |      ,tr.auto
          |from dl_cpc.logparsed_cpc_trace_minute as tr
          |left join
-         |(select searchid, userid, planid, unitid, ideaid, isclick from dl_cpc.cpc_user_api_callback_union_log where "%s") as un on tr.searchid = un.searchid
+         |(select searchid, userid, planid, unitid, ideaid, isclick from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
          |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1
        """.stripMargin.format(get3DaysBefore(date, hour), date, hour)
     println(sql)
@@ -271,7 +271,7 @@ object GetTraceReportV3 {
       """
         |select ideaid , sum(isshow) as show, sum(isclick) as click
         |from dl_cpc.cpc_user_api_callback_union_log
-        |where "%s" group by ideaid
+        |where %s group by ideaid
       """.stripMargin.format(get3DaysBefore(date, hour))
     println(sql1)
 
