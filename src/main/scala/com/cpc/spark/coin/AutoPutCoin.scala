@@ -62,7 +62,7 @@ object AutoPutCoin {
 
         val apiUnionLog = spark.sql(apiUnionLogSql)
         println("apiUnionLog 's count is " + apiUnionLog.rdd.count())
-        val apiUnionNth = getNth(apiUnionLog,p)
+        val apiUnionNth = getNth(apiUnionLog, p)
 
         println("apiUnionNth 's count is " + apiUnionNth.count())
         val mlFeatureSql =
@@ -84,79 +84,119 @@ object AutoPutCoin {
         println("mlFeatureNth 's count is " + mlFeatureNth.count())
 
         val Nth = mlFeatureNth.fullOuterJoin(apiUnionNth)
-            .map(x => {
+          .map(x => {
+              val label = x._2._1.orNull
 
-                coin(ideaid = x._1,
-                label_exp_cvr = x._2._1.orNull._1,
-                label_min = x._2._1.orNull._2,
-                label_max = x._2._1.orNull._3,
-                label_num = x._2._1.orNull._4,
-                label_5th = x._2._1.orNull._5,
-                label_6th = x._2._1.orNull._6,
-                label_7th = x._2._1.orNull._7,
-                label_8th = x._2._1.orNull._8,
-                label_9th = x._2._1.orNull._9,
+              val api = x._2._2.orNull
+              if (label != null && api != null) {
+                  coin(ideaid = x._1,
+                      label_exp_cvr = x._2._1.orNull._1,
+                      label_min = x._2._1.orNull._2,
+                      label_max = x._2._1.orNull._3,
+                      label_num = x._2._1.orNull._4,
+                      label_5th = x._2._1.orNull._5,
+                      label_6th = x._2._1.orNull._6,
+                      label_7th = x._2._1.orNull._7,
+                      label_8th = x._2._1.orNull._8,
+                      label_9th = x._2._1.orNull._9,
 
-                api_exp_cvr = x._2._2.orNull._1,
-                api_min = x._2._2.orNull._2,
-                api_max = x._2._2.orNull._3,
-                api_num = x._2._2.orNull._4,
-                api_5th = x._2._2.orNull._5,
-                api_6th = x._2._2.orNull._6,
-                api_7th = x._2._2.orNull._7,
-                api_8th = x._2._2.orNull._8,
-                api_9th = x._2._2.orNull._9,
+                      api_exp_cvr = x._2._2.orNull._1,
+                      api_min = x._2._2.orNull._2,
+                      api_max = x._2._2.orNull._3,
+                      api_num = x._2._2.orNull._4,
+                      api_5th = x._2._2.orNull._5,
+                      api_6th = x._2._2.orNull._6,
+                      api_7th = x._2._2.orNull._7,
+                      api_8th = x._2._2.orNull._8,
+                      api_9th = x._2._2.orNull._9,
 
-                date = date,
-                hour = hour.toString)}
-            )
+                      date = date,
+                      hour = hour.toString)
+              }
+              else if (label == null && api != null) {
+                  coin(ideaid = x._1,
+
+                      api_exp_cvr = x._2._2.orNull._1,
+                      api_min = x._2._2.orNull._2,
+                      api_max = x._2._2.orNull._3,
+                      api_num = x._2._2.orNull._4,
+                      api_5th = x._2._2.orNull._5,
+                      api_6th = x._2._2.orNull._6,
+                      api_7th = x._2._2.orNull._7,
+                      api_8th = x._2._2.orNull._8,
+                      api_9th = x._2._2.orNull._9,
+
+                      date = date,
+                      hour = hour.toString)
+              }
+              else if (label != null && api == null) {
+                  coin(ideaid = x._1,
+                      label_exp_cvr = x._2._1.orNull._1,
+                      label_min = x._2._1.orNull._2,
+                      label_max = x._2._1.orNull._3,
+                      label_num = x._2._1.orNull._4,
+                      label_5th = x._2._1.orNull._5,
+                      label_6th = x._2._1.orNull._6,
+                      label_7th = x._2._1.orNull._7,
+                      label_8th = x._2._1.orNull._8,
+                      label_9th = x._2._1.orNull._9,
+
+                      date = date,
+                      hour = hour.toString)
+              }
+              else {
+                  coin(ideaid = x._1)
+              }
+          })
           .toDS()
 
 
-        println("Nth 's count is " + Nth.count())
+              println("Nth 's count is " + Nth.count())
 
-        Nth.write.mode("overwrite").insertInto("test.coin2")
+              Nth.write.mode("overwrite").insertInto("test.coin2")
 
-        spark.stop()
+              spark.stop()
+          }
+
+        def getNth(df: DataFrame, p: Double): RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
+            df.rdd.map(x => (x.getAs[Int]("ideaid"), x.getAs[Int]("exp_cvr")))
+              .combineByKey(x => List(x),
+                  (x: List[Int], y: Int) => y :: x,
+                  (x: List[Int], y: List[Int]) => x ::: y)
+              .mapValues(x => {
+                  val sorted = x.sorted
+                  val index = (x.length * p).toInt
+                  val i5th = (x.length * 0.5).toInt
+                  val i6th = (x.length * 0.6).toInt
+                  val i7th = (x.length * 0.7).toInt
+                  val i8th = (x.length * 0.8).toInt
+                  val i9th = (x.length * 0.9).toInt
+                  (x(index), x(0), x(x.length - 1), x.length, x(i5th), x(i6th), x(i7th), x(i8th), x(i9th))
+                  //x(index)
+              })
+        }
+
     }
-    def getNth(df: DataFrame,p:Double): RDD[(Int,(Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
-        df.rdd.map(x => (x.getAs[Int]("ideaid"), x.getAs[Int]("exp_cvr")))
-          .combineByKey(x => List(x),
-            (x:List[Int], y:Int) => y::x,
-            (x:List[Int], y:List[Int]) => x:::y)
-            .mapValues(x => {
-                val sorted = x.sorted
-                val index = (x.length * p).toInt
-                val i5th = (x.length * 0.5).toInt
-                val i6th = (x.length * 0.6).toInt
-                val i7th = (x.length * 0.7).toInt
-                val i8th = (x.length * 0.8).toInt
-                val i9th = (x.length * 0.9).toInt
-                (x(index), x(0),x(x.length - 1), x.length, x(i5th), x(i6th), x(i7th), x(i8th), x(i9th))
-                //x(index)
-            })
-    }
 
-}
-case class coin(var ideaid:Int = 0,
-                var label_exp_cvr: Int = 0,
-                var label_min: Int = 0,
-                var label_max: Int = 0,
-                var label_num: Int = 0,
-                var label_5th: Int = 0,
-                var label_6th: Int = 0,
-                var label_7th: Int = 0,
-                var label_8th: Int = 0,
-                var label_9th: Int = 0,
+    case class coin(var ideaid: Int = 0,
+                    var label_exp_cvr: Int = 0,
+                    var label_min: Int = 0,
+                    var label_max: Int = 0,
+                    var label_num: Int = 0,
+                    var label_5th: Int = 0,
+                    var label_6th: Int = 0,
+                    var label_7th: Int = 0,
+                    var label_8th: Int = 0,
+                    var label_9th: Int = 0,
 
-                var api_exp_cvr: Int = 0,
-                var api_min: Int = 0,
-                var api_max: Int = 0,
-                var api_num: Int = 0,
-                var api_5th: Int = 0,
-                var api_6th: Int = 0,
-                var api_7th: Int = 0,
-                var api_8th: Int = 0,
-                var api_9th: Int = 0,
-                var date:String = "",
-                var hour:String = "")
+                    var api_exp_cvr: Int = 0,
+                    var api_min: Int = 0,
+                    var api_max: Int = 0,
+                    var api_num: Int = 0,
+                    var api_5th: Int = 0,
+                    var api_6th: Int = 0,
+                    var api_7th: Int = 0,
+                    var api_8th: Int = 0,
+                    var api_9th: Int = 0,
+                    var date: String = "",
+                    var hour: String = "")
