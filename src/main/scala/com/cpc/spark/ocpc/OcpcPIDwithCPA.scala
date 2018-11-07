@@ -860,22 +860,12 @@ object OcpcPIDwithCPA {
   def getActivationData(date: String, hour: String, spark: SparkSession) = {
     import spark.implicits._
 
-    val filename = "/user/cpc/wangjun/cvr3ideaid.txt"
-    val data = spark.sparkContext.textFile(filename)
-
-    val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
-    //    dataRDD.foreach(println)
-
-    val cvr3List = dataRDD
-      .toDF("ideaid", "flag")
-      .select("ideaid", "flag")
-      .distinct()
-
-    val cpaData = spark.table("test.ocpc_idea_update_time")
-
-    val resultDF = cvr3List
-      .join(cpaData, Seq("ideaid"), "left_outer")
+    val resultDF = spark
+      .table("test.ocpc_idea_update_time")
+      .filter("conversion_goal=2")
+      .withColumn("flag", lit(1))
       .select("ideaid", "cpa_given", "flag")
+
 
     resultDF
   }

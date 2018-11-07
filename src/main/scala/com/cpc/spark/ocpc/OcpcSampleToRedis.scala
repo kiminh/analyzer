@@ -620,14 +620,10 @@ object OcpcSampleToRedis {
   def getCvr3List(date: String, hour: String, spark: SparkSession) :DataFrame = {
     import spark.implicits._
 
-    val filename = "/user/cpc/wangjun/cvr3ideaid.txt"
-    val data = spark.sparkContext.textFile(filename)
-
-    val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
-    //    dataRDD.foreach(println)
-
-    val cvr3List = dataRDD
-      .toDF("ideaid", "flag")
+    val cvr3List = spark
+      .table("test.ocpc_idea_update_time")
+      .filter("conversion_goal=2")
+      .withColumn("flag", lit(1))
       .select("ideaid", "flag")
       .distinct()
 
