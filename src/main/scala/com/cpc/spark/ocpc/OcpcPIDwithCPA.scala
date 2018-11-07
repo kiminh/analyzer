@@ -898,7 +898,7 @@ object OcpcPIDwithCPA {
       .select("ideaid", "adclass", "cvr3_cost", "cvr3_cvr_cnt", "cpa_given", "flag")
       .withColumn("cpa_real", col("cvr3_cost") / col("cvr3_cvr_cnt"))
       .withColumn("cpa_ratio", col("cpa_given") / col("cpa_real"))
-      .withColumn("cpa_ratio_cvr3", when(col("cpa_ratio").isNull, 1).otherwise("cpa_ratio"))
+      .withColumn("cpa_ratio_cvr3", when(col("cpa_ratio").isNull, 1).otherwise(col("cpa_ratio")))
 
     // TODO 删除临时表
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_with_cvr3_k")
