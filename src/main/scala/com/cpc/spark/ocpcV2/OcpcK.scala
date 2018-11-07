@@ -13,6 +13,7 @@ object OcpcK {
     // val onDuty = args(2).toInt
 
     val dtCondition = "`date` = '2018-11-07' and hour in ('09','10','11')"
+    val dtCondition2 = "`date` = '2018-11-07' and hour in ('09','10','11')"
 
     val statSql =
       s"""
@@ -25,7 +26,7 @@ object OcpcK {
         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0))/ocpc_log_dict['cpagiven'] as ratio2,
         |  sum(if(isclick=1,price,0))/sum(COALESCE(label3,0))/ocpc_log_dict['cpagiven'] as ratio3
         |from
-        |  (select * from dl_cpc.ocpc_unionlog where $dtCondition and ocpc_log_dict['kvalue'] !=null and isclick=1) a
+        |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] !=null and isclick=1) a
         |  left outer join
         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition) b on a.searchid = b.searchid
         |  left outer join
