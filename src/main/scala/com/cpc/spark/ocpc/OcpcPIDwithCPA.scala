@@ -889,8 +889,8 @@ object OcpcPIDwithCPA {
     val rawData = cvr3Data
       .groupBy("ideaid", "adclass")
       .agg(
-        sum(col("cvr3_cost")).alias("total_cost"),
-        sum(col("cvr3_cvr_cnt")).alias("cvr_cnt"))
+        sum(col("cost")).alias("cvr3_cost"),
+        sum(col("cvr_cnt")).alias("cvr3_cvr_cnt"))
       .select("ideaid", "adclass", "cvr3_cost", "cvr3_cvr_cnt")
 
     val resultDF = cvr3List
