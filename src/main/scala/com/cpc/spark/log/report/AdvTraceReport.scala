@@ -20,8 +20,7 @@ case class AdvTraceReport(
                            click: Int = 0
                          ) {
 
-  val key1 = (this.user_id, this.plan_id, this.unit_id, this.idea_id, this.date, this.hour, this.trace_type, this.trace_op1, this.duration, this.auto)
-  val key2 = (this.user_id, this.plan_id, this.unit_id, this.idea_id, this.date, this.hour, this.trace_type, this.trace_op1, this.duration, this.auto)
+  val key = (this.user_id, this.plan_id, this.unit_id, this.idea_id, this.date, this.hour, this.trace_type, this.trace_op1, this.duration, this.auto)
 
   def sum(r: AdvTraceReport): AdvTraceReport = {
     copy(

@@ -1,12 +1,15 @@
 package com.cpc.spark.log.report
 
 import java.sql.DriverManager
-import java.util.Properties
+import java.text.SimpleDateFormat
+import java.util.{Calendar, Properties}
 
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
+
+import scala.collection.mutable.ListBuffer
 
 /**
   * Created on ${Date} ${Time}
@@ -66,13 +69,29 @@ object GetTraceReportV3 {
       .union(traceReport_Motivate)
       .union(traceReport_ApiCallBack)
 
-    val a = traceReport1
-      .map { x =>
+    val traceData = traceReport1.map {
+      x =>
+        (x.key, x)
+    }.reduceByKey((x, y) => x)
+      .reduceByKey((x, y) => x.sum(y))
+      .map(x => x._2)
 
-      }
+    ctx.createDataFrame(traceData)
+      .repartition(1)
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet("/warehouse/test.db/zhy_report_trace/%s/%s".format(date, hour))
 
-    clearReportHourData("report_trace", date, hour)
-    clearReportHourData2("report_trace", date, hour)
+    ctx.sql(
+      """
+        |ALTER TABLE test.zhy_report_trace add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/warehouse/test.db/zhy_report_trace/%s/%s'
+      """.stripMargin.format(date, hour, date, hour))
+
+
+    //clearReportHourData("report_trace", date, hour)
+    //clearReportHourData2("report_trace", date, hour)
+    //writeToTraceReport(ctx, traceData)
 
 
     println("GetTraceReport_done")
@@ -144,6 +163,7 @@ object GetTraceReportV3 {
 
   /**
     * 应用商城
+    *
     * @param ctx
     * @param date
     * @param hour
@@ -225,9 +245,7 @@ object GetTraceReportV3 {
     */
   def saveTraceReport_ApiCallBack(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
 
-
-
-    val traceReport = ctx.sql(
+    val sql =
       s"""
          |select tr.searchid
          |      ,un.userid as user_id
@@ -240,12 +258,23 @@ object GetTraceReportV3 {
          |      ,tr.trace_op1 as trace_op1
          |      ,tr.duration as duration
          |      ,tr.auto
-         |from dl_cpc.cpc_union_trace_log as tr left join dl_cpc.cpc_motivation_log as un on tr.searchid = un.searchid
-         |where  tr.`date` = "%s" and tr.`hour` = "%s"  and un.`date` = "%s" and un.`hour` = "%s" and un.isclick = 1
-       """.stripMargin.format(date, hour, date, hour))
-      .rdd
+         |from dl_cpc.logparsed_cpc_trace_minute as tr
+         |left join
+         |(select searchid, userid, planid, unitid, ideaid, isclick from dl_cpc.cpc_user_api_callback_union_log where "%s") as un on tr.searchid = un.searchid
+         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1
+       """.stripMargin.format(get3DaysBefore(date, hour), date, hour)
+    println(sql)
 
-    val sql1 = "select ideaid , sum(isshow) as show, sum(isclick) as click from dl_cpc.cpc_union_log where `date` = \"%s\" and `hour` =\"%s\" group by ideaid ".format(date, hour)
+    val traceReport = ctx.sql(sql).rdd
+
+    val sql1 =
+      """
+        |select ideaid , sum(isshow) as show, sum(isclick) as click
+        |from dl_cpc.cpc_user_api_callback_union_log
+        |where "%s" group by ideaid
+      """.stripMargin.format(get3DaysBefore(date, hour))
+    println(sql1)
+
     val unionRdd = ctx.sql(sql1).rdd.map {
       x =>
         val ideaid: Int = x(0).toString().toInt
@@ -257,19 +286,17 @@ object GetTraceReportV3 {
 
     val traceData = traceReport.filter {
       trace =>
-        trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type").length < 100 && trace.getAs[String]("trace_type").length > 1
+        trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "active_third"
     }.map {
       trace =>
         val trace_type = trace.getAs[String]("trace_type")
-        var trace_op1 = ""
-        if (trace_type == "sdk_incite") {
-          trace_op1 = trace.getAs[String]("trace_op1")
-        }
-        ((trace.getAs[String]("searchid"), trace.getAs[Int]("ideaid"), trace_type, trace_op1, trace.getAs[Int]("duration"), trace.getAs[Int]("auto")), trace)
+        val trace_op1 = trace.getAs[String]("trace_op1")
+
+        ((trace.getAs[String]("searchid"), trace_type, trace_op1, trace.getAs[Int]("duration"), trace.getAs[Int]("auto")), trace)
     }.reduceByKey {
       case (x, y) => x //去重
     }.map {
-      case ((searchid, ideaid, trace_type, trace_op1, duration, auto), trace) =>
+      case ((searchid, trace_type, trace_op1, duration, auto), trace) =>
         ((trace.getAs[Int]("user_id"),
           trace.getAs[Int]("plan_id"),
           trace.getAs[Int]("unit_id"),
@@ -307,7 +334,26 @@ object GetTraceReportV3 {
       .mode(SaveMode.Append)
       .jdbc(mariadb_amateur_url, "report.report_trace", mariadb_amateur_prop)
 
-    ctx.stop()
+  }
+
+  def get3DaysBefore(date: String, hour: String): String = {
+    val dateHourList = ListBuffer[String]()
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    val cal = Calendar.getInstance()
+    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
+    for (t <- 0 to 72) {
+      if (t > 0) {
+        cal.add(Calendar.HOUR, -1)
+      }
+      val formatDate = dateFormat.format(cal.getTime)
+      val datee = formatDate.substring(0, 10)
+      val hourr = formatDate.substring(11, 13)
+
+      val dateL = s"(`date`='$datee' and `hour`='$hourr')"
+      dateHourList += dateL
+    }
+
+    "(" + dateHourList.mkString(" or ") + ")"
   }
 
   def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
