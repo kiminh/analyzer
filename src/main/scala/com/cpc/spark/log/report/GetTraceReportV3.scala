@@ -58,14 +58,18 @@ object GetTraceReportV3 {
       .getOrCreate()
 
     val traceReport = saveTraceReport(ctx, date, hour)
-    val traceReport_Motivate = saveTraceReport_Moivation(ctx, date, hour) //应用商城（激励下载）
+    val traceReport_Motivate = saveTraceReport_Motivate(ctx, date, hour) //应用商城（激励下载）
     val traceReport_ApiCallBack = saveTraceReport_ApiCallBack(ctx, date, hour) //用户api回传
+
 
     val traceReport1 = traceReport
       .union(traceReport_Motivate)
       .union(traceReport_ApiCallBack)
 
     val a = traceReport1
+      .map { x =>
+
+      }
 
     clearReportHourData("report_trace", date, hour)
     clearReportHourData2("report_trace", date, hour)
@@ -120,7 +124,7 @@ object GetTraceReportV3 {
           trace.getAs[String]("hour"),
           trace.getAs[String]("trace_type"),
           trace_op1,
-          trace.getAs[Int](" "),
+          trace.getAs[Int]("duration"),
           trace.getAs[Int]("auto")), 1)
     }.reduceByKey {
       case (x, y) => (x + y)
@@ -138,7 +142,14 @@ object GetTraceReportV3 {
 
   }
 
-  def saveTraceReport_Moivation(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
+  /**
+    * 应用商城
+    * @param ctx
+    * @param date
+    * @param hour
+    * @return
+    */
+  def saveTraceReport_Motivate(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
     val traceReport = ctx.sql(
       s"""
          |select tr.searchid
@@ -169,14 +180,12 @@ object GetTraceReportV3 {
 
     val traceData = traceReport.filter {
       trace =>
-        trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type").length < 100 && trace.getAs[String]("trace_type").length > 1
+        trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "sdk_incite" && trace.getAs[String]("trace_op1") != ""
     }.map {
       trace =>
         val trace_type = trace.getAs[String]("trace_type")
-        var trace_op1 = ""
-        if (trace_type == "sdk_incite") {
-          trace_op1 = trace.getAs[String]("trace_op1")
-        }
+        var trace_op1 = trace.getAs[String]("trace_op1")
+
         ((trace.getAs[String]("searchid"), trace.getAs[Int]("ideaid"), trace_type, trace_op1, trace.getAs[Int]("duration"), trace.getAs[Int]("auto")), trace)
     }.reduceByKey {
       case (x, y) => x //去重
@@ -190,7 +199,7 @@ object GetTraceReportV3 {
           trace.getAs[String]("hour"),
           trace.getAs[String]("trace_type"),
           trace_op1,
-          trace.getAs[Int](" "),
+          trace.getAs[Int]("duration"),
           trace.getAs[Int]("auto")), 1)
     }.reduceByKey {
       case (x, y) => (x + y)
@@ -203,7 +212,7 @@ object GetTraceReportV3 {
         AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, trace_op1, duration, auto, count, impression, click)
     }
 
-    println("count:" + toResult.count())
+    println("motivate count:" + toResult.count())
     toResult
   }
 
@@ -215,6 +224,9 @@ object GetTraceReportV3 {
     * @param hour
     */
   def saveTraceReport_ApiCallBack(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
+
+
+
     val traceReport = ctx.sql(
       s"""
          |select tr.searchid
@@ -266,7 +278,7 @@ object GetTraceReportV3 {
           trace.getAs[String]("hour"),
           trace.getAs[String]("trace_type"),
           trace_op1,
-          trace.getAs[Int](" "),
+          trace.getAs[Int]("duration"),
           trace.getAs[Int]("auto")), 1)
     }.reduceByKey {
       case (x, y) => (x + y)
