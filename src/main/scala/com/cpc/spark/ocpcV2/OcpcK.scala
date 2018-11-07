@@ -12,8 +12,8 @@ object OcpcK {
     // val hour = args(1).toString
     // val onDuty = args(2).toInt
 
-    val dtCondition = "`date` = '2018-11-07' and hour in ('09','10','11')"
-    val dtCondition2 = "`dt` = '2018-11-07' and hour in ('09','10','11')"
+    val dtCondition = "`date` = '2018-11-07' and hour in ('10','11')"
+    val dtCondition2 = "`dt` = '2018-11-07' and hour in ('10','11')"
 
     val statSql =
       s"""
@@ -30,7 +30,7 @@ object OcpcK {
         |  left outer join
         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition) b on a.searchid = b.searchid
         |  left outer join
-        |  (select searhcid, iscvr as label3 from dl_cpc.cpc_api_union_log where $dtCondition) c on a.searchid = c.searchid
+        |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $dtCondition) c on a.searchid = c.searchid
         |group by ideaid, ocpc_log_dict['kvalue'], ocpc_log_dict['cpagiven']
       """.stripMargin
 
