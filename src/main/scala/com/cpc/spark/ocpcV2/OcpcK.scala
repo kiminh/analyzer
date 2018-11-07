@@ -3,6 +3,9 @@ package com.cpc.spark.ocpcV2
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
 import org.apache.spark.sql.SparkSession
 
+import scala.collection.mutable
+import org.apache.spark.sql.functions._
+
 object OcpcK {
 
   def main(args: Array[String]): Unit = {
@@ -40,26 +43,44 @@ object OcpcK {
 
     println(statSql)
 
-    spark.sql(statSql).write.mode("overwrite").saveAsTable("test.djq_ocpc")
+    val tablename = "test.djq_ocpc"
+    spark.sql(statSql).write.mode("overwrite").saveAsTable(tablename)
 
+    val res = spark.table(tablename).where("ratio2 is not null")
+      .withColumn("str", concat_ws(" ", col("k"), col("ratio2"), col("clickCnt")))
+      .groupBy("ideaid")
+      .agg(collect_set("str").as("liststr"))
+      .select("ideaid", "liststr").collect()
+
+    for (row <- res) {
+      val ideaid = row(0).toString.toInt
+      val pointList = row(1).asInstanceOf[List[String]].map(x => {
+        x.split("\\s+")
+        (x(0).toDouble, x(1).toDouble, x(2).toInt)
+      })
+      println("ideaid " + ideaid, "coff " + fitPoints(pointList))
+    }
+
+  }
+
+  def fitPoints(pointsWithCount: List[(Double, Double, Int)]): List[Double] = {
     var obs: WeightedObservedPoints = new WeightedObservedPoints();
-    obs.add(-3, 4);
-    obs.add(-2, 2);
-    obs.add(-1, 3);
-    obs.add(0, 0);
-    obs.add(1, -1);
-    obs.add(2, -2);
-    obs.add(3, -5);
+    for ((x, y, n) <- pointsWithCount) {
+      for (i <- 1 to n) {
+        obs.add(x, y);
+      }
+    }
 
     // Instantiate a third-degree polynomial fitter.
-    var fitter: PolynomialCurveFitter = PolynomialCurveFitter.create(3);
+    var fitter: PolynomialCurveFitter = PolynomialCurveFitter.create(2);
 
 
-
+    var res = mutable.ListBuffer[Double]()
     // Retrieve fitted parameters (coefficients of the polynomial function).
     for (c <- fitter.fit(obs.toList)) {
-      println(c);
+      res.append(c)
     }
+    res.toList
   }
 
 
