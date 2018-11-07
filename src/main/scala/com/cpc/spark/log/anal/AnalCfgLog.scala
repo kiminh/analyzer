@@ -12,7 +12,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
 import scala.collection.mutable
-
+import scala.sys.process._
 
 /**
   * Created by Roy on 2017/4/18.
@@ -52,7 +52,7 @@ object AnalCfgLog {
       spark.stop()
       System.exit(1)
     }
-    val cfglog = cfgData.map(x => LogParser.parseCfgLog(x)).filter(x => x != null).map(x => x.copy(date = date, hour = hour))
+    val cfglog = cfgData.map(x => LogParser.parseCfgLog_v2(x)).filter(x => x != null).map(x => x.copy(date = date, hour = hour))
     //clear dir
     //    Utils.deleteHdfs("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
     //    spark.createDataFrame(cfglog)
@@ -75,6 +75,8 @@ object AnalCfgLog {
       """.stripMargin.format(table, date, hour, table, date, hour))
     println("cfglog", cfglog.count())
 
+    //输出标记文件
+    s"hadoop fs -touchz /user/cpc/okdir/cpc_cfg_log_done/$date-$hour.ok" !
 
     spark.stop()
     for (i <- 0 to 100) {

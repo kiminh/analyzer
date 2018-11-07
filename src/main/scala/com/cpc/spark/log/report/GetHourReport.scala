@@ -443,9 +443,30 @@ object GetHourReport {
 
     //get cvr data
     val cvrlog = ctx.sql(
+      //      s"""
+      //         |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
+      //            """.stripMargin.format(date, hour))
       s"""
-         |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
-            """.stripMargin.format(date, hour))
+         |select a.searchid as search_id
+         |       ,a.adslot_type
+         |       ,a.ext["client_type"].string_value as client_type
+         |       ,a.ext["adclass"].int_value  as adclass
+         |       ,a.ext_int['siteid'] as siteid
+         |       ,a.adsrc
+         |       ,a.interaction
+         |       ,b.*
+         |from (select * from dl_cpc.cpc_union_log
+         |        where `date` = "%s" and `hour` = "%s" ) a
+         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
+         |         on a.userid = t2.id
+         |    left join
+         |        (select *
+         |            from dl_cpc.cpc_union_trace_log
+         |            where `date` = "%s" and `hour` = "%s"
+         |         ) b
+         |    on a.searchid=b.searchid
+         |where b.searchid is not null and t2.id is null
+        """.stripMargin.format(date, hour, date, date, hour))
       .rdd
       .map {
         x =>
@@ -455,11 +476,17 @@ object GetHourReport {
       .map {
         x =>
           val convert = Utils.cvrPositiveV(x._2, "v2")
-          (x._1, convert)
+          val (convert2, label_type) = Utils.cvrPositiveV2(x._2, "v2") //新cvr,不包含用户回传api cvr
+          (x._1, (convert, convert2))
+        //(x._1, convert)
       }
 
     val ctrCvrData = ctrData.leftOuterJoin(cvrlog)
-      .map { x => x._2._1.copy(cvr_num = x._2._2.getOrElse(0)) }
+      //.map { x => x._2._1.copy(cvr_num = x._2._2.getOrElse(0)) }
+      .map { x =>
+      x._2._1.copy(cvr_num = x._2._2.getOrElse((0, 0))._1)
+      x._2._1.copy(cvr2_num = x._2._2.getOrElse((0, 0))._2)
+    }
       .map {
         ctr =>
           val key = (ctr.media_id, ctr.adslot_id, ctr.adclass, ctr.exp_tag)
@@ -474,7 +501,8 @@ object GetHourReport {
             cash_cost = x.cash_cost + y.cash_cost,
             click = x.click + y.click,
             exp_click = x.exp_click + y.exp_click,
-            cvr_num = x.cvr_num + y.cvr_num
+            cvr_num = x.cvr_num + y.cvr_num,
+            cvr2_num = x.cvr2_num + y.cvr2_num
           )
       }.coalesce(200)
       .map {
@@ -723,6 +751,7 @@ object GetHourReport {
                                 cash_cost: Float = 0,
                                 click: Int = 0,
                                 cvr_num: Int = 0,
+                                cvr2_num: Int = 0, //新cvr
                                 exp_click: Float = 0,
                                 ctr: Float = 0,
                                 exp_ctr: Float = 0,

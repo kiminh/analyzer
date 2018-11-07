@@ -114,7 +114,7 @@ object MLSnapshot {
                     result += tmp
                 })
                 result.toIterator
-            }).partitionBy(new HashPartitioner(100)).cache().mapPartitions(f => {
+            }).partitionBy(new HashPartitioner(500)).cache().mapPartitions(f => {
                 val result = scala.collection.mutable.ListBuffer[RawFeature]()
                 val list = f.toIterator
                 list.foreach(x => {
@@ -220,7 +220,7 @@ object MLSnapshot {
                     result += tmp
                 })
                 result.toIterator
-            }).toLocalIterator
+            }).collect
             //val keys = snap.map(f => ((f.date,f.hour),1)).reduceByKey((x,y) => x).map(f => f._1).toLocalIterator
             System.out.println("******keys 's num is " + keys.length + " ******")
             //val keys = snap.map { x => (x.date, x.hour) }.distinct.toLocalIterator
@@ -233,20 +233,20 @@ object MLSnapshot {
                 //println(part.first())
 
                 //if (numbs > 0) {
-                    val table = "ml_snapshot_from_show"
-                    spark.createDataFrame(part)
-                      .coalesce(100)
-                      .write
-                      .mode(SaveMode.Append)
-                      .parquet("/warehouse/dl_cpc.db/%s/%s/%s".format(table, key._1, key._2))
+                val table = "ml_snapshot_from_show"
+                spark.createDataFrame(part)
+                  .coalesce(100)
+                  .write
+                  .mode(SaveMode.Append)
+                  .parquet("/warehouse/dl_cpc.db/%s/%s/%s".format(table, key._1, key._2))
 
-                    val sqlStmt =
-                        """
-                          |ALTER TABLE dl_cpc.%s add if not exists PARTITION (`date` = "%s", hour = "%s")
-                          | LOCATION '/warehouse/dl_cpc.db/%s/%s/%s'
-                        """.stripMargin.format(table, key._1, key._2, table, key._1, key._2)
-                    println(sqlStmt)
-                    spark.sql(sqlStmt)
+                val sqlStmt =
+                    """
+                      |ALTER TABLE dl_cpc.%s add if not exists PARTITION (`date` = "%s", hour = "%s")
+                      | LOCATION '/warehouse/dl_cpc.db/%s/%s/%s'
+                    """.stripMargin.format(table, key._1, key._2, table, key._1, key._2)
+                println(sqlStmt)
+                spark.sql(sqlStmt)
                 //}
             }
             /**

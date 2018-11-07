@@ -8,6 +8,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
 import scala.collection.mutable.Map
+import scala.sys.process._
 
 /**
   * Created by roydong on 15/12/2017.
@@ -17,7 +18,7 @@ object SaveFeatures {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   private var version = "v1"
-  private var versionV2 = "v2"
+  private var versionV2 = "v2_test"
 
 
   def main(args: Array[String]): Unit = {
@@ -32,15 +33,17 @@ object SaveFeatures {
     }
     val date = args(0)
     val hour = args(1)
+    val yesterday = args(2)
+    println("day: " + date, " yesterday: " + yesterday)
 
     val spark = SparkSession.builder()
       .appName("Save features from UnionLog [%s/%s/%s]".format(version, date, hour))
       .enableHiveSupport()
       .getOrCreate()
 
-    saveDataFromLog(spark, date, hour)
+    //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
-    saveCvrDataV2(spark, date, hour, versionV2) //第二版cvr
+    saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
     println("SaveFeatures_done")
   }
 
@@ -65,7 +68,8 @@ object SaveFeatures {
     println(stmt)
     val rows = spark.sql(stmt)
     println("num", rows.count())
-    rows.write
+    rows.repartition(10)
+      .write
       .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/lrmodel/ctrdata_%s/%s/%s".format(version, date, hour))
     spark.sql(
@@ -106,6 +110,7 @@ object SaveFeatures {
     val num = daily.count()
     daily.sortBy(x => x)
       .toDF()
+      .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
       .parquet(path)
@@ -128,6 +133,7 @@ object SaveFeatures {
     val num = daily.count()
     daily.sortBy(x => x)
       .toDF()
+      .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
       .parquet(path)
@@ -218,30 +224,148 @@ object SaveFeatures {
       """.stripMargin.format(date, hour, date, hour))
   }
 
-  def saveCvrDataV2(spark: SparkSession, date: String, hour: String, version: String): Unit = {
+  def saveCvrDataV2(spark: SparkSession, date: String, hour: String, yesterday: String, version: String): Unit = {
     import spark.implicits._
+
+    //激励下载转化  取有点击的
+    val motivateRDD = spark.sql(
+      s"""
+         |select   b.trace_type as flag1
+         |        ,b.trace_op1 as flag2
+         |        ,a.searchid
+         |        ,a.ideaid
+         |        ,b.trace_type
+         |        ,b.trace_op1
+         |from (select * from dl_cpc.cpc_motivation_log
+         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick > 0) a
+         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
+         |        on a.userid = t2.id
+         |    left join
+         |        (select *
+         |            from dl_cpc.logparsed_cpc_trace_minute
+         |            where `thedate` = "%s" and `thehour` = "%s"
+         |         ) b
+         |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
+         | where t2.id is null
+       """.stripMargin.format(date, hour, yesterday, date, hour))
+      .rdd
+      .map {
+        x =>
+          ((x.getAs[String]("searchid"), x.getAs[Int]("ideaid")), Seq(x))
+      }
+      .reduceByKey(_ ++ _)
+      .map { x =>
+        val (convert, label_type) = Utils.cvrPositiveV3(x._2, version)
+        (x._1._1, x._1._2, convert)
+      }.toDF("searchid", "ideaid", "label")
+    println("motivate: " + motivateRDD.count())
+
+    motivateRDD
+      .repartition(1)
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet("/user/cpc/lrmodel/cvrdata_motivate/%s/%s".format(date, hour))
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.ml_cvr_feature_motivate add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_motivate/%s/%s'
+      """.stripMargin.format(date, hour, date, hour))
+
+
+    //用户Api回传数据(如已经安装但未激活) cvr计算
+    val userApiBackRDD = spark.sql(
+      s"""
+         |select   b.trace_type as flag1
+         |        ,a.searchid
+         |        ,a.uid
+         |        ,a.userid
+         |        ,a.ideaid
+         |        ,b.trace_type
+         |from (select * from dl_cpc.cpc_union_log
+         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick > 0) a
+         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
+         |        on a.userid = t2.id
+         |    left join
+         |        (select *
+         |            from dl_cpc.logparsed_cpc_trace_minute
+         |            where `thedate` = "%s" and `thehour` = "%s"
+         |         ) b
+         |    on a.searchid=b.searchid
+         | where t2.id is null
+       """.stripMargin.format(date, hour, yesterday, date, hour))
+      .rdd
+      .map {
+        x =>
+          (x.getAs[String]("searchid"), Seq(x))
+      }
+      .map {
+        x =>
+          var active_third = 0
+          var uid = ""
+          var userid = 0
+          var ideaid = 0
+          x._2.foreach(
+            x => {
+              uid = x.getAs[String]("uid")
+              userid = x.getAs[Int]("userid")
+              ideaid = x.getAs[Int]("ideaid")
+              if (!x.isNullAt(0)) { //trace_type为null时过滤
+                val trace_type = x.getAs[String]("trace_type")
+                if (trace_type == "active_third") {
+                  active_third = 1
+                }
+              } else {
+                active_third = -1
+              }
+            }
+          )
+          (x._1, active_third, uid, userid, ideaid)
+      }
+      .filter(x => x._2 != -1) //过滤空值
+      .toDF("searchid", "label", "uid", "userid", "ideaid")
+
+    println("user api back: " + userApiBackRDD.count())
+
+    userApiBackRDD
+      .repartition(1)
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet("/user/cpc/lrmodel/cvrdata_userapiback/%s/%s".format(date, hour))
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v2 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_userapiback/%s/%s'
+      """.stripMargin.format(date, hour, date, hour))
+
+
+    //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算
     val cvrlog = spark.sql(
       s"""
-         |select a.searchid as search_id
+         |select  b.trace_type as flag1
+         |       ,b.trace_op1 as flag2
+         |       ,a.searchid as search_id
          |       ,a.adslot_type
          |       ,a.ext["client_type"].string_value as client_type
          |       ,a.ext["adclass"].int_value  as adclass
          |       ,a.ext_int['siteid'] as siteid
          |       ,a.adsrc
          |       ,a.interaction
+         |       ,a.uid
+         |       ,a.userid
+         |       ,a.ideaid
          |       ,b.*
          |from (select * from dl_cpc.cpc_union_log
-         |        where `date` = "%s" and `hour` = "%s" ) a
+         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick > 0) a
          |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
-         |         on a.userid = t2.id
+         |        on a.userid = t2.id
          |    left join
          |        (select *
-         |            from dl_cpc.cpc_union_trace_log
-         |            where `date` = "%s" and `hour` = "%s"
+         |            from dl_cpc.logparsed_cpc_trace_minute
+         |            where `thedate` = "%s" and `thehour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid
-         |where b.searchid is not null and t2.id is null
-        """.stripMargin.format(date, hour, date, date, hour))
+         | where t2.id is null
+            """.stripMargin.format(date, hour, yesterday, date, hour))
       .rdd
       .map {
         x =>
@@ -251,31 +375,34 @@ object SaveFeatures {
       .map {
         x =>
           val convert = Utils.cvrPositiveV(x._2, version)
-          val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version)  //新cvr
+          val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version) //新cvr
 
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
           //active1,active2,active3,active4,active5,active6,disactive,active_auto,active_auto_download,active_auto_submit,active_wx,active_third
           x._2.foreach(
             x => {
-              val trace_type = x.getAs[String]("trace_type")
-              val trace_op1 = x.getAs[String]("trace_op1")
+              if ((!x.isNullAt(0)) && (!x.isNullAt(1))) { //过滤 cpc_union_log有cpc_union_trace_log 没有的
+                val trace_type = x.getAs[String]("trace_type")
+                val trace_op1 = x.getAs[String]("trace_op1")
 
-              trace_type match {
-                case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
-                  || s == "active6" || s == "disactive" || s == "active_href")
-                => active_map += (s -> 1)
-                case _ =>
-              }
+                trace_type match {
+                  case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
+                    || s == "active6" || s == "disactive" || s == "active_href")
+                  => active_map += (s -> 1)
+                  case _ =>
+                }
 
-              //增加下载激活字段,trace_op1=="REPORT_DOWNLOAD_PKGADDED"(包含apkdown和lpdown下载安装), 则installed记为1，否则为0
-              if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
-                active_map += ("installed" -> 1)
-              }
+                //增加下载激活字段,trace_op1=="REPORT_DOWNLOAD_PKGADDED"(包含apkdown和lpdown下载安装), 则installed记为1，否则为0
+                if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
+                  active_map += ("installed" -> 1)
+                }
 
-              //REPORT_USER_STAYINWX：用户点击落地页里的加微信链接跳转到微信然后10秒内没有回来,表示已经转化，REPORT_USER_STAYINWX记为1，否则为0
-              if (trace_op1 == "REPORT_USER_STAYINWX") {
-                active_map += ("report_user_stayinwx" -> 1)
+                //REPORT_USER_STAYINWX：用户点击落地页里的加微信链接跳转到微信然后10秒内没有回来,表示已经转化，REPORT_USER_STAYINWX记为1，否则为0
+                if (trace_op1 == "REPORT_USER_STAYINWX") {
+                  active_map += ("report_user_stayinwx" -> 1)
+                }
+
               }
             }
           )
@@ -305,20 +432,24 @@ object SaveFeatures {
         |       ext['long_click_count'].int_value as user_long_click_count
         |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isclick = 1
         |
-      """.stripMargin.format(date, hour)
+          """.stripMargin.format(date, hour)
     println(sqlStmt)
     val clicklog = spark.sql(sqlStmt)
     println("click log", clicklog.count())
 
     clicklog.join(cvrlog, Seq("searchid"))
+      .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
     spark.sql(
       """
-        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1_test add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2_test/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
+
+    //输出标记文件
+    //s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !
 
   }
 }

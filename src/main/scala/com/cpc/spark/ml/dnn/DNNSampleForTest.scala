@@ -12,6 +12,7 @@ import org.apache.spark.sql.functions._
   * @version 1.0
   *
   */
+@deprecated
 object DNNSampleForTest {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()

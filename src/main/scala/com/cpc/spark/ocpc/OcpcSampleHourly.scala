@@ -38,7 +38,7 @@ object OcpcSampleHourly {
          |        and adsrc = 1
          |        and adslot_type in (1,2,3)
          |      ) a
-         |inner join
+         |left join
          |      (
          |        select searchid, label
          |        from dl_cpc.ml_cvr_feature_v1
