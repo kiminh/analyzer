@@ -61,7 +61,7 @@ object OcpcK {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
-      val k = (1.0 - coffList(1)) / coffList(0)
+      val k = (1.0 - coffList(0)) / coffList(1)
       println("ideaid " + ideaid, "coff " + coffList, "k: " + k)
     }
 
