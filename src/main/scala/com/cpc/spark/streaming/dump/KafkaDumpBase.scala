@@ -9,7 +9,7 @@ import kafka.message.MessageAndMetadata
 import kafka.serializer.{DefaultDecoder, StringDecoder}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.streaming.dstream.InputDStream
 import org.apache.spark.streaming.kafka.KafkaCluster.LeaderOffset
 import org.apache.spark.streaming.kafka.{HasOffsetRanges, KafkaCluster, KafkaUtils, OffsetRange}
@@ -136,14 +136,15 @@ abstract class KafkaDumpBase[K <: scala.Product] (
               rTime._1 == key._1 && rTime._2 == key._2 && rTime._3 == key._3
             })
             val numbs = part.count()
-            val clickOutFiles = (numbs / numPerPartition + 1).toInt //用于动态减少输出文件数
+            val outFilesNum = (numbs / numPerPartition + 1).toInt //用于动态减少输出文件数
 
             date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date().getTime)
             println("~~~~~~~~~ %s ~~~~~~ on time:%s  batch-size:%d".format(inputTopicName, date, numbs))
 
             if (numbs > 0) {
-              spark.createDataFrame(part.asInstanceOf[RDD[scala.Product]])
-                .repartition(clickOutFiles)
+              getDF(part.asInstanceOf[RDD[K]], spark)
+//              spark.createDataFrame[K](part.asInstanceOf[RDD[K]])
+                .repartition(outFilesNum)
                 .write
                 .mode(SaveMode.Append)
                 .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(outputDirName, key._1, key._2, key._3))
@@ -180,6 +181,8 @@ abstract class KafkaDumpBase[K <: scala.Product] (
     ssc.start()
     ssc.awaitTermination()
   }
+
+  def getDF(rdd: RDD[K], spark: SparkSession): DataFrame
 
   def parseFunc(bytes: Array[Byte]) : K
 
