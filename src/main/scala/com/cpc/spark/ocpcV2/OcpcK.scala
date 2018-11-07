@@ -59,7 +59,7 @@ object OcpcK {
         (x(0).toDouble, x(1).toDouble, x(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
-      val k = (1.0 - coffList(0)) / coffList(1)
+      val k = (1.0 - coffList(1)) / coffList(0)
       println("ideaid " + ideaid, "coff " + coffList, "k: " + k)
     }
 
@@ -84,6 +84,9 @@ object OcpcK {
     // Retrieve fitted parameters (coefficients of the polynomial function).
     for (c <- fitter.fit(obs.toList)) {
       res.append(c)
+    }
+    for ((x, y, n) <- pointsWithCount) {
+      println("test", y, res(0) + x * res(1))
     }
     res.toList
   }
