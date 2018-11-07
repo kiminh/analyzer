@@ -16,7 +16,7 @@ object OcpcRunOver {
          |SELECT
          |  *
          |FROM
-         |  dl_cpc.ocpc_pb_result_table_v4
+         |  dl_cpc.ocpc_pb_result_table_v5
          |WHERE
          |  `date` = '$date'
          |AND
