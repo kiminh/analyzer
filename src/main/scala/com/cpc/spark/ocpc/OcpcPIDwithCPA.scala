@@ -735,7 +735,7 @@ object OcpcPIDwithCPA {
       .withColumn("new_k_value", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
       .select("ideaid", "adclass", "new_k_value", "updated_k")
       .join(cvr3Data, Seq("ideaid"), "left_outer")
-      .withColumn("k_value", when(col("flag").isNull, col("new_k_value")).otherwise(0.694))
+      .withColumn("k_value", when(col("flag").isNull, col("new_k_value")).otherwise(1.0))
 
 
     // TODO 删除临时表
@@ -807,6 +807,9 @@ object OcpcPIDwithCPA {
       .groupBy("ideaid", "adclass").agg(sum("isclick").alias("hourly_ctr_cnt"), sum(col("iscvr")).alias("hourly_cvr_cnt"))
       .select("ideaid", "adclass", "hourly_ctr_cnt", "hourly_cvr_cnt")
 
+    // cvr3
+//    val cvr3Data = getAPIcvr3V3(date, hour, spark)
+
     // 计算cpa_ratio
     val joinData = baseData
       .join(cpaGiven, Seq("ideaid"), "left_outer")
@@ -864,26 +867,21 @@ object OcpcPIDwithCPA {
     cvr3List
   }
 
-  def getCPAratioAPIv3(date: String, hour: String, spark: SparkSession) = {
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -24)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
-
-    val cvr3List = getActivationData(date, hour, spark)
-
-    val cvr3Data = getActData(date1, hour, 24, spark)
-
-    val baseData = cvr3Data.groupBy("ideaid", "adclass")
-  }
+//  def getAPIcvr3V3(date: String, hour: String, spark: SparkSession) :DataFrame = {
+//    val cvr3List = getActivationData(date, hour, spark)
+//
+//    val cvr3Data = getActData(date, hour, 24, spark)
+//
+//    val rawData = cvr3Data
+//      .groupBy("ideaid", "adclass")
+//      .agg(
+//        sum(col("cvr3_cost")).alias("total_cost"),
+//        sum(col("cvr3_cvr_cnt")).alias("cvr_cnt"))
+//      .select("ideaid", "adclass", "cvr3_cost", "cvr3_cvr_cnt")
+//
+//    val resutDF = cvr3List
+//
+////    resultDF
+//  }
 
 }
