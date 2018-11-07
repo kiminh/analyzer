@@ -718,13 +718,9 @@ object OcpcPIDwithCPA {
 
     // 关联得到基础表
     baseData.write.mode("overwrite").saveAsTable("test.ocpc_base_table")
-    val rawData1 = baseData
+    val rawData = baseData
       .join(kValue, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "kvalue")
-
-    rawData1.write.mode("overwrite").saveAsTable("test.ocpc_debug_table1")
-
-    val rawData = rawData1
       .join(cpaRatio, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "kvalue", "cpa_ratio")
       .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
@@ -738,10 +734,9 @@ object OcpcPIDwithCPA {
 
     val resultDF = rawData
       .select("ideaid", "adclass", "updated_k")
-      .withColumn("new_k_value", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
-      .select("ideaid", "adclass", "new_k_value", "updated_k")
-      .join(cvr3Data, Seq("ideaid"), "left_outer")
-      .withColumn("k_value", col("new_k_value"))
+      .withColumn("k_value", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
+      .select("ideaid", "adclass", "k_value", "updated_k")
+
 
 
     // TODO 删除临时表
