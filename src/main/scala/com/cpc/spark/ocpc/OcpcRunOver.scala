@@ -26,6 +26,9 @@ object OcpcRunOver {
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
 
+    val dataCount = data.count()
+    println(s"data count is $dataCount")
+
     // 保存pb文件
     savePbPack(data)
   }
