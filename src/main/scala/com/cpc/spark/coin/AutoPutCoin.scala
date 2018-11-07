@@ -67,7 +67,7 @@ object AutoPutCoin {
         println("apiUnionNth 's count is " + apiUnionNth.count())
         val mlFeatureSql =
             s"""
-               |select ideaid,ext["exp_cvr"].int_value as exp_cvr
+               |select ideaid,exp_cvr
                |from test.ml_cvr_feature_v1
                |where ($datehour)
                |and label2 = 1
