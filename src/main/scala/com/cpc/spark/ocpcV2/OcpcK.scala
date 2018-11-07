@@ -58,7 +58,9 @@ object OcpcK {
         x.split("\\s+")
         (x(0).toDouble, x(1).toDouble, x(2).toInt)
       })
-      println("ideaid " + ideaid, "coff " + fitPoints(pointList.toList))
+      val coffList = fitPoints(pointList.toList)
+      val k = (1.0 - coffList(0)) / coffList(1)
+      println("ideaid " + ideaid, "coff " + coffList, "k: " + k)
     }
 
   }
