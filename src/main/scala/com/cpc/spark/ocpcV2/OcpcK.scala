@@ -53,9 +53,10 @@ object OcpcK {
       .select("ideaid", "liststr").collect()
 
     for (row <- res) {
+      println(row)
       val ideaid = row(0).toString.toInt
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
-        x.split("\\s+")
+        x.trim.split("\\s+")
         (x(0).toDouble, x(1).toDouble, x(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
