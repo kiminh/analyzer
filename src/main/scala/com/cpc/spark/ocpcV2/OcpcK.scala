@@ -56,6 +56,7 @@ object OcpcK {
       println(row)
       val ideaid = row(0).toString.toInt
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
+        println(x)
         x.trim.split("\\s+")
         (x(0).toDouble, x(1).toDouble, x(2).toInt)
       })
@@ -67,6 +68,7 @@ object OcpcK {
   }
 
   def fitPoints(pointsWithCount: List[(Double, Double, Int)]): List[Double] = {
+    println(pointsWithCount)
     var obs: WeightedObservedPoints = new WeightedObservedPoints();
     if (pointsWithCount.size <= 1) {
       obs.add(0.0, 0.0);
