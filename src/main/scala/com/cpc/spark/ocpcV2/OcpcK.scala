@@ -65,6 +65,9 @@ object OcpcK {
 
   def fitPoints(pointsWithCount: List[(Double, Double, Int)]): List[Double] = {
     var obs: WeightedObservedPoints = new WeightedObservedPoints();
+    if (pointsWithCount.size <= 1) {
+      obs.add(0.0, 0.0);
+    }
     for ((x, y, n) <- pointsWithCount) {
       for (i <- 1 to n) {
         obs.add(x, y);
