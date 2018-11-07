@@ -83,29 +83,31 @@ object AutoPutCoin {
 
 
         val Nth = mlFeatureNth.fullOuterJoin(apiUnionNth)
-            .map(x => coin(ideaid = x._1,
-                label_exp_cvr = x._2._1._1,
-                label_min = x._2._1._2,
-                label_max = x._2._1._3,
-                label_num = x._2._1._4,
-                label_5th = x._2._1._5,
-                label_6th = x._2._1._6,
-                label_7th = x._2._1._7,
-                label_8th = x._2._1._8,
-                label_9th = x._2._1._9,
+            .map(x => {
 
-                api_exp_cvr = x._2._2._1,
-                api_min = x._2._2._2,
-                api_max = x._2._2._3,
-                api_num = x._2._2._4,
-                api_5th = x._2._2._5,
-                api_6th = x._2._2._6,
-                api_7th = x._2._2._7,
-                api_8th = x._2._2._8,
-                api_9th = x._2._2._9,
+                coin(ideaid = x._1,
+                label_exp_cvr = x._2._1.orNull._1,
+                label_min = x._2._1.orNull._2,
+                label_max = x._2._1.orNull._3,
+                label_num = x._2._1.orNull._4,
+                label_5th = x._2._1.orNull._5,
+                label_6th = x._2._1.orNull._6,
+                label_7th = x._2._1.orNull._7,
+                label_8th = x._2._1.orNull._8,
+                label_9th = x._2._1.orNull._9,
+
+                api_exp_cvr = x._2._2.orNull._1,
+                api_min = x._2._2.orNull._2,
+                api_max = x._2._2.orNull._3,
+                api_num = x._2._2.orNull._4,
+                api_5th = x._2._2.orNull._5,
+                api_6th = x._2._2.orNull._6,
+                api_7th = x._2._2.orNull._7,
+                api_8th = x._2._2.orNull._8,
+                api_9th = x._2._2.orNull._9,
 
                 date = date,
-                hour = hour.toString)
+                hour = hour.toString)}
             )
           .toDS()
 
