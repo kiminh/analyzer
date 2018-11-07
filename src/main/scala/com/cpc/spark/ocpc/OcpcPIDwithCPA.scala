@@ -717,6 +717,7 @@ object OcpcPIDwithCPA {
       */
 
     // 关联得到基础表
+    baseData.write.mode("overwrite").saveAsTable("test.ocpc_base_table")
     val rawData = baseData
       .join(kValue, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "kvalue")
