@@ -8,6 +8,7 @@ import kafka.common.TopicAndPartition
 import kafka.message.MessageAndMetadata
 import kafka.serializer.{DefaultDecoder, StringDecoder}
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.streaming.dstream.InputDStream
 import org.apache.spark.streaming.kafka.KafkaCluster.LeaderOffset
@@ -141,7 +142,7 @@ abstract class KafkaDumpBase[K <: scala.Product] (
             println("~~~~~~~~~ %s ~~~~~~ on time:%s  batch-size:%d".format(inputTopicName, date, numbs))
 
             if (numbs > 0) {
-              spark.createDataFrame(part)
+              spark.createDataFrame(part.asInstanceOf[RDD[scala.Product]])
                 .repartition(clickOutFiles)
                 .write
                 .mode(SaveMode.Append)
