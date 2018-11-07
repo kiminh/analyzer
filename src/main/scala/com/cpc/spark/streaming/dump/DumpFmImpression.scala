@@ -14,7 +14,7 @@ object DumpFmImpression {
     val runner = new KafkaDumpBase[FmImpLog](
       "fm_impression",
       "FM_IMP_LOG_KAFKA_OFFSET",
-      "parse_cpc_fm_click_minute") {
+      "parse_cpc_fm_imp_minute") {
       override def parseFunc(bytes: Array[Byte]): FmImpLog = {
         val aae = mlevent.AdActionEvent.parseFrom(bytes)
         val timestamp = aae.timestamp
