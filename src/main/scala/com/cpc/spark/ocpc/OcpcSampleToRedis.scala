@@ -701,6 +701,8 @@ object OcpcSampleToRedis {
       .select("ideaid", "flag", "k_ratio2", "k_ratio3", "cvr3_flag")
       .withColumn("regression_k_value", when(col("cvr3_flag").isNull, col("k_ratio2")).otherwise(col("k_ratio3")))
 
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_test_k_regression_list")
+
     resultDF
 
 
