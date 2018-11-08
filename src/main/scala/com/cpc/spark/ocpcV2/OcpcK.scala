@@ -100,7 +100,7 @@ object OcpcK {
         obs.add(x, y);
       }
       count = count + n
-      println("sample", x, y)
+      println("sample", x, y, n)
     }
 
     for (i <- 0 to count / 5) {
