@@ -170,7 +170,8 @@ object AutoPutCoin {
         val autoCoinListBuffer = scala.collection.mutable.ListBuffer[AutoCoin]()
 
         Nth.foreachPartition(x => {
-            x.foreach(coin => {
+            
+            x.toList.foreach(coin => {
                 autoCoinListBuffer += AutoCoin(
                     ideaid = coin.ideaid,
                     label2ExpCvr = coin.label_exp_cvr,
