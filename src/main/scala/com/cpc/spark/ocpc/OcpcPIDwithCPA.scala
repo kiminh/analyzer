@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Utils.getTimeRangeSql
-import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
+import com.cpc.spark.ocpc.OcpcUtils.{getActData, getTimeRangeSql2}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
 import com.cpc.spark.udfs.Udfs_wj._
@@ -23,6 +23,7 @@ object OcpcPIDwithCPA {
     // TODO ideaid与userid的名称
     if (onDuty == 1) {
       val result = calculateKv3(date, hour, spark)
+//      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
       result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
     } else {
       println("############## entering test stage ###################")
@@ -483,7 +484,7 @@ object OcpcPIDwithCPA {
     val cpaRatio = getCPAratio(baseData, historyData, date, hour, spark)
     println("################# cpaRatio table #######################")
 //    cpaRatio.show(10)
-    val newK = updateKv2(baseData, avgK, cpaRatio, spark)
+    val newK = updateKv2(baseData, avgK, cpaRatio, date, hour, spark)
     println("################# final result ####################")
 //    newK.show(10)
     newK
@@ -513,6 +514,7 @@ object OcpcPIDwithCPA {
        """.stripMargin
     println(sqlRequest)
     val baseData = spark.sql(sqlRequest)
+
 
     // TODO 删除临时表
     baseData.write.mode("overwrite").saveAsTable("test.ocpc_base_table_hourly")
@@ -698,7 +700,7 @@ object OcpcPIDwithCPA {
 
   }
 
-  def updateKv2(baseData: DataFrame, kValue: DataFrame, cpaRatio: DataFrame, spark: SparkSession) :DataFrame ={
+  def updateKv2(baseData: DataFrame, kValue: DataFrame, cpaRatio: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
     /**
       * 根据新的K基准值和cpa_ratio来在分段函数中重新定义k值
       * case1：0.9 <= cpa_ratio <= 1.1，k基准值
@@ -715,6 +717,7 @@ object OcpcPIDwithCPA {
       */
 
     // 关联得到基础表
+    baseData.write.mode("overwrite").saveAsTable("test.ocpc_base_table")
     val rawData = baseData
       .join(kValue, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "kvalue")
@@ -727,10 +730,14 @@ object OcpcPIDwithCPA {
     // TODO 删除临时表
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_k_value_raw_table")
 
+    val cvr3Data = getActivationData(date, hour, spark)
+
     val resultDF = rawData
       .select("ideaid", "adclass", "updated_k")
       .withColumn("k_value", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
       .select("ideaid", "adclass", "k_value", "updated_k")
+
+
 
     // TODO 删除临时表
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_update_k_v2")
@@ -757,7 +764,7 @@ object OcpcPIDwithCPA {
     val cpaRatio = getCPAratioV3(baseData, historyData, date, hour, spark)
     println("################# cpaRatio table #######################")
 //    cpaRatio.show(10)
-    val newK = updateKv2(baseData, avgK, cpaRatio, spark)
+    val newK = updateKv2(baseData, avgK, cpaRatio, date, hour, spark)
     println("################# final result ####################")
 //    newK.show(10)
     newK
@@ -788,6 +795,7 @@ object OcpcPIDwithCPA {
       .agg(
         sum(col("weighted_cost")).alias("total_cost"),
         sum(col("weighted_cvr_cnt")).alias("cvr_cnt"))
+
     // TODO 删除临时表
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_cost_ctr_cvr_v3")
 
@@ -799,6 +807,8 @@ object OcpcPIDwithCPA {
       .filter(s"hour='$hour'")
       .groupBy("ideaid", "adclass").agg(sum("isclick").alias("hourly_ctr_cnt"), sum(col("iscvr")).alias("hourly_cvr_cnt"))
       .select("ideaid", "adclass", "hourly_ctr_cnt", "hourly_cvr_cnt")
+
+
 
     // 计算cpa_ratio
     val joinData = baseData
@@ -827,18 +837,63 @@ object OcpcPIDwithCPA {
          |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then -1
          |        when hourly_ctr_cnt>=10 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
          |        when cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
-         |        else 1.0 end) as cpa_ratio
+         |        else 1.0 end) as cpa_ratio_cvr2
          |FROM
          |  join_table
        """.stripMargin
     println(sqlRequest)
-    val cpaRatio = spark.sql(sqlRequest)
+    val cpaRatioCvr2 = spark.sql(sqlRequest)
+
+    val cpaRatioCvr3 = getAPIcvr3V3(date, hour, spark)
+
+    val cpaRatio = cpaRatioCvr2
+      .join(cpaRatioCvr3, Seq("ideaid", "adclass"), "left_outer")
+      .withColumn("cpa_ratio", when(col("flag").isNotNull && col("cpa_ratio_cvr3")>=0, col("cpa_ratio_cvr3")).otherwise(col("cpa_ratio_cvr2")))
+
     //TODO 删除临时表
     cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v3")
 
     cpaRatio
 
+  }
 
+  def getActivationData(date: String, hour: String, spark: SparkSession) = {
+    import spark.implicits._
+
+    val resultDF = spark
+      .table("test.ocpc_idea_update_time")
+      .filter("conversion_goal=2")
+      .withColumn("flag", lit(1))
+      .select("ideaid", "cpa_given", "flag")
+
+
+    resultDF
+  }
+
+  //TODO 给api回传模型做反馈机制
+  def getAPIcvr3V3(date: String, hour: String, spark: SparkSession) :DataFrame = {
+    val cvr3List = getActivationData(date, hour, spark)
+
+    val cvr3Data = getActData(date, hour, 24, spark)
+
+    val rawData = cvr3Data
+      .groupBy("ideaid", "adclass")
+      .agg(
+        sum(col("cost")).alias("cvr3_cost"),
+        sum(col("cvr_cnt")).alias("cvr3_cvr_cnt"))
+      .select("ideaid", "adclass", "cvr3_cost", "cvr3_cvr_cnt")
+
+    val resultDF = cvr3List
+      .join(rawData, Seq("ideaid"), "left_outer")
+      .select("ideaid", "adclass", "cvr3_cost", "cvr3_cvr_cnt", "cpa_given", "flag")
+      .withColumn("cpa_real", col("cvr3_cost") / col("cvr3_cvr_cnt"))
+      .withColumn("cpa_ratio", col("cpa_given") / col("cpa_real"))
+      .withColumn("cpa_ratio_cvr3", when(col("cpa_ratio").isNull, 1).otherwise(col("cpa_ratio")))
+
+    // TODO 删除临时表
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_with_cvr3_k")
+    val finalDF = resultDF.select("ideaid", "adclass", "flag", "cpa_ratio_cvr3")
+    finalDF
   }
 
 }

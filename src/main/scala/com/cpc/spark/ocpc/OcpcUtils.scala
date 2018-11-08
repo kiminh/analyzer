@@ -156,11 +156,12 @@ object OcpcUtils {
          |SELECT
          |  ideaid,
          |  adclass,
+         |  cost,
          |  ctr_cnt,
          |  cvr_cnt,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_ideaid_adclass_label3_track
+         |  dl_cpc.ocpc_ideaid_adclass_label3_track_v1
          |WHERE $selectCondition
        """.stripMargin
     println(sqlRequest)
