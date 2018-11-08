@@ -45,8 +45,8 @@ object OcpcK {
       s"""
          |select
          |  ideaid,
-         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) as k_ratio1,
-         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3_cali'] * 100.0 / 5) as k_ratio2,
+         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) as k_ratio2,
+         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3_cali'] * 100.0 / 5) as k_ratio3,
          |  ocpc_log_dict['cpagiven'] as cpagiven,
          |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0)) as cpa2,
          |  sum(if(isclick=1,price,0))/sum(COALESCE(label3,0)) as cpa3,
@@ -61,7 +61,10 @@ object OcpcK {
          |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition) b on a.searchid = b.searchid
          |  left outer join
          |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $dtCondition) c on a.searchid = c.searchid
-         |group by ideaid, round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) , ocpc_log_dict['cpagiven']
+         |group by ideaid,
+         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) ,
+         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3_cali'] * 100.0 / 5),
+         |  ocpc_log_dict['cpagiven']
       """.stripMargin
 
     println(statSql)
