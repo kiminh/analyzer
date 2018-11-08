@@ -300,7 +300,7 @@ object OcpcSampleToRedis {
     val finalData1 = spark
       .sql(sqlRequest4)
       .join(regressionK, Seq("ideaid"), "left_outer")
-      .withColumn("k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise("raw_k_value"))
+      .withColumn("k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
 
     finalData1.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete")
 
