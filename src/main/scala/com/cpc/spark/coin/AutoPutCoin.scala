@@ -185,6 +185,8 @@ object AutoPutCoin {
 
         coinData.writeTo(new FileOutputStream("Coin.pb"))
 
+        println("autoCoinList 's num is " + autoCoinList.length)
+
         spark.stop()
     }
 
