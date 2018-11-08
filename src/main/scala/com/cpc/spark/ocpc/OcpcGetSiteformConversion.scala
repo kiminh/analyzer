@@ -18,12 +18,10 @@ object OcpcGetSiteformConversion {
          |select
          |    idea_id,
          |    search_id,
-         |    modified_time,
-         |    DATE(modified_time) as date,
-         |    EXTRACT(HOUR FROM modified_time) as hour
+         |    modified_time
          |from adv_test.site_form_data
          |where
-         |    DATE(modified_time)>'$date'
+         |    DATE(modified_time)='$date'
          |AND
          |    EXTRACT(HOUR FROM modified_time)='$hour'
        """.stripMargin
@@ -39,7 +37,7 @@ object OcpcGetSiteformConversion {
 
     data.show(10)
 
-
+    data.write.mode("overwrite").saveAsTable("test.site_form_unionlog")
 
 
   }
