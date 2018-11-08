@@ -172,6 +172,7 @@ object AutoPutCoin {
         Nth.foreachPartition(x => {
             x.foreach(coin => {
                 autoCoinListBuffer += AutoCoin(
+                    ideaid = coin.ideaid,
                     label2ExpCvr = coin.label_exp_cvr,
                     apiExpCvr = coin.api_exp_cvr)
 
