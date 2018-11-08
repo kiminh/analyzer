@@ -74,7 +74,7 @@ object OcpcK {
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
-    val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
+    val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour", "k"), "outer")
     res.write.partitionBy("date", "hour").mode("overwrite").saveAsTable("dl_cpc.ocpc_v2_k")
 
   }
@@ -82,7 +82,7 @@ object OcpcK {
   def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
 
     val res = spark.table(tablename).where(s"$ratioType is not null")
-      .withColumn("str", concat_ws(" ", col(s"k_$ratioType"), col(s"$ratioType"), col("clickCnt")))
+      .withColumn("str", concat_ws(" ", col(s"k"), col(s"$ratioType"), col("clickCnt")))
       .groupBy("ideaid")
       .agg(collect_set("str").as("liststr"))
       .select("ideaid", "liststr").collect()
