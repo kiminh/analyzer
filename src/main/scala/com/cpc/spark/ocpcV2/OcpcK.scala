@@ -45,7 +45,8 @@ object OcpcK {
       s"""
          |select
          |  ideaid,
-         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) as k,
+         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) as k_ratio1,
+         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3_cali'] * 100.0 / 5) as k_ratio2,
          |  ocpc_log_dict['cpagiven'] as cpagiven,
          |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0)) as cpa2,
          |  sum(if(isclick=1,price,0))/sum(COALESCE(label3,0)) as cpa3,
@@ -74,7 +75,7 @@ object OcpcK {
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
-    val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour", "k"), "outer")
+    val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
     res.write.partitionBy("date", "hour").mode("overwrite").saveAsTable("dl_cpc.ocpc_v2_k")
 
   }
@@ -82,7 +83,7 @@ object OcpcK {
   def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
 
     val res = spark.table(tablename).where(s"$ratioType is not null")
-      .withColumn("str", concat_ws(" ", col(s"k"), col(s"$ratioType"), col("clickCnt")))
+      .withColumn("str", concat_ws(" ", col(s"k_$ratioType"), col(s"$ratioType"), col("clickCnt")))
       .groupBy("ideaid")
       .agg(collect_set("str").as("liststr"))
       .select("ideaid", "liststr").collect()
