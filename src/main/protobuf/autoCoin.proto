@@ -6,3 +6,7 @@ message AutoCoin {
     int32 label2_exp_cvr = 1;
     int32 api_exp_cvr = 2;
 }
+
+message Coin {
+    repeated AutoCoin coin = 1;
+}

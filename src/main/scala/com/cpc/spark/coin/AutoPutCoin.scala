@@ -1,16 +1,18 @@
 package com.cpc.spark.coin
+import java.io.FileOutputStream
+
 import com.redis.RedisClient
 import java.text.SimpleDateFormat
 import java.util.Calendar
+
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.rdd.RDD
-import autoCoin.autoCoin.AutoCoin
-
+import autoCoin.autoCoin._
 /**
   * @author Jinbao
-  * @date 2018/11/6 15:22
+  * @date 2018/11/8 14:08
   */
 object AutoPutCoin {
     def main(args: Array[String]): Unit = {
@@ -163,23 +165,24 @@ object AutoPutCoin {
 
         Nth.write.mode("overwrite").insertInto(coinTable)
 
+        //保存到PB文件
+
+        val autoCoinListBuffer = scala.collection.mutable.ListBuffer[AutoCoin]()
+
         Nth.foreachPartition(x => {
-            val conf = ConfigFactory.load()
-
-            val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-
-            redis.select(0)
-
             x.foreach(coin => {
-                val t = AutoCoin(label2ExpCvr = coin.label_exp_cvr,
+                autoCoinListBuffer += AutoCoin(
+                    label2ExpCvr = coin.label_exp_cvr,
                     apiExpCvr = coin.api_exp_cvr)
-                //redis.setex(coin.ideaid.toString, 3600 * 24 * 30, t)
-                redis.set(coin.ideaid.toString,t)
+
             })
-
-            redis.disconnect
-
         })
+
+        val autoCoinList = autoCoinListBuffer.toArray
+
+        val coinData = Coin(coin = autoCoinList)
+
+        coinData.writeTo(new FileOutputStream("Coin.pb"))
 
         spark.stop()
     }
@@ -203,27 +206,28 @@ object AutoPutCoin {
           })
     }
 
+    case class coin(var ideaid: Int = 0,
+                    var label_exp_cvr: Int = 0,
+                    var label_min: Int = 0,
+                    var label_max: Int = 0,
+                    var label_num: Int = 0,
+                    var label_5th: Int = 0,
+                    var label_6th: Int = 0,
+                    var label_7th: Int = 0,
+                    var label_8th: Int = 0,
+                    var label_9th: Int = 0,
+
+                    var api_exp_cvr: Int = 0,
+                    var api_min: Int = 0,
+                    var api_max: Int = 0,
+                    var api_num: Int = 0,
+                    var api_5th: Int = 0,
+                    var api_6th: Int = 0,
+                    var api_7th: Int = 0,
+                    var api_8th: Int = 0,
+                    var api_9th: Int = 0,
+                    var date: String = "",
+                    var hour: String = "")
 }
 
-case class coin(var ideaid: Int = 0,
-                var label_exp_cvr: Int = 0,
-                var label_min: Int = 0,
-                var label_max: Int = 0,
-                var label_num: Int = 0,
-                var label_5th: Int = 0,
-                var label_6th: Int = 0,
-                var label_7th: Int = 0,
-                var label_8th: Int = 0,
-                var label_9th: Int = 0,
 
-                var api_exp_cvr: Int = 0,
-                var api_min: Int = 0,
-                var api_max: Int = 0,
-                var api_num: Int = 0,
-                var api_5th: Int = 0,
-                var api_6th: Int = 0,
-                var api_7th: Int = 0,
-                var api_8th: Int = 0,
-                var api_9th: Int = 0,
-                var date: String = "",
-                var hour: String = "")
