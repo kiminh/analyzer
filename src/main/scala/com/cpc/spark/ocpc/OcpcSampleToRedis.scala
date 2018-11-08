@@ -562,6 +562,7 @@ object OcpcSampleToRedis {
   }
 
   def checkAdType(endDate: String, hour: String, spark: SparkSession): DataFrame ={
+    // TODO 从广告更新表中更新广告类型
     // 计算时间区间
     val threshold = 20
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
@@ -596,6 +597,7 @@ object OcpcSampleToRedis {
   }
 
   def filterDataByType(rawData: DataFrame, date:String, hour: String, spark:SparkSession): DataFrame ={
+    // TODO 使广告行业的ctr与cvr的替换更加平滑
     val typeData = checkAdType(date, hour, spark)
 
     val joinData = rawData
