@@ -698,7 +698,7 @@ object OcpcSampleToRedis {
       .join(regressionK, Seq("ideaid"), "left_outer")
       .select("ideaid", "k_ratio2", "k_ratio3", "flag")
       .join(cvr3List, Seq("ideaid"), "left_outer")
-      .select("ideaid", "flag", "k_ratio2", "k_ratio3")
+      .select("ideaid", "flag", "k_ratio2", "k_ratio3", "cvr3_flag")
       .withColumn("regression_k_value", when(col("cvr3_flag").isNull, col("k_ratio2")).otherwise(col("k_ratio3")))
 
     resultDF
