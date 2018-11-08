@@ -1,12 +1,12 @@
 package com.cpc.spark.coin
-
+import com.redis.RedisClient
 import java.text.SimpleDateFormat
 import java.util.Calendar
-
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.functions.col
+import autoCoin.autoCoin.AutoCoin
 
 /**
   * @author Jinbao
@@ -15,15 +15,21 @@ import org.apache.spark.sql.functions.col
 object AutoPutCoin {
     def main(args: Array[String]): Unit = {
 
-        val date = args(0)
+        val cpc_api_union_log = args(0) //"dl_cpc.cpc_api_union_log"
 
-        val hour = args(1).toInt
+        val ml_cvr_feature_v1 = args(1) //"test.ml_cvr_feature_v1"
+
+        val coinTable = "test.coin2"
+
+        val date = args(2)
+
+        val hour = args(3).toInt
 
         val minute = 0
 
-        val p = 0.7
+        val p = args(4).toDouble //0.7
 
-        val preDay = 3
+        val preDay = args(5).toInt //3
 
         val spark = SparkSession.builder()
           .appName(s"AutoPutCoin date = $date, hour = $hour")
@@ -52,7 +58,7 @@ object AutoPutCoin {
         val apiUnionLogSql =
             s"""
                |select ideaid,ext["exp_cvr"].int_value as exp_cvr
-               |from dl_cpc.cpc_api_union_log
+               |from $cpc_api_union_log
                |where ($datehour)
                |and iscvr = 1
                |and media_appsid in ('80000001','80000002')
@@ -68,7 +74,7 @@ object AutoPutCoin {
         val mlFeatureSql =
             s"""
                |select ideaid,exp_cvr
-               |from test.ml_cvr_feature_v1
+               |from $ml_cvr_feature_v1
                |where ($datehour)
                |and label2 = 1
                |and media_appsid in ('80000001','80000002')
@@ -90,25 +96,25 @@ object AutoPutCoin {
               val api = x._2._2.orNull
               if (label != null && api != null) {
                   coin(ideaid = x._1,
-                      label_exp_cvr = x._2._1.orNull._1,
-                      label_min = x._2._1.orNull._2,
-                      label_max = x._2._1.orNull._3,
-                      label_num = x._2._1.orNull._4,
-                      label_5th = x._2._1.orNull._5,
-                      label_6th = x._2._1.orNull._6,
-                      label_7th = x._2._1.orNull._7,
-                      label_8th = x._2._1.orNull._8,
-                      label_9th = x._2._1.orNull._9,
+                      label_exp_cvr = label._1,
+                      label_min = label._2,
+                      label_max = label._3,
+                      label_num = label._4,
+                      label_5th = label._5,
+                      label_6th = label._6,
+                      label_7th = label._7,
+                      label_8th = label._8,
+                      label_9th = label._9,
 
-                      api_exp_cvr = x._2._2.orNull._1,
-                      api_min = x._2._2.orNull._2,
-                      api_max = x._2._2.orNull._3,
-                      api_num = x._2._2.orNull._4,
-                      api_5th = x._2._2.orNull._5,
-                      api_6th = x._2._2.orNull._6,
-                      api_7th = x._2._2.orNull._7,
-                      api_8th = x._2._2.orNull._8,
-                      api_9th = x._2._2.orNull._9,
+                      api_exp_cvr = api._1,
+                      api_min = api._2,
+                      api_max = api._3,
+                      api_num = api._4,
+                      api_5th = api._5,
+                      api_6th = api._6,
+                      api_7th = api._7,
+                      api_8th = api._8,
+                      api_9th = api._9,
 
                       date = date,
                       hour = hour.toString)
@@ -116,88 +122,108 @@ object AutoPutCoin {
               else if (label == null && api != null) {
                   coin(ideaid = x._1,
 
-                      api_exp_cvr = x._2._2.orNull._1,
-                      api_min = x._2._2.orNull._2,
-                      api_max = x._2._2.orNull._3,
-                      api_num = x._2._2.orNull._4,
-                      api_5th = x._2._2.orNull._5,
-                      api_6th = x._2._2.orNull._6,
-                      api_7th = x._2._2.orNull._7,
-                      api_8th = x._2._2.orNull._8,
-                      api_9th = x._2._2.orNull._9,
+                      api_exp_cvr = api._1,
+                      api_min = api._2,
+                      api_max = api._3,
+                      api_num = api._4,
+                      api_5th = api._5,
+                      api_6th = api._6,
+                      api_7th = api._7,
+                      api_8th = api._8,
+                      api_9th = api._9,
 
                       date = date,
                       hour = hour.toString)
               }
               else if (label != null && api == null) {
                   coin(ideaid = x._1,
-                      label_exp_cvr = x._2._1.orNull._1,
-                      label_min = x._2._1.orNull._2,
-                      label_max = x._2._1.orNull._3,
-                      label_num = x._2._1.orNull._4,
-                      label_5th = x._2._1.orNull._5,
-                      label_6th = x._2._1.orNull._6,
-                      label_7th = x._2._1.orNull._7,
-                      label_8th = x._2._1.orNull._8,
-                      label_9th = x._2._1.orNull._9,
+                      label_exp_cvr = label._1,
+                      label_min = label._2,
+                      label_max = label._3,
+                      label_num = label._4,
+                      label_5th = label._5,
+                      label_6th = label._6,
+                      label_7th = label._7,
+                      label_8th = label._8,
+                      label_9th = label._9,
 
                       date = date,
                       hour = hour.toString)
               }
               else {
-                  coin(ideaid = x._1)
+                  coin(ideaid = x._1,
+                      date = date,
+                      hour = hour.toString)
               }
           })
+          .filter(x => x.api_num >= 30 || x.label_num >= 30)
           .toDS()
 
+        println("Nth 's count is " + Nth.count())
 
-              println("Nth 's count is " + Nth.count())
+        Nth.write.mode("overwrite").insertInto(coinTable)
 
-              Nth.write.mode("overwrite").insertInto("test.coin2")
+        Nth.foreachPartition(x => {
+            val conf = ConfigFactory.load()
 
-              spark.stop()
-          }
+            val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
 
-        def getNth(df: DataFrame, p: Double): RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
-            df.rdd.map(x => (x.getAs[Int]("ideaid"), x.getAs[Int]("exp_cvr")))
-              .combineByKey(x => List(x),
-                  (x: List[Int], y: Int) => y :: x,
-                  (x: List[Int], y: List[Int]) => x ::: y)
-              .mapValues(x => {
-                  val sorted = x.sorted
-                  val index = (sorted.length * p).toInt
-                  val i5th = (sorted.length * 0.5).toInt
-                  val i6th = (sorted.length * 0.6).toInt
-                  val i7th = (sorted.length * 0.7).toInt
-                  val i8th = (sorted.length * 0.8).toInt
-                  val i9th = (sorted.length * 0.9).toInt
-                  (sorted(index), sorted(0), sorted(sorted.length - 1), sorted.length,
-                    sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
-                  //x(index)
-              })
-        }
+            redis.select(0)
 
+            x.foreach(coin => {
+                val t = AutoCoin(label2ExpCvr = coin.label_exp_cvr,
+                    apiExpCvr = coin.api_exp_cvr)
+                //redis.setex(coin.ideaid.toString, 3600 * 24 * 30, t)
+                redis.set(coin.ideaid.toString,t)
+            })
+
+            redis.disconnect
+
+        })
+
+        spark.stop()
     }
 
-    case class coin(var ideaid: Int = 0,
-                    var label_exp_cvr: Int = 0,
-                    var label_min: Int = 0,
-                    var label_max: Int = 0,
-                    var label_num: Int = 0,
-                    var label_5th: Int = 0,
-                    var label_6th: Int = 0,
-                    var label_7th: Int = 0,
-                    var label_8th: Int = 0,
-                    var label_9th: Int = 0,
+    def getNth(df: DataFrame, p: Double): RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
+        df.rdd.map(x => (x.getAs[Int]("ideaid"), x.getAs[Int]("exp_cvr")))
+          .combineByKey(x => List(x),
+              (x: List[Int], y: Int) => y :: x,
+              (x: List[Int], y: List[Int]) => x ::: y)
+          .mapValues(x => {
+              val sorted = x.sorted
+              val index = (sorted.length * p).toInt - 1
+              val i5th = (sorted.length * 0.5).toInt - 1
+              val i6th = (sorted.length * 0.6).toInt - 1
+              val i7th = (sorted.length * 0.7).toInt - 1
+              val i8th = (sorted.length * 0.8).toInt - 1
+              val i9th = (sorted.length * 0.9).toInt - 1
+              (sorted(index), sorted(0), sorted(sorted.length - 1), sorted.length,
+                sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
+              //x(index)
+          })
+    }
 
-                    var api_exp_cvr: Int = 0,
-                    var api_min: Int = 0,
-                    var api_max: Int = 0,
-                    var api_num: Int = 0,
-                    var api_5th: Int = 0,
-                    var api_6th: Int = 0,
-                    var api_7th: Int = 0,
-                    var api_8th: Int = 0,
-                    var api_9th: Int = 0,
-                    var date: String = "",
-                    var hour: String = "")
+}
+
+case class coin(var ideaid: Int = 0,
+                var label_exp_cvr: Int = 0,
+                var label_min: Int = 0,
+                var label_max: Int = 0,
+                var label_num: Int = 0,
+                var label_5th: Int = 0,
+                var label_6th: Int = 0,
+                var label_7th: Int = 0,
+                var label_8th: Int = 0,
+                var label_9th: Int = 0,
+
+                var api_exp_cvr: Int = 0,
+                var api_min: Int = 0,
+                var api_max: Int = 0,
+                var api_num: Int = 0,
+                var api_5th: Int = 0,
+                var api_6th: Int = 0,
+                var api_7th: Int = 0,
+                var api_8th: Int = 0,
+                var api_9th: Int = 0,
+                var date: String = "",
+                var hour: String = "")
