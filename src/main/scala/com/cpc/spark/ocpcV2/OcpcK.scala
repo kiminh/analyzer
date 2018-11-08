@@ -110,7 +110,7 @@ object OcpcK {
       }
     }
     val data = spark.createDataFrame(resList)
-      .toDF("ideaid", "k", "date", "hour")
+      .toDF("ideaid", s"k_$ratioType", "date", "hour")
     data
   }
 
