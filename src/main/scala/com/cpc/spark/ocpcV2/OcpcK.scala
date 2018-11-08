@@ -82,7 +82,7 @@ object OcpcK {
   def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
 
     val res = spark.table(tablename).where(s"$ratioType is not null")
-      .withColumn("str", concat_ws(" ", col("k"), col(s"$ratioType"), col("clickCnt")))
+      .withColumn("str", concat_ws(" ", col(s"k_$ratioType"), col(s"$ratioType"), col("clickCnt")))
       .groupBy("ideaid")
       .agg(collect_set("str").as("liststr"))
       .select("ideaid", "liststr").collect()
