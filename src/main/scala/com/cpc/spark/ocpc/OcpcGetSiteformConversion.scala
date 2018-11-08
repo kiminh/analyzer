@@ -1,6 +1,7 @@
 package com.cpc.spark.ocpc
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 
 object OcpcGetSiteformConversion {
   def main(args: Array[String]): Unit = {
@@ -16,21 +17,6 @@ object OcpcGetSiteformConversion {
     val table = s"(select idea_id as ideaid, search_id as searchid, modified_time from adv_test.site_form_data where DATE(modified_time)='$date' and EXTRACT(HOUR FROM modified_time)='$hour') as tmp"
 
 
-
-//
-//
-//      s"""
-//         |select
-//         |    idea_id,
-//         |    search_id,
-//         |    modified_time
-//         |from adv_test.site_form_data
-//         |where
-//         |    DATE(modified_time)='$date'
-//         |AND
-//         |    EXTRACT(HOUR FROM modified_time)='$hour'
-//       """.stripMargin
-
     val data = spark.read.format("jdbc")
       .option("url", url)
       .option("driver", driver)
@@ -40,9 +26,14 @@ object OcpcGetSiteformConversion {
       .load()
 
 
-    data.show(10)
+    val resultDF = data
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
 
-    data.write.mode("overwrite").saveAsTable("test.site_form_unionlog")
+
+    resultDF.show(10)
+
+    resultDF.write.mode("overwrite").saveAsTable("test.site_form_unionlog")
 
 
   }
