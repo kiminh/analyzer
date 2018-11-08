@@ -66,7 +66,10 @@ object OcpcK {
     println(statSql)
 
     val tablename = "test.djq_ocpc"
-    spark.sql(statSql).write.mode("overwrite").saveAsTable(tablename)
+    spark.sql(statSql)
+      .withColumn("`date`", lit(date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite").partitionBy("`date`", "hour").saveAsTable(tablename)
 
     val res = spark.table(tablename).where("ratio2 is not null")
       .withColumn("str", concat_ws(" ", col("k"), col("ratio2"), col("clickCnt")))
@@ -83,7 +86,8 @@ object OcpcK {
       })
       val coffList = fitPoints(pointList.toList)
       val k = (targetK - coffList(0)) / coffList(1)
-      println("ideaid " + ideaid, "coff " + coffList, "target k: " + k)
+      val realk = k * 5.0 / 100.0
+      println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk)
     }
 
   }
