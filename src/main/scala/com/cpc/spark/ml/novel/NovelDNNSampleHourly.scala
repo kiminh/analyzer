@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.noveldnn
+package com.cpc.spark.ml.novel
 
 import java.text.SimpleDateFormat
 import java.util.Calendar

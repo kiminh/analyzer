@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.noveldnn
+package com.cpc.spark.ml.novel
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
