@@ -85,6 +85,7 @@ object OcpcK {
 
   def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
 
+    println(s"in getKWithRatioType $ratioType")
     val res = spark.table(tablename).where(s"$ratioType is not null")
       .withColumn("str", concat_ws(" ", col(s"k_$ratioType"), col(s"$ratioType"), col("clickCnt")))
       .groupBy("ideaid")
@@ -94,6 +95,7 @@ object OcpcK {
     val targetK = 0.95
     var resList = new mutable.ListBuffer[(String, Double, String, String)]()
     for (row <- res) {
+      println(row)
       val ideaid = row(0).toString
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
         val y = x.trim.split("\\s+")
