@@ -67,9 +67,9 @@ object OcpcK {
 
     val tablename = "test.djq_ocpc"
     spark.sql(statSql)
-      .withColumn("`date`", lit(date))
+      .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .write.mode("overwrite").partitionBy("`date`", "hour").saveAsTable(tablename)
+      .write.mode("overwrite").partitionBy("date", "hour").saveAsTable(tablename)
 
     val res = spark.table(tablename).where("ratio2 is not null")
       .withColumn("str", concat_ws(" ", col("k"), col("ratio2"), col("clickCnt")))
