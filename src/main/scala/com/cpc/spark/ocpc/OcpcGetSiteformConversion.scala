@@ -10,9 +10,13 @@ object OcpcGetSiteformConversion {
     val date = args(0).toString
     val hour = args(1).toString
 
-    val url = "jdbc:mysql://rm-2zef52mz0p6mv5007.mysql.rds.aliyuncs.com:3306/adv_test?useUnicode=true&characterEncoding=utf-8"
-    val user = "cpcrw"
-    val passwd = "zZdlz9qUB51awT8b"
+//    val url = "jdbc:mysql://rm-2zef52mz0p6mv5007.mysql.rds.aliyuncs.com:3306/adv_test?useUnicode=true&characterEncoding=utf-8"
+//    val user = "cpcrw"
+//    val passwd = "zZdlz9qUB51awT8b"
+//    val driver = "com.mysql.jdbc.Driver"
+    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+    val user = "adv_live_read"
+    val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
     val table = s"(select idea_id as ideaid, search_id as searchid, modified_time from adv_test.site_form_data where DATE(modified_time)='$date' and EXTRACT(HOUR FROM modified_time)='$hour') as tmp"
 
