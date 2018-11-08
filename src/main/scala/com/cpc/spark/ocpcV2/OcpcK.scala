@@ -71,10 +71,10 @@ object OcpcK {
       .withColumn("hour", lit(hour))
       .write.mode("overwrite").partitionBy("date", "hour").saveAsTable(tablename)
 
-    val ratio1Data = getKWithRatioType(spark, tablename, "ratio1", date, hour)
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
+    val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
-    val res = ratio1Data.join(ratio2Data, Seq("ideaid", "date", "hour"), "outer")
+    val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
     res.write.partitionBy("date", "hour").mode("overwrite").saveAsTable("dl_cpc.ocpc_v2_k")
 
   }
