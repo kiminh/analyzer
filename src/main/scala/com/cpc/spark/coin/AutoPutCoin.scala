@@ -160,6 +160,7 @@ object AutoPutCoin {
           })
           .filter(x => x.api_num >= 30 || x.label_num >= 30)
           .toDS()
+          .coalesce(1)
 
         println("Nth 's count is " + Nth.count())
 
@@ -179,12 +180,12 @@ object AutoPutCoin {
         })
 
         val autoCoinList = autoCoinListBuffer.toArray
-
+        println("autoCoinList 's num is " + autoCoinList.length)
         val coinData = Coin(coin = autoCoinList)
 
         coinData.writeTo(new FileOutputStream("Coin.pb"))
 
-        println("autoCoinList 's num is " + autoCoinList.length)
+        println("write to Coin.pb success")
 
         spark.stop()
     }
