@@ -74,6 +74,7 @@ object OcpcK {
       .agg(collect_set("str").as("liststr"))
       .select("ideaid", "liststr").collect()
 
+    val targetK = 0.95
     for (row <- res) {
       val ideaid = row(0).toString.toInt
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
@@ -81,7 +82,7 @@ object OcpcK {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
-      val k = (1.0 - coffList(0)) / coffList(1)
+      val k = (targetK - coffList(0)) / coffList(1)
       println("ideaid " + ideaid, "coff " + coffList, "target k: " + k)
     }
 
