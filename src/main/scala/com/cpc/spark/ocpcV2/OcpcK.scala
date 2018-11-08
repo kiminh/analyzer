@@ -1,5 +1,8 @@
 package com.cpc.spark.ocpcV2
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
 import org.apache.spark.sql.SparkSession
 
@@ -12,12 +15,31 @@ object OcpcK {
 
     val spark = SparkSession.builder().appName("ocpc v2").enableHiveSupport().getOrCreate()
 
-    // val date = args(0).toString
-    // val hour = args(1).toString
+    val date = args(0).toString
+    val hour = args(1).toString
     // val onDuty = args(2).toInt
 
-    val dtCondition = "`date` = '2018-11-05' "
-    val dtCondition2 = "`dt` = '2018-11-05' "
+    val datehourlist = scala.collection.mutable.ListBuffer[String]()
+    val datehourlist2 = scala.collection.mutable.ListBuffer[String]()
+    val cal = Calendar.getInstance()
+    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0)
+    for (t <- 0 to 24) {
+      if (t > 0) {
+        cal.add(Calendar.HOUR, -1)
+      }
+      val sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+      val dd = sf.format(cal.getTime())
+      val d1 = dd.substring(0, 10)
+      val h1 = dd.substring(11, 13)
+      val datecond = s"`date` = '$d1' and hour = '$h1'"
+      val datecond2 = s"`dt` = '$d1' and hour = '$h1'"
+      datehourlist += datecond
+      datehourlist2 += datecond2
+    }
+
+    val dtCondition = "(%s)".format(datehourlist.mkString(" or "))
+    val dtCondition2 = "(%s)".format(datehourlist2.mkString(" or "))
+
 
     val statSql =
       s"""
@@ -53,22 +75,19 @@ object OcpcK {
       .select("ideaid", "liststr").collect()
 
     for (row <- res) {
-      println(row)
       val ideaid = row(0).toString.toInt
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
-        println(x)
         val y = x.trim.split("\\s+")
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
       val k = (1.0 - coffList(0)) / coffList(1)
-      println("ideaid " + ideaid, "coff " + coffList, "k: " + k)
+      println("ideaid " + ideaid, "coff " + coffList, "target k: " + k)
     }
 
   }
 
   def fitPoints(pointsWithCount: List[(Double, Double, Int)]): List[Double] = {
-    println(pointsWithCount)
     var obs: WeightedObservedPoints = new WeightedObservedPoints();
     var count = 0
     for ((x, y, n) <- pointsWithCount) {
@@ -86,14 +105,10 @@ object OcpcK {
     // Instantiate a third-degree polynomial fitter.
     var fitter: PolynomialCurveFitter = PolynomialCurveFitter.create(1);
 
-
     var res = mutable.ListBuffer[Double]()
     // Retrieve fitted parameters (coefficients of the polynomial function).
     for (c <- fitter.fit(obs.toList)) {
       res.append(c)
-    }
-    for ((x, y, n) <- pointsWithCount) {
-      println("test", y, res(0) + x * res(1))
     }
     res.toList
   }
