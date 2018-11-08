@@ -340,7 +340,7 @@ object Utils {
         }
 
         // 非直接下载 sdk
-        else if ((adclass.toString.length > 3 && adclass.toString.substring(0, 3).toInt == 100) && client_type == "NATIVESDK") {
+        else if ((adclass.toString.length > 3 && adclass.toString.substring(0, 3).toInt == 100) && (client_type == "NATIVESDK" || client_type == "JSSDK")) {
           label_type = 5
           if (conversion_sdk_download > 0) {
             active_js_ldy_download += 1
