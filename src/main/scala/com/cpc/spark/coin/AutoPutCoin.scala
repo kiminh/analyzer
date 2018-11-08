@@ -165,19 +165,17 @@ object AutoPutCoin {
 
         Nth.write.mode("overwrite").insertInto(coinTable)
 
+
+
         //保存到PB文件
 
         val autoCoinListBuffer = scala.collection.mutable.ListBuffer[AutoCoin]()
 
-        Nth.foreachPartition(x => {
-            
-            x.toList.foreach(coin => {
-                autoCoinListBuffer += AutoCoin(
-                    ideaid = coin.ideaid,
-                    label2ExpCvr = coin.label_exp_cvr,
-                    apiExpCvr = coin.api_exp_cvr)
-
-            })
+        Nth.collect().foreach(coin => {
+            autoCoinListBuffer += AutoCoin(
+                ideaid = coin.ideaid,
+                label2ExpCvr = coin.label_exp_cvr,
+                apiExpCvr = coin.api_exp_cvr)
         })
 
         val autoCoinList = autoCoinListBuffer.toArray
