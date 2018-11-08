@@ -36,7 +36,7 @@ object OcpcSampleHourlyV1 {
          |        and adsrc = 1
          |        and adslot_type in (1,2,3)
          |      ) a
-         |inner join
+         |left join
          |      (
          |        select searchid, label2
          |        from dl_cpc.ml_cvr_feature_v1
@@ -70,6 +70,8 @@ object OcpcSampleHourlyV1 {
 
     // save data
     result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track_label2")
+
+    result.show(10)
 
 
 

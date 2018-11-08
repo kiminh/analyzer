@@ -1,0 +1,231 @@
+package com.cpc.spark.ocpc
+
+import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
+import org.apache.spark.sql.functions._
+
+object OcpcDailyReport {
+  def main(args: Array[String]): Unit = {
+    val spark = SparkSession
+      .builder()
+      .appName("OcpcDailyReport")
+      .enableHiveSupport()
+      .getOrCreate()
+
+    val date = args(0).toString
+
+//    val rawCompleteData = getCompleteRawTable(date, spark)
+    getDailyReport(date, spark)
+
+  }
+
+  def getCompleteRawTable(date: String, spark: SparkSession): DataFrame = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    a.*,
+         |    b.iscvr
+         |FROM
+         |    (select
+         |        uid,
+         |        timestamp,
+         |        searchid,
+         |        userid,
+         |        ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
+         |        ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |        isclick,
+         |        isshow,
+         |        ideaid,
+         |        exptags,
+         |        price,
+         |        ext_int['bid_ocpc'] as bid_ocpc,
+         |        ext_int['is_ocpc'] as is_ocpc,
+         |        ext_string['ocpc_log'] as ocpc_log,
+         |        hour
+         |    from
+         |        dl_cpc.cpc_union_log
+         |    WHERE
+         |        `date` = '$date'
+         |    and
+         |        media_appsid  in ("80000001", "80000002")
+         |    and
+         |        ext['antispam'].int_value = 0
+         |    and adsrc = 1
+         |    and adslot_type in (1,2,3)
+         |    and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
+         |    AND ext_int['is_ocpc']=1
+         |    and ext_string['ocpc_log'] is not null
+         |    and ext_string['ocpc_log'] != '') a
+         |left outer join
+         |    (
+         |        select
+         |            searchid,
+         |            label2 as iscvr
+         |        from dl_cpc.ml_cvr_feature_v1
+         |        WHERE `date` = '$date'
+         |    ) b on a.searchid = b.searchid
+       """.stripMargin
+    println(sqlRequest)
+
+    val rawData = spark.sql(sqlRequest)
+    println("####### rawData ######################")
+    rawData.show(10)
+
+    rawData.write.mode("overwrite").saveAsTable("test.test_ocpc_complete_raw_table")
+
+    rawData
+  }
+
+  def getDailyReport(date: String, spark: SparkSession): Unit ={
+    // 读取基础表
+    val sqlRequest0 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  ideaid,
+         |  exptags,
+         |  uid,
+         |  bid_ocpc,
+         |  ocpc_log,
+         |  price,
+         |  isshow,
+         |  isclick,
+         |  iscvr,
+         |  exp_cvr,
+         |  hour
+         |FROM
+         |  dl_cpc.ocpc_result_unionlog_table_bak
+         |WHERE
+         |    `date`='$date'
+       """.stripMargin
+
+    println(sqlRequest0)
+    val baseData = spark.sql(sqlRequest0).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+    baseData.createOrReplaceTempView("base_table")
+
+    // 读取unionlog和cvr历史数据进行统计
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    AVG(bid_ocpc) as cpa_given,
+         |    sum(case WHEN isclick == 1 then price else 0 end)/sum(iscvr) as cpa_real,
+         |    sum(CASE WHEN isclick=1 then exp_cvr else 0 end) * 1.0/SUM(isclick) as pcvr,
+         |    round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
+         |    round(sum(case WHEN isclick == 1 then price else 0 end)*10/count(distinct uid),3) as arpu,
+         |    sum(isclick) * 1.0 / sum(isshow) as ctr,
+         |    sum(iscvr) * 1.0 / sum(isclick) as click_cvr,
+         |    sum(iscvr) * 1.0 / sum(isshow) as show_cvr,
+         |    AVG(price) as price,
+         |    sum(case WHEN isclick == 1 then price else 0 end) as total_cost,
+         |    COUNT(isshow) as show_cnt,
+         |    SUM(isclick) as ctr_cnt,
+         |    SUM(iscvr) as cvr_cnt
+         |FROM
+         |    base_table
+         |GROUP BY
+         |    ideaid
+       """.stripMargin
+
+    println(sqlRequest1)
+    val data1 = spark.sql(sqlRequest1)
+
+    // 读取pb历史数据进行统计
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |    searchid,
+         |    ideaid,
+         |    ocpc_log_dict['kvalue'] as kvalue
+         |FROM
+         |    base_table
+       """.stripMargin
+
+    println(sqlRequest2)
+    val kvalueData = spark.sql(sqlRequest2)
+
+    val data2 = kvalueData
+      .groupBy("ideaid")
+      .agg(
+        avg(col("kvalue")).alias("avg_k"),
+        stddev(col("kvalue")).alias("stddev_k"),
+        count(col("kvalue")).alias("k_cnt"))
+
+    val resultDF = data1
+      .join(data2, Seq("ideaid"), "left_outer")
+      .select("ideaid", "cpa_given", "cpa_real", "pcvr", "cpm", "arpu", "ctr", "click_cvr", "show_cvr", "price", "total_cost", "show_cnt", "ctr_cnt", "cvr_cnt", "avg_k", "stddev_k", "k_cnt")
+      .withColumn("date", lit(date))
+
+
+//    data1.createOrReplaceTempView("statistic_data1")
+//    data2.createOrReplaceTempView("statistic_data2")
+//
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |    t1.*,
+//         |    t2.avg_k,
+//         |    t2.stddev_k,
+//         |    t2.k_cnt,
+//         |    '$date' as date
+//         |FROM
+//         |    statistic_data1 as t1
+//         |LEFT JOIN
+//         |    statistic_data2 as t2
+//         |ON
+//         |    t1.ideaid=t2.ideaid
+//       """.stripMargin
+//
+//    println(sqlRequest)
+//    val resultDF = spark.sql(sqlRequest)
+
+
+    println("############# resultDF ###############")
+    resultDF.show(10)
+
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_daily_report")
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_daily_report")
+  }
+
+  def getKcurve(date: String, spark: SparkSession) ={
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    k_value,
+         |    hour
+         |FROM
+         |    dl_cpc.ocpc_pb_result_table_v2
+         |WHERE
+         |    `date`='$date'
+       """.stripMargin
+    println(sqlRequest1)
+    val kvalueData = spark.sql(sqlRequest1)
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    cpa_given,
+         |    cpa_history as cpa_real,
+         |    ratio as cpa_ratio,
+         |    hour
+         |FROM
+         |    dl_cpc.ocpc_cpa_given_history_ratio
+         |WHERE
+         |    `date`='$date'
+       """.stripMargin
+    println(sqlRequest2)
+    val ratioData = spark.sql(sqlRequest2)
+
+    val resultData = kvalueData
+      .join(ratioData, Seq("ideaid", "hour"))
+      .select("ideaid", "k_value", "cpa_given", "cpa_real", "cpa_ratio", "hour")
+      .withColumn("date", lit(date))
+
+    resultData.write.mode("overwrite").insertInto("dl_cpc.ocpc_k_curve_daily")
+
+  }
+
+}
