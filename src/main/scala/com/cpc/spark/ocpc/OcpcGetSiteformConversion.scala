@@ -13,7 +13,7 @@ object OcpcGetSiteformConversion {
     val user = "cpcrw"
     val passwd = "zZdlz9qUB51awT8b"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select ideaid, searchid, modified_time from adv_test.site_form_data limit 10) as tmp"
+    val table = "(select idea_id as ideaid, searchid, modified_time from adv_test.site_form_data limit 10) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
