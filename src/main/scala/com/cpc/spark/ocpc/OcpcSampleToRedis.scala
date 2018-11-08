@@ -443,7 +443,7 @@ object OcpcSampleToRedis {
       val caliValue = record.getAs[Double]("cali_value")
       val cvr3Cali = record.getAs[Double]("cvr3_cali")
       val cvr3Cnt = record.getAs[Long]("cvr3_cnt")
-      
+
       if (cnt % 500 == 0) {
         println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali, cvr3Cnt:$cvr3Cnt")
       }
