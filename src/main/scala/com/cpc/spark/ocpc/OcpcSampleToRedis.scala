@@ -240,12 +240,15 @@ object OcpcSampleToRedis {
 
     userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
 
-    userFinalData2
-      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
-      .withColumn("date", lit(end_date))
-      .withColumn("hour", lit(hour))
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
+
+
+
+//    userFinalData2
+//      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
+//      .withColumn("date", lit(end_date))
+//      .withColumn("hour", lit(hour))
+//      .write.mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
 
 
 
@@ -263,7 +266,7 @@ object OcpcSampleToRedis {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case when a.k_value is null then 0.694 else a.k_value end) as k_value,
+         |  (case when a.k_value is null then 0.694 else a.k_value end) as raw_k_value,
          |  b.hpcvr,
          |  (case when c.cali_value is null or c.cali_value=0 then 1.0 else c.cali_value end) as cali_value,
          |  (case when d.cali_value is null or d.cali_value=0 then 1.0 else d.cali_value end) as cvr3_cali,
@@ -292,7 +295,21 @@ object OcpcSampleToRedis {
 
     println(sqlRequest4)
 
-    val finalData = spark.sql(sqlRequest4)
+    val regressionK = getRegressionK(end_date, hour, spark)
+
+    val finalData1 = spark
+      .sql(sqlRequest4)
+      .join(regressionK, Seq("ideaid"), "left_outer")
+      .withColumn("k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
+      .withColumn("ctr_cnt", when(col("flag").isNotNull && col("regression_k_value")>0, col("cvr_cnt")).otherwise(col("ctr_cnt")))
+      .withColumn("hpcvr", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("hpcvr")))
+      .withColumn("cali_value", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("cali_value")))
+      .withColumn("cvr3_cali", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("cvr3_cali")))
+
+    finalData1.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete")
+
+
+    val finalData = finalData1.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
 
     finalData.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
 
@@ -443,7 +460,7 @@ object OcpcSampleToRedis {
       val caliValue = record.getAs[Double]("cali_value")
       val cvr3Cali = record.getAs[Double]("cvr3_cali")
       val cvr3Cnt = record.getAs[Long]("cvr3_cnt")
-      
+
       if (cnt % 500 == 0) {
         println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali, cvr3Cnt:$cvr3Cnt")
       }
@@ -545,6 +562,7 @@ object OcpcSampleToRedis {
   }
 
   def checkAdType(endDate: String, hour: String, spark: SparkSession): DataFrame ={
+    // TODO 从广告更新表中更新广告类型
     // 计算时间区间
     val threshold = 20
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
@@ -579,6 +597,7 @@ object OcpcSampleToRedis {
   }
 
   def filterDataByType(rawData: DataFrame, date:String, hour: String, spark:SparkSession): DataFrame ={
+    // TODO 使广告行业的ctr与cvr的替换更加平滑
     val typeData = checkAdType(date, hour, spark)
 
     val joinData = rawData
@@ -644,6 +663,53 @@ object OcpcSampleToRedis {
 
     resultDF
 
+  }
+
+  def getRegressionK(date: String, hour: String, spark: SparkSession) = {
+    import spark.implicits._
+
+    val filename = "/user/cpc/wangjun/ocpc_linearregression_k.txt"
+    val data = spark.sparkContext.textFile(filename)
+
+
+    val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+    rawRDD.foreach(println)
+
+    val rawDF = rawRDD.toDF("ideaid", "flag").distinct()
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  k_ratio2,
+         |  k_ratio3
+         |FROM
+         |  dl_cpc.ocpc_v2_k
+         |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+       """.stripMargin
+
+    val regressionK = spark.sql(sqlRequest)
+
+    val cvr3List = spark
+      .table("test.ocpc_idea_update_time")
+      .filter("conversion_goal=2")
+      .withColumn("cvr3_flag", lit(1))
+      .select("ideaid", "cvr3_flag")
+      .distinct()
+
+    val resultDF = rawDF
+      .join(regressionK, Seq("ideaid"), "left_outer")
+      .select("ideaid", "k_ratio2", "k_ratio3", "flag")
+      .join(cvr3List, Seq("ideaid"), "left_outer")
+      .select("ideaid", "flag", "k_ratio2", "k_ratio3", "cvr3_flag")
+      .withColumn("regression_k_value", when(col("cvr3_flag").isNull, col("k_ratio2")).otherwise(col("k_ratio3")))
+
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_test_k_regression_list")
+
+    resultDF
 
 
   }

@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Utils.getTimeRangeSql
-import com.cpc.spark.ocpc.OcpcUtils.{getActData, getTimeRangeSql2}
+import com.cpc.spark.ocpc.OcpcUtils._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
 import com.cpc.spark.udfs.Udfs_wj._
@@ -23,7 +23,7 @@ object OcpcPIDwithCPA {
     // TODO ideaid与userid的名称
     if (onDuty == 1) {
       val result = calculateKv3(date, hour, spark)
-//      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+//      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_bak")
       result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
     } else {
       println("############## entering test stage ###################")
@@ -563,6 +563,7 @@ object OcpcPIDwithCPA {
     resultDF
   }
 
+
   def getAvgK(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
     /**
       * 计算修正前的k基准值
@@ -734,9 +735,11 @@ object OcpcPIDwithCPA {
 
     val resultDF = rawData
       .select("ideaid", "adclass", "updated_k")
-      .withColumn("k_value", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
-      .select("ideaid", "adclass", "k_value", "updated_k")
-
+      .withColumn("new_k_value", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
+      .select("ideaid", "adclass", "new_k_value", "updated_k")
+      .join(cvr3Data, Seq("ideaid"), "left_outer")
+      .select("ideaid", "adclass", "new_k_value", "updated_k", "flag")
+      .withColumn("k_value", when(col("flag").isNotNull, col("new_k_value") / 2.0).otherwise(col("new_k_value")))
 
 
     // TODO 删除临时表
@@ -874,7 +877,7 @@ object OcpcPIDwithCPA {
   def getAPIcvr3V3(date: String, hour: String, spark: SparkSession) :DataFrame = {
     val cvr3List = getActivationData(date, hour, spark)
 
-    val cvr3Data = getActData(date, hour, 24, spark)
+    val cvr3Data = getActData(date, hour, 48, spark)
 
     val rawData = cvr3Data
       .groupBy("ideaid", "adclass")
@@ -883,10 +886,20 @@ object OcpcPIDwithCPA {
         sum(col("cvr_cnt")).alias("cvr3_cvr_cnt"))
       .select("ideaid", "adclass", "cvr3_cost", "cvr3_cvr_cnt")
 
+
+
+    val historyData = getCompleteHistoryData(date, hour, 48, spark)
+    val costData = historyData
+      .groupBy("ideaid", "adclass")
+      .agg(sum(col("cost")).alias("cost"))
+      .select("ideaid", "adclass", "cost")
+
     val resultDF = cvr3List
-      .join(rawData, Seq("ideaid"), "left_outer")
-      .select("ideaid", "adclass", "cvr3_cost", "cvr3_cvr_cnt", "cpa_given", "flag")
-      .withColumn("cpa_real", col("cvr3_cost") / col("cvr3_cvr_cnt"))
+      .join(costData, Seq("ideaid"), "left_outer")
+      .select("ideaid", "adclass", "cost", "cpa_given", "flag")
+      .join(rawData, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "adclass", "cost", "cvr3_cost", "cvr3_cvr_cnt", "cpa_given", "flag")
+      .withColumn("cpa_real", col("cost") / col("cvr3_cvr_cnt"))
       .withColumn("cpa_ratio", col("cpa_given") / col("cpa_real"))
       .withColumn("cpa_ratio_cvr3", when(col("cpa_ratio").isNull, 1).otherwise(col("cpa_ratio")))
 
