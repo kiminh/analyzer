@@ -893,9 +893,9 @@ object OcpcPIDwithCPA {
       .select("ideaid", "adclass", "cost")
 
     val resultDF = cvr3List
-      .join(rawData, Seq("ideaid"), "left_outer")
-      .select("ideaid", "adclass", "cvr3_cost", "cvr3_cvr_cnt", "cpa_given", "flag")
-      .join(costData, Seq("ideaid", "adclass"))
+      .join(costData, Seq("ideaid"), "left_outer")
+      .select("ideaid", "adclass", "cost")
+      .join(rawData, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "cost", "cvr3_cost", "cvr3_cvr_cnt", "cpa_given", "flag")
       .withColumn("cpa_real", col("cost") / col("cvr3_cvr_cnt"))
       .withColumn("cpa_ratio", col("cpa_given") / col("cpa_real"))
