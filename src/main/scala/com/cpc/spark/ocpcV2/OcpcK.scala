@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Dataset, Row, SparkSession}
 
 import scala.collection.mutable
 import org.apache.spark.sql.functions._
@@ -65,31 +65,47 @@ object OcpcK {
 
     println(statSql)
 
-    val tablename = "test.djq_ocpc"
+    val tablename = "dl_cpc.cpc_ocpc_v2_middle"
     spark.sql(statSql)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write.mode("overwrite").partitionBy("date", "hour").saveAsTable(tablename)
 
-    val res = spark.table(tablename).where("ratio2 is not null")
-      .withColumn("str", concat_ws(" ", col("k"), col("ratio2"), col("clickCnt")))
+    val ratio1Data = getKWithRatioType(spark, tablename, "ratio1", date, hour)
+    val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
+
+    val res = ratio1Data.join(ratio2Data, Seq("ideaid", "date", "hour"), "outer")
+    res.write.partitionBy("date", "hour").mode("overwrite").saveAsTable("dl_cpc.ocpc_v2_k")
+
+  }
+
+  def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
+
+    val res = spark.table(tablename).where(s"$ratioType is not null")
+      .withColumn("str", concat_ws(" ", col("k"), col(s"$ratioType"), col("clickCnt")))
       .groupBy("ideaid")
       .agg(collect_set("str").as("liststr"))
       .select("ideaid", "liststr").collect()
 
     val targetK = 0.95
+    var resList = new mutable.ListBuffer[(String, Double, String, String)]()
     for (row <- res) {
-      val ideaid = row(0).toString.toInt
+      val ideaid = row(0).toString
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
         val y = x.trim.split("\\s+")
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
       val k = (targetK - coffList(0)) / coffList(1)
-      val realk = k * 5.0 / 100.0
+      val realk: Double = k * 5.0 / 100.0
       println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk)
+      if (realk > 0) {
+        resList.append((ideaid, realk, date, hour))
+      }
     }
-
+    val data = spark.createDataFrame(resList)
+      .toDF("ideaid", "k", "date", "hour")
+    data
   }
 
   def fitPoints(pointsWithCount: List[(Double, Double, Int)]): List[Double] = {
