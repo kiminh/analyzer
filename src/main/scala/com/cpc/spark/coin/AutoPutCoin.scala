@@ -195,12 +195,12 @@ object AutoPutCoin {
               (x: List[Int], y: List[Int]) => x ::: y)
           .mapValues(x => {
               val sorted = x.sorted
-              val index = (sorted.length * p).toInt - 1
-              val i5th = (sorted.length * 0.5).toInt - 1
-              val i6th = (sorted.length * 0.6).toInt - 1
-              val i7th = (sorted.length * 0.7).toInt - 1
-              val i8th = (sorted.length * 0.8).toInt - 1
-              val i9th = (sorted.length * 0.9).toInt - 1
+              val index = (sorted.length * p).toInt
+              val i5th = (sorted.length * 0.5).toInt
+              val i6th = (sorted.length * 0.6).toInt
+              val i7th = (sorted.length * 0.7).toInt
+              val i8th = (sorted.length * 0.8).toInt
+              val i9th = (sorted.length * 0.9).toInt
               (sorted(index), sorted(0), sorted(sorted.length - 1), sorted.length,
                 sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
               //x(index)
