@@ -23,8 +23,8 @@ object OcpcPIDwithCPA {
     // TODO ideaid与userid的名称
     if (onDuty == 1) {
       val result = calculateKv3(date, hour, spark)
+      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_bak")
 //      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
-      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
@@ -844,7 +844,7 @@ object OcpcPIDwithCPA {
     println(sqlRequest)
     val cpaRatioCvr2 = spark.sql(sqlRequest)
 
-    val cpaRatioCvr3 = getAPIcvr3V3(date, hour, spark)
+    val cpaRatioCvr3 = getAPIcvr3V3(historyData, date, hour, spark)
 
     val cpaRatio = cpaRatioCvr2
       .join(cpaRatioCvr3, Seq("ideaid", "adclass"), "left_outer")
@@ -871,7 +871,7 @@ object OcpcPIDwithCPA {
   }
 
   //TODO 给api回传模型做反馈机制
-  def getAPIcvr3V3(date: String, hour: String, spark: SparkSession) :DataFrame = {
+  def getAPIcvr3V3(historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame = {
     val cvr3List = getActivationData(date, hour, spark)
 
     val cvr3Data = getActData(date, hour, 24, spark)
@@ -883,10 +883,17 @@ object OcpcPIDwithCPA {
         sum(col("cvr_cnt")).alias("cvr3_cvr_cnt"))
       .select("ideaid", "adclass", "cvr3_cost", "cvr3_cvr_cnt")
 
+    val costData = historyData
+      .filter("isclick=1")
+      .groupBy("ideaid", "adclass").agg(sum(col("price")).alias("cost"))
+      .select("ideaid", "adclass", "cost")
+
     val resultDF = cvr3List
       .join(rawData, Seq("ideaid"), "left_outer")
       .select("ideaid", "adclass", "cvr3_cost", "cvr3_cvr_cnt", "cpa_given", "flag")
-      .withColumn("cpa_real", col("cvr3_cost") / col("cvr3_cvr_cnt"))
+      .join(costData, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "adclass", "cost", "cvr3_cvr_cnt", "cpa_given", "flag")
+      .withColumn("cpa_real", col("cost") / col("cvr3_cvr_cnt"))
       .withColumn("cpa_ratio", col("cpa_given") / col("cpa_real"))
       .withColumn("cpa_ratio_cvr3", when(col("cpa_ratio").isNull, 1).otherwise(col("cpa_ratio")))
 
