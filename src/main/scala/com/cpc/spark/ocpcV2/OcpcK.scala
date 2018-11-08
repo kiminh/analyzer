@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Dataset, Row, SparkSession}
 
 import scala.collection.mutable
 import org.apache.spark.sql.functions._
@@ -45,7 +45,8 @@ object OcpcK {
       s"""
          |select
          |  ideaid,
-         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) as k,
+         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) as k_ratio2,
+         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5) as k_ratio3,
          |  ocpc_log_dict['cpagiven'] as cpagiven,
          |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0)) as cpa2,
          |  sum(if(isclick=1,price,0))/sum(COALESCE(label3,0)) as cpa3,
@@ -60,31 +61,55 @@ object OcpcK {
          |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition) b on a.searchid = b.searchid
          |  left outer join
          |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $dtCondition) c on a.searchid = c.searchid
-         |group by ideaid, round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) , ocpc_log_dict['cpagiven']
+         |group by ideaid,
+         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) ,
+         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5),
+         |  ocpc_log_dict['cpagiven']
       """.stripMargin
 
     println(statSql)
 
-    val tablename = "test.djq_ocpc"
-    spark.sql(statSql).write.mode("overwrite").saveAsTable(tablename)
+    val tablename = "dl_cpc.cpc_ocpc_v2_middle"
+    spark.sql(statSql)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite").partitionBy("date", "hour").saveAsTable(tablename)
 
-    val res = spark.table(tablename).where("ratio2 is not null")
-      .withColumn("str", concat_ws(" ", col("k"), col("ratio2"), col("clickCnt")))
+    val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
+    val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
+
+    val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
+    res.write.partitionBy("date", "hour").mode("overwrite").saveAsTable("dl_cpc.ocpc_v2_k")
+
+  }
+
+  def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
+
+    val res = spark.table(tablename).where(s"$ratioType is not null")
+      .withColumn("str", concat_ws(" ", col(s"k_$ratioType"), col(s"$ratioType"), col("clickCnt")))
       .groupBy("ideaid")
       .agg(collect_set("str").as("liststr"))
       .select("ideaid", "liststr").collect()
 
+    val targetK = 0.95
+    var resList = new mutable.ListBuffer[(String, Double, String, String)]()
     for (row <- res) {
-      val ideaid = row(0).toString.toInt
+      val ideaid = row(0).toString
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
         val y = x.trim.split("\\s+")
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
-      val k = (1.0 - coffList(0)) / coffList(1)
-      println("ideaid " + ideaid, "coff " + coffList, "target k: " + k)
+      val k = (targetK - coffList(0)) / coffList(1)
+      val realk: Double = k * 5.0 / 100.0
+      println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk)
+      if (realk > 0) {
+        resList.append((ideaid, realk, date, hour))
+      }
     }
-
+    val data = spark.createDataFrame(resList)
+      .toDF("ideaid", s"k_$ratioType", "date", "hour")
+    data
   }
 
   def fitPoints(pointsWithCount: List[(Double, Double, Int)]): List[Double] = {
@@ -95,7 +120,7 @@ object OcpcK {
         obs.add(x, y);
       }
       count = count + n
-      println("sample", x, y)
+      println("sample", x, y, n)
     }
 
     for (i <- 0 to count / 5) {
