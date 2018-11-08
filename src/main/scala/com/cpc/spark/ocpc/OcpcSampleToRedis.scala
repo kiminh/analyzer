@@ -301,6 +301,10 @@ object OcpcSampleToRedis {
       .sql(sqlRequest4)
       .join(regressionK, Seq("ideaid"), "left_outer")
       .withColumn("k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
+      .withColumn("ctr_cnt", when(col("flag").isNotNull && col("regression_k_value")>0, col("cvr_cnt")).otherwise(col("ctr_cnt")))
+      .withColumn("hpcvr", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("hpcvr")))
+      .withColumn("cali_value", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("cali_value")))
+      .withColumn("cvr3_cali", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("cvr3_cali")))
 
     finalData1.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete")
 
