@@ -13,7 +13,20 @@ object OcpcGetSiteformConversion {
     val user = "cpcrw"
     val passwd = "zZdlz9qUB51awT8b"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select idea_id as ideaid, search_id as searchid, modified_time from adv_test.site_form_data limit 10) as tmp"
+    val table =
+      s"""
+         |select
+         |    idea_id,
+         |    search_id,
+         |    modified_time,
+         |    DATE(modified_time) as date,
+         |    EXTRACT(HOUR FROM modified_time) as hour
+         |from adv_test.site_form_data
+         |where
+         |    DATE(modified_time)>'$date'
+         |AND
+         |    EXTRACT(HOUR FROM modified_time)='$hour'
+       """.stripMargin
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -22,6 +35,7 @@ object OcpcGetSiteformConversion {
       .option("password", passwd)
       .option("dbtable", table)
       .load()
+
 
     data.show(10)
 
