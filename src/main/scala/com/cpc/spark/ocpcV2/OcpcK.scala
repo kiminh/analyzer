@@ -73,13 +73,14 @@ object OcpcK {
     spark.sql(statSql)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .write.mode("overwrite").partitionBy("date", "hour").insertInto(tablename)
+      .write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
-    res.write.partitionBy("date", "hour").mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
+        .select("ideaid", "k_ratio2", "k_ratio3", "date", "hour")
+    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
 
   }
 
