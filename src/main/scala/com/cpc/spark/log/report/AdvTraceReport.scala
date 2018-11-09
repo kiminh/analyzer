@@ -24,9 +24,9 @@ case class AdvTraceReport(
 
   def sum(o: AdvTraceReport): AdvTraceReport = {
     this.copy(
-      total_num = total_num + o.total_num,
-      impression = impression + o.impression,
-      click = click + o.click
+      total_num = this.total_num + o.total_num,
+      impression = this.impression + o.impression,
+      click = this.click + o.click
     )
   }
 

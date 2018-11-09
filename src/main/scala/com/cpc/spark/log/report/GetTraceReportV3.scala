@@ -72,8 +72,7 @@ object GetTraceReportV3 {
     val traceData = traceReport1.map {
       x =>
         (x.key, x)
-    }.reduceByKey((x, y) => x)
-      .reduceByKey((x, y) => x.sum(y))
+    }.reduceByKey((x, y) => x.sum(y))
       .map(x => x._2)
 
     /*
@@ -90,9 +89,7 @@ object GetTraceReportV3 {
       """.stripMargin.format(date, hour, date, hour))
   */
 
-    clearReportHourData("report_trace", date, hour)
-    clearReportHourData2("report_trace", date, hour)
-    writeToTraceReport(ctx, traceData)
+    writeToTraceReport(ctx, traceData, date, hour)
 
 
     println("GetTraceReport_done")
@@ -324,12 +321,14 @@ object GetTraceReportV3 {
 
   }
 
-  def writeToTraceReport(ctx: SparkSession, toResult: RDD[AdvTraceReport]): Unit = {
+  def writeToTraceReport(ctx: SparkSession, toResult: RDD[AdvTraceReport], date: String, hour: String): Unit = {
+    clearReportHourData("report_trace", date, hour)
     ctx.createDataFrame(toResult)
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_trace", mariadbProp)
 
+    clearReportHourData2("report_trace", date, hour)
     ctx.createDataFrame(toResult)
       .write
       .mode(SaveMode.Append)
