@@ -67,7 +67,7 @@ object OcpcGetBudget {
       .load()
 
     val base = data.select("planid", "ideaid", "least_xbalance", "bcost")
-    
+
     base
 
   }
