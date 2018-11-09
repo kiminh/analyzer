@@ -254,6 +254,7 @@ object OcpcSampleToRedis {
     val cvr3Ideaid = spark
       .table("test.ocpc_idea_update_time")
       .select("ideaid", "conversion_goal")
+      .distinct()
 
     val finalData1 = spark
       .sql(sqlRequest4)
@@ -272,7 +273,7 @@ object OcpcSampleToRedis {
 
     val finalData = finalData1.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
 //
-//    finalData.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
+    finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
 //
 //    finalData
 //      .withColumn("date", lit(end_date))
@@ -555,8 +556,10 @@ object OcpcSampleToRedis {
 //    val typeData = rawData.filter("seq=1").select("ideaid", "adclass", "type_flag")
 
     val typeData = spark
-      .sql("test.ocpc_idea_update_time")
+      .table("test.ocpc_idea_update_time")
       .withColumn("type_flag", when(col("conversion_goal")===2, 1).otherwise(0)).select("ideaid", "type_flag")
+
+    typeData.write.mode("overwrite").saveAsTable("test.ocpc_idea_type_20181109")
 
     typeData
   }
