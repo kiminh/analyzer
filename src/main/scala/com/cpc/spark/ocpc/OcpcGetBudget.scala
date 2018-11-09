@@ -11,7 +11,7 @@ object OcpcGetBudget {
 
     val result = getBudget(date, hour, spark)
     result.show(10)
-    result.write.mode("overwrite").saveAsTable("test.ocpc_check_budget_table")
+    result.write.mode("overwrite").saveAsTable("test.ocpc_get_user_ideaid_budget")
   }
 
   def getBudget(date: String, hour: String, spark: SparkSession) :DataFrame ={
@@ -66,6 +66,8 @@ object OcpcGetBudget {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .select("planid", "least_xbalance", "bcost", "date", "hour")
+
+//    base.write.mode("overwrite").saveAsTable("test.ocpc_get_user_ideaid_budget")
 
     base
 
