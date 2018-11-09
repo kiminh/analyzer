@@ -11,7 +11,7 @@ object OcpcGetBudget {
 
     val result = getBudget(date, hour, spark)
     result.show(10)
-    result.write.mode("overwrite").saveAsTable("test.ocpc_get_user_ideaid_budget")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_ideaid_budget")
   }
 
   def getBudget(date: String, hour: String, spark: SparkSession) :DataFrame ={
