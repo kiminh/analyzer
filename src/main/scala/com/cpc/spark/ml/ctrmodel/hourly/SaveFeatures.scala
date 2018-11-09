@@ -1,13 +1,16 @@
 package com.cpc.spark.ml.ctrmodel.hourly
 
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import com.cpc.spark.log.parser.TraceLog
 import com.cpc.spark.ml.common.Utils
 import org.apache.spark.rdd.RDD
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
-import scala.collection.mutable.Map
+import scala.collection.mutable.{ListBuffer, Map}
 import scala.sys.process._
 
 /**
@@ -247,7 +250,7 @@ object SaveFeatures {
          |         ) b
          |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
          | where t2.id is null
-       """.stripMargin.format(date, hour, yesterday, date, hour))
+        """.stripMargin.format(date, hour, yesterday, date, hour))
       .rdd
       .map {
         x =>
@@ -273,26 +276,41 @@ object SaveFeatures {
 
 
     //用户Api回传数据(如已经安装但未激活) cvr计算
+    //    val userApiBackRDD = spark.sql(
+    //      s"""
+    //         |select   b.trace_type as flag1
+    //         |        ,a.searchid
+    //         |        ,a.uid
+    //         |        ,a.userid
+    //         |        ,a.ideaid
+    //         |        ,b.trace_type
+    //         |from (select * from dl_cpc.cpc_union_log
+    //         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "") a
+    //         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
+    //         |        on a.userid = t2.id
+    //         |    left join
+    //         |        (select *
+    //         |            from dl_cpc.cpc_union_trace_log
+    //         |            where `date` = "%s" and `hour` = "%s"
+    //         |         ) b
+    //         |    on a.searchid=b.searchid
+    //         | where t2.id is null
+    //       """.stripMargin.format(date, hour, yesterday, date, hour))
+
     val userApiBackRDD = spark.sql(
-      s"""
-         |select   b.trace_type as flag1
-         |        ,a.searchid
-         |        ,a.uid
-         |        ,a.userid
-         |        ,a.ideaid
-         |        ,b.trace_type
-         |from (select * from dl_cpc.cpc_union_log
-         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "") a
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
-         |        on a.userid = t2.id
-         |    left join
-         |        (select *
-         |            from dl_cpc.cpc_union_trace_log
-         |            where `date` = "%s" and `hour` = "%s"
-         |         ) b
-         |    on a.searchid=b.searchid
-         | where t2.id is null
-       """.stripMargin.format(date, hour, yesterday, date, hour))
+      """
+        |select tr.trace_type as flag1
+        |      ,tr.searchid
+        |      ,un.userid
+        |      ,un.uid
+        |      ,un.ideaid
+        |      ,tr.trace_type as trace_type
+        |from dl_cpc.logparsed_cpc_trace_minute as tr
+        |left join
+        |(select searchid, userid, planid, uid, ideaid, adslot_type, isclick from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
+        |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
+        |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
+      """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour))
       .rdd
       .map {
         x =>
@@ -454,6 +472,27 @@ object SaveFeatures {
     s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !
 
   }
+
+  def get3DaysBefore(date: String, hour: String): String = {
+    val dateHourList = ListBuffer[String]()
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    val cal = Calendar.getInstance()
+    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
+    for (t <- 0 to 72) {
+      if (t > 0) {
+        cal.add(Calendar.HOUR, -1)
+      }
+      val formatDate = dateFormat.format(cal.getTime)
+      val datee = formatDate.substring(0, 10)
+      val hourr = formatDate.substring(11, 13)
+
+      val dateL = s"(`date`='$datee' and `hour`='$hourr')"
+      dateHourList += dateL
+    }
+
+    "(" + dateHourList.mkString(" or ") + ")"
+  }
+
 }
 
 
