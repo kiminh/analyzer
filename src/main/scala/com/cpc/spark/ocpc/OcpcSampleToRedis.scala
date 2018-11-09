@@ -268,7 +268,8 @@ object OcpcSampleToRedis {
       .withColumn("k_value", when(col("conversion_goal")===2, col("new_k_value")*col("cvr3_cali")).otherwise(col("new_k_value") * col("cali_value")))
 
 
-    finalData1.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete")
+    // TODO bak表
+    finalData1.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
 
 
     val finalData = finalData1.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
