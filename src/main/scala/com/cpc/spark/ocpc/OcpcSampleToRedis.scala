@@ -31,7 +31,6 @@ object OcpcSampleToRedis {
     // 计算日期周期
     val end_date = args(0)
     val hour = args(1)
-    val threshold = 20
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val date = sdf.parse(end_date)
     val calendar = Calendar.getInstance
@@ -198,12 +197,12 @@ object OcpcSampleToRedis {
 
 
 
-//    userFinalData2
-//      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
-//      .withColumn("date", lit(end_date))
-//      .withColumn("hour", lit(hour))
-//      .write.mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
+    userFinalData2
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
+      .withColumn("date", lit(end_date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
 
 
 
@@ -273,14 +272,14 @@ object OcpcSampleToRedis {
 
 
     val finalData = finalData1.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
-//
+
     finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
-//
-//    finalData
-//      .withColumn("date", lit(end_date))
-//      .withColumn("hour", lit(hour))
-//      .write.mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
+
+    finalData
+      .withColumn("date", lit(end_date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
 
     // 保存pb文件
     savePbPack(finalData)
