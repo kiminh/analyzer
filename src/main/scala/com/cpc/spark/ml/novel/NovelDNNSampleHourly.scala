@@ -42,7 +42,7 @@ object NovelDNNSampleHourly {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/wy/dnn_novel/dnntrain-$date-$hour")
+      .save(s"/user/cpc/wy/dnn_novel_v1/dnntrain-$date-$hour")
     train.take(10).foreach(println)
 
     train.sample(withReplacement = false, 0.1).repartition(100)
@@ -50,7 +50,7 @@ object NovelDNNSampleHourly {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/wy/dnn_novel/dnntest-$date-$hour")
+      .save(s"/user/cpc/wy/dnn_novel_v1/dnntest-$date-$hour")
 
     train.unpersist()
   }
