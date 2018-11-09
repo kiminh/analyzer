@@ -81,7 +81,19 @@ object GetTraceReportV3 {
     ).reduceByKey((x, y) => x)
       .map(x => x._2)
 
+    println("traceData: " + traceData)
 
+    clearReportHourData("report_trace", date, hour)
+    ctx.createDataFrame(traceData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadbUrl, "report.report_trace", mariadbProp)
+
+    clearReportHourData2("report_trace", date, hour)
+    ctx.createDataFrame(traceData)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadb_amateur_url, "report.report_trace", mariadb_amateur_prop)
 
     /*
     ctx.createDataFrame(traceData)
@@ -97,7 +109,7 @@ object GetTraceReportV3 {
       """.stripMargin.format(date, hour, date, hour))
   */
 
-    writeToTraceReport(ctx, traceData, date, hour)
+    //writeToTraceReport(ctx, traceData, date, hour)
 
 
     println("GetTraceReport_done")
