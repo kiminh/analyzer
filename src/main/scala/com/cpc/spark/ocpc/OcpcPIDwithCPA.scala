@@ -909,7 +909,7 @@ object OcpcPIDwithCPA {
     finalDF
   }
 
-  def getCurrentBudget(date: String, hour: String, spark: SparkSession) :DataFrame = {
+  def getCurrentBudget(date: String, hour: String, spark: SparkSession) :Unit = {
     val sqlRequest =
       s"""
          |SELECT
