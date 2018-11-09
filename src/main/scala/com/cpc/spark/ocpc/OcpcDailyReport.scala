@@ -260,10 +260,16 @@ object OcpcDailyReport {
        """.stripMargin
 
     val rawData = spark.sql(sqlRequest1)
-    rawData.createOrReplaceTempView("raw_table")
+//    rawData.createOrReplaceTempView("raw_table")
+    rawData.write.mode("overwrite").saveAsTable("test.ocpc_daily_complete_data")
 
-    val ocpcAd = rawData.select("ideaid", "is_api_callback").distinct()
-    ocpcAd.createOrReplaceTempView("ocpc_ad_list")
+    val ocpcAd = spark
+      .table("test.ocpc_daily_complete_data")
+      .select("ideaid", "is_api_callback")
+      .distinct()
+
+    ocpcAd.write.mode("overwrite").saveAsTable("test.ocpc_daily_ad_list")
+//    ocpcAd.createOrReplaceTempView("ocpc_ad_list")
 
     val sqlRequest2 =
       s"""
@@ -281,7 +287,8 @@ object OcpcDailyReport {
        """.stripMargin
 
     val label3Data = spark.sql(sqlRequest2)
-    label3Data.createOrReplaceTempView("label3_data")
+    label3Data.write.mode("overwrite").saveAsTable("test.ocpc_label3_daily_data")
+//    label3Data.createOrReplaceTempView("label3_data")
 
     val sqlRequest3 =
       s"""
@@ -294,12 +301,13 @@ object OcpcDailyReport {
          |    SUM(isclick) as ctr_cnt,
          |    SUM(iscvr) as cvr_cnt
          |FROM
-         |    raw_table
+         |    test.ocpc_daily_complete_data
          |GROUP BY ideaid
        """.stripMargin
 
     val label2Data = spark.sql(sqlRequest3)
-    label2Data.createOrReplaceTempView("label2_data")
+    label2Data.write.mode("overwrite").saveAsTable("test.ocpc_label2_daily_data")
+//    label2Data.createOrReplaceTempView("label2_data")
 
     val sqlRequest4 =
       s"""
@@ -319,11 +327,11 @@ object OcpcDailyReport {
          |    (SELECT
          |        ideaid
          |    FROM
-         |        ocpc_ad_list
+         |        test.ocpc_daily_ad_list
          |    WHERE
          |        is_api_callback!=1) as a
          |INNER JOIN
-         |    label2_data as b
+         |    test.ocpc_label2_daily_data as b
          |ON
          |    a.ideaid=b.ideaid
        """.stripMargin
@@ -348,15 +356,15 @@ object OcpcDailyReport {
          |    (SELECT
          |        ideaid
          |    FROM
-         |        ocpc_ad_list
+         |        test.ocpc_daily_ad_list
          |    WHERE
          |        is_api_callback=1) as a
          |INNER JOIN
-         |    label2_data as b
+         |    test.ocpc_label2_daily_data as b
          |ON
          |    a.ideaid=b.ideaid
          |INNER JOIN
-         |    label3_data as c
+         |    test.ocpc_label3_daily_data as c
          |ON
          |    a.ideaid=c.ideaid
        """.stripMargin
