@@ -189,7 +189,7 @@ object OcpcSampleToRedis {
 
     println(sqlRequest3)
 
-    val userFinalData2 = spark.sql(sqlRequest3).filter("cvr_cnt >= 20 or cvr3_cnt >= 20")
+    val userFinalData2 = spark.sql(sqlRequest3)
 
     userFinalData2.show(10)
 
