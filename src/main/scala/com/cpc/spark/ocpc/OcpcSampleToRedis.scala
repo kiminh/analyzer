@@ -65,51 +65,6 @@ object OcpcSampleToRedis {
 
     rawBase.createOrReplaceTempView("base_table")
 
-    // read outsiders
-//    readInnocence(spark)
-//
-//    // TODO: 清楚按照时间戳截取逻辑
-//
-//    // 根据从mysql抽取的数据将每个ideaid的更新时间戳之前的用户记录剔除
-//    val sqlRequestNew1 =
-//      s"""
-//         |SELECT
-//         |  a.userid,
-//         |  a.ideaid,
-//         |  a.adclass,
-//         |  a.cost,
-//         |  a.ctr_cnt,
-//         |  a.cvr_cnt,
-//         |  a.total_cnt,
-//         |  a.date,
-//         |  a.hour,
-//         |  (case when b.update_date is null then '$start_date' else b.update_date end) as update_date,
-//         |  (case when b.update_hour is null then '$hour' else b.update_hour end) as update_hour,
-//         |  (case when c.flag is not null then 1
-//         |        when b.update_date is null or b.update_hour is null then 1
-//         |        when b.update_date < date then 1
-//         |        when b.update_date = date and b.update_hour <= hour then 1
-//         |        else 0 end) as flag
-//         |FROM
-//         |  base_table as a
-//         |LEFT JOIN
-//         |  test.ocpc_idea_update_time as b
-//         |ON
-//         |  a.ideaid=b.ideaid
-//         |LEFT JOIN
-//         |   test.ocpc_innocence_idea_list as c
-//         |on
-//         |   a.ideaid=c.ideaid
-//       """.stripMargin
-//
-//    println(sqlRequestNew1)
-//
-//    val rawData = spark.sql(sqlRequestNew1)
-//
-//    println("##### records of flag = 0 ##############")
-//    rawData.filter("flag=0").show(10)
-//
-//    val base = rawData.filter("flag=1").select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
     val base = rawBase.select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
@@ -296,28 +251,34 @@ object OcpcSampleToRedis {
     println(sqlRequest4)
 
     val regressionK = getRegressionK(end_date, hour, spark)
+    val cvr3Ideaid = spark
+      .table("test.ocpc_idea_update_time")
+      .select("ideaid", "conversion_goal")
 
     val finalData1 = spark
       .sql(sqlRequest4)
       .join(regressionK, Seq("ideaid"), "left_outer")
-      .withColumn("k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
+      .withColumn("new_k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
       .withColumn("ctr_cnt", when(col("flag").isNotNull && col("regression_k_value")>0, col("cvr_cnt")).otherwise(col("ctr_cnt")))
       .withColumn("hpcvr", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("hpcvr")))
       .withColumn("cali_value", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("cali_value")))
       .withColumn("cvr3_cali", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("cvr3_cali")))
+      .join(cvr3Ideaid, Seq("ideaid"), "left_outer")
+      .withColumn("k_value", when(col("conversion_goal")===2, col("new_k_value")*col("cvr3_cali")).otherwise(col("new_k_value") * col("cali_value")))
+
 
     finalData1.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete")
 
 
-    val finalData = finalData1.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
-
-    finalData.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
-
-    finalData
-      .withColumn("date", lit(end_date))
-      .withColumn("hour", lit(hour))
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
+//    val finalData = finalData1.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
+//
+//    finalData.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
+//
+//    finalData
+//      .withColumn("date", lit(end_date))
+//      .withColumn("hour", lit(hour))
+//      .write.mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
 
     // 保存pb文件
     savePbPack(finalData)
