@@ -260,8 +260,8 @@ object GetTraceReportV3 {
          |      ,tr.auto
          |from dl_cpc.logparsed_cpc_trace_minute as tr
          |left join
-         |(select searchid, userid, planid, unitid, ideaid, isclick from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
-         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1
+         |(select searchid, userid, planid, unitid, ideaid, adslot_type, isclick from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
+         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7
        """.stripMargin.format(get3DaysBefore(date, hour), date, hour)
     println(sql)
 

@@ -22,11 +22,11 @@ case class AdvTraceReport(
 
   val key = (this.user_id, this.plan_id, this.unit_id, this.idea_id, this.date, this.hour, this.trace_type, this.trace_op1, this.duration, this.auto)
 
-  def sum(r: AdvTraceReport): AdvTraceReport = {
-    copy(
-      total_num = total_num + r.total_num,
-      impression = impression + r.impression,
-      click = click + r.click
+  def sum(o: AdvTraceReport): AdvTraceReport = {
+    this.copy(
+      total_num = total_num + o.total_num,
+      impression = impression + o.impression,
+      click = click + o.click
     )
   }
 
