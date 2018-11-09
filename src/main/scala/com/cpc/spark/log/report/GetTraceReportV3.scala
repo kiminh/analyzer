@@ -71,9 +71,16 @@ object GetTraceReportV3 {
 
     val traceData = traceReport1.map {
       x =>
-        (x.key, x)
-    }.reduceByKey((x, y) => x.sum(y))
-      .map(x => x._2)
+        ((x.user_id, x.plan_id, x.unit_id, x.idea_id, x.date, x.hour, x.trace_type, x.trace_op1, x.duration, x.auto), x)
+    }.reduceByKey((x, y) =>
+      x.copy(
+        total_num = x.total_num + y.total_num,
+        impression = x.impression + y.impression,
+        click = x.click + y.click
+      )
+    ).map(x=>x._2)
+
+
 
     /*
     ctx.createDataFrame(traceData)
@@ -358,6 +365,7 @@ object GetTraceReportV3 {
 
   def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
     try {
+      println("~~~~~~~~~~~~~~~")
       Class.forName(mariadbProp.getProperty("driver"));
       val conn = DriverManager.getConnection(
         mariadbUrl,
