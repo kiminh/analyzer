@@ -78,7 +78,8 @@ object GetTraceReportV3 {
         impression = x.impression + y.impression,
         click = x.click + y.click
       )
-    ).map(x=>x._2)
+    ).reduceByKey((x, y) => x)
+      .map(x => x._2)
 
 
 
