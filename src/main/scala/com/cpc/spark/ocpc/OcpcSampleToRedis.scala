@@ -31,7 +31,6 @@ object OcpcSampleToRedis {
     // 计算日期周期
     val end_date = args(0)
     val hour = args(1)
-    val threshold = 20
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val date = sdf.parse(end_date)
     val calendar = Calendar.getInstance
@@ -65,51 +64,6 @@ object OcpcSampleToRedis {
 
     rawBase.createOrReplaceTempView("base_table")
 
-    // read outsiders
-//    readInnocence(spark)
-//
-//    // TODO: 清楚按照时间戳截取逻辑
-//
-//    // 根据从mysql抽取的数据将每个ideaid的更新时间戳之前的用户记录剔除
-//    val sqlRequestNew1 =
-//      s"""
-//         |SELECT
-//         |  a.userid,
-//         |  a.ideaid,
-//         |  a.adclass,
-//         |  a.cost,
-//         |  a.ctr_cnt,
-//         |  a.cvr_cnt,
-//         |  a.total_cnt,
-//         |  a.date,
-//         |  a.hour,
-//         |  (case when b.update_date is null then '$start_date' else b.update_date end) as update_date,
-//         |  (case when b.update_hour is null then '$hour' else b.update_hour end) as update_hour,
-//         |  (case when c.flag is not null then 1
-//         |        when b.update_date is null or b.update_hour is null then 1
-//         |        when b.update_date < date then 1
-//         |        when b.update_date = date and b.update_hour <= hour then 1
-//         |        else 0 end) as flag
-//         |FROM
-//         |  base_table as a
-//         |LEFT JOIN
-//         |  test.ocpc_idea_update_time as b
-//         |ON
-//         |  a.ideaid=b.ideaid
-//         |LEFT JOIN
-//         |   test.ocpc_innocence_idea_list as c
-//         |on
-//         |   a.ideaid=c.ideaid
-//       """.stripMargin
-//
-//    println(sqlRequestNew1)
-//
-//    val rawData = spark.sql(sqlRequestNew1)
-//
-//    println("##### records of flag = 0 ##############")
-//    rawData.filter("flag=0").show(10)
-//
-//    val base = rawData.filter("flag=1").select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
     val base = rawBase.select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
@@ -234,7 +188,7 @@ object OcpcSampleToRedis {
 
     println(sqlRequest3)
 
-    val userFinalData2 = spark.sql(sqlRequest3).filter("cvr_cnt >= 20 or cvr3_cnt >= 20")
+    val userFinalData2 = spark.sql(sqlRequest3)
 
     userFinalData2.show(10)
 
@@ -243,12 +197,12 @@ object OcpcSampleToRedis {
 
 
 
-//    userFinalData2
-//      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
-//      .withColumn("date", lit(end_date))
-//      .withColumn("hour", lit(hour))
-//      .write.mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
+    userFinalData2
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
+      .withColumn("date", lit(end_date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
 
 
 
@@ -296,22 +250,30 @@ object OcpcSampleToRedis {
     println(sqlRequest4)
 
     val regressionK = getRegressionK(end_date, hour, spark)
+    val cvr3Ideaid = spark
+      .table("test.ocpc_idea_update_time")
+      .select("ideaid", "conversion_goal")
+      .distinct()
 
     val finalData1 = spark
       .sql(sqlRequest4)
       .join(regressionK, Seq("ideaid"), "left_outer")
-      .withColumn("k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
+      .withColumn("new_k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
       .withColumn("ctr_cnt", when(col("flag").isNotNull && col("regression_k_value")>0, col("cvr_cnt")).otherwise(col("ctr_cnt")))
       .withColumn("hpcvr", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("hpcvr")))
       .withColumn("cali_value", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("cali_value")))
       .withColumn("cvr3_cali", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("cvr3_cali")))
+      .join(cvr3Ideaid, Seq("ideaid"), "left_outer")
+      .withColumn("k_value", when(col("conversion_goal")===2, col("new_k_value")*col("cvr3_cali")).otherwise(col("new_k_value") * col("cali_value")))
 
-    finalData1.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete")
+
+    // TODO bak表
+    finalData1.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
 
 
     val finalData = finalData1.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
 
-    finalData.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
+    finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
 
     finalData
       .withColumn("date", lit(end_date))
@@ -563,35 +525,41 @@ object OcpcSampleToRedis {
 
   def checkAdType(endDate: String, hour: String, spark: SparkSession): DataFrame ={
     // TODO 从广告更新表中更新广告类型
-    // 计算时间区间
-    val threshold = 20
-    val sdf = new SimpleDateFormat("yyyy-MM-dd")
-    val date = sdf.parse(endDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(date)
-    calendar.add(Calendar.DATE, -7)
-    val dt = calendar.getTime
-    val startDate = sdf.format(dt)
-    val selectCondition = getTimeRangeSql(startDate, hour, endDate, hour)
+//    // 计算时间区间
+//    val threshold = 20
+//    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+//    val date = sdf.parse(endDate)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(date)
+//    calendar.add(Calendar.DATE, -7)
+//    val dt = calendar.getTime
+//    val startDate = sdf.format(dt)
+//    val selectCondition = getTimeRangeSql(startDate, hour, endDate, hour)
+//
+//    // 汇总近七天数据并找到每个ideaid，adclass的最新数据的类型
+//    val sqlRequest1 =
+//      s"""
+//         |SELECT
+//         |    ideaid,
+//         |    adclass,
+//         |    (case when siteid>0 then 1 else 0 end) as type_flag,
+//         |    row_number() over(partition by ideaid, adclass ORDER BY timestamp DESC) as seq
+//         |FROM
+//         |    dl_cpc.ocpc_track_ad_type_hourly
+//         |WHERE
+//         |    $selectCondition
+//       """.stripMargin
+//
+//    println(sqlRequest1)
+//    val rawData = spark.sql(sqlRequest1)
+//
+//    val typeData = rawData.filter("seq=1").select("ideaid", "adclass", "type_flag")
 
-    // 汇总近七天数据并找到每个ideaid，adclass的最新数据的类型
-    val sqlRequest1 =
-      s"""
-         |SELECT
-         |    ideaid,
-         |    adclass,
-         |    (case when siteid>0 then 1 else 0 end) as type_flag,
-         |    row_number() over(partition by ideaid, adclass ORDER BY timestamp DESC) as seq
-         |FROM
-         |    dl_cpc.ocpc_track_ad_type_hourly
-         |WHERE
-         |    $selectCondition
-       """.stripMargin
+    val typeData = spark
+      .table("test.ocpc_idea_update_time")
+      .withColumn("type_flag", when(col("conversion_goal")===3, 1).otherwise(0)).select("ideaid", "type_flag")
 
-    println(sqlRequest1)
-    val rawData = spark.sql(sqlRequest1)
-
-    val typeData = rawData.filter("seq=1").select("ideaid", "adclass", "type_flag")
+    typeData.write.mode("overwrite").saveAsTable("test.ocpc_idea_type_20181109")
 
     typeData
   }
@@ -601,7 +569,7 @@ object OcpcSampleToRedis {
     val typeData = checkAdType(date, hour, spark)
 
     val joinData = rawData
-      .join(typeData, Seq("ideaid", "adclass"), "left_outer")
+      .join(typeData, Seq("ideaid"), "left_outer")
       .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "type_flag")
       .withColumn("new_type_flag", when(col("type_flag").isNull, 0).otherwise(col("type_flag")))
 
