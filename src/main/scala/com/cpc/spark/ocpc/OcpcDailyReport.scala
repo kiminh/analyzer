@@ -363,8 +363,8 @@ object OcpcDailyReport {
 
     val apiData = spark.sql(sqlRequest5)
 
-    noApiData.write.mode("overwrite").saveAsTable("test.ocpc_check_daily_report_noapi_" + date)
-    apiData.write.mode("overwrite").saveAsTable("test.ocpc_check_daily_report_api_" + date)
+    noApiData.write.mode("overwrite").saveAsTable("test.ocpc_check_daily_report_noapi")
+    apiData.write.mode("overwrite").saveAsTable("test.ocpc_check_daily_report_api")
 
 
   }
