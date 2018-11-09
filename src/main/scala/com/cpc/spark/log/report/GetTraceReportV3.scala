@@ -71,15 +71,11 @@ object GetTraceReportV3 {
 
     val traceData = traceReport1.map {
       x =>
-        ((x.user_id, x.plan_id, x.unit_id, x.idea_id, x.date, x.hour, x.trace_type, x.trace_op1, x.duration, x.auto), x)
-    }.reduceByKey((x, y) =>
-      x.copy(
-        total_num = x.total_num + y.total_num,
-        impression = x.impression + y.impression,
-        click = x.click + y.click
-      )
-    ).reduceByKey((x, y) => x)
+        (x.key, x)
+    }.reduceByKey((x, y) =>x.sum(y))
+      .reduceByKey((x, y) => x)
       .map(x => x._2)
+
 
     println("traceData: " + traceData)
 
@@ -219,9 +215,9 @@ object GetTraceReportV3 {
 
     val traceData = traceReport.filter {
       trace =>
-        trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "sdk_incite" && trace.getAs[String]("trace_op1") == "DOWNLOAD_START" &&
-          trace.getAs[String]("trace_op1") == "DOWNLOAD_FINISH" && trace.getAs[String]("trace_op1") == "INSTALL_FINISH" && trace.getAs[String]("trace_op1") == "OPEN_APP" &&
-          trace.getAs[String]("trace_op1") == "INSTALL_HIJACK" && trace.getAs[String]("trace_op1") == "INSTALL_ABORT"
+        trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "sdk_incite" && (trace.getAs[String]("trace_op1") == "DOWNLOAD_START" ||
+          trace.getAs[String]("trace_op1") == "DOWNLOAD_FINISH" || trace.getAs[String]("trace_op1") == "INSTALL_FINISH" || trace.getAs[String]("trace_op1") == "OPEN_APP" &&
+          trace.getAs[String]("trace_op1") == "INSTALL_HIJACK" || trace.getAs[String]("trace_op1") == "INSTALL_ABORT")
     }.map {
       trace =>
         val trace_type = trace.getAs[String]("trace_type")
