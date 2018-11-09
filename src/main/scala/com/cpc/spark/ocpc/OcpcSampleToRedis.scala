@@ -265,6 +265,8 @@ object OcpcSampleToRedis {
       .withColumn("cvr3_cali", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("cvr3_cali")))
       .join(cvr3Ideaid, Seq("ideaid"), "left_outer")
       .withColumn("k_value", when(col("conversion_goal")===2, col("new_k_value")*col("cvr3_cali")).otherwise(col("new_k_value") * col("cali_value")))
+        .withColumn("cali_value", lit(1.0))
+        .withColumn("cvr3_cali", lit(1.0))
 
 
     // TODO bak表
