@@ -22,6 +22,7 @@ object OcpcGetBudget {
       s"""
          |(SELECT
          |    p.id AS planid,
+         |    idea.id as ideaid,
          |    LEAST((us.balance+us.coupon),p.budget-IFNULL(b.fee+b.coupon,0)) least_xbalance,
          |    IFNULL(b.fee+b.coupon,0) bcost
          |FROM plan p
@@ -34,6 +35,10 @@ object OcpcGetBudget {
          |INNER JOIN
          |    user us
          |ON us.id = p.user_id
+         |LEFT JOIN
+         |    idea
+         |ON
+         |    idea.plan_id=p.id
          |WHERE
          |    ((b.fee+b.coupon) < p.budget OR b.plan_id is NULL)
          |AND
@@ -61,10 +66,8 @@ object OcpcGetBudget {
       .option("dbtable", table)
       .load()
 
-    val base = data.select("planid", "least_xbalance", "bcost")
-
-//    base.write.mode("overwrite").saveAsTable("test.ocpc_get_user_ideaid_budget")
-
+    val base = data.select("planid", "ideaid", "least_xbalance", "bcost")
+    
     base
 
   }
