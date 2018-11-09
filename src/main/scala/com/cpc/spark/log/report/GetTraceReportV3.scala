@@ -178,8 +178,8 @@ object GetTraceReportV3 {
          |      ,un.planid as plan_id
          |      ,un.unitid as unit_id
          |      ,un.ideaid as idea_id
-         |      ,tr.date as date
-         |      ,tr.hour
+         |      ,un.date
+         |      ,un.hour
          |      ,tr.trace_type as trace_type
          |      ,tr.trace_op1 as trace_op1
          |      ,tr.duration as duration
@@ -253,15 +253,15 @@ object GetTraceReportV3 {
          |      ,un.planid as plan_id
          |      ,un.unitid as unit_id
          |      ,un.ideaid as idea_id
-         |      ,tr.date as date
-         |      ,tr.hour
+         |      ,un.date
+         |      ,un.hour
          |      ,tr.trace_type as trace_type
          |      ,tr.trace_op1 as trace_op1
          |      ,tr.duration as duration
          |      ,tr.auto
          |from dl_cpc.logparsed_cpc_trace_minute as tr
          |left join
-         |(select searchid, userid, planid, unitid, ideaid, adslot_type, isclick from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
+         |(select searchid, userid, planid, unitid, ideaid, adslot_type, isclick, date, hour from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
          |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7
        """.stripMargin.format(get3DaysBefore(date, hour), date, hour)
     println(sql)
