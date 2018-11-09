@@ -913,8 +913,26 @@ object OcpcPIDwithCPA {
     val sqlRequest =
       s"""
          |SELECT
-         |
+         |    t.ideaid,
+         |    t.balance
+         |FROM
+         |    (SELECT
+         |        ideaid,
+         |        least_xbalance as balance,
+         |        row_number() over(partition by ideaid order by least_xbalance) as seq
+         |    FROM
+         |        dl_cpc.ocpc_ideaid_budget
+         |    WHERE
+         |        `date`='2018-11-09'
+         |    AND
+         |        `hour`='17') as t
+         |WHERE
+         |    t.seq=1
        """.stripMargin
+
+    val data = spark.sql(sqlRequest)
+
+//    data.withColumn("label", when(col("balance") < ))
   }
 
 }
