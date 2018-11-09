@@ -11,7 +11,8 @@ object OcpcLogParser {
     val tableName = args(0).toString
 
     val result = logParser(tableName, spark)
-    result.write.mode("overwrite").saveAsTable("test.ocpc_log_parsed_table")
+    val newTableName = tableName + "_parsed"
+    result.write.mode("overwrite").saveAsTable(newTableName)
   }
 
   def logParser(tableName: String, spark: SparkSession): DataFrame = {

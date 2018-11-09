@@ -16,7 +16,8 @@ object OcpcDailyReport {
     val date = args(0).toString
 
 //    val rawCompleteData = getCompleteRawTable(date, spark)
-    getDailyReport(date, spark)
+//    getDailyReport(date, spark)
+    getDailyReportV2(date, spark)
 
   }
 
@@ -158,29 +159,6 @@ object OcpcDailyReport {
       .withColumn("date", lit(date))
 
 
-//    data1.createOrReplaceTempView("statistic_data1")
-//    data2.createOrReplaceTempView("statistic_data2")
-//
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |    t1.*,
-//         |    t2.avg_k,
-//         |    t2.stddev_k,
-//         |    t2.k_cnt,
-//         |    '$date' as date
-//         |FROM
-//         |    statistic_data1 as t1
-//         |LEFT JOIN
-//         |    statistic_data2 as t2
-//         |ON
-//         |    t1.ideaid=t2.ideaid
-//       """.stripMargin
-//
-//    println(sqlRequest)
-//    val resultDF = spark.sql(sqlRequest)
-
-
     println("############# resultDF ###############")
     resultDF.show(10)
 
@@ -225,6 +203,169 @@ object OcpcDailyReport {
       .withColumn("date", lit(date))
 
     resultData.write.mode("overwrite").insertInto("dl_cpc.ocpc_k_curve_daily")
+
+  }
+
+  def getDailyReportV2(date: String, spark: SparkSession) :Unit = {
+    /**
+      * 重新计算抽取全天的数据日志
+      */
+
+    // 抽取基础数据：所有跑ocpc的广告主
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    a.*,
+         |    b.iscvr
+         |FROM
+         |    (select
+         |        uid,
+         |        timestamp,
+         |        searchid,
+         |        userid,
+         |        ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
+         |        ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |        isclick,
+         |        isshow,
+         |        ideaid,
+         |        exptags,
+         |        price,
+         |        ext_int['bid_ocpc'] as bid_ocpc,
+         |        ext_int['is_ocpc'] as is_ocpc,
+         |        ext_string['ocpc_log'] as ocpc_log,
+         |        ext_int['is_api_callback'] as is_api_callback,
+         |        date,
+         |        hour
+         |    from
+         |        dl_cpc.cpc_union_log
+         |    WHERE
+         |        `date`='$date'
+         |    and
+         |        media_appsid  in ("80000001", "80000002")
+         |    and
+         |        ext['antispam'].int_value = 0
+         |    and adsrc = 1
+         |    and adslot_type in (1,2,3)
+         |    and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
+         |    AND ext_int['is_ocpc']=1
+         |    and ext_string['ocpc_log'] != '' and ext_string['ocpc_log'] is not null) a
+         |left outer join
+         |    (
+         |        select
+         |            searchid,
+         |            label2 as iscvr
+         |        from dl_cpc.ml_cvr_feature_v1
+         |        WHERE `date`='$date'
+         |    ) b on a.searchid = b.searchid
+       """.stripMargin
+
+    val rawData = spark.sql(sqlRequest1)
+    rawData.createOrReplaceTempView("raw_table")
+
+    val ocpcAd = rawData.select("ideaid", "is_api_callback").distinct()
+    ocpcAd.createOrReplaceTempView("ocpc_ad_list")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    SUM(iscvr) as cvr_cnt
+         |FROM
+         |    dl_cpc.cpc_api_union_log
+         |WHERE
+         |    `date`='$date'
+         |AND ext_int['is_ocpc']=1
+         |and ext_string['ocpc_log'] != ''
+         |and ext_string['ocpc_log'] is not null
+         |GROUP BY ideaid
+       """.stripMargin
+
+    val label3Data = spark.sql(sqlRequest2)
+    label3Data.createOrReplaceTempView("label3_data")
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    SUM(case when isclick==1 then bid_ocpc else 0 end) * 1.0 / sum(isclick) as cpa_given,
+         |    SUM(case when isclick==1 then price else 0 end) as cost,
+         |    sum(CASE WHEN isclick=1 then exp_cvr else 0 end) * 1.0/SUM(isclick) as pcvr,
+         |    SUM(isshow) as show_cnt,
+         |    SUM(isclick) as ctr_cnt,
+         |    SUM(iscvr) as cvr_cnt
+         |FROM
+         |    raw_table
+         |GROUP BY ideaid
+       """.stripMargin
+
+    val label2Data = spark.sql(sqlRequest3)
+    label2Data.createOrReplaceTempView("label2_data")
+
+    val sqlRequest4 =
+      s"""
+         |SELECT
+         |    a.ideaid,
+         |    b.cpa_given,
+         |    b.cost * 1.0 / b.cvr_cnt as cpa_real,
+         |    b.pcvr,
+         |    b.ctr_cnt * 1.0 / b.show_cnt as ctr,
+         |    b.cvr_cnt * 1.0 / b.ctr_cnt as click_cvr,
+         |    b.cvr_cnt * 1.0 / b.show_cnt as show_cvr,
+         |    b.cost * 1.0 / b.ctr_cnt as price,
+         |    b.show_cnt,
+         |    b.ctr_cnt,
+         |    b.cvr_cnt
+         |FROM
+         |    (SELECT
+         |        ideaid
+         |    FROM
+         |        ocpc_ad_list
+         |    WHERE
+         |        is_api_callback!=1) as a
+         |INNER JOIN
+         |    label2_data as b
+         |ON
+         |    a.ideaid=b.ideaid
+       """.stripMargin
+
+    val noApiData = spark.sql(sqlRequest4)
+
+    val sqlRequest5 =
+      s"""
+         |SELECT
+         |    a.ideaid,
+         |    b.cpa_given,
+         |    b.cost * 1.0 / c.cvr_cnt as cpa_real,
+         |    b.pcvr,
+         |    b.ctr_cnt * 1.0 / b.show_cnt as ctr,
+         |    c.cvr_cnt * 1.0 / b.ctr_cnt as click_cvr,
+         |    c.cvr_cnt * 1.0 / b.show_cnt as show_cvr,
+         |    b.cost * 1.0 / b.ctr_cnt as price,
+         |    b.show_cnt,
+         |    b.ctr_cnt,
+         |    c.cvr_cnt
+         |FROM
+         |    (SELECT
+         |        ideaid
+         |    FROM
+         |        ocpc_ad_list
+         |    WHERE
+         |        is_api_callback=1) as a
+         |INNER JOIN
+         |    label2_data as b
+         |ON
+         |    a.ideaid=b.ideaid
+         |INNER JOIN
+         |    label3_data as c
+         |ON
+         |    a.ideaid=c.ideaid
+       """.stripMargin
+
+    val apiData = spark.sql(sqlRequest5)
+
+    noApiData.write.mode("overwrite").saveAsTable("test.ocpc_check_daily_report_noapi_" + date)
+    apiData.write.mode("overwrite").saveAsTable("test.ocpc_check_daily_report_api_" + date)
+
 
   }
 
