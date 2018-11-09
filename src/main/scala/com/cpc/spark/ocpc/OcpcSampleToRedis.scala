@@ -270,7 +270,7 @@ object OcpcSampleToRedis {
     finalData1.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete")
 
 
-//    val finalData = finalData1.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
+    val finalData = finalData1.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
 //
 //    finalData.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
 //
