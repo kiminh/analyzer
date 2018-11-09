@@ -10,6 +10,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 import scala.collection.mutable.ListBuffer
+import org.apache.spark.sql.functions._
 
 /**
   * Created on ${Date} ${Time}
@@ -73,24 +74,11 @@ object GetTraceReportV3 {
       x =>
         (x.key, x)
     }.reduceByKey((x, y) =>x.sum(y))
-      .reduceByKey((x, y) => x)
       .map(x => x._2)
 
 
     println("traceData: " + traceData)
-/*
-    clearReportHourData("report_trace", date, hour)
-    ctx.createDataFrame(traceData)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_trace", mariadbProp)
 
-    clearReportHourData2("report_trace", date, hour)
-    ctx.createDataFrame(traceData)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadb_amateur_url, "report.report_trace", mariadb_amateur_prop)
-*/
     /*
     ctx.createDataFrame(traceData)
       .repartition(1)
@@ -105,7 +93,7 @@ object GetTraceReportV3 {
       """.stripMargin.format(date, hour, date, hour))
   */
 
-    //writeToTraceReport(ctx, traceData, date, hour)
+    writeToTraceReport(ctx, traceData, date, hour)
 
 
     println("GetTraceReport_done")
@@ -269,8 +257,6 @@ object GetTraceReportV3 {
          |      ,un.planid as plan_id
          |      ,un.unitid as unit_id
          |      ,un.ideaid as idea_id
-         |      ,$date
-         |      ,$hour
          |      ,tr.trace_type as trace_type
          |      ,tr.trace_op1 as trace_op1
          |      ,tr.duration as duration
@@ -282,7 +268,10 @@ object GetTraceReportV3 {
        """.stripMargin.format(get3DaysBefore(date, hour), date, hour)
     println(sql)
 
-    val traceReport = ctx.sql(sql).rdd
+    val traceReport = ctx.sql(sql)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .rdd
 
     val sql1 =
       """
