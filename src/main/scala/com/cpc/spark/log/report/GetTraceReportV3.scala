@@ -76,6 +76,7 @@ object GetTraceReportV3 {
       .reduceByKey((x, y) => x.sum(y))
       .map(x => x._2)
 
+    /*
     ctx.createDataFrame(traceData)
       .repartition(1)
       .write
@@ -87,11 +88,11 @@ object GetTraceReportV3 {
         |ALTER TABLE test.zhy_report_trace add if not exists PARTITION(`date` = "%s", `hour` = "%s")
         | LOCATION  '/warehouse/test.db/zhy_report_trace/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
+  */
 
-
-    //clearReportHourData("report_trace", date, hour)
-    //clearReportHourData2("report_trace", date, hour)
-    //writeToTraceReport(ctx, traceData)
+    clearReportHourData("report_trace", date, hour)
+    clearReportHourData2("report_trace", date, hour)
+    writeToTraceReport(ctx, traceData)
 
 
     println("GetTraceReport_done")
