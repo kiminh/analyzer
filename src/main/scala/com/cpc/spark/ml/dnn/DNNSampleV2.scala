@@ -16,6 +16,7 @@ import org.apache.spark.sql.functions.{array, udf}
   * @version 1.0
   *
   */
+@deprecated
 object DNNSampleV2 {
 
   Logger.getRootLogger.setLevel(Level.WARN)

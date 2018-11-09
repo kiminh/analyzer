@@ -16,6 +16,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
   * @version 1.0
   *
   */
+@deprecated
 object DNNSampleV2_tmp {
 
   Logger.getRootLogger.setLevel(Level.WARN)

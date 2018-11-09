@@ -13,7 +13,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
   * 去除无点击 uv
   * 采样有点击 uv
   * sample_idx 搞成 userid 的 hash
-  * created time : 2018/11/307 15:05
+  * created time : 2018/11/07 15:05
   *
   * @author zhj
   * @version 1.0
@@ -43,7 +43,7 @@ object DNNSampleV3_tmp {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/test/dnntest-" + date)
+      .save("/user/cpc/zhj/test_content/dnntest-" + date)
 
     val tn = test.count
 
@@ -136,7 +136,7 @@ object DNNSampleV3_tmp {
          |  hour
          |
          |from dl_cpc.cpc_union_log where `date` = '$date'
-         |  and isshow = 1 and ideaid > 0 and adslot_type = 1
+         |  and isshow = 1 and ideaid > 0 and adslot_type = 2
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
