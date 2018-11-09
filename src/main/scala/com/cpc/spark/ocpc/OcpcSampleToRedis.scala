@@ -557,7 +557,7 @@ object OcpcSampleToRedis {
 
     val typeData = spark
       .table("test.ocpc_idea_update_time")
-      .withColumn("type_flag", when(col("conversion_goal")===2, 1).otherwise(0)).select("ideaid", "type_flag")
+      .withColumn("type_flag", when(col("conversion_goal")===3, 1).otherwise(0)).select("ideaid", "type_flag")
 
     typeData.write.mode("overwrite").saveAsTable("test.ocpc_idea_type_20181109")
 
