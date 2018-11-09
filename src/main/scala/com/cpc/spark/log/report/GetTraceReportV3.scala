@@ -78,7 +78,7 @@ object GetTraceReportV3 {
 
 
     println("traceData: " + traceData)
-
+/*
     clearReportHourData("report_trace", date, hour)
     ctx.createDataFrame(traceData)
       .write
@@ -90,7 +90,7 @@ object GetTraceReportV3 {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadb_amateur_url, "report.report_trace", mariadb_amateur_prop)
-
+*/
     /*
     ctx.createDataFrame(traceData)
       .repartition(1)
@@ -269,8 +269,8 @@ object GetTraceReportV3 {
          |      ,un.planid as plan_id
          |      ,un.unitid as unit_id
          |      ,un.ideaid as idea_id
-         |      ,un.date
-         |      ,un.hour
+         |      ,$date
+         |      ,$hour
          |      ,tr.trace_type as trace_type
          |      ,tr.trace_op1 as trace_op1
          |      ,tr.duration as duration
