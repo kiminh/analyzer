@@ -32,6 +32,7 @@ object DNNSampleV4 {
 
     val date = args(0)
     val tdate = args(1)
+    val path = args(2)
 
     getSample(spark, date, is_train = true)
       .repartition(1000)
@@ -39,7 +40,7 @@ object DNNSampleV4 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/daily_v4_list_test/dnntrain-" + date)
+      .save(s"$path/dnntrain-" + date)
 
     val test = getSample(spark, tdate, is_train = false).persist()
     val tn = test.count
@@ -50,7 +51,7 @@ object DNNSampleV4 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/daily_v4_list_test/dnntest-" + tdate)
+      .save(s"$path/dnntest-" + tdate)
 
     test.take(10).foreach(println)
   }
@@ -61,7 +62,7 @@ object DNNSampleV4 {
     val behavior_sql =
       s"""
          |select uid,
-         |collect_set(if(load_date='${getDay(date, 1)}',show_ideaid,null)) as s_ideaid_1,
+         |       collect_set(if(load_date='${getDay(date, 1)}',show_ideaid,null)) as s_ideaid_1,
          |       collect_set(if(load_date='${getDay(date, 1)}',show_adclass,null)) as s_adclass_1,
          |       collect_set(if(load_date='${getDay(date, 2)}',show_ideaid,null)) as s_ideaid_2,
          |       collect_set(if(load_date='${getDay(date, 2)}',show_adclass,null)) as s_adclass_2,
@@ -71,22 +72,16 @@ object DNNSampleV4 {
          |       collect_list(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
          |       collect_list(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
          |
-         |       collect_set(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
-         |       collect_set(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
+         |       collect_list(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
+         |       collect_list(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
          |
-         |       collect_set(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
-         |       collect_set(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3,
+         |       collect_list(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
+         |       collect_list(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3,
          |
-         |       collect_set(if(load_date>='${getDay(date, 7)}'
+         |       collect_list(if(load_date>='${getDay(date, 7)}'
          |                  and load_date<='${getDay(date, 4)}',click_ideaid,null)) as c_ideaid_4_7,
          |       collect_list(if(load_date>='${getDay(date, 7)}'
          |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7,
-         |
-         |
-         |       collect_list(if(load_date>='${getDay(date, 7)}'
-         |                  and load_date<='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1_7,
-         |       collect_list(if(load_date>='${getDay(date, 7)}'
-         |                  and load_date<='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1_7
          |from dl_cpc.cpc_user_behaviors
          |where load_date in ('${getDays(date, 1, 7)}')
          |group by uid
@@ -98,37 +93,43 @@ object DNNSampleV4 {
 
     val raw_behavior = spark.sql(behavior_sql)
       .withColumn("c1_ideaid_count", mkCount($"c_ideaid_1"))
-      .withColumn("c1_adclass_count", mkCount($"c_ideaid_1"))
-      .withColumn("c17_ideaid_count", mkCount($"c_ideaid_1_7"))
-      .withColumn("c17_adclass_count", mkCount($"c_adclass_1_7"))
+      .withColumn("c1_adclass_count", mkCount($"c_adclass_1"))
+      .withColumn("c2_ideaid_count", mkCount($"c_ideaid_2"))
+      .withColumn("c2_adclass_count", mkCount($"c_adclass_2"))
+      .withColumn("c3_ideaid_count", mkCount($"c_ideaid_3"))
+      .withColumn("c3_adclass_count", mkCount($"c_adclass_3"))
+      .withColumn("c47_ideaid_count", mkCount($"c_ideaid_4_7"))
+      .withColumn("c47_adclass_count", mkCount($"c_adclass_4_7"))
+
       .withColumn("m2", hashSeq("m2", "int")($"s_ideaid_1"))
       .withColumn("m3", hashSeq("m3", "int")($"s_ideaid_2"))
       .withColumn("m4", hashSeq("m4", "int")($"s_ideaid_3"))
       .withColumn("m5", hashSeq("m5", "int")($"s_adclass_1"))
       .withColumn("m6", hashSeq("m6", "int")($"s_adclass_2"))
       .withColumn("m7", hashSeq("m7", "int")($"s_adclass_3"))
-      .withColumn("m8", hashSeq("m8", "int")($"c_ideaid_1"))
-      .withColumn("m9", hashSeq("m9", "int")($"c_ideaid_2"))
-      .withColumn("m10", hashSeq("m10", "int")($"c_ideaid_3"))
-      .withColumn("m11", hashSeq("m11", "int")($"c_adclass_1"))
-      .withColumn("m12", hashSeq("m12", "int")($"c_adclass_2"))
-      .withColumn("m13", hashSeq("m13", "int")($"c_adclass_3"))
 
-      .withColumn("m14", hashSeq("m14", "int")($"c_adclass_4_7"))
-      .withColumn("m15", hashSeq("m15", "int")($"c_adclass_4_7"))
       .persist()
 
     raw_behavior.show(10)
 
     val behavior_data = raw_behavior
-      .withColumn("m16", hashSeq("m16", "int")(getKeys($"c1_ideaid_count")))
-      .withColumn("m17", hashSeq("m17", "int")(getKeys($"c1_adclass_count")))
-      .withColumn("m18", hashSeq("m18", "int")(getKeys($"c17_ideaid_count")))
-      .withColumn("m19", hashSeq("m19", "int")(getKeys($"c17_adclass_count")))
+      .withColumn("m8", hashSeq("m8", "int")(getKeys($"c1_ideaid_count")))
+      .withColumn("m9", hashSeq("m9", "int")(getKeys($"c2_ideaid_count")))
+      .withColumn("m10", hashSeq("m10", "int")(getKeys($"c3_ideaid_count")))
+      .withColumn("m11", hashSeq("m11", "int")(getKeys($"c1_adclass_count")))
+      .withColumn("m12", hashSeq("m12", "int")(getKeys($"c2_adclass_count")))
+      .withColumn("m13", hashSeq("m13", "int")(getKeys($"c3_adclass_count")))
+      .withColumn("m14", hashSeq("m14", "int")(getKeys($"c47_ideaid_count")))
+      .withColumn("m15", hashSeq("m15", "int")(getKeys($"c47_adclass_count")))
+
       .withColumn("cv1", getValues($"c1_ideaid_count"))
       .withColumn("cv2", getValues($"c1_adclass_count"))
-      .withColumn("cv3", getValues($"c17_ideaid_count"))
-      .withColumn("cv4", getValues($"c17_adclass_count"))
+      .withColumn("cv3", getValues($"c2_ideaid_count"))
+      .withColumn("cv4", getValues($"c2_adclass_count"))
+      .withColumn("cv5", getValues($"c3_ideaid_count"))
+      .withColumn("cv6", getValues($"c3_adclass_count"))
+      .withColumn("cv7", getValues($"c47_ideaid_count"))
+      .withColumn("cv8", getValues($"c47_adclass_count"))
 
     val userAppIdx = getUidApp(spark, date)
       .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))
@@ -208,31 +209,19 @@ object DNNSampleV4 {
       hash("f27")($"age").alias("f27"),
       hash("f28")($"hour").alias("f28"),
 
-      getHashValue(29)($"ideaid", $"c1_ideaid_count").alias("f29"),
-      getHashValue(30)($"adclass", $"c1_adclass_count").alias("f30"),
-      getHashValue(31)($"ideaid", $"c17_ideaid_count").alias("f31"),
-      getHashValue(32)($"adclass", $"c17_adclass_count").alias("f32"),
-
       array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
-        $"m11", $"m12", $"m13", $"m14", $"m15", $"m16", $"m17", $"m18", $"m19")
+        $"m11", $"m12", $"m13", $"m14", $"m15")
         .alias("raw_sparse"),
 
-      getFloatValue($"ideaid", $"c1_ideaid_count").alias("c1"),
-      getFloatValue($"adclass", $"c1_adclass_count").alias("c2"),
-      getFloatValue($"ideaid", $"c17_ideaid_count").alias("c3"),
-      getFloatValue($"adclass", $"c17_adclass_count").alias("c4"),
-
-      array($"cv1", $"cv2", $"cv3", $"cv4").alias("float_sparse")
+      array($"cv1", $"cv2", $"cv3", $"cv4", $"cv5", $"cv6", $"cv7", $"cv8").alias("float_sparse")
     )
 
       .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
-        $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27", $"f28", $"f29",
-        $"f30", $"f31", $"f32").alias("dense"),
+        $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27", $"f28").alias("dense"),
 
         mkSparseFeature_m($"raw_sparse").alias("sparse"),
 
-        array($"c1", $"c2", $"c3", $"c4").alias("f_dense"),
         mkFloatSparseFeature_m($"float_sparse").alias("f_sparse"),
 
         $"label"
@@ -246,7 +235,6 @@ object DNNSampleV4 {
         $"sparse".getField("_3").alias("idx2"),
         $"sparse".getField("_4").alias("id_arr"),
 
-        $"f_dense",
         $"f_sparse._1".alias("f_idx0"),
         $"f_sparse._2".alias("f_idx1"),
         $"f_sparse._3".alias("f_idx2"),
@@ -258,12 +246,11 @@ object DNNSampleV4 {
         (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
           x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"),
-          x._1.getAs[Seq[Double]]("f_dense"),
           x._1.getAs[Seq[Int]]("f_idx0"), x._1.getAs[Seq[Int]]("f_idx1"),
           x._1.getAs[Seq[Int]]("f_idx2"), x._1.getAs[Seq[Double]]("f_id_arr"))
       }
       .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr",
-        "f_dense", "f_idx0", "f_idx1", "f_idx2", "f_id_arr")
+        "f_idx0", "f_idx1", "f_idx2", "f_id_arr")
   }
 
   def getDays(startdate: String, day1: Int = 0, day2: Int): String = {
