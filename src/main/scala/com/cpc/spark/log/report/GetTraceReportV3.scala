@@ -127,7 +127,8 @@ object GetTraceReportV3 {
 
     val traceData = traceReport.filter {
       trace =>
-        trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type").length < 100 && trace.getAs[String]("trace_type").length > 1
+        trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type").length < 100 && trace.getAs[String]("trace_type").length > 1 &&
+          trace.getAs[String]("trace_type") != "active_third"
     }.map {
       trace =>
         val trace_type = trace.getAs[String]("trace_type")
@@ -205,7 +206,9 @@ object GetTraceReportV3 {
 
     val traceData = traceReport.filter {
       trace =>
-        trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "sdk_incite" && trace.getAs[String]("trace_op1") != ""
+        trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "sdk_incite" && trace.getAs[String]("trace_op1") == "DOWNLOAD_START" &&
+          trace.getAs[String]("trace_op1") == "DOWNLOAD_FINISH" && trace.getAs[String]("trace_op1") == "INSTALL_FINISH" && trace.getAs[String]("trace_op1") == "OPEN_APP" &&
+          trace.getAs[String]("trace_op1") == "INSTALL_HIJACK" && trace.getAs[String]("trace_op1") == "INSTALL_ABORT"
     }.map {
       trace =>
         val trace_type = trace.getAs[String]("trace_type")
