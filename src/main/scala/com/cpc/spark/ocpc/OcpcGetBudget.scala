@@ -6,15 +6,14 @@ import org.apache.spark.sql.functions._
 object OcpcGetBudget {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
-    val date = args(0).toString
-    val hour = args(1).toString
 
-    val result = getBudget(date, hour, spark)
+
+    val result = getBudget(spark)
     result.show(10)
     result.write.mode("overwrite").saveAsTable("test.ocpc_get_user_ideaid_budget")
   }
 
-  def getBudget(date: String, hour: String, spark: SparkSession) :DataFrame ={
+  def getBudget(spark: SparkSession) :DataFrame ={
     val url = "jdbc:mysql://rr-2ze8n4bxmg3snxf7e.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
     val user = "rd"
     val passwd = "rdv587@123"
@@ -62,10 +61,7 @@ object OcpcGetBudget {
       .option("dbtable", table)
       .load()
 
-    val base = data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .select("planid", "least_xbalance", "bcost", "date", "hour")
+    val base = data.select("planid", "least_xbalance", "bcost")
 
 //    base.write.mode("overwrite").saveAsTable("test.ocpc_get_user_ideaid_budget")
 
