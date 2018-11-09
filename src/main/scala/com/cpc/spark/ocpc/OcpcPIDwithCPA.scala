@@ -848,10 +848,14 @@ object OcpcPIDwithCPA {
     val cpaRatioCvr2 = spark.sql(sqlRequest)
 
     val cpaRatioCvr3 = getAPIcvr3V3(date, hour, spark)
+    val ideaBalance = getCurrentBudget(date, hour, spark)
 
     val cpaRatio = cpaRatioCvr2
       .join(cpaRatioCvr3, Seq("ideaid", "adclass"), "left_outer")
       .withColumn("cpa_ratio", when(col("flag").isNotNull && col("cpa_ratio_cvr3")>=0, col("cpa_ratio_cvr3")).otherwise(col("cpa_ratio_cvr2")))
+
+
+
 
     //TODO 删除临时表
     cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v3")
@@ -907,6 +911,36 @@ object OcpcPIDwithCPA {
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_with_cvr3_k")
     val finalDF = resultDF.select("ideaid", "adclass", "flag", "cpa_ratio_cvr3")
     finalDF
+  }
+
+  def getCurrentBudget(date: String, hour: String, spark: SparkSession) :DataFrame = {
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    t.ideaid,
+         |    t.balance
+         |FROM
+         |    (SELECT
+         |        ideaid,
+         |        least_xbalance as balance,
+         |        row_number() over(partition by ideaid order by least_xbalance) as seq
+         |    FROM
+         |        dl_cpc.ocpc_ideaid_budget
+         |    WHERE
+         |        `date`='$date'
+         |    AND
+         |        `hour`='$hour') as t
+         |WHERE
+         |    t.seq=1
+       """.stripMargin
+
+    val data = spark.sql(sqlRequest)
+
+    val resultDF = data
+      .withColumn("balance_label", when(col("balance") < 100, 1).otherwise(0))
+      .select("ideaid", "balance_label")
+
+    resultDF
   }
 
 }
