@@ -22,7 +22,13 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
   def saveTrain(p: String = trPath, num_partitions: Int = 1000): Unit = {
     println("Starting preparing data for train")
 
-    getTrainSample(spark, trDate)
+    val traindata = getTrainSample(spark, trDate).persist()
+
+    val st = traindata.sample(withReplacement = true, 0.01).count
+
+    println(s"训练数据总量：${st * 100}")
+
+    traindata
       .repartition(num_partitions)
       .write
       .mode("overwrite")
@@ -30,6 +36,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
       .option("recordType", "Example")
       .save(s"$p/dnntrain-$trDate")
 
+    traindata.unpersist()
     println(s"DONE : Saving train file to $trPath/dnntrain-$trDate")
   }
 
@@ -219,6 +226,16 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
       }
       val c = re.map(x => (0, x._1, x._2, x._3))
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
+  }
+
+  //获取小于当前小时的指定Seq【id】的hash值
+  def filterHash(prefix: String) = udf {
+    (hour: String, values: Seq[String]) =>
+      val re = if (values != null && values.exists(_ < hour)) {
+        values.filter(_ < hour).map(x => Murmur3Hash.stringHash64(prefix + x.split(":")(1), 0))
+      }
+      else Seq(Murmur3Hash.stringHash64(prefix, 0))
+      re.slice(0, 1000)
   }
 
 }
