@@ -852,7 +852,7 @@ object OcpcPIDwithCPA {
 
 
 //    val ideaBalance = getCurrentBudget(date, hour, spark)
-    val cpaRatioCvr3 = getAPIcvr3V3(date, hour, spark)
+    val cpaRatioCvr3 = getAPIcvr3V3(singleHour, date, hour, spark)
 
     val cpaRatio = cpaRatioCvr2
       .join(cpaRatioCvr3, Seq("ideaid", "adclass"), "left_outer")
@@ -882,7 +882,7 @@ object OcpcPIDwithCPA {
   }
 
   //TODO 给api回传模型做反馈机制
-  def getAPIcvr3V3(date: String, hour: String, spark: SparkSession) :DataFrame = {
+  def getAPIcvr3V3(singleHour: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame = {
     val cvr3List = getActivationData(date, hour, spark)
 
     val cvr3Data = getActData(date, hour, 24, spark)
@@ -903,12 +903,6 @@ object OcpcPIDwithCPA {
       .select("ideaid", "adclass", "cost")
 
     // 计算单个小时的ctr_cnt和cvr_cnt
-    val singleHour = historyData
-      .filter(s"`date`='$date' and `hour`='$hour'")
-      .select("ideaid", "adclass", "ctr_cnt")
-      .withColumn("hourly_ctr_cnt", col("ctr_cnt"))
-      .select("ideaid", "adclass", "hourly_ctr_cnt")
-      .distinct()
     singleHour.write.mode("overwrite").saveAsTable("test.test_ocpc_cvr3_debug_singlehour")
 
     val data = cvr3List
