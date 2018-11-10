@@ -812,6 +812,7 @@ object OcpcPIDwithCPA {
       .select("ideaid", "adclass", "hourly_ctr_cnt", "hourly_cvr_cnt")
 
 
+    val cpaRatioCvr3 = getAPIcvr3V3(date, hour, spark)
 
     // 计算cpa_ratio
     val joinData = baseData
@@ -821,6 +822,8 @@ object OcpcPIDwithCPA {
       .select("ideaid", "adclass", "cpa_given", "total_cost", "cvr_cnt")
       .join(singleHour, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "cpa_given", "total_cost", "cvr_cnt", "hourly_ctr_cnt", "hourly_cvr_cnt")
+      .join(cpaRatioCvr3, Seq("ideaid", "adclass"), "left_outer")
+      .withColumn("cvr_cnt", when(col("flag").isNotNull, col("cvr3_cvr_cnt")).otherwise(col("cvr_cnt")))
 
     joinData.createOrReplaceTempView("join_table")
 
@@ -845,14 +848,14 @@ object OcpcPIDwithCPA {
          |  join_table
        """.stripMargin
     println(sqlRequest)
-    val cpaRatioCvr2 = spark.sql(sqlRequest)
+    val cpaRatio = spark.sql(sqlRequest)
 
-    val cpaRatioCvr3 = getAPIcvr3V3(date, hour, spark)
-    val ideaBalance = getCurrentBudget(date, hour, spark)
 
-    val cpaRatio = cpaRatioCvr2
-      .join(cpaRatioCvr3, Seq("ideaid", "adclass"), "left_outer")
-      .withColumn("cpa_ratio", when(col("flag").isNotNull && col("cpa_ratio_cvr3")>=0, col("cpa_ratio_cvr3")).otherwise(col("cpa_ratio_cvr2")))
+//    val ideaBalance = getCurrentBudget(date, hour, spark)
+//
+//    val cpaRatio = cpaRatioCvr2
+//      .join(cpaRatioCvr3, Seq("ideaid", "adclass"), "left_outer")
+//      .withColumn("cpa_ratio", when(col("flag").isNotNull && col("cpa_ratio_cvr3")>=0, col("cpa_ratio_cvr3")).otherwise(col("cpa_ratio_cvr2")))
 
 
 
@@ -904,12 +907,12 @@ object OcpcPIDwithCPA {
       .join(rawData, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "cost", "cvr3_cost", "cvr3_cvr_cnt", "cpa_given", "flag")
       .withColumn("cpa_real", col("cost") / col("cvr3_cvr_cnt"))
-      .withColumn("cpa_ratio", col("cpa_given") / col("cpa_real"))
+      .withColumn("cpa_ratio", when(col("cvr3_cvr_cnt").isNull, 0.8).otherwise(col("cpa_given") / col("cpa_real")))
       .withColumn("cpa_ratio_cvr3", when(col("cpa_ratio").isNull, 1).otherwise(col("cpa_ratio")))
 
     // TODO 删除临时表
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_with_cvr3_k")
-    val finalDF = resultDF.select("ideaid", "adclass", "flag", "cpa_ratio_cvr3")
+    val finalDF = resultDF.select("ideaid", "adclass", "flag", "cpa_ratio_cvr3", "cvr3_cvr_cnt")
     finalDF
   }
 
