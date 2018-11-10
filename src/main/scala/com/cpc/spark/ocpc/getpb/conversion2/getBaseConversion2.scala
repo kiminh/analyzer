@@ -14,7 +14,7 @@ object getBaseConversion2 {
 
     val resultDF = getDataV1(date, hour, spark)
     // TODO: 换成dl_cpc的表
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cvr2_base_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_conversion2_base_hourly")
   }
 
   def getDataV1(date: String, hour: String, spark: SparkSession) :DataFrame = {
@@ -43,9 +43,6 @@ object getBaseConversion2 {
       .select("ideaid", "adclass", "base_cvr3_cnt")
       .withColumn("cvr3_cnt", when(col("base_cvr3_cnt").isNull, 0).otherwise(col("base_cvr3_cnt")))
       .select("ideaid", "adclass", "cvr3_cnt", "base_cvr3_cnt")
-
-    // TODO 删除临时表
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cvr3_cnt_ideaids")
 
     resultDF
   }

@@ -19,7 +19,7 @@ object getBaseConversion1 {
 
     val resultDF = baseDataV1(date, hour, spark)
     // TODO: 换成dl_cpc的表
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cvr1_base_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_conversion1_base_hourly")
   }
 
   def baseDataV1(end_date: String, hour: String, spark: SparkSession) :DataFrame = {
