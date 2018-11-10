@@ -11,7 +11,7 @@ object OcpcGetBudget {
 
     val result = getBudget(date, hour, spark)
     result.show(10)
-    result.write.mode("overwrite").saveAsTable("test.ocpc_check_budget_table")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_ideaid_budget")
   }
 
   def getBudget(date: String, hour: String, spark: SparkSession) :DataFrame ={
@@ -23,6 +23,7 @@ object OcpcGetBudget {
       s"""
          |(SELECT
          |    p.id AS planid,
+         |    idea.id as ideaid,
          |    LEAST((us.balance+us.coupon),p.budget-IFNULL(b.fee+b.coupon,0)) least_xbalance,
          |    IFNULL(b.fee+b.coupon,0) bcost
          |FROM plan p
@@ -35,6 +36,10 @@ object OcpcGetBudget {
          |INNER JOIN
          |    user us
          |ON us.id = p.user_id
+         |LEFT JOIN
+         |    idea
+         |ON
+         |    idea.plan_id=p.id
          |WHERE
          |    ((b.fee+b.coupon) < p.budget OR b.plan_id is NULL)
          |AND
@@ -65,7 +70,7 @@ object OcpcGetBudget {
     val base = data
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .select("planid", "least_xbalance", "bcost", "date", "hour")
+      .select("planid", "ideaid", "least_xbalance", "bcost", "date", "hour")
 
     base
 
