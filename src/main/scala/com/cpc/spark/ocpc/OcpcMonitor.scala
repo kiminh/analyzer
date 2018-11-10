@@ -5,6 +5,7 @@ import java.util.Calendar
 
 import org.apache.spark.sql.SparkSession
 import com.cpc.spark.common.Utils._
+import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.cpc.spark.udfs.Udfs_wj._
 import org.apache.spark.sql.functions._
 
@@ -162,6 +163,20 @@ object OcpcMonitor {
 
 
   def getHoursReportWithAct(date: String, hour: String, spark: SparkSession) = {
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, 4)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
     // 抽取基础数据：所有跑ocpc的广告主
     val sqlRequest1 =
       s"""
@@ -190,9 +205,7 @@ object OcpcMonitor {
          |    from
          |        dl_cpc.cpc_union_log
          |    WHERE
-         |        `date`='$date'
-         |    and
-         |        `hour`='$hour'
+         |        $selectCondition
          |    and
          |        media_appsid  in ("80000001", "80000002")
          |    and
@@ -208,7 +221,7 @@ object OcpcMonitor {
          |            searchid,
          |            label2 as iscvr
          |        from dl_cpc.ml_cvr_feature_v1
-         |        WHERE `date`='$date' and `hour`='$hour'
+         |        WHERE $selectCondition
          |    ) b on a.searchid = b.searchid
        """.stripMargin
     println(sqlRequest1)
@@ -223,9 +236,7 @@ object OcpcMonitor {
          |FROM
          |    dl_cpc.cpc_api_union_log
          |WHERE
-         |    `date`='$date'
-         |and
-         |    `hour`='$hour'
+         |    $selectCondition
          |AND ext_int['is_ocpc']=1
          |and ext_string['ocpc_log'] != ''
          |and ext_string['ocpc_log'] is not null
