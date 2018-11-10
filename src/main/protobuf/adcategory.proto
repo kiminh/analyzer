@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package adcategory;
+
+message Show {
+    int64 isshow=1;
+}
