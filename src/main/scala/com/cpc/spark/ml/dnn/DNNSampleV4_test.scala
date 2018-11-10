@@ -99,7 +99,7 @@ class DNNSampleV4_test(spark: SparkSession, trdate: String = "", trpath: String 
 
   override def getTrainSample(spark: SparkSession, date: String): DataFrame = {
     val rawTrain = spark.sql(sql.replace("XXXX-XX-XX", date))
-
+    spark.sql(sql.replace("XXXX-XX-XX", date))
   }
 
   override def getTestSamle(spark: SparkSession, date: String, percent: Double): DataFrame = super.getTestSamle(spark, date, percent)
