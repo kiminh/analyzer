@@ -255,8 +255,10 @@ object OcpcSampleToRedis {
       .select("ideaid", "conversion_goal")
       .distinct()
 
-    val finalData1 = spark
-      .sql(sqlRequest4)
+    val finalData1 = spark.sql(sqlRequest4)
+    finalData1.write.mode("overwrite").saveAsTable("test.ocpc_debug_k_values")
+
+    val finalData2 = finalData1
       .join(regressionK, Seq("ideaid"), "left_outer")
       .withColumn("new_k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
       .withColumn("ctr_cnt", when(col("flag").isNotNull && col("regression_k_value")>0, col("cvr_cnt")).otherwise(col("ctr_cnt")))
@@ -271,10 +273,10 @@ object OcpcSampleToRedis {
 
 
     // TODO bak表
-    finalData1.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
+    finalData2.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
 
 
-    val finalData = finalData1.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
+    val finalData = finalData2.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
 
     finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
 
