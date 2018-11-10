@@ -77,7 +77,7 @@ object GetTraceReportV3 {
       .map(x => x._2)
 
 
-    println("traceData: " + traceData)
+    println("traceData: " + traceData.count())
 
     /*
     ctx.createDataFrame(traceData)
@@ -366,7 +366,7 @@ object GetTraceReportV3 {
 
   def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
     try {
-      println("~~~~~~~~~~~~~~~")
+      println("~~~~~clearReportHourData~~~~~")
       Class.forName(mariadbProp.getProperty("driver"));
       val conn = DriverManager.getConnection(
         mariadbUrl,
