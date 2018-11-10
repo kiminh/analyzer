@@ -606,6 +606,7 @@ object OcpcPIDwithCPA {
       .table("dl_cpc.new_pb_ocpc_with_pcvr")
       .withColumn("kvalue2", col("k_value"))
       .select("ideaid", "adclass", "kvalue2")
+      .distinct()
 
     // 优先case1，然后case2，最后case3
     val resultDF = baseData
@@ -884,7 +885,7 @@ object OcpcPIDwithCPA {
   def getAPIcvr3V3(date: String, hour: String, spark: SparkSession) :DataFrame = {
     val cvr3List = getActivationData(date, hour, spark)
 
-    val cvr3Data = getActData(date, hour, 48, spark)
+    val cvr3Data = getActData(date, hour, 24, spark)
 
     val rawData = cvr3Data
       .groupBy("ideaid", "adclass")
@@ -895,7 +896,7 @@ object OcpcPIDwithCPA {
 
 
 
-    val historyData = getCompleteHistoryData(date, hour, 48, spark)
+    val historyData = getCompleteHistoryData(date, hour, 24, spark)
     val costData = historyData
       .groupBy("ideaid", "adclass")
       .agg(sum(col("cost")).alias("cost"))
@@ -907,6 +908,7 @@ object OcpcPIDwithCPA {
       .select("ideaid", "adclass", "ctr_cnt")
       .withColumn("hourly_ctr_cnt", col("ctr_cnt"))
       .select("ideaid", "adclass", "hourly_ctr_cnt")
+      .distinct()
 
     val data = cvr3List
       .join(costData, Seq("ideaid"), "left_outer")
