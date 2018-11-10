@@ -17,7 +17,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
   *
   */
 class DNNSample(spark: SparkSession, trDate: String, trPath: String,
-                teDate: String, tePath: String) {
+                teDate: String, tePath: String) extends Serializable {
 
   def saveTrain(p: String = trPath, num_partitions: Int = 1000): Unit = {
     println("Starting preparing data for train")

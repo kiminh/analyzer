@@ -2,7 +2,6 @@ package com.cpc.spark.ml.dnn
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
-import org.dmg.pmml.True
 
 /**
   * 在d3版本特征的基础上实时增加当天看过和点击过的广告ideaid
@@ -101,13 +100,16 @@ class DNNSampleV4_test(spark: SparkSession, trdate: String = "", trpath: String 
 
   override def getTrainSample(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
+    val trainSql = sql(date, 2)
+    val behaviorSql = behavior_sql(date)
+
     println("=================PREPARING TRAIN DATA==============")
-    println(sql(date))
+    println(trainSql)
     println("====================================================")
-    println(behavior_sql(date))
+    println(behaviorSql)
     println("====================================================")
 
-    val rawBehavior = spark.sql(behavior_sql(date))
+    val rawBehavior = spark.sql(behaviorSql)
 
     val userAppIdx = getUidApp(spark, date)
       .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))
@@ -131,7 +133,7 @@ class DNNSampleV4_test(spark: SparkSession, trdate: String = "", trpath: String 
         hashSeq("m15", "int")($"c_adclass_4_7").alias("m15")
       )
 
-    spark.sql(sql(date, 2))
+    spark.sql(trainSql)
       .join(behavior_data, Seq("uid"), "left")
       .join(userAppIdx, Seq("uid"), "left")
       .select($"label",
@@ -193,14 +195,17 @@ class DNNSampleV4_test(spark: SparkSession, trdate: String = "", trpath: String 
   }
 
   override def getTestSamle4Gauc(spark: SparkSession, date: String, percent: Double = 0.05): DataFrame = {
+    val testSql = sql(date, 2)
+    val behaviorSql = behavior_sql(date)
+
     println("=================PREPARING TEST DATA================")
-    println(sql(date))
+    println(testSql)
     println("====================================================")
-    println(behavior_sql(date))
+    println(behaviorSql)
     println("====================================================")
 
     import spark.implicits._
-    val rawTrain = spark.sql(sql(date))
+    val rawTrain = spark.sql(testSql)
     val uid = rawTrain.groupBy("uid").agg(expr("sum(label[0]) as count"))
       .filter("count>0")
       .sample(withReplacement = false, percent)
@@ -208,7 +213,7 @@ class DNNSampleV4_test(spark: SparkSession, trdate: String = "", trpath: String 
     val userAppIdx = getUidApp(spark, date)
       .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))
 
-    val rawBehavior = spark.sql(behavior_sql(date))
+    val rawBehavior = spark.sql(behaviorSql)
     val behavior_data = rawBehavior
       .select(
         $"uid",
