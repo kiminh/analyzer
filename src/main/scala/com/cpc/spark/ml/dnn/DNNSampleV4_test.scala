@@ -101,6 +101,11 @@ class DNNSampleV4_test(spark: SparkSession, trdate: String = "", trpath: String 
 
   override def getTrainSample(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
+    println("=================PREPARING TRAIN DATA==============")
+    println(sql(date))
+    println("====================================================")
+    println(behavior_sql(date))
+    println("====================================================")
 
     val rawBehavior = spark.sql(behavior_sql(date))
 
@@ -188,6 +193,12 @@ class DNNSampleV4_test(spark: SparkSession, trdate: String = "", trpath: String 
   }
 
   override def getTestSamle4Gauc(spark: SparkSession, date: String, percent: Double = 0.05): DataFrame = {
+    println("=================PREPARING TEST DATA================")
+    println(sql(date))
+    println("====================================================")
+    println(behavior_sql(date))
+    println("====================================================")
+
     import spark.implicits._
     val rawTrain = spark.sql(sql(date))
     val uid = rawTrain.groupBy("uid").agg(expr("sum(label[0]) as count"))
