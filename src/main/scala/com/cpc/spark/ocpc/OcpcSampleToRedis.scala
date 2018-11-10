@@ -258,6 +258,7 @@ object OcpcSampleToRedis {
     val finalData1 = spark.sql(sqlRequest4)
     finalData1.write.mode("overwrite").saveAsTable("test.ocpc_debug_k_values")
 
+    // TODO 调回k值
     val finalData2 = finalData1
       .join(regressionK, Seq("ideaid"), "left_outer")
       .withColumn("new_k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
@@ -270,7 +271,7 @@ object OcpcSampleToRedis {
         .withColumn("cali_value", lit(1.0))
         .withColumn("cvr3_cali", lit(1.0))
         .withColumn("k_value", when(col("ideaid")===2297796 && col("k_value")<0.6, 0.6).otherwise(col("k_value")))
-        .withColumn("k_value", when(col("ideaid")===2291776 || col("ideaid")===2291821 || col("ideaid")===2297796 || col("ideaid")===2291709, 0.5).otherwise(col("k_value")))
+//        .withColumn("k_value", when(col("ideaid")===2291776 || col("ideaid")===2291821 || col("ideaid")===2297796 || col("ideaid")===2291709, 0.5).otherwise(col("k_value")))
 
 //    (2291776,2291821,2297796,2291709)
 
