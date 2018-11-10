@@ -464,11 +464,6 @@ object OcpcSampleToRedis {
         )
         list += currentItem
 
-        val testCvr3Cnt = currentItem.cvr3Cnt
-        if(testCvr3Cnt>0) {
-          println("#######################################")
-          println(s"get cvr3_cnt: $testCvr3Cnt")
-        }
       }
     }
     val result = list.toArray[SingleUser]
