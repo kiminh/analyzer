@@ -15,7 +15,7 @@ object OcpcMonitor {
     val date = args(0).toString
     val hour = args(1).toString
 
-//    getBaseData(date, hour, spark)
+    getBaseData(date, hour, spark)
 //    getHoursReport(date, hour, spark)
     getHoursReportWithAct(date, hour, spark)
 
@@ -272,7 +272,9 @@ object OcpcMonitor {
          |    b.cost * 1.0 / b.ctr_cnt as price,
          |    b.show_cnt,
          |    b.ctr_cnt,
-         |    b.cvr_cnt
+         |    b.cvr_cnt,
+         |    '$date' as date,
+         |    '$hour' as hour
          |FROM
          |    (SELECT
          |        ideaid
@@ -301,7 +303,9 @@ object OcpcMonitor {
          |    b.cost * 1.0 / b.ctr_cnt as price,
          |    b.show_cnt,
          |    b.ctr_cnt,
-         |    c.cvr_cnt
+         |    c.cvr_cnt,
+         |    '$date' as date,
+         |    '$hour' as hour
          |FROM
          |    (SELECT
          |        ideaid
@@ -324,8 +328,8 @@ object OcpcMonitor {
 //    noApiData.write.mode("overwrite").insertInto("dl_cpc.ocpc_check_hourly_report_noapi")
 //    apiData.write.mode("overwrite").insertInto("dl_cpc.ocpc_check_hourly_report_api")
 
-    noApiData.write.mode("overwrite").saveAsTable("test.ocpc_check_hourly_report_noapi")
-    apiData.write.mode("overwrite").saveAsTable("test.ocpc_check_hourly_report_api")
+    noApiData.write.mode("overwrite").insertInto("dl_cpc.ocpc_check_hourly_report_noapi")
+    apiData.write.mode("overwrite").insertInto("dl_cpc.ocpc_check_hourly_report_api")
 
   }
 

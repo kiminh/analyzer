@@ -319,7 +319,8 @@ object OcpcDailyReport {
          |    b.cost * 1.0 / b.ctr_cnt as price,
          |    b.show_cnt,
          |    b.ctr_cnt,
-         |    b.cvr_cnt
+         |    b.cvr_cnt,
+         |    '$date' as date
          |FROM
          |    (SELECT
          |        ideaid
@@ -348,7 +349,8 @@ object OcpcDailyReport {
          |    b.cost * 1.0 / b.ctr_cnt as price,
          |    b.show_cnt,
          |    b.ctr_cnt,
-         |    c.cvr_cnt
+         |    c.cvr_cnt,
+         |    '$date' as date
          |FROM
          |    (SELECT
          |        ideaid
