@@ -904,11 +904,9 @@ object OcpcPIDwithCPA {
     // 计算单个小时的ctr_cnt和cvr_cnt
     val singleHour = historyData
       .filter(s"hour='$hour'")
-      .groupBy("ideaid", "adclass")
-      .agg(
-        sum("isclick").alias("hourly_ctr_cnt"),
-        sum(col("iscvr")).alias("hourly_cvr_cnt"))
-      .select("ideaid", "adclass", "hourly_ctr_cnt", "hourly_cvr_cnt")
+      .select("ideaid", "adclass", "ctr_cnt")
+      .withColumn("hourly_ctr_cnt", col("ctr_cnt"))
+      .select("ideaid", "adclass", "hourly_ctr_cnt")
 
     val data = cvr3List
       .join(costData, Seq("ideaid"), "left_outer")
