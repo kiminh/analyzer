@@ -165,7 +165,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
     * @param prefix ：前缀
     * @return
     */
-  private def hash(prefix: String) = udf {
+  def hash(prefix: String) = udf {
     num: String =>
       if (num != null) Murmur3Hash.stringHash64(prefix + num, 0) else Murmur3Hash.stringHash64(prefix, 0)
   }
@@ -177,7 +177,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
     * @param t      ：类型
     * @return
     */
-  private def hashSeq(prefix: String, t: String) = {
+  def hashSeq(prefix: String, t: String) = {
     t match {
       case "int" => udf {
         seq: Seq[Int] =>
@@ -201,10 +201,24 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
     * @param d :默认值
     * @return
     */
-  private def getNewDense(p: Int, d: Long) = udf {
+  def getNewDense(p: Int, d: Long) = udf {
     (dense: Seq[Long], f: Boolean) =>
       if (f) (dense.slice(0, p) :+ d) ++ dense.slice(p + 1, 1000) else dense
   }
 
+  private val default_hash = for (i <- 1 to 100) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
+
+  def mkSparseFeature_m = udf {
+    features: Seq[Seq[Long]] =>
+      var i = 0
+      var re = Seq[(Int, Int, Long)]()
+      for (feature <- features) {
+        re = re ++
+          (if (feature != null) feature.zipWithIndex.map(x => (i, x._2, x._1)) else default_hash(i))
+        i = i + 1
+      }
+      val c = re.map(x => (0, x._1, x._2, x._3))
+      (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
+  }
 
 }
