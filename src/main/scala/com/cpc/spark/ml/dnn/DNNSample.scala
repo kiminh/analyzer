@@ -22,13 +22,11 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
   def saveTrain(p: String = trPath, num_partitions: Int = 1000): Unit = {
     println("Starting preparing data for train")
 
-    val traindata = getTrainSample(spark, trDate).persist()
+    /*val st = traindata.sample(withReplacement = true, 0.01).count
 
-    val st = traindata.sample(withReplacement = true, 0.01).count
+    println(s"训练数据总量：${st * 100}")*/
 
-    println(s"训练数据总量：${st * 100}")
-
-    traindata
+    getTrainSample(spark, trDate)
       .repartition(num_partitions)
       .write
       .mode("overwrite")
@@ -36,7 +34,6 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
       .option("recordType", "Example")
       .save(s"$p/dnntrain-$trDate")
 
-    traindata.unpersist()
     println(s"DONE : Saving train file to $trPath/dnntrain-$trDate")
   }
 
