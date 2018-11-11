@@ -260,7 +260,6 @@ object OcpcDailyReport {
        """.stripMargin
 
     val rawData = spark.sql(sqlRequest1)
-//    rawData.createOrReplaceTempView("raw_table")
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_daily_complete_data")
 
     val ocpcAd = spark
@@ -269,7 +268,6 @@ object OcpcDailyReport {
       .distinct()
 
     ocpcAd.write.mode("overwrite").saveAsTable("test.ocpc_daily_ad_list")
-//    ocpcAd.createOrReplaceTempView("ocpc_ad_list")
 
     val sqlRequest2 =
       s"""
@@ -288,7 +286,7 @@ object OcpcDailyReport {
 
     val label3Data = spark.sql(sqlRequest2)
     label3Data.write.mode("overwrite").saveAsTable("test.ocpc_label3_daily_data")
-//    label3Data.createOrReplaceTempView("label3_data")
+
 
     val sqlRequest3 =
       s"""
@@ -307,7 +305,6 @@ object OcpcDailyReport {
 
     val label2Data = spark.sql(sqlRequest3)
     label2Data.write.mode("overwrite").saveAsTable("test.ocpc_label2_daily_data")
-//    label2Data.createOrReplaceTempView("label2_data")
 
     val sqlRequest4 =
       s"""
@@ -322,7 +319,8 @@ object OcpcDailyReport {
          |    b.cost * 1.0 / b.ctr_cnt as price,
          |    b.show_cnt,
          |    b.ctr_cnt,
-         |    b.cvr_cnt
+         |    b.cvr_cnt,
+         |    '$date' as date
          |FROM
          |    (SELECT
          |        ideaid
@@ -351,7 +349,8 @@ object OcpcDailyReport {
          |    b.cost * 1.0 / b.ctr_cnt as price,
          |    b.show_cnt,
          |    b.ctr_cnt,
-         |    c.cvr_cnt
+         |    c.cvr_cnt,
+         |    '$date' as date
          |FROM
          |    (SELECT
          |        ideaid
@@ -371,8 +370,8 @@ object OcpcDailyReport {
 
     val apiData = spark.sql(sqlRequest5)
 
-    noApiData.write.mode("overwrite").saveAsTable("test.ocpc_check_daily_report_noapi")
-    apiData.write.mode("overwrite").saveAsTable("test.ocpc_check_daily_report_api")
+    noApiData.write.mode("overwrite").insertInto("dl_cpc.ocpc_check_daily_report_noapi")
+    apiData.write.mode("overwrite").insertInto("dl_cpc.ocpc_check_daily_report_api")
 
 
   }

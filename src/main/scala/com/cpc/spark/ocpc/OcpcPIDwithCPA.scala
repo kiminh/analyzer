@@ -606,6 +606,7 @@ object OcpcPIDwithCPA {
       .table("dl_cpc.new_pb_ocpc_with_pcvr")
       .withColumn("kvalue2", col("k_value"))
       .select("ideaid", "adclass", "kvalue2")
+      .distinct()
 
     // 优先case1，然后case2，最后case3
     val resultDF = baseData
@@ -813,6 +814,7 @@ object OcpcPIDwithCPA {
 
 
 
+
     // 计算cpa_ratio
     val joinData = baseData
       .join(cpaGiven, Seq("ideaid"), "left_outer")
@@ -821,6 +823,7 @@ object OcpcPIDwithCPA {
       .select("ideaid", "adclass", "cpa_given", "total_cost", "cvr_cnt")
       .join(singleHour, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "cpa_given", "total_cost", "cvr_cnt", "hourly_ctr_cnt", "hourly_cvr_cnt")
+
 
     joinData.createOrReplaceTempView("join_table")
 
@@ -847,12 +850,13 @@ object OcpcPIDwithCPA {
     println(sqlRequest)
     val cpaRatioCvr2 = spark.sql(sqlRequest)
 
-    val cpaRatioCvr3 = getAPIcvr3V3(date, hour, spark)
-    val ideaBalance = getCurrentBudget(date, hour, spark)
+
+//    val ideaBalance = getCurrentBudget(date, hour, spark)
+    val cpaRatioCvr3 = getAPIcvr3V3(singleHour, date, hour, spark)
 
     val cpaRatio = cpaRatioCvr2
       .join(cpaRatioCvr3, Seq("ideaid", "adclass"), "left_outer")
-      .withColumn("cpa_ratio", when(col("flag").isNotNull && col("cpa_ratio_cvr3")>=0, col("cpa_ratio_cvr3")).otherwise(col("cpa_ratio_cvr2")))
+      .withColumn("cpa_ratio", when(col("flag").isNotNull, col("cpa_ratio_cvr3")).otherwise(col("cpa_ratio_cvr2")))
 
 
 
@@ -878,10 +882,10 @@ object OcpcPIDwithCPA {
   }
 
   //TODO 给api回传模型做反馈机制
-  def getAPIcvr3V3(date: String, hour: String, spark: SparkSession) :DataFrame = {
+  def getAPIcvr3V3(singleHour: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame = {
     val cvr3List = getActivationData(date, hour, spark)
 
-    val cvr3Data = getActData(date, hour, 48, spark)
+    val cvr3Data = getActData(date, hour, 24, spark)
 
     val rawData = cvr3Data
       .groupBy("ideaid", "adclass")
@@ -892,24 +896,51 @@ object OcpcPIDwithCPA {
 
 
 
-    val historyData = getCompleteHistoryData(date, hour, 48, spark)
+    val historyData = getCompleteHistoryData(date, hour, 24, spark)
     val costData = historyData
       .groupBy("ideaid", "adclass")
       .agg(sum(col("cost")).alias("cost"))
       .select("ideaid", "adclass", "cost")
 
-    val resultDF = cvr3List
+    // 计算单个小时的ctr_cnt和cvr_cnt
+    singleHour.write.mode("overwrite").saveAsTable("test.test_ocpc_cvr3_debug_singlehour")
+
+    val data = cvr3List
       .join(costData, Seq("ideaid"), "left_outer")
       .select("ideaid", "adclass", "cost", "cpa_given", "flag")
       .join(rawData, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "cost", "cvr3_cost", "cvr3_cvr_cnt", "cpa_given", "flag")
-      .withColumn("cpa_real", col("cost") / col("cvr3_cvr_cnt"))
-      .withColumn("cpa_ratio", col("cpa_given") / col("cpa_real"))
-      .withColumn("cpa_ratio_cvr3", when(col("cpa_ratio").isNull, 1).otherwise(col("cpa_ratio")))
+      .join(singleHour, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "adclass", "cost", "cvr3_cost", "cvr3_cvr_cnt", "cpa_given", "flag", "hourly_ctr_cnt")
+
+
+
+    data.createOrReplaceTempView("data_table")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  adclass,
+         |  cost,
+         |  cpa_given,
+         |  cvr3_cvr_cnt,
+         |  hourly_ctr_cnt,
+         |  flag,
+         |  (case when cpa_given is null then 1.0
+         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then -1
+         |        when hourly_ctr_cnt>=10 and (cvr3_cvr_cnt=0 or cvr3_cvr_cnt is null) then 0.8
+         |        when cvr3_cvr_cnt>0 then cpa_given * cvr3_cvr_cnt * 1.0 / cost
+         |        else 1.0 end) as cpa_ratio_cvr3
+         |FROM
+         |  data_table
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+
 
     // TODO 删除临时表
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_with_cvr3_k")
-    val finalDF = resultDF.select("ideaid", "adclass", "flag", "cpa_ratio_cvr3")
+    val finalDF = resultDF.select("ideaid", "adclass", "flag", "cvr3_cvr_cnt", "cpa_ratio_cvr3")
     finalDF
   }
 

@@ -255,8 +255,11 @@ object OcpcSampleToRedis {
       .select("ideaid", "conversion_goal")
       .distinct()
 
-    val finalData1 = spark
-      .sql(sqlRequest4)
+    val finalData1 = spark.sql(sqlRequest4)
+    finalData1.write.mode("overwrite").saveAsTable("test.ocpc_debug_k_values")
+
+    // TODO 调回k值
+    val finalData2 = finalData1
       .join(regressionK, Seq("ideaid"), "left_outer")
       .withColumn("new_k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
       .withColumn("ctr_cnt", when(col("flag").isNotNull && col("regression_k_value")>0, col("cvr_cnt")).otherwise(col("ctr_cnt")))
@@ -267,14 +270,16 @@ object OcpcSampleToRedis {
       .withColumn("k_value", when(col("conversion_goal")===2, col("new_k_value")*col("cvr3_cali")).otherwise(col("new_k_value") * col("cali_value")))
         .withColumn("cali_value", lit(1.0))
         .withColumn("cvr3_cali", lit(1.0))
-        .withColumn("k_value", when(col("ideaid")===2297796 && col("k_value")<0.6, 0.6).otherwise(col("k_value")))
+//        .withColumn("k_value", when(col("ideaid")===2297796 && col("k_value")<0.6, 0.6).otherwise(col("k_value")))
+//        .withColumn("k_value", when(col("ideaid")===2291776 || col("ideaid")===2291821 || col("ideaid")===2297796 || col("ideaid")===2291709, 0.5).otherwise(col("k_value")))
 
+//    (2291776,2291821,2297796,2291709)
 
     // TODO bak表
-    finalData1.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
+    finalData2.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
 
 
-    val finalData = finalData1.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
+    val finalData = finalData2.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
 
     finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
 
@@ -430,6 +435,10 @@ object OcpcSampleToRedis {
         println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali, cvr3Cnt:$cvr3Cnt")
       }
       cnt += 1
+//      if (cvr3Cnt > 0) {
+//        println("######################")
+//        println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali, cvr3Cnt:$cvr3Cnt")
+//      }
 
       val tmpCost = adclassCost.toLong
       if (tmpCost<0) {
@@ -454,6 +463,7 @@ object OcpcSampleToRedis {
           cvr3Cnt = cvr3Cnt
         )
         list += currentItem
+
       }
     }
     val result = list.toArray[SingleUser]
