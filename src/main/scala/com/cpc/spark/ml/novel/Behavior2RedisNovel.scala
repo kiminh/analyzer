@@ -90,7 +90,7 @@ object Behavior2RedisNovel {
       p.foreach { rec =>
         var group = Seq[Int]()
         var hashcode = Seq[Long]()
-        val uid = "dnn_novel_ctr_" + rec.getString(0)
+        val uid = "n1_" + rec.getString(0)
         for (i <- 1 to 14) {
           val f = rec.getAs[Seq[Long]](i)
           group = group ++ Array.tabulate(f.length)(x => i)
