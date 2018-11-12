@@ -25,15 +25,15 @@ object UserBehaviorNovelCvr {
     val cvr_sql =
       s"""
          |select uid, ideaid as click_ideaid, timestamp,
-         |      ext['adclass'].int_value as click_adclass,
-         |      userid       as click_userid,
-         |      planid       as click_planid,
-         |      adtype       as click_adtype,
-         |      interaction  as click_interaction,
-         |      city         as click_city,
-         |      adslotid     as click_adslotid,
-         |      ext['phone_level'].int_value  as click_phone_level,
-         |      ext['brand_title'].string_value  as click_brand_title,
+         |      ext['adclass'].int_value as cvr_adclass,
+         |      userid       as cvr_userid,
+         |      planid       as cvr_planid,
+         |      adtype       as cvr_adtype,
+         |      interaction  as cvr_interaction,
+         |      city         as cvr_city,
+         |      adslotid     as cvr_adslotid,
+         |      ext['phone_level'].int_value  as cvr_phone_level,
+         |      ext['brand_title'].string_value  as cvr_brand_title,
          |      row_number() over(partition by uid,ideaid order by timestamp desc) rn
          |from
          |  (select *
