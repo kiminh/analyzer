@@ -24,7 +24,7 @@ object UserBehaviorNovelCvr {
     //cvr data
     val cvr_sql =
       s"""
-         |select uid, ideaid as click_ideaid, timestamp,
+         |select uid, ideaid as cvr_ideaid, timestamp,
          |      ext['adclass'].int_value as cvr_adclass,
          |      userid       as cvr_userid,
          |      planid       as cvr_planid,
