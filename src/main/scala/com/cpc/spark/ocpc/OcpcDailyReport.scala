@@ -283,7 +283,7 @@ object OcpcDailyReport {
       s"""
          |SELECT
          |    ideaid,
-         |    SUM(iscvr) as cvr_cnt
+         |    SUM(label) as cvr_cnt
          |FROM
          |    dl_cpc.ml_cvr_feature_v2
          |WHERE
