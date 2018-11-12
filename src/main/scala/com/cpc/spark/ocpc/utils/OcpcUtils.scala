@@ -1,12 +1,17 @@
 package com.cpc.spark.ocpc.utils
 
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.common.Utils.getTimeRangeSql
 import com.cpc.spark.ocpc.OcpcSampleToRedis.checkAdType
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
-import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions.{col, when}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.functions.{col, lit, when}
+import userocpc.userocpc.{SingleUser, UserOcpc}
+
+import scala.collection.mutable.ListBuffer
 
 object OcpcUtils {
   def filterDataByType(rawData: DataFrame, date:String, hour: String, spark:SparkSession): DataFrame ={
@@ -90,6 +95,158 @@ object OcpcUtils {
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
     resultDF
+  }
+
+  def calculateHPCVR(endDate: String, hour: String, spark: SparkSession) ={
+    // calculate time period for historical data
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val date = sdf.parse(endDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(date)
+    calendar.add(Calendar.DATE, -7)
+    val dt = calendar.getTime
+    val startDate = sdf.format(dt)
+    val selectCondition = getTimeRangeSql(startDate, hour, endDate, hour)
+
+    // read data and set redis configuration
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  adclass,
+         |  SUM(total_cvr) * 1.0 / SUM(cnt) as hpcvr
+         |FROM
+         |  dl_cpc.ocpc_pcvr_history
+         |WHERE $selectCondition
+         |GROUP BY ideaid, adclass
+       """.stripMargin
+    println(sqlRequest)
+
+    val rawTable = spark.sql(sqlRequest)
+
+    rawTable.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr_total")
+    rawTable
+
+  }
+
+  def getRegressionK(date: String, hour: String, spark: SparkSession) = {
+    import spark.implicits._
+
+    val filename = "/user/cpc/wangjun/ocpc_linearregression_k.txt"
+    val data = spark.sparkContext.textFile(filename)
+
+
+    val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+    rawRDD.foreach(println)
+
+    val rawDF = rawRDD.toDF("ideaid", "flag").distinct()
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  k_ratio2,
+         |  k_ratio3
+         |FROM
+         |  dl_cpc.ocpc_v2_k
+         |WHERE
+         |  `date` = '$date'
+         |AND
+         |  `hour` = '$hour'
+       """.stripMargin
+
+    val regressionK = spark.sql(sqlRequest)
+
+    val cvr3List = spark
+      .table("test.ocpc_idea_update_time")
+      .filter("conversion_goal=2")
+      .withColumn("cvr3_flag", lit(1))
+      .select("ideaid", "cvr3_flag")
+      .distinct()
+
+    val resultDF = rawDF
+      .join(regressionK, Seq("ideaid"), "left_outer")
+      .select("ideaid", "k_ratio2", "k_ratio3", "flag")
+      .join(cvr3List, Seq("ideaid"), "left_outer")
+      .select("ideaid", "flag", "k_ratio2", "k_ratio3", "cvr3_flag")
+      .withColumn("regression_k_value", when(col("cvr3_flag").isNull, col("k_ratio2")).otherwise(col("k_ratio3")))
+
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_test_k_regression_list")
+
+    resultDF
+
+
+  }
+
+
+  def savePbPack(dataset: Dataset[Row]): Unit = {
+    var list = new ListBuffer[SingleUser]
+    val filename = s"UseridDataOcpc.pb"
+    println("size of the dataframe")
+    println(dataset.count)
+    dataset.show(10)
+    var cnt = 0
+
+    for (record <- dataset.collect()) {
+      val ideaid = record.get(0).toString
+      val userId = record.get(1).toString
+      val adclassId = record.get(2).toString
+      val costValue = record.get(3).toString
+      val ctrValue = record.getLong(4).toString
+      val cvrValue = record.getLong(5).toString
+      val adclassCost = record.get(6).toString
+      val adclassCtr = record.getLong(7).toString
+      val adclassCvr = record.getLong(8).toString
+      val k = record.get(9).toString
+      val hpcvr = record.getAs[Double]("hpcvr")
+      val caliValue = record.getAs[Double]("cali_value")
+      val cvr3Cali = record.getAs[Double]("cvr3_cali")
+      val cvr3Cnt = record.getAs[Long]("cvr3_cnt")
+
+      if (cnt % 500 == 0) {
+        println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali, cvr3Cnt:$cvr3Cnt")
+      }
+      cnt += 1
+      //      if (cvr3Cnt > 0) {
+      //        println("######################")
+      //        println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali, cvr3Cnt:$cvr3Cnt")
+      //      }
+
+      val tmpCost = adclassCost.toLong
+      if (tmpCost<0) {
+        println("#######################################")
+        println("negative cost")
+        println(record)
+      } else {
+        val currentItem = SingleUser(
+          ideaid = ideaid,
+          userid = userId,
+          cost = costValue,
+          ctrcnt = ctrValue,
+          cvrcnt = cvrValue,
+          adclass = adclassId,
+          adclassCost = adclassCost,
+          adclassCtrcnt = adclassCtr,
+          adclassCvrcnt = adclassCvr,
+          kvalue = k,
+          hpcvr = hpcvr,
+          calibration = caliValue,
+          cvr3Cali = cvr3Cali,
+          cvr3Cnt = cvr3Cnt
+        )
+        list += currentItem
+
+      }
+    }
+    val result = list.toArray[SingleUser]
+    val useridData = UserOcpc(
+      user = result
+    )
+    println("length of the array")
+    println(result.length)
+    useridData.writeTo(new FileOutputStream(filename))
+    println("complete save data into protobuffer")
+
   }
 
 
