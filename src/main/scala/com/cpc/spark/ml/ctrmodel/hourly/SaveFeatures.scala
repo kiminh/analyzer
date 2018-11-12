@@ -304,6 +304,8 @@ object SaveFeatures {
         |      ,un.userid
         |      ,un.uid
         |      ,un.ideaid
+        |      ,un.date
+        |      ,un.hour
         |      ,tr.trace_type as trace_type
         |from dl_cpc.logparsed_cpc_trace_minute as tr
         |left join
@@ -322,11 +324,16 @@ object SaveFeatures {
           var uid = ""
           var userid = 0
           var ideaid = 0
+          var date = ""
+          var hour = ""
+          var search_time = ""
           x._2.foreach(
             x => {
               uid = x.getAs[String]("uid")
               userid = x.getAs[Int]("userid")
               ideaid = x.getAs[Int]("ideaid")
+              search_time = date.concat(" ").concat(hour)
+
               if (!x.isNullAt(0)) { //trace_type为null时过滤
                 val trace_type = x.getAs[String]("trace_type")
                 if (trace_type == "active_third") {
@@ -337,10 +344,10 @@ object SaveFeatures {
               }
             }
           )
-          (x._1, active_third, uid, userid, ideaid)
+          (x._1, active_third, uid, userid, ideaid, search_time)
       }
       .filter(x => x._2 != -1) //过滤空值
-      .toDF("searchid", "label", "uid", "userid", "ideaid")
+      .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time")
 
     println("user api back: " + userApiBackRDD.count())
 
