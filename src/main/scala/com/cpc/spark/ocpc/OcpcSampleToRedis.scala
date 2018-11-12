@@ -272,6 +272,41 @@ object OcpcSampleToRedis {
     // TODO bak表
     finalData2.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
 
+    val sqlRequest5 =
+      s"""
+         |SELECT
+         |  a.ideaid,
+         |  a.userid,
+         |  a.adclass,
+         |  a.cost,
+         |  a.ctr_cnt,
+         |  a.cvr_cnt,
+         |  a.adclass_cost,
+         |  a.adclass_ctr_cnt,
+         |  a.adclass_cvr_cnt,
+         |  (case when b.conversion_goal=1 and a.k_value<0.2 then 0.2
+         |        when b.conversion_goal=1 and a.k_value>1.4 then 1.4
+         |        when b.conversion_goal=2 and a.k_value<0.05 then 0.05
+         |        when b.conversion_goal=2 and a.k_value>1.2 then 1.2
+         |        when b.conversion_goal=3 and a.k_value<0.02 then 0.02
+         |        when b.conversion_goal=3 and a.k_value>1.2 then 1.2
+         |        else a.k_value end) as k_value,
+         |  a.hpcvr,
+         |  a.cali_value,
+         |  a.cvr3_cali,
+         |  a.cvr3_cnt
+         |FROM
+         |  test.new_pb_ocpc_with_pcvr_complete_bak as a
+         |LEFT JOIN
+         |  test.ocpc_idea_update_time as b
+         |ON
+         |  a.ideaid=b.ideaid
+       """.stripMargin
+    println(sqlRequest5)
+    val finalData3 = spark.sql(sqlRequest5)
+
+    // TODO bak表
+    finalData2.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak2")
 
     val finalData = finalData2.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
 
