@@ -288,6 +288,7 @@ object OcpcSampleToRedis {
          |        when b.conversion_goal=2 and a.k_value>1.2 then 1.2
          |        when b.conversion_goal=3 and a.k_value<0.02 then 0.02
          |        when b.conversion_goal=3 and a.k_value>1.2 then 1.2
+         |        when a.k_value>1.4 then 1.4
          |        else a.k_value end) as k_value,
          |  a.hpcvr,
          |  a.cali_value,
