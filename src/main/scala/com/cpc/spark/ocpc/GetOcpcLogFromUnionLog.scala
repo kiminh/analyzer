@@ -144,13 +144,13 @@ object GetOcpcLogFromUnionLog {
     cols.foreach(println)
     val resultDF = result
       .select(cols.head, cols.tail: _*)
-      .withColumn("date", lit(date))
+      .withColumn("dt", lit(date))
       .withColumn("hour", lit(hour))
     println(s"output size: ${df.count()}")
     println("first 10 rows: ")
     resultDF.show(10)
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_unionlog_v2")
-//    df.write.mode("append").insertInto("dl_cpc.ocpc_unionlog_v2")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_unionlog_v2")
+    df.write.mode("append").insertInto("dl_cpc.ocpc_unionlog_v2")
   }
 
 }
