@@ -129,6 +129,7 @@ object GetOcpcLogFromUnionLog {
     df = df.withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
     // switch the last column with the last but three
     val cols = df.columns
+    df.show(10)
     val ocpc_log_dict = cols(cols.length - 1)
     cols(cols.length - 1) = cols(cols.length - 2)
     cols(cols.length - 2) = cols(cols.length - 3)
