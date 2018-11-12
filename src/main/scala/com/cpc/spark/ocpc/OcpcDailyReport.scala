@@ -270,6 +270,7 @@ object OcpcDailyReport {
       s"""
          |SELECT
          |  ideaid,
+         |  userid,
          |  ocpc_log_dict['conversiongoal'] as conversion_goal
          |FROM
          |  test.ocpc_daily_complete_data
@@ -317,6 +318,7 @@ object OcpcDailyReport {
       s"""
          |SELECT
          |    a.ideaid,
+         |    a.userid,
          |    a.conversion_goal,
          |    b.cpa_given,
          |    b.cost * 1.0 / b.cvr_cnt as cpa_real,
@@ -332,6 +334,7 @@ object OcpcDailyReport {
          |FROM
          |    (SELECT
          |        ideaid,
+         |        userid,
          |        conversion_goal
          |    FROM
          |        test.ocpc_daily_ad_list
@@ -349,6 +352,7 @@ object OcpcDailyReport {
       s"""
          |SELECT
          |    a.ideaid,
+         |    a.userid,
          |    b.cpa_given,
          |    b.cost * 1.0 / c.cvr_cnt as cpa_real,
          |    b.pcvr,
@@ -363,6 +367,7 @@ object OcpcDailyReport {
          |FROM
          |    (SELECT
          |        ideaid,
+         |        a.userid,
          |        conversion_goal
          |    FROM
          |        test.ocpc_daily_ad_list

@@ -82,21 +82,32 @@ object OcpcActivationDataV1 {
          |and adslot_type in (1,2,3)
       """.stripMargin
     println(sqlRequest)
-    val base = spark.sql(sqlRequest).filter("isclick=1")
+    val base = spark.sql(sqlRequest)
 
-    val resultDF = base
+    val ctrData = base
+      .filter("isclick=1")
       .groupBy("ideaid", "adclass")
       .agg(
         sum(col("price")).alias("cost"),
-        sum(col("isclick")).alias("ctr_cnt"),
-        sum(col("isact")).alias("cvr_cnt"))
+        sum(col("isclick")).alias("ctr_cnt"))
+      .select("ideaid", "adclass", "cost", "ctr_cnt")
+
+    val cvrData = spark
+      .table("dl_cpc.ml_cvr_feature_v2")
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .groupBy("ideaid")
+      .agg(sum(col("label")).alias("cvr_cnt"))
+      .select("ideaid", "cvr_cnt")
+
+    val resultDF = ctrData
+      .join(cvrData, Seq("ideaid"), "left_outer")
       .select("ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_adclass_label3_track")
 
-    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_ideaid_adclass_label3_track_v1")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_adclass_label3_track_v1")
+//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_ideaid_adclass_label3_track_v1")
 
     //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_adclass_label3_track_v1")
   }
