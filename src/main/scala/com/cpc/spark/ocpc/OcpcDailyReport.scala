@@ -317,7 +317,7 @@ object OcpcDailyReport {
       s"""
          |SELECT
          |    a.ideaid,
-         |    a.conversion_goal
+         |    a.conversion_goal,
          |    b.cpa_given,
          |    b.cost * 1.0 / b.cvr_cnt as cpa_real,
          |    b.pcvr,
