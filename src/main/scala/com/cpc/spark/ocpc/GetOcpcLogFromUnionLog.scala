@@ -15,6 +15,7 @@ object GetOcpcLogFromUnionLog {
     val date = args(0).toString
     val hour = args(1).toString
 
+    getUnionlog(date, hour, spark)
     getUnionlogV2(date, hour, spark)
   }
 
