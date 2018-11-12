@@ -324,8 +324,8 @@ class DNNSampleV4_test1(spark: SparkSession, trdate: String = "", trpath: String
   private def r_behavior_sql(date: String) =
     s"""
        |select uid,
-       |      collect_set(concat(hour, ':', hash(concat('m16',ideaid), 0))) as s_ideaid,
-       |      collect_set(if(isclick = 1, concat(hour, ':', hash(concat('m17',ideaid), 0)), null)) as c_ideaid
+       |      collect_set(concat(hour, ':', hash(concat('m16',adclass), 0))) as s_adclass,
+       |      collect_set(if(isclick = 1, concat(hour, ':', hash(concat('m17',adclass), 0)), null)) as c_adclass
        |from dl_cpc.cpc_union_log where `date` = '$date'
        |  and isshow = 1 and ideaid > 0
        |  and media_appsid in ("80000001", "80000002")
@@ -472,8 +472,8 @@ class DNNSampleV4_test1(spark: SparkSession, trdate: String = "", trpath: String
 
       array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
         $"m11", $"m12", $"m13", $"m14", $"m15",
-        filterHash(16)($"hour", $"s_ideaid").alias("m16"),
-        filterHash(17)($"hour", $"c_ideaid").alias("m17")).alias("raw_sparse")
+        filterHash(16)($"hour", $"s_adclass").alias("m16"),
+        filterHash(17)($"hour", $"c_adclass").alias("m17")).alias("raw_sparse")
     )
       .select(
         array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
