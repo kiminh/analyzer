@@ -260,7 +260,10 @@ object OcpcDailyReport {
 //       """.stripMargin
 
 //    val rawData = spark.sql(sqlRequest1)
-    val rawData = spark.table("dl_cpc.ocpc_unionlog").where(s"`date`='$date'")
+    val rawData = spark
+      .table("dl_cpc.ocpc_unionlog")
+      .where(s"`dt`='$date'")
+      .withColumn("bid_ocpc", col("cpa_given"))
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_daily_complete_data")
 
     val sqlRequest1=
