@@ -140,9 +140,12 @@ object GetOcpcLogFromUnionLog {
       .withColumn("ocpc_exp_tags", when(col("flag")===1, "kmodel:regressionv1").otherwise(""))
 
     // save data
-    val cols = df.columns + "ocpc_exp_tags"
+    val cols = df.columns :+ "ocpc_exp_tags"
     println(cols)
-    val resultDF = result.withColumn("date", lit(date)).withColumn("hour", lit(hour))
+    val resultDF = result
+      .select(cols.head, cols.tail: _*)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
     println(s"output size: ${df.count()}")
     println("first 10 rows: ")
     resultDF.show(10)
