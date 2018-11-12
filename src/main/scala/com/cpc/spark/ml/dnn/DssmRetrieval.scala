@@ -5,8 +5,11 @@ import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions.{array, udf}
 import org.apache.spark.sql.{DataFrame, SparkSession}
+
+import scala.collection.immutable
 
 /**
   * 基于DnnCtrV3, 把特征拆分成用户特征和广告特征
@@ -22,8 +25,10 @@ object DssmRetrieval {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   //multi hot 特征默认hash code
-  private val default_hash_u = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("um" + i, 0)))
-  private val default_hash_ad = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("am" + i, 0)))
+  val default_hash_u: immutable.IndexedSeq[Seq[(Int, Int, Long)]]
+    = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("um" + i, 0)))
+  val default_hash_ad: immutable.IndexedSeq[Seq[(Int, Int, Long)]]
+    = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("am" + i, 0)))
 
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
@@ -282,7 +287,7 @@ object DssmRetrieval {
     * @param prefix ：前缀
     * @return
     */
-  private def hash(prefix: String) = udf {
+  def hash(prefix: String): UserDefinedFunction = udf {
     num: String =>
       if (num != null) Murmur3Hash.stringHash64(prefix + num, 0) else Murmur3Hash.stringHash64(prefix, 0)
   }
@@ -294,7 +299,7 @@ object DssmRetrieval {
     * @param t      ：类型
     * @return
     */
-  private def hashSeq(prefix: String, t: String) = {
+   def hashSeq(prefix: String, t: String): UserDefinedFunction = {
     t match {
       case "int" => udf {
         seq: Seq[Int] =>
@@ -311,7 +316,7 @@ object DssmRetrieval {
     }
   }
 
-  private def mkSparseFeature_u = udf {
+  def mkSparseFeature_u: UserDefinedFunction = udf {
     features: Seq[Seq[Long]] =>
       var i = 0
       var re = Seq[(Int, Int, Long)]()
@@ -324,7 +329,7 @@ object DssmRetrieval {
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
 
-  private def mkSparseFeature_ad = udf {
+  def mkSparseFeature_ad: UserDefinedFunction = udf {
     features: Seq[Seq[Long]] =>
       var i = 0
       var re = Seq[(Int, Int, Long)]()
@@ -336,6 +341,4 @@ object DssmRetrieval {
       val c = re.map(x => (0, x._1, x._2, x._3))
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
-
-
 }
