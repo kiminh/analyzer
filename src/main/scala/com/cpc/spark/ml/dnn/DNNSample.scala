@@ -226,12 +226,12 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
   }
 
   //获取小于当前小时的指定Seq【id】的hash值
-  def filterHash(prefix: String) = udf {
+  def filterHash(index: Int) = udf {
     (hour: String, values: Seq[String]) =>
       val re = if (values != null && values.exists(_ < hour)) {
         values.filter(_ < hour).map(x => x.split(":")(1))
       }
-      else Seq(Murmur3Hash.stringHash64(prefix, 0))
+      else Seq(default_hash(index))
       re.slice(0, 1000)
   }
 
