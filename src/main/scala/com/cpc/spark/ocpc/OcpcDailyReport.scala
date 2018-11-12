@@ -380,8 +380,8 @@ object OcpcDailyReport {
 
     val apiData = spark.sql(sqlRequest5)
 
-    noApiData.write.mode("overwrite").insertInto("dl_cpc.ocpc_check_daily_report_noapi")
-    apiData.write.mode("overwrite").insertInto("dl_cpc.ocpc_check_daily_report_api")
+    noApiData.write.mode("overwrite").insertInto("test.ocpc_check_daily_report_noapi")
+    apiData.write.mode("overwrite").insertInto("test.ocpc_check_daily_report_api")
 
 
   }
