@@ -212,55 +212,55 @@ object OcpcDailyReport {
       */
 
     // 抽取基础数据：所有跑ocpc的广告主
-//    val sqlRequest1 =
-//      s"""
-//         |SELECT
-//         |    a.*,
-//         |    b.iscvr
-//         |FROM
-//         |    (select
-//         |        uid,
-//         |        timestamp,
-//         |        searchid,
-//         |        userid,
-//         |        ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
-//         |        ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
-//         |        isclick,
-//         |        isshow,
-//         |        ideaid,
-//         |        exptags,
-//         |        price,
-//         |        ext_int['bid_ocpc'] as bid_ocpc,
-//         |        ext_int['is_ocpc'] as is_ocpc,
-//         |        ext_string['ocpc_log'] as ocpc_log,
-//         |        ext_int['is_api_callback'] as is_api_callback,
-//         |        date,
-//         |        hour
-//         |    from
-//         |        dl_cpc.cpc_union_log
-//         |    WHERE
-//         |        `date`='$date'
-//         |    and
-//         |        media_appsid  in ("80000001", "80000002")
-//         |    and
-//         |        ext['antispam'].int_value = 0
-//         |    and adsrc = 1
-//         |    and adslot_type in (1,2,3)
-//         |    and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
-//         |    AND ext_int['is_ocpc']=1
-//         |    and ext_string['ocpc_log'] != '' and ext_string['ocpc_log'] is not null) a
-//         |left outer join
-//         |    (
-//         |        select
-//         |            searchid,
-//         |            label2 as iscvr
-//         |        from dl_cpc.ml_cvr_feature_v1
-//         |        WHERE `date`='$date'
-//         |    ) b on a.searchid = b.searchid
-//       """.stripMargin
-//
-//    val rawData = spark.sql(sqlRequest1)
-//    rawData.write.mode("overwrite").saveAsTable("test.ocpc_daily_complete_data")
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    a.*,
+         |    b.iscvr
+         |FROM
+         |    (select
+         |        uid,
+         |        timestamp,
+         |        searchid,
+         |        userid,
+         |        ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
+         |        ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |        isclick,
+         |        isshow,
+         |        ideaid,
+         |        exptags,
+         |        price,
+         |        ext_int['bid_ocpc'] as bid_ocpc,
+         |        ext_int['is_ocpc'] as is_ocpc,
+         |        ext_string['ocpc_log'] as ocpc_log,
+         |        ext_int['is_api_callback'] as is_api_callback,
+         |        date,
+         |        hour
+         |    from
+         |        dl_cpc.cpc_union_log
+         |    WHERE
+         |        `date`='$date'
+         |    and
+         |        media_appsid  in ("80000001", "80000002")
+         |    and
+         |        ext['antispam'].int_value = 0
+         |    and adsrc = 1
+         |    and adslot_type in (1,2,3)
+         |    and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
+         |    AND ext_int['is_ocpc']=1
+         |    and ext_string['ocpc_log'] != '' and ext_string['ocpc_log'] is not null) a
+         |left outer join
+         |    (
+         |        select
+         |            searchid,
+         |            label2 as iscvr
+         |        from dl_cpc.ml_cvr_feature_v1
+         |        WHERE `date`='$date'
+         |    ) b on a.searchid = b.searchid
+       """.stripMargin
+
+    val rawData = spark.sql(sqlRequest1)
+    rawData.write.mode("overwrite").saveAsTable("test.ocpc_daily_complete_data")
 
     val ocpcAd = spark
       .table("test.ocpc_daily_complete_data")
