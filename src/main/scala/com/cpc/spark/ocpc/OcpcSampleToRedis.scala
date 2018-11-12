@@ -258,20 +258,14 @@ object OcpcSampleToRedis {
     val finalData1 = spark.sql(sqlRequest4)
     finalData1.write.mode("overwrite").saveAsTable("test.ocpc_debug_k_values")
 
-    // TODO 调回k值
+
     val finalData2 = finalData1
       .join(regressionK, Seq("ideaid"), "left_outer")
-      .withColumn("new_k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
-      .withColumn("ctr_cnt", when(col("flag").isNotNull && col("regression_k_value")>0, col("cvr_cnt")).otherwise(col("ctr_cnt")))
-      .withColumn("hpcvr", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("hpcvr")))
-      .withColumn("cali_value", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("cali_value")))
-      .withColumn("cvr3_cali", when(col("flag").isNotNull && col("regression_k_value")>0, 1.0).otherwise(col("cvr3_cali")))
-      .join(cvr3Ideaid, Seq("ideaid"), "left_outer")
-      .withColumn("k_value", when(col("conversion_goal")===2, col("new_k_value")*col("cvr3_cali")).otherwise(col("new_k_value") * col("cali_value")))
-        .withColumn("cali_value", lit(1.0))
-        .withColumn("cvr3_cali", lit(1.0))
-//        .withColumn("k_value", when(col("ideaid")===2297796 && col("k_value")<0.6, 0.6).otherwise(col("k_value")))
-//        .withColumn("k_value", when(col("ideaid")===2291776 || col("ideaid")===2291821 || col("ideaid")===2297796 || col("ideaid")===2291709, 0.5).otherwise(col("k_value")))
+      .withColumn("k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
+      .withColumn("cali_value", lit(1.0))
+      .withColumn("cvr3_cali", lit(1.0))
+//    .withColumn("k_value", when(col("ideaid")===2297796 && col("k_value")<0.6, 0.6).otherwise(col("k_value")))
+//    .withColumn("k_value", when(col("ideaid")===2291776 || col("ideaid")===2291821 || col("ideaid")===2297796 || col("ideaid")===2291709, 0.5).otherwise(col("k_value")))
 
 //    (2291776,2291821,2297796,2291709)
 
@@ -281,13 +275,13 @@ object OcpcSampleToRedis {
 
     val finalData = finalData2.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
 
-    finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
-
-    finalData
-      .withColumn("date", lit(end_date))
-      .withColumn("hour", lit(hour))
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
+//    finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
+//
+//    finalData
+//      .withColumn("date", lit(end_date))
+//      .withColumn("hour", lit(hour))
+//      .write.mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
 
     // 保存pb文件
     savePbPack(finalData)
