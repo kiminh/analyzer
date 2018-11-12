@@ -44,7 +44,7 @@ object DssmRetrieval {
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
 
-    train.repartition(100)
+    train.repartition(200)
       .write
       .mode("overwrite")
       .format("tfrecords")

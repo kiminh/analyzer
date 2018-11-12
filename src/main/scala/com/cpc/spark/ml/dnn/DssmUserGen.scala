@@ -67,7 +67,7 @@ object DssmUserGen {
         .join(userAppIdx, Seq("uid"), "leftouter")
         .join(userHistory, Seq("uid"), "leftouter")
 
-    re.select(
+    val joined = re.select(
       // user index
       $"uid",
 
@@ -110,7 +110,13 @@ object DssmUserGen {
           x._1.getAs[Seq[Long]]("u_id_arr")
         )
       }
-      .toDF("sample_idx", "uid",
+
+      joined.map{x => (x._1, x._2)}
+        .toDF("sample_idx", "uid")
+        .coalesce(50).write.mode("overwrite")
+        .parquet("/user/cpc/hzh/user_id_map/" + date + "/")
+
+      joined.toDF("sample_idx", "uid",
         "u_dense", "u_idx0", "u_idx1", "u_idx2", "u_id_arr")
   }
 }
