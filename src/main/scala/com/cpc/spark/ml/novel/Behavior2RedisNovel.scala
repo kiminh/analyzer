@@ -78,8 +78,8 @@ object Behavior2RedisNovel {
 
     println("dnn novel 用户行为特征总数：" + data.count())
 
-    data.coalesce(20).write.mode("overwrite")
-      .parquet("/user/cpc/wy/novel_behavior")
+//    data.coalesce(20).write.mode("overwrite")
+//      .parquet("/user/cpc/wy/novel_behavior")
 
 
     val conf = ConfigFactory.load()
