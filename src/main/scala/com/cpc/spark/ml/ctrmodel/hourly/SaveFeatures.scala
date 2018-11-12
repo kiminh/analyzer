@@ -332,6 +332,8 @@ object SaveFeatures {
               uid = x.getAs[String]("uid")
               userid = x.getAs[Int]("userid")
               ideaid = x.getAs[Int]("ideaid")
+              date = x.getAs[String]("date")
+              hour = x.getAs[String]("hour")
               search_time = date.concat(" ").concat(hour)
 
               if (!x.isNullAt(0)) { //trace_type为null时过滤
