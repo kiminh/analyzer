@@ -74,8 +74,8 @@ object getBaseConversion1 {
       .groupBy("adclass")
       .agg(
         sum("cost").alias("adclass_cost"),
-        sum("user_ctr_cnt").alias("adclass_ctr_cnt"),
-        sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
+        sum("ctr_cnt").alias("adclass_ctr_cnt"),
+        sum("cvr_cnt").alias("adclass_cvr_cnt"))
       .select("adclass", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
     // 关联ideaid和adclass维度的累计表
