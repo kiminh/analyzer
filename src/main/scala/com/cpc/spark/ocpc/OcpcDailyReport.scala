@@ -367,7 +367,7 @@ object OcpcDailyReport {
          |FROM
          |    (SELECT
          |        ideaid,
-         |        a.userid,
+         |        userid,
          |        conversion_goal
          |    FROM
          |        test.ocpc_daily_ad_list
