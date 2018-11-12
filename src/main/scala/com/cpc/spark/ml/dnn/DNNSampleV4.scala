@@ -114,10 +114,10 @@ object DNNSampleV4 {
 
     val behavior_data = raw_behavior
       .withColumn("m8", hashSeq("m8", "int")(getKeys($"c1_ideaid_count")))
-      .withColumn("m9", hashSeq("m9", "int")(getKeys($"c2_ideaid_count")))
-      .withColumn("m10", hashSeq("m10", "int")(getKeys($"c3_ideaid_count")))
-      .withColumn("m11", hashSeq("m11", "int")(getKeys($"c1_adclass_count")))
-      .withColumn("m12", hashSeq("m12", "int")(getKeys($"c2_adclass_count")))
+      .withColumn("m9", hashSeq("m9", "int")(getKeys($"c1_adclass_count")))
+      .withColumn("m10", hashSeq("m10", "int")(getKeys($"c2_ideaid_count")))
+      .withColumn("m11", hashSeq("m11", "int")(getKeys($"c2_adclass_count")))
+      .withColumn("m12", hashSeq("m12", "int")(getKeys($"c3_ideaid_count")))
       .withColumn("m13", hashSeq("m13", "int")(getKeys($"c3_adclass_count")))
       .withColumn("m14", hashSeq("m14", "int")(getKeys($"c47_ideaid_count")))
       .withColumn("m15", hashSeq("m15", "int")(getKeys($"c47_adclass_count")))
