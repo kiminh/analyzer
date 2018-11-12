@@ -229,7 +229,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
   def filterHash(prefix: String) = udf {
     (hour: String, values: Seq[String]) =>
       val re = if (values != null && values.exists(_ < hour)) {
-        values.filter(_ < hour).map(x => Murmur3Hash.stringHash64(prefix + x.split(":")(1), 0))
+        values.filter(_ < hour).map(x => x.split(":")(1))
       }
       else Seq(Murmur3Hash.stringHash64(prefix, 0))
       re.slice(0, 1000)

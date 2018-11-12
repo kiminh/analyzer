@@ -324,8 +324,8 @@ class DNNSampleV4_test1(spark: SparkSession, trdate: String = "", trpath: String
   private def r_behavior_sql(date: String) =
     s"""
        |select uid,
-       |      collect_set(concat(hour, ':', hash(ideaid, 0))) as s_ideaid,
-       |      collect_set(if(isclick = 1, concat(hour, ':', hash(ideaid, 0)), null)) as c_ideaid
+       |      collect_set(concat(hour, ':', hash(concat('m16',ideaid), 0))) as s_ideaid,
+       |      collect_set(if(isclick = 1, concat(hour, ':', hash(concat('m17',ideaid), 0)), null)) as c_ideaid
        |from dl_cpc.cpc_union_log where `date` = '$date'
        |  and isshow = 1 and ideaid > 0
        |  and media_appsid in ("80000001", "80000002")
