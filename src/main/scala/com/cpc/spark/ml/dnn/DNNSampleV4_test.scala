@@ -21,7 +21,7 @@ object DNNSampleV4_test {
     spark.udf.register("hash", Murmur3Hash.stringHash64 _)
     val Array(trdate, trpath, tedate, tepath) = args
 
-    val sample = new DNNSampleV4_test(spark, trdate, trpath, tedate, tepath)
+    val sample = new DNNSampleV4_test1(spark, trdate, trpath, tedate, tepath)
     sample.saveTrain()
     sample.saveTest(gauc = true)
   }
