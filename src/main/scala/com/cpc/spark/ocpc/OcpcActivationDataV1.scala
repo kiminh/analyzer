@@ -102,6 +102,7 @@ object OcpcActivationDataV1 {
     val resultDF = ctrData
       .join(cvrData, Seq("ideaid"), "left_outer")
       .select("ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt")
+      .withColumn("cvr_cnt", when(col("cvr_cnt").isNull, 0).otherwise(col("cvr_cnt")))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
