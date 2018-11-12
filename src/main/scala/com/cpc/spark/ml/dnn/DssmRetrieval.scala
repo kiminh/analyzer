@@ -4,7 +4,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
-import com.cpc.spark.ml.dnn.DssmRetrieval.hash
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions.{array, udf}
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -23,7 +22,8 @@ object DssmRetrieval {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   //multi hot 特征默认hash code
-  private val default_hash = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
+  private val default_hash_u = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("um" + i, 0)))
+  private val default_hash_ad = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("am" + i, 0)))
 
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
@@ -47,11 +47,68 @@ object DssmRetrieval {
       .save("/user/cpc/hzh/dssm/train-v0/" + date)
   }
 
+  def getHistoryFeature(spark: SparkSession, date: String): DataFrame = {
+    import spark.implicits._
+    val data = spark.sql(
+      s"""
+         |select uid,
+         |       collect_set(if(load_date='${getDay(date, 1)}',show_ideaid,null)) as s_ideaid_1,
+         |       collect_set(if(load_date='${getDay(date, 1)}',show_adclass,null)) as s_adclass_1,
+         |       collect_set(if(load_date='${getDay(date, 2)}',show_ideaid,null)) as s_ideaid_2,
+         |       collect_set(if(load_date='${getDay(date, 2)}',show_adclass,null)) as s_adclass_2,
+         |       collect_set(if(load_date='${getDay(date, 3)}',show_ideaid,null)) as s_ideaid_3,
+         |       collect_set(if(load_date='${getDay(date, 3)}',show_adclass,null)) as s_adclass_3,
+         |
+         |
+         |       collect_set(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
+         |       collect_set(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
+         |
+         |       collect_set(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
+         |       collect_set(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
+         |
+         |       collect_set(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
+         |       collect_set(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3,
+         |
+         |       collect_set(if(load_date>='${getDay(date, 7)}'
+         |                  and load_date<='${getDay(date, 4)}',click_ideaid,null)) as c_ideaid_4_7,
+         |       collect_list(if(load_date>='${getDay(date, 7)}'
+         |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7
+         |
+         |from dl_cpc.cpc_user_behaviors
+         |where load_date in ('${getDays(date, 1, 7)}')
+         |    and rn <= 1000
+         |group by uid
+      """.stripMargin)
+      .select(
+        $"uid",
+        hashSeq("um2", "int")($"s_ideaid_1").alias("um2"),
+        hashSeq("um3", "int")($"s_ideaid_2").alias("um3"),
+        hashSeq("um4", "int")($"s_ideaid_3").alias("um4"),
+        hashSeq("um5", "int")($"s_adclass_1").alias("um5"),
+        hashSeq("um6", "int")($"s_adclass_2").alias("um6"),
+        hashSeq("um7", "int")($"s_adclass_3").alias("um7"),
+        hashSeq("um8", "int")($"c_ideaid_1").alias("um8"),
+        hashSeq("um9", "int")($"c_ideaid_2").alias("um9"),
+        hashSeq("um10", "int")($"c_ideaid_3").alias("um10"),
+        hashSeq("um11", "int")($"c_adclass_1").alias("um11"),
+        hashSeq("um12", "int")($"c_adclass_2").alias("um12"),
+        hashSeq("um13", "int")($"c_adclass_3").alias("um13"),
+
+        hashSeq("um14", "int")($"c_adclass_4_7").alias("um14"),
+        hashSeq("um15", "int")($"c_adclass_4_7").alias("um15")
+      )
+
+    println("用户行为特征总数：" + data.count())
+    data
+  }
+
   def getSample(spark: SparkSession, date: String, sampleRate: Double): DataFrame = {
     import spark.implicits._
 
     val userAppIdx = getUidApp(spark, date)
       .select($"uid", hashSeq("um1", "string")($"pkgs").alias("um1"))
+
+    val userHistory = getHistoryFeature(spark, date)
 
     val sql =
       s"""
@@ -88,30 +145,31 @@ object DssmRetrieval {
     println(sql)
     println("--------------------------------")
 
-    //    val behavior_data = spark.read.parquet("/user/cpc/zhj/behaviorV3")
-
     val re =
-      spark.sql(sql).sample(false, sampleRate).withColumn("am1", hashSeq("am1", "string")($"material_ids"))
+      spark.sql(sql).sample(withReplacement = false, sampleRate)
+        .withColumn("am1", hashSeq("am1", "string")($"material_ids"))
         .join(userAppIdx, Seq("uid"), "leftouter")
-    //        .join(behavior_data, Seq("uid"), "leftouter")
+        .join(userHistory, Seq("uid"), "leftouter")
 
     re.select($"label",
       // user index
-      hash("u1")($"uid").alias("u1"),
+      hash("u1")($"uid").alias("uid"),
 
       // user feature
-      hash("u2")($"os").alias("u2"),
-      hash("u3")($"network").alias("u3"),
-      hash("u4")($"phone_price").alias("u4"),
-      hash("u5")($"brand").alias("u5"),
-      hash("u6")($"province").alias("u6"),
-      hash("u7")($"city").alias("u7"),
-      hash("u8")($"city_level").alias("u8"),
-      hash("u9")($"age").alias("u9"),
-      hash("u10")($"sex").alias("u10"),
+      hash("u1")($"os").alias("u1"),
+      hash("u2")($"network").alias("u2"),
+      hash("u3")($"phone_price").alias("u3"),
+      hash("u4")($"brand").alias("u4"),
+      hash("u5")($"province").alias("u5"),
+      hash("u6")($"city").alias("u6"),
+      hash("u7")($"city_level").alias("u7"),
+      hash("u8")($"age").alias("u8"),
+      hash("u9")($"sex").alias("u9"),
 
       // user multi-hot
-      array($"um1").alias("u_sparse_raw"),
+      array($"um1", $"um2", $"um3", $"um4", $"um5", $"um6", $"um7", $"um8", $"um9", $"um10",
+        $"um11", $"um12", $"um13", $"um14", $"um15"
+      ).alias("u_sparse_raw"),
 
       // ad index
       hash("a1")($"ideaid").alias("a1"),
@@ -127,15 +185,13 @@ object DssmRetrieval {
       hash("a9")($"site_id").alias("a9"),
 
       // ad multi-hot
-      array($"am1").alias("ad_sparse_raw")
-
-    )
-
+      array($"am1").alias("ad_sparse_raw"))
       .select(
-        array($"u1", $"u2", $"u3", $"u4", $"u5", $"u6", $"u7", $"u8", $"u9", $"u10").alias("u_dense"),
-        mkSparseFeature_m($"u_sparse_raw").alias("u_sparse"),
+        // don't use uid as a feature
+        array($"u1", $"u2", $"u3", $"u4", $"u5", $"u6", $"u7", $"u8", $"u9").alias("u_dense"),
+        mkSparseFeature_u($"u_sparse_raw").alias("u_sparse"),
         array($"a1", $"a2", $"a3", $"a4", $"a5", $"a6", $"a7", $"a8", $"a9").alias("ad_dense"),
-        mkSparseFeature_m($"ad_sparse_raw").alias("ad_sparse"),
+        mkSparseFeature_ad($"ad_sparse_raw").alias("ad_sparse"),
         $"label"
       )
       .select(
@@ -255,13 +311,26 @@ object DssmRetrieval {
     }
   }
 
-  private def mkSparseFeature_m = udf {
+  private def mkSparseFeature_u = udf {
     features: Seq[Seq[Long]] =>
       var i = 0
       var re = Seq[(Int, Int, Long)]()
       for (feature <- features) {
         re = re ++
-          (if (feature != null) feature.zipWithIndex.map(x => (i, x._2, x._1)) else default_hash(i))
+          (if (feature != null) feature.zipWithIndex.map(x => (i, x._2, x._1)) else default_hash_u(i))
+        i = i + 1
+      }
+      val c = re.map(x => (0, x._1, x._2, x._3))
+      (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
+  }
+
+  private def mkSparseFeature_ad = udf {
+    features: Seq[Seq[Long]] =>
+      var i = 0
+      var re = Seq[(Int, Int, Long)]()
+      for (feature <- features) {
+        re = re ++
+          (if (feature != null) feature.zipWithIndex.map(x => (i, x._2, x._1)) else default_hash_ad(i))
         i = i + 1
       }
       val c = re.map(x => (0, x._1, x._2, x._3))

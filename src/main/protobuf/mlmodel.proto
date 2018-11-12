@@ -2,6 +2,16 @@ syntax = "proto3";
 
 package mlmodel;
 
+message RetrievalEmbedding {
+    int32 size = 1;
+    repeated double embeddings = 2;
+}
+
+message AllProductEmbeddings {
+    string version = 1;
+    map<int32, RetrievalEmbedding> allEmbeddings = 2;
+}
+
 message FtrlProto {
     double alpha = 1;
     double beta = 2;
