@@ -320,6 +320,7 @@ object OcpcDailyReport {
       s"""
          |SELECT
          |    a.ideaid,
+         |    a.conversion_goal
          |    b.cpa_given,
          |    b.cost * 1.0 / b.cvr_cnt as cpa_real,
          |    b.pcvr,
@@ -333,11 +334,12 @@ object OcpcDailyReport {
          |    '$date' as date
          |FROM
          |    (SELECT
-         |        ideaid
+         |        ideaid,
+         |        conversion_goal
          |    FROM
          |        test.ocpc_daily_ad_list
          |    WHERE
-         |        is_api_callback!=1) as a
+         |        conversion_goal!=2) as a
          |INNER JOIN
          |    test.ocpc_label2_daily_data as b
          |ON
@@ -363,11 +365,12 @@ object OcpcDailyReport {
          |    '$date' as date
          |FROM
          |    (SELECT
-         |        ideaid
+         |        ideaid,
+         |        conversion_goal
          |    FROM
          |        test.ocpc_daily_ad_list
          |    WHERE
-         |        is_api_callback=1) as a
+         |        conversion_goal=2) as a
          |INNER JOIN
          |    test.ocpc_label2_daily_data as b
          |ON
