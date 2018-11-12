@@ -10,7 +10,7 @@ object OcpcActivationDataV1 {
     val date = args(0).toString
     val hour = args(1).toString
 
-    getDataHourly(date, hour, spark)
+    getDataHourlyV1(date, hour, spark)
 
   }
   def getDataHourly(date: String, hour: String, spark: SparkSession) :Unit = {
