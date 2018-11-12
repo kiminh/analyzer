@@ -275,7 +275,7 @@ object OcpcDailyReport {
          |    ideaid,
          |    SUM(iscvr) as cvr_cnt
          |FROM
-         |    dl_cpc.cpc_api_union_log
+         |    dl_cpc.ml_cvr_feature_v2
          |WHERE
          |    `date`='$date'
          |AND ext_int['is_ocpc']=1

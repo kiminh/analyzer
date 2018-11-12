@@ -68,9 +68,6 @@ object getBaseConversion1 {
         sum("cvr_cnt").alias("cvr_cnt"))
       .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt")
 
-    // TODO 删除临时表
-    userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
-
 
     // 按adclass求和
     val adclassData = userData
@@ -80,9 +77,6 @@ object getBaseConversion1 {
         sum("user_ctr_cnt").alias("adclass_ctr_cnt"),
         sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
       .select("adclass", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt")
-
-    // TODO 删除临时表
-    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
 
     // 关联ideaid和adclass维度的累计表
     val userFinalData = userData
