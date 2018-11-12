@@ -27,8 +27,13 @@ object OcpcCheckResultWithList {
     val rawDF = rawRDD.toDF("ideaid", "flag").distinct()
     rawDF.write.mode("overwrite").saveAsTable("test.ocpc_regression_k_idea_list")
 
-    val noApiTable = spark.table("test.ocpc_check_daily_report_noapi")
-    val apiTable = spark.table("test.ocpc_check_daily_report_api")
+    val noApiTable = spark
+      .table("dl_cpc.ocpc_check_daily_report_noapi")
+      .where(s"`date`='$date'")
+
+    val apiTable = spark
+      .table("dl_cpc.ocpc_check_daily_report_api")
+      .where(s"`date`='$date'")
 
     val noApiResult = noApiTable
       .join(rawDF, Seq("ideaid"), "left_outer")
