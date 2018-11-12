@@ -141,7 +141,7 @@ object GetOcpcLogFromUnionLog {
 
     // save data
     val cols = df.columns :+ "ocpc_exp_tags"
-    println(cols)
+    cols.foreach(println)
     val resultDF = result
       .select(cols.head, cols.tail: _*)
       .withColumn("date", lit(date))
@@ -149,8 +149,8 @@ object GetOcpcLogFromUnionLog {
     println(s"output size: ${df.count()}")
     println("first 10 rows: ")
     resultDF.show(10)
-//    df.write.mode("overwrite").saveAsTable("test.ocpc_unionlog_v2")
-//    df.write.mode("append").insertInto("dl_cpc.ocpc_unionlog")
+    df.write.mode("overwrite").saveAsTable("test.ocpc_unionlog_v2")
+//    df.write.mode("append").insertInto("dl_cpc.ocpc_unionlog_v2")
   }
 
 }
