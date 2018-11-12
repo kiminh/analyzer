@@ -27,18 +27,18 @@ object OcpcCheckResultWithList {
     val rawDF = rawRDD.toDF("ideaid", "flag").distinct()
     rawDF.write.mode("overwrite").saveAsTable("test.ocpc_regression_k_idea_list")
 
-//    val noApiTable = spark.table("test.ocpc_check_daily_report_noapi")
-//    val apiTable = spark.table("test.ocpc_check_daily_report_api")
-//
-//    val noApiResult = noApiTable
-//      .join(rawDF, Seq("ideaid"), "left_outer")
-//      .withColumn("k_model", when(col("flag")===1, "regression").otherwise("no_regression"))
-//    noApiResult.write.mode("overwrite").saveAsTable("test.ocpc_daily_report_noapi")
-//
-//    val apiResult = apiTable
-//      .join(rawDF, Seq("ideaid"), "left_outer")
-//      .withColumn("k_model", when(col("flag")===1, "regression").otherwise("no_regression"))
-//    apiResult.write.mode("overwrite").saveAsTable("test.ocpc_daily_report_api")
+    val noApiTable = spark.table("test.ocpc_check_daily_report_noapi")
+    val apiTable = spark.table("test.ocpc_check_daily_report_api")
+
+    val noApiResult = noApiTable
+      .join(rawDF, Seq("ideaid"), "left_outer")
+      .withColumn("k_model", when(col("flag")===1, "regression").otherwise("no_regression"))
+    noApiResult.write.mode("overwrite").saveAsTable("test.ocpc_daily_report_noapi")
+
+    val apiResult = apiTable
+      .join(rawDF, Seq("ideaid"), "left_outer")
+      .withColumn("k_model", when(col("flag")===1, "regression").otherwise("no_regression"))
+    apiResult.write.mode("overwrite").saveAsTable("test.ocpc_daily_report_api")
   }
 
 }
