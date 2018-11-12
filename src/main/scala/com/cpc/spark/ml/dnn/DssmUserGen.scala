@@ -88,6 +88,11 @@ object DssmUserGen {
       ).alias("u_sparse_raw"))
       .select(
         $"uid",
+        array($"u1", $"u2", $"u3", $"u4", $"u5", $"u6", $"u7", $"u8", $"u9").alias("u_dense"),
+        mkSparseFeature_u($"u_sparse_raw").alias("u_sparse")
+      )
+      .select(
+        $"uid",
         $"u_dense",
         $"u_sparse".getField("_1").alias("u_idx0"),
         $"u_sparse".getField("_2").alias("u_idx1"),
