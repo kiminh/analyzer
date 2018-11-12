@@ -288,9 +288,6 @@ object OcpcDailyReport {
          |    dl_cpc.ml_cvr_feature_v2
          |WHERE
          |    `date`='$date'
-         |AND ext_int['is_ocpc']=1
-         |and ext_string['ocpc_log'] != ''
-         |and ext_string['ocpc_log'] is not null
          |GROUP BY ideaid
        """.stripMargin
 
