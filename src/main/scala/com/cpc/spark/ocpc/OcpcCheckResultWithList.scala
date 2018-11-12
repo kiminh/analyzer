@@ -26,8 +26,8 @@ object OcpcCheckResultWithList {
     rawRDD.foreach(println)
     val rawDF = rawRDD.toDF("ideaid", "flag").distinct()
 
-    val noApiTable = spark.table("dl_cpc.ocpc_check_daily_report_noapi").where(s"`date`='$date'")
-    val apiTable = spark.table("dl_cpc.ocpc_check_daily_report_api").where(s"`date`='$date'")
+    val noApiTable = spark.table("test.ocpc_check_daily_report_noapi")
+    val apiTable = spark.table("test.ocpc_check_daily_report_api")
 
     val noApiResult = noApiTable
       .join(rawDF, Seq("ideaid"), "left_outer")
