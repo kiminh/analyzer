@@ -145,7 +145,7 @@ object UserBehaviorNovelCvr {
 
     spark.sql(
       s"""
-         |alter table dl_cpc.cpc_user_behaviors_novel add partition(load_date='$date')
+         |alter table dl_cpc.cpc_user_behaviors_novel_cvr add partition(load_date='$date')
          |location '/warehouse/dl_cpc.db/cpc_user_behaviors_novel_cvr/load_date=$date'
       """.stripMargin)
 
