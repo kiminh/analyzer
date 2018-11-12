@@ -309,7 +309,7 @@ object SaveFeatures {
         |      ,tr.trace_type as trace_type
         |from dl_cpc.logparsed_cpc_trace_minute as tr
         |left join
-        |(select searchid, userid, planid, uid, ideaid, adslot_type, isclick from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
+        |(select searchid, userid, planid, uid, ideaid, adslot_type, isclick, date, hour from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
       """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour))
