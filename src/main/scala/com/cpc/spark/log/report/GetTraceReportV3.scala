@@ -292,7 +292,7 @@ object GetTraceReportV3 {
          |(select a.searchid, a.userid ,a.planid ,a.unitid ,a.ideaid from dl_cpc.cpc_union_log a
          |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type<>7 and a.isclick=1) as un on tr.searchid = un.searchid
          |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"
-       """.stripMargin.format(date, hour, before2hour, date, hour)
+       """.stripMargin.format(date, before2hour, hour, date, hour)
     println(sql2)
 
     val traceReport1 = ctx.sql(sql)
