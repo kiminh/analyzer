@@ -473,7 +473,9 @@ class DNNSampleV4_test1(spark: SparkSession, trdate: String = "", trpath: String
       array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
         $"m11", $"m12", $"m13", $"m14", $"m15",
         filterHash(16)($"hour", $"s_adclass").alias("m16"),
-        filterHash(17)($"hour", $"c_adclass").alias("m17")).alias("raw_sparse")
+        filterHash(17)($"hour", $"c_adclass").alias("m17"),
+        filterHash1(18)($"hour", $"s_adclass").alias("m18"),
+        filterHash1(19)($"hour", $"c_adclass").alias("m19")).alias("raw_sparse")
     )
       .select(
         array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
