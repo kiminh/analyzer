@@ -64,10 +64,11 @@ object miReadAucGauc {
         //println(exptag.mkString(" "))
         val aucGaucBuffer = ListBuffer[AucGauc]()
 
-        for (adslot_type <- 1 to 3) {
+//        for (adslot_type <- 1 to 3) {
             for (exp <- exptag) {
                 val unionJoincvrFilter = unionJoincvr
-                  .filter(s"exptag = '$exp' and adslot_type = $adslot_type")
+//                  .filter(s"exptag = '$exp' and adslot_type = $adslot_type")
+                  .filter(s"exptag = '$exp'")
                   .coalesce(400)
                   .cache()
 
@@ -124,10 +125,10 @@ object miReadAucGauc {
 
                     val gaucROC = if (sum > 1e-6) auc / sum else 0.0
 
-                    //println(s"auc = $auc , sum = $sum , gaucROC = $gaucROC")
+                    println(s"auc = $auc , sum = $sum , gaucROC = $gaucROC , modeltype = %$exp%")
                     aucGaucBuffer += AucGauc(auc = aucROC,
                         gauc = gaucROC,
-                        adslot = adslot_type,
+                        adslot = 0,
                         modeltype = s"%$exp%",
                         date = date,
                         hour = hour)
@@ -136,12 +137,12 @@ object miReadAucGauc {
 
 
             }
-        }
+//        }
 
         val aucGauc = aucGaucBuffer.toList.toDF()
 
         aucGauc.coalesce(1).write.mode("overwrite").insertInto("dl_cpc.miReadAucGauc")
-
+        println("insert into dl_cpc.miReadAucGauc success!")
         spark.stop()
     }
     def getExptag = udf((exptags:String) => {
