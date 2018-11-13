@@ -68,6 +68,8 @@ object OcpcHourlyReport {
          |    dl_cpc.ml_cvr_feature_v2
          |WHERE
          |    `date`='$date'
+         |AND
+         |    `hour`<='$hour'
          |GROUP BY ideaid
        """.stripMargin
 
