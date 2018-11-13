@@ -73,7 +73,7 @@ object GetTraceReportV3 {
     val traceData = traceReport1.map {
       x =>
         (x.key, x)
-    }.reduceByKey((x, y) =>x.sum(y))
+    }.reduceByKey((x, y) => x.sum(y))
       .map(x => x._2)
 
 
@@ -250,6 +250,13 @@ object GetTraceReportV3 {
     */
   def saveTraceReport_ApiCallBack(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
 
+    val cal = Calendar.getInstance()
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
+    cal.add(Calendar.HOUR, -1)
+    val fDate = dateFormat.format(cal.getTime)
+    val before2hour = fDate.substring(11, 13)
+
     val sql =
       s"""
          |select tr.searchid
@@ -268,10 +275,36 @@ object GetTraceReportV3 {
        """.stripMargin.format(get3DaysBefore(date, hour), date, hour)
     println(sql)
 
-    val traceReport = ctx.sql(sql)
+    //没有api回传标记，直接上报到trace
+    val sql2 =
+      s"""
+         |select tr.searchid
+         |      ,un.userid as user_id
+         |      ,un.planid as plan_id
+         |      ,un.unitid as unit_id
+         |      ,un.ideaid as idea_id
+         |      ,tr.trace_type as trace_type
+         |      ,tr.trace_op1 as trace_op1
+         |      ,tr.duration as duration
+         |      ,tr.auto
+         |from dl_cpc.logparsed_cpc_trace_minute as tr
+         |left join
+         |(select a.searchid, a.userid ,a.planid ,a.unitid ,a.ideaid from dl_cpc.cpc_union_log a
+         |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type<>7 and a.isclick=1) as un on tr.searchid = un.searchid
+         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"
+       """.stripMargin.format(date, hour, before2hour, date, hour)
+    println(sql2)
+
+    val traceReport1 = ctx.sql(sql)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .rdd
+
+    val traceReport2 = ctx.sql(sql2)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .rdd
+
 
     val sql1 =
       """
@@ -290,7 +323,7 @@ object GetTraceReportV3 {
         (ideaid, (show, click))
     }
 
-    val traceData = traceReport.filter {
+    val traceData = traceReport1.union(traceReport2).filter {
       trace =>
         trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "active_third"
     }.map {
