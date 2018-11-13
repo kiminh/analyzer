@@ -359,7 +359,7 @@ object SaveFeatures {
     //              |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
     //            """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour))
 
-    val userApiBackRDD = (spark.sql(sql).union(spark.sql(sql2)))
+    val userApiBackRDD = (spark.sql(sql)).union(spark.sql(sql2))
       .rdd
       .map {
         x =>
