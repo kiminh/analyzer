@@ -58,7 +58,7 @@ object NovelDNNSampleHourlyV2 {
   def getSample(spark: SparkSession, date: String, hour: String): DataFrame = {
     import spark.implicits._
 
-    val behavior_data = spark.read.parquet("/user/cpc/wy/novel_behavior")
+    val behavior_data = spark.read.parquet("/user/cpc/wy/novel_behavior_cvr")
 
     val userAppIdx = getUidApp(spark, date)
       .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))

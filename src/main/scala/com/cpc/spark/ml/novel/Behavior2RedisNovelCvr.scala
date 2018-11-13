@@ -106,7 +106,7 @@ object Behavior2RedisNovelCvr {
         var group = Seq[Int]()
         var hashcode = Seq[Long]()
         val uid = "n2_" + rec.getString(0)
-        for (i <- 1 to 14) {
+        for (i <- 1 to 22) {
           val f = rec.getAs[Seq[Long]](i)
           group = group ++ Array.tabulate(f.length)(x => i)
           hashcode = hashcode ++ f

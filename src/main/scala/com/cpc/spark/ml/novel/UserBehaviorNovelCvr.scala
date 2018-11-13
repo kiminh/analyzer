@@ -27,7 +27,7 @@ object UserBehaviorNovelCvr {
          |select a.*,
          |      row_number() over(partition by uid,cvr_ideaid order by timestamp desc) rn
          |from
-         |  (select uid, ideaid as cvr_ideaid, timestamp,
+         |  (select searchid, uid, ideaid as cvr_ideaid, timestamp,
          |      ext['adclass'].int_value as cvr_adclass,
          |      userid       as cvr_userid,
          |      planid       as cvr_planid,
