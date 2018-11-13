@@ -314,7 +314,7 @@ object SaveFeatures {
        |      ,un.hour
        |      ,tr.trace_type
        |from (select searchid, userid, uid, planid, unitid, ideaid, adslot_type, isclick, date, hour from dl_cpc.cpc_user_api_callback_union_log where %s) as un
-       |left join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
+       |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
        |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
        |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
        """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour)
@@ -333,7 +333,7 @@ object SaveFeatures {
          |      ,tr.trace_type
          |from (select a.searchid, a.userid, a.uid ,a.planid ,a.unitid ,a.ideaid, a.date, a.hour from dl_cpc.cpc_union_log a
          |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type <> 7 and a.isclick = 1) as un
-         |left join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
+         |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
          |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
          |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and t2.id is null
        """.stripMargin.format(date, before1hour, hour, yesterday, date, hour)
@@ -505,7 +505,8 @@ object SaveFeatures {
         |       ext['click_unit_count'].int_value as user_click_unit_num,
         |       ext['long_click_count'].int_value as user_long_click_count,
         |       ext['exp_ctr'].int_value as exp_ctr,
-        |       ext['exp_cvr'].int_value as exp_cvr
+        |       ext['exp_cvr'].int_value as exp_cvr,
+        |       ext['usertype'].int_value as usertype
         |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isclick = 1
         |
           """.stripMargin.format(date, hour)
