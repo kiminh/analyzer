@@ -306,15 +306,24 @@ object GetTraceReportV3 {
       .rdd
 
 
-    val sql1 =
+    val sql3 =
       """
         |select ideaid , sum(isshow) as show, sum(isclick) as click
         |from dl_cpc.cpc_user_api_callback_union_log
         |where %s group by ideaid
       """.stripMargin.format(get3DaysBefore(date, hour))
-    println(sql1)
+    println(sql3)
 
-    val unionRdd = ctx.sql(sql1).rdd.map {
+    val sql4 =
+      """
+        |select ideaid , sum(isshow) as show, sum(isclick) as click
+        |from dl_cpc.cpc_union_log
+        |where `date`="%s" and hour>="%s" and hour<="%s" and ext_int['is_api_callback'] = 0 and adslot_type<>7 and isclick=1
+        |group by ideaid
+      """.stripMargin.format(date, before2hour, hour)
+    println(sql4)
+
+    val unionRdd1 = ctx.sql(sql3).rdd.map {
       x =>
         val ideaid: Int = x(0).toString().toInt
         val show: Int = x(1).toString().toInt
@@ -322,6 +331,17 @@ object GetTraceReportV3 {
 
         (ideaid, (show, click))
     }
+
+    val unionRdd2 = ctx.sql(sql4).rdd.map {
+      x =>
+        val ideaid: Int = x(0).toString().toInt
+        val show: Int = x(1).toString().toInt
+        val click: Int = x(2).toString().toInt
+
+        (ideaid, (show, click))
+    }
+    val unionRdd =unionRdd1.union(unionRdd2)
+
 
     val traceData = traceReport1.union(traceReport2).filter {
       trace =>
