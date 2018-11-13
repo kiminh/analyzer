@@ -43,7 +43,7 @@ object DNNSampleV3_tmp {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/zhj/test_content/dnntest-" + date)
+      .save("/user/cpc/zhj/daily_v3_list/dnntest-" + date)
 
     val tn = test.count
 
@@ -136,7 +136,7 @@ object DNNSampleV3_tmp {
          |  hour
          |
          |from dl_cpc.cpc_union_log where `date` = '$date'
-         |  and isshow = 1 and ideaid > 0 and adslot_type = 2
+         |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
@@ -147,12 +147,8 @@ object DNNSampleV3_tmp {
     println("--------------------------------")
 
 
-    val data = spark.sql(sql).persist()
-    val uid = data.groupBy("uid").agg(expr("sum(label[0]) as count"))
-      .filter("count>0")
-      .sample(withReplacement = false, 0.05)
-
-    data.join(uid, Seq("uid"), "inner")
+    spark.sql(sql)
+      .sample(withReplacement = false, 0.03)
       .join(behavior_data, Seq("uid"), "left")
       .join(userAppIdx, Seq("uid"), "left")
 
