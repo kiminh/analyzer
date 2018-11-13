@@ -24,7 +24,10 @@ object UserBehaviorNovelCvr {
     //cvr data
     val cvr_sql =
       s"""
-         |select uid, ideaid as cvr_ideaid, timestamp,
+         |select a.*,
+         |      row_number() over(partition by uid,cvr_ideaid order by timestamp desc) rn
+         |from
+         |  (select uid, ideaid as cvr_ideaid, timestamp,
          |      ext['adclass'].int_value as cvr_adclass,
          |      userid       as cvr_userid,
          |      planid       as cvr_planid,
@@ -33,10 +36,7 @@ object UserBehaviorNovelCvr {
          |      city         as cvr_city,
          |      adslotid     as cvr_adslotid,
          |      ext['phone_level'].int_value  as cvr_phone_level,
-         |      ext['brand_title'].string_value  as cvr_brand_title,
-         |      row_number() over(partition by uid,ideaid order by timestamp desc) rn
-         |from
-         |  (select *
+         |      ext['brand_title'].string_value  as cvr_brand_title
          |  from dl_cpc.cpc_union_log
          |  where date='$date'
          |  and isclick = 1 and ideaid > 0
@@ -46,7 +46,7 @@ object UserBehaviorNovelCvr {
          |  and uid > 0
          |  ) a
          |inner join
-         |  (select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
+         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1
          |  WHERE `date` = '$date' and label2 = 1
          |  ) b on a.searchid = b.searchid
       """.stripMargin
