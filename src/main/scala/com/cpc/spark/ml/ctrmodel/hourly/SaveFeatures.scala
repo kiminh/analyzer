@@ -230,6 +230,13 @@ object SaveFeatures {
   def saveCvrDataV2(spark: SparkSession, date: String, hour: String, yesterday: String, version: String): Unit = {
     import spark.implicits._
 
+    val cal = Calendar.getInstance()
+    val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
+    cal.add(Calendar.HOUR, -1)
+    val fDate = dateFormat.format(cal.getTime)
+    val before1hour = fDate.substring(11, 13)
+
     //激励下载转化  取有点击的
     val motivateRDD = spark.sql(
       s"""
@@ -296,23 +303,63 @@ object SaveFeatures {
     //         |    on a.searchid=b.searchid
     //         | where t2.id is null
     //       """.stripMargin.format(date, hour, yesterday, date, hour))
+    val sql =
+    s"""
+       |select tr.trace_type as flag1
+       |      ,tr.searchid
+       |      ,un.userid
+       |      ,un.uid
+       |      ,un.ideaid
+       |      ,un.date
+       |      ,un.hour
+       |      ,tr.trace_type
+       |from dl_cpc.logparsed_cpc_trace_minute as tr
+       |left join
+       |(select searchid, userid, uid, planid, unitid, ideaid, adslot_type, isclick, date, hour from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
+       |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
+       |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
+       """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour)
+    println(sql)
 
-    val userApiBackRDD = spark.sql(
-      """
-        |select tr.trace_type as flag1
-        |      ,tr.searchid
-        |      ,un.userid
-        |      ,un.uid
-        |      ,un.ideaid
-        |      ,un.date
-        |      ,un.hour
-        |      ,tr.trace_type as trace_type
-        |from dl_cpc.logparsed_cpc_trace_minute as tr
-        |left join
-        |(select searchid, userid, planid, uid, ideaid, adslot_type, isclick, date, hour from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
-        |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
-        |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
-      """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour))
+    //没有api回传标记，直接上报到trace
+    val sql2 =
+      s"""
+         |select tr.trace_type as flag1
+         |      ,tr.searchid
+         |      ,un.userid
+         |      ,un.uid
+         |      ,un.ideaid
+         |      ,un.date
+         |      ,un.hour
+         |      ,tr.trace_type
+         |from dl_cpc.logparsed_cpc_trace_minute as tr
+         |left join
+         |(select a.searchid, a.userid, a.uid ,a.planid ,a.unitid ,a.ideaid, a.date, a.hour from dl_cpc.cpc_union_log a
+         |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type<>7 and a.isclick=1) as un on tr.searchid = un.searchid
+         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
+         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and t2.id is null
+       """.stripMargin.format(date, before1hour, hour, yesterday, date, hour)
+    println(sql2)
+
+
+    //    val userApiBackRDD = spark.sql(
+    //            """
+    //              |select tr.trace_type as flag1
+    //              |      ,tr.searchid
+    //              |      ,un.userid
+    //              |      ,un.uid
+    //              |      ,un.ideaid
+    //              |      ,un.date
+    //              |      ,un.hour
+    //              |      ,tr.trace_type
+    //              |from dl_cpc.logparsed_cpc_trace_minute as tr
+    //              |left join
+    //              |(select searchid, userid, planid, uid, ideaid, adslot_type, isclick, date, hour from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
+    //              |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
+    //              |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
+    //            """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour))
+
+    val userApiBackRDD = (spark.sql(sql).union(spark.sql(sql2)))
       .rdd
       .map {
         x =>

@@ -255,7 +255,7 @@ object GetTraceReportV3 {
     cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0, 0)
     cal.add(Calendar.HOUR, -1)
     val fDate = dateFormat.format(cal.getTime)
-    val before2hour = fDate.substring(11, 13)
+    val before1hour = fDate.substring(11, 13)
 
     val sql =
       s"""
@@ -292,7 +292,7 @@ object GetTraceReportV3 {
          |(select a.searchid, a.userid ,a.planid ,a.unitid ,a.ideaid from dl_cpc.cpc_union_log a
          |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type<>7 and a.isclick=1) as un on tr.searchid = un.searchid
          |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"
-       """.stripMargin.format(date, before2hour, hour, date, hour)
+       """.stripMargin.format(date, before1hour, hour, date, hour)
     println(sql2)
 
     val traceReport1 = ctx.sql(sql)
@@ -320,7 +320,7 @@ object GetTraceReportV3 {
         |from dl_cpc.cpc_union_log
         |where `date`="%s" and hour>="%s" and hour<="%s" and ext_int['is_api_callback'] = 0 and adslot_type<>7 and isclick=1
         |group by ideaid
-      """.stripMargin.format(date, before2hour, hour)
+      """.stripMargin.format(date, before1hour, hour)
     println(sql4)
 
     val unionRdd1 = ctx.sql(sql3).rdd.map {
