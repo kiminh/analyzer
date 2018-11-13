@@ -113,7 +113,7 @@ object DssmUserGen {
 
       joined.map{x => (x._1, x._2)}
         .toDF("sample_idx", "uid")
-        .coalesce(50).write.mode("overwrite")
+        .coalesce(10).write.mode("overwrite")
         .parquet("/user/cpc/hzh/user_id_map/" + date + "/")
 
       joined.toDF("sample_idx", "uid",
