@@ -69,7 +69,7 @@ object UserBehaviorNovelCvr {
       .where("rn <= 5000")
       .persist()
 
-    println(s"click data count $date : " + cvr_data.count())
+    println(s"cvr data count $date : " + cvr_data.count())
 
     //click data
     val click_sql =
