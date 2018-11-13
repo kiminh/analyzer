@@ -259,15 +259,16 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
             }
         }
       }
-      if(re1.nonEmpty) re1.distinct.slice(0, 1000) else re
+      if (re1.nonEmpty) re1.distinct.slice(0, 1000) else re
   }
 
-  def test(i: Int) = udf {
-    (index: Seq[Long], values: Seq[Long]) =>
-      var re = Seq[Long]()
-      for (id <- index.zipWithIndex) {
-        if (id._1 == i) re = re :+ values(id._2)
-      }
-      re.size
+  def filterHash3 = udf {
+    (hour: String, adclass: Int, values: Seq[String]) =>
+      val re = if (values != null && values.nonEmpty) {
+        values.map(_.split(":"))
+          .filter(_ (0) < hour)
+          .map(x => if (x(1).toInt == adclass) 1 else 0)
+      } else Seq(0)
+      if (re.isEmpty) Seq(0) else re.slice(0, 1000)
   }
 }
