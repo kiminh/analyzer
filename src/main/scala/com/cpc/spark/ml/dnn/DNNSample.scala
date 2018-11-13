@@ -259,7 +259,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
             }
         }
       }
-      if(re1.nonEmpty) re1.slice(0, 1000) else re
+      if(re1.nonEmpty) re1.distinct.slice(0, 1000) else re
   }
 
   def test(i: Int) = udf {
