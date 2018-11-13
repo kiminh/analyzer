@@ -21,8 +21,8 @@ object DNNSampleV4_test {
     spark.udf.register("hash", Murmur3Hash.stringHash64 _)
     val Array(trdate, trpath, tedate, tepath) = args
 
-    val sample = new DNNSampleV4_test2(spark, trdate, trpath, tedate, tepath)
-    //    sample.saveTrain()
+    val sample = new DNNSampleV4_test1(spark, trdate, trpath, tedate, tepath)
+    sample.saveTrain()
     sample.saveTest(gauc = true)
   }
 }
@@ -327,7 +327,7 @@ class DNNSampleV4_test1(spark: SparkSession, trdate: String = "", trpath: String
        |      collect_set(concat(hour, ':', hash(concat('m16',ext['adclass'].int_value), 0))) as s_adclass,
        |      collect_set(if(isclick = 1, concat(hour, ':', hash(concat('m17',ext['adclass'].int_value), 0)), null)) as c_adclass
        |from dl_cpc.cpc_union_log where `date` = '$date'
-       |  and isshow = 1 and ideaid > 0
+       |  and isshow = 1 and ideaid > 0 and adslot_type = 1
        |  and media_appsid in ("80000001", "80000002")
        |  and uid not like "%.%"
        |  and uid not like "%000000%"
