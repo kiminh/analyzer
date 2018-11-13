@@ -38,7 +38,7 @@ object DNNSampleV3_tmp {
 
     val test = getSample(spark, date).persist()
 
-    test.repartition(100, $"sample_idx")
+    test.repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
