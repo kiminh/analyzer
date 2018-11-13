@@ -863,6 +863,12 @@ object OcpcPIDwithCPA {
 
     //TODO 删除临时表
     cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v3")
+    cpaRatio
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_check_cpa_ratio_hourly")
 
     cpaRatio
 
