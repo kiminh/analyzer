@@ -244,6 +244,24 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
       re.slice(0, 1000)
   }
 
+  def filterHash2(index: Int) = udf {
+    (hour: String, values: Seq[String]) =>
+      var re = Seq(Murmur3Hash.stringHash64("m" + index, 0))
+      var h = hour.toInt
+      var re1 = Seq[Long]()
+      if (h > 2) {
+        if (values != null) {
+          re1 = values.filter { x =>
+            x.split(":")(0).toInt < (h - 2)
+          }
+            .map { x =>
+              x.split(":")(1).toLong
+            }
+        }
+      }
+      if(re1.nonEmpty) re1.slice(0, 1000) else re
+  }
+
   def test(i: Int) = udf {
     (index: Seq[Long], values: Seq[Long]) =>
       var re = Seq[Long]()
