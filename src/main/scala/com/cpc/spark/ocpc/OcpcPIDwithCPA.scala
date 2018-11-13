@@ -731,6 +731,12 @@ object OcpcPIDwithCPA {
     rawData.createOrReplaceTempView("raw_table")
     // TODO 删除临时表
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_k_value_raw_table")
+    rawData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_k_value_raw_table")
 
     val cvr3Data = getActivationData(date, hour, spark)
 
