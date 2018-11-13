@@ -237,7 +237,7 @@ object OcpcDailyReport {
          |    ideaid,
          |    SUM(case when ocpc_log_dict['ocpcstep']=2 then 1 else 0 end) * 1.0 / sum(isclick) as step2_percent
          |FROM
-         |    test.test_ocpc_daily_complete_data20181112
+         |    test.ocpc_daily_complete_data
          |WHERE
          |    isclick=1
          |GROUP BY ideaid
