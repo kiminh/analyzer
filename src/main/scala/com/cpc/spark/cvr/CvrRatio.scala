@@ -55,9 +55,9 @@ object CvrRatio {
              """.stripMargin
         print(mlFeatureSql)
         val union = spark.sql(unionSql)
-        union.show()
+        //union.show()
         val mlFeature = spark.sql(mlFeatureSql)
-        mlFeature.show()
+        //mlFeature.show()
         val result = union.join(mlFeature,Seq("media_appsid"),"inner")
           .withColumn("ratio",calRatio(col("exp_cvr"),col("acutal_cvr")))
           .withColumn("date", lit(s"$date"))
