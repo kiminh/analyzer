@@ -54,7 +54,7 @@ object TopApps {
       s"""
          |select pkg, install_user_num
          |from dl_cpc.top_apps
-         |where \`date\`='${date}'
+         |where `date`='${date}'
          |sort by install_user_num desc
          |limit 10
       """.stripMargin)
