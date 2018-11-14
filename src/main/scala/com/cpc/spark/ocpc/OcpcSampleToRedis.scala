@@ -258,7 +258,7 @@ object OcpcSampleToRedis {
 
 
     val finalData2 = finalData1
-      .join(regressionK, Seq("ideaid"), "left_outer")
+      .join(regressionK, Seq("ideaid", "adclass"), "left_outer")
       .withColumn("k_value", when(col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
       .withColumn("cali_value", lit(1.0))
       .withColumn("cvr3_cali", lit(1.0))
@@ -266,6 +266,7 @@ object OcpcSampleToRedis {
 
     // TODO bak表
     finalData2.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
+
 
     val sqlRequest5 =
       s"""
@@ -279,13 +280,7 @@ object OcpcSampleToRedis {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case when b.conversion_goal=1 and a.k_value<0.01 then 0.01
-         |        when b.conversion_goal=1 and a.k_value>1.4 then 1.4
-         |        when b.conversion_goal=2 and a.k_value<0.01 then 0.01
-         |        when b.conversion_goal=2 and a.k_value>1.2 then 1.2
-         |        when b.conversion_goal=3 and a.k_value<0.01 then 0.01
-         |        when b.conversion_goal=3 and a.k_value>1.2 then 1.2
-         |        when a.k_value>1.4 then 1.4
+         |  (case when a.k_value>2.0 then 2.0
          |        when a.k_value<0.01 then 0.01
          |        else a.k_value end) as k_value,
          |  a.hpcvr,
@@ -707,13 +702,23 @@ object OcpcSampleToRedis {
       .select("ideaid", "cvr3_flag")
       .distinct()
 
-    val resultDF = regressionK
+    val prevTable = spark.table("dl_cpc.new_pb_ocpc_with_pcvr")
+
+    val finalDF = regressionK
       .join(cvr3List, Seq("ideaid"), "left_outer")
       .select("ideaid", "k_ratio2", "k_ratio3", "cvr3_flag")
-      .withColumn("regression_k_value", when(col("cvr3_flag").isNull, col("k_ratio2")).otherwise(col("k_ratio3")))
-      .select("ideaid", "regression_k_value")
+      .withColumn("original_regression_k_value", when(col("cvr3_flag").isNull, col("k_ratio2")).otherwise(col("k_ratio3")))
+      .select("ideaid", "original_regression_k_value")
+      .join(prevTable, Seq("ideaid"), "left_outer")
+      .withColumn("regression_k_value", when(col("k_value").isNotNull && col("original_regression_k_value").isNotNull && col("original_regression_k_value")>col("k_value"), (col("k_value") + col("original_regression_k_value")) * 1.0/2.0).otherwise(col("original_regression_k_value")))
+      .select("ideaid", "adclass", "regression_k_value", "original_regression_k_value", "k_value")
+      .filter("adclass is not null")
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_test_k_regression_list")
+
+
+    finalDF.write.mode("overwrite").saveAsTable("test.ocpc_test_k_regression_list")
+
+    val resultDF  = finalDF.select("ideaid", "adclass", "regression_k_value")
 
     resultDF
 
