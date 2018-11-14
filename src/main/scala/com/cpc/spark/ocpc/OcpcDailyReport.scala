@@ -267,6 +267,7 @@ object OcpcDailyReport {
       s"""
          |SELECT
          |    ideaid,
+         |    ocpc_log_dict['conversiongoal'] as conversion_goal,
          |    SUM(case when isclick==1 then bid_ocpc else 0 end) * 1.0 / sum(isclick) as cpa_given,
          |    SUM(case when isclick==1 then price else 0 end) as cost,
          |    sum(CASE WHEN isclick=1 then exp_cvr else 0 end) * 1.0/SUM(isclick) as pcvr,
@@ -275,7 +276,7 @@ object OcpcDailyReport {
          |    SUM(iscvr) as cvr_cnt
          |FROM
          |    test.ocpc_daily_complete_data
-         |GROUP BY ideaid
+         |GROUP BY ideaid, ocpc_log_dict['conversiongoal']
        """.stripMargin
 
     val label2Data = spark.sql(sqlRequest4)
@@ -312,6 +313,8 @@ object OcpcDailyReport {
          |    test.ocpc_label2_daily_data as b
          |ON
          |    a.ideaid=b.ideaid
+         |AND
+         |    a.conversion_goal=b.conversion_goal
          |INNER JOIN
          |    test.ocpc_daily_step2_percent as c
          |ON
@@ -350,6 +353,8 @@ object OcpcDailyReport {
          |    test.ocpc_label2_daily_data as b
          |ON
          |    a.ideaid=b.ideaid
+         |AND
+         |    a.conversion_goal=b.conversion_goal
          |INNER JOIN
          |    test.ocpc_label3_daily_data as c
          |ON
