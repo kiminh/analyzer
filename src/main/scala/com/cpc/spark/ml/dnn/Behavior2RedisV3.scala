@@ -92,7 +92,7 @@ object Behavior2RedisV3 {
         var group = Seq[Int]()
         var hashcode = Seq[Long]()
         val uid = "d3_" + rec.getString(0)
-        for (i <- 1 to 12) {
+        for (i <- 1 to 15) {
           val f = rec.getAs[Seq[Long]](i)
           group = group ++ Array.tabulate(f.length)(x => i)
           hashcode = hashcode ++ f
