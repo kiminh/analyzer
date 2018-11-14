@@ -23,8 +23,8 @@ object OcpcPIDwithCPA {
     // TODO ideaid与userid的名称
     if (onDuty == 1) {
       val result = calculateKv3(date, hour, spark)
-//      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_bak")
-      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_bak")
+//      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
@@ -768,8 +768,8 @@ object OcpcPIDwithCPA {
     val historyData = getHistoryData(date, hour, 24, spark)
     println("################# historyData ####################")
 //    historyData.show(10)
-    val avgK = getAvgK(baseData, historyData, date, hour, spark)
-//    val avgK = getAvgKV3(baseData, historyData, date, hour, spark)
+//    val avgK = getAvgK(baseData, historyData, date, hour, spark)
+    val avgK = getAvgKV3(baseData, historyData, date, hour, spark)
     println("################# avgK table #####################")
 //    avgK.show(10)
     val cpaRatio = getCPAratioV3(baseData, historyData, date, hour, spark)
@@ -1055,13 +1055,18 @@ object OcpcPIDwithCPA {
     val case1 = rawData
       .filter("isclick=1")
       .groupBy("ideaid", "adclass", "hour")
-      .agg(avg(col("kvalue")).alias("hourly_k"))
-      .filter("kvalue>0")
+      .agg(
+        sum(col("kvalue")).alias("hourly_k"),
+        sum(col("isclick")).alias("hourly_ctr_cnt"))
+      .filter("hourly_k>0")
       .withColumn("weight", udfCalculateWeightByHour(hour)(col("hour")))
       .withColumn("weighted_k", col("weight")*col("hourly_k"))
+      .withColumn("weighted_ctr_cnt", col("weight")*col("hourly_ctr_cnt"))
       .groupBy("ideaid", "adclass")
-      .agg(sum(col("weighted_k")).alias("total_k"), sum(col("weight")).alias("total_weight"))
-      .withColumn("kvalue1", col("total_k") / col("total_weight"))
+      .agg(
+        sum(col("weighted_k")).alias("total_k"),
+        sum(col("weighted_ctr_cnt")).alias("total_ctr_cnt"))
+      .withColumn("kvalue1", col("total_k") / col("total_ctr_cnt"))
       .select("ideaid", "adclass", "kvalue1")
 
     //TODO 删除case3
