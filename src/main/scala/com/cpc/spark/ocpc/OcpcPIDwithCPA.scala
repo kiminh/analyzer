@@ -731,6 +731,12 @@ object OcpcPIDwithCPA {
     rawData.createOrReplaceTempView("raw_table")
     // TODO 删除临时表
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_k_value_raw_table")
+    rawData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_k_value_raw_table")
 
     val cvr3Data = getActivationData(date, hour, spark)
 
@@ -763,6 +769,7 @@ object OcpcPIDwithCPA {
     println("################# historyData ####################")
 //    historyData.show(10)
     val avgK = getAvgK(baseData, historyData, date, hour, spark)
+//    val avgK = getAvgKV3(baseData, historyData, date, hour, spark)
     println("################# avgK table #####################")
 //    avgK.show(10)
     val cpaRatio = getCPAratioV3(baseData, historyData, date, hour, spark)
@@ -831,6 +838,23 @@ object OcpcPIDwithCPA {
     joinData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_total_cost_v3")
 
     // case1, case2, case3
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  ideaid,
+//         |  adclass,
+//         |  cpa_given,
+//         |  total_cost,
+//         |  cvr_cnt,
+//         |  (case when cpa_given is null then 1.0
+//         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then -1
+//         |        when hourly_ctr_cnt>=10 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
+//         |        when cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
+//         |        else 1.0 end) as cpa_ratio_cvr2
+//         |FROM
+//         |  join_table
+//       """.stripMargin
+
     val sqlRequest =
       s"""
          |SELECT
@@ -840,8 +864,7 @@ object OcpcPIDwithCPA {
          |  total_cost,
          |  cvr_cnt,
          |  (case when cpa_given is null then 1.0
-         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then -1
-         |        when hourly_ctr_cnt>=10 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
+         |        when cvr_cnt=0 or cvr_cnt is null then 0.8
          |        when cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
          |        else 1.0 end) as cpa_ratio_cvr2
          |FROM
@@ -863,6 +886,12 @@ object OcpcPIDwithCPA {
 
     //TODO 删除临时表
     cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v3")
+    cpaRatio
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_check_cpa_ratio_hourly")
 
     cpaRatio
 
@@ -916,6 +945,25 @@ object OcpcPIDwithCPA {
 
 
     data.createOrReplaceTempView("data_table")
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  ideaid,
+//         |  adclass,
+//         |  cost,
+//         |  cpa_given,
+//         |  cvr3_cvr_cnt,
+//         |  hourly_ctr_cnt,
+//         |  flag,
+//         |  (case when cpa_given is null then 1.0
+//         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then -1
+//         |        when hourly_ctr_cnt>=10 and (cvr3_cvr_cnt=0 or cvr3_cvr_cnt is null) then 0.8
+//         |        when cvr3_cvr_cnt>0 then cpa_given * cvr3_cvr_cnt * 1.0 / cost
+//         |        else 1.0 end) as cpa_ratio_cvr3
+//         |FROM
+//         |  data_table
+//       """.stripMargin
+
     val sqlRequest =
       s"""
          |SELECT
@@ -927,8 +975,7 @@ object OcpcPIDwithCPA {
          |  hourly_ctr_cnt,
          |  flag,
          |  (case when cpa_given is null then 1.0
-         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then -1
-         |        when hourly_ctr_cnt>=10 and (cvr3_cvr_cnt=0 or cvr3_cvr_cnt is null) then 0.8
+         |        when cvr3_cvr_cnt=0 or cvr3_cvr_cnt is null then 0.8
          |        when cvr3_cvr_cnt>0 then cpa_given * cvr3_cvr_cnt * 1.0 / cost
          |        else 1.0 end) as cpa_ratio_cvr3
          |FROM
@@ -972,6 +1019,90 @@ object OcpcPIDwithCPA {
       .select("ideaid", "balance_label")
 
     resultDF
+  }
+
+  def getAvgKV3(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
+    /**
+      * 计算修正前的k基准值
+      * case1：前6个小时有isclick=1的数据，统计这批数据的k均值作为基准值
+      * case2：前6个小时没有isclick=1的数据，将前一个小时的数据作为基准值
+      * case3: 在主表（7*24）中存在，但是不属于前两种情况的，初始值0.694
+      */
+
+    historyData
+      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+      .createOrReplaceTempView("raw_table")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  ideaid,
+         |  adclass,
+         |  isshow,
+         |  isclick,
+         |  iscvr,
+         |  ocpc_log,
+         |  ocpc_log_dict['kvalue'] as kvalue,
+         |  hour
+         |FROM
+         |  raw_table
+       """.stripMargin
+    println(sqlRequest2)
+    val rawData = spark.sql(sqlRequest2)
+
+    // case1
+    val case1 = rawData
+      .filter("isclick=1")
+      .groupBy("ideaid", "adclass", "hour")
+      .agg(
+        sum(col("kvalue")).alias("hourly_k"),
+        sum(col("isclick")).alias("hourly_ctr_cnt"))
+      .filter("hourly_k>0")
+      .withColumn("weight", udfCalculateWeightByHour(hour)(col("hour")))
+      .withColumn("weighted_k", col("weight")*col("hourly_k"))
+      .withColumn("weighted_ctr_cnt", col("weight")*col("hourly_ctr_cnt"))
+      .groupBy("ideaid", "adclass")
+      .agg(
+        sum(col("weighted_k")).alias("total_k"),
+        sum(col("weighted_ctr_cnt")).alias("total_ctr_cnt"))
+      .withColumn("kvalue1", col("total_k") / col("total_ctr_cnt"))
+      .select("ideaid", "adclass", "kvalue1")
+
+    //TODO 删除case3
+    val case3 = rawData
+      .filter("isclick=1")
+      .groupBy("ideaid", "adclass")
+      .agg(avg(col("kvalue")).alias("kvalue3")).select("ideaid", "adclass", "kvalue3")
+
+
+
+//      .agg(avg(col("kvalue")).alias("kvalue1")).select("ideaid", "adclass", "kvalue1")
+
+    // case2
+    // table name for previous calculation: test.new_pb_ocpc_with_pcvr
+    val case2 = spark
+      .table("dl_cpc.new_pb_ocpc_with_pcvr")
+      .withColumn("kvalue2", col("k_value"))
+      .select("ideaid", "adclass", "kvalue2")
+      .distinct()
+
+    // 优先case1，然后case2，最后case3
+    // TODO 删除case3
+    val resultDF = baseData
+      .join(case1, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "adclass", "kvalue1")
+      .join(case2, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "adclass", "kvalue1", "kvalue2")
+      .withColumn("kvalue_new", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
+      .withColumn("kvalue", when(col("kvalue_new").isNull, 0.694).otherwise(col("kvalue_new")))
+      .join(case3, Seq("ideaid", "adclass"), "left_outer")
+
+    resultDF.show(10)
+    // TODO 删除临时表
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_avg_k_value_v3")
+    resultDF
+
   }
 
 }

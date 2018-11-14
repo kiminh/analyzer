@@ -18,7 +18,7 @@ object OcpcMonitor {
 
     getBaseData(date, hour, spark)
 //    getHoursReport(date, hour, spark)
-    getHoursReportWithAct(date, hour, spark)
+//    getHoursReportWithAct(date, hour, spark)
 
 
   }

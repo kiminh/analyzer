@@ -211,55 +211,7 @@ object OcpcDailyReport {
       * 重新计算抽取全天的数据日志
       */
 
-//    // 抽取基础数据：所有跑ocpc的广告主
-//    val sqlRequest1 =
-//      s"""
-//         |SELECT
-//         |    a.*,
-//         |    b.iscvr
-//         |FROM
-//         |    (select
-//         |        uid,
-//         |        timestamp,
-//         |        searchid,
-//         |        userid,
-//         |        ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
-//         |        ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
-//         |        isclick,
-//         |        isshow,
-//         |        ideaid,
-//         |        exptags,
-//         |        price,
-//         |        ext_int['bid_ocpc'] as bid_ocpc,
-//         |        ext_int['is_ocpc'] as is_ocpc,
-//         |        ext_string['ocpc_log'] as ocpc_log,
-//         |        ext_int['is_api_callback'] as is_api_callback,
-//         |        date,
-//         |        hour
-//         |    from
-//         |        dl_cpc.cpc_union_log
-//         |    WHERE
-//         |        `date`='$date'
-//         |    and
-//         |        media_appsid  in ("80000001", "80000002")
-//         |    and
-//         |        ext['antispam'].int_value = 0
-//         |    and adsrc = 1
-//         |    and adslot_type in (1,2,3)
-//         |    and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
-//         |    AND ext_int['is_ocpc']=1
-//         |    and ext_string['ocpc_log'] != '' and ext_string['ocpc_log'] is not null) a
-//         |left outer join
-//         |    (
-//         |        select
-//         |            searchid,
-//         |            label2 as iscvr
-//         |        from dl_cpc.ml_cvr_feature_v1
-//         |        WHERE `date`='$date'
-//         |    ) b on a.searchid = b.searchid
-//       """.stripMargin
-
-//    val rawData = spark.sql(sqlRequest1)
+    // 抽取基础数据：所有跑ocpc的广告主
     val rawData = spark
       .table("dl_cpc.ocpc_unionlog")
       .where(s"`dt`='$date'")
@@ -277,10 +229,25 @@ object OcpcDailyReport {
        """.stripMargin
 
     val ocpcAd = spark.sql(sqlRequest1).distinct()
-
     ocpcAd.write.mode("overwrite").saveAsTable("test.ocpc_daily_ad_list")
 
     val sqlRequest2 =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    SUM(case when ocpc_log_dict['ocpcstep']=2 then 1 else 0 end) * 1.0 / sum(isclick) as step2_percent
+         |FROM
+         |    test.ocpc_daily_complete_data
+         |WHERE
+         |    isclick=1
+         |GROUP BY ideaid
+       """.stripMargin
+
+    val ocpcStep2 = spark.sql(sqlRequest2)
+    ocpcStep2.write.mode("overwrite").saveAsTable("test.ocpc_daily_step2_percent")
+
+
+    val sqlRequest3 =
       s"""
          |SELECT
          |    ideaid,
@@ -292,14 +259,15 @@ object OcpcDailyReport {
          |GROUP BY ideaid
        """.stripMargin
 
-    val label3Data = spark.sql(sqlRequest2)
+    val label3Data = spark.sql(sqlRequest3)
     label3Data.write.mode("overwrite").saveAsTable("test.ocpc_label3_daily_data")
 
 
-    val sqlRequest3 =
+    val sqlRequest4 =
       s"""
          |SELECT
          |    ideaid,
+         |    ocpc_log_dict['conversiongoal'] as conversion_goal,
          |    SUM(case when isclick==1 then bid_ocpc else 0 end) * 1.0 / sum(isclick) as cpa_given,
          |    SUM(case when isclick==1 then price else 0 end) as cost,
          |    sum(CASE WHEN isclick=1 then exp_cvr else 0 end) * 1.0/SUM(isclick) as pcvr,
@@ -308,18 +276,19 @@ object OcpcDailyReport {
          |    SUM(iscvr) as cvr_cnt
          |FROM
          |    test.ocpc_daily_complete_data
-         |GROUP BY ideaid
+         |GROUP BY ideaid, ocpc_log_dict['conversiongoal']
        """.stripMargin
 
-    val label2Data = spark.sql(sqlRequest3)
+    val label2Data = spark.sql(sqlRequest4)
     label2Data.write.mode("overwrite").saveAsTable("test.ocpc_label2_daily_data")
 
-    val sqlRequest4 =
+    val sqlRequest5 =
       s"""
          |SELECT
          |    a.ideaid,
          |    a.userid,
          |    a.conversion_goal,
+         |    c.step2_percent,
          |    b.cpa_given,
          |    b.cost * 1.0 / b.cvr_cnt as cpa_real,
          |    b.pcvr,
@@ -344,15 +313,22 @@ object OcpcDailyReport {
          |    test.ocpc_label2_daily_data as b
          |ON
          |    a.ideaid=b.ideaid
+         |AND
+         |    a.conversion_goal=b.conversion_goal
+         |INNER JOIN
+         |    test.ocpc_daily_step2_percent as c
+         |ON
+         |    a.ideaid=c.ideaid
        """.stripMargin
 
-    val noApiData = spark.sql(sqlRequest4)
+    val noApiData = spark.sql(sqlRequest5)
 
-    val sqlRequest5 =
+    val sqlRequest6 =
       s"""
          |SELECT
          |    a.ideaid,
          |    a.userid,
+         |    d.step2_percent,
          |    b.cpa_given,
          |    b.cost * 1.0 / c.cvr_cnt as cpa_real,
          |    b.pcvr,
@@ -377,13 +353,19 @@ object OcpcDailyReport {
          |    test.ocpc_label2_daily_data as b
          |ON
          |    a.ideaid=b.ideaid
+         |AND
+         |    a.conversion_goal=b.conversion_goal
          |INNER JOIN
          |    test.ocpc_label3_daily_data as c
          |ON
          |    a.ideaid=c.ideaid
+         |INNER JOIN
+         |    test.ocpc_daily_step2_percent as d
+         |ON
+         |    a.ideaid=d.ideaid
        """.stripMargin
 
-    val apiData = spark.sql(sqlRequest5)
+    val apiData = spark.sql(sqlRequest6)
 
 //    noApiData.write.mode("overwrite").saveAsTable("test.ocpc_check_daily_report_noapi")
 //    apiData.write.mode("overwrite").saveAsTable("test.ocpc_check_daily_report_api")
