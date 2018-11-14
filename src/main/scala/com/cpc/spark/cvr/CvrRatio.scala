@@ -42,6 +42,7 @@ object CvrRatio {
                |where ($datelist)
                |and media_appsid not in ('80000001','80000002')
                |and isclick = 1
+               |group by media_appsid
              """.stripMargin
 
         val mlFeatureSql =
@@ -50,6 +51,7 @@ object CvrRatio {
                |from dl_cpc.ml_cvr_feature_v1
                |where `date` = $date
                |and media_appsid not in ('80000001','80000002')
+               |group by media_appsid
              """.stripMargin
 
         val union = spark.sql(unionSql)
