@@ -838,6 +838,23 @@ object OcpcPIDwithCPA {
     joinData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_total_cost_v3")
 
     // case1, case2, case3
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  ideaid,
+//         |  adclass,
+//         |  cpa_given,
+//         |  total_cost,
+//         |  cvr_cnt,
+//         |  (case when cpa_given is null then 1.0
+//         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then -1
+//         |        when hourly_ctr_cnt>=10 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
+//         |        when cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
+//         |        else 1.0 end) as cpa_ratio_cvr2
+//         |FROM
+//         |  join_table
+//       """.stripMargin
+
     val sqlRequest =
       s"""
          |SELECT
@@ -847,8 +864,7 @@ object OcpcPIDwithCPA {
          |  total_cost,
          |  cvr_cnt,
          |  (case when cpa_given is null then 1.0
-         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then -1
-         |        when hourly_ctr_cnt>=10 and (cvr_cnt=0 or cvr_cnt is null) then 0.8
+         |        when cvr_cnt=0 or cvr_cnt is null then 0.8
          |        when cvr_cnt>0 then cpa_given * cvr_cnt * 1.0 / total_cost
          |        else 1.0 end) as cpa_ratio_cvr2
          |FROM
@@ -929,6 +945,25 @@ object OcpcPIDwithCPA {
 
 
     data.createOrReplaceTempView("data_table")
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  ideaid,
+//         |  adclass,
+//         |  cost,
+//         |  cpa_given,
+//         |  cvr3_cvr_cnt,
+//         |  hourly_ctr_cnt,
+//         |  flag,
+//         |  (case when cpa_given is null then 1.0
+//         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then -1
+//         |        when hourly_ctr_cnt>=10 and (cvr3_cvr_cnt=0 or cvr3_cvr_cnt is null) then 0.8
+//         |        when cvr3_cvr_cnt>0 then cpa_given * cvr3_cvr_cnt * 1.0 / cost
+//         |        else 1.0 end) as cpa_ratio_cvr3
+//         |FROM
+//         |  data_table
+//       """.stripMargin
+
     val sqlRequest =
       s"""
          |SELECT
@@ -940,8 +975,7 @@ object OcpcPIDwithCPA {
          |  hourly_ctr_cnt,
          |  flag,
          |  (case when cpa_given is null then 1.0
-         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then -1
-         |        when hourly_ctr_cnt>=10 and (cvr3_cvr_cnt=0 or cvr3_cvr_cnt is null) then 0.8
+         |        when cvr3_cvr_cnt=0 or cvr3_cvr_cnt is null then 0.8
          |        when cvr3_cvr_cnt>0 then cpa_given * cvr3_cvr_cnt * 1.0 / cost
          |        else 1.0 end) as cpa_ratio_cvr3
          |FROM
