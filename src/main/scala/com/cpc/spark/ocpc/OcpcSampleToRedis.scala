@@ -718,7 +718,7 @@ object OcpcSampleToRedis {
 
     finalDF.write.mode("overwrite").saveAsTable("test.ocpc_test_k_regression_list")
 
-    val resultDF  = finalDF.select("ideaid", "regression_k_value")
+    val resultDF  = finalDF.select("ideaid", "adclass", "regression_k_value")
 
     resultDF
 
