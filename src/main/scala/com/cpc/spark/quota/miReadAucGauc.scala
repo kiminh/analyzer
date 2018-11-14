@@ -21,7 +21,9 @@ object miReadAucGauc {
 
         val unionSql =
             s"""
-               |select exptags,uid,isclick,ext['exp_ctr'].int_value as score
+               |select exptags,uid,
+               |isclick as label,
+               |ext['exp_ctr'].int_value as score
                |from dl_cpc.cpc_union_log
                |where `date` = '$date' and hour = '$hour'
                |and isshow = 1
