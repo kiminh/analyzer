@@ -12,7 +12,7 @@ import org.apache.spark.sql.functions._
   * @version 1.0
   *
   */
-object DNNSampleV4_test {
+object DNNSample_test {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
@@ -21,7 +21,7 @@ object DNNSampleV4_test {
     spark.udf.register("hash", Murmur3Hash.stringHash64 _)
     val Array(trdate, trpath, tedate, tepath) = args
 
-    val sample = new DNNSampleV4_test1(spark, trdate, trpath, tedate, tepath)
+    val sample = new DNNSample_test1(spark, trdate, trpath, tedate, tepath)
     //    sample.saveTrain()
     sample.saveTest(gauc = false)
   }
@@ -36,8 +36,8 @@ object DNNSampleV4_test {
   * @version 1.0
   *
   */
-class DNNSampleV4_test(spark: SparkSession, trdate: String = "", trpath: String = "",
-                       tedate: String = "", tepath: String = "")
+class DNNSample_test(spark: SparkSession, trdate: String = "", trpath: String = "",
+                     tedate: String = "", tepath: String = "")
   extends DNNSample(spark, trdate, trpath, tedate, tepath) {
 
   //union log 取数
@@ -256,8 +256,8 @@ class DNNSampleV4_test(spark: SparkSession, trdate: String = "", trpath: String 
   * @version 1.0
   *
   */
-class DNNSampleV4_test1(spark: SparkSession, trdate: String = "", trpath: String = "",
-                        tedate: String = "", tepath: String = "")
+class DNNSample_test1(spark: SparkSession, trdate: String = "", trpath: String = "",
+                      tedate: String = "", tepath: String = "")
   extends DNNSample(spark, trdate, trpath, tedate, tepath) {
 
   //union log 取数
@@ -555,8 +555,8 @@ class DNNSampleV4_test1(spark: SparkSession, trdate: String = "", trpath: String
   * @version 1.0
   *
   */
-class DNNSampleV4_test2(spark: SparkSession, trdate: String = "", trpath: String = "",
-                        tedate: String = "", tepath: String = "")
+class DNNSample_test2(spark: SparkSession, trdate: String = "", trpath: String = "",
+                      tedate: String = "", tepath: String = "")
   extends DNNSample(spark, trdate, trpath, tedate, tepath) {
 
   //union log 取数

@@ -19,6 +19,7 @@ import org.apache.spark.sql.functions.udf
   * @version 1.0
   *
   */
+@deprecated
 object Behavior2Redis {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
@@ -69,7 +70,6 @@ object Behavior2Redis {
 
     data.coalesce(20).write.mode("overwrite")
       .parquet("/user/cpc/zhj/behavior")
-
 
 
     val conf = ConfigFactory.load()
