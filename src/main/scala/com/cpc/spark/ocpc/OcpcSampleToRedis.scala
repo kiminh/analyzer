@@ -675,14 +675,14 @@ object OcpcSampleToRedis {
   def getRegressionK(date: String, hour: String, spark: SparkSession) = {
     import spark.implicits._
 
-    val filename = "/user/cpc/wangjun/ocpc_linearregression_k.txt"
-    val data = spark.sparkContext.textFile(filename)
-
-
-    val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
-    rawRDD.foreach(println)
-
-    val rawDF = rawRDD.toDF("ideaid", "flag").distinct()
+//    val filename = "/user/cpc/wangjun/ocpc_linearregression_k.txt"
+//    val data = spark.sparkContext.textFile(filename)
+//
+//
+//    val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+//    rawRDD.foreach(println)
+//
+//    val rawDF = rawRDD.toDF("ideaid", "flag").distinct()
 
     val sqlRequest =
       s"""
@@ -707,12 +707,11 @@ object OcpcSampleToRedis {
       .select("ideaid", "cvr3_flag")
       .distinct()
 
-    val resultDF = rawDF
-      .join(regressionK, Seq("ideaid"), "left_outer")
-      .select("ideaid", "k_ratio2", "k_ratio3", "flag")
+    val resultDF = regressionK
       .join(cvr3List, Seq("ideaid"), "left_outer")
-      .select("ideaid", "flag", "k_ratio2", "k_ratio3", "cvr3_flag")
+      .select("ideaid", "k_ratio2", "k_ratio3", "cvr3_flag")
       .withColumn("regression_k_value", when(col("cvr3_flag").isNull, col("k_ratio2")).otherwise(col("k_ratio3")))
+      .select("ideaid", "regression_k_value")
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_test_k_regression_list")
 
