@@ -258,7 +258,7 @@ object OcpcSampleToRedis {
 
 
     val finalData2 = finalData1
-      .join(regressionK, Seq("ideaid"), "left_outer")
+      .join(regressionK, Seq("ideaid", "adclass"), "left_outer")
       .withColumn("k_value", when(col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
       .withColumn("cali_value", lit(1.0))
       .withColumn("cvr3_cali", lit(1.0))
@@ -709,9 +709,10 @@ object OcpcSampleToRedis {
       .select("ideaid", "k_ratio2", "k_ratio3", "cvr3_flag")
       .withColumn("original_regression_k_value", when(col("cvr3_flag").isNull, col("k_ratio2")).otherwise(col("k_ratio3")))
       .select("ideaid", "original_regression_k_value")
-      .join(prevTable, Seq("ideaid", "adclass"), "left_outer")
+      .join(prevTable, Seq("ideaid"), "left_outer")
       .withColumn("regression_k_value", when(col("k_value").isNotNull && col("original_regression_k_value").isNotNull && col("original_regression_k_value")>col("k_value"), (col("k_value") + col("original_regression_k_value")) * 1.0/2.0).otherwise(col("original_regression_k_value")))
-      .select("ideaid", "regression_k_value", "original_regression_k_value", "k_value")
+      .select("ideaid", "adclass", "regression_k_value", "original_regression_k_value", "k_value")
+      .filter("adclass is not null")
 
 
 
