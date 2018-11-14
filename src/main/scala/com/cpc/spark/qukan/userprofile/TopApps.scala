@@ -56,7 +56,7 @@ object TopApps {
     var txt = ""
     for (i <- 0 until topApps_top100.length) {
       val t = topApps_top100(i)
-      txt = txt + "%-80s%-15s\n".format(t._1, t._2)
+      txt = txt + "%-80s %-20s\n".format(t._1, t._2)
     }
 
     val b = sendMail(txt, "'$date' topApps 活跃用户数top100", Seq("zhanghongyang@aiclk.com"))
