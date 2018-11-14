@@ -86,7 +86,8 @@ object OcpcHourlyReport {
          |    SUM(CASE WHEN isclick=1 then exp_cvr else 0 end) * 1.0/SUM(isclick) as pcvr,
          |    SUM(isshow) as show_cnt,
          |    SUM(isclick) as ctr_cnt,
-         |    SUM(iscvr) as cvr_cnt
+         |    SUM(iscvr) as cvr_cnt,
+         |    sum(case when ocpc_log_dict['kvalue'] else 0 end) * 1.0 / sum(isclick)
          |FROM
          |    test.ocpc_hourly_complete_data
          |GROUP BY ideaid
