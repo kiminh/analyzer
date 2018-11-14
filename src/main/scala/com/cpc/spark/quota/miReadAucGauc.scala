@@ -13,22 +13,19 @@ object miReadAucGauc {
         val hour = args(1)
         val spark = SparkSession.builder()
           .appName(s"miReadAucGauc date = $date , hour = $hour")
+          .config("spark.serializer","org.apache.spark.serializer.KryoSerializer")
           .enableHiveSupport()
           .getOrCreate()
 
         import spark.implicits._
 
-        val model = "ctrmodel"
-
         val unionSql =
             s"""
-               |select searchid, exptags, uid,
-               |ext['exp_cvr'].int_value as score,
-               |adslot_type
+               |select exptags,uid,isclick,ext['exp_ctr'].int_value as score
                |from dl_cpc.cpc_union_log
                |where `date` = '$date' and hour = '$hour'
-               |and adslot_type in (1,2,3) and isshow = 1
-               |and ext['exp_cvr'].int_value is not null
+               |and isshow = 1
+               |and ext['exp_ctr'].int_value is not null
                |and media_appsid  in ('80001098', '80001292')
                |and ext['antispam'].int_value = 0
                |and ideaid > 0 and adsrc = 1
@@ -40,104 +37,78 @@ object miReadAucGauc {
           .filter("exptags like '%ctrmodel%'")
           .withColumn("exptag",getExptag(col("exptags")))
           .drop("exptags")
+          .cache()
 
-        val cvrSql =
-            s"""
-               |select searchid,label
-               |from dl_cpc.ml_cvr_feature_v1
-               |where `date` = '$date' and hour = '$hour'
-             """.stripMargin
-
-        val cvr = spark.sql(cvrSql)
-
-        println("union 's num is " + union.count())
-        println("cvr 's num is " + cvr.count())
-
-        val unionJoincvr = union.join(cvr,Seq("searchid")).cache()
-
-        unionJoincvr.show(2)
-
-        val exptag = unionJoincvr.select("exptag")
+        val exptag = union.select("exptag")
           .distinct()
           .collect()
           .map(x => x.getAs[String]("exptag"))
-        //println(exptag.mkString(" "))
+
         val aucGaucBuffer = ListBuffer[AucGauc]()
 
-//        for (adslot_type <- 1 to 3) {
-            for (exp <- exptag) {
-                val unionJoincvrFilter = unionJoincvr
-//                  .filter(s"exptag = '$exp' and adslot_type = $adslot_type")
-                  .filter(s"exptag = '$exp'")
-                  .coalesce(400)
-                  .cache()
-
-                val ScoreAndLabel = unionJoincvrFilter
-                  .select($"score",$"label")
+        for (exp <- exptag) {
+            println(s"******************$exp******************")
+            val unionSingleExp = union.filter(s"exptag = '$exp'")
+              .coalesce(100)
+              .cache()
+            val scoreAndLable = unionSingleExp.select($"score",$"label")
+              .rdd
+              .map(x => (x.getAs[Int]("score").toDouble, x.getAs[Int]("label").toDouble))
+            val scoreAndLabelNum = scoreAndLable.count()
+            println("scoreAndLable 's count is " + scoreAndLabelNum)
+            if (scoreAndLabelNum > 0) {
+                val metrics = new BinaryClassificationMetrics(scoreAndLable)
+                val aucROC = metrics.areaUnderROC
+                val aucAndSum = unionSingleExp
+                  .select($"uid",$"score",$"label")
                   .rdd
-                  .map(x => (x.getAs[Int]("score").toDouble, x.getAs[Int]("label").toDouble))
+                  .map(x => (x.getAs[String]("uid"),
+                    (x.getAs[Int]("score"), x.getAs[Int]("label"))))
+                  .combineByKey(
+                      x => List(x),
+                      (x: List[(Int, Int)], y: (Int, Int)) => y :: x,
+                      (x: List[(Int, Int)], y: List[(Int, Int)]) => x ::: y
+                  )
+                  .mapValues(x => {
+                      val label = x.map(x => x._2)
+                      val max = x.map(x => x._1).max + 2
+                      val pos = Array.fill(max)(0)
+                      val neg = Array.fill(max)(0)
+                      val n = label.sum //正样本数
+                      val m = x.length - n  //负样本数
 
-                val ScoreAndLabelNum = ScoreAndLabel.count()
+                      for ((s,l) <- x){
+                          if (l == 0) neg(s) += 1
+                          else pos(s) += 1
+                      }
 
-                //System.out.println("adslot_type = %d , exp = %s , unionJoincvrFilter 's num is %d , ScoreAndLabelNum = %d".format(adslot_type,
-                //    exp, unionJoincvrFilter.count(), ScoreAndLabelNum))
-                if (ScoreAndLabelNum > 0) {
-                    val metrics = new BinaryClassificationMetrics(ScoreAndLabel)
-                    val aucROC = metrics.areaUnderROC
+                      var negSum = 0
+                      var auc: Double = 0
+                      for (i <- 0 to max - 1) {
+                          auc += 1.0 * pos(i) * negSum + pos(i) * neg(i) * 0.5
+                          negSum += neg(i)
+                      }
+                      val result = if (m <= 0 || n <= 0) (0.0, 0.0) else (auc / (1.0 * m * n), 0.0 + m + n)
+                      result
+                  })
+                  .map(x => x._2)
+                //计算分子
+                val auc = aucAndSum.map(x => x._1 * x._2).reduce((x, y) => x+y)
+                //计算分母
+                val sum = aucAndSum.map(x => x._2).reduce((x, y) => x+y)
 
-                    val aucAndSum = unionJoincvrFilter
-                      .select($"uid",$"score",$"label")
-                      .rdd
-                      .map(x => (x.getAs[String]("uid"),
-                        (x.getAs[Int]("score"), x.getAs[Int]("label"))))
-                      .combineByKey(
-                          x => List(x),
-                          (x: List[(Int, Int)], y: (Int, Int)) => y :: x,
-                          (x: List[(Int, Int)], y: List[(Int, Int)]) => x ::: y
-                      )
-                      .mapValues(x => {
-                          val label = x.map(x => x._2)
-                          val max = x.map(x => x._1).max + 2
-                          val pos = Array.fill(max)(0)
-                          val neg = Array.fill(max)(0)
-                          val n = label.sum //正样本数
-                          val m = x.length - n  //负样本数
+                val gaucROC = if (sum > 1e-6) auc / sum else 0.0
 
-                          for ((s,l) <- x){
-                              if (l == 0) neg(s) += 1
-                              else pos(s) += 1
-                          }
-
-                          var negSum = 0
-                          var auc: Double = 0
-                          for (i <- 0 to max - 1) {
-                              auc += 1.0 * pos(i) * negSum + pos(i) * neg(i) * 0.5
-                              negSum += neg(i)
-                          }
-                          val result = if (m <= 0 || n <= 0) (0.0, 0.0) else (auc / (1.0 * m * n), 0.0 + m + n)
-                          result
-                      })
-                      .map(x => x._2)
-                    //计算分子
-                    val auc = aucAndSum.map(x => x._1 * x._2).reduce((x, y) => x+y)
-                    //计算分母
-                    val sum = aucAndSum.map(x => x._2).reduce((x, y) => x+y)
-
-                    val gaucROC = if (sum > 1e-6) auc / sum else 0.0
-
-                    println(s"auc = $auc , sum = $sum , gaucROC = $gaucROC , modeltype = %$exp%")
-                    aucGaucBuffer += AucGauc(auc = aucROC,
-                        gauc = gaucROC,
-                        adslot = 0,
-                        modeltype = s"%$exp%",
-                        date = date,
-                        hour = hour)
-                }
-                unionJoincvrFilter.unpersist()
-
-
+                println(s"aucROC = $aucROC , gaucROC = $gaucROC , modeltype = %$exp%")
+                aucGaucBuffer += AucGauc(auc = aucROC,
+                    gauc = gaucROC,
+                    adslot = 0,
+                    modeltype = s"%$exp%",
+                    date = date,
+                    hour = hour)
             }
-//        }
+            unionSingleExp.unpersist()
+        }
 
         val aucGauc = aucGaucBuffer.toList.toDF()
 
