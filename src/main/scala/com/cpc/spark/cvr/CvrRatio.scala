@@ -33,7 +33,7 @@ object CvrRatio {
         }
 
         val datelist = dateList.toList.mkString(" or ")
-        println(datelist)
+        //println(datelist)
         val unionSql =
             s"""
                |select media_appsid,
@@ -44,16 +44,16 @@ object CvrRatio {
                |and isclick = 1
                |group by media_appsid
              """.stripMargin
-
+        println(unionSql)
         val mlFeatureSql =
             s"""
                |select media_appsid,sum(label2) / count(*) * 1000000.0 as acutal_cvr
                |from dl_cpc.ml_cvr_feature_v1
-               |where `date` = $date
+               |where `date` = '$date'
                |and media_appsid not in ('80000001','80000002')
                |group by media_appsid
              """.stripMargin
-
+        print(mlFeatureSql)
         val union = spark.sql(unionSql)
         union.show()
         val mlFeature = spark.sql(mlFeatureSql)
