@@ -22,8 +22,8 @@ object DNNSampleV4_test {
     val Array(trdate, trpath, tedate, tepath) = args
 
     val sample = new DNNSampleV4_test1(spark, trdate, trpath, tedate, tepath)
-    sample.saveTrain()
-    sample.saveTest(gauc = true)
+    //    sample.saveTrain()
+    sample.saveTest(gauc = false)
   }
 }
 
