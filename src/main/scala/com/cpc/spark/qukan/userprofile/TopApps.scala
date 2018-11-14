@@ -67,7 +67,7 @@ object TopApps {
 
     }
 
-    val b = sendMail(txt, "'$date' topApps 活跃用户数top100", Seq("zhanghongyang@aiclk.com")
+    val b = sendMail(txt, "'$date' topApps 活跃用户数top100", Seq("zhanghongyang@aiclk.com"))
     if (!b) {
       println("发送邮件失败")
     }
