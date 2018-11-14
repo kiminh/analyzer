@@ -259,7 +259,7 @@ object OcpcSampleToRedis {
 
     val finalData2 = finalData1
       .join(regressionK, Seq("ideaid"), "left_outer")
-      .withColumn("k_value", when(col("flag").isNotNull && col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
+      .withColumn("k_value", when(col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
       .withColumn("cali_value", lit(1.0))
       .withColumn("cvr3_cali", lit(1.0))
 
