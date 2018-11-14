@@ -23,8 +23,8 @@ object OcpcPIDwithCPA {
     // TODO ideaid与userid的名称
     if (onDuty == 1) {
       val result = calculateKv3(date, hour, spark)
-      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_bak")
-//      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
+//      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_bak")
+      result.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table")
     } else {
       println("############## entering test stage ###################")
       // 初始化K值
@@ -768,8 +768,8 @@ object OcpcPIDwithCPA {
     val historyData = getHistoryData(date, hour, 24, spark)
     println("################# historyData ####################")
 //    historyData.show(10)
-//    val avgK = getAvgK(baseData, historyData, date, hour, spark)
-    val avgK = getAvgKV3(baseData, historyData, date, hour, spark)
+    val avgK = getAvgK(baseData, historyData, date, hour, spark)
+//    val avgK = getAvgKV3(baseData, historyData, date, hour, spark)
     println("################# avgK table #####################")
 //    avgK.show(10)
     val cpaRatio = getCPAratioV3(baseData, historyData, date, hour, spark)
