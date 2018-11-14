@@ -55,19 +55,21 @@ object CvrRatio {
              """.stripMargin
 
         val union = spark.sql(unionSql)
+        union.show()
         val mlFeature = spark.sql(mlFeatureSql)
-
+        mlFeature.show()
         val result = union.join(mlFeature,Seq("media_appsid"),"inner")
           .withColumn("ratio",calRatio(col("exp_cvr"),col("acutal_cvr")))
           .withColumn("date", lit(s"$date"))
+          .cache()
 
         result.show()
-        val r = result.collect()
-        println("result 's count is " + r.length)
-        result.coalesce(1)
-          .write.mode("overwrite")
-          .insertInto("dl_cpc.cvrratio")
-        println("insert into dl_cpc.cvrratio success!")
+        //val r = result.collect()
+//        println("result 's count is " + r.length)
+//        result.coalesce(1)
+//          .write.mode("overwrite")
+//          .insertInto("dl_cpc.cvrratio")
+//        println("insert into dl_cpc.cvrratio success!")
     }
     def calRatio = udf((exp_cvr:Int, acutal_cvr:Int) => {
         1.0 * acutal_cvr / exp_cvr
