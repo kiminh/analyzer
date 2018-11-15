@@ -60,7 +60,7 @@ object TopApps {
     }
 
     val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
-      "zhangting@aiclk.com", "huxinjie@aiclk.com", "wuguangxin@aiclk.com", "sujiaqi@aiclk.com"))
+      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "wuguangxin@qutoutiao.net", "sujiaqi@qutoutiao.net"))
     if (!b) {
       println("发送邮件失败")
     }
