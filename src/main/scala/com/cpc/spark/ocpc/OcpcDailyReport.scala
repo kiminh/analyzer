@@ -341,7 +341,7 @@ object OcpcDailyReport {
          |    b.show_cnt,
          |    b.ctr_cnt,
          |    c.cvr_cnt,
-         |    c.avg_k,
+         |    b.avg_k,
          |    '$date' as date
          |FROM
          |    (SELECT
