@@ -29,7 +29,7 @@ object readtfrecord {
       val sample = spark.read
           .format("tfrecords")
         .option("recordType", "Example")
-        .load((s"/user/cpc/wy/dnn_novel_v1/dnntrain-2018-11-13-12/part-r-000**"))
+        .load(s"/user/cpc/wy/dnn_novel_v1/dnntrain-2018-11-13-12/part-r-000**")
       sample.take(10).foreach(println)
 
 
