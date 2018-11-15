@@ -82,9 +82,25 @@ object CvrRatio {
 //        val ratioList = ratioListBuffer.toArray
         val ratioList = ratio.collect()
 
-        println("ratioList 's num is " + ratioList.length)
+        val ratioD = ratioList.map(x => x.ratio).sorted
+        val th1 = ratioD.length * 0.1
+        val ratio1th = ratioD(th1.toInt)
 
-        val ratioData = Ratio(cvratio = ratioList)
+        val ratioList2 = ratioList.map(x => {
+            if (x.ratio < ratio1th) {
+                x.copy(ratio = ratio1th)
+            }
+            else if (x.ratio > 1) {
+                x.copy(ratio = 1)
+            }
+            else{
+                x
+            }
+        })
+
+        println("ratioList2 's num is " + ratioList2.length)
+
+        val ratioData = Ratio(cvratio = ratioList2)
 
         ratioData.writeTo(new FileOutputStream("Ratio.pb"))
 
