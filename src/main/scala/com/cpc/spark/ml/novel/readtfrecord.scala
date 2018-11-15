@@ -32,6 +32,9 @@ object readtfrecord {
         .load(s"/user/cpc/wy/dnn_novel_v1/dnntrain-2018-11-13-12")
       sample.take(10).foreach(println)
 
+      val tag=sample.filter("sample_idx=4143279")
+    tag.show(5)
+
 
     }
   }
