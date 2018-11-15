@@ -100,6 +100,10 @@ object CvrRatio {
 
         println("ratioList2 's num is " + ratioList2.length)
 
+        for (r <- ratioList2) {
+            println(r.mediaAppsid + " " + r.ratio + " " + r.date)
+        }
+
         val ratioData = Ratio(cvratio = ratioList2)
 
         ratioData.writeTo(new FileOutputStream("Ratio.pb"))
