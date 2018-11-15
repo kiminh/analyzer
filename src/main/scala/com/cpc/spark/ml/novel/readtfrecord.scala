@@ -33,9 +33,10 @@ object readtfrecord {
      // sample.take(10).foreach(println)
 
       val tag=sample.filter("sample_idx=4143279")
+          .select("idx1","idx_arr").show(false)
 
-    tag.show(5)
-    tag.take(10).foreach(println)
+//    tag.show(5)
+//    tag.take(1).foreach(println)
 
 
     }
