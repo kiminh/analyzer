@@ -1,5 +1,6 @@
 package com.cpc.spark.ml.dnn
 
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
@@ -7,6 +8,8 @@ import com.cpc.spark.common.Murmur3Hash
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions.{array, udf}
 import org.apache.spark.sql.{DataFrame, SparkSession}
+
+import sys.process._
 
 /**
   * dnn ctr v3  小时任务
@@ -36,8 +39,8 @@ object DNNSampleHourlyV3 {
 
     val train = getSample(spark, date, hour).persist()
 
-    val n = train.count()
-    println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
+    val tr_count = train.count()
+    println("训练数据：total = %d, 正比例 = %.4f".format(tr_count, train.where("label=array(1,0)").count.toDouble / tr_count))
 
     train.repartition(100)
       .write
@@ -46,6 +49,11 @@ object DNNSampleHourlyV3 {
       .option("recordType", "Example")
       .save(s"/user/cpc/zhj/hourly_v3/dnntrain-$date-$hour")
     train.take(10).foreach(println)
+
+
+    s"echo $tr_count" #> new File("count") !
+
+    s"hadoop fs -put count /user/cpc/zhj/hourly_v3/dnntrain-$date-$hour/" !
 
     train.sample(withReplacement = false, 0.1).repartition(100)
       .write

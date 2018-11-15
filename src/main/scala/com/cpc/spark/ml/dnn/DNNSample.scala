@@ -264,12 +264,12 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
 
   def filterHash3 = udf {
     (hour: String, adclass: Int, values: Seq[String]) =>
-      if (values != null) {
+      val re = if (values != null && values.nonEmpty) {
         val cnt = values.map(_.split(":"))
           .filter(_ (0) < hour)
           .count(_ (1).toInt == adclass)
-        if (cnt > 0) Seq(Murmur3Hash.stringHash64("m171", 0)) else Seq(Murmur3Hash.stringHash64("m170", 0))
-      }
-      else Seq(Murmur3Hash.stringHash64("m170", 0))
+        if (cnt > 0) Murmur3Hash.stringHash64("m171", 0) else Murmur3Hash.stringHash64("m170", 0)
+      }else Murmur3Hash.stringHash64("m170", 0)
+
   }
 }

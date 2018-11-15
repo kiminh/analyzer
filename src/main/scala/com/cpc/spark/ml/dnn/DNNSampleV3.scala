@@ -336,7 +336,7 @@ object DNNSampleV3 {
         hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
         hashSeq("m13", "int")($"c_adclass_3").alias("m13"),
 
-        hashSeq("m14", "int")($"c_adclass_4_7").alias("m14"),
+        hashSeq("m14", "int")($"c_ideaid_4_7").alias("m14"),
         hashSeq("m15", "int")($"c_adclass_4_7").alias("m15")
 
       )
