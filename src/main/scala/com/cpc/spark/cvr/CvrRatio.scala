@@ -1,10 +1,13 @@
 package com.cpc.spark.cvr
 
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
+
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.udf
+import ratio.ratio._
 
 /**
   * @author Jinbao
@@ -61,15 +64,39 @@ object CvrRatio {
         val result = union.join(mlFeature,Seq("media_appsid"),"inner")
           .withColumn("ratio",calRatio(col("exp_cvr"),col("acutal_cvr")))
           .withColumn("date", lit(s"$date"))
-          .cache()
 
-        result.show()
-        //val r = result.collect()
-//        println("result 's count is " + r.length)
-        result.coalesce(1)
-          .write.mode("overwrite")
-          .insertInto("dl_cpc.cvrratio")
-        println("insert into dl_cpc.cvrratio success!")
+        val ratio = result.rdd.map(x => {
+            CvRatio(mediaAppsid = x.getAs[String]("media_appsid"),
+                ratio = x.getAs[Double]("ratio"),
+                date = x.getAs[String]("date"))
+        })
+
+//        val ratioListBuffer = scala.collection.mutable.ListBuffer[CvRatio]()
+//
+//        result.collect().foreach(x => {
+//            ratioListBuffer += CvRatio(mediaAppsid = x.getAs[String]("media_appsid"),
+//                ratio = x.getAs[Double]("ratio"),
+//                date = x.getAs[String]("date"))
+//        })
+
+//        val ratioList = ratioListBuffer.toArray
+        val ratioList = ratio.collect()
+
+        println("ratioList 's num is " + ratioList.length)
+
+        val ratioData = Ratio(cvratio = ratioList)
+
+        ratioData.writeTo(new FileOutputStream("Ratio.pb"))
+
+        println("write to Ratio.pb success!")
+
+//        result.show()
+//        //val r = result.collect()
+////        println("result 's count is " + r.length)
+//        result.coalesce(1)
+//          .write.mode("overwrite")
+//          .insertInto("dl_cpc.cvrratio")
+//        println("insert into dl_cpc.cvrratio success!")
     }
     def calRatio = udf((exp_cvr:Int, acutal_cvr:Int) => {
         1.0 * acutal_cvr / exp_cvr
