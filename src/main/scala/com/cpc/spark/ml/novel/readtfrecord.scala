@@ -17,26 +17,25 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
   * @version 1.0
   *
   */
+
 object readtfrecord {
   def main(args: Array[String]): Unit = {
       val spark = SparkSession.builder()
         .appName("dnn sample")
         .enableHiveSupport()
         .getOrCreate()
-      val date = "2018-11-13"
-      val hour = "12"
 
       val sample = spark.read
           .format("tfrecords")
         .option("recordType", "Example")
-        .load(s"hdfs://emr-cluster/user/cpc/wy/dnn_novel_v1/dnntrain-2018-11-13-12/part-r-000**")
+        .load(s"/user/cpc/wy/dnn_novel_v1/dnntrain-2018-11-13-12")
       sample.take(10).foreach(println)
 
 
     }
   }
 
-//  Logger.getRootLogger.setLevel(Level.WARN)
+
 //
 //  //multi hot 特征默认hash code
 //  private val default_hash = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
