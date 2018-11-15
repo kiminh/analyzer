@@ -31,9 +31,25 @@ object OcpcDataDetail {
     val rawData = apiData.union(noApiData)
     rawData.show(10)
 
-    val count1 = apiData.count()
-    val count2 = noApiData.count()
-    val count3 = rawData.count()
-    println(s"count of apiData is $count1, count of noApiData is $count2, count of total dataset is $count3")
+    // 计算其他相关特征
+    val data = rawData
+      .withColumn("idea_id", col("ideaid"))
+      .withColumn("user_id", col("user_id"))
+      .withColumn("step2_click_percent", col("step2_percent"))
+      .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
+      .withColumn("cpa_ratio", col("cpa_given") * 1.0 / col("cpa_real"))
+      .withColumn("is_cpa_ok", when(col("cpa_ratio")>=0.8, 1).otherwise(0))
+      .withColumn("impression", col("show_cnt"))
+      .withColumn("click", col("ctr_cnt"))
+      .withColumn("conversion", col("cvr_cnt"))
+      .withColumn("ctr", col("click") * 1.0 / col("impression"))
+      .withColumn("click_cvr", col("conversion") * 1.0 / col("click"))
+      .withColumn("show_cvr", col("conversion") * 1.0 / col("impression"))
+      .withColumn("cost", col("price") * col("click"))
+      .withColumn("acp", col("price"))
+
+    data.show(10)
+    data.write.mode("overwrite").saveAsTable("test.test_ocpc_export_hourly_report")
+
   }
 }
