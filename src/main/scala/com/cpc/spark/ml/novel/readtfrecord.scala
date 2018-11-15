@@ -19,23 +19,21 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
   */
 object readtfrecord {
   def main(args: Array[String]): Unit = {
+      val spark = SparkSession.builder()
+        .appName("dnn sample")
+        .enableHiveSupport()
+        .getOrCreate()
+      val date = "2018-11-13"
+      val hour = "12"
 
-    def main(args: Array[String]): Unit = {
-          val spark = SparkSession.builder()
-            .appName("dnn sample")
-            .enableHiveSupport()
-            .getOrCreate()
-          val date = "2018-11-13"
-          val hour = "12"
-
-          val sample = spark.read
-            .format("tfrecords")
-            .option("recordType", "Example")
-              .load((s"/user/cpc/wy/dnn_novel_v1/dnntrain-$date-$hour"))
+      val sample = spark.read
+        .format("tfrecords")
+        .option("recordType", "Example")
+        .load((s"/user/cpc/wy/dnn_novel_v1/dnntrain-$date-$hour"))
       sample.take(10).foreach(println)
 
 
-
+    }
   }
 
 //  Logger.getRootLogger.setLevel(Level.WARN)
