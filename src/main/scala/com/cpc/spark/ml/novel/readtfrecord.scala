@@ -27,7 +27,7 @@ object readtfrecord {
       val hour = "12"
 
       val sample = spark.read
-          .format((s"/user/cpc/wy/dnn_novel_v1/dnntrain-$date-$hour/part-r-000**"))
+          .format("tfrecords")
         .option("recordType", "Example")
         .load((s"/user/cpc/wy/dnn_novel_v1/dnntrain-$date-$hour"))
       sample.take(10).foreach(println)
