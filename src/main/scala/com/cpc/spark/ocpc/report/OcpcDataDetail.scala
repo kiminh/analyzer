@@ -34,7 +34,7 @@ object OcpcDataDetail {
     // 计算其他相关特征
     val data = rawData
       .withColumn("idea_id", col("ideaid"))
-      .withColumn("user_id", col("user_id"))
+      .withColumn("user_id", col("userid"))
       .withColumn("step2_click_percent", col("step2_percent"))
       .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
       .withColumn("cpa_ratio", col("cpa_given") * 1.0 / col("cpa_real"))
