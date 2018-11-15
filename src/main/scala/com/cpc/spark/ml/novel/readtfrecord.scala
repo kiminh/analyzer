@@ -8,6 +8,7 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions.{array, udf}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
+
 /**
   * dnn ctr v3  小时任务
   * 共28个dense，15个multi hot特征，

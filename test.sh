@@ -11,6 +11,8 @@ jars=(
     "$cur/lib/config-1.2.1.jar"
     "$cur/lib/hadoop-lzo-0.4.20.jar"
     "$cur/lib/scala-redis_2.11-1.0.jar"
+    "$cur/lib/spark-tensorflow-connector_2.11-1.10.0.jar"
+
 )
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
