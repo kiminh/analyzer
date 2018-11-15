@@ -87,7 +87,8 @@ object OcpcHourlyReport {
          |    SUM(isshow) as show_cnt,
          |    SUM(isclick) as ctr_cnt,
          |    SUM(iscvr) as cvr_cnt,
-         |    sum(case when ocpc_log_dict['kvalue'] else 0 end) * 1.0 / sum(isclick)
+         |    sum(case when isclick=1 then ocpc_log_dict['kvalue'] else 0 end) * 1.0 / sum(isclick) as avg_k,
+         |    SUM(case when isclick=1 and `hour`='$hour' then ocpc_log_dict['kvalue'] else 0 end) * 1.0 / sum(case when `hour`='$hour' then isclick else 0 end) as recent_k
          |FROM
          |    test.ocpc_hourly_complete_data
          |GROUP BY ideaid
@@ -113,6 +114,8 @@ object OcpcHourlyReport {
          |    b.show_cnt,
          |    b.ctr_cnt,
          |    b.cvr_cnt,
+         |    b.avg_k,
+         |    b.recent_k,
          |    '$date' as date,
          |    '$hour' as hour
          |FROM
@@ -152,6 +155,8 @@ object OcpcHourlyReport {
          |    b.show_cnt,
          |    b.ctr_cnt,
          |    c.cvr_cnt,
+         |    b.avg_k,
+         |    b.recent_k
          |    '$date' as date,
          |    '$hour' as hour
          |FROM
