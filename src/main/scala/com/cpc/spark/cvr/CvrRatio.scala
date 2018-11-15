@@ -82,7 +82,7 @@ object CvrRatio {
 //        val ratioList = ratioListBuffer.toArray
         val ratioList = ratio.collect()
 
-        val ratioD = ratioList.map(x => x.ratio).sorted
+        val ratioD = ratioList.map(x => x.ratio).filter(x => x > 0).sorted
         val th1 = ratioD.length * 0.1
         val ratio1th = ratioD(th1.toInt)
 
