@@ -156,7 +156,7 @@ object OcpcHourlyReport {
          |    b.ctr_cnt,
          |    c.cvr_cnt,
          |    b.avg_k,
-         |    b.recent_k
+         |    b.recent_k,
          |    '$date' as date,
          |    '$hour' as hour
          |FROM
