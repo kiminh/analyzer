@@ -106,7 +106,7 @@ object OcpcK {
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
       println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk)
-      if (realk > 0) {
+      if (coffList(1)>0 && realk > 0) {
         resList.append((ideaid, realk, date, hour))
       }
     }
