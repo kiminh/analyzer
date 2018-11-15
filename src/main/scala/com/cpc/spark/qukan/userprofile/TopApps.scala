@@ -59,8 +59,8 @@ object TopApps {
       txt = txt + "%s %s\n".format(t._1, t._2)
     }
 
-    val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com","dongwei@aiclk.com",
-    "zhangting@aiclk.com"," huxinjie@aiclk.com","wuguangxin@aiclk.com","sujiaqi@aiclk.com"))
+    val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
+      "zhangting@aiclk.com", "huxinjie@aiclk.com", "wuguangxin@aiclk.com", "sujiaqi@aiclk.com"))
     if (!b) {
       println("发送邮件失败")
     }
