@@ -132,7 +132,8 @@ object NovelDNNSampleHourlyV2 {
         hash("f28")($"hour").alias("f28"),
 
         array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
-          $"m11", $"m12", $"m13", $"m14", $"m15").alias("raw_sparse")
+          $"m11", $"m12", $"m13", $"m14", $"m15",$"m16", $"m17", $"m18", $"m19", $"m20",$"m21", $"m22",$"m23")
+          .alias("raw_sparse")
       )
 
       .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
