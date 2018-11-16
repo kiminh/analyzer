@@ -711,7 +711,7 @@ object OcpcSampleToRedis {
       .withColumn("original_regression_k_value", when(col("cvr3_flag").isNull, col("k_ratio2")).otherwise(col("k_ratio3")))
       .select("ideaid", "original_regression_k_value")
       .join(prevTable, Seq("ideaid"), "left_outer")
-      .withColumn("regression_k_value", when(col("k_value").isNotNull && col("original_regression_k_value").isNotNull && col("original_regression_k_value")>col("k_value"), (col("k_value") + col("original_regression_k_value")) * 1.0/2.0).otherwise(col("original_regression_k_value")))
+      .withColumn("regression_k_value", when(col("k_value").isNotNull && col("original_regression_k_value").isNotNull && col("original_regression_k_value")>col("k_value"), col("k_value") + (col("original_regression_k_value") - col("k_value")) * 1.0/5.0).otherwise(col("original_regression_k_value")))
       .select("ideaid", "adclass", "regression_k_value", "original_regression_k_value", "k_value")
       .filter("adclass is not null")
 
@@ -725,6 +725,7 @@ object OcpcSampleToRedis {
 
 
   }
+
 
 
 
