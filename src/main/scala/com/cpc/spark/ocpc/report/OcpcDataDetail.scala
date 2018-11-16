@@ -35,6 +35,7 @@ object OcpcDataDetail {
       .table("dl_cpc.ocpc_check_hourly_report_noapi")
       .where(s"`date`='$date' and `hour`='$hour'")
       .select("ideaid", "userid", "conversion_goal", "step2_percent", "cpa_given", "cpa_real", "show_cnt", "ctr_cnt", "cvr_cnt", "price", "avg_k", "recent_k")
+      .filter("ctr_cnt>0")
 
     // 把两个部分数据连接到一起
     val rawData = apiData.union(noApiData)
@@ -46,7 +47,7 @@ object OcpcDataDetail {
       .withColumn("user_id", col("userid"))
       .withColumn("step2_click_percent", col("step2_percent"))
       .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
-      .withColumn("cpa_ratio", when(col("cpa_real").isNull, 0.0).otherwise(col("cpa_given") * 1.0 / col("cpa_real")))
+      .withColumn("cpa_ratio", when(col("cvr_cnt").isNull || col("cvr_cnt") === 0, 0.0).otherwise(col("cpa_given") * 1.0 / col("cpa_real")))
       .withColumn("is_cpa_ok", when(col("cpa_ratio")>=0.8, 1).otherwise(0))
       .withColumn("impression", col("show_cnt"))
       .withColumn("click", col("ctr_cnt"))
@@ -59,6 +60,7 @@ object OcpcDataDetail {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
       .withColumn("recent_k", when(col("recent_k").isNull, 0.0).otherwise(col("recent_k")))
+      .withColumn("cpa_real", when(col("cpa_real").isNull, col("cost") * 10.0).otherwise(col("cpa_real")))
 
 //    data.show(10)
     // TODO 删除临时表
