@@ -34,8 +34,8 @@ object OcpcDataSummary {
     val data = rawData
       .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
       .withColumn("cpa_ratio", col("cpa_given") * 1.0 / col("cpa_real"))
-      .withColumn("is_low_cpa", when(col("is_step2")===1 && (col("cpa_ratio")<0.8 || col("cpa_real").isNull), 1).otherwise(0))
-      .withColumn("is_high_cpa", when(col("is_step2")===1 && col("cpa_ratio")>=0.8, 1).otherwise(0))
+      .withColumn("is_high_cpa", when(col("is_step2")===1 && (col("cpa_ratio")<0.8 || col("cpa_real").isNull), 1).otherwise(0))
+      .withColumn("is_low_cpa", when(col("is_step2")===1 && col("cpa_ratio")>=0.8, 1).otherwise(0))
       .withColumn("cost", col("price") * col("ctr_cnt"))
     data.printSchema()
     data.show(10)
