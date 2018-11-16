@@ -64,7 +64,7 @@ object OcpcDataDetail {
 
 //    data.show(10)
     // TODO 删除临时表
-    data.write.mode("overwrite").saveAsTable("test.test_ocpc_export_hourly_report")
+//    data.write.mode("overwrite").saveAsTable("test.test_ocpc_export_hourly_report")
 
     // 输出结果
     val result = data.select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "date", "hour")
@@ -91,9 +91,9 @@ object OcpcDataDetail {
 //    println("driver: " + conf.getString("mariadb.report2_write.driver"))
     data.show(10)
 
-//    data
-//      .write
-//      .mode(SaveMode.Append)
-//      .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
+    data
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
   }
 }
