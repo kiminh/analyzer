@@ -78,11 +78,13 @@ object OcpcDataDetail {
     mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
     mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
 
+    println("#################################")
     println("count:" + data.count())
     println("url: " + conf.getString("mariadb.report2_write.url"))
     println("user: " + conf.getString("mariadb.report2_write.user"))
     println("password: " + conf.getString("mariadb.report2_write.password"))
     println("driver: " + conf.getString("mariadb.report2_write.driver"))
+    data.show(10)
 
 //    data
 //      .write
