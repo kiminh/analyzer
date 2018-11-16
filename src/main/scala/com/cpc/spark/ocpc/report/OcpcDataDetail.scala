@@ -15,6 +15,7 @@ object OcpcDataDetail {
   }
 
   def exportHourlyReport(date: String, hour: String, spark: SparkSession) = {
+    val hourInt = hour.toInt
     // 读取数据
     val apiData = spark
       .table("dl_cpc.ocpc_check_hourly_report_api")
@@ -47,6 +48,8 @@ object OcpcDataDetail {
       .withColumn("show_cvr", col("conversion") * 1.0 / col("impression"))
       .withColumn("cost", col("price") * col("click"))
       .withColumn("acp", col("price"))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hourInt))
 
     data.show(10)
     // TODO 删除临时表
@@ -54,6 +57,7 @@ object OcpcDataDetail {
 
     // 输出结果
     val result = data.select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "date", "hour")
+    result.printSchema()
     result.show(10)
 
   }
