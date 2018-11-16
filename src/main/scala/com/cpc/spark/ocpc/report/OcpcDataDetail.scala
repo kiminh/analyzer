@@ -76,6 +76,7 @@ object OcpcDataDetail {
 
   def saveDataDetailToReport(data: DataFrame, spark: SparkSession) = {
     val conf = ConfigFactory.load()
+    val tableName = "report2.report_ocpc_data_detail"
     mariadb_write_url = conf.getString("mariadb.report2_write.url")
     mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
     mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
@@ -84,14 +85,15 @@ object OcpcDataDetail {
     println("#################################")
     println("count:" + data.count())
     println("url: " + conf.getString("mariadb.report2_write.url"))
-    println("user: " + conf.getString("mariadb.report2_write.user"))
-    println("password: " + conf.getString("mariadb.report2_write.password"))
-    println("driver: " + conf.getString("mariadb.report2_write.driver"))
+    println("table name: " + tableName)
+//    println("user: " + conf.getString("mariadb.report2_write.user"))
+//    println("password: " + conf.getString("mariadb.report2_write.password"))
+//    println("driver: " + conf.getString("mariadb.report2_write.driver"))
     data.show(10)
 
 //    data
 //      .write
 //      .mode(SaveMode.Append)
-//      .jdbc(mariadb_write_url, "report2.report_ocpc_data_detail", mariadb_write_prop)
+//      .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
   }
 }
