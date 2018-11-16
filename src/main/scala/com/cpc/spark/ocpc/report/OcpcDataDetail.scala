@@ -1,17 +1,25 @@
 package com.cpc.spark.ocpc.report
 
-import org.apache.spark.sql.SparkSession
+import java.util.Properties
+import com.typesafe.config.ConfigFactory
+
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcDataDetail {
+  var mariadb_write_url = ""
+  val mariadb_write_prop = new Properties()
+
+
   def main(args: Array[String]): Unit = {
-    val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    val spark = SparkSession.builder().appName("ocpc-report-writer-hourly").enableHiveSupport().getOrCreate()
 
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
 
-    exportHourlyReport(date, hour, spark)
+    val data = exportHourlyReport(date, hour, spark)
+    saveDataDetailToReport(data, spark)
   }
 
   def exportHourlyReport(date: String, hour: String, spark: SparkSession) = {
@@ -30,7 +38,7 @@ object OcpcDataDetail {
 
     // 把两个部分数据连接到一起
     val rawData = apiData.union(noApiData)
-    rawData.show(10)
+//    rawData.show(10)
 
     // 计算其他相关特征
     val data = rawData
@@ -51,14 +59,34 @@ object OcpcDataDetail {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
 
-    data.show(10)
+//    data.show(10)
     // TODO 删除临时表
 //    data.write.mode("overwrite").saveAsTable("test.test_ocpc_export_hourly_report")
 
     // 输出结果
     val result = data.select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "date", "hour")
-    result.printSchema()
+//    result.printSchema()
     result.show(10)
 
+    result
+  }
+
+  def saveDataDetailToReport(data: DataFrame, spark: SparkSession) = {
+    val conf = ConfigFactory.load()
+    mariadb_write_url = conf.getString("mariadb.report2_write.url")
+    mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
+    mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
+    mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
+
+    println("count:" + data.count())
+    println("url: " + conf.getString("mariadb.report2_write.url"))
+    println("user: " + conf.getString("mariadb.report2_write.user"))
+    println("password: " + conf.getString("mariadb.report2_write.password"))
+    println("driver: " + conf.getString("mariadb.report2_write.driver"))
+
+//    data
+//      .write
+//      .mode(SaveMode.Append)
+//      .jdbc(mariadb_write_url, "report2.report_ocpc_data_detail", mariadb_write_prop)
   }
 }
