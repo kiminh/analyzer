@@ -60,7 +60,7 @@ object OcpcDataDetail {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
       .withColumn("recent_k", when(col("recent_k").isNull, 0.0).otherwise(col("recent_k")))
-      .withColumn("cpa_real", when(col("cpa_real").isNull, col("cost") * 10.0).otherwise(col("cpa_real")))
+      .withColumn("cpa_real", when(col("cpa_real").isNull, 9999999.0).otherwise(col("cpa_real")))
 
 //    data.show(10)
     // TODO 删除临时表
