@@ -46,7 +46,7 @@ object OcpcDataDetail {
       .withColumn("user_id", col("userid"))
       .withColumn("step2_click_percent", col("step2_percent"))
       .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
-      .withColumn("cpa_ratio", col("cpa_given") * 1.0 / col("cpa_real"))
+      .withColumn("cpa_ratio", when(col("cpa_real").isNull, 0.0).otherwise(col("cpa_given") * 1.0 / col("cpa_real")))
       .withColumn("is_cpa_ok", when(col("cpa_ratio")>=0.8, 1).otherwise(0))
       .withColumn("impression", col("show_cnt"))
       .withColumn("click", col("ctr_cnt"))
@@ -58,6 +58,7 @@ object OcpcDataDetail {
       .withColumn("acp", col("price"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
+      .withColumn("recent_k", when(col("recent_k").isNull, 0.0).otherwise(col("recent_k")))
 
 //    data.show(10)
     // TODO 删除临时表
