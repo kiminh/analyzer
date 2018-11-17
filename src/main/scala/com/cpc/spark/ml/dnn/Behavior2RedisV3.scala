@@ -77,7 +77,7 @@ object Behavior2RedisV3 {
       )
       .persist()
 
-    println("dnn v2 用户行为特征总数：" + data.count())
+    println("dnn v3 用户行为特征总数：" + data.count())
 
     data.coalesce(20).write.mode("overwrite")
       .parquet("/user/cpc/zhj/behaviorV3")
@@ -92,7 +92,7 @@ object Behavior2RedisV3 {
         var group = Seq[Int]()
         var hashcode = Seq[Long]()
         val uid = "d3_" + rec.getString(0)
-        for (i <- 1 to 15) {
+        for (i <- 1 to 14) {
           val f = rec.getAs[Seq[Long]](i)
           group = group ++ Array.tabulate(f.length)(x => i)
           hashcode = hashcode ++ f
