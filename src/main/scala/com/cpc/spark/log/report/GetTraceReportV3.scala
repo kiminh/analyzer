@@ -205,7 +205,7 @@ object GetTraceReportV3 {
          |            select userid, planid, unitid, ideaid, `date`, hour
          |            from dl_cpc.cpc_motivation_log
          |            where `date` = "%s" and hour = "%s" and isclick = 1
-         |            group by userid, planid, unitid, ideaid
+         |            group by userid, planid, unitid, ideaid, `date`, hour
          |        ) a
          |        join
          |        (
