@@ -164,15 +164,86 @@ object GetTraceReportV3 {
 
   }
 
-  /**
-    * 应用商城
-    *
-    * @param ctx
-    * @param date
-    * @param hour
-    * @return
-    */
   def saveTraceReport_Motivate(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
+    val sql =
+      s"""
+         |select b.planid as plan_id, b.unitid as unit_id, a.*, 0 as duration, 0 as auto, b.`date`, b.hour, b.show, b.click
+         |from (
+         |        select   b.user_id
+         |                ,a.ideaid as idea_id
+         |                ,a.appname
+         |                ,a.adslotid
+         |                ,a.trace_type
+         |                ,a.trace_op1
+         |                ,sum(if(a.trace_op1 ='OPEN_APP' and a.num > 0, 1, a.num)) as total_num
+         |        from (
+         |                select opt["appname"] as appname
+         |                    ,trace_type
+         |                    ,trace_op1
+         |                    ,opt['ideaid'] as ideaid
+         |                    ,trace_op3
+         |                    ,opt['adslotid'] as adslotid
+         |                    ,count(1) as num
+         |                from dl_cpc.logparsed_cpc_trace_minute cut1
+         |                where `thedate` = "%s" and thehour = "%s"
+         |                  and trace_type = 'sdk_incite'
+         |                  and trace_op1 in ('DOWNLOAD_START','DOWNLOAD_FINISH','INSTALL_FINISH','OPEN_APP','INSTALL_HIJACK')
+         |                group by  opt["appname"]
+         |                   ,trace_type
+         |                   ,trace_op1
+         |                   ,opt['ideaid']
+         |                   ,trace_op3
+         |                   ,opt['adslotid']
+         |        ) a
+         |        left join src_cpc.cpc_idea b
+         |        on a.ideaid = b.id
+         |        group by b.user_id,a.ideaid,a.appname,a.adslotid,a.trace_type,a.trace_op1
+         |    ) a
+         |join (
+         |    select a.userid, a.planid, a.unitid, a.ideaid, a.`date`, a.hour, b.show, b.click
+         |    from (
+         |            select userid, planid, unitid, ideaid, `date`, hour
+         |            from dl_cpc.cpc_motivation_log
+         |            where `date` = "%s" and hour = "%s" and isclick = 1
+         |            group by userid, planid, unitid, ideaid
+         |        ) a
+         |        join
+         |        (
+         |            select ideaid , sum(isshow) as show, sum(isclick) as click
+         |            from dl_cpc.cpc_motivation_log
+         |            where `date` = "%s" and hour = "%s"
+         |            group by ideaid
+         |        ) b on a.ideaid = b.ideaid
+         |    ) b
+         |on a.user_id = b.userid and a.idea_id = b.ideaid
+      """.stripMargin.format(date, hour, date, hour, date, hour)
+
+    val toResult = ctx.sql(sql)
+      .rdd
+      .map(x =>
+        AdvTraceReport(x.getAs[Int]("user_id"),
+          x.getAs[Int]("plan_id"),
+          x.getAs[Int]("unit_id"),
+          x.getAs[Int]("idea_id"),
+          x.getAs[String]("date"),
+          x.getAs[String]("hour"),
+          x.getAs[String]("trace_type"),
+          x.getAs[String]("trace_op1"),
+          x.getAs[Int]("duration"),
+          x.getAs[Int]("auto"),
+          x.getAs[Int]("total_num"),
+          x.getAs[Int]("show"),
+          x.getAs[Int]("click")
+        )
+      )
+
+    println("motivate count:" + toResult.count())
+    toResult
+
+  }
+
+  //应用商城
+  /*def saveTraceReport_Motivate(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
     val traceReport = ctx.sql(
       s"""
          |select tr.searchid
@@ -239,7 +310,7 @@ object GetTraceReportV3 {
 
     println("motivate count:" + toResult.count())
     toResult
-  }
+  }*/
 
   /**
     * 用户api回传
@@ -340,7 +411,7 @@ object GetTraceReportV3 {
 
         (ideaid, (show, click))
     }
-    val unionRdd =unionRdd1.union(unionRdd2)
+    val unionRdd = unionRdd1.union(unionRdd2)
 
 
     val traceData = traceReport1.union(traceReport2).filter {
