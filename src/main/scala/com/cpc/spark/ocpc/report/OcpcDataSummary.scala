@@ -45,7 +45,7 @@ object OcpcDataSummary {
       .withColumn("cost", col("price") * col("ctr_cnt"))
 
     // summary data
-    val resultDF = data
+    val result = data
       .groupBy("conversion_goal")
       .agg(
         count(col("ideaid")).alias("total_adnum"),
@@ -63,6 +63,24 @@ object OcpcDataSummary {
       .withColumn("acp", col("cost") * 1.0 / col("click"))
       .withColumn("date", lit(date))
       .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "date")
+
+    val summaryData = result.agg(
+      sum(col("total_adnum")).alias("total_adnum"),
+      sum(col("step2_adnum")).alias("step2_adnum"),
+      sum(col("low_cpa_adnum")).alias("low_cpa_adnum"),
+      sum(col("high_cpa_adnum")).alias("high_cpa_adnum"),
+      sum(col("impression")).alias("impression"),
+      sum(col("click")).alias("click"),
+      sum(col("conversion")).alias("conversion"),
+      sum(col("cost")).alias("cost"))
+      .withColumn("conversion_goal", lit(0))
+      .withColumn("ctr", col("click")*1.0 / col("impression"))
+      .withColumn("click_cvr", col("conversion") * 1.0 / col("click"))
+      .withColumn("acp", col("cost") * 1.0 / col("click"))
+      .withColumn("date", lit(date))
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "date")
+
+    val resultDF = result.union(summaryData)
 
     resultDF.printSchema()
     resultDF
@@ -86,10 +104,10 @@ object OcpcDataSummary {
 //    println("driver: " + conf.getString("mariadb.report2_write.driver"))
     data.show(10)
 
-    data
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
+//    data
+//      .write
+//      .mode(SaveMode.Append)
+//      .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
 
   }
 }
