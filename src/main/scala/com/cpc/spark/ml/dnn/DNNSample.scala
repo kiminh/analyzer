@@ -45,7 +45,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
     var path: String = ""
     if (gauc) {
       path = s"$p/dnntest-gauc-$teDate"
-      getTestSamle4Gauc(spark, teDate)
+      getTestSample4Gauc(spark, teDate)
         .repartition(num_partitions, $"sample_idx")
         .write
         .mode("overwrite")
@@ -54,7 +54,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
         .save(path)
     } else {
       path = s"$p/dnntest-$teDate"
-      getTestSamle(spark, teDate)
+      getTestSample(spark, teDate)
         .repartition(num_partitions)
         .write
         .mode("overwrite")
