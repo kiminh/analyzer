@@ -269,7 +269,15 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
           .filter(_ (0) < hour)
           .count(_ (1).toInt == adclass)
         if (cnt > 0) Murmur3Hash.stringHash64("m171", 0) else Murmur3Hash.stringHash64("m170", 0)
-      }else Murmur3Hash.stringHash64("m170", 0)
+      } else Murmur3Hash.stringHash64("m170", 0)
 
+  }
+
+  def findHash(m: Map[String, Long], default: Long) = udf {
+    values: Seq[String] =>
+      if (values != null && values.nonEmpty) {
+        for (v <- values) yield m.getOrElse(v, 0L)
+      }
+      else default
   }
 }
