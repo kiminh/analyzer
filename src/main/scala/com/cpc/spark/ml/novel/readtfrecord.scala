@@ -32,7 +32,7 @@ object readtfrecord {
         .load(s"/user/cpc/wy/dnn_novel_v1/dnntrain-2018-11-13-12")
      // sample.take(10).foreach(println)
 
-      val tag=sample.filter("sample_idx=12752791")
+      val tag=sample.filter("sample_idx=2669412")
           .select("idx1","id_arr","dense").show(false)
 
 //    tag.show(5)
