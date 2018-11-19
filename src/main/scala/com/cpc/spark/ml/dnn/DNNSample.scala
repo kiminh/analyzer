@@ -90,7 +90,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
     * @return
     */
   def getTestSample(spark: SparkSession, date: String,
-                   percent: Double = 0.05): DataFrame = {
+                    percent: Double = 0.05): DataFrame = {
     println("==========================")
     println("YOU MUST OVERWRITE THIS 'getTestSamle' METHOD!!!")
     println("==========================")
@@ -107,7 +107,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
     * @return
     */
   def getTestSample4Gauc(spark: SparkSession, date: String,
-                        percent: Double = 0.05): DataFrame = {
+                         percent: Double = 0.05): DataFrame = {
     println("==========================")
     println("YOU MUST OVERWRITE THIS 'getTestSamle4Gauc' METHOD!!!")
     println("==========================")
@@ -276,7 +276,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
   def findHash(m: Map[String, Long], default: Long) = udf {
     values: Seq[String] =>
       if (values != null && values.nonEmpty) {
-        for (v <- values) yield m.getOrElse(v, 0L)
+        for (v <- values.slice(0, 1000)) yield m.getOrElse(v, 0L)
       }
       else default
   }
