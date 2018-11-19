@@ -88,11 +88,7 @@ object OcpcSampleHourlyV1 {
     val base = spark
       .sql(sqlRequest2)
       .withColumn("iscvr", when(col("flag")===1, col("iscvr2")).otherwise(col("iscvr1")))
-    base.show(10)
-    println("#############")
-    base.filter("flag=1").show(10)
 
-    base.write.mode("overwrite").saveAsTable("test.ocpc_uid_userid_track_label2_bak")
     // recalculation with groupby of userid and uid
     base.createOrReplaceTempView("tmpTable")
     val groupByRequesst =
@@ -117,7 +113,7 @@ object OcpcSampleHourlyV1 {
 
 
     // save data
-//    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track_label2")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track_label2")
 
     result.show(10)
 
