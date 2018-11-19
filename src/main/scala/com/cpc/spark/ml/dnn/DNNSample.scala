@@ -278,6 +278,6 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
       if (values != null && values.nonEmpty) {
         for (v <- values.slice(0, 1000)) yield m.getOrElse(v, 0L)
       }
-      else default
+      else Seq(default)
   }
 }
