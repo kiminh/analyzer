@@ -30,9 +30,9 @@ object NovelDNNSampleHourlyV2 {
       .enableHiveSupport()
       .getOrCreate()
     val date = args(0)
-    val hour = args(1)
+//    val hour = args(1)
 
-    val train = getSample(spark, date, hour).persist()
+    val train = getSample(spark, date).persist()
 
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
@@ -42,7 +42,7 @@ object NovelDNNSampleHourlyV2 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/wy/dnn_novel_cvr_v1/dnntrain-$date-$hour")
+      .save(s"/user/cpc/wy/dnn_novel_cvr_v1/dnntrain-$date")
     train.take(10).foreach(println)
 
     train.sample(withReplacement = false, 0.1).repartition(100)
@@ -50,15 +50,15 @@ object NovelDNNSampleHourlyV2 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/wy/dnn_novel_cvr_v1/dnntest-$date-$hour")
+      .save(s"/user/cpc/wy/dnn_novel_cvr_v1/dnntest-$date")
 
     train.unpersist()
   }
 
-  def getSample(spark: SparkSession, date: String, hour: String): DataFrame = {
+  def getSample(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
 
-    val behavior_data = spark.read.parquet("/user/cpc/wy/novel_behavior_cvr")
+    val behavior_data = spark.read.parquet(s"/user/cpc/wy/novel_behavior_cvr/behavior-$date")
 
     val userAppIdx = getUidApp(spark, date)
       .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))
@@ -81,7 +81,7 @@ object NovelDNNSampleHourlyV2 {
          |  a.hour
          |from
          |  (select *
-         |from dl_cpc.cpc_union_log where `date` = '$date' and hour = $hour
+         |from dl_cpc.cpc_union_log where `date` = '$date'
          |  and isclick = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
@@ -90,7 +90,7 @@ object NovelDNNSampleHourlyV2 {
          |) a
          |inner join
          |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
-         |  WHERE `date` = '$date' and hour = $hour
+         |  WHERE `date` = '$date'
          |) b on a.searchid = b.searchid
       """.stripMargin
     println("--------------------------------")
