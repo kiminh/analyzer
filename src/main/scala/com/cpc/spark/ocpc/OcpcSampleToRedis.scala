@@ -282,7 +282,7 @@ object OcpcSampleToRedis {
          |  a.adclass_cvr_cnt,
          |  (case when b.conversion_goal=1 and a.k_value>2.5 then 2.5
          |        when b.conversion_goal!=1 and a.k_value>2.0 then 2.0
-         |        when a.k_value<0.01 then 0.01
+         |        when a.k_value<0 then 0
          |        else a.k_value end) as k_value,
          |  a.hpcvr,
          |  a.cali_value,
