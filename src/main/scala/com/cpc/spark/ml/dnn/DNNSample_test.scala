@@ -873,7 +873,7 @@ class DNNSample_test3(spark: SparkSession, trdate: String = "", trpath: String =
        |     features['u_dy_5_readsourcename'].stringarrayvalue    as author,
        |     features['u_dy_5_readkeyword'].stringarrayvalue       as word
        |from dl_cpc.cpc_user_features_from_algo
-       |where load_date='$date
+       |where load_date='$date'
     """.stripMargin
 
   override def getTrainSample(spark: SparkSession, date: String): DataFrame = {
