@@ -23,7 +23,7 @@ object OcpcK {
     val datehourlist2 = scala.collection.mutable.ListBuffer[String]()
     val cal = Calendar.getInstance()
     cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0)
-    for (t <- 0 to 24) {
+    for (t <- 0 to 72) {
       if (t > 0) {
         cal.add(Calendar.HOUR, -1)
       }
@@ -62,7 +62,7 @@ object OcpcK {
          |  left outer join
          |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $dtCondition) c on a.searchid = c.searchid
          |group by ideaid,
-         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) ,
+         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5),
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5),
          |  ocpc_log_dict['cpagiven']
       """.stripMargin

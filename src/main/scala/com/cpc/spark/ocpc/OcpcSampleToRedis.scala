@@ -280,8 +280,9 @@ object OcpcSampleToRedis {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case when a.k_value>2.0 then 2.0
-         |        when a.k_value<0.01 then 0.01
+         |  (case when b.conversion_goal=1 and a.k_value>2.5 then 2.5
+         |        when b.conversion_goal!=1 and a.k_value>2.0 then 2.0
+         |        when a.k_value<0 then 0
          |        else a.k_value end) as k_value,
          |  a.hpcvr,
          |  a.cali_value,
@@ -710,7 +711,7 @@ object OcpcSampleToRedis {
       .withColumn("original_regression_k_value", when(col("cvr3_flag").isNull, col("k_ratio2")).otherwise(col("k_ratio3")))
       .select("ideaid", "original_regression_k_value")
       .join(prevTable, Seq("ideaid"), "left_outer")
-      .withColumn("regression_k_value", when(col("k_value").isNotNull && col("original_regression_k_value").isNotNull && col("original_regression_k_value")>col("k_value"), (col("k_value") + col("original_regression_k_value")) * 1.0/2.0).otherwise(col("original_regression_k_value")))
+      .withColumn("regression_k_value", when(col("k_value").isNotNull && col("original_regression_k_value").isNotNull && col("original_regression_k_value")>col("k_value"), col("k_value") + (col("original_regression_k_value") - col("k_value")) * 1.0/5.0).otherwise(col("original_regression_k_value")))
       .select("ideaid", "adclass", "regression_k_value", "original_regression_k_value", "k_value")
       .filter("adclass is not null")
 
@@ -724,6 +725,7 @@ object OcpcSampleToRedis {
 
 
   }
+
 
 
 
