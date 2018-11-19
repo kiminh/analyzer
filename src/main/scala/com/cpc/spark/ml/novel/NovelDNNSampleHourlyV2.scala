@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
+import com.cpc.spark.ml.novel.Behavior2RedisNovelCvr.getDay
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions.{array, udf}
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -81,7 +82,7 @@ object NovelDNNSampleHourlyV2 {
          |  a.hour
          |from
          |  (select *
-         |from dl_cpc.cpc_union_log where `date` = '$date'
+         |from dl_cpc.cpc_union_log where `date` = '${getDay(date, 1)}'
          |  and isclick = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
@@ -90,7 +91,7 @@ object NovelDNNSampleHourlyV2 {
          |) a
          |inner join
          |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
-         |  WHERE `date` = '$date'
+         |  WHERE `date` = '${getDay(date, 1)}'
          |) b on a.searchid = b.searchid
       """.stripMargin
     println("--------------------------------")
