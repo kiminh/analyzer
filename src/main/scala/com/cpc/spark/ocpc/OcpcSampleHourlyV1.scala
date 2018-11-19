@@ -80,7 +80,7 @@ object OcpcSampleHourlyV1 {
          |on
          |  a.searchid=b.searchid
          |left join
-         |  (select searchid, label from dl_cpc.site_form_unionlog where $selectWhere) as c
+         |  (select searchid, 1 as label from dl_cpc.site_form_unionlog where $selectWhere) as c
          |on
          |  a.searchid=c.searchid
        """.stripMargin
