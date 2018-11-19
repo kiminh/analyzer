@@ -1034,19 +1034,19 @@ class DNNSample_test3(spark: SparkSession, trdate: String = "", trpath: String =
     import spark.implicits._
     val data = spark.sql(sql).persist()
 
-    val catHash = data.select("cat").distinct().withColumn("m16", hash("m16")($"cat"))
+    val catHash = data.select(explode($"cat")).distinct().withColumn("m16", hash("m16")($"cat"))
       .rdd.map(x => {
       x.getAs[String]("cat") -> x.getAs[Long]("m16")
     }).collect().toMap
     val catMap = spark.sparkContext.broadcast(catHash)
 
-    val authorHash = data.select("author").distinct().withColumn("m17", hash("m17")($"author"))
+    val authorHash = data.select(explode($"author")).distinct().withColumn("m17", hash("m17")($"author"))
       .rdd.map(x => {
       x.getAs[String]("author") -> x.getAs[Long]("m17")
     }).collect().toMap
     val authorMap = spark.sparkContext.broadcast(authorHash)
 
-    val wordHash = data.select("word").distinct().withColumn("m18", hash("m18")($"word"))
+    val wordHash = data.select(explode($"word")).distinct().withColumn("m18", hash("m18")($"word"))
       .rdd.map(x => {
       x.getAs[String]("word") -> x.getAs[Long]("m18")
     }).collect().toMap
