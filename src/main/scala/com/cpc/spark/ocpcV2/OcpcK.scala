@@ -60,7 +60,7 @@ object OcpcK {
          |  left outer join
          |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition) b on a.searchid = b.searchid
          |  left outer join
-         |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $dtCondition) c on a.searchid = c.searchid
+         |  (select searchid, label as label3 from dl_cpc.ml_cvr_feature_v2 where $dtCondition) c on a.searchid = c.searchid
          |group by ideaid,
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5),
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5),
