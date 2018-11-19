@@ -1007,7 +1007,7 @@ class DNNSample_test3(spark: SparkSession, trdate: String = "", trpath: String =
       hash("f28")($"hour").alias("f28"),
 
       array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
-        $"m11", $"m12", $"m13", $"m14", $"m15", $"m16", $"m17", $"m18").alias("raw_sparse")
+        $"m11", $"m12", $"m13", $"m14", $"m15", $"m16").alias("raw_sparse")
     )
       .select(
         array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
@@ -1040,7 +1040,7 @@ class DNNSample_test3(spark: SparkSession, trdate: String = "", trpath: String =
     }).collect().toMap
     val catMap = spark.sparkContext.broadcast(catHash)
 
-    val authorHash = data.select(explode($"author").alias("author")).distinct().withColumn("m17", hash("m17")($"author"))
+    /*val authorHash = data.select(explode($"author").alias("author")).distinct().withColumn("m17", hash("m17")($"author"))
       .rdd.map(x => {
       x.getAs[String]("author") -> x.getAs[Long]("m17")
     }).collect().toMap
@@ -1050,12 +1050,12 @@ class DNNSample_test3(spark: SparkSession, trdate: String = "", trpath: String =
       .rdd.map(x => {
       x.getAs[String]("word") -> x.getAs[Long]("m18")
     }).collect().toMap
-    val wordMap = spark.sparkContext.broadcast(wordHash)
+    val wordMap = spark.sparkContext.broadcast(wordHash)*/
 
     data.select($"uid",
       findHash(catMap.value, Murmur3Hash.stringHash64("m16", 0))($"cat").alias("m16"),
-      findHash(authorMap.value, Murmur3Hash.stringHash64("m17", 0))($"author").alias("m17"),
-      findHash(wordMap.value, Murmur3Hash.stringHash64("m18", 0))($"word").alias("m18")
+      /*findHash(authorMap.value, Murmur3Hash.stringHash64("m17", 0))($"author").alias("m17"),
+      findHash(wordMap.value, Murmur3Hash.stringHash64("m18", 0))($"word").alias("m18")*/
     )
   }
 }
