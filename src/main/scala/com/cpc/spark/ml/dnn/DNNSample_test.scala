@@ -1053,7 +1053,7 @@ class DNNSample_test3(spark: SparkSession, trdate: String = "", trpath: String =
     val wordMap = spark.sparkContext.broadcast(wordHash)*/
 
     data.select($"uid",
-      findHash(catMap.value, Murmur3Hash.stringHash64("m16", 0))($"cat").alias("m16"),
+      findHash(catMap.value, Murmur3Hash.stringHash64("m16", 0))($"cat").alias("m16")
       /*findHash(authorMap.value, Murmur3Hash.stringHash64("m17", 0))($"author").alias("m17"),
       findHash(wordMap.value, Murmur3Hash.stringHash64("m18", 0))($"word").alias("m18")*/
     )
