@@ -140,7 +140,7 @@ class DNNSample_test(spark: SparkSession, trdate: String = "", trpath: String = 
       .join(userAppIdx, Seq("uid"), "left"))
   }
 
-  override def getTestSamle4Gauc(spark: SparkSession, date: String, percent: Double = 0.05): DataFrame = {
+  override def getTestSample4Gauc(spark: SparkSession, date: String, percent: Double = 0.05): DataFrame = {
     val testSql = sql(date, 2)
     val behaviorSql = behavior_sql(date)
 
@@ -382,7 +382,7 @@ class DNNSample_test1(spark: SparkSession, trdate: String = "", trpath: String =
         .join(userAppIdx, Seq("uid"), "left"))
   }
 
-  override def getTestSamle(spark: SparkSession, date: String, percent: Double): DataFrame = {
+  override def getTestSample(spark: SparkSession, date: String, percent: Double): DataFrame = {
     val testSql = sql(date, 1)
     val behaviorSql = behavior_sql(date)
     val r_behaviroSql = r_behavior_sql(date)
@@ -433,7 +433,7 @@ class DNNSample_test1(spark: SparkSession, trdate: String = "", trpath: String =
     )
   }
 
-  override def getTestSamle4Gauc(spark: SparkSession, date: String, percent: Double = 0.05): DataFrame = {
+  override def getTestSample4Gauc(spark: SparkSession, date: String, percent: Double = 0.05): DataFrame = {
     val testSql = sql(date, 1)
     val behaviorSql = behavior_sql(date)
     val r_behaviroSql = r_behavior_sql(date)
@@ -681,7 +681,7 @@ class DNNSample_test2(spark: SparkSession, trdate: String = "", trpath: String =
         .join(userAppIdx, Seq("uid"), "left"))
   }
 
-  override def getTestSamle4Gauc(spark: SparkSession, date: String, percent: Double = 0.05): DataFrame = {
+  override def getTestSample4Gauc(spark: SparkSession, date: String, percent: Double = 0.05): DataFrame = {
     val testSql = sql(date, 1)
     val behaviorSql = behavior_sql(date)
     val r_behaviroSql = r_behavior_sql(date)
@@ -922,7 +922,8 @@ class DNNSample_test3(spark: SparkSession, trdate: String = "", trpath: String =
         .join(recData, Seq("uid"), "left"))
   }
 
-  override def getTestSample(spark: SparkSession, date: String): DataFrame = {
+
+  override def getTestSample(spark: SparkSession, date: String, percent: Double): DataFrame = {
     import spark.implicits._
     val trainSql = sql(date, 1)
     val behaviorSql = behavior_sql(date)

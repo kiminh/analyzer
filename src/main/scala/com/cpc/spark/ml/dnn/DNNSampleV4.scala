@@ -136,7 +136,7 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
         .join(userAppIdx, Seq("uid"), "left"))
   }
 
-  override def getTestSamle(spark: SparkSession, date: String, percent: Double = 0.03): DataFrame = {
+  override def getTestSample(spark: SparkSession, date: String, percent: Double = 0.03): DataFrame = {
     val testSql = sql(date, 1)
     val behaviorSql = behavior_sql(date)
 
@@ -181,7 +181,7 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
     )
   }
 
-  override def getTestSamle4Gauc(spark: SparkSession, date: String, percent: Double = 0.05): DataFrame = {
+  override def getTestSample4Gauc(spark: SparkSession, date: String, percent: Double = 0.05): DataFrame = {
     val testSql = sql(date, 1)
     val behaviorSql = behavior_sql(date)
 

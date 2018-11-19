@@ -89,7 +89,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
     * @param percent ：选取比例，默认0.05
     * @return
     */
-  def getTestSamle(spark: SparkSession, date: String,
+  def getTestSample(spark: SparkSession, date: String,
                    percent: Double = 0.05): DataFrame = {
     println("==========================")
     println("YOU MUST OVERWRITE THIS 'getTestSamle' METHOD!!!")
@@ -106,7 +106,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
     * @param percent ：选取比例，默认0.05
     * @return
     */
-  def getTestSamle4Gauc(spark: SparkSession, date: String,
+  def getTestSample4Gauc(spark: SparkSession, date: String,
                         percent: Double = 0.05): DataFrame = {
     println("==========================")
     println("YOU MUST OVERWRITE THIS 'getTestSamle4Gauc' METHOD!!!")
