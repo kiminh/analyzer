@@ -91,7 +91,7 @@ object Behavior2RedisNovelCvr {
       )
       .persist()
 
-    println("dnn novel 用户行为特征总数：" + data.count())
+    println("dnn novel cvr用户行为特征总数：" + data.count())
 
     data.coalesce(20).write.mode("overwrite")
       .parquet("/user/cpc/wy/novel_behavior_cvr")

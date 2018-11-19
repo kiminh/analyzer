@@ -82,13 +82,13 @@ object NovelDNNSampleHourlyV2 {
          |from
          |  (select *
          |from dl_cpc.cpc_union_log where `date` = '$date' and hour = $hour
-         |  and isshow = 1 and ideaid > 0
+         |  and isclick = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and uid > 0
          |) a
-         |left outer join
+         |inner join
          |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
          |  WHERE `date` = '$date' and hour = $hour
          |) b on a.searchid = b.searchid
