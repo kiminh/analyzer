@@ -81,15 +81,15 @@ object OcpcDataSummary {
     println("count:" + data.count())
     println("url: " + conf.getString("mariadb.report2_write.url"))
     println("table name: " + tableName)
-    println("user: " + conf.getString("mariadb.report2_write.user"))
-    println("password: " + conf.getString("mariadb.report2_write.password"))
-    println("driver: " + conf.getString("mariadb.report2_write.driver"))
+//    println("user: " + conf.getString("mariadb.report2_write.user"))
+//    println("password: " + conf.getString("mariadb.report2_write.password"))
+//    println("driver: " + conf.getString("mariadb.report2_write.driver"))
     data.show(10)
 
-//    data
-//      .write
-//      .mode(SaveMode.Append)
-//      .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
+    data
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
 
   }
 }
