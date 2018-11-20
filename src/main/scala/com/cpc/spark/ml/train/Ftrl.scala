@@ -340,17 +340,21 @@ class Ftrl(size: Int) {
 
     val beforeAUC = predictAndAuc(spark, res)
     println(s"before training auc: $beforeAUC")
+    var totalPredict = 0.0
     for (p <- res) {
       val x = p.features.toSparse.indices
       val pre = predict(x)
+      totalPredict = totalPredict + pre
       update(x, pre, p.label)
       if (p.label > 0) {
         posCount += 1
       }
     }
+    val averagePredict: Double = totalPredict / res.length
     println(s"posCount=$posCount, totalCount=${res.size}")
     val afterAUC = predictAndAuc(spark, res)
     println(s"after training auc=$afterAUC")
+    println(s"average prediction = $averagePredict")
   }
 
   def shuffle[T](array: Array[T]): Array[T] = {
