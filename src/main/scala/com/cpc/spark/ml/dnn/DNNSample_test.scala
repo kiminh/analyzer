@@ -1242,7 +1242,7 @@ class DNNSample_test4(spark: SparkSession, trdate: String = "", trpath: String =
 
     transform2TF(spark, spark.sql(trainSql)
       .sample(withReplacement = false, percent)
-      .join(ftrl_data, Seq("searchid"), "left")
+      .join(ftrl_data, Seq("searchid"), "left").na.fill(Map("ftrl" -> (0 to 410).map(_ => 0)))
       .join(behavior_data, Seq("uid"), "left")
       .join(userAppIdx, Seq("uid"), "left"))
   }
