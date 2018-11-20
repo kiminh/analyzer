@@ -15,6 +15,15 @@ object OcpcUtils {
       s"or (`date` > '$startDate' and `date` < '$endDate'))"
   }
 
+  def getTimeRangeSql3(startDate: String, startHour: String, endDate: String, endHour: String): String = {
+    if (startDate.equals(endDate)) {
+      return s"(`dt` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
+    }
+    return s"((`dt` = '$startDate' and hour > '$startHour') " +
+      s"or (`dt` = '$endDate' and hour <= '$endHour') " +
+      s"or (`dt` > '$startDate' and `dt` < '$endDate'))"
+  }
+
   def getHistoryData(date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
     /**
       * 按照给定的时间区间获取从OcpcMonitor程序的结果表获取历史数据
