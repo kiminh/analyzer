@@ -76,7 +76,7 @@ object OcpcK {
 
     val tablename = "dl_cpc.cpc_ocpc_v2_middle"
     val rawData = spark.sql(statSql)
-    rawData.write.mode("overwrite").saveAsTable("test.cpc_ocpc_v2_middle1")
+//    rawData.write.mode("overwrite").saveAsTable("test.cpc_ocpc_v2_middle1")
 
     val data = rawData
       .join(realCvr3, Seq("ideaid"), "left_outer")
@@ -86,16 +86,15 @@ object OcpcK {
       .withColumn("cvr3Cnt", col("cvr3Cnt") * col("cvr3_ratio"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .write.mode("overwrite").saveAsTable("test.cpc_ocpc_v2_middle2")
-//      .write.mode("overwrite").insertInto(tablename)
+      .write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio2", "k_ratio3", "date", "hour")
-    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k")
-//    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
+//    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k")
+    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
 
   }
 
