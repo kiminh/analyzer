@@ -1242,7 +1242,7 @@ class DNNSample_test4(spark: SparkSession, trdate: String = "", trpath: String =
 
     transform2TF(spark, spark.sql(trainSql)
       .sample(withReplacement = false, percent)
-      .join(ftrl_data, Seq("searchid"), "left").na.fill(Map("ftrl" -> (0 to 410).map(_ => 0)))
+      .join(ftrl_data, Seq("searchid"), "left")
       .join(behavior_data, Seq("uid"), "left")
       .join(userAppIdx, Seq("uid"), "left"))
   }
@@ -1250,43 +1250,44 @@ class DNNSample_test4(spark: SparkSession, trdate: String = "", trpath: String =
   def transform2TF(spark: SparkSession, data: DataFrame): DataFrame = {
     import spark.implicits._
 
-    data.select($"label",
+    data.na.fill(Map("ftrl" -> (1 to 410).map(_ => 0f)))
+      .select($"label",
 
-      hash("uid")($"uid").alias("sample_idx"),
-      hash("f1")($"media_type").alias("f1"),
-      hash("f2")($"mediaid").alias("f2"),
-      hash("f3")($"channel").alias("f3"),
-      hash("f4")($"sdk_type").alias("f4"),
-      hash("f5")($"adslot_type").alias("f5"),
-      hash("f6")($"adslotid").alias("f6"),
-      hash("f7")($"sex").alias("f7"),
-      hash("f8")($"dtu_id").alias("f8"),
-      hash("f9")($"adtype").alias("f9"),
-      hash("f10")($"interaction").alias("f10"),
-      hash("f11")($"bid").alias("f11"),
-      hash("f12")($"ideaid").alias("f12"),
-      hash("f13")($"unitid").alias("f13"),
-      hash("f14")($"planid").alias("f14"),
-      hash("f15")($"userid").alias("f15"),
-      hash("f16")($"is_new_ad").alias("f16"),
-      hash("f17")($"adclass").alias("f17"),
-      hash("f18")($"site_id").alias("f18"),
-      hash("f19")($"os").alias("f19"),
-      hash("f20")($"network").alias("f20"),
-      hash("f21")($"phone_price").alias("f21"),
-      hash("f22")($"brand").alias("f22"),
-      hash("f23")($"province").alias("f23"),
-      hash("f24")($"city").alias("f24"),
-      hash("f25")($"city_level").alias("f25"),
-      hash("f26")($"uid").alias("f26"),
-      hash("f27")($"age").alias("f27"),
-      hash("f28")($"hour").alias("f28"),
+        hash("uid")($"uid").alias("sample_idx"),
+        hash("f1")($"media_type").alias("f1"),
+        hash("f2")($"mediaid").alias("f2"),
+        hash("f3")($"channel").alias("f3"),
+        hash("f4")($"sdk_type").alias("f4"),
+        hash("f5")($"adslot_type").alias("f5"),
+        hash("f6")($"adslotid").alias("f6"),
+        hash("f7")($"sex").alias("f7"),
+        hash("f8")($"dtu_id").alias("f8"),
+        hash("f9")($"adtype").alias("f9"),
+        hash("f10")($"interaction").alias("f10"),
+        hash("f11")($"bid").alias("f11"),
+        hash("f12")($"ideaid").alias("f12"),
+        hash("f13")($"unitid").alias("f13"),
+        hash("f14")($"planid").alias("f14"),
+        hash("f15")($"userid").alias("f15"),
+        hash("f16")($"is_new_ad").alias("f16"),
+        hash("f17")($"adclass").alias("f17"),
+        hash("f18")($"site_id").alias("f18"),
+        hash("f19")($"os").alias("f19"),
+        hash("f20")($"network").alias("f20"),
+        hash("f21")($"phone_price").alias("f21"),
+        hash("f22")($"brand").alias("f22"),
+        hash("f23")($"province").alias("f23"),
+        hash("f24")($"city").alias("f24"),
+        hash("f25")($"city_level").alias("f25"),
+        hash("f26")($"uid").alias("f26"),
+        hash("f27")($"age").alias("f27"),
+        hash("f28")($"hour").alias("f28"),
 
-      array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
-        $"m11", $"m12", $"m13", $"m14", $"m15").alias("raw_sparse"),
+        array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
+          $"m11", $"m12", $"m13", $"m14", $"m15").alias("raw_sparse"),
 
-      $"ftrl".alias("float_dense")
-    )
+        $"ftrl".alias("float_dense")
+      )
       .select(
         array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
           $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17", $"f18", $"f19",
