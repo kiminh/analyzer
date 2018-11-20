@@ -214,6 +214,9 @@ enum Dsp {
     QIHU_DSP = 17;
     XINGU_DSP = 18;
     GANJIWANG_DSP = 19;
+    YOUXIN_DSP = 20;
+    INMOBI_VIDEO_DSP = 21;
+    MANISRTB_DSP = 22;
 }
 
 // DSP计费相关字段
@@ -426,6 +429,11 @@ message Event {
             optional int32           class     = 12;  // 广告class
             optional AdRedirectType  redirect_type    = 13;  // 跳转类型
             optional int32           coin = 14; //广告的金币数
+            optional int32           style_id = 15; //广告的样式号
+            optional int32           ctr = 16; // 请求ml返回的ctr
+            optional int32           cvr = 17; // 请求ml返回的cvr
+            optional string          ctr_host = 18; // 请求ctr的ml节点
+            optional string          cvr_host = 19; // 请求cvr的ml节点
         }
         message InterestItem {
             optional uint64 interestid = 1; // 兴趣id

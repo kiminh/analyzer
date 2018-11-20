@@ -1579,6 +1579,18 @@ public final class Protocol {
      * <code>GANJIWANG_DSP = 19;</code>
      */
     GANJIWANG_DSP(19),
+    /**
+     * <code>YOUXIN_DSP = 20;</code>
+     */
+    YOUXIN_DSP(20),
+    /**
+     * <code>INMOBI_VIDEO_DSP = 21;</code>
+     */
+    INMOBI_VIDEO_DSP(21),
+    /**
+     * <code>MANISRTB_DSP = 22;</code>
+     */
+    MANISRTB_DSP(22),
     ;
 
     /**
@@ -1661,6 +1673,18 @@ public final class Protocol {
      * <code>GANJIWANG_DSP = 19;</code>
      */
     public static final int GANJIWANG_DSP_VALUE = 19;
+    /**
+     * <code>YOUXIN_DSP = 20;</code>
+     */
+    public static final int YOUXIN_DSP_VALUE = 20;
+    /**
+     * <code>INMOBI_VIDEO_DSP = 21;</code>
+     */
+    public static final int INMOBI_VIDEO_DSP_VALUE = 21;
+    /**
+     * <code>MANISRTB_DSP = 22;</code>
+     */
+    public static final int MANISRTB_DSP_VALUE = 22;
 
 
     public final int getNumber() {
@@ -1696,6 +1720,9 @@ public final class Protocol {
         case 17: return QIHU_DSP;
         case 18: return XINGU_DSP;
         case 19: return GANJIWANG_DSP;
+        case 20: return YOUXIN_DSP;
+        case 21: return INMOBI_VIDEO_DSP;
+        case 22: return MANISRTB_DSP;
         default: return null;
       }
     }
@@ -27419,6 +27446,109 @@ public final class Protocol {
          * <code>optional int32 coin = 14;</code>
          */
         int getCoin();
+
+        /**
+         * <pre>
+         *广告的样式号
+         * </pre>
+         *
+         * <code>optional int32 style_id = 15;</code>
+         */
+        boolean hasStyleId();
+        /**
+         * <pre>
+         *广告的样式号
+         * </pre>
+         *
+         * <code>optional int32 style_id = 15;</code>
+         */
+        int getStyleId();
+
+        /**
+         * <pre>
+         * 请求ml返回的ctr
+         * </pre>
+         *
+         * <code>optional int32 ctr = 16;</code>
+         */
+        boolean hasCtr();
+        /**
+         * <pre>
+         * 请求ml返回的ctr
+         * </pre>
+         *
+         * <code>optional int32 ctr = 16;</code>
+         */
+        int getCtr();
+
+        /**
+         * <pre>
+         * 请求ml返回的cvr
+         * </pre>
+         *
+         * <code>optional int32 cvr = 17;</code>
+         */
+        boolean hasCvr();
+        /**
+         * <pre>
+         * 请求ml返回的cvr
+         * </pre>
+         *
+         * <code>optional int32 cvr = 17;</code>
+         */
+        int getCvr();
+
+        /**
+         * <pre>
+         * 请求ctr的ml节点
+         * </pre>
+         *
+         * <code>optional string ctr_host = 18;</code>
+         */
+        boolean hasCtrHost();
+        /**
+         * <pre>
+         * 请求ctr的ml节点
+         * </pre>
+         *
+         * <code>optional string ctr_host = 18;</code>
+         */
+        java.lang.String getCtrHost();
+        /**
+         * <pre>
+         * 请求ctr的ml节点
+         * </pre>
+         *
+         * <code>optional string ctr_host = 18;</code>
+         */
+        com.google.protobuf.ByteString
+            getCtrHostBytes();
+
+        /**
+         * <pre>
+         * 请求cvr的ml节点
+         * </pre>
+         *
+         * <code>optional string cvr_host = 19;</code>
+         */
+        boolean hasCvrHost();
+        /**
+         * <pre>
+         * 请求cvr的ml节点
+         * </pre>
+         *
+         * <code>optional string cvr_host = 19;</code>
+         */
+        java.lang.String getCvrHost();
+        /**
+         * <pre>
+         * 请求cvr的ml节点
+         * </pre>
+         *
+         * <code>optional string cvr_host = 19;</code>
+         */
+        com.google.protobuf.ByteString
+            getCvrHostBytes();
       }
       /**
        * <pre>
@@ -27450,6 +27580,11 @@ public final class Protocol {
           class__ = 0;
           redirectType_ = 0;
           coin_ = 0;
+          styleId_ = 0;
+          ctr_ = 0;
+          cvr_ = 0;
+          ctrHost_ = "";
+          cvrHost_ = "";
         }
 
         @java.lang.Override
@@ -27568,6 +27703,33 @@ public final class Protocol {
                 case 112: {
                   bitField0_ |= 0x00002000;
                   coin_ = input.readInt32();
+                  break;
+                }
+                case 120: {
+                  bitField0_ |= 0x00004000;
+                  styleId_ = input.readInt32();
+                  break;
+                }
+                case 128: {
+                  bitField0_ |= 0x00008000;
+                  ctr_ = input.readInt32();
+                  break;
+                }
+                case 136: {
+                  bitField0_ |= 0x00010000;
+                  cvr_ = input.readInt32();
+                  break;
+                }
+                case 146: {
+                  com.google.protobuf.ByteString bs = input.readBytes();
+                  bitField0_ |= 0x00020000;
+                  ctrHost_ = bs;
+                  break;
+                }
+                case 154: {
+                  com.google.protobuf.ByteString bs = input.readBytes();
+                  bitField0_ |= 0x00040000;
+                  cvrHost_ = bs;
                   break;
                 }
               }
@@ -27982,6 +28144,183 @@ public final class Protocol {
           return coin_;
         }
 
+        public static final int STYLE_ID_FIELD_NUMBER = 15;
+        private int styleId_;
+        /**
+         * <pre>
+         *广告的样式号
+         * </pre>
+         *
+         * <code>optional int32 style_id = 15;</code>
+         */
+        public boolean hasStyleId() {
+          return ((bitField0_ & 0x00004000) == 0x00004000);
+        }
+        /**
+         * <pre>
+         *广告的样式号
+         * </pre>
+         *
+         * <code>optional int32 style_id = 15;</code>
+         */
+        public int getStyleId() {
+          return styleId_;
+        }
+
+        public static final int CTR_FIELD_NUMBER = 16;
+        private int ctr_;
+        /**
+         * <pre>
+         * 请求ml返回的ctr
+         * </pre>
+         *
+         * <code>optional int32 ctr = 16;</code>
+         */
+        public boolean hasCtr() {
+          return ((bitField0_ & 0x00008000) == 0x00008000);
+        }
+        /**
+         * <pre>
+         * 请求ml返回的ctr
+         * </pre>
+         *
+         * <code>optional int32 ctr = 16;</code>
+         */
+        public int getCtr() {
+          return ctr_;
+        }
+
+        public static final int CVR_FIELD_NUMBER = 17;
+        private int cvr_;
+        /**
+         * <pre>
+         * 请求ml返回的cvr
+         * </pre>
+         *
+         * <code>optional int32 cvr = 17;</code>
+         */
+        public boolean hasCvr() {
+          return ((bitField0_ & 0x00010000) == 0x00010000);
+        }
+        /**
+         * <pre>
+         * 请求ml返回的cvr
+         * </pre>
+         *
+         * <code>optional int32 cvr = 17;</code>
+         */
+        public int getCvr() {
+          return cvr_;
+        }
+
+        public static final int CTR_HOST_FIELD_NUMBER = 18;
+        private volatile java.lang.Object ctrHost_;
+        /**
+         * <pre>
+         * 请求ctr的ml节点
+         * </pre>
+         *
+         * <code>optional string ctr_host = 18;</code>
+         */
+        public boolean hasCtrHost() {
+          return ((bitField0_ & 0x00020000) == 0x00020000);
+        }
+        /**
+         * <pre>
+         * 请求ctr的ml节点
+         * </pre>
+         *
+         * <code>optional string ctr_host = 18;</code>
+         */
+        public java.lang.String getCtrHost() {
+          java.lang.Object ref = ctrHost_;
+          if (ref instanceof java.lang.String) {
+            return (java.lang.String) ref;
+          } else {
+            com.google.protobuf.ByteString bs = 
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              ctrHost_ = s;
+            }
+            return s;
+          }
+        }
+        /**
+         * <pre>
+         * 请求ctr的ml节点
+         * </pre>
+         *
+         * <code>optional string ctr_host = 18;</code>
+         */
+        public com.google.protobuf.ByteString
+            getCtrHostBytes() {
+          java.lang.Object ref = ctrHost_;
+          if (ref instanceof java.lang.String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            ctrHost_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+
+        public static final int CVR_HOST_FIELD_NUMBER = 19;
+        private volatile java.lang.Object cvrHost_;
+        /**
+         * <pre>
+         * 请求cvr的ml节点
+         * </pre>
+         *
+         * <code>optional string cvr_host = 19;</code>
+         */
+        public boolean hasCvrHost() {
+          return ((bitField0_ & 0x00040000) == 0x00040000);
+        }
+        /**
+         * <pre>
+         * 请求cvr的ml节点
+         * </pre>
+         *
+         * <code>optional string cvr_host = 19;</code>
+         */
+        public java.lang.String getCvrHost() {
+          java.lang.Object ref = cvrHost_;
+          if (ref instanceof java.lang.String) {
+            return (java.lang.String) ref;
+          } else {
+            com.google.protobuf.ByteString bs = 
+                (com.google.protobuf.ByteString) ref;
+            java.lang.String s = bs.toStringUtf8();
+            if (bs.isValidUtf8()) {
+              cvrHost_ = s;
+            }
+            return s;
+          }
+        }
+        /**
+         * <pre>
+         * 请求cvr的ml节点
+         * </pre>
+         *
+         * <code>optional string cvr_host = 19;</code>
+         */
+        public com.google.protobuf.ByteString
+            getCvrHostBytes() {
+          java.lang.Object ref = cvrHost_;
+          if (ref instanceof java.lang.String) {
+            com.google.protobuf.ByteString b = 
+                com.google.protobuf.ByteString.copyFromUtf8(
+                    (java.lang.String) ref);
+            cvrHost_ = b;
+            return b;
+          } else {
+            return (com.google.protobuf.ByteString) ref;
+          }
+        }
+
         private byte memoizedIsInitialized = -1;
         public final boolean isInitialized() {
           byte isInitialized = memoizedIsInitialized;
@@ -28035,6 +28374,21 @@ public final class Protocol {
           }
           if (((bitField0_ & 0x00002000) == 0x00002000)) {
             output.writeInt32(14, coin_);
+          }
+          if (((bitField0_ & 0x00004000) == 0x00004000)) {
+            output.writeInt32(15, styleId_);
+          }
+          if (((bitField0_ & 0x00008000) == 0x00008000)) {
+            output.writeInt32(16, ctr_);
+          }
+          if (((bitField0_ & 0x00010000) == 0x00010000)) {
+            output.writeInt32(17, cvr_);
+          }
+          if (((bitField0_ & 0x00020000) == 0x00020000)) {
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 18, ctrHost_);
+          }
+          if (((bitField0_ & 0x00040000) == 0x00040000)) {
+            com.google.protobuf.GeneratedMessageV3.writeString(output, 19, cvrHost_);
           }
           unknownFields.writeTo(output);
         }
@@ -28097,6 +28451,24 @@ public final class Protocol {
           if (((bitField0_ & 0x00002000) == 0x00002000)) {
             size += com.google.protobuf.CodedOutputStream
               .computeInt32Size(14, coin_);
+          }
+          if (((bitField0_ & 0x00004000) == 0x00004000)) {
+            size += com.google.protobuf.CodedOutputStream
+              .computeInt32Size(15, styleId_);
+          }
+          if (((bitField0_ & 0x00008000) == 0x00008000)) {
+            size += com.google.protobuf.CodedOutputStream
+              .computeInt32Size(16, ctr_);
+          }
+          if (((bitField0_ & 0x00010000) == 0x00010000)) {
+            size += com.google.protobuf.CodedOutputStream
+              .computeInt32Size(17, cvr_);
+          }
+          if (((bitField0_ & 0x00020000) == 0x00020000)) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(18, ctrHost_);
+          }
+          if (((bitField0_ & 0x00040000) == 0x00040000)) {
+            size += com.google.protobuf.GeneratedMessageV3.computeStringSize(19, cvrHost_);
           }
           size += unknownFields.getSerializedSize();
           memoizedSize = size;
@@ -28182,6 +28554,31 @@ public final class Protocol {
             result = result && (getCoin()
                 == other.getCoin());
           }
+          result = result && (hasStyleId() == other.hasStyleId());
+          if (hasStyleId()) {
+            result = result && (getStyleId()
+                == other.getStyleId());
+          }
+          result = result && (hasCtr() == other.hasCtr());
+          if (hasCtr()) {
+            result = result && (getCtr()
+                == other.getCtr());
+          }
+          result = result && (hasCvr() == other.hasCvr());
+          if (hasCvr()) {
+            result = result && (getCvr()
+                == other.getCvr());
+          }
+          result = result && (hasCtrHost() == other.hasCtrHost());
+          if (hasCtrHost()) {
+            result = result && getCtrHost()
+                .equals(other.getCtrHost());
+          }
+          result = result && (hasCvrHost() == other.hasCvrHost());
+          if (hasCvrHost()) {
+            result = result && getCvrHost()
+                .equals(other.getCvrHost());
+          }
           result = result && unknownFields.equals(other.unknownFields);
           return result;
         }
@@ -28248,6 +28645,26 @@ public final class Protocol {
           if (hasCoin()) {
             hash = (37 * hash) + COIN_FIELD_NUMBER;
             hash = (53 * hash) + getCoin();
+          }
+          if (hasStyleId()) {
+            hash = (37 * hash) + STYLE_ID_FIELD_NUMBER;
+            hash = (53 * hash) + getStyleId();
+          }
+          if (hasCtr()) {
+            hash = (37 * hash) + CTR_FIELD_NUMBER;
+            hash = (53 * hash) + getCtr();
+          }
+          if (hasCvr()) {
+            hash = (37 * hash) + CVR_FIELD_NUMBER;
+            hash = (53 * hash) + getCvr();
+          }
+          if (hasCtrHost()) {
+            hash = (37 * hash) + CTR_HOST_FIELD_NUMBER;
+            hash = (53 * hash) + getCtrHost().hashCode();
+          }
+          if (hasCvrHost()) {
+            hash = (37 * hash) + CVR_HOST_FIELD_NUMBER;
+            hash = (53 * hash) + getCvrHost().hashCode();
           }
           hash = (29 * hash) + unknownFields.hashCode();
           memoizedHashCode = hash;
@@ -28399,6 +28816,16 @@ public final class Protocol {
             bitField0_ = (bitField0_ & ~0x00001000);
             coin_ = 0;
             bitField0_ = (bitField0_ & ~0x00002000);
+            styleId_ = 0;
+            bitField0_ = (bitField0_ & ~0x00004000);
+            ctr_ = 0;
+            bitField0_ = (bitField0_ & ~0x00008000);
+            cvr_ = 0;
+            bitField0_ = (bitField0_ & ~0x00010000);
+            ctrHost_ = "";
+            bitField0_ = (bitField0_ & ~0x00020000);
+            cvrHost_ = "";
+            bitField0_ = (bitField0_ & ~0x00040000);
             return this;
           }
 
@@ -28479,6 +28906,26 @@ public final class Protocol {
               to_bitField0_ |= 0x00002000;
             }
             result.coin_ = coin_;
+            if (((from_bitField0_ & 0x00004000) == 0x00004000)) {
+              to_bitField0_ |= 0x00004000;
+            }
+            result.styleId_ = styleId_;
+            if (((from_bitField0_ & 0x00008000) == 0x00008000)) {
+              to_bitField0_ |= 0x00008000;
+            }
+            result.ctr_ = ctr_;
+            if (((from_bitField0_ & 0x00010000) == 0x00010000)) {
+              to_bitField0_ |= 0x00010000;
+            }
+            result.cvr_ = cvr_;
+            if (((from_bitField0_ & 0x00020000) == 0x00020000)) {
+              to_bitField0_ |= 0x00020000;
+            }
+            result.ctrHost_ = ctrHost_;
+            if (((from_bitField0_ & 0x00040000) == 0x00040000)) {
+              to_bitField0_ |= 0x00040000;
+            }
+            result.cvrHost_ = cvrHost_;
             result.bitField0_ = to_bitField0_;
             onBuilt();
             return result;
@@ -28566,6 +29013,25 @@ public final class Protocol {
             }
             if (other.hasCoin()) {
               setCoin(other.getCoin());
+            }
+            if (other.hasStyleId()) {
+              setStyleId(other.getStyleId());
+            }
+            if (other.hasCtr()) {
+              setCtr(other.getCtr());
+            }
+            if (other.hasCvr()) {
+              setCvr(other.getCvr());
+            }
+            if (other.hasCtrHost()) {
+              bitField0_ |= 0x00020000;
+              ctrHost_ = other.ctrHost_;
+              onChanged();
+            }
+            if (other.hasCvrHost()) {
+              bitField0_ |= 0x00040000;
+              cvrHost_ = other.cvrHost_;
+              onChanged();
             }
             this.mergeUnknownFields(other.unknownFields);
             onChanged();
@@ -29379,6 +29845,350 @@ public final class Protocol {
           public Builder clearCoin() {
             bitField0_ = (bitField0_ & ~0x00002000);
             coin_ = 0;
+            onChanged();
+            return this;
+          }
+
+          private int styleId_ ;
+          /**
+           * <pre>
+           *广告的样式号
+           * </pre>
+           *
+           * <code>optional int32 style_id = 15;</code>
+           */
+          public boolean hasStyleId() {
+            return ((bitField0_ & 0x00004000) == 0x00004000);
+          }
+          /**
+           * <pre>
+           *广告的样式号
+           * </pre>
+           *
+           * <code>optional int32 style_id = 15;</code>
+           */
+          public int getStyleId() {
+            return styleId_;
+          }
+          /**
+           * <pre>
+           *广告的样式号
+           * </pre>
+           *
+           * <code>optional int32 style_id = 15;</code>
+           */
+          public Builder setStyleId(int value) {
+            bitField0_ |= 0x00004000;
+            styleId_ = value;
+            onChanged();
+            return this;
+          }
+          /**
+           * <pre>
+           *广告的样式号
+           * </pre>
+           *
+           * <code>optional int32 style_id = 15;</code>
+           */
+          public Builder clearStyleId() {
+            bitField0_ = (bitField0_ & ~0x00004000);
+            styleId_ = 0;
+            onChanged();
+            return this;
+          }
+
+          private int ctr_ ;
+          /**
+           * <pre>
+           * 请求ml返回的ctr
+           * </pre>
+           *
+           * <code>optional int32 ctr = 16;</code>
+           */
+          public boolean hasCtr() {
+            return ((bitField0_ & 0x00008000) == 0x00008000);
+          }
+          /**
+           * <pre>
+           * 请求ml返回的ctr
+           * </pre>
+           *
+           * <code>optional int32 ctr = 16;</code>
+           */
+          public int getCtr() {
+            return ctr_;
+          }
+          /**
+           * <pre>
+           * 请求ml返回的ctr
+           * </pre>
+           *
+           * <code>optional int32 ctr = 16;</code>
+           */
+          public Builder setCtr(int value) {
+            bitField0_ |= 0x00008000;
+            ctr_ = value;
+            onChanged();
+            return this;
+          }
+          /**
+           * <pre>
+           * 请求ml返回的ctr
+           * </pre>
+           *
+           * <code>optional int32 ctr = 16;</code>
+           */
+          public Builder clearCtr() {
+            bitField0_ = (bitField0_ & ~0x00008000);
+            ctr_ = 0;
+            onChanged();
+            return this;
+          }
+
+          private int cvr_ ;
+          /**
+           * <pre>
+           * 请求ml返回的cvr
+           * </pre>
+           *
+           * <code>optional int32 cvr = 17;</code>
+           */
+          public boolean hasCvr() {
+            return ((bitField0_ & 0x00010000) == 0x00010000);
+          }
+          /**
+           * <pre>
+           * 请求ml返回的cvr
+           * </pre>
+           *
+           * <code>optional int32 cvr = 17;</code>
+           */
+          public int getCvr() {
+            return cvr_;
+          }
+          /**
+           * <pre>
+           * 请求ml返回的cvr
+           * </pre>
+           *
+           * <code>optional int32 cvr = 17;</code>
+           */
+          public Builder setCvr(int value) {
+            bitField0_ |= 0x00010000;
+            cvr_ = value;
+            onChanged();
+            return this;
+          }
+          /**
+           * <pre>
+           * 请求ml返回的cvr
+           * </pre>
+           *
+           * <code>optional int32 cvr = 17;</code>
+           */
+          public Builder clearCvr() {
+            bitField0_ = (bitField0_ & ~0x00010000);
+            cvr_ = 0;
+            onChanged();
+            return this;
+          }
+
+          private java.lang.Object ctrHost_ = "";
+          /**
+           * <pre>
+           * 请求ctr的ml节点
+           * </pre>
+           *
+           * <code>optional string ctr_host = 18;</code>
+           */
+          public boolean hasCtrHost() {
+            return ((bitField0_ & 0x00020000) == 0x00020000);
+          }
+          /**
+           * <pre>
+           * 请求ctr的ml节点
+           * </pre>
+           *
+           * <code>optional string ctr_host = 18;</code>
+           */
+          public java.lang.String getCtrHost() {
+            java.lang.Object ref = ctrHost_;
+            if (!(ref instanceof java.lang.String)) {
+              com.google.protobuf.ByteString bs =
+                  (com.google.protobuf.ByteString) ref;
+              java.lang.String s = bs.toStringUtf8();
+              if (bs.isValidUtf8()) {
+                ctrHost_ = s;
+              }
+              return s;
+            } else {
+              return (java.lang.String) ref;
+            }
+          }
+          /**
+           * <pre>
+           * 请求ctr的ml节点
+           * </pre>
+           *
+           * <code>optional string ctr_host = 18;</code>
+           */
+          public com.google.protobuf.ByteString
+              getCtrHostBytes() {
+            java.lang.Object ref = ctrHost_;
+            if (ref instanceof String) {
+              com.google.protobuf.ByteString b = 
+                  com.google.protobuf.ByteString.copyFromUtf8(
+                      (java.lang.String) ref);
+              ctrHost_ = b;
+              return b;
+            } else {
+              return (com.google.protobuf.ByteString) ref;
+            }
+          }
+          /**
+           * <pre>
+           * 请求ctr的ml节点
+           * </pre>
+           *
+           * <code>optional string ctr_host = 18;</code>
+           */
+          public Builder setCtrHost(
+              java.lang.String value) {
+            if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00020000;
+            ctrHost_ = value;
+            onChanged();
+            return this;
+          }
+          /**
+           * <pre>
+           * 请求ctr的ml节点
+           * </pre>
+           *
+           * <code>optional string ctr_host = 18;</code>
+           */
+          public Builder clearCtrHost() {
+            bitField0_ = (bitField0_ & ~0x00020000);
+            ctrHost_ = getDefaultInstance().getCtrHost();
+            onChanged();
+            return this;
+          }
+          /**
+           * <pre>
+           * 请求ctr的ml节点
+           * </pre>
+           *
+           * <code>optional string ctr_host = 18;</code>
+           */
+          public Builder setCtrHostBytes(
+              com.google.protobuf.ByteString value) {
+            if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00020000;
+            ctrHost_ = value;
+            onChanged();
+            return this;
+          }
+
+          private java.lang.Object cvrHost_ = "";
+          /**
+           * <pre>
+           * 请求cvr的ml节点
+           * </pre>
+           *
+           * <code>optional string cvr_host = 19;</code>
+           */
+          public boolean hasCvrHost() {
+            return ((bitField0_ & 0x00040000) == 0x00040000);
+          }
+          /**
+           * <pre>
+           * 请求cvr的ml节点
+           * </pre>
+           *
+           * <code>optional string cvr_host = 19;</code>
+           */
+          public java.lang.String getCvrHost() {
+            java.lang.Object ref = cvrHost_;
+            if (!(ref instanceof java.lang.String)) {
+              com.google.protobuf.ByteString bs =
+                  (com.google.protobuf.ByteString) ref;
+              java.lang.String s = bs.toStringUtf8();
+              if (bs.isValidUtf8()) {
+                cvrHost_ = s;
+              }
+              return s;
+            } else {
+              return (java.lang.String) ref;
+            }
+          }
+          /**
+           * <pre>
+           * 请求cvr的ml节点
+           * </pre>
+           *
+           * <code>optional string cvr_host = 19;</code>
+           */
+          public com.google.protobuf.ByteString
+              getCvrHostBytes() {
+            java.lang.Object ref = cvrHost_;
+            if (ref instanceof String) {
+              com.google.protobuf.ByteString b = 
+                  com.google.protobuf.ByteString.copyFromUtf8(
+                      (java.lang.String) ref);
+              cvrHost_ = b;
+              return b;
+            } else {
+              return (com.google.protobuf.ByteString) ref;
+            }
+          }
+          /**
+           * <pre>
+           * 请求cvr的ml节点
+           * </pre>
+           *
+           * <code>optional string cvr_host = 19;</code>
+           */
+          public Builder setCvrHost(
+              java.lang.String value) {
+            if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00040000;
+            cvrHost_ = value;
+            onChanged();
+            return this;
+          }
+          /**
+           * <pre>
+           * 请求cvr的ml节点
+           * </pre>
+           *
+           * <code>optional string cvr_host = 19;</code>
+           */
+          public Builder clearCvrHost() {
+            bitField0_ = (bitField0_ & ~0x00040000);
+            cvrHost_ = getDefaultInstance().getCvrHost();
+            onChanged();
+            return this;
+          }
+          /**
+           * <pre>
+           * 请求cvr的ml节点
+           * </pre>
+           *
+           * <code>optional string cvr_host = 19;</code>
+           */
+          public Builder setCvrHostBytes(
+              com.google.protobuf.ByteString value) {
+            if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00040000;
+            cvrHost_ = value;
             onChanged();
             return this;
           }
@@ -50541,7 +51351,7 @@ public final class Protocol {
       "ocol.Version\"u\n\007DspInfo\022\037\n\003dsp\030\001 \002(\0162\022.e" +
       "ventprotocol.Dsp\022\020\n\010media_id\030\002 \001(\t\022\022\n\nch" +
       "annel_id\030\003 \001(\t\022\020\n\010timecost\030\004 \001(\005\022\021\n\tadsl" +
-      "ot_id\030\005 \001(\t\"\276+\n\005Event\022\'\n\004head\030\001 \002(\0132\031.ev" +
+      "ot_id\030\005 \001(\t\"\216,\n\005Event\022\'\n\004head\030\001 \002(\0132\031.ev" +
       "entprotocol.Event.Head\022\'\n\004body\030\002 \002(\0132\031.e" +
       "ventprotocol.Event.Body\022)\n\005extra\030\003 \001(\0132\032" +
       ".eventprotocol.Event.Extra\032\337\003\n\004Head\0229\n\013c" +
@@ -50556,7 +51366,7 @@ public final class Protocol {
       "\027\n\023UNKNOWN_CRYPTO_TYPE\020\005\022\025\n\021BODY_BASE64_" +
       "ERROR\020\006\022\027\n\023BODY_PROTOBUF_ERROR\020\007\022\023\n\017EXTR" +
       "A_RSA_ERROR\020\010\022\026\n\022EXTRA_FORMAT_ERROR\020\t\022\035\n",
-      "\031APPEND_TARGET_PARAM_ERROR\020\n\032\273$\n\004Body\0221\n" +
+      "\031APPEND_TARGET_PARAM_ERROR\020\n\032\213%\n\004Body\0221\n" +
       "\004type\030\001 \002(\0162#.eventprotocol.Event.Body.E" +
       "ventType\022\021\n\tsearch_id\030\002 \001(\t\022\030\n\020search_ti" +
       "mestamp\030\003 \001(\r\022\021\n\tsearch_ip\030\004 \001(\r\022\027\n\017even" +
@@ -50602,7 +51412,7 @@ public final class Protocol {
       "tprotocol.Version\022\021\n\tadslot_id\030\005 \001(\t\0229\n\013" +
       "adslot_type\030\006 \001(\0162$.eventprotocol.Event." +
       "Body.AdslotType\022\026\n\016sub_account_id\030\007 \001(\t\022" +
-      "\017\n\007user_id\030\010 \001(\t\032\360\002\n\002Ad\022\017\n\007user_id\030\001 \001(\r" +
+      "\017\n\007user_id\030\010 \001(\t\032\300\003\n\002Ad\022\017\n\007user_id\030\001 \001(\r" +
       "\022\017\n\007plan_id\030\002 \001(\r\022\020\n\010group_id\030\003 \001(\r\022\022\n\np" +
       "roduct_id\030\004 \001(\r\022\017\n\007unit_id\030\005 \001(\r\022\023\n\013temp" +
       "late_id\030\006 \001(\r\022.\n\004type\030\007 \001(\0162 .eventproto",
@@ -50611,11 +51421,13 @@ public final class Protocol {
       "nType\022\r\n\005score\030\t \001(\r\022\016\n\006domain\030\n \001(\t\022\017\n\007" +
       "adidstr\030\013 \001(\t\022\r\n\005class\030\014 \001(\005\022?\n\rredirect" +
       "_type\030\r \001(\0162(.eventprotocol.Event.Body.A" +
-      "dRedirectType\022\014\n\004coin\030\016 \001(\005\0321\n\014InterestI" +
+      "dRedirectType\022\014\n\004coin\030\016 \001(\005\022\020\n\010style_id\030" +
+      "\017 \001(\005\022\013\n\003ctr\030\020 \001(\005\022\013\n\003cvr\030\021 \001(\005\022\020\n\010ctr_h" +
+      "ost\030\022 \001(\t\022\020\n\010cvr_host\030\023 \001(\t\0321\n\014InterestI" +
       "tem\022\022\n\ninterestid\030\001 \001(\004\022\r\n\005score\030\002 \001(\004\032\272" +
-      "\001\n\013UserProfile\0229\n\tinterests\030\001 \003(\0132&.even" +
+      "\001\n\013UserProfile\0229\n\tinterests\030\001 \003(\0132&.even",
       "tprotocol.Event.Body.InterestItem\022\013\n\003age" +
-      "\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpca",
+      "\030\002 \001(\r\022\013\n\003sex\030\003 \001(\r\022\014\n\004coin\030\004 \001(\r\022\021\n\tpca" +
       "tegory\030\005 \001(\r\022\020\n\010antispam\030\006 \001(\r\022\022\n\nshare_" +
       "coin\030\007 \001(\r\022\017\n\007newuser\030\010 \001(\r\032\235\002\n\010Antispam" +
       "\022\r\n\005score\030\001 \002(\r\022*\n\005rules\030\002 \003(\0162\033.eventpr" +
@@ -50623,9 +51435,9 @@ public final class Protocol {
       "ntprotocol.Event.Body.Antispam.Flags\022\017\n\007" +
       "predict\030\004 \001(\002\032\213\001\n\005Flags\022$\n\034search_click_" +
       "count_hit_cache\030\001 \001(\010\022\032\n\022search_click_co" +
-      "unt\030\002 \001(\r\022$\n\034device_click_count_hit_cach" +
+      "unt\030\002 \001(\r\022$\n\034device_click_count_hit_cach",
       "e\030\003 \001(\010\022\032\n\022device_click_count\030\004 \001(\r\032\360\001\n\006" +
-      "Charge\022\'\n\004type\030\001 \002(\0162\031.eventprotocol.Cha",
+      "Charge\022\'\n\004type\030\001 \002(\0162\031.eventprotocol.Cha" +
       "rgeType\022\r\n\005price\030\002 \002(\r\022\017\n\007success\030\003 \001(\010\022" +
       "?\n\022trigger_event_type\030\004 \001(\0162#.eventproto" +
       "col.Event.Body.EventType\022\023\n\013over_budget\030" +
@@ -50633,9 +51445,9 @@ public final class Protocol {
       "ce\030\007 \001(\010\022\014\n\004cash\030\010 \001(\r\022\016\n\006coupon\030\t \001(\r\032\364" +
       "\001\n\006Action\022\022\n\ntarget_url\030\001 \001(\t\022=\n\rredirec" +
       "t_type\030\002 \001(\0162&.eventprotocol.Event.Body." +
-      "RedirectType\022\023\n\013trace_level\030\003 \001(\r\022\017\n\007is_" +
+      "RedirectType\022\023\n\013trace_level\030\003 \001(\r\022\017\n\007is_",
       "post\030\004 \001(\010\022\026\n\016click_monitors\030\005 \003(\t\022\030\n\020tr" +
-      "ace_timepoints\030\006 \003(\r\022\025\n\rad_target_url\030\007 ",
+      "ace_timepoints\030\006 \003(\r\022\025\n\rad_target_url\030\007 " +
       "\001(\t\022\022\n\nuser_agent\030\010 \001(\t\022\024\n\014referer_host\030" +
       "\t \001(\t\032\212\001\n\003App\022\024\n\014package_name\030\001 \002(\t\022\024\n\014i" +
       "nstall_time\030\002 \001(\r\022\023\n\013update_time\030\003 \001(\r\022\031" +
@@ -50643,9 +51455,9 @@ public final class Protocol {
       "(\0132\026.eventprotocol.Version\032e\n\006Client\0222\n\004" +
       "type\030\001 \002(\0162$.eventprotocol.Event.Body.Cl" +
       "ientType\022\'\n\007version\030\002 \001(\0132\026.eventprotoco" +
-      "l.Version\032I\n\010Location\022\017\n\007country\030\001 \001(\r\022\020" +
+      "l.Version\032I\n\010Location\022\017\n\007country\030\001 \001(\r\022\020",
       "\n\010province\030\002 \001(\r\022\014\n\004city\030\003 \001(\r\022\014\n\004isps\030\004" +
-      " \003(\r\"~\n\tEventType\022\t\n\005CLICK\020\000\022\016\n\nIMPRESSI",
+      " \003(\r\"~\n\tEventType\022\t\n\005CLICK\020\000\022\016\n\nIMPRESSI" +
       "ON\020\001\022\016\n\nACTIVATION\020\002\022\014\n\010DOWNLOAD\020\003\022\013\n\007IN" +
       "STALL\020\004\022\t\n\005ORDER\020\005\022\024\n\020INSTALL_PACKAGES\020\n" +
       "\022\n\n\006CHARGE\020\036\"f\n\014RedirectType\022\n\n\006DIRECT\020\000" +
@@ -50653,9 +51465,9 @@ public final class Protocol {
       "\022DELAY_POST_TRACING\020\003\022\r\n\tNO_DIRECT\020\004\"w\n\016" +
       "AdRedirectType\022\020\n\014AD_NO_DIRECT\020\000\022\r\n\tAD_D" +
       "IRECT\020\001\022\023\n\017AD_SYNC_TRACING\020\002\022\024\n\020AD_DELAY" +
-      "_TRACING\020\003\022\031\n\025AD_DELAY_POST_TRACING\020\004\"\205\001" +
+      "_TRACING\020\003\022\031\n\025AD_DELAY_POST_TRACING\020\004\"\205\001",
       "\n\nAdslotType\022\r\n\tLIST_FEED\020\001\022\020\n\014CONTENT_F" +
-      "EED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLOT_SPLASH\020",
+      "EED\020\002\022\021\n\rSLOT_INTERACT\020\003\022\017\n\013SLOT_SPLASH\020" +
       "\004\022\017\n\013SLOT_BANNER\020\005\022\016\n\nSLOT_VIDEO\020\006\022\021\n\rSL" +
       "OT_MOTIVATE\020\007\"\265\001\n\013BrowserType\022\022\n\016Unknown" +
       "Browser\020\000\022\016\n\nMQQBrowser\020\001\022\n\n\006Chrome\020\002\022\r\n" +
@@ -50663,9 +51475,9 @@ public final class Protocol {
       "owser\020\005\022\017\n\013QvodBrowser\020\006\022\023\n\017IEMobileBrow" +
       "ser\020\007\022\022\n\016MicroMessenger\020\010\022\n\n\006QQChat\020\t\"P\n" +
       "\014DeviceIdType\022\021\n\rDEVID_UNKNOWN\020\000\022\016\n\nDEVI" +
-      "D_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\"" +
+      "D_IMEI\020\001\022\r\n\tDEVID_MAC\020\002\022\016\n\nDEVID_IDFA\020\003\"",
       "\217\001\n\006AdType\022\010\n\004TEXT\020\001\022\t\n\005IMAGE\020\002\022\r\n\tTEXT_" +
-      "ICON\020\003\022\023\n\017THREE_TEXT_ICON\020\004\022\017\n\013AD_INTERA",
+      "ICON\020\003\022\023\n\017THREE_TEXT_ICON\020\004\022\017\n\013AD_INTERA" +
       "CT\020\005\022\r\n\tAD_SPLASH\020\006\022\r\n\tAD_BANNER\020\007\022\014\n\010AD" +
       "_VIDEO\020\010\022\017\n\013AD_MOTIVATE\020\t\"\215\001\n\017Interactio" +
       "nType\022\017\n\013NO_INTERACT\020\000\022\021\n\rINTER_SURFING\020" +
@@ -50673,9 +51485,9 @@ public final class Protocol {
       "\022\021\n\rINTER_MESSAGE\020\004\022\016\n\nINTER_MAIL\020\005\022\014\n\010I" +
       "NTER_GP\020\006\"W\n\nClientType\022\r\n\tNATIVESDK\020\001\022\t" +
       "\n\005JSSDK\020\002\022\013\n\007OPENAPI\020\003\022\006\n\002HZ\020\004\022\007\n\003FUN\020\005\022" +
-      "\007\n\003QTT\020\006\022\010\n\004BOBO\020\007\032\227\002\n\005Extra\0220\n\007unknown\030" +
+      "\007\n\003QTT\020\006\022\010\n\004BOBO\020\007\032\227\002\n\005Extra\0220\n\007unknown\030",
       "\001 \003(\0132\037.eventprotocol.Event.Extra.Item\022\017" +
-      "\n\007touch_x\030\002 \001(\r\022\017\n\007touch_y\030\003 \001(\r\022\022\n\npres",
+      "\n\007touch_x\030\002 \001(\r\022\017\n\007touch_y\030\003 \001(\r\022\022\n\npres" +
       "s_time\030\004 \001(\r\022\022\n\nscroll_num\030\005 \001(\r\022\023\n\013scro" +
       "ll_time\030\006 \001(\r\022\r\n\005width\030\007 \001(\r\022\016\n\006height\030\010" +
       " \001(\r\022\023\n\013click_delta\030\t \001(\001\022\017\n\007on_mask\030\n \001" +
@@ -50683,9 +51495,9 @@ public final class Protocol {
       "\001 \002(\r\022\r\n\005value\030\002 \002(\t\"2\n\016LockerUProfile\022\021" +
       "\n\ttimestamp\030\001 \002(\r\022\r\n\005count\030\002 \001(\r*L\n\nDevi" +
       "ceType\022\027\n\023UNKNOWN_DEVICE_TYPE\020\000\022\006\n\002PC\020\001\022" +
-      "\t\n\005PHONE\020\002\022\n\n\006TABLET\020\003\022\006\n\002TV\020\004*&\n\tMediaT" +
+      "\t\n\005PHONE\020\002\022\n\n\006TABLET\020\003\022\006\n\002TV\020\004*&\n\tMediaT",
       "ype\022\007\n\003APP\020\001\022\007\n\003WEB\020\002\022\007\n\003WAP\020\003*;\n\006OSType" +
-      "\022\023\n\017UNKNOWN_OS_TYPE\020\000\022\013\n\007ANDROID\020\001\022\007\n\003IO",
+      "\022\023\n\017UNKNOWN_OS_TYPE\020\000\022\013\n\007ANDROID\020\001\022\007\n\003IO" +
       "S\020\002\022\006\n\002WP\020\003*p\n\014DeviceIDType\022\010\n\004IMEI\020\001\022\007\n" +
       "\003MAC\020\002\022\010\n\004IDFA\020\003\022\010\n\004AAID\020\004\022\014\n\010OPENUDID\020\005" +
       "\022\r\n\tANDROIDID\020\006\022\010\n\004UDID\020\007\022\010\n\004ODIN\020\010\022\010\n\004D" +
@@ -50693,31 +51505,32 @@ public final class Protocol {
       "LP\020\001\022\014\n\010DOWNLOAD\020\002\022\010\n\004DAIL\020\003\022\007\n\003SMS\020\004\022\t\n" +
       "\005EMAIL\020\005*`\n\013NetworkType\022\010\n\004WIFI\020\001\022\024\n\020CEL" +
       "LULAR_UNKNOWN\020\002\022\017\n\013CELLULAR_2G\020\003\022\017\n\013CELL" +
-      "ULAR_3G\020\004\022\017\n\013CELLULAR_4G\020\005*)\n\007GeoType\022\t\n" +
+      "ULAR_3G\020\004\022\017\n\013CELLULAR_4G\020\005*)\n\007GeoType\022\t\n",
       "\005WGS84\020\001\022\t\n\005GCJ02\020\002\022\010\n\004BD09\020\003*3\n\nClientT" +
-      "ype\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI",
+      "ype\022\r\n\tNATIVESDK\020\001\022\t\n\005JSSDK\020\002\022\013\n\007OPENAPI" +
       "\020\003*\"\n\tGeoSource\022\n\n\006NATIVE\020\001\022\t\n\005BAIDU\020\002*1" +
       "\n\nChargeType\022\010\n\004FREE\020\000\022\007\n\003CPC\020\001\022\007\n\003CPM\020\002" +
-      "\022\007\n\003CPA\020\003*\260\002\n\003Dsp\022\013\n\007CPC_DSP\020\001\022\016\n\nINMOBI" +
+      "\022\007\n\003CPA\020\003*\350\002\n\003Dsp\022\013\n\007CPC_DSP\020\001\022\016\n\nINMOBI" +
       "_DSP\020\002\022\020\n\014TANX_SSP_DSP\020\003\022\r\n\tBOTTOMING\020\004\022" +
       "\017\n\013HUZHONG_DSP\020\005\022\r\n\tFANCY_DSP\020\006\022\013\n\007GDT_D" +
       "SP\020\007\022\020\n\014MOBVISTA_DSP\020\010\022\r\n\tVANKA_DSP\020\t\022\017\n" +
       "\013IFLYTEK_DSP\020\n\022\014\n\010WINQ_DSP\020\013\022\r\n\tVLION_DS" +
-      "P\020\014\022\016\n\nYOUDAO_DSP\020\r\022\014\n\010MOMO_DSP\020\016\022\020\n\014QUY" +
+      "P\020\014\022\016\n\nYOUDAO_DSP\020\r\022\014\n\010MOMO_DSP\020\016\022\020\n\014QUY",
       "UANSU_DSP\020\017\022\017\n\013TOUTIAO_DSP\020\020\022\014\n\010QIHU_DSP" +
-      "\020\021\022\r\n\tXINGU_DSP\020\022\022\021\n\rGANJIWANG_DSP\020\023*\303\003\n",
-      "\014AntispamRule\022\021\n\rDUP_SEARCH_ID\020\001\022\021\n\rOUT_" +
-      "TIME_SPAN\020\002\022\014\n\010DUP_USER\020\003\022\021\n\rNEW_USER_RA" +
-      "TE\020\004\022\022\n\016INVALID_COOKIE\020\005\022\022\n\016INVALID_REGI" +
-      "ON\020\006\022\016\n\nNEW_COOKIE\020\007\022\r\n\tNO_COOKIE\020\010\022\022\n\016N" +
-      "O_DEVICE_INFO\020\t\022\020\n\014NO_DEVICE_ID\020\n\022\013\n\007ON_" +
-      "MASK\020\013\022\n\n\006DUP_IP\020\014\022\022\n\016JS_CLICK_DELTA\020\r\022\021" +
-      "\n\rSAME_POSITION\020\016\022\014\n\010NO_EXTRA\020\017\022\016\n\nNO_RE" +
-      "FERER\020\020\022\023\n\017CK_DISPATCHTIME\020\021\022\n\n\006RANDOM\020\022" +
-      "\022\010\n\004GIFT\020\023\022\016\n\nBAD_METHOD\020\024\022\022\n\016SERVER_REQ" +
-      "UEST\020\025\022\013\n\007MAX_CTR\020\026\022\013\n\007DIFF_UA\020\027\022\r\n\tMAX_",
-      "CLICK\020\030\022\017\n\013TRAIN_MODEL\020\031\022\n\n\006IP_ISP\020\032\022\014\n\010" +
-      "IP_BLACK\020\033"
+      "\020\021\022\r\n\tXINGU_DSP\020\022\022\021\n\rGANJIWANG_DSP\020\023\022\016\n\n" +
+      "YOUXIN_DSP\020\024\022\024\n\020INMOBI_VIDEO_DSP\020\025\022\020\n\014MA" +
+      "NISRTB_DSP\020\026*\303\003\n\014AntispamRule\022\021\n\rDUP_SEA" +
+      "RCH_ID\020\001\022\021\n\rOUT_TIME_SPAN\020\002\022\014\n\010DUP_USER\020" +
+      "\003\022\021\n\rNEW_USER_RATE\020\004\022\022\n\016INVALID_COOKIE\020\005" +
+      "\022\022\n\016INVALID_REGION\020\006\022\016\n\nNEW_COOKIE\020\007\022\r\n\t" +
+      "NO_COOKIE\020\010\022\022\n\016NO_DEVICE_INFO\020\t\022\020\n\014NO_DE" +
+      "VICE_ID\020\n\022\013\n\007ON_MASK\020\013\022\n\n\006DUP_IP\020\014\022\022\n\016JS" +
+      "_CLICK_DELTA\020\r\022\021\n\rSAME_POSITION\020\016\022\014\n\010NO_",
+      "EXTRA\020\017\022\016\n\nNO_REFERER\020\020\022\023\n\017CK_DISPATCHTI" +
+      "ME\020\021\022\n\n\006RANDOM\020\022\022\010\n\004GIFT\020\023\022\016\n\nBAD_METHOD" +
+      "\020\024\022\022\n\016SERVER_REQUEST\020\025\022\013\n\007MAX_CTR\020\026\022\013\n\007D" +
+      "IFF_UA\020\027\022\r\n\tMAX_CLICK\020\030\022\017\n\013TRAIN_MODEL\020\031" +
+      "\022\n\n\006IP_ISP\020\032\022\014\n\010IP_BLACK\020\033"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -50856,7 +51669,7 @@ public final class Protocol {
     internal_static_eventprotocol_Event_Body_Ad_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_eventprotocol_Event_Body_Ad_descriptor,
-        new java.lang.String[] { "UserId", "PlanId", "GroupId", "ProductId", "UnitId", "TemplateId", "Type", "Interaction", "Score", "Domain", "Adidstr", "Class_", "RedirectType", "Coin", });
+        new java.lang.String[] { "UserId", "PlanId", "GroupId", "ProductId", "UnitId", "TemplateId", "Type", "Interaction", "Score", "Domain", "Adidstr", "Class_", "RedirectType", "Coin", "StyleId", "Ctr", "Cvr", "CtrHost", "CvrHost", });
     internal_static_eventprotocol_Event_Body_InterestItem_descriptor =
       internal_static_eventprotocol_Event_Body_descriptor.getNestedTypes().get(5);
     internal_static_eventprotocol_Event_Body_InterestItem_fieldAccessorTable = new
