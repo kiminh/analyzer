@@ -256,13 +256,13 @@ object OcpcSampleToRedis {
     val finalData1 = spark.sql(sqlRequest4)
     finalData1.write.mode("overwrite").saveAsTable("test.ocpc_debug_k_values")
 
-
+    // TODO 测试
     val finalData2 = changeIncreaseSpeed(regressionK, finalData1, spark)
     finalData2.createOrReplaceTempView("raw_final_data")
 
 
     // TODO bak表
-//    finalData2.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
+    finalData2.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
 
 
     val sqlRequest5 =
