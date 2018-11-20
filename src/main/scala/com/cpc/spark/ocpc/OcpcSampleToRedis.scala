@@ -268,7 +268,9 @@ object OcpcSampleToRedis {
       .withColumn("cali_value", lit(1.0))
       .withColumn("cvr3_cali", lit(1.0))
       .join(prevTable, Seq("ideaid", "adclass"), "left_outer")
-      .withColumn("k_value", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 5.0).otherwise("new_k"))
+      .withColumn("k_value", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 5.0).otherwise(col("new_k")))
+
+    finalData2.createOrReplaceTempView("raw_final_data")
 
 
     // TODO bak表
@@ -296,7 +298,7 @@ object OcpcSampleToRedis {
          |  a.cvr3_cali,
          |  a.cvr3_cnt
          |FROM
-         |  test.new_pb_ocpc_with_pcvr_complete_bak as a
+         |  raw_final_data as a
          |LEFT JOIN
          |  test.ocpc_idea_update_time as b
          |ON
