@@ -302,7 +302,7 @@ object OcpcSampleToRedis {
          |  a.cvr3_cali,
          |  a.cvr3_cnt
          |FROM
-         |  (SELECT * FROM raw_final_data WHERE cvr_cnt>0) as a
+         |  raw_final_data as a
          |LEFT JOIN
          |  test.ocpc_idea_update_time as b
          |ON
