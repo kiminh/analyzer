@@ -1250,7 +1250,9 @@ class DNNSample_test4(spark: SparkSession, trdate: String = "", trpath: String =
   def transform2TF(spark: SparkSession, data: DataFrame): DataFrame = {
     import spark.implicits._
 
-    data.na.fill(Map("ftrl" -> (1 to 410).map(_ => 0f)))
+    val defaultNa = for (i <- 1 to 410) yield 0f
+
+    data.na.fill(Map("ftrl" -> defaultNa))
       .select($"label",
 
         hash("uid")($"uid").alias("sample_idx"),
