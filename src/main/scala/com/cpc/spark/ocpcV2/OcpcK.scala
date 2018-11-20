@@ -84,6 +84,7 @@ object OcpcK {
       .withColumn("cpa3", col("cpa3") * 1.0 / col("cvr3_ratio"))
       .withColumn("ratio3", col("ratio3") * 1.0 / col("cvr3_ratio"))
       .withColumn("cvr3Cnt", col("cvr3Cnt") * col("cvr3_ratio"))
+      .select("ideaid", "k_ratio2", "k_ratio3", "cpagiven", "cpa2", "cpa3", "ratio2", "ratio3", "clickCnt", "cvr2Cnt", "cvr3Cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write.mode("overwrite").insertInto(tablename)
