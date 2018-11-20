@@ -91,7 +91,7 @@ object NovelDNNSampleHourlyV2 {
          |) a
          |inner join
          |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
-         |  WHERE `date` = '${getDay(date, 1)}'
+         |  WHERE `date` = '$date'
          |) b on a.searchid = b.searchid
       """.stripMargin
     println("--------------------------------")
@@ -203,9 +203,9 @@ object NovelDNNSampleHourlyV2 {
   def getUidApp(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
     spark.sql(
-      """
-        |select * from dl_cpc.cpc_user_installed_apps where `load_date` = "%s"
-      """.stripMargin.format(date)).rdd
+      s"""
+        |select * from dl_cpc.cpc_user_installed_apps where `load_date` = date_add('$date', -1)
+      """.stripMargin).rdd
       .map(x => (x.getAs[String]("uid"), x.getAs[Seq[String]]("pkgs")))
       .reduceByKey(_ ++ _)
       .map(x => (x._1, x._2.distinct))
