@@ -274,7 +274,7 @@ object OcpcSampleToRedis {
 
 
     // TODO bak表
-    finalData2.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
+//    finalData2.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
 
 
     val sqlRequest5 =
