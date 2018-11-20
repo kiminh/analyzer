@@ -91,7 +91,7 @@ object NovelDNNSampleHourlyV2 {
          |) a
          |inner join
          |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
-         |  WHERE `date` = '$date'
+         |  WHERE `date` = '${getDay(date, 1)}'
          |) b on a.searchid = b.searchid
       """.stripMargin
     println("--------------------------------")
