@@ -257,10 +257,16 @@ object OcpcSampleToRedis {
     finalData1.write.mode("overwrite").saveAsTable("test.ocpc_debug_k_values")
 
     // TODO 测试
-    val prevTable = spark
-      .table("dl_cpc.new_pb_ocpc_with_pcvr")
-      .withColumn("prev_k", col("k_value"))
-      .select("ideaid", "adclass", "prev_k")
+    val prevTable = spark.sql(
+      s"""
+         |SELECT
+         |  ideaid,
+         |  adclass,
+         |  k_value as prev_k
+         |FROM
+         |  dl_cpc.new_pb_ocpc_with_pcvr
+       """.stripMargin)
+
 
     val finalData2 = finalData1
       .join(regressionK, Seq("ideaid"), "left_outer")
