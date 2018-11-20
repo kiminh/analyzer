@@ -33,7 +33,7 @@ object DNNSample_test {
   }
 
   def getFtrlFeature(m: Map[Int, Float]): Seq[Float] = {
-    for (i <- 1 to 410) yield m.getOrElse(i, 0)
+    for (i <- 1 to 410) yield m.getOrElse(i, 0f)
   }
 }
 
