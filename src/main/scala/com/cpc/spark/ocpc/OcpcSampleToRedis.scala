@@ -256,26 +256,8 @@ object OcpcSampleToRedis {
     val finalData1 = spark.sql(sqlRequest4)
     finalData1.write.mode("overwrite").saveAsTable("test.ocpc_debug_k_values")
 
-    // TODO 测试
-    val prevTable = spark.sql(
-      s"""
-         |SELECT
-         |  ideaid,
-         |  adclass,
-         |  k_value as prev_k
-         |FROM
-         |  dl_cpc.new_pb_ocpc_with_pcvr
-       """.stripMargin)
 
-
-    val finalData2 = finalData1
-      .join(regressionK, Seq("ideaid"), "left_outer")
-      .withColumn("new_k", when(col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
-      .withColumn("cali_value", lit(1.0))
-      .withColumn("cvr3_cali", lit(1.0))
-      .join(prevTable, Seq("ideaid", "adclass"), "left_outer")
-      .withColumn("k_value", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 5.0).otherwise(col("new_k")))
-
+    val finalData2 = changeIncreaseSpeed(regressionK, finalData1, spark)
     finalData2.createOrReplaceTempView("raw_final_data")
 
 
@@ -738,7 +720,30 @@ object OcpcSampleToRedis {
 
     finalDF
 
+  }
 
+  def changeIncreaseSpeed(regressionK: DataFrame, pidK: DataFrame, spark: SparkSession) = {
+    // TODO 测试
+    val prevTable = spark.sql(
+      s"""
+         |SELECT
+         |  ideaid,
+         |  adclass,
+         |  k_value as prev_k
+         |FROM
+         |  dl_cpc.new_pb_ocpc_with_pcvr
+       """.stripMargin)
+
+
+    val finalData2 = pidK
+      .join(regressionK, Seq("ideaid"), "left_outer")
+      .withColumn("new_k", when(col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
+      .withColumn("cali_value", lit(1.0))
+      .withColumn("cvr3_cali", lit(1.0))
+      .join(prevTable, Seq("ideaid", "adclass"), "left_outer")
+      .withColumn("k_value", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 5.0).otherwise(col("new_k")))
+
+    finalData2
   }
 
 
