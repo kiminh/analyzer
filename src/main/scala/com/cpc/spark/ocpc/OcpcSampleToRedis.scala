@@ -257,12 +257,24 @@ object OcpcSampleToRedis {
     finalData1.write.mode("overwrite").saveAsTable("test.ocpc_debug_k_values")
 
     // TODO 测试
-    val finalData2 = changeIncreaseSpeed(regressionK, finalData1, spark)
+    val prevTable = spark
+      .table("test.new_pb_ocpc_with_pcvr")
+      .withColumn("prev_k", col("k_value"))
+      .select("ideaid", "adclass", "prev_k")
+
+    val finalData2 = finalData1
+      .join(regressionK, Seq("ideaid"), "left_outer")
+      .withColumn("new_k", when(col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
+      .withColumn("cali_value", lit(1.0))
+      .withColumn("cvr3_cali", lit(1.0))
+      .join(prevTable, Seq("ideaid", "adclass"), "left_outer")
+      .withColumn("k_value", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 5.0).otherwise(col("new_k")))
+
     finalData2.createOrReplaceTempView("raw_final_data")
 
 
     // TODO bak表
-    finalData2.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
+//    finalData2.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
 
 
     val sqlRequest5 =
@@ -301,6 +313,7 @@ object OcpcSampleToRedis {
     val finalData = finalData3.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
 
     finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
+
 
     finalData
       .withColumn("date", lit(end_date))
@@ -492,6 +505,8 @@ object OcpcSampleToRedis {
     println("length of the array")
     println(result.length)
     useridData.writeTo(new FileOutputStream(filename))
+
+    dataset.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
     println("complete save data into protobuffer")
 
   }
@@ -720,30 +735,7 @@ object OcpcSampleToRedis {
 
     finalDF
 
-  }
 
-  def changeIncreaseSpeed(regressionK: DataFrame, pidK: DataFrame, spark: SparkSession) = {
-    // TODO 测试
-    val prevTable = spark.sql(
-      s"""
-         |SELECT
-         |  ideaid,
-         |  adclass,
-         |  k_value as prev_k
-         |FROM
-         |  dl_cpc.new_pb_ocpc_with_pcvr
-       """.stripMargin)
-
-
-    val finalData2 = pidK
-      .join(regressionK, Seq("ideaid"), "left_outer")
-      .withColumn("new_k", when(col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
-      .withColumn("cali_value", lit(1.0))
-      .withColumn("cvr3_cali", lit(1.0))
-      .join(prevTable, Seq("ideaid", "adclass"), "left_outer")
-      .withColumn("k_value", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 5.0).otherwise(col("new_k")))
-
-    finalData2
   }
 
 
