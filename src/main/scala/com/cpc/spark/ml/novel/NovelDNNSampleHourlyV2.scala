@@ -58,8 +58,8 @@ object NovelDNNSampleHourlyV2 {
 
   def getSample(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
-
-    val behavior_data = spark.read.parquet(s"/user/cpc/wy/novel_behavior_cvr/behavior-$date")
+    val day = getDay(date, 1)
+    val behavior_data = spark.read.parquet(s"/user/cpc/wy/novel_behavior_cvr/behavior-$day")
 
     val userAppIdx = getUidApp(spark, date)
       .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))
@@ -82,7 +82,7 @@ object NovelDNNSampleHourlyV2 {
          |  a.hour
          |from
          |  (select *
-         |from dl_cpc.cpc_union_log where `date` = '${getDay(date, 1)}'
+         |from dl_cpc.cpc_union_log where `date` = '$day'
          |  and isclick = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
@@ -91,7 +91,7 @@ object NovelDNNSampleHourlyV2 {
          |) a
          |inner join
          |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
-         |  WHERE `date` = '${getDay(date, 1)}'
+         |  WHERE `date` = '$day'
          |) b on a.searchid = b.searchid
       """.stripMargin
     println("--------------------------------")
