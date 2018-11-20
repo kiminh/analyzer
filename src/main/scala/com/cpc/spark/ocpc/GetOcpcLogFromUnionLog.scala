@@ -115,7 +115,7 @@ object GetOcpcLogFromUnionLog {
     resultDF.printSchema()
 
 
-    df.write.mode("append").insertInto("dl_cpc.ocpc_unionlog")
+    resultDF.write.mode("append").insertInto("dl_cpc.ocpc_unionlog")
   }
 
   def getUnionlogV2(date: String, hour: String, spark: SparkSession) = {
