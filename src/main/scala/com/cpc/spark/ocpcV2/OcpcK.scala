@@ -126,7 +126,7 @@ object OcpcK {
       println("sample", x, y, n)
     }
 
-    for (i <- 0 to count / 5) {
+    for (i <- 0 to count / 10) {
       obs.add(0.0, 0.0);
     }
 
