@@ -177,4 +177,8 @@ object Udfs_wj{
     }
     result
   })
+
+  def udfSqrt() = udf((value: Double) => {
+    math.sqrt(value)
+  })
 }
