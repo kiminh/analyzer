@@ -201,6 +201,8 @@ object OcpcK {
     val resultDF = filteredData
       .join(rawData, Seq("ideaid"), "left_outer")
       .withColumn("cvr_ratio", col("total_cvr_cnt") * 1.0 / col("cvr_cnt"))
+      .withColumn("cvr_ratio", when(col("cvr_ratio")<1, 1.0).otherwise(col("cvr_ratio")))
+      .withColumn("cvr_ratio", when(col("cvr_ratio")>10, 10.0).otherwise(col("cvr_ratio")))
 
     // TODO 删除临时表
     resultDF.write.mode("overwrite").saveAsTable("test.test_ocpc_check_cvr3_ratio")
