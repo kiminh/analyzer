@@ -20,7 +20,7 @@ import java.io.FileOutputStream
 
 import com.cpc.spark.common.Utils.getTimeRangeSql
 import com.cpc.spark.ocpc.OcpcUtils.getActData
-import com.cpc.spark.ocpc.utils.OcpcUtils.getTimeRangeSql2
+import com.cpc.spark.ocpc.utils.OcpcUtils._
 import org.apache.spark.sql.functions._
 
 
@@ -129,9 +129,9 @@ object OcpcSampleToRedis {
          |    useridTable
        """.stripMargin
 
-    // TODO 移除表单类广告的特殊数据
+
     val userFinalData = spark.sql(sqlRequest2)
-    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
+//    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
     val userFinalData3 = filterDataByType(userFinalData, end_date, hour, spark)
 
@@ -196,12 +196,12 @@ object OcpcSampleToRedis {
 
 
 
-    userFinalData2
-      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
-      .withColumn("date", lit(end_date))
-      .withColumn("hour", lit(hour))
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
+//    userFinalData2
+//      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
+//      .withColumn("date", lit(end_date))
+//      .withColumn("hour", lit(hour))
+//      .write.mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
 
 
 
@@ -259,12 +259,28 @@ object OcpcSampleToRedis {
 
 
     val finalData2 = resetK(end_date, hour, regressionK, finalData1, spark)
-    finalData2.createOrReplaceTempView("raw_final_data")
 
 
-    // TODO bak表
-    finalData2.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
+    // TODO 测试
+    val selectCondition2 = getTimeRangeSql3(start_date, hour, end_date, hour)
+    val ocpcHistoryData = spark
+      .table("dl_cpc.ocpc_unionlog")
+      .where(selectCondition2)
+      .select("ideaid", "adclass")
+      .withColumn("is_ocpc_flag", lit(1))
+      .distinct()
 
+
+    val finalData3New = finalData2
+      .filter("cvr_cnt>0")
+      .join(ocpcHistoryData, Seq("ideaid", "adclass"), "left_outer")
+      .withColumn("k_value", when(col("is_ocpc_flag").isNull, col("cvr_cnt") * 1.0 / (col("ctr_cnt") * col("hpcvr"))).otherwise(col("k_value")))
+
+
+    finalData3New.createOrReplaceTempView("raw_final_data")
+
+
+    finalData3New.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
 
     val sqlRequest5 =
       s"""
@@ -287,7 +303,7 @@ object OcpcSampleToRedis {
          |  a.cvr3_cali,
          |  a.cvr3_cnt
          |FROM
-         |  raw_final_data as a
+         |  (SELECT * FROM raw_final_data WHERE cvr_cnt>0) as a
          |LEFT JOIN
          |  test.ocpc_idea_update_time as b
          |ON
@@ -296,19 +312,18 @@ object OcpcSampleToRedis {
     println(sqlRequest5)
     val finalData3 = spark.sql(sqlRequest5)
 
-    // TODO bak表
     finalData3.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak2")
 
     val finalData = finalData3.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
 
-    finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
-
-
-    finalData
-      .withColumn("date", lit(end_date))
-      .withColumn("hour", lit(hour))
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
+//    finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
+//
+//
+//    finalData
+//      .withColumn("date", lit(end_date))
+//      .withColumn("hour", lit(hour))
+//      .write.mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
 
     // 保存pb文件
     savePbPack(finalData)
