@@ -63,7 +63,7 @@ object OcpcK {
          |  left outer join
          |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition) b on a.searchid = b.searchid
          |  left outer join
-         |  (select searchid, label as label3 from dl_cpc.ml_cvr_feature_v2 where $dtCondition) c on a.searchid = c.searchid
+         |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $dtCondition) c on a.searchid = c.searchid
          |group by ideaid,
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5),
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5),
@@ -87,7 +87,8 @@ object OcpcK {
       .select("ideaid", "k_ratio2", "k_ratio3", "cpagiven", "cpa2", "cpa3", "ratio2", "ratio3", "clickCnt", "cvr2Cnt", "cvr3Cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .write.mode("overwrite").insertInto(tablename)
+
+    data.write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
