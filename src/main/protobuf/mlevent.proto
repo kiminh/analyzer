@@ -1,0 +1,50 @@
+syntax = "proto3";
+package data;
+
+enum ActionType {
+    IMPRESSION = 0;
+    CLICK = 1;
+    CONVERSION = 2;
+    ONSITE_CONVERSION = 3;
+    API_CONVERSION = 4;
+}
+
+message AdActionEvent {
+    int64  timestamp = 1;
+    string insertionID = 2;  // unique key for each ad insertion
+    string requestID = 3;
+    string userID = 4;       // client user ID (not advertiser ID)
+    map<int32, int32> actionMap = 5;
+}
+
+message FeatureGroup {
+    map<string, double> namedValue = 1;
+    repeated string strClass = 2;
+    repeated int32 intClass = 3;
+    repeated double vector = 4;
+}
+
+enum ModelType {
+    MTYPE_NONE = 0;
+    MTYPE_CTR = 1;
+    MTYPE_CVR = 2;
+    MYTPE_API_CVR = 3;
+}
+
+message AdScoringEvent {
+    int64 timestamp = 1;
+    string insertionID = 2;  // unique key for each ad insertion
+    int32 userID = 3;
+    int32 ideaID = 4; // various Ad internal ids
+    string uid = 5;
+    string version = 6;
+    ModelType modelType = 7;
+    map<string, FeatureGroup> featureGroups = 100;
+}
+
+message AdTrainingStream {
+    int64  timestamp = 1;
+    string insertionID = 2;  // unique key for each ad insertion
+    AdScoringEvent ase = 3;
+    AdActionEvent aae = 4;   // various Ad internal ids
+}
