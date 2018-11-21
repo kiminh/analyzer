@@ -23,9 +23,9 @@ object DNNSample_test {
     spark.udf.register("hash", Murmur3Hash.stringHash64 _)
     val Array(trdate, trpath, tedate, tepath) = args
 
-    val sample = new DNNSample_test4(spark, trdate, trpath, tedate, tepath)
+    val sample = new DNNSample_test(spark, trdate, trpath, tedate, tepath)
     sample.saveTrain()
-    sample.saveTest(gauc = false)
+    //sample.saveTest(gauc = false)
   }
 
   def getKeys(m: Map[Int, Float]): Int = {
@@ -41,6 +41,9 @@ object DNNSample_test {
 /**
   * 详情页在d3版本特征上增加文章id和文章category
   * created time : 2018/11/10 14:13
+  *
+  * 只取特定栏位的广告进行训练
+  * modified time : 2018/11/21 10:40
   *
   * @author zhj
   * @version 1.0
@@ -76,6 +79,7 @@ class DNNSample_test(spark: SparkSession, trdate: String = "", trpath: String = 
        |from dl_cpc.cpc_union_log where `date` = '$date'
        |  and isshow = 1 and ideaid > 0 and adslot_type = $adslot_type
        |  and media_appsid in ("80000001", "80000002")
+       |  and adslotid in (7096368,7132208,7034978,7453081,7903746)
        |  and uid not like "%.%"
        |  and uid not like "%000000%"
        |  and uid > 0
