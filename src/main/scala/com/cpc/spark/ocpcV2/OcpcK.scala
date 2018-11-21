@@ -173,11 +173,21 @@ object OcpcK {
     val selectCondition1 = getTimeRangeSql2(date1, hour1, date, hour)
     val selectCondition2 = getTimeRangeSql3(date1, hour1, date, hour)
 
-    val rawData = spark
-      .table("dl_cpc.ml_cvr_feature_v2")
-      .where(selectCondition1).groupBy("ideaid")
-      .agg(sum(col("label")).alias("total_cvr_cnt"))
-      .select("ideaid", "total_cvr_cnt")
+    val sqlRequest0 =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  SUM(iscvr) as total_cvr_cnt
+         |FROM
+         |  dl_cpc.cpc_api_union_log
+         |WHERE
+         |  $selectCondition1
+         |AND
+         |  iscvr=1
+         |GROUP BY ideaid
+       """.stripMargin
+
+    val rawData = spark.sql(sqlRequest0)
 
     val sqlRequest =
       s"""
@@ -187,7 +197,7 @@ object OcpcK {
          |FROM
          |  (select * from dl_cpc.ocpc_unionlog where $selectCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1) as a
          |LEFT JOIN
-         |  (select searchid, label from dl_cpc.ml_cvr_feature_v2 where $selectCondition1) as b
+         |  (select searchid, iscvr as label from dl_cpc.cpc_api_union_log where $selectCondition1 and iscvr=1 group by searchid, iscvr) as b
          |ON
          |  a.searchid=b.searchid
        """.stripMargin
