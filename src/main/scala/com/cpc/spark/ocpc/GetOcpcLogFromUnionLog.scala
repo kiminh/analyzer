@@ -113,7 +113,7 @@ object GetOcpcLogFromUnionLog {
       .withColumn("dt", lit(date))
       .withColumn("hour", lit(hour))
     resultDF.printSchema()
-
+    result.show(10)
 
 //    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_unionlog")
   }
