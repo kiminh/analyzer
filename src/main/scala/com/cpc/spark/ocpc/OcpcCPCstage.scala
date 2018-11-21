@@ -12,7 +12,7 @@ object OcpcCPCstage {
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select * from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
+    val table = "(select ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
 
 
     val data = spark.read.format("jdbc")
@@ -23,10 +23,10 @@ object OcpcCPCstage {
       .option("dbtable", table)
       .load()
 
-    val base = data.select("ideas", "bid", "ocpc_bid", "ocpc_bid_update_time")
+    val base = data.select("ideas", "bid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal")
 
 
-    val ideaTable = base.withColumn("ideaid", explode(split(col("ideas"), "[,]"))).select("ideaid", "ocpc_bid", "ocpc_bid_update_time")
+    val ideaTable = base.withColumn("ideaid", explode(split(col("ideas"), "[,]"))).select("ideaid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal")
 
     ideaTable.createOrReplaceTempView("ideaid_update_time")
 
@@ -35,6 +35,7 @@ object OcpcCPCstage {
          |SELECT
          |    t.ideaid,
          |    t.ocpc_bid as cpa_given,
+         |    t.conversion_goal,
          |    from_unixtime(t.ocpc_bid_update_time) as update_time,
          |    from_unixtime(t.ocpc_bid_update_time, 'yyyy-MM-dd') as update_date,
          |    from_unixtime(t.ocpc_bid_update_time, 'HH') as update_hour
@@ -44,6 +45,7 @@ object OcpcCPCstage {
          |        ideaid,
          |        ocpc_bid,
          |        ocpc_bid_update_time,
+         |        cast(conversion_goal as int) as conversion_goal,
          |        row_number() over(partition by ideaid order by ocpc_bid_update_time desc) as seq
          |    FROM
          |        ideaid_update_time) t
