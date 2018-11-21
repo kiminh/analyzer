@@ -3,48 +3,48 @@ package com.cpc.spark.ocpcV2
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.ocpc.OcpcUtils._
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import org.apache.spark.sql.functions.{col, collect_set, concat_ws, lit}
 
 import scala.collection.mutable
-import org.apache.spark.sql.functions._
 
-object OcpcK {
-
+object OcpcKHourly {
   def main(args: Array[String]): Unit = {
-
     val spark = SparkSession.builder().appName("ocpc v2").enableHiveSupport().getOrCreate()
 
     val date = args(0).toString
     val hour = args(1).toString
-    // val onDuty = args(2).toInt
+    val hourCnt = args(2).toInt
 
-    val datehourlist = scala.collection.mutable.ListBuffer[String]()
-    val datehourlist2 = scala.collection.mutable.ListBuffer[String]()
-    val cal = Calendar.getInstance()
-    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0)
-    for (t <- 0 to 72) {
-      if (t > 0) {
-        cal.add(Calendar.HOUR, -1)
-      }
-      val sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-      val dd = sf.format(cal.getTime())
-      val d1 = dd.substring(0, 10)
-      val h1 = dd.substring(11, 13)
-      val datecond = s"`date` = '$d1' and hour = '$h1'"
-      val datecond2 = s"`dt` = '$d1' and hour = '$h1'"
-      datehourlist += datecond
-      datehourlist2 += datecond2
-    }
+    // TODO 分段拟合
+    getK(date, hour, 48, spark)
+  }
 
-    val dtCondition = "(%s)".format(datehourlist.mkString(" or "))
-    val dtCondition2 = "(%s)".format(datehourlist2.mkString(" or "))
+  def getK(date: String, hour: String, hourCnt: Int, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourCnt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+    val selectCondition2 = getTimeRangeSql3(date1, hour1, date, hour)
 
-
-    val statSql =
+    val sqlRequest1 =
       s"""
          |select
          |  ideaid,
+         |  (case when hour < '07' then 't1'
+         |        when hour >= '07' and hour < '18' then 't2'
+         |        else 't3' end) as time_span,
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) as k_ratio2,
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5) as k_ratio3,
          |  ocpc_log_dict['cpagiven'] as cpagiven,
@@ -56,21 +56,24 @@ object OcpcK {
          |  sum(COALESCE(label2,0)) cvr2Cnt,
          |  sum(COALESCE(label3,0)) cvr3Cnt
          |from
-         |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1) a
+         |  (select * from dl_cpc.ocpc_unionlog where $selectCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1) a
          |  left outer join
-         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition) b on a.searchid = b.searchid
+         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $selectCondition) b on a.searchid = b.searchid
          |  left outer join
-         |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $dtCondition) c on a.searchid = c.searchid
+         |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $selectCondition) c on a.searchid = c.searchid
          |group by ideaid,
-         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5),
+         |  (case when hour < '07' then 't1'
+         |        when hour >= '07' and hour < '18' then 't2'
+         |        else 't3' end),
+         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) ,
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5),
          |  ocpc_log_dict['cpagiven']
       """.stripMargin
 
-    println(statSql)
+    println(sqlRequest1)
 
-    val tablename = "dl_cpc.cpc_ocpc_v2_middle"
-    spark.sql(statSql)
+    val tablename = "dl_cpc.cpc_ocpc_v2_regression_timespan_middle"
+    spark.sql(sqlRequest1)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write.mode("overwrite").insertInto(tablename)
@@ -78,11 +81,14 @@ object OcpcK {
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
-    val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
-      .select("ideaid", "k_ratio2", "k_ratio3", "date", "hour")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
+    val res = ratio2Data.join(ratio3Data, Seq("ideaid", "time_span", "date", "hour"), "outer")
+      .select("ideaid", "time_span", "k_ratio2", "k_ratio3", "date", "hour")
+    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k_timespan_regression")
+
+
 
   }
+
 
   def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
 
@@ -90,28 +96,29 @@ object OcpcK {
     println("getKWithRatioType", condition)
     val res = spark.table(tablename).where(condition)
       .withColumn("str", concat_ws(" ", col(s"k_$ratioType"), col(s"$ratioType"), col("clickCnt")))
-      .groupBy("ideaid")
+      .groupBy("ideaid", "time_span")
       .agg(collect_set("str").as("liststr"))
-      .select("ideaid", "liststr").collect()
+      .select("ideaid", "time_span", "liststr").collect()
 
     val targetK = 0.95
-    var resList = new mutable.ListBuffer[(String, Double, String, String)]()
+    var resList = new mutable.ListBuffer[(String, String, Double, String, String)]()
     for (row <- res) {
       val ideaid = row(0).toString
-      val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
+      val timeSpan = row(1).toString
+      val pointList = row(2).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
         val y = x.trim.split("\\s+")
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
-      println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk)
-      if (coffList(1)>0 && realk > 0) {
-        resList.append((ideaid, realk, date, hour))
+      println("ideaid " + ideaid, "time_span " + timeSpan, "coff " + coffList, "target k: " + k, "realk: " + realk)
+      if (realk > 0) {
+        resList.append((ideaid, timeSpan, realk, date, hour))
       }
     }
     val data = spark.createDataFrame(resList)
-      .toDF("ideaid", s"k_$ratioType", "date", "hour")
+      .toDF("ideaid", "time_span", s"k_$ratioType", "date", "hour")
     data
   }
 
@@ -140,6 +147,5 @@ object OcpcK {
     }
     res.toList
   }
-
 
 }

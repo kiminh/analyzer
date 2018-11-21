@@ -1,8 +1,14 @@
 #!/bin/bash
 
+#sh testOcpcForAll.sh getBaseConversion1 2018-11-12 09
+
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
-queue=root.production.algo.cpc
+queue=root.develop.adhoc.cpc
+
+className=$1
+date=$2
+hour=$3
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -17,5 +23,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.ocpc.OcpcDailyReport \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1
+    --class com.cpc.spark.ocpc.savepb.${className} \
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $date $hour
