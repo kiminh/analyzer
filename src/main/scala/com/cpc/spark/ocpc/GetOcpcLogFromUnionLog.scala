@@ -115,7 +115,7 @@ object GetOcpcLogFromUnionLog {
     resultDF.printSchema()
     result.show(10)
 
-//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_unionlog")
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_unionlog")
   }
 
   def getUnionlogV2(date: String, hour: String, spark: SparkSession) = {
