@@ -89,7 +89,7 @@ object OcpcK {
       .withColumn("hour", lit(hour))
 
 
-    rawData.write.mode("overwrite").saveAsTable(tablename)
+    data.write.mode("overwrite").saveAsTable(tablename)
 //    data.write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
