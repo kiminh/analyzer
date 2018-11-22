@@ -43,7 +43,7 @@ object OcpcK {
     val dtCondition = "(%s)".format(datehourlist.mkString(" or "))
     val dtCondition2 = "(%s)".format(datehourlist2.mkString(" or "))
 
-
+    // TODO  替换成弘扬的表
     val statSql =
       s"""
          |select
@@ -63,7 +63,7 @@ object OcpcK {
          |  left outer join
          |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition) b on a.searchid = b.searchid
          |  left outer join
-         |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $dtCondition and iscvr=1 group by searchid, iscvr) c on a.searchid = c.searchid
+         |  (select searchid, label as label3 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) c on a.searchid = c.searchid
          |group by ideaid,
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5),
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5),
@@ -74,7 +74,7 @@ object OcpcK {
 
     val realCvr3 = getIdeaidCvr3Ratio(date, hour, spark)
 
-    val tablename = "dl_cpc.cpc_ocpc_v2_middle"
+    val tablename = "test.cpc_ocpc_v2_middle"
     val rawData = spark.sql(statSql)
 
 
@@ -89,16 +89,16 @@ object OcpcK {
       .withColumn("hour", lit(hour))
 
 
-//    data.write.mode("overwrite").saveAsTable(tablename)
-    data.write.mode("overwrite").insertInto(tablename)
+    data.write.mode("overwrite").saveAsTable(tablename)
+//    data.write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio2", "k_ratio3", "date", "hour")
-//    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
+    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k")
+//    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
 
   }
 
@@ -191,13 +191,13 @@ object OcpcK {
       s"""
          |SELECT
          |  ideaid,
-         |  SUM(iscvr) as total_cvr_cnt
+         |  COUNT(distinct searchid) as total_cvr_cnt
          |FROM
-         |  dl_cpc.cpc_api_union_log
+         |  dl_cpc.ml_cvr_feature_v2
          |WHERE
          |  $selectCondition1
          |AND
-         |  iscvr=1
+         |  label=1
          |GROUP BY ideaid
        """.stripMargin
 
@@ -211,7 +211,7 @@ object OcpcK {
          |FROM
          |  (select * from dl_cpc.ocpc_unionlog where $selectCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1) as a
          |LEFT JOIN
-         |  (select searchid, iscvr as label from dl_cpc.cpc_api_union_log where $selectCondition1 and iscvr=1 group by searchid, iscvr) as b
+         |  (select searchid, label from dl_cpc.ml_cvr_feature_v2 where $selectCondition1 and label=1 group by searchid, label) as b
          |ON
          |  a.searchid=b.searchid
        """.stripMargin
@@ -263,10 +263,10 @@ object OcpcK {
         avg(col("cpa_given")).alias("cpa_given"))
 
     val rawData2 = spark
-      .table("dl_cpc.cpc_api_union_log")
+      .table("dl_cpc.ml_cvr_feature_v2")
       .where(s"`date`='$date1'")
-      .filter("iscvr=1")
-      .select("ideaid", "iscvr", "searchid")
+      .filter("label=1")
+      .select("ideaid", "label", "searchid")
       .distinct()
 
     val cvrData = rawData2
