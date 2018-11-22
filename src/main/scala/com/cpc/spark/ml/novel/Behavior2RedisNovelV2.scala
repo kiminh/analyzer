@@ -60,9 +60,11 @@ object Behavior2RedisNovelV2 {
 
     data1.show(5)
 
-      val data2 = spark.sql(s"""
-                             |select * from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
+      val data2 = spark.sql(
+        s"""
+             |select * from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
       """.stripMargin)
+          .select("uid","book_id","first_category_id","second_category_id","third_category_id")
 
     data2.show(5)
 
