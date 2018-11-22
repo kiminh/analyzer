@@ -57,7 +57,7 @@ object AdInterestWords {
       .parquet(s"/warehouse/dl_cpc.db/cpc_user_interest_words/load_date=$date")
 
     spark.sql(s"alter table dl_cpc.cpc_user_interest_words add partition(laod_date=$date" +
-      s"location '/warehouse/dl_cpc.db/cpc_user_interest_words/load_date=$date'")
+      s" location '/warehouse/dl_cpc.db/cpc_user_interest_words/load_date=$date'")
   }
 
   def getDay(startdate: String, day: Int): String = {
