@@ -74,7 +74,7 @@ object OcpcK {
 
     val realCvr3 = getIdeaidCvr3Ratio(date, hour, spark)
 
-    val tablename = "dl_cpc.cpc_ocpc_v2_middle"
+    val tablename = "test.cpc_ocpc_v2_middle"
     val rawData = spark.sql(statSql)
 
 
@@ -89,16 +89,16 @@ object OcpcK {
       .withColumn("hour", lit(hour))
 
 
-//    data.write.mode("overwrite").saveAsTable(tablename)
-    data.write.mode("overwrite").insertInto(tablename)
+    data.write.mode("overwrite").saveAsTable(tablename)
+//    data.write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio2", "k_ratio3", "date", "hour")
-//    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
+    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k")
+//    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
 
   }
 
@@ -253,7 +253,8 @@ object OcpcK {
 
     val rawData1 = spark
       .table("dl_cpc.ocpc_unionlog")
-      .where(selectCondition2).filter("isclick=1 and ocpc_log_dict['kvalue'] is not null")
+      .where(s"`dt`='$date1'")
+      .filter("isclick=1 and ocpc_log_dict['kvalue'] is not null")
 
     val costData = rawData1
       .groupBy("ideaid")
@@ -263,7 +264,7 @@ object OcpcK {
 
     val rawData2 = spark
       .table("dl_cpc.cpc_api_union_log")
-      .where(selectCondition1)
+      .where(s"`date`='$date1'")
       .filter("iscvr=1")
       .select("ideaid", "iscvr", "searchid")
       .distinct()
