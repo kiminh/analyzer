@@ -20,6 +20,8 @@ object AdInterestWords {
       .enableHiveSupport()
       .getOrCreate()
 
+    import spark.implicits._
+
     val date = args(0)
 
     val sql =
