@@ -74,9 +74,9 @@ object OcpcK {
 
     val realCvr3 = getIdeaidCvr3Ratio(date, hour, spark)
 
-    val tablename = "dl_cpc.cpc_ocpc_v2_middle"
+    val tablename = "test.cpc_ocpc_v2_middle"
     val rawData = spark.sql(statSql)
-//    rawData.write.mode("overwrite").saveAsTable("test.cpc_ocpc_v2_middle1")
+
 
     val data = rawData
       .join(realCvr3, Seq("ideaid"), "left_outer")
@@ -88,15 +88,17 @@ object OcpcK {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    data.write.mode("overwrite").insertInto(tablename)
+
+    rawData.write.mode("overwrite").saveAsTable(tablename)
+//    data.write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio2", "k_ratio3", "date", "hour")
-//    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
+    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k")
+//    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
 
   }
 
@@ -110,7 +112,8 @@ object OcpcK {
       .agg(collect_set("str").as("liststr"))
       .select("ideaid", "liststr").collect()
 
-    val targetK = 0.95
+    val cpaMap = getCPAratio(date, hour, spark)
+    var targetK = 0.95
     var resList = new mutable.ListBuffer[(String, Double, String, String)]()
     for (row <- res) {
       val ideaid = row(0).toString
@@ -119,6 +122,15 @@ object OcpcK {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
+      // TODO
+      // 1. 斜率过小
+      // 2. 前24小时的cpa比值过低
+      // 适当提高targetK
+      // coff1>0.1
+      val cpaRatio = cpaMap.getOrElse(ideaid, 0)
+      if (coffList(1)<0.1 && cpaRatio>1.05 && cpaMap.contains(ideaid) && ratioType=="ratio3") {
+        targetK = 0.98
+      }
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
       println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk)
@@ -215,10 +227,74 @@ object OcpcK {
       .withColumn("cvr_ratio", when(col("cvr_ratio")<1, 1.0).otherwise(col("cvr_ratio")))
       .withColumn("cvr_ratio", when(col("cvr_ratio")>10, 10.0).otherwise(col("cvr_ratio")))
 
-    // TODO 删除临时表
-    resultDF.write.mode("overwrite").saveAsTable("test.test_ocpc_check_cvr3_ratio")
 
     resultDF
+
+  }
+
+  def getCPAratio(date: String, hour: String, spark: SparkSession) = {
+    import spark.implicits._
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -24)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition1 = getTimeRangeSql2(date1, hour1, date, hour)
+    val selectCondition2 = getTimeRangeSql3(date1, hour1, date, hour)
+
+    val rawData1 = spark
+      .table("dl_cpc.ocpc_unionlog")
+      .where(selectCondition2).filter("isclick=1 and ocpc_log_dict['kvalue'] is not null")
+
+    val costData = rawData1
+      .groupBy("ideaid")
+      .agg(
+        sum(col("price")).alias("cost"),
+        avg(col("cpa_given")).alias("cpa_given"))
+
+    val rawData2 = spark
+      .table("dl_cpc.cpc_api_union_log")
+      .where(selectCondition1)
+      .filter("iscvr=1")
+      .select("ideaid", "iscvr", "searchid")
+      .distinct()
+
+    val cvrData = rawData2
+      .groupBy("ideaid")
+      .agg(sum(col("iscvr")).alias("cvr_cnt"))
+
+    // 读取实验ideaid列表
+    val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
+    val data = spark.sparkContext.textFile(filename)
+    val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+    rawRDD.foreach(println)
+    val expIdeas = rawRDD.toDF("ideaid", "flag").distinct()
+
+    val resultDF = expIdeas
+      .join(costData, Seq("ideaid"), "left_outer")
+      .join(cvrData, Seq("ideaid"), "left_outer")
+      .select("ideaid", "cpa_given", "cost", "cvr_cnt")
+      .withColumn("cpa_real", col("cost") * 1.0 / col("cvr_cnt"))
+      .withColumn("cpa_ratio", col("cpa_given") * 1.0 / col("cpa_real"))
+
+
+    println("cpa ratio in past 24 hours")
+    resultDF.show(10)
+
+    var cpaMap = mutable.LinkedHashMap[String, Double]()
+    for(row <- resultDF.collect()) {
+      val ideaid = row.getAs[String]("ideaid")
+      val cpaRatio = row.getAs[Double]("cpa_ratio")
+      cpaMap += (ideaid -> cpaRatio)
+    }
+    cpaMap
 
   }
 
