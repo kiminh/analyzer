@@ -32,8 +32,10 @@ object AdInterestWords {
          |                  and load_date<='${getDay(date, 1)}',b.tokens,null)) as words3
          |from dl_cpc.cpc_user_behaviors a
          |join dl_cpc.ideaid_title b
-         |  on a.ideaid = b.ideaid
+         |  on a.click_ideaid = b.ideaid
+         |  and b.tokens is not null
          |where a.load_date >= '${getDay(date, 3)}'
+         |  and a.click_ideaid is not null
          |group by a.uid
       """.stripMargin
 
