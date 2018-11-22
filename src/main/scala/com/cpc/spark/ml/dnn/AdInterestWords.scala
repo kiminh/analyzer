@@ -45,8 +45,8 @@ object AdInterestWords {
       .rdd
       .map { r =>
         val uid = r.getAs[String]("uid")
-        val words1 = r.getAs[Seq[String]]("words1").mkString(" ").split(" ").distinct
-        val words3 = r.getAs[Seq[String]]("words3").mkString(" ").split(" ").distinct
+        val words1 = r.getAs[Seq[String]]("words1").mkString(" ").split(" ").distinct.filter(_.length > 0)
+        val words3 = r.getAs[Seq[String]]("words3").mkString(" ").split(" ").distinct.filter(_.length > 0)
         (uid, words1, words3)
       }.toDF("uid", "interest_ad_words_1", "interest_ad_words_3")
       .persist()
