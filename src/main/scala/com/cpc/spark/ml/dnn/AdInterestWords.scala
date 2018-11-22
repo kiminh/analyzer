@@ -33,6 +33,7 @@ object AdInterestWords {
          |from dl_cpc.cpc_user_behaviors a
          |join dl_cpc.ideaid_title b
          |  on a.ideaid = b.ideaid
+         |where a.load_date >= '${getDay(date, 3)}'
          |group by a.uid
       """.stripMargin
 
