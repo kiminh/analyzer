@@ -271,7 +271,7 @@ object OcpcK {
 
     val cvrData = rawData2
       .groupBy("ideaid")
-      .agg(sum(col("iscvr")).alias("cvr_cnt"))
+      .agg(sum(col("label")).alias("cvr_cnt"))
 
     // 读取实验ideaid列表
     val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
