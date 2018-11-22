@@ -61,7 +61,7 @@ object Behavior2RedisNovelV2 {
     data1.show(5)
 
       val data2 = spark.sql(s"""
-                             |select * from dl_cpc.miReadTrait where day = date_add('$date', -1)
+                             |select * from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
       """.stripMargin)
 
     data2.show(5)
