@@ -115,6 +115,7 @@ class DNNSampleV5(spark: SparkSession, trdate: String = "", trpath: String = "",
     """
       |select id as ideaid,
       |       hashSeq(split(tokens,' ')) as m16
+      |from dl_cpc.ideaid_title
     """.stripMargin
 
   override def getTrainSample(spark: SparkSession, date: String): DataFrame = {
