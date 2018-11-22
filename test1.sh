@@ -1,3 +1,4 @@
+sh test.sh 2018-11-21 00
 sh test.sh 2018-11-21 01
 sh test.sh 2018-11-21 02
 sh test.sh 2018-11-21 03
