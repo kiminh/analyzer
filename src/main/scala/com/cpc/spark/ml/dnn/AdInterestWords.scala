@@ -28,7 +28,8 @@ object AdInterestWords {
       s"""
          |select a.uid,
          |     collect_set(if(load_date='${getDay(date, 1)}',b.tokens,null)) as words1,
-         |     collect_set(if(load_date='${getDay(date, 3)}',b.tokens,null)) as words3,
+         |     collect_set(if(load_date>='${getDay(date, 3)}'
+         |                  and load_date<='${getDay(date, 1)}',b.tokens,null)) as words3,
          |from dl_cpc.cpc_user_behaviors a
          |join dl_cpc.ideaid_title b
          |  on a.ideaid = b.ideaid
