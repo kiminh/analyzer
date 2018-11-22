@@ -54,7 +54,7 @@ object AdInterestWords {
     println("total num is : " + data.count)
 
     data.write.mode("overwrite")
-      .parquet("/warehosue/dl_cpc.db/cpc_user_interest_words/")
+      .parquet("/warehouse/dl_cpc.db/cpc_user_interest_words/")
 
     spark.sql("refresh table dl_cpc.cpc_user_interest_words")
   }
