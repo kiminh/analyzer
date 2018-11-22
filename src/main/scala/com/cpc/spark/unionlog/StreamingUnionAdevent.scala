@@ -171,12 +171,12 @@ object StreamingUnionAdevent {
                 .repartition(clickOutFiles)
                 .write
                 .mode(SaveMode.Append)
-                .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(outTable, key._1, key._2, key._3))
+                .parquet("/warehouse/test.db/%s/%s/%s/%s".format(outTable, key._1, key._2, key._3))
 
               val sqlStmt =
                 """
-                  |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
-                  |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
+                  |ALTER TABLE test.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
+                  |       '/warehouse/test.db/%s/%s/%s/%s'
                   |
                     """.stripMargin.format(outTable, key._1, key._2, key._3, outTable, key._1, key._2, key._3)
               println(sqlStmt)
