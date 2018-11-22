@@ -127,7 +127,7 @@ object OcpcK {
       // 2. 前24小时的cpa比值过低
       // 适当提高targetK
       // coff1>0.1
-      val cpaRatio = cpaMap.getOrElse(ideaid, 0)
+      val cpaRatio = cpaMap.getOrElse[Double](ideaid, 0.0)
       if (coffList(1)<0.1 && cpaRatio>1.05 && cpaMap.contains(ideaid) && ratioType=="ratio3") {
         targetK = 0.98
       }
