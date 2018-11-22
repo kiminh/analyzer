@@ -5,6 +5,7 @@ SPARK_HOME=/usr/lib/spark-current
 queue=root.develop.adhoc.cpc
 date=`date +"%Y-%m-%d" -d "-1day"`
 day=$1
+hour=$2
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -23,5 +24,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.ml.novel.Behavior2RedisNovelV3 \
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2018-11-20
+    --class com.cpc.spark.ml.novel.NovelDNNSampleHourlyV3 \
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $date $hour
