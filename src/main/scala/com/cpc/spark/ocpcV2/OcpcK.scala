@@ -290,7 +290,7 @@ object OcpcK {
 
     var cpaMap = mutable.LinkedHashMap[String, Double]()
     for(row <- resultDF.collect()) {
-      val ideaid = row.getAs[String]("ideaid")
+      val ideaid = row.getAs[Int]("ideaid").toString
       val cpaRatio = row.getAs[Double]("cpa_ratio")
       cpaMap += (ideaid -> cpaRatio)
     }
