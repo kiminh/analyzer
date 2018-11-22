@@ -36,6 +36,7 @@ object AdInterestWords {
     println(sql)
 
     val data = spark.sql(sql)
+      .rdd
       .map { r =>
         val uid = r.getAs[String]("uid")
         val words1 = r.getAs[Seq[String]]("words1").mkString(" ").split(" ").distinct
