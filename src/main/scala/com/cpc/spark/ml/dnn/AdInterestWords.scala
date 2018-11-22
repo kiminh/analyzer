@@ -53,7 +53,7 @@ object AdInterestWords {
 
     println("total num is : " + data.count)
 
-    data.write.mode("overwrite")
+    data.coalesce(5).write.mode("overwrite")
       .parquet(s"/warehouse/dl_cpc.db/cpc_user_interest_words/load_date=$date")
 
     spark.sql(s"alter table dl_cpc.cpc_user_interest_words add partition(load_date='$date')" +
