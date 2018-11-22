@@ -18,7 +18,7 @@ import org.apache.spark.sql.functions.udf
   * @version 1.0
   *
   */
-object Behavior2RedisNovelV2 {
+object Behavior2RedisNovelV3 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
@@ -64,56 +64,54 @@ object Behavior2RedisNovelV2 {
          |group by uid
       """.stripMargin)
       .join(data2,"uid")
+      .select(
+        $"uid",
+        hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
+        hashSeq("m3", "int")($"s_ideaid_2").alias("m3"),
+        hashSeq("m4", "int")($"s_ideaid_3").alias("m4"),
+        hashSeq("m5", "int")($"s_adclass_1").alias("m5"),
+        hashSeq("m6", "int")($"s_adclass_2").alias("m6"),
+        hashSeq("m7", "int")($"s_adclass_3").alias("m7"),
+        hashSeq("m8", "int")($"c_ideaid_1").alias("m8"),
+        hashSeq("m9", "int")($"c_ideaid_2").alias("m9"),
+        hashSeq("m10", "int")($"c_ideaid_3").alias("m10"),
+        hashSeq("m11", "int")($"c_adclass_1").alias("m11"),
+        hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
+        hashSeq("m13", "int")($"c_adclass_3").alias("m13"),
+        hashSeq("m14", "int")($"c_adclass_4_7").alias("m14"),
+        hashSeq("m15", "int")($"c_adclass_4_7").alias("m15"),
+        hashSeq("m16", "int")($"book_id").alias("m16"),
+        hashSeq("m17", "int")($"first_category_id").alias("m17"),
+        hashSeq("m18", "int")($"second_category_id").alias("m18"),
+        hashSeq("m19", "int")($"third_category_id").alias("m19")
+      )
+      .persist()
 
-    data.show(5)
-//      .select(
-//        $"uid",
-//        hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
-//        hashSeq("m3", "int")($"s_ideaid_2").alias("m3"),
-//        hashSeq("m4", "int")($"s_ideaid_3").alias("m4"),
-//        hashSeq("m5", "int")($"s_adclass_1").alias("m5"),
-//        hashSeq("m6", "int")($"s_adclass_2").alias("m6"),
-//        hashSeq("m7", "int")($"s_adclass_3").alias("m7"),
-//        hashSeq("m8", "int")($"c_ideaid_1").alias("m8"),
-//        hashSeq("m9", "int")($"c_ideaid_2").alias("m9"),
-//        hashSeq("m10", "int")($"c_ideaid_3").alias("m10"),
-//        hashSeq("m11", "int")($"c_adclass_1").alias("m11"),
-//        hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
-//        hashSeq("m13", "int")($"c_adclass_3").alias("m13"),
-//        hashSeq("m14", "int")($"c_adclass_4_7").alias("m14"),
-//        hashSeq("m15", "int")($"c_adclass_4_7").alias("m15"),
-//        hashSeq("m17", "int")($"c_adclass_2").alias("m12"),
-//        hashSeq("m18", "int")($"c_adclass_3").alias("m13"),
-//        hashSeq("m19", "int")($"c_adclass_4_7").alias("m14"),
-//        hashSeq("m20", "int")($"c_adclass_4_7").alias("m15")
-//      )
-//      .persist()
-//
-//    println("dnn novel 用户行为特征总数：" + data.count())
-//
-//    data.coalesce(20).write.mode("overwrite")
-//      .parquet("/user/cpc/wy/novel_behavior_v2")
-//
-//
-//    val conf = ConfigFactory.load()
-//    data.coalesce(20).foreachPartition { p =>
-//      val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
-//      redis.auth(conf.getString("ali_redis.auth"))
-//
-//      p.foreach { rec =>
-//        var group = Seq[Int]()
-//        var hashcode = Seq[Long]()
-//        val uid = "n1_" + rec.getString(0)
-//        for (i <- 1 to 19) {
-//          val f = rec.getAs[Seq[Long]](i)
-//          group = group ++ Array.tabulate(f.length)(x => i)
-//          hashcode = hashcode ++ f
-//        }
-//        redis.setex(uid, 3600 * 24 * 7, DnnMultiHot(group, hashcode).toByteArray)
-//      }
-//
-//      redis.disconnect
-//    }
+    println("dnn novel 用户行为特征总数：" + data.count())
+
+    data.coalesce(20).write.mode("overwrite")
+      .parquet("/user/cpc/wy/novel_behavior_v3")
+
+
+    val conf = ConfigFactory.load()
+    data.coalesce(20).foreachPartition { p =>
+      val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
+      redis.auth(conf.getString("ali_redis.auth"))
+
+      p.foreach { rec =>
+        var group = Seq[Int]()
+        var hashcode = Seq[Long]()
+        val uid = "n3_" + rec.getString(0)
+        for (i <- 1 to 18) {
+          val f = rec.getAs[Seq[Long]](i)
+          group = group ++ Array.tabulate(f.length)(x => i)
+          hashcode = hashcode ++ f
+        }
+        redis.setex(uid, 3600 * 24 * 7, DnnMultiHot(group, hashcode).toByteArray)
+      }
+
+      redis.disconnect
+    }
   }
 
   /**
