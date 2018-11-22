@@ -15,23 +15,28 @@ import org.apache.spark.sql.functions._
   * @version 1.0
   *
   */
-object DNNSampleV4 {
+object DNNSampleV5 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
       .getOrCreate()
 
+    spark.udf.register("hashSeq", hashSeq4Hive _)
     spark.udf.register("hash", Murmur3Hash.stringHash64 _)
     val Array(trdate, trpath, tedate, tepath) = args
 
-    val sample = new DNNSampleV4(spark, trdate, trpath, tedate, tepath)
-    //    sample.saveTrain()    //保存训练数据
-    sample.saveTest(gauc = false) //保存普通auc测试数据
-    sample.saveTest(gauc = true) //保存gauc测试数据
+    val sample = new DNNSampleV5(spark, trdate, trpath, tedate, tepath)
+    sample.saveTrain() //保存训练数据
+    //sample.saveTest(gauc = false) //保存普通auc测试数据
+    //sample.saveTest(gauc = true) //保存gauc测试数据
+  }
+
+  def hashSeq4Hive(values: Seq[String]): Seq[Long] = {
+    for (v <- values) yield Murmur3Hash.stringHash64(v, 0)
   }
 }
 
-class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
+class DNNSampleV5(spark: SparkSession, trdate: String = "", trpath: String = "",
                   tedate: String = "", tepath: String = "")
   extends DNNSample(spark, trdate, trpath, tedate, tepath) {
 
@@ -95,23 +100,43 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
        |group by uid
       """.stripMargin
 
+  //用户最近点击过的广告title关键词
+  private def ad_word_sql(date: String) =
+    s"""
+       |select uid,
+       |       hashSeq(interest_ad_words_1) as m17,
+       |       hashSeq(interest_ad_words_3) as m18
+       |from dl_cpc.cpc_user_interest_words
+       |where load_date='$date'
+    """.stripMargin
+
+  //广告title对应的分词
+  private def titleSql =
+    """
+      |select id as ideaid,
+      |       hashSeq(split(tokens,' ')) as m16
+    """.stripMargin
+
   override def getTrainSample(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
     val trainSql = sql(date, 1)
     val behaviorSql = behavior_sql(date)
+    val adWordSql = ad_word_sql(date)
 
     println("=================PREPARING TRAIN DATA==============")
     println(trainSql)
     println("====================================================")
     println(behaviorSql)
     println("====================================================")
+    println(adWordSql)
+    println("====================================================")
+    println(titleSql)
+    println("====================================================")
 
-    val rawBehavior = spark.sql(behaviorSql)
-
-    val userAppIdx = getUidApp(spark, date)
+    val app_data = getUidApp(spark, date)
       .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))
 
-    val behavior_data = rawBehavior
+    val behavior_data = spark.sql(behaviorSql)
       .select(
         $"uid",
         hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
@@ -130,10 +155,16 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
         hashSeq("m15", "int")($"c_adclass_4_7").alias("m15")
       )
 
+    val adWord_data = spark.sql(adWordSql)
+
+    val title_data = spark.sql(titleSql)
+
     transform2TF(spark,
       spark.sql(trainSql)
         .join(behavior_data, Seq("uid"), "left")
-        .join(userAppIdx, Seq("uid"), "left"))
+        .join(app_data, Seq("uid"), "left")
+        .join(title_data, Seq("ideaid"), "left")
+        .join(adWord_data, Seq("uid"), "left"))
   }
 
   override def getTestSample(spark: SparkSession, date: String, percent: Double = 0.03): DataFrame = {
@@ -181,54 +212,6 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
     )
   }
 
-  override def getTestSample4Gauc(spark: SparkSession, date: String, percent: Double = 0.05): DataFrame = {
-    val testSql = sql(date, 1)
-    val behaviorSql = behavior_sql(date)
-
-    println("=================PREPARING TRAIN DATA==============")
-    println(testSql)
-    println("====================================================")
-    println(behaviorSql)
-    println("====================================================")
-
-    import spark.implicits._
-    val rawTest = spark.sql(testSql)
-    val uid = rawTest.groupBy("uid").agg(expr("sum(label[0]) as count"))
-      .filter("count>0")
-      .sample(withReplacement = false, percent)
-
-    val userAppIdx = getUidApp(spark, date)
-      .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))
-
-    val rawBehavior = spark.sql(behaviorSql)
-    val behavior_data = rawBehavior
-      .select(
-        $"uid",
-        hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
-        hashSeq("m3", "int")($"s_ideaid_2").alias("m3"),
-        hashSeq("m4", "int")($"s_ideaid_3").alias("m4"),
-        hashSeq("m5", "int")($"s_adclass_1").alias("m5"),
-        hashSeq("m6", "int")($"s_adclass_2").alias("m6"),
-        hashSeq("m7", "int")($"s_adclass_3").alias("m7"),
-        hashSeq("m8", "int")($"c_ideaid_1").alias("m8"),
-        hashSeq("m9", "int")($"c_ideaid_2").alias("m9"),
-        hashSeq("m10", "int")($"c_ideaid_3").alias("m10"),
-        hashSeq("m11", "int")($"c_adclass_1").alias("m11"),
-        hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
-        hashSeq("m13", "int")($"c_adclass_3").alias("m13"),
-
-        hashSeq("m14", "int")($"c_adclass_4_7").alias("m14"),
-        hashSeq("m15", "int")($"c_adclass_4_7").alias("m15")
-      )
-
-    transform2TF(
-      spark,
-      rawTest.join(uid, Seq("uid"), "inner")
-        .join(behavior_data, Seq("uid"), "left")
-        .join(userAppIdx, Seq("uid"), "left")
-    )
-  }
-
   def transform2TF(spark: SparkSession, data: DataFrame): DataFrame = {
     import spark.implicits._
 
@@ -265,7 +248,7 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
       hash("f28")($"hour").alias("f28"),
 
       array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
-        $"m11", $"m12", $"m13", $"m14", $"m15").alias("raw_sparse")
+        $"m11", $"m12", $"m13", $"m14", $"m15", $"m16", $"m17", $"m18").alias("raw_sparse")
     )
       .select(
         array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",

@@ -54,9 +54,10 @@ object AdInterestWords {
     println("total num is : " + data.count)
 
     data.write.mode("overwrite")
-      .parquet("/warehouse/dl_cpc.db/cpc_user_interest_words/")
+      .parquet(s"/warehouse/dl_cpc.db/cpc_user_interest_words/load_date=$date")
 
-    spark.sql("refresh table dl_cpc.cpc_user_interest_words")
+    spark.sql(s"alter table dl_cpc.cpc_user_interest_words add partition(laod_date=$date" +
+      s"location '/warehouse/dl_cpc.db/cpc_user_interest_words/load_date=$date'")
   }
 
   def getDay(startdate: String, day: Int): String = {
