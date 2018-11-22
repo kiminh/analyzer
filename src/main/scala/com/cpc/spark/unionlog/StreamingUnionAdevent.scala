@@ -127,6 +127,10 @@ object StreamingUnionAdevent {
       case (k, v) =>
         try {
           val event = adevent.AdActionEvent.parseFrom(v)
+          val log_timestamp = event.timestamp
+          val date = new SimpleDateFormat("yyyy-MM-dd").format(log_timestamp)
+          val hour = new SimpleDateFormat("HH").format(log_timestamp)
+          val minute = new SimpleDateFormat("mm").format(log_timestamp).charAt(0) + "0"
 
           val alog = AdeventUnionLog(
             timestamp = event.timestamp,
@@ -135,7 +139,10 @@ object StreamingUnionAdevent {
             isclick = event.isClick,
             isfill = event.isFill,
             isshow = event.isShow,
-            userID = event.getAd.userid
+            userID = event.getAd.userid,
+            thedate = date,
+            thehour = hour,
+            theminute = minute
           )
 
           alog
