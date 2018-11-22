@@ -27,7 +27,13 @@ object Behavior2RedisNovelV2 {
     import spark.implicits._
     val date = args(0) //today
 
-    val data1 = spark.sql(
+    val data2 = spark.sql(
+      s"""
+         |select * from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
+      """.stripMargin)
+      .select("uid","book_id","first_category_id","second_category_id","third_category_id")
+
+    val data = spark.sql(
       s"""
          |select uid,
          |       collect_set(if(load_date='${getDay(date, 1)}',show_ideaid,null)) as s_ideaid_1,
@@ -57,18 +63,7 @@ object Behavior2RedisNovelV2 {
          |    and rn <= 1000
          |group by uid
       """.stripMargin)
-
-    data1.show(5)
-
-      val data2 = spark.sql(
-        s"""
-             |select * from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
-      """.stripMargin)
-          .select("uid","book_id","first_category_id","second_category_id","third_category_id")
-
-    data2.show(5)
-
-      val data = data1.join(data2,"uid")
+      .join(data2,"uid")
 
     data.show(5)
 //      .select(
