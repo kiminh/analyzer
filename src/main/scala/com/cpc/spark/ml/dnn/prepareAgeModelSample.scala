@@ -119,7 +119,7 @@ object prepareAgeModelSample {
         } else {(x._1._2, Seq("requestTimeNum" + x._1._1 + 7))}
     }.reduceByKey(_ ++ _).toDF("uid", "request")
 
-    val sample = zfb.join(profileData, Seq("uid")).join(uidRequest, Seq("uid"), "leftouter")
+    val sample = zfb.join(profileData, Seq("uid")).join(uidRequest, Seq("uid"), "leftouter").repartition(800)
 
     sample.select($"uid", $"label", hashSeq("m1", "string")($"pkgs").alias("m1"),
       hashSeq("m2", "string")($"request").alias("m2"),
