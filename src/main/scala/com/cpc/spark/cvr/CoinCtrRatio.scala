@@ -1,7 +1,9 @@
 package com.cpc.spark.cvr
 
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
+
 import ratio.ratio._
 import org.apache.spark.sql.SparkSession
 
@@ -94,5 +96,10 @@ object CoinCtrRatio {
             println(r.ideaid + " " + r.ratio + " " + r.date)
         }
 
+        val ratioData = IdeaidCtrRatio(ideaidRatio = ratioList2)
+
+        ratioData.writeTo(new FileOutputStream("IdeaidCtrRatio.pb"))
+
+        println("write to IdeaidCtrRatio.pb success!")
     }
 }
