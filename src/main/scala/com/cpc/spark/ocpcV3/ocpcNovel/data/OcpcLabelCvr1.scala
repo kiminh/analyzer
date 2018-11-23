@@ -56,6 +56,8 @@ object OcpcLabelCvr1 {
          |FROM
          |  dl_cpc.ml_cvr_feature_v1
          |WHERE
+         |  where $selectWhere
+         |AND
          |  label2=1
        """.stripMargin
     println(sqlRequest2)
