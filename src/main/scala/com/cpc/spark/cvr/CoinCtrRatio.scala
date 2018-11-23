@@ -43,7 +43,7 @@ object CoinCtrRatio {
                |    select
                |        ideaid,
                |        sum(isclick) / count(*) as acutal_ctr,
-               |        sum(ext["exp_ctr"].int_value) / count(*) as exp_ctr
+               |        (sum(ext["exp_ctr"].int_value)/1000000) / count(*) as exp_ctr
                |        from
                |            dl_cpc.cpc_union_log
                |        where
