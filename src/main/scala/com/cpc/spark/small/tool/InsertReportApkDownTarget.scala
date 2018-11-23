@@ -205,7 +205,7 @@ object InsertReportApkDownTarget {
       }
       .repartition(50)
 
-    //println("lploadTraceData count", lploadTraceData.count())
+    println("lploadTraceData count", lploadTraceData.count())
 
 
     val lploadAllData = lploadUnionData
@@ -215,8 +215,8 @@ object InsertReportApkDownTarget {
           val searchid = if (a.planid != -1) a.searchid else b.searchid
           val planid = if (a.planid != -1) a.planid else b.planid
           val unitid = if (a.planid != -1) a.unitid else b.unitid
-          val isshow = if (a.planid != -1) a.isshow else b.isshow
-          val isclick = if (a.planid != -1) a.isclick else b.isclick
+          val isshow = a.isshow + b.isshow
+          val isclick = a.isclick + b.isclick
           val sex = if (a.planid != -1) a.sex else b.sex
           val age = if (a.planid != -1) a.age else b.age
           val os = if (a.planid != -1) a.os else b.os
@@ -253,7 +253,7 @@ object InsertReportApkDownTarget {
       .filter { x => x.unitid > 0 && x.planid > 0 }
       .repartition(50)
       .cache()
-    //println("lploadAllData count", lploadAllData.count())
+    println("lploadAllData count", lploadAllData.count())
 
 
     val motivationUnionData = ctx
@@ -261,7 +261,7 @@ object InsertReportApkDownTarget {
         """
           |SELECT searchid,m.planid,m.unitid,m.isshow,m.isclick,sex,age,os,province,ext['phone_level'].int_value,hour,
           |network,coin,ext['qukan_new_user'].int_value,adslot_type,media_appsid,adslotid,brand,ext_int["browser_type"],
-          |interests,userid,m.ideaid
+          |interests,m.userid,m.ideaid
           |FROM dl_cpc.cpc_union_log cul
           |lateral view explode(motivation) b as m
           |WHERE `date`="%s" AND (m.isshow+m.isclick)>0 AND ext["client_type"].string_value="NATIVESDK" AND cul.adsrc=1
@@ -319,7 +319,7 @@ object InsertReportApkDownTarget {
         |select DISTINCT searchid,trace_type,trace_op1,opt["ideaid"]
         |from dl_cpc.logparsed_cpc_trace_minute
         |where trace_type="sdk_incite" and `thedate`="%s"
-        |and trace_op1 in("DOWNLOAD_START","DOWNLOAD_FINISH","INSTALL_FINISH") AND opt["ideaid"]>0
+        |and trace_op1 in("DOWNLOAD_START","DOWNLOAD_FINISH","INSTALL_FINISH","INSTALL_HIJACK") AND opt["ideaid"]>0
       """.stripMargin.format(argDay))
       .rdd
       .map {
@@ -332,13 +332,13 @@ object InsertReportApkDownTarget {
           var finish: Int = 0
           var pkgadded: Int = 0
           var instHijack: Int = 0
-          if (trace_op1 == "REPORT_DOWNLOAD_START") {
+          if (trace_op1 == "DOWNLOAD_START") {
             start = 1
-          } else if (trace_op1 == "REPORT_DOWNLOAD_FINISH") {
+          } else if (trace_op1 == "DOWNLOAD_FINISH") {
             finish = 1
-          } else if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
+          } else if (trace_op1 == "INSTALL_FINISH") {
             pkgadded = 1
-          } else if (trace_op1 == "REPORT_DOWNLOAD_INST_HIJACK") {
+          } else if (trace_op1 == "INSTALL_HIJACK") {
             instHijack = 1
           }
           ((searchid, ideaid), (Info(searchid, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, start, finish, pkgadded, trace_type, 0, instHijack)))
@@ -355,8 +355,8 @@ object InsertReportApkDownTarget {
           val searchid = if (a.planid != -1) a.searchid else b.searchid
           val planid = if (a.planid != -1) a.planid else b.planid
           val unitid = if (a.planid != -1) a.unitid else b.unitid
-          val isshow = if (a.planid != -1) a.isshow else b.isshow
-          val isclick = if (a.planid != -1) a.isclick else b.isclick
+          val isshow = a.isshow + b.isshow
+          val isclick = a.isclick + b.isclick
           val sex = if (a.planid != -1) a.sex else b.sex
           val age = if (a.planid != -1) a.age else b.age
           val os = if (a.planid != -1) a.os else b.os
@@ -393,8 +393,8 @@ object InsertReportApkDownTarget {
       .repartition(50)
       .cache()
 
-    //    println("motivationAllData count", motivationAllData.count())
-    //    motivationAllData.take(10).foreach(println)
+    //println("motivationAllData count", motivationAllData.count())
+    //motivationAllData.take(10).foreach(println)
 
     var siteData = ctx.read.jdbc(mariaAdvdbUrl,
       """
@@ -512,8 +512,8 @@ object InsertReportApkDownTarget {
           val searchid = if (a.planid != -1) a.searchid else b.searchid
           val planid = if (a.planid != -1) a.planid else b.planid
           val unitid = if (a.planid != -1) a.unitid else b.unitid
-          val isshow = if (a.planid != -1) a.isshow else b.isshow
-          val isclick = if (a.planid != -1) a.isclick else b.isclick
+          val isshow = a.isshow + b.isshow
+          val isclick = a.isclick + b.isclick
           val sex = if (a.planid != -1) a.sex else b.sex
           val age = if (a.planid != -1) a.age else b.age
           val os = if (a.planid != -1) a.os else b.os
@@ -653,8 +653,8 @@ object InsertReportApkDownTarget {
           val searchid = if (a.planid != -1) a.searchid else b.searchid
           val planid = if (a.planid != -1) a.planid else b.planid
           val unitid = if (a.planid != -1) a.unitid else b.unitid
-          val isshow = if (a.planid != -1) a.isshow else b.isshow
-          val isclick = if (a.planid != -1) a.isclick else b.isclick
+          val isshow = a.isshow + b.isshow
+          val isclick = a.isclick + b.isclick
           val sex = if (a.planid != -1) a.sex else b.sex
           val age = if (a.planid != -1) a.age else b.age
           val os = if (a.planid != -1) a.os else b.os
@@ -693,7 +693,7 @@ object InsertReportApkDownTarget {
 
     clearReportApkDownTarget(argDay)
 
-    //    //-----
+    //-----
     var insertDataFramelpload = ctx.createDataFrame(getInsertAllData(lploadAllData, argDay, broadcastBrandMaps))
       .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date", "inst_hijack")
       .repartition(50)
@@ -734,7 +734,7 @@ object InsertReportApkDownTarget {
       .jdbc(mariaReportdbUrl, "report.report_apk_down_target", mariaReportdbProp)
     println("insertDataFrameallDatax over!")
 
-    //-----
+
     var insertDataFrameMotivation = ctx.createDataFrame(getInsertAllData(motivationAllData, argDay, broadcastBrandMaps))
       .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date", "inst_hijack")
       .repartition(50)
@@ -885,7 +885,6 @@ object InsertReportApkDownTarget {
     }
     val sexData = getTargetData(inputSexData, "sex", argDay)
     //println("sex count is", sexData.count())
-
     insertAllData = insertAllData.union(sexData)
 
     val inputAgeData = allData
