@@ -126,14 +126,14 @@ object prepareAgeModelSample {
       hashSeq("m3", "string")($"words").alias("m3"),
       hashSeq("m4", "string")($"terms").alias("m4"),
       hash("f1")($"brand").alias("f1"),
-      hash("f2")($"province").alias("f1"),
-      hash("f3")($"city").alias("f1"),
-      hash("f4")($"isp").alias("f1"),
-      hash("f5")($"os").alias("f1"),
-      hash("f6")($"screen_w").alias("f1"),
-      hash("f7")($"screen_h").alias("f1"),
-      hash("f8")($"sex").alias("f1"),
-      hash("f9")($"antispam_score").alias("f1")).
+      hash("f2")($"province").alias("f2"),
+      hash("f3")($"city").alias("f3"),
+      hash("f4")($"isp").alias("f4"),
+      hash("f5")($"os").alias("f5"),
+      hash("f6")($"screen_w").alias("f6"),
+      hash("f7")($"screen_h").alias("f7"),
+      hash("f8")($"sex").alias("f8"),
+      hash("f9")($"antispam_score").alias("f9")).
       select($"label",
         array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9").alias("dense"),
         array($"m1", $"m2", $"m3", $"m4").alias("raw_sparse")
