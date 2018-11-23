@@ -57,8 +57,7 @@ object CoinCtrRatio {
                |        from
                |            src_cpc.cpc_idea
                |        where
-               |            day = '$date'
-               |            and style_id = 510127
+               |            style_id = 510127
                |    ) b
                |where
                |    a.ideaid = b.ideaid
