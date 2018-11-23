@@ -218,7 +218,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
       var re = Seq[(Int, Int, Long)]()
       for (feature <- features) {
         re = re ++
-          (if (feature != null || feature.isEmpty) feature.zipWithIndex.map(x => (i, x._2, x._1)) else default_hash(i))
+          (if (feature != null || feature.nonEmpty) feature.zipWithIndex.map(x => (i, x._2, x._1)) else default_hash(i))
         i = i + 1
       }
       val c = re.map(x => (0, x._1, x._2, x._3))
