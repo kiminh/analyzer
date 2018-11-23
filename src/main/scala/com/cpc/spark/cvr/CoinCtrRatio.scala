@@ -36,7 +36,8 @@ object CoinCtrRatio {
         val sql =
             s"""
                |select
-               |    ideaid, if (exp_ctr > 0, acutal_ctr/exp_ctr , 0) as ratio,
+               |    a.ideaid as ideaid,
+               |    if (exp_ctr > 0, acutal_ctr/exp_ctr , 0) as ratio,
                |    $date as date
                |from (
                |    select
