@@ -42,7 +42,7 @@ object NovelDNNSampleHourlyV2 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/wy/dnn_novel_v2/dnntrain-$date-$hour")
+      .save(s"/user/cpc/wy/dnn_novel_v2/dnntrain-$date")
     train.take(10).foreach(println)
 
     train.sample(withReplacement = false, 0.1).repartition(100)
@@ -50,7 +50,7 @@ object NovelDNNSampleHourlyV2 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/wy/dnn_novel_v2/dnntest-$date-$hour")
+      .save(s"/user/cpc/wy/dnn_novel_v2/dnntest-$date")
 
     train.unpersist()
   }
@@ -85,7 +85,7 @@ object NovelDNNSampleHourlyV2 {
          |
          |  hour
          |
-         |from dl_cpc.cpc_union_log where `date` = '$date' and hour = $hour
+         |from dl_cpc.cpc_union_log where `date` = '$date'
          |  and isshow = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"

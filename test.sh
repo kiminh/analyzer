@@ -25,4 +25,4 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
     --class com.cpc.spark.ml.novel.NovelDNNSampleHourlyV2 \
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $day $hour
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2018-11-22
