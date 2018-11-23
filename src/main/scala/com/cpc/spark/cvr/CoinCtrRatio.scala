@@ -69,8 +69,9 @@ object CoinCtrRatio {
                 ratio = x.getAs[Double]("ratio"),
                 date = x.getAs[String]("date"))
         ).collect()
-
+        println("coinCtrRatio 's length is " + coinCtrRatio.length)
         val ratioD = coinCtrRatio.map(x => x.ratio).filter(x => x > 0).sorted
+        println("ratioD 's length is " + ratioD.length)
 
         val th1 = ratioD.length * 0.1
         val ratio1th = ratioD(th1.toInt)
