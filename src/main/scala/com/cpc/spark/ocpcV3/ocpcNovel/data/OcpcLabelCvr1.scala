@@ -64,6 +64,9 @@ object OcpcLabelCvr1 {
       .join(labelData, Seq("searchid"), "left_outer")
       .groupBy("ideaid", "adclass", "media_appsid")
       .agg(sum(col("label")).alias("cvr1_cnt"))
+      .select("ideaid", "adclass", "media_appsid", "cvr1_cnt")
+
+    println("###############complete########")
 
     resultDF.show(10)
     resultDF.printSchema()
