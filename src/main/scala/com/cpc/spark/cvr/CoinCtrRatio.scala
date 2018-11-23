@@ -48,7 +48,7 @@ object CoinCtrRatio {
                |            dl_cpc.cpc_union_log
                |        where
                |            ($datelist)
-               |            and media_appsid not in ('80000001','80000002')
+               |            and media_appsid in ('80000001','80000002')
                |        group by
                |            ideaid
                |    ) a,
@@ -63,7 +63,7 @@ object CoinCtrRatio {
                |where
                |    a.ideaid = b.ideaid
              """.stripMargin
-
+        println(sql)
         val coinCtrRatio = spark.sql(sql).rdd.map(x =>
             IdeaidRatio(ideaid = x.getAs[Int]("ideaid"),
                 ratio = x.getAs[Double]("ratio"),
