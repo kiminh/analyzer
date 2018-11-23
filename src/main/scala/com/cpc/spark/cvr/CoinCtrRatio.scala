@@ -38,7 +38,7 @@ object CoinCtrRatio {
                |select
                |    a.ideaid as ideaid,
                |    if (exp_ctr > 0, acutal_ctr/exp_ctr , 0) as ratio,
-               |    $date as date
+               |    '$date' as date
                |from (
                |    select
                |        ideaid,
