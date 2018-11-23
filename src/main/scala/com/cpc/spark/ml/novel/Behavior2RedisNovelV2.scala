@@ -18,7 +18,7 @@ import org.apache.spark.sql.functions.udf
   * @version 1.0
   *
   */
-object Behavior2RedisNovelV3 {
+object Behavior2RedisNovelV2 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
@@ -90,7 +90,7 @@ object Behavior2RedisNovelV3 {
     println("dnn novel 用户行为特征总数：" + data.count())
 
     data.coalesce(20).write.mode("overwrite")
-      .parquet("/user/cpc/wy/novel_behavior_v3")
+      .parquet("/user/cpc/wy/novel_behavior_v2")
 
 
     val conf = ConfigFactory.load()
