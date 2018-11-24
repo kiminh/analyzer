@@ -68,7 +68,6 @@ object OcpcLabelCvr2 {
       .agg(sum(col("label")).alias("cvr2_cnt"))
       .select("ideaid", "adclass", "media_appsid", "cvr2_cnt")
 
-    println("###############complete########")
 
     resultDF.show(10)
     resultDF.printSchema()
