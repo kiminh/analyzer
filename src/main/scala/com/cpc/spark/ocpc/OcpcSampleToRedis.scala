@@ -76,6 +76,7 @@ object OcpcSampleToRedis {
 
 
     userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
+    userData.createOrReplaceTempView("ocpc_data_userdata")
 
 
     // 按adclass求和
@@ -85,6 +86,7 @@ object OcpcSampleToRedis {
       .select("adclass", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
     adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
+    adclassData.createOrReplaceTempView("ocpc_data_adclassdata")
 
 
     // 关联adclass和ideaid
@@ -101,9 +103,9 @@ object OcpcSampleToRedis {
          |    b.adclass_ctr_cnt,
          |    b.adclass_cvr_cnt
          |FROM
-         |    test.ocpc_data_userdata a
+         |    ocpc_data_userdata a
          |INNER JOIN
-         |    test.ocpc_data_adclassdata b
+         |    ocpc_data_adclassdata b
          |ON
          |    a.adclass=b.adclass
        """.stripMargin)
@@ -141,7 +143,7 @@ object OcpcSampleToRedis {
 
 
     userFinalData4.write.mode("overwrite").saveAsTable("test.ocpc_new_cvr_table")
-
+    userFinalData4.createOrReplaceTempView("ocpc_new_cvr_table")
 
 
     // 根据中间表加入k值
@@ -176,7 +178,7 @@ object OcpcSampleToRedis {
          |    new_type_flag,
          |    cast(cvr3_cnt as bigint) as cvr3_cnt
          |   FROM
-         |    test.ocpc_new_cvr_table) a
+         |    ocpc_new_cvr_table) a
          |LEFT JOIN
          |   (SELECT ideaid, adclass, cast(k_value as double) as k_value FROM test.ocpc_k_value_table) as b
          |ON
@@ -192,7 +194,7 @@ object OcpcSampleToRedis {
     userFinalData2.show(10)
 
     userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
-
+    userFinalData2.createOrReplaceTempView("test_new_pb_ocpc")
 
 
 
@@ -205,7 +207,8 @@ object OcpcSampleToRedis {
 
 
 
-    calculateHPCVR(end_date, hour, spark)
+    val hpcvrTable = calculateHPCVR(end_date, hour, spark)
+    hpcvrTable.createOrReplaceTempView("ocpc_hpcvr_total")
 
     val sqlRequest4 =
       s"""
@@ -225,14 +228,14 @@ object OcpcSampleToRedis {
          |  (case when d.cali_value is null or d.cali_value=0 then 1.0 else d.cali_value end) as cvr3_cali,
          |  a.cvr3_cnt
          |FROM
-         |  test.test_new_pb_ocpc as a
+         |  test_new_pb_ocpc as a
          |INNER JOIN
-         |  test.ocpc_hpcvr_total as b
+         |  ocpc_hpcvr_total as b
          |ON
          |  a.ideaid=b.ideaid
          |AND
          |  a.adclass=b.adclass
-         |INNER JOIN
+         |LEFT JOIN
          |  test.ocpc_new_calibration_value as c
          |ON
          |  a.ideaid=c.ideaid
@@ -544,7 +547,7 @@ object OcpcSampleToRedis {
   }
 
 
-  def calculateHPCVR(endDate: String, hour: String, spark: SparkSession): Unit ={
+  def calculateHPCVR(endDate: String, hour: String, spark: SparkSession) ={
     // calculate time period for historical data
     val threshold = 20
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
@@ -573,6 +576,7 @@ object OcpcSampleToRedis {
     val rawTable = spark.sql(sqlRequest)
 
     rawTable.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr_total")
+    rawTable
 
   }
 
