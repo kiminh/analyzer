@@ -750,16 +750,17 @@ object OcpcSampleToRedis {
 
   def resetK(date: String, hour: String, regressionK: DataFrame, pidK: DataFrame, spark: SparkSession) = {
     var prevTable = getPrevK(date, hour, 1, spark)
-    var hourCnt=2
+    var hourCnt=1
     while (hourCnt < 11) {
       val cnt = prevTable.count()
-      println(s"check prevTable Count: $cnt, at an hour before hourCnt = $hourCnt")
+      println(s"check prevTable Count: $cnt, at hourCnt = $hourCnt")
       if (cnt>0) {
         hourCnt = 11
       } else {
         hourCnt += 1
         prevTable = getPrevK(date, hour, hourCnt, spark)
       }
+      prevTable.show(3)
 
     }
     prevTable.write.mode("overwrite").saveAsTable("test.ocpc_prev_k_table")
