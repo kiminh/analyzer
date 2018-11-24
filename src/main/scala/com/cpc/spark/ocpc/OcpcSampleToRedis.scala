@@ -757,6 +757,7 @@ object OcpcSampleToRedis {
       }
       prevTable = getPrevK(date, hour, hourCnt, spark)
     }
+    prevTable.write.mode("overwrite").saveAsTable("test.ocpc_prev_k_table")
 
     val finalData2 = pidK
       .join(regressionK, Seq("ideaid"), "left_outer")
@@ -788,7 +789,7 @@ object OcpcSampleToRedis {
       .table("dl_cpc.ocpc_pb_result_table_v5")
       .where(s"`date`='$date1' and `hour`='$hour1'")
       .withColumn("prev_k", col("k_value"))
-      .select("ideaid", "adclass", "prev_k")
+      .select("ideaid", "adclass", "prev_k", "date", "hour")
 
     prevTable
   }
