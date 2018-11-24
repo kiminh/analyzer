@@ -119,10 +119,7 @@ object OcpcK {
       val ideaid = row(0).toString
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
         val y = x.trim.split("\\s+")
-        // TODO 测试将按点击数累积的权重效果去除
-        val ctrCnt = y(2).toInt
-        val n = removeWeightByCTR(ideaid, ctrCnt, spark)
-        (y(0).toDouble, y(1).toDouble, n)
+        (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
       // TODO
@@ -304,12 +301,12 @@ object OcpcK {
 
   }
 
-  // TODO
   // 测试将按照ctr重新计算权重的函数去除
+  // 效果不佳
   def removeWeightByCTR(ideaid: String, n: Int, spark: SparkSession) = {
     var pointNum = n
-    // TODO 不能发布上线!!!!
-    if (ideaid == "2320960" || ideaid == "1950940" || ideaid == "2351105" || ideaid == "2351096") {
+    // TODO 测试去除权重
+    if (ideaid == "2320960" || ideaid == "1950940") {
       pointNum = 1
     } else {
       pointNum = n
