@@ -308,7 +308,8 @@ object OcpcK {
   // 测试将按照ctr重新计算权重的函数去除
   def removeWeightByCTR(ideaid: String, n: Int, spark: SparkSession) = {
     var pointNum = n
-    if (ideaid == "2320960" || ideaid == "1950940") {
+    // TODO 不能发布上线!!!!
+    if (ideaid == "2320960" || ideaid == "1950940" || ideaid == "2351105" || ideaid == "2351096") {
       pointNum = 1
     } else {
       pointNum = n
