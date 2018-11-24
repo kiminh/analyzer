@@ -74,7 +74,7 @@ object OcpcK {
 
     val realCvr3 = getIdeaidCvr3Ratio(date, hour, spark)
 
-    val tablename = "test.cpc_ocpc_v2_middle"
+    val tablename = "dl_cpc.cpc_ocpc_v2_middle"
     val rawData = spark.sql(statSql)
 
 
@@ -89,16 +89,16 @@ object OcpcK {
       .withColumn("hour", lit(hour))
 
 
-    data.write.mode("overwrite").saveAsTable(tablename)
-//    data.write.mode("overwrite").insertInto(tablename)
+//    data.write.mode("overwrite").saveAsTable(tablename)
+    data.write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio2", "k_ratio3", "date", "hour")
-    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k")
-//    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
+//    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k")
+    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
 
   }
 
@@ -121,6 +121,8 @@ object OcpcK {
         val y = x.trim.split("\\s+")
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
+      // TODO
+      // 增加原点数量来防止模型
       val coffList = fitPoints(pointList.toList)
       // TODO
       // 1. 斜率过小
