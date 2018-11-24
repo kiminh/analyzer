@@ -131,7 +131,7 @@ object OcpcSampleToRedis {
 
 
     val userFinalData = spark.sql(sqlRequest2)
-    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
+//    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
     val userFinalData3 = filterDataByType(userFinalData, end_date, hour, spark)
 
@@ -196,12 +196,12 @@ object OcpcSampleToRedis {
 
 
 
-    userFinalData2
-      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
-      .withColumn("date", lit(end_date))
-      .withColumn("hour", lit(hour))
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
+//    userFinalData2
+//      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
+//      .withColumn("date", lit(end_date))
+//      .withColumn("hour", lit(hour))
+//      .write.mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
 
 
 
@@ -261,7 +261,7 @@ object OcpcSampleToRedis {
     val finalData2 = resetK(end_date, hour, regressionK, finalData1, spark)
 
 
-    // TODO 测试
+    // 对于刚进入ocpc阶段但是有cpc历史数据的广告依据历史转化率给出k的初值
     val selectCondition2 = getTimeRangeSql3(start_date, hour, end_date, hour)
     val ocpcHistoryData = spark
       .table("dl_cpc.ocpc_unionlog")
@@ -318,14 +318,14 @@ object OcpcSampleToRedis {
 
     val finalData = finalData3.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
 
-    finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
-
-
-    finalData
-      .withColumn("date", lit(end_date))
-      .withColumn("hour", lit(hour))
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
+//    finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
+//
+//
+//    finalData
+//      .withColumn("date", lit(end_date))
+//      .withColumn("hour", lit(hour))
+//      .write.mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
 
     // 保存pb文件
     savePbPack(finalData)
@@ -745,13 +745,38 @@ object OcpcSampleToRedis {
   }
 
   def resetK(date: String, hour: String, regressionK: DataFrame, pidK: DataFrame, spark: SparkSession) = {
+    var prevTable = getPrevK(date, hour, 1, spark)
+    var hourCnt=2
+    while (hourCnt < 11) {
+      val cnt = prevTable.count()
+      println(s"check prevTable Count: $cnt, at an hour before hourCnt = $hourCnt")
+      if (cnt>0) {
+        hourCnt = 11
+      } else {
+        hourCnt += 1
+      }
+      prevTable = getPrevK(date, hour, hourCnt, spark)
+    }
+
+    val finalData2 = pidK
+      .join(regressionK, Seq("ideaid"), "left_outer")
+      .withColumn("new_k", when(col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
+      .withColumn("cali_value", lit(1.0))
+      .withColumn("cvr3_cali", lit(1.0))
+      .join(prevTable, Seq("ideaid", "adclass"), "left_outer")
+      .withColumn("k_value", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 5.0).otherwise(col("new_k")))
+
+    finalData2
+  }
+
+  def getPrevK(date: String, hour: String, hourCnt: Int, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -1)
+    calendar.add(Calendar.HOUR, -hourCnt)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
@@ -765,15 +790,7 @@ object OcpcSampleToRedis {
       .withColumn("prev_k", col("k_value"))
       .select("ideaid", "adclass", "prev_k")
 
-    val finalData2 = pidK
-      .join(regressionK, Seq("ideaid"), "left_outer")
-      .withColumn("new_k", when(col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
-      .withColumn("cali_value", lit(1.0))
-      .withColumn("cvr3_cali", lit(1.0))
-      .join(prevTable, Seq("ideaid", "adclass"), "left_outer")
-      .withColumn("k_value", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 5.0).otherwise(col("new_k")))
-
-    finalData2
+    prevTable
   }
 
 

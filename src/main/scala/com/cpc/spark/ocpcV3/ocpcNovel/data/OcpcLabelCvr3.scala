@@ -13,7 +13,7 @@ object OcpcLabelCvr3 {
 
     // TODO  测试
     val result1 = getLabelFromAdv(date, hour, spark)
-    result1.write.mode("overwrite").saveAsTable("test.ocpcv3_base_data_part3")
+    result1.write.mode("overwrite").saveAsTable("test.ocpcv3_base_data_part4_bak1")
   }
 
   def getLabelFromAdv(date: String, hour: String, spark: SparkSession) = {
