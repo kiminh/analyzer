@@ -760,7 +760,6 @@ object OcpcSampleToRedis {
         hourCnt += 1
         prevTable = getPrevK(date, hour, hourCnt, spark)
       }
-      prevTable.show(3)
 
     }
     prevTable.write.mode("overwrite").saveAsTable("test.ocpc_prev_k_table")
