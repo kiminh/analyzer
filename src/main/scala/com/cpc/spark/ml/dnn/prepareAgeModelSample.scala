@@ -7,6 +7,7 @@ import com.cpc.spark.common.Murmur3Hash
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.spark.storage.StorageLevel
 
 object prepareAgeModelSample {
   Logger.getRootLogger.setLevel(Level.WARN)
@@ -19,13 +20,13 @@ object prepareAgeModelSample {
       .enableHiveSupport()
       .getOrCreate()
 
-    val train = getSample(spark).persist()
+    val train = getSample(spark).persist(StorageLevel.MEMORY_AND_DISK)
     val n = train.count().toDouble
     println("训练数据：total = %.4f, age1 = %.4f, age2 = %.4f, age3 = %.4f, age4 = %.4f,".
       format(n, train.where("label=array(1,0,0,0)").count.toDouble / n,
-      train.where("label=array(0,1,0,0)").count.toDouble / n,
-    train.where("label=array(0,0,1,0)").count.toDouble / n,
-    train.where("label=array(0,0,0,1)").count.toDouble / n))
+        train.where("label=array(0,1,0,0)").count.toDouble / n,
+        train.where("label=array(0,0,1,0)").count.toDouble / n,
+        train.where("label=array(0,0,0,1)").count.toDouble / n))
 
     val Array(traindata, testdata) = train.randomSplit(Array(0.95, 0.05), 1)
 
@@ -35,7 +36,6 @@ object prepareAgeModelSample {
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"/user/cpc/dnn/age/dnntrain")
-    train.take(10).foreach(println)
 
     testdata.sample(withReplacement = false, 0.1).repartition(100)
       .write
@@ -43,7 +43,6 @@ object prepareAgeModelSample {
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"/user/cpc/dnn/age/dnntest")
-
     train.unpersist()
   }
 
