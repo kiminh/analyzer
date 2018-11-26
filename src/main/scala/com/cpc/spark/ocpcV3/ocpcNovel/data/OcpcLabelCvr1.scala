@@ -14,7 +14,8 @@ object OcpcLabelCvr1 {
     // TODO 测试
     val result = getLabel(date, hour, spark)
     // TODO 删除临时表
-    result.write.mode("overwrite").saveAsTable("test.ocpcv3_base_data_part2")
+    result.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr1_data_hourly")
+    println("successfully save data into table: dl_cpc.ocpcv3_cvr1_data_hourly")
   }
 
   def getLabel(date: String, hour: String, spark: SparkSession) = {
@@ -71,8 +72,6 @@ object OcpcLabelCvr1 {
       .select("ideaid", "unitid", "adclass", "media_appsid", "cvr1_cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-
-    println("###############complete########")
 
     resultDF.show(10)
     resultDF.printSchema()

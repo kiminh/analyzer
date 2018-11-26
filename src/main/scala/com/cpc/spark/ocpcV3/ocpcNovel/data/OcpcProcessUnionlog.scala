@@ -55,7 +55,7 @@ object OcpcProcessUnionlog {
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
     rawData.createOrReplaceTempView("raw_table")
-    
+
     // 展现数、点击数、花费
     val sqlRequest1 =
       s"""
