@@ -21,7 +21,7 @@ object DNNSample_test {
     spark.udf.register("getFtrlFeature", getFtrlFeature _)
 
     spark.udf.register("hash", Murmur3Hash.stringHash64 _)
-    spark.udf.register("hasSeq", hashSeq4Hive _)
+    spark.udf.register("hashSeq", hashSeq4Hive _)
     val Array(trdate, trpath, tedate, tepath) = args
 
     val sample = new DNNSampleV6(spark, trdate, trpath, tedate, tepath)
