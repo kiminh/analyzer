@@ -18,8 +18,8 @@ object OcpcProcessUnionlog {
 
     // TODO 待测试
     val resultDF = preprocessUnionlog(date, hour, spark)
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_ctr_data_hourly")
-//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_ctr_data_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_ctr_data_hourly")
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_ctr_data_hourly")
     println("successfully save data into table dl_cpc.ocpcv3_ctr_data_hourly")
   }
 
@@ -55,9 +55,7 @@ object OcpcProcessUnionlog {
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
     rawData.createOrReplaceTempView("raw_table")
-    //TODO 删除临时表
-    rawData.write.mode("overwrite").saveAsTable("test.ocpcv3_ctr_data_hourly20181126")
-
+    
     // 展现数、点击数、花费
     val sqlRequest1 =
       s"""
@@ -119,9 +117,6 @@ object OcpcProcessUnionlog {
     val data = groupData1
       .join(groupData2, Seq("ideaid", "unitid", "adclass", "media_appsid"), "left_outer")
       .join(groupData3, Seq("ideaid", "unitid", "adclass", "media_appsid"), "left_outer")
-
-    // TODO 删除临时表
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_base_data_part1")
 
     val resultDF = data
       .select("ideaid", "unitid", "adclass", "media_appsid", "total_price", "show_cnt", "ctr_cnt", "total_bid", "noapi_click", "noapi_pcvr_total", "api_click", "api_pcvr_total")
