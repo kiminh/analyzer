@@ -20,6 +20,7 @@ object OcpcProcessUnionlog {
     val resultDF = preprocessUnionlog(date, hour, spark)
     resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_ctr_data_hourly")
 //    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_ctr_data_hourly")
+    println("successfully save data into table dl_cpc.ocpcv3_ctr_data_hourly")
   }
 
   def preprocessUnionlog(date: String, hour: String, spark: SparkSession) = {
