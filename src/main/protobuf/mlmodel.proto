@@ -7,7 +7,7 @@ message RetrievalEmbedding {
     repeated double embeddings = 2;
 }
 
-message AllProductEmbeddings {
+message AllAdEmbeddings {
     string version = 1;
     map<int32, RetrievalEmbedding> allEmbeddings = 2;
 }

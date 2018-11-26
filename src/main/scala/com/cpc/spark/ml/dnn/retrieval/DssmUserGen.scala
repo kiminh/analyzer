@@ -1,9 +1,9 @@
-package com.cpc.spark.ml.dnn
+package com.cpc.spark.ml.dnn.retrieval
 
+import com.cpc.spark.ml.dnn.retrieval.DssmRetrieval._
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.array
-import com.cpc.spark.ml.dnn.DssmRetrieval._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object DssmUserGen {
   Logger.getRootLogger.setLevel(Level.WARN)
@@ -15,13 +15,59 @@ object DssmUserGen {
       .getOrCreate()
 
     val date = args(0)
+    val firstTime = args(1).toBoolean
 
     val userInfo = getData(spark, date)
 
-    val n = userInfo.count()
-    println("User Info：total = %d".format(n))
+    println("DAU User count = %d".format(userInfo.count()))
 
-    userInfo.repartition(100)
+    val finalOutput = if (!firstTime) {
+      import spark.implicits._
+
+      val keyedUser = userInfo.rdd.map(x => (x.getAs[String]("uid"), x))
+
+      val allUserInfo = spark.read.parquet("/user/cpc/hzh/dssm/all-user-info")
+      allUserInfo.rdd.map(x => (x.getAs[String]("uid"), x))
+        .cogroup(keyedUser)
+        .map {
+          x => {
+            val row =
+              if (x._2._2 != null && x._2._2.iterator != null && x._2._2.iterator.hasNext) {
+                x._2._2.iterator.next()
+              } else if (x._2._1 != null && x._2._1.iterator != null && x._2._1.iterator.hasNext) {
+                x._2._1.iterator.next()
+              } else {
+                null
+              }
+            if (row != null) {
+              ( row.getAs[Number]("sample_idx").longValue(),
+                row.getAs[String]("uid"),
+                row.getAs[Seq[Long]]("u_dense"),
+                row.getAs[Seq[Int]]("u_idx0"),
+                row.getAs[Seq[Int]]("u_idx1"),
+                row.getAs[Seq[Int]]("u_idx2"),
+                row.getAs[Seq[Long]]("u_id_arr"))
+            } else {
+              (-1L, "", Seq(0L), Seq(0), Seq(0), Seq(0), Seq(0L))
+            }
+          }
+        }
+        .toDF("sample_idx", "uid",
+          "u_dense", "u_idx0", "u_idx1", "u_idx2", "u_id_arr")
+        .filter(row => row.getAs[Long]("sample_idx") > 0)
+    } else {
+      userInfo
+    }
+
+    val n = finalOutput.count()
+    println("Final user count = %d".format(n))
+
+    finalOutput.repartition(100)
+      .write
+      .mode("overwrite")
+      .parquet("/user/cpc/hzh/dssm/all-user-info")
+
+    finalOutput.repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -50,13 +96,14 @@ object DssmUserGen {
          |  max(ext['city_level'].int_value) as city_level,
          |  max(age) as age,
          |  max(sex) as sex
-         |from dl_cpc.cpc_union_log where `date` = '$date'
+         | from dl_cpc.cpc_union_log
+         |  where `date` = '$date'
          |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and uid > 0
-         |group by uid  
+         |group by uid
       """.stripMargin
     println("--------------------------------")
     println(sql)
@@ -67,7 +114,7 @@ object DssmUserGen {
         .join(userAppIdx, Seq("uid"), "leftouter")
         .join(userHistory, Seq("uid"), "leftouter")
 
-    val joined = re.select(
+    re.select(
       // user index
       $"uid",
 
@@ -110,13 +157,7 @@ object DssmUserGen {
           x._1.getAs[Seq[Long]]("u_id_arr")
         )
       }
-
-      joined.map{x => (x._1, x._2)}
-        .toDF("sample_idx", "uid")
-        .coalesce(10).write.mode("overwrite")
-        .parquet("/user/cpc/hzh/user_id_map/" + date + "/")
-
-      joined.toDF("sample_idx", "uid",
+      .toDF("sample_idx", "uid",
         "u_dense", "u_idx0", "u_idx1", "u_idx2", "u_id_arr")
   }
 }
