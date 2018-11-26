@@ -4,7 +4,7 @@ date=$1
 hour=$2
 
 
-sh testOcpcSampleToRedis.sh $date $hour
+sh testGetOcpcLogFromUnionLog.sh $date $hour
 sh testOcpcActivationDataV1.sh $date $hour
 sh testOcpcAccPact.sh $date $hour
 sh testOcpcAccPcvr.sh $date $hour
