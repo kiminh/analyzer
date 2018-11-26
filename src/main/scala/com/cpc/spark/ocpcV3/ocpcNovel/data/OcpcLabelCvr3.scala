@@ -11,12 +11,14 @@ object OcpcLabelCvr3 {
     val date = args(0).toString
     val hour = args(1).toString
 
-    // TODO  测试
-    val result1 = getLabelFromAdv(date, hour, spark)
-    result1.write.mode("overwrite").saveAsTable("test.ocpcv3_base_data_part4_bak1")
+//    // TODO  测试
+//    val result1 = getLabelFromAdv(date, hour, spark)
+//    result1.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr3_data_hourly")
+//    println("successfully save data into table: dl_cpc.ocpcv3_cvr3_data_hourly")
     // TODO 测试
-//    val result2 = getLabel(date, hour, spark)
-//    result2.write.mode("overwrite").saveAsTable("test.ocpcv3_base_data_part4_bak2")
+    val result2 = getLabel(date, hour, spark)
+    result2.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr3_data_hourly")
+    println("successfully save data into table: dl_cpc.ocpcv3_cvr3_data_hourly")
   }
 
   def getLabelFromAdv(date: String, hour: String, spark: SparkSession) = {
@@ -121,13 +123,13 @@ object OcpcLabelCvr3 {
          |  label2=1
        """.stripMargin
     println(sqlRequest2)
-    val labelData = spark.sql(sqlRequest2)
+    val labelData = spark.sql(sqlRequest2).distinct()
 
     val resultDF = rawData
       .join(labelData, Seq("searchid"), "left_outer")
-      .groupBy("ideaid", "adclass", "media_appsid")
+      .groupBy("ideaid", "unitid", "adclass", "media_appsid")
       .agg(sum(col("label")).alias("cvr3_cnt"))
-      .select("ideaid", "adclass", "media_appsid", "cvr3_cnt")
+      .select("ideaid", "unitid", "adclass", "media_appsid", "cvr3_cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
