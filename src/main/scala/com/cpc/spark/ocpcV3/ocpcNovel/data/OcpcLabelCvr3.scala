@@ -11,13 +11,12 @@ object OcpcLabelCvr3 {
     val date = args(0).toString
     val hour = args(1).toString
 
-//    // TODO  测试
+//    // TODO  如何判断究竟用哪一个表？
 //    val result1 = getLabelFromAdv(date, hour, spark)
 //    result1.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr3_data_hourly")
 //    println("successfully save data into table: dl_cpc.ocpcv3_cvr3_data_hourly")
-    // TODO 测试
+
     val result2 = getLabel(date, hour, spark)
-//    result2.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr3_data_hourly")
     result2.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr3_data_hourly")
     println("successfully save data into table: dl_cpc.ocpcv3_cvr3_data_hourly")
   }
