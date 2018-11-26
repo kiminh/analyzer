@@ -14,7 +14,8 @@ object OcpcLabelCvr1 {
     // TODO 测试
     val result = getLabel(date, hour, spark)
     // TODO 删除临时表
-    result.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr1_data_hourly")
+//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr1_data_hourly")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr1_data_hourly")
     println("successfully save data into table: dl_cpc.ocpcv3_cvr1_data_hourly")
   }
 
