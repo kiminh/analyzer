@@ -15,10 +15,7 @@ object OcpcProcessUnionlog {
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
-
-    // TODO 待测试
     val resultDF = preprocessUnionlog(date, hour, spark)
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_ctr_data_hourly")
     resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_ctr_data_hourly")
     println("successfully save data into table dl_cpc.ocpcv3_ctr_data_hourly")
   }
