@@ -26,11 +26,12 @@ object OcpcLabelCvr1 {
          |    searchid,
          |    uid,
          |    ideaid,
+         |    unitid,
          |    price,
+         |    bid,
          |    userid,
          |    media_appsid,
          |    ext['adclass'].int_value as adclass,
-         |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
          |    isclick,
          |    isshow
          |from dl_cpc.cpc_union_log
@@ -65,9 +66,9 @@ object OcpcLabelCvr1 {
 
     val resultDF = rawData
       .join(labelData, Seq("searchid"), "left_outer")
-      .groupBy("ideaid", "adclass", "media_appsid")
+      .groupBy("ideaid", "unitid", "adclass", "media_appsid")
       .agg(sum(col("label")).alias("cvr1_cnt"))
-      .select("ideaid", "adclass", "media_appsid", "cvr1_cnt")
+      .select("ideaid", "unitid", "adclass", "media_appsid", "cvr1_cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
