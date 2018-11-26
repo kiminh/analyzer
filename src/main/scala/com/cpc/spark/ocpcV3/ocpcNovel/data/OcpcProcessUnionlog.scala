@@ -54,6 +54,8 @@ object OcpcProcessUnionlog {
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
     rawData.createOrReplaceTempView("raw_table")
+    //TODO 删除临时表
+    rawData.write.mode("overwrite").saveAsTable("test.ocpcv3_ctr_data_hourly20181126")
 
     // 展现数、点击数、花费
     val sqlRequest1 =
