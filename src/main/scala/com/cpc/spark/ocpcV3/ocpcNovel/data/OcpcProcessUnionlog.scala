@@ -118,7 +118,7 @@ object OcpcProcessUnionlog {
       .select("ideaid", "adclass", "media_appsid", "cost", "show_cnt", "ctr_cnt", "noapi_click", "noapi_pcvr_total", "api_click", "api_pcvr_total")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-    
+
     resultDF
 
   }
