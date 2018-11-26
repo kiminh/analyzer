@@ -121,20 +121,19 @@ object OcpcK {
         val y = x.trim.split("\\s+")
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
-      // TODO
-      // 增加原点数量来防止模型
       val coffList = fitPoints(pointList.toList)
       // TODO
-      // 1. 斜率过小
-      // 2. 前24小时的cpa比值过低
-      // 适当提高targetK
-      // coff1>0.1
+      // 每天12点之后，如果当天cpa过低（1.3），targetK -> 1.0
+      // 每天12点之后，如果当天cpa过高（0.7）, targetK -> 0.7
       val cpaRatio = cpaMap.getOrElse[Double](ideaid, 0.0)
       if (coffList(1)<0.1 && cpaRatio>1.05 && cpaMap.contains(ideaid) && ratioType=="ratio3") {
         targetK = 0.98
       } else {
         targetK = 0.95
       }
+      // TODO 根据k是否大于0循环判断决定调整原点数量
+      // k<0， 增加原点数量重新拟合
+      // k>0, 退出循环
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
       println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
