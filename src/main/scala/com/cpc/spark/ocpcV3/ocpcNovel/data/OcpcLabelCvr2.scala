@@ -67,6 +67,8 @@ object OcpcLabelCvr2 {
       .groupBy("ideaid", "adclass", "media_appsid")
       .agg(sum(col("label")).alias("cvr2_cnt"))
       .select("ideaid", "adclass", "media_appsid", "cvr2_cnt")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
 
 
     resultDF.show(10)

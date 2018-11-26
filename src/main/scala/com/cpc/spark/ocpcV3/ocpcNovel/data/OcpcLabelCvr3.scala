@@ -68,6 +68,8 @@ object OcpcLabelCvr3 {
       .groupBy("ideaid", "adclass", "media_appsid")
       .agg(sum(col("label")).alias("cvr3_cnt"))
       .select("ideaid", "adclass", "media_appsid", "cvr3_cnt")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
 
     resultDF.show(10)
     resultDF.printSchema()
@@ -126,6 +128,8 @@ object OcpcLabelCvr3 {
       .groupBy("ideaid", "adclass", "media_appsid")
       .agg(sum(col("label")).alias("cvr3_cnt"))
       .select("ideaid", "adclass", "media_appsid", "cvr3_cnt")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
 
 
     resultDF.show(10)

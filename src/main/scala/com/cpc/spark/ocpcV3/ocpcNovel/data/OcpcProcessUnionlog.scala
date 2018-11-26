@@ -114,7 +114,11 @@ object OcpcProcessUnionlog {
     // TODO 删除临时表
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_base_data_part1")
 
-    val resultDF = data.select("ideaid", "adclass", "media_appsid", "cost", "show_cnt", "ctr_cnt", "noapi_click", "noapi_pcvr_total", "api_click", "api_pcvr_total")
+    val resultDF = data
+      .select("ideaid", "adclass", "media_appsid", "cost", "show_cnt", "ctr_cnt", "noapi_click", "noapi_pcvr_total", "api_click", "api_pcvr_total")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+    
     resultDF
 
   }

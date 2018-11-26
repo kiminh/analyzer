@@ -68,6 +68,8 @@ object OcpcLabelCvr1 {
       .groupBy("ideaid", "adclass", "media_appsid")
       .agg(sum(col("label")).alias("cvr1_cnt"))
       .select("ideaid", "adclass", "media_appsid", "cvr1_cnt")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
 
     println("###############complete########")
 
