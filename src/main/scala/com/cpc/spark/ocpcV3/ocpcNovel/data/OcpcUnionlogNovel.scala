@@ -107,6 +107,8 @@ object OcpcUnionlogNovel {
       .join(labelData1, Seq("searchid"), "left_outer")
       .join(labelData2, Seq("searchid"), "left_outer")
       .join(labelData3, Seq("searchid"), "left_outer")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
 
     resultDF.show(10)
     resultDF.printSchema()
