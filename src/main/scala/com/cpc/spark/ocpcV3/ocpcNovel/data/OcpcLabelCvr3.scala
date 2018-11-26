@@ -30,11 +30,12 @@ object OcpcLabelCvr3 {
          |    searchid,
          |    uid,
          |    ideaid,
+         |    unitid,
          |    price,
+         |    bid,
          |    userid,
          |    media_appsid,
          |    ext['adclass'].int_value as adclass,
-         |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
          |    isclick,
          |    isshow
          |from dl_cpc.cpc_union_log
@@ -88,11 +89,12 @@ object OcpcLabelCvr3 {
          |    searchid,
          |    uid,
          |    ideaid,
+         |    unitid,
          |    price,
+         |    bid,
          |    userid,
          |    media_appsid,
          |    ext['adclass'].int_value as adclass,
-         |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
          |    isclick,
          |    isshow
          |from dl_cpc.cpc_union_log
