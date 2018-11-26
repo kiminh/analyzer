@@ -14,7 +14,8 @@ object OcpcUnionlogNovel {
 
     // TODO 测试
     val result = getOcpcUnionlog(date, hour, spark)
-    result.write.mode("overwrite").saveAsTable("test.ocpcv3_unionlog_label_hourly")
+//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_unionlog_label_hourly")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_unionlog_label_hourly")
     println("successfully save data into table: dl_cpc.ocpcv3_unionlog_label_hourly")
   }
 
