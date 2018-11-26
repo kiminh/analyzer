@@ -32,6 +32,7 @@ object OcpcProcessUnionlog {
          |    searchid,
          |    uid,
          |    ideaid,
+         |    unitid,
          |    price,
          |    userid,
          |    media_appsid,
@@ -59,6 +60,7 @@ object OcpcProcessUnionlog {
       s"""
          |SELECT
          |  ideaid,
+         |  unitid,
          |  adclass,
          |  media_appsid,
          |  SUM(case when isclick=1 then price else 0 end) as cost,
@@ -66,7 +68,7 @@ object OcpcProcessUnionlog {
          |  SUM(isclick) as ctr_cnt
          |FROM
          |  raw_table
-         |GROUP BY ideaid, adclass, media_appsid
+         |GROUP BY ideaid, unitid, adclass, media_appsid
        """.stripMargin
     println(sqlRequest1)
     val groupData1 = spark.sql(sqlRequest1)
@@ -76,6 +78,7 @@ object OcpcProcessUnionlog {
       s"""
          |SELECT
          |  ideaid,
+         |  unitid,
          |  adclass,
          |  media_appsid,
          |  SUM(isclick) as noapi_click,
@@ -84,7 +87,7 @@ object OcpcProcessUnionlog {
          |  raw_table
          |WHERE
          |  is_api_callback!=1
-         |GROUP BY ideaid, adclass, media_appsid
+         |GROUP BY ideaid, unitid, adclass, media_appsid
        """.stripMargin
     println(sqlRequest2)
     val groupData2 = spark.sql(sqlRequest2)
@@ -94,6 +97,7 @@ object OcpcProcessUnionlog {
       s"""
          |SELECT
          |  ideaid,
+         |  unitid,
          |  adclass,
          |  media_appsid,
          |  SUM(isclick) as api_click,
@@ -102,21 +106,21 @@ object OcpcProcessUnionlog {
          |  raw_table
          |WHERE
          |  is_api_callback=1
-         |GROUP BY ideaid, adclass, media_appsid
+         |GROUP BY ideaid, unitid, adclass, media_appsid
        """.stripMargin
     println(sqlRequest3)
     val groupData3 = spark.sql(sqlRequest3)
 
     // 关联所有数据
     val data = groupData1
-      .join(groupData2, Seq("ideaid", "adclass", "media_appsid"), "left_outer")
-      .join(groupData3, Seq("ideaid", "adclass", "media_appsid"), "left_outer")
+      .join(groupData2, Seq("ideaid", "unitid", "adclass", "media_appsid"), "left_outer")
+      .join(groupData3, Seq("ideaid", "unitid", "adclass", "media_appsid"), "left_outer")
 
     // TODO 删除临时表
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_base_data_part1")
 
     val resultDF = data
-      .select("ideaid", "adclass", "media_appsid", "cost", "show_cnt", "ctr_cnt", "noapi_click", "noapi_pcvr_total", "api_click", "api_pcvr_total")
+      .select("ideaid", "unitid", "adclass", "media_appsid", "cost", "show_cnt", "ctr_cnt", "noapi_click", "noapi_pcvr_total", "api_click", "api_pcvr_total")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
