@@ -11,7 +11,6 @@ object evaluate {
         val date = args(0)
         val spark = SparkSession.builder()
           .appName(s"evaluate date = $date")
-          .config("spark.serializer","org.apache.spark.serializer.KryoSerializer")
           .enableHiveSupport()
           .getOrCreate()
 
