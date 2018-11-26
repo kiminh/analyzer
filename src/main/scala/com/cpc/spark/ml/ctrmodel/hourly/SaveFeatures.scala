@@ -310,10 +310,11 @@ object SaveFeatures {
        |      ,un.userid
        |      ,un.uid
        |      ,un.ideaid
+       |      ,un.adclass
        |      ,un.date
        |      ,un.hour
        |      ,tr.trace_type
-       |from (select searchid, userid, uid, planid, unitid, ideaid, adslot_type, isclick, date, hour from dl_cpc.cpc_user_api_callback_union_log where %s) as un
+       |from (select searchid, userid, uid, planid, unitid, ideaid, adslot_type, isclick, ext['adclass'].int_value as adclass, date, hour from dl_cpc.cpc_user_api_callback_union_log where %s) as un
        |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
        |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
        |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
@@ -328,10 +329,11 @@ object SaveFeatures {
          |      ,un.userid
          |      ,un.uid
          |      ,un.ideaid
+         |      ,un.adclass
          |      ,un.date
          |      ,un.hour
          |      ,tr.trace_type
-         |from (select a.searchid, a.userid, a.uid ,a.planid ,a.unitid ,a.ideaid, a.date, a.hour from dl_cpc.cpc_union_log a
+         |from (select a.searchid, a.userid, a.uid ,a.planid ,a.unitid ,a.ideaid, ext['adclass'].int_value as adclass, a.date, a.hour from dl_cpc.cpc_union_log a
          |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type <> 7 and a.isclick = 1) as un
          |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
          |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
@@ -369,6 +371,7 @@ object SaveFeatures {
           var uid = ""
           var userid = 0
           var ideaid = 0
+          var adclass = 0
           var date = ""
           var hour = ""
           var search_time = ""
@@ -377,6 +380,7 @@ object SaveFeatures {
               uid = x.getAs[String]("uid")
               userid = x.getAs[Int]("userid")
               ideaid = x.getAs[Int]("ideaid")
+              adclass = x.getAs[Int]("adclass")
               date = x.getAs[String]("date")
               hour = x.getAs[String]("hour")
               search_time = date + " " + hour
@@ -391,10 +395,10 @@ object SaveFeatures {
               }
             }
           )
-          (x._1, active_third, uid, userid, ideaid, search_time)
+          (x._1, active_third, uid, userid, ideaid, search_time, adclass)
       }
       .filter(x => x._2 != -1) //过滤空值
-      .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time")
+      .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time", "adclass")
 
     println("user api back: " + userApiBackRDD.count())
 
