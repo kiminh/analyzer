@@ -61,7 +61,7 @@ object OcpcLabelCvr1 {
          |  label2=1
        """.stripMargin
     println(sqlRequest2)
-    val labelData = spark.sql(sqlRequest2)
+    val labelData = spark.sql(sqlRequest2).distinct()
 
     val resultDF = rawData
       .join(labelData, Seq("searchid"), "left_outer")
