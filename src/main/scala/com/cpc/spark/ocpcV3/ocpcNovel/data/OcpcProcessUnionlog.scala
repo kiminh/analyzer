@@ -86,7 +86,7 @@ object OcpcProcessUnionlog {
          |  adclass,
          |  media_appsid,
          |  SUM(isclick) as noapi_click,
-         |  SUM(exp_cvr) as noapi_pcvr_total
+         |  SUM(case when isclick=1 then exp_cvr else 0 end) as noapi_pcvr_total
          |FROM
          |  raw_table
          |WHERE
@@ -105,7 +105,7 @@ object OcpcProcessUnionlog {
          |  adclass,
          |  media_appsid,
          |  SUM(isclick) as api_click,
-         |  SUM(exp_cvr) as api_pcvr_total
+         |  SUM(case when isclick=1 then exp_cvr else 0 end) as api_pcvr_total
          |FROM
          |  raw_table
          |WHERE
