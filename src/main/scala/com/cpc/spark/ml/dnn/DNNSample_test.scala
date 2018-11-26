@@ -21,6 +21,7 @@ object DNNSample_test {
     spark.udf.register("getFtrlFeature", getFtrlFeature _)
 
     spark.udf.register("hash", Murmur3Hash.stringHash64 _)
+    spark.udf.register("hasSeq", hashSeq4Hive _)
     val Array(trdate, trpath, tedate, tepath) = args
 
     val sample = new DNNSampleV6(spark, trdate, trpath, tedate, tepath)
@@ -34,6 +35,10 @@ object DNNSample_test {
 
   def getFtrlFeature(m: Map[Int, Float]): Seq[Float] = {
     for (i <- 1 to 410) yield m.getOrElse(i, 0f)
+  }
+
+  def hashSeq4Hive(values: Seq[String]): Seq[Long] = {
+    for (v <- values) yield Murmur3Hash.stringHash64(v, 0)
   }
 }
 
