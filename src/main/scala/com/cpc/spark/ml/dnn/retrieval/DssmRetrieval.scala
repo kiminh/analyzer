@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.dnn
+package com.cpc.spark.ml.dnn.retrieval
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
