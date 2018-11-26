@@ -34,6 +34,7 @@ object OcpcProcessUnionlog {
          |    ideaid,
          |    unitid,
          |    price,
+         |    bid,
          |    userid,
          |    media_appsid,
          |    ext['adclass'].int_value as adclass,
@@ -65,9 +66,10 @@ object OcpcProcessUnionlog {
          |  unitid,
          |  adclass,
          |  media_appsid,
-         |  SUM(case when isclick=1 then price else 0 end) as cost,
+         |  SUM(case when isclick=1 then price else 0 end) as total_price,
          |  SUM(isshow) as show_cnt,
-         |  SUM(isclick) as ctr_cnt
+         |  SUM(isclick) as ctr_cnt,
+         |  SUM(case when isclick=1 then bid else 0 end) as total_bid
          |FROM
          |  raw_table
          |GROUP BY ideaid, unitid, adclass, media_appsid
@@ -122,7 +124,7 @@ object OcpcProcessUnionlog {
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_base_data_part1")
 
     val resultDF = data
-      .select("ideaid", "unitid", "adclass", "media_appsid", "cost", "show_cnt", "ctr_cnt", "noapi_click", "noapi_pcvr_total", "api_click", "api_pcvr_total")
+      .select("ideaid", "unitid", "adclass", "media_appsid", "total_price", "show_cnt", "ctr_cnt", "total_bid", "noapi_click", "noapi_pcvr_total", "api_click", "api_pcvr_total")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
