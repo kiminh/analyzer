@@ -362,7 +362,7 @@ object SaveFeatures {
          |      from dl_cpc.cpc_motivation_log
          |      where `date` = "%s" and hour = "%s" and isclick = 1
          |   ) as un
-         |on tr.searchid = un.searchid and tr.ideaid = un.ideadid
+         |on tr.searchid = un.searchid and tr.ideaid = un.ideaid
          |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
          |where t2.id is null
        """.stripMargin.format(date, hour, date, hour, yesterday)
