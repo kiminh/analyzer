@@ -47,8 +47,7 @@ object IdFeature2File {
       .collect()
       .foreach(x => arr_idx = arr_idx :+ x)
 
-    writer.write(ad_idx(arr_idx).toByteArray)
-
+    writer.write(ad_idx(arr_idx).toString)
 
   }
 
