@@ -476,6 +476,7 @@ object SaveFeatures {
     println("table: " + table)
     val site_form = spark.read.jdbc(url, table, properties)
     println("site_form " + site_form.count())
+    println("site_form " + site_form.printSchema())
 
     val cvrlog = spark.sql(
       s"""
