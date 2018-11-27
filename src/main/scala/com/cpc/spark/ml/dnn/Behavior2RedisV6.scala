@@ -99,6 +99,8 @@ object Behavior2RedisV6 {
       )
       .persist()
 
+    data.show(false)
+
     println("user behavior v6 用户行为特征总数：" + data.count())
 
     data.coalesce(20).write.mode("overwrite")

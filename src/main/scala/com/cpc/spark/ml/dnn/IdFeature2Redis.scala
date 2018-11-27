@@ -1,11 +1,11 @@
 package com.cpc.spark.ml.dnn
 
-import java.io.{File, FileOutputStream, PrintWriter}
-
 import com.cpc.spark.common.Murmur3Hash
+import com.redis.RedisClient
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.udf
-import mlmodel.mlmodel.{ID2idx, ad_idx}
+import mlmodel.mlmodel.DnnMultiHot
 
 /**
   * 生成广告title分词hash后文件供上线使用
@@ -16,7 +16,7 @@ import mlmodel.mlmodel.{ID2idx, ad_idx}
   * @version 1.0
   *
   */
-object IdFeature2File {
+object IdFeature2Redis {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
@@ -37,17 +37,28 @@ object IdFeature2File {
     println(ideaid_sql)
     println("-----------------------------")
 
-    var arr_idx = Seq[ID2idx]()
+    val data = spark.sql(ideaid_sql).persist()
 
-    spark.sql(ideaid_sql)
-      .rdd
-      .map { x =>
-        ID2idx(x.getAs[Int]("ideaid").toString, x.getAs[Seq[Long]]("m16"))
+    data.show(false)
+    println("id features count : " + data.count)
+
+    /*val conf = ConfigFactory.load()
+    data.coalesce(20).foreachPartition { p =>
+      val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
+      redis.auth(conf.getString("ali_redis.auth"))
+
+      p.foreach { rec =>
+        var group = Seq[Int]()
+        val ideaid = "ad_" + rec.getString(0)
+        val hashcode = rec.getAs[Seq[Long]](1)
+
+        group = group ++ Array.tabulate(hashcode.length)(x => 0)
+
+        redis.setex(ideaid, 3600 * 24 * 7, DnnMultiHot(group, hashcode).toByteArray)
       }
-      .collect()
-      .foreach(x => arr_idx = arr_idx :+ x)
 
-    ad_idx(arr_idx).writeTo(new FileOutputStream(path))
+      redis.disconnect
+    }*/
 
   }
 
