@@ -558,7 +558,7 @@ object SaveFeatures {
             }
           )
 
-          (x._1, convert, convert2, label_type,
+          (x._1._1, convert, convert2, label_type,
             active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
             active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
             active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
