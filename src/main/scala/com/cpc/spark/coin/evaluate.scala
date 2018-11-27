@@ -144,14 +144,22 @@ object evaluate {
                |)
              """.stripMargin
 
-        val union = spark.sql(unionSql)
+        //val union = spark.sql(unionSql)
 
         //union.show(10)
-        val data = union.repartition(1).cache()
+        //val data = union.repartition(1).cache()
 
-        data.write.mode("overwrite").insertInto("dl_cpc.auto_coin_evaluation_daily")
+        //data.write.mode("overwrite").insertInto("dl_cpc.auto_coin_evaluation_daily")
 
-        println("insert into dl_cpc.auto_coin_evaluation_daily success!")
+        //println("insert into dl_cpc.auto_coin_evaluation_daily success!")
+
+        val sql =
+            s"""
+               |select *
+               |from dl_cpc.auto_coin_evaluation_daily
+               |where `date`= '$date'
+             """.stripMargin
+        val data = spark.sql(sql)
 
         val conf = ConfigFactory.load()
         val tableName = "report2.report_auto_coin_evaluation_daily"
