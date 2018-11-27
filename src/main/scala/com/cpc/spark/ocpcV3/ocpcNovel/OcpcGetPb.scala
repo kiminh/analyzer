@@ -145,11 +145,11 @@ object OcpcGetPb {
     var cnt = 0
 
     for (record <- dataset.collect()) {
-      val unitid = record.getAs[Long]("unitid").toString
+      val unitid = record.getAs[Int]("unitid").toString
       val cpaHistory = record.getAs[Double]("cpa_history")
       val kvalue = record.getAs[Double]("kvalue")
-      val cvr1cnt = record.getAs[Int]("cvr1cnt")
-      val cvr2cnt = record.getAs[Int]("cvr2cnt")
+      val cvr1cnt = record.getAs[Long]("cvr1cnt")
+      val cvr2cnt = record.getAs[Long]("cvr2cnt")
 
       if (cnt % 500 == 0) {
         println(s"unitid:$unitid, cpaHistory:$cpaHistory, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt")
