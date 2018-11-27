@@ -63,7 +63,7 @@ object Behavior2RedisNovelV2 {
          |    and rn <= 1000
          |group by uid
       """.stripMargin)
-      .join(data2,"uid")
+      .join(data2,Seq("uid"),"left")
       .select(
         $"uid",
         hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),

@@ -10,7 +10,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**
   * dnn ctr v3  小时任务
-  * 共28个dense，15个multi hot特征，
+  * 共28个dense，19个multi hot特征，
   * created time : 2018/11/01 14:34
   *
   * @author zhj
