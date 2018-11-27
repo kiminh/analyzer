@@ -366,6 +366,37 @@ object GetTraceReportV3 {
        """.stripMargin.format(date, before1hour, hour, date, hour)
     println(sql2)
 
+    //应用商城api回传
+    val sql_moti =
+      s"""
+         |select tr.searchid
+         |      ,un.userid as user_id
+         |      ,un.planid as plan_id
+         |      ,un.unitid as unit_id
+         |      ,un.ideaid as idea_id
+         |      ,tr.trace_type as trace_type
+         |      ,tr.trace_op1 as trace_op1
+         |      ,tr.duration as duration
+         |      ,tr.auto
+         |from (
+         |      select searchid
+         |            ,opt['ideaid'] as ideaid
+         |            ,trace_type
+         |            ,trace_op1
+         |            ,duration
+         |            ,auto
+         |      from dl_cpc.logparsed_cpc_trace_minute
+         |      where `thedate` = "%s" and `thehour` = "%s" and trace_type = 'active_third'
+         |   ) as tr
+         |join
+         |   (  select searchid, userid, planid, unitid, ideaid, isclick, date, hour
+         |      from dl_cpc.cpc_motivation_log
+         |      where `date` = "%s" and hour = "%s" and isclick = 1
+         |   ) as un
+         |on tr.searchid = un.searchid and tr.ideaid = un.ideadid
+       """.stripMargin.format(date, hour, date, hour)
+    println(sql_moti)
+
     val traceReport1 = ctx.sql(sql)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
@@ -376,15 +407,22 @@ object GetTraceReportV3 {
       .withColumn("hour", lit(hour))
       .rdd
 
+    val traceReport_moti = ctx.sql(sql_moti)
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .rdd
 
+    /* 获取用户api回传、没有api回传标记、应用商城 每个ideaid 的点击和展示数 */
+    //用户api回传
     val sql3 =
-      """
-        |select ideaid , sum(isshow) as show, sum(isclick) as click
-        |from dl_cpc.cpc_user_api_callback_union_log
-        |where %s group by ideaid
-      """.stripMargin.format(get3DaysBefore(date, hour))
+    """
+      |select ideaid , sum(isshow) as show, sum(isclick) as click
+      |from dl_cpc.cpc_user_api_callback_union_log
+      |where %s group by ideaid
+    """.stripMargin.format(get3DaysBefore(date, hour))
     println(sql3)
 
+    //没有api回传标记
     val sql4 =
       """
         |select ideaid , sum(isshow) as show, sum(isclick) as click
@@ -393,6 +431,16 @@ object GetTraceReportV3 {
         |group by ideaid
       """.stripMargin.format(date, before1hour, hour)
     println(sql4)
+
+    //应用商城
+    val sql5 =
+      """
+        |select ideaid , sum(isshow) as show, sum(isclick) as click
+        |from dl_cpc.cpc_motivation_log
+        |where `date`="%s" and hour="%s" and isclick=1
+        |group by ideaid
+      """.stripMargin.format(date, hour)
+    println(sql5)
 
     val unionRdd1 = ctx.sql(sql3).rdd.map {
       x =>
@@ -411,10 +459,20 @@ object GetTraceReportV3 {
 
         (ideaid, (show, click))
     }
-    val unionRdd = unionRdd1.union(unionRdd2)
+
+    val unionRdd_moti = ctx.sql(sql5).rdd.map {
+      x =>
+        val ideaid: Int = x(0).toString().toInt
+        val show: Int = x(1).toString().toInt
+        val click: Int = x(2).toString().toInt
+
+        (ideaid, (show, click))
+    }
+    val unionRdd = unionRdd1.union(unionRdd2).union(unionRdd_moti)
+      .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
 
 
-    val traceData = traceReport1.union(traceReport2).filter {
+    val traceData = traceReport1.union(traceReport2).union(traceReport_moti).filter {
       trace =>
         trace.getAs[Int]("plan_id") > 0 && trace.getAs[String]("trace_type") == "active_third"
     }.map {

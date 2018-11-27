@@ -310,7 +310,6 @@ object SaveFeatures {
        |      ,un.userid
        |      ,un.uid
        |      ,un.ideaid
-       |      ,un.adclass
        |      ,un.date
        |      ,un.hour
        |      ,tr.trace_type
@@ -329,7 +328,6 @@ object SaveFeatures {
          |      ,un.userid
          |      ,un.uid
          |      ,un.ideaid
-         |      ,un.adclass
          |      ,un.date
          |      ,un.hour
          |      ,tr.trace_type
@@ -341,6 +339,34 @@ object SaveFeatures {
        """.stripMargin.format(date, before1hour, hour, yesterday, date, hour)
     println(sql2)
 
+    //应用商城api转化
+    val sql_moti =
+      s"""
+         |select tr.trace_type as flag1
+         |      ,tr.searchid
+         |      ,un.userid
+         |      ,un.uid
+         |      ,un.ideaid
+         |      ,un.date
+         |      ,un.hour
+         |      ,tr.trace_type
+         |from (
+         |      select searchid
+         |            ,opt['ideaid'] as ideaid
+         |            ,trace_type
+         |      from dl_cpc.logparsed_cpc_trace_minute
+         |      where `thedate` = "%s" and `thehour` = "%s" and trace_type = 'active_third'
+         |   ) as tr
+         |join
+         |   (  select searchid, userid, uid, planid, unitid, ideaid, adclass, date, hour
+         |      from dl_cpc.cpc_motivation_log
+         |      where `date` = "%s" and hour = "%s" and isclick = 1
+         |   ) as un
+         |on tr.searchid = un.searchid and tr.ideaid = un.ideadid
+         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
+         |where t2.id is null
+       """.stripMargin.format(date, hour, date, hour, yesterday)
+    println(sql_moti)
 
     //    val userApiBackRDD = spark.sql(
     //            """
@@ -359,7 +385,7 @@ object SaveFeatures {
     //              |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
     //            """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour))
 
-    val userApiBackRDD = (spark.sql(sql)).union(spark.sql(sql2))
+    val userApiBackRDD = (spark.sql(sql)).union(spark.sql(sql2)).union(spark.sql(sql_moti))
       .rdd
       .map {
         x =>
@@ -371,7 +397,6 @@ object SaveFeatures {
           var uid = ""
           var userid = 0
           var ideaid = 0
-          var adclass = 0
           var date = ""
           var hour = ""
           var search_time = ""
@@ -380,7 +405,6 @@ object SaveFeatures {
               uid = x.getAs[String]("uid")
               userid = x.getAs[Int]("userid")
               ideaid = x.getAs[Int]("ideaid")
-              adclass = x.getAs[Int]("adclass")
               date = x.getAs[String]("date")
               hour = x.getAs[String]("hour")
               search_time = date + " " + hour
@@ -395,10 +419,10 @@ object SaveFeatures {
               }
             }
           )
-          (x._1, active_third, uid, userid, ideaid, search_time, adclass)
+          (x._1, active_third, uid, userid, ideaid, search_time)
       }
       .filter(x => x._2 != -1) //过滤空值
-      .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time", "adclass")
+      .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time")
 
     println("user api back: " + userApiBackRDD.count())
 
