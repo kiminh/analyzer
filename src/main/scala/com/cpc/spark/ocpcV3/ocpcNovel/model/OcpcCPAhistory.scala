@@ -4,7 +4,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
-import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import com.cpc.spark.ocpc.utils.OcpcUtils.getIdeaUpdates
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 
 
@@ -17,10 +18,11 @@ object OcpcCPAhistory {
     val hour = args(1).toString
 
     // TODO 测试
-    val result = calculateCPA(date, hour, spark)
+    val cpaList = calculateCPA(date, hour, spark)
+    val result = checkCPA(cpaList, date, hour, spark)
 //    dl_cpc.ocpcv3_novel_cpa_history_hourly
-    result.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_bid_ratio20181127")
-    println(s"succesfully save data into table: test.ocpcv3_cpa_bid_ratio20181127")
+    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly")
+    println(s"succesfully save data into table: test.ocpcv3_novel_cpa_history_hourly")
   }
 
   def calculateCPA(date: String, hour: String, spark: SparkSession) = {
@@ -112,6 +114,19 @@ object OcpcCPAhistory {
 
     resultDF.show(10)
     resultDF
+
+  }
+
+  def checkCPA(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    // TODO demo
+    val resultDF = data
+      .select("unitid", "cpa1")
+      .distinct()
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+    resultDF
+
+
 
   }
 

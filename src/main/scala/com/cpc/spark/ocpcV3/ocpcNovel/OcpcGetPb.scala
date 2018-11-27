@@ -8,7 +8,7 @@ import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 import ocpcnovel.ocpcnovel.SingleUnit
-//import ocpcnovel.ocpcnovel.OcpcNovel
+import ocpcnovel.ocpcnovel.OcpcNovelList
 //import ocpcnovel.ocpcnovel
 
 import scala.collection.mutable.ListBuffer
@@ -30,6 +30,8 @@ object OcpcGetPb {
       .join(kvalue, Seq("unitid"), "left_outer")
       .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt")
       .join(cpaHistory, Seq("unitid"), "left_outer")
+      .withColumn("kvalue", when(col("kvalue").isNull, lit(0.5)).otherwise(col("kvalue")))
+      .filter("cpa_history is not null")
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt")
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_hourly")
 
@@ -162,16 +164,14 @@ object OcpcGetPb {
       list += currentItem
 
     }
-//    val result = list.toArray[SingleUnit]
-//    val adUnit = OcpcnovelProto(
-//      adUnit = result
-//    )
-//    val adUnit = OcpcnovelProto(
-//      adunit = result
-//    )
-//    println("length of the array")
-//    println(result.length)
-//    useridData.writeTo(new FileOutputStream(filename))
+    val result = list.toArray[SingleUnit]
+    val adUnitList = OcpcNovelList(
+      adunit = result
+    )
+
+    println("length of the array")
+    println(result.length)
+    adUnitList.writeTo(new FileOutputStream(filename))
 
     //    dataset.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
     println("complete save data into protobuffer")
