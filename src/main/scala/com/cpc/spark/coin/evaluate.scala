@@ -2,6 +2,10 @@ package com.cpc.spark.coin
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import java.util.Properties
+import com.typesafe.config.ConfigFactory
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
+
 /**
   * @author Jinbao
   * @date 2018/11/26 16:10
@@ -143,9 +147,26 @@ object evaluate {
         val union = spark.sql(unionSql)
 
         //union.show(10)
+        val data = union.repartition(1).cache()
 
-        union.repartition(1).write.mode("overwrite").insertInto("dl_cpc.auto_coin_evaluation_daily")
+        data.write.mode("overwrite").insertInto("dl_cpc.auto_coin_evaluation_daily")
 
         println("insert into dl_cpc.auto_coin_evaluation_daily success!")
+
+        val conf = ConfigFactory.load()
+        val tableName = "report2.report_auto_coin_evaluation_daily"
+        val mariadb_write_prop = new Properties()
+
+        val mariadb_write_url = conf.getString("mariadb.report2_write.url")
+        mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
+        mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
+        mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
+
+        data
+          .write
+          .mode(SaveMode.Append)
+          .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
+
+
     }
 }
