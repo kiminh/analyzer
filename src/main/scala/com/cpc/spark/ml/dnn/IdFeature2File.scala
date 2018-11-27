@@ -42,12 +42,14 @@ object IdFeature2File {
     spark.sql(ideaid_sql)
       .rdd
       .map { x =>
-        ID2idx(x.getAs[String]("ideaid"), x.getAs[Seq[Long]]("m16"))
+        ID2idx(x.getAs[Int]("ideaid").toString, x.getAs[Seq[Long]]("m16"))
       }
       .collect()
       .foreach(x => arr_idx = arr_idx :+ x)
 
     writer.write(ad_idx(arr_idx).toString)
+
+    writer.close()
 
   }
 
