@@ -18,6 +18,56 @@ object evaluate {
 
         val unionSql =
             s"""
+               |select tag,
+               |    round(click_num/show_num,6) as ctr,
+               |    round(convert_num/click_num,6) as cvr,
+               |    round(click_price*10/show_num,6) as cpm,
+               |    round(click_price*10/uid_num,6) as arpu,
+               |
+               |    round(convert_num*100/uid_num,6) as acpu,
+               |    round(convert_0*100/uid_num,6) as acpu_0,
+               |    round(convert_1*100/uid_num,6) as acpu_1,
+               |    round(convert_2*100/uid_num,6) as acpu_2,
+               |
+               |    round(click_wangzhuan/show_wangzhuan,6) as ctr_wangzhuan,
+               |    round(convert_wangzhuan/click_wangzhuan,6) as cvr_wangzhuan,
+               |    round(show_wangzhuan/uid_num,6) as aspu_wangzhuan,
+               |    round(convert_wangzhuan/uid_num,6) as acpu_wangzhuan,
+               |    round(click_price_wangzhuan*10/uid_num,6) as arpu_wangzhuan,
+               |    round(click_price_wangzhuan*10/click_wangzhuan,6) as acp_wangzhuan,
+               |    round(click_price_wangzhuan*10/show_wangzhuan,6) as cpm_wangzhuan,
+               |    click_num_wangzhuan,
+               |
+               |    round(click_xiazai/show_xiazai,6) as ctr_xiazai,
+               |    round(convert_xiazai/click_xiazai,6) as cvr_xiazai,
+               |    round(show_xiazai/uid_num,6) as aspu_xiazai,
+               |    round(convert_xiazai/uid_num,6) as acpu_xiazai,
+               |    round(click_price_xiazai*10/uid_num,6) as arpu_xiazai,
+               |    round(click_price_xiazai*10/click_xiazai,6) as acp_xiazai,
+               |    round(click_price_xiazai*10/show_xiazai,6) as cpm_xiazai,
+               |    click_num_xiazai,
+               |
+               |    round(click_baojianpin/show_baojianpin,6) as ctr_baojianpin,
+               |    round(convert_baojianpin/click_baojianpin,6) as cvr_baojianpin,
+               |    round(show_baojianpin/uid_num,6) as aspu_baojianpin,
+               |    round(convert_baojianpin/uid_num,6) as acpu_baojianpin,
+               |    round(click_price_baojianpin*10/uid_num,6) as arpu_baojianpin,
+               |    round(click_price_baojianpin*10/click_baojianpin,6) as acp_baojianpin,
+               |    round(click_price_baojianpin*10/show_baojianpin,6) as cpm_baojianpin,
+               |    click_num_baojianpin,
+               |
+               |    round(click_qipai/show_qipai,6) as ctr_qipai,
+               |    round(convert_qipai/click_qipai,6) as cvr_qipai,
+               |    round(show_qipai/uid_num,6) as aspu_qipai,
+               |    round(convert_qipai/uid_num,6) as acpu_qipai,
+               |    round(click_price_qipai*10/uid_num,6) as arpu_qipai,
+               |    round(click_price_qipai*10/click_qipai,6) as acp_qipai,
+               |    round(click_price_qipai*10/show_qipai,6) as cpm_qipai,
+               |    click_num_qipai,
+               |
+               |    '$date' as `date`
+               |
+               |from (
                |select
                |    case when a.exptags like '%needautocoin%' then "auto"
                |        when a.exptags not like "%nostylecoin%" then "manual"
@@ -30,9 +80,9 @@ object evaluate {
                |
                |    sum(case WHEN isclick = 1 then price else 0 end) as click_price, --点击总价
                |    count(distinct uid) as uid_num, --用户数
-               |    sum(case WHEN label2 = 1 and ext['usertype'].int_value = 0 then 1 else 0 end), --其他企业数
-               |    sum(case WHEN label2 = 1 and ext['usertype'].int_value = 1 then 1 else 0 end), --非企
-               |    sum(case WHEN label2 = 1 and ext['usertype'].int_value = 2 then 1 else 0 end), --正企
+               |    sum(case WHEN label2 = 1 and ext['usertype'].int_value = 0 then 1 else 0 end) as convert_0, --其他企业数
+               |    sum(case WHEN label2 = 1 and ext['usertype'].int_value = 1 then 1 else 0 end) as convert_1, --非企
+               |    sum(case WHEN label2 = 1 and ext['usertype'].int_value = 2 then 1 else 0 end) as convert_2, --正企
                |
                |    --网赚
                |    sum(if (round(ext['adclass'].int_value/1000) = 110110 and isshow = 1, 1, 0)) as show_wangzhuan, --网赚展示数
@@ -87,10 +137,15 @@ object evaluate {
                |        case when a.exptags like '%needautocoin%' then "auto"
                |            when a.exptags not like "%nostylecoin%" then "manual"
                |            else "notag" end
+               |)
              """.stripMargin
 
         val union = spark.sql(unionSql)
 
-        union.show(10)
+        //union.show(10)
+
+        union.repartition(1).write.mode("overwrite").insertInto("dl_cpc.auto_coin_evaluation_daily")
+
+        println("insert into dl_cpc.auto_coin_evaluation_daily success!")
     }
 }
