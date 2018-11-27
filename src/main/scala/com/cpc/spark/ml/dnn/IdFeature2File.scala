@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.dnn
 
-import java.io.{File, PrintWriter}
+import java.io.{File, FileOutputStream, PrintWriter}
 
 import com.cpc.spark.common.Murmur3Hash
 import org.apache.spark.sql.SparkSession
@@ -22,6 +22,8 @@ object IdFeature2File {
       .enableHiveSupport()
       .getOrCreate()
 
+    val path = args(0)
+
     spark.udf.register("hashSeq", hashSeq4Hive _)
 
     val ideaid_sql =
@@ -35,8 +37,6 @@ object IdFeature2File {
     println(ideaid_sql)
     println("-----------------------------")
 
-    val writer = new PrintWriter(new File("ideaid_title.hash"))
-
     var arr_idx = Seq[ID2idx]()
 
     spark.sql(ideaid_sql)
@@ -47,9 +47,7 @@ object IdFeature2File {
       .collect()
       .foreach(x => arr_idx = arr_idx :+ x)
 
-    writer.write(ad_idx(arr_idx).toString)
-
-    writer.close()
+    ad_idx(arr_idx).writeTo(new FileOutputStream(path))
 
   }
 
