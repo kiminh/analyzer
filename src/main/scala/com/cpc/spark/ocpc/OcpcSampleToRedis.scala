@@ -79,7 +79,7 @@ object OcpcSampleToRedis {
       .select("ideaid", "userid", "adclass", "cost", "user_ctr_cnt", "user_cvr_cnt")
 
 
-    userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata")
+    userData.write.mode("overwrite").saveAsTable("test.ocpc_data_userdata_bak")
     userData.createOrReplaceTempView("ocpc_data_userdata")
 
 
@@ -89,7 +89,7 @@ object OcpcSampleToRedis {
       .agg(sum("cost").alias("adclass_cost"), sum("user_ctr_cnt").alias("adclass_ctr_cnt"), sum("user_cvr_cnt").alias("adclass_cvr_cnt"))
       .select("adclass", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt")
 
-    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata")
+    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_data_adclassdata_bak")
     adclassData.createOrReplaceTempView("ocpc_data_adclassdata")
 
 
@@ -146,7 +146,7 @@ object OcpcSampleToRedis {
     val userFinalData4 = userFinalData3.join(cvr3Data, Seq("ideaid", "adclass"), "left_outer")
 
 
-    userFinalData4.write.mode("overwrite").saveAsTable("test.ocpc_new_cvr_table")
+    userFinalData4.write.mode("overwrite").saveAsTable("test.ocpc_new_cvr_table_bak")
     userFinalData4.createOrReplaceTempView("ocpc_new_cvr_table")
 
 
@@ -197,7 +197,7 @@ object OcpcSampleToRedis {
 
     userFinalData2.show(10)
 
-    userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc")
+    userFinalData2.write.mode("overwrite").saveAsTable("test.test_new_pb_ocpc_bak")
     userFinalData2.createOrReplaceTempView("test_new_pb_ocpc")
 
 
@@ -263,7 +263,7 @@ object OcpcSampleToRedis {
       .distinct()
 
     val finalData1 = spark.sql(sqlRequest4)
-    finalData1.write.mode("overwrite").saveAsTable("test.ocpc_debug_k_values")
+    finalData1.write.mode("overwrite").saveAsTable("test.ocpc_debug_k_values_bak")
 
 
     val finalData2 = resetK(end_date, hour, regressionK, finalData1, spark)
@@ -290,7 +290,7 @@ object OcpcSampleToRedis {
     finalData3New.createOrReplaceTempView("raw_final_data")
 
 
-    finalData3New.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak")
+    finalData3New.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak_bak")
 
     val sqlRequest5 =
       s"""
@@ -323,12 +323,12 @@ object OcpcSampleToRedis {
     println(sqlRequest5)
     val finalData3 = spark.sql(sqlRequest5)
 
-    finalData3.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak2")
+    finalData3.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak2_bak")
 
     val finalData = finalData3.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
 
     // TODO 测试
-    finalData.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr20181126")
+    finalData.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr20181126_bak")
 
 //    finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
 //
@@ -552,7 +552,7 @@ object OcpcSampleToRedis {
 
     val resultDF = spark.sql(sqlRequest)
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_innocence_idea_list")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_innocence_idea_list_bak")
   }
 
 
@@ -584,7 +584,7 @@ object OcpcSampleToRedis {
 
     val rawTable = spark.sql(sqlRequest)
 
-    rawTable.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr_total")
+    rawTable.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr_total_bak")
     rawTable
 
   }
@@ -625,7 +625,6 @@ object OcpcSampleToRedis {
       .table("dl_cpc.ocpcv3_ideaid_list")
       .withColumn("type_flag", when(col("conversion_goal")===3, 1).otherwise(0)).select("ideaid", "type_flag")
 
-    typeData.write.mode("overwrite").saveAsTable("test.ocpc_idea_type_20181109")
 
     typeData
   }
@@ -665,7 +664,7 @@ object OcpcSampleToRedis {
       .withColumn("new_cvr_cnt", when(col("cvr_cnt")<20 and col("new_type_flag")===1, col("total_cvr")).otherwise(col("cvr_cnt")))
 
 
-    joinData2.write.mode("overwrite").saveAsTable("test.ocpc_final_join_table")
+    joinData2.write.mode("overwrite").saveAsTable("test.ocpc_final_join_table_bak")
     joinData2
 
 
@@ -693,7 +692,7 @@ object OcpcSampleToRedis {
       .withColumn("cvr3_cnt", when(col("base_cvr3_cnt").isNull, 0).otherwise(col("base_cvr3_cnt")))
       .select("ideaid", "adclass", "cvr3_cnt", "base_cvr3_cnt")
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cvr3_cnt_ideaids")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cvr3_cnt_ideaids_bak")
 
     resultDF
 
@@ -748,7 +747,7 @@ object OcpcSampleToRedis {
 
 
 
-    finalDF.write.mode("overwrite").saveAsTable("test.ocpc_test_k_regression_list")
+    finalDF.write.mode("overwrite").saveAsTable("test.ocpc_test_k_regression_list_bak")
 
 //    val resultDF  = finalDF.select("ideaid", "adclass", "regression_k_value")
 

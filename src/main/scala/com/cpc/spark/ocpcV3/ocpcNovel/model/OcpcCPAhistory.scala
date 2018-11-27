@@ -18,6 +18,7 @@ object OcpcCPAhistory {
 
     // TODO 测试
     val result = calculateCPA(date, hour, spark)
+//    dl_cpc.ocpcv3_novel_cpa_history_hourly
     result.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_bid_ratio20181127")
     println(s"succesfully save data into table: test.ocpcv3_cpa_bid_ratio20181127")
   }
