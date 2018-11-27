@@ -161,6 +161,8 @@ object evaluate {
              """.stripMargin
         val data = spark.sql(sql)
 
+        data.show(10)
+
         val conf = ConfigFactory.load()
         val tableName = "report2.report_auto_coin_evaluation_daily"
         val mariadb_write_prop = new Properties()
