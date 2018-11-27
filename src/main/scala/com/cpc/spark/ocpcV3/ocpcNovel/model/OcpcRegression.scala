@@ -19,6 +19,7 @@ object OcpcRegression {
     val date = args(0).toString
     val hour = args(1).toString
 
+    calculateK(date, hour, spark)
   }
 
   def calculateK(date: String, hour: String, spark: SparkSession) = {
