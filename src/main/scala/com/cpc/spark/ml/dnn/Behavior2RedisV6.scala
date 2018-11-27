@@ -75,7 +75,7 @@ object Behavior2RedisV6 {
     println("-------------------------------")
 
     val data = spark.sql(behavior_sql)
-      .join(spark.sql(interest_sql), Seq("uid"), "")
+      .join(spark.sql(interest_sql), Seq("uid"), "left")
       .select(
         $"uid",
         hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),

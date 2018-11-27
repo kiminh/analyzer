@@ -22,8 +22,6 @@ object IdFeature2Redis {
       .enableHiveSupport()
       .getOrCreate()
 
-    val path = args(0)
-
     spark.udf.register("hashSeq", hashSeq4Hive _)
 
     val ideaid_sql =
@@ -42,14 +40,14 @@ object IdFeature2Redis {
     data.show(false)
     println("id features count : " + data.count)
 
-    /*val conf = ConfigFactory.load()
+    val conf = ConfigFactory.load()
     data.coalesce(20).foreachPartition { p =>
       val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
       redis.auth(conf.getString("ali_redis.auth"))
 
       p.foreach { rec =>
         var group = Seq[Int]()
-        val ideaid = "ad_" + rec.getString(0)
+        val ideaid = "ad_" + rec.getInt(0)
         val hashcode = rec.getAs[Seq[Long]](1)
 
         group = group ++ Array.tabulate(hashcode.length)(x => 0)
@@ -58,7 +56,7 @@ object IdFeature2Redis {
       }
 
       redis.disconnect
-    }*/
+    }
 
   }
 
