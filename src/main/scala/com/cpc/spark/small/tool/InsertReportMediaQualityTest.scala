@@ -93,6 +93,7 @@ object InsertReportMediaQualityTest {
         (a, b) =>
           UnionLogInfo(a.searchid, a.mediaid, a.adslotid, a.adslot_type, 0, 0, a.trace_type, a.total + b.total, a.planid)
       }
+      .filter(_._2.trace_type.length < 200)
       .map {
         x =>
           (x._2)
