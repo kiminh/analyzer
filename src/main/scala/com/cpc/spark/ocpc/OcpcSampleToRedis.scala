@@ -286,7 +286,7 @@ object OcpcSampleToRedis {
     finalData3New.createOrReplaceTempView("raw_final_data")
 
 
-    finalData3New.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak_bak")
+//    finalData3New.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak_bak")
 
     val sqlRequest5 =
       s"""
@@ -319,7 +319,7 @@ object OcpcSampleToRedis {
     println(sqlRequest5)
     val finalData3 = spark.sql(sqlRequest5)
 
-    finalData3.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak2_bak")
+//    finalData3.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak2_bak")
 
     val finalData = finalData3.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
 
