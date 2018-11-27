@@ -512,7 +512,7 @@ object SaveFeatures {
       .rdd
       .map {
         x =>
-          ((x.getAs[String]("search_id"), x.getAs[String]("ideaid"), x.getAs[String]("telephone")), Seq(x))
+          ((x.getAs[String]("search_id"), x.getAs[Int]("ideaid"), x.getAs[String]("telephone")), Seq(x))
       }
       .reduceByKey(_ ++ _)
       .map {
