@@ -64,8 +64,8 @@ object OcpcRegression {
          |from
          |  (select unitid, isclick, price, ocpc_log_dict, iscvr1 as label1, iscvr2 as label2 from dl_cpc.ocpcv3_unionlog_label_hourly where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1 and media_appsid in ("80001098","80001292")) a
          |group by unitid,
-         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio1,
-         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio2,
+         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5),
+         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5),
          |  ocpc_log_dict['cpagiven']
       """.stripMargin
 
