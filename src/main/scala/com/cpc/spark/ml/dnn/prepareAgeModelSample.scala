@@ -176,7 +176,7 @@ object prepareAgeModelSample {
         $"sparse".getField("_3").alias("idx2"),
         $"sparse".getField("_4").alias("id_arr")
       ).rdd.zipWithUniqueId().map { x =>
-        (x._2, x._1.getAs[Seq[String]]("uid"), x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
+        (x._2, x._1.getAs[String]("uid"), x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
           x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
       }.toDF("sample_idx", "uid", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
