@@ -144,38 +144,38 @@ object evaluate {
                |)
              """.stripMargin
 
-        //val union = spark.sql(unionSql)
+        val union = spark.sql(unionSql)
 
-        //union.show(10)
-        //val data = union.repartition(1).cache()
+//        union.show(10)
+        val data = union.repartition(1).cache()
 
-        //data.write.mode("overwrite").insertInto("dl_cpc.auto_coin_evaluation_daily")
+        data.write.mode("overwrite").insertInto("dl_cpc.auto_coin_evaluation_daily")
 
-        //println("insert into dl_cpc.auto_coin_evaluation_daily success!")
+        println("insert into dl_cpc.auto_coin_evaluation_daily success!")
 
-        val sql =
-            s"""
-               |select *
-               |from dl_cpc.auto_coin_evaluation_daily
-               |where `date`= '$date'
-             """.stripMargin
-        val data = spark.sql(sql)
-
-        data.show(10)
-
-        val conf = ConfigFactory.load()
-        val tableName = "report2.report_auto_coin_evaluation_daily"
-        val mariadb_write_prop = new Properties()
-
-        val mariadb_write_url = conf.getString("mariadb.report2_write.url")
-        mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
-        mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
-        mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
-
-        data
-          .write
-          .mode(SaveMode.Append)
-          .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
+//        val sql =
+//            s"""
+//               |select *
+//               |from dl_cpc.auto_coin_evaluation_daily
+//               |where `date`= '$date'
+//             """.stripMargin
+//        val data = spark.sql(sql)
+//
+//        data.show(10)
+//
+//        val conf = ConfigFactory.load()
+//        val tableName = "report2.report_auto_coin_evaluation_daily"
+//        val mariadb_write_prop = new Properties()
+//
+//        val mariadb_write_url = conf.getString("mariadb.report2_write.url")
+//        mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
+//        mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
+//        mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
+//
+//        data
+//          .write
+//          .mode(SaveMode.Append)
+//          .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
 
 
     }
