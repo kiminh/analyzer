@@ -279,6 +279,7 @@ object OcpcSampleToRedis {
       .withColumn("k_value", when(col("is_ocpc_flag").isNull, col("cvr_cnt") * 1.0 / (col("ctr_cnt") * col("hpcvr"))).otherwise(col("k_value")))
       .join(cvr3Ideaid, Seq("ideaid"), "left_outer")
       .withColumn("k_value", when(col("conversion_goal")===2 && col("is_ocpc_flag").isNull, col("cvr3_cnt") * 1.0 / (col("ctr_cnt") * col("hpcvr"))).otherwise(col("k_value")))
+      .filter("k_value!=0")
 
 
     finalData3New.createOrReplaceTempView("raw_final_data")
