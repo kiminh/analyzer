@@ -136,3 +136,11 @@ message FloatArray {
     repeated float value = 1;
 }
 
+message ID2idx {
+    string key = 1;
+    repeated uint64 values = 2;
+}
+
+message ad_idx {
+    repeated ID2idx ideaid = 1;
+}
