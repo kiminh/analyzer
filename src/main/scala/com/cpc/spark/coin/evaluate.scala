@@ -86,7 +86,7 @@ object evaluate {
                |    group by
                |        case when a.exptags like '%needautocoin%' then "auto"
                |            when a.exptags not like "%nostylecoin%" then "manual"
-               |            else "notag" end;
+               |            else "notag" end
              """.stripMargin
 
         val union = spark.sql(unionSql)
