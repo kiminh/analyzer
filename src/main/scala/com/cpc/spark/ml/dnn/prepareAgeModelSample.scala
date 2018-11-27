@@ -5,7 +5,7 @@ import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.storage.StorageLevel
 
@@ -20,7 +20,36 @@ object prepareAgeModelSample {
       .enableHiveSupport()
       .getOrCreate()
 
-    val train = getSample(spark).persist(StorageLevel.MEMORY_AND_DISK)
+    import spark.implicits._
+
+    val sampleForAge = getSample(spark).persist(StorageLevel.MEMORY_AND_DISK)
+
+    val cal1 = Calendar.getInstance()
+    cal1.add(Calendar.DATE, -1)
+    val tardate = new SimpleDateFormat("yyyyMMdd").format(cal1.getTime)
+
+    val stmt =
+      """
+        |select distinct uid from dl_cpc.cpc_union_log where `date` = "%s" and media_appsid in ("80000001", "80000002")
+      """.stripMargin.format(tardate)
+
+    val uv = spark.sql(stmt).rdd.map {
+      r =>
+        val did = r.getAs[String](0)
+        did
+    }.distinct().toDF("uid")
+
+    val psampleForage = uv.join(sampleForAge, Seq("uid"))
+
+    psampleForage.repartition(100)
+      .write
+      .mode("overwrite")
+      .format("tfrecords")
+      .option("recordType", "Example")
+      .save(s"/user/cpc/dnn/age/dnnpredict")
+
+    val train = sampleForAge.filter("label is not null")
+
     val n = train.count().toDouble
     println("训练数据：total = %.4f, age1 = %.4f, age2 = %.4f, age3 = %.4f, age4 = %.4f,".
       format(n, train.where("label=array(1,0,0,0)").count.toDouble / n,
@@ -118,7 +147,7 @@ object prepareAgeModelSample {
         } else {(x._1._2, Seq("requestTimeNum" + x._1._1 + 7))}
     }.reduceByKey(_ ++ _).toDF("uid", "request")
 
-    val sample = zfb.join(profileData, Seq("uid")).join(uidRequest, Seq("uid"), "leftouter").repartition(800)
+    val sample = profileData.join(zfb, Seq("uid"), "leftouter").join(uidRequest, Seq("uid"), "leftouter").repartition(800)
 
     sample.select($"uid", $"label", hashSeq("m1", "string")($"pkgs").alias("m1"),
       hashSeq("m2", "string")($"request").alias("m2"),
@@ -133,24 +162,24 @@ object prepareAgeModelSample {
       hash("f7")($"screen_h").alias("f7"),
       hash("f8")($"sex").alias("f8"),
       hash("f9")($"antispam_score").alias("f9")).
-      select($"label",
+      select($"uid", $"label",
         array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9").alias("dense"),
         array($"m1", $"m2", $"m3", $"m4").alias("raw_sparse")
       ).select($"dense",
         mkSparseFeature_m($"raw_sparse").alias("sparse"),
-        $"label"
-      ).select(
-        $"label",
+        $"label", $"uid"
+    ).select(
+      $"uid", $"label",
         $"dense",
         $"sparse".getField("_1").alias("idx0"),
         $"sparse".getField("_2").alias("idx1"),
         $"sparse".getField("_3").alias("idx2"),
         $"sparse".getField("_4").alias("id_arr")
       ).rdd.zipWithUniqueId().map { x =>
-        (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
+        (x._2, x._1.getAs[Seq[String]]("uid"), x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
           x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
-      }.toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
+      }.toDF("sample_idx", "uid", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
 
   }
 
