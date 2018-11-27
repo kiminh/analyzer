@@ -1,11 +1,17 @@
 package com.cpc.spark.ocpcV3.ocpcNovel
 
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
+import ocpcnovel.ocpcnovel.SingleUnit
+//import ocpcnovel.ocpcnovel.OcpcNovel
+//import ocpcnovel.ocpcnovel
+
+import scala.collection.mutable.ListBuffer
 
 
 object OcpcGetPb {
@@ -20,8 +26,15 @@ object OcpcGetPb {
     val kvalue = getK(date, hour, spark)
     val cpaHistory = getCPAhistory(date, hour, spark)
 
-//    val data = cvrData.join(kvalue, )
+    val data = cvrData
+      .join(kvalue, Seq("unitid"), "left_outer")
+      .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt")
+      .join(cpaHistory, Seq("unitid"), "left_outer")
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt")
+    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_hourly")
 
+    // 输出pb文件
+    savePbPack(data)
   }
 
   def getK(date: String, hour: String, spark: SparkSession) = {
@@ -117,6 +130,52 @@ object OcpcGetPb {
     // 返回结果
     resultDF.show(10)
     resultDF
+  }
+
+  def savePbPack(dataset: Dataset[Row]): Unit = {
+    var list = new ListBuffer[SingleUnit]
+    val filename = s"OcpcNovel.pb"
+    println("size of the dataframe")
+    println(dataset.count)
+    dataset.show(10)
+    var cnt = 0
+
+    for (record <- dataset.collect()) {
+      val unitid = record.getAs[Int]("unitid").toString
+      val cpaHistory = record.getAs[Double]("cpa_history")
+      val kvalue = record.getAs[Double]("kvalue")
+      val cvr1cnt = record.getAs[Int]("cvr1cnt")
+      val cvr2cnt = record.getAs[Int]("cvr2cnt")
+
+      if (cnt % 500 == 0) {
+        println(s"unitid:$unitid, cpaHistory:$cpaHistory, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt")
+      }
+      cnt += 1
+
+      val currentItem = SingleUnit(
+        unitid = unitid,
+        kvalue = kvalue,
+        cpaHistory = cpaHistory,
+        cvr2Cnt = cvr1cnt,
+        cvr3Cnt = cvr2cnt
+      )
+      list += currentItem
+
+    }
+//    val result = list.toArray[SingleUnit]
+//    val adUnit = OcpcnovelProto(
+//      adUnit = result
+//    )
+//    val adUnit = OcpcnovelProto(
+//      adunit = result
+//    )
+//    println("length of the array")
+//    println(result.length)
+//    useridData.writeTo(new FileOutputStream(filename))
+
+    //    dataset.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
+    println("complete save data into protobuffer")
+
   }
 
 

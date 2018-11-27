@@ -11,6 +11,6 @@ message SingleUnit {
 }
 
 
-message OcpcNovel {
-    repeated SingleUnit unitid = 1;
+message OcpcNovelList {
+    repeated SingleUnit adunit = 1;
 }
