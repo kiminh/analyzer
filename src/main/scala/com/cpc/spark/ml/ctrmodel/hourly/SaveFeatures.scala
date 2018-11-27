@@ -2,10 +2,11 @@ package com.cpc.spark.ml.ctrmodel.hourly
 
 
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Properties}
 
 import com.cpc.spark.log.parser.TraceLog
 import com.cpc.spark.ml.common.Utils
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.rdd.RDD
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
@@ -44,7 +45,7 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    saveDataFromLog(spark, date, hour)
+    //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
     saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
     println("SaveFeatures_done")
@@ -441,10 +442,45 @@ object SaveFeatures {
 
 
     //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算
+    //读取表单转化数据
+    val config = ConfigFactory.load()
+    val url = config.getString("mariadb.adv.url")
+    val properties = new Properties()
+    properties.put("user", config.getString("mariadb.adv.user"))
+    properties.put("password", config.getString("mariadb.adv.password"))
+    properties.put("driver", config.getString("mariadb.adv.driver"))
+
+    val table =
+      s"""
+         |select "" as flag1
+         |       ,"" as flag2
+         |       ,0 as flag3
+         |       ,search_id
+         |       ,0 as adslot_type
+         |       ,"" as client_type
+         |       ,0 as adclass
+         |       ,siteid
+         |       ,0 as adsrc
+         |       ,0 as interaction
+         |       ,"" as uid
+         |       ,user_id as userid
+         |       ,idea_id as ideaid
+         |       ,telephone
+         |       ,"" as trace_type
+         |       ,"" as trace_op1
+         |from adv.site_form_data
+         |where SUBSTR(create_time,1,10)='2018-11-26' and SUBSTR(create_time,12,2)>="%s" and SUBSTR(create_time,12,2)<="%s"
+         |    and ideaid > 0
+       """.stripMargin.format(date, before1hour, hour)
+
+    val site_form = spark.read.jdbc(url, table, properties)
+
+
     val cvrlog = spark.sql(
       s"""
          |select  b.trace_type as flag1
          |       ,b.trace_op1 as flag2
+         |       ,1 as flag3
          |       ,a.searchid as search_id
          |       ,a.adslot_type
          |       ,a.ext["client_type"].string_value as client_type
@@ -455,7 +491,9 @@ object SaveFeatures {
          |       ,a.uid
          |       ,a.userid
          |       ,a.ideaid
-         |       ,b.*
+         |       ,"" as telephone
+         |       ,b.trace_type
+         |       ,b.trace_op1
          |from (select * from dl_cpc.cpc_union_log
          |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "") a
          |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
@@ -468,10 +506,11 @@ object SaveFeatures {
          |    on a.searchid=b.searchid
          | where t2.id is null
             """.stripMargin.format(date, hour, yesterday, date, hour))
+      .union(site_form)
       .rdd
       .map {
         x =>
-          (x.getAs[String]("search_id"), Seq(x))
+          ((x.getAs[String]("search_id"), x.getAs[String]("ideaid")), Seq(x))
       }
       .reduceByKey(_ ++ _)
       .map {
