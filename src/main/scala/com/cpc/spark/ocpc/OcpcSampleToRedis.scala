@@ -137,7 +137,7 @@ object OcpcSampleToRedis {
 
 
     val userFinalData = spark.sql(sqlRequest2)
-//    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
+    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
 //    val userFinalData3 = filterDataByType(userFinalData, end_date, hour, spark)
 
@@ -198,12 +198,12 @@ object OcpcSampleToRedis {
 
 
 
-//    userFinalData2
-//      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
-//      .withColumn("date", lit(end_date))
-//      .withColumn("hour", lit(hour))
-//      .write.mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
+    userFinalData2
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
+      .withColumn("date", lit(end_date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
 
 
 
@@ -325,14 +325,14 @@ object OcpcSampleToRedis {
 
 
 
-//    finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
-//
-//
-//    finalData
-//      .withColumn("date", lit(end_date))
-//      .withColumn("hour", lit(hour))
-//      .write.mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
+    finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
+
+
+    finalData
+      .withColumn("date", lit(end_date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
 
     // 保存pb文件
     savePbPack(finalData)
