@@ -163,11 +163,8 @@ object OcpcSampleToRedis {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case when b.k_value is null and a.new_type_flag=1 then 0.694 * 0.8
-         |        when b.k_value is null and a.new_type_flag!=1 then 0.694
-         |        else b.k_value end) as k_value,
-         |  (case when a.cvr3_cnt is null then 0 else a.cvr3_cnt end) as cvr3_cnt,
-         |  a.new_type_flag as type_flag
+         |  b.k_value,
+         |  (case when a.cvr3_cnt is null then 0 else a.cvr3_cnt end) as cvr3_cnt
          |FROM
          |  (SELECT
          |    ideaid,
@@ -179,7 +176,6 @@ object OcpcSampleToRedis {
          |    adclass_cost,
          |    adclass_ctr_cnt,
          |    adclass_cvr_cnt,
-         |    new_type_flag,
          |    cast(cvr3_cnt as bigint) as cvr3_cnt
          |   FROM
          |    ocpc_new_cvr_table) a
