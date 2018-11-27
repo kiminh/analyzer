@@ -65,6 +65,10 @@ object OcpcSampleToRedis {
 
     rawBase.createOrReplaceTempView("base_table")
 
+    val ocpcIdeas = getIdeaUpdates(spark)
+//    ocpcIdeas.createOrReplaceTempView("ocpc_idea_update_time")
+    ocpcIdeas.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_ideaid_list")
+
 
     val base = rawBase.select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
@@ -252,8 +256,9 @@ object OcpcSampleToRedis {
     println(sqlRequest4)
 
     val regressionK = getRegressionK(end_date, hour, spark)
+
     val cvr3Ideaid = spark
-      .table("test.ocpc_idea_update_time")
+      .table("dl_cpc.ocpcv3_ideaid_list")
       .select("ideaid", "conversion_goal")
       .distinct()
 
@@ -311,7 +316,7 @@ object OcpcSampleToRedis {
          |FROM
          |  (SELECT * FROM raw_final_data WHERE k_value is not null or is_ocpc_flag is not null) as a
          |LEFT JOIN
-         |  test.ocpc_idea_update_time as b
+         |  dl_cpc.ocpcv3_ideaid_list as b
          |ON
          |  a.ideaid=b.ideaid
        """.stripMargin
@@ -617,7 +622,7 @@ object OcpcSampleToRedis {
 //    val typeData = rawData.filter("seq=1").select("ideaid", "adclass", "type_flag")
 
     val typeData = spark
-      .table("test.ocpc_idea_update_time")
+      .table("dl_cpc.ocpcv3_ideaid_list")
       .withColumn("type_flag", when(col("conversion_goal")===3, 1).otherwise(0)).select("ideaid", "type_flag")
 
     typeData.write.mode("overwrite").saveAsTable("test.ocpc_idea_type_20181109")
@@ -670,7 +675,7 @@ object OcpcSampleToRedis {
     import spark.implicits._
 
     val cvr3List = spark
-      .table("test.ocpc_idea_update_time")
+      .table("dl_cpc.ocpcv3_ideaid_list")
       .filter("conversion_goal=2")
       .withColumn("flag", lit(1))
       .select("ideaid", "flag")
@@ -723,7 +728,7 @@ object OcpcSampleToRedis {
     val regressionK = spark.sql(sqlRequest)
 
     val cvr3List = spark
-      .table("test.ocpc_idea_update_time")
+      .table("dl_cpc.ocpcv3_ideaid_list")
       .filter("conversion_goal=2")
       .withColumn("cvr3_flag", lit(1))
       .select("ideaid", "cvr3_flag")
