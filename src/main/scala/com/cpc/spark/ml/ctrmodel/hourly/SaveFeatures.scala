@@ -367,7 +367,7 @@ object SaveFeatures {
          |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
          |where t2.id is null
        """.stripMargin.format(date, hour, date, hour, yesterday)
-    println("sql_moti" + sql_moti)
+    println("sql_moti: " + sql_moti)
 
     //    val userApiBackRDD = spark.sql(
     //            """
@@ -459,7 +459,7 @@ object SaveFeatures {
          |       ,0 as adslot_type
          |       ,"" as client_type
          |       ,0 as adclass
-         |       ,siteid
+         |       ,site_id as siteid
          |       ,0 as adsrc
          |       ,0 as interaction
          |       ,"" as uid
@@ -470,7 +470,7 @@ object SaveFeatures {
          |       ,"" as trace_op1
          |from adv.site_form_data
          |where SUBSTR(create_time,1,10)="%s" and SUBSTR(create_time,12,2)>="%s" and SUBSTR(create_time,12,2)<="%s"
-         |    and ideaid > 0
+         |    and idea_id > 0
        """.stripMargin.format(date, before1hour, hour)
     println(table)
     val site_form = spark.read.jdbc(url, table, properties)
@@ -518,6 +518,9 @@ object SaveFeatures {
           val convert = Utils.cvrPositiveV(x._2, version)
           val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version) //新cvr
 
+          //telephone
+          var telephone = ""
+
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
           //active1,active2,active3,active4,active5,active6,disactive,active_auto,active_auto_download,active_auto_submit,active_wx,active_third
@@ -526,6 +529,7 @@ object SaveFeatures {
               if ((!x.isNullAt(0)) && (!x.isNullAt(1))) { //过滤 cpc_union_log有cpc_union_trace_log 没有的
                 val trace_type = x.getAs[String]("trace_type")
                 val trace_op1 = x.getAs[String]("trace_op1")
+                val flag3 = x.getAs[String]("flag3")
 
                 trace_type match {
                   case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
@@ -544,6 +548,9 @@ object SaveFeatures {
                   active_map += ("report_user_stayinwx" -> 1)
                 }
 
+                if (flag3 == 0){
+                  telephone=x.getAs[String]("telephone")
+                }
               }
             }
           )
@@ -552,13 +559,14 @@ object SaveFeatures {
             active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
             active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
             active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
-            active_map.getOrElse("report_user_stayinwx", 0))
+            active_map.getOrElse("report_user_stayinwx", 0), telephone)
       }
-      .toDF("searchid", "label", "label2", "label_type", "active1", "active2", "active3", "active4", "active5", "active6", "disactive", "active_href", "installed", "report_user_stayinwx")
+      .toDF("searchid", "label", "label2", "label_type", "active1", "active2", "active3", "active4", "active5", "active6",
+        "disactive", "active_href", "installed", "report_user_stayinwx", "telephone")
 
     //cvrlog.filter(x => x.getAs[String]("searchid") == "02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
-
+    cvrlog.take(3).map(x=>println(x))
     val sqlStmt =
       """
         |select searchid,sex,age,os,isp,network,
