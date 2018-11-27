@@ -237,7 +237,7 @@ object SaveFeatures {
     cal.add(Calendar.HOUR, -1)
     val fDate = dateFormat.format(cal.getTime)
     val before1hour = fDate.substring(11, 13)
-
+/*
     //激励下载转化  取有点击的
     val motivateRDD = spark.sql(
       s"""
@@ -440,7 +440,7 @@ object SaveFeatures {
 
     s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v2_done/$date-$hour.ok" !
 
-
+*/
     //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算
     //读取表单转化数据
     val config = ConfigFactory.load()
@@ -567,8 +567,9 @@ object SaveFeatures {
         "disactive", "active_href", "installed", "report_user_stayinwx", "telephone")
 
     //cvrlog.filter(x => x.getAs[String]("searchid") == "02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
-    println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
     cvrlog.take(3).map(x => println(x))
+    println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getAs[Int]("label2") > 0).count())
+
 
     val sqlStmt =
       """
