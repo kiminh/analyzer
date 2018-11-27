@@ -100,7 +100,6 @@ object DNNSampleHourlyV3 {
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
-         |  and uid > 0
       """.stripMargin
     println("--------------------------------")
     println(sql)
