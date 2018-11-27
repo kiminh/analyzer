@@ -22,7 +22,7 @@ object SaveFeatures {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   private var version = "v1"
-  private var versionV2 = "v2"
+  private var versionV2 = "v2_test"//
 
 
   def main(args: Array[String]): Unit = {
@@ -452,7 +452,7 @@ object SaveFeatures {
 
     val table =
       s"""
-         |select "" as flag1
+         |(select "" as flag1
          |       ,"" as flag2
          |       ,0 as flag3
          |       ,search_id
@@ -470,9 +470,9 @@ object SaveFeatures {
          |       ,"" as trace_op1
          |from adv.site_form_data
          |where SUBSTR(create_time,1,10)="%s" and SUBSTR(create_time,12,2)>="%s" and SUBSTR(create_time,12,2)<="%s"
-         |    and idea_id > 0
+         |    and idea_id > 0) as t
        """.stripMargin.format(date, before1hour, hour)
-    println(table)
+    println("table: " + table)
     val site_form = spark.read.jdbc(url, table, properties)
     println("site_form " + site_form.count())
 
@@ -510,7 +510,7 @@ object SaveFeatures {
       .rdd
       .map {
         x =>
-          ((x.getAs[String]("search_id"), x.getAs[String]("ideaid")), Seq(x))
+          ((x.getAs[String]("search_id"), x.getAs[String]("ideaid"), x.getAs[String]("telephone")), Seq(x))
       }
       .reduceByKey(_ ++ _)
       .map {
@@ -548,8 +548,8 @@ object SaveFeatures {
                   active_map += ("report_user_stayinwx" -> 1)
                 }
 
-                if (flag3 == 0){
-                  telephone=x.getAs[String]("telephone")
+                if (flag3 == 0) {
+                  telephone = x.getAs[String]("telephone")
                 }
               }
             }
@@ -566,7 +566,8 @@ object SaveFeatures {
 
     //cvrlog.filter(x => x.getAs[String]("searchid") == "02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getInt(1) > 0).count())
-    cvrlog.take(3).map(x=>println(x))
+    cvrlog.take(3).map(x => println(x))
+
     val sqlStmt =
       """
         |select searchid,sex,age,os,isp,network,
@@ -596,12 +597,12 @@ object SaveFeatures {
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
     spark.sql(
       """
-        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
-      """.stripMargin.format(date, hour, date, hour))
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1_test add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2_test/%s/%s'
+      """.stripMargin.format(date, hour, date, hour)) // //
 
     //输出标记文件
-    s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !
+    //s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !  //
 
   }
 
