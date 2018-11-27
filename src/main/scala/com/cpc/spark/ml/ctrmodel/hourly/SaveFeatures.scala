@@ -469,7 +469,7 @@ object SaveFeatures {
          |       ,"" as trace_type
          |       ,"" as trace_op1
          |from adv.site_form_data
-         |where SUBSTR(create_time,1,10)='2018-11-26' and SUBSTR(create_time,12,2)>="%s" and SUBSTR(create_time,12,2)<="%s"
+         |where SUBSTR(create_time,1,10)="%s" and SUBSTR(create_time,12,2)>="%s" and SUBSTR(create_time,12,2)<="%s"
          |    and ideaid > 0
        """.stripMargin.format(date, before1hour, hour)
 
