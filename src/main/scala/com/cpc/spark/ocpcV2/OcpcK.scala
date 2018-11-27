@@ -3,11 +3,14 @@ package com.cpc.spark.ocpcV2
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.ocpc.utils.OcpcUtils._
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 
 import scala.collection.mutable
 import org.apache.spark.sql.functions._
+
+import com.cpc.spark.udfs.Udfs_wj._
 
 object OcpcK {
 
@@ -60,7 +63,7 @@ object OcpcK {
          |  left outer join
          |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition) b on a.searchid = b.searchid
          |  left outer join
-         |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $dtCondition) c on a.searchid = c.searchid
+         |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $dtCondition and iscvr=1 group by searchid, iscvr) c on a.searchid = c.searchid
          |group by ideaid,
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5),
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5),
@@ -69,17 +72,30 @@ object OcpcK {
 
     println(statSql)
 
+    val realCvr3 = getIdeaidCvr3Ratio(date, hour, spark)
+
     val tablename = "dl_cpc.cpc_ocpc_v2_middle"
-    spark.sql(statSql)
+    val rawData = spark.sql(statSql)
+//    rawData.write.mode("overwrite").saveAsTable("test.cpc_ocpc_v2_middle1")
+
+    val data = rawData
+      .join(realCvr3, Seq("ideaid"), "left_outer")
+      .withColumn("cvr3_ratio", udfSqrt()(col("cvr_ratio")))
+      .withColumn("cpa3", col("cpa3") * 1.0 / col("cvr3_ratio"))
+      .withColumn("ratio3", col("ratio3") * 1.0 / col("cvr3_ratio"))
+      .withColumn("cvr3Cnt", col("cvr3Cnt") * col("cvr3_ratio"))
+      .select("ideaid", "k_ratio2", "k_ratio3", "cpagiven", "cpa2", "cpa3", "ratio2", "ratio3", "clickCnt", "cvr2Cnt", "cvr3Cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .write.mode("overwrite").insertInto(tablename)
+
+    data.write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio2", "k_ratio3", "date", "hour")
+//    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k")
     res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
 
   }
@@ -126,7 +142,7 @@ object OcpcK {
       println("sample", x, y, n)
     }
 
-    for (i <- 0 to count / 5) {
+    for (i <- 0 to count / 10) {
       obs.add(0.0, 0.0);
     }
 
@@ -139,6 +155,71 @@ object OcpcK {
       res.append(c)
     }
     res.toList
+  }
+
+  def getIdeaidCvr3Ratio(date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -72)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition1 = getTimeRangeSql2(date1, hour1, date, hour)
+    val selectCondition2 = getTimeRangeSql3(date1, hour1, date, hour)
+
+    val sqlRequest0 =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  SUM(iscvr) as total_cvr_cnt
+         |FROM
+         |  dl_cpc.cpc_api_union_log
+         |WHERE
+         |  $selectCondition1
+         |AND
+         |  iscvr=1
+         |GROUP BY ideaid
+       """.stripMargin
+
+    val rawData = spark.sql(sqlRequest0)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  a.ideaid,
+         |  b.label
+         |FROM
+         |  (select * from dl_cpc.ocpc_unionlog where $selectCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1) as a
+         |LEFT JOIN
+         |  (select searchid, iscvr as label from dl_cpc.cpc_api_union_log where $selectCondition1 and iscvr=1 group by searchid, iscvr) as b
+         |ON
+         |  a.searchid=b.searchid
+       """.stripMargin
+
+    println(sqlRequest)
+    val filteredData = spark
+      .sql(sqlRequest)
+      .groupBy("ideaid")
+      .agg(sum(col("label")).alias("cvr_cnt"))
+      .select("ideaid", "cvr_cnt")
+
+    val resultDF = filteredData
+      .join(rawData, Seq("ideaid"), "left_outer")
+      .withColumn("cvr_ratio", col("total_cvr_cnt") * 1.0 / col("cvr_cnt"))
+      .withColumn("cvr_ratio", when(col("cvr_ratio")<1, 1.0).otherwise(col("cvr_ratio")))
+      .withColumn("cvr_ratio", when(col("cvr_ratio")>10, 10.0).otherwise(col("cvr_ratio")))
+
+    // TODO 删除临时表
+    resultDF.write.mode("overwrite").saveAsTable("test.test_ocpc_check_cvr3_ratio")
+
+    resultDF
+
   }
 
 

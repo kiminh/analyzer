@@ -7,7 +7,7 @@ message RetrievalEmbedding {
     repeated double embeddings = 2;
 }
 
-message AllProductEmbeddings {
+message AllAdEmbeddings {
     string version = 1;
     map<int32, RetrievalEmbedding> allEmbeddings = 2;
 }
@@ -80,6 +80,7 @@ message Pack {
     uint32 dnn_embed_width = 16;
     bool use_model_server = 17;
     ModelServer model_server = 18;
+    repeated int32 dnn_redis_groups = 19;
 }
 
 message ModelServer {
@@ -127,14 +128,45 @@ message AccessLog {
 message IntArray {
     repeated int64 value = 1;
 }
+
+message FloatArray {
+    repeated float value = 1;
+}
+
 message DnnMultiHot {
     repeated uint32 group = 1;
     repeated uint64 hashcode = 2;
 }
 
-message FloatArray {
-    repeated float value = 1;
+//----------------------------snapshot--
+
+enum ModelType {
+    MTYPE_NONE = 0;
+    MTYPE_CTR = 1;
+    MTYPE_CVR = 2;
+    MYTPE_API_CVR = 3;
 }
+
+message FeatureGroup {
+    map<string, double> namedValue = 1;
+    repeated string strClass = 2;
+    repeated int32 intClass = 3;
+    repeated double vector = 4;
+    repeated int64 longClass = 5;
+}
+
+message AdScoringEvent {
+    int64 timestamp = 1;
+    string insertionID = 2;  // unique key for each ad insertion
+    int32 userID = 3;
+    int32 ideaID = 4; // various Ad internal ids
+    string uid = 5;
+    string version = 6;
+    ModelType modelType = 7;
+    repeated FeatureGroup dnnMultihot = 8;
+    map<string, FeatureGroup> featureGroups = 100;
+}
+//----------------------------
 
 message ID2idx {
     string key = 1;
