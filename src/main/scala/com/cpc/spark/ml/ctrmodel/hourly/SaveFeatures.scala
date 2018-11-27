@@ -529,7 +529,7 @@ object SaveFeatures {
               if ((!x.isNullAt(0)) && (!x.isNullAt(1))) { //过滤 cpc_union_log有cpc_union_trace_log 没有的
                 val trace_type = x.getAs[String]("trace_type")
                 val trace_op1 = x.getAs[String]("trace_op1")
-                val flag3 = x.getAs[String]("flag3")
+                val flag3 = x.getAs[Int]("flag3")
 
                 trace_type match {
                   case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
