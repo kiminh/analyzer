@@ -117,7 +117,7 @@ object evaluate {
                |        from
                |            dl_cpc.cpc_union_log
                |        where
-               |            `date` = '2018-11-26'
+               |            `date` = '$date'
                |            and media_appsid  in ("80000001", "80000002")
                |            and isshow = 1
                |            and ext['antispam'].int_value = 0 and ideaid > 0
@@ -129,7 +129,7 @@ object evaluate {
                |    (
                |        select searchid, label2
                |        from dl_cpc.ml_cvr_feature_v1
-               |        where `date`='2018-11-26'
+               |        where `date`='$date'
                |    ) b
                |    on a.searchid = b.searchid
                |
