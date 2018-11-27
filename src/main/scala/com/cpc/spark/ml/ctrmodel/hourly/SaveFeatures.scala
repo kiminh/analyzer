@@ -468,6 +468,7 @@ object SaveFeatures {
          |       ,telephone
          |       ,"" as trace_type
          |       ,"" as trace_op1
+         |       ,0 as duration
          |from adv.site_form_data
          |where SUBSTR(create_time,1,10)="%s" and SUBSTR(create_time,12,2)>="%s" and SUBSTR(create_time,12,2)<="%s"
          |    and idea_id > 0) as t
@@ -494,6 +495,7 @@ object SaveFeatures {
          |       ,"" as telephone
          |       ,b.trace_type
          |       ,b.trace_op1
+         |       ,b.duration
          |from (select * from dl_cpc.cpc_union_log
          |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "") a
          |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
