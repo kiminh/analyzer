@@ -31,6 +31,7 @@ object OcpcGetPb {
       .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt")
       .join(cpaHistory, Seq("unitid"), "left_outer")
       .withColumn("kvalue", when(col("kvalue").isNull, lit(0.5)).otherwise(col("kvalue")))
+      .withColumn("cpa_history", col("cpa1"))
       .filter("cpa_history is not null")
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt")
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_hourly")
@@ -173,7 +174,6 @@ object OcpcGetPb {
     println(result.length)
     adUnitList.writeTo(new FileOutputStream(filename))
 
-    //    dataset.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
     println("complete save data into protobuffer")
 
   }
