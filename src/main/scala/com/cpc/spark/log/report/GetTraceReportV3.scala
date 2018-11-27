@@ -393,7 +393,7 @@ object GetTraceReportV3 {
          |      from dl_cpc.cpc_motivation_log
          |      where `date` = "%s" and hour = "%s" and isclick = 1
          |   ) as un
-         |on tr.searchid = un.searchid and tr.ideaid = un.ideadid
+         |on tr.searchid = un.searchid and tr.ideaid = un.ideaid
        """.stripMargin.format(date, hour, date, hour)
     println(sql_moti)
 
