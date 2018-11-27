@@ -141,10 +141,11 @@ object OcpcGetPb {
     println("size of the dataframe")
     println(dataset.count)
     dataset.show(10)
+    dataset.printSchema()
     var cnt = 0
 
     for (record <- dataset.collect()) {
-      val unitid = record.getAs[Int]("unitid").toString
+      val unitid = record.getAs[Long]("unitid").toString
       val cpaHistory = record.getAs[Double]("cpa_history")
       val kvalue = record.getAs[Double]("kvalue")
       val cvr1cnt = record.getAs[Int]("cvr1cnt")
