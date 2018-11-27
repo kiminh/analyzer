@@ -102,10 +102,10 @@ object Behavior2RedisV6 {
     println("user behavior v6 用户行为特征总数：" + data.count())
 
     data.coalesce(20).write.mode("overwrite")
-      .parquet("/user/cpc/zhj/behaviorV3")
+      .parquet("/user/cpc/zhj/behaviorV6")
 
 
-    val conf = ConfigFactory.load()
+    /*val conf = ConfigFactory.load()
     data.coalesce(20).foreachPartition { p =>
       val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
       redis.auth(conf.getString("ali_redis.auth"))
@@ -123,7 +123,7 @@ object Behavior2RedisV6 {
       }
 
       redis.disconnect
-    }
+    }*/
   }
 
   /**
