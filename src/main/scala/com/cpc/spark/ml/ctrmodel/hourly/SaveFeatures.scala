@@ -319,7 +319,7 @@ object SaveFeatures {
        |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
        |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
        """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour)
-    println(sql)
+    println("sql: " + sql)
 
     //没有api回传标记，直接上报到trace
     val sql2 =
@@ -338,7 +338,7 @@ object SaveFeatures {
          |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
          |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and t2.id is null
        """.stripMargin.format(date, before1hour, hour, yesterday, date, hour)
-    println(sql2)
+    println("sql2: " + sql2)
 
     //应用商城api转化
     val sql_moti =
@@ -359,7 +359,7 @@ object SaveFeatures {
          |      where `thedate` = "%s" and `thehour` = "%s" and trace_type = 'active_third'
          |   ) as tr
          |join
-         |   (  select searchid, userid, uid, planid, unitid, ideaid, adclass, date, hour
+         |   (  select searchid, userid, "" as uid, planid, unitid, ideaid, adclass, date, hour
          |      from dl_cpc.cpc_motivation_log
          |      where `date` = "%s" and hour = "%s" and isclick = 1
          |   ) as un
@@ -367,7 +367,7 @@ object SaveFeatures {
          |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
          |where t2.id is null
        """.stripMargin.format(date, hour, date, hour, yesterday)
-    println(sql_moti)
+    println("sql_moti" + sql_moti)
 
     //    val userApiBackRDD = spark.sql(
     //            """
@@ -472,9 +472,9 @@ object SaveFeatures {
          |where SUBSTR(create_time,1,10)="%s" and SUBSTR(create_time,12,2)>="%s" and SUBSTR(create_time,12,2)<="%s"
          |    and ideaid > 0
        """.stripMargin.format(date, before1hour, hour)
-
+    println(table)
     val site_form = spark.read.jdbc(url, table, properties)
-
+    println("site_form " + site_form.count())
 
     val cvrlog = spark.sql(
       s"""
