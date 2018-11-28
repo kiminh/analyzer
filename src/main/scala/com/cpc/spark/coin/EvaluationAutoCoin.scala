@@ -18,7 +18,7 @@ object EvaluationAutoCoin {
 
         val sql =
             s"""
-               |select *
+               |select a.*,b.label2 as label2
                |from
                |(
                |    select *
