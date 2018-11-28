@@ -25,11 +25,7 @@ object OcpcMotivationTable {
       s"""
          |select
          |    searchid,
-         |    ideaid,
-         |    unitid,
-         |    userid,
-         |    media_appsid,
-         |    ext['adclass'].int_value as adclass
+         |    media_appsid
          |from dl_cpc.cpc_union_log
          |where $selectWhere
          |and isclick is not null
@@ -67,7 +63,7 @@ object OcpcMotivationTable {
 
     // 数据关联，使用unionlog过滤
     val resultDF = unionLog
-      .join(motivationLog, Seq("searchid", "ideaid", "unitid", "adclass", "userid"))
+      .join(motivationLog, Seq("searchid"))
       .select("searchid", "ideaid", "unitid", "adclass", "userid", "media_appsid", "isclick", "isshow")
 
     resultDF.show(10)
