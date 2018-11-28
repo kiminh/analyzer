@@ -123,6 +123,10 @@ object EvaluationAutoCoin {
                |    round(convert_1*100/uid_num,6) as acpu_1,
                |    round(convert_2*100/uid_num,6) as acpu_2,
                |
+               |    show_wangzhuan,
+               |    click_wangzhuan,
+               |    convert_wangzhuan,
+               |    click_price_wangzhuan,
                |    round(click_wangzhuan/show_wangzhuan,6) as ctr_wangzhuan,
                |    round(convert_wangzhuan/click_wangzhuan,6) as cvr_wangzhuan,
                |    round(show_wangzhuan/uid_num,6) as aspu_wangzhuan,
@@ -132,6 +136,10 @@ object EvaluationAutoCoin {
                |    round(click_price_wangzhuan*10/show_wangzhuan,6) as cpm_wangzhuan,
                |    click_num_wangzhuan,
                |
+               |    show_xiazai,
+               |    click_xiazai,
+               |    convert_xiazai,
+               |    click_price_xiazai,
                |    round(click_xiazai/show_xiazai,6) as ctr_xiazai,
                |    round(convert_xiazai/click_xiazai,6) as cvr_xiazai,
                |    round(show_xiazai/uid_num,6) as aspu_xiazai,
@@ -141,6 +149,10 @@ object EvaluationAutoCoin {
                |    round(click_price_xiazai*10/show_xiazai,6) as cpm_xiazai,
                |    click_num_xiazai,
                |
+               |    show_baojianpin,
+               |    click_baojianpin,
+               |    convert_baojianpin,
+               |    click_price_baojianpin,
                |    round(click_baojianpin/show_baojianpin,6) as ctr_baojianpin,
                |    round(convert_baojianpin/click_baojianpin,6) as cvr_baojianpin,
                |    round(show_baojianpin/uid_num,6) as aspu_baojianpin,
@@ -150,6 +162,10 @@ object EvaluationAutoCoin {
                |    round(click_price_baojianpin*10/show_baojianpin,6) as cpm_baojianpin,
                |    click_num_baojianpin,
                |
+               |    show_qipai,
+               |    click_qipai,
+               |    convert_qipai,
+               |    click_price_qipai,
                |    round(click_qipai/show_qipai,6) as ctr_qipai,
                |    round(convert_qipai/click_qipai,6) as cvr_qipai,
                |    round(show_qipai/uid_num,6) as aspu_qipai,
