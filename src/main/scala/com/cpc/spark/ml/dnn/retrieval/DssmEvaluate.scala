@@ -33,7 +33,7 @@ object DssmEvaluate {
       var score = 0.0
       var userEmbeddingStr = ""
       var adEmbeddingStr = ""
-      if (userEmbedding != null && adEmbedding == null) {
+      if (userEmbedding != null && adEmbedding != null) {
         var sum = 0.0
         for (i <- userEmbedding.indices) {
           sum = sum + userEmbedding(i) * adEmbedding(i)
