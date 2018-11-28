@@ -15,7 +15,9 @@ object OcpcLabelCvr2 {
     val date = args(0).toString
     val hour = args(1).toString
 
+    // TODO 测试
     val result = getLabel(date, hour, spark)
+    result.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr2_data_hourly")
 //    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr2_data_hourly")
     println("successfully save data into table: dl_cpc.ocpcv3_cvr2_data_hourly")
   }
@@ -278,8 +280,20 @@ object OcpcLabelCvr2 {
   }
 
   def getLabel(date: String, hour: String, spark: SparkSession) = {
-    // TODO 测试
     val labelData1 = getLabel1(date, hour, spark)
-    labelData1.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr2_data_part1")
+    val labelData2 = getLabel2(date, hour, spark)
+    val labelData3 = getLabel3(date, hour, spark)
+
+    val labelData = labelData1.union(labelData2).union(labelData3)
+    labelData.show(10)
+    labelData.createOrReplaceTempView("label_data")
+    val resultDF = labelData
+      .filter(s"label=1")
+      .select("ideaid", "unitid", "adclass", "media_appsid", "label")
+      .distinct()
+      .groupBy("ideaid", "unitid", "adclass", "media_appsid")
+      .agg(sum(col("label")).alias("cvr2_cnt"))
+    resultDF.show(10)
+    resultDF
   }
 }
