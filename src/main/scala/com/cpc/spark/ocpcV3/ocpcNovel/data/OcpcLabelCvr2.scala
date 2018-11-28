@@ -143,7 +143,7 @@ object OcpcLabelCvr2 {
     val labelData = spark.sql(sqlRequest2).distinct()
 
     val resultDF = rawData
-      .join(labelData, Seq("searchid"), "left_outer")
+      .join(labelData, Seq("searchid"))
       .select("searchid", "ideaid", "unitid", "adclass", "media_appsid", "label")
     resultDF.show(10)
     resultDF
@@ -173,18 +173,11 @@ object OcpcLabelCvr2 {
          |    ideaid,
          |    unitid,
          |    media_appsid,
-         |    ext['adclass'].int_value as adclass,
+         |    adclass,
          |    isclick,
          |    isshow
-         |from dl_cpc.cpc_motivation_log
+         |from dl_cpc.ocpcv3_motivation_unionlog_hourly
          |where $selectCondition
-         |and isclick is not null
-         |and media_appsid in ("80001098","80001292","80000001", "80000002")
-         |and isshow = 1
-         |and ext['antispam'].int_value = 0
-         |and ideaid > 0
-         |and adsrc = 1
-         |and adslot_type in (1,2,3)
        """.stripMargin
     println(sqlRequest1)
 
@@ -196,6 +189,7 @@ object OcpcLabelCvr2 {
       s"""
          |SELECT
          |  searchid,
+         |  ideaid,
          |  label
          |FROM
          |  dl_cpc.ml_cvr_feature_v2
@@ -205,10 +199,10 @@ object OcpcLabelCvr2 {
          |  label=1
        """.stripMargin
     println(sqlRequest2)
-    val labelData = spark.sql(sqlRequest2).distinct()
+    val labelData = spark.sql(sqlRequest2).distinct().select("searchid", "label")
 
     val resultDF = rawData
-      .join(labelData, Seq("searchid"), "left_outer")
+      .join(labelData, Seq("searchid"))
       .select("searchid", "ideaid", "unitid", "adclass", "media_appsid", "label")
     resultDF.show(10)
     resultDF
@@ -250,7 +244,6 @@ object OcpcLabelCvr2 {
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)
-         |and ext_int['is_api_callback']=1
        """.stripMargin
     println(sqlRequest1)
 
@@ -274,7 +267,7 @@ object OcpcLabelCvr2 {
     val labelData = spark.sql(sqlRequest2).distinct()
 
     val resultDF = rawData
-      .join(labelData, Seq("searchid"), "left_outer")
+      .join(labelData, Seq("searchid"))
       .select("searchid", "ideaid", "unitid", "adclass", "media_appsid", "label")
     resultDF.show(10)
     resultDF
