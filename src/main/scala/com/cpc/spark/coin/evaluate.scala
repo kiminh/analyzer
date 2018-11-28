@@ -20,162 +20,31 @@ object evaluate {
 
         import spark.implicits._
 
-        val unionSql =
+        val sql =
             s"""
-               |select tag,
-               |    round(click_num/show_num,6) as ctr,
-               |    round(convert_num/click_num,6) as cvr,
-               |    round(click_price*10/show_num,6) as cpm,
-               |    round(click_price*10/uid_num,6) as arpu,
-               |
-               |    round(convert_num*100/uid_num,6) as acpu,
-               |    round(convert_0*100/uid_num,6) as acpu_0,
-               |    round(convert_1*100/uid_num,6) as acpu_1,
-               |    round(convert_2*100/uid_num,6) as acpu_2,
-               |
-               |    round(click_wangzhuan/show_wangzhuan,6) as ctr_wangzhuan,
-               |    round(convert_wangzhuan/click_wangzhuan,6) as cvr_wangzhuan,
-               |    round(show_wangzhuan/uid_num,6) as aspu_wangzhuan,
-               |    round(convert_wangzhuan/uid_num,6) as acpu_wangzhuan,
-               |    round(click_price_wangzhuan*10/uid_num,6) as arpu_wangzhuan,
-               |    round(click_price_wangzhuan*10/click_wangzhuan,6) as acp_wangzhuan,
-               |    round(click_price_wangzhuan*10/show_wangzhuan,6) as cpm_wangzhuan,
-               |    click_num_wangzhuan,
-               |
-               |    round(click_xiazai/show_xiazai,6) as ctr_xiazai,
-               |    round(convert_xiazai/click_xiazai,6) as cvr_xiazai,
-               |    round(show_xiazai/uid_num,6) as aspu_xiazai,
-               |    round(convert_xiazai/uid_num,6) as acpu_xiazai,
-               |    round(click_price_xiazai*10/uid_num,6) as arpu_xiazai,
-               |    round(click_price_xiazai*10/click_xiazai,6) as acp_xiazai,
-               |    round(click_price_xiazai*10/show_xiazai,6) as cpm_xiazai,
-               |    click_num_xiazai,
-               |
-               |    round(click_baojianpin/show_baojianpin,6) as ctr_baojianpin,
-               |    round(convert_baojianpin/click_baojianpin,6) as cvr_baojianpin,
-               |    round(show_baojianpin/uid_num,6) as aspu_baojianpin,
-               |    round(convert_baojianpin/uid_num,6) as acpu_baojianpin,
-               |    round(click_price_baojianpin*10/uid_num,6) as arpu_baojianpin,
-               |    round(click_price_baojianpin*10/click_baojianpin,6) as acp_baojianpin,
-               |    round(click_price_baojianpin*10/show_baojianpin,6) as cpm_baojianpin,
-               |    click_num_baojianpin,
-               |
-               |    round(click_qipai/show_qipai,6) as ctr_qipai,
-               |    round(convert_qipai/click_qipai,6) as cvr_qipai,
-               |    round(show_qipai/uid_num,6) as aspu_qipai,
-               |    round(convert_qipai/uid_num,6) as acpu_qipai,
-               |    round(click_price_qipai*10/uid_num,6) as arpu_qipai,
-               |    round(click_price_qipai*10/click_qipai,6) as acp_qipai,
-               |    round(click_price_qipai*10/show_qipai,6) as cpm_qipai,
-               |    click_num_qipai,
-               |
-               |    '$date' as `date`
-               |
-               |from (
-               |select
-               |    case when a.exptags like '%needautocoin%' then "auto"
-               |        when a.exptags not like "%nostylecoin%" then "manual"
-               |        else "notag"
-               |        end as tag,
-               |    sum(isclick) as click_num, --点击数
-               |    sum(isshow) as show_num, --展示数
-               |    sum(case when label2 = 1 then 1 else 0 end) as convert_num, --转化数
-               |    sum(if (isclick=1 and ext_int['exp_style'] =510127, 1, 0)) as coin_click_num, --金币点击数
-               |
-               |    sum(case WHEN isclick = 1 then price else 0 end) as click_price, --点击总价
-               |    count(distinct uid) as uid_num, --用户数
-               |    sum(case WHEN label2 = 1 and ext['usertype'].int_value = 0 then 1 else 0 end) as convert_0, --其他企业数
-               |    sum(case WHEN label2 = 1 and ext['usertype'].int_value = 1 then 1 else 0 end) as convert_1, --非企
-               |    sum(case WHEN label2 = 1 and ext['usertype'].int_value = 2 then 1 else 0 end) as convert_2, --正企
-               |
-               |    --网赚
-               |    sum(if (round(ext['adclass'].int_value/1000) = 110110 and isshow = 1, 1, 0)) as show_wangzhuan, --网赚展示数
-               |    sum(if (round(ext['adclass'].int_value/1000) = 110110 and isclick = 1, 1, 0)) as click_wangzhuan, --网赚点击数
-               |    sum(if (round(ext['adclass'].int_value/1000) = 110110 and label2 = 1, 1, 0)) as convert_wangzhuan, --网赚转化数
-               |    sum(if (round(ext['adclass'].int_value/1000) = 110110 and isclick = 1, price, 0)) as click_price_wangzhuan, --网赚点击总价
-               |    sum(if (round(ext['adclass'].int_value/1000) = 110110 and isclick = 1 and ext_int['exp_style'] =510127, 1, 0)) as click_num_wangzhuan, --网赚金币点击数
-               |
-               |    --下载
-               |    sum(if (round(ext['adclass'].int_value/1000) = 100102 and isshow = 1, 1, 0)) as show_xiazai, --下载展示数
-               |    sum(if (round(ext['adclass'].int_value/1000) = 100102 and isclick = 1, 1, 0)) as click_xiazai, --下载点击数
-               |    sum(if (round(ext['adclass'].int_value/1000) = 100102 and label2 = 1, 1, 0)) as convert_xiazai, --下载转化数
-               |    sum(if (round(ext['adclass'].int_value/1000) = 100102 and isclick = 1, price, 0)) as click_price_xiazai, --下载点击总价
-               |    sum(if (round(ext['adclass'].int_value/1000) = 100102 and isclick = 1 and ext_int['exp_style'] =510127, 1, 0)) as click_num_xiazai, --下载金币点击数
-               |
-               |    --保健品
-               |    sum(if (round(ext['adclass'].int_value/1000) = 130104 and isshow = 1, 1, 0)) as show_baojianpin, --保健品展示数
-               |    sum(if (round(ext['adclass'].int_value/1000) = 130104 and isclick = 1, 1, 0)) as click_baojianpin, --保健品点击数
-               |    sum(if (round(ext['adclass'].int_value/1000) = 130104 and label2 = 1, 1, 0)) as convert_baojianpin, --保健品转化数
-               |    sum(if (round(ext['adclass'].int_value/1000) = 130104 and isclick = 1, price, 0)) as click_price_baojianpin, --保健品点击总价
-               |    sum(if (round(ext['adclass'].int_value/1000) = 130104 and isclick = 1 and ext_int['exp_style'] =510127, 1, 0)) as click_num_baojianpin, --保健品金币点击数
-               |
-               |    --棋牌
-               |    sum(if (ext['adclass'].int_value = 100101109 and isshow = 1, 1, 0)) as show_qipai, --棋牌展示数
-               |    sum(if (ext['adclass'].int_value = 100101109 and isclick = 1, 1, 0)) as click_qipai, --棋牌点击数
-               |    sum(if (ext['adclass'].int_value = 100101109 and label2 = 1, 1, 0)) as convert_qipai, --棋牌转化数
-               |    sum(if (ext['adclass'].int_value = 100101109 and isclick = 1, price, 0)) as click_price_qipai, --棋牌点击总价
-               |    sum(if (ext['adclass'].int_value = 100101109 and isclick = 1 and ext_int['exp_style'] =510127, 1, 0)) as click_num_qipai --棋牌金币点击数
-               |
-               |    from (
-               |        select *
-               |        from
-               |            dl_cpc.cpc_union_log
-               |        where
-               |            `date` = '$date'
-               |            and media_appsid  in ("80000001", "80000002")
-               |            and isshow = 1
-               |            and ext['antispam'].int_value = 0 and ideaid > 0
-               |            and adsrc = 1
-               |            and ext['city_level'].int_value != 1
-               |            and userid not in (1001028, 1501875)
-               |    ) a
-               |    left outer join
-               |    (
-               |        select searchid, label2
-               |        from dl_cpc.ml_cvr_feature_v1
-               |        where `date`='$date'
-               |    ) b
-               |    on a.searchid = b.searchid
-               |
-               |    group by
-               |        case when a.exptags like '%needautocoin%' then "auto"
-               |            when a.exptags not like "%nostylecoin%" then "manual"
-               |            else "notag" end
-               |)
+               |select a.*,b.label2 as label2
+               |from
+               |(
+               |    select *
+               |    from dl_cpc.cpc_union_log
+               |    where `date`='$date'
+               |    and media_appsid  in ("80000001", "80000002") and isshow = 1
+               |    and ext['antispam'].int_value = 0 and ideaid > 0
+               |    and adsrc = 1
+               |    and ext['city_level'].int_value != 1
+               |    and userid not in (1001028, 1501875)
+               |) a left outer join
+               |(
+               |    select searchid, label2
+               |    from dl_cpc.ml_cvr_feature_v1
+               |    where `date`='$date'
+               |) b
+               |on a.searchid = b.searchid
              """.stripMargin
-
-        val union = spark.sql(unionSql)
-
-//        union.show(10)
-        val data = union.repartition(1).cache()
-
-        data.write.mode("overwrite").insertInto("dl_cpc.auto_coin_evaluation_daily")
-
-        println("insert into dl_cpc.auto_coin_evaluation_daily success!")
-
-//        val sql =
-//            s"""
-//               |select *
-//               |from dl_cpc.auto_coin_evaluation_daily
-//               |where `date`= '$date'
-//             """.stripMargin
-//        val data = spark.sql(sql)
-//
-//        data.show(10)
-//
-//        val conf = ConfigFactory.load()
-//        val tableName = "report2.report_auto_coin_evaluation_daily"
-//        val mariadb_write_prop = new Properties()
-//
-//        val mariadb_write_url = conf.getString("mariadb.report2_write.url")
-//        mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
-//        mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
-//        mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
-//
-//        data
-//          .write
-//          .mode(SaveMode.Append)
-//          .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
+        println(sql)
+        val union = spark.sql(sql)
+        val testTable = "test.union_feature"
+        union.write.mode("overwrite").insertInto(testTable)
 
 
     }
