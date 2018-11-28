@@ -32,6 +32,7 @@ object evaluate {
                |    and ext['antispam'].int_value = 0 and ideaid > 0
                |    and adsrc = 1
                |    and ext['city_level'].int_value != 1
+               |    AND (ext["charge_type"] IS NULL OR ext["charge_type"].int_value = 1)
                |    and userid not in (1001028, 1501875)
                |) a left outer join
                |(
