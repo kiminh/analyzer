@@ -24,7 +24,7 @@ object HiveToMysql {
             s"""
                |select *
                |from dl_cpc.auto_coin_evaluation_daily
-               |where `date` = $date
+               |where `date` = '$date'
              """.stripMargin
 
         println(sql)
