@@ -454,6 +454,7 @@ object GetHourReport {
          |       ,a.ext_int['siteid'] as siteid
          |       ,a.adsrc
          |       ,a.interaction
+         |       ,1 as flag3
          |       ,b.*
          |from (select * from dl_cpc.cpc_union_log
          |        where `date` = "%s" and `hour` = "%s" ) a
