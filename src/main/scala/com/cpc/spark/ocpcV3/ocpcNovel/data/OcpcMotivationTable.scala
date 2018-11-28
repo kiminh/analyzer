@@ -34,7 +34,7 @@ object OcpcMotivationTable {
          |and ext['antispam'].int_value = 0
          |and ideaid > 0
          |and adsrc = 1
-         |and adslot_type in (1,2,3)
+         |and adslot_type=7
       """.stripMargin
     println(sqlRequest1)
     val unionLog = spark.sql(sqlRequest1)
