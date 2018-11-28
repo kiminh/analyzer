@@ -391,10 +391,10 @@ object GetTraceReportV3 {
          |join
          |   (  select searchid, userid, planid, unitid, ideaid, isclick, date, hour
          |      from dl_cpc.cpc_motivation_log
-         |      where `date` = "%s" and hour = "%s" and isclick = 1
+         |      where %s and isclick = 1
          |   ) as un
          |on tr.searchid = un.searchid and tr.ideaid = un.ideaid
-       """.stripMargin.format(date, hour, date, hour)
+       """.stripMargin.format(date, hour, get3DaysBefore(date, hour))
     println(sql_moti)
 
     val traceReport1 = ctx.sql(sql)
@@ -437,12 +437,12 @@ object GetTraceReportV3 {
       """
         |select ideaid , sum(isshow) as show, sum(isclick) as click
         |from dl_cpc.cpc_motivation_log
-        |where `date`="%s" and hour="%s" and isclick=1
+        |where %s and isclick=1
         |group by ideaid
-      """.stripMargin.format(date, hour)
+      """.stripMargin.format(get3DaysBefore(date, hour))
     println(sql5)
 
-    val unionRdd1 = ctx.sql(sql3).rdd.map {
+    val unionRdd_api = ctx.sql(sql3).rdd.map {
       x =>
         val ideaid: Int = x(0).toString().toInt
         val show: Int = x(1).toString().toInt
@@ -451,7 +451,7 @@ object GetTraceReportV3 {
         (ideaid, (show, click))
     }
 
-    val unionRdd2 = ctx.sql(sql4).rdd.map {
+    val unionRdd_nonapi = ctx.sql(sql4).rdd.map {
       x =>
         val ideaid: Int = x(0).toString().toInt
         val show: Int = x(1).toString().toInt
@@ -468,7 +468,7 @@ object GetTraceReportV3 {
 
         (ideaid, (show, click))
     }
-    val unionRdd = unionRdd1.union(unionRdd2).union(unionRdd_moti)
+    val unionRdd = unionRdd_api.union(unionRdd_nonapi).union(unionRdd_moti)
       .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
 
 

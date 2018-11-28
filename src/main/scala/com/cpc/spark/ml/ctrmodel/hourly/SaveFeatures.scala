@@ -361,12 +361,12 @@ object SaveFeatures {
          |join
          |   (  select searchid, userid, "" as uid, planid, unitid, ideaid, adclass, date, hour
          |      from dl_cpc.cpc_motivation_log
-         |      where `date` = "%s" and hour = "%s" and isclick = 1
+         |      where %s and isclick = 1
          |   ) as un
          |on tr.searchid = un.searchid and tr.ideaid = un.ideaid
          |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
          |where t2.id is null
-       """.stripMargin.format(date, hour, date, hour, yesterday)
+       """.stripMargin.format(date, hour, get3DaysBefore(date, hour), yesterday)
     println("sql_moti: " + sql_moti)
 
     //    val userApiBackRDD = spark.sql(
@@ -442,7 +442,7 @@ object SaveFeatures {
 
 */
     //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算
-    //读取表单转化数据
+    //读取建站表单转化数据
     val config = ConfigFactory.load()
     val url = config.getString("mariadb.adv.url")
     val properties = new Properties()
@@ -476,7 +476,7 @@ object SaveFeatures {
     println("table: " + table)
     val site_form = spark.read.jdbc(url, table, properties)
     println("site_form " + site_form.count())
-    println("site_form " + site_form.printSchema())
+    println("site_form schema" + site_form.printSchema())
 
     val cvrlog = spark.sql(
       s"""
@@ -558,13 +558,13 @@ object SaveFeatures {
             }
           )
 
-          (x._1._1, convert, convert2, label_type,
+          (x._1._1, x._1._2.toInt, convert, convert2, label_type,
             active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
             active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
             active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
             active_map.getOrElse("report_user_stayinwx", 0), telephone)
       }
-      .toDF("searchid", "label", "label2", "label_type", "active1", "active2", "active3", "active4", "active5", "active6",
+      .toDF("searchid", "ideaid", "label", "label2", "label_type", "active1", "active2", "active3", "active4", "active5", "active6",
         "disactive", "active_href", "installed", "report_user_stayinwx", "telephone")
 
     //cvrlog.filter(x => x.getAs[String]("searchid") == "02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
@@ -594,7 +594,7 @@ object SaveFeatures {
     val clicklog = spark.sql(sqlStmt)
     println("click log", clicklog.count())
 
-    clicklog.join(cvrlog, Seq("searchid"))
+    clicklog.join(cvrlog, Seq("searchid", "ideaid"))
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
