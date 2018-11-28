@@ -102,10 +102,21 @@ object EvaluationAutoCoin {
         val summarySql =
             s"""
                |select tag,
+               |    click_num,
+               |    show_num,
+               |    convert_num,
+               |    coin_click_num,
+               |    click_price,
+               |    uid_num,
+               |    convert_0,
+               |    convert_1,
+               |    convert_2,
                |    round(click_num/show_num,6) as ctr,
+               |
                |    round(convert_num/click_num,6) as cvr,
                |    round(click_price*10/show_num,6) as cpm,
                |    round(click_price*10/uid_num,6) as arpu,
+               |    round(show_num/uid_num,6) as aspu,
                |
                |    round(convert_num*100/uid_num,6) as acpu,
                |    round(convert_0*100/uid_num,6) as acpu_0,
@@ -215,7 +226,7 @@ object EvaluationAutoCoin {
 
         println("insert into dl_cpc.auto_coin_evaluation_daily success!")
 
-        spark.sql(s"drop table if exists $testTable")
-        println(s"drop $testTable success!")
+//        spark.sql(s"drop table if exists $testTable")
+//        println(s"drop $testTable success!")
     }
 }
