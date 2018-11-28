@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS dl_cpc.dssm_eval (
   clickCount bigint,
   score float,
   userNull int,
-  adNull int
+  adNull int,
+  userEmbedding string,
+  adEmbedding string
 )
 PARTITIONED BY (dt string)
 STORED AS PARQUET;

@@ -2,8 +2,6 @@ package com.cpc.spark.ml.dnn.retrieval
 
 import com.cpc.spark.ml.dnn.retrieval.UserEmbeddingToRedis.{hdfsDir => userHDFSDir}
 import com.cpc.spark.ml.dnn.retrieval.AdEmbeddingToFile.{hdfsDir => adHDFSDir}
-import com.redis.RedisClient
-import mlmodel.mlmodel.RetrievalEmbedding
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.collection.mutable
@@ -32,16 +30,22 @@ object DssmEvaluate {
       val userisNull = if (userEmbedding == null) 1 else 0
       val adIsNull = if (adEmbedding == null) 1 else 0
       val clickCount = x.getAs[Long]("click")
-      val score = if (userEmbedding == null || adEmbedding == null) 0 else {
+      var score = 0.0
+      var userEmbeddingStr = ""
+      var adEmbeddingStr = ""
+      if (userEmbedding != null && adEmbedding == null) {
         var sum = 0.0
         for (i <- userEmbedding.indices) {
           sum = sum + userEmbedding(i) * adEmbedding(i)
         }
-        sum
+        score = sum
+        userEmbeddingStr = userEmbedding.mkString(",")
+        adEmbeddingStr = adEmbedding.mkString(",")
       }
       (uid, ideaid, clickCount, score, userisNull, adIsNull, date)
-    }).toDF("uid", "ideaid", "clickCount", "score", "userNull", "adNull", "dt").write.mode("overwrite")
-      .insertInto("dl_cpc.dssm_eval")
+    }).toDF("uid", "ideaid", "clickCount", "score", "userNull", "adNull",
+      "userEmbeddingStr", "adEmbeddingStr","dt").write.mode("overwrite")
+      .insertInto("dl_cpc.dssm_eval_raw")
   }
 
   def getLabels(date: String, spark: SparkSession): DataFrame = {
