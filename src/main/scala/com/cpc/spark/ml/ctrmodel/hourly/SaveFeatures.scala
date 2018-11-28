@@ -22,7 +22,7 @@ object SaveFeatures {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   private var version = "v1"
-  private var versionV2 = "v2_test"//
+  private var versionV2 = "v2"
 
 
   def main(args: Array[String]): Unit = {
@@ -45,7 +45,7 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    //saveDataFromLog(spark, date, hour)
+    saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
     saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
     println("SaveFeatures_done")
@@ -237,7 +237,7 @@ object SaveFeatures {
     cal.add(Calendar.HOUR, -1)
     val fDate = dateFormat.format(cal.getTime)
     val before1hour = fDate.substring(11, 13)
-/*
+
     //激励下载转化  取有点击的
     val motivateRDD = spark.sql(
       s"""
@@ -440,7 +440,7 @@ object SaveFeatures {
 
     s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v2_done/$date-$hour.ok" !
 
-*/
+
     //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算
     //读取建站表单转化数据
     val config = ConfigFactory.load()
@@ -601,12 +601,12 @@ object SaveFeatures {
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
     spark.sql(
       """
-        |ALTER TABLE dl_cpc.ml_cvr_feature_v1_test add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2_test/%s/%s'
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
       """.stripMargin.format(date, hour, date, hour)) // //
 
     //输出标记文件
-    //s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !  //
+    s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !  //
 
   }
 
