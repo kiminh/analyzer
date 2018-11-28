@@ -27,6 +27,7 @@ object HiveToMysql {
                |where `date` = $date
              """.stripMargin
 
+        println(sql)
         val data = spark.sql(sql)
 
         data.show(10)
@@ -44,5 +45,6 @@ object HiveToMysql {
 
         data.write.mode(SaveMode.Append)
           .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
+        println("insert into report2.report_auto_coin_evaluation_daily success!")
     }
 }
