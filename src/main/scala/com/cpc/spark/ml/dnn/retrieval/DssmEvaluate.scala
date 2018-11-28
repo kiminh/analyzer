@@ -42,7 +42,7 @@ object DssmEvaluate {
         userEmbeddingStr = userEmbedding.mkString(",")
         adEmbeddingStr = adEmbedding.mkString(",")
       }
-      (uid, ideaid, clickCount, score, userisNull, adIsNull, date)
+      (uid, ideaid, clickCount, score, userisNull, adIsNull, userEmbeddingStr, adEmbeddingStr, date)
     }).toDF("uid", "ideaid", "clickCount", "score", "userNull", "adNull",
       "userEmbeddingStr", "adEmbeddingStr","dt").write.mode("overwrite")
       .insertInto("dl_cpc.dssm_eval_raw")
