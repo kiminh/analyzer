@@ -13,7 +13,8 @@ object OcpcMotivationTable {
 
     // TODO 测试
     val result = filterTable(date, hour, spark)
-    result.write.mode("overwrite").saveAsTable("test.ocpcv3_motivation_unionlog_hourly")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_motivation_unionlog_hourly")
+//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_motivation_unionlog_hourly")
     println("successfully save table into dl_cpc.ocpcv3_motivation_unionlog_hourly")
   }
 
