@@ -47,6 +47,12 @@ object DssmEvaluate {
       "userEmbeddingStr", "adEmbeddingStr","dt")
       .coalesce(50).write.mode("overwrite")
       .parquet("/user/cpc/hzh/dssm/eval_raw/dt=" + date)
+
+    spark.sql(
+      s"""
+         |alter table dl_cpc.dssm_eval_raw add partition(dt='$date')
+         |  location '/user/cpc/hzh/dssm/eval_raw/dt=$date'
+      """.stripMargin)
   }
 
   def getLabels(date: String, spark: SparkSession): DataFrame = {
