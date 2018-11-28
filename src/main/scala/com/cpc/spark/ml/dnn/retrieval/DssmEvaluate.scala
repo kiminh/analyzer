@@ -45,14 +45,15 @@ object DssmEvaluate {
       (uid, ideaid, clickCount, score, userisNull, adIsNull, userEmbeddingStr, adEmbeddingStr, date)
     }).toDF("uid", "ideaid", "clickCount", "score", "userNull", "adNull",
       "userEmbeddingStr", "adEmbeddingStr","dt")
-      .coalesce(50).write.mode("overwrite")
-      .parquet("/user/cpc/hzh/dssm/eval_raw/dt=" + date)
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.dssm_eval_raw")
+//      .parquet("/user/cpc/hzh/dssm/eval_raw/dt=" + date)
 
-    spark.sql(
-      s"""
-         |alter table dl_cpc.dssm_eval_raw add partition(dt='$date')
-         |  location '/user/cpc/hzh/dssm/eval_raw/dt=$date'
-      """.stripMargin)
+//    spark.sql(
+//      s"""
+//         |alter table dl_cpc.dssm_eval_raw add partition(dt='$date')
+//         |  location '/user/cpc/hzh/dssm/eval_raw/dt=$date'
+//      """.stripMargin)
   }
 
   def getLabels(date: String, spark: SparkSession): DataFrame = {
@@ -65,9 +66,7 @@ object DssmEvaluate {
          |from dl_cpc.cpc_union_log where `date` = '$date' and hour = '20'
          |  and isshow = 1 and ideaid > 0 and adslot_type = 1
          |  and media_appsid in ("80000001", "80000002")
-         |  and uid not like "%.%"
-         |  and uid not like "%000000%"
-         |  and uid > 0
+         |  and length(uid) > 1
          |group by uid, ideaid
       """.stripMargin
     println("--------------------------------")

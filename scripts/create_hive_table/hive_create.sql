@@ -20,11 +20,11 @@ PARTITIONED BY (dt string, hour string)
 STORED AS PARQUET;
 
 
-CREATE TABLE IF NOT EXISTS dl_cpc.dssm_eval (
+CREATE TABLE IF NOT EXISTS dl_cpc.dssm_eval_raw (
   uid string,
   ideaid int,
   clickCount bigint,
-  score float,
+  score double,
   userNull int,
   adNull int,
   userEmbedding string,
