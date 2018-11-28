@@ -37,7 +37,7 @@ object EvaluationAutoCoin {
                |) b
                |on a.searchid = b.searchid
              """.stripMargin
-
+        println(sql)
         val union = spark.sql(sql)
         val testTable = "test.union_feature"
         union.write.mode("overwrite").saveAsTable(testTable)
@@ -56,7 +56,7 @@ object EvaluationAutoCoin {
                |from $testTable
                |group by ideaid
              """.stripMargin
-
+        println(ideaidSql)
         val ideaidEvaluation = spark.sql(ideaidSql)
 
         ideaidEvaluation.show(5)
