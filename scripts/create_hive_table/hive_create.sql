@@ -20,4 +20,15 @@ PARTITIONED BY (dt string, hour string)
 STORED AS PARQUET;
 
 
+CREATE TABLE IF NOT EXISTS dl_cpc.dssm_eval (
+  uid string,
+  ideaid int,
+  clickCount bigint,
+  score float,
+  userNull int,
+  adNull int
+)
+PARTITIONED BY (dt string)
+STORED AS PARQUET;
+
 

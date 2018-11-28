@@ -25,6 +25,8 @@ object DssmEvaluate {
     labels.join(userEmbedding, Seq("uid"), "left")
       .join(adEmbeding, Seq("ideaid"), "left")
       .rdd.map(x => {
+      val uid = x.getAs[String]("uid")
+      val ideaid = x.getAs[Number]("ideaid").intValue()
       val userEmbedding = x.getAs[mutable.WrappedArray[Double]]("user_embedding")
       val adEmbedding = x.getAs[mutable.WrappedArray[Double]]("ad_embedding")
       val userisNull = if (userEmbedding == null) 1 else 0
@@ -37,8 +39,8 @@ object DssmEvaluate {
         }
         sum
       }
-      (clickCount, score, userisNull, adIsNull)
-    }).toDF("clickCount", "score", "userNull", "adNull").write.mode("overwrite")
+      (uid, ideaid, clickCount, score, userisNull, adIsNull, date)
+    }).toDF("uid", "ideaid", "clickCount", "score", "userNull", "adNull", "dt").write.mode("overwrite")
       .insertInto("dl_cpc.dssm_eval")
   }
 
