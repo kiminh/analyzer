@@ -44,8 +44,9 @@ object DssmEvaluate {
       }
       (uid, ideaid, clickCount, score, userisNull, adIsNull, userEmbeddingStr, adEmbeddingStr, date)
     }).toDF("uid", "ideaid", "clickCount", "score", "userNull", "adNull",
-      "userEmbeddingStr", "adEmbeddingStr","dt").write.mode("overwrite")
-      .insertInto("dl_cpc.dssm_eval_raw")
+      "userEmbeddingStr", "adEmbeddingStr","dt")
+      .coalesce(50).write.mode("overwrite")
+      .parquet("/user/cpc/hzh/dssm/eval_raw/dt=" + date)
   }
 
   def getLabels(date: String, spark: SparkSession): DataFrame = {
