@@ -39,7 +39,6 @@ object OcpcMotivationTable {
     println(sqlRequest1)
     val unionLog = spark.sql(sqlRequest1)
     unionLog.show(10)
-    unionLog.write.mode("overwrite").saveAsTable("test.test_ocpcv3_motivation_unionlog_hourly_unionlog")
 
     // cpc_motivation数据
     val sqlRequest2 =
@@ -58,12 +57,13 @@ object OcpcMotivationTable {
     println(sqlRequest2)
     val motivationLog = spark.sql(sqlRequest2)
     motivationLog.show(10)
-    motivationLog.write.mode("overwrite").saveAsTable("test.test_ocpcv3_motivation_unionlog_hourly_motivation")
 
     // 数据关联，使用unionlog过滤
     val resultDF = unionLog
       .join(motivationLog, Seq("searchid"))
       .select("searchid", "ideaid", "unitid", "adclass", "userid", "media_appsid", "isclick", "isshow")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
 
     resultDF.show(10)
     resultDF
