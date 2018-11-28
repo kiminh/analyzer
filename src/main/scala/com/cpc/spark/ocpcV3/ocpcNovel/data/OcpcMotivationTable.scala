@@ -39,7 +39,7 @@ object OcpcMotivationTable {
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)
-         |and ext_int['is_api_callback']!=1
+         |and ext_int['is_api_callback']=1
       """.stripMargin
     println(sqlRequest1)
     val unionLog = spark.sql(sqlRequest1)
