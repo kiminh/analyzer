@@ -106,14 +106,13 @@ object GetOcpcLogFromUnionLog {
        """.stripMargin
     println(sqlRequest1)
     val result = spark.sql(sqlRequest1)
-    result.write.mode("overwrite").saveAsTable("test.ocpc_unionlog")
 
     val resultDF = result
       .select("searchid", "timestamp", "uid", "exp_ctr", "exp_cvr", "ideaid", "price", "userid", "adclass", "isclick", "isshow", "exptags", "cpa_given", "ocpc_log", "iscvr", "ocpc_log_dict")
       .withColumn("dt", lit(date))
       .withColumn("hour", lit(hour))
     resultDF.printSchema()
-
+    result.show(10)
 
     resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_unionlog")
   }

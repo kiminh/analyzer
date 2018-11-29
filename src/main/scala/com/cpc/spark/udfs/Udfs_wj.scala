@@ -164,10 +164,10 @@ object Udfs_wj{
     val result = valueTag match {
       case 1 if valueK >= 1.2 => valueK
       case 1 if valueK < 1.2 => valueK * 1.1
-      case 2 => valueK / 1.6
-      case 3 => valueK / 1.4
-      case 4 => valueK / 1.2
-      case 5 => valueK / 1.1
+      case 2 => valueK / 2.5
+      case 3 => valueK / 2.0
+      case 4 => valueK / 1.8
+      case 5 => valueK / 1.5
       case 6 => valueK
       case 7 => valueK * 1.1
       case 8 => valueK * 1.2
