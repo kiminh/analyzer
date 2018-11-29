@@ -36,7 +36,7 @@ object Behavior2RedisV4 {
     //用户安装app
     val ud_sql0 =
       s"""
-         |select * from dl_cpc.cpc_user_installed_apps where `load_date` = "${getDay(date, 1)}"
+         select * from dl_cpc.cpc_user_installed_apps where load_date = "${getDay(date, 1)}"
         """
 
     //用户天级别过去访问广告情况
@@ -115,7 +115,7 @@ object Behavior2RedisV4 {
     ud_features.coalesce(50).write.mode("overwrite")
       .parquet("/user/cpc/dnn/features/ud")
 
-//    Utils.DnnFeatures2Redis(ud_features, "d4_")
+    //    Utils.DnnFeatures2Redis(ud_features, "d4_")
   }
 
   private def saveAdDailyFeatures(spark: SparkSession, date: String): Unit = {
@@ -137,7 +137,7 @@ object Behavior2RedisV4 {
     ad_features.coalesce(1).write.mode("overwrite")
       .parquet("/user/cpc/dnn/features/ad")
 
-//    Utils.DnnFeatures2Redis(ad_features, "id_")
+    //    Utils.DnnFeatures2Redis(ad_features, "id_")
 
   }
 
