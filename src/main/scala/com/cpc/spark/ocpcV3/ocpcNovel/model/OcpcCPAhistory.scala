@@ -164,6 +164,8 @@ object OcpcCPAhistory {
       .select("unitid", "adclass", "cvr1cnt", "alpha1", "avg_bid", "cpa1", "new_adclass", "alpha1_max")
       .withColumn("cpa1_max", col("avg_bid") * col("alpha1_max"))
       .withColumn("cpa1_history", when(col("cpa1")>col("cpa1_max"), col("cpa1_max")).otherwise(col("cpa1")))
+    cvr1Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa1_result_hourly")
+
     // cvr2
     val sqlRequest2 =
       s"""
@@ -172,10 +174,6 @@ object OcpcCPAhistory {
          |  percentile(alpha2, 0.8) as alpha2_max
          |FROM
          |  cvr2_data
-         |WHERE
-         |  new_adclass == 100101
-         |or
-         |  new_adclass == 110110
          |GROUP BY new_adclass
        """.stripMargin
     println(sqlRequest2)
@@ -186,6 +184,7 @@ object OcpcCPAhistory {
       .select("unitid", "adclass", "cvr2cnt", "alpha2", "avg_bid", "cpa2", "new_adclass", "alpha2_max")
       .withColumn("cpa2_max", col("avg_bid") * col("alpha2_max"))
       .withColumn("cpa2_history", when(col("cpa2")>col("cpa2_max"), col("cpa2_max")).otherwise(col("cpa2")))
+    cvr2Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa2_result_hourly")
 
     // 关联结果
     val resultDF = data

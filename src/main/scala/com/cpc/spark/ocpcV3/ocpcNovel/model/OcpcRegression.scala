@@ -50,23 +50,27 @@ object OcpcRegression {
     val statSql =
       s"""
          |select
-         |  unitid,
-         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio1,
-         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio2,
-         |  ocpc_log_dict['cpagiven'] as cpagiven,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0)) as cpa1,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0)) as cpa2,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0))/ocpc_log_dict['cpagiven'] as ratio1,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0))/ocpc_log_dict['cpagiven'] as ratio2,
-         |  sum(isclick) clickCnt,
-         |  sum(COALESCE(label1,0)) cvr1Cnt,
-         |  sum(COALESCE(label2,0)) cvr2Cnt
+         |  a.unitid,
+         |  round(a.ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio1,
+         |  round(a.ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio2,
+         |  a.ocpc_log_dict['cpagiven'] as cpagiven,
+         |  sum(if(a.isclick=1,price,0))/sum(COALESCE(a.label1,0)) as cpa1,
+         |  sum(if(a.isclick=1,price,0))/sum(COALESCE(b.label2,0)) as cpa2,
+         |  sum(if(a.isclick=1,price,0))/sum(COALESCE(a.label1,0))/a.ocpc_log_dict['cpagiven'] as ratio1,
+         |  sum(if(a.isclick=1,price,0))/sum(COALESCE(b.label2,0))/a.ocpc_log_dict['cpagiven'] as ratio2,
+         |  sum(a.isclick) clickCnt,
+         |  sum(COALESCE(a.label1,0)) cvr1Cnt,
+         |  sum(COALESCE(b.label2,0)) cvr2Cnt
          |from
-         |  (select unitid, isclick, price, ocpc_log_dict, iscvr1 as label1, iscvr2 as label2 from dl_cpc.ocpcv3_unionlog_label_hourly where $dtCondition and ocpc_log_dict['kvalue'] is not null and isclick=1 and media_appsid in ("80001098","80001292")) a
-         |group by unitid,
-         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5),
-         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5),
-         |  ocpc_log_dict['cpagiven']
+         |  (select searchid, unitid, isclick, price, ocpc_log_dict, iscvr1 as label1 from dl_cpc.ocpcv3_unionlog_label_hourly where $dtCondition and ocpc_log_dict['kvalue'] is not null and isclick=1 and media_appsid in ("80001098","80001292")) as a
+         |LEFT JOIN
+         |  (select searchid, label as label2 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) as b
+         |on
+         |  a.searchid=b.searchid
+         |group by a.unitid,
+         |  round(a.ocpc_log_dict['kvalue'] * 100.0 / 5),
+         |  round(a.ocpc_log_dict['kvalue'] * 100.0 / 5),
+         |  a.ocpc_log_dict['cpagiven']
       """.stripMargin
 
     println(statSql)
