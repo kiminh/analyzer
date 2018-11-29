@@ -118,6 +118,8 @@ object OcpcPIDwithCPA {
          |  dl_cpc.ocpcv3_unionlog_label_hourly
          |WHERE
          |  $selectCondition
+         |and
+         |media_appsid in ('80001098', '80001292')
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
@@ -150,8 +152,6 @@ object OcpcPIDwithCPA {
          |  hour
          |FROM
          |  raw_table
-         |WHERE
-         |media_appsid in ('80001098', '80001292')
        """.stripMargin
     println(sqlRequest2)
     val rawData = spark.sql(sqlRequest2)
