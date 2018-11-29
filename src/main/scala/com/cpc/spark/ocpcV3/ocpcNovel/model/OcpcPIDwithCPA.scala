@@ -111,7 +111,6 @@ object OcpcPIDwithCPA {
          |  adclass,
          |  isshow,
          |  isclick,
-         |  iscvr,
          |  price,
          |  ocpc_log,
          |  hour
@@ -119,6 +118,8 @@ object OcpcPIDwithCPA {
          |  dl_cpc.ocpcv3_unionlog_label_hourly
          |WHERE
          |  $selectCondition
+         |and
+         |media_appsid in ('80001098', '80001292')
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
@@ -146,7 +147,6 @@ object OcpcPIDwithCPA {
          |  adclass,
          |  isshow,
          |  isclick,
-         |  iscvr,
          |  ocpc_log,
          |  ocpc_log_dict['kvalue'] as kvalue,
          |  hour
@@ -164,10 +164,9 @@ object OcpcPIDwithCPA {
 
     // case2
     // table name for previous calculation: test.new_pb_ocpc_with_pcvr
-    // todo: dl_cpc.new_pb_ocpc_novel_with_pcvr
+    // todo: test.new_pb_ocpc_novel_with_pcvr
     val case2 = spark
-      .table("dl_cpc.new_pb_ocpc_novel_with_pcvr")
-      .filter("media_appsid in ('80001098', '80001292')")
+      .table("test.new_pb_ocpc_novel_with_pcvr")
       .withColumn("kvalue2", col("k_value"))
       .select("unitid", "adclass", "kvalue2")
       .distinct()
@@ -196,7 +195,7 @@ object OcpcPIDwithCPA {
       */
 
     // 获得cpa_given
-    val cpaGiven = spark.table("test.ocpc_novel_idea_update_time_" + hour).select("unitid", "cpa_given")
+    val cpaGiven = spark.table("test.ocpc_unitid_update_time_" + hour).select("unitid", "cpa_given")
 
     val Cvr1data=getCvr1HistoryData(date, hour, 24, spark)
     // 按ideaid和adclass统计每一个广告创意的数据
@@ -355,7 +354,7 @@ object OcpcPIDwithCPA {
         sum(col("weighted_cvr_cnt")).alias("cvr_cnt"))
 
     // 获得cpa_given
-    val cpaGiven = spark.table("test.ocpc_novel_idea_update_time_" + hour).select("unitid", "cpa_given")
+    val cpaGiven = spark.table("test.ocpc_unitid_update_time_" + hour).select("unitid", "cpa_given")
 
     // 计算单个小时的ctr_cnt和cvr_cnt
     val singleHour = historyData
@@ -414,7 +413,7 @@ object OcpcPIDwithCPA {
   def getActivationData(date: String, hour: String, spark: SparkSession) = {
 
     val resultDF = spark
-      .table("test.ocpc_novel_idea_update_time_" + hour)
+      .table("test.ocpc_unitid_update_time_" + hour)
       .filter("conversion_goal=2")
       .withColumn("flag", lit(1))
       .select("unitid", "cpa_given", "flag")
@@ -427,13 +426,13 @@ object OcpcPIDwithCPA {
   def getAPIcvr3V3(singleHour: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame = {
     val cvr3List = getActivationData(date, hour, spark)
 
-    val cvr3Data = getActData(date, hour, 24, spark)
+    val cvr3Data = getActDataNovel(date, hour, 24, spark)
 
     val rawData = cvr3Data
       .groupBy("unitid", "adclass")
       .agg(
         sum(col("cost")).alias("cvr3_cost"),
-        sum(col("cvr_cnt")).alias("cvr3_cvr_cnt"))
+        sum(col("cvr2cnt")).alias("cvr3_cvr_cnt"))
       .select("unitid", "adclass", "cvr3_cost", "cvr3_cvr_cnt")
 
 
