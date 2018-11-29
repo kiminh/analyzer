@@ -111,7 +111,6 @@ object OcpcPIDwithCPA {
          |  adclass,
          |  isshow,
          |  isclick,
-         |  iscvr,
          |  price,
          |  ocpc_log,
          |  hour
