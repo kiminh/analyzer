@@ -166,7 +166,7 @@ object OcpcPIDwithCPA {
     // table name for previous calculation: test.new_pb_ocpc_with_pcvr
     // todo: test.new_pb_ocpc_novel_with_pcvr
     val case2 = spark
-      .table("test.new_pb_ocpc_with_pcvr")
+      .table("test.new_pb_ocpc_novel_with_pcvr")
       .withColumn("kvalue2", col("k_value"))
       .select("unitid", "adclass", "kvalue2")
       .distinct()
