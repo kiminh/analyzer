@@ -333,6 +333,7 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
         .join(getAdFeature_hourly(date), Seq("ideaid"), "left")
         .persist()
     } else {
+      println(date)
       println("-------------------日期格式传入错误-----------------")
       println("       正确格式：yyyy-MM-dd 或 yyyy-MM-dd-HH        ")
       println("---------------------------------------------------")
