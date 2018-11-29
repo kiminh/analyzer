@@ -264,8 +264,8 @@ object Utils {
           }
 
           //其它类：建站
-          if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active3" ||
-            r.getAs[String]("trace_type") == "active4" ) {
+          if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
+            r.getAs[String]("trace_type") == "active3" || r.getAs[String]("trace_type") == "active4") {
             js_site_active_other += 1
           }
 
@@ -285,7 +285,7 @@ object Utils {
         val adslot_type = r.getAs[Int]("adslot_type")
         val client_type = r.getAs[String]("client_type")
         val interaction = r.getAs[Int]("interaction")
-        val flag3 = r.getAs[Int]("flag3")
+
 
         //判断广告类型
         //第一类：建站&sdk：列表页、详情等sdk栏位,网赚+彩票 ：trace_op1 = “REPORT_USER_STAYINWX”
@@ -361,7 +361,7 @@ object Utils {
         else {
           if (siteid > 0) {
             label_type = 6 //其它类建站
-            if (js_site_active_other > 0 || (active5 > 0 && disactive == 0) || flag3 == 0) {// flag3=0是建站表单转化
+            if (js_site_active_other > 0 || (active5 > 0 && disactive == 0)) {
               active_other_site += 1
             }
           } else {

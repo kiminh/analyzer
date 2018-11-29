@@ -313,8 +313,10 @@ object SaveFeatures {
        |      ,un.ideaid
        |      ,un.date
        |      ,un.hour
+       |      ,un.adclass
+       |      ,un.media_appsid
        |      ,tr.trace_type
-       |from (select searchid, userid, uid, planid, unitid, ideaid, adslot_type, isclick, ext['adclass'].int_value as adclass, date, hour from dl_cpc.cpc_user_api_callback_union_log where %s) as un
+       |from (select searchid, userid, uid, planid, unitid, ideaid, adslot_type, isclick, ext['adclass'].int_value as adclass, media_appsid, date, hour from dl_cpc.cpc_user_api_callback_union_log where %s) as un
        |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
        |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
        |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
@@ -331,8 +333,10 @@ object SaveFeatures {
          |      ,un.ideaid
          |      ,un.date
          |      ,un.hour
+         |      ,un.adclass
+         |      ,un.media_appsid
          |      ,tr.trace_type
-         |from (select a.searchid, a.userid, a.uid ,a.planid ,a.unitid ,a.ideaid, ext['adclass'].int_value as adclass, a.date, a.hour from dl_cpc.cpc_union_log a
+         |from (select a.searchid, a.userid, a.uid ,a.planid ,a.unitid ,a.ideaid, ext['adclass'].int_value as adclass, media_appsid, a.date, a.hour from dl_cpc.cpc_union_log a
          |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type <> 7 and a.isclick = 1) as un
          |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
          |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
@@ -350,6 +354,8 @@ object SaveFeatures {
          |      ,un.ideaid
          |      ,un.date
          |      ,un.hour
+         |      ,un.adclass
+         |      ,un.media_appsid
          |      ,tr.trace_type
          |from (
          |      select searchid
@@ -359,7 +365,7 @@ object SaveFeatures {
          |      where `thedate` = "%s" and `thehour` = "%s" and trace_type = 'active_third'
          |   ) as tr
          |join
-         |   (  select searchid, userid, "" as uid, planid, unitid, ideaid, adclass, date, hour
+         |   (  select searchid, userid, "" as uid, planid, unitid, ideaid, adclass, media_appsid, date, hour
          |      from dl_cpc.cpc_motivation_log
          |      where %s and isclick = 1
          |   ) as un
@@ -398,6 +404,8 @@ object SaveFeatures {
           var uid = ""
           var userid = 0
           var ideaid = 0
+          var adclass = 0
+          var media_appsid = ""
           var date = ""
           var hour = ""
           var search_time = ""
@@ -406,6 +414,8 @@ object SaveFeatures {
               uid = x.getAs[String]("uid")
               userid = x.getAs[Int]("userid")
               ideaid = x.getAs[Int]("ideaid")
+              adclass = x.getAs[Int]("adclass")
+              media_appsid = x.getAs[String]("media_appsid")
               date = x.getAs[String]("date")
               hour = x.getAs[String]("hour")
               search_time = date + " " + hour
@@ -420,10 +430,10 @@ object SaveFeatures {
               }
             }
           )
-          (x._1, active_third, uid, userid, ideaid, search_time)
+          (x._1, active_third, uid, userid, ideaid, search_time, adclass, media_appsid)
       }
       .filter(x => x._2 != -1) //过滤空值
-      .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time")
+      .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time","adclass", "media_appsid")
 
     println("user api back: " + userApiBackRDD.count())
 
@@ -442,7 +452,9 @@ object SaveFeatures {
 
 
     //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算
-    //读取建站表单转化数据
+
+    //读取建站表单转化数据； active2建站表单 替换为adv.site_form_data中的转化数据
+    /*
     val config = ConfigFactory.load()
     val url = config.getString("mariadb.adv.url")
     val properties = new Properties()
@@ -477,12 +489,11 @@ object SaveFeatures {
     val site_form = spark.read.jdbc(url, table, properties)
     println("site_form " + site_form.count())
     println("site_form schema" + site_form.printSchema())
-
+    */
     val cvrlog = spark.sql(
       s"""
          |select  b.trace_type as flag1
          |       ,b.trace_op1 as flag2
-         |       ,1 as flag3
          |       ,a.searchid as search_id
          |       ,a.adslot_type
          |       ,a.ext["client_type"].string_value as client_type
@@ -493,7 +504,6 @@ object SaveFeatures {
          |       ,a.uid
          |       ,a.userid
          |       ,a.ideaid
-         |       ,"" as telephone
          |       ,b.trace_type
          |       ,b.trace_op1
          |       ,b.duration
@@ -509,20 +519,17 @@ object SaveFeatures {
          |    on a.searchid=b.searchid
          | where t2.id is null
             """.stripMargin.format(date, hour, yesterday, date, hour))
-      .union(site_form)
+      //.union(site_form)
       .rdd
       .map {
         x =>
-          ((x.getAs[String]("search_id"), x.getAs[Long]("ideaid"), x.getAs[String]("telephone")), Seq(x))
+          ((x.getAs[String]("search_id"), x.getAs[Long]("ideaid")), Seq(x))
       }
       .reduceByKey(_ ++ _)
       .map {
         x =>
           val convert = Utils.cvrPositiveV(x._2, version)
           val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version) //新cvr
-
-          //telephone
-          var telephone = ""
 
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
@@ -532,7 +539,6 @@ object SaveFeatures {
               if ((!x.isNullAt(0)) && (!x.isNullAt(1))) { //过滤 cpc_union_log有cpc_union_trace_log 没有的
                 val trace_type = x.getAs[String]("trace_type")
                 val trace_op1 = x.getAs[String]("trace_op1")
-                val flag3 = x.getAs[Int]("flag3")
 
                 trace_type match {
                   case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
@@ -551,9 +557,6 @@ object SaveFeatures {
                   active_map += ("report_user_stayinwx" -> 1)
                 }
 
-                if (flag3 == 0) {
-                  telephone = x.getAs[String]("telephone")
-                }
               }
             }
           )
@@ -562,10 +565,10 @@ object SaveFeatures {
             active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
             active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
             active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
-            active_map.getOrElse("report_user_stayinwx", 0), telephone)
+            active_map.getOrElse("report_user_stayinwx", 0))
       }
       .toDF("searchid", "ideaid", "label", "label2", "label_type", "active1", "active2", "active3", "active4", "active5", "active6",
-        "disactive", "active_href", "installed", "report_user_stayinwx", "telephone")
+        "disactive", "active_href", "installed", "report_user_stayinwx")
 
     //cvrlog.filter(x => x.getAs[String]("searchid") == "02c2cfe082a1aa43074b6841ac37a36efefd4e8d").show()
     cvrlog.take(3).map(x => println(x))
