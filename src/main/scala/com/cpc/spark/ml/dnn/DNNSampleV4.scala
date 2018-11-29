@@ -76,6 +76,7 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
     spark.sql(as_sql)
       .select($"label",
         $"uid",
+        $"ideaid",
 
         hash("f0#")($"media_type").alias("f0"),
         hash("f1#")($"mediaid").alias("f1"),
@@ -153,6 +154,7 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
     spark.sql(as_sql)
       .select($"label",
         $"uid",
+        $"ideaid",
 
         hash("f0#")($"media_type").alias("f0"),
         hash("f1#")($"mediaid").alias("f1"),
