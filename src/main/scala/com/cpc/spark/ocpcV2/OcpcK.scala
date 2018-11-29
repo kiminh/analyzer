@@ -371,10 +371,13 @@ object OcpcK {
       .withColumn("cpa2_ratio", col("cpa_given") * 1.0 / col("cpa2_real"))
       .withColumn("cpa3_ratio", col("cpa_given") * 1.0 / col("cpa2_real"))
       .withColumn("cpa_ratio", when(col("conversion_goal") === 2, col("cpa3_ratio")).otherwise(col("cpa2_ratio")))
+      .filter("cpa_ratio is not null")
 
 
     println("cpa ratio in this day")
     resultDF.show(10)
+    // TODO 测试表
+    resultDF.write.mode("overwrite").saveAsTable("test.test_ocpc_k_cparatio")
 
     var cpaMap = mutable.LinkedHashMap[String, Double]()
     for(row <- resultDF.collect()) {
