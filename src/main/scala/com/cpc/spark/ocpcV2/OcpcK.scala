@@ -104,7 +104,6 @@ object OcpcK {
 
   def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
 
-    val hourInt = hour.toInt
     val condition = s"`date` = '$date' and hour = '$hour' and $ratioType is not null"
     println("getKWithRatioType", condition)
     val res = spark.table(tablename).where(condition)
@@ -114,7 +113,6 @@ object OcpcK {
       .select("ideaid", "liststr").collect()
 
     val cpaMap = getCPAratio2(date, hour, spark)
-    var targetK = 0.95
     var resList = new mutable.ListBuffer[(String, Double, String, String)]()
     for (row <- res) {
       val ideaid = row(0).toString
@@ -126,14 +124,8 @@ object OcpcK {
       // TODO
       // 每天12点之后，如果当天cpa过低（1.3），targetK -> 1.0
       // 每天12点之后，如果当天cpa过高（0.7）, targetK -> 0.7
-      val cpaRatio = cpaMap.getOrElse[Double](ideaid, 0.0)
-      if (hourInt >= 12 && cpaMap.contains(ideaid) && cpaRatio >= 1.3) {
-        targetK = 1.0
-      } else if (hourInt >= 12 && cpaMap.contains(ideaid) && cpaRatio <= 0.7) {
-        targetK = 0.7
-      } else {
-        targetK = 0.95
-      }
+      val targetK = getTargetK2(cpaMap, hour, ideaid, spark)
+
       // TODO 根据k是否大于0循环判断决定调整原点数量
       // k<0， 增加原点数量重新拟合
       // k>0, 退出循环
@@ -389,18 +381,34 @@ object OcpcK {
 
   }
 
-  // 测试将按照ctr重新计算权重的函数去除
-  // 效果不佳
-  def removeWeightByCTR(ideaid: String, n: Int, spark: SparkSession) = {
-    var pointNum = n
-    // TODO 测试去除权重
-    if (ideaid == "2320960" || ideaid == "1950940") {
-      pointNum = 1
+  def getTargetK2(cpaMap: mutable.LinkedHashMap[String, Double], hour: String, ideaid: String, spark: SparkSession) = {
+    // 每天12点之后，如果当天cpa过低（1.3），targetK -> 1.0
+    // 每天12点之后，如果当天cpa过高（0.7）, targetK -> 0.7
+    val cpaRatio = cpaMap.getOrElse[Double](ideaid, 0.0)
+    val hourInt = hour.toInt
+    var targetK = 0.95
+    if (hourInt >= 12 && cpaMap.contains(ideaid) && cpaRatio >= 1.3) {
+      targetK = 1.0
+    } else if (hourInt >= 12 && cpaMap.contains(ideaid) && cpaRatio <= 0.7) {
+      targetK = 0.7
     } else {
-      pointNum = n
+      targetK = 0.95
     }
-    pointNum
+    targetK
   }
+
+//  // 测试将按照ctr重新计算权重的函数去除
+//  // 效果不佳
+//  def removeWeightByCTR(ideaid: String, n: Int, spark: SparkSession) = {
+//    var pointNum = n
+//    // TODO 测试去除权重
+//    if (ideaid == "2320960" || ideaid == "1950940") {
+//      pointNum = 1
+//    } else {
+//      pointNum = n
+//    }
+//    pointNum
+//  }
 
 
 }
