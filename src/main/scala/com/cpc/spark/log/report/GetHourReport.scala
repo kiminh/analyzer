@@ -392,7 +392,7 @@ object GetHourReport {
     println("fill", fillData.count())
 
 
-    val unionLog_tmp = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
+    val unionLog_tmp = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0).cache()
 
     //取展示top10 的adclass
     val topAdclass = unionLog_tmp
@@ -454,6 +454,7 @@ object GetHourReport {
           )
           (u.getAs[String]("searchid"), ctr)
       }
+    unionLog_tmp.unpersist()
 
     //get cvr data
     val cvrlog = ctx.sql(
