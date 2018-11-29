@@ -289,7 +289,6 @@ object OcpcLabelCvr2 {
     val resultDF = labelData
       .filter(s"label=1")
       .select("ideaid", "unitid", "adclass", "media_appsid", "label")
-      .distinct()
       .groupBy("ideaid", "unitid", "adclass", "media_appsid")
       .agg(sum(col("label")).alias("cvr2_cnt"))
     resultDF.show(10)
