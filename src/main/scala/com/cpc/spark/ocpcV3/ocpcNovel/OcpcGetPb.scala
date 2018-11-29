@@ -31,9 +31,8 @@ object OcpcGetPb {
       .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt")
       .join(cpaHistory, Seq("unitid"), "left_outer")
       .withColumn("kvalue", when(col("kvalue").isNull, lit(0.5)).otherwise(col("kvalue")))
-      .withColumn("cpa_history", col("cpa1"))
-      .filter("cpa_history is not null")
-      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt")
+      .filter("cpa1_history is not null and cpa2_history is not null")
+      .select("unitid", "cpa1_history", "cpa2_history", "kvalue", "cvr1cnt", "cvr2cnt")
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_hourly")
 
     // 输出pb文件
@@ -146,22 +145,24 @@ object OcpcGetPb {
 
     for (record <- dataset.collect()) {
       val unitid = record.getAs[Int]("unitid").toString
-      val cpaHistory = record.getAs[Double]("cpa_history")
+      val cpa1History = record.getAs[Double]("cpa1_history")
       val kvalue = record.getAs[Double]("kvalue")
       val cvr1cnt = record.getAs[Long]("cvr1cnt")
       val cvr2cnt = record.getAs[Long]("cvr2cnt")
+      val cpa2History = record.getAs[Double]("cpa2_history")
 
       if (cnt % 500 == 0) {
-        println(s"unitid:$unitid, cpaHistory:$cpaHistory, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt")
+        println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History")
       }
       cnt += 1
 
       val currentItem = SingleUnit(
         unitid = unitid,
         kvalue = kvalue,
-        cpaHistory = cpaHistory,
+        cpaHistory = cpa1History,
         cvr2Cnt = cvr1cnt,
-        cvr3Cnt = cvr2cnt
+        cvr3Cnt = cvr2cnt,
+        cpa3History = cpa2History
       )
       list += currentItem
 
