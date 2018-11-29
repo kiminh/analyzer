@@ -157,15 +157,15 @@ object OcpcPIDwithCPA {
     // case1
     val case1 = rawData
       .filter("isclick=1")
+      .filter("media_appsid in ('80001098', '80001292')")
       .groupBy("unitid", "adclass")
       .agg(avg(col("kvalue")).alias("kvalue1")).select("unitid", "adclass", "kvalue1")
 
     // case2
     // table name for previous calculation: test.new_pb_ocpc_with_pcvr
-    // todo: dl_cpc.new_pb_ocpc_novel_with_pcvr
+    // todo: test.new_pb_ocpc_novel_with_pcvr
     val case2 = spark
-      .table("dl_cpc.new_pb_ocpc_novel_with_pcvr")
-      .filter("media_appsid in ('80001098', '80001292')")
+      .table("test.new_pb_ocpc_with_pcvr")
       .withColumn("kvalue2", col("k_value"))
       .select("unitid", "adclass", "kvalue2")
       .distinct()
