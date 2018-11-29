@@ -87,7 +87,7 @@ class DNNSample_test(spark: SparkSession, trdate: String = "", trpath: String = 
        |  and adslotid in (7096368,7132208,7034978,7453081,7903746)
        |  and uid not like "%.%"
        |  and uid not like "%000000%"
-       |  and uid > 0
+       |  and length(uid) in (14, 15, 36)
       """.stripMargin
 
   //用户历史点击和看过的广告
@@ -307,7 +307,7 @@ class DNNSample_test1(spark: SparkSession, trdate: String = "", trpath: String =
        |  and media_appsid in ("80000001", "80000002")
        |  and uid not like "%.%"
        |  and uid not like "%000000%"
-       |  and uid > 0
+       |  and length(uid) in (14, 15, 36)
       """.stripMargin
 
   //用户历史点击和看过的广告
@@ -350,7 +350,7 @@ class DNNSample_test1(spark: SparkSession, trdate: String = "", trpath: String =
        |  and media_appsid in ("80000001", "80000002")
        |  and uid not like "%.%"
        |  and uid not like "%000000%"
-       |  and uid > 0
+       |  and length(uid) in (14, 15, 36)
        |group by uid
       """.stripMargin
 
@@ -606,7 +606,7 @@ class DNNSample_test2(spark: SparkSession, trdate: String = "", trpath: String =
        |  and media_appsid in ("80000001", "80000002")
        |  and uid not like "%.%"
        |  and uid not like "%000000%"
-       |  and uid > 0
+       |  and length(uid) in (14, 15, 36)
       """.stripMargin
 
   //用户历史点击和看过的广告
@@ -649,7 +649,7 @@ class DNNSample_test2(spark: SparkSession, trdate: String = "", trpath: String =
        |  and media_appsid in ("80000001", "80000002")
        |  and uid not like "%.%"
        |  and uid not like "%000000%"
-       |  and uid > 0
+       |  and length(uid) in (14, 15, 36)
        |group by uid
       """.stripMargin
 
@@ -852,7 +852,7 @@ class DNNSample_test3(spark: SparkSession, trdate: String = "", trpath: String =
        |  and media_appsid in ("80000001", "80000002")
        |  and uid not like "%.%"
        |  and uid not like "%000000%"
-       |  and uid > 0
+       |  and length(uid) in (14, 15, 36)
       """.stripMargin
 
   //用户历史点击和看过的广告
@@ -1121,7 +1121,7 @@ class DNNSample_test4(spark: SparkSession, trdate: String = "", trpath: String =
        |  and media_appsid in ("80000001", "80000002")
        |  and uid not like "%.%"
        |  and uid not like "%000000%"
-       |  and uid > 0
+       |  and length(uid) in (14, 15, 36)
       """.stripMargin
 
   //用户历史点击和看过的广告
@@ -1362,7 +1362,7 @@ class DNNSampleV6(spark: SparkSession, trdate: String = "", trpath: String = "",
        |  and media_appsid in ("80000001", "80000002")
        |  and uid not like "%.%"
        |  and uid not like "%000000%"
-       |  and uid > 0
+       |  and length(uid) in (14, 15, 36)
       """.stripMargin
 
   //用户历史点击和看过的广告
