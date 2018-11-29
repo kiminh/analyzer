@@ -45,7 +45,7 @@ object OcpcTraceAdType {
     val unionlog = spark.sql(sqlRequest)
     println(unionlog.count)
 
-    val ocpcAdList = spark.table("test.ocpc_idea_update_time")
+    val ocpcAdList = spark.table("test.ocpc_idea_update_time_" + hour)
     println(ocpcAdList.count)
 
     val rawData = unionlog.join(ocpcAdList, Seq("ideaid")).select("ideaid", "adclass", "timestamp", "siteid")

@@ -348,7 +348,7 @@ object OcpcK {
 
     // 读取ideaid的转化目标
     val ideaids = spark
-      .table("test.ocpc_idea_update_time")
+      .table("test.ocpc_idea_update_time_" + hour)
       .select("ideaid", "conversion_goal")
       .distinct()
 

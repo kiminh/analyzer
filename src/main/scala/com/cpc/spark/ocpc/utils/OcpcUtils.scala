@@ -21,7 +21,7 @@ object OcpcUtils {
     // TODO 使广告行业的ctr与cvr的替换更加平滑
     // TODO 还需不需要这个阶段？
     val typeData = spark
-      .table("test.ocpc_idea_update_time")
+      .table("test.ocpc_idea_update_time_" + hour)
       .withColumn("type_flag", when(col("conversion_goal")===3, 1).otherwise(0)).select("ideaid", "type_flag")
 
     val joinData = rawData
@@ -158,7 +158,7 @@ object OcpcUtils {
     val regressionK = spark.sql(sqlRequest)
 
     val cvr3List = spark
-      .table("test.ocpc_idea_update_time")
+      .table("test.ocpc_idea_update_time_" + hour)
       .filter("conversion_goal=2")
       .withColumn("cvr3_flag", lit(1))
       .select("ideaid", "cvr3_flag")
