@@ -340,7 +340,7 @@ object OcpcK {
       .select("ideaid", "cvr3_cnt")
 
     // 读取实验ideaid列表
-    val filename = "/user/cpc/wangjun/ocpc_exp_ideas1.txt"
+    val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
     val data = spark.sparkContext.textFile(filename)
     val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     rawRDD.foreach(println)
@@ -388,7 +388,7 @@ object OcpcK {
     if (hourInt >= 12 && cpaMap.contains(ideaid) && cpaRatio >= 1.3) {
       targetK = 1.0
     } else if (hourInt >= 12 && cpaMap.contains(ideaid) && cpaRatio <= 0.7) {
-      targetK = 0.7
+      targetK = 0.9
     } else {
       targetK = 0.95
     }
