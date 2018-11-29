@@ -7,6 +7,7 @@ import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.cpc.spark.ocpc.utils.OcpcUtils.getIdeaUpdates
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.IntegerType
 
 
 object OcpcCPAhistory {
@@ -127,14 +128,17 @@ object OcpcCPAhistory {
     // 取alpha的80%分位数
 
     // 取数据并过滤
+    // todo  类型转换
     val cvr1Data = data
       .select("unitid", "adclass", "cvr1cnt", "alpha1")
       .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .filter("cvr1cnt<=1")
     cvr1Data.createOrReplaceTempView("cvr1_data")
     val cvr2Data = data
       .select("unitid", "adclass", "cvr2cnt", "alpha2")
       .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .filter("cvr2cnt<=1")
     cvr2Data.createOrReplaceTempView("cvr2_data")
     // TODO 测试
