@@ -50,7 +50,7 @@ object OcpcCPAhistory {
          |WHERE
          |  `date`='$date1'
          |AND
-         |  media_appsid in ("80000001", "80000002")
+         |  media_appsid in ("80001098","80001292")
        """.stripMargin
     println(sqlRequestCostData)
     val costData = spark
@@ -75,7 +75,7 @@ object OcpcCPAhistory {
          |WHERE
          |  `date`='$date1'
          |AND
-         |  media_appsid in ("80000001", "80000002")
+         |  media_appsid in ("80001098","80001292")
        """.stripMargin
     println(sqlRequestCvr1Data)
     val cvr1Data = spark
@@ -96,7 +96,7 @@ object OcpcCPAhistory {
          |WHERE
          |  `date`='$date1'
          |AND
-         |  media_appsid in ("80000001", "80000002")
+         |  media_appsid in ("80001098","80001292")
        """.stripMargin
     println(sqlRequestCvr2Data)
     val cvr2Data = spark
@@ -199,37 +199,5 @@ object OcpcCPAhistory {
     resultDF
   }
 
-//  def CPAbidRatio(date: String, hour: String, spark: SparkSession) = {
-//    // 取历史数据
-//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-//    val today = dateConverter.parse(date)
-//    val calendar = Calendar.getInstance
-//    calendar.setTime(today)
-//    calendar.add(Calendar.DATE, -1)
-//    val yesterday = calendar.getTime
-//    val date1 = dateConverter.format(yesterday)
-//
-//    // cost数据
-//    val sqlRequestCostData =
-//      s"""
-//         |SELECT
-//         |  unitid,
-//         |  total_bid,
-//         |  ctr_cnt
-//         |FROM
-//         |  dl_cpc.ocpcv3_ctr_data_hourly
-//         |WHERE
-//         |  `date`='$date1'
-//         |AND
-//         |  media_appsid in ("80000001", "80000002")
-//       """.stripMargin
-//    println(sqlRequestCostData)
-//    val costData = spark
-//      .sql(sqlRequestCostData)
-//      .groupBy("unitid")
-//      .agg(
-//        sum(col("total_bid")).alias("bid"),
-//        sum(col("ctr_cnt")))
-//    costData.show(10)
-//  }
+
 }
