@@ -7,6 +7,8 @@ import org.apache.spark.sql.functions._
 object OcpcCPCstage {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    val date = args(0).toString
+    val hour = args(1).toString
 
     val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
     val user = "adv_live_read"
@@ -60,7 +62,8 @@ object OcpcCPCstage {
     println("########## updateTime #################")
     updateTime.show(10)
 
-    updateTime.write.mode("overwrite").saveAsTable("test.ocpc_idea_update_time")
+    val tableName = "test.ocpc_idea_update_time_" + hour
+    updateTime.write.mode("overwrite").saveAsTable(tableName)
 
   }
 }

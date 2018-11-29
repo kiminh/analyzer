@@ -259,7 +259,7 @@ object OcpcPIDwithCPA {
 //    //    resultRDD.foreach(println)
 //
 //    //    val resultDF = resultRDD.toDF("ideaid", "cpa_given")
-//    val resultDF = spark.table("test.ocpc_idea_update_time").select("ideaid", "cpa_given")
+//    val resultDF = spark.table("test.ocpc_idea_update_time_" + hour).select("ideaid", "cpa_given")
 //    resultDF
 //  }
 //
@@ -634,7 +634,7 @@ object OcpcPIDwithCPA {
       */
 
     // 获得cpa_given
-    val cpaGiven = spark.table("test.ocpc_idea_update_time").select("ideaid", "cpa_given")
+    val cpaGiven = spark.table("test.ocpc_idea_update_time_" + hour).select("ideaid", "cpa_given")
 
     // 按ideaid和adclass统计每一个广告创意的数据
     val rawData = historyData
@@ -811,7 +811,7 @@ object OcpcPIDwithCPA {
     rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_cost_ctr_cvr_v3")
 
     // 获得cpa_given
-    val cpaGiven = spark.table("test.ocpc_idea_update_time").select("ideaid", "cpa_given")
+    val cpaGiven = spark.table("test.ocpc_idea_update_time_" + hour).select("ideaid", "cpa_given")
 
     // 计算单个小时的ctr_cnt和cvr_cnt
     val singleHour = historyData
@@ -901,7 +901,7 @@ object OcpcPIDwithCPA {
     import spark.implicits._
 
     val resultDF = spark
-      .table("test.ocpc_idea_update_time")
+      .table("test.ocpc_idea_update_time_" + hour)
       .filter("conversion_goal=2")
       .withColumn("flag", lit(1))
       .select("ideaid", "cpa_given", "flag")
