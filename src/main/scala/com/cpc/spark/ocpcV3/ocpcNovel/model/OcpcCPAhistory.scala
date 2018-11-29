@@ -150,10 +150,6 @@ object OcpcCPAhistory {
          |  percentile(alpha1, 0.8) as alpha1_max
          |FROM
          |  cvr1_data
-         |WHERE
-         |  new_adclass == 100101
-         |or
-         |  new_adclass == 110110
          |GROUP BY new_adclass
        """.stripMargin
     println(sqlRequest1)
