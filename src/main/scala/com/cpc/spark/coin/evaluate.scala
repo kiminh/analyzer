@@ -46,7 +46,7 @@ object evaluate {
              """.stripMargin
         println(sql)
         val union = spark.sql(sql)
-        val testTable = "test.union_log_feature"
+        val testTable = "test.cpc_union_log_label2"
         union.write.mode("overwrite").insertInto(testTable)
 
 
