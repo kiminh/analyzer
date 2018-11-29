@@ -273,7 +273,7 @@ object OcpcPIDwithCPA {
       .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
       .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
 
-    rawData.createOrReplaceTempView("raw_table")
+//    rawData.createOrReplaceTempView("raw_table")
 
 //    rawData
 //      .withColumn("date", lit(date))
@@ -284,7 +284,7 @@ object OcpcPIDwithCPA {
 
 
     val resultDF = rawData
-      .select("unitid", "adclass", "updated_k")
+      .select("unitid", "adclass", "updated_k", "conversion_goal")
       .withColumn("k_value", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
       .select("unitid", "adclass", "k_value", "updated_k", "conversion_goal")
       .withColumn("date", lit(date))

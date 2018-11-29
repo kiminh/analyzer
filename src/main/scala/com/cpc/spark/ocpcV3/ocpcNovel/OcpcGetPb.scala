@@ -58,10 +58,10 @@ object OcpcGetPb {
 
     val data = rawData2
       .join(rawData1, Seq("unitid"), "outer")
-      .select("unitid", "adclass", "updated_k", "conversion_goal", "k_ratio1", "k_ratio2")
+      .select("unitid", "adclass", "k_value", "conversion_goal", "k_ratio1", "k_ratio2")
       .filter("adclass is not null and conversion_goal is not null")
       .withColumn("k_ratio", when(col("conversion_goal") === 2, col("k_ratio2")).otherwise(col("k_ratio1")))
-      .withColumn("kvalue", when(col("k_ratio").isNull, col("updated_k")).otherwise(col("k_ratio")))
+      .withColumn("kvalue", when(col("k_ratio").isNull, col("k_value")).otherwise(col("k_ratio")))
       .filter(s"kvalue > 0 and kvalue is not null")
       .withColumn("kvalue", when(col("kvalue") > 1.4, 1.4).otherwise("kvalue"))
       .withColumn("kvalue", when(col("kvalue") < 0.0001, 0.0001).otherwise("kvalue"))
