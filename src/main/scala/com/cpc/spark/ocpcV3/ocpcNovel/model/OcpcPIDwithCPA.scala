@@ -16,16 +16,10 @@ object OcpcPIDwithCPA {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val onDuty = args(2).toInt // onDuty=1表示部署模型，onDuty!=1表示测试新代码
 
-    // TODO ideaid与userid的名称
-    if (onDuty == 1) {
-      val result = calculateKv2(date, hour, spark)
-      result.write.mode("overwrite").saveAsTable("test.ocpc_novel_k_value_table")
-    } else {
-      println("############## entering test stage ###################")
-      val testKstrat = calculateKv2(date, hour, spark)
-    }
+    val result = calculateKv2(date, hour, spark)
+    result.write.mode("overwrite").saveAsTable("test.ocpc_novel_k_value_table")
+
 
   }
 
