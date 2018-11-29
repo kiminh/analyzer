@@ -277,6 +277,9 @@ object OcpcLabelCvr2 {
     val labelData1 = getLabel1(date, hour, spark)
     val labelData2 = getLabel2(date, hour, spark)
     val labelData3 = getLabel3(date, hour, spark)
+    labelData1.write.mode("ooverwrite").saveAsTable("test.ocpcv3_cvr2_data_hourly_label1")
+    labelData2.write.mode("ooverwrite").saveAsTable("test.ocpcv3_cvr2_data_hourly_label2")
+    labelData3.write.mode("ooverwrite").saveAsTable("test.ocpcv3_cvr2_data_hourly_label3")
 
     val labelData = labelData1.union(labelData2).union(labelData3)
     labelData.show(10)
