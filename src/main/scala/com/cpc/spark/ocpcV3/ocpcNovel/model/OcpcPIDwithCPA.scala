@@ -150,6 +150,8 @@ object OcpcPIDwithCPA {
          |  hour
          |FROM
          |  raw_table
+         |WHERE
+         |media_appsid in ('80001098', '80001292')
        """.stripMargin
     println(sqlRequest2)
     val rawData = spark.sql(sqlRequest2)
@@ -157,7 +159,6 @@ object OcpcPIDwithCPA {
     // case1
     val case1 = rawData
       .filter("isclick=1")
-      .filter("media_appsid in ('80001098', '80001292')")
       .groupBy("unitid", "adclass")
       .agg(avg(col("kvalue")).alias("kvalue1")).select("unitid", "adclass", "kvalue1")
 
