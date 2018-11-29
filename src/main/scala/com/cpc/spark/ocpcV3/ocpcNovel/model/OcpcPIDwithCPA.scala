@@ -192,6 +192,7 @@ object OcpcPIDwithCPA {
     val cpaGiven = spark
       .table("test.ocpcv3_novel_cpa_history_hourly")
       .where(s"`date`='$date' and `hour`='$hour'")
+      .withColumn("cpa_given", col("cpa_history"))
       .select("unitid", "cpa_given", "conversion_goal")
 
     val cvr1Data=getCvr1HistoryData(date, hour, 6, spark)
