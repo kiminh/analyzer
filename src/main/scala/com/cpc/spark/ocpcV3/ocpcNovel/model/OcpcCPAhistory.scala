@@ -135,7 +135,7 @@ object OcpcCPAhistory {
       .filter("cvr1cnt>1")
     cvr1Data.createOrReplaceTempView("cvr1_data")
     val cvr2Data = data
-      .select("unitid", "adclass", "cvr2cnt", "alpha2")
+      .select("unitid", "adclass", "cvr2cnt", "alpha2", "avg_bid", "cpa2")
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .filter("cvr2cnt>1")
