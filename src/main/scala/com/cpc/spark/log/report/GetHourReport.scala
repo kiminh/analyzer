@@ -421,6 +421,7 @@ object GetHourReport {
           //val topAdclass = Seq(110110100, 130104101, 125100100, 100101109)
           //取展示top10 的adclass
           val topAdclass = unionLog
+            .filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
             .map(x=>(x.getAs[Int]("adclass"),1))
             .reduceByKey(_+_)
             .sortBy(x=>x._2,false)
