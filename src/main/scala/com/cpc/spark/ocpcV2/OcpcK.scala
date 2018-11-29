@@ -348,7 +348,7 @@ object OcpcK {
       .select("ideaid", "cvr3_cnt")
 
     // 读取实验ideaid列表
-    val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
+    val filename = "/user/cpc/wangjun/ocpc_exp_ideas1.txt"
     val data = spark.sparkContext.textFile(filename)
     val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     rawRDD.foreach(println)
