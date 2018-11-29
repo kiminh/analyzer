@@ -427,13 +427,13 @@ object OcpcPIDwithCPA {
   def getAPIcvr3V3(singleHour: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame = {
     val cvr3List = getActivationData(date, hour, spark)
 
-    val cvr3Data = getActData(date, hour, 24, spark)
+    val cvr3Data = getActDataNovel(date, hour, 24, spark)
 
     val rawData = cvr3Data
       .groupBy("unitid", "adclass")
       .agg(
         sum(col("cost")).alias("cvr3_cost"),
-        sum(col("cvr_cnt")).alias("cvr3_cvr_cnt"))
+        sum(col("cvr2cnt")).alias("cvr3_cvr_cnt"))
       .select("unitid", "adclass", "cvr3_cost", "cvr3_cvr_cnt")
 
 

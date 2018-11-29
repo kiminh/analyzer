@@ -62,7 +62,7 @@ object OcpcRegression {
          |  sum(COALESCE(label1,0)) cvr1Cnt,
          |  sum(COALESCE(label2,0)) cvr2Cnt
          |from
-         |  (select unitid, isclick, price, ocpc_log_dict, iscvr1 as label1, iscvr2 as label2 from dl_cpc.ocpcv3_unionlog_label_hourly where $dtCondition and ocpc_log_dict['kvalue'] is not null and isclick=1 and media_appsid in ("80000001","80000002")) a
+         |  (select unitid, isclick, price, ocpc_log_dict, iscvr1 as label1, iscvr2 as label2 from dl_cpc.ocpcv3_unionlog_label_hourly where $dtCondition and ocpc_log_dict['kvalue'] is not null and isclick=1 and media_appsid in ("80001098","80001292")) a
          |group by unitid,
          |  round(ocpc_log_dict['kvalue'] * 100.0 / 5),
          |  round(ocpc_log_dict['kvalue'] * 100.0 / 5),

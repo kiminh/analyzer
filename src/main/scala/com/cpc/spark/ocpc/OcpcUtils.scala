@@ -178,6 +178,66 @@ object OcpcUtils {
     resultDF
   }
 
+  def getActDataNovel(date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
+    /**
+      * 按照给定的时间区间获取从OcpcActivationData程序的结果表获取历史数据
+      */
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourCnt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+
+    // read data and set redis configuration
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adclass,
+         |  hour,
+         |  sum(cvr2_cnt) as cvr2cnt
+         |FROM
+         |  dl_cpc.ocpcv3_cvr2_data_hourly
+         |WHERE
+         |  media_appsid in ("80001098", "80001292")
+         |  and $selectCondition
+         |group by unitid,adclass
+       """.stripMargin
+    println(sqlRequest)
+    val cvrData = spark.sql(sqlRequest)
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adclass,
+         |  total_price as cost,
+         |  hour
+         |FROM
+         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |WHERE
+         |  $selectCondition
+         |and
+         |  media_appsid in ("80001098", "80001292")
+       """.stripMargin
+    println(sqlRequest2)
+    val costData = spark.sql(sqlRequest2)
+
+    val resultDF = costData
+      .join(cvrData, Seq("unitid", "adclass", "hour"), "left_outer")
+      .select("unitid", "adclass", "cost", "cvr2cnt", "hour")
+    resultDF
+  }
+
   def getPactData(date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
     /**
       * 按照给定的时间区间获取从OcpcAccPact程序的结果表获取历史数据
