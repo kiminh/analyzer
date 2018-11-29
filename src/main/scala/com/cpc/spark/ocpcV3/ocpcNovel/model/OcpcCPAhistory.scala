@@ -160,7 +160,7 @@ object OcpcCPAhistory {
     cvr1Alpha.show(10)
 
     val cvr1Result = cvr1Data
-      .join(cvr1Alpha, Seq("unitid", "new_adclass"))
+      .join(cvr1Alpha, Seq("new_adclass"))
       .select("unitid", "adclass", "cvr1cnt", "alpha1", "avg_bid", "cpa1", "new_adclass", "alpha_max")
       .withColumn("cpa1_max", col("avg_bid") * col("alpha_max"))
 
