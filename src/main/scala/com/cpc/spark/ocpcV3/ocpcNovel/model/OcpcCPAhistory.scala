@@ -57,8 +57,8 @@ object OcpcCPAhistory {
       .sql(sqlRequestCostData)
       .groupBy("unitid", "adclass")
       .agg(
-        sum(col("total_price")).alias("cost"),
-        sum(col("total_bid")).alias("bid"),
+        sum(col("total_price")).alias("total_cost"),
+        sum(col("total_bid")).alias("total_bid"),
         sum(col("ctr_cnt")).alias("ctrcnt"))
     costData.show(10)
 
@@ -109,10 +109,10 @@ object OcpcCPAhistory {
     val resultDF = costData
       .join(cvr1Data, Seq("unitid", "adclass"), "left_outer")
       .join(cvr2Data, Seq("unitid", "adclass"), "left_outer")
-      .select("unitid", "adclass", "cost", "cvr1cnt", "cvr2cnt", "bid", "ctrcnt")
-      .withColumn("cpa1", col("cost") * 1.0 / col("cvr1cnt"))
-      .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
-      .withColumn("avg_bid", col("bid") * 1.0 / col("ctrcnt"))
+      .select("unitid", "adclass", "total_cost", "cvr1cnt", "cvr2cnt", "total_bid", "ctrcnt")
+      .withColumn("cpa1", col("total_cost") * 1.0 / col("cvr1cnt"))
+      .withColumn("cpa2", col("total_cost") * 1.0 / col("cvr2cnt"))
+      .withColumn("avg_bid", col("total_bid") * 1.0 / col("ctrcnt"))
       .withColumn("alpha1", col("cpa1") * 1.0 / col("avg_bid"))
       .withColumn("alpha2", col("cpa2") * 1.0 / col("avg_bid"))
 
@@ -128,9 +128,8 @@ object OcpcCPAhistory {
     // 取alpha的80%分位数
 
     // 取数据并过滤
-    // todo  类型转换
     val cvr1Data = data
-      .select("unitid", "adclass", "cvr1cnt", "alpha1")
+      .select("unitid", "adclass", "cvr1cnt", "alpha1", "avg_bid", "cpa1")
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .filter("cvr1cnt<=1")
@@ -141,15 +140,13 @@ object OcpcCPAhistory {
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .filter("cvr2cnt<=1")
     cvr2Data.createOrReplaceTempView("cvr2_data")
-    // TODO 测试
-    cvr1Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr1cnt_alpha")
 
     // 取分位数
     val sqlRequest1 =
       s"""
          |SELECT
-         |  new_adclass as adclass,
-         |  percentile(alpha1, 0.8) as alpha1
+         |  new_adclass,
+         |  percentile(alpha1, 0.8) as alpha_max
          |FROM
          |  cvr1_data
          |WHERE
@@ -159,8 +156,17 @@ object OcpcCPAhistory {
          |GROUP BY new_adclass
        """.stripMargin
     println(sqlRequest1)
-    val cvr1Result = spark.sql(sqlRequest1)
+    val cvr1Alpha = spark.sql(sqlRequest1)
+    cvr1Alpha.show(10)
+
+    val cvr1Result = cvr1Data
+      .join(cvr1Alpha, Seq("unitid", "new_adclass"))
+      .select("unitid", "adclass", "cvr1cnt", "alpha1", "avg_bid", "cpa1", "new_adclass", "alpha_max")
+      .withColumn("cpa1_max", col("avg_bid") * col("alpha_max"))
+
     cvr1Result.show(10)
+    // TODO 测试表
+    cvr1Result.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr1cnt_alpha")
     cvr1Result
 
   }
