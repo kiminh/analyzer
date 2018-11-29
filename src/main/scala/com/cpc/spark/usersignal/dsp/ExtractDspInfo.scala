@@ -20,7 +20,7 @@ object ExtractDspInfo {
         |   isshow,
         |   isclick,
         |   ext['adid_str'].string_value as adid,
-        |   adsrc as int,
+        |   cast(adsrc as int) as adsrc,
         |   ext['ad_title'].string_value as title,
         |   ext['ad_desc'].string_value as desc,
         |   ext['ad_img_urls'].string_value as image_url,
