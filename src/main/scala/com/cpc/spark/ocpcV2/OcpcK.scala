@@ -369,7 +369,7 @@ object OcpcK {
       .withColumn("cpa2_real", col("cost") * 1.0 / col("cvr2_cnt"))
       .withColumn("cpa3_real", col("cost") * 1.0 / col("cvr3_cnt"))
       .withColumn("cpa2_ratio", col("cpa_given") * 1.0 / col("cpa2_real"))
-      .withColumn("cpa3_ratio", col("cpa_given") * 1.0 / col("cpa2_real"))
+      .withColumn("cpa3_ratio", col("cpa_given") * 1.0 / col("cpa3_real"))
       .withColumn("cpa_ratio", when(col("conversion_goal") === 2, col("cpa3_ratio")).otherwise(col("cpa2_ratio")))
       .filter("cpa_ratio is not null")
 
