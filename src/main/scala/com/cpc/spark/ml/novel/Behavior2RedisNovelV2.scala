@@ -18,7 +18,7 @@ import org.apache.spark.sql.functions.udf
   * @version 1.0
   *
   */
-object Behavior2RedisNovel {
+object Behavior2RedisNovelV2 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
@@ -26,6 +26,12 @@ object Behavior2RedisNovel {
 
     import spark.implicits._
     val date = args(0) //today
+
+    val data2 = spark.sql(
+      s"""
+         |select * from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
+      """.stripMargin)
+      .select("uid","book_id","first_category_id","second_category_id","third_category_id")
 
     val data = spark.sql(
       s"""
@@ -57,6 +63,7 @@ object Behavior2RedisNovel {
          |    and rn <= 1000
          |group by uid
       """.stripMargin)
+      .join(data2,Seq("uid"),"left")
       .select(
         $"uid",
         hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
@@ -72,14 +79,18 @@ object Behavior2RedisNovel {
         hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
         hashSeq("m13", "int")($"c_adclass_3").alias("m13"),
         hashSeq("m14", "int")($"c_adclass_4_7").alias("m14"),
-        hashSeq("m15", "int")($"c_adclass_4_7").alias("m15")
+        hashSeq("m15", "int")($"c_adclass_4_7").alias("m15"),
+        hashSeq("m16", "int")($"book_id").alias("m16"),
+        hashSeq("m17", "int")($"first_category_id").alias("m17"),
+        hashSeq("m18", "int")($"second_category_id").alias("m18"),
+        hashSeq("m19", "int")($"third_category_id").alias("m19")
       )
       .persist()
 
     println("dnn novel 用户行为特征总数：" + data.count())
 
     data.coalesce(20).write.mode("overwrite")
-      .parquet("/user/cpc/wy/novel_behavior")
+      .parquet("/user/cpc/wy/novel_behavior_v2")
 
 
     val conf = ConfigFactory.load()
@@ -90,8 +101,8 @@ object Behavior2RedisNovel {
       p.foreach { rec =>
         var group = Seq[Int]()
         var hashcode = Seq[Long]()
-        val uid = "n1_" + rec.getString(0)
-        for (i <- 1 to 14) {
+        val uid = "n3_" + rec.getString(0)
+        for (i <- 1 to 18) {
           val f = rec.getAs[Seq[Long]](i)
           group = group ++ Array.tabulate(f.length)(x => i)
           hashcode = hashcode ++ f

@@ -254,6 +254,46 @@ object OcpcUtils {
   }
 
 
+  def getCvr1HistoryData(date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
+    /**
+      * 按照给定的时间区间获取从OcpcMonitor程序的结果表获取历史数据
+      */
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourCnt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adclass,
+         |  hour,
+         |  sum(cvr1_cnt) as cvr1cnt
+         |FROM
+         |  dl_cpc.ocpcv3_cvr1_data_hourly
+         |WHERE
+         |  media_appsid in ("80001098", "80001292")
+         |  and $selectCondition
+         |group by unitid,adclass
+
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+    resultDF
+  }
+
+
 
 
 }
