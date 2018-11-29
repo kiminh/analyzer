@@ -183,7 +183,7 @@ object OcpcCPAhistory {
     cvr2Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa2_result_hourly")
 
     // 关联结果
-    val resultDF = data
+    val result = data
       .join(cvr1Result, Seq("unitid", "adclass"), "left_outer")
       .join(cvr2Result, Seq("unitid", "adclass"), "left_outer")
       .filter(s"alpha1_max is not null or alpha2_max is not null")
@@ -194,6 +194,9 @@ object OcpcCPAhistory {
       .withColumn("conversion_goal", when(col("cpa1_history") === -1, 2).otherwise(1))
       .withColumn("cpa_history", when(col("conversion_goal") === 1, col("cpa1_history")).otherwise(col("cpa2_history")))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
+
+    val resultDF = result
+      .select("unitid", "adclass", "cpa_history", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
     resultDF
