@@ -1,10 +1,11 @@
 package com.cpc.spark.ml.dnn
 
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
-import org.apache.log4j.{Level, Logger}
+import sys.process._
 import org.apache.spark.sql.functions.{array, udf}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -26,13 +27,21 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
 
     println(s"训练数据总量：${st * 100}")*/
 
-    getTrainSample(spark, trDate)
+    val data = getTrainSample(spark, trDate)
       .repartition(num_partitions)
-      .write
+
+    data.write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"$p/dnntrain-$trDate")
+
+    if (trDate.length == 13) {
+      val count = data.count()
+      s"echo $count" #> new File("count") !
+
+      s"hadoop fs -put count $p/dnntrain-$trDate/" !
+    }
 
     println(s"DONE : Saving train file to $trPath/dnntrain-$trDate")
   }

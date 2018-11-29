@@ -1,8 +1,11 @@
 package com.cpc.spark.ml.dnn
 
+import java.io.File
+
 import com.cpc.spark.common.Murmur3Hash
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.{array, udf}
+import sys.process._
 
 /**
   * d4数据生成规范化
@@ -202,8 +205,8 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
     //用户安装app
     val ud_sql0 =
       s"""
-         |select * from dl_cpc.cpc_user_installed_apps where `load_date` = "$date"
-        """
+         |select * from dl_cpc.cpc_user_installed_apps where load_date = '${getDay(date, 1)}'
+        """.stripMargin
 
     //用户天级别过去访问广告情况
     val ud_sql1 =
@@ -321,12 +324,14 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
       data = getAsFeature(date)
         .join(getUdFeature(date), Seq("uid"), "left")
         .join(getAdFeature(date), Seq("ideaid"), "left")
-    } else if (date.length == 13) {
+    }
+    else if (date.length == 13) {
       val dt = date.substring(0, 10)
       val h = date.substring(11, 13).toInt
       data = getAsFeature_hourly(dt, h)
         .join(getUdFeature_hourly(date), Seq("uid"), "left")
         .join(getAdFeature_hourly(date), Seq("ideaid"), "left")
+        .persist()
     } else {
       println("-------------------日期格式传入错误-----------------")
       println("       正确格式：yyyy-MM-dd 或 yyyy-MM-dd-HH        ")
