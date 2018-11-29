@@ -286,7 +286,7 @@ object OcpcPIDwithCPA {
     val resultDF = rawData
       .select("unitid", "adclass", "updated_k")
       .withColumn("k_value", when(col("updated_k").isNull, 0.694).otherwise(col("updated_k")))
-      .select("unitid", "adclass", "k_value", "updated_k")
+      .select("unitid", "adclass", "k_value", "updated_k", "conversion_goal")
 
     resultDF
   }

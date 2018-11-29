@@ -40,18 +40,32 @@ object OcpcGetPb {
   }
 
   def getK(date: String, hour: String, spark: SparkSession) = {
-    val tableName = "test.ocpc_v3_novel_k_regression"
-    val rawData = spark
-      .table(tableName)
+    // 先获取回归模型和备用模型的k值
+    // 根据conversion_goal选择需要的k值
+    val tableName1 = "test.ocpc_v3_novel_k_regression"
+    val rawData1 = spark
+      .table(tableName1)
       .where(s"`date`='$date' and `hour`='$hour'")
-    rawData.show(10)
+    rawData1.show(10)
 
-    val resultDF = rawData
-      .select("unitid")
-      .distinct()
-      .withColumn("kvalue", lit(0.5))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
+    val tableName2 = "test.ocpc_novel_k_value_table"
+    val rawData2 = spark
+      .table(tableName2)
+      .where(s"`date`='$date' and `hour`='$hour'")
+    rawData2.show(10)
+
+    val data = rawData2
+      .join(rawData1, Seq("unitid"), "outer")
+      .select("unitid", "adclass", "updated_k", "conversion_goal", "k_ratio1", "k_ratio2")
+      .filter("adclass is not null and conversion_goal is not null")
+      .withColumn("k_ratio", when(col("conversion_goal") === 2, col("k_ratio2")).otherwise(col("k_ratio1")))
+      .withColumn("kvalue", when(col("k_ratio").isNull, col("updated_k")).otherwise(col("k_ratio")))
+      .filter(s"kvalue > 0 and kvalue is not null")
+      .withColumn("kvalue", when(col("kvalue") > 1.4, 1.4).otherwise("kvalue"))
+      .withColumn("kvalue", when(col("kvalue") < 0.0001, 0.0001).otherwise("kvalue"))
+
+    val resultDF = data.select("unitid", "kvalue")
+
 
     resultDF
   }
