@@ -75,7 +75,7 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
     println(as_sql)
     spark.sql(as_sql)
       .select($"label",
-        hash("uid")($"uid").alias("sample_idx"),
+        $"uid",
 
         hash("f0#")($"media_type").alias("f0"),
         hash("f1#")($"mediaid").alias("f1"),
@@ -152,7 +152,7 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
     println(as_sql)
     spark.sql(as_sql)
       .select($"label",
-        hash("uid")($"uid").alias("sample_idx"),
+        $"uid",
 
         hash("f0#")($"media_type").alias("f0"),
         hash("f1#")($"mediaid").alias("f1"),
@@ -350,7 +350,7 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
     data
       .select(
         $"label",
-        $"sample_idx",
+        $"uid",
         $"dense",
         mkSparseFeature(default_hash_seq)(
           array($"ud0", $"ud1", $"ud2", $"ud3", $"ud4", $"ud5", $"ud6", $"ud7", $"ud8"
@@ -358,7 +358,7 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
         ).alias("sparse")
       )
       .select(
-        $"sample_idx",
+        hash("uid")($"uid").alias("sample_idx"),
         $"label",
         $"dense",
         $"sparse._1".alias("idx0"),
