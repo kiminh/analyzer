@@ -26,6 +26,8 @@ object OcpcGetPb {
     val kvalue = getK(date, hour, spark)
     val cpaHistory = getCPAhistory(date, hour, spark)
 
+    // TODO
+    // kvalue为空应该过滤掉
     val data = cvrData
       .join(kvalue, Seq("unitid"), "left_outer")
       .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt")
