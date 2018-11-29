@@ -392,9 +392,10 @@ object GetHourReport {
     println("fill", fillData.count())
 
 
+    val unionLog_tmp = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
+
     //取展示top10 的adclass
-    val topAdclass = unionLog
-      .filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
+    val topAdclass = unionLog_tmp
       .map(x => (x.getAs[Int]("adclass"), 1))
       .reduceByKey(_ + _)
       .sortBy(x => x._2, false)
@@ -403,7 +404,7 @@ object GetHourReport {
       .toSeq
     println("topAdclass: " + topAdclass)
 
-    val ctrData = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
+    val ctrData = unionLog_tmp
       .map {
         u =>
           val exptag = u.getAs[String]("exptags").split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
