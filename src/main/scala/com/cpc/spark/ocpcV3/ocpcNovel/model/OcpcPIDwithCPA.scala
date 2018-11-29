@@ -145,7 +145,6 @@ object OcpcPIDwithCPA {
          |  adclass,
          |  isshow,
          |  isclick,
-         |  iscvr,
          |  ocpc_log,
          |  ocpc_log_dict['kvalue'] as kvalue,
          |  hour
