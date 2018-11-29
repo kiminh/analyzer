@@ -195,7 +195,7 @@ object OcpcPIDwithCPA {
       */
 
     // 获得cpa_given
-    val cpaGiven = spark.table("test.ocpc_novel_idea_update_time_" + hour).select("unitid", "cpa_given")
+    val cpaGiven = spark.table("test.ocpc_idea_update_time_" + hour).select("unitid", "cpa_given")
 
     val Cvr1data=getCvr1HistoryData(date, hour, 24, spark)
     // 按ideaid和adclass统计每一个广告创意的数据
@@ -354,7 +354,7 @@ object OcpcPIDwithCPA {
         sum(col("weighted_cvr_cnt")).alias("cvr_cnt"))
 
     // 获得cpa_given
-    val cpaGiven = spark.table("test.ocpc_novel_idea_update_time_" + hour).select("unitid", "cpa_given")
+    val cpaGiven = spark.table("test.ocpc_idea_update_time_" + hour).select("unitid", "cpa_given")
 
     // 计算单个小时的ctr_cnt和cvr_cnt
     val singleHour = historyData
@@ -413,7 +413,7 @@ object OcpcPIDwithCPA {
   def getActivationData(date: String, hour: String, spark: SparkSession) = {
 
     val resultDF = spark
-      .table("test.ocpc_novel_idea_update_time_" + hour)
+      .table("test.ocpc_idea_update_time_" + hour)
       .filter("conversion_goal=2")
       .withColumn("flag", lit(1))
       .select("unitid", "cpa_given", "flag")
