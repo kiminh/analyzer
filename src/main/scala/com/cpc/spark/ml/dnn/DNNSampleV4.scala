@@ -69,7 +69,7 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
-         |  length(uid) in (14, 15, 36)
+         |  and length(uid) in (14, 15, 36)
       """.stripMargin
     println("============= as features ==============")
     println(as_sql)
@@ -146,7 +146,7 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
          |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
-         |  length(uid) in (14, 15, 36)
+         |  and length(uid) in (14, 15, 36)
       """.stripMargin
     println("============= as features ==============")
     println(as_sql)
