@@ -36,8 +36,8 @@ object Behavior2RedisV4 {
     //用户安装app
     val ud_sql0 =
       s"""
-         select * from dl_cpc.cpc_user_installed_apps where load_date = "${getDay(date, 1)}"
-        """
+         |select * from dl_cpc.cpc_user_installed_apps where load_date = '${getDay(date, 1)}'
+      """.stripMargin
 
     //用户天级别过去访问广告情况
     val ud_sql1 =
