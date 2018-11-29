@@ -139,7 +139,10 @@ object OcpcK {
       // k>0, 退出循环
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
-      println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
+      // TODO 暂时调整打印的内容，过滤无关内容
+      if (targetK != 0.98) {
+        println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
+      }
       if (coffList(1)>0 && realk > 0) {
         resList.append((ideaid, realk, date, hour))
       }
@@ -157,7 +160,8 @@ object OcpcK {
         obs.add(x, y);
       }
       count = count + n
-      println("sample", x, y, n)
+      // todo 暂时注释
+//      println("sample", x, y, n)
     }
 
     for (i <- 0 to count / 10) {
