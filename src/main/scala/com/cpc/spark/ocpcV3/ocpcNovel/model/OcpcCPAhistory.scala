@@ -157,7 +157,7 @@ object OcpcCPAhistory {
     println(sqlRequest1)
     val cvr1Result = spark.sql(sqlRequest1)
     cvr1Result.show(10)
-
+    cvr1Result
 
   }
 
