@@ -22,7 +22,7 @@ object OcpcCPAhistory {
     val cpaList = calculateCPA(date, hour, spark)
     val result = checkCPA(cpaList, date, hour, spark)
 //    dl_cpc.ocpcv3_novel_cpa_history_hourly
-//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly")
+    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly")
     println(s"succesfully save data into table: test.ocpcv3_novel_cpa_history_hourly")
   }
 
@@ -138,15 +138,16 @@ object OcpcCPAhistory {
       .select("unitid", "adclass", "cvr2cnt", "alpha2")
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
-      .filter("cvr2cnt<=1")
+      .filter("cvr2cnt>1")
     cvr2Data.createOrReplaceTempView("cvr2_data")
 
     // 取分位数
+    // cvr1
     val sqlRequest1 =
       s"""
          |SELECT
          |  new_adclass,
-         |  percentile(alpha1, 0.8) as alpha_max
+         |  percentile(alpha1, 0.8) as alpha1_max
          |FROM
          |  cvr1_data
          |WHERE
@@ -158,17 +159,45 @@ object OcpcCPAhistory {
     println(sqlRequest1)
     val cvr1Alpha = spark.sql(sqlRequest1)
     cvr1Alpha.show(10)
-
     val cvr1Result = cvr1Data
       .join(cvr1Alpha, Seq("new_adclass"))
-      .select("unitid", "adclass", "cvr1cnt", "alpha1", "avg_bid", "cpa1", "new_adclass", "alpha_max")
-      .withColumn("cpa1_max", col("avg_bid") * col("alpha_max"))
+      .select("unitid", "adclass", "cvr1cnt", "alpha1", "avg_bid", "cpa1", "new_adclass", "alpha1_max")
+      .withColumn("cpa1_max", col("avg_bid") * col("alpha1_max"))
+      .withColumn("cpa1_history", when(col("cpa1")>col("cpa1_max"), col("cpa1_max")).otherwise(col("cpa1")))
+    // cvr2
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  new_adclass,
+         |  percentile(alpha2, 0.8) as alpha2_max
+         |FROM
+         |  cvr2_data
+         |WHERE
+         |  new_adclass == 100101
+         |or
+         |  new_adclass == 110110
+         |GROUP BY new_adclass
+       """.stripMargin
+    println(sqlRequest2)
+    val cvr2Alpha = spark.sql(sqlRequest2)
+    cvr2Alpha.show(10)
+    val cvr2Result = cvr2Data
+      .join(cvr2Alpha, Seq("new_adclass"))
+      .select("unitid", "adclass", "cvr2cnt", "alpha2", "avg_bid", "cpa2", "new_adclass", "alpha2_max")
+      .withColumn("cpa2_max", col("avg_bid") * col("alpha2_max"))
+      .withColumn("cpa2_history", when(col("cpa2")>col("cpa2_max"), col("cpa2_max")).otherwise(col("cpa2")))
 
-    cvr1Result.show(10)
-    // TODO 测试表
-    cvr1Result.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr1cnt_alpha")
-    cvr1Result
-
+    // 关联结果
+    val resultDF = data
+      .join(cvr1Result, Seq("unitid", "adclass"), "left_outer")
+      .join(cvr2Result, Seq("unitid", "adclass"), "left_outer")
+      .filter(s"alpha1_max is not null or alpha2_max is not null")
+      .select("unitid", "adclass", "cpa1_history", "cpa2_history")
+      .withColumn("cpa1_history", when(col("cpa1_history").isNull, -1).otherwise(col("cpa1_history")))
+      .withColumn("cpa2_history", when(col("cpa2_history").isNull, -1).otherwise(col("cpa2_history")))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+    resultDF
   }
 
 //  def CPAbidRatio(date: String, hour: String, spark: SparkSession) = {
