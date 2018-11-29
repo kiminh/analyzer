@@ -210,7 +210,7 @@ object OcpcUtils {
          |WHERE
          |  media_appsid in ("80001098", "80001292")
          |  and $selectCondition
-         |group by unitid,adclass
+         |group by unitid,adclass, hour
        """.stripMargin
     println(sqlRequest)
     val cvrData = spark.sql(sqlRequest)
@@ -220,7 +220,7 @@ object OcpcUtils {
          |SELECT
          |  unitid,
          |  adclass,
-         |  total_price as cost,
+         |  sum(total_price) as cost,
          |  hour
          |FROM
          |  dl_cpc.ocpcv3_ctr_data_hourly
@@ -228,6 +228,7 @@ object OcpcUtils {
          |  $selectCondition
          |and
          |  media_appsid in ("80001098", "80001292")
+         |group by unitid, adclass, hour
        """.stripMargin
     println(sqlRequest2)
     val costData = spark.sql(sqlRequest2)
@@ -345,7 +346,7 @@ object OcpcUtils {
          |WHERE
          |  media_appsid in ("80001098", "80001292")
          |  and $selectCondition
-         |group by unitid,adclass
+         |group by unitid,adclass, hour
 
        """.stripMargin
     println(sqlRequest)
