@@ -29,7 +29,6 @@ object ExtractDspInfo {
         |WHERE date='$date' and ext['adid_str'].string_value != '' and adsrc > 1
         |   and media_appsid in ("80000001", "80000002")
         |   and ext['ad_title'].string_value != ''
-        |   group by ext['adid_str'].string_value, adsrc
       """.stripMargin
     val rawData = spark.sql(sql)
     spark.udf.register("slm", new StringLengthMax)
@@ -46,7 +45,7 @@ object ExtractDspInfo {
 
     adData.coalesce(20).write.mode("overwrite")
       .parquet(s"/user/cpc/user_signal/dsp_raw/$date")
-    
+
 
 
   }
