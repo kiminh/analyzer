@@ -391,6 +391,18 @@ object GetHourReport {
       .jdbc(mariadbUrl, "report.report_media_fill_hourly", mariadbProp)
     println("fill", fillData.count())
 
+
+    //取展示top10 的adclass
+    val topAdclass = unionLog
+      .filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
+      .map(x => (x.getAs[Int]("adclass"), 1))
+      .reduceByKey(_ + _)
+      .sortBy(x => x._2, false)
+      .map(x => x._1)
+      .take(10)
+      .toSeq
+    println("topAdclass: " + topAdclass)
+
     val ctrData = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
       .map {
         u =>
@@ -419,16 +431,6 @@ object GetHourReport {
           99   其他
            */
           //val topAdclass = Seq(110110100, 130104101, 125100100, 100101109)
-          //取展示top10 的adclass
-          val topAdclass = unionLog
-            .filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
-            .map(x=>(x.getAs[Int]("adclass"),1))
-            .reduceByKey(_+_)
-            .sortBy(x=>x._2,false)
-            .map(x=>x._1)
-            .take(10)
-            .toSeq
-
           if (!topAdclass.contains(adclass)) {
             adclass = 99
           }
