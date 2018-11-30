@@ -29,8 +29,8 @@ object CreateSlimUnionLog {
         |   isshow,
         |   exptags,
         |   adslot_type,
-        |   bs_rank_tag,
-        |   embeddingNum,
+        |   ext_string['bs_rank_tag'] as bs_rank_tag,
+        |   ext_int['embeddingNum'] as embeddingNum,
         |   ext_int["dsp_adnum_by_src_1"] as bs_num
         | from dl_cpc.cpc_union_log
         | where `date`='$date' and hour='$hour'
