@@ -160,8 +160,7 @@ object OcpcPIDwithCPA {
     // case2
     // table name: dl_cpc.ocpcv3_novel_pb_hourly
     val case2 = spark
-      .table("dl_cpc.ocpcv3_novel_pb_hourly")
-      .where(s"`date`='$date' and `hour`='$hour'")
+      .table("test.ocpcv3_novel_pb_hourly")
       .withColumn("kvalue2", col("kvalue"))
       .select("unitid", "adclass", "kvalue2")
       .distinct()
