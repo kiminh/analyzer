@@ -28,7 +28,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
     println(s"训练数据总量：${st * 100}")*/
 
     val data = getTrainSample(spark, trDate)
-      .repartition(num_partitions)
+      .repartition(if (trDate.length == 13) 100 else num_partitions)
 
     data.write
       .mode("overwrite")
@@ -234,13 +234,12 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
 
-  def mkSparseFeature(dh: Array[Seq[(Int, Int, Long)]]) = udf {
+  def mkSparseFeature = udf {
     features: Seq[Seq[Long]] =>
       var i = 0
       var re = Seq[(Int, Int, Long)]()
       for (feature <- features) {
-        re = re ++
-          (if (feature != null && feature.nonEmpty) feature.zipWithIndex.map(x => (i, x._2, x._1)) else dh(i))
+        re = re ++ feature.zipWithIndex.map(x => (i, x._2, x._1))
         i = i + 1
       }
       val c = re.map(x => (0, x._1, x._2, x._3))
