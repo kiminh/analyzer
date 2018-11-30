@@ -1,0 +1,39 @@
+package com.cpc.spark.report
+
+import org.apache.spark.sql.SparkSession
+
+/**
+  * author: huazhenhao
+  * date: 11/30/18
+  */
+object CreateSlimUnionLog {
+  def main(args: Array[String]): Unit = {
+    val spark = SparkSession.builder().appName("slim-unionlog").enableHiveSupport().getOrCreate()
+
+    val date = args(0).toString
+    val hour = args(1).toString
+
+    spark.sql(
+      s"""
+        | select
+        |   searchid,
+        |   timestamp as ts,
+        |   uid,
+        |   ext_int['raw_ctr'] as exp_ctr,
+        |   ideaid,
+        |   bid,
+        |   price,
+        |   userid,
+        |   ext['adclass'].int_value as adclass,
+        |   isclick,
+        |   isshow,
+        |   exptags,
+        |   adslot_type
+        | from dl_cpc.cpc_union_log
+        | where `date`='$date' and hour='$hour'
+        | and media_appsid in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0
+        | and ideaid > 0 and adsrc = 1 AND userid > 0
+      """.stripMargin).write.mode("overwrite").partitionBy(date, hour)
+      .insertInto("dl_cpc.slim_unionlog")
+  }
+}
