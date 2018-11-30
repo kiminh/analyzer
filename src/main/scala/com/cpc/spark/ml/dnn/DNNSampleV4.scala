@@ -347,7 +347,7 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
     val columns = Seq("ud0", "ud1", "ud2", "ud3", "ud4", "ud5", "ud6", "ud7", "ud8", "ud9", "ud10",
       "ud11", "ud12", "ud13", "ud14", "ud15", "ud16", "ad0")
     val default_hash = (for (col <- columns)
-      yield (col, Murmur3Hash.stringHash64(col + "#", 0))).toMap
+      yield (col, Seq(Murmur3Hash.stringHash64(col + "#", 0)))).toMap
 
     data.na.fill(default_hash)
       .select(
