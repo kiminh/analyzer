@@ -50,7 +50,7 @@ object OcpcCPAhistory {
          |WHERE
          |  `date`='$date1'
          |AND
-         |  media_appsid in ("80001098","80001292")
+         |  media_appsid in ("80000001", "80000002")
        """.stripMargin
     println(sqlRequestCostData)
     val costData = spark
@@ -75,7 +75,7 @@ object OcpcCPAhistory {
          |WHERE
          |  `date`='$date1'
          |AND
-         |  media_appsid in ("80001098","80001292")
+         |  media_appsid in ("80000001", "80000002")
        """.stripMargin
     println(sqlRequestCvr1Data)
     val cvr1Data = spark
@@ -96,7 +96,7 @@ object OcpcCPAhistory {
          |WHERE
          |  `date`='$date1'
          |AND
-         |  media_appsid in ("80001098","80001292")
+         |  media_appsid in ("80000001", "80000002")
        """.stripMargin
     println(sqlRequestCvr2Data)
     val cvr2Data = spark
