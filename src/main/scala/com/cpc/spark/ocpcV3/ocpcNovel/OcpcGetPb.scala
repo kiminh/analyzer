@@ -70,6 +70,7 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("kvalue") < 0.0001, 0.0001).otherwise("kvalue"))
 
     val resultDF = data.select("unitid", "kvalue")
+    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly")
 
 
     resultDF
@@ -142,11 +143,13 @@ object OcpcGetPb {
     cvr2Data.show(10)
 
     // 数据关联
-    val resultDF = cvr1Data
+    val result = cvr1Data
       .join(cvr2Data, Seq("unitid"), "outer")
       .withColumn("cvr1cnt", when(col("cvr1cnt").isNull, 0).otherwise(col("cvr1cnt")))
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
-      .select("unitid", "cvr1cnt", "cvr2cnt")
+    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly")
+
+    val resultDF = result.select("unitid", "cvr1cnt", "cvr2cnt")
 
     // 返回结果
     resultDF.show(10)
