@@ -15,7 +15,7 @@ import org.apache.spark.sql.functions.udf
   * @version 1.0
   *
   */
-object Behavior2RedisV4 {
+object Behavior2RedisV6 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
@@ -115,6 +115,8 @@ object Behavior2RedisV4 {
     ud_features.coalesce(50).write.mode("overwrite")
       .parquet("/user/cpc/dnn/features/ud")
 
+    ud_features.show()
+
     //    Utils.DnnFeatures2Redis(ud_features, "d4_")
   }
 
@@ -133,9 +135,12 @@ object Behavior2RedisV4 {
     val ad_features = spark.sql(title_sql)
       .select($"ideaid",
         hashSeq("ad0#", "string")($"words").alias("ad0"))
+      .persist()
 
     ad_features.coalesce(1).write.mode("overwrite")
       .parquet("/user/cpc/dnn/features/ad")
+
+    ad_features.show()
 
     //    Utils.DnnFeatures2Redis(ad_features, "id_")
 

@@ -1,10 +1,9 @@
-package com.cpc.spark.ml.dnn
+package com.cpc.spark.ml.dnn.trash
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
-import com.cpc.spark.ml.dnn.DNNSampleV2.hashSeq
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.DnnMultiHot

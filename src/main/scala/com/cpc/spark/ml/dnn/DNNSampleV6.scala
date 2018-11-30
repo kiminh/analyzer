@@ -15,7 +15,7 @@ import sys.process._
   * @version 1.0
   *
   */
-object DNNSampleV4 {
+object DNNSampleV6 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
@@ -23,13 +23,13 @@ object DNNSampleV4 {
 
     val Array(trdate, trpath, tedate, tepath) = args
 
-    val sample = new DNNSampleV4(spark, trdate, trpath, tedate, tepath)
+    val sample = new DNNSampleV6(spark, trdate, trpath, tedate, tepath)
     sample.saveTrain()
   }
 }
 
 
-class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
+class DNNSampleV6(spark: SparkSession, trdate: String = "", trpath: String = "",
                   tedate: String = "", tepath: String = "")
   extends DNNSample(spark, trdate, trpath, tedate, tepath) {
 

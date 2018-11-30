@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.dnn
+package com.cpc.spark.ml.dnn.trash
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -6,8 +6,6 @@ import java.util.Calendar
 import com.cpc.spark.common.Murmur3Hash
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-
-import scala.util.Random
 
 /**
   * 获取dnn ctr训练的数据，生成tfrecord格式保存到 /user/dnn/ctr/traindata下

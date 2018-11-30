@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.dnn
+package com.cpc.spark.ml.dnn.trash
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -17,6 +17,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
   * @version 1.0
   *
   */
+@deprecated
 object DNNSampleV3 {
 
   Logger.getRootLogger.setLevel(Level.WARN)

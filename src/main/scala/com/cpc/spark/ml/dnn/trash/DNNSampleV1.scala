@@ -1,17 +1,12 @@
-package com.cpc.spark.ml.dnn
+package com.cpc.spark.ml.dnn.trash
 
 import java.text.SimpleDateFormat
-import java.util.{Calendar, Date}
+import java.util.Calendar
 
-import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-
-import scala.collection.mutable
-import scala.collection.mutable.WrappedArray
-import scala.util.Random
 import com.cpc.spark.common.Murmur3Hash
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions._
-import org.apache.spark.storage.StorageLevel
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 @deprecated
 object DNNSampleV1 {
