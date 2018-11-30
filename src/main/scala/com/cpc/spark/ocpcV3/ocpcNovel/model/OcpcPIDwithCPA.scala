@@ -18,7 +18,8 @@ object OcpcPIDwithCPA {
     val hour = args(1).toString
 
     val result = calculateKv2(date, hour, spark)
-    result.write.mode("overwrite").saveAsTable("test.ocpc_novel_k_value_table")
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_novel_k_value_table")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_k_value_table")
 
 
   }
@@ -157,11 +158,11 @@ object OcpcPIDwithCPA {
       .agg(avg(col("kvalue")).alias("kvalue1")).select("unitid", "adclass", "kvalue1")
 
     // case2
-    // table name for previous calculation: test.new_pb_ocpc_with_pcvr
-    // todo: test.new_pb_ocpc_novel_with_pcvr
+    // table name: dl_cpc.ocpcv3_novel_pb_hourly
     val case2 = spark
-      .table("test.new_pb_ocpc_novel_with_pcvr")
-      .withColumn("kvalue2", col("k_value"))
+      .table("dl_cpc.ocpcv3_novel_pb_hourly")
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .withColumn("kvalue2", col("kvalue"))
       .select("unitid", "adclass", "kvalue2")
       .distinct()
 
@@ -190,7 +191,7 @@ object OcpcPIDwithCPA {
 
     // 获得cpa_given
     val cpaGiven = spark
-      .table("test.ocpcv3_novel_cpa_history_hourly")
+      .table("dl_cpc.ocpcv3_novel_cpa_history_hourly")
       .where(s"`date`='$date' and `hour`='$hour'")
       .withColumn("cpa_given", col("cpa_history"))
       .select("unitid", "cpa_given", "conversion_goal")

@@ -38,7 +38,8 @@ object OcpcGetPb {
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_hourly")
+//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_hourly")
+    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_hourly")
 
     // 输出pb文件
     savePbPack(data)
@@ -47,13 +48,13 @@ object OcpcGetPb {
   def getK(date: String, hour: String, spark: SparkSession) = {
     // 先获取回归模型和备用模型的k值
     // 根据conversion_goal选择需要的k值
-    val tableName1 = "test.ocpc_v3_novel_k_regression"
+    val tableName1 = "dl_cpc.ocpc_v3_novel_k_regression"
     val rawData1 = spark
       .table(tableName1)
       .where(s"`date`='$date' and `hour`='$hour'")
     rawData1.show(10)
 
-    val tableName2 = "test.ocpc_novel_k_value_table"
+    val tableName2 = "dl_cpc.ocpc_novel_k_value_table"
     val rawData2 = spark
       .table(tableName2)
       .where(s"`date`='$date' and `hour`='$hour'")
@@ -71,14 +72,14 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("kvalue") < 0.0001, 0.0001).otherwise(col("kvalue")))
 
     val resultDF = data.select("unitid", "kvalue")
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly")
+//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly")
 
 
     resultDF
   }
 
   def getCPAhistory(date: String, hour: String, spark: SparkSession) = {
-    val tableName = "test.ocpcv3_novel_cpa_history_hourly"
+    val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly"
     val resultDF = spark
       .table(tableName)
       .where(s"`date`='$date' and `hour`='$hour'")
@@ -148,7 +149,7 @@ object OcpcGetPb {
       .join(cvr2Data, Seq("unitid"), "outer")
       .withColumn("cvr1cnt", when(col("cvr1cnt").isNull, 0).otherwise(col("cvr1cnt")))
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
-    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly")
+//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly")
 
     val resultDF = result.select("unitid", "cvr1cnt", "cvr2cnt")
 
