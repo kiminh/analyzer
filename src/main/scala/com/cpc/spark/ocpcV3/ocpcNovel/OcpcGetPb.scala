@@ -57,6 +57,7 @@ object OcpcGetPb {
     val rawData2 = spark
       .table(tableName2)
       .where(s"`date`='$date' and `hour`='$hour'")
+      .filter("conversion_goal is not null and k_value is not null")
     rawData2.show(10)
 
     val data = rawData2

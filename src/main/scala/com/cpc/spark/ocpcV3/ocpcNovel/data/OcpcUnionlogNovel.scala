@@ -49,7 +49,7 @@ object OcpcUnionlogNovel {
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)
-         |and ext_int['is_ocpc'] = 1
+         |and exptags like "%novelocpcmodel%"
       """.stripMargin
     println(sqlRequest1)
     val rawData = spark.sql(sqlRequest1).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
