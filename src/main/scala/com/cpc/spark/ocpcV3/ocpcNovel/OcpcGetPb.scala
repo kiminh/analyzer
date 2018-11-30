@@ -35,8 +35,7 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
       .join(cpaHistory, Seq("unitid"), "left_outer")
       .filter("cpa_history is not null and cpa_history>0 and kvalue>=0")
-      .withColumn("cpa2_history", lit(0.0).cast(DoubleType))
-      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "cpa2_history")
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_hourly")
@@ -169,7 +168,7 @@ object OcpcGetPb {
       val kvalue = record.getAs[Double]("kvalue")
       val cvr1cnt = record.getAs[Long]("cvr1cnt")
       val cvr2cnt = record.getAs[Long]("cvr2cnt")
-      val cpa2History = record.getAs[Double]("cpa2_history")
+      val cpa2History = 0.0
 
       if (cnt % 100 == 0) {
         println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History")
