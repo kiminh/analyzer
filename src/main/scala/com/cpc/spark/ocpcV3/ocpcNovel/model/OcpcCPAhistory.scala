@@ -191,7 +191,7 @@ object OcpcCPAhistory {
       .withColumn("cpa1_history", when(col("cpa1_history").isNull, -1).otherwise(col("cpa1_history")))
       .withColumn("cpa2_history", when(col("cpa2_history").isNull, -1).otherwise(col("cpa2_history")))
       .filter("cpa1_history!=-1 or cpa2_history!=-1")
-      .withColumn("conversion_goal", when(col("cpa1_history") === -1, 2).otherwise(1))
+      .withColumn("conversion_goal", when(col("cpa2_history") === -1, 1).otherwise(2))
       .withColumn("cpa_history", when(col("conversion_goal") === 1, col("cpa1_history")).otherwise(col("cpa2_history")))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
     result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_debug")
