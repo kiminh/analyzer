@@ -32,9 +32,9 @@ object OcpcGetPb {
     val data = cvrData
       .join(kvalue, Seq("unitid"), "left_outer")
       .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt")
-      .withColumn("kvalue", when(col("kvalue").isNull, -1.0).otherwise(col("kvalue")))
+      .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
       .join(cpaHistory, Seq("unitid"), "left_outer")
-      .filter("cpa_history is not null")
+      .filter("cpa_history is not null and kvalue>=0")
       .withColumn("cpa2_history", lit(0.0).cast(DoubleType))
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "cpa2_history")
       .withColumn("date", lit(date))
