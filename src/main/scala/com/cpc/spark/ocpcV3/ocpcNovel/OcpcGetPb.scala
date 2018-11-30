@@ -165,7 +165,7 @@ object OcpcGetPb {
     for (record <- dataset.collect()) {
       val unitid = record.getAs[Int]("unitid").toString
       val cpa1History = record.getAs[Double]("cpa_history")
-      val kvalue = record.getAs[Double]("kvalue")
+      val kvalue = record.getAs[String]("kvalue").toDouble
       val cvr1cnt = record.getAs[Long]("cvr1cnt")
       val cvr2cnt = record.getAs[Long]("cvr2cnt")
       val cpa2History = 0.0
