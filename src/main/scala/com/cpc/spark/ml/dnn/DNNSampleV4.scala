@@ -346,15 +346,15 @@ class DNNSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
     //获取默认hash列表
     val columns = Seq("ud0", "ud1", "ud2", "ud3", "ud4", "ud5", "ud6", "ud7", "ud8", "ud9", "ud10",
       "ud11", "ud12", "ud13", "ud14", "ud15", "ud16", "ad0")
-    val default_hash = (for (col <- columns)
-      yield (col, Seq(Murmur3Hash.stringHash64(col + "#", 0)))).toMap
+    val default_hash = for (col <- columns.zipWithIndex)
+      yield (col._2, 0, Murmur3Hash.stringHash64(col._1 + "#", 0))
 
-    data.na.fill(default_hash)
+    data
       .select(
         $"label",
         $"uid",
         $"dense",
-        mkSparseFeature(
+        mkSparseFeature(default_hash)(
           array($"ud0", $"ud1", $"ud2", $"ud3", $"ud4", $"ud5", $"ud6", $"ud7", $"ud8"
             , $"ud9", $"ud10", $"ud11", $"ud12", $"ud13", $"ud14", $"ud15", $"ud16", $"ad0")
         ).alias("sparse")
