@@ -66,8 +66,8 @@ object OcpcGetPb {
       .withColumn("k_ratio", when(col("conversion_goal") === 2, col("k_ratio2")).otherwise(col("k_ratio1")))
       .withColumn("kvalue", when(col("k_ratio").isNull, col("k_value")).otherwise(col("k_ratio")))
       .filter(s"kvalue > 0 and kvalue is not null")
-      .withColumn("kvalue", when(col("kvalue") > 1.4, 1.4).otherwise("kvalue"))
-      .withColumn("kvalue", when(col("kvalue") < 0.0001, 0.0001).otherwise("kvalue"))
+      .withColumn("kvalue", when(col("kvalue") > 1.4, 1.4).otherwise(col("kvalue")))
+      .withColumn("kvalue", when(col("kvalue") < 0.0001, 0.0001).otherwise(col("kvalue")))
 
     val resultDF = data.select("unitid", "kvalue")
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly")
@@ -168,7 +168,7 @@ object OcpcGetPb {
     for (record <- dataset.collect()) {
       val unitid = record.getAs[Int]("unitid").toString
       val cpa1History = record.getAs[Double]("cpa_history")
-      val kvalue = record.getAs[String]("kvalue").toDouble
+      val kvalue = record.getAs[Double]("kvalue")
       val cvr1cnt = record.getAs[Long]("cvr1cnt")
       val cvr2cnt = record.getAs[Long]("cvr2cnt")
       val cpa2History = 0.0
