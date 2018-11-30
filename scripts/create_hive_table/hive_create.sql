@@ -46,7 +46,10 @@ CREATE TABLE IF NOT EXISTS dl_cpc.slim_unionlog (
     isclick int,
     isshow int,
     exptags string,
-    adslot_type int
+    adslot_type int,
+    bs_rank_tag string,
+    embeddingNum bigint,
+    bs_num int
 )
 PARTITIONED BY (dt string, hour string)
 STORED AS PARQUET;

@@ -28,11 +28,15 @@ object CreateSlimUnionLog {
         |   isclick,
         |   isshow,
         |   exptags,
-        |   adslot_type
+        |   adslot_type,
+        |   bs_rank_tag,
+        |   embeddingNum,
+        |   ext_int["dsp_adnum_by_src_1"] as bs_num
         | from dl_cpc.cpc_union_log
         | where `date`='$date' and hour='$hour'
-        | and media_appsid in ('80000001', '80000002') and isshow = 1 and ext['antispam'].int_value = 0
-        | and ideaid > 0 and adsrc = 1 AND userid > 0
+        | and media_appsid in ('80000001', '80000002')
+        | and isshow = 1 and ext['antispam'].int_value = 0
+        | and ideaid > 0 and adsrc = 1 and userid > 0
       """.stripMargin).write.mode("overwrite").partitionBy(date, hour)
       .insertInto("dl_cpc.slim_unionlog")
   }
