@@ -4,7 +4,7 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions.expr
-
+import userprofile.Userprofile
 /**
   * author: huazhenhao
   * date: 11/29/18
@@ -45,9 +45,6 @@ object ExtractDspInfo {
 
     adData.coalesce(20).write.mode("overwrite")
       .parquet(s"/user/cpc/user_signal/dsp_raw/$date")
-
-
-
   }
 
 }
@@ -75,7 +72,7 @@ class StringLengthMax extends UserDefinedAggregateFunction {
   override def update(buffer: MutableAggregationBuffer, input: Row): Unit = {
     val str = input.getAs[String](0)
     if (buffer.getAs[String](0).length < str.length) {
-      buffer(0) = input.getAs[String](0)
+      buffer(0) = str
     }
   }
 
