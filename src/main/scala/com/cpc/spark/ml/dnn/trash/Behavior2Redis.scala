@@ -1,10 +1,9 @@
-package com.cpc.spark.ml.dnn
+package com.cpc.spark.ml.dnn.trash
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
-import com.cpc.spark.ml.dnn.DNNSampleV2.hashSeq
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.DnnMultiHot
@@ -19,6 +18,7 @@ import org.apache.spark.sql.functions.udf
   * @version 1.0
   *
   */
+@deprecated
 object Behavior2Redis {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
@@ -69,7 +69,6 @@ object Behavior2Redis {
 
     data.coalesce(20).write.mode("overwrite")
       .parquet("/user/cpc/zhj/behavior")
-
 
 
     val conf = ConfigFactory.load()

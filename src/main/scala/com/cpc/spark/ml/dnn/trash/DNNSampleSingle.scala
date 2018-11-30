@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.dnn
+package com.cpc.spark.ml.dnn.trash
 
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat

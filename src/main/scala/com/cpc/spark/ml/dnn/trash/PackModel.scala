@@ -1,21 +1,17 @@
-package com.cpc.spark.ml.dnn
+package com.cpc.spark.ml.dnn.trash
 
-import java.io.{FileInputStream, FileOutputStream}
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 
 import com.cpc.spark.ml.common.Utils
+import com.redis.RedisClient
+import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
-import mlmodel.mlmodel.{IRModel, Pack}
+import mlmodel.mlmodel.Pack
 import org.apache.spark.mllib.regression.{IsotonicRegression, IsotonicRegressionModel}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-
-import com.redis.RedisClient
-import com.redis.serialization.Parse.Implicits._
-
-import scala.io.Source
-import scala.sys.process._
 
 /**
   * Created by roydong on 19/03/2018.
