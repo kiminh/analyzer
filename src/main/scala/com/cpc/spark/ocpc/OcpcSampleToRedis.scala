@@ -151,6 +151,7 @@ object OcpcSampleToRedis {
 
 
     // 根据中间表加入k值
+    val pidKtable = "test.ocpc_k_value_table_" + hour
     val sqlRequest3 =
       s"""
          |SELECT
@@ -180,7 +181,7 @@ object OcpcSampleToRedis {
          |   FROM
          |    ocpc_new_cvr_table) a
          |LEFT JOIN
-         |   (SELECT ideaid, adclass, cast(k_value as double) as k_value FROM test.ocpc_k_value_table) as b
+         |   (SELECT ideaid, adclass, cast(k_value as double) as k_value FROM $pidKtable) as b
          |ON
          |   a.ideaid=b.ideaid
          |and
@@ -210,6 +211,8 @@ object OcpcSampleToRedis {
     val hpcvrTable = calculateHPCVR(end_date, hour, spark)
     hpcvrTable.createOrReplaceTempView("ocpc_hpcvr_total")
 
+    val pcvrCaliTable = "test.ocpc_new_calibration_value_" + hour
+    val pactCaliTable = "test.ocpc_new_calibration_value_cvr3_" + hour
     val sqlRequest4 =
       s"""
          |SELECT
@@ -236,13 +239,13 @@ object OcpcSampleToRedis {
          |AND
          |  a.adclass=b.adclass
          |LEFT JOIN
-         |  test.ocpc_new_calibration_value as c
+         |  $pcvrCaliTable as c
          |ON
          |  a.ideaid=c.ideaid
          |AND
          |  a.adclass=c.adclass
          |LEFT JOIN
-         |  test.ocpc_new_calibration_value_cvr3 as d
+         |  $pactCaliTable as d
          |ON
          |  a.ideaid=d.ideaid
          |AND

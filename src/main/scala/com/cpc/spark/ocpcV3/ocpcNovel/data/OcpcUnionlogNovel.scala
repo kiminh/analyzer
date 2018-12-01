@@ -43,16 +43,17 @@ object OcpcUnionlogNovel {
          |from dl_cpc.cpc_union_log
          |where $selectWhere
          |and isclick is not null
-         |and media_appsid in ("80001098","80001292","80000001", "80000002")
+         |and media_appsid in ("80001098","80001292")
          |and isshow = 1
          |and ext['antispam'].int_value = 0
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)
-         |and ext_int['is_ocpc'] = 1
       """.stripMargin
     println(sqlRequest1)
-    val rawData = spark.sql(sqlRequest1).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+    val rawData = spark
+      .sql(sqlRequest1).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+      .filter(s"length(ocpc_log)>0")
 
     // cvr1：安装类
     val sqlRequest2 =
