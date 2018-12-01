@@ -359,7 +359,7 @@ object OcpcUtils {
        |    a.searchid,
        |    a.unitid,
        |    a.adclass,
-       |    a.hour
+       |    a.hour,
        |    b.label
        |FROM
        |    (SELECT
@@ -437,7 +437,7 @@ object OcpcUtils {
          |    a.searchid,
          |    a.unitid,
          |    a.adclass,
-         |    a.hour
+         |    a.hour,
          |    b.label
          |FROM
          |    (SELECT
