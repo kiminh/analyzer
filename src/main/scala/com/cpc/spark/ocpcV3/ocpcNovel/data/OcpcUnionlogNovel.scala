@@ -49,10 +49,11 @@ object OcpcUnionlogNovel {
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)
-         |and length(ocpc_log)>0
       """.stripMargin
     println(sqlRequest1)
-    val rawData = spark.sql(sqlRequest1).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+    val rawData = spark
+      .sql(sqlRequest1).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+      .filter(s"length(ocpc_log)>0")
 
     // cvr1：安装类
     val sqlRequest2 =
