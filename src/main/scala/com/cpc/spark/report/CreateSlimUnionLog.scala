@@ -39,7 +39,7 @@ object CreateSlimUnionLog {
         | and media_appsid in ('80000001', '80000002')
         | and isshow = 1 and ext['antispam'].int_value = 0
         | and ideaid > 0 and adsrc = 1 and userid > 0
-      """.stripMargin).write.mode("overwrite").partitionBy(date, hour)
+      """.stripMargin).write.mode("overwrite").partitionBy("dt", "hour")
       .saveAsTable("dl_cpc.slim_unionlog")
   }
 }
