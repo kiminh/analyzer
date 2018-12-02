@@ -33,7 +33,7 @@ object CreateSlimUnionLog {
         |   ext_int['embeddingNum'] as embeddingNum,
         |   ext_int["dsp_adnum_by_src_1"] as bs_num,
         |   '$date' as dt,
-        |   '$hour' as hour,
+        |   '$hour' as hour
         | from dl_cpc.cpc_union_log
         | where `date`='$date' and hour='$hour'
         | and media_appsid in ('80000001', '80000002')
