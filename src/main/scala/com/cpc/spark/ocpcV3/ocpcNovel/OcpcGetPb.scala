@@ -68,7 +68,7 @@ object OcpcGetPb {
       .withColumn("k_ratio", when(col("conversion_goal") === 2, col("k_ratio2")).otherwise(col("k_ratio1")))
       .withColumn("kvalue", when(col("k_ratio").isNull, col("k_value")).otherwise(col("k_ratio")))
       .filter(s"kvalue > 0 and kvalue is not null")
-      .withColumn("kvalue", when(col("kvalue") > 5.0, 5.0).otherwise(col("kvalue")))
+      .withColumn("kvalue", when(col("kvalue") > 10.0, 10.0).otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") < 0.0001, 0.0001).otherwise(col("kvalue")))
 
     val resultDF = data.select("unitid", "kvalue")
