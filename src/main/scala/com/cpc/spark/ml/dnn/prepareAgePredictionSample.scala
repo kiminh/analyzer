@@ -23,6 +23,8 @@ object prepareAgePredictionSample {
 
     val sampleForAgePrediction = getSample(spark).persist(StorageLevel.MEMORY_AND_DISK)
 
+    sampleForAgePrediction.count()
+    
     sampleForAgePrediction.repartition(100)
       .write
       .mode("overwrite")
