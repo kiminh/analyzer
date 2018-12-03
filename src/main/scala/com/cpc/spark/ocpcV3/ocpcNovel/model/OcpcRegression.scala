@@ -44,9 +44,6 @@ object OcpcRegression {
     val dtCondition = "(%s)".format(datehourlist.mkString(" or "))
     val dtCondition2 = "(%s)".format(datehourlist2.mkString(" or "))
 
-
-
-    // TODO  替换成弘扬的表
     val statSql =
       s"""
          |select
