@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.novel
+package com.cpc.spark.ml.dnn
 
 import com.cpc.spark.common.Murmur3Hash
 import org.apache.spark.sql.functions.array
