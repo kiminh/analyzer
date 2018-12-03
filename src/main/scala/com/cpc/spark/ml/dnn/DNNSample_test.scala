@@ -1,6 +1,7 @@
 package com.cpc.spark.ml.dnn
 
 import com.cpc.spark.common.Murmur3Hash
+import com.cpc.spark.ml.novel.DNNSampleV6
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
