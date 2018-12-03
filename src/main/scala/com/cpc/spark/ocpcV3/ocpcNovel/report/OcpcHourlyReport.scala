@@ -64,7 +64,7 @@ object OcpcHourlyReport {
          |WHERE
          |    $selectCondition
          |AND
-         |    label=1;
+         |    label=1
        """.stripMargin
     println(sqlRequest3)
     val cvr2Data = spark.sql(sqlRequest3).distinct()
