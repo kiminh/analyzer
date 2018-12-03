@@ -51,6 +51,7 @@ message UserProfile {
 	string userCreateTime = 15; // 账号创建日期
 	int64 ctrcnt = 16; // uid维度的最近几天点击总次数
 	int64 cvrcnt = 17; // uid维度的最近几天转化总次数
+	map<string, double> dspKeywords = 18;
     QttProfile qttProfile = 101;
 }
 
