@@ -53,7 +53,7 @@ object CvrRatio {
                |select media_appsid,sum(label2) / count(*) * 1000000.0 as acutal_cvr
                |from dl_cpc.ml_cvr_feature_v1
                |where `date` = '$date'
-               |and media_appsid not in ('80000001','80000002')
+               |and media_appsid not in ('80000001', '80000002', '80001098', '80001292')
                |group by media_appsid
              """.stripMargin
         print(mlFeatureSql)
@@ -82,6 +82,7 @@ object CvrRatio {
 //        val ratioList = ratioListBuffer.toArray
         val ratioList = ratio.collect()
 
+        //将所有的比例小于前90%的调成在90%位置的值
         val ratioD = ratioList.map(x => x.ratio).filter(x => x > 0).sorted
         val th1 = ratioD.length * 0.1
         val ratio1th = ratioD(th1.toInt)
