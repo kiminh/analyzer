@@ -177,7 +177,7 @@ object OcpcGetPb {
       val conversionGoal = record.getAs[Int]("conversion_goal")
 
       if (cnt % 100 == 0) {
-        println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History")
+        println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History, conversionGoal:$conversionGoal")
       }
       cnt += 1
 
