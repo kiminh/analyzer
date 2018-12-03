@@ -31,7 +31,7 @@ object OcpcGetPb {
     // kvalue为空应该过滤掉
     val data = cvrData
       .join(kvalue, Seq("unitid"), "left_outer")
-      .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal")
+      .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt")
       .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
       .join(cpaHistory, Seq("unitid"), "left_outer")
       .filter("cpa_history is not null and cpa_history>0 and kvalue>=0")
@@ -71,7 +71,7 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("kvalue") > 5.0, 5.0).otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") < 0.0001, 0.0001).otherwise(col("kvalue")))
 
-    val resultDF = data.select("unitid", "kvalue", "conversion_goal")
+    val resultDF = data.select("unitid", "kvalue")
 //    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly")
 
 
