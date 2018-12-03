@@ -31,15 +31,15 @@ object OcpcGetPb {
     // kvalue为空应该过滤掉
     val data = cvrData
       .join(kvalue, Seq("unitid"), "left_outer")
-      .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt")
+      .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal")
       .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
       .join(cpaHistory, Seq("unitid"), "left_outer")
       .filter("cpa_history is not null and cpa_history>0 and kvalue>=0")
-      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt")
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_hourly")
-    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_hourly")
+    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly")
+//    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_hourly")
 
     // 输出pb文件
     savePbPack(data)
@@ -71,7 +71,7 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("kvalue") > 5.0, 5.0).otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") < 0.0001, 0.0001).otherwise(col("kvalue")))
 
-    val resultDF = data.select("unitid", "kvalue")
+    val resultDF = data.select("unitid", "kvalue", "conversion_goal")
 //    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly")
 
 
@@ -174,6 +174,7 @@ object OcpcGetPb {
       val cvr1cnt = record.getAs[Long]("cvr1cnt")
       val cvr2cnt = record.getAs[Long]("cvr2cnt")
       val cpa2History = 0.0
+      val conversionGoal = record.getAs[Int]("conversion_goal")
 
       if (cnt % 100 == 0) {
         println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History")
@@ -186,7 +187,8 @@ object OcpcGetPb {
         cpaHistory = cpa1History,
         cvr2Cnt = cvr1cnt,
         cvr3Cnt = cvr2cnt,
-        cpa3History = cpa2History
+        cpa3History = cpa2History,
+        conversiongoal = conversionGoal
       )
       list += currentItem
 
