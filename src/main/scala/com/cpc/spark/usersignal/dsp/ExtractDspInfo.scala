@@ -4,7 +4,6 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.expressions.{MutableAggregationBuffer, UserDefinedAggregateFunction}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.functions.expr
-import userprofile.Userprofile
 /**
   * author: huazhenhao
   * date: 11/29/18
