@@ -17,43 +17,23 @@ object DnnFeatures2Redis {
   def multiHot2Redis(data: DataFrame, keyPrefix: String, key_type: String): Unit = {
 
     val conf = ConfigFactory.load()
+    val col_length = data.columns.length
+    println("column length : " + col_length)
     data.coalesce(20).foreachPartition { p =>
       val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
       redis.auth(conf.getString("ali_redis.auth"))
 
-      key_type match {
-        case "string" => {
-          p.foreach { rec =>
-            var group = Seq[Int]()
-            var hashcode = Seq[Long]()
-            val key = keyPrefix + rec.getString(0).toString
-            for (i <- 1 until data.columns.length) {
-              val f = rec.getAs[Seq[Long]](i)
-              group = group ++ Array.tabulate(f.length)(x => i)
-              hashcode = hashcode ++ f
-            }
-            redis.setex(key, 3600 * 24 * 7, DnnMultiHot(group, hashcode).toByteArray)
-          }
+      p.foreach { rec =>
+        var group = Seq[Int]()
+        var hashcode = Seq[Long]()
+        val key = keyPrefix + rec.get(0).toString
+        for (i <- 1 until col_length) {
+          val f = rec.getAs[Seq[Long]](i)
+          group = group ++ Array.tabulate(f.length)(x => i)
+          hashcode = hashcode ++ f
         }
-        case "int" => {
-          p.foreach { rec =>
-            var group = Seq[Int]()
-            var hashcode = Seq[Long]()
-            val key = keyPrefix + rec.getInt(0).toString
-            for (i <- 1 until data.columns.length) {
-              val f = rec.getAs[Seq[Long]](i)
-              group = group ++ Array.tabulate(f.length)(x => i)
-              hashcode = hashcode ++ f
-            }
-            redis.setex(key, 3600 * 24 * 7, DnnMultiHot(group, hashcode).toByteArray)
-          }
-        }
-        case _ => {
-          println("key type error ")
-          System.exit(1)
-        }
+        redis.setex(key, 3600 * 24 * 7, DnnMultiHot(group, hashcode).toByteArray)
       }
-
 
       redis.disconnect
     }
