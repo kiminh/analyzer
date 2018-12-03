@@ -40,6 +40,7 @@ object OcpcGetPb {
       .withColumn("hour", lit(hour))
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly")
 //    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_hourly")
+    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly")
 
     // 输出pb文件
     savePbPack(data)
