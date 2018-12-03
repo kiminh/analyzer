@@ -8,7 +8,7 @@ import org.apache.spark.sql.functions.{array, udf}
 import sys.process._
 
 /**
-  * d4数据生成规范化
+  * d6数据生成规范化
   * created time : 2018/11/28 16:36
   *
   * @author zhj
@@ -115,7 +115,7 @@ class DNNSampleV6(spark: SparkSession, trdate: String = "", trpath: String = "",
         $"label",
         $"uid",
         $"ideaid"
-      )
+      ).repartition(1000)
   }
 
   private def getAsFeature_hourly(date: String, hour: Int, adtype: Int = 1): DataFrame = {
