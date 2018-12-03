@@ -6,71 +6,29 @@ import java.util.Calendar
 import com.cpc.spark.common.Murmur3Hash
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions._
+import org.apache.spark.sql.functions.{array, split, udf}
 import org.apache.spark.storage.StorageLevel
 
-object prepareAgeModelSample {
+object prepareAgePredictionSample {
+
   Logger.getRootLogger.setLevel(Level.WARN)
 
   //multi hot 特征默认hash code
   private val default_hash = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
-      .appName("prepare age model sample")
+      .appName("prepare age prediction sample")
       .enableHiveSupport()
       .getOrCreate()
 
-    val sampleForAge = getSample(spark).persist(StorageLevel.MEMORY_AND_DISK)
-/**
-    val cal1 = Calendar.getInstance()
-    cal1.add(Calendar.DATE, -1)
-    val tardate = new SimpleDateFormat("yyyyMMdd").format(cal1.getTime)
+    val sampleForAgePrediction = getSample(spark).persist(StorageLevel.MEMORY_AND_DISK)
 
-    val stmt =
-      """
-        |select distinct uid from dl_cpc.cpc_union_log where `date` = "%s" and media_appsid in ("80000001", "80000002")
-      """.stripMargin.format(tardate)
-
-    val uv = spark.sql(stmt).rdd.map {
-      r =>
-        val did = r.getAs[String](0)
-        did
-    }.distinct().toDF("uid")
-
-    val psampleForage = uv.join(sampleForAge, Seq("uid"))
-
-    psampleForage.repartition(100)
+    sampleForAgePrediction.repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"/user/cpc/dnn/age/dnnpredict")
-*/
-    val train = sampleForAge.filter("label is not null")
-
-    val n = train.count().toDouble
-    println("训练数据：total = %.4f, age1 = %.4f, age2 = %.4f, age3 = %.4f, age4 = %.4f,".
-      format(n, train.where("label=array(1,0,0,0)").count.toDouble / n,
-        train.where("label=array(0,1,0,0)").count.toDouble / n,
-        train.where("label=array(0,0,1,0)").count.toDouble / n,
-        train.where("label=array(0,0,0,1)").count.toDouble / n))
-
-    val Array(traindata, testdata) = train.randomSplit(Array(0.95, 0.05), 1)
-
-    traindata.repartition(100)
-      .write
-      .mode("overwrite")
-      .format("tfrecords")
-      .option("recordType", "Example")
-      .save(s"/user/cpc/dnn/age/dnntrain")
-
-    testdata.sample(withReplacement = false, 0.1).repartition(100)
-      .write
-      .mode("overwrite")
-      .format("tfrecords")
-      .option("recordType", "Example")
-      .save(s"/user/cpc/dnn/age/dnntest")
-    train.unpersist()
   }
 
   def getSample(spark: SparkSession): DataFrame = {
@@ -79,13 +37,13 @@ object prepareAgeModelSample {
     val calCur = Calendar.getInstance()
     val dateCur = new SimpleDateFormat("yyyyMMdd").format(calCur.getTime)
 
-    val profileData = spark.read.parquet("/user/cpc/qtt-lookalike-sample/v1").
+    val profileData = spark.read.parquet("/user/cpc/qtt-lookalike-sample/pv1").
       select($"did".alias("uid"), $"apps._1".alias("pkgs"), $"words", $"terms", $"brand",
-      split($"province._1", "province")(1).alias("province"), split($"city._1", "city")(1).alias("city"),
-      split($"isp._1", "isp")(1).alias("isp"), split($"os._1", "os")(1).alias("os"),
-      split($"screen_w._1", "screen_w")(1).alias("screen_w"), split($"screen_h._1", "screen_h")(1).alias("screen_h"),
-      split($"sex._1", "sex")(1).alias("sex"), split($"antispam_score._1", "antispam_score")(1).alias("antispam_score")
-    )
+        split($"province._1", "province")(1).alias("province"), split($"city._1", "city")(1).alias("city"),
+        split($"isp._1", "isp")(1).alias("isp"), split($"os._1", "os")(1).alias("os"),
+        split($"screen_w._1", "screen_w")(1).alias("screen_w"), split($"screen_h._1", "screen_h")(1).alias("screen_h"),
+        split($"sex._1", "sex")(1).alias("sex"), split($"antispam_score._1", "antispam_score")(1).alias("antispam_score")
+      )
 
     val zfb = spark.read.parquet("/user/cpc/qtt-zfb/10").map {
       r =>
@@ -135,20 +93,20 @@ object prepareAgeModelSample {
         array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9").alias("dense"),
         array($"m1", $"m2", $"m3", $"m4").alias("raw_sparse")
       ).select($"dense",
-        mkSparseFeature_m($"raw_sparse").alias("sparse"),
-        $"label", $"uid"
+      mkSparseFeature_m($"raw_sparse").alias("sparse"),
+      $"label", $"uid"
     ).select(
       $"uid", $"label",
-        $"dense",
-        $"sparse".getField("_1").alias("idx0"),
-        $"sparse".getField("_2").alias("idx1"),
-        $"sparse".getField("_3").alias("idx2"),
-        $"sparse".getField("_4").alias("id_arr")
-      ).rdd.zipWithUniqueId().map { x =>
-        (x._2, x._1.getAs[String]("uid"), x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
-          x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
-          x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
-      }.toDF("sample_idx", "uid", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
+      $"dense",
+      $"sparse".getField("_1").alias("idx0"),
+      $"sparse".getField("_2").alias("idx1"),
+      $"sparse".getField("_3").alias("idx2"),
+      $"sparse".getField("_4").alias("id_arr")
+    ).rdd.zipWithUniqueId().map { x =>
+      (x._2, x._1.getAs[String]("uid"), x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
+        x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
+        x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
+    }.toDF("sample_idx", "uid", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
 
   }
 
@@ -247,5 +205,4 @@ object prepareAgeModelSample {
       val c = re.map(x => (0, x._1, x._2, x._3))
       (c.map(_._1), c.map(_._2), c.map(_._3), c.map(_._4))
   }
-
 }
