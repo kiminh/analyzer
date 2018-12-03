@@ -13,7 +13,7 @@ object CreateSlimUnionLog {
     val date = args(0).toString
     val hour = args(1).toString
 
-    spark.sql(
+    val df = spark.sql(
       s"""
         | select
         |   searchid,
@@ -31,16 +31,20 @@ object CreateSlimUnionLog {
         |   adslot_type,
         |   ext_string['bs_rank_tag'] as bs_rank_tag,
         |   ext_int['embeddingNum'] as embeddingNum,
-        |   ext_int["dsp_adnum_by_src_1"] as bs_num,
-        |   '$date' as dt,
-        |   '$hour' as hour
+        |   ext_int["dsp_adnum_by_src_1"] as bs_num
         | from dl_cpc.cpc_union_log
         | where `date`='$date' and hour='$hour'
         | and media_appsid in ('80000001', '80000002')
         | and ext['antispam'].int_value = 0
         | and isshow = 1 and ext['antispam'].int_value = 0
         | and ideaid > 0 and adsrc = 1 and userid > 0
-      """.stripMargin).write.mode("overwrite").partitionBy("dt", "hour")
-      .saveAsTable("dl_cpc.slim_unionlog")
+      """.stripMargin)
+      df.repartition(10).createOrReplaceTempView("tbl")
+
+    spark.sql(
+      s"""
+        |insert into dl_cpc.slim_unionlog partition (dt='$date', hour='$hour')
+        |select * from tbl
+      """.stripMargin)
   }
 }
