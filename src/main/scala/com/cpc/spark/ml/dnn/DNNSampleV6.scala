@@ -115,7 +115,7 @@ class DNNSampleV6(spark: SparkSession, trdate: String = "", trpath: String = "",
         $"label",
         $"uid",
         $"ideaid"
-      ).repartition(1000)
+      ).repartition(1000, $"uid", $"ideaid")
   }
 
   private def getAsFeature_hourly(date: String, hour: Int, adtype: Int = 1): DataFrame = {
