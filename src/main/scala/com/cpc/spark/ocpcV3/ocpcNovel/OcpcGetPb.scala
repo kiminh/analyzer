@@ -9,6 +9,7 @@ import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 import ocpcnovel.ocpcnovel.SingleUnit
 import ocpcnovel.ocpcnovel.OcpcNovelList
+import org.apache.spark.sql.types.DoubleType
 //import ocpcnovel.ocpcnovel
 
 import scala.collection.mutable.ListBuffer
@@ -26,38 +27,59 @@ object OcpcGetPb {
     val kvalue = getK(date, hour, spark)
     val cpaHistory = getCPAhistory(date, hour, spark)
 
+    // TODO
+    // kvalue为空应该过滤掉
     val data = cvrData
       .join(kvalue, Seq("unitid"), "left_outer")
       .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt")
+      .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
       .join(cpaHistory, Seq("unitid"), "left_outer")
-      .withColumn("kvalue", when(col("kvalue").isNull, lit(0.5)).otherwise(col("kvalue")))
-      .filter("cpa1_history is not null and cpa2_history is not null")
-      .select("unitid", "cpa1_history", "cpa2_history", "kvalue", "cvr1cnt", "cvr2cnt")
+      .filter("cpa_history is not null and cpa_history>0 and kvalue>=0")
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_hourly")
+    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_hourly")
 
     // 输出pb文件
     savePbPack(data)
   }
 
   def getK(date: String, hour: String, spark: SparkSession) = {
-    val tableName = "test.ocpc_v3_novel_k_regression"
-    val rawData = spark
-      .table(tableName)
+    // 先获取回归模型和备用模型的k值
+    // 根据conversion_goal选择需要的k值
+    val tableName1 = "dl_cpc.ocpc_v3_novel_k_regression"
+    val rawData1 = spark
+      .table(tableName1)
       .where(s"`date`='$date' and `hour`='$hour'")
-    rawData.show(10)
+    rawData1.show(10)
 
-    val resultDF = rawData
-      .select("unitid")
-      .distinct()
-      .withColumn("kvalue", lit(0.5))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
+    val tableName2 = "dl_cpc.ocpc_novel_k_value_table"
+    val rawData2 = spark
+      .table(tableName2)
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .filter("conversion_goal is not null and k_value is not null")
+    rawData2.show(10)
+
+    val data = rawData2
+      .join(rawData1, Seq("unitid"), "outer")
+      .select("unitid", "adclass", "k_value", "conversion_goal", "k_ratio1", "k_ratio2")
+      .filter("adclass is not null and conversion_goal is not null")
+      .withColumn("k_ratio", when(col("conversion_goal") === 2, col("k_ratio2")).otherwise(col("k_ratio1")))
+      .withColumn("kvalue", when(col("k_ratio").isNull, col("k_value")).otherwise(col("k_ratio")))
+      .filter(s"kvalue > 0 and kvalue is not null")
+      .withColumn("kvalue", when(col("kvalue") > 1.4, 1.4).otherwise(col("kvalue")))
+      .withColumn("kvalue", when(col("kvalue") < 0.0001, 0.0001).otherwise(col("kvalue")))
+
+    val resultDF = data.select("unitid", "kvalue")
+//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly")
+
 
     resultDF
   }
 
   def getCPAhistory(date: String, hour: String, spark: SparkSession) = {
-    val tableName = "test.ocpcv3_novel_cpa_history_hourly"
+    val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly"
     val resultDF = spark
       .table(tableName)
       .where(s"`date`='$date' and `hour`='$hour'")
@@ -123,11 +145,13 @@ object OcpcGetPb {
     cvr2Data.show(10)
 
     // 数据关联
-    val resultDF = cvr1Data
+    val result = cvr1Data
       .join(cvr2Data, Seq("unitid"), "outer")
       .withColumn("cvr1cnt", when(col("cvr1cnt").isNull, 0).otherwise(col("cvr1cnt")))
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
-      .select("unitid", "cvr1cnt", "cvr2cnt")
+//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly")
+
+    val resultDF = result.select("unitid", "cvr1cnt", "cvr2cnt")
 
     // 返回结果
     resultDF.show(10)
@@ -145,13 +169,13 @@ object OcpcGetPb {
 
     for (record <- dataset.collect()) {
       val unitid = record.getAs[Int]("unitid").toString
-      val cpa1History = record.getAs[Double]("cpa1_history")
+      val cpa1History = record.getAs[Double]("cpa_history")
       val kvalue = record.getAs[Double]("kvalue")
       val cvr1cnt = record.getAs[Long]("cvr1cnt")
       val cvr2cnt = record.getAs[Long]("cvr2cnt")
-      val cpa2History = record.getAs[Double]("cpa2_history")
+      val cpa2History = 0.0
 
-      if (cnt % 500 == 0) {
+      if (cnt % 100 == 0) {
         println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History")
       }
       cnt += 1

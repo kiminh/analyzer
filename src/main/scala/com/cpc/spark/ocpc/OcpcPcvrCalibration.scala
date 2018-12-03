@@ -20,7 +20,7 @@ object OcpcPcvrCalibration {
 //    val result = calibrationV1(date, hour, spark)
 //    result.write.mode("overwrite").saveAsTable("test.ocpc_new_calibration_value")
     val result = calibrationV2(date, hour, spark)
-    result.write.mode("overwrite").saveAsTable("test.ocpc_new_calibration_value")
+    result.write.mode("overwrite").saveAsTable("test.ocpc_new_calibration_value_" + hour)
   }
 
   def calibrationV1(date: String, hour: String,spark: SparkSession) :DataFrame = {

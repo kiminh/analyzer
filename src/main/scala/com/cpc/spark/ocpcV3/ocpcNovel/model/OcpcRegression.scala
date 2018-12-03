@@ -50,28 +50,32 @@ object OcpcRegression {
     val statSql =
       s"""
          |select
-         |  unitid,
-         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio1,
-         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio2,
-         |  ocpc_log_dict['cpagiven'] as cpagiven,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0)) as cpa1,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0)) as cpa2,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0))/ocpc_log_dict['cpagiven'] as ratio1,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0))/ocpc_log_dict['cpagiven'] as ratio2,
-         |  sum(isclick) clickCnt,
-         |  sum(COALESCE(label1,0)) cvr1Cnt,
-         |  sum(COALESCE(label2,0)) cvr2Cnt
+         |  a.unitid,
+         |  round(a.ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio1,
+         |  round(a.ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio2,
+         |  a.ocpc_log_dict['cpagiven'] as cpagiven,
+         |  sum(if(a.isclick=1,price,0))/sum(COALESCE(a.label1,0)) as cpa1,
+         |  sum(if(a.isclick=1,price,0))/sum(COALESCE(b.label2,0)) as cpa2,
+         |  sum(if(a.isclick=1,price,0))/sum(COALESCE(a.label1,0))/a.ocpc_log_dict['cpagiven'] as ratio1,
+         |  sum(if(a.isclick=1,price,0))/sum(COALESCE(b.label2,0))/a.ocpc_log_dict['cpagiven'] as ratio2,
+         |  sum(a.isclick) clickCnt,
+         |  sum(COALESCE(a.label1,0)) cvr1Cnt,
+         |  sum(COALESCE(b.label2,0)) cvr2Cnt
          |from
-         |  (select unitid, isclick, price, ocpc_log_dict, iscvr1 as label1, iscvr2 as label2 from dl_cpc.ocpcv3_unionlog_label_hourly where $dtCondition and ocpc_log_dict['kvalue'] is not null and isclick=1 and media_appsid in ("80001098","80001292")) a
-         |group by unitid,
-         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5),
-         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5),
-         |  ocpc_log_dict['cpagiven']
+         |  (select searchid, unitid, isclick, price, ocpc_log_dict, iscvr1 as label1 from dl_cpc.ocpcv3_unionlog_label_hourly where $dtCondition and ocpc_log_dict['kvalue'] is not null and isclick=1 and media_appsid in ("80001098","80001292")) as a
+         |LEFT JOIN
+         |  (select searchid, label as label2 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) as b
+         |on
+         |  a.searchid=b.searchid
+         |group by a.unitid,
+         |  round(a.ocpc_log_dict['kvalue'] * 100.0 / 5),
+         |  round(a.ocpc_log_dict['kvalue'] * 100.0 / 5),
+         |  a.ocpc_log_dict['cpagiven']
       """.stripMargin
 
     println(statSql)
 
-    val tablename = "test.ocpc_v3_novel_regression_middle"
+    val tablename = "dl_cpc.ocpc_v3_novel_regression_middle"
     val rawData = spark.sql(statSql)
 
 
@@ -80,16 +84,16 @@ object OcpcRegression {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    data.write.mode("overwrite").saveAsTable(tablename)
-//    data.write.mode("overwrite").insertInto(tablename)
+//    data.write.mode("overwrite").saveAsTable(tablename)
+    data.write.mode("overwrite").insertInto(tablename)
 
     val ratio1Data = getKWithRatioType(spark, tablename, "ratio1", date, hour)
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
 
     val res = ratio1Data.join(ratio2Data, Seq("unitid", "date", "hour"), "outer")
       .select("unitid", "k_ratio1", "k_ratio2", "date", "hour")
-    res.write.mode("overwrite").saveAsTable("test.ocpc_v3_novel_k_regression")
-//    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
+//    res.write.mode("overwrite").saveAsTable("test.ocpc_v3_novel_k_regression")
+    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v3_novel_k_regression")
   }
 
   def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
@@ -102,7 +106,7 @@ object OcpcRegression {
       .agg(collect_set("str").as("liststr"))
       .select("unitid", "liststr").collect()
 
-    val targetK = 0.95
+    val targetK = 1.0
     var resList = new mutable.ListBuffer[(String, Double, String, String)]()
     for (row <- res) {
       val unitid = row(0).toString

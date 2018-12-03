@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions._
 
 object OcpcUtils {
   def getTimeRangeSql2(startDate: String, startHour: String, endDate: String, endHour: String): String = {
@@ -334,27 +335,141 @@ object OcpcUtils {
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
 
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  unitid,
+//         |  adclass,
+//         |  hour,
+//         |  sum(cvr1_cnt) as cvr1cnt
+//         |FROM
+//         |  dl_cpc.ocpcv3_cvr1_data_hourly
+//         |WHERE
+//         |  media_appsid in ("80001098", "80001292")
+//         |  and $selectCondition
+//         |group by unitid,adclass, hour
+//
+//       """.stripMargin
+//    println(sqlRequest)
+//    val resultDF = spark.sql(sqlRequest)
+//    resultDF
     val sqlRequest =
-      s"""
-         |SELECT
-         |  unitid,
-         |  adclass,
-         |  hour,
-         |  sum(cvr1_cnt) as cvr1cnt
-         |FROM
-         |  dl_cpc.ocpcv3_cvr1_data_hourly
-         |WHERE
-         |  media_appsid in ("80001098", "80001292")
-         |  and $selectCondition
-         |group by unitid,adclass, hour
-
-       """.stripMargin
+    s"""
+       |SELECT
+       |    a.searchid,
+       |    a.unitid,
+       |    a.adclass,
+       |    a.hour,
+       |    b.label
+       |FROM
+       |    (SELECT
+       |        *
+       |    FROM
+       |        dl_cpc.ocpcv3_unionlog_label_hourly
+       |    WHERE
+       |        $selectCondition
+       |    and
+       |        media_appsid in ('80001098', '80001292')) as a
+       |LEFT JOIN
+       |    (SELECT
+       |        searchid,
+       |        label2 as label
+       |    FROM
+       |        dl_cpc.ml_cvr_feature_v1
+       |    WHERE
+       |        $selectCondition
+       |    AND
+       |        label2=1
+       |    GROUP BY searchid, label2) as b
+       |ON
+       |    a.searchid=b.searchid
+           """.stripMargin
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
+    val resultDF = spark
+      .sql(sqlRequest)
+      .groupBy("unitid", "adclass", "hour")
+      .agg(sum(col("label")).alias("cvr1cnt"))
+      .select("unitid", "adclass", "hour", "cvr1cnt")
     resultDF
   }
 
+  def getCvr2HistoryData(date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
+    /**
+      * 按照给定的时间区间获取从OcpcMonitor程序的结果表获取历史数据
+      */
 
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourCnt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  unitid,
+//         |  adclass,
+//         |  hour,
+//         |  sum(cvr2_cnt) as cvr2cnt
+//         |FROM
+//         |  dl_cpc.ocpcv3_cvr2_data_hourly
+//         |WHERE
+//         |  media_appsid in ("80001098", "80001292")
+//         |  and $selectCondition
+//         |group by unitid,adclass, hour
+//
+//       """.stripMargin
+//    println(sqlRequest)
+//    val resultDF = spark.sql(sqlRequest)
+//    resultDF
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    a.searchid,
+         |    a.unitid,
+         |    a.adclass,
+         |    a.hour,
+         |    b.label
+         |FROM
+         |    (SELECT
+         |        *
+         |    FROM
+         |        dl_cpc.ocpcv3_unionlog_label_hourly
+         |    WHERE
+         |        $selectCondition
+         |    and
+         |        media_appsid in ('80001098', '80001292')) as a
+         |LEFT JOIN
+         |    (SELECT
+         |        searchid,
+         |        label as label
+         |    FROM
+         |        dl_cpc.ml_cvr_feature_v2
+         |    WHERE
+         |        $selectCondition
+         |    AND
+         |        label=1
+         |    GROUP BY searchid, label) as b
+         |ON
+         |    a.searchid=b.searchid
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark
+      .sql(sqlRequest)
+      .groupBy("unitid", "adclass", "hour")
+      .agg(sum(col("label")).alias("cvr2cnt"))
+      .select("unitid", "adclass", "hour", "cvr2cnt")
+    resultDF
+  }
 
 
 }
