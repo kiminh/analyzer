@@ -160,23 +160,40 @@ object OcpcUtils {
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
 
+//    // read data and set redis configuration
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  ideaid,
+//         |  adclass,
+//         |  cost,
+//         |  ctr_cnt,
+//         |  cvr_cnt,
+//         |  hour
+//         |FROM
+//         |  dl_cpc.ocpc_ideaid_adclass_label3_track_v1
+//         |WHERE $selectCondition
+//       """.stripMargin
+//    println(sqlRequest)
+//    val resultDF = spark.sql(sqlRequest)
+//    resultDF
+
     // read data and set redis configuration
     val sqlRequest =
       s"""
          |SELECT
          |  ideaid,
          |  adclass,
-         |  cost,
-         |  ctr_cnt,
-         |  cvr_cnt,
+         |  sum(),
          |  hour
          |FROM
-         |  dl_cpc.ocpc_ideaid_adclass_label3_track_v1
+         |  dl_cpc.ml_cvr_feature_v2
          |WHERE $selectCondition
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
     resultDF
+
   }
 
   def getActDataNovel(date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
