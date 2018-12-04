@@ -47,7 +47,9 @@ object OcpcCost {
         val qttSql =
             s"""
                |select unitid,
-               |    sum(price) / sum(label2) as cost,
+               |    sum(price) as total_price,
+               |    sum(label2) as convert_num,
+               |    round(sum(price) / sum(label2),3) as cost,
                |    "qtt" as tag
                |from all
                |where media_appsid in ('80000001', '80000002')
@@ -61,7 +63,9 @@ object OcpcCost {
         val miduSql =
             s"""
                |select unitid,
-               |    sum(price) / sum(label2) as cost,
+               |    sum(price) as total_price,
+               |    sum(label2) as convert_num,
+               |    round(sum(price) / sum(label2),3) as cost,
                |    "midu" as tag
                |from all
                |where media_appsid in ('80001098', '80001292')
@@ -75,7 +79,9 @@ object OcpcCost {
         val midu_ocpcSql =
             s"""
                |select unitid,
-               |    sum(price) / sum(label2) as cost,
+               |    sum(price) as total_price,
+               |    sum(label2) as convert_num,
+               |    round(sum(price) / sum(label2),3) as cost,
                |    "midu_ocpc" as tag
                |from all
                |where media_appsid in ('80001098', '80001292')
