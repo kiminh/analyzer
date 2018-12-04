@@ -12,6 +12,7 @@ object OcpcHourlyReport {
     val hour = args(1).toString
 
     val result = getHourlyReport(date, hour, spark)
+    result.show(10)
   }
 
   def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
@@ -75,7 +76,6 @@ object OcpcHourlyReport {
     val data = rawData
       .join(cvr1Data, Seq("searchid"), "left_outer")
       .join(cvr2Data, Seq("searchid"), "left_outer")
-    data.show(10)
     data.createOrReplaceTempView("data_table")
 
     // 计算指标
