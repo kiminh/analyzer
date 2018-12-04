@@ -103,7 +103,7 @@ object OcpcHourlyReport {
       .withColumn("cpa_real", col("cost") * 1.0 / col("cvr_cnt"))
     result.show(10)
 
-    val resultDF = result.select("unitid", "userid", "conversion_goal", )
+    val resultDF = result.select("unitid", "userid", "conversion_goal")
 
 
   }
