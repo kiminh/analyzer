@@ -38,10 +38,10 @@ object OcpcGetPb {
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly_bak")
-//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly")
-//    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_hourly")
-//    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly")
+//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly_bak")
+    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly")
+    // 原表名：dl_cpc.ocpcv3_novel_pb_hourly
+    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly")
 
     // 输出pb文件
     savePbPack(data)
@@ -84,7 +84,7 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("kvalue") < 0.0001, 0.0001).otherwise(col("kvalue")))
 
     val resultDF = data.select("unitid", "kvalue")
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly")
+//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly")
 
 
     resultDF
@@ -161,7 +161,7 @@ object OcpcGetPb {
       .join(cvr2Data, Seq("unitid"), "outer")
       .withColumn("cvr1cnt", when(col("cvr1cnt").isNull, 0).otherwise(col("cvr1cnt")))
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
-    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly")
+//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly")
 
     val resultDF = result.select("unitid", "cvr1cnt", "cvr2cnt")
 

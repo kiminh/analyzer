@@ -18,8 +18,8 @@ object OcpcPIDwithCPA {
     val hour = args(1).toString
 
     val result = calculateKv2(date, hour, spark)
-    result.write.mode("overwrite").saveAsTable("test.ocpc_novel_k_value_table")
-//    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_k_value_table")
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_novel_k_value_table")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_k_value_table")
 
 
   }
@@ -160,7 +160,7 @@ object OcpcPIDwithCPA {
     // case2
     // table name: dl_cpc.ocpcv3_novel_pb_hourly
     val case2 = spark
-      .table("test.ocpcv3_novel_pb_v1_hourly_bak")
+      .table("test.ocpcv3_novel_pb_v1_hourly")
       .withColumn("kvalue2", col("kvalue"))
       .select("unitid", "kvalue2")
       .distinct()
@@ -172,7 +172,7 @@ object OcpcPIDwithCPA {
       .join(case2, Seq("unitid"), "left_outer")
       .select("unitid", "adclass", "kvalue1", "kvalue2")
       .withColumn("kvalue", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_avgk_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_avgk_hourly")
 
     resultDF.show(10)
     resultDF
@@ -243,7 +243,7 @@ object OcpcPIDwithCPA {
        """.stripMargin
     println(sqlRequest)
     val cpaRatio = spark.sql(sqlRequest)
-    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_cparatio_hourly")
+//    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_cparatio_hourly")
 
     cpaRatio
 
