@@ -29,6 +29,7 @@ object OcpcHourlyReport {
          |    ocpc_log_dict['cpagiven'] as cpagiven,
          |    ocpc_log_dict['dynamicbid'] as bid,
          |    ocpc_log_dict['ocpcstep'] as ocpc_step,
+         |    ocpc_log_dict['conversiongoal'] as conversion_goal,
          |    isshow,
          |    isclick
          |FROM
