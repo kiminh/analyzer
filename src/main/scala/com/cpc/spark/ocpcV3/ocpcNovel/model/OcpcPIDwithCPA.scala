@@ -171,8 +171,7 @@ object OcpcPIDwithCPA {
       .select("unitid", "adclass", "kvalue1")
       .join(case2, Seq("unitid"), "left_outer")
       .select("unitid", "adclass", "kvalue1", "kvalue2")
-      .withColumn("kvalue_new", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
-      .withColumn("kvalue", when(col("kvalue_new").isNull, 0.694).otherwise(col("kvalue_new")))
+      .withColumn("kvalue", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
     resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_avgk_hourly")
 
     resultDF.show(10)
