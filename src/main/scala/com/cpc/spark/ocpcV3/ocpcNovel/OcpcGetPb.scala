@@ -69,7 +69,7 @@ object OcpcGetPb {
       .table(tableName2)
       .where(s"`date`='$date' and `hour`='$hour'")
       .filter("conversion_goal is not null and k_value is not null")
-      .select("unitid", "adclass", "kvalue")
+      .select("unitid", "adclass", "k_value")
     rawData2.show(10)
 
     val data = cpaHistory

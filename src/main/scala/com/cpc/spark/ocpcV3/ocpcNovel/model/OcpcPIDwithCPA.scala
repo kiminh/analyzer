@@ -18,8 +18,8 @@ object OcpcPIDwithCPA {
     val hour = args(1).toString
 
     val result = calculateKv2(date, hour, spark)
-//    result.write.mode("overwrite").saveAsTable("test.ocpc_novel_k_value_table")
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_k_value_table")
+    result.write.mode("overwrite").saveAsTable("test.ocpc_novel_k_value_table")
+//    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_k_value_table")
 
 
   }
@@ -173,6 +173,7 @@ object OcpcPIDwithCPA {
       .select("unitid", "adclass", "kvalue1", "kvalue2")
       .withColumn("kvalue_new", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
       .withColumn("kvalue", when(col("kvalue_new").isNull, 0.694).otherwise(col("kvalue_new")))
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_avgk_hourly")
 
     resultDF.show(10)
     resultDF
@@ -243,6 +244,7 @@ object OcpcPIDwithCPA {
        """.stripMargin
     println(sqlRequest)
     val cpaRatio = spark.sql(sqlRequest)
+    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_cparatio_hourly")
 
     cpaRatio
 
@@ -272,15 +274,6 @@ object OcpcPIDwithCPA {
       .select("unitid", "adclass", "kvalue", "cpa_ratio", "conversion_goal")
       .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
       .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
-
-//    rawData.createOrReplaceTempView("raw_table")
-
-//    rawData
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .write
-//      .mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_k_value_raw_table")
 
 
     val resultDF = rawData
