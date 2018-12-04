@@ -43,6 +43,7 @@ object UserBehaviorNovelCvr {
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
+         |  and length(uid) in (14, 15, 36)
          |  ) a
          |inner join
          |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1
@@ -90,6 +91,7 @@ object UserBehaviorNovelCvr {
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
+         |  and length(uid) in (14, 15, 36)
       """.stripMargin
 
     println(click_sql)
@@ -124,6 +126,7 @@ object UserBehaviorNovelCvr {
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
+         |  and length(uid) in (14, 15, 36)
       """.stripMargin
 
     println(show_sql)
