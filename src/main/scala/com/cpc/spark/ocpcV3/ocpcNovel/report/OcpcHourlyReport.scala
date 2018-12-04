@@ -31,7 +31,8 @@ object OcpcHourlyReport {
          |    ocpc_log_dict['ocpcstep'] as ocpc_step,
          |    ocpc_log_dict['conversiongoal'] as conversion_goal,
          |    isshow,
-         |    isclick
+         |    isclick,
+         |    hour
          |FROM
          |    dl_cpc.ocpcv3_unionlog_label_hourly
          |WHERE
