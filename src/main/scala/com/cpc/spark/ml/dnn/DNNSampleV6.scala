@@ -4,11 +4,11 @@ import java.io.File
 
 import com.cpc.spark.common.Murmur3Hash
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions.{array, udf}
+import org.apache.spark.sql.functions._
 import sys.process._
 
 /**
-  * d4数据生成规范化
+  * d6数据生成规范化
   * created time : 2018/11/28 16:36
   *
   * @author zhj
@@ -325,14 +325,14 @@ class DNNSampleV6(spark: SparkSession, trdate: String = "", trpath: String = "",
     if (date.length == 10) {
       data = getAsFeature(date)
         .join(getUdFeature(date), Seq("uid"), "left")
-        .join(getAdFeature(date), Seq("ideaid"), "left")
+        .join(broadcast(getAdFeature(date)), Seq("ideaid"), "left")
     }
     else if (date.length == 13) {
       val dt = date.substring(0, 10)
       val h = date.substring(11, 13).toInt
       data = getAsFeature_hourly(dt, h)
         .join(getUdFeature_hourly(date), Seq("uid"), "left")
-        .join(getAdFeature_hourly(date), Seq("ideaid"), "left")
+        .join(broadcast(getAdFeature_hourly(date)), Seq("ideaid"), "left")
         .persist()
     } else {
       println(date)
