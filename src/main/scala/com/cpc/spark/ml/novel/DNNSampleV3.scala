@@ -1,18 +1,21 @@
 package com.cpc.spark.ml.novel
 
+import java.io.File
+
 import com.cpc.spark.common.Murmur3Hash
-import org.apache.spark.sql.functions.array
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions._
+import sys.process._
 
 /**
-  * d4数据生成规范化
+  * d6数据生成规范化
   * created time : 2018/11/28 16:36
   *
   * @author zhj
   * @version 1.0
   *
   */
-object DNNSampleV3 {
+object DNNSampleV6 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
@@ -20,7 +23,7 @@ object DNNSampleV3 {
 
     val Array(trdate, trpath, tedate, tepath) = args
 
-    val sample = new DNNSampleV3(spark, trdate, trpath, tedate, tepath)
+    val sample = new DNNSampleV6(spark, trdate, trpath, tedate, tepath)
     sample.saveTrain()
   }
 }
@@ -34,9 +37,10 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
     * as features：id 类特征的 one hot feature    ====== 前缀 f+index+"#" 如 f0#,f1#,f2#..
     *
     * @param date
+    * @param adtype
     * @return
     */
-  private def getAsFeature(date: String): DataFrame = {
+  private def getAsFeature(date: String, adtype: Int = 1): DataFrame = {
     import spark.implicits._
     val as_sql =
       s"""
@@ -58,11 +62,11 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id,
          |
-         |  hour
+         |  hour, ext_int['content_id'] as content_id, ext_int['category'] as content_category
          |
          |from dl_cpc.cpc_union_log where `date` = '$date'
-         |  and isshow = 1 and ideaid > 0
-         |  and media_appsid in ("80001098", "80001292")
+         |  and isshow = 1 and ideaid > 0 and adslot_type = $adtype
+         |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and length(uid) in (14, 15, 36)
@@ -114,7 +118,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
       )
   }
 
-  private def getAsFeature_hourly(date: String, hour: Int): DataFrame = {
+  private def getAsFeature_hourly(date: String, hour: Int, adtype: Int = 1): DataFrame = {
     import spark.implicits._
     val as_sql =
       s"""
@@ -136,11 +140,11 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id,
          |
-         |  hour
+         |  hour, ext_int['content_id'] as content_id, ext_int['category'] as content_category
          |
          |from dl_cpc.cpc_union_log where `date` = '$date' and hour=$hour
-         |  and isshow = 1 and ideaid > 0
-         |  and media_appsid in ("80001098", "80001292")
+         |  and isshow = 1 and ideaid > 0 and adslot_type = $adtype
+         |  and media_appsid in ("80000001", "80000002")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and length(uid) in (14, 15, 36)
@@ -245,21 +249,12 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |where load_date='$date'
     """.stripMargin
 
-    //用户点击过的文章id及分类
-    val ud_sql3 =
-      s"""
-         |select uid,book_id,first_category_id,second_category_id,third_category_id
-         |from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
-      """.stripMargin
-
     println("============= user dayily features =============")
     println(ud_sql0)
     println("-------------------------------------------------")
     println(ud_sql1)
     println("-------------------------------------------------")
     println(ud_sql2)
-    println("-------------------------------------------------")
-    println(ud_sql3)
 
 
     spark.sql(ud_sql0).rdd
@@ -269,7 +264,6 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
       .toDF("uid", "pkgs")
       .join(spark.sql(ud_sql1), Seq("uid"), "outer")
       .join(spark.sql(ud_sql2), Seq("uid"), "outer")
-      .join(spark.sql(ud_sql3), Seq("uid"), "outer")
       .select($"uid",
         hashSeq("ud0#", "string")($"pkgs").alias("ud0"),
         hashSeq("ud1#", "int")($"s_ideaid_1").alias("ud1"),
@@ -287,16 +281,12 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
         hashSeq("ud13#", "int")($"c_ideaid_4_7").alias("ud13"),
         hashSeq("ud14#", "int")($"c_adclass_4_7").alias("ud14"),
         hashSeq("ud15#", "string")($"word1").alias("ud15"),
-        hashSeq("ud16#", "string")($"word3").alias("ud16"),
-        hashSeq("ud17#", "int")($"book_id").alias("ud17"),
-        hashSeq("ud18#", "int")($"first_category_id").alias("ud18"),
-        hashSeq("ud19#", "int")($"second_category_id").alias("ud19"),
-        hashSeq("ud20#", "int")($"third_category_id").alias("ud20")
+        hashSeq("ud16#", "string")($"word3").alias("ud16")
       )
   }
 
   private def getUdFeature_hourly(date: String): DataFrame = {
-    spark.read.parquet("/user/cpc/wy/novel/features/ud")
+    spark.read.parquet("/user/cpc/dnn/features/ud")
   }
 
   /**
@@ -324,7 +314,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
   }
 
   private def getAdFeature_hourly(date: String = ""): DataFrame = {
-    spark.read.parquet("/user/cpc/wy/novel/features/ad")
+    spark.read.parquet("/user/cpc/dnn/features/ad")
   }
 
   override def getTrainSample(spark: SparkSession, date: String): DataFrame = {
@@ -335,14 +325,14 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
     if (date.length == 10) {
       data = getAsFeature(date)
         .join(getUdFeature(date), Seq("uid"), "left")
-        .join(getAdFeature(date), Seq("ideaid"), "left")
+        .join(broadcast(getAdFeature(date)), Seq("ideaid"), "left")
     }
     else if (date.length == 13) {
       val dt = date.substring(0, 10)
       val h = date.substring(11, 13).toInt
       data = getAsFeature_hourly(dt, h)
         .join(getUdFeature_hourly(date), Seq("uid"), "left")
-        .join(getAdFeature_hourly(date), Seq("ideaid"), "left")
+        .join(broadcast(getAdFeature_hourly(date)), Seq("ideaid"), "left")
         .persist()
     } else {
       println(date)
