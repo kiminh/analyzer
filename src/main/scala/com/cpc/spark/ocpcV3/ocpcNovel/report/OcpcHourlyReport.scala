@@ -103,9 +103,10 @@ object OcpcHourlyReport {
       .sql(sqlRequest4)
       .withColumn("cvr_cnt", when(col("conversion_goal")===1, col("cvr1_cnt")).otherwise(col("cvr2_cnt")))
       .withColumn("cpa_real", col("cost") * 1.0 / col("cvr_cnt"))
-    result.show(10)
 
-    val resultDF = result.select("unitid", "userid", "conversion_goal", "step2_percent", "cpa_given", "cpa_real", "show_cnt", "ctr_cnt", "cvr_cnt", "avg_k", "recent_k", "cost")
+    val resultDF = result
+      .select("unitid", "userid", "conversion_goal", "step2_percent", "cpa_given", "cpa_real", "show_cnt", "ctr_cnt", "cvr_cnt", "avg_k", "recent_k", "cost")
+      .filter(s"step2_percent is not null")
 
     resultDF
   }
