@@ -68,7 +68,7 @@ object OcpcCost {
                |    sum(price) as total_price,
                |    sum(label2) as convert_num,
                |    round(sum(price) / sum(label2),3) as cost,
-               |    "midu" as tag
+               |    "midu" as tag,
                |    '$date' as date,
                |    '$hour' as hour
                |from all
@@ -86,7 +86,7 @@ object OcpcCost {
                |    sum(price) as total_price,
                |    sum(label2) as convert_num,
                |    round(sum(price) / sum(label2),3) as cost,
-               |    "midu_ocpc" as tag
+               |    "midu_ocpc" as tag,
                |    '$date' as date,
                |    '$hour' as hour
                |from all
