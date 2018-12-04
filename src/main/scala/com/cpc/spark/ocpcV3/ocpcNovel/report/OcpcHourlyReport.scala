@@ -91,8 +91,8 @@ object OcpcHourlyReport {
          |    SUM(isclick) as ctr_cnt,
          |    SUM(iscvr1) as cvr1_cnt,
          |    SUM(iscvr2) as cvr2_cnt,
-         |    sum(case when isclick=1 then ocpc_log_dict['kvalue'] else 0 end) * 1.0 / sum(isclick) as avg_k,
-         |    SUM(case when isclick=1 and `hour`='$hour' then ocpc_log_dict['kvalue'] else 0 end) * 1.0 / sum(case when `hour`='$hour' then isclick else 0 end) as recent_k
+         |    sum(case when isclick=1 then kvalue else 0 end) * 1.0 / sum(isclick) as avg_k,
+         |    SUM(case when isclick=1 and `hour`='$hour' then kvalue else 0 end) * 1.0 / sum(case when `hour`='$hour' then isclick else 0 end) as recent_k
          |FROM
          |    data_table
          |GROUP BY unitid, userid, conversion_goal
