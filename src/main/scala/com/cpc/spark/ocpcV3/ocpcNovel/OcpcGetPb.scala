@@ -50,10 +50,18 @@ object OcpcGetPb {
   def getK(date: String, hour: String, spark: SparkSession) = {
     // 先获取回归模型和备用模型的k值
     // 根据conversion_goal选择需要的k值
+    val cpaHistory = spark
+      .table("dl_cpc.ocpcv3_novel_cpa_history_hourly")
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .filter(s"conversion_goal is not null")
+      .select("unitid", "adclass", "conversion_goal")
+      .distinct()
+
     val tableName1 = "dl_cpc.ocpc_v3_novel_k_regression"
     val rawData1 = spark
       .table(tableName1)
       .where(s"`date`='$date' and `hour`='$hour'")
+      .select("unitid", "k_ratio1", "k_ratio2")
     rawData1.show(10)
 
     val tableName2 = "dl_cpc.ocpc_novel_k_value_table"
@@ -61,10 +69,12 @@ object OcpcGetPb {
       .table(tableName2)
       .where(s"`date`='$date' and `hour`='$hour'")
       .filter("conversion_goal is not null and k_value is not null")
+      .select("unitid", "adclass", "kvalue")
     rawData2.show(10)
 
-    val data = rawData2
-      .join(rawData1, Seq("unitid"), "outer")
+    val data = cpaHistory
+      .join(rawData1, Seq("unitid"), "left_outer")
+      .join(rawData2, Seq("unitid", "adclass"), "left_outer")
       .select("unitid", "adclass", "k_value", "conversion_goal", "k_ratio1", "k_ratio2")
       .filter("adclass is not null and conversion_goal is not null")
       .withColumn("k_ratio", when(col("conversion_goal") === 2, col("k_ratio2")).otherwise(col("k_ratio1")))
