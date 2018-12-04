@@ -81,6 +81,7 @@ message Pack {
     bool use_model_server = 17;
     ModelServer model_server = 18;
     repeated int32 dnn_redis_groups = 19;
+    string dnn_feaconf_file = 20;
 }
 
 message ModelServer {
