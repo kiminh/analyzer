@@ -11,7 +11,7 @@ object OcpcHourlyReport {
     val date = args(0).toString
     val hour = args(1).toString
 
-    getHourlyReport(date, hour, spark)
+    val result = getHourlyReport(date, hour, spark)
   }
 
   def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
@@ -103,9 +103,9 @@ object OcpcHourlyReport {
       .withColumn("cpa_real", col("cost") * 1.0 / col("cvr_cnt"))
     result.show(10)
 
-    val resultDF = result.select("unitid", "userid", "conversion_goal")
+    val resultDF = result.select("unitid", "userid", "conversion_goal", "step2_percent", "cpa_given", "cpa_real", "show_cnt", "ctr_cnt", "cvr_cnt", "avg_k", "recent_k", "cost")
 
-
+    resultDF
   }
 
 }
