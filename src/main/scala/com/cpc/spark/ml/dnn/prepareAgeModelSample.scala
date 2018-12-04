@@ -64,7 +64,7 @@ object prepareAgeModelSample {
       .option("recordType", "Example")
       .save(s"/user/cpc/dnn/age/dnntrain")
 
-    testdata.sample(withReplacement = false, 0.1).repartition(100)
+    testdata.repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
