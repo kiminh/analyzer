@@ -41,7 +41,7 @@ object OcpcCost {
              """.stripMargin
         println(sql)
         val all = spark.sql(sql)
-        println("all 's count is " + all.count())
+        //println("all 's count is " + all.count())
         all.createOrReplaceTempView("all")
 
         val qttSql =
@@ -50,15 +50,17 @@ object OcpcCost {
                |    sum(price) as total_price,
                |    sum(label2) as convert_num,
                |    round(sum(price) / sum(label2),3) as cost,
-               |    "qtt" as tag
+               |    "qtt" as tag,
+               |    '$date' as date,
+               |    '$hour' as hour
                |from all
                |where media_appsid in ('80000001', '80000002')
                |group by unitid
              """.stripMargin
         println(qttSql)
         val qtt = spark.sql(qttSql)
-        println("qtt 's count is " + qtt.count())
-        qtt.show(10)
+        //println("qtt 's count is " + qtt.count())
+        //qtt.show(10)
 
         val miduSql =
             s"""
@@ -67,6 +69,8 @@ object OcpcCost {
                |    sum(label2) as convert_num,
                |    round(sum(price) / sum(label2),3) as cost,
                |    "midu" as tag
+               |    '$date' as date,
+               |    '$hour' as hour
                |from all
                |where media_appsid in ('80001098', '80001292')
                |group by unitid
@@ -74,8 +78,8 @@ object OcpcCost {
         println(miduSql)
 
         val midu = spark.sql(miduSql)
-        midu.show(10)
-        println("midu 's count is " + midu.count())
+        //midu.show(10)
+        //println("midu 's count is " + midu.count())
         val midu_ocpcSql =
             s"""
                |select unitid,
@@ -83,6 +87,8 @@ object OcpcCost {
                |    sum(label2) as convert_num,
                |    round(sum(price) / sum(label2),3) as cost,
                |    "midu_ocpc" as tag
+               |    '$date' as date,
+               |    '$hour' as hour
                |from all
                |where media_appsid in ('80001098', '80001292')
                |and length(ocpc_log) > 0
@@ -91,13 +97,19 @@ object OcpcCost {
         println(midu_ocpcSql)
         val midu_ocpc = spark.sql(midu_ocpcSql)
 
-        midu_ocpc.show(10)
-        println("midu_ocpc 's count is " + midu_ocpc.count())
+        //midu_ocpc.show(10)
+        //println("midu_ocpc 's count is " + midu_ocpc.count())
         val result = qtt.union(midu).union(midu_ocpc)
 
-        result.show(10)
+        //result.show(10)
 
-        println("result 's count is " + result.count())
+        //println("result 's count is " + result.count())
+        result.repartition(1)
+          .write
+          .mode("overwrite")
+          .insertInto("dl_cpc.report_cost")
+
+        println("insert into dl_cpc.report_cost success!")
     }
 
 }
