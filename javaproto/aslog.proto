@@ -141,6 +141,7 @@ message Device {
 	optional uint32 phoneprice = 14;
 	optional uint32 phonelevel = 15; // 1 高端 2 中高 3中低 4低端
 	optional string brand_title = 16; //设备品牌名称
+	optional bytes chrome_useragent = 17; //chrome useragent
 };
 
 enum AdType {
@@ -153,6 +154,7 @@ enum AdType {
 	AD_BANNER       = 7;
 	AD_VIDEO        = 8;
 	AD_MOTIVATE     = 9;
+	AD_VERTICAL_VIDEO     = 10;
 };
 
 enum AdSrc {
@@ -178,6 +180,7 @@ enum AdSrc {
 	YOUXIN = 20;
 	INMOBIVIDEO = 21;
 	MANISRTB = 22;
+	CTRIP = 23;
 };
 enum InteractionType {
 	NO_INTERACT = 0;
@@ -229,6 +232,7 @@ message DspReqInfo {
 	optional int64	blackMediaFilterTime = 10;
 	optional int64	fixClickTime = 11;
 	optional string	dspadslotid = 12;
+	optional int32  embeddingNum = 13;
 };
 
 message AdInfo {
@@ -289,12 +293,16 @@ message AdInfo {
 	optional int32 conversion_goal = 55; // 转化目标，1.安装，2.激活，3.表单，
 	optional int32 dynamic_material_type = 56; //动态商品库 1：vip
     optional VipDmt vip_dmt = 57; //唯品会动态库参数
+    optional uint32 white_user_ad_corner = 58; // 白名单用户广告无角标，1：生效，0：无效
+	optional string bs_rank_tag = 59;
 };
 
 message VipDmt {
     optional int32 vip_first_category = 1; // vip的类型
     optional int64 vip_price = 2; // vip的现价
-    optional int64 vip_value = 3; // vip的原价
+	optional int64 vip_value = 3; // vip的原价
+	optional int32 vip_title_template = 4; // vip的标题模板
+	optional int64 vip_outer_id = 5; // vip商品outer id
 }
 
 message AdDspRet {

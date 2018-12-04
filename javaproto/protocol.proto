@@ -217,6 +217,7 @@ enum Dsp {
     YOUXIN_DSP = 20;
     INMOBI_VIDEO_DSP = 21;
     MANISRTB_DSP = 22;
+    CTRIP_DSP = 23;
 }
 
 // DSP计费相关字段
@@ -402,6 +403,7 @@ message Event {
             AD_BANNER           = 7;  // 横幅广告
             AD_VIDEO            = 8;  // 视频广告
             AD_MOTIVATE         = 9;  // 激励广告
+            AD_VERTICAL_VIDEO   = 10;  // 竖屏视频广告
         };
         // 交互类型
         enum InteractionType {
