@@ -18,9 +18,12 @@ object OcpcCost {
 
         val sql =
             s"""
-               |select unitid,price,is_ocpc,label2,media_appsid
+               |select unitid,price,ocpc_log,label2,media_appsid
                |from(
-               |    select searchid,unitid,price,ext_int['is_ocpc'] as is_ocpc,media_appsid
+               |    select searchid,unitid,
+               |        case when price > 0 else price then 0 end as price,
+               |        ext_string['ocpc_log'] as ocpc_log,
+               |        media_appsid
                |    from dl_cpc.cpc_union_log
                |    where `date`='$date' and hour = '$hour'
                |    and media_appsid in ('80000001', '80000002', '80001098', '80001292')
@@ -28,7 +31,8 @@ object OcpcCost {
                |) a
                |left outer join
                |(
-               |    select searchid,label2
+               |    select searchid,
+               |    case when label2 = 1 then 1 else 0 end as label2
                |    from dl_cpc.ml_cvr_feature_v1
                |    where `date`='$date' and hour = '$hour'
                |    and media_appsid in ('80000001', '80000002', '80001098', '80001292')
@@ -43,7 +47,7 @@ object OcpcCost {
         val qttSql =
             s"""
                |select unitid,
-               |    sum(price) / sum(case when label2 = 1 then 1 else 0 end) as cost,
+               |    sum(price) / sum(label2) as cost,
                |    "qtt" as tag
                |from all
                |where media_appsid in ('80000001', '80000002')
@@ -57,8 +61,8 @@ object OcpcCost {
         val miduSql =
             s"""
                |select unitid,
-               |    sum(price) / sum(case when label2 = 1 then 1 else 0 end) as cost,
-               |    "qtt" as tag
+               |    sum(price) / sum(label2) as cost,
+               |    "midu" as tag
                |from all
                |where media_appsid in ('80001098', '80001292')
                |group by unitid
@@ -71,11 +75,11 @@ object OcpcCost {
         val midu_ocpcSql =
             s"""
                |select unitid,
-               |    sum(price) / sum(case when label2 = 1 then 1 else 0 end) as cost,
-               |    "qtt" as tag
+               |    sum(price) / sum(label2) as cost,
+               |    "midu_ocpc" as tag
                |from all
                |where media_appsid in ('80001098', '80001292')
-               |and is_ocpc = 1
+               |and length(ocpc_log) > 0
                |group by unitid
              """.stripMargin
         println(midu_ocpcSql)
