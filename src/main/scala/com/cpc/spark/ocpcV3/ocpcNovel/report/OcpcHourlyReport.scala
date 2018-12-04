@@ -1,6 +1,6 @@
 package com.cpc.spark.ocpcV3.ocpcNovel.report
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcHourlyReport {
@@ -11,8 +11,9 @@ object OcpcHourlyReport {
     val date = args(0).toString
     val hour = args(1).toString
 
-    val result = getHourlyReport(date, hour, spark)
-    result.show(10)
+    // TODO 测试
+    val rawData = getHourlyReport(date, hour, spark)
+    rawData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_data_detail_hourly")
   }
 
   def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
@@ -38,6 +39,7 @@ object OcpcHourlyReport {
          |    dl_cpc.ocpcv3_unionlog_label_hourly
          |WHERE
          |    $selectCondition
+         |
        """.stripMargin
     println(sqlRequest1)
     val rawData = spark.sql(sqlRequest1)
@@ -109,6 +111,12 @@ object OcpcHourlyReport {
       .filter(s"step2_percent is not null")
 
     resultDF
+  }
+
+  def calculateData(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val result = data
+      .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
+      .withColumn("cpa_ratio", col("cpa_given") * 1.0 / col("cpa_real"))
   }
 
 }
