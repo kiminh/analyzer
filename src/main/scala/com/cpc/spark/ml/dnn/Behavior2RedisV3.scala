@@ -72,12 +72,12 @@ object Behavior2RedisV3 {
         hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
         hashSeq("m13", "int")($"c_adclass_3").alias("m13"),
 
-        hashSeq("m14", "int")($"c_adclass_4_7").alias("m14"),
+        hashSeq("m14", "int")($"c_ideaid_4_7").alias("m14"),
         hashSeq("m15", "int")($"c_adclass_4_7").alias("m15")
       )
       .persist()
 
-    println("dnn v2 用户行为特征总数：" + data.count())
+    println("dnn v3 用户行为特征总数：" + data.count())
 
     data.coalesce(20).write.mode("overwrite")
       .parquet("/user/cpc/zhj/behaviorV3")
@@ -92,7 +92,7 @@ object Behavior2RedisV3 {
         var group = Seq[Int]()
         var hashcode = Seq[Long]()
         val uid = "d3_" + rec.getString(0)
-        for (i <- 1 to 12) {
+        for (i <- 1 to 14) {
           val f = rec.getAs[Seq[Long]](i)
           group = group ++ Array.tabulate(f.length)(x => i)
           hashcode = hashcode ++ f

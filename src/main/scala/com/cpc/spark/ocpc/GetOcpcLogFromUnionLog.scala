@@ -16,7 +16,7 @@ object GetOcpcLogFromUnionLog {
     val hour = args(1).toString
 
     getUnionlog(date, hour, spark)
-    getUnionlogV2(date, hour, spark)
+//    getUnionlogV2(date, hour, spark)
   }
 
   def getUnionlog(date: String, hour: String, spark: SparkSession) = {
@@ -38,9 +38,7 @@ object GetOcpcLogFromUnionLog {
          |  a.exptags,
          |  a.ext_int['bid_ocpc'] as cpa_given,
          |  a.ext_string['ocpc_log'] as ocpc_log,
-         |  b.label2 as iscvr,
-         |  '$date' as dt,
-         |  '$hour' as hour
+         |  b.label2 as iscvr1
          | from
          |      (
          |        select *
@@ -67,19 +65,56 @@ object GetOcpcLogFromUnionLog {
 
     var df = spark.sql(sqlRequest)
     df = df.withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-    // switch the last column with the last but three
-    val cols = df.columns
-    val ocpc_log_dict = cols(cols.length - 1)
-    cols(cols.length - 1) = cols(cols.length - 2)
-    cols(cols.length - 2) = cols(cols.length - 3)
-    cols(cols.length - 3) = ocpc_log_dict
-
-    df = df.select(cols.head, cols.tail: _*)
-
-    println(s"output size: ${df.count()}")
-    println("first 10 rows: ")
+    df.createOrReplaceTempView("ocpc_unionlog")
     df.show(10)
-    df.write.mode("append").insertInto("dl_cpc.ocpc_unionlog")
+
+    val siteFormData = spark
+      .table("dl_cpc.site_form_unionlog")
+      .where(s"`date`='$date' and `hour`='$hour' and ideaid!=0")
+      .select("ideaid", "searchid")
+      .withColumn("iscvr2", lit(1))
+      .distinct()
+    siteFormData.createOrReplaceTempView("site_form_data")
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    a.searchid,
+         |    a.timestamp,
+         |    a.uid,
+         |    a.exp_ctr,
+         |    a.exp_cvr,
+         |    a.ideaid,
+         |    a.price,
+         |    a.userid,
+         |    a.adclass,
+         |    a.isclick,
+         |    a.isshow,
+         |    a.exptags,
+         |    a.cpa_given,
+         |    a.ocpc_log,
+         |    a.ocpc_log_dict,
+         |    a.iscvr1,
+         |    b.iscvr2,
+         |    (case when ocpc_log_dict['conversiongoal']=3 then b.iscvr2 else a.iscvr1 end) as iscvr
+         |FROM
+         |    ocpc_unionlog as a
+         |LEFT JOIN
+         |    site_form_data as b
+         |ON
+         |    a.searchid=b.searchid
+       """.stripMargin
+    println(sqlRequest1)
+    val result = spark.sql(sqlRequest1)
+
+    val resultDF = result
+      .select("searchid", "timestamp", "uid", "exp_ctr", "exp_cvr", "ideaid", "price", "userid", "adclass", "isclick", "isshow", "exptags", "cpa_given", "ocpc_log", "iscvr", "ocpc_log_dict")
+      .withColumn("dt", lit(date))
+      .withColumn("hour", lit(hour))
+    resultDF.printSchema()
+    result.show(10)
+
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_unionlog")
   }
 
   def getUnionlogV2(date: String, hour: String, spark: SparkSession) = {
