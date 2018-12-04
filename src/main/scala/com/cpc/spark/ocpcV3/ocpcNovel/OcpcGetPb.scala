@@ -81,7 +81,7 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("k_ratio").isNull, col("k_value")).otherwise(col("k_ratio")))
       .filter(s"kvalue > 0 and kvalue is not null")
       .withColumn("kvalue", when(col("kvalue") > 5.0, 5.0).otherwise(col("kvalue")))
-      .withColumn("kvalue", when(col("kvalue") < 0.0001, 0.0001).otherwise(col("kvalue")))
+      .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
 
     val resultDF = data.select("unitid", "kvalue")
 //    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly")
