@@ -105,7 +105,7 @@ object Behavior2RedisV3 {
       .toDF("uid", "pkgs")
       .join(spark.sql(ud_sql1), Seq("uid"), "outer")
       .join(spark.sql(ud_sql2), Seq("uid"), "outer")
-      .join(spark.sql(ud_sql3), Seq("uid"), "left")
+      .join(spark.sql(ud_sql3), Seq("uid"), "outer")
       .select($"uid",
         hashSeq("ud0#", "string")($"pkgs").alias("ud0"),
         hashSeq("ud1#", "int")($"s_ideaid_1").alias("ud1"),
