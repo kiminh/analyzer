@@ -15,7 +15,7 @@ import sys.process._
   * @version 1.0
   *
   */
-object DNNSampleV6 {
+object DNNSampleV3 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
@@ -23,7 +23,7 @@ object DNNSampleV6 {
 
     val Array(trdate, trpath, tedate, tepath) = args
 
-    val sample = new DNNSampleV6(spark, trdate, trpath, tedate, tepath)
+    val sample = new DNNSampleV3(spark, trdate, trpath, tedate, tepath)
     sample.saveTrain()
   }
 }
@@ -40,7 +40,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
     * @param adtype
     * @return
     */
-  private def getAsFeature(date: String, adtype: Int = 1): DataFrame = {
+  private def getAsFeature(date: String): DataFrame = {
     import spark.implicits._
     val as_sql =
       s"""
@@ -62,11 +62,11 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id,
          |
-         |  hour, ext_int['content_id'] as content_id, ext_int['category'] as content_category
+         |  hour
          |
          |from dl_cpc.cpc_union_log where `date` = '$date'
-         |  and isshow = 1 and ideaid > 0 and adslot_type = $adtype
-         |  and media_appsid in ("80000001", "80000002")
+         |  and isshow = 1 and ideaid > 0
+         |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and length(uid) in (14, 15, 36)
@@ -118,7 +118,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
       )
   }
 
-  private def getAsFeature_hourly(date: String, hour: Int, adtype: Int = 1): DataFrame = {
+  private def getAsFeature_hourly(date: String, hour: Int): DataFrame = {
     import spark.implicits._
     val as_sql =
       s"""
@@ -140,11 +140,11 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id,
          |
-         |  hour, ext_int['content_id'] as content_id, ext_int['category'] as content_category
+         |  hour
          |
          |from dl_cpc.cpc_union_log where `date` = '$date' and hour=$hour
-         |  and isshow = 1 and ideaid > 0 and adslot_type = $adtype
-         |  and media_appsid in ("80000001", "80000002")
+         |  and isshow = 1 and ideaid > 0
+         |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and length(uid) in (14, 15, 36)
@@ -249,12 +249,21 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |where load_date='$date'
     """.stripMargin
 
+    //用户点击过的文章id及分类
+    val ud_sql3 =
+      s"""
+         |select uid,book_id,first_category_id,second_category_id,third_category_id
+         |from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
+      """.stripMargin
+
     println("============= user dayily features =============")
     println(ud_sql0)
     println("-------------------------------------------------")
     println(ud_sql1)
     println("-------------------------------------------------")
     println(ud_sql2)
+    println("-------------------------------------------------")
+    println(ud_sql3)
 
 
     spark.sql(ud_sql0).rdd
@@ -264,6 +273,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
       .toDF("uid", "pkgs")
       .join(spark.sql(ud_sql1), Seq("uid"), "outer")
       .join(spark.sql(ud_sql2), Seq("uid"), "outer")
+      .join(spark.sql(ud_sql3), Seq("uid"), "outer")
       .select($"uid",
         hashSeq("ud0#", "string")($"pkgs").alias("ud0"),
         hashSeq("ud1#", "int")($"s_ideaid_1").alias("ud1"),
