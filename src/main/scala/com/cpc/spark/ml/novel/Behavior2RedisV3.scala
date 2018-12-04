@@ -122,12 +122,12 @@ object Behavior2RedisV3 {
         hashSeq("ud12#", "int")($"c_adclass_3").alias("ud12"),
         hashSeq("ud13#", "int")($"c_ideaid_4_7").alias("ud13"),
         hashSeq("ud14#", "int")($"c_adclass_4_7").alias("ud14"),
-        hashSeq("ud15#", "string")($"word1").alias("ud15"),
-        hashSeq("ud16#", "string")($"word3").alias("ud16"),
-        hashSeq("ud17#", "int")($"book_id").alias("ud17"),
-        hashSeq("ud18#", "int")($"first_category_id").alias("ud18"),
-        hashSeq("ud19#", "int")($"second_category_id").alias("ud19"),
-        hashSeq("ud20#", "int")($"third_category_id").alias("ud20")
+        hashSeq("ud15#", "int")($"book_id").alias("ud15"),
+        hashSeq("ud16#", "int")($"first_category_id").alias("ud16"),
+        hashSeq("ud17#", "int")($"second_category_id").alias("ud17"),
+        hashSeq("ud18#", "int")($"third_category_id").alias("ud18"),
+        hashSeq("ud19#", "string")($"word1").alias("ud19"),
+        hashSeq("ud20#", "string")($"word3").alias("ud20")
       ).persist()
 
     ud_features.coalesce(50).write.mode("overwrite")
