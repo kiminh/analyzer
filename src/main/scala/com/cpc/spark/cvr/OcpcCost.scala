@@ -21,7 +21,7 @@ object OcpcCost {
                |select unitid,price,ocpc_log,label2,media_appsid
                |from(
                |    select searchid,unitid,
-               |        case when price > 0 else price then 0 end as price,
+               |        case when price > 0 then price else 0 end as price,
                |        ext_string['ocpc_log'] as ocpc_log,
                |        media_appsid
                |    from dl_cpc.cpc_union_log
