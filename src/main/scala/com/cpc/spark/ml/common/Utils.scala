@@ -286,6 +286,7 @@ object Utils {
         val client_type = r.getAs[String]("client_type")
         val interaction = r.getAs[Int]("interaction")
 
+
         //判断广告类型
         //第一类：建站&sdk：列表页、详情等sdk栏位,网赚+彩票 ：trace_op1 = “REPORT_USER_STAYINWX”
         //第二类：建站&非sdk：详情页、互动位等其他非sdk栏位, 网赚+彩票 ：trace_type: active5-disactive
@@ -340,7 +341,7 @@ object Utils {
         }
 
         // 非直接下载 sdk
-        else if ((adclass.toString.length > 3 && adclass.toString.substring(0, 3).toInt == 100) && client_type == "NATIVESDK") {
+        else if ((adclass.toString.length > 3 && adclass.toString.substring(0, 3).toInt == 100) && (client_type == "NATIVESDK" || client_type == "JSSDK")) {
           label_type = 5
           if (conversion_sdk_download > 0) {
             active_js_ldy_download += 1

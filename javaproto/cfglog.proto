@@ -34,4 +34,20 @@ message NoticeLogBody {
     repeated string template_conf = 11;
     optional string ip = 12;
     optional string ua = 13;
+    optional HdIcon hdicon = 14;
+   	optional Location location = 15;
 };
+
+message HdIcon {
+    required string iconid = 1;
+    required string iconurl = 2;
+}
+message Location {
+	optional uint32 country = 1;
+	optional uint32 province = 2;
+	optional uint32 city = 3;
+	optional uint32 isp = 4;
+	optional string province_name = 5;
+	optional string city_name = 6;
+	optional uint32 city_level = 7;
+}

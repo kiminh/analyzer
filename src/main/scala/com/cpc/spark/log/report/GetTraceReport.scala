@@ -12,6 +12,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 /**
   * Created by Roy on 2017/4/26.
   */
+@deprecated
 object GetTraceReport {
 
   var mariadbUrl  = ""
