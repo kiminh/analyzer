@@ -19,7 +19,6 @@ object OcpcCPAhistory {
     val hour = args(1).toString
 
     val cpaList = calculateCPA(date, hour, spark)
-    cpaList.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_list")
     val result = checkCPA(cpaList, date, hour, spark)
 //    dl_cpc.ocpcv3_novel_cpa_history_hourly
     result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly")
@@ -156,6 +155,11 @@ object OcpcCPAhistory {
       .groupBy("new_adclass")
       .agg(avg(col("cpa2")).alias("avg_cpa2"))
     cvr2AdclassData.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr2_adclass_cpa")
+    val adclassCPA = cvr1Data
+      .join(cvr2Data, Seq("new_adclass"), "outer")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+    adclassCPA.write.mode("overwrite").saveAsTable("test.ocpcv3_adclass_cpa_history_hourly")
 
     // 取分位数
     // cvr1
@@ -202,12 +206,13 @@ object OcpcCPAhistory {
     val result = data
       .join(cvr1Result, Seq("unitid", "adclass"), "left_outer")
       .join(cvr2Result, Seq("unitid", "adclass"), "left_outer")
-      .filter(s"alpha1_max is not null or alpha2_max is not null")
+      .join(adclassCPA, Seq("new_adclass"), "left_outer")
+      .withColumn("cpa1_history", when(col("alpha1_max").isNull, col("avg_cpa1")).otherwise(col("cpa1_history")))
+      .withColumn("cpa2_history", when(col("alpha2_max").isNull, col("avg_cpa2")).otherwise(col("cpa2_history")))
       .select("unitid", "adclass", "cpa1_history", "cpa2_history")
       .withColumn("cpa1_history", when(col("cpa1_history").isNull, -1).otherwise(col("cpa1_history")))
       .withColumn("cpa2_history", when(col("cpa2_history").isNull, -1).otherwise(col("cpa2_history")))
-      .filter("cpa1_history!=-1 or cpa2_history!=-1")
-      .withColumn("conversion_goal", when(col("cpa2_history") === -1, 1).otherwise(2))
+      .withColumn("conversion_goal", when(col("cpa2_history") <= 0, 1).otherwise(2))
       .withColumn("cpa_history", when(col("conversion_goal") === 1, col("cpa1_history")).otherwise(col("cpa2_history")))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
 //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_debug")

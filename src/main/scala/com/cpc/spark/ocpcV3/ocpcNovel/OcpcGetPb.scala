@@ -9,7 +9,7 @@ import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 import ocpcnovel.ocpcnovel.SingleUnit
 import ocpcnovel.ocpcnovel.OcpcNovelList
-import org.apache.spark.sql.types.DoubleType
+import org.apache.spark.sql.types.{DoubleType, IntegerType}
 //import ocpcnovel.ocpcnovel
 
 import scala.collection.mutable.ListBuffer
@@ -26,16 +26,27 @@ object OcpcGetPb {
     val cvrData = getCvr(date, hour, spark)
     val kvalue = getK(date, hour, spark)
     val cpaHistory = getCPAhistory(date, hour, spark)
+    val adclassCPA = spark
+      .table("test.ocpcv3_adclass_cpa_history_hourly")
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .select("new_adclass", "avg_cpa1", "avg_cpa2")
 
     // TODO
     // kvalue为空应该过滤掉
+
     val data = cvrData
       .join(kvalue, Seq("unitid"), "left_outer")
-      .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt")
+      .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt", "new_adclass")
       .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
       .join(cpaHistory, Seq("unitid"), "left_outer")
-      .filter("cpa_history is not null and cpa_history>0 and kvalue>=0")
+//      .filter("cpa_history is not null and cpa_history>0 and kvalue>=0")
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal")
+      .filter(s"conversion_goal is not null")
+      .join(adclassCPA, Seq("new_adclass"), "left_outer")
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "new_adclass", "avg_cpa1", "avg_cpa2")
+      .withColumn("avg_cpa", when(col("conversion_goal")===1, col("avg_cpa1")).otherwise("avg_cpa2"))
+      .withColumn("cpa_history_old", col("cpa_history"))
+      .withColumn("cpa_history", when(col("cpa_history").isNull || col("cpa_history") === -1, col("avg_cpa")).otherwise(col("cpa_history")))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly_bak")
@@ -120,6 +131,7 @@ object OcpcGetPb {
       s"""
          |SELECT
          |  unitid,
+         |  adclass,
          |  ctr_cnt
          |FROM
          |  dl_cpc.ocpcv3_ctr_data_hourly
@@ -129,7 +141,10 @@ object OcpcGetPb {
     println(sqlRequestCtrData)
     val ctrData = spark
       .sql(sqlRequestCtrData)
-      .select("unitid")
+      .select("unitid", "adclass")
+      .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+      .select("unitid", "new_adclass")
       .distinct()
 
     // cvr data
@@ -181,7 +196,7 @@ object OcpcGetPb {
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
     result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly")
 
-    val resultDF = result.select("unitid", "cvr1cnt", "cvr2cnt")
+    val resultDF = result.select("unitid", "new_adclass", "cvr1cnt", "cvr2cnt")
 
     // 返回结果
     resultDF.show(10)
