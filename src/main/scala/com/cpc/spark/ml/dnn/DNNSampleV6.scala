@@ -45,7 +45,7 @@ class DNNSampleV6(spark: SparkSession, trdate: String = "", trpath: String = "",
     val as_sql =
       s"""
          |select a.searchid,
-         |  if(coalesce(c.label, b.label, 0) > 0, array(1, 0), array(0, 1) as cvr_label,
+         |  if(coalesce(c.label, b.label, 0) > 0, array(1, 0), array(0, 1)) as cvr_label,
          |  if(a.isclick>0, array(1,0), array(0,1)) as label,
          |  a.media_type, a.media_appsid as mediaid,
          |  a.ext['channel'].int_value as channel,
