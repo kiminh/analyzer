@@ -6,7 +6,7 @@ import org.apache.spark.sql.SparkSession
   * @author Jinbao
   * @date 2018/12/5 0:11
   */
-object Coin {
+object CoinTest {
     def main(args: Array[String]): Unit = {
         val date = args(0)
 
