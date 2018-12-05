@@ -38,7 +38,6 @@ object OcpcGetPb {
       .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt", "new_adclass")
       .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
       .join(cpaHistory, Seq("unitid"), "left_outer")
-//      .filter("cpa_history is not null and cpa_history>0 and kvalue>=0")
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "new_adclass")
       .withColumn("conversion_goal", when(col("conversion_goal").isNull && col("cvr2cnt")>0, 2).otherwise(1))
       .filter(s"conversion_goal is not null")
@@ -48,7 +47,8 @@ object OcpcGetPb {
       .withColumn("cpa_history_old", col("cpa_history"))
       .withColumn("cpa_history", when(col("cpa_history").isNull || col("cpa_history") === -1, col("avg_cpa")).otherwise(col("cpa_history")))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly_bak")
+      .filter("cpa_history is not null and cpa_history>0 and kvalue>=0")
+//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly_bak")
 
 //    unitid          int,
 //    cpa_history     double,
@@ -61,9 +61,9 @@ object OcpcGetPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly")
+    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly")
     // 原表名：dl_cpc.ocpcv3_novel_pb_hourly
-//    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly")
 
     // 输出pb文件
     savePbPack(result)
