@@ -84,7 +84,7 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
 
     val resultDF = data.select("unitid", "kvalue")
-//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly")
+    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly")
 
 
     resultDF
@@ -96,6 +96,7 @@ object OcpcGetPb {
       .table(tableName)
       .where(s"`date`='$date' and `hour`='$hour'")
     resultDF.show(10)
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_data_hourly")
 
     resultDF
   }
@@ -178,7 +179,7 @@ object OcpcGetPb {
       .join(cvr2Data, Seq("unitid"), "left_outer")
       .withColumn("cvr1cnt", when(col("cvr1cnt").isNull, 0).otherwise(col("cvr1cnt")))
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
-//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly")
+    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly")
 
     val resultDF = result.select("unitid", "cvr1cnt", "cvr2cnt")
 
