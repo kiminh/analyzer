@@ -76,7 +76,7 @@ class DNNSampleV6(spark: SparkSession, trdate: String = "", trpath: String = "",
          |  on a.searchid=c.searchid
          |  and c.label=1
          |  and c.date='$date'
-         |where `date` = '$date'
+         |where a.`date` = '$date'
          |  and a.isshow = 1 and a.ideaid > 0 and a.adslot_type = $adtype
          |  and a.media_appsid in ("80000001", "80000002")
          |  and a.uid not like "%.%"
