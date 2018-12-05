@@ -1,5 +1,6 @@
 package com.cpc.spark.ml.dnn.Utils
 
+import com.cpc.spark.common.Murmur3Hash
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import mlmodel.mlmodel.DnnMultiHot
@@ -37,5 +38,19 @@ object DnnFeatures2Redis {
 
       redis.disconnect
     }
+
+    println("----------------------------------------------")
+    println(s"start setting default value for $keyPrefix ")
+    var group = Seq[Int]()
+    var hashcode = Seq[Long]()
+    val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
+    redis.auth(conf.getString("ali_redis.auth"))
+
+    for (col <- data.columns.zipWithIndex) {
+      group = group ++ Seq(col._2)
+      hashcode = hashcode ++ Seq(Murmur3Hash.stringHash64(col._1 + "#", 0))
+    }
+    redis.setex(keyPrefix + "default", 3600 * 24 * 7, DnnMultiHot(group, hashcode).toByteArray)
+    redis.disconnect
   }
 }
