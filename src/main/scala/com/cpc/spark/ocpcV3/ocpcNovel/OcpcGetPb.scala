@@ -39,9 +39,9 @@ object OcpcGetPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 //    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly_bak")
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly")
+//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly")
     // 原表名：dl_cpc.ocpcv3_novel_pb_hourly
-    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly")
+//    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly")
 
     // 输出pb文件
     savePbPack(data)
@@ -114,6 +114,24 @@ object OcpcGetPb {
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+    // ctr data
+    val sqlRequestCtrData =
+      s"""
+         |SELECT
+         |  unitid,
+         |  ctr_cnt,
+         |FROM
+         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  media_appsid in ("80001098","80001292")
+       """.stripMargin
+    println(sqlRequestCtrData)
+    val ctrData = spark
+      .sql(sqlRequestCtrData)
+      .select("unitid")
+      .distinct()
 
     // cvr data
     // cvr1 or cvr3 data
@@ -157,8 +175,9 @@ object OcpcGetPb {
     cvr2Data.show(10)
 
     // 数据关联
-    val result = cvr1Data
-      .join(cvr2Data, Seq("unitid"), "outer")
+    val result = ctrData
+      .join(cvr1Data, Seq("unitid"), "left_outer")
+      .join(cvr2Data, Seq("unitid"), "left_outer")
       .withColumn("cvr1cnt", when(col("cvr1cnt").isNull, 0).otherwise(col("cvr1cnt")))
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
 //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly")
