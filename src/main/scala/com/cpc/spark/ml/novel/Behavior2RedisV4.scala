@@ -15,7 +15,7 @@ import org.apache.spark.sql.functions.udf
   * @version 1.0
   *
   */
-object Behavior2RedisV3 {
+object Behavior2RedisV4 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
