@@ -27,7 +27,7 @@ object OcpcGetPb {
     val kvalue = getK(date, hour, spark)
     val cpaHistory = getCPAhistory(date, hour, spark)
     val adclassCPA = spark
-      .table("test.ocpcv3_adclass_cpa_history_hourly")
+      .table("dl_cpc.ocpcv3_adclass_cpa_history_hourly")
       .where(s"`date`='$date' and `hour`='$hour'")
       .select("new_adclass", "avg_cpa1", "avg_cpa2")
 
@@ -48,6 +48,7 @@ object OcpcGetPb {
       .withColumn("avg_cpa", when(col("conversion_goal")===1, col("avg_cpa1")).otherwise(col("avg_cpa2")))
       .withColumn("cpa_history_old", col("cpa_history"))
       .withColumn("cpa_history", when(col("cpa_history").isNull || col("cpa_history") === -1, col("avg_cpa")).otherwise(col("cpa_history")))
+      .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
 //    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly_bak")
 
 //    unitid          int,

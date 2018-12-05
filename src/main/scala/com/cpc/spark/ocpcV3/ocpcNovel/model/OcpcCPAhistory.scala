@@ -160,7 +160,8 @@ object OcpcCPAhistory {
       .select("new_adclass", "avg_cpa1", "avg_cpa2")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-    adclassCPA.write.mode("overwrite").saveAsTable("test.ocpcv3_adclass_cpa_history_hourly")
+//    adclassCPA.write.mode("overwrite").saveAsTable("test.ocpcv3_adclass_cpa_history_hourly")
+    adclassCPA.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_adclass_cpa_history_hourly")
 
     // 取分位数
     // cvr1
