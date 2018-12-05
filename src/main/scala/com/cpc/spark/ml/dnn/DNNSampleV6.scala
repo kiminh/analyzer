@@ -44,40 +44,56 @@ class DNNSampleV6(spark: SparkSession, trdate: String = "", trpath: String = "",
     import spark.implicits._
     val as_sql =
       s"""
-         |select if(isclick>0, array(1,0), array(0,1)) as label,
-         |  media_type, media_appsid as mediaid,
-         |  ext['channel'].int_value as channel,
-         |  ext['client_type'].string_value as sdk_type,
+         |select a.searchid,
+         |  if(coalesce(c.label, b.label, 0) > 0, array(1, 0), array(0, 1)) as cvr_label,
+         |  if(a.isclick>0, array(1,0), array(0,1)) as label,
+         |  a.media_type, a.media_appsid as mediaid,
+         |  a.ext['channel'].int_value as channel,
+         |  a.ext['client_type'].string_value as sdk_type,
          |
-         |  adslot_type, adslotid,
+         |  a.adslot_type, a.adslotid,
          |
-         |  adtype, interaction, bid, ideaid, unitid, planid, userid,
-         |  ext_int['is_new_ad'] as is_new_ad, ext['adclass'].int_value as adclass,
-         |  ext_int['siteid'] as site_id,
+         |  a.adtype, a.interaction, a.bid, a.ideaid, a.unitid, a.planid, a.userid,
+         |  a.ext_int['is_new_ad'] as is_new_ad, a.ext['adclass'].int_value as adclass,
+         |  a.ext_int['siteid'] as site_id,
          |
-         |  os, network, ext['phone_price'].int_value as phone_price,
-         |  ext['brand_title'].string_value as brand,
+         |  a.os, a.network, a.ext['phone_price'].int_value as phone_price,
+         |  a.ext['brand_title'].string_value as brand,
          |
-         |  province, city, ext['city_level'].int_value as city_level,
+         |  a.province, a.city, a.ext['city_level'].int_value as city_level,
          |
-         |  uid, age, sex, ext_string['dtu_id'] as dtu_id,
+         |  a.uid, a.age, a.sex, a.ext_string['dtu_id'] as dtu_id,
          |
-         |  hour, ext_int['content_id'] as content_id, ext_int['category'] as content_category
+         |  a.hour, a.ext_int['content_id'] as content_id,
+         |  a.ext_int['category'] as content_category
          |
-         |from dl_cpc.cpc_union_log where `date` = '$date'
-         |  and isshow = 1 and ideaid > 0 and adslot_type = $adtype
-         |  and media_appsid in ("80000001", "80000002")
-         |  and uid not like "%.%"
-         |  and uid not like "%000000%"
-         |  and length(uid) in (14, 15, 36)
+         |from dl_cpc.cpc_union_log a
+         |left join dl_cpc.ml_cvr_feature_v1 b
+         |  on a.searchid=b.searchid
+         |  and b.label2=1
+         |  and b.date='$date'
+         |left join dl_cpc.ml_cvr_feature_v2 c
+         |  on a.searchid=c.searchid
+         |  and c.label=1
+         |  and c.date='$date'
+         |where a.`date` = '$date'
+         |  and a.isshow = 1 and a.ideaid > 0 and a.adslot_type = $adtype
+         |  and a.media_appsid in ("80000001", "80000002")
+         |  and a.uid not like "%.%"
+         |  and a.uid not like "%000000%"
+         |  and length(a.uid) in (14, 15, 36)
       """.stripMargin
     println("============= as features ==============")
     println(as_sql)
-    spark.sql(as_sql)
+
+    val data = spark.sql(as_sql).persist()
+
+    data.write.mode("overwrite").parquet(s"/user/cpc/dnn/raw_data_list/$date")
+
+    data
       .select($"label",
         $"uid",
         $"ideaid",
-
         hash("f0#")($"media_type").alias("f0"),
         hash("f1#")($"mediaid").alias("f1"),
         hash("f2#")($"channel").alias("f2"),
@@ -115,7 +131,7 @@ class DNNSampleV6(spark: SparkSession, trdate: String = "", trpath: String = "",
         $"label",
         $"uid",
         $"ideaid"
-      )
+      ).repartition(1000, $"uid")
   }
 
   private def getAsFeature_hourly(date: String, hour: Int, adtype: Int = 1): DataFrame = {

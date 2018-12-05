@@ -15,6 +15,8 @@ message SiteInfo {
 	optional string title = 3;
 	optional string config = 4;
 	optional int64 content_id = 5;
+	optional int32 category = 6;
+	repeated string key_words_list = 7;
 };
 enum MediaType {
 	UNKNOWN = 0;
@@ -139,6 +141,7 @@ message Device {
 	optional uint32 phoneprice = 14;
 	optional uint32 phonelevel = 15; // 1 高端 2 中高 3中低 4低端
 	optional string brand_title = 16; //设备品牌名称
+	optional bytes chrome_useragent = 17; //chrome useragent
 };
 
 enum AdType {
@@ -151,6 +154,7 @@ enum AdType {
 	AD_BANNER       = 7;
 	AD_VIDEO        = 8;
 	AD_MOTIVATE     = 9;
+	AD_VERTICAL_VIDEO     = 10;
 };
 
 enum AdSrc {
@@ -173,6 +177,10 @@ enum AdSrc {
 	QIHU = 17;
 	XINGU = 18;
 	GANJIWANG = 19;
+	YOUXIN = 20;
+	INMOBIVIDEO = 21;
+	MANISRTB = 22;
+	CTRIP = 23;
 };
 enum InteractionType {
 	NO_INTERACT = 0;
@@ -207,6 +215,8 @@ message Client {
 	optional Version	version = 2;
 	optional string requestId = 3;
 	optional bool isValid = 4;
+	optional string SDK_security_check_version = 5;
+	optional string security_strategy = 6;
 };
 
 message DspReqInfo {
@@ -222,6 +232,7 @@ message DspReqInfo {
 	optional int64	blackMediaFilterTime = 10;
 	optional int64	fixClickTime = 11;
 	optional string	dspadslotid = 12;
+	optional int32  embeddingNum = 13;
 };
 
 message AdInfo {
@@ -270,8 +281,29 @@ message AdInfo {
     optional uint64 boost_cpm = 43; //冷启动cpm
 	optional uint64 is_new_ad = 44; //是否为新广告
 	optional uint64 boost_win = 45; //是否为通过boost赢得竞价
-	optional int64 content_id = 46; //文章id
+	optional uint32 bid_ocpc = 46; //当启用ocpc时计算出的bid值
+	optional uint32 is_ocpc = 47; //是否启用ocpc
+	optional string ocpc_log = 48; //记录ocpc计算中的变量，供ocpc观测使用
+	optional uint32 ocpc_step = 49; // 标记进行的是ocpc的哪个阶段，0：未启用ocpc，1：第一阶段(cpc计价)，2：第二阶段(ocpc计价)
+	optional int64 ocpc_bid_update_time = 50; //ocpc出价最后更新时间
+	optional int64 calc_ocpc_bid_result = 51; //ocpc计价的结果
+	optional double bid_adjustment = 52; //二价率调整值
+	optional int32 is_content_category = 53; //是否支持详情页定向广告
+	optional int32 is_api_callback = 54;
+	optional int32 conversion_goal = 55; // 转化目标，1.安装，2.激活，3.表单，
+	optional int32 dynamic_material_type = 56; //动态商品库 1：vip
+    optional VipDmt vip_dmt = 57; //唯品会动态库参数
+    optional uint32 white_user_ad_corner = 58; // 白名单用户广告无角标，1：生效，0：无效
+	optional string bs_rank_tag = 59;
 };
+
+message VipDmt {
+    optional int32 vip_first_category = 1; // vip的类型
+    optional int64 vip_price = 2; // vip的现价
+	optional int64 vip_value = 3; // vip的原价
+	optional int32 vip_title_template = 4; // vip的标题模板
+	optional int64 vip_outer_id = 5; // vip商品outer id
+}
 
 message AdDspRet {
 	required AdSrc src = 1;
@@ -287,6 +319,8 @@ message Location {
 	optional double lnt = 6; // 经度
 	optional double lat = 7; // 纬度
 	optional int64 locTime = 8; // 获取经纬度的时间
+	optional string gps_province = 9; // gps省份
+	optional string gps_city = 10; // gps城市
 }
 
 message InterestItem {
