@@ -141,8 +141,8 @@ object Behavior2RedisCvr {
         hashSeq("m23", "int")($"r_adclass_4_7").alias("m23")
       ).persist()
 
-    ud_features.coalesce(50).write.mode("overwrite")
-      .parquet(s"/user/cpc/wy/novel/features_cvr/ud-$date")
+//    ud_features.coalesce(50).write.mode("overwrite")
+//      .parquet(s"/user/cpc/wy/novel/features_cvr/ud-$date")
 
     ud_features.show()
 
