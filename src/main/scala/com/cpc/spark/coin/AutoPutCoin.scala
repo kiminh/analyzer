@@ -83,7 +83,7 @@ object AutoPutCoin {
                |and media_appsid in ('80000001','80000002')
                |and adslot_type in (1, 2, 3)
                |and ideaid > 0
-               |and userid not in (1551448, 1546636, 1557412)
+               |and ideaid not in (2391911, 2385002, 2388289, 2391495, 2381868, 2391641, 2330249, 2384970, 2391533, 2360176, 2391895, 2391881, 2390834)
              """.stripMargin
 
         val mlFeature = spark.sql(mlFeatureSql)
