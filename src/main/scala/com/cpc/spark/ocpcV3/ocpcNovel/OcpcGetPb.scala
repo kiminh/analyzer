@@ -45,7 +45,7 @@ object OcpcGetPb {
       .filter(s"conversion_goal is not null")
       .join(adclassCPA, Seq("new_adclass"), "left_outer")
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "new_adclass", "avg_cpa1", "avg_cpa2")
-      .withColumn("avg_cpa", when(col("conversion_goal")===1, col("avg_cpa1")).otherwise("avg_cpa2"))
+      .withColumn("avg_cpa", when(col("conversion_goal")===1, col("avg_cpa1")).otherwise(col("avg_cpa2")))
       .withColumn("cpa_history_old", col("cpa_history"))
       .withColumn("cpa_history", when(col("cpa_history").isNull || col("cpa_history") === -1, col("avg_cpa")).otherwise(col("cpa_history")))
       .withColumn("date", lit(date))
