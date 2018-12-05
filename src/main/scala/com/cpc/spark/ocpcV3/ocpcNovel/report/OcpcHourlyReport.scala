@@ -117,6 +117,22 @@ object OcpcHourlyReport {
     val result = data
       .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
       .withColumn("cpa_ratio", col("cpa_given") * 1.0 / col("cpa_real"))
+      .withColumn("is_cpa_ok", when(col("cpa_ratio")>=0.8, 1).otherwise(0))
+      .withColumn("impression", col("show_cnt"))
+      .withColumn("click", col("ctr_cnt"))
+      .withColumn("conversion", col("cvr_cnt"))
+      .withColumn("ctr", col("click") * 1.0 / col("impression"))
+      .withColumn("click_cvr", col("conversion") * 1.0 / col("click"))
+      .withColumn("show_cvr", col("conversion") * 1.0 / col("impression"))
+      .withColumn("acp", col("cost") * 1.0 / col("click"))
+      .withColumn("step2_click_percent", col("step2_percent"))
+
+    val resultDF = result
+      .select("unitid", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+    resultDF
   }
 
 }

@@ -7,6 +7,15 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcUtils {
+  def getTimeRangeSql(startDate: String, startHour: String, endDate: String, endHour: String): String = {
+    if (startDate.equals(endDate)) {
+      return s"(`date` = '$startDate' and hour <= '$endHour' and hour >= '$startHour')"
+    }
+    return s"((`date` = '$startDate' and hour >= '$startHour') " +
+      s"or (`date` = '$endDate' and hour <= '$endHour') " +
+      s"or (`date` > '$startDate' and `date` < '$endDate'))"
+  }
+
   def getTimeRangeSql2(startDate: String, startHour: String, endDate: String, endHour: String): String = {
     if (startDate.equals(endDate)) {
       return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"

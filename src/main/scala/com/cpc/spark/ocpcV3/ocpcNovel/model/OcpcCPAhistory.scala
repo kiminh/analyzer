@@ -3,7 +3,7 @@ package com.cpc.spark.ocpcV3.ocpcNovel.model
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
+import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.ocpc.utils.OcpcUtils.getIdeaUpdates
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
@@ -21,20 +21,21 @@ object OcpcCPAhistory {
     val cpaList = calculateCPA(date, hour, spark)
     val result = checkCPA(cpaList, date, hour, spark)
 //    dl_cpc.ocpcv3_novel_cpa_history_hourly
-//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly")
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_cpa_history_hourly")
+    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly")
+//    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_cpa_history_hourly")
     println(s"succesfully save data into table: dl_cpc.ocpcv3_novel_cpa_history_hourly")
   }
 
   def calculateCPA(date: String, hour: String, spark: SparkSession) = {
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
+    // 计算日期周期
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val end_date = sdf.parse(date)
     val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
+    calendar.setTime(end_date)
+    calendar.add(Calendar.DATE, -7)
+    val start_date = calendar.getTime
+    val date1 = sdf.format(start_date)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
     // cost数据
     val sqlRequestCostData =
