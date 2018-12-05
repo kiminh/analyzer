@@ -37,7 +37,8 @@ object OcpcCPAhistory {
     calendar.add(Calendar.DATE, -7)
     val start_date = calendar.getTime
     val date1 = sdf.format(start_date)
-    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
+//    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
+    val selectCondition = s"`date`='$date1'"
 
     // cost数据
     val sqlRequestCostData =
@@ -147,6 +148,16 @@ object OcpcCPAhistory {
       .filter("cvr2cnt>1")
     cvr2Data.createOrReplaceTempView("cvr2_data")
 
+    // TODO adclass cpa
+    val cvr1AdclassData = cvr1Data
+      .groupBy("new_adclass")
+      .agg(avg(col("cpa1")).alias("avg_cpa1"))
+    cvr1AdclassData.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr1_adclass_cpa")
+    val cvr2AdclassData = cvr2Data
+      .groupBy("new_adclass")
+      .agg(avg(col("cpa2")).alias("avg_cpa2"))
+    cvr2AdclassData.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr2_adclass_cpa")
+
     // 取分位数
     // cvr1
     val sqlRequest1 =
@@ -208,6 +219,5 @@ object OcpcCPAhistory {
       .withColumn("hour", lit(hour))
     resultDF
   }
-
 
 }
