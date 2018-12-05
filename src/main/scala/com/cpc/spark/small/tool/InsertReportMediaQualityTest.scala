@@ -21,7 +21,8 @@ object InsertReportMediaQualityTest {
                            isshow: Int = 0,
                            isclick: Int = 0,
                            trace_type: String,
-                           total: Int) {
+                           total: Int = 0,
+                           planid: Int = 0) {
 
   }
 
@@ -45,9 +46,9 @@ object InsertReportMediaQualityTest {
     val unionLogData = ctx
       .sql(
         """
-          |SELECT searchid,media_appsid,adslotid,adslot_type,isshow,isclick
+          |SELECT searchid,media_appsid,adslotid,adslot_type,isshow,isclick,planid
           |FROM dl_cpc.cpc_union_log
-          |WHERE date="%s" AND ext["adclass"].int_value=132102100 AND userid=1001028 AND isshow>0
+          |WHERE date="%s" AND ext["adclass"].int_value=132102100 AND userid=1001028 AND isshow>0 AND planid>0
         """.stripMargin.format(argDay))
       .rdd
       .map {
@@ -58,11 +59,12 @@ object InsertReportMediaQualityTest {
           val adslot_type = x.getInt(3)
           val isshow = x.getInt(4)
           val isclick = x.getInt(5)
-          (adslotid, (UnionLogInfo(searchid, mediaid, adslotid, adslot_type, isshow, isclick, "", 0)))
+          val planid = x.getInt(6)
+          ((adslotid, planid), (UnionLogInfo(searchid, mediaid, adslotid, adslot_type, isshow, isclick, "", 0, planid)))
       }
       .reduceByKey {
         (a, b) =>
-          UnionLogInfo(a.searchid, a.mediaid, a.adslotid, a.adslot_type, a.isshow + b.isshow, a.isclick + b.isclick, "", 0)
+          UnionLogInfo(a.searchid, a.mediaid, a.adslotid, a.adslot_type, a.isshow + b.isshow, a.isclick + b.isclick, "", 0, a.planid)
       }
       .repartition(50)
       .cache()
@@ -70,7 +72,7 @@ object InsertReportMediaQualityTest {
 
     val traceData = ctx.sql(
       """
-        |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslotid,cul.adslot_type,cutl.trace_type,cutl.duration
+        |SELECT DISTINCT cutl.searchid,cul.media_appsid,cul.adslotid,cul.adslot_type,cutl.trace_type,cutl.duration,cul.planid
         |FROM dl_cpc.cpc_union_trace_log cutl
         |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
         |WHERE cutl.date="%s" AND cul.date="%s" AND cul.ext["adclass"].int_value=132102100 AND cul.userid=1001028 AND cul.isclick>0
@@ -84,12 +86,14 @@ object InsertReportMediaQualityTest {
           val adslot_type = x.getInt(3)
           val duration = x.getInt(5)
           val trace_type = if (x.getString(4) == "stay") "%s%d".format(x.getString(4), x.getInt(5)) else x.getString(4)
-          ((adslotid, trace_type), (UnionLogInfo(searchid, mediaid, adslotid, adslot_type, 0, 0, trace_type, 1)))
+          val planid = x.getInt(6)
+          ((adslotid, planid, trace_type), (UnionLogInfo(searchid, mediaid, adslotid, adslot_type, 0, 0, trace_type, 1, planid)))
       }
       .reduceByKey {
         (a, b) =>
-          UnionLogInfo(a.searchid, a.mediaid, a.adslotid, a.adslot_type, 0, 0, a.trace_type, a.total + b.total)
+          UnionLogInfo(a.searchid, a.mediaid, a.adslotid, a.adslot_type, 0, 0, a.trace_type, a.total + b.total, a.planid)
       }
+      .filter(_._2.trace_type.length < 200)
       .map {
         x =>
           (x._2)
@@ -102,14 +106,14 @@ object InsertReportMediaQualityTest {
       .map {
         x =>
           val info = x._2
-          UnionLogInfo(info.searchid, info.mediaid, info.adslotid, info.adslot_type, 0, 0, "impression", info.isshow)
+          UnionLogInfo(info.searchid, info.mediaid, info.adslotid, info.adslot_type, 0, 0, "impression", info.isshow, info.planid)
       }
 
     val clickData = unionLogData
       .map {
         x =>
           val info = x._2
-          UnionLogInfo(info.searchid, info.mediaid, info.adslotid, info.adslot_type, 0, 0, "click", info.isclick)
+          UnionLogInfo(info.searchid, info.mediaid, info.adslotid, info.adslot_type, 0, 0, "click", info.isclick, info.planid)
       }
 
     val allData = impressionData
@@ -117,16 +121,16 @@ object InsertReportMediaQualityTest {
       .union(traceData)
       .map {
         x =>
-          (x.mediaid, x.adslotid, x.adslot_type, x.trace_type, x.total, argDay)
+          (x.mediaid, x.adslotid, x.adslot_type, x.trace_type, x.total, argDay, x.planid)
       }
       .repartition(50)
       .cache()
 
     var insertDataFrame = ctx.createDataFrame(allData)
-      .toDF("media_id", "adslot_id", "adslot_type", "target_type", "target_value", "date")
+      .toDF("media_id", "adslot_id", "adslot_type", "target_type", "target_value", "date", "plan_id")
     println("insertDataFrame count", insertDataFrame.count())
 
-    insertDataFrame.show(100)
+    insertDataFrame.show(10)
 
     clearReportMediaQualityTest(argDay)
 

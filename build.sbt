@@ -13,7 +13,8 @@ javacOptions ++= Seq(
 PB.protocVersion := "-v:com.google.protobuf:protoc:3.0.0"
 PB.pythonExe := "C:/Python27/Python.exe"
 PB.targets in Compile := Seq(
-  scalapb.gen() -> (sourceManaged in Compile).value
+  PB.gens.java -> (sourceManaged in Compile).value,
+  scalapb.gen(javaConversions = true) -> (sourceManaged in Compile).value
 )
 
 libraryDependencies ++= Seq(
@@ -26,7 +27,8 @@ libraryDependencies ++= Seq(
   "com.trueaccord.scalapb" %% "scalapb-runtime-grpc" % com.trueaccord.scalapb.compiler.Version.scalapbVersion,
   "com.google.code.gson" % "gson" % "2.8.1",
   "com.alibaba" % "fastjson" % "1.2.39",
-  "org.scalaj" %% "scalaj-http" % "2.3.0"
+  "org.scalaj" %% "scalaj-http" % "2.3.0",
+  "org.apache.commons" % "commons-math3" % "3.5"
 )
 
 assemblyMergeStrategy in assembly := {
