@@ -61,7 +61,6 @@ object Behavior2RedisNovelCvr {
          |
          |from dl_cpc.cpc_user_behaviors_novel_cvr
          |where load_date in ('${getDays(date, 1, 7)}')
-         |    and rn <= 1000
          |group by uid
       """.stripMargin)
       .select(

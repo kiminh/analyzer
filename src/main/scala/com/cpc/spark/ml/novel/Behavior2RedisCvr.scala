@@ -50,20 +50,29 @@ object Behavior2RedisCvr {
          |       collect_set(if(load_date='${getDay(date, 3)}',show_ideaid,null)) as s_ideaid_3,
          |       collect_set(if(load_date='${getDay(date, 3)}',show_adclass,null)) as s_adclass_3,
          |
-         |       collect_list(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
-         |       collect_list(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
-         |
-         |       collect_list(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
-         |       collect_list(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
-         |
-         |       collect_list(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
-         |       collect_list(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3,
-         |
-         |       collect_list(if(load_date>='${getDay(date, 7)}'
+         |       collect_set(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
+         |       collect_set(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
+         |       collect_set(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
+         |       collect_set(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
+         |       collect_set(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
+         |       collect_set(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3,
+         |       collect_set(if(load_date>='${getDay(date, 7)}'
          |                  and load_date<='${getDay(date, 4)}',click_ideaid,null)) as c_ideaid_4_7,
          |       collect_list(if(load_date>='${getDay(date, 7)}'
-         |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7
-         |from dl_cpc.cpc_user_behaviors_novel
+         |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7,
+         |
+         |       collect_set(if(load_date='${getDay(date, 1)}',cvr_ideaid,null)) as r_ideaid_1,
+         |       collect_set(if(load_date='${getDay(date, 1)}',cvr_adclass,null)) as r_adclass_1,
+         |       collect_set(if(load_date='${getDay(date, 2)}',cvr_ideaid,null)) as r_ideaid_2,
+         |       collect_set(if(load_date='${getDay(date, 2)}',cvr_adclass,null)) as r_adclass_2,
+         |       collect_set(if(load_date='${getDay(date, 3)}',cvr_ideaid,null)) as r_ideaid_3,
+         |       collect_set(if(load_date='${getDay(date, 3)}',cvr_adclass,null)) as r_adclass_3,
+         |       collect_set(if(load_date>='${getDay(date, 7)}'
+         |                  and load_date<='${getDay(date, 4)}',cvr_ideaid,null)) as r_ideaid_4_7,
+         |       collect_list(if(load_date>='${getDay(date, 7)}'
+         |                  and load_date<='${getDay(date, 4)}',cvr_adclass,null)) as r_adclass_4_7
+         |
+         |from dl_cpc.cpc_user_behaviors_novel_cvr
          |where load_date in ('${getDays(date, 1, 7)}')
          |group by uid
       """.stripMargin
@@ -83,6 +92,9 @@ object Behavior2RedisCvr {
       s"""
          |select uid,book_id,first_category_id,second_category_id,third_category_id
          |from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
+         |  and uid not like "%.%"
+         |  and uid not like "%000000%"
+         |  and length(uid) in (14, 15, 36)
       """.stripMargin
 
 
@@ -126,11 +138,17 @@ object Behavior2RedisCvr {
         hashSeq("ud19#", "int")($"r_adclass_2").alias("ud19"),
         hashSeq("ud20#", "int")($"r_adclass_3").alias("ud20"),
         hashSeq("ud21#", "int")($"r_ideaid_4_7").alias("ud21"),
-        hashSeq("ud22#", "int")($"r_adclass_4_7").alias("ud22")
+        hashSeq("ud22#", "int")($"r_adclass_4_7").alias("ud22"),
+        hashSeq("ud23#", "int")($"book_id").alias("ud23"),
+        hashSeq("ud24#", "int")($"first_category_id").alias("ud24"),
+        hashSeq("ud25#", "int")($"second_category_id").alias("ud25"),
+        hashSeq("ud26#", "int")($"third_category_id").alias("ud26"),
+        hashSeq("ud27#", "string")($"word1").alias("ud27"),
+        hashSeq("ud28#", "string")($"word3").alias("ud28")
       ).persist()
 
     ud_features.coalesce(50).write.mode("overwrite")
-      .parquet("/user/cpc/wy/novel/features_cvr/ud")
+      .parquet(s"/user/cpc/wy/novel/features_cvr/ud-$date")
 
     ud_features.show()
 
@@ -159,7 +177,7 @@ object Behavior2RedisCvr {
 
     ad_features.show()
 
-    Utils.DnnFeatures2Redis.multiHot2Redis(ad_features, "n_id_", "int")
+   // Utils.DnnFeatures2Redis.multiHot2Redis(ad_features, "n_id_", "int")
 
   }
 
