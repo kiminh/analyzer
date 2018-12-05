@@ -135,7 +135,7 @@ object Behavior2RedisV4 {
 
     ud_features.show()
 
-    Utils.DnnFeatures2Redis.multiHot2Redis(ud_features, "n4_", "string")
+    Utils.DnnFeatures2Redis.multiHot2Redis(ud_features, "n6_", "string")
   }
 
   private def saveAdDailyFeatures(spark: SparkSession, date: String): Unit = {
