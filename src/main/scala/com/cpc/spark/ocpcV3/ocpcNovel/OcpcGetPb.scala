@@ -31,6 +31,8 @@ object OcpcGetPb {
       .where(s"`date`='$date' and `hour`='$hour'")
       .select("new_adclass", "avg_cpa1", "avg_cpa2")
 
+    // todo
+    // 检查cpa_history=0
     val data = cvrData
       .join(kvalue, Seq("unitid"), "left_outer")
       .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt", "new_adclass")
