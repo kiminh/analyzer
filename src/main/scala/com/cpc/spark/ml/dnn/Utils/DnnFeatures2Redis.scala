@@ -30,7 +30,7 @@ object DnnFeatures2Redis {
         val key = keyPrefix + rec.get(0).toString
         for (i <- 1 until col_length) {
           val f = rec.getAs[Seq[Long]](i)
-          group = group ++ Array.tabulate(f.length)(x => i)
+          group = group ++ Array.tabulate(f.length)(x => i - 1)
           hashcode = hashcode ++ f
         }
         redis.setex(key, 3600 * 24 * 7, DnnMultiHot(group, hashcode).toByteArray)
