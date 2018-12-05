@@ -66,6 +66,7 @@ object AutoPutCoin {
                |and media_appsid in ('80000001','80000002')
                |and ideaid > 0
                |and adslot_type in (1, 2, 3)
+               |and userid not in (1551448, 1546636, 1557412)
              """.stripMargin
 
         val apiUnionLog = spark.sql(apiUnionLogSql)
@@ -82,6 +83,7 @@ object AutoPutCoin {
                |and media_appsid in ('80000001','80000002')
                |and adslot_type in (1, 2, 3)
                |and ideaid > 0
+               |and userid not in (1551448, 1546636, 1557412)
              """.stripMargin
 
         val mlFeature = spark.sql(mlFeatureSql)
@@ -232,5 +234,4 @@ object AutoPutCoin {
                     var date: String = "",
                     var hour: String = "")
 }
-
 
