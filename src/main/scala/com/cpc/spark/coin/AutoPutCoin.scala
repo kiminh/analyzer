@@ -84,7 +84,7 @@ object AutoPutCoin {
                |and ideaid > 0
                |and ideaid not in (2391911, 2385002, 2388289, 2391495, 2381868, 2391641, 2330249, 2384970, 2391533, 2360176, 2391895, 2391881, 2390834)
              """.stripMargin
-
+        println(mlFeatureSql)
         val mlFeature = spark.sql(mlFeatureSql)
         println("mlFeature 's count is " + mlFeature.rdd.count())
 
