@@ -40,7 +40,7 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
       .join(cpaHistory, Seq("unitid"), "left_outer")
 //      .filter("cpa_history is not null and cpa_history>0 and kvalue>=0")
-      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal")
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "new_adclass")
       .withColumn("conversion_goal", when(col("conversion_goal").isNull && col("cvr2cnt")>0, 2).otherwise(1))
       .filter(s"conversion_goal is not null")
       .join(adclassCPA, Seq("new_adclass"), "left_outer")
