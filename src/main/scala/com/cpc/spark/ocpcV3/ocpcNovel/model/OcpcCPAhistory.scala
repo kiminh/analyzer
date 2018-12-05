@@ -150,13 +150,13 @@ object OcpcCPAhistory {
     val cvr1AdclassData = cvr1Data
       .groupBy("new_adclass")
       .agg(avg(col("cpa1")).alias("avg_cpa1"))
-    cvr1AdclassData.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr1_adclass_cpa")
+//    cvr1AdclassData.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr1_adclass_cpa")
     val cvr2AdclassData = cvr2Data
       .groupBy("new_adclass")
       .agg(avg(col("cpa2")).alias("avg_cpa2"))
-    cvr2AdclassData.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr2_adclass_cpa")
-    val adclassCPA = cvr1Data
-      .join(cvr2Data, Seq("new_adclass"), "outer")
+//    cvr2AdclassData.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr2_adclass_cpa")
+    val adclassCPA = cvr1AdclassData
+      .join(cvr2AdclassData, Seq("new_adclass"), "outer")
       .select("new_adclass", "avg_cpa1", "avg_cpa2")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
