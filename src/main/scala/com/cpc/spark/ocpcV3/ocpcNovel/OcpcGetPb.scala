@@ -124,8 +124,6 @@ object OcpcGetPb {
          |  dl_cpc.ocpcv3_ctr_data_hourly
          |WHERE
          |  $selectCondition
-         |AND
-         |  media_appsid in ("80001098","80001292")
        """.stripMargin
     println(sqlRequestCtrData)
     val ctrData = spark
