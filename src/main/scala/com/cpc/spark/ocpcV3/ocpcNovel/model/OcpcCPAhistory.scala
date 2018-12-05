@@ -64,6 +64,7 @@ object OcpcCPAhistory {
         sum(col("total_bid")).alias("total_bid"),
         sum(col("ctr_cnt")).alias("ctrcnt"))
     costData.show(10)
+    costData.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_costdata")
 
     // cvr data
     // cvr1 or cvr3 data
@@ -86,6 +87,7 @@ object OcpcCPAhistory {
       .groupBy("unitid", "adclass")
       .agg(sum(col("cvr1_cnt")).alias("cvr1cnt"))
     cvr1Data.show(10)
+    cvr1Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr1data")
 
     // cvr2data
     val sqlRequestCvr2Data =
@@ -107,6 +109,7 @@ object OcpcCPAhistory {
       .groupBy("unitid", "adclass")
       .agg(sum(col("cvr2_cnt")).alias("cvr2cnt"))
     cvr2Data.show(10)
+    cvr2Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr2data")
 
     // 关联数据
     val resultDF = costData
