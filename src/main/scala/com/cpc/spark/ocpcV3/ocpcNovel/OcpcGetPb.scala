@@ -119,7 +119,7 @@ object OcpcGetPb {
       s"""
          |SELECT
          |  unitid,
-         |  ctr_cnt,
+         |  ctr_cnt
          |FROM
          |  dl_cpc.ocpcv3_ctr_data_hourly
          |WHERE
