@@ -157,6 +157,7 @@ object OcpcCPAhistory {
     cvr2AdclassData.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr2_adclass_cpa")
     val adclassCPA = cvr1Data
       .join(cvr2Data, Seq("new_adclass"), "outer")
+      .select("new_adclass", "avg_cpa1", "avg_cpa2")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
     adclassCPA.write.mode("overwrite").saveAsTable("test.ocpcv3_adclass_cpa_history_hourly")
