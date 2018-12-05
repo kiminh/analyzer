@@ -49,7 +49,7 @@ object OcpcCPAhistory {
          |FROM
          |  dl_cpc.ocpcv3_ctr_data_hourly
          |WHERE
-         |  `date`='$date1'
+         |  $selectCondition
          |AND
          |  media_appsid in ("80000001", "80000002")
        """.stripMargin
@@ -74,7 +74,7 @@ object OcpcCPAhistory {
          |FROM
          |  dl_cpc.ocpcv3_cvr1_data_hourly
          |WHERE
-         |  `date`='$date1'
+         |  $selectCondition
          |AND
          |  media_appsid in ("80000001", "80000002")
        """.stripMargin
@@ -95,7 +95,7 @@ object OcpcCPAhistory {
          |FROM
          |  dl_cpc.ocpcv3_cvr2_data_hourly
          |WHERE
-         |  `date`='$date1'
+         |  $selectCondition
          |AND
          |  media_appsid in ("80000001", "80000002")
        """.stripMargin
