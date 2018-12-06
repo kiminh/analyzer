@@ -32,7 +32,7 @@ object OcpcCPAhistory {
     val end_date = sdf.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(end_date)
-    calendar.add(Calendar.DATE, -7)
+    calendar.add(Calendar.DATE, -1)
     val start_date = calendar.getTime
     val date1 = sdf.format(start_date)
 //    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
