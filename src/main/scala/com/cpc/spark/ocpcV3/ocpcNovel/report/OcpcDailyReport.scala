@@ -13,7 +13,6 @@ object OcpcDailyReport {
 
     val summaryReport = getHourlyReport(date, hour, spark)
     val tableName = "dl_cpc.ocpcv3_novel_report_summary_hourly"
-//    summaryReport.write.mode("overwrite").saveAsTable(tableName)
     summaryReport.write.mode("overwrite").insertInto(tableName)
     println(s"successfully save table into $tableName")
   }

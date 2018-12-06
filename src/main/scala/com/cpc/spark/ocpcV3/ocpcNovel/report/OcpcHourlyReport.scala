@@ -1,9 +1,15 @@
 package com.cpc.spark.ocpcV3.ocpcNovel.report
 
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import java.util.Properties
+import com.typesafe.config.ConfigFactory
+
+import org.apache.spark.sql.{DataFrame, SparkSession, SaveMode}
 import org.apache.spark.sql.functions._
 
 object OcpcHourlyReport {
+  var mariadb_write_url = ""
+  val mariadb_write_prop = new Properties()
+
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
@@ -13,12 +19,11 @@ object OcpcHourlyReport {
 
     // TODO 测试
     val rawData = getHourlyReport(date, hour, spark)
-//    rawData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_data_detail_hourly")
     val result = calculateData(rawData, date, hour, spark)
     val tableName = "dl_cpc.ocpcv3_novel_report_detail_hourly"
-//    result.write.mode("overwrite").saveAsTable(tableName)
-    result.write.mode("overwrite").insertInto(tableName)
+//    result.write.mode("overwrite").insertInto(tableName)
     println(s"successfully save table into $tableName")
+    saveDataToReport(result, spark)
   }
 
   def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
@@ -139,5 +144,30 @@ object OcpcHourlyReport {
 
     resultDF
   }
+
+  def saveDataToReport(data: DataFrame, spark: SparkSession) = {
+    val conf = ConfigFactory.load()
+    val tableName = "report2.report_ocpc_novel_data_detail"
+    mariadb_write_url = conf.getString("mariadb.report2_write.url")
+    mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
+    mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
+    mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
+
+    println("#################################")
+    println("count:" + data.count())
+    println("url: " + conf.getString("mariadb.report2_write.url"))
+    println("table name: " + tableName)
+    println("user: " + conf.getString("mariadb.report2_write.user"))
+    println("password: " + conf.getString("mariadb.report2_write.password"))
+    println("driver: " + conf.getString("mariadb.report2_write.driver"))
+    data.show(10)
+
+//    data
+//      .write
+//      .mode(SaveMode.Append)
+//      .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
+
+  }
+
 
 }
