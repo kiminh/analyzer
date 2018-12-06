@@ -159,6 +159,7 @@ object OcpcPIDwithCPA {
 
     // case2
     // table name: dl_cpc.ocpcv3_novel_pb_hourly
+    // 去重
     val case2 = spark
       .table("test.ocpcv3_novel_pb_v1_hourly")
       .withColumn("kvalue2", col("kvalue"))
