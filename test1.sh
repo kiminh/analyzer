@@ -20,7 +20,7 @@ train=(
     hdfs://emr-cluster/user/cpc/wy/novel/ctr_v3/dnntrain-${y1}/part*
 )
 
-test= hdfs://emr-cluster/user/cpc/wy/novel/ctr_v3/dnntrain-${y1}/part-r-00[9]**
+test= hdfs://emr-cluster/user/cpc/wy/novel/ctr_v3/dnntrain-${y1}/part-r-009**
 
 ip=`ifconfig eth0 | grep "inet" | awk '{ print $2}'`
 #ip=192.168.80.43
@@ -47,7 +47,7 @@ ssh -l ${user} -p 3072 ci.qtt6.cn build qtt_rec_ml-start-job -s -v \
     -p GIT_NAME="git@git.qutoutiao.net:songchengru/dl-demo.git" \
     -p SCM_REVISION="${branch}" \
     -p TRAIN_FILE="$( IFS=$','; echo "${train[*]}" )" \
-    -p TEST_FILE="${test}" \
+    -p TEST_FILE="$test" \
     -p OTHER_PARAMS="$( IFS=$';'; echo "${other_params[*]}" )" > /home/cpc/wy/tmp_ctr/jenkins_daily_${version}.log
 
 cat /home/cpc/wy/tmp_ctr/jenkins_daily_${version}.log
