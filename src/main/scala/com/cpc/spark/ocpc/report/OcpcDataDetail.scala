@@ -19,7 +19,8 @@ object OcpcDataDetail {
     val hour = args(1).toString
 
     val data = exportHourlyReport(date, hour, spark)
-    saveDataDetailToReport(data, spark)
+    data.write.mode("overwrite").saveAsTable("test.ocpc_detail_report20181505")
+//    saveDataDetailToReport(data, spark)
   }
 
   def exportHourlyReport(date: String, hour: String, spark: SparkSession) = {
