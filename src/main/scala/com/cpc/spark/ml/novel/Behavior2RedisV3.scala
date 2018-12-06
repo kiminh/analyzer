@@ -130,8 +130,8 @@ object Behavior2RedisV3 {
         hashSeq("m21", "string")($"word3").alias("m21")
       ).persist()
 
-//    ud_features.coalesce(50).write.mode("overwrite")
-//      .parquet("/user/cpc/wy/novel/features/ud")
+    ud_features.coalesce(50).write.mode("overwrite")
+      .parquet(s"/user/cpc/wy/novel/features/ud-$date")
 
     ud_features.show()
 
