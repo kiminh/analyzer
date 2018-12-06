@@ -52,7 +52,7 @@ object OcpcGetPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly_middle")
+    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly_middle")
 
 //    unitid          int,
 //    cpa_history     double,
