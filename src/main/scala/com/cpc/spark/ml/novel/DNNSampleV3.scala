@@ -278,6 +278,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
       .map(x => (x._1, x._2.distinct))
       .toDF("uid", "pkgs")
       .join(spark.sql(ud_sql1), Seq("uid"), "outer")
+      .join(spark.sql(ud_sql2), Seq("uid"), "outer")
       .join(spark.sql(ud_sql3), Seq("uid"), "outer")
       .select($"uid",
         hashSeq("ud0#", "string")($"pkgs").alias("ud0"),
