@@ -24,5 +24,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.ml.novel.Behavior2RedisNovelV2 \
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2018-11-27
+    --class com.cpc.spark.ml.novel.DNNSampleV3 \
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2018-12-04 /user/cpc/wy/novel/ctr_v3 2018-12-04 /user/cpc/wy/dnn/ctr_v3
