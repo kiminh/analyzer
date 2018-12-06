@@ -12,14 +12,14 @@ object OcpcDailyReport {
     val hour = args(1).toString
 
     val summaryReport = getHourlyReport(date, hour, spark)
-    val tableName = "test.ocpcv3_novel_report_summary_hourly"
-    summaryReport.write.mode("overwrite").saveAsTable(tableName)
+    val tableName = "dl_cpc.ocpcv3_novel_report_summary_hourly"
+//    summaryReport.write.mode("overwrite").saveAsTable(tableName)
+    summaryReport.write.mode("overwrite").insertInto(tableName)
     println(s"successfully save table into $tableName")
   }
 
   def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
-    // todo  表名
-    val tableName = "test.ocpcv3_novel_report_detail_hourly"
+    val tableName = "dl_cpc.ocpcv3_novel_report_detail_hourly"
 
     // 基础统计
     val sqlRequest1 =

@@ -15,8 +15,9 @@ object OcpcHourlyReport {
     val rawData = getHourlyReport(date, hour, spark)
 //    rawData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_data_detail_hourly")
     val result = calculateData(rawData, date, hour, spark)
-    val tableName = "test.ocpcv3_novel_report_detail_hourly"
-    result.write.mode("overwrite").saveAsTable(tableName)
+    val tableName = "dl_cpc.ocpcv3_novel_report_detail_hourly"
+//    result.write.mode("overwrite").saveAsTable(tableName)
+    result.write.mode("overwrite").insertInto(tableName)
     println(s"successfully save table into $tableName")
   }
 
