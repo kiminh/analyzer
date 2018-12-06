@@ -82,6 +82,7 @@ object AutoPutCoin {
                |and media_appsid in ('80000001','80000002')
                |and adslot_type in (1, 2, 3)
                |and ideaid > 0
+               |and adclass not in (134100100, 107101100, 107102100, 107103100, 107104100, 107105100, 107106100, 107107100, 107108100)
                |and ideaid not in (2391911, 2385002, 2388289, 2391495, 2381868, 2391641, 2330249, 2384970, 2391533, 2360176, 2391895, 2391881, 2390834)
              """.stripMargin
         println(mlFeatureSql)
