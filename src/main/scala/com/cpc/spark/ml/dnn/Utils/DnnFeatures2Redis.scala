@@ -52,7 +52,7 @@ object DnnFeatures2Redis {
       hashcode = hashcode ++ Seq(Murmur3Hash.stringHash64(columns(i) + "#", 0))
     }
 
-    redis.setex(keyPrefix + "default", 3600 * 24 * 7, DnnMultiHot(group, hashcode).toByteArray)
+    redis.setex(keyPrefix + "default", 3600 * 24 * 2, DnnMultiHot(group, hashcode).toByteArray)
     redis.disconnect
   }
 
