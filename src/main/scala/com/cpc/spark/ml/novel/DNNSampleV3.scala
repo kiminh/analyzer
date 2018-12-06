@@ -40,55 +40,42 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
     * @param adtype
     * @return
     */
-  private def getAsFeature(date: String, adtype: Int = 1): DataFrame = {
+  private def getAsFeature(date: String): DataFrame = {
     import spark.implicits._
     val as_sql =
       s"""
-         |select a.searchid,
-         |  if(coalesce(c.label, b.label, 0) > 0, array(1, 0), array(0, 1)) as cvr_label,
-         |  if(a.isclick>0, array(1,0), array(0,1)) as label,
-         |  a.media_type, a.media_appsid as mediaid,
-         |  a.ext['channel'].int_value as channel,
-         |  a.ext['client_type'].string_value as sdk_type,
+         |select if(isclick>0, array(1,0), array(0,1)) as label,
+         |  media_type, media_appsid as mediaid,
+         |  ext['channel'].int_value as channel,
+         |  ext['client_type'].string_value as sdk_type,
          |
-         |  a.adslot_type, a.adslotid,
+         |  adslot_type, adslotid,
          |
-         |  a.adtype, a.interaction, a.bid, a.ideaid, a.unitid, a.planid, a.userid,
-         |  a.ext_int['is_new_ad'] as is_new_ad, a.ext['adclass'].int_value as adclass,
-         |  a.ext_int['siteid'] as site_id,
+         |  adtype, interaction, bid, ideaid, unitid, planid, userid,
+         |  ext_int['is_new_ad'] as is_new_ad, ext['adclass'].int_value as adclass,
+         |  ext_int['siteid'] as site_id,
          |
-         |  a.os, a.network, a.ext['phone_price'].int_value as phone_price,
-         |  a.ext['brand_title'].string_value as brand,
+         |  os, network, ext['phone_price'].int_value as phone_price,
+         |  ext['brand_title'].string_value as brand,
          |
-         |  a.province, a.city, a.ext['city_level'].int_value as city_level,
+         |  province, city, ext['city_level'].int_value as city_level,
          |
-         |  a.uid, a.age, a.sex, a.ext_string['dtu_id'] as dtu_id,
+         |  uid, age, sex, ext_string['dtu_id'] as dtu_id,
          |
-         |  a.hour, a.ext_int['content_id'] as content_id,
-         |  a.ext_int['category'] as content_category
+         |  hour
          |
-         |from dl_cpc.cpc_union_log a
-         |left join dl_cpc.ml_cvr_feature_v1 b
-         |  on a.searchid=b.searchid
-         |  and b.label2=1
-         |  and b.date='$date'
-         |left join dl_cpc.ml_cvr_feature_v2 c
-         |  on a.searchid=c.searchid
-         |  and c.label=1
-         |  and c.date='$date'
-         |where a.`date` = '$date'
-         |  and a.isshow = 1 and a.ideaid > 0 and a.adslot_type = $adtype
-         |  and a.media_appsid in ("80000001", "80000002")
-         |  and a.uid not like "%.%"
-         |  and a.uid not like "%000000%"
-         |  and length(a.uid) in (14, 15, 36)
+         |from dl_cpc.cpc_union_log where `date` = '$date'
+         |  and isshow = 1 and ideaid > 0
+         |  and media_appsid in ("80001098", "80001292")
+         |  and uid not like "%.%"
+         |  and uid not like "%000000%"
       """.stripMargin
     println("============= as features ==============")
     println(as_sql)
 
     val data = spark.sql(as_sql).persist()
 
-    data.write.mode("overwrite").parquet(s"/user/cpc/dnn/raw_data_list/$date")
+    data.write.mode("overwrite").parquet(s"/user/cpc/wy/novel/raw_data/$date")
 
     data
       .select($"label",
@@ -156,7 +143,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id,
          |
-         |  hour, ext_int['content_id'] as content_id, ext_int['category'] as content_category
+         |  hour
          |
          |from dl_cpc.cpc_union_log where `date` = '$date' and hour=$hour
          |  and isshow = 1 and ideaid > 0 and adslot_type = $adtype
@@ -265,7 +252,17 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |where load_date='$date'
     """.stripMargin
 
-    println("============= user dayily features =============")
+    //用户点击过的文章id及分类
+    val ud_sql3 =
+      s"""
+         |select uid,book_id,first_category_id,second_category_id,third_category_id
+         |from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
+         |  and uid not like "%.%"
+         |  and uid not like "%000000%"
+         |  and length(uid) in (14, 15, 36)
+      """.stripMargin
+
+    println("============= user daily features =============")
     println(ud_sql0)
     println("-------------------------------------------------")
     println(ud_sql1)
@@ -302,7 +299,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
   }
 
   private def getUdFeature_hourly(date: String): DataFrame = {
-    spark.read.parquet("/user/cpc/dnn/features/ud")
+    spark.read.parquet("/user/cpc/wy/novel/features/ud")
   }
 
   /**
@@ -341,14 +338,13 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
     if (date.length == 10) {
       data = getAsFeature(date)
         .join(getUdFeature(date), Seq("uid"), "left")
-        .join(broadcast(getAdFeature(date)), Seq("ideaid"), "left")
+
     }
     else if (date.length == 13) {
       val dt = date.substring(0, 10)
       val h = date.substring(11, 13).toInt
       data = getAsFeature_hourly(dt, h)
         .join(getUdFeature_hourly(date), Seq("uid"), "left")
-        .join(broadcast(getAdFeature_hourly(date)), Seq("ideaid"), "left")
         .persist()
     } else {
       println(date)
@@ -361,7 +357,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
 
     //获取默认hash列表
     val columns = Seq("ud0", "ud1", "ud2", "ud3", "ud4", "ud5", "ud6", "ud7", "ud8", "ud9", "ud10",
-      "ud11", "ud12", "ud13", "ud14", "ud15", "ud16", "ad0")
+      "ud11", "ud12", "ud13", "ud14", "ud15", "ud16")
     val default_hash = for (col <- columns.zipWithIndex)
       yield (col._2, 0, Murmur3Hash.stringHash64(col._1 + "#", 0))
 
@@ -372,7 +368,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
         $"dense",
         mkSparseFeature(default_hash)(
           array($"ud0", $"ud1", $"ud2", $"ud3", $"ud4", $"ud5", $"ud6", $"ud7", $"ud8"
-            , $"ud9", $"ud10", $"ud11", $"ud12", $"ud13", $"ud14", $"ud15", $"ud16", $"ad0")
+            , $"ud9", $"ud10", $"ud11", $"ud12", $"ud13", $"ud14", $"ud15", $"ud16")
         ).alias("sparse")
       )
       .select(
