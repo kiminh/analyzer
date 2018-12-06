@@ -138,11 +138,17 @@ object Behavior2RedisCvr {
         hashSeq("ud19#", "int")($"r_adclass_2").alias("ud19"),
         hashSeq("ud20#", "int")($"r_adclass_3").alias("ud20"),
         hashSeq("ud21#", "int")($"r_ideaid_4_7").alias("ud21"),
-        hashSeq("ud22#", "int")($"r_adclass_4_7").alias("ud22")
+        hashSeq("ud22#", "int")($"r_adclass_4_7").alias("ud22"),
+        hashSeq("ud23#", "int")($"book_id").alias("ud23"),
+        hashSeq("ud24#", "int")($"first_category_id").alias("ud24"),
+        hashSeq("ud25#", "int")($"second_category_id").alias("ud25"),
+        hashSeq("ud26#", "int")($"third_category_id").alias("ud26"),
+        hashSeq("ud27#", "string")($"word1").alias("ud27"),
+        hashSeq("ud28#", "string")($"word3").alias("ud28")
       ).persist()
 
     ud_features.coalesce(50).write.mode("overwrite")
-      .parquet(s"/user/cpc/wy/novel/features_cvr/ud-$date")
+      .parquet(s"/user/cpc/wy/novel/features_cvr/ud")
 
     ud_features.show()
 
