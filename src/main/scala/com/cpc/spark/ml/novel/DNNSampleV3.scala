@@ -344,7 +344,6 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
     if (date.length == 10) {
       data = getAsFeature(date)
         .join(getUdFeature(date), Seq("uid"), "left")
-
     }
     else if (date.length == 13) {
       val dt = date.substring(0, 10)
