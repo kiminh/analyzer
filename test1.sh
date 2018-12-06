@@ -8,7 +8,7 @@ replica=15
 redis_lock=novel-ctr-dnn-rawid_v3_lock
 
 t=`date +"%Y-%m-%d-%H"`
-y1=`date -d"-1 days" +"%Y-%m-%d"`
+y1=`date -d"-2 days" +"%Y-%m-%d"`
 #y2=`date -d"-2 days" +"%Y-%m-%d"`
 #y3=`date -d"-3 days" +"%Y-%m-%d"`
 
