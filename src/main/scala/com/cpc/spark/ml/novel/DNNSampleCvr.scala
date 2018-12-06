@@ -4,6 +4,18 @@ import com.cpc.spark.common.Murmur3Hash
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
+object DNNSampleCvr {
+  def main(args: Array[String]): Unit = {
+    val spark = SparkSession.builder()
+      .enableHiveSupport()
+      .getOrCreate()
+
+    val Array(trdate, trpath, tedate, tepath) = args
+
+    val sample = new DNNSampleCvr(spark, trdate, trpath, tedate, tepath)
+    sample.saveTrain()
+  }
+}
 
 class DNNSampleCvr(spark: SparkSession, trdate: String = "", trpath: String = "",
                   tedate: String = "", tepath: String = "")
