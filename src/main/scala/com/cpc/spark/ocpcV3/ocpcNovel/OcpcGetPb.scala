@@ -65,9 +65,9 @@ object OcpcGetPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly")
-//    // 原表名：dl_cpc.ocpcv3_novel_pb_hourly
-//    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly")
+    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly")
+    // 原表名：dl_cpc.ocpcv3_novel_pb_hourly
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly")
 
     // 输出pb文件
     savePbPack(result)

@@ -146,7 +146,8 @@ object OcpcCPAhistory {
       .filter("cvr2cnt>1")
     cvr2Data.createOrReplaceTempView("cvr2_data")
 
-    // TODO adclass cpa
+    // adclass cpa
+    // TODO 考虑使用cost / cvr 来计算平均cpa
     val cvr1AdclassData = cvr1Data
       .groupBy("new_adclass")
       .agg(avg(col("cpa1")).alias("avg_cpa1"))
