@@ -10,4 +10,8 @@ object OcpcDailyReport {
     val date = args(0).toString
     val hour = args(1).toString
   }
+
+  def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
+
+  }
 }

@@ -9,7 +9,7 @@ import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 import ocpcnovel.ocpcnovel.SingleUnit
 import ocpcnovel.ocpcnovel.OcpcNovelList
-import org.apache.spark.sql.types.DoubleType
+import org.apache.spark.sql.types.{DoubleType, IntegerType}
 //import ocpcnovel.ocpcnovel
 
 import scala.collection.mutable.ListBuffer
@@ -26,32 +26,64 @@ object OcpcGetPb {
     val cvrData = getCvr(date, hour, spark)
     val kvalue = getK(date, hour, spark)
     val cpaHistory = getCPAhistory(date, hour, spark)
+    val adclassCPA = spark
+      .table("dl_cpc.ocpcv3_adclass_cpa_history_hourly")
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .select("new_adclass", "avg_cpa1", "avg_cpa2")
 
-    // TODO
-    // kvalue为空应该过滤掉
+    // todo
+    // 检查cpa_history=0
     val data = cvrData
       .join(kvalue, Seq("unitid"), "left_outer")
-      .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt")
+      .select("unitid", "kvalue", "cvr1cnt", "cvr2cnt", "new_adclass")
       .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
       .join(cpaHistory, Seq("unitid"), "left_outer")
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "new_adclass")
+      .withColumn("conversion_goal", when(col("conversion_goal").isNull && col("cvr2cnt")>0, 2).otherwise(1))
+      .filter(s"conversion_goal is not null")
+      .join(adclassCPA, Seq("new_adclass"), "left_outer")
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "new_adclass", "avg_cpa1", "avg_cpa2")
+      .withColumn("avg_cpa", when(col("conversion_goal")===1, col("avg_cpa1")).otherwise(col("avg_cpa2")))
+      .withColumn("cpa_history_old", col("cpa_history"))
+      .withColumn("cpa_history", when(col("cpa_history").isNull || col("cpa_history") === -1, col("avg_cpa")).otherwise(col("cpa_history")))
+      .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
       .filter("cpa_history is not null and cpa_history>0 and kvalue>=0")
-      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt")
+//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly_bak")
+
+//    unitid          int,
+//    cpa_history     double,
+//    kvalue          double,
+//    cvr1cnt         bigint,
+//    cvr2cnt         bigint,
+//    conversion_goal int
+    val result = data
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_hourly")
-    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_hourly")
+
+    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly")
+    // 原表名：dl_cpc.ocpcv3_novel_pb_hourly
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly")
 
     // 输出pb文件
-    savePbPack(data)
+    savePbPack(result)
   }
 
   def getK(date: String, hour: String, spark: SparkSession) = {
     // 先获取回归模型和备用模型的k值
     // 根据conversion_goal选择需要的k值
+    val cpaHistory = spark
+      .table("dl_cpc.ocpcv3_novel_cpa_history_hourly")
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .filter(s"conversion_goal is not null")
+      .select("unitid", "adclass", "conversion_goal")
+      .distinct()
+
     val tableName1 = "dl_cpc.ocpc_v3_novel_k_regression"
     val rawData1 = spark
       .table(tableName1)
       .where(s"`date`='$date' and `hour`='$hour'")
+      .select("unitid", "k_ratio1", "k_ratio2")
     rawData1.show(10)
 
     val tableName2 = "dl_cpc.ocpc_novel_k_value_table"
@@ -59,17 +91,19 @@ object OcpcGetPb {
       .table(tableName2)
       .where(s"`date`='$date' and `hour`='$hour'")
       .filter("conversion_goal is not null and k_value is not null")
+      .select("unitid", "adclass", "k_value")
     rawData2.show(10)
 
-    val data = rawData2
-      .join(rawData1, Seq("unitid"), "outer")
+    val data = cpaHistory
+      .join(rawData1, Seq("unitid"), "left_outer")
+      .join(rawData2, Seq("unitid", "adclass"), "left_outer")
       .select("unitid", "adclass", "k_value", "conversion_goal", "k_ratio1", "k_ratio2")
       .filter("adclass is not null and conversion_goal is not null")
       .withColumn("k_ratio", when(col("conversion_goal") === 2, col("k_ratio2")).otherwise(col("k_ratio1")))
       .withColumn("kvalue", when(col("k_ratio").isNull, col("k_value")).otherwise(col("k_ratio")))
       .filter(s"kvalue > 0 and kvalue is not null")
-      .withColumn("kvalue", when(col("kvalue") > 1.4, 1.4).otherwise(col("kvalue")))
-      .withColumn("kvalue", when(col("kvalue") < 0.0001, 0.0001).otherwise(col("kvalue")))
+      .withColumn("kvalue", when(col("kvalue") > 5.0, 5.0).otherwise(col("kvalue")))
+      .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
 
     val resultDF = data.select("unitid", "kvalue")
 //    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly")
@@ -84,6 +118,7 @@ object OcpcGetPb {
       .table(tableName)
       .where(s"`date`='$date' and `hour`='$hour'")
     resultDF.show(10)
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_data_hourly")
 
     resultDF
   }
@@ -102,6 +137,26 @@ object OcpcGetPb {
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+    // ctr data
+    val sqlRequestCtrData =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adclass,
+         |  ctr_cnt
+         |FROM
+         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequestCtrData)
+    val ctrData = spark
+      .sql(sqlRequestCtrData)
+      .select("unitid", "adclass")
+      .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+      .select("unitid", "new_adclass")
+      .distinct()
 
     // cvr data
     // cvr1 or cvr3 data
@@ -145,13 +200,14 @@ object OcpcGetPb {
     cvr2Data.show(10)
 
     // 数据关联
-    val result = cvr1Data
-      .join(cvr2Data, Seq("unitid"), "outer")
+    val result = ctrData
+      .join(cvr1Data, Seq("unitid"), "left_outer")
+      .join(cvr2Data, Seq("unitid"), "left_outer")
       .withColumn("cvr1cnt", when(col("cvr1cnt").isNull, 0).otherwise(col("cvr1cnt")))
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
 //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly")
 
-    val resultDF = result.select("unitid", "cvr1cnt", "cvr2cnt")
+    val resultDF = result.select("unitid", "new_adclass", "cvr1cnt", "cvr2cnt")
 
     // 返回结果
     resultDF.show(10)
@@ -174,9 +230,10 @@ object OcpcGetPb {
       val cvr1cnt = record.getAs[Long]("cvr1cnt")
       val cvr2cnt = record.getAs[Long]("cvr2cnt")
       val cpa2History = 0.0
+      val conversionGoal = record.getAs[Int]("conversion_goal")
 
       if (cnt % 100 == 0) {
-        println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History")
+        println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History, conversionGoal:$conversionGoal")
       }
       cnt += 1
 
@@ -186,7 +243,8 @@ object OcpcGetPb {
         cpaHistory = cpa1History,
         cvr2Cnt = cvr1cnt,
         cvr3Cnt = cvr2cnt,
-        cpa3History = cpa2History
+        cpa3History = cpa2History,
+        conversiongoal = conversionGoal
       )
       list += currentItem
 
