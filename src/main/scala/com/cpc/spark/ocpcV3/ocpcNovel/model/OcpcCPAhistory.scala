@@ -63,7 +63,7 @@ object OcpcCPAhistory {
         sum(col("total_bid")).alias("total_bid"),
         sum(col("ctr_cnt")).alias("ctrcnt"))
     costData.show(10)
-    costData.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_costdata")
+//    costData.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_costdata")
 
     // cvr data
     // cvr1 or cvr3 data
@@ -86,7 +86,7 @@ object OcpcCPAhistory {
       .groupBy("unitid", "adclass")
       .agg(sum(col("cvr1_cnt")).alias("cvr1cnt"))
     cvr1Data.show(10)
-    cvr1Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr1data")
+//    cvr1Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr1data")
 
     // cvr2data
     val sqlRequestCvr2Data =
@@ -108,7 +108,7 @@ object OcpcCPAhistory {
       .groupBy("unitid", "adclass")
       .agg(sum(col("cvr2_cnt")).alias("cvr2cnt"))
     cvr2Data.show(10)
-    cvr2Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr2data")
+//    cvr2Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr2data")
 
     // 关联数据
     val resultDF = costData
@@ -182,7 +182,7 @@ object OcpcCPAhistory {
       .select("unitid", "adclass", "cvr1cnt", "alpha1", "avg_bid", "cpa1", "new_adclass", "alpha1_max")
       .withColumn("cpa1_max", col("avg_bid") * col("alpha1_max"))
       .withColumn("cpa1_history", when(col("cpa1")>col("cpa1_max"), col("cpa1_max")).otherwise(col("cpa1")))
-    cvr1Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa1_result_hourly")
+//    cvr1Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa1_result_hourly")
 
     // cvr2
     val sqlRequest2 =
@@ -202,7 +202,7 @@ object OcpcCPAhistory {
       .select("unitid", "adclass", "cvr2cnt", "alpha2", "avg_bid", "cpa2", "new_adclass", "alpha2_max")
       .withColumn("cpa2_max", col("avg_bid") * col("alpha2_max"))
       .withColumn("cpa2_history", when(col("cpa2")>col("cpa2_max"), col("cpa2_max")).otherwise(col("cpa2")))
-    cvr2Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa2_result_hourly")
+//    cvr2Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa2_result_hourly")
 
     // 关联结果
     val result = data
