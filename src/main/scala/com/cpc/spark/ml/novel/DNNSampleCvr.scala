@@ -130,7 +130,7 @@ class DNNSampleCvr(spark: SparkSession, trdate: String = "", trpath: String = ""
          |  a.hour
          |from
          |  (select *
-         |from dl_cpc.cpc_union_log where `date` = '$date'
+         |from dl_cpc.cpc_union_log where `date` = '$date' and hour=$hour
          |  and isclick = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
@@ -138,7 +138,7 @@ class DNNSampleCvr(spark: SparkSession, trdate: String = "", trpath: String = ""
          |) a
          |inner join
          |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
-         |  WHERE `date` = '$date'
+         |  WHERE `date` = '$date' and hour=$hour
          |) b on a.searchid = b.searchid
       """.stripMargin
     println("============= as features ==============")
