@@ -20,7 +20,7 @@ train=(
     hdfs://emr-cluster/user/cpc/wy/novel/ctr_v3/dnntrain-${y1}/part*
 )
 
-test= hdfs://emr-cluster/user/cpc/wy/novel/ctr_v3/dnntrain-${y1}/part-r-009**
+test=hdfs://emr-cluster/user/cpc/wy/novel/ctr_v3/dnntrain-${y1}/part-r-009**
 
 ip=`ifconfig eth0 | grep "inet" | awk '{ print $2}'`
 #ip=192.168.80.43
