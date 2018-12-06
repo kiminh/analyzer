@@ -61,7 +61,6 @@ object Behavior2RedisNovelCvr {
          |
          |from dl_cpc.cpc_user_behaviors_novel_cvr
          |where load_date in ('${getDays(date, 1, 7)}')
-         |    and rn <= 1000
          |group by uid
       """.stripMargin)
       .select(
@@ -86,7 +85,7 @@ object Behavior2RedisNovelCvr {
         hashSeq("m19", "int")($"r_adclass_1").alias("m19"),
         hashSeq("m20", "int")($"r_adclass_2").alias("m20"),
         hashSeq("m21", "int")($"r_adclass_3").alias("m21"),
-        hashSeq("m22", "int")($"r_adclass_4_7").alias("m22"),
+        hashSeq("m22", "int")($"r_ideaid_4_7").alias("m22"),
         hashSeq("m23", "int")($"r_adclass_4_7").alias("m23")
       )
       .persist()

@@ -87,7 +87,6 @@ object NovelDNNSampleHourlyCvr {
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
-         |  and uid > 0
          |) a
          |inner join
          |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
