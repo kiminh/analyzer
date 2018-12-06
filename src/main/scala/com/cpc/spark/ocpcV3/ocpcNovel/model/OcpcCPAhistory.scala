@@ -32,7 +32,7 @@ object OcpcCPAhistory {
     val end_date = sdf.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(end_date)
-    calendar.add(Calendar.DATE, -7)
+    calendar.add(Calendar.DATE, -1)
     val start_date = calendar.getTime
     val date1 = sdf.format(start_date)
 //    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
@@ -63,7 +63,7 @@ object OcpcCPAhistory {
         sum(col("total_bid")).alias("total_bid"),
         sum(col("ctr_cnt")).alias("ctrcnt"))
     costData.show(10)
-    costData.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_costdata")
+//    costData.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_costdata")
 
     // cvr data
     // cvr1 or cvr3 data
@@ -86,7 +86,7 @@ object OcpcCPAhistory {
       .groupBy("unitid", "adclass")
       .agg(sum(col("cvr1_cnt")).alias("cvr1cnt"))
     cvr1Data.show(10)
-    cvr1Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr1data")
+//    cvr1Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr1data")
 
     // cvr2data
     val sqlRequestCvr2Data =
@@ -108,7 +108,7 @@ object OcpcCPAhistory {
       .groupBy("unitid", "adclass")
       .agg(sum(col("cvr2_cnt")).alias("cvr2cnt"))
     cvr2Data.show(10)
-    cvr2Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr2data")
+//    cvr2Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr2data")
 
     // 关联数据
     val resultDF = costData
@@ -182,7 +182,7 @@ object OcpcCPAhistory {
       .select("unitid", "adclass", "cvr1cnt", "alpha1", "avg_bid", "cpa1", "new_adclass", "alpha1_max")
       .withColumn("cpa1_max", col("avg_bid") * col("alpha1_max"))
       .withColumn("cpa1_history", when(col("cpa1")>col("cpa1_max"), col("cpa1_max")).otherwise(col("cpa1")))
-    cvr1Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa1_result_hourly")
+//    cvr1Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa1_result_hourly")
 
     // cvr2
     val sqlRequest2 =
@@ -202,7 +202,7 @@ object OcpcCPAhistory {
       .select("unitid", "adclass", "cvr2cnt", "alpha2", "avg_bid", "cpa2", "new_adclass", "alpha2_max")
       .withColumn("cpa2_max", col("avg_bid") * col("alpha2_max"))
       .withColumn("cpa2_history", when(col("cpa2")>col("cpa2_max"), col("cpa2_max")).otherwise(col("cpa2")))
-    cvr2Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa2_result_hourly")
+//    cvr2Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa2_result_hourly")
 
     // 关联结果
     val result = data
@@ -226,4 +226,85 @@ object OcpcCPAhistory {
     resultDF
   }
 
+  def getNovelCPA(date: String, hour: String, spark: SparkSession) = {
+    // 计算日期周期
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val end_date = sdf.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(end_date)
+    calendar.add(Calendar.DATE, -1)
+    val start_date = calendar.getTime
+    val date1 = sdf.format(start_date)
+    val selectCondition = s"`date`='$date1'"
+
+    // ctr data
+    val sqlRequestCtrData =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adclass,
+         |  cost,
+         |  ctr_cnt
+         |FROM
+         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequestCtrData)
+    val ctrData = spark
+      .sql(sqlRequestCtrData)
+      .select("unitid", "adclass")
+      .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+      .select("unitid", "new_adclass")
+      .distinct()
+
+    // cvr data
+    // cvr1 or cvr3 data
+    val sqlRequestCvr1Data =
+    s"""
+       |SELECT
+       |  unitid,
+       |  cvr1_cnt
+       |FROM
+       |  dl_cpc.ocpcv3_cvr1_data_hourly
+       |WHERE
+       |  $selectCondition
+       |AND
+       |  media_appsid in ("80001098","80001292")
+       """.stripMargin
+    println(sqlRequestCvr1Data)
+    val cvr1Data = spark
+      .sql(sqlRequestCvr1Data)
+      .groupBy("unitid")
+      .agg(sum(col("cvr1_cnt")).alias("cvr1cnt"))
+    cvr1Data.show(10)
+
+    // cvr2data
+    val sqlRequestCvr2Data =
+      s"""
+         |SELECT
+         |  unitid,
+         |  cvr2_cnt
+         |FROM
+         |  dl_cpc.ocpcv3_cvr2_data_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  media_appsid in ("80001098","80001292")
+       """.stripMargin
+    println(sqlRequestCvr2Data)
+    val cvr2Data = spark
+      .sql(sqlRequestCvr2Data)
+      .groupBy("unitid")
+      .agg(sum(col("cvr2_cnt")).alias("cvr2cnt"))
+    cvr2Data.show(10)
+
+    // 数据关联
+    val result = ctrData
+      .join(cvr1Data, Seq("unitid"), "left_outer")
+      .join(cvr2Data, Seq("unitid"), "left_outer")
+      .withColumn("cvr1cnt", when(col("cvr1cnt").isNull, 0).otherwise(col("cvr1cnt")))
+      .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
+  }
 }
