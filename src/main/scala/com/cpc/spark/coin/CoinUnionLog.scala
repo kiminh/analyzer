@@ -25,7 +25,9 @@ object CoinUnionLog {
 
         val coinUnionLog = spark.sql(sql)
 
-        coinUnionLog.repartition(1)
+        println(coinUnionLog.count())
+
+        coinUnionLog.repartition(400)
           .write
           .mode("overwrite")
           .insertInto("dl_cpc.coin_union_log")
