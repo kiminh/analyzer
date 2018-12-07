@@ -20,11 +20,11 @@ object OcpcCPAhistory {
 
     // TODO 查找bug
     val cpaList = calculateCPA(date, hour, spark)
-    cpaList.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpaList")
+//    cpaList.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpaList")
     val result = checkCPA(cpaList, date, hour, spark)
 //    dl_cpc.ocpcv3_novel_cpa_history_hourly
-    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly")
-//    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_cpa_history_hourly")
+//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_cpa_history_hourly")
     println(s"succesfully save data into table: dl_cpc.ocpcv3_novel_cpa_history_hourly")
   }
 
@@ -149,7 +149,6 @@ object OcpcCPAhistory {
 
     // adclass cpa
     // TODO 考虑使用cost / cvr 来计算平均cpa
-    // TODO 程序测试中
     val cvr1AdclassData = cvr1Data
       .groupBy("new_adclass")
       .agg(avg(col("cpa1")).alias("avg_cpa1"))
@@ -164,7 +163,7 @@ object OcpcCPAhistory {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 //    adclassCPA.write.mode("overwrite").saveAsTable("test.ocpcv3_adclass_cpa_history_hourly")
-//    adclassCPA.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_adclass_cpa_history_hourly")
+    adclassCPA.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_adclass_cpa_history_hourly")
 
     // 取分位数
     // cvr1
@@ -185,7 +184,7 @@ object OcpcCPAhistory {
       .select("unitid", "adclass", "cvr1cnt", "alpha1", "avg_bid", "cpa1", "new_adclass", "alpha1_max")
       .withColumn("cpa1_max", col("avg_bid") * col("alpha1_max"))
       .withColumn("cpa1_history", when(col("cpa1")>col("cpa1_max"), col("cpa1_max")).otherwise(col("cpa1")))
-    cvr1Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa1_result_hourly")
+//    cvr1Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa1_result_hourly")
 
     // cvr2
     val sqlRequest2 =
@@ -205,10 +204,9 @@ object OcpcCPAhistory {
       .select("unitid", "adclass", "cvr2cnt", "alpha2", "avg_bid", "cpa2", "new_adclass", "alpha2_max")
       .withColumn("cpa2_max", col("avg_bid") * col("alpha2_max"))
       .withColumn("cpa2_history", when(col("cpa2")>col("cpa2_max"), col("cpa2_max")).otherwise(col("cpa2")))
-    cvr2Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa2_result_hourly")
+//    cvr2Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa2_result_hourly")
 
     // 关联结果
-    // TODO fix bug
     val result = data
       .join(cvr1Result, Seq("unitid", "adclass"), "left_outer")
       .join(cvr2Result, Seq("unitid", "adclass"), "left_outer")
@@ -221,7 +219,7 @@ object OcpcCPAhistory {
       .withColumn("cpa2_history", when(col("cpa2_history").isNull, -1).otherwise(col("cpa2_history")))
       .withColumn("cpa_history", when(col("conversion_goal") === 1, col("cpa1_history")).otherwise(col("cpa2_history")))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
-    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_debug")
+//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_debug")
 
     val resultDF = result
       .select("unitid", "adclass", "cpa_history", "conversion_goal")
