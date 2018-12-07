@@ -287,6 +287,10 @@ object OcpcCPAhistoryV2 {
       .withColumn("cpa2_history_" + media, col("cpa2_history"))
 
     // 关联数据表
+    println("cvr1alpha ########################")
+    cvr1alpha.printSchema()
+    println("cvr2alpha ########################")
+    cvr2alpha.printSchema()
     val resultDF = cvr1alpha
       .join(cvr2alpha, Seq("unitid", "new_adclass"), "outer")
       .select("unitid", "new_adclass", "cpa1_history_" + media, "cpa2_history_" + media)
