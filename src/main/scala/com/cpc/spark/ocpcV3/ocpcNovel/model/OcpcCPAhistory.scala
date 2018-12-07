@@ -18,7 +18,6 @@ object OcpcCPAhistory {
     val date = args(0).toString
     val hour = args(1).toString
 
-    // TODO 查找bug
     val cpaList = calculateCPA(date, hour, spark)
 //    cpaList.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpaList")
     val result = checkCPA(cpaList, date, hour, spark)
