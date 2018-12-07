@@ -28,6 +28,8 @@ object OcpcCPAhistoryV2 {
     val hour = args(1).toString
 
     val baseData = getBaseData(date, hour, spark)
+    val qttData = getQttCPA(baseData, date, hour, spark)
+    val novelData = getNovelCPA(baseData, date, hour, spark)
   }
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
@@ -118,16 +120,51 @@ object OcpcCPAhistoryV2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
+    // TODO 删除临时表
     resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_base")
     resultDF
 
   }
 
-  def getQttCPA(date: String, hour: String, spark: SparkSession) = {
+  def getQttCPA(base: DataFrame, date: String, hour: String, spark: SparkSession) = {
     /*
     抽取趣头条cpa数据
      */
+    val resultDF = base
+      .filter(s"media_appsid in ('80000001', '80000002')")
+      .groupBy("unitid", "new_adclass")
+      .agg(
+        sum(col("total_cost")).alias("cost"),
+        sum(col("cvr1cnt")).alias("cvr1cnt"),
+        sum(col("cvr2cnt")).alias("cvr2cnt"))
+      .withColumn("cpa1", col("cost") * 1.0 / col("cvr1cnt"))
+      .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
 
+    // TODO 删除临时表
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_qtt")
+    resultDF
+  }
 
+  def getNovelCPA(base: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    抽取小说cpa数据
+     */
+    val resultDF = base
+      .filter(s"media_appsid in ('80001098', '80001292')")
+      .groupBy("unitid", "new_adclass")
+      .agg(
+        sum(col("total_cost")).alias("cost"),
+        sum(col("cvr1cnt")).alias("cvr1cnt"),
+        sum(col("cvr2cnt")).alias("cvr2cnt"))
+      .withColumn("cpa1", col("cost") * 1.0 / col("cvr1cnt"))
+      .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+    // TODO 删除临时表
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_novel")
+    resultDF
   }
 }
