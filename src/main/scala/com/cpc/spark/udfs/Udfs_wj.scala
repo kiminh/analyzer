@@ -181,4 +181,22 @@ object Udfs_wj{
   def udfSqrt() = udf((value: Double) => {
     math.sqrt(value)
   })
+
+  def udfNovelConversionGoal() = udf((cpa1Qtt: Double, cpa2Qtt: Double, cpa1Novel: Double, cpa2Novel: Double) => {
+    var conversionGoal = 1
+    if (cpa1Qtt == null && cpa2Qtt == null) {
+      if (cpa2Novel != null) {
+        conversionGoal = 2
+      } else {
+        conversionGoal = 1
+      }
+    } else {
+      if (cpa2Qtt != null) {
+        conversionGoal = 2
+      } else {
+        conversionGoal = 1
+      }
+    }
+    conversionGoal
+  })
 }
