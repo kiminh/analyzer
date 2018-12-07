@@ -4,9 +4,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
-import com.redis.RedisClient
-import com.typesafe.config.ConfigFactory
-import mlmodel.mlmodel.DnnMultiHot
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.udf
 
@@ -18,22 +15,32 @@ import org.apache.spark.sql.functions.udf
   * @version 1.0
   *
   */
-object Behavior2RedisNovelV2 {
+object Behavior2RedisV3 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
       .getOrCreate()
 
+    val date = args(0)
+
+    // user dayily featrues
+    saveUserDailyFeatures(spark, date)
+
+//    //ad daily features
+//    saveAdDailyFeatures(spark, date)
+
+  }
+
+  private def saveUserDailyFeatures(spark: SparkSession, date: String): Unit = {
     import spark.implicits._
-    val date = args(0) //today
-
-    val data2 = spark.sql(
+    //用户安装app
+    val ud_sql0 =
       s"""
-         |select * from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
-      """.stripMargin)
-      .select("uid","book_id","first_category_id","second_category_id","third_category_id")
+         |select * from dl_cpc.cpc_user_installed_apps where load_date = '${getDay(date, 1)}'
+      """.stripMargin
 
-    val data = spark.sql(
+    //用户天级别过去访问广告情况
+    val ud_sql1 =
       s"""
          |select uid,
          |       collect_set(if(load_date='${getDay(date, 1)}',show_ideaid,null)) as s_ideaid_1,
@@ -43,29 +50,64 @@ object Behavior2RedisNovelV2 {
          |       collect_set(if(load_date='${getDay(date, 3)}',show_ideaid,null)) as s_ideaid_3,
          |       collect_set(if(load_date='${getDay(date, 3)}',show_adclass,null)) as s_adclass_3,
          |
+         |       collect_list(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
+         |       collect_list(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
          |
-         |       collect_set(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
-         |       collect_set(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
+         |       collect_list(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
+         |       collect_list(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
          |
-         |       collect_set(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
-         |       collect_set(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
+         |       collect_list(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
+         |       collect_list(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3,
          |
-         |       collect_set(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
-         |       collect_set(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3,
-         |
-         |       collect_set(if(load_date>='${getDay(date, 7)}'
+         |       collect_list(if(load_date>='${getDay(date, 7)}'
          |                  and load_date<='${getDay(date, 4)}',click_ideaid,null)) as c_ideaid_4_7,
          |       collect_list(if(load_date>='${getDay(date, 7)}'
          |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7
-         |
          |from dl_cpc.cpc_user_behaviors_novel
          |where load_date in ('${getDays(date, 1, 7)}')
-         |    and rn <= 1000
          |group by uid
-      """.stripMargin)
-      .join(data2,Seq("uid"),"left")
-      .select(
-        $"uid",
+      """.stripMargin
+
+    //用户点击过的广告分词
+    val ud_sql2 =
+      s"""
+         |select uid,
+         |       interest_ad_words_1 as word1,
+         |       interest_ad_words_3 as word3
+         |from dl_cpc.cpc_user_interest_words
+         |where load_date='$date'
+    """.stripMargin
+
+    //用户点击过的文章id及分类
+    val ud_sql3 =
+      s"""
+         |select uid,book_id,first_category_id,second_category_id,third_category_id
+         |from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
+         |  and uid not like "%.%"
+         |  and uid not like "%000000%"
+         |  and length(uid) in (14, 15, 36)
+      """.stripMargin
+
+
+    println("============= user daily features =============")
+    println(ud_sql0)
+    println("-------------------------------------------------")
+    println(ud_sql1)
+    println("-------------------------------------------------")
+    println(ud_sql2)
+    println("-------------------------------------------------")
+    println(ud_sql3)
+
+    val ud_features = spark.sql(ud_sql0).rdd
+      .map(x => (x.getAs[String]("uid"), x.getAs[Seq[String]]("pkgs")))
+      .reduceByKey(_ ++ _)
+      .map(x => (x._1, x._2.distinct))
+      .toDF("uid", "pkgs")
+      .join(spark.sql(ud_sql1), Seq("uid"), "outer")
+      .join(spark.sql(ud_sql2), Seq("uid"), "outer")
+      .join(spark.sql(ud_sql3), Seq("uid"), "outer")
+      .select($"uid",
+        hashSeq("m1", "string")($"pkgs").alias("m1"),
         hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
         hashSeq("m3", "int")($"s_ideaid_2").alias("m3"),
         hashSeq("m4", "int")($"s_ideaid_3").alias("m4"),
@@ -83,35 +125,43 @@ object Behavior2RedisNovelV2 {
         hashSeq("m16", "int")($"book_id").alias("m16"),
         hashSeq("m17", "int")($"first_category_id").alias("m17"),
         hashSeq("m18", "int")($"second_category_id").alias("m18"),
-        hashSeq("m19", "int")($"third_category_id").alias("m19")
-      )
+        hashSeq("m19", "int")($"third_category_id").alias("m19"),
+        hashSeq("m20", "string")($"word1").alias("m20"),
+        hashSeq("m21", "string")($"word3").alias("m21")
+      ).persist()
+
+//    ud_features.coalesce(50).write.mode("overwrite")
+//      .parquet("/user/cpc/wy/novel/features/ud")
+
+    ud_features.show()
+
+    Utils.DnnFeatures2Redis.multiHot2Redis(ud_features, "n4_", "string")
+  }
+
+  private def saveAdDailyFeatures(spark: SparkSession, date: String): Unit = {
+    import spark.implicits._
+    val title_sql =
+      """
+        |select id as ideaid,
+        |       split(tokens,' ') as words
+        |from dl_cpc.ideaid_title
+      """.stripMargin
+
+    println("============= ad daily feature ============")
+    println(title_sql)
+
+    val ad_features = spark.sql(title_sql)
+      .select($"ideaid",
+        hashSeq("ad0#", "string")($"words").alias("ad0"))
       .persist()
 
-    println("dnn novel 用户行为特征总数：" + data.count())
+    ad_features.coalesce(1).write.mode("overwrite")
+      .parquet("/user/cpc/wy/novel/features/ad")
 
-    data.coalesce(20).write.mode("overwrite")
-      .parquet("/user/cpc/wy/novel_behavior_v2")
+    ad_features.show()
 
+    Utils.DnnFeatures2Redis.multiHot2Redis(ad_features, "n_id_", "int")
 
-    val conf = ConfigFactory.load()
-    data.coalesce(20).foreachPartition { p =>
-      val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
-      redis.auth(conf.getString("ali_redis.auth"))
-
-      p.foreach { rec =>
-        var group = Seq[Int]()
-        var hashcode = Seq[Long]()
-        val uid = "n3_" + rec.getString(0)
-        for (i <- 1 to 18) {
-          val f = rec.getAs[Seq[Long]](i)
-          group = group ++ Array.tabulate(f.length)(x => i)
-          hashcode = hashcode ++ f
-        }
-        redis.setex(uid, 3600 * 24 * 7, DnnMultiHot(group, hashcode).toByteArray)
-      }
-
-      redis.disconnect
-    }
   }
 
   /**

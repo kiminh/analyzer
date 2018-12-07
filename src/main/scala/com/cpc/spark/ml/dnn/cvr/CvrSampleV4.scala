@@ -36,11 +36,8 @@ class CvrSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
     println("============= as features ==============")
     println(raw_data_path)
 
-    val data = spark.read.parquet(raw_data_path)
-
-    data
-      .select(
-        $"cvr_label".alias("label"),
+    spark.read.parquet(raw_data_path)
+      .select($"cvr_label".alias("label"),
         $"uid",
         $"ideaid",
         hash("f0#")($"media_type").alias("f0"),
@@ -160,9 +157,7 @@ class CvrSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
         hashSeq("ud11#", "int")($"c_adclass_2").alias("ud11"),
         hashSeq("ud12#", "int")($"c_adclass_3").alias("ud12"),
         hashSeq("ud13#", "int")($"c_ideaid_4_7").alias("ud13"),
-        hashSeq("ud14#", "int")($"c_adclass_4_7").alias("ud14"),
-        hashSeq("ud15#", "string")($"word1").alias("ud15"),
-        hashSeq("ud16#", "string")($"word3").alias("ud16")
+        hashSeq("ud14#", "int")($"c_adclass_4_7").alias("ud14")
       )
   }
 
@@ -192,7 +187,6 @@ class CvrSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
     }
 
 
-    //获取默认hash列表
     val columns = Seq("ud0", "ud1", "ud2", "ud3", "ud4", "ud5", "ud6", "ud7", "ud8", "ud9", "ud10",
       "ud11", "ud12", "ud13", "ud14", "ud15", "ud16")
     val default_hash = for (col <- columns.zipWithIndex)

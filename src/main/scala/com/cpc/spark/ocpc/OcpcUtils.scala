@@ -7,6 +7,15 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcUtils {
+  def getTimeRangeSql(startDate: String, startHour: String, endDate: String, endHour: String): String = {
+    if (startDate.equals(endDate)) {
+      return s"(`date` = '$startDate' and hour <= '$endHour' and hour >= '$startHour')"
+    }
+    return s"((`date` = '$startDate' and hour >= '$startHour') " +
+      s"or (`date` = '$endDate' and hour <= '$endHour') " +
+      s"or (`date` > '$startDate' and `date` < '$endDate'))"
+  }
+
   def getTimeRangeSql2(startDate: String, startHour: String, endDate: String, endHour: String): String = {
     if (startDate.equals(endDate)) {
       return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
@@ -177,6 +186,23 @@ object OcpcUtils {
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
     resultDF
+
+//    // read data and set redis configuration
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  ideaid,
+//         |  adclass,
+//         |  sum(),
+//         |  hour
+//         |FROM
+//         |  dl_cpc.ml_cvr_feature_v2
+//         |WHERE $selectCondition
+//       """.stripMargin
+//    println(sqlRequest)
+//    val resultDF = spark.sql(sqlRequest)
+//    resultDF
+
   }
 
   def getActDataNovel(date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
