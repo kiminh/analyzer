@@ -258,9 +258,8 @@ object OcpcCPAhistoryV2 {
       .withColumn("cpa1_history_" + media, when(col("cpa1") > col("cpa1_max"), col("cpa1_max")).otherwise(col("cpa1")))
     // TODO 删除临时表
     cvr1alpha.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_alpha1_" + media)
-//    val cvr1Final = cvr1alpha
-//      .select("unitid", "new_adclass", "cpa1_history")
-//      .withColumn("cpa1_history_" + media, col("cpa1_history"))
+    val cvr1Final = cvr1alpha
+      .select("unitid", "new_adclass", "cpa1_history_" + media)
 
     val sqlRequest2 =
       s"""
@@ -282,19 +281,18 @@ object OcpcCPAhistoryV2 {
       .withColumn("cpa2_history_" + media, when(col("cpa2") > col("cpa2_max"), col("cpa2_max")).otherwise(col("cpa2")))
     // TODO 删除临时表
     cvr2alpha.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_alpha2_" + media)
-//    val cvr2Final = cvr2alpha
-//      .select("unitid", "new_adclass", "cpa2_history")
-//      .withColumn("cpa2_history_" + media, col("cpa2_history"))
+    val cvr2Final = cvr2alpha
+      .select("unitid", "new_adclass", "cpa2_history_" + media)
 
     // 关联数据表
-    println("cvr1alpha ########################")
-    cvr1alpha.printSchema()
-    cvr1alpha.show(10)
-    println("cvr2alpha ########################")
-    cvr2alpha.printSchema()
-    cvr2alpha.show(10)
-    val resultDF = cvr1alpha
-      .join(cvr2alpha, Seq("unitid", "new_adclass"), "outer")
+    println("cvr1Final ########################")
+    cvr1Final.printSchema()
+    cvr1Final.show(10)
+    println("cvr2Final ########################")
+    cvr2Final.printSchema()
+    cvr2Final.show(10)
+    val resultDF = cvr1Final
+      .join(cvr2Final, Seq("unitid", "new_adclass"), "outer")
 //      .select("unitid", "new_adclass", "cpa1_history_" + media, "cpa2_history_" + media)
     resultDF.printSchema()
 
