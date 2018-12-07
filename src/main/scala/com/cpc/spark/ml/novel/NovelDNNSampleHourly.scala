@@ -90,7 +90,6 @@ object NovelDNNSampleHourly {
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
-         |  and uid > 0
       """.stripMargin
     println("--------------------------------")
     println(sql)

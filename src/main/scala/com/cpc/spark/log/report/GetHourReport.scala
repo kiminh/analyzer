@@ -4,6 +4,7 @@ import java.sql.DriverManager
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
+import breeze.linalg.sum
 import com.cpc.spark.ml.common.Utils
 import com.typesafe.config.ConfigFactory
 import eventprotocol.Protocol.ChargeType
@@ -390,7 +391,20 @@ object GetHourReport {
       .jdbc(mariadbUrl, "report.report_media_fill_hourly", mariadbProp)
     println("fill", fillData.count())
 
-    val ctrData = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0)
+
+    val unionLog_tmp = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0).cache()
+
+    //取展示top10 的adclass
+    val topAdclass = unionLog_tmp
+      .map(x => (x.getAs[Int]("adclass"), 1))
+      .reduceByKey(_ + _)
+      .sortBy(x => x._2, false)
+      .map(x => x._1)
+      .take(10)
+      .toSeq
+    println("topAdclass: " + topAdclass)
+
+    val ctrData = unionLog_tmp
       .map {
         u =>
           val exptag = u.getAs[String]("exptags").split(",").find(_.startsWith("ctrmodel")).getOrElse("base")
@@ -417,7 +431,7 @@ object GetHourReport {
           100101109  扑克
           99   其他
            */
-          val topAdclass = Seq(110110100, 130104101, 125100100, 100101109)
+          //val topAdclass = Seq(110110100, 130104101, 125100100, 100101109)
           if (!topAdclass.contains(adclass)) {
             adclass = 99
           }
@@ -440,6 +454,7 @@ object GetHourReport {
           )
           (u.getAs[String]("searchid"), ctr)
       }
+    unionLog_tmp.unpersist()
 
     //get cvr data
     val cvrlog = ctx.sql(

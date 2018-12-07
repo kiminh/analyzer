@@ -24,7 +24,7 @@ object getBaseConversion2 {
 
     // 获取使用api回传的广告list
     val cvr3List = spark
-      .table("test.ocpc_idea_update_time")
+      .table("test.ocpc_idea_update_time_" + hour)
       .filter("conversion_goal=2")
       .withColumn("flag", lit(1))
       .select("ideaid", "flag")
