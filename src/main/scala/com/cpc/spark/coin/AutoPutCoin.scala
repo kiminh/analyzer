@@ -21,7 +21,7 @@ object AutoPutCoin {
 
         val ml_cvr_feature_v1 = args(1) //"test.ml_cvr_feature_v1"
 
-        val coinTable = "test.coin2"
+        val coinTable = "test.coin3" //TODO
 
         val date = args(2)
 
