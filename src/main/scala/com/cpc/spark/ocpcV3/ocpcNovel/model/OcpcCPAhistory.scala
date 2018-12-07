@@ -129,7 +129,6 @@ object OcpcCPAhistory {
   }
 
   def checkCPA(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    // TODO demo
     // 分别按cvr1和cvr2抽取数据
     // 过滤掉只有一个cvr的数据记录
     // 取alpha的80%分位数
@@ -150,6 +149,7 @@ object OcpcCPAhistory {
 
     // adclass cpa
     // TODO 考虑使用cost / cvr 来计算平均cpa
+    // TODO 程序测试中
     val cvr1AdclassData = cvr1Data
       .groupBy("new_adclass")
       .agg(avg(col("cpa1")).alias("avg_cpa1"))
@@ -164,7 +164,7 @@ object OcpcCPAhistory {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 //    adclassCPA.write.mode("overwrite").saveAsTable("test.ocpcv3_adclass_cpa_history_hourly")
-    adclassCPA.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_adclass_cpa_history_hourly")
+//    adclassCPA.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_adclass_cpa_history_hourly")
 
     // 取分位数
     // cvr1
