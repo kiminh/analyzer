@@ -208,16 +208,17 @@ object OcpcCPAhistory {
     cvr2Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa2_result_hourly")
 
     // 关联结果
+    // TODO fix bug
     val result = data
       .join(cvr1Result, Seq("unitid", "adclass"), "left_outer")
       .join(cvr2Result, Seq("unitid", "adclass"), "left_outer")
       .join(adclassCPA, Seq("new_adclass"), "left_outer")
+      .withColumn("conversion_goal", when(col("cpa2_history").isNull, 1).otherwise(2))
       .withColumn("cpa1_history", when(col("alpha1_max").isNull, col("avg_cpa1")).otherwise(col("cpa1_history")))
       .withColumn("cpa2_history", when(col("alpha2_max").isNull, col("avg_cpa2")).otherwise(col("cpa2_history")))
-      .select("unitid", "adclass", "cpa1_history", "cpa2_history")
+      .select("unitid", "adclass", "cpa1_history", "cpa2_history", "conversion_goal")
       .withColumn("cpa1_history", when(col("cpa1_history").isNull, -1).otherwise(col("cpa1_history")))
       .withColumn("cpa2_history", when(col("cpa2_history").isNull, -1).otherwise(col("cpa2_history")))
-      .withColumn("conversion_goal", when(col("cpa2_history") <= 0, 1).otherwise(2))
       .withColumn("cpa_history", when(col("conversion_goal") === 1, col("cpa1_history")).otherwise(col("cpa2_history")))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
     result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_debug")
