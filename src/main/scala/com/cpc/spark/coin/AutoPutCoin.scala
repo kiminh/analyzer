@@ -98,11 +98,13 @@ object AutoPutCoin {
                |        (
                |            select id,user_id
                |            from src_cpc.cpc_idea
+               |            group by id,user_id
                |         ) x left outer join
                |         (
                |            select id, account_type
                |            from src_cpc.cpc_user_p
                |            where account_type = 2
+               |            group by id, account_type
                |         ) y
                |         on x.user_id = y.id
                |    ) b
