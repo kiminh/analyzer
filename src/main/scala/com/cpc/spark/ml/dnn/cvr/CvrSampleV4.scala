@@ -188,7 +188,7 @@ class CvrSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
 
 
     val columns = Seq("ud0", "ud1", "ud2", "ud3", "ud4", "ud5", "ud6", "ud7", "ud8", "ud9", "ud10",
-      "ud11", "ud12", "ud13", "ud14", "ud15", "ud16")
+      "ud11", "ud12", "ud13", "ud14")
     val default_hash = for (col <- columns.zipWithIndex)
       yield (col._2, 0, Murmur3Hash.stringHash64(col._1 + "#", 0))
 
@@ -199,7 +199,7 @@ class CvrSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
         $"dense",
         mkSparseFeature(default_hash)(
           array($"ud0", $"ud1", $"ud2", $"ud3", $"ud4", $"ud5", $"ud6", $"ud7", $"ud8"
-            , $"ud9", $"ud10", $"ud11", $"ud12", $"ud13", $"ud14", $"ud15", $"ud16")
+            , $"ud9", $"ud10", $"ud11", $"ud12", $"ud13", $"ud14")
         ).alias("sparse")
       )
       .select(
