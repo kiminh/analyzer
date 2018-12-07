@@ -80,9 +80,6 @@ object AutoPutCoin {
         val mlFeatureSql =
             s"""
                |select ideaid,exp_cvr
-               |from
-               |(
-               |    select ideaid,exp_cvr,user_id
                |    from
                |    (
                |        select ideaid,exp_cvr
@@ -96,19 +93,22 @@ object AutoPutCoin {
                |        and ideaid not in (2391911, 2385002, 2388289, 2391495, 2381868, 2391641, 2330249, 2384970, 2391533, 2360176, 2391895, 2391881, 2390834)
                |    ) a left outer join
                |    (
-               |        select id,user_id
-               |        from src_cpc.cpc_idea
+               |        select x.id as ideaid ,x.user_id as userid,y.account_type as account_type
+               |        from
+               |        (
+               |            select id,user_id
+               |            from src_cpc.cpc_idea
+               |         ) x left outer join
+               |         (
+               |            select id, account_type
+               |            from src_cpc.cpc_user_p
+               |            where account_type = 2
+               |         ) y
+               |         on x.user_id = y.id
                |    ) b
-               |    on a.ideaid = b.id
-               |) c left outer join
-               |(
-               |    select id, account_type
-               |    from src_cpc.cpc_user_p
-               |    where account_type = 2
-               |) d
-               |on c.ideaid = d.id
-               |where c.user_id in (1550745,1522853,1548882,1530359,1534763,1533743,1538013,1538252,1515505,1552588,1549938,1546988,1557909,1552587)
-               |or d.account_type is null
+               |    on a.ideaid = b.ideaid
+               |    where b.userid in (1550745,1522853,1548882,1530359,1534763,1533743,1538013,1538252,1515505,1552588,1549938,1546988,1557909,1552587)
+               |    or b.account_type is null
              """.stripMargin
         println(mlFeatureSql)
         val mlFeature = spark.sql(mlFeatureSql)
