@@ -27,7 +27,7 @@ object CoinUnionLog {
 
         println(coinUnionLog.count())
 
-        coinUnionLog.repartition(400)
+        coinUnionLog.repartition(200)
           .write
           .mode("overwrite")
           .insertInto("dl_cpc.coin_union_log")
