@@ -255,7 +255,7 @@ object OcpcCPAhistoryV2 {
       .join(alpha1Data, Seq("new_adclass"), "left_outer")
       .select("unitid", "new_adclass", "cvr1cnt", "cpa1", "avg_bid", "alpha1", "alpha1_max")
       .withColumn("cpa1_max", col("avg_bid") * col("alpha1_max"))
-      .withColumn("cpa1_history_" + media, when(col("cpa1") > col("cpa1_max"), col("cpa1_max")).otherwise(col("cpa1")))
+      .withColumn("cpa1_history_" + media, when(col("cpa1") > col("cpa1_max") && col("cpa1_max") > 0, col("cpa1_max")).otherwise(col("cpa1")))
     // TODO 删除临时表
     cvr1alpha.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_alpha1_" + media)
     val cvr1Final = cvr1alpha
@@ -278,7 +278,7 @@ object OcpcCPAhistoryV2 {
       .join(alpha2Data, Seq("new_adclass"), "left_outer")
       .select("unitid", "new_adclass", "cvr2cnt", "cpa2", "avg_bid", "alpha2", "alpha2_max")
       .withColumn("cpa2_max", col("avg_bid") * col("alpha2_max"))
-      .withColumn("cpa2_history_" + media, when(col("cpa2") > col("cpa2_max"), col("cpa2_max")).otherwise(col("cpa2")))
+      .withColumn("cpa2_history_" + media, when(col("cpa2") > col("cpa2_max") && col("cpa2_max")>0, col("cpa2_max")).otherwise(col("cpa2")))
     // TODO 删除临时表
     cvr2alpha.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_alpha2_" + media)
     val cvr2Final = cvr2alpha
@@ -299,8 +299,36 @@ object OcpcCPAhistoryV2 {
     1. 确定转化目标
     2. 根据转化目标和cpa优先级选择最终cpa
      */
-    val rawData = base
-      .withColumn("conversion_goal", udfNovelConversionGoal()(col("cpa1_history_qtt"), col("cpa2_history_qtt"), col("cpa1_history_novel"), col("cpa2_history_novel")))
+    base.createOrReplaceTempView("base_table")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  new_adclass,
+         |  cpa1_history_qtt,
+         |  cpa2_history_qtt,
+         |  cpa1_history_novel,
+         |  cpa2_history_novel,
+         |  cpa1,
+         |  cpa2,
+         |  (case when cpa1_history_qtt is null and cpa2_history_qtt is null then 0
+         |        when cpa1_history_qtt is null and cpa2_history_qtt is not null then 2
+         |        else 1 end) as qtt_conversion,
+         |  (case when cpa1_history_novel is null and cpa2_history_novel is null then 0
+         |        when cpa1_history_novel is null and cpa2_history_novel is not null then 2
+         |        else 1 end) as novel_conversion,
+         |  (case when cpa1 is null and cpa2 is null then 0
+         |        when cpa1 is null and cpa2 is not null then 2
+         |        else 1 end) as adclass_conversion
+         |FROM
+         |  base_table
+       """.stripMargin
+    println(sqlRequest)
+    val rawData = spark.sql(sqlRequest)
+    rawData.printSchema()
+
+    val data = rawData
+      .withColumn("conversion_goal", udfNovelConversionGoal()(col("qtt_conversion"), col("novel_conversion"), col("adclass_conversion")))
       .withColumn("cpa_qtt", when(col("conversion_goal")===1, col("cpa1_history_qtt")).otherwise(col("cpa2_history_qtt")))
       .withColumn("cpa_novel", when(col("conversion_goal")===1, col("cpa1_history_novel")).otherwise(col("cpa2_history_novel")))
       .withColumn("cpa_adclass", when(col("conversion_goal")===1, col("cpa1")).otherwise(col("cpa2")))
@@ -308,14 +336,14 @@ object OcpcCPAhistoryV2 {
       .withColumn("cpa_history", when(col("cpa_history").isNull, col("cpa_adclass")).otherwise("cpa_history"))
 
     // TODO 删除临时表
-    rawData
+    data
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write
       .mode("overwrite")
       .saveAsTable("test.ocpcv3_cpa_history_v2_final_middle")
 
-    val resultDF = rawData
+    val resultDF = data
       .select("unitid", "new_adclass", "cpa_history", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
