@@ -75,6 +75,8 @@ object EvaluationAutoCoin {
                |select
                |    '$date' as `date`,
                |    userid,
+               |    sum(isshow) as show_num,
+               |    sum(case WHEN isshow = 1 and ext_int['exp_style'] =510127 then 1 else 0 end) as coin_show_num,
                |    sum(isclick) / sum(isshow) as ctr,
                |    sum(case when label2 = 1 then 1 else 0 end) / sum(isclick) as cvr,
                |    round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isshow),3) as cpm,
@@ -119,6 +121,15 @@ object EvaluationAutoCoin {
                |    round(show_num/uid_num,6) as aspu,
                |
                |    round(convert_num*100/uid_num,6) as acpu,
+               |
+               |    round(show_0/uid_num,6) as aspu_0,
+               |    round(show_1/uid_num,6) as aspu_1,
+               |    round(show_2/uid_num,6) as aspu_2,
+               |
+               |    round(click_price_0*10/uid_num,6) as arpu_0,
+               |    round(click_price_1*10/uid_num,6) as arpu_1,
+               |    round(click_price_2*10/uid_num,6) as arpu_2,
+               |
                |    round(convert_0*100/uid_num,6) as acpu_0,
                |    round(convert_1*100/uid_num,6) as acpu_1,
                |    round(convert_2*100/uid_num,6) as acpu_2,
@@ -190,9 +201,18 @@ object EvaluationAutoCoin {
                |
                |    sum(case WHEN isclick = 1 then price else 0 end) as click_price, --点击总价
                |    count(distinct uid) as uid_num, --用户数
+               |
+               |    sum(case WHEN isclick = 1 and ext['usertype'].int_value = 0 then price else 0 end) as click_price_0,
+               |    sum(case WHEN isclick = 1 and ext['usertype'].int_value = 1 then price else 0 end) as click_price_1,
+               |    sum(case WHEN isclick = 1 and ext['usertype'].int_value = 2 then price else 0 end) as click_price_2,
+               |
+               |    sum(case WHEN ext['usertype'].int_value = 0 then 1 else 0 end) as show_0,
+               |    sum(case WHEN ext['usertype'].int_value = 1 then 1 else 0 end) as show_1,
+               |    sum(case WHEN ext['usertype'].int_value = 2 then 1 else 0 end) as show_2,
+               |
                |    sum(case WHEN label2 = 1 and ext['usertype'].int_value = 0 then 1 else 0 end) as convert_0, --其他企业数
                |    sum(case WHEN label2 = 1 and ext['usertype'].int_value = 1 then 1 else 0 end) as convert_1, --非企
-               |    sum(case WHEN label2 = 1 and ext['usertype'].int_value = 2 then 1 else 0 end) as convert_2, --正企
+               |    sum(case WHEN label2 = 1 and ext['usertype'].int_value = 2 then 1 else 0 end) as convert_2, --正 企
                |
                |    --网赚
                |    sum(if (round(ext['adclass'].int_value/1000) = 110110 and isshow = 1, 1, 0)) as show_wangzhuan, --网赚展示数
@@ -202,11 +222,11 @@ object EvaluationAutoCoin {
                |    sum(if (round(ext['adclass'].int_value/1000) = 110110 and isclick = 1 and ext_int['exp_style'] =510127, 1, 0)) as click_num_wangzhuan, --网赚金币点击数
                |
                |    --下载
-               |    sum(if (round(ext['adclass'].int_value/1000) = 100102 and isshow = 1, 1, 0)) as show_xiazai, --下载展示数
-               |    sum(if (round(ext['adclass'].int_value/1000) = 100102 and isclick = 1, 1, 0)) as click_xiazai, --下载点击数
-               |    sum(if (round(ext['adclass'].int_value/1000) = 100102 and label2 = 1, 1, 0)) as convert_xiazai, --下载转化数
-               |    sum(if (round(ext['adclass'].int_value/1000) = 100102 and isclick = 1, price, 0)) as click_price_xiazai, --下载点击总价
-               |    sum(if (round(ext['adclass'].int_value/1000) = 100102 and isclick = 1 and ext_int['exp_style'] =510127, 1, 0)) as click_num_xiazai, --下载金币点击数
+               |    sum(if (round(ext['usertype'].int_value = 2 and interaction=2 and isshow = 1, 1, 0)) as show_xiazai, --下载展示数
+               |    sum(if (round(ext['usertype'].int_value = 2 and interaction=2 and isclick = 1, 1, 0)) as click_xiazai, --下载点击数
+               |    sum(if (round(ext['usertype'].int_value = 2 and interaction=2 and label2 = 1, 1, 0)) as convert_xiazai, --下载转化数
+               |    sum(if (round(ext['usertype'].int_value = 2 and interaction=2 and isclick = 1, price, 0)) as click_price_xiazai, --下载点击总价
+               |    sum(if (round(ext['usertype'].int_value = 2 and interaction=2 and isclick = 1 and ext_int['exp_style'] =510127, 1, 0)) as click_num_xiazai, --下载金币点击数
                |
                |    --保健品
                |    sum(if (round(ext['adclass'].int_value/1000) = 130104 and isshow = 1, 1, 0)) as show_baojianpin, --保健品展示数
