@@ -148,7 +148,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |
          |from dl_cpc.cpc_union_log where `date` = '$date' and hour=$hour
          |  and isshow = 1 and ideaid > 0
-         |  and media_appsid in ("80000001", "80000002")
+         |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and length(uid) in (14, 15, 36)
