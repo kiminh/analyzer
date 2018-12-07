@@ -31,7 +31,6 @@ object OcpcGetPb {
       .where(s"`date`='$date' and `hour`='$hour'")
       .select("new_adclass", "avg_cpa1", "avg_cpa2")
 
-    // todo
     // 检查cpa_history=0
     val data = cvrData
       .join(kvalue, Seq("unitid"), "left_outer")
@@ -48,7 +47,12 @@ object OcpcGetPb {
       .withColumn("cpa_history", when(col("cpa_history").isNull || col("cpa_history") === -1, col("avg_cpa")).otherwise(col("cpa_history")))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
       .filter("cpa_history is not null and cpa_history>0 and kvalue>=0")
-//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly_bak")
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "cpa_history_old", "avg_cpa", "avg_cpa1", "avg_cpa2", "new_adclass")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly_middle")
+    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly_middle")
 
 //    unitid          int,
 //    cpa_history     double,

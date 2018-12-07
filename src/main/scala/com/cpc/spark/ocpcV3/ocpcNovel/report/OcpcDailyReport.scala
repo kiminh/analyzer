@@ -16,11 +16,10 @@ object OcpcDailyReport {
     val date = args(0).toString
     val hour = args(1).toString
 
-    // TODO 测试
     val summaryReport = getHourlyReport(date, hour, spark)
-    val tableName = "test.ocpcv3_novel_report_summary_hourly"
-//    summaryReport.write.mode("overwrite").insertInto(tableName)
-    summaryReport.write.mode("overwrite").saveAsTable(tableName)
+    val tableName = "dl_cpc.ocpcv3_novel_report_summary_hourly"
+    summaryReport.write.mode("overwrite").insertInto(tableName)
+//    summaryReport.write.mode("overwrite").saveAsTable(tableName)
     println(s"successfully save table into $tableName")
     saveDataToReport(summaryReport, spark)
   }

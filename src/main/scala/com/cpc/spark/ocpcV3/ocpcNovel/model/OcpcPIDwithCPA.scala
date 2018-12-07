@@ -159,6 +159,7 @@ object OcpcPIDwithCPA {
 
     // case2
     // table name: dl_cpc.ocpcv3_novel_pb_hourly
+    // TODO 去重
     val case2 = spark
       .table("test.ocpcv3_novel_pb_v1_hourly")
       .withColumn("kvalue2", col("kvalue"))
@@ -180,7 +181,6 @@ object OcpcPIDwithCPA {
   }
 
   def getCPAratio(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
-    // TODO case
     /**
       * 计算前6个小时每个广告创意的cpa_given/cpa_real的比值
       * case1：hourly_ctr_cnt<10，可能出价过低，需要提高k值，所以比值应该大于1
