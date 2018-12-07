@@ -35,7 +35,7 @@ object UserBehaviorNovel {
          |      ext['phone_level'].int_value  as click_phone_level,
          |      ext['brand_title'].string_value  as click_brand_title,
          |      row_number() over(partition by uid,ideaid order by timestamp desc) rn
-         |from dl_cpc.cpc_union_log
+         |from dl_cpc.cpc_novel_union_log
          |where date='$date'
          |  and isclick = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
