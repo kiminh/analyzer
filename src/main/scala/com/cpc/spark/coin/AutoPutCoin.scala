@@ -79,7 +79,7 @@ object AutoPutCoin {
         println("apiUnionNth 's count is " + apiUnionNth.count())
         val mlFeatureSql =
             s"""
-               |select ideaid,exp_cvr
+               |select a.ideaid as ideaid,exp_cvr
                |    from
                |    (
                |        select ideaid,exp_cvr
