@@ -3078,6 +3078,32 @@ public final class Cfglog {
      */
     com.google.protobuf.ByteString
         getUaBytes();
+
+    /**
+     * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+     */
+    boolean hasHdicon();
+    /**
+     * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+     */
+    cfglog.Cfglog.HdIcon getHdicon();
+    /**
+     * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+     */
+    cfglog.Cfglog.HdIconOrBuilder getHdiconOrBuilder();
+
+    /**
+     * <code>optional .cfglog.Location location = 15;</code>
+     */
+    boolean hasLocation();
+    /**
+     * <code>optional .cfglog.Location location = 15;</code>
+     */
+    cfglog.Cfglog.Location getLocation();
+    /**
+     * <code>optional .cfglog.Location location = 15;</code>
+     */
+    cfglog.Cfglog.LocationOrBuilder getLocationOrBuilder();
   }
   /**
    * Protobuf type {@code cfglog.NoticeLogBody}
@@ -3227,6 +3253,32 @@ public final class Cfglog {
               com.google.protobuf.ByteString bs = input.readBytes();
               bitField0_ |= 0x00000400;
               ua_ = bs;
+              break;
+            }
+            case 114: {
+              cfglog.Cfglog.HdIcon.Builder subBuilder = null;
+              if (((bitField0_ & 0x00000800) == 0x00000800)) {
+                subBuilder = hdicon_.toBuilder();
+              }
+              hdicon_ = input.readMessage(cfglog.Cfglog.HdIcon.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(hdicon_);
+                hdicon_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00000800;
+              break;
+            }
+            case 122: {
+              cfglog.Cfglog.Location.Builder subBuilder = null;
+              if (((bitField0_ & 0x00001000) == 0x00001000)) {
+                subBuilder = location_.toBuilder();
+              }
+              location_ = input.readMessage(cfglog.Cfglog.Location.PARSER, extensionRegistry);
+              if (subBuilder != null) {
+                subBuilder.mergeFrom(location_);
+                location_ = subBuilder.buildPartial();
+              }
+              bitField0_ |= 0x00001000;
               break;
             }
           }
@@ -3711,6 +3763,48 @@ public final class Cfglog {
       }
     }
 
+    public static final int HDICON_FIELD_NUMBER = 14;
+    private cfglog.Cfglog.HdIcon hdicon_;
+    /**
+     * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+     */
+    public boolean hasHdicon() {
+      return ((bitField0_ & 0x00000800) == 0x00000800);
+    }
+    /**
+     * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+     */
+    public cfglog.Cfglog.HdIcon getHdicon() {
+      return hdicon_ == null ? cfglog.Cfglog.HdIcon.getDefaultInstance() : hdicon_;
+    }
+    /**
+     * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+     */
+    public cfglog.Cfglog.HdIconOrBuilder getHdiconOrBuilder() {
+      return hdicon_ == null ? cfglog.Cfglog.HdIcon.getDefaultInstance() : hdicon_;
+    }
+
+    public static final int LOCATION_FIELD_NUMBER = 15;
+    private cfglog.Cfglog.Location location_;
+    /**
+     * <code>optional .cfglog.Location location = 15;</code>
+     */
+    public boolean hasLocation() {
+      return ((bitField0_ & 0x00001000) == 0x00001000);
+    }
+    /**
+     * <code>optional .cfglog.Location location = 15;</code>
+     */
+    public cfglog.Cfglog.Location getLocation() {
+      return location_ == null ? cfglog.Cfglog.Location.getDefaultInstance() : location_;
+    }
+    /**
+     * <code>optional .cfglog.Location location = 15;</code>
+     */
+    public cfglog.Cfglog.LocationOrBuilder getLocationOrBuilder() {
+      return location_ == null ? cfglog.Cfglog.Location.getDefaultInstance() : location_;
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -3731,6 +3825,12 @@ public final class Cfglog {
       }
       if (hasHdJumpCfg()) {
         if (!getHdJumpCfg().isInitialized()) {
+          memoizedIsInitialized = 0;
+          return false;
+        }
+      }
+      if (hasHdicon()) {
+        if (!getHdicon().isInitialized()) {
           memoizedIsInitialized = 0;
           return false;
         }
@@ -3779,6 +3879,12 @@ public final class Cfglog {
       }
       if (((bitField0_ & 0x00000400) == 0x00000400)) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 13, ua_);
+      }
+      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+        output.writeMessage(14, getHdicon());
+      }
+      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+        output.writeMessage(15, getLocation());
       }
       unknownFields.writeTo(output);
     }
@@ -3839,6 +3945,14 @@ public final class Cfglog {
       }
       if (((bitField0_ & 0x00000400) == 0x00000400)) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(13, ua_);
+      }
+      if (((bitField0_ & 0x00000800) == 0x00000800)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(14, getHdicon());
+      }
+      if (((bitField0_ & 0x00001000) == 0x00001000)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeMessageSize(15, getLocation());
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -3916,6 +4030,16 @@ public final class Cfglog {
         result = result && getUa()
             .equals(other.getUa());
       }
+      result = result && (hasHdicon() == other.hasHdicon());
+      if (hasHdicon()) {
+        result = result && getHdicon()
+            .equals(other.getHdicon());
+      }
+      result = result && (hasLocation() == other.hasLocation());
+      if (hasLocation()) {
+        result = result && getLocation()
+            .equals(other.getLocation());
+      }
       result = result && unknownFields.equals(other.unknownFields);
       return result;
     }
@@ -3978,6 +4102,14 @@ public final class Cfglog {
       if (hasUa()) {
         hash = (37 * hash) + UA_FIELD_NUMBER;
         hash = (53 * hash) + getUa().hashCode();
+      }
+      if (hasHdicon()) {
+        hash = (37 * hash) + HDICON_FIELD_NUMBER;
+        hash = (53 * hash) + getHdicon().hashCode();
+      }
+      if (hasLocation()) {
+        hash = (37 * hash) + LOCATION_FIELD_NUMBER;
+        hash = (53 * hash) + getLocation().hashCode();
       }
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
@@ -4095,6 +4227,8 @@ public final class Cfglog {
                 .alwaysUseFieldBuilders) {
           getFormFieldBuilder();
           getHdJumpCfgFieldBuilder();
+          getHdiconFieldBuilder();
+          getLocationFieldBuilder();
         }
       }
       public Builder clear() {
@@ -4133,6 +4267,18 @@ public final class Cfglog {
         bitField0_ = (bitField0_ & ~0x00000800);
         ua_ = "";
         bitField0_ = (bitField0_ & ~0x00001000);
+        if (hdiconBuilder_ == null) {
+          hdicon_ = null;
+        } else {
+          hdiconBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00002000);
+        if (locationBuilder_ == null) {
+          location_ = null;
+        } else {
+          locationBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00004000);
         return this;
       }
 
@@ -4219,6 +4365,22 @@ public final class Cfglog {
           to_bitField0_ |= 0x00000400;
         }
         result.ua_ = ua_;
+        if (((from_bitField0_ & 0x00002000) == 0x00002000)) {
+          to_bitField0_ |= 0x00000800;
+        }
+        if (hdiconBuilder_ == null) {
+          result.hdicon_ = hdicon_;
+        } else {
+          result.hdicon_ = hdiconBuilder_.build();
+        }
+        if (((from_bitField0_ & 0x00004000) == 0x00004000)) {
+          to_bitField0_ |= 0x00001000;
+        }
+        if (locationBuilder_ == null) {
+          result.location_ = location_;
+        } else {
+          result.location_ = locationBuilder_.build();
+        }
         result.bitField0_ = to_bitField0_;
         onBuilt();
         return result;
@@ -4330,6 +4492,12 @@ public final class Cfglog {
           ua_ = other.ua_;
           onChanged();
         }
+        if (other.hasHdicon()) {
+          mergeHdicon(other.getHdicon());
+        }
+        if (other.hasLocation()) {
+          mergeLocation(other.getLocation());
+        }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
         return this;
@@ -4347,6 +4515,11 @@ public final class Cfglog {
         }
         if (hasHdJumpCfg()) {
           if (!getHdJumpCfg().isInitialized()) {
+            return false;
+          }
+        }
+        if (hasHdicon()) {
+          if (!getHdicon().isInitialized()) {
             return false;
           }
         }
@@ -5433,6 +5606,242 @@ public final class Cfglog {
         onChanged();
         return this;
       }
+
+      private cfglog.Cfglog.HdIcon hdicon_ = null;
+      private com.google.protobuf.SingleFieldBuilderV3<
+          cfglog.Cfglog.HdIcon, cfglog.Cfglog.HdIcon.Builder, cfglog.Cfglog.HdIconOrBuilder> hdiconBuilder_;
+      /**
+       * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+       */
+      public boolean hasHdicon() {
+        return ((bitField0_ & 0x00002000) == 0x00002000);
+      }
+      /**
+       * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+       */
+      public cfglog.Cfglog.HdIcon getHdicon() {
+        if (hdiconBuilder_ == null) {
+          return hdicon_ == null ? cfglog.Cfglog.HdIcon.getDefaultInstance() : hdicon_;
+        } else {
+          return hdiconBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+       */
+      public Builder setHdicon(cfglog.Cfglog.HdIcon value) {
+        if (hdiconBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          hdicon_ = value;
+          onChanged();
+        } else {
+          hdiconBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00002000;
+        return this;
+      }
+      /**
+       * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+       */
+      public Builder setHdicon(
+          cfglog.Cfglog.HdIcon.Builder builderForValue) {
+        if (hdiconBuilder_ == null) {
+          hdicon_ = builderForValue.build();
+          onChanged();
+        } else {
+          hdiconBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00002000;
+        return this;
+      }
+      /**
+       * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+       */
+      public Builder mergeHdicon(cfglog.Cfglog.HdIcon value) {
+        if (hdiconBuilder_ == null) {
+          if (((bitField0_ & 0x00002000) == 0x00002000) &&
+              hdicon_ != null &&
+              hdicon_ != cfglog.Cfglog.HdIcon.getDefaultInstance()) {
+            hdicon_ =
+              cfglog.Cfglog.HdIcon.newBuilder(hdicon_).mergeFrom(value).buildPartial();
+          } else {
+            hdicon_ = value;
+          }
+          onChanged();
+        } else {
+          hdiconBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00002000;
+        return this;
+      }
+      /**
+       * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+       */
+      public Builder clearHdicon() {
+        if (hdiconBuilder_ == null) {
+          hdicon_ = null;
+          onChanged();
+        } else {
+          hdiconBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00002000);
+        return this;
+      }
+      /**
+       * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+       */
+      public cfglog.Cfglog.HdIcon.Builder getHdiconBuilder() {
+        bitField0_ |= 0x00002000;
+        onChanged();
+        return getHdiconFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+       */
+      public cfglog.Cfglog.HdIconOrBuilder getHdiconOrBuilder() {
+        if (hdiconBuilder_ != null) {
+          return hdiconBuilder_.getMessageOrBuilder();
+        } else {
+          return hdicon_ == null ?
+              cfglog.Cfglog.HdIcon.getDefaultInstance() : hdicon_;
+        }
+      }
+      /**
+       * <code>optional .cfglog.HdIcon hdicon = 14;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilderV3<
+          cfglog.Cfglog.HdIcon, cfglog.Cfglog.HdIcon.Builder, cfglog.Cfglog.HdIconOrBuilder> 
+          getHdiconFieldBuilder() {
+        if (hdiconBuilder_ == null) {
+          hdiconBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+              cfglog.Cfglog.HdIcon, cfglog.Cfglog.HdIcon.Builder, cfglog.Cfglog.HdIconOrBuilder>(
+                  getHdicon(),
+                  getParentForChildren(),
+                  isClean());
+          hdicon_ = null;
+        }
+        return hdiconBuilder_;
+      }
+
+      private cfglog.Cfglog.Location location_ = null;
+      private com.google.protobuf.SingleFieldBuilderV3<
+          cfglog.Cfglog.Location, cfglog.Cfglog.Location.Builder, cfglog.Cfglog.LocationOrBuilder> locationBuilder_;
+      /**
+       * <code>optional .cfglog.Location location = 15;</code>
+       */
+      public boolean hasLocation() {
+        return ((bitField0_ & 0x00004000) == 0x00004000);
+      }
+      /**
+       * <code>optional .cfglog.Location location = 15;</code>
+       */
+      public cfglog.Cfglog.Location getLocation() {
+        if (locationBuilder_ == null) {
+          return location_ == null ? cfglog.Cfglog.Location.getDefaultInstance() : location_;
+        } else {
+          return locationBuilder_.getMessage();
+        }
+      }
+      /**
+       * <code>optional .cfglog.Location location = 15;</code>
+       */
+      public Builder setLocation(cfglog.Cfglog.Location value) {
+        if (locationBuilder_ == null) {
+          if (value == null) {
+            throw new NullPointerException();
+          }
+          location_ = value;
+          onChanged();
+        } else {
+          locationBuilder_.setMessage(value);
+        }
+        bitField0_ |= 0x00004000;
+        return this;
+      }
+      /**
+       * <code>optional .cfglog.Location location = 15;</code>
+       */
+      public Builder setLocation(
+          cfglog.Cfglog.Location.Builder builderForValue) {
+        if (locationBuilder_ == null) {
+          location_ = builderForValue.build();
+          onChanged();
+        } else {
+          locationBuilder_.setMessage(builderForValue.build());
+        }
+        bitField0_ |= 0x00004000;
+        return this;
+      }
+      /**
+       * <code>optional .cfglog.Location location = 15;</code>
+       */
+      public Builder mergeLocation(cfglog.Cfglog.Location value) {
+        if (locationBuilder_ == null) {
+          if (((bitField0_ & 0x00004000) == 0x00004000) &&
+              location_ != null &&
+              location_ != cfglog.Cfglog.Location.getDefaultInstance()) {
+            location_ =
+              cfglog.Cfglog.Location.newBuilder(location_).mergeFrom(value).buildPartial();
+          } else {
+            location_ = value;
+          }
+          onChanged();
+        } else {
+          locationBuilder_.mergeFrom(value);
+        }
+        bitField0_ |= 0x00004000;
+        return this;
+      }
+      /**
+       * <code>optional .cfglog.Location location = 15;</code>
+       */
+      public Builder clearLocation() {
+        if (locationBuilder_ == null) {
+          location_ = null;
+          onChanged();
+        } else {
+          locationBuilder_.clear();
+        }
+        bitField0_ = (bitField0_ & ~0x00004000);
+        return this;
+      }
+      /**
+       * <code>optional .cfglog.Location location = 15;</code>
+       */
+      public cfglog.Cfglog.Location.Builder getLocationBuilder() {
+        bitField0_ |= 0x00004000;
+        onChanged();
+        return getLocationFieldBuilder().getBuilder();
+      }
+      /**
+       * <code>optional .cfglog.Location location = 15;</code>
+       */
+      public cfglog.Cfglog.LocationOrBuilder getLocationOrBuilder() {
+        if (locationBuilder_ != null) {
+          return locationBuilder_.getMessageOrBuilder();
+        } else {
+          return location_ == null ?
+              cfglog.Cfglog.Location.getDefaultInstance() : location_;
+        }
+      }
+      /**
+       * <code>optional .cfglog.Location location = 15;</code>
+       */
+      private com.google.protobuf.SingleFieldBuilderV3<
+          cfglog.Cfglog.Location, cfglog.Cfglog.Location.Builder, cfglog.Cfglog.LocationOrBuilder> 
+          getLocationFieldBuilder() {
+        if (locationBuilder_ == null) {
+          locationBuilder_ = new com.google.protobuf.SingleFieldBuilderV3<
+              cfglog.Cfglog.Location, cfglog.Cfglog.Location.Builder, cfglog.Cfglog.LocationOrBuilder>(
+                  getLocation(),
+                  getParentForChildren(),
+                  isClean());
+          location_ = null;
+        }
+        return locationBuilder_;
+      }
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
         return super.setUnknownFields(unknownFields);
@@ -5482,6 +5891,1873 @@ public final class Cfglog {
 
   }
 
+  public interface HdIconOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:cfglog.HdIcon)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>required string iconid = 1;</code>
+     */
+    boolean hasIconid();
+    /**
+     * <code>required string iconid = 1;</code>
+     */
+    java.lang.String getIconid();
+    /**
+     * <code>required string iconid = 1;</code>
+     */
+    com.google.protobuf.ByteString
+        getIconidBytes();
+
+    /**
+     * <code>required string iconurl = 2;</code>
+     */
+    boolean hasIconurl();
+    /**
+     * <code>required string iconurl = 2;</code>
+     */
+    java.lang.String getIconurl();
+    /**
+     * <code>required string iconurl = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getIconurlBytes();
+  }
+  /**
+   * Protobuf type {@code cfglog.HdIcon}
+   */
+  public  static final class HdIcon extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:cfglog.HdIcon)
+      HdIconOrBuilder {
+    // Use HdIcon.newBuilder() to construct.
+    private HdIcon(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+      super(builder);
+    }
+    private HdIcon() {
+      iconid_ = "";
+      iconurl_ = "";
+    }
+
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+    getUnknownFields() {
+      return this.unknownFields;
+    }
+    private HdIcon(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      this();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000001;
+              iconid_ = bs;
+              break;
+            }
+            case 18: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000002;
+              iconurl_ = bs;
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return cfglog.Cfglog.internal_static_cfglog_HdIcon_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return cfglog.Cfglog.internal_static_cfglog_HdIcon_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              cfglog.Cfglog.HdIcon.class, cfglog.Cfglog.HdIcon.Builder.class);
+    }
+
+    private int bitField0_;
+    public static final int ICONID_FIELD_NUMBER = 1;
+    private volatile java.lang.Object iconid_;
+    /**
+     * <code>required string iconid = 1;</code>
+     */
+    public boolean hasIconid() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>required string iconid = 1;</code>
+     */
+    public java.lang.String getIconid() {
+      java.lang.Object ref = iconid_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          iconid_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string iconid = 1;</code>
+     */
+    public com.google.protobuf.ByteString
+        getIconidBytes() {
+      java.lang.Object ref = iconid_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        iconid_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int ICONURL_FIELD_NUMBER = 2;
+    private volatile java.lang.Object iconurl_;
+    /**
+     * <code>required string iconurl = 2;</code>
+     */
+    public boolean hasIconurl() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>required string iconurl = 2;</code>
+     */
+    public java.lang.String getIconurl() {
+      java.lang.Object ref = iconurl_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          iconurl_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>required string iconurl = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getIconurlBytes() {
+      java.lang.Object ref = iconurl_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        iconurl_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      if (!hasIconid()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      if (!hasIconurl()) {
+        memoizedIsInitialized = 0;
+        return false;
+      }
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 1, iconid_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 2, iconurl_);
+      }
+      unknownFields.writeTo(output);
+    }
+
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(1, iconid_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(2, iconurl_);
+      }
+      size += unknownFields.getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof cfglog.Cfglog.HdIcon)) {
+        return super.equals(obj);
+      }
+      cfglog.Cfglog.HdIcon other = (cfglog.Cfglog.HdIcon) obj;
+
+      boolean result = true;
+      result = result && (hasIconid() == other.hasIconid());
+      if (hasIconid()) {
+        result = result && getIconid()
+            .equals(other.getIconid());
+      }
+      result = result && (hasIconurl() == other.hasIconurl());
+      if (hasIconurl()) {
+        result = result && getIconurl()
+            .equals(other.getIconurl());
+      }
+      result = result && unknownFields.equals(other.unknownFields);
+      return result;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      if (hasIconid()) {
+        hash = (37 * hash) + ICONID_FIELD_NUMBER;
+        hash = (53 * hash) + getIconid().hashCode();
+      }
+      if (hasIconurl()) {
+        hash = (37 * hash) + ICONURL_FIELD_NUMBER;
+        hash = (53 * hash) + getIconurl().hashCode();
+      }
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static cfglog.Cfglog.HdIcon parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static cfglog.Cfglog.HdIcon parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static cfglog.Cfglog.HdIcon parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static cfglog.Cfglog.HdIcon parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static cfglog.Cfglog.HdIcon parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static cfglog.Cfglog.HdIcon parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static cfglog.Cfglog.HdIcon parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+    public static cfglog.Cfglog.HdIcon parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static cfglog.Cfglog.HdIcon parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static cfglog.Cfglog.HdIcon parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(cfglog.Cfglog.HdIcon prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code cfglog.HdIcon}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:cfglog.HdIcon)
+        cfglog.Cfglog.HdIconOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return cfglog.Cfglog.internal_static_cfglog_HdIcon_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return cfglog.Cfglog.internal_static_cfglog_HdIcon_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                cfglog.Cfglog.HdIcon.class, cfglog.Cfglog.HdIcon.Builder.class);
+      }
+
+      // Construct using cfglog.Cfglog.HdIcon.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
+        }
+      }
+      public Builder clear() {
+        super.clear();
+        iconid_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        iconurl_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        return this;
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return cfglog.Cfglog.internal_static_cfglog_HdIcon_descriptor;
+      }
+
+      public cfglog.Cfglog.HdIcon getDefaultInstanceForType() {
+        return cfglog.Cfglog.HdIcon.getDefaultInstance();
+      }
+
+      public cfglog.Cfglog.HdIcon build() {
+        cfglog.Cfglog.HdIcon result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public cfglog.Cfglog.HdIcon buildPartial() {
+        cfglog.Cfglog.HdIcon result = new cfglog.Cfglog.HdIcon(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.iconid_ = iconid_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.iconurl_ = iconurl_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder clone() {
+        return (Builder) super.clone();
+      }
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.setField(field, value);
+      }
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return (Builder) super.clearField(field);
+      }
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return (Builder) super.clearOneof(oneof);
+      }
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, Object value) {
+        return (Builder) super.setRepeatedField(field, index, value);
+      }
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.addRepeatedField(field, value);
+      }
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof cfglog.Cfglog.HdIcon) {
+          return mergeFrom((cfglog.Cfglog.HdIcon)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(cfglog.Cfglog.HdIcon other) {
+        if (other == cfglog.Cfglog.HdIcon.getDefaultInstance()) return this;
+        if (other.hasIconid()) {
+          bitField0_ |= 0x00000001;
+          iconid_ = other.iconid_;
+          onChanged();
+        }
+        if (other.hasIconurl()) {
+          bitField0_ |= 0x00000002;
+          iconurl_ = other.iconurl_;
+          onChanged();
+        }
+        this.mergeUnknownFields(other.unknownFields);
+        onChanged();
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        if (!hasIconid()) {
+          return false;
+        }
+        if (!hasIconurl()) {
+          return false;
+        }
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        cfglog.Cfglog.HdIcon parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (cfglog.Cfglog.HdIcon) e.getUnfinishedMessage();
+          throw e.unwrapIOException();
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      private java.lang.Object iconid_ = "";
+      /**
+       * <code>required string iconid = 1;</code>
+       */
+      public boolean hasIconid() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>required string iconid = 1;</code>
+       */
+      public java.lang.String getIconid() {
+        java.lang.Object ref = iconid_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            iconid_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string iconid = 1;</code>
+       */
+      public com.google.protobuf.ByteString
+          getIconidBytes() {
+        java.lang.Object ref = iconid_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          iconid_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string iconid = 1;</code>
+       */
+      public Builder setIconid(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        iconid_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string iconid = 1;</code>
+       */
+      public Builder clearIconid() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        iconid_ = getDefaultInstance().getIconid();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string iconid = 1;</code>
+       */
+      public Builder setIconidBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        iconid_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object iconurl_ = "";
+      /**
+       * <code>required string iconurl = 2;</code>
+       */
+      public boolean hasIconurl() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>required string iconurl = 2;</code>
+       */
+      public java.lang.String getIconurl() {
+        java.lang.Object ref = iconurl_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            iconurl_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>required string iconurl = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getIconurlBytes() {
+        java.lang.Object ref = iconurl_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          iconurl_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>required string iconurl = 2;</code>
+       */
+      public Builder setIconurl(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        iconurl_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string iconurl = 2;</code>
+       */
+      public Builder clearIconurl() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        iconurl_ = getDefaultInstance().getIconurl();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>required string iconurl = 2;</code>
+       */
+      public Builder setIconurlBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        iconurl_ = value;
+        onChanged();
+        return this;
+      }
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.setUnknownFields(unknownFields);
+      }
+
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.mergeUnknownFields(unknownFields);
+      }
+
+
+      // @@protoc_insertion_point(builder_scope:cfglog.HdIcon)
+    }
+
+    // @@protoc_insertion_point(class_scope:cfglog.HdIcon)
+    private static final cfglog.Cfglog.HdIcon DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new cfglog.Cfglog.HdIcon();
+    }
+
+    public static cfglog.Cfglog.HdIcon getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<HdIcon>
+        PARSER = new com.google.protobuf.AbstractParser<HdIcon>() {
+      public HdIcon parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+          return new HdIcon(input, extensionRegistry);
+      }
+    };
+
+    public static com.google.protobuf.Parser<HdIcon> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<HdIcon> getParserForType() {
+      return PARSER;
+    }
+
+    public cfglog.Cfglog.HdIcon getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
+  public interface LocationOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:cfglog.Location)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>optional uint32 country = 1;</code>
+     */
+    boolean hasCountry();
+    /**
+     * <code>optional uint32 country = 1;</code>
+     */
+    int getCountry();
+
+    /**
+     * <code>optional uint32 province = 2;</code>
+     */
+    boolean hasProvince();
+    /**
+     * <code>optional uint32 province = 2;</code>
+     */
+    int getProvince();
+
+    /**
+     * <code>optional uint32 city = 3;</code>
+     */
+    boolean hasCity();
+    /**
+     * <code>optional uint32 city = 3;</code>
+     */
+    int getCity();
+
+    /**
+     * <code>optional uint32 isp = 4;</code>
+     */
+    boolean hasIsp();
+    /**
+     * <code>optional uint32 isp = 4;</code>
+     */
+    int getIsp();
+
+    /**
+     * <code>optional string province_name = 5;</code>
+     */
+    boolean hasProvinceName();
+    /**
+     * <code>optional string province_name = 5;</code>
+     */
+    java.lang.String getProvinceName();
+    /**
+     * <code>optional string province_name = 5;</code>
+     */
+    com.google.protobuf.ByteString
+        getProvinceNameBytes();
+
+    /**
+     * <code>optional string city_name = 6;</code>
+     */
+    boolean hasCityName();
+    /**
+     * <code>optional string city_name = 6;</code>
+     */
+    java.lang.String getCityName();
+    /**
+     * <code>optional string city_name = 6;</code>
+     */
+    com.google.protobuf.ByteString
+        getCityNameBytes();
+
+    /**
+     * <code>optional uint32 city_level = 7;</code>
+     */
+    boolean hasCityLevel();
+    /**
+     * <code>optional uint32 city_level = 7;</code>
+     */
+    int getCityLevel();
+  }
+  /**
+   * Protobuf type {@code cfglog.Location}
+   */
+  public  static final class Location extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:cfglog.Location)
+      LocationOrBuilder {
+    // Use Location.newBuilder() to construct.
+    private Location(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+      super(builder);
+    }
+    private Location() {
+      country_ = 0;
+      province_ = 0;
+      city_ = 0;
+      isp_ = 0;
+      provinceName_ = "";
+      cityName_ = "";
+      cityLevel_ = 0;
+    }
+
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+    getUnknownFields() {
+      return this.unknownFields;
+    }
+    private Location(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      this();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 8: {
+              bitField0_ |= 0x00000001;
+              country_ = input.readUInt32();
+              break;
+            }
+            case 16: {
+              bitField0_ |= 0x00000002;
+              province_ = input.readUInt32();
+              break;
+            }
+            case 24: {
+              bitField0_ |= 0x00000004;
+              city_ = input.readUInt32();
+              break;
+            }
+            case 32: {
+              bitField0_ |= 0x00000008;
+              isp_ = input.readUInt32();
+              break;
+            }
+            case 42: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000010;
+              provinceName_ = bs;
+              break;
+            }
+            case 50: {
+              com.google.protobuf.ByteString bs = input.readBytes();
+              bitField0_ |= 0x00000020;
+              cityName_ = bs;
+              break;
+            }
+            case 56: {
+              bitField0_ |= 0x00000040;
+              cityLevel_ = input.readUInt32();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return cfglog.Cfglog.internal_static_cfglog_Location_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return cfglog.Cfglog.internal_static_cfglog_Location_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              cfglog.Cfglog.Location.class, cfglog.Cfglog.Location.Builder.class);
+    }
+
+    private int bitField0_;
+    public static final int COUNTRY_FIELD_NUMBER = 1;
+    private int country_;
+    /**
+     * <code>optional uint32 country = 1;</code>
+     */
+    public boolean hasCountry() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>optional uint32 country = 1;</code>
+     */
+    public int getCountry() {
+      return country_;
+    }
+
+    public static final int PROVINCE_FIELD_NUMBER = 2;
+    private int province_;
+    /**
+     * <code>optional uint32 province = 2;</code>
+     */
+    public boolean hasProvince() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>optional uint32 province = 2;</code>
+     */
+    public int getProvince() {
+      return province_;
+    }
+
+    public static final int CITY_FIELD_NUMBER = 3;
+    private int city_;
+    /**
+     * <code>optional uint32 city = 3;</code>
+     */
+    public boolean hasCity() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional uint32 city = 3;</code>
+     */
+    public int getCity() {
+      return city_;
+    }
+
+    public static final int ISP_FIELD_NUMBER = 4;
+    private int isp_;
+    /**
+     * <code>optional uint32 isp = 4;</code>
+     */
+    public boolean hasIsp() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional uint32 isp = 4;</code>
+     */
+    public int getIsp() {
+      return isp_;
+    }
+
+    public static final int PROVINCE_NAME_FIELD_NUMBER = 5;
+    private volatile java.lang.Object provinceName_;
+    /**
+     * <code>optional string province_name = 5;</code>
+     */
+    public boolean hasProvinceName() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>optional string province_name = 5;</code>
+     */
+    public java.lang.String getProvinceName() {
+      java.lang.Object ref = provinceName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          provinceName_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string province_name = 5;</code>
+     */
+    public com.google.protobuf.ByteString
+        getProvinceNameBytes() {
+      java.lang.Object ref = provinceName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        provinceName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int CITY_NAME_FIELD_NUMBER = 6;
+    private volatile java.lang.Object cityName_;
+    /**
+     * <code>optional string city_name = 6;</code>
+     */
+    public boolean hasCityName() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <code>optional string city_name = 6;</code>
+     */
+    public java.lang.String getCityName() {
+      java.lang.Object ref = cityName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          cityName_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string city_name = 6;</code>
+     */
+    public com.google.protobuf.ByteString
+        getCityNameBytes() {
+      java.lang.Object ref = cityName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        cityName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int CITY_LEVEL_FIELD_NUMBER = 7;
+    private int cityLevel_;
+    /**
+     * <code>optional uint32 city_level = 7;</code>
+     */
+    public boolean hasCityLevel() {
+      return ((bitField0_ & 0x00000040) == 0x00000040);
+    }
+    /**
+     * <code>optional uint32 city_level = 7;</code>
+     */
+    public int getCityLevel() {
+      return cityLevel_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeUInt32(1, country_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeUInt32(2, province_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeUInt32(3, city_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeUInt32(4, isp_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 5, provinceName_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 6, cityName_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        output.writeUInt32(7, cityLevel_);
+      }
+      unknownFields.writeTo(output);
+    }
+
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(1, country_);
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(2, province_);
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(3, city_);
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(4, isp_);
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(5, provinceName_);
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, cityName_);
+      }
+      if (((bitField0_ & 0x00000040) == 0x00000040)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(7, cityLevel_);
+      }
+      size += unknownFields.getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof cfglog.Cfglog.Location)) {
+        return super.equals(obj);
+      }
+      cfglog.Cfglog.Location other = (cfglog.Cfglog.Location) obj;
+
+      boolean result = true;
+      result = result && (hasCountry() == other.hasCountry());
+      if (hasCountry()) {
+        result = result && (getCountry()
+            == other.getCountry());
+      }
+      result = result && (hasProvince() == other.hasProvince());
+      if (hasProvince()) {
+        result = result && (getProvince()
+            == other.getProvince());
+      }
+      result = result && (hasCity() == other.hasCity());
+      if (hasCity()) {
+        result = result && (getCity()
+            == other.getCity());
+      }
+      result = result && (hasIsp() == other.hasIsp());
+      if (hasIsp()) {
+        result = result && (getIsp()
+            == other.getIsp());
+      }
+      result = result && (hasProvinceName() == other.hasProvinceName());
+      if (hasProvinceName()) {
+        result = result && getProvinceName()
+            .equals(other.getProvinceName());
+      }
+      result = result && (hasCityName() == other.hasCityName());
+      if (hasCityName()) {
+        result = result && getCityName()
+            .equals(other.getCityName());
+      }
+      result = result && (hasCityLevel() == other.hasCityLevel());
+      if (hasCityLevel()) {
+        result = result && (getCityLevel()
+            == other.getCityLevel());
+      }
+      result = result && unknownFields.equals(other.unknownFields);
+      return result;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      if (hasCountry()) {
+        hash = (37 * hash) + COUNTRY_FIELD_NUMBER;
+        hash = (53 * hash) + getCountry();
+      }
+      if (hasProvince()) {
+        hash = (37 * hash) + PROVINCE_FIELD_NUMBER;
+        hash = (53 * hash) + getProvince();
+      }
+      if (hasCity()) {
+        hash = (37 * hash) + CITY_FIELD_NUMBER;
+        hash = (53 * hash) + getCity();
+      }
+      if (hasIsp()) {
+        hash = (37 * hash) + ISP_FIELD_NUMBER;
+        hash = (53 * hash) + getIsp();
+      }
+      if (hasProvinceName()) {
+        hash = (37 * hash) + PROVINCE_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getProvinceName().hashCode();
+      }
+      if (hasCityName()) {
+        hash = (37 * hash) + CITY_NAME_FIELD_NUMBER;
+        hash = (53 * hash) + getCityName().hashCode();
+      }
+      if (hasCityLevel()) {
+        hash = (37 * hash) + CITY_LEVEL_FIELD_NUMBER;
+        hash = (53 * hash) + getCityLevel();
+      }
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static cfglog.Cfglog.Location parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static cfglog.Cfglog.Location parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static cfglog.Cfglog.Location parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static cfglog.Cfglog.Location parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static cfglog.Cfglog.Location parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static cfglog.Cfglog.Location parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static cfglog.Cfglog.Location parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+    public static cfglog.Cfglog.Location parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static cfglog.Cfglog.Location parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static cfglog.Cfglog.Location parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(cfglog.Cfglog.Location prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code cfglog.Location}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:cfglog.Location)
+        cfglog.Cfglog.LocationOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return cfglog.Cfglog.internal_static_cfglog_Location_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return cfglog.Cfglog.internal_static_cfglog_Location_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                cfglog.Cfglog.Location.class, cfglog.Cfglog.Location.Builder.class);
+      }
+
+      // Construct using cfglog.Cfglog.Location.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
+        }
+      }
+      public Builder clear() {
+        super.clear();
+        country_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000001);
+        province_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000002);
+        city_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000004);
+        isp_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000008);
+        provinceName_ = "";
+        bitField0_ = (bitField0_ & ~0x00000010);
+        cityName_ = "";
+        bitField0_ = (bitField0_ & ~0x00000020);
+        cityLevel_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000040);
+        return this;
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return cfglog.Cfglog.internal_static_cfglog_Location_descriptor;
+      }
+
+      public cfglog.Cfglog.Location getDefaultInstanceForType() {
+        return cfglog.Cfglog.Location.getDefaultInstance();
+      }
+
+      public cfglog.Cfglog.Location build() {
+        cfglog.Cfglog.Location result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public cfglog.Cfglog.Location buildPartial() {
+        cfglog.Cfglog.Location result = new cfglog.Cfglog.Location(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.country_ = country_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.province_ = province_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.city_ = city_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.isp_ = isp_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.provinceName_ = provinceName_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.cityName_ = cityName_;
+        if (((from_bitField0_ & 0x00000040) == 0x00000040)) {
+          to_bitField0_ |= 0x00000040;
+        }
+        result.cityLevel_ = cityLevel_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder clone() {
+        return (Builder) super.clone();
+      }
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.setField(field, value);
+      }
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return (Builder) super.clearField(field);
+      }
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return (Builder) super.clearOneof(oneof);
+      }
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, Object value) {
+        return (Builder) super.setRepeatedField(field, index, value);
+      }
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          Object value) {
+        return (Builder) super.addRepeatedField(field, value);
+      }
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof cfglog.Cfglog.Location) {
+          return mergeFrom((cfglog.Cfglog.Location)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(cfglog.Cfglog.Location other) {
+        if (other == cfglog.Cfglog.Location.getDefaultInstance()) return this;
+        if (other.hasCountry()) {
+          setCountry(other.getCountry());
+        }
+        if (other.hasProvince()) {
+          setProvince(other.getProvince());
+        }
+        if (other.hasCity()) {
+          setCity(other.getCity());
+        }
+        if (other.hasIsp()) {
+          setIsp(other.getIsp());
+        }
+        if (other.hasProvinceName()) {
+          bitField0_ |= 0x00000010;
+          provinceName_ = other.provinceName_;
+          onChanged();
+        }
+        if (other.hasCityName()) {
+          bitField0_ |= 0x00000020;
+          cityName_ = other.cityName_;
+          onChanged();
+        }
+        if (other.hasCityLevel()) {
+          setCityLevel(other.getCityLevel());
+        }
+        this.mergeUnknownFields(other.unknownFields);
+        onChanged();
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        cfglog.Cfglog.Location parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (cfglog.Cfglog.Location) e.getUnfinishedMessage();
+          throw e.unwrapIOException();
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      private int country_ ;
+      /**
+       * <code>optional uint32 country = 1;</code>
+       */
+      public boolean hasCountry() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>optional uint32 country = 1;</code>
+       */
+      public int getCountry() {
+        return country_;
+      }
+      /**
+       * <code>optional uint32 country = 1;</code>
+       */
+      public Builder setCountry(int value) {
+        bitField0_ |= 0x00000001;
+        country_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint32 country = 1;</code>
+       */
+      public Builder clearCountry() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        country_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int province_ ;
+      /**
+       * <code>optional uint32 province = 2;</code>
+       */
+      public boolean hasProvince() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional uint32 province = 2;</code>
+       */
+      public int getProvince() {
+        return province_;
+      }
+      /**
+       * <code>optional uint32 province = 2;</code>
+       */
+      public Builder setProvince(int value) {
+        bitField0_ |= 0x00000002;
+        province_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint32 province = 2;</code>
+       */
+      public Builder clearProvince() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        province_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int city_ ;
+      /**
+       * <code>optional uint32 city = 3;</code>
+       */
+      public boolean hasCity() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>optional uint32 city = 3;</code>
+       */
+      public int getCity() {
+        return city_;
+      }
+      /**
+       * <code>optional uint32 city = 3;</code>
+       */
+      public Builder setCity(int value) {
+        bitField0_ |= 0x00000004;
+        city_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint32 city = 3;</code>
+       */
+      public Builder clearCity() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        city_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int isp_ ;
+      /**
+       * <code>optional uint32 isp = 4;</code>
+       */
+      public boolean hasIsp() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional uint32 isp = 4;</code>
+       */
+      public int getIsp() {
+        return isp_;
+      }
+      /**
+       * <code>optional uint32 isp = 4;</code>
+       */
+      public Builder setIsp(int value) {
+        bitField0_ |= 0x00000008;
+        isp_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint32 isp = 4;</code>
+       */
+      public Builder clearIsp() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        isp_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object provinceName_ = "";
+      /**
+       * <code>optional string province_name = 5;</code>
+       */
+      public boolean hasProvinceName() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional string province_name = 5;</code>
+       */
+      public java.lang.String getProvinceName() {
+        java.lang.Object ref = provinceName_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            provinceName_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string province_name = 5;</code>
+       */
+      public com.google.protobuf.ByteString
+          getProvinceNameBytes() {
+        java.lang.Object ref = provinceName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          provinceName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string province_name = 5;</code>
+       */
+      public Builder setProvinceName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        provinceName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string province_name = 5;</code>
+       */
+      public Builder clearProvinceName() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        provinceName_ = getDefaultInstance().getProvinceName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string province_name = 5;</code>
+       */
+      public Builder setProvinceNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        provinceName_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object cityName_ = "";
+      /**
+       * <code>optional string city_name = 6;</code>
+       */
+      public boolean hasCityName() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <code>optional string city_name = 6;</code>
+       */
+      public java.lang.String getCityName() {
+        java.lang.Object ref = cityName_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          if (bs.isValidUtf8()) {
+            cityName_ = s;
+          }
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string city_name = 6;</code>
+       */
+      public com.google.protobuf.ByteString
+          getCityNameBytes() {
+        java.lang.Object ref = cityName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          cityName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string city_name = 6;</code>
+       */
+      public Builder setCityName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        cityName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string city_name = 6;</code>
+       */
+      public Builder clearCityName() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        cityName_ = getDefaultInstance().getCityName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string city_name = 6;</code>
+       */
+      public Builder setCityNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000020;
+        cityName_ = value;
+        onChanged();
+        return this;
+      }
+
+      private int cityLevel_ ;
+      /**
+       * <code>optional uint32 city_level = 7;</code>
+       */
+      public boolean hasCityLevel() {
+        return ((bitField0_ & 0x00000040) == 0x00000040);
+      }
+      /**
+       * <code>optional uint32 city_level = 7;</code>
+       */
+      public int getCityLevel() {
+        return cityLevel_;
+      }
+      /**
+       * <code>optional uint32 city_level = 7;</code>
+       */
+      public Builder setCityLevel(int value) {
+        bitField0_ |= 0x00000040;
+        cityLevel_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint32 city_level = 7;</code>
+       */
+      public Builder clearCityLevel() {
+        bitField0_ = (bitField0_ & ~0x00000040);
+        cityLevel_ = 0;
+        onChanged();
+        return this;
+      }
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.setUnknownFields(unknownFields);
+      }
+
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.mergeUnknownFields(unknownFields);
+      }
+
+
+      // @@protoc_insertion_point(builder_scope:cfglog.Location)
+    }
+
+    // @@protoc_insertion_point(class_scope:cfglog.Location)
+    private static final cfglog.Cfglog.Location DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new cfglog.Cfglog.Location();
+    }
+
+    public static cfglog.Cfglog.Location getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    @java.lang.Deprecated public static final com.google.protobuf.Parser<Location>
+        PARSER = new com.google.protobuf.AbstractParser<Location>() {
+      public Location parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+          return new Location(input, extensionRegistry);
+      }
+    };
+
+    public static com.google.protobuf.Parser<Location> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<Location> getParserForType() {
+      return PARSER;
+    }
+
+    public cfglog.Cfglog.Location getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
   private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_cfglog_Rule_descriptor;
   private static final 
@@ -5507,6 +7783,16 @@ public final class Cfglog {
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_cfglog_NoticeLogBody_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_cfglog_HdIcon_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_cfglog_HdIcon_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_cfglog_Location_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_cfglog_Location_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -5521,14 +7807,20 @@ public final class Cfglog {
       "mpCfg\022\035\n\007hd_jump\030\001 \003(\0132\014.cfglog.Rule\"\'\n\t" +
       "FormValue\022\013\n\003key\030\001 \002(\t\022\r\n\005value\030\002 \002(\t\")\n" +
       "\004Form\022!\n\006values\030\001 \003(\0132\021.cfglog.FormValue" +
-      "\"\233\002\n\rNoticeLogBody\022\013\n\003aid\030\001 \003(\t\022\022\n\nad_sl" +
+      "\"\337\002\n\rNoticeLogBody\022\013\n\003aid\030\001 \003(\t\022\022\n\nad_sl" +
       "ot_id\030\002 \001(\t\022\020\n\010url_path\030\003 \002(\t\022\032\n\004form\030\004 " +
       "\002(\0132\014.cfglog.Form\022\021\n\tresp_body\030\005 \001(\t\022&\n\013" +
       "hd_jump_cfg\030\006 \001(\0132\021.cfglog.HdJumpCfg\022\024\n\014" +
       "redirect_url\030\007 \001(\t\022\021\n\ttimestamp\030\010 \001(\r\022\023\n",
       "\013request_url\030\t \001(\t\022\023\n\013adslot_conf\030\n \001(\t\022" +
       "\025\n\rtemplate_conf\030\013 \003(\t\022\n\n\002ip\030\014 \001(\t\022\n\n\002ua" +
-      "\030\r \001(\t"
+      "\030\r \001(\t\022\036\n\006hdicon\030\016 \001(\0132\016.cfglog.HdIcon\022\"" +
+      "\n\010location\030\017 \001(\0132\020.cfglog.Location\")\n\006Hd" +
+      "Icon\022\016\n\006iconid\030\001 \002(\t\022\017\n\007iconurl\030\002 \002(\t\"\206\001" +
+      "\n\010Location\022\017\n\007country\030\001 \001(\r\022\020\n\010province\030" +
+      "\002 \001(\r\022\014\n\004city\030\003 \001(\r\022\013\n\003isp\030\004 \001(\r\022\025\n\rprov" +
+      "ince_name\030\005 \001(\t\022\021\n\tcity_name\030\006 \001(\t\022\022\n\nci" +
+      "ty_level\030\007 \001(\r"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -5571,7 +7863,19 @@ public final class Cfglog {
     internal_static_cfglog_NoticeLogBody_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_cfglog_NoticeLogBody_descriptor,
-        new java.lang.String[] { "Aid", "AdSlotId", "UrlPath", "Form", "RespBody", "HdJumpCfg", "RedirectUrl", "Timestamp", "RequestUrl", "AdslotConf", "TemplateConf", "Ip", "Ua", });
+        new java.lang.String[] { "Aid", "AdSlotId", "UrlPath", "Form", "RespBody", "HdJumpCfg", "RedirectUrl", "Timestamp", "RequestUrl", "AdslotConf", "TemplateConf", "Ip", "Ua", "Hdicon", "Location", });
+    internal_static_cfglog_HdIcon_descriptor =
+      getDescriptor().getMessageTypes().get(5);
+    internal_static_cfglog_HdIcon_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_cfglog_HdIcon_descriptor,
+        new java.lang.String[] { "Iconid", "Iconurl", });
+    internal_static_cfglog_Location_descriptor =
+      getDescriptor().getMessageTypes().get(6);
+    internal_static_cfglog_Location_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_cfglog_Location_descriptor,
+        new java.lang.String[] { "Country", "Province", "City", "Isp", "ProvinceName", "CityName", "CityLevel", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

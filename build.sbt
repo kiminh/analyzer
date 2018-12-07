@@ -13,7 +13,8 @@ javacOptions ++= Seq(
 PB.protocVersion := "-v:com.google.protobuf:protoc:3.0.0"
 PB.pythonExe := "C:/Python27/Python.exe"
 PB.targets in Compile := Seq(
-  scalapb.gen() -> (sourceManaged in Compile).value
+  PB.gens.java -> (sourceManaged in Compile).value,
+  scalapb.gen(javaConversions = true) -> (sourceManaged in Compile).value
 )
 
 libraryDependencies ++= Seq(

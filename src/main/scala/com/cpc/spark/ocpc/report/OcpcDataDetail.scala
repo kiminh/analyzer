@@ -19,6 +19,7 @@ object OcpcDataDetail {
     val hour = args(1).toString
 
     val data = exportHourlyReport(date, hour, spark)
+//    data.write.mode("overwrite").saveAsTable("test.ocpc_detail_report20181505")
     saveDataDetailToReport(data, spark)
   }
 
@@ -30,11 +31,13 @@ object OcpcDataDetail {
       .where(s"`date`='$date' and `hour`='$hour'")
       .withColumn("conversion_goal", lit(2))
       .select("ideaid", "userid", "conversion_goal", "step2_percent", "cpa_given", "cpa_real", "show_cnt", "ctr_cnt", "cvr_cnt", "price", "avg_k", "recent_k")
+      .withColumn("cvr_cnt", when(col("cvr_cnt").isNull, 0).otherwise(col("cvr_cnt")))
 
     val noApiData = spark
       .table("dl_cpc.ocpc_check_hourly_report_noapi")
       .where(s"`date`='$date' and `hour`='$hour'")
       .select("ideaid", "userid", "conversion_goal", "step2_percent", "cpa_given", "cpa_real", "show_cnt", "ctr_cnt", "cvr_cnt", "price", "avg_k", "recent_k")
+      .withColumn("cvr_cnt", when(col("cvr_cnt").isNull, 0).otherwise(col("cvr_cnt")))
       .filter("ctr_cnt>0")
 
     // 把两个部分数据连接到一起

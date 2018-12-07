@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package ratio;
+
+message CvRatio {
+    string media_appsid = 1;
+    double ratio = 2;
+    string date = 3;
+}
+
+message Ratio {
+    repeated CvRatio cvratio = 1;
+}
+
+message IdeaidRatio {
+    int32 ideaid = 1;
+    double ratio = 2;
+    string date = 3;
+}
+
+message IdeaidCtrRatio {
+    repeated IdeaidRatio ideaidRatio = 1;
+}
