@@ -31,26 +31,26 @@ object OcpcCPAhistoryV2 {
     // 按照要求生成相关基础数据表
     val baseData = getBaseData(date, hour, spark)
     val qttData = getQttCPA(baseData, date, hour, spark)
-    val novelData = getNovelCPA(baseData, date, hour, spark)
-    val adclassData = getAdclassCPA(baseData, date, hour, spark).select("new_adclass", "cpa1", "cpa2")
+//    val novelData = getNovelCPA(baseData, date, hour, spark)
+//    val adclassData = getAdclassCPA(baseData, date, hour, spark).select("new_adclass", "cpa1", "cpa2")
     val qttAlpha = checkCPAhistory(qttData, 0.8, "qtt", date, hour, spark)
-    val novelAlpha = checkCPAhistory(novelData, 0.8, "novel", date, hour, spark)
-
-    // 数据表关联
-    val data = baseData
-      .select("unitid", "new_adclass")
-      .distinct()
-      .join(qttAlpha, Seq("unitid", "new_adclass"), "left_outer")
-      .join(novelAlpha, Seq("unitid", "new_adclass"), "left_outer")
-      .join(adclassData, Seq("new_adclass"), "left_outer")
-      .select("unitid", "new_adclass", "cpa1_history_qtt", "cpa2_history_qtt", "cpa1_history_novel", "cpa2_history_novel", "cpa1", "cpa2")
-
-    // 按照策略挑选合适的cpa以及确定对应的conversion_goal
-    val result = getResult(data, date, hour, spark)
-    // TODO 删除临时表
-    val tableName = "test.ocpcv3_novel_cpa_history_hourly_v2"
-    result.write.mode("overwrite").saveAsTable(tableName)
-    println(s"save data into table: $tableName")
+//    val novelAlpha = checkCPAhistory(novelData, 0.8, "novel", date, hour, spark)
+//
+//    // 数据表关联
+//    val data = baseData
+//      .select("unitid", "new_adclass")
+//      .distinct()
+//      .join(qttAlpha, Seq("unitid", "new_adclass"), "left_outer")
+//      .join(novelAlpha, Seq("unitid", "new_adclass"), "left_outer")
+//      .join(adclassData, Seq("new_adclass"), "left_outer")
+//      .select("unitid", "new_adclass", "cpa1_history_qtt", "cpa2_history_qtt", "cpa1_history_novel", "cpa2_history_novel", "cpa1", "cpa2")
+//
+//    // 按照策略挑选合适的cpa以及确定对应的conversion_goal
+//    val result = getResult(data, date, hour, spark)
+//    // TODO 删除临时表
+//    val tableName = "test.ocpcv3_novel_cpa_history_hourly_v2"
+//    result.write.mode("overwrite").saveAsTable(tableName)
+//    println(s"save data into table: $tableName")
 
   }
 
@@ -255,12 +255,12 @@ object OcpcCPAhistoryV2 {
       .join(alpha1Data, Seq("new_adclass"), "left_outer")
       .select("unitid", "new_adclass", "cvr1cnt", "cpa1", "avg_bid", "alpha1", "alpha1_max")
       .withColumn("cpa1_max", col("avg_bid") * col("alpha1_max"))
-      .withColumn("cpa1_history", when(col("cpa1") > col("cpa1_max"), col("cpa1_max")).otherwise(col("cpa1")))
+      .withColumn("cpa1_history_" + media, when(col("cpa1") > col("cpa1_max"), col("cpa1_max")).otherwise(col("cpa1")))
     // TODO 删除临时表
     cvr1alpha.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_alpha1_" + media)
-    val cvr1Final = cvr1alpha
-      .select("unitid", "new_adclass", "cpa1_history")
-      .withColumn("cpa1_history_" + media, col("cpa1_history"))
+//    val cvr1Final = cvr1alpha
+//      .select("unitid", "new_adclass", "cpa1_history")
+//      .withColumn("cpa1_history_" + media, col("cpa1_history"))
 
     val sqlRequest2 =
       s"""
@@ -279,12 +279,12 @@ object OcpcCPAhistoryV2 {
       .join(alpha2Data, Seq("new_adclass"), "left_outer")
       .select("unitid", "new_adclass", "cvr2cnt", "cpa2", "avg_bid", "alpha2", "alpha2_max")
       .withColumn("cpa2_max", col("avg_bid") * col("alpha2_max"))
-      .withColumn("cpa2_history", when(col("cpa2") > col("cpa2_max"), col("cpa2_max")).otherwise(col("cpa2")))
+      .withColumn("cpa2_history_" + media, when(col("cpa2") > col("cpa2_max"), col("cpa2_max")).otherwise(col("cpa2")))
     // TODO 删除临时表
     cvr2alpha.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_alpha2_" + media)
-    val cvr2Final = cvr2alpha
-      .select("unitid", "new_adclass", "cpa2_history")
-      .withColumn("cpa2_history_" + media, col("cpa2_history"))
+//    val cvr2Final = cvr2alpha
+//      .select("unitid", "new_adclass", "cpa2_history")
+//      .withColumn("cpa2_history_" + media, col("cpa2_history"))
 
     // 关联数据表
     println("cvr1alpha ########################")
