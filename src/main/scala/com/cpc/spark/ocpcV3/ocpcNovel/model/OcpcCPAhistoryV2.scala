@@ -293,7 +293,8 @@ object OcpcCPAhistoryV2 {
     cvr2alpha.printSchema()
     val resultDF = cvr1alpha
       .join(cvr2alpha, Seq("unitid", "new_adclass"), "outer")
-      .select("unitid", "new_adclass", "cpa1_history_" + media, "cpa2_history_" + media)
+//      .select("unitid", "new_adclass", "cpa1_history_" + media, "cpa2_history_" + media)
+    resultDF.printSchema()
 
     // TODO 删除临时表
     resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_final_" + media)
