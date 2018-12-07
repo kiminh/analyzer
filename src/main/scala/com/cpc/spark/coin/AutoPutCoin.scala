@@ -105,7 +105,7 @@ object AutoPutCoin {
                |) d
                |on c.ideaid = d.id
                |where c.user_id in (1550745,1522853,1548882,1530359,1534763,1533743,1538013,1538252,1515505,1552588,1549938,1546988,1557909,1552587)
-               |or d.account_type != 2
+               |or d.account_type is null
              """.stripMargin
         println(mlFeatureSql)
         val mlFeature = spark.sql(mlFeatureSql)
