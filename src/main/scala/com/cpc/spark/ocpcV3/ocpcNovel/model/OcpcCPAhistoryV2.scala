@@ -332,8 +332,8 @@ object OcpcCPAhistoryV2 {
       .withColumn("cpa_qtt", when(col("conversion_goal")===1, col("cpa1_history_qtt")).otherwise(col("cpa2_history_qtt")))
       .withColumn("cpa_novel", when(col("conversion_goal")===1, col("cpa1_history_novel")).otherwise(col("cpa2_history_novel")))
       .withColumn("cpa_adclass", when(col("conversion_goal")===1, col("cpa1")).otherwise(col("cpa2")))
-      .withColumn("cpa_history", when(col("cpa_qtt").isNull, col("cpa_novel")).otherwise(col("cpa_qtt")))
-      .withColumn("cpa_history", when(col("cpa_history").isNull, col("cpa_adclass")).otherwise(col("cpa_history")))
+      .withColumn("cpa_history_middle", when(col("cpa_qtt").isNull, col("cpa_novel")).otherwise(col("cpa_qtt")))
+      .withColumn("cpa_history", when(col("cpa_history_middle").isNull, col("cpa_adclass")).otherwise(col("cpa_history_middle")))
 
     // TODO 删除临时表
     data
