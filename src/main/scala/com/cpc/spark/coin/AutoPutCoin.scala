@@ -100,8 +100,7 @@ object AutoPutCoin {
                |(
                |    select id, account_type
                |    from src_cpc.cpc_user_p
-               |    where day = date_sub('$date',1)
-               |    and account_type = 2
+               |    where account_type = 2
                |) d
                |on c.ideaid = d.id
                |where c.user_id in (1550745,1522853,1548882,1530359,1534763,1533743,1538013,1538252,1515505,1552588,1549938,1546988,1557909,1552587)
