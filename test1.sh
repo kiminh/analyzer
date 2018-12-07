@@ -31,7 +31,7 @@ other_params=(
     DATA.one_hot_slot_num:28
     DATA.multi_hot_slot_num:21
     TRAIN.test_iter:2000
-    TRAIN.max_steps:15000
+    TRAIN.max_steps:2000
     dest_ip:$ip
     dest_dir:$curdir
 )
