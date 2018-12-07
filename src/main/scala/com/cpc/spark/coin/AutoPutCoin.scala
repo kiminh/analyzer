@@ -66,10 +66,10 @@ object AutoPutCoin {
                |and media_appsid in ('80000001','80000002')
                |and ideaid > 0
                |and adslot_type in (1, 2, 3)
-               |and ext['adclass'].int_value not in (134100100, 107101100, 107102100, 107103100, 107104100, 107105100, 107106100, 107107100, 107108100)
-               |and ideaid not in (2391911, 2385002, 2388289, 2391495, 2381868, 2391641, 2330249, 2384970, 2391533, 2360176, 2391895, 2391881, 2390834)
+               |and (userid not in (1550745,1522853,1548882,1530359,1534763,1533743,1538013,1538252,1515505,1552588,1549938,1546988,1557909,1552587)
+               |or ext['usertype'].int_value != 2)
              """.stripMargin
-
+        println(apiUnionLogSql)
         val apiUnionLog = spark.sql(apiUnionLogSql)
         println("apiUnionLog 's count is " + apiUnionLog.rdd.count())
         val apiUnionNth = getNth(apiUnionLog, p)
@@ -78,14 +78,33 @@ object AutoPutCoin {
         val mlFeatureSql =
             s"""
                |select ideaid,exp_cvr
-               |from $ml_cvr_feature_v1
-               |where ($datehour)
-               |and label2 = 1
-               |and media_appsid in ('80000001','80000002')
-               |and adslot_type in (1, 2, 3)
-               |and ideaid > 0
-               |and adclass not in (134100100, 107101100, 107102100, 107103100, 107104100, 107105100, 107106100, 107107100, 107108100)
-               |and ideaid not in (2391911, 2385002, 2388289, 2391495, 2381868, 2391641, 2330249, 2384970, 2391533, 2360176, 2391895, 2391881, 2390834)
+               |from
+               |(
+               |    select ideaid,exp_cvr,user_id
+               |    from
+               |    (
+               |        select ideaid,exp_cvr
+               |        from dl_cpc.ml_cvr_feature_v1
+               |        where ($datehour)
+               |        and label2 = 1
+               |        and media_appsid in ('80000001','80000002')
+               |        and adslot_type in (1, 2, 3)
+               |        and ideaid > 0
+               |    ) a left outer join
+               |    (
+               |        select id,user_id
+               |        from src_cpc.cpc_idea
+               |    ) b
+               |    on a.ideaid = b.id
+               |) c left outer join
+               |(
+               |    select id, account_type
+               |    from src_cpc.cpc_user_p
+               |    where day = date_sub('$date',1)
+               |) d
+               |on c.ideaid = d.id
+               |where c.user_id in (1550745,1522853,1548882,1530359,1534763,1533743,1538013,1538252,1515505,1552588,1549938,1546988,1557909,1552587)
+               |or d.account_type != 2
              """.stripMargin
         println(mlFeatureSql)
         val mlFeature = spark.sql(mlFeatureSql)
