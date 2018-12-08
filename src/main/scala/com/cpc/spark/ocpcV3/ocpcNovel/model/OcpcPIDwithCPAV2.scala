@@ -184,10 +184,10 @@ object OcpcPIDwithCPAV2 {
 
     // 优先case1，然后case2，最后case3
     val resultDF = baseData
-      .join(case1, Seq("unitid", "new_adcass"), "left_outer")
-      .select("unitid", "new_adcass", "kvalue1")
+      .join(case1, Seq("unitid", "new_adclass"), "left_outer")
+      .select("unitid", "new_adlcass", "kvalue1")
       .join(case2, Seq("unitid"), "left_outer")
-      .select("unitid", "new_adcass", "kvalue1", "kvalue2")
+      .select("unitid", "new_adlcass", "kvalue1", "kvalue2")
       .withColumn("kvalue", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
     //    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_avgk_hourly")
 
@@ -211,7 +211,7 @@ object OcpcPIDwithCPAV2 {
       .table(tableName)
       .where(s"`date`='$date' and `hour`='$hour'")
       .withColumn("cpa_given", col("cpa_history"))
-      .select("unitid", "new_adcass", "cpa_given", "conversion_goal")
+      .select("unitid", "new_adlcass", "cpa_given", "conversion_goal")
 
     val cvr1Data=getCvr1HistoryData(date, hour, 6, spark)
       .withColumn("new_adclass", col("adclass")/1000)
