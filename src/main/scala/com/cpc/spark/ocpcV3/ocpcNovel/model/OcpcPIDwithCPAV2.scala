@@ -197,8 +197,10 @@ object OcpcPIDwithCPAV2 {
       */
 
     // 获得cpa_given
+    // TODO 表名
+    val tableName = "test.ocpcv3_novel_cpa_history_hourly_v2"
     val cpaGiven = spark
-      .table("dl_cpc.ocpcv3_novel_cpa_history_hourly")
+      .table(tableName)
       .where(s"`date`='$date' and `hour`='$hour'")
       .select("unitid", "cpa_history", "conversion_goal")
       .groupBy("unitid")
