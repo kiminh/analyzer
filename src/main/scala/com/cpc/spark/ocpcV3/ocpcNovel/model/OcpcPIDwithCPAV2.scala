@@ -19,9 +19,9 @@ object OcpcPIDwithCPAV2 {
     val hour = args(1).toString
 
     val result = calculateKv2(date, hour, spark)
-    val tableName = "test.ocpc_novel_k_value_table_v2"
-    result.write.mode("overwrite").saveAsTable(tableName)
-//    result.write.mode("overwrite").insertInto(tableName)
+    val tableName = "dl_cpc.ocpc_novel_k_value_table_v2"
+//    result.write.mode("overwrite").saveAsTable(tableName)
+    result.write.mode("overwrite").insertInto(tableName)
     println(s"successfully save data into table: $tableName")
 
 
@@ -169,6 +169,7 @@ object OcpcPIDwithCPAV2 {
 
     // case2
     // table name: dl_cpc.ocpcv3_novel_pb_hourly
+//    ocpcv3_novel_pb_v2_hourly
     // TODO 去重
     val case2 = spark
       .table("test.ocpcv3_novel_pb_v1_hourly")
@@ -190,7 +191,6 @@ object OcpcPIDwithCPAV2 {
       .join(case2, Seq("unitid"), "left_outer")
       .select("unitid", "new_adclass", "kvalue1", "kvalue2")
       .withColumn("kvalue", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_avgk_hourly")
 
     resultDF.show(10)
     resultDF
@@ -207,7 +207,7 @@ object OcpcPIDwithCPAV2 {
 
     // 获得cpa_given
     // TODO 表名
-    val tableName = "test.ocpcv3_novel_cpa_history_hourly_v2"
+    val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
     val cpaGiven = spark
       .table(tableName)
       .where(s"`date`='$date' and `hour`='$hour'")
@@ -268,7 +268,6 @@ object OcpcPIDwithCPAV2 {
        """.stripMargin
     println(sqlRequest)
     val cpaRatio = spark.sql(sqlRequest)
-    //    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_cparatio_hourly")
 
     cpaRatio
 
