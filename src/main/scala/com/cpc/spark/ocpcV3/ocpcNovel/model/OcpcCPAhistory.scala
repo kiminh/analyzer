@@ -22,8 +22,8 @@ object OcpcCPAhistory {
 //    cpaList.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpaList")
     val result = checkCPA(cpaList, date, hour, spark)
 //    dl_cpc.ocpcv3_novel_cpa_history_hourly
-    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly")
-//    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_cpa_history_hourly")
+//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_cpa_history_hourly")
     println(s"succesfully save data into table: dl_cpc.ocpcv3_novel_cpa_history_hourly")
   }
 
