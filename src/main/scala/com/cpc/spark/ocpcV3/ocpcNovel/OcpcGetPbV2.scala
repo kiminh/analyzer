@@ -50,11 +50,11 @@ object OcpcGetPbV2 {
       .withColumn("cpa_history", when(col("cpa_history").isNull, col("adclass_cpa")).otherwise("cpa_history"))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
       .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
-      .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0")
 
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly_middle")
 
     val resultDF = data
+      .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0")
       .groupBy("unitid")
       .agg(
         avg(col("kvalue")).alias("kvalue"),
@@ -164,6 +164,7 @@ object OcpcGetPbV2 {
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
 
     val resultDF = result.select("unitid", "new_adclass", "cvr1cnt", "cvr2cnt")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly_v2")
 
     // 返回结果
     resultDF.show(10)
