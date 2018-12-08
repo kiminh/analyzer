@@ -38,15 +38,13 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
       .save(s"$p/dnntrain-$trDate")
 
     //确认样本数
-    val n = data.count()
-    println("训练数据：total = %d, 正比例 = %.4f".format(n, data.where("label=array(1,0)").count.toDouble / n))
-
-    if (trDate.length == 13) {
+//    if (trDate.length == 13) {
       val count = data.count()
+    println("训练数据：total = %d, 正比例 = %.4f".format(count, data.where("label=array(1,0)").count.toDouble / count))
       s"echo $count" #> new File("count") !
 
       s"hadoop fs -put count $p/dnntrain-$trDate/" !
-    }
+//    }
 
     println(s"DONE : Saving train file to $trPath/dnntrain-$trDate")
   }
