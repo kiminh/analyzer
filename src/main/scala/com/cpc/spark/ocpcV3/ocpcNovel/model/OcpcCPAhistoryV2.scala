@@ -221,8 +221,8 @@ object OcpcCPAhistoryV2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    // TODO 删除临时表
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_adclass")
+    // TODO 删除临时表
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_adclass_hourly")
     resultDF
   }
 
