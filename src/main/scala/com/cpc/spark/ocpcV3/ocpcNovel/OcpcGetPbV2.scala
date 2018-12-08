@@ -200,8 +200,8 @@ object OcpcGetPbV2 {
       .select("unitid", "k_ratio1", "k_ratio2")
     rawData1.show(10)
 
-    // TODO 以后要做调整
-    val tableName2 = "dl_cpc.ocpc_novel_k_value_table_v2"
+    // TODO 表名
+    val tableName2 = "test.ocpc_novel_k_value_table_v2"
     val rawData2 = spark
       .table(tableName2)
       .where(s"`date`='$date' and `hour`='$hour'")
