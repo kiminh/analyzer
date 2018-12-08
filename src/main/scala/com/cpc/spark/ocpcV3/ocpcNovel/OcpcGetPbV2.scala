@@ -47,6 +47,7 @@ object OcpcGetPbV2 {
       .select("unitid", "new_adclass", "cpa_history", "cvr1cnt", "cvr2cnt", "kvalue", "conversion_goal", "cpa1", "cpa2")
       .withColumn("adclass_cpa", when(col("conversion_goal")===1, col("cpa1")).otherwise(col("cpa2")))
       .withColumn("cpa_history", when(col("cpa_history").isNull, col("adclass_cpa")).otherwise("cpa_history"))
+      .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
       .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
       .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0")
 

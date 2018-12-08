@@ -334,6 +334,7 @@ object OcpcCPAhistoryV2 {
       .withColumn("cpa_adclass", when(col("conversion_goal")===1, col("cpa1")).otherwise(col("cpa2")))
       .withColumn("cpa_history_middle", when(col("cpa_qtt").isNull, col("cpa_novel")).otherwise(col("cpa_qtt")))
       .withColumn("cpa_history", when(col("cpa_history_middle").isNull, col("cpa_adclass")).otherwise(col("cpa_history_middle")))
+      .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
 
 //    // TODO 删除临时表
 //    data
