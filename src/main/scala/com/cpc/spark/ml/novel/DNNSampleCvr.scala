@@ -13,7 +13,7 @@ object DNNSampleCvr {
     val Array(trdate, trpath, tedate, tepath) = args
 
     val sample = new DNNSampleCvr(spark, trdate, trpath, tedate, tepath)
-    sample.saveTrain()
+    sample.saveTrain(trpath,100)
   }
 }
 
