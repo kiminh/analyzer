@@ -172,7 +172,7 @@ object OcpcPIDwithCPAV2 {
 //    ocpcv3_novel_pb_v2_hourly
     // TODO 去重
     val case2 = spark
-      .table("test.ocpcv3_novel_pb_v1_hourly")
+      .table("test.ocpcv3_novel_pb_v2_hourly")
       .withColumn("kvalue2", col("kvalue"))
       .select("unitid", "kvalue2")
       .distinct()
