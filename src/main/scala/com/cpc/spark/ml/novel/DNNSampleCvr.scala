@@ -248,7 +248,7 @@ class DNNSampleCvr(spark: SparkSession, trdate: String = "", trpath: String = ""
          |select uid,
          |       interest_ad_words_1 as word1,
          |       interest_ad_words_3 as word3
-         |from dl_cpc.cpc_user_interest_words
+         |from dl_cpc.cpc_user_interest_words_novel
          |where load_date='$date'
     """.stripMargin
 
