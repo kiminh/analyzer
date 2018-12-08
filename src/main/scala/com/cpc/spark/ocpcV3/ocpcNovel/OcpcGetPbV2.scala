@@ -36,6 +36,7 @@ object OcpcGetPbV2 {
     val adclassCPA = spark
       .table("test.ocpcv3_cpa_history_v2_adclass_hourly")
       .where(s"`date`='$date' and `hour`='$hour'")
+      .select("new_adclass", "cpa1", "cpa2")
 
     // 组装数据
     val data = base
