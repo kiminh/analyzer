@@ -199,12 +199,10 @@ object OcpcGetPbV2 {
     rawData1.show(10)
 
     // TODO 以后要做调整
-    val tableName2 = "dl_cpc.ocpc_novel_k_value_table"
+    val tableName2 = "dl_cpc.ocpc_novel_k_value_table_v2"
     val rawData2 = spark
       .table(tableName2)
       .where(s"`date`='$date' and `hour`='$hour'")
-      .withColumn("new_adclass", col("adclass")/1000)
-      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .groupBy("unitid", "new_adclass")
       .agg(avg(col("k_value")).alias("k_value"))
       .select("unitid", "new_adclass", "k_value")
@@ -213,6 +211,7 @@ object OcpcGetPbV2 {
     val kvalues = rawData1
       .join(rawData2, Seq("unitid"), "outer")
       .select("unitid", "new_adclass", "k_value", "k_ratio1", "k_ratio2")
+      .filter("new_adclass is not null")
 
     // 关联主表，根据conversion goal选择k
     val data = rawData
