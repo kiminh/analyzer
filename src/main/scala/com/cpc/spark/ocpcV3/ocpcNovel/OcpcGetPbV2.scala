@@ -34,7 +34,7 @@ object OcpcGetPbV2 {
     val cpaHistory = getCPAhistory(date, hour, spark)
     val kvalue = getK(base, cpaHistory, date, hour, spark)
     val adclassCPA = spark
-      .table("test.ocpcv3_cpa_history_v2_adclass_hourly")
+      .table("dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly")
       .where(s"`date`='$date' and `hour`='$hour'")
       .select("new_adclass", "cpa1", "cpa2")
 
@@ -50,8 +50,11 @@ object OcpcGetPbV2 {
       .withColumn("cpa_history", when(col("cpa_history").isNull, col("adclass_cpa")).otherwise(col("cpa_history")))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
       .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
 
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly_middle")
+//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly_middle")
+    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v2_hourly_middle")
 
     val resultDF = data
       .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0 and conversion_goal>0")
@@ -67,9 +70,9 @@ object OcpcGetPbV2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly")
-    // 原表名：dl_cpc.ocpcv3_novel_pb_hourly
-//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v2_hourly")
+    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
+//    resultDF.write.mode("overwrite").saveAsTable(tableName)
+    resultDF.write.mode("overwrite").insertInto(tableName)
 
     savePbPack(resultDF)
 
@@ -164,7 +167,7 @@ object OcpcGetPbV2 {
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
 
     val resultDF = result.select("unitid", "new_adclass", "cvr1cnt", "cvr2cnt")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly_v2")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly_v2")
 
     // 返回结果
     resultDF.show(10)
@@ -175,8 +178,7 @@ object OcpcGetPbV2 {
     /*
     抽取v2版本的cpa history
      */
-    // todo 更换表名
-    val tableName = "test.ocpcv3_novel_cpa_history_hourly_v2"
+    val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
     val resultDF = spark
       .table(tableName)
       .where(s"`date`='$date' and `hour`='$hour'")
@@ -204,7 +206,7 @@ object OcpcGetPbV2 {
     rawData1.show(10)
 
     // TODO 表名
-    val tableName2 = "test.ocpc_novel_k_value_table_v2"
+    val tableName2 = "dl_cpc.ocpc_novel_k_value_table_v2"
     val rawData2 = spark
       .table(tableName2)
       .where(s"`date`='$date' and `hour`='$hour'")
@@ -232,7 +234,7 @@ object OcpcGetPbV2 {
     val resultDF = data.select("unitid", "new_adclass", "kvalue", "conversion_goal")
 
     // TODO 删除临时表
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly_v2")
+//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly_v2")
 
     resultDF
   }
