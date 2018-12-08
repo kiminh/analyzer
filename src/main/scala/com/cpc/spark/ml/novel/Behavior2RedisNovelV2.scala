@@ -58,7 +58,7 @@ object Behavior2RedisNovelV2 {
          |       collect_list(if(load_date>='${getDay(date, 7)}'
          |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7
          |
-         |from dl_cpc.cpc_user_behaviors_novel_debug
+         |from dl_cpc.cpc_user_behaviors_novel
          |where load_date in ('${getDays(date, 1, 7)}')
          |    and rn <= 1000
          |group by uid
