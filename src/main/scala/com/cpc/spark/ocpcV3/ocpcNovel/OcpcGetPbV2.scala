@@ -71,7 +71,7 @@ object OcpcGetPbV2 {
       .withColumn("hour", lit(hour))
 
     val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-//    resultDF.write.mode("overwrite").saveAsTable(tableName)
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly")
     resultDF.write.mode("overwrite").insertInto(tableName)
 
     savePbPack(resultDF)
@@ -205,7 +205,7 @@ object OcpcGetPbV2 {
       .select("unitid", "k_ratio1", "k_ratio2")
     rawData1.show(10)
 
-    // TODO 表名
+
     val tableName2 = "dl_cpc.ocpc_novel_k_value_table_v2"
     val rawData2 = spark
       .table(tableName2)
