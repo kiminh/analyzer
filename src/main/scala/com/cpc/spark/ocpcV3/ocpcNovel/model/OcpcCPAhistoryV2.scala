@@ -336,13 +336,13 @@ object OcpcCPAhistoryV2 {
       .withColumn("cpa_history", when(col("cpa_history_middle").isNull, col("cpa_adclass")).otherwise(col("cpa_history_middle")))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
 
-//    // TODO 删除临时表
-//    data
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .write
-//      .mode("overwrite")
-//      .saveAsTable("test.ocpcv3_cpa_history_v2_final_middle")
+    // TODO 删除临时表
+    data
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .saveAsTable("test.ocpcv3_cpa_history_v2_final_middle")
 
     val resultDF = data
       .select("unitid", "new_adclass", "cpa_history", "conversion_goal")
