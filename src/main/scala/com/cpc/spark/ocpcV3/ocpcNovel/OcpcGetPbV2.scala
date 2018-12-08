@@ -136,6 +136,7 @@ object OcpcGetPbV2 {
       s"""
          |SELECT
          |  unitid,
+         |  adclass,
          |  cvr2_cnt
          |FROM
          |  dl_cpc.ocpcv3_cvr2_data_hourly
