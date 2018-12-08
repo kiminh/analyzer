@@ -164,7 +164,8 @@ object OcpcPIDwithCPAV2 {
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .groupBy("unitid", "new_adclass")
-      .agg(avg(col("kvalue")).alias("kvalue1")).select("unitid", "kvalue1")
+      .agg(avg(col("kvalue")).alias("kvalue1"))
+      .select("unitid", "new_adclass", "kvalue1")
 
     // case2
     // table name: dl_cpc.ocpcv3_novel_pb_hourly
