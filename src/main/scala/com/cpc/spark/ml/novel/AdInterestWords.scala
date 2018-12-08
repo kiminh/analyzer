@@ -56,7 +56,7 @@ object AdInterestWords {
     data.coalesce(5).write.mode("overwrite")
       .parquet(s"/warehouse/dl_cpc.db/cpc_user_interest_words_novel/load_date=$date")
 
-    spark.sql(s"alter table dl_cpc.cpc_user_interest_words add partition(load_date='$date')" +
+    spark.sql(s"alter table dl_cpc.cpc_user_interest_words_novel add partition(load_date='$date')" +
       s" location '/warehouse/dl_cpc.db/cpc_user_interest_words_novel/load_date=$date'")
   }
 
