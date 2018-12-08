@@ -198,7 +198,7 @@ object OcpcGetPbV2 {
       .withColumn("conversion_goal", when(col("conversion_goal").isNull, 1).otherwise(col("conversion_goal")))
 
     // 读取k
-    val tableName1 = "dl_cpc.ocpc_v3_novel_k_regression"
+    val tableName1 = "dl_cpc.ocpc_v3_novel_k_regression_v2"
     val rawData1 = spark
       .table(tableName1)
       .where(s"`date`='$date' and `hour`='$hour'")
