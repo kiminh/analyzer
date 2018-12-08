@@ -54,7 +54,7 @@ object OcpcGetPbV2 {
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly_middle")
 
     val resultDF = data
-      .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0")
+      .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0 and conversion_goal>0")
       .groupBy("unitid")
       .agg(
         avg(col("kvalue")).alias("kvalue"),
