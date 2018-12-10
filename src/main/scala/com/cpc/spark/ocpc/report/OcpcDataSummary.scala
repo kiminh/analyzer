@@ -16,6 +16,7 @@ object OcpcDataSummary {
     val date = args(0).toString
 
     val data = exportDailyReport(date, spark)
+//    data.write.mode("overwrite").saveAsTable("test.ocpc_daily_report20181505")
     saveDataSummaryToReport(data, spark)
   }
 

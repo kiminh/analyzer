@@ -211,6 +211,7 @@ object OcpcSampleToRedis {
     val hpcvrTable = calculateHPCVR(end_date, hour, spark)
     hpcvrTable.createOrReplaceTempView("ocpc_hpcvr_total")
 
+    // TODO 删除cvr3cali的数据表引用
     val pcvrCaliTable = "test.ocpc_new_calibration_value_" + hour
     val pactCaliTable = "test.ocpc_new_calibration_value_cvr3_" + hour
     val sqlRequest4 =
@@ -228,7 +229,7 @@ object OcpcSampleToRedis {
          |  (case when a.k_value is null then 0.694 else a.k_value end) as raw_k_value,
          |  b.hpcvr,
          |  (case when c.cali_value is null or c.cali_value=0 then 1.0 else c.cali_value end) as cali_value,
-         |  (case when d.cali_value is null or d.cali_value=0 then 1.0 else d.cali_value end) as cvr3_cali,
+         |  1.0 as cvr3_cali,
          |  a.cvr3_cnt
          |FROM
          |  test_new_pb_ocpc as a
@@ -244,12 +245,6 @@ object OcpcSampleToRedis {
          |  a.ideaid=c.ideaid
          |AND
          |  a.adclass=c.adclass
-         |LEFT JOIN
-         |  $pactCaliTable as d
-         |ON
-         |  a.ideaid=d.ideaid
-         |AND
-         |  a.adclass=d.adclass
        """.stripMargin
 
     println(sqlRequest4)
