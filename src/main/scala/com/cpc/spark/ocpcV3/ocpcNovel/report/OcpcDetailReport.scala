@@ -102,6 +102,7 @@ object OcpcDetailReport {
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
     resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_ocpc_raw")
+    println(s"successfully save data into table: test.ocpcv3_novel_ocpc_raw")
   }
 
   def getOcpcData(date: String, hour: String, spark: SparkSession) = {
@@ -183,6 +184,7 @@ object OcpcDetailReport {
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
     resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpc_raw")
+    println(s"successfully save data into table: test.ocpcv3_novel_cpc_raw")
   }
 
   def getCPCdata(date: String, hour: String, spark: SparkSession) = {
