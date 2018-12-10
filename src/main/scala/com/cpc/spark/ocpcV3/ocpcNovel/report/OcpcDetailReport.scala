@@ -21,7 +21,7 @@ object OcpcDetailReport {
     getOcpcRaw(date, hour, spark)
     val ocpcData = getOcpcData(date, hour, spark)
     getCpcRaw(ocpcData, date, hour, spark)
-//    val cpcData = getCPCdata(date, hour, spark)
+    val cpcData = getCPCdata(date, hour, spark)
 //
 //    val cmpModel = cmpByModel(date, hour, spark)
 //    val cmpUnitid = cmpByUnitid(ocpcData, cpcData, date, hour, spark)
