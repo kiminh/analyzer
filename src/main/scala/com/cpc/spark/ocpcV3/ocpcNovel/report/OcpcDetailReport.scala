@@ -303,43 +303,28 @@ object OcpcDetailReport {
          |    a.cpa_ocpc,
          |    a.cpa_cpc,
          |    c.cpa_history,
-         |    c.avg_cpa,
-         |    c.cpa_history_old,
+         |    c.adclass_cpa,
          |    a.acp_ocpc,
          |    a.acp_cpc,
          |    a.cost_ocpc,
          |    a.cost_cpc,
          |    (a.cost_ocpc + a.cost_cpc) as cost,
-         |    b.avg_k,
-         |    b.recent_k,
          |    a.cpa_ocpc * 1.0 / a.cpa_cpc as cparatio1,
-         |    a.cpa_cpc * 1.0 / b.cpa_given as cparatio2,
+         |    a.cpa_cpc * 1.0 / c.cpa_history as cparatio2,
          |    a.cost_ocpc * 1.0 / (a.cost_ocpc + a.cost_cpc) as costratio
          |FROM
          |    ocpc_novel_cmp as a
          |LEFT JOIN
          |    (SELECT
-         |        *
-         |    FROM
-         |        dl_cpc.ocpcv3_novel_report_detail_hourly
-         |    WHERE
-         |        `date`='$date'
-         |    AND
-         |        `hour`='$hour') as b
-         |ON
-         |    a.unitid=b.unitid
-         |LEFT JOIN
-         |    (SELECT
          |        unitid,
-         |        avg_cpa,
-         |        cpa_history,
-         |        cpa_history_old as cpa_history_old
+         |        adclass_cpa,
+         |        cpa_history
          |    FROM
-         |        dl_cpc.ocpcv3_novel_pb_v1_hourly_middle
+         |        dl_cpc.ocpcv3_novel_pb_v2_hourly_middle
          |    WHERE
          |        `date`='$date' and `hour`='$hour') as c
          |ON
-         |    a.unitid=c.unitid
+         |    a.unitid=c.unitid;
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
