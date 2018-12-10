@@ -270,7 +270,6 @@ object OcpcDetailReport {
   def cmpByUnitid(date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
-         |CREATE TABLE test.test_ocpc_novel_cmp20181208 AS
          |SELECT
          |    a.unitid,
          |    a.cpa as cpa_ocpc,
