@@ -18,12 +18,12 @@ object OcpcDetailReport {
     val hour = args(1).toString
 
     // 获取数据
-    val ocpcRaw = getOcpcRaw(date, hour, spark)
-    val ocpcData = getOcpcData(ocpcRaw, date, hour, spark)
-    val cpcRaw = getCpcRaw(ocpcData, date, hour, spark)
-    val cpcData = getCPCdata(cpcRaw, date, hour, spark)
+    getOcpcRaw(date, hour, spark)
+    val ocpcData = getOcpcData(date, hour, spark)
+    getCpcRaw(ocpcData, date, hour, spark)
+    val cpcData = getCPCdata(date, hour, spark)
 
-    val cmpModel = cmpByModel(ocpcRaw, cpcRaw, date, hour, spark)
+    val cmpModel = cmpByModel(date, hour, spark)
     val cmpUnitid = cmpByUnitid(ocpcData, cpcData, date, hour, spark)
     val result = getCmpDetail(cmpUnitid, date, hour, spark)
 
@@ -101,14 +101,13 @@ object OcpcDetailReport {
 
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
-    resultDF
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_ocpc_raw")
   }
 
-  def getOcpcData(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getOcpcData(date: String, hour: String, spark: SparkSession) = {
     /*
     小说媒体上ocpc广告的汇总统计信息
      */
-    rawData.createOrReplaceTempView("raw_table")
     val sqlRequest =
       s"""
          |SELECT
@@ -121,7 +120,7 @@ object OcpcDetailReport {
          |    sum(iscvr) * 1.0 / sum(isclick) as cvr1,
          |    sum(case when isclick=1 then price else 0 end) as cost
          |FROM
-         |    raw_table
+         |    test.ocpcv3_novel_ocpc_raw
          |GROUP BY unitid
        """.stripMargin
     println(sqlRequest)
@@ -183,15 +182,13 @@ object OcpcDetailReport {
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
-    resultDF
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpc_raw")
   }
 
-  def getCPCdata(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getCPCdata(date: String, hour: String, spark: SparkSession) = {
     /*
     小说媒体上同时在跑ocpc和cpc广告的cpc数据
      */
-
-    rawData.createOrReplaceTempView("raw_table")
     val sqlRequest =
       s"""
          |SELECT
@@ -204,7 +201,7 @@ object OcpcDetailReport {
          |    sum(iscvr) * 1.0 / sum(isclick) as cvr1,
          |    sum(case when isclick=1 then price else 0 end) as cost
          |FROM
-         |    raw_table
+         |    test.ocpcv3_novel_cpc_raw
          |GROUP BY unitid
        """.stripMargin
     println(sqlRequest)
@@ -214,13 +211,10 @@ object OcpcDetailReport {
     resultDF
   }
 
-  def cmpByModel(ocpcRaw: DataFrame, cpcRaw: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def cmpByModel(date: String, hour: String, spark: SparkSession) = {
     /*
     比较ocpc与cpc的汇总信息：cpm, arpu等
      */
-    ocpcRaw.createOrReplaceTempView("ocpc_raw_data")
-    cpcRaw.createOrReplaceTempView("cpc_raw_data")
-
     // ocpc数据
     val sqlRequestOCPC =
       s"""
@@ -237,7 +231,7 @@ object OcpcDetailReport {
          |    SUM(isclick) as ctr_cnt,
          |    SUM(iscvr) as cvr_cnt
          |FROM
-         |    ocpc_raw_data
+         |    test.ocpcv3_novel_ocpc_raw
        """.stripMargin
     println(sqlRequestOCPC)
     val ocpcData = spark.sql(sqlRequestOCPC)
@@ -258,7 +252,7 @@ object OcpcDetailReport {
          |    SUM(isclick) as ctr_cnt,
          |    SUM(iscvr) as cvr_cnt
          |FROM
-         |    cpc_raw_data
+         |    test.ocpcv3_novel_cpc_raw
        """.stripMargin
     println(sqlRequestCPC)
     val cpcData = spark.sql(sqlRequestCPC)
@@ -291,7 +285,7 @@ object OcpcDetailReport {
          |INNER JOIN
          |    cpc_unitid as b
          |ON
-         |    a.unitid=b.unitid;
+         |    a.unitid=b.unitid
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
