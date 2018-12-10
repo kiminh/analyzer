@@ -323,7 +323,7 @@ object OcpcDetailReport {
          |    WHERE
          |        `date`='$date' and `hour`='$hour') as c
          |ON
-         |    a.unitid=c.unitid;
+         |    a.unitid=c.unitid
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
