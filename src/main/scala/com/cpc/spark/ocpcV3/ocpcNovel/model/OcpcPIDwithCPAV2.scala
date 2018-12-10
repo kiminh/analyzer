@@ -8,9 +8,10 @@ import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.IntegerType
 
 
-object OcpcPIDwithCPA {
+object OcpcPIDwithCPAV2 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
 
@@ -18,8 +19,10 @@ object OcpcPIDwithCPA {
     val hour = args(1).toString
 
     val result = calculateKv2(date, hour, spark)
-//    result.write.mode("overwrite").saveAsTable("test.ocpc_novel_k_value_table")
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_k_value_table")
+    val tableName = "dl_cpc.ocpc_novel_k_value_table_v2"
+//    result.write.mode("overwrite").saveAsTable(tableName)
+    result.write.mode("overwrite").insertInto(tableName)
+    println(s"successfully save data into table: $tableName")
 
 
   }
@@ -70,10 +73,14 @@ object OcpcPIDwithCPA {
          |  dl_cpc.ocpcv3_ctr_data_hourly
          |WHERE $selectCondition
          |  and media_appsid in ("80001098", "80001292")
-         |GROUP BY unitid, adclass
        """.stripMargin
     println(sqlRequest)
-    val baseData = spark.sql(sqlRequest)
+    val baseData = spark
+      .sql(sqlRequest)
+      .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+      .select("unitid", "new_adclass")
+      .distinct()
 
     baseData
 
@@ -154,33 +161,36 @@ object OcpcPIDwithCPA {
     // case1
     val case1 = rawData
       .filter("isclick=1")
-      .groupBy("unitid", "adclass")
-      .agg(avg(col("kvalue")).alias("kvalue1")).select("unitid", "adclass", "kvalue1")
+      .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+      .groupBy("unitid", "new_adclass")
+      .agg(avg(col("kvalue")).alias("kvalue1"))
+      .select("unitid", "new_adclass", "kvalue1")
 
     // case2
     // table name: dl_cpc.ocpcv3_novel_pb_hourly
+//    ocpcv3_novel_pb_v2_hourly
     // TODO 去重
     val case2 = spark
-      .table("test.ocpcv3_novel_pb_v1_hourly")
+      .table("test.ocpcv3_novel_pb_v2_hourly")
       .withColumn("kvalue2", col("kvalue"))
       .select("unitid", "kvalue2")
       .distinct()
-//    val case2 = spark
-//      .table("test.ocpcv3_novel_pb_v1_hourly")
-//      .withColumn("kvalue2", col("kvalue"))
-//      .groupBy("unitid")
-//      .agg(avg(col("kvalue2")).alias("kvalue2"))
-//      .select("unitid", "kvalue2")
-//      .distinct()
+    //    val case2 = spark
+    //      .table("test.ocpcv3_novel_pb_v1_hourly")
+    //      .withColumn("kvalue2", col("kvalue"))
+    //      .groupBy("unitid")
+    //      .agg(avg(col("kvalue2")).alias("kvalue2"))
+    //      .select("unitid", "kvalue2")
+    //      .distinct()
 
     // 优先case1，然后case2，最后case3
     val resultDF = baseData
-      .join(case1, Seq("unitid", "adclass"), "left_outer")
-      .select("unitid", "adclass", "kvalue1")
+      .join(case1, Seq("unitid", "new_adclass"), "left_outer")
+      .select("unitid", "new_adclass", "kvalue1")
       .join(case2, Seq("unitid"), "left_outer")
-      .select("unitid", "adclass", "kvalue1", "kvalue2")
+      .select("unitid", "new_adclass", "kvalue1", "kvalue2")
       .withColumn("kvalue", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_avgk_hourly")
 
     resultDF.show(10)
     resultDF
@@ -196,38 +206,46 @@ object OcpcPIDwithCPA {
       */
 
     // 获得cpa_given
+    // TODO 表名
+    val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
     val cpaGiven = spark
-      .table("dl_cpc.ocpcv3_novel_cpa_history_hourly")
+      .table(tableName)
       .where(s"`date`='$date' and `hour`='$hour'")
       .withColumn("cpa_given", col("cpa_history"))
-      .select("unitid", "cpa_given", "conversion_goal")
+      .select("unitid", "new_adclass", "cpa_given", "conversion_goal")
 
     val cvr1Data=getCvr1HistoryData(date, hour, 6, spark)
-      .groupBy("unitid", "adclass")
+      .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+      .groupBy("unitid", "new_adclass")
       .agg(sum(col("cvr1cnt")).alias("cvr1cnt"))
     val cvr2Data=getCvr2HistoryData(date, hour, 6, spark)
-      .groupBy("unitid", "adclass")
+      .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+      .groupBy("unitid", "new_adclass")
       .agg(sum(col("cvr2cnt")).alias("cvr2cnt"))
-    // 按ideaid和adclass统计每一个广告创意的数据
+    // 按ideaid统计每一个广告创意的数据
     val rawData = historyData
       .withColumn("cost",
         when(col("isclick")===1,col("price")).otherwise(0))
-      .groupBy("unitid", "adclass")
+      .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+      .groupBy("unitid", "new_adclass")
       .agg(
         sum(col("cost")).alias("total_cost"),
         sum(col("isclick")).alias("ctr_cnt"))
-      .select("unitid", "adclass", "total_cost", "ctr_cnt")
-      .join(cvr1Data,Seq("unitid", "adclass"), "left_outer")
-      .join(cvr2Data,Seq("unitid", "adclass"), "left_outer")
-      .select("unitid", "adclass", "total_cost", "ctr_cnt", "cvr1cnt", "cvr2cnt")
+      .select("unitid", "new_adclass", "total_cost", "ctr_cnt")
+      .join(cvr1Data,Seq("unitid", "new_adclass"), "left_outer")
+      .join(cvr2Data,Seq("unitid", "new_adclass"), "left_outer")
+      .select("unitid", "new_adclass", "total_cost", "ctr_cnt", "cvr1cnt", "cvr2cnt")
 
     // 计算cpa_ratio
     val joinData = baseData
-      .join(cpaGiven, Seq("unitid"), "left_outer")
-      .select("unitid", "adclass", "cpa_given", "conversion_goal")
-      .join(rawData, Seq("unitid", "adclass"), "left_outer")
+      .join(cpaGiven, Seq("unitid", "new_adclass"), "left_outer")
+      .select("unitid", "new_adclass", "cpa_given", "conversion_goal")
+      .join(rawData, Seq("unitid", "new_adclass"), "left_outer")
       .withColumn("cvr_cnt", when(col("conversion_goal")===2, col("cvr2cnt")).otherwise(col("cvr1cnt")))
-      .select("unitid", "adclass", "cpa_given", "conversion_goal", "total_cost", "ctr_cnt", "cvr_cnt")
+      .select("unitid", "new_adclass", "cpa_given", "conversion_goal", "total_cost", "ctr_cnt", "cvr_cnt")
       .filter("cpa_given is not null and total_cost>0")
 
     joinData.createOrReplaceTempView("join_table")
@@ -237,7 +255,7 @@ object OcpcPIDwithCPA {
       s"""
          |SELECT
          |  unitid,
-         |  adclass,
+         |  new_adclass,
          |  conversion_goal,
          |  cpa_given,
          |  total_cost,
@@ -250,7 +268,6 @@ object OcpcPIDwithCPA {
        """.stripMargin
     println(sqlRequest)
     val cpaRatio = spark.sql(sqlRequest)
-//    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_cparatio_hourly")
 
     cpaRatio
 
@@ -274,18 +291,18 @@ object OcpcPIDwithCPA {
 
     // 关联得到基础表
     val rawData = baseData
-      .join(kValue, Seq("unitid", "adclass"), "left_outer")
-      .select("unitid", "adclass", "kvalue")
-      .join(cpaRatio, Seq("unitid", "adclass"), "left_outer")
-      .select("unitid", "adclass", "kvalue", "cpa_ratio", "conversion_goal")
+      .join(kValue, Seq("unitid", "new_adclass"), "left_outer")
+      .select("unitid", "new_adclass", "kvalue")
+      .join(cpaRatio, Seq("unitid", "new_adclass"), "left_outer")
+      .select("unitid", "new_adclass", "kvalue", "cpa_ratio", "conversion_goal")
       .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
       .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
 
 
     val resultDF = rawData
-      .select("unitid", "adclass", "updated_k", "conversion_goal")
+      .select("unitid", "new_adclass", "updated_k", "conversion_goal")
       .withColumn("k_value", col("updated_k"))
-      .select("unitid", "adclass", "k_value", "updated_k", "conversion_goal")
+      .select("unitid", "new_adclass", "k_value", "updated_k", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
