@@ -18,12 +18,12 @@ object OcpcDetailReport {
     val hour = args(1).toString
 
     // 获取数据
-    getOcpcRaw(date, hour, spark)
-    val ocpcData = getOcpcData(date, hour, spark)
-    ocpcData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_ocpc_unitid")
-    getCpcRaw(date, hour, spark)
-    val cpcData = getCPCdata(date, hour, spark)
-    cpcData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpc_unitid")
+//    getOcpcRaw(date, hour, spark)
+//    val ocpcData = getOcpcData(date, hour, spark)
+//    ocpcData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_ocpc_unitid")
+//    getCpcRaw(date, hour, spark)
+//    val cpcData = getCPCdata(date, hour, spark)
+//    cpcData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpc_unitid")
 
     val cmpModel = cmpByModel(date, hour, spark)
     val tableName1 = "test.ocpcv3_novel_cmp_model_hourly"
