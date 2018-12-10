@@ -20,8 +20,10 @@ object OcpcDetailReport {
     // 获取数据
     getOcpcRaw(date, hour, spark)
     val ocpcData = getOcpcData(date, hour, spark)
-    getCpcRaw(ocpcData, date, hour, spark)
+    ocpcData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_ocpc_unitid")
+    getCpcRaw(date, hour, spark)
     val cpcData = getCPCdata(date, hour, spark)
+    cpcData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpc_unitid")
 //
 //    val cmpModel = cmpByModel(date, hour, spark)
 //    val cmpUnitid = cmpByUnitid(ocpcData, cpcData, date, hour, spark)
@@ -131,16 +133,16 @@ object OcpcDetailReport {
     resultDF
   }
 
-  def getCpcRaw(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getCpcRaw(date: String, hour: String, spark: SparkSession) = {
     val selectCondition = s"`date`='$date' and `hour` <= '$hour'"
-    data.createOrReplaceTempView("ocpc_data")
+//    data.createOrReplaceTempView("ocpc_data")
     val sqlRequest =
       s"""
          |SELECT
          |    b.*,
          |    c.iscvr
          |FROM
-         |    ocpc_data as a
+         |    test.ocpcv3_novel_ocpc_unitid as a
          |INNER JOIN
          |    (select
          |        uid,
