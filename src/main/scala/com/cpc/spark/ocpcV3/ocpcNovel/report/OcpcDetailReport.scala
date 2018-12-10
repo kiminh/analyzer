@@ -21,34 +21,34 @@ object OcpcDetailReport {
     getOcpcRaw(date, hour, spark)
     val ocpcData = getOcpcData(date, hour, spark)
     getCpcRaw(ocpcData, date, hour, spark)
-    val cpcData = getCPCdata(date, hour, spark)
-
-    val cmpModel = cmpByModel(date, hour, spark)
-    val cmpUnitid = cmpByUnitid(ocpcData, cpcData, date, hour, spark)
-    val result = getCmpDetail(cmpUnitid, date, hour, spark)
-
-    // 存储数据
-    val tableName1 = "test.ocpcv3_novel_cmp_model_hourly"
-    val tableName2 = "test.ocpcv3_novel_cmp_unitid_hourly"
-    val tableName3 = "test._ocpcv3_novel_cmp_detail_hourly"
-    cmpModel
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .write
-      .mode("overwrite")
-      .saveAsTable(tableName1)
-    cmpUnitid
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .write
-      .mode("overwrite")
-      .saveAsTable(tableName2)
-    result
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .write
-      .mode("overwrite")
-      .saveAsTable(tableName3)
+//    val cpcData = getCPCdata(date, hour, spark)
+//
+//    val cmpModel = cmpByModel(date, hour, spark)
+//    val cmpUnitid = cmpByUnitid(ocpcData, cpcData, date, hour, spark)
+//    val result = getCmpDetail(cmpUnitid, date, hour, spark)
+//
+//    // 存储数据
+//    val tableName1 = "test.ocpcv3_novel_cmp_model_hourly"
+//    val tableName2 = "test.ocpcv3_novel_cmp_unitid_hourly"
+//    val tableName3 = "test._ocpcv3_novel_cmp_detail_hourly"
+//    cmpModel
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .write
+//      .mode("overwrite")
+//      .saveAsTable(tableName1)
+//    cmpUnitid
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .write
+//      .mode("overwrite")
+//      .saveAsTable(tableName2)
+//    result
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .write
+//      .mode("overwrite")
+//      .saveAsTable(tableName3)
 
   }
 
