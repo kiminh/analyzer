@@ -1,0 +1,355 @@
+package com.cpc.spark.ocpcV3.ocpcNovel.report
+
+import java.util.Properties
+import com.typesafe.config.ConfigFactory
+
+import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions._
+
+object OcpcDetailReport {
+  def main(args: Array[String]): Unit = {
+    /*
+    小说媒体上的ocpc广告的详情数据，主要用来比对每个广告单元的ocpc cpa和 cpc cpa
+     */
+    val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+
+    // 计算日期周期
+    val date = args(0).toString
+    val hour = args(1).toString
+
+    // 获取数据
+    val ocpcRaw = getOcpcRaw(date, hour, spark)
+    val ocpcData = getOcpcData(ocpcRaw, date, hour, spark)
+    val cpcRaw = getCpcRaw(ocpcData, date, hour, spark)
+    val cpcData = getCPCdata(cpcRaw, date, hour, spark)
+
+    val cmpModel = cmpByModel(ocpcRaw, cpcRaw, date, hour, spark)
+    val cmpUnitid = cmpByUnitid(ocpcData, cpcData, date, hour, spark)
+    val result = getCmpDetail(cmpUnitid, date, hour, spark)
+
+    // 存储数据
+    val tableName1 = "test.ocpcv3_novel_cmp_model_hourly"
+    val tableName2 = "test.ocpcv3_novel_cmp_unitid_hourly"
+    val tableName3 = "test._ocpcv3_novel_cmp_detail_hourly"
+    cmpModel
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .saveAsTable(tableName1)
+    cmpUnitid
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .saveAsTable(tableName2)
+    result
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .saveAsTable(tableName3)
+
+  }
+
+  def getOcpcRaw(date: String, hour: String, spark: SparkSession) = {
+    val selectCondition = s"`date`='$date' and `hour` <= '$hour'"
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    a.*,
+         |    b.iscvr
+         |FROM
+         |    (select
+         |        uid,
+         |        timestamp,
+         |        searchid,
+         |        userid,
+         |        unitid,
+         |        ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
+         |        ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |        isclick,
+         |        isshow,
+         |        ideaid,
+         |        exptags,
+         |        price,
+         |        ext_int['bid_ocpc'] as bid_ocpc,
+         |        ext_int['is_ocpc'] as is_ocpc,
+         |        ext_string['ocpc_log'] as ocpc_log,
+         |        hour
+         |    from
+         |        dl_cpc.cpc_novel_union_log
+         |    WHERE
+         |        $selectCondition
+         |    and
+         |        ext['antispam'].int_value = 0
+         |    and adsrc = 1
+         |    and adslot_type in (1,2,3)
+         |    and round(ext["adclass"].int_value/1000) != 132101
+         |    and ext_string['ocpc_log'] is not null
+         |    and ext_string['ocpc_log'] != '') a
+         |left outer join
+         |    (
+         |        select
+         |            searchid,
+         |            label2 as iscvr
+         |        from dl_cpc.ml_cvr_feature_v1
+         |        WHERE $selectCondition
+         |    ) b on a.searchid = b.searchid
+       """.stripMargin
+
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+    resultDF
+  }
+
+  def getOcpcData(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    小说媒体上ocpc广告的汇总统计信息
+     */
+    rawData.createOrReplaceTempView("raw_table")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    unitid,
+         |    SUM(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa,
+         |    SUM(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
+         |    sum(isshow) as show_cnt,
+         |    sum(isclick) as ctr_cnt,
+         |    sum(iscvr) as cvr1_cnt,
+         |    sum(iscvr) * 1.0 / sum(isclick) as cvr1,
+         |    sum(case when isclick=1 then price else 0 end) as cost
+         |FROM
+         |    raw_table
+         |GROUP BY unitid
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+
+    resultDF.show(10)
+    resultDF
+  }
+
+  def getCpcRaw(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val selectCondition = s"`date`='$date' and `hour` <= '$hour'"
+    data.createOrReplaceTempView("ocpc_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    b.*,
+         |    c.iscvr
+         |FROM
+         |    ocpc_data as a
+         |INNER JOIN
+         |    (select
+         |        uid,
+         |        timestamp,
+         |        searchid,
+         |        userid,
+         |        unitid,
+         |        ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
+         |        ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |        isclick,
+         |        isshow,
+         |        ideaid,
+         |        exptags,
+         |        price,
+         |        ext_int['bid_ocpc'] as bid_ocpc,
+         |        ext_int['is_ocpc'] as is_ocpc,
+         |        ext_string['ocpc_log'] as ocpc_log,
+         |        hour
+         |    from
+         |        dl_cpc.cpc_novel_union_log
+         |    WHERE
+         |        $selectCondition
+         |    and
+         |        ext['antispam'].int_value = 0
+         |    and adsrc = 1
+         |    and adslot_type in (1,2,3)
+         |    and round(ext["adclass"].int_value/1000) != 132101
+         |    and (ext_string['ocpc_log'] is null or ext_string['ocpc_log'] = '')) as b
+         |ON
+         |    a.unitid=b.unitid
+         |left outer join
+         |    (
+         |        select
+         |            searchid,
+         |            label2 as iscvr
+         |        from dl_cpc.ml_cvr_feature_v1
+         |        WHERE $selectCondition
+         |    ) as c
+         |on  b.searchid = c.searchid
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+    resultDF
+  }
+
+  def getCPCdata(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    小说媒体上同时在跑ocpc和cpc广告的cpc数据
+     */
+
+    rawData.createOrReplaceTempView("raw_table")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    unitid,
+         |    SUM(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa,
+         |    SUM(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
+         |    sum(isshow) as show_cnt,
+         |    sum(isclick) as ctr_cnt,
+         |    sum(iscvr) as cvr1_cnt,
+         |    sum(iscvr) * 1.0 / sum(isclick) as cvr1,
+         |    sum(case when isclick=1 then price else 0 end) as cost
+         |FROM
+         |    raw_table
+         |GROUP BY unitid
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+
+    resultDF.show(10)
+    resultDF
+  }
+
+  def cmpByModel(ocpcRaw: DataFrame, cpcRaw: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    比较ocpc与cpc的汇总信息：cpm, arpu等
+     */
+    ocpcRaw.createOrReplaceTempView("ocpc_raw_data")
+    cpcRaw.createOrReplaceTempView("cpc_raw_data")
+
+    // ocpc数据
+    val sqlRequestOCPC =
+      s"""
+         |SELECT
+         |    'ocpc' as ad_model,
+         |    sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa,
+         |    round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
+         |    round(sum(case WHEN isclick == 1 then price else 0 end)*10/count(distinct uid),3) as arpu,
+         |    sum(isclick) * 1.0 / sum(isshow) as ctr,
+         |    sum(iscvr) * 1.0 / sum(isclick) as click_cvr,
+         |    sum(iscvr) * 1.0 / sum(isshow) as show_cvr,
+         |    sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
+         |    COUNT(isshow) as show_cnt,
+         |    SUM(isclick) as ctr_cnt,
+         |    SUM(iscvr) as cvr_cnt
+         |FROM
+         |    ocpc_raw_data
+       """.stripMargin
+    println(sqlRequestOCPC)
+    val ocpcData = spark.sql(sqlRequestOCPC)
+
+    // cpc数据
+    val sqlRequestCPC =
+      s"""
+         |SELECT
+         |    'cpc' as ad_model,
+         |    sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa,
+         |    round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
+         |    round(sum(case WHEN isclick == 1 then price else 0 end)*10/count(distinct uid),3) as arpu,
+         |    sum(isclick) * 1.0 / sum(isshow) as ctr,
+         |    sum(iscvr) * 1.0 / sum(isclick) as click_cvr,
+         |    sum(iscvr) * 1.0 / sum(isshow) as show_cvr,
+         |    sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
+         |    COUNT(isshow) as show_cnt,
+         |    SUM(isclick) as ctr_cnt,
+         |    SUM(iscvr) as cvr_cnt
+         |FROM
+         |    cpc_raw_data
+       """.stripMargin
+    println(sqlRequestCPC)
+    val cpcData = spark.sql(sqlRequestCPC)
+
+    // 汇总union数据，并存储数据
+    val resultDF = ocpcData.union(cpcData)
+    resultDF.show(10)
+    resultDF
+  }
+
+  def cmpByUnitid(ocpc: DataFrame, cpc: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    ocpc.createOrReplaceTempView("ocpc_unitid")
+    cpc.createOrReplaceTempView("cpc_unitid")
+
+    val sqlRequest =
+      s"""
+         |CREATE TABLE test.test_ocpc_novel_cmp20181208 AS
+         |SELECT
+         |    a.unitid,
+         |    a.cpa as cpa_ocpc,
+         |    b.cpa as cpa_cpc,
+         |    a.acp as acp_ocpc,
+         |    b.acp as acp_cpc,
+         |    a.cvr1 as cvr_ocpc,
+         |    b.cvr1 as cvr_cpc,
+         |    a.cost as cost_ocpc,
+         |    b.cost as cost_cpc
+         |FROM
+         |    ocpc_unitid as a
+         |INNER JOIN
+         |    cpc_unitid as b
+         |ON
+         |    a.unitid=b.unitid;
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+    resultDF.show(10)
+    resultDF
+  }
+
+  def getCmpDetail(cmpData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    cmpData.createOrReplaceTempView("ocpc_novel_cmp")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    a.unitid,
+         |    a.cpa_ocpc,
+         |    a.cpa_cpc,
+         |    c.cpa_history,
+         |    c.avg_cpa,
+         |    c.cpa_history_old,
+         |    a.acp_ocpc,
+         |    a.acp_cpc,
+         |    a.cost_ocpc,
+         |    a.cost_cpc,
+         |    (a.cost_ocpc + a.cost_cpc) as cost,
+         |    b.avg_k,
+         |    b.recent_k,
+         |    a.cpa_ocpc * 1.0 / a.cpa_cpc as cparatio1,
+         |    a.cpa_cpc * 1.0 / b.cpa_given as cparatio2,
+         |    a.cost_ocpc * 1.0 / (a.cost_ocpc + a.cost_cpc) as costratio
+         |FROM
+         |    ocpc_novel_cmp as a
+         |LEFT JOIN
+         |    (SELECT
+         |        *
+         |    FROM
+         |        dl_cpc.ocpcv3_novel_report_detail_hourly
+         |    WHERE
+         |        `date`='$date'
+         |    AND
+         |        `hour`='$hour') as b
+         |ON
+         |    a.unitid=b.unitid
+         |LEFT JOIN
+         |    (SELECT
+         |        unitid,
+         |        avg_cpa,
+         |        cpa_history,
+         |        cpa_history_old as cpa_history_old
+         |    FROM
+         |        dl_cpc.ocpcv3_novel_pb_v1_hourly_middle
+         |    WHERE
+         |        `date`='$date' and `hour`='$hour') as c
+         |ON
+         |    a.unitid=c.unitid
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+
+    resultDF.show(10)
+    resultDF
+  }
+}
