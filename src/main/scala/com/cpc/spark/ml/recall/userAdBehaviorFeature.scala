@@ -75,7 +75,7 @@ object userAdBehaviorFeature {
     println("-------------------------------------------------")
 
     val ud_features = spark.sql(ud_sql1)
-      .join(spark.sql(ud_sql2), Seq("uid"), "outer")
+      //.join(spark.sql(ud_sql2), Seq("uid"), "outer")
       .select($"uid",
         hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
         hashSeq("m3", "int")($"s_ideaid_2").alias("m3"),
@@ -99,11 +99,10 @@ object userAdBehaviorFeature {
         hashSeq("m21", "int")($"r_adclass_3").alias("m21"),
         hashSeq("m22", "int")($"r_ideaid_4_7").alias("m22"),
         hashSeq("m23", "int")($"r_adclass_4_7").alias("m23")
-      ).persist()
+      )
 
     ud_features.coalesce(50).write.mode("overwrite")
       .parquet("/user/cpc/features/adBehaviorFeature")
-    ud_features.show()
   }
   /**
     * 获取时间序列
