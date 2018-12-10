@@ -126,13 +126,14 @@ object OcpcK {
       // 每天12点之后，如果当天cpa过低（1.3），targetK -> 1.0
       // 每天12点之后，如果当天cpa过高（0.7）, targetK -> 0.7
       val targetK = getTargetK2(cpaMap, hour, ideaid, spark)
+      val cpaRatio = cpaMap.getOrElse(ideaid, 0.0)
 
       // TODO 根据k是否大于0循环判断决定调整原点数量
       // k<0， 增加原点数量重新拟合
       // k>0, 退出循环
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
-      println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
+      println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK, "cpaRatio: " + cpaRatio)
       if (coffList(1)>0 && realk > 0) {
         resList.append((ideaid, realk, date, hour))
       }
