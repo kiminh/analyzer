@@ -43,7 +43,7 @@ object OcpcK {
     val dtCondition = "(%s)".format(datehourlist.mkString(" or "))
     val dtCondition2 = "(%s)".format(datehourlist2.mkString(" or "))
 
-    // TODO  替换成弘扬的表
+
     val statSql =
       s"""
          |select
@@ -73,6 +73,7 @@ object OcpcK {
     println(statSql)
 
     val realCvr3 = getIdeaidCvr3Ratio(date, hour, spark)
+
 
     val tablename = "dl_cpc.cpc_ocpc_v2_middle"
     val rawData = spark.sql(statSql)
@@ -121,17 +122,18 @@ object OcpcK {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
-      // TODO
+      // 已全量
       // 每天12点之后，如果当天cpa过低（1.3），targetK -> 1.0
       // 每天12点之后，如果当天cpa过高（0.7）, targetK -> 0.7
       val targetK = getTargetK2(cpaMap, hour, ideaid, spark)
+      val cpaRatio = cpaMap.getOrElse(ideaid, 0.0)
 
       // TODO 根据k是否大于0循环判断决定调整原点数量
       // k<0， 增加原点数量重新拟合
       // k>0, 退出循环
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
-      println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
+      println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK, "cpaRatio: " + cpaRatio)
       if (coffList(1)>0 && realk > 0) {
         resList.append((ideaid, realk, date, hour))
       }
@@ -303,7 +305,7 @@ object OcpcK {
     // cost数据
     val rawData1 = spark
       .table("dl_cpc.ocpc_unionlog")
-      .where(s"`dt`='$date'")
+      .where(s"`dt`='$date' and `hour` <= '$hour'")
       .filter("isclick=1 and ocpc_log_dict['kvalue'] is not null")
 
     val costData = rawData1
@@ -315,7 +317,7 @@ object OcpcK {
     // cvr2数据
     val rawData2 = spark
       .table("dl_cpc.ml_cvr_feature_v1")
-      .where(s"`date`='$date'")
+      .where(s"`date`='$date' and `hour` <= '$hour'")
       .filter("label2=1")
       .withColumn("label", col("label2"))
       .select("ideaid", "label", "searchid")
@@ -329,7 +331,7 @@ object OcpcK {
     // cvr3数据
     val rawData3 = spark
       .table("dl_cpc.ml_cvr_feature_v2")
-      .where(s"`date`='$date'")
+      .where(s"`date`='$date' and `hour` <= '$hour'")
       .filter("label=1")
       .select("ideaid", "label", "searchid")
       .distinct()
@@ -339,12 +341,13 @@ object OcpcK {
       .agg(sum(col("label")).alias("cvr3_cnt"))
       .select("ideaid", "cvr3_cnt")
 
-    // 读取实验ideaid列表
-    val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
-    val data = spark.sparkContext.textFile(filename)
-    val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
-    rawRDD.foreach(println)
-    val expIdeas = rawRDD.toDF("ideaid", "flag").distinct()
+//    全量采用
+//    // 读取实验ideaid列表
+//    val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
+//    val data = spark.sparkContext.textFile(filename)
+//    val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+//    rawRDD.foreach(println)
+//    val expIdeas = rawRDD.toDF("ideaid", "flag").distinct()
 
     // 读取ideaid的转化目标
     val ideaids = spark
@@ -352,8 +355,7 @@ object OcpcK {
       .select("ideaid", "conversion_goal")
       .distinct()
 
-    val resultDF = expIdeas
-      .join(ideaids, Seq("ideaid"))
+    val resultDF = ideaids
       .join(costData, Seq("ideaid"), "left_outer")
       .join(cvr2Data, Seq("ideaid"), "left_outer")
       .join(cvr3Data, Seq("ideaid"), "left_outer")
