@@ -24,33 +24,33 @@ object OcpcDetailReport {
     getCpcRaw(date, hour, spark)
     val cpcData = getCPCdata(date, hour, spark)
     cpcData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpc_unitid")
-//
-//    val cmpModel = cmpByModel(date, hour, spark)
-//    val cmpUnitid = cmpByUnitid(ocpcData, cpcData, date, hour, spark)
-//    val result = getCmpDetail(cmpUnitid, date, hour, spark)
-//
-//    // 存储数据
-//    val tableName1 = "test.ocpcv3_novel_cmp_model_hourly"
-//    val tableName2 = "test.ocpcv3_novel_cmp_unitid_hourly"
-//    val tableName3 = "test._ocpcv3_novel_cmp_detail_hourly"
-//    cmpModel
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .write
-//      .mode("overwrite")
-//      .saveAsTable(tableName1)
-//    cmpUnitid
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .write
-//      .mode("overwrite")
-//      .saveAsTable(tableName2)
-//    result
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .write
-//      .mode("overwrite")
-//      .saveAsTable(tableName3)
+
+    val cmpModel = cmpByModel(date, hour, spark)
+    val cmpUnitid = cmpByUnitid(date, hour, spark)
+    val result = getCmpDetail(cmpUnitid, date, hour, spark)
+
+    // 存储数据
+    val tableName1 = "test.ocpcv3_novel_cmp_model_hourly"
+    val tableName2 = "test.ocpcv3_novel_cmp_unitid_hourly"
+    val tableName3 = "test._ocpcv3_novel_cmp_detail_hourly"
+    cmpModel
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .saveAsTable(tableName1)
+    cmpUnitid
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .saveAsTable(tableName2)
+    result
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .saveAsTable(tableName3)
 
   }
 
@@ -267,10 +267,7 @@ object OcpcDetailReport {
     resultDF
   }
 
-  def cmpByUnitid(ocpc: DataFrame, cpc: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    ocpc.createOrReplaceTempView("ocpc_unitid")
-    cpc.createOrReplaceTempView("cpc_unitid")
-
+  def cmpByUnitid(date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |CREATE TABLE test.test_ocpc_novel_cmp20181208 AS
@@ -285,9 +282,9 @@ object OcpcDetailReport {
          |    a.cost as cost_ocpc,
          |    b.cost as cost_cpc
          |FROM
-         |    ocpc_unitid as a
+         |    test.ocpcv3_novel_ocpc_unitid as a
          |INNER JOIN
-         |    cpc_unitid as b
+         |    test.ocpcv3_novel_cpc_unitid as b
          |ON
          |    a.unitid=b.unitid
        """.stripMargin
