@@ -26,25 +26,25 @@ object OcpcDetailReport {
     cpcData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpc_unitid")
 
     val cmpModel = cmpByModel(date, hour, spark)
-    val cmpUnitid = cmpByUnitid(date, hour, spark)
-    val result = getCmpDetail(cmpUnitid, date, hour, spark)
-
-    // 存储数据
     val tableName1 = "test.ocpcv3_novel_cmp_model_hourly"
-    val tableName2 = "test.ocpcv3_novel_cmp_unitid_hourly"
-    val tableName3 = "test._ocpcv3_novel_cmp_detail_hourly"
     cmpModel
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write
       .mode("overwrite")
       .saveAsTable(tableName1)
+
+    val cmpUnitid = cmpByUnitid(date, hour, spark)
+    val tableName2 = "test.ocpcv3_novel_cmp_unitid_hourly"
     cmpUnitid
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write
       .mode("overwrite")
       .saveAsTable(tableName2)
+
+    val result = getCmpDetail(date, hour, spark)
+    val tableName3 = "test._ocpcv3_novel_cmp_detail_hourly"
     result
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
@@ -293,8 +293,8 @@ object OcpcDetailReport {
     resultDF
   }
 
-  def getCmpDetail(cmpData: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    cmpData.createOrReplaceTempView("ocpc_novel_cmp")
+  def getCmpDetail(date: String, hour: String, spark: SparkSession) = {
+    val selectCondition = s"`date`='$date' and `hour`='$hour'"
     val sqlRequest =
       s"""
          |SELECT
@@ -312,7 +312,12 @@ object OcpcDetailReport {
          |    a.cpa_cpc * 1.0 / c.cpa_history as cparatio2,
          |    a.cost_ocpc * 1.0 / (a.cost_ocpc + a.cost_cpc) as costratio
          |FROM
-         |    ocpc_novel_cmp as a
+         |    (SELECT
+         |        *
+         |    FROM
+         |        test.ocpcv3_novel_cmp_unitid_hourly
+         |    WHERE
+         |        $selectCondition) as a
          |LEFT JOIN
          |    (SELECT
          |        unitid,
@@ -321,7 +326,7 @@ object OcpcDetailReport {
          |    FROM
          |        dl_cpc.ocpcv3_novel_pb_v2_hourly_middle
          |    WHERE
-         |        `date`='$date' and `hour`='$hour') as c
+         |        $selectCondition) as c
          |ON
          |    a.unitid=c.unitid
        """.stripMargin
