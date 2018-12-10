@@ -24,6 +24,7 @@ object NovelEvaluation {
                |    '$date' as date
                |from dl_cpc.cpc_novel_union_log
                |where `date` = '$date'
+               |and adsrc = 1
              """.stripMargin
 
         val novelEval = spark.sql(sql)
