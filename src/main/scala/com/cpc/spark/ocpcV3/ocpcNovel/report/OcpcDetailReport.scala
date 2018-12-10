@@ -18,39 +18,42 @@ object OcpcDetailReport {
     val hour = args(1).toString
 
     // 获取数据
-//    getOcpcRaw(date, hour, spark)
-//    val ocpcData = getOcpcData(date, hour, spark)
-//    ocpcData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_ocpc_unitid")
-//    getCpcRaw(date, hour, spark)
-//    val cpcData = getCPCdata(date, hour, spark)
-//    cpcData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpc_unitid")
+    getOcpcRaw(date, hour, spark)
+    val ocpcData = getOcpcData(date, hour, spark)
+    ocpcData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_ocpc_unitid")
+    getCpcRaw(date, hour, spark)
+    val cpcData = getCPCdata(date, hour, spark)
+    cpcData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpc_unitid")
 
     val cmpModel = cmpByModel(date, hour, spark)
-    val tableName1 = "test.ocpcv3_novel_cmp_model_hourly"
+    val tableName1 = "dl_cpc.ocpcv3_novel_cmp_model_hourly"
     cmpModel
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write
       .mode("overwrite")
-      .saveAsTable(tableName1)
+      .insertInto(tableName1)
+    println(s"successfully save data into table: $tableName1")
 
     val cmpUnitid = cmpByUnitid(date, hour, spark)
-    val tableName2 = "test.ocpcv3_novel_cmp_unitid_hourly"
+    val tableName2 = "dl_cpc.ocpcv3_novel_cmp_unitid_hourly"
     cmpUnitid
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write
       .mode("overwrite")
-      .saveAsTable(tableName2)
+      .insertInto(tableName2)
+    println(s"successfully save data into table: $tableName2")
 
-    val result = getCmpDetail(date, hour, spark)
-    val tableName3 = "test._ocpcv3_novel_cmp_detail_hourly"
+    val result = getCmpDetail(tableName2, date, hour, spark)
+    val tableName3 = "dl_cpc.ocpcv3_novel_cmp_detail_hourly"
     result
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write
       .mode("overwrite")
-      .saveAsTable(tableName3)
+      .insertInto(tableName3)
+    println(s"successfully save data into table: $tableName3")
 
   }
 
@@ -293,7 +296,7 @@ object OcpcDetailReport {
     resultDF
   }
 
-  def getCmpDetail(date: String, hour: String, spark: SparkSession) = {
+  def getCmpDetail(tableName: String, date: String, hour: String, spark: SparkSession) = {
     val selectCondition = s"`date`='$date' and `hour`='$hour'"
     val sqlRequest =
       s"""
@@ -315,7 +318,7 @@ object OcpcDetailReport {
          |    (SELECT
          |        *
          |    FROM
-         |        test.ocpcv3_novel_cmp_unitid_hourly
+         |        $tableName
          |    WHERE
          |        $selectCondition) as a
          |LEFT JOIN
