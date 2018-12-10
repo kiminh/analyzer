@@ -16,15 +16,20 @@ object NovelEvaluation {
         val sql =
             s"""
                |select
-               |    sum(isshow) as show_num, --展示数
+               |    sum(case when isshow = 1 and adsrc = 1 then 1 else 0 end) as cpc_show_num, --cpc展示数
+               |    sum(isshow) as show_num, --总展示数
+               |    round(sum(case when isshow = 1 and adsrc = 1 then 1 else 0 end)/ sum(isshow), 4) as cpc_show_rate,
+               |    sum(case when isclick = 1 and adsrc = 1 then 1 else 0 end) as cpc_click_num, --cpc点击数
                |    sum(isclick) as click_num, --点击数
                |    round(sum(isclick) / sum(isshow),6) as ctr, --点击率
-               |    sum(case WHEN isclick = 1 then price else 0 end) as click_total_price, --点击总价
-               |    round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isshow), 6) as cpm,
+               |    round(sum(case when isclick = 1 and adsrc = 1 then 1 else 0 end) / sum(case when isshow = 1 and adsrc = 1 then 1 else 0 end), 6) as cpc_ctr, --cpc点击率
+               |    sum(case WHEN isclick = 1 then price else 0 end) / 100.0 as total_price, --点击总价
+               |    sum(case WHEN isclick = 1 and adsrc = 1 then price else 0 end) / 100.0 as cpc_total_price, --cpc点击总价
+               |    round(sum(case WHEN isclick = 1 and adsrc = 1 then price else 0 end)*10/sum(case when isshow = 1 and adsrc = 1 then 1 else 0 end), 6) as cpc_cpm,
+               |    round(sum(case WHEN isclick = 1 and adsrc = 1 then price else 0 end)*10/count(distinct case when adsrc = 1 then uid else null end), 6) as cpc_arpu,
                |    '$date' as date
                |from dl_cpc.cpc_novel_union_log
                |where `date` = '$date'
-               |and adsrc = 1
              """.stripMargin
 
         val novelEval = spark.sql(sql)
