@@ -32,15 +32,15 @@ object prepare_bsCvr_dnnSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/dgd/dnn_recall_cvr_v1/dnntrain-$date")
-    train.take(10).foreach(println)
+      .save(s"/user/cpc/sample/recall/dnn_recall_cvr_v1/dnntrain-$date")
+    //train.take(10).foreach(println)
 
     train.sample(withReplacement = false, 0.1).repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/dgd/dnn_recall_cvr_v1/dnntest-$date")
+      .save(s"/user/cpc/sample/recall/dnn_recall_cvr_v1/dnntest-$date")
 
     train.unpersist()
   }
