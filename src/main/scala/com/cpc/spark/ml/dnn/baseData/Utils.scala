@@ -18,14 +18,30 @@ import org.apache.spark.rdd.RDD
 object Utils {
 
   //写RDD[example]到hdfs
-  def saveExample2Hdfs(data: RDD[Array[Byte]], path: String): Unit = {
+  def saveExample2Hdfs(str: String, path: String, numPartitions: Int = 100): Unit = {
+
+    val spark = SparkSession.builder()
+      .enableHiveSupport()
+      .getOrCreate()
+
+    //str = "table_name/dt=2018-12-08,pt=daily,hour=00,ml_name=adcontent,ml_ver=v7"
+
+    val table = str.split("/")(0)
+    val condition = str.split("/")(1).replace("=", "='").replace(",", "' and ") + "'"
+
+    val sql = s"select example from $table where $condition"
+    print(sql)
+
+    /*val data = spark.sql(sql)
+      .rdd.map(x => Base64.decodeBase64(x.getString(0)))
 
     val path_exists = s"hadoop fs -test -e $path" !
     if (path_exists > 0) {
       s"hadoop fs -rm -r $path" !
     }
 
-    data.map(x => (new BytesWritable(Base64.decodeBase64(x)), NullWritable.get()))
-      .coalesce(1).saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)
+    data.map(x => (new BytesWritable(x), NullWritable.get()))
+      .repartition(numPartitions)
+      .saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)*/
   }
 }
