@@ -763,7 +763,7 @@ object OcpcSampleToRedis {
 
     }
 
-    // TODO 测试
+    // TODO 测试，临时表
     prevTable.write.mode("overwrite").saveAsTable("test.ocpc_prev_table20181211")
 
     val finalData = pidK
@@ -775,6 +775,7 @@ object OcpcSampleToRedis {
       .withColumn("k_value_middle", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 5.0).otherwise(col("new_k")))
       .withColumn("k_value", when(col("flag")===0, col("prev_k")).otherwise(col("k_value_middle")))
 
+    // TODO 临时表
     finalData.write.mode("overwrite").saveAsTable("test.ocpc_check_pb_k20181211")
 
     finalData

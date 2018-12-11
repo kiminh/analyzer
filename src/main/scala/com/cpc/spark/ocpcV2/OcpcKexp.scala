@@ -15,8 +15,8 @@ object OcpcKexp {
     // TODO 测试
     val result = selectKbyEXP(date, hour, spark)
     val tableName = "ocpc_regression_k_final"
-    result.write.mode("overwrite").saveAsTable("test." + tableName)
-//    result.write.mode("overwrite").insertInto("dl_cpc." + tableName)
+//    result.write.mode("overwrite").saveAsTable("test." + tableName)
+    result.write.mode("overwrite").insertInto("dl_cpc." + tableName)
     println(s"save data into table: $tableName")
   }
 
@@ -52,9 +52,7 @@ object OcpcKexp {
       .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "flag")
       .withColumn("k_ratio2", when(col("flag") === 1, col("k_ratio2_v2")).otherwise(col("k_ratio2_v1")))
       .withColumn("k_ratio3", when(col("flag") === 1, col("k_ratio3_v2")).otherwise(col("k_ratio3_v1")))
-
-    // TODO 临时表
-    kvalue.write.mode("overwrite").saveAsTable("test.ocpc_k_exp_check20181211")
+    
 
     kvalue.show(10)
     val resultDF = kvalue
