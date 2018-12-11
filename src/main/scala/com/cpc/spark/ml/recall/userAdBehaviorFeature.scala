@@ -100,9 +100,9 @@ object userAdBehaviorFeature {
         hashSeq("m22", "int")($"r_ideaid_4_7").alias("m22"),
         hashSeq("m23", "int")($"r_adclass_4_7").alias("m23")
       )
-
+    val day = getDay(date, 1)
     ud_features.coalesce(50).write.mode("overwrite")
-      .parquet("/user/cpc/features/adBehaviorFeature")
+      .parquet(s"/user/cpc/features/adBehaviorFeature/$day")
   }
   /**
     * 获取时间序列
