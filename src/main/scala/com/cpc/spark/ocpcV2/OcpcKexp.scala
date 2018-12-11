@@ -12,7 +12,6 @@ object OcpcKexp {
     val date = args(0).toString
     val hour = args(1).toString
 
-    // TODO 测试
     val result = selectKbyEXP(date, hour, spark)
     val tableName = "ocpc_regression_k_final"
 //    result.write.mode("overwrite").saveAsTable("test." + tableName)

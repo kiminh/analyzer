@@ -137,7 +137,7 @@ object OcpcSampleToRedis {
 
 
     val userFinalData = spark.sql(sqlRequest2)
-//    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
+    userFinalData.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table")
 
 
     val cvr3Data = getCvr3List(end_date, hour, spark)
@@ -197,12 +197,12 @@ object OcpcSampleToRedis {
 
 
 
-//    userFinalData2
-//      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
-//      .withColumn("date", lit(end_date))
-//      .withColumn("hour", lit(hour))
-//      .write.mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
+    userFinalData2
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value")
+      .withColumn("date", lit(end_date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v1_new")
 
 
 
@@ -321,14 +321,14 @@ object OcpcSampleToRedis {
 
 
 
-//    finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
+    finalData.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
 
 
-//    finalData
-//      .withColumn("date", lit(end_date))
-//      .withColumn("hour", lit(hour))
-//      .write.mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
+    finalData
+      .withColumn("date", lit(end_date))
+      .withColumn("hour", lit(hour))
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
 
     // 保存pb文件
     savePbPack(finalData)
@@ -763,8 +763,6 @@ object OcpcSampleToRedis {
 
     }
 
-    // TODO 测试，临时表
-    prevTable.write.mode("overwrite").saveAsTable("test.ocpc_prev_table20181211")
 
     val finalData = pidK
       .join(regressionK, Seq("ideaid"), "left_outer")
@@ -775,8 +773,6 @@ object OcpcSampleToRedis {
       .withColumn("k_value_middle", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 5.0).otherwise(col("new_k")))
       .withColumn("k_value", when(col("flag")===0, col("prev_k")).otherwise(col("k_value_middle")))
 
-    // TODO 临时表
-    finalData.write.mode("overwrite").saveAsTable("test.ocpc_check_pb_k20181211")
 
     finalData
   }
