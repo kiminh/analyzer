@@ -211,7 +211,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
     //用户安装app
     val ud_sql0 =
       s"""
-         |select * from dl_cpc.cpc_user_installed_apps where load_date = '${getDay(date, 1)}'
+         |select * from dl_cpc.cpc_user_installed_apps where load_date = '$date'
         """.stripMargin
 
     //用户天级别过去访问广告情况
