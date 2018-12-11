@@ -28,7 +28,8 @@ libraryDependencies ++= Seq(
   "com.google.code.gson" % "gson" % "2.8.1",
   "com.alibaba" % "fastjson" % "1.2.39",
   "org.scalaj" %% "scalaj-http" % "2.3.0",
-  "org.apache.commons" % "commons-math3" % "3.5"
+  "org.apache.commons" % "commons-math3" % "3.5",
+  "commons-codec" % "commons-codec" % "1.9"
 )
 
 assemblyMergeStrategy in assembly := {
