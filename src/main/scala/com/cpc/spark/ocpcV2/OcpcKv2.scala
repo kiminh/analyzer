@@ -70,22 +70,22 @@ object OcpcKv2 {
 
     println(statSql)
 
-    val tablename = "test.ocpc_regression_middle"
+    val tablename = "dl_cpc.ocpc_regression_middle"
     val data = spark
       .sql(statSql)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    data.write.mode("overwrite").saveAsTable(tablename)
-//    data.write.mode("overwrite").insertInto(tablename)
+//    data.write.mode("overwrite").saveAsTable(tablename)
+    data.write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio2", "k_ratio3", "date", "hour")
-    res.write.mode("overwrite").saveAsTable("test.ocpc_regression_k")
-//    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_regression_k")
+//    res.write.mode("overwrite").saveAsTable("test.ocpc_regression_k")
+    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_regression_k")
 
   }
 
