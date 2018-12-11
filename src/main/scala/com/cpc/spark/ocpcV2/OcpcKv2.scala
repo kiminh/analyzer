@@ -84,7 +84,7 @@ object OcpcKv2 {
 
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio2", "k_ratio3", "date", "hour")
-    res.write.mode("overwrite").saveAsTable("test.ocpc_regression_k_new")
+    res.write.mode("overwrite").saveAsTable("test.ocpc_regression_k")
 //    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_regression_k")
 
   }
