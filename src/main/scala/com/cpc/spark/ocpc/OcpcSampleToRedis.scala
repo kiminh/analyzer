@@ -709,7 +709,7 @@ object OcpcSampleToRedis {
          |  k_ratio2,
          |  k_ratio3
          |FROM
-         |  dl_cpc.ocpc_v2_k
+         |  dl_cpc.ocpc_regression_k_final
          |WHERE
          |  `date` = '$date'
          |AND
