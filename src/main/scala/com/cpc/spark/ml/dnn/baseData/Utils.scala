@@ -32,16 +32,15 @@ object Utils {
     val sql = s"select example from $table where $condition"
     print(sql)
 
-    /*val data = spark.sql(sql)
-      .rdd.map(x => Base64.decodeBase64(x.getString(0)))
-
     val path_exists = s"hadoop fs -test -e $path" !
     if (path_exists > 0) {
       s"hadoop fs -rm -r $path" !
     }
 
-    data.map(x => (new BytesWritable(x), NullWritable.get()))
+    spark.sql(sql)
+      .rdd.map(x => Base64.decodeBase64(x.getString(0)))
+      .map(x => (new BytesWritable(x), NullWritable.get()))
       .repartition(numPartitions)
-      .saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)*/
+      .saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)
   }
 }
