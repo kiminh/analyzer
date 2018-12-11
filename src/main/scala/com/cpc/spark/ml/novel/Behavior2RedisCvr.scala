@@ -91,7 +91,7 @@ object Behavior2RedisCvr {
     val ud_sql3 =
       s"""
          |select uid,book_id,first_category_id,second_category_id,third_category_id
-         |from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
+         |from dl_cpc.miReadTrait where day = '$date'
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and length(uid) in (14, 15, 36)
