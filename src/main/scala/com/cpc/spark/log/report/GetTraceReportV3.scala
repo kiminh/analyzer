@@ -75,6 +75,7 @@ object GetTraceReportV3 {
         (x.key, x)
     }.reduceByKey((x, y) => x.sum(y))
       .map(x => x._2)
+      .filter(x => x.trace_op1.length < 200)
 
 
     println("traceData: " + traceData.count())
