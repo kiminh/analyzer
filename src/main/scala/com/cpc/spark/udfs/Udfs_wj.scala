@@ -181,4 +181,18 @@ object Udfs_wj{
   def udfSqrt() = udf((value: Double) => {
     math.sqrt(value)
   })
+
+  def udfNovelConversionGoal() = udf((conversion1: Int, conversion2: Int, conversion3: Int) => {
+    var conversionGoal = 1
+    if (conversion1 == 0) {
+      if (conversion2 == 0) {
+        conversionGoal = conversion3
+      } else {
+        conversionGoal = conversion2
+      }
+    } else {
+      conversionGoal = conversion1
+    }
+    conversionGoal
+  })
 }
