@@ -33,8 +33,11 @@ object Utils {
     print(sql)
 
     val path_exists = s"hadoop fs -test -e $path" !
+
     if (path_exists > 0) {
+
       s"hadoop fs -rm -r $path" !
+
     }
 
     spark.sql(sql)
