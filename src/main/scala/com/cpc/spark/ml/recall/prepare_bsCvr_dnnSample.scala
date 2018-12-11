@@ -27,12 +27,14 @@ object prepare_bsCvr_dnnSample {
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
 
+    val sampleDay = getDay(date, 1)
+
     train.repartition(1000)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/sample/recall/dnn_recall_cvr_v1/dnntrain-$date")
+      .save(s"/user/cpc/sample/recall/dnn_recall_cvr_v1/dnntrain-$sampleDay")
     //train.take(10).foreach(println)
 
     train.sample(withReplacement = false, 0.1).repartition(100)
@@ -40,7 +42,7 @@ object prepare_bsCvr_dnnSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/sample/recall/dnn_recall_cvr_v1/dnntest-$date")
+      .save(s"/user/cpc/sample/recall/dnn_recall_cvr_v1/dnntest-$sampleDay")
 
     train.unpersist()
   }
@@ -48,8 +50,9 @@ object prepare_bsCvr_dnnSample {
   def getSample(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
     val day = getDay(date, 1)
+    val dayFeature = getDay(date, 2)
 
-    val behavior_data = spark.read.parquet(s"/user/cpc/features/adBehaviorFeature")
+    val behavior_data = spark.read.parquet(s"/user/cpc/features/adBehaviorFeature/$dayFeature")
 
     val uidRequest = spark.read.parquet("/user/cpc/features/timeDistributionFeature").
       select($"uid", hashSeq("m26", "string")($"request").alias("m26"))
