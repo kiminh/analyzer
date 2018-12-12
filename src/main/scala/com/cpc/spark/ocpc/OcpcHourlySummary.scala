@@ -20,6 +20,9 @@ object OcpcHourlySummary {
     val costData = calculateCost(data, date, hour, spark)
     val otherData = calculateData(data, date, hour, spark)
 
+    data.write.mode("overwrite").saveAsTable("test.ocpc_join_data20181212")
+
+
     // 关联数据
     val resultDF = otherData
       .join(costData, Seq("conversion_goal"), "left_outer")
@@ -101,6 +104,8 @@ object OcpcHourlySummary {
       .withColumn("high_cpa_cost", col("cost") - col("cost_given"))
       .withColumn("high_cpa_cost", when(col("high_cpa_cost") <= 0, 0.0).otherwise(col("high_cpa_cost")))
     unitidData.createOrReplaceTempView("unitid_data")
+    // TODO
+    unitidData.write.mode("overwrite").saveAsTable("test.ocpc_unitid_data20181212")
 
     val sqlRequest2 =
       s"""
