@@ -96,17 +96,17 @@ object prepare_bsCvr_dnnPredictSample {
 
     val sql =
       s"""
+         |select os, phone_price, brand, province, city, city_level, uid, age, sex from (
          |select
          |  os, ext['phone_price'].int_value as phone_price,
          |  ext['brand_title'].string_value as brand,
          |  province, city, ext['city_level'].int_value as city_level,
-         |  uid, age, sex
+         |  uid, age, sex, row_number() over(partition by uid order by hour desc) row_num
          |from dl_cpc.cpc_union_log where `date` = '$day'
          |  and ideaid > 0
          |  and media_appsid in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
          |  and uid not like "%.%"
-         |  and uid not like "%000000%"
-         |  group by os, ext['phone_price'].int_value, ext['brand_title'].string_value, province, city, ext['city_level'].int_value, uid, age, sex
+         |  and uid not like "%000000%") ta where ta.row_num=1
       """.stripMargin
     println("--------------------------------")
     println(sql)
@@ -147,9 +147,9 @@ object prepare_bsCvr_dnnPredictSample {
         hash("f17")($"age").alias("f17"),
         //hash("f28")($"hour").alias("f28"),
 
-        array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
-          $"m11", $"m12", $"m13", $"m14", $"m15",$"m16", $"m17", $"m18", $"m19", $"m20",$"m21", $"m22",$"m23", $"m24",$"m25",$"m26")
-          .alias("raw_sparse"), $"uid"
+        mkSparseFeature_m(array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
+          $"m11", $"m12", $"m13", $"m14", $"m15",$"m16", $"m17", $"m18", $"m19", $"m20",$"m21", $"m22",$"m23", $"m24",$"m25",$"m26"))
+          .alias("sparse"), $"uid"
       ).persist(StorageLevel.DISK_ONLY)
 
     result_temp.show(10)
@@ -159,7 +159,7 @@ object prepare_bsCvr_dnnPredictSample {
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
-        mkSparseFeature_m($"raw_sparse").alias("sparse"),
+        $"sparse",
         $"uid", $"ideaid"
       )
       .select(
