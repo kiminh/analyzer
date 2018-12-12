@@ -281,7 +281,7 @@ class DNNSampleCvr(spark: SparkSession, trdate: String = "", trpath: String = ""
       .join(spark.sql(ud_sql2), Seq("uid"), "outer")
       .join(spark.sql(ud_sql3), Seq("uid"), "outer")
       .select($"uid",
-        hashSeq("ud0#", "string")($"pkgs").alias("ud0"),
+        hashSeq("f30#", "string")($"pkgs").alias("f30"),
         hashSeq("ud1#", "int")($"s_ideaid_1").alias("ud1"),
         hashSeq("ud2#", "int")($"s_ideaid_2").alias("ud2"),
         hashSeq("ud3#", "int")($"s_ideaid_3").alias("ud3"),
@@ -370,7 +370,7 @@ class DNNSampleCvr(spark: SparkSession, trdate: String = "", trpath: String = ""
 
 
     //获取默认hash列表
-    val columns = Seq("ud0", "ud1", "ud2", "ud3", "ud4", "ud5", "ud6", "ud7", "ud8", "ud9", "ud10",
+    val columns = Seq("f30", "ud1", "ud2", "ud3", "ud4", "ud5", "ud6", "ud7", "ud8", "ud9", "ud10",
       "ud11", "ud12", "ud13", "ud14", "ud15", "ud16", "ud17", "ud18", "ud19", "ud20",
       "ud21", "ud22", "ud23", "ud24", "ud25", "ud26", "ud27", "ud28")
     val default_hash = for (col <- columns.zipWithIndex)
@@ -382,7 +382,7 @@ class DNNSampleCvr(spark: SparkSession, trdate: String = "", trpath: String = ""
         $"uid",
         $"dense",
         mkSparseFeature(default_hash)(
-          array($"ud0", $"ud1", $"ud2", $"ud3", $"ud4", $"ud5", $"ud6", $"ud7", $"ud8"
+          array($"f30", $"ud1", $"ud2", $"ud3", $"ud4", $"ud5", $"ud6", $"ud7", $"ud8"
             , $"ud9", $"ud10", $"ud11", $"ud12", $"ud13", $"ud14", $"ud15", $"ud16", $"ud17", $"ud18"
             , $"ud19", $"ud20", $"ud21", $"ud22", $"ud23", $"ud24", $"ud25", $"ud26", $"ud27", $"ud28")
         ).alias("sparse")

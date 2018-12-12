@@ -116,7 +116,7 @@ object Behavior2RedisCvr {
       .join(spark.sql(ud_sql2), Seq("uid"), "outer")
       .join(spark.sql(ud_sql3), Seq("uid"), "outer")
       .select($"uid",
-        hashSeq("ud0#", "string")($"pkgs").alias("ud0"),
+        hashSeq("f30#", "string")($"pkgs").alias("f30"),
         hashSeq("ud1#", "int")($"s_ideaid_1").alias("ud1"),
         hashSeq("ud2#", "int")($"s_ideaid_2").alias("ud2"),
         hashSeq("ud3#", "int")($"s_ideaid_3").alias("ud3"),
