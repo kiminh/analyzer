@@ -52,6 +52,13 @@ object OcpcKexp {
       .withColumn("k_ratio2", when(col("flag") === 1, col("k_ratio2_v2")).otherwise(col("k_ratio2_v1")))
       .withColumn("k_ratio3", when(col("flag") === 1, col("k_ratio3_v2")).otherwise(col("k_ratio3_v1")))
 
+    kvalue
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .saveAsTable("test.ocpc_k_exp_middle_hourly")
+
 
     kvalue.show(10)
     val resultDF = kvalue
