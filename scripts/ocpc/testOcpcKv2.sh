@@ -4,6 +4,7 @@ cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
 queue=root.cpc.develop
 
+
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
     "$cur/lib/hadoop-lzo-0.4.20.jar"
@@ -17,5 +18,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.ocpc.OcpcSampleToRedis \
+    --class com.cpc.spark.ocpcV2.OcpcKv2 \
     /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2
