@@ -14,8 +14,8 @@ object OcpcKexp {
 
     val result = selectKbyEXP(date, hour, spark)
     val tableName = "ocpc_regression_k_final"
-    result.write.mode("overwrite").saveAsTable("test." + tableName)
-//    result.write.mode("overwrite").insertInto("dl_cpc." + tableName)
+//    result.write.mode("overwrite").saveAsTable("test." + tableName)
+    result.write.mode("overwrite").insertInto("dl_cpc." + tableName)
     println(s"save data into table: $tableName")
   }
 
@@ -57,7 +57,7 @@ object OcpcKexp {
       .withColumn("hour", lit(hour))
       .write
       .mode("overwrite")
-      .saveAsTable("test.ocpc_k_exp_middle_hourly")
+      .insertInto("dl_cpc.ocpc_k_exp_middle_hourly")
 
 
     kvalue.show(10)
