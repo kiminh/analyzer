@@ -2,7 +2,7 @@
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
-queue=root.production.algo.cpc
+queue=root.cpc.develop
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
