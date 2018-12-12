@@ -4,7 +4,6 @@ import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
 
 import com.cpc.spark.common.Murmur3Hash
-import com.cpc.spark.ml.recall.prepare_bsCvr_dnnSample._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
