@@ -47,7 +47,7 @@ object OcpcHourlySummary {
 
     val resultDF = noAPI
       .union(api)
-      .join(ideaidList, Seq("ideaid", "userid"), "left_outer")
+      .join(ideaidList, Seq("ideaid"), "left_outer")
       .select("ideaid", "unitid", "userid", "conversion_goal", "step2_percent", "cpa_given", "cpa_real", "show_cnt", "ctr_cnt", "cvr_cnt", "price", "avg_k", "recent_k")
 
     resultDF.show(10)
