@@ -35,7 +35,7 @@ object NovelEvaluation {
                |where `date` = '$date'
              """.stripMargin
 
-        val novelEval = spark.sql(sql)
+        val novelEval = spark.sql(sql).cache()
 
         novelEval.repartition(1)
           .write
@@ -56,6 +56,7 @@ object NovelEvaluation {
         novelEval.write.mode(SaveMode.Append)
           .jdbc(mariadb_write_url, "report2.report_novel_evaluation", mariadb_write_prop)
         println("insert into report2.report_novel_evaluation success!")
+        novelEval.unpersist()
 
         val novelEvalDetailSql =
             s"""
@@ -85,7 +86,7 @@ object NovelEvaluation {
                |    else "其他" end
              """.stripMargin
 
-        val novelEvalDetail = spark.sql(novelEvalDetailSql)
+        val novelEvalDetail = spark.sql(novelEvalDetailSql).cache()
 
         novelEvalDetail.repartition(1)
           .write
@@ -97,5 +98,6 @@ object NovelEvaluation {
         novelEvalDetail.write.mode(SaveMode.Append)
           .jdbc(mariadb_write_url, "report2.report_novel_evaluation_detail", mariadb_write_prop)
         println("insert into report2.report_novel_evaluation_detail success!")
+        novelEvalDetail.unpersist()
     }
 }
