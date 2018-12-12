@@ -388,9 +388,9 @@ object OcpcK {
     val hourInt = hour.toInt
     var targetK = 0.95
     if (hourInt >= 12 && cpaMap.contains(ideaid) && cpaRatio >= 1.3) {
-      targetK = 1.0
+      targetK = 0.95
     } else if (hourInt >= 12 && cpaMap.contains(ideaid) && cpaRatio <= 0.7) {
-      targetK = 0.9
+      targetK = 0.95
     } else {
       targetK = 0.95
     }
