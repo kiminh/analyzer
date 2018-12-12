@@ -83,7 +83,7 @@ object OcpcHourlySummary {
     val sqlRequest1 =
       s"""
          |SELECT
-         |  unitid,
+         |  unit_id,
          |  conversion_goal,
          |  sum(click_cpa_given) / sum(click) as cpa_given,
          |  sum(cost) as cost,
@@ -92,7 +92,7 @@ object OcpcHourlySummary {
          |  base_data
          |WHERE
          |  is_step2=1
-         |GROUP BY unitid, conversion_goal
+         |GROUP BY unit_id, conversion_goal
        """.stripMargin
     println(sqlRequest1)
     val unitidData = spark
