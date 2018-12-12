@@ -159,11 +159,19 @@ object OcpcPIDwithCPA {
 
     // case2
     // table name: dl_cpc.ocpcv3_novel_pb_hourly
+    // TODO 去重
     val case2 = spark
-      .table("test.ocpcv3_novel_pb_hourly")
+      .table("test.ocpcv3_novel_pb_v1_hourly")
       .withColumn("kvalue2", col("kvalue"))
       .select("unitid", "kvalue2")
       .distinct()
+//    val case2 = spark
+//      .table("test.ocpcv3_novel_pb_v1_hourly")
+//      .withColumn("kvalue2", col("kvalue"))
+//      .groupBy("unitid")
+//      .agg(avg(col("kvalue2")).alias("kvalue2"))
+//      .select("unitid", "kvalue2")
+//      .distinct()
 
     // 优先case1，然后case2，最后case3
     val resultDF = baseData
@@ -171,8 +179,8 @@ object OcpcPIDwithCPA {
       .select("unitid", "adclass", "kvalue1")
       .join(case2, Seq("unitid"), "left_outer")
       .select("unitid", "adclass", "kvalue1", "kvalue2")
-      .withColumn("kvalue_new", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
-      .withColumn("kvalue", when(col("kvalue_new").isNull, 0.694).otherwise(col("kvalue_new")))
+      .withColumn("kvalue", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_avgk_hourly")
 
     resultDF.show(10)
     resultDF
@@ -180,7 +188,6 @@ object OcpcPIDwithCPA {
   }
 
   def getCPAratio(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
-    // TODO case
     /**
       * 计算前6个小时每个广告创意的cpa_given/cpa_real的比值
       * case1：hourly_ctr_cnt<10，可能出价过低，需要提高k值，所以比值应该大于1
@@ -236,13 +243,14 @@ object OcpcPIDwithCPA {
          |  total_cost,
          |  ctr_cnt,
          |  cvr_cnt,
-         |  (case when cvr_cnt=0 then 0.8
+         |  (case when cvr_cnt=0 or cvr_cnt is null then 0.8
          |        else cpa_given * cvr_cnt * 1.0 / total_cost end) as cpa_ratio
          |FROM
          |  join_table
        """.stripMargin
     println(sqlRequest)
     val cpaRatio = spark.sql(sqlRequest)
+//    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpcv3_pid_cparatio_hourly")
 
     cpaRatio
 
@@ -272,15 +280,6 @@ object OcpcPIDwithCPA {
       .select("unitid", "adclass", "kvalue", "cpa_ratio", "conversion_goal")
       .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
       .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
-
-//    rawData.createOrReplaceTempView("raw_table")
-
-//    rawData
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .write
-//      .mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_k_value_raw_table")
 
 
     val resultDF = rawData

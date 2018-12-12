@@ -89,7 +89,7 @@ object OcpcPIDwithCPA {
 
 
     // TODO 删除临时表
-    baseData.write.mode("overwrite").saveAsTable("test.ocpc_base_table_hourly")
+//    baseData.write.mode("overwrite").saveAsTable("test.ocpc_base_table_hourly")
     baseData
 
   }
@@ -191,7 +191,7 @@ object OcpcPIDwithCPA {
 
     resultDF.show(10)
     // TODO 删除临时表
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_avg_k_value")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_avg_k_value")
     resultDF
 
   }
@@ -218,7 +218,7 @@ object OcpcPIDwithCPA {
         sum(col("isclick")).alias("ctr_cnt"),
         sum(col("iscvr")).alias("cvr_cnt"))
     // TODO 删除临时表
-    rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_cost_ctr_cvr")
+//    rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_cost_ctr_cvr")
 
     // 计算单个小时的ctr_cnt和cvr_cnt
     val singleHour = historyData
@@ -243,7 +243,7 @@ object OcpcPIDwithCPA {
 //      .select("ideaid", "adclass", "cpa_given", "total_cost", "ctr_cnt", "cvr_cnt")
 //    joinData.createOrReplaceTempView("join_table")
     // TODO 删除临时表
-    joinData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_total_cost")
+//    joinData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_total_cost")
 
 
 
@@ -268,7 +268,7 @@ object OcpcPIDwithCPA {
     println(sqlRequest)
     val cpaRatio = spark.sql(sqlRequest)
     //TODO 删除临时表
-    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v2")
+//    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v2")
 
     cpaRatio
 
@@ -291,7 +291,7 @@ object OcpcPIDwithCPA {
       */
 
     // 关联得到基础表
-    baseData.write.mode("overwrite").saveAsTable("test.ocpc_base_table")
+//    baseData.write.mode("overwrite").saveAsTable("test.ocpc_base_table")
     val rawData = baseData
       .join(kValue, Seq("ideaid", "adclass"), "left_outer")
       .select("ideaid", "adclass", "kvalue")
@@ -302,8 +302,7 @@ object OcpcPIDwithCPA {
 
     rawData.createOrReplaceTempView("raw_table")
     // TODO 删除临时表
-    rawData.write.mode("overwrite").saveAsTable(
-      "test.ocpc_k_value_raw_table")
+//    rawData.write.mode("overwrite").saveAsTable("test.ocpc_k_value_raw_table")
     rawData
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
@@ -323,7 +322,7 @@ object OcpcPIDwithCPA {
 
 
     // TODO 删除临时表
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_update_k_v2")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_update_k_v2")
     resultDF
   }
 
@@ -381,7 +380,7 @@ object OcpcPIDwithCPA {
         sum(col("weighted_cvr_cnt")).alias("cvr_cnt"))
 
     // TODO 删除临时表
-    rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_cost_ctr_cvr_v3")
+//    rawData.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_cost_ctr_cvr_v3")
 
     // 获得cpa_given
     val cpaGiven = spark.table("test.ocpc_idea_update_time_" + hour).select("ideaid", "cpa_given")
@@ -408,7 +407,7 @@ object OcpcPIDwithCPA {
     joinData.createOrReplaceTempView("join_table")
 
     // TODO 删除临时表
-    joinData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_total_cost_v3")
+//    joinData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_total_cost_v3")
 
     // case1, case2, case3
 //    val sqlRequest =
@@ -458,7 +457,7 @@ object OcpcPIDwithCPA {
 
 
     //TODO 删除临时表
-    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v3")
+//    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v3")
     cpaRatio
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
@@ -505,7 +504,7 @@ object OcpcPIDwithCPA {
       .select("ideaid", "adclass", "cost")
 
     // 计算单个小时的ctr_cnt和cvr_cnt
-    singleHour.write.mode("overwrite").saveAsTable("test.test_ocpc_cvr3_debug_singlehour")
+//    singleHour.write.mode("overwrite").saveAsTable("test.test_ocpc_cvr3_debug_singlehour")
 
     val data = cvr3List
       .join(costData, Seq("ideaid"), "left_outer")
@@ -559,7 +558,7 @@ object OcpcPIDwithCPA {
 
 
     // TODO 删除临时表
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_with_cvr3_k")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_with_cvr3_k")
     val finalDF = resultDF.select("ideaid", "adclass", "flag", "cvr3_cvr_cnt", "cpa_ratio_cvr3")
     finalDF
   }
@@ -673,7 +672,7 @@ object OcpcPIDwithCPA {
 
     resultDF.show(10)
     // TODO 删除临时表
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_avg_k_value_v3")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_avg_k_value_v3")
     resultDF
 
   }

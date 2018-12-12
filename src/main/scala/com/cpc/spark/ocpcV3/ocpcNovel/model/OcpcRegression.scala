@@ -44,9 +44,6 @@ object OcpcRegression {
     val dtCondition = "(%s)".format(datehourlist.mkString(" or "))
     val dtCondition2 = "(%s)".format(datehourlist2.mkString(" or "))
 
-
-
-    // TODO  替换成弘扬的表
     val statSql =
       s"""
          |select
@@ -106,7 +103,7 @@ object OcpcRegression {
       .agg(collect_set("str").as("liststr"))
       .select("unitid", "liststr").collect()
 
-    val targetK = 1.0
+    val targetK = 2.0
     var resList = new mutable.ListBuffer[(String, Double, String, String)]()
     for (row <- res) {
       val unitid = row(0).toString

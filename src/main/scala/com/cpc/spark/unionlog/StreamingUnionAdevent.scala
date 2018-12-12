@@ -1,30 +1,30 @@
-package com.cpc.spark.streaming.anal
+package com.cpc.spark.unionlog
 
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import com.cpc.spark.common.FmClickData
+import adevent.adevent
 import com.cpc.spark.streaming.anal.CpcStreamingSearchLogParser.currentBatchStartTime
-import com.cpc.spark.streaming.tools.{Data2Kafka, OffsetRedis}
+import com.cpc.spark.streaming.tools.OffsetRedis
 import kafka.common.TopicAndPartition
 import kafka.message.MessageAndMetadata
 import kafka.serializer.{DefaultDecoder, StringDecoder}
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{SaveMode, SparkSession}
-import org.apache.spark.{SparkConf, TaskContext}
 import org.apache.spark.streaming.dstream.InputDStream
 import org.apache.spark.streaming.kafka.KafkaCluster.LeaderOffset
 import org.apache.spark.streaming.kafka.{HasOffsetRanges, KafkaCluster, KafkaUtils, OffsetRange}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
+import org.apache.spark.{SparkConf, TaskContext}
 
 
 /**
   * Created on ${Date} ${Time}
   */
-object CpcStreamingFmClickParser {
+object StreamingUnionAdevent {
 
   val offsetRedis = new OffsetRedis()
-  offsetRedis.setRedisKey("FM_CLICK_LOG_KAFKA_OFFSET")
+  offsetRedis.setRedisKey("FLINK_UNION_ADEVENT_KAFKA_OFFSET")
 
   def main(args: Array[String]): Unit = {
     if (args.length < 4) {
@@ -41,7 +41,7 @@ object CpcStreamingFmClickParser {
     Logger.getRootLogger.setLevel(Level.WARN)
     val Array(brokers, topics, seconds, outTable) = args
 
-    val sparkConf = new SparkConf().setAppName("topic:fm_click = " + topics)
+    val sparkConf = new SparkConf().setAppName("topic:flink_adevent_union = " + topics)
     val ssc = new StreamingContext(sparkConf, Seconds(seconds.toInt))
 
     val topicsSet = topics.split(",").toSet
@@ -126,18 +126,27 @@ object CpcStreamingFmClickParser {
     val base_data = messages.map {
       case (k, v) =>
         try {
-          val logData = FmClickData.parseData(v)
-          val timestamp = logData.log.timestamp
-          val date = new SimpleDateFormat("yyyy-MM-dd").format(timestamp)
-          val hour = new SimpleDateFormat("HH").format(timestamp)
-          val minute = new SimpleDateFormat("mm").format(timestamp).charAt(0) + "0"
+          val event = adevent.AdActionEvent.parseFrom(v)
+          val log_timestamp = event.timestamp
+          val date = new SimpleDateFormat("yyyy-MM-dd").format(log_timestamp)
+          val hour = new SimpleDateFormat("HH").format(log_timestamp)
+          val minute = new SimpleDateFormat("mm").format(log_timestamp).charAt(0) + "0"
 
-          val insertionID = logData.log.insertionID
-          val requestID = logData.log.requestID
-          val userID = logData.log.userID
-          val actionMap: collection.Map[Int, Int] = logData.log.actionMap
+          val alog = AdeventUnionLog(
+            timestamp = event.timestamp,
+            insertionID = event.insertionID,
+            searchid = event.searchID,
+            isclick = event.isClick,
+            isfill = event.isFill,
+            isshow = event.isShow,
+            userID = event.getAd.userid,
+            thedate = date,
+            thehour = hour,
+            theminute = minute
+          )
 
-          FmClickLog(timestamp, insertionID, requestID, userID, actionMap, date, hour, minute)
+          alog
+
         } catch {
           case t: Throwable =>
             t.printStackTrace()
@@ -169,12 +178,12 @@ object CpcStreamingFmClickParser {
                 .repartition(clickOutFiles)
                 .write
                 .mode(SaveMode.Append)
-                .parquet("/warehouse/dl_cpc.db/%s/%s/%s/%s".format(outTable, key._1, key._2, key._3))
+                .parquet("/warehouse/test.db/%s/%s/%s/%s".format(outTable, key._1, key._2, key._3))
 
               val sqlStmt =
                 """
-                  |ALTER TABLE dl_cpc.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
-                  |       '/warehouse/dl_cpc.db/%s/%s/%s/%s'
+                  |ALTER TABLE test.%s add if not exists PARTITION (thedate = "%s", thehour = "%s", theminute = "%s")  LOCATION
+                  |       '/warehouse/test.db/%s/%s/%s/%s'
                   |
                     """.stripMargin.format(outTable, key._1, key._2, key._3, outTable, key._1, key._2, key._3)
               println(sqlStmt)
@@ -247,12 +256,15 @@ object CpcStreamingFmClickParser {
     }
   }
 
-  case class FmClickLog(
+  case class AdeventUnionLog(
                          var timestamp: Long = 0,
+                         var searchid: String = "",
                          var insertionID: String = "", // unique key for each ad insertion
                          var requestID: String = "",
-                         var userID: String = "", // client user ID (not advertiser ID)
-                         var actionMap: collection.Map[Int, Int] = null,
+                         var userID: Int = 0,
+                         var isfill: Int = 0,
+                         var isshow: Int = 0,
+                         var isclick: Int = 0,
                          var thedate: String = "",
                          var thehour: String = "",
                          var theminute: String = ""
