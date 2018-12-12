@@ -20,8 +20,6 @@ object OcpcHourlySummary {
     val costData = calculateCost(data, date, hour, spark)
     val otherData = calculateData(data, date, hour, spark)
 
-    data.write.mode("overwrite").saveAsTable("test.ocpc_join_data20181212")
-
 
     // 关联数据
     val resultDF = otherData
@@ -35,25 +33,6 @@ object OcpcHourlySummary {
   }
 
   def joinData(date: String, hour: String, spark: SparkSession) = {
-//    val tableNameNoAPI = "dl_cpc.ocpc_check_hourly_report_noapi"
-//    val tableNameAPI = "dl_cpc.ocpc_check_hourly_report_api"
-//    val selectCondition = s"`date`='$date' and `hour`='$hour'"
-//
-//    val noAPI = spark
-//      .table(tableNameNoAPI)
-//      .where(selectCondition)
-//      .withColumn("conversion_goal", lit(1))
-//      .select("ideaid", "userid", "conversion_goal", "step2_percent", "cpa_given", "cpa_real", "show_cnt", "ctr_cnt", "cvr_cnt", "price", "avg_k", "recent_k")
-//      .withColumn("cvr_cnt", when(col("cvr_cnt").isNull, 0).otherwise(col("cvr_cnt")))
-//
-//    val api = spark
-//      .table(tableNameAPI)
-//      .where(selectCondition)
-//      .withColumn("conversion_goal", lit(2))
-//      .select("ideaid", "userid", "conversion_goal", "step2_percent", "cpa_given", "cpa_real", "show_cnt", "ctr_cnt", "cvr_cnt", "price", "avg_k", "recent_k")
-//      .withColumn("cvr_cnt", when(col("cvr_cnt").isNull, 0).otherwise(col("cvr_cnt")))
-
-
     // 关联数据得到unitid
     val rawData = spark
       .table("dl_cpc.ocpc_detail_report_hourly")
@@ -104,8 +83,6 @@ object OcpcHourlySummary {
       .withColumn("high_cpa_cost", col("cost") - col("cost_given"))
       .withColumn("high_cpa_cost", when(col("high_cpa_cost") <= 0, 0.0).otherwise(col("high_cpa_cost")))
     unitidData.createOrReplaceTempView("unitid_data")
-    // TODO
-    unitidData.write.mode("overwrite").saveAsTable("test.ocpc_unitid_data20181212")
 
     val sqlRequest2 =
       s"""
