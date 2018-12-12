@@ -7,6 +7,7 @@ import com.cpc.spark.common.Murmur3Hash
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.{array, split, udf}
+import org.apache.spark.storage.StorageLevel
 
 object prepare_bsCvr_dnnSample {
   Logger.getRootLogger.setLevel(Level.WARN)
@@ -22,14 +23,16 @@ object prepare_bsCvr_dnnSample {
     val date = args(0)
     //    val hour = args(1)
 
-    val train = getSample(spark, date).persist()
+    val train = getSample(spark, date).persist(StorageLevel.MEMORY_AND_DISK)
 
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
 
     val sampleDay = getDay(date, 1)
 
-    train.repartition(1000)
+    val Array(traindata, testdata) = train.randomSplit(Array(0.95, 0.1), 1)
+
+    traindata.repartition(1000)
       .write
       .mode("overwrite")
       .format("tfrecords")
@@ -37,7 +40,7 @@ object prepare_bsCvr_dnnSample {
       .save(s"/user/cpc/sample/recall/dnn_recall_cvr_v1/dnntrain-$sampleDay")
     //train.take(10).foreach(println)
 
-    train.sample(withReplacement = false, 0.1).repartition(100)
+    testdata.repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
