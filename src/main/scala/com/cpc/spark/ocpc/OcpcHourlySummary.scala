@@ -42,7 +42,7 @@ object OcpcHourlySummary {
     val ideaidList = spark
       .table("dl_cpc.ocpcv3_ctr_data_hourly")
       .where(s"`date`='$date' and `hour` <= '$hour' and media_appsid in ('80000001', '80000002')")
-      .select("ideaid", "unitid", "userid")
+      .select("ideaid", "unitid")
       .distinct()
 
     val resultDF = noAPI
