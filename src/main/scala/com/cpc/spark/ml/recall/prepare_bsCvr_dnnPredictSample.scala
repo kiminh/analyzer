@@ -86,18 +86,12 @@ object prepare_bsCvr_dnnPredictSample {
          |  ext['brand_title'].string_value as brand,
          |  province, city, ext['city_level'].int_value as city_level,
          |  uid, age, sex
-         |from
-         |  (select *
          |from dl_cpc.cpc_union_log where `date` = '$day'
-         |  and isclick = 1 and ideaid > 0
+         |  and ideaid > 0
          |  and media_appsid in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
-         |) a
-         |inner join
-         |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
-         |  WHERE `date` = '$day'
-         |) b on a.searchid = b.searchid
+         |  group by os, ext['phone_price'].int_value, ext['brand_title'].string_value, province, city, ext['city_level'].int_value, uid, age, sex
       """.stripMargin
     println("--------------------------------")
     println(sql)
@@ -107,8 +101,7 @@ object prepare_bsCvr_dnnPredictSample {
       .join(profileData, Seq("uid"), "leftouter")
       .join(uidRequest, Seq("uid"), "leftouter")
       .join(behavior_data, Seq("uid"), "leftouter").crossJoin(idea_info)
-      .select($"label",
-
+      .select(
         //hash("f1")($"media_type").alias("f1"),
         //hash("f2")($"mediaid").alias("f2"),
         //hash("f3")($"channel").alias("f3"),
@@ -140,7 +133,7 @@ object prepare_bsCvr_dnnPredictSample {
 
         array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
           $"m11", $"m12", $"m13", $"m14", $"m15",$"m16", $"m17", $"m18", $"m19", $"m20",$"m21", $"m22",$"m23", $"m24",$"m25",$"m26")
-          .alias("raw_sparse")
+          .alias("raw_sparse"), $"uid", $"ideaid"
       )
 
       .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
@@ -148,25 +141,25 @@ object prepare_bsCvr_dnnPredictSample {
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
         mkSparseFeature_m($"raw_sparse").alias("sparse"),
-        $"label"
+        $"uid", $"ideaid"
       )
 
       .select(
-        $"label",
         $"dense",
         $"sparse".getField("_1").alias("idx0"),
         $"sparse".getField("_2").alias("idx1"),
         $"sparse".getField("_3").alias("idx2"),
-        $"sparse".getField("_4").alias("id_arr")
+        $"sparse".getField("_4").alias("id_arr"),
+        $"uid", $"ideaid"
       )
-
       .rdd.zipWithUniqueId()
       .map { x =>
-        (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
+        (x._2, x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
-          x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
+          x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"),
+          x._1.getAs[String]("uid"), x._1.getAs[Int]("ideaid"))
       }
-      .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
+      .toDF("sample_idx", "dense", "idx0", "idx1", "idx2", "id_arr", "uid", "ideaid")
 
   }
 
