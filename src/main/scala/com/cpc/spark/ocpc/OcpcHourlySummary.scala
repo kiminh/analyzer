@@ -1,10 +1,15 @@
 package com.cpc.spark.ocpc
 
+import java.util.Properties
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions.{col, lit, when}
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.{DataFrame, SparkSession, SaveMode}
 
 
 object OcpcHourlySummary {
+  var mariadb_write_url = ""
+  val mariadb_write_prop = new Properties()
+
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
     val hour = args(1).toString
@@ -30,6 +35,9 @@ object OcpcHourlySummary {
 
     // 输出数据到hive表
     resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly")
+
+    // 输出数据到mysql
+    saveDataSummaryToReport(resultDF, spark)
   }
 
   def joinData(date: String, hour: String, spark: SparkSession) = {
@@ -180,5 +188,28 @@ object OcpcHourlySummary {
     resultDF
   }
 
+  def saveDataSummaryToReport(data: DataFrame, spark: SparkSession) = {
+    val conf = ConfigFactory.load()
+    val tableName = "report2.report_ocpc_data_summary_v2"
+    mariadb_write_url = conf.getString("mariadb.report2_write.url")
+    mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
+    mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
+    mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
+
+    println("#################################")
+    println("count:" + data.count())
+    println("url: " + conf.getString("mariadb.report2_write.url"))
+    println("table name: " + tableName)
+    println("user: " + conf.getString("mariadb.report2_write.user"))
+    println("password: " + conf.getString("mariadb.report2_write.password"))
+    println("driver: " + conf.getString("mariadb.report2_write.driver"))
+    data.show(10)
+
+    //    data
+    //      .write
+    //      .mode(SaveMode.Append)
+    //      .jdbc(mariadb_write_url, tableName, mariadb_write_prop)
+
+  }
 
 }
