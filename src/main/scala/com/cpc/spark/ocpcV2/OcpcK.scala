@@ -385,7 +385,7 @@ object OcpcK {
     // 每天12点之后，如果当天cpa过高（0.7）, targetK -> 0.7
     val cpaRatio = cpaMap.getOrElse[Double](ideaid, 0.0)
     val hourInt = hour.toInt
-    var targetK = 0.95
+    var targetK = 0.98
     if (hourInt >= 12 && cpaMap.contains(ideaid) && cpaRatio >= 1.3) {
       targetK = 1.0
     } else if (hourInt >= 12 && cpaMap.contains(ideaid) && cpaRatio <= 0.7) {
