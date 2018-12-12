@@ -64,7 +64,7 @@ object prepare_bsCvr_dnnPredictSample {
     jdbcProp.put("driver", "com.mysql.jdbc.Driver")
 
     //从adv后台mysql获取人群包的url
-    val table="(select id as ideaid, plan_id as planid, user_id as userid, adslot_type, type, clk_site_id as site_id, category as adclass from adv.idea where status=0 and audit=1) as tmp"
+    val table="(select id as ideaid, plan_id as planid, user_id as userid, adslot_type, type as adtype, clk_site_id as site_id, category as adclass from adv.idea where status=0 and audit=1) as tmp"
     val idea = spark.read.jdbc(jdbcUrl, table, jdbcProp).distinct()
     idea.printSchema()
 
