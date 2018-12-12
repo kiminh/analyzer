@@ -61,7 +61,7 @@ object NovelEvaluation {
                |  and cmd in ('25101','25003','26002','26003')
                |  group by day
                |) b
-               |on a.`date` = b.`date` ;
+               |on a.`date` = b.`date`
              """.stripMargin
 
         val novelEval = spark.sql(sql).cache()
