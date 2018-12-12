@@ -150,24 +150,25 @@ object prepare_bsCvr_dnnPredictSample {
         mkSparseFeature_m(array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
           $"m11", $"m12", $"m13", $"m14", $"m15",$"m16", $"m17", $"m18", $"m19", $"m20",$"m21", $"m22",$"m23", $"m24",$"m25",$"m26"))
           .alias("sparse"), $"uid"
-      ).persist(StorageLevel.DISK_ONLY)
+      ).select(
+      $"f2", $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17",
+      $"sparse".getField("_1").alias("idx0"),
+      $"sparse".getField("_2").alias("idx1"),
+      $"sparse".getField("_3").alias("idx2"),
+      $"sparse".getField("_4").alias("id_arr"),
+      $"uid"
+    ).persist(StorageLevel.DISK_ONLY)
 
     result_temp.show(10)
-
-
+    
     result_temp.crossJoin(ideaid_hash).select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
-        $"sparse",
-        $"uid", $"ideaid"
-      )
-      .select(
-        $"dense",
-        $"sparse".getField("_1").alias("idx0"),
-        $"sparse".getField("_2").alias("idx1"),
-        $"sparse".getField("_3").alias("idx2"),
-        $"sparse".getField("_4").alias("id_arr"),
+        $"idx0",
+        $"idx1",
+        $"idx2",
+        $"id_arr",
         $"uid", $"ideaid"
       )
       .rdd.zipWithUniqueId()
