@@ -21,8 +21,8 @@ object OcpcDataDetail {
     val data = exportHourlyReport(date, hour, spark)
 //    data.write.mode("overwrite").saveAsTable("test.ocpc_detail_report20181505")
 //    dl_cpc.ocpc_detail_report_hourly
-    data.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly")
-
+//    data.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly")
+    data.write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly")
     saveDataDetailToReport(data, spark)
   }
 
