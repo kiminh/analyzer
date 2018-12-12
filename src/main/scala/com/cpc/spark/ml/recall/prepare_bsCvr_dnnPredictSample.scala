@@ -160,7 +160,7 @@ object prepare_bsCvr_dnnPredictSample {
     ).persist(StorageLevel.DISK_ONLY)
 
     result_temp.show(10)
-    
+
     result_temp.crossJoin(ideaid_hash).select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
