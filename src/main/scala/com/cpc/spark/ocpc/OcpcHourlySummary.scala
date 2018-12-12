@@ -151,10 +151,6 @@ object OcpcHourlySummary {
          |FROM
          |    raw_table
          |WHERE
-         |    `date`='$date'
-         |AND
-         |    `hour`='$hour'
-         |AND
          |    conversion_goal is not null
          |GROUP BY conversion_goal
        """.stripMargin
@@ -175,10 +171,6 @@ object OcpcHourlySummary {
          |FROM
          |    raw_table
          |WHERE
-         |    `date`='$date'
-         |AND
-         |    `hour`='$hour'
-         |AND
          |    conversion_goal is not null
        """.stripMargin
     println(sqlRequest2)
