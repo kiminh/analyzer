@@ -157,7 +157,7 @@ object prepare_bsCvr_dnnPredictSample {
         (x._2, x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
           x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"),
-          x._1.getAs[String]("uid"), x._1.getAs[Int]("ideaid"))
+          x._1.getAs[String]("uid"), x._1.getAs[Long]("ideaid"))
       }
       .toDF("sample_idx", "dense", "idx0", "idx1", "idx2", "id_arr", "uid", "ideaid")
 
