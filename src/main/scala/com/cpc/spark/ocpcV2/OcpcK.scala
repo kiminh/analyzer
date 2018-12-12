@@ -128,7 +128,8 @@ object OcpcK {
 //      val targetK = getTargetK2(cpaMap, hour, ideaid, spark)
 //      val k = (targetK - coffList(0)) / coffList(1)
 
-      val k = getResultK(cpaMap, hour, ideaid, coffList(0), coffList(1), spark)
+      val targetK = getTargetK2(cpaMap, hour, ideaid, spark)
+      val k = getResultK(targetK, coffList(0), coffList(1), spark)
       val cpaRatio = cpaMap.getOrElse(ideaid, 0.0)
       val realk: Double = k * 5.0 / 100.0
       println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK, "cpaRatio: " + cpaRatio)
@@ -395,13 +396,12 @@ object OcpcK {
     targetK
   }
 
-  def getResultK(cpaMap: mutable.LinkedHashMap[String, Double], hour: String, ideaid: String, x0: Double, x1: Double, spark: SparkSession) = {
+  def getResultK(targetK: Double, x0: Double, x1: Double, spark: SparkSession) = {
     /*
     限制提高拟合目标值的情况下，k值变化过大的情况：
     maxK = 2 * originalK
     originalK为拟合目标值为0.95时得到的结果
      */
-    val targetK = getTargetK2(cpaMap, hour, ideaid, spark)
     val k = (targetK - x0) / x1
     val originalK = (0.95 - x0) / x1
 
