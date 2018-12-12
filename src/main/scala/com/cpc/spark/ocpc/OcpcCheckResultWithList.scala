@@ -20,7 +20,7 @@ object OcpcCheckResultWithList {
   def getResult(date: String, spark: SparkSession) = {
     import spark.implicits._
 
-    val filename = "/user/cpc/wangjun/ocpc_linearregression_k.txt"
+    val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
     val data = spark.sparkContext.textFile(filename)
     val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     rawRDD.foreach(println)

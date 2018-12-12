@@ -75,7 +75,7 @@ object OcpcK {
     val realCvr3 = getIdeaidCvr3Ratio(date, hour, spark)
 
 
-    val tablename = "dl_cpc.cpc_ocpc_v2_middle"
+    val tablename = "test.cpc_ocpc_v2_middle"
     val rawData = spark.sql(statSql)
 
 
@@ -90,16 +90,16 @@ object OcpcK {
       .withColumn("hour", lit(hour))
 
 
-//    data.write.mode("overwrite").saveAsTable(tablename)
-    data.write.mode("overwrite").insertInto(tablename)
+    data.write.mode("overwrite").saveAsTable(tablename)
+//    data.write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio2", "k_ratio3", "date", "hour")
-//    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
+    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k")
+//    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k")
 
   }
 
@@ -122,16 +122,14 @@ object OcpcK {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
-      // 已全量
+      // TODO 控制k值的增加上限
       // 每天12点之后，如果当天cpa过低（1.3），targetK -> 1.0
       // 每天12点之后，如果当天cpa过高（0.7）, targetK -> 0.7
-      val targetK = getTargetK2(cpaMap, hour, ideaid, spark)
-      val cpaRatio = cpaMap.getOrElse(ideaid, 0.0)
+//      val targetK = getTargetK2(cpaMap, hour, ideaid, spark)
+//      val k = (targetK - coffList(0)) / coffList(1)
 
-      // TODO 根据k是否大于0循环判断决定调整原点数量
-      // k<0， 增加原点数量重新拟合
-      // k>0, 退出循环
-      val k = (targetK - coffList(0)) / coffList(1)
+      val k = getResultK(cpaMap, hour, ideaid, coffList(0), coffList(1), spark)
+      val cpaRatio = cpaMap.getOrElse(ideaid, 0.0)
       val realk: Double = k * 5.0 / 100.0
       println("ideaid " + ideaid, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK, "cpaRatio: " + cpaRatio)
       if (coffList(1)>0 && realk > 0) {
@@ -388,27 +386,35 @@ object OcpcK {
     val hourInt = hour.toInt
     var targetK = 0.95
     if (hourInt >= 12 && cpaMap.contains(ideaid) && cpaRatio >= 1.3) {
-      targetK = 0.95
+      targetK = 1.0
     } else if (hourInt >= 12 && cpaMap.contains(ideaid) && cpaRatio <= 0.7) {
-      targetK = 0.95
+      targetK = 0.9
     } else {
       targetK = 0.95
     }
     targetK
   }
 
-//  // 测试将按照ctr重新计算权重的函数去除
-//  // 效果不佳
-//  def removeWeightByCTR(ideaid: String, n: Int, spark: SparkSession) = {
-//    var pointNum = n
-//    // TODO 测试去除权重
-//    if (ideaid == "2320960" || ideaid == "1950940") {
-//      pointNum = 1
-//    } else {
-//      pointNum = n
-//    }
-//    pointNum
-//  }
+  def getResultK(cpaMap: mutable.LinkedHashMap[String, Double], hour: String, ideaid: String, x0: Double, x1: Double, spark: SparkSession) = {
+    /*
+    限制提高拟合目标值的情况下，k值变化过大的情况：
+    maxK = 2 * originalK
+    originalK为拟合目标值为0.95时得到的结果
+     */
+    val targetK = getTargetK2(cpaMap, hour, ideaid, spark)
+    val k = (targetK - x0) / x1
+    val originalK = (0.95 - x0) / x1
+
+    var resultK = k
+    val maxK = originalK * 2
+    if (k > maxK) {
+      resultK = maxK
+    } else {
+      resultK = k
+    }
+    resultK
+
+  }
 
 
 }
