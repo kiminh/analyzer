@@ -53,7 +53,7 @@ object NovelEvaluation {
                |  where `date` = '$date'
                |) a join
                |(
-               |  select day as `$date`,
+               |  select day as `date`,
                |    sum(case when eventid in ('86','88','90','92','98','110','123','125','127','129','131','133','160') then 1 else 0 end ) as show_num,  -- 米读小说广告总展示数
                |    sum(case when eventid in ('87','89','91','93','99','111','124','126','128','130','132','134','159') then 1 else 0 end ) as click_num -- 米读小说广告总点击数
                |  from bdm_book.xcx_web_log_cmd_byday
