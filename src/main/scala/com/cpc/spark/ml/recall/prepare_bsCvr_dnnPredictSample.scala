@@ -5,10 +5,16 @@ import java.util.{Calendar, Properties}
 
 import com.cpc.spark.common.Murmur3Hash
 import com.cpc.spark.ml.recall.prepare_bsCvr_dnnSample._
+import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
 object prepare_bsCvr_dnnPredictSample {
+  Logger.getRootLogger.setLevel(Level.WARN)
+
+  //multi hot 特征默认hash code
+  private val default_hash = for (i <- 1 to 37) yield Seq((i - 1, 0, Murmur3Hash.stringHash64("m" + i, 0)))
+
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .appName("dnn bsCvr predictSample")
