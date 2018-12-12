@@ -7,6 +7,7 @@ import com.cpc.spark.common.Murmur3Hash
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.spark.storage.StorageLevel
 
 object prepare_bsCvr_dnnPredictSample {
   Logger.getRootLogger.setLevel(Level.WARN)
@@ -77,7 +78,21 @@ object prepare_bsCvr_dnnPredictSample {
     val costTop100 = spark.read.jdbc(jdbcUrl, table2, jdbcProp)
 
     val idea_info = costTop100.join(idea, Seq("ideaid")).join(unit,  Seq("ideaid"))
-
+    val ideaid_hash = idea_info.select(hash("f1")($"adslot_type").alias("f1"),
+      //hash("f6")($"adslotid").alias("f6"),
+      //hash("f2")($"sex").alias("f2"),
+      //hash("f8")($"dtu_id").alias("f8"),
+      hash("f3")($"adtype").alias("f3"),
+      //hash("f10")($"interaction").alias("f10"),
+      //hash("f11")($"bid").alias("f11"),
+      hash("f4")($"ideaid").alias("f4"),
+      hash("f5")($"unitid").alias("f5"),
+      hash("f6")($"planid").alias("f6"),
+      hash("f7")($"userid").alias("f7"),
+      //hash("f16")($"is_new_ad").alias("f16"),
+      hash("f8")($"adclass").alias("f8"),
+      hash("f9")($"site_id").alias("f9"),$"ideaid").persist(StorageLevel.DISK_ONLY)
+    ideaid_hash.show(10)
 
     val sql =
       s"""
@@ -97,29 +112,30 @@ object prepare_bsCvr_dnnPredictSample {
     println(sql)
     println("--------------------------------")
 
+    val result_temp =
     spark.sql(sql)
       .join(profileData, Seq("uid"), "leftouter")
       .join(uidRequest, Seq("uid"), "leftouter")
-      .join(behavior_data, Seq("uid"), "leftouter").crossJoin(idea_info)
+      .join(behavior_data, Seq("uid"), "leftouter")
       .select(
         //hash("f1")($"media_type").alias("f1"),
         //hash("f2")($"mediaid").alias("f2"),
         //hash("f3")($"channel").alias("f3"),
         //hash("f4")($"sdk_type").alias("f4"),
-        hash("f1")($"adslot_type").alias("f1"),
+        //hash("f1")($"adslot_type").alias("f1"),
         //hash("f6")($"adslotid").alias("f6"),
         hash("f2")($"sex").alias("f2"),
         //hash("f8")($"dtu_id").alias("f8"),
-        hash("f3")($"adtype").alias("f3"),
+        //hash("f3")($"adtype").alias("f3"),
         //hash("f10")($"interaction").alias("f10"),
         //hash("f11")($"bid").alias("f11"),
-        hash("f4")($"ideaid").alias("f4"),
-        hash("f5")($"unitid").alias("f5"),
-        hash("f6")($"planid").alias("f6"),
-        hash("f7")($"userid").alias("f7"),
+        //hash("f4")($"ideaid").alias("f4"),
+        //hash("f5")($"unitid").alias("f5"),
+        //hash("f6")($"planid").alias("f6"),
+        //hash("f7")($"userid").alias("f7"),
         //hash("f16")($"is_new_ad").alias("f16"),
-        hash("f8")($"adclass").alias("f8"),
-        hash("f9")($"site_id").alias("f9"),
+        //hash("f8")($"adclass").alias("f8"),
+        //hash("f9")($"site_id").alias("f9"),
         hash("f10")($"os").alias("f10"),
         //hash("f20")($"network").alias("f20"),
         hash("f11")($"phone_price").alias("f11"),
@@ -133,17 +149,19 @@ object prepare_bsCvr_dnnPredictSample {
 
         array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
           $"m11", $"m12", $"m13", $"m14", $"m15",$"m16", $"m17", $"m18", $"m19", $"m20",$"m21", $"m22",$"m23", $"m24",$"m25",$"m26")
-          .alias("raw_sparse"), $"uid", $"ideaid"
-      )
+          .alias("raw_sparse"), $"uid"
+      ).persist(StorageLevel.DISK_ONLY)
 
-      .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
+    result_temp.show(10)
+
+
+    result_temp.crossJoin(ideaid_hash).select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
         mkSparseFeature_m($"raw_sparse").alias("sparse"),
         $"uid", $"ideaid"
       )
-
       .select(
         $"dense",
         $"sparse".getField("_1").alias("idx0"),
