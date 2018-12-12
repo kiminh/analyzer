@@ -1,6 +1,9 @@
 package com.cpc.spark.novel
 
-import org.apache.spark.sql.SparkSession
+import java.util.Properties
+
+import com.typesafe.config.ConfigFactory
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
   * @author Jinbao
@@ -41,6 +44,19 @@ object NovelEvaluation {
 
         println("insert into dl_cpc.report_novel_evaluation success!")
 
+        val conf = ConfigFactory.load()
+        val mariadb_write_prop = new Properties()
+
+        val mariadb_write_url = conf.getString("mariadb.report2_write.url")
+        mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
+        mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
+        mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
+
+        println("mariadb_write_url = " + mariadb_write_url)
+        novelEval.write.mode(SaveMode.Append)
+          .jdbc(mariadb_write_url, "report2.report_novel_evaluation", mariadb_write_prop)
+        println("insert into report2.report_novel_evaluation success!")
+
         val novelEvalDetailSql =
             s"""
                |select
@@ -77,5 +93,9 @@ object NovelEvaluation {
           .insertInto("dl_cpc.report_novel_evaluation_detail")
 
         println("insert into dl_cpc.report_novel_evaluation_detail success!")
+
+        novelEvalDetail.write.mode(SaveMode.Append)
+          .jdbc(mariadb_write_url, "report2.report_novel_evaluation_detail", mariadb_write_prop)
+        println("insert into report2.report_novel_evaluation_detail success!")
     }
 }
