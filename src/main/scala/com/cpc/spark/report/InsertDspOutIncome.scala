@@ -49,6 +49,7 @@ object InsertDspOutIncome {
     val sql =
       s"""
          |SELECT
+         |  adslotid,
          |  ext_string["dsp_adslotid_by_src_22"] as dsp_adslot_id,
          |sum(
          |    CASE
@@ -66,13 +67,17 @@ object InsertDspOutIncome {
          |  AND `date` = "$day"
          |GROUP BY
          |  `date`,
+         |  adslotid,
          |  ext_string["dsp_adslotid_by_src_22"]
        """.stripMargin
     println("sql: " + sql)
 
     var dspLog = spark.sql(sql)
+    dspLog.printSchema()
+    dspLog.foreach(println(_))
 
-    dspLog.foreach { r =>
+    dspLog.repartition(5)
+      .foreach { r =>
       var dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
       var dsp_income = r.getAs[Double]("dsp_income")
       var dsp_click = r.getAs[Long]("dsp_click")
@@ -101,7 +106,7 @@ object InsertDspOutIncome {
            |set dsp_income = "%s",
            |dsp_click = "%s",
            |dsp_impression = "%s"
-           |where `date` = "%s" and dsp_adslot_id = "%s"
+           |where `date` = "%s" and dsp_adslot_id = "%s" and adsrc = 22
       """.stripMargin.format(table, dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
       println("sql" + sql);
       stmt.executeUpdate(sql);
