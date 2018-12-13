@@ -58,7 +58,7 @@ object InsertDspOutIncome {
     val stmt = conn.createStatement()
     val resultSet = stmt.executeQuery(sql2)
     while (resultSet.next()){
-      println("@@@@@: "+resultSet.getString(0))
+      println("@@@@@: "+resultSet.getString(1))
     }
 
     val sql =
