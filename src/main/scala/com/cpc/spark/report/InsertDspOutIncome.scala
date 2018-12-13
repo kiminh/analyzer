@@ -48,32 +48,42 @@ object InsertDspOutIncome {
       .getOrCreate()
     import spark.implicits._
 
-    val sql =
-      s"""
-         |SELECT
-         | `date`,
-         |  ext_string["dsp_adslotid_by_src_22"] as dsp_adslot_id,
-         |  sum(
-         |    CASE
-         |      WHEN isshow == 1 THEN price/1000
-         |      ELSE 0
-         |    END
-         |  ) AS dsp_income,
-         |  sum(isclick) as dsp_click,
-         |  sum(isshow) as dsp_impression
-         |FROM
-         |  dl_cpc.cpc_union_log
-         |WHERE
-         |  adsrc = 22
-         |  AND isshow = 1
-         |  AND `date` = "$day" and hour='20'
-         |GROUP BY
-         |  `date`,
-         |  ext_string["dsp_adslotid_by_src_22"]
-       """.stripMargin
-    println("sql: " + sql)
+    Class.forName(mariadbProp.getProperty("driver"))
+    val conn = DriverManager.getConnection(
+      mariadbUrl,
+      mariadbProp.getProperty("user"),
+      mariadbProp.getProperty("password"))
 
-    var dspLog = spark.sql(sql)
+    val sql= "show table"
+    val stmt = conn.createStatement()
+    val num = stmt.executeUpdate(sql);
+
+//    val sql =
+//      s"""
+//         |SELECT
+//         | `date`,
+//         |  ext_string["dsp_adslotid_by_src_22"] as dsp_adslot_id,
+//         |  sum(
+//         |    CASE
+//         |      WHEN isshow == 1 THEN price/1000
+//         |      ELSE 0
+//         |    END
+//         |  ) AS dsp_income,
+//         |  sum(isclick) as dsp_click,
+//         |  sum(isshow) as dsp_impression
+//         |FROM
+//         |  dl_cpc.cpc_union_log
+//         |WHERE
+//         |  adsrc = 22
+//         |  AND isshow = 1
+//         |  AND `date` = "$day" and hour='20'
+//         |GROUP BY
+//         |  `date`,
+//         |  ext_string["dsp_adslotid_by_src_22"]
+//       """.stripMargin
+//    println("sql: " + sql)
+//
+//    var dspLog = spark.sql(sql)
 
 //    for (log <- dspLog) {
 //      val dsp_adslot_id = log.getAs[String]("dsp_adslot_id")
@@ -83,7 +93,7 @@ object InsertDspOutIncome {
 //      val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
 //    }
 
-        dspLog.rdd.foreachPartition(updateData)
+        //dspLog.rdd.foreachPartition(updateData)
     //    val s = Seq()
 
     //    dspLog.foreach { r =>
