@@ -49,7 +49,6 @@ object InsertDspOutIncome {
     val sql =
       s"""
          |SELECT
-         |  adslotid,
          |  ext_string["dsp_adslotid_by_src_22"] as dsp_adslot_id,
          |sum(
          |    CASE
@@ -67,7 +66,6 @@ object InsertDspOutIncome {
          |  AND `date` = "$day"
          |GROUP BY
          |  `date`,
-         |  adslotid,
          |  ext_string["dsp_adslotid_by_src_22"]
        """.stripMargin
     println("sql: " + sql)
