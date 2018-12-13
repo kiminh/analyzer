@@ -161,7 +161,10 @@ object prepare_bsCvr_dnnPredictSample {
 
     result_temp.show(10)
 
-    result_temp.crossJoin(ideaid_hash).select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
+    val bideaid_hash = spark.sparkContext.broadcast(ideaid_hash)
+    val ideaid_hash1 = bideaid_hash.value
+
+    result_temp.crossJoin(ideaid_hash1).select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
