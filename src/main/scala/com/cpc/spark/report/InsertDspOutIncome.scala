@@ -182,7 +182,7 @@ object InsertDspOutIncome {
       }
     } catch {
       case e: Exception => println("exception caught: " + e)
-//    } finally {
+    } //finally {
 //      if (conn != null) {
 //        conn.close()
 //      }
