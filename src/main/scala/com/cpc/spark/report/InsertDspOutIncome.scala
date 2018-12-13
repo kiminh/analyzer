@@ -87,16 +87,26 @@ object InsertDspOutIncome {
     println("sql: " + sql)
 
     var dspLog = spark.sql(sql)
+      .rdd
+      .map {
+        r =>
+          val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
+          val dsp_income = r.getAs[Double]("dsp_income")
+          val dsp_click = r.getAs[Long]("dsp_click")
+          val dsp_impression = r.getAs[Long]("dsp_impression")
+          (dsp_adslot_id, dsp_impression, dsp_click, dsp_income)
+      }
+
+    dspLog.foreach(println(_))
+    dspLog.foreachPartition(updateData)
 
     /*for (log <- dspLog) {
-      val dsp_adslot_id = log.getAs[String]("dsp_adslot_id")
-      val dsp_income = log.getAs[Double]("dsp_income")
-      val dsp_click = log.getAs[Long]("dsp_click")
-      val dsp_impression = log.getAs[Long]("dsp_impression")
-      val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
-    }*/
-
-    dspLog.rdd.foreachPartition(updateData)
+     val dsp_adslot_id = log.getAs[String]("dsp_adslot_id")
+     val dsp_income = log.getAs[Double]("dsp_income")
+     val dsp_click = log.getAs[Long]("dsp_click")
+     val dsp_impression = log.getAs[Long]("dsp_impression")
+     val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
+   }*/
     //    val s = Seq()
 
     //    dspLog.foreach { r =>
@@ -138,7 +148,7 @@ object InsertDspOutIncome {
     }
   }*/
 
-  def updateData(iter: Iterator[Row]): Unit = {
+  def updateData(iter: Iterator[(String, Long, Long, Double)]): Unit = {
     var conn: Connection = null
     var stmt: Statement = null
     try {
@@ -150,11 +160,11 @@ object InsertDspOutIncome {
       conn.setAutoCommit(false)
       stmt = conn.createStatement()
 
-      iter.foreach { r =>
-        val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
+      iter.foreach { x =>
+        /*val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
         val dsp_income = r.getAs[Double]("dsp_income")
         val dsp_click = r.getAs[Long]("dsp_click")
-        val dsp_impression = r.getAs[Long]("dsp_impression")
+        val dsp_impression = r.getAs[Long]("dsp_impression")*/
 
         val sql =
           s"""
@@ -163,7 +173,7 @@ object InsertDspOutIncome {
              |dsp_click = %s,
              |dsp_impression = %s
              |where `date` = "%s" and dsp_adslot_id = "%s" and ad_src = 22
-        """.stripMargin.format(table, dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
+        """.stripMargin.format(table, x._4, x._3, x._2, day, x._1)
         println("sql" + sql);
         stmt.executeUpdate(sql)
 
