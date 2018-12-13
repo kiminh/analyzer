@@ -70,7 +70,8 @@ object InsertDspOutIncome {
        """.stripMargin
     println("sql: " + sql)
 
-    var dspLog = spark.sql(sql).repartition(2)
+    var dspLog = spark.sql(sql).repartition(1)
+    dspLog.show()
 
     dspLog.foreach { r =>
       val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
