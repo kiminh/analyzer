@@ -79,7 +79,7 @@ object InsertDspOutIncome {
          |WHERE
          |  adsrc = 22
          |  AND isshow = 1
-         |  AND `date` = "$day"
+         |  AND `date` = "$day" and hour='20'
          |GROUP BY
          |  `date`,
          |  ext_string["dsp_adslotid_by_src_22"]
@@ -173,7 +173,7 @@ object InsertDspOutIncome {
              |dsp_click = %s,
              |dsp_impression = %s
              |where `date` = "2018-12-08" and dsp_adslot_id = "%s" and ad_src = 22
-        """.stripMargin.format(table, x._4, x._3, x._2, day, x._1)
+        """.stripMargin.format(x._4, x._3, x._2, x._1)
         println("sql" + sql);
         stmt.executeUpdate(sql)
 
