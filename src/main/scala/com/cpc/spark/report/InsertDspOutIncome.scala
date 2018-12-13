@@ -100,11 +100,11 @@ object InsertDspOutIncome {
       val sql =
         s"""
            |update union_test.%s
-           |set dsp_income = "$dsp_income",
-           |dsp_click = "$dsp_click",
-           |dsp_impression = "$dsp_impression"
-           |where `date` = "$day" and dsp_adslot_id = "$dsp_adslot_id"
-      """.stripMargin.format(table)
+           |set dsp_income = "%s",
+           |dsp_click = "%s",
+           |dsp_impression = "%s"
+           |where `date` = "%s" and dsp_adslot_id = "%s"
+      """.stripMargin.format(table, dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
       println("sql" + sql);
       stmt.executeUpdate(sql);
     } catch {
