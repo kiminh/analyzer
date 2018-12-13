@@ -48,7 +48,7 @@ object InsertDspOutIncome {
     val sql =
       s"""
          |SELECT
-         |  `date`,
+         | `date`,
          |  ext_string["dsp_adslotid_by_src_22"] as dsp_adslot_id,
          |  sum(
          |    CASE
@@ -70,7 +70,7 @@ object InsertDspOutIncome {
        """.stripMargin
     println("sql: " + sql)
 
-    var dspLog = spark.sql(sql)
+    var dspLog = spark.sql(sql).repartition(2)
 
     dspLog.foreach { r =>
       val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
@@ -87,7 +87,7 @@ object InsertDspOutIncome {
 
 
   def updateData(table: String, day: String, dsp_adslot_id: String, dsp_income: Double, dsp_click: Long, dsp_impression: Long): Unit = {
-
+    println("#####: " + table + ", " + day + ", " + dsp_adslot_id + ", " + dsp_income + ", " + dsp_click + ", " + dsp_impression)
     try {
       Class.forName(mariadbProp.getProperty("driver"))
       val conn = DriverManager.getConnection(
@@ -98,9 +98,9 @@ object InsertDspOutIncome {
       val sql =
         s"""
            |update union_test.%s
-           |set dsp_income = "%s",
-           |dsp_click = "%s",
-           |dsp_impression = "%s"
+           |set dsp_income = %s,
+           |dsp_click = %s,
+           |dsp_impression = %s
            |where `date` = "%s" and dsp_adslot_id = "%s" and adsrc = 22
       """.stripMargin.format(table, dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
       println("sql" + sql);
