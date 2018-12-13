@@ -111,7 +111,6 @@ object NovelEvaluation {
         val novelEvalDetailSql =
             """
                |select
-               |    a.`date` as `date`,                                      --date
                |    a.tag as tag  ,                                           --分类
                |    case when b.show_num is not null then b.show_num else 9999999 end as show_num,                                  --米读小说广告总展示数
                |    a.cpc_dsp_show_num as cpc_dsp_show_num,                  --CPC和DSP总展示数
@@ -126,8 +125,8 @@ object NovelEvaluation {
                |    a.cpc_dsp_total_price as cpc_dsp_total_price,            --CPC和DSP总消费
                |    a.cpc_total_price as cpc_total_price,                    --CPC消费
                |    a.cpc_cpm as cpc_cpm,                                    --CPC的CPM
-               |    a.cpc_arpu as cpc_arpu                                   --CPC的arpu
-               |
+               |    a.cpc_arpu as cpc_arpu,                                   --CPC的arpu
+               |    a.`date` as `date`                                        --date
                |from
                |(
                |  select
