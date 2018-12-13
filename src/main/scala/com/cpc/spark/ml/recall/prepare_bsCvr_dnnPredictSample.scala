@@ -179,8 +179,8 @@ object prepare_bsCvr_dnnPredictSample {
 
     result_temp1.show(10)
 
-    result_temp1.unpersist()
-    ideaid_hash.unpersist()
+    //result_temp1.unpersist()
+    //ideaid_hash.unpersist()
 
     result_temp1.rdd.zipWithUniqueId()
       .map { x =>
