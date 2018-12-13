@@ -72,22 +72,23 @@ object InsertDspOutIncome {
 
     var dspLog = spark.sql(sql).repartition(1)
     dspLog.show()
+    val s = Seq()
 
     dspLog.foreach { r =>
       val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
       val dsp_income = r.getAs[Double]("dsp_income")
       val dsp_click = r.getAs[Long]("dsp_click")
       val dsp_impression = r.getAs[Long]("dsp_impression")
-      updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
-
+      val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
+      s :+ n
     }
-
+    println("s: " + s)
     println("~~~~~~write to mysql successfully")
     spark.stop()
   }
 
 
-  def updateData(table: String, day: String, dsp_adslot_id: String, dsp_income: Double, dsp_click: Long, dsp_impression: Long): Unit = {
+  def updateData(table: String, day: String, dsp_adslot_id: String, dsp_income: Double, dsp_click: Long, dsp_impression: Long): Int = {
     println("#####: " + table + ", " + day + ", " + dsp_adslot_id + ", " + dsp_income + ", " + dsp_click + ", " + dsp_impression)
     try {
       Class.forName(mariadbProp.getProperty("driver"))
@@ -105,7 +106,8 @@ object InsertDspOutIncome {
            |where `date` = "%s" and dsp_adslot_id = "%s" and adsrc = 22
       """.stripMargin.format(table, dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
       println("sql" + sql);
-      stmt.executeUpdate(sql);
+      val num = stmt.executeUpdate(sql);
+      num
     } catch {
       case e: Exception => println("exception caught: " + e)
     }
