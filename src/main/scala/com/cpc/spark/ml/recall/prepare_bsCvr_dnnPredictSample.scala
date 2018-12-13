@@ -157,7 +157,7 @@ object prepare_bsCvr_dnnPredictSample {
       $"sparse".getField("_3").alias("idx2"),
       $"sparse".getField("_4").alias("id_arr"),
       $"uid"
-    ).persist(StorageLevel.DISK_ONLY)
+    ).repartition(1000).persist(StorageLevel.DISK_ONLY)
 
     result_temp.show(10)
 
