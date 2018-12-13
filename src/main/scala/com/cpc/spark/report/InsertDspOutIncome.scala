@@ -70,25 +70,25 @@ object InsertDspOutIncome {
        """.stripMargin
     println("sql: " + sql)
 
-    var dspLog = spark.sql(sql).first()
-    val dsp_adslot_id = dspLog.getAs[String]("dsp_adslot_id")
-    val dsp_income = dspLog.getAs[Double]("dsp_income")
-    val dsp_click = dspLog.getAs[Long]("dsp_click")
-    val dsp_impression = dspLog.getAs[Long]("dsp_impression")
-    val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
+    var dspLog = spark.sql(sql)
+//    val dsp_adslot_id = dspLog.getAs[String]("dsp_adslot_id")
+//    val dsp_income = dspLog.getAs[Double]("dsp_income")
+//    val dsp_click = dspLog.getAs[Long]("dsp_click")
+//    val dsp_impression = dspLog.getAs[Long]("dsp_impression")
+//    val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
 
 
     val s = Seq()
 
-//    dspLog.foreach { r =>
-//      val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
-//      val dsp_income = r.getAs[Double]("dsp_income")
-//      val dsp_click = r.getAs[Long]("dsp_click")
-//      val dsp_impression = r.getAs[Long]("dsp_impression")
-//      val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
-//      s :+ r
-//    }
-    println("return: " + n)
+    dspLog.foreach { r =>
+      val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
+      val dsp_income = r.getAs[Double]("dsp_income")
+      val dsp_click = r.getAs[Long]("dsp_click")
+      val dsp_impression = r.getAs[Long]("dsp_impression")
+      val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
+      s :+ r
+    }
+    println("return: " + s)
     println("~~~~~~write to mysql successfully")
     spark.stop()
   }
