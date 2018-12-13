@@ -5,7 +5,8 @@ import java.util.Properties
 
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 
 /**
   * Created on 2018-12-12 16
@@ -14,6 +15,8 @@ object InsertDspOutIncome {
 
   var mariadbUrl = ""
   val mariadbProp = new Properties()
+  var day=""
+  var table=""
 
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
@@ -23,8 +26,8 @@ object InsertDspOutIncome {
         """.stripMargin)
       System.exit(1)
     }
-    val day = args(0).toString
-    val table = args(1).toString
+    day = args(0).toString
+    table = args(1).toString
 
     Logger.getRootLogger.setLevel(Level.WARN)
 
@@ -70,53 +73,59 @@ object InsertDspOutIncome {
        """.stripMargin
     println("sql: " + sql)
 
-    var dspLog = spark.sql(sql)
+    var dspLog = spark.sql(sql).rdd
 //    val dsp_adslot_id = dspLog.getAs[String]("dsp_adslot_id")
 //    val dsp_income = dspLog.getAs[Double]("dsp_income")
 //    val dsp_click = dspLog.getAs[Long]("dsp_click")
 //    val dsp_impression = dspLog.getAs[Long]("dsp_impression")
 //    val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
-
+dspLog.foreachPartition(updateData)
 
     val s = Seq()
 
-    dspLog.foreach { r =>
-      val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
-      val dsp_income = r.getAs[Double]("dsp_income")
-      val dsp_click = r.getAs[Long]("dsp_click")
-      val dsp_impression = r.getAs[Long]("dsp_impression")
-      val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
-      s :+ r
-    }
-    println("return: " + s)
+//    dspLog.foreach { r =>
+//      val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
+//      val dsp_income = r.getAs[Double]("dsp_income")
+//      val dsp_click = r.getAs[Long]("dsp_click")
+//      val dsp_impression = r.getAs[Long]("dsp_impression")
+//      val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
+//      s :+ r
+//    }
+//    println("return: " + s)
     println("~~~~~~write to mysql successfully")
     spark.stop()
   }
 
 
-  def updateData(table: String, day: String, dsp_adslot_id: String, dsp_income: Double, dsp_click: Long, dsp_impression: Long): Int = {
-    println("#####: " + table + ", " + day + ", " + dsp_adslot_id + ", " + dsp_income + ", " + dsp_click + ", " + dsp_impression)
+  def updateData(iter:Iterator[Row]): Unit = {
+    var conn:Connection=null;
+
     try {
       Class.forName(mariadbProp.getProperty("driver"))
       val conn = DriverManager.getConnection(
         mariadbUrl,
         mariadbProp.getProperty("user"),
         mariadbProp.getProperty("password"))
-      val stmt = conn.createStatement()
-      val sql =
-        s"""
-           |update union_test.%s
-           |set dsp_income = %s,
-           |dsp_click = %s,
-           |dsp_impression = %s
-           |where `date` = "%s" and dsp_adslot_id = "%s" and ad_src = 22
+      iter.foreach{r=>
+        val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
+        val dsp_income = r.getAs[Double]("dsp_income")
+        val dsp_click = r.getAs[Long]("dsp_click")
+        val dsp_impression = r.getAs[Long]("dsp_impression")
+        val sql =
+          s"""
+             |update union_test.%s
+             |set dsp_income = %s,
+             |dsp_click = %s,
+             |dsp_impression = %s
+             |where `date` = "%s" and dsp_adslot_id = "%s" and ad_src = 22
       """.stripMargin.format(table, dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
-      println("sql" + sql);
-      val num = stmt.executeUpdate(sql);
-      num
+        println("sql" + sql);
+        
+        val stmt = conn.createStatement()
+        val num = stmt.executeUpdate(sql);
+      }
     } catch {
       case e: Exception => println("exception caught: " + e)
-        -1
     }
   }
 }
