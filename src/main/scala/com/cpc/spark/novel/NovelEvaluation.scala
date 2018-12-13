@@ -70,7 +70,7 @@ object NovelEvaluation {
         novelEval
           .rdd
           .map(x =>
-              ReportNovelEvaluation(show_num = x.getAs[Int]("show_num"),
+              ReportNovelEvaluation(show_num = x.getAs[Long]("show_num").toInt,
                   cpc_dsp_show_num = x.getAs[Int]("cpc_dsp_show_num"),
                   cpc_dsp_rate = x.getAs[Double]("cpc_dsp_rate"),
                   cpc_show_num = x.getAs[Int]("cpc_show_num"),
@@ -139,7 +139,7 @@ object NovelEvaluation {
         novelEvalDetail.rdd
           .map(x =>
               ReportNovelEvaluationDetail(tag = x.getAs[String]("tag"),
-                  show_num = x.getAs[Int]("show_num"),
+                  show_num = x.getAs[Long]("show_num").toInt,
                   cpc_dsp_show_num = x.getAs[Int]("cpc_dsp_show_num"),
                   cpc_dsp_rate = x.getAs[Double]("cpc_dsp_rate"),
                   cpc_show_num = x.getAs[Int]("cpc_show_num"),
