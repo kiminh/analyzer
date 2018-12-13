@@ -40,9 +40,9 @@ object Utils {
     }
 
     spark.sql(sql)
+      .repartition(numPartitions)
       .rdd.map(x => Base64.decodeBase64(x.getString(0)))
       .map(x => (new BytesWritable(x), NullWritable.get()))
-      .repartition(numPartitions)
       .saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)
   }
 
