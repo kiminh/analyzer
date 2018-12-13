@@ -113,7 +113,7 @@ object prepare_bsCvr_dnnPredictSample {
     println("--------------------------------")
 
     val result_temp =
-    spark.sql(sql)
+    spark.sql(sql).repartition(1000)
       .join(profileData, Seq("uid"), "leftouter")
       .join(uidRequest, Seq("uid"), "leftouter")
       .join(behavior_data, Seq("uid"), "leftouter")
@@ -157,7 +157,7 @@ object prepare_bsCvr_dnnPredictSample {
       $"sparse".getField("_3").alias("idx2"),
       $"sparse".getField("_4").alias("id_arr"),
       $"uid"
-    ).repartition(1000).persist(StorageLevel.DISK_ONLY)
+    ).persist(StorageLevel.DISK_ONLY)
 
     result_temp.show(10)
 
