@@ -74,10 +74,11 @@ object prepare_bsCvr_dnnPredictSample {
     val unit = spark.read.jdbc(jdbcUrl, table1, jdbcProp).select($"unitid", explode(split($"ideas", ",")).alias("ideaid")).
       filter("ideaid is not null").distinct()
 
-    val table2=s"(select idea_id as ideaid from (SELECT idea_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by idea_id) t order by cnt desc limit 100) as tmp2"
+    val table2=s"(select idea_id as ideaid from (SELECT idea_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by idea_id) t order by cnt desc) as tmp2"
     val costTop100 = spark.read.jdbc(jdbcUrl, table2, jdbcProp)
 
     val idea_info = costTop100.join(idea, Seq("ideaid")).join(unit,  Seq("ideaid"))
+    println(idea_info.count())
     val ideaid_hash = idea_info.select(hash("f1")($"adslot_type").alias("f1"),
       //hash("f6")($"adslotid").alias("f6"),
       //hash("f2")($"sex").alias("f2"),
@@ -106,7 +107,8 @@ object prepare_bsCvr_dnnPredictSample {
          |  and ideaid > 0
          |  and media_appsid in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
          |  and uid not like "%.%"
-         |  and uid not like "%000000%") ta where ta.row_num=1
+         |  and uid not like "%000000%"
+         |  and uid not null) ta where ta.row_num=1
       """.stripMargin
     println("--------------------------------")
     println(sql)
@@ -157,7 +159,7 @@ object prepare_bsCvr_dnnPredictSample {
       $"sparse".getField("_3").alias("idx2"),
       $"sparse".getField("_4").alias("id_arr"),
       $"uid"
-    ).persist.repartition(16000).cache()
+    ).persist.repartition(90000).cache()
 
     result_temp.show(10)
 
