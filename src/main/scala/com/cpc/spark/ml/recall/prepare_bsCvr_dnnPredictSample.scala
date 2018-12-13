@@ -108,7 +108,7 @@ object prepare_bsCvr_dnnPredictSample {
          |  and media_appsid in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
-         |  and uid not null) ta where ta.row_num=1
+         |  and uid is not null) ta where ta.row_num=1
       """.stripMargin
     println("--------------------------------")
     println(sql)
