@@ -19,7 +19,6 @@ object NovelEvaluation {
         val sql =
             s"""
                |select
-               |  a.`date` as `date`,                                      --date
                |  b.show_num as show_num,                                  --米读小说广告总展示数
                |  a.cpc_dsp_show_num as cpc_dsp_show_num,                  --CPC和DSP总展示数
                |  round(a.cpc_dsp_show_num/b.show_num,6)  as cpc_dsp_rate, --CPC和DSP展示占比
@@ -33,7 +32,8 @@ object NovelEvaluation {
                |  a.cpc_dsp_total_price as cpc_dsp_total_price,            --CPC和DSP总消费
                |  a.cpc_total_price as cpc_total_price,                    --CPC消费
                |  a.cpc_cpm as cpc_cpm,                                    --CPC的CPM
-               |  a.cpc_arpu as cpc_arpu                                   --CPC的arpu
+               |  a.cpc_arpu as cpc_arpu,                                  --CPC的arpu
+               |  a.`date` as `date`                                       --date
                |from
                |(
                |  select
