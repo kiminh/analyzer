@@ -168,11 +168,11 @@ object InsertDspOutIncome {
 
         val sql =
           s"""
-             |update union_test.%s
+             |update union_test.dsp_out_income
              |set dsp_income = %s,
              |dsp_click = %s,
              |dsp_impression = %s
-             |where `date` = "%s" and dsp_adslot_id = "%s" and ad_src = 22
+             |where `date` = "2018-12-08" and dsp_adslot_id = "%s" and ad_src = 22
         """.stripMargin.format(table, x._4, x._3, x._2, day, x._1)
         println("sql" + sql);
         stmt.executeUpdate(sql)
