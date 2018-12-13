@@ -33,11 +33,12 @@ object OcpcCheckResultWithList {
     val rawData = spark
       .table("dl_cpc.ocpc_detail_report_hourly")
       .where(s"`date`='$date' and `hour`='23'")
+      .withColumn("ideaid", col("idea_id"))
 
     val resultDF = rawData
       .join(rawDF, Seq("ideaid"), "left_outer")
-      .select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "flag")
       .withColumn("flag", when(col("flag").isNull, 0).otherwise(col("flag")))
+      .select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "flag")
 
     resultDF
   }
