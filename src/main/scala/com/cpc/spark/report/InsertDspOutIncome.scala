@@ -37,7 +37,7 @@ object InsertDspOutIncome {
     mariadbUrl = "jdbc:mysql://rm-2zef52mz0p6mv5007.mysql.rds.aliyuncs.com:3306/union_test"
     mariadbProp.put("user", "cpcrw")
     mariadbProp.put("password", "zZdlz9qUB51awT8b")
-    mariadbProp.put("driver", "org.mariadb.jdbc.Drive")
+    mariadbProp.put("driver", "org.mysql.jdbc.Drive")
 
     val spark = SparkSession.builder()
       .appName("insert dsp_out_income date " + day)
