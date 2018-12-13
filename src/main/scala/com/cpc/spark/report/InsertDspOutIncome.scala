@@ -37,7 +37,7 @@ object InsertDspOutIncome {
     mariadbProp.put("password", conf.getString("mariadb.union_write.password"))
     mariadbProp.put("driver", conf.getString("mariadb.union_write.driver"))*/
 
-    mariadbUrl = "jdbc:mysql://rm-2zef52mz0p6mv5007.mysql.rds.aliyuncs.com:3306/union_test"
+    mariadbUrl = "jdbc:mysql://rm-2zef52mz0p6mv5007.mysql.rds.aliyuncs.com:3306/union_test?useUnicode=true&characterEncoding=UTF-8"
     mariadbProp.put("user", "cpcrw")
     mariadbProp.put("password", "zZdlz9qUB51awT8b")
     mariadbProp.put("driver", "org.mariadb.jdbc.Driver")
@@ -60,6 +60,7 @@ object InsertDspOutIncome {
     while (resultSet.next()) {
       println("@@@@@: " + resultSet.getString(1))
     }
+
 
     val sql =
       s"""
@@ -152,13 +153,14 @@ object InsertDspOutIncome {
     var conn: Connection = null
     var stmt: Statement = null
     try {
-      Class.forName(mariadbProp.getProperty("driver"))
-      val conn = DriverManager.getConnection(
-        mariadbUrl,
-        mariadbProp.getProperty("user"),
-        mariadbProp.getProperty("password"))
-      conn.setAutoCommit(false)
-      stmt = conn.createStatement()
+//      Class.forName("org.mariadb.jdbc.Driver")
+//
+//      val conn = DriverManager.getConnection(
+//        mariadbUrl,
+//        mariadbProp.getProperty("user"),
+//        mariadbProp.getProperty("password"))
+//      conn.setAutoCommit(false)
+//      stmt = conn.createStatement()
 
       iter.foreach { x =>
         /*val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
@@ -180,14 +182,14 @@ object InsertDspOutIncome {
       }
     } catch {
       case e: Exception => println("exception caught: " + e)
-    } finally {
-      if (conn != null) {
-        conn.close()
-      }
-      if (stmt != null) {
-        stmt.close()
-      }
-    }
+//    } finally {
+//      if (conn != null) {
+//        conn.close()
+//      }
+//      if (stmt != null) {
+//        stmt.close()
+//      }
+//    }
   }
 
 
