@@ -13,14 +13,15 @@ object OcpcCheckResultWithList {
       .getOrCreate()
 
     val date = args(0).toString
+    val hour = args(1).toString
 
-    val result = getResult(date, spark)
+    val result = getResult(date, hour, spark)
     val tableName = "test.ocpc_check_exp_result20181213"
     result.write.mode("overwrite").saveAsTable(tableName)
     println(s"successfully save data into table: $tableName")
   }
 
-  def getResult(date: String, spark: SparkSession) = {
+  def getResult(date: String, hour: String, spark: SparkSession) = {
     import spark.implicits._
 
     val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
@@ -32,7 +33,7 @@ object OcpcCheckResultWithList {
 
     val rawData = spark
       .table("dl_cpc.ocpc_detail_report_hourly")
-      .where(s"`date`='$date' and `hour`='23'")
+      .where(s"`date`='$date' and `hour`='$hour'")
       .withColumn("ideaid", col("idea_id"))
 
     val resultDF = rawData
