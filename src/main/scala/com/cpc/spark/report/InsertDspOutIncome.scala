@@ -79,7 +79,7 @@ object InsertDspOutIncome {
          |WHERE
          |  adsrc = 22
          |  AND isshow = 1
-         |  AND `date` = "$day" and hour='20'
+         |  AND `date` = "$day"
          |GROUP BY
          |  `date`,
          |  ext_string["dsp_adslotid_by_src_22"]
@@ -119,7 +119,7 @@ object InsertDspOutIncome {
     //    }
     //    println("return: " + s)
     println("~~~~~~write to mysql successfully")
-    spark.stop()
+
   }
 
   /*def updateData(table: String, day: String, dsp_adslot_id: String, dsp_income: Double, dsp_click: Long, dsp_impression: Long): Int = {
@@ -169,7 +169,7 @@ object InsertDspOutIncome {
         val sql =
           s"""
              |update union_test.%s
-             |set dsp_income = "%s",
+             |set dsp_income = %s,
              |dsp_click = %s,
              |dsp_impression = %s
              |where `date` = "%s" and dsp_adslot_id = "%s" and ad_src = 22
