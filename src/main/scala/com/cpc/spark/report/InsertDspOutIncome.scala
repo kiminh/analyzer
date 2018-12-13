@@ -1,7 +1,6 @@
 package com.cpc.spark.report
 
 import java.sql.{Connection, DriverManager, PreparedStatement}
-import java.text.SimpleDateFormat
 import java.util.Properties
 
 import com.typesafe.config.ConfigFactory
@@ -49,9 +48,9 @@ object InsertDspOutIncome {
     val sql =
       s"""
          |SELECT
-         |  adslotid,
+         |  `date`,
          |  ext_string["dsp_adslotid_by_src_22"] as dsp_adslot_id,
-         |sum(
+         |  sum(
          |    CASE
          |      WHEN isshow == 1 THEN price/1000
          |      ELSE 0
@@ -67,21 +66,17 @@ object InsertDspOutIncome {
          |  AND `date` = "$day"
          |GROUP BY
          |  `date`,
-         |  adslotid,
          |  ext_string["dsp_adslotid_by_src_22"]
        """.stripMargin
     println("sql: " + sql)
 
     var dspLog = spark.sql(sql)
-    dspLog.printSchema()
-    dspLog.foreach(println(_))
 
-    dspLog.repartition(5)
-      .foreach { r =>
-      var dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
-      var dsp_income = r.getAs[Double]("dsp_income")
-      var dsp_click = r.getAs[Long]("dsp_click")
-      var dsp_impression = r.getAs[Long]("dsp_impression")
+    dspLog.foreach { r =>
+      val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
+      val dsp_income = r.getAs[Double]("dsp_income")
+      val dsp_click = r.getAs[Long]("dsp_click")
+      val dsp_impression = r.getAs[Long]("dsp_impression")
       updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
 
     }
