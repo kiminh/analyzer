@@ -97,7 +97,7 @@ object InsertDspOutIncome {
           (dsp_adslot_id, dsp_impression, dsp_click, dsp_income)
       }
 
-    dspLog.foreach(println(_))
+    dspLog.take(10).foreach(x => println("##: " + x._1 + ", " + x._2 + ", " + x._3 + ", " + x._4))
     dspLog.foreachPartition(updateData)
 
     /*for (log <- dspLog) {
