@@ -74,7 +74,7 @@ object prepare_bsCvr_dnnPredictSample {
     val unit = spark.read.jdbc(jdbcUrl, table1, jdbcProp).select($"unitid", explode(split($"ideas", ",")).alias("ideaid")).
       filter("ideaid is not null").distinct()
 
-    val table2=s"(select idea_id as ideaid from (SELECT idea_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by idea_id) t order by cnt desc limit 2) as tmp2"
+    val table2=s"(select idea_id as ideaid from (SELECT idea_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by idea_id) t order by cnt desc limit 50) as tmp2"
     val costTop100 = spark.read.jdbc(jdbcUrl, table2, jdbcProp)
 
     val idea_info = costTop100.join(idea, Seq("ideaid")).join(unit,  Seq("ideaid"))
@@ -113,7 +113,7 @@ object prepare_bsCvr_dnnPredictSample {
     println("--------------------------------")
 
     val result_temp =
-    spark.sql(sql).repartition(1000)
+    spark.sql(sql).repartition(2000)
       .join(profileData, Seq("uid"), "leftouter")
       .join(uidRequest, Seq("uid"), "leftouter")
       .join(behavior_data, Seq("uid"), "leftouter")
