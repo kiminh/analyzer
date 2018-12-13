@@ -140,7 +140,6 @@ object InsertDspOutIncome {
 
     def updateData(iter: Iterator[Row]): Unit = {
       var conn: Connection = null;
-
       try {
         Class.forName(mariadbProp.getProperty("driver"))
         val conn = DriverManager.getConnection(
@@ -163,7 +162,8 @@ object InsertDspOutIncome {
                |where `date` = "%s" and dsp_adslot_id = "%s" and ad_src = 22
         """.stripMargin.format(table, dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
           println("sql" + sql);
-          val num = stmt.executeUpdate(sql);
+          stmt.executeQuery(sql)
+
         }
       } catch {
         case e: Exception => println("exception caught: " + e)
