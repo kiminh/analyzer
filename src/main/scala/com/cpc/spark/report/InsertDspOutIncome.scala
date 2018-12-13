@@ -63,7 +63,7 @@ object InsertDspOutIncome {
          |WHERE
          |  adsrc = 22
          |  AND isshow = 1
-         |  AND `date` = "$day" and hour = '20'
+         |  AND `date` = "$day"
          |GROUP BY
          |  `date`,
          |  ext_string["dsp_adslotid_by_src_22"]
