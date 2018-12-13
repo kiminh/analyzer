@@ -110,6 +110,7 @@ object InsertDspOutIncome {
       num
     } catch {
       case e: Exception => println("exception caught: " + e)
+        555
     }
   }
 }
