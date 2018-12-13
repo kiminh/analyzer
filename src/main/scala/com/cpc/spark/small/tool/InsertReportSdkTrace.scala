@@ -601,6 +601,8 @@ object InsertReportSdkTrace {
     allData = allData.union(wzSdkType2Lpload)
     allData = allData.union(downSdkType2Apkdown)
 
+
+
     //    var allData = wzSdkType2Lpload.union(downSdkType2Apkdown)
     //    var allData = allSdkReq
     //      .union(allSdkFill)
@@ -627,7 +629,7 @@ object InsertReportSdkTrace {
     //      .union(downSdkType2Apkdown)
 
     val allDataFrame =
-      ctx.createDataFrame(allData)
+      ctx.createDataFrame(allData.filter(_._5.length < 200))
         .toDF("media_id", "adslot_id", "adslot_type", "target_type", "trace_op1", "target_value", "date", "hour", "data_type")
     //
     allDataFrame.show(10)
