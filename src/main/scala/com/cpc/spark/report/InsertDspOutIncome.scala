@@ -177,7 +177,7 @@ object InsertDspOutIncome {
              |where `date` = "2018-12-08" and dsp_adslot_id = "%s" and ad_src = 22
         """.stripMargin.format(x._4, x._3, x._2, x._1)
         println("sql" + sql);
-        stmt.executeUpdate(sql)
+        stmt.execute(sql)
 
       }
     } catch {
