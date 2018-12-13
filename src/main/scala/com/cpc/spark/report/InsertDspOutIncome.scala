@@ -1,12 +1,12 @@
 package com.cpc.spark.report
 
-import java.sql.{Connection, DriverManager, PreparedStatement}
+import java.sql.{Connection, DriverManager, Statement}
 import java.util.Properties
 
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 /**
   * Created on 2018-12-12 16
@@ -54,11 +54,11 @@ object InsertDspOutIncome {
       mariadbProp.getProperty("user"),
       mariadbProp.getProperty("password"))
 
-    val sql2= "show tables"
+    val sql2 = "show tables"
     val stmt = conn.createStatement()
     val resultSet = stmt.executeQuery(sql2)
-    while (resultSet.next()){
-      println("@@@@@: "+resultSet.getString(1))
+    while (resultSet.next()) {
+      println("@@@@@: " + resultSet.getString(1))
     }
 
     val sql =
@@ -96,7 +96,7 @@ object InsertDspOutIncome {
       val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
     }*/
 
-        dspLog.rdd.foreachPartition(updateData)
+    dspLog.rdd.foreachPartition(updateData)
     //    val s = Seq()
 
     //    dspLog.foreach { r =>
@@ -138,40 +138,47 @@ object InsertDspOutIncome {
     }
   }*/
 
-    def updateData(iter: Iterator[Row]): Unit = {
-      var conn: Connection = null;
-      try {
-        Class.forName(mariadbProp.getProperty("driver"))
-        val conn = DriverManager.getConnection(
-          mariadbUrl,
-          mariadbProp.getProperty("user"),
-          mariadbProp.getProperty("password"))
-        conn.setAutoCommit(false)
-        val stmt = conn.createStatement()
-        iter.foreach { r =>
-          val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
-          val dsp_income = r.getAs[Double]("dsp_income")
-          val dsp_click = r.getAs[Long]("dsp_click")
-          val dsp_impression = r.getAs[Long]("dsp_impression")
-          val sql =
-            s"""
-               |update union_test.%s
-               |set dsp_income = %s,
-               |dsp_click = %s,
-               |dsp_impression = %s
-               |where `date` = "%s" and dsp_adslot_id = "%s" and ad_src = 22
-        """.stripMargin.format(table, dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
-          println("sql" + sql);
-          stmt.executeQuery(sql)
+  def updateData(iter: Iterator[Row]): Unit = {
+    var conn: Connection = null
+    var stmt: Statement = null
+    try {
+      Class.forName(mariadbProp.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        mariadbUrl,
+        mariadbProp.getProperty("user"),
+        mariadbProp.getProperty("password"))
+      conn.setAutoCommit(false)
+      stmt = conn.createStatement()
 
-        }
-      } catch {
-        case e: Exception => println("exception caught: " + e)
-      } finally {
-        if (conn != null)
-          conn.close()
+      iter.foreach { r =>
+        val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
+        val dsp_income = r.getAs[Double]("dsp_income")
+        val dsp_click = r.getAs[Long]("dsp_click")
+        val dsp_impression = r.getAs[Long]("dsp_impression")
+
+        val sql =
+          s"""
+             |update union_test.%s
+             |set dsp_income = "%s",
+             |dsp_click = %s,
+             |dsp_impression = %s
+             |where `date` = "%s" and dsp_adslot_id = "%s" and ad_src = 22
+        """.stripMargin.format(table, dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
+        println("sql" + sql);
+        stmt.executeUpdate(sql)
+
+      }
+    } catch {
+      case e: Exception => println("exception caught: " + e)
+    } finally {
+      if (conn != null) {
+        conn.close()
+      }
+      if (stmt != null) {
+        stmt.close()
       }
     }
+  }
 
 
 }
