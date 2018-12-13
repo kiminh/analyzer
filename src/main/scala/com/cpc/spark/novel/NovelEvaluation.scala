@@ -70,23 +70,23 @@ object NovelEvaluation {
         novelEval.show(10)
 
         novelEval
-          .rdd
-          .map(x =>
-              ReportNovelEvaluation(show_num = x.getAs[Long]("show_num"),
-                  cpc_dsp_show_num = x.getAs[Long]("cpc_dsp_show_num"),
-                  cpc_dsp_rate = x.getAs[Double]("cpc_dsp_rate"),
-                  cpc_show_num = x.getAs[Long]("cpc_show_num"),
-                  cpc_rate = x.getAs[Double]("cpc_rate"),
-                  click_num = x.getAs[Long]("click_num"),
-                  cpc_dsp_click_num = x.getAs[Long]("cpc_dsp_click_num"),
-                  cpc_dsp_ctr = x.getAs[Double]("cpc_dsp_ctr"),
-                  cpc_click_num = x.getAs[Long]("cpc_click_num"),
-                  cpc_ctr = x.getAs[Double]("cpc_ctr"),
-                  cpc_dsp_total_price = x.getAs[Double]("cpc_dsp_total_price"),
-                  cpc_total_price = x.getAs[Double]("cpc_total_price"),
-                  cpc_cpm = x.getAs[Double]("cpc_cpm"),
-                  cpc_arpu = x.getAs[Double]("cpc_arpu"))
-          ).toDF()
+//          .rdd
+//          .map(x =>
+//              ReportNovelEvaluation(show_num = x.getAs[Long]("show_num"),
+//                  cpc_dsp_show_num = x.getAs[Long]("cpc_dsp_show_num"),
+//                  cpc_dsp_rate = x.getAs[Double]("cpc_dsp_rate"),
+//                  cpc_show_num = x.getAs[Long]("cpc_show_num"),
+//                  cpc_rate = x.getAs[Double]("cpc_rate"),
+//                  click_num = x.getAs[Long]("click_num"),
+//                  cpc_dsp_click_num = x.getAs[Long]("cpc_dsp_click_num"),
+//                  cpc_dsp_ctr = x.getAs[Double]("cpc_dsp_ctr"),
+//                  cpc_click_num = x.getAs[Long]("cpc_click_num"),
+//                  cpc_ctr = x.getAs[Double]("cpc_ctr"),
+//                  cpc_dsp_total_price = x.getAs[Double]("cpc_dsp_total_price"),
+//                  cpc_total_price = x.getAs[Double]("cpc_total_price"),
+//                  cpc_cpm = x.getAs[Double]("cpc_cpm"),
+//                  cpc_arpu = x.getAs[Double]("cpc_arpu"))
+//          ).toDF()
           .repartition(1)
           .write
           .mode("overwrite")
