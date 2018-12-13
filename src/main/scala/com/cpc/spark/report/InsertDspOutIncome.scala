@@ -56,7 +56,10 @@ object InsertDspOutIncome {
 
     val sql2= "show tables"
     val stmt = conn.createStatement()
-    val num = stmt.executeUpdate(sql2);
+    val resultSet = stmt.executeQuery(sql2)
+    while (resultSet.next()){
+      println("@@@@@: "+resultSet.getString(0))
+    }
 
     val sql =
       s"""
