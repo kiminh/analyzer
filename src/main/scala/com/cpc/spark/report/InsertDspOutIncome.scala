@@ -70,25 +70,19 @@ object InsertDspOutIncome {
        """.stripMargin
     println("sql: " + sql)
 
-    var dspLog = spark.sql(sql).first()
-    //dspLog.show()
+    var dspLog = spark.sql(sql)
 
-    val dsp_adslot_id = dspLog.getAs[String]("dsp_adslot_id")
-    val dsp_income = dspLog.getAs[Double]("dsp_income")
-    val dsp_click = dspLog.getAs[Long]("dsp_click")
-    val dsp_impression = dspLog.getAs[Long]("dsp_impression")
+    val s = Seq()
 
-    val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
-
-//    dspLog.foreach { r =>
-//      val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
-//      val dsp_income = r.getAs[Double]("dsp_income")
-//      val dsp_click = r.getAs[Long]("dsp_click")
-//      val dsp_impression = r.getAs[Long]("dsp_impression")
-//      val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
-
-//    }
-    println("s: " + n)
+    dspLog.foreach { r =>
+      val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
+      val dsp_income = r.getAs[Double]("dsp_income")
+      val dsp_click = r.getAs[Long]("dsp_click")
+      val dsp_impression = r.getAs[Long]("dsp_impression")
+      val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
+      s :+ r
+    }
+    println("return: " + s)
     println("~~~~~~write to mysql successfully")
     spark.stop()
   }
@@ -109,14 +103,14 @@ object InsertDspOutIncome {
            |set dsp_income = %s,
            |dsp_click = %s,
            |dsp_impression = %s
-           |where `date` = "%s" and dsp_adslot_id = "%s" and adsrc = 22
+           |where `date` = "%s" and dsp_adslot_id = "%s" and ad_src = 22
       """.stripMargin.format(table, dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
       println("sql" + sql);
       val num = stmt.executeUpdate(sql);
       num
     } catch {
       case e: Exception => println("exception caught: " + e)
-        555
+        -1
     }
   }
 }
