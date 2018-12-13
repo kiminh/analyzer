@@ -74,7 +74,7 @@ object prepare_bsCvr_dnnPredictSample {
     val unit = spark.read.jdbc(jdbcUrl, table1, jdbcProp).select($"unitid", explode(split($"ideas", ",")).alias("ideaid")).
       filter("ideaid is not null").distinct()
 
-    val table2=s"(select idea_id as ideaid from (SELECT idea_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by idea_id) t order by cnt desc limit 100) as tmp2"
+    val table2=s"(select idea_id as ideaid from (SELECT idea_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by idea_id) t order by cnt desc limit 50) as tmp2"
     val costTop100 = spark.read.jdbc(jdbcUrl, table2, jdbcProp)
 
     val idea_info = costTop100.join(idea, Seq("ideaid")).join(unit,  Seq("ideaid"))
@@ -164,7 +164,7 @@ object prepare_bsCvr_dnnPredictSample {
     val bideaid_hash = broadcast(ideaid_hash).persist(StorageLevel.DISK_ONLY)
     bideaid_hash.show(10)
 
-    val result_temp1 = result_temp.crossJoin(broadcast(bideaid_hash)).select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
+    val result_temp1 = result_temp.crossJoin(bideaid_hash).select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
@@ -176,7 +176,7 @@ object prepare_bsCvr_dnnPredictSample {
       ).persist(StorageLevel.DISK_ONLY)
 
     result_temp1.show(10)
-    
+
     result_temp1.unpersist()
     ideaid_hash.unpersist()
 
