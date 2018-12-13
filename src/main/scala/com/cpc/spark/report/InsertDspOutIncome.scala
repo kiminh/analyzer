@@ -54,46 +54,46 @@ object InsertDspOutIncome {
       mariadbProp.getProperty("user"),
       mariadbProp.getProperty("password"))
 
-    val sql= "show table"
+    val sql2= "show tables"
     val stmt = conn.createStatement()
-    val num = stmt.executeUpdate(sql);
+    val num = stmt.executeUpdate(sql2);
 
-//    val sql =
-//      s"""
-//         |SELECT
-//         | `date`,
-//         |  ext_string["dsp_adslotid_by_src_22"] as dsp_adslot_id,
-//         |  sum(
-//         |    CASE
-//         |      WHEN isshow == 1 THEN price/1000
-//         |      ELSE 0
-//         |    END
-//         |  ) AS dsp_income,
-//         |  sum(isclick) as dsp_click,
-//         |  sum(isshow) as dsp_impression
-//         |FROM
-//         |  dl_cpc.cpc_union_log
-//         |WHERE
-//         |  adsrc = 22
-//         |  AND isshow = 1
-//         |  AND `date` = "$day" and hour='20'
-//         |GROUP BY
-//         |  `date`,
-//         |  ext_string["dsp_adslotid_by_src_22"]
-//       """.stripMargin
-//    println("sql: " + sql)
-//
-//    var dspLog = spark.sql(sql)
+    val sql =
+      s"""
+         |SELECT
+         | `date`,
+         |  ext_string["dsp_adslotid_by_src_22"] as dsp_adslot_id,
+         |  sum(
+         |    CASE
+         |      WHEN isshow == 1 THEN price/1000
+         |      ELSE 0
+         |    END
+         |  ) AS dsp_income,
+         |  sum(isclick) as dsp_click,
+         |  sum(isshow) as dsp_impression
+         |FROM
+         |  dl_cpc.cpc_union_log
+         |WHERE
+         |  adsrc = 22
+         |  AND isshow = 1
+         |  AND `date` = "$day" and hour='20'
+         |GROUP BY
+         |  `date`,
+         |  ext_string["dsp_adslotid_by_src_22"]
+       """.stripMargin
+    println("sql: " + sql)
 
-//    for (log <- dspLog) {
-//      val dsp_adslot_id = log.getAs[String]("dsp_adslot_id")
-//      val dsp_income = log.getAs[Double]("dsp_income")
-//      val dsp_click = log.getAs[Long]("dsp_click")
-//      val dsp_impression = log.getAs[Long]("dsp_impression")
-//      val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
-//    }
+    var dspLog = spark.sql(sql)
 
-        //dspLog.rdd.foreachPartition(updateData)
+    /*for (log <- dspLog) {
+      val dsp_adslot_id = log.getAs[String]("dsp_adslot_id")
+      val dsp_income = log.getAs[Double]("dsp_income")
+      val dsp_click = log.getAs[Long]("dsp_click")
+      val dsp_impression = log.getAs[Long]("dsp_impression")
+      val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
+    }*/
+
+        dspLog.rdd.foreachPartition(updateData)
     //    val s = Seq()
 
     //    dspLog.foreach { r =>
@@ -144,6 +144,8 @@ object InsertDspOutIncome {
           mariadbUrl,
           mariadbProp.getProperty("user"),
           mariadbProp.getProperty("password"))
+        conn.setAutoCommit(false)
+        val stmt = conn.createStatement()
         iter.foreach { r =>
           val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
           val dsp_income = r.getAs[Double]("dsp_income")
@@ -158,8 +160,6 @@ object InsertDspOutIncome {
                |where `date` = "%s" and dsp_adslot_id = "%s" and ad_src = 22
         """.stripMargin.format(table, dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
           println("sql" + sql);
-
-          val stmt = conn.createStatement()
           val num = stmt.executeUpdate(sql);
         }
       } catch {
