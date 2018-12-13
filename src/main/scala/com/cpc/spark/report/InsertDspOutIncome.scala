@@ -48,20 +48,6 @@ object InsertDspOutIncome {
       .getOrCreate()
     import spark.implicits._
 
-    Class.forName(mariadbProp.getProperty("driver"))
-    val conn = DriverManager.getConnection(
-      mariadbUrl,
-      mariadbProp.getProperty("user"),
-      mariadbProp.getProperty("password"))
-
-    val sql2 = "show tables"
-    val stmt = conn.createStatement()
-    val resultSet = stmt.executeQuery(sql2)
-    while (resultSet.next()) {
-      println("@@@@@: " + resultSet.getString(1))
-    }
-
-
     val sql =
       s"""
          |SELECT
@@ -88,18 +74,8 @@ object InsertDspOutIncome {
     println("sql: " + sql)
 
     var dspLog = spark.sql(sql)
-      .rdd
-      .map {
-        r =>
-          val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
-          val dsp_income = r.getAs[Double]("dsp_income")
-          val dsp_click = r.getAs[Long]("dsp_click")
-          val dsp_impression = r.getAs[Long]("dsp_impression")
-          (dsp_adslot_id, dsp_impression, dsp_click, dsp_income)
-      }
 
-    dspLog.take(10).foreach(x => println("##: " + x._1 + ", " + x._2 + ", " + x._3 + ", " + x._4))
-    dspLog.foreachPartition(updateData)
+
 
     /*for (log <- dspLog) {
      val dsp_adslot_id = log.getAs[String]("dsp_adslot_id")
@@ -110,20 +86,20 @@ object InsertDspOutIncome {
    }*/
     //    val s = Seq()
 
-    //    dspLog.foreach { r =>
-    //      val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
-    //      val dsp_income = r.getAs[Double]("dsp_income")
-    //      val dsp_click = r.getAs[Long]("dsp_click")
-    //      val dsp_impression = r.getAs[Long]("dsp_impression")
-    //      val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
-    //      s :+ r
-    //    }
-    //    println("return: " + s)
-    println("~~~~~~write to mysql successfully")
+        dspLog.foreach { r =>
+          val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
+          val dsp_income = r.getAs[Double]("dsp_income")
+          val dsp_click = r.getAs[Long]("dsp_click")
+          val dsp_impression = r.getAs[Long]("dsp_impression")
+          val n = updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
 
+        }
+
+    println("~~~~~~write to mysql successfully")
+    spark.stop()
   }
 
-  /*def updateData(table: String, day: String, dsp_adslot_id: String, dsp_income: Double, dsp_click: Long, dsp_impression: Long): Int = {
+  def updateData(table: String, day: String, dsp_adslot_id: String, dsp_income: Double, dsp_click: Long, dsp_impression: Long): Int = {
     println("#####: " + table + ", " + day + ", " + dsp_adslot_id + ", " + dsp_income + ", " + dsp_click + ", " + dsp_impression)
     try {
       Class.forName(mariadbProp.getProperty("driver"))
@@ -147,49 +123,6 @@ object InsertDspOutIncome {
       case e: Exception => println("exception caught: " + e)
         -1
     }
-  }*/
-
-  def updateData(iter: Iterator[(String, Long, Long, Double)]): Unit = {
-    var conn: Connection = null
-    var stmt: Statement = null
-    try {
-//      Class.forName("org.mariadb.jdbc.Driver")
-//
-//      val conn = DriverManager.getConnection(
-//        mariadbUrl,
-//        mariadbProp.getProperty("user"),
-//        mariadbProp.getProperty("password"))
-//      conn.setAutoCommit(false)
-//      stmt = conn.createStatement()
-
-      iter.foreach { x =>
-        /*val dsp_adslot_id = r.getAs[String]("dsp_adslot_id")
-        val dsp_income = r.getAs[Double]("dsp_income")
-        val dsp_click = r.getAs[Long]("dsp_click")
-        val dsp_impression = r.getAs[Long]("dsp_impression")*/
-
-        val sql =
-          s"""
-             |update union_test.dsp_out_income
-             |set dsp_income = %s,
-             |dsp_click = %s,
-             |dsp_impression = %s
-             |where `date` = "2018-12-08" and dsp_adslot_id = "%s" and ad_src = 22
-        """.stripMargin.format(x._4, x._3, x._2, x._1)
-        println("sql" + sql);
-        stmt.execute(sql)
-
-      }
-    } catch {
-      case e: Exception => println("exception caught: " + e)
-    } //finally {
-//      if (conn != null) {
-//        conn.close()
-//      }
-//      if (stmt != null) {
-//        stmt.close()
-//      }
-//    }
   }
 
 
