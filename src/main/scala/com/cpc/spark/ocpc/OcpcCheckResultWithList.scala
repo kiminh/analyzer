@@ -14,7 +14,10 @@ object OcpcCheckResultWithList {
 
     val date = args(0).toString
 
-    getResult(date, spark)
+    val result = getResult(date, spark)
+    val tableName = "test.ocpc_check_exp_result20181213"
+    result.write.mode("overwrite").saveAsTable(tableName)
+    println(s"successfully save data into table: $tableName")
   }
 
   def getResult(date: String, spark: SparkSession) = {
@@ -25,25 +28,18 @@ object OcpcCheckResultWithList {
     val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     rawRDD.foreach(println)
     val rawDF = rawRDD.toDF("ideaid", "flag").distinct()
-    rawDF.write.mode("overwrite").saveAsTable("test.ocpc_regression_k_idea_list")
+    rawDF.write.mode("overwrite").saveAsTable("test.ocpc_exp_ideaid_list")
 
-    val noApiTable = spark
-      .table("dl_cpc.ocpc_check_daily_report_noapi")
-      .where(s"`date`='$date'")
+    val rawData = spark
+      .table("dl_cpc.ocpc_detail_report_hourly")
+      .where(s"`date`='$date' and `hour`='23'")
 
-    val apiTable = spark
-      .table("dl_cpc.ocpc_check_daily_report_api")
-      .where(s"`date`='$date'")
-
-    val noApiResult = noApiTable
+    val resultDF = rawData
       .join(rawDF, Seq("ideaid"), "left_outer")
-      .withColumn("k_model", when(col("flag")===1, "regression").otherwise("no_regression"))
-    noApiResult.write.mode("overwrite").saveAsTable("test.ocpc_daily_report_noapi")
+      .select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "flag")
+      .withColumn("flag", when(col("flag").isNull, 0).otherwise(col("flag")))
 
-    val apiResult = apiTable
-      .join(rawDF, Seq("ideaid"), "left_outer")
-      .withColumn("k_model", when(col("flag")===1, "regression").otherwise("no_regression"))
-    apiResult.write.mode("overwrite").saveAsTable("test.ocpc_daily_report_api")
+    resultDF
   }
 
 }
