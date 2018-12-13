@@ -16,6 +16,7 @@ object NovelEvaluation {
           .appName(s"NovelEvaluation date = $date")
           .enableHiveSupport()
           .getOrCreate()
+        import spark.implicits._
         val sql =
             s"""
                |select
@@ -66,7 +67,25 @@ object NovelEvaluation {
 
         val novelEval = spark.sql(sql).cache()
 
-        novelEval.repartition(1)
+        novelEval
+          .rdd
+          .map(x =>
+              ReportNovelEvaluation(show_num = x.getAs[Int]("show_num"),
+                  cpc_dsp_show_num = x.getAs[Int]("cpc_dsp_show_num"),
+                  cpc_dsp_rate = x.getAs[Double]("cpc_dsp_rate"),
+                  cpc_show_num = x.getAs[Int]("cpc_show_num"),
+                  cpc_rate = x.getAs[Double]("cpc_rate"),
+                  click_num = x.getAs[Int]("click_num"),
+                  cpc_dsp_click_num = x.getAs[Int]("cpc_dsp_click_num"),
+                  cpc_dsp_ctr = x.getAs[Double]("cpc_dsp_ctr"),
+                  cpc_click_num = x.getAs[Int]("cpc_click_num"),
+                  cpc_ctr = x.getAs[Double]("cpc_ctr"),
+                  cpc_dsp_total_price = x.getAs[Double]("cpc_dsp_total_price"),
+                  cpc_total_price = x.getAs[Double]("cpc_total_price"),
+                  cpc_cpm = x.getAs[Double]("cpc_cpm"),
+                  cpc_arpu = x.getAs[Double]("cpc_arpu"))
+          ).toDF()
+          .repartition(1)
           .write
           .mode("overwrite")
           .insertInto("dl_cpc.report_novel_evaluation")
@@ -129,4 +148,19 @@ object NovelEvaluation {
 //        println("insert into report2.report_novel_evaluation_detail success!")
 //        novelEvalDetail.unpersist()
     }
+    case class ReportNovelEvaluation(var show_num:Int = 0,
+                                     var cpc_dsp_show_num:Int = 0,
+                                     var cpc_dsp_rate:Double = 0,
+                                     var cpc_show_num:Int = 0,
+                                     var cpc_rate:Double = 0,
+                                     var click_num:Int = 0,
+                                     var cpc_dsp_click_num:Int = 0,
+                                     var cpc_dsp_ctr:Double = 0,
+                                     var cpc_click_num:Int = 0,
+                                     var cpc_ctr:Double = 0,
+                                     var cpc_dsp_total_price:Double = 0,
+                                     var cpc_total_price:Double = 0,
+                                     var cpc_cpm:Double = 0,
+                                     var cpc_arpu:Double = 0,
+                                     var date:String = "")
 }
