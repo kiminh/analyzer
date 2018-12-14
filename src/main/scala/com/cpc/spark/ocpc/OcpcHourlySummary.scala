@@ -167,7 +167,7 @@ object OcpcHourlySummary {
     val rawData2 = spark.sql(sqlRequest2)
     val data = rawData2
       .union(rawData1)
-      .na.fill(0, Seq("low_cpa_adnum", "high_cpa_adnum", "impression", "click", "conversion", "cost"))
+      .na.fill(0, Seq("total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "impression", "click", "conversion", "cost"))
 
     // 计算其他数据
     //    ctr
