@@ -24,6 +24,7 @@ object OcpcHourlySummary {
     val data = joinData(date, hour, spark)
     val costData = calculateCost(data, date, hour, spark)
     val otherData = calculateData(data, date, hour, spark)
+    data.write.mode("overwrite").saveAsTable("test.ocpc_data_summary20181214")
 
 
     // 关联数据
