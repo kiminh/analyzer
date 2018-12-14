@@ -290,6 +290,9 @@ object FishingBoat {
           val usertype = if (x.ext.contains("usertype")) x.ext.get("usertype").get.int_value else 0
           infoMap += ("usertype" -> usertype.toString)
 
+          //ext_int['exp_style']
+          val exp_style = if(x.ext_int.contains("exp_style")) x.ext_int.get("exp_style").get else 0.toLong
+          infoMap += ("exp_style" -> exp_style.toString)
 
           if (x.exptags.length > 0) {
             val tmpArr = x.exptags.split(",")

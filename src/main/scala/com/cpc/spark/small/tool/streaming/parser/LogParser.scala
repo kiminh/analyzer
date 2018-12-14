@@ -427,6 +427,8 @@ object LogParser {
     val data = Event.parse_show_log(txt)
     if (data != null) {
       val body = data.event
+      val extInt = mutable.Map[String, Long]()
+      extInt.update("exp_style", body.getAd.getStyleId.toLong)
       val ext = mutable.Map[String, ExtValue]()
       ext.update("show_refer", ExtValue(string_value = data.refer))
       ext.update("show_ua", ExtValue(string_value = data.ua))
@@ -448,7 +450,8 @@ object LogParser {
         adslot_type = body.getMedia.getAdslotType.getNumber,
         adsrc = body.getDspInfo.getDsp.getNumber,
         uid = body.getDevice.getUid,
-        ext = ext
+        ext = ext,
+        ext_int = extInt
       )
     }
     log
@@ -599,6 +602,8 @@ object LogParser {
     val data = Event.parse_click_log(txt)
     if (data != null) {
       val event = data.event
+      val extInt = mutable.Map[String, Long]()
+      extInt.update("exp_style", event.getBody.getAd.getStyleId.toLong)
       val (date, hour) = getDateHourFromTime(event.getBody.getEventTimestamp)
       if (event.getBody.getSearchId.length > 0) {
         val body = event.getBody
@@ -665,7 +670,8 @@ object LogParser {
           coin = body.getUserprofile.getCoin,
           interests = interRows.mkString(","),
           adsrc = body.getDspInfo.getDsp.getNumber,
-          ext = ext.toMap
+          ext = ext.toMap,
+          ext_int = extInt
         )
       }
     }
