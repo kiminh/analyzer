@@ -24,7 +24,7 @@ object DNNSample_test {
     spark.udf.register("hashSeq", hashSeq4Hive _)
     val Array(trdate, trpath, tedate, tepath) = args
 
-    val sample = new DNNSampleV6(spark, trdate, trpath, tedate, tepath)
+    val sample = new DNNSample_test(spark, trdate, trpath, tedate, tepath)
     sample.saveTrain()
     //sample.saveTest(gauc = false)
   }
