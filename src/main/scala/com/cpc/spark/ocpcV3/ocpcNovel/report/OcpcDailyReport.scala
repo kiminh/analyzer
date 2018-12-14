@@ -10,11 +10,12 @@ object OcpcDailyReport {
   var mariadb_write_url = ""
   val mariadb_write_prop = new Properties()
   def main(args: Array[String]): Unit = {
-    val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
-
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
+
+    val spark = SparkSession.builder().appName(s"ocpc novel hourly summary: $date, $hour").enableHiveSupport().getOrCreate()
+
 
     val summaryReport = getHourlyReport(date, hour, spark)
     val tableName = "test.ocpcv3_novel_report_summary_hourly"
