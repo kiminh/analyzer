@@ -58,7 +58,7 @@ object Utils {
     print(sql)
 
     spark.sql(sql).repartition(20)
-      .rdd.map(x => (prefix + x.getString(0), Base64.decodeBase64(x.getString(0))))
+      .rdd.map(x => (prefix + x.getString(0), Base64.decodeBase64(x.getString(1))))
       .foreachPartition {
         p => {
           val redis = new RedisClient(conf.getString("ali_redis.host"), conf.getInt("ali_redis.port"))
