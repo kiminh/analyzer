@@ -34,10 +34,11 @@ object OcpcHourlySummary {
       .withColumn("hour", lit(hour))
 
     // 输出数据到hive表
-    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly")
+//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly")
 
     // 输出数据到mysql
-    saveDataSummaryToReport(resultDF, spark)
+//    saveDataSummaryToReport(resultDF, spark)
   }
 
   def joinData(date: String, hour: String, spark: SparkSession) = {
