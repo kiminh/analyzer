@@ -17,11 +17,11 @@ object OcpcDailyReport {
     val hour = args(1).toString
 
     val summaryReport = getHourlyReport(date, hour, spark)
-    val tableName = "dl_cpc.ocpcv3_novel_report_summary_hourly"
-    summaryReport.write.mode("overwrite").insertInto(tableName)
-//    summaryReport.write.mode("overwrite").saveAsTable(tableName)
+    val tableName = "test.ocpcv3_novel_report_summary_hourly"
+//    summaryReport.write.mode("overwrite").insertInto(tableName)
+    summaryReport.write.mode("overwrite").saveAsTable(tableName)
     println(s"successfully save table into $tableName")
-    saveDataToReport(summaryReport, spark)
+//    saveDataToReport(summaryReport, spark)
   }
 
   def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
@@ -37,7 +37,7 @@ object OcpcDailyReport {
          |    SUM(case when is_cpa_ok=1 and is_step2=1 then 1 else 0 end) as low_cpa_adnum,
          |    SUM(case when is_cpa_ok=0 and is_step2=1 then 1 else 0 end) as high_cpa_adnum,
          |    SUM(case when is_step2=1 then cost else 0 end) as step2_cost,
-         |    SUM(case when is_step2=1 and is_cpa_ok=0 then cost else 0 end) as step2_cpa_high_cost,
+         |    SUM(case when is_step2=1 and is_cpa_ok=0 then (cost - cpa_given * conversion * 2) else 0 end) as step2_cpa_high_cost,
          |    SUM(impression) as impression,
          |    SUM(click) as click,
          |    SUM(conversion) as conversion,
@@ -63,7 +63,7 @@ object OcpcDailyReport {
          |    SUM(case when is_cpa_ok=1 and is_step2=1 then 1 else 0 end) as low_cpa_adnum,
          |    SUM(case when is_cpa_ok=0 and is_step2=1 then 1 else 0 end) as high_cpa_adnum,
          |    SUM(case when is_step2=1 then cost else 0 end) as step2_cost,
-         |    SUM(case when is_step2=1 and is_cpa_ok=0 then cost else 0 end) as step2_cpa_high_cost,
+         |    SUM(case when is_step2=1 and is_cpa_ok=0 then (cost - cpa_given * conversion * 2) else 0 end) as step2_cpa_high_cost,
          |    SUM(impression) as impression,
          |    SUM(click) as click,
          |    SUM(conversion) as conversion,
