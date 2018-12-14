@@ -13,6 +13,7 @@ object OcpcHourlySummary {
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
     val hour = args(1).toString
+    val hourInt = hour.toInt
 
     val spark = SparkSession
       .builder()
@@ -24,22 +25,25 @@ object OcpcHourlySummary {
     val data = joinData(date, hour, spark)
     val costData = calculateCost(data, date, hour, spark)
     val otherData = calculateData(data, date, hour, spark)
-    data.write.mode("overwrite").saveAsTable("test.ocpc_data_summary20181214")
+
 
 
     // 关联数据
-    val resultDF = otherData
+    val result = otherData
       .join(costData, Seq("conversion_goal"), "left_outer")
       .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
     // 输出数据到hive表
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly")
-//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly")
 
-    // 输出数据到mysql
-//    saveDataSummaryToReport(resultDF, spark)
+//     输出数据到mysql
+    val resultDF = result
+        .withColumn("hour", lit(hourInt))
+        .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "date", "hour")
+
+    saveDataSummaryToReport(resultDF, spark)
   }
 
   def joinData(date: String, hour: String, spark: SparkSession) = {

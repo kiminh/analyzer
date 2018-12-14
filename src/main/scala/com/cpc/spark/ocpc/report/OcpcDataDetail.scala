@@ -18,12 +18,19 @@ object OcpcDataDetail {
     val date = args(0).toString
     val hour = args(1).toString
 
-    val data = exportHourlyReport(date, hour, spark)
-//    data.write.mode("overwrite").saveAsTable("test.ocpc_detail_report20181505")
+    val result = exportHourlyReport(date, hour, spark)
 //    dl_cpc.ocpc_detail_report_hourly
 //    data.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly")
-    data.write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly")
-    saveDataDetailToReport(data, spark)
+    val data = result
+      .withColumn("hour", lit(hour))
+      .select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "date", "hour")
+
+    data
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_detail_report_hourly")
+
+    saveDataDetailToReport(result, spark)
   }
 
   def exportHourlyReport(date: String, hour: String, spark: SparkSession) = {
