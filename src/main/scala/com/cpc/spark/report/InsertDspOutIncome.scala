@@ -32,15 +32,10 @@ object InsertDspOutIncome {
     Logger.getRootLogger.setLevel(Level.WARN)
 
     val conf = ConfigFactory.load()
-    /*mariadbUrl = conf.getString("mariadb.union_write.url")
+    mariadbUrl = conf.getString("mariadb.union_write.url")
     mariadbProp.put("user", conf.getString("mariadb.union_write.user"))
     mariadbProp.put("password", conf.getString("mariadb.union_write.password"))
-    mariadbProp.put("driver", conf.getString("mariadb.union_write.driver"))*/
-
-    mariadbUrl = "jdbc:mysql://rm-2zef52mz0p6mv5007.mysql.rds.aliyuncs.com:3306/union_test?useUnicode=true&characterEncoding=UTF-8"
-    mariadbProp.put("user", "cpcrw")
-    mariadbProp.put("password", "zZdlz9qUB51awT8b")
-    mariadbProp.put("driver", "org.mariadb.jdbc.Driver")
+    mariadbProp.put("driver", conf.getString("mariadb.union_write.driver"))
 
     val spark = SparkSession.builder()
       .appName("insert dsp_out_income date " + day)
