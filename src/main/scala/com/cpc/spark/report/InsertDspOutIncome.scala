@@ -93,7 +93,7 @@ object InsertDspOutIncome {
       val stmt = conn.createStatement()
       val sql =
         s"""
-           |update union_test.%s
+           |update union.%s
            |set dsp_income = %s,
            |dsp_click = %s,
            |dsp_impression = %s
