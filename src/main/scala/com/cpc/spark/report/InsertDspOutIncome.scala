@@ -93,12 +93,12 @@ object InsertDspOutIncome {
       val stmt = conn.createStatement()
       val sql =
         s"""
-           |update union.%s
+           |update union.dsp_out_income
            |set dsp_income = %s,
            |dsp_click = %s,
            |dsp_impression = %s
            |where `date` = "%s" and dsp_adslot_id = "%s" and ad_src = 22
-      """.stripMargin.format(table, dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
+      """.stripMargin.format(dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
       println("sql" + sql);
       stmt.executeUpdate(sql);
 
