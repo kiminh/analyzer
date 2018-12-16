@@ -48,7 +48,7 @@ class DNNSampleCvr(spark: SparkSession, trdate: String = "", trpath: String = ""
          |  a.hour
          |from
          |  (select *
-         |from dl_cpc.cpc_union_log where `date` = '$date'
+         |from dl_cpc.cpc_novel_union_log where `date` = '$date'
          |  and isclick = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
