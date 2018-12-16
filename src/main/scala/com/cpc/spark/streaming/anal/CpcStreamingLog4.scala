@@ -104,7 +104,7 @@ object CpcStreamingLog4 {
         rdd.foreachPartition { iter =>
           try {
             val o: OffsetRange = offsetRanges(TaskContext.get.partitionId)
-            //OffsetRedis.getOffsetRedis.setTopicAndPartitionOffSet(o.topic, o.partition, o.fromOffset)
+            OffsetRedis.getOffsetRedis.setTopicAndPartitionOffSet(o.topic, o.partition, o.fromOffset)
           } catch {
             case t: Throwable =>
               t.printStackTrace()
