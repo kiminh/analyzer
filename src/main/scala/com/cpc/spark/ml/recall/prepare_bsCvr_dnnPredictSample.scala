@@ -65,20 +65,20 @@ object prepare_bsCvr_dnnPredictSample {
     jdbcProp.put("driver", "com.mysql.jdbc.Driver")
 
     //从adv后台mysql获取人群包的url
-    /**
-    val table="(select id as ideaid, plan_id as planid, user_id as userid, adslot_type, type as adtype, clk_site_id as site_id, category as adclass from adv.idea where status=0 and audit=1) as tmp"
+
+    val table="(select user_id as userid, adslot_type, type as adtype, clk_site_id as site_id, category as adclass from adv.idea where status=0 and audit=1) as tmp"
     val idea = spark.read.jdbc(jdbcUrl, table, jdbcProp).distinct()
     idea.printSchema()
 
     idea.show(5)
-      */
+
     val table1="(select id as unitid, user_id as userid from adv.unit where status = 0) as tmp1"
     val unit = spark.read.jdbc(jdbcUrl, table1, jdbcProp).filter("userid is not null and unitid is not null").distinct()
 
     val table2=s"(select unit_id as unitid from (SELECT unit_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by unit_id) t order by cnt desc limit 100) as tmp2"
     val costTop100 = spark.read.jdbc(jdbcUrl, table2, jdbcProp)
 
-    val unit_info = costTop100.join(unit, Seq("unitid"))
+    val unit_info = costTop100.join(unit, Seq("unitid")).join(idea, Seq("userid"))
 
     val ideaid_hash = unit_info.select(hash("f1")($"adslot_type").alias("f1"),
       //hash("f6")($"adslotid").alias("f6"),
