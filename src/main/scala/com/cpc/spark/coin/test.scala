@@ -75,7 +75,7 @@ object test {
                |    ) b
                |    on a.searchid = b.searchid
                |    group by userid
-               |) c ;
+               |) c
              """.stripMargin
 
         val re = spark.sql(sql)
