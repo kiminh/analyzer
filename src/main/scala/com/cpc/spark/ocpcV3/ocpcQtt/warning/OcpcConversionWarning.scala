@@ -234,19 +234,19 @@ object OcpcConversionWarning {
     val historyCvrData1 = getCvrData(date, 1, spark)
     val historyData1 = historyCtrData1
       .join(historyCvrData1, Seq("ideaid"), "outer")
-      .select("ideaid", "cvr1cnt_total", "cvr2cnt", "cvr2cnt_total")
+      .select("ideaid", "cvr1cnt", "cvr1cnt_total", "cvr2cnt", "cvr2cnt_total")
 
     val historyCtrData2 = getCtrData(date, 2, spark)
     val historyCvrData2 = getCvrData(date, 2, spark)
     val historyData2 = historyCtrData2
       .join(historyCvrData2, Seq("ideaid"), "outer")
-      .select("ideaid", "cvr1cnt_total", "cvr2cnt", "cvr2cnt_total")
+      .select("ideaid", "cvr1cnt", "cvr1cnt_total", "cvr2cnt", "cvr2cnt_total")
 
     val historyCtrData3 = getCtrData(date, 3, spark)
     val historyCvrData3 = getCvrData(date, 3, spark)
     val historyData3 = historyCtrData3
       .join(historyCvrData3, Seq("ideaid"), "outer")
-      .select("ideaid", "cvr1cnt_total", "cvr2cnt", "cvr2cnt_total")
+      .select("ideaid", "cvr1cnt", "cvr1cnt_total", "cvr2cnt", "cvr2cnt_total")
 
     val historyFinalData = historyData1
       .union(historyData2)
