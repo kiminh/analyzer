@@ -46,10 +46,11 @@ object OcpcCPAhistoryV2 {
       .select("unitid", "new_adclass", "cpa1_history_qtt", "cpa2_history_qtt", "cpa1_history_novel", "cpa2_history_novel", "cpa1", "cpa2")
 
     // 按照策略挑选合适的cpa以及确定对应的conversion_goal
+    // TODO
     val result = getResult(data, date, hour, spark)
     val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
-//    result.write.mode("overwrite").saveAsTable(tableName)
-    result.write.mode("overwrite").insertInto(tableName)
+    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
+//    result.write.mode("overwrite").insertInto(tableName)
     println(s"save data into table: $tableName")
 
   }
@@ -66,7 +67,10 @@ object OcpcCPAhistoryV2 {
     calendar.add(Calendar.DATE, -1)
     val start_date = calendar.getTime
     val date1 = sdf.format(start_date)
-    val selectCondition = s"`date`='$date1'"
+    calendar.add(Calendar.DATE, -3)
+    val start_date2 = calendar.getTime
+    val date2 = sdf.format(start_date2)
+    val selectCondition = s"`date` between '$date2' and '$date1'"
 
     // 消费
     val sqlRequest1 =
