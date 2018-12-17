@@ -19,11 +19,13 @@ object OcpcCPAhistory {
     val hour = args(1).toString
 
     val cpaList = calculateCPA(date, hour, spark)
+//    cpaList.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpaList")
     val result = checkCPA(cpaList, date, hour, spark)
 //    dl_cpc.ocpcv3_novel_cpa_history_hourly
+    val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly"
 //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly")
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_cpa_history_hourly")
-    println(s"succesfully save data into table: dl_cpc.ocpcv3_novel_cpa_history_hourly")
+    result.write.mode("overwrite").insertInto(tableName)
+    println(s"succesfully save data into table: $tableName")
   }
 
   def calculateCPA(date: String, hour: String, spark: SparkSession) = {
@@ -32,7 +34,7 @@ object OcpcCPAhistory {
     val end_date = sdf.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(end_date)
-    calendar.add(Calendar.DATE, -7)
+    calendar.add(Calendar.DATE, -1)
     val start_date = calendar.getTime
     val date1 = sdf.format(start_date)
 //    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
@@ -63,7 +65,7 @@ object OcpcCPAhistory {
         sum(col("total_bid")).alias("total_bid"),
         sum(col("ctr_cnt")).alias("ctrcnt"))
     costData.show(10)
-    costData.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_costdata")
+//    costData.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_costdata")
 
     // cvr data
     // cvr1 or cvr3 data
@@ -86,7 +88,7 @@ object OcpcCPAhistory {
       .groupBy("unitid", "adclass")
       .agg(sum(col("cvr1_cnt")).alias("cvr1cnt"))
     cvr1Data.show(10)
-    cvr1Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr1data")
+//    cvr1Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr1data")
 
     // cvr2data
     val sqlRequestCvr2Data =
@@ -108,7 +110,7 @@ object OcpcCPAhistory {
       .groupBy("unitid", "adclass")
       .agg(sum(col("cvr2_cnt")).alias("cvr2cnt"))
     cvr2Data.show(10)
-    cvr2Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr2data")
+//    cvr2Data.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_cvr2data")
 
     // 关联数据
     val resultDF = costData
@@ -127,7 +129,6 @@ object OcpcCPAhistory {
   }
 
   def checkCPA(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    // TODO demo
     // 分别按cvr1和cvr2抽取数据
     // 过滤掉只有一个cvr的数据记录
     // 取alpha的80%分位数
@@ -146,7 +147,8 @@ object OcpcCPAhistory {
       .filter("cvr2cnt>1")
     cvr2Data.createOrReplaceTempView("cvr2_data")
 
-    // TODO adclass cpa
+    // adclass cpa
+    // TODO 考虑使用cost / cvr 来计算平均cpa
     val cvr1AdclassData = cvr1Data
       .groupBy("new_adclass")
       .agg(avg(col("cpa1")).alias("avg_cpa1"))
@@ -182,7 +184,7 @@ object OcpcCPAhistory {
       .select("unitid", "adclass", "cvr1cnt", "alpha1", "avg_bid", "cpa1", "new_adclass", "alpha1_max")
       .withColumn("cpa1_max", col("avg_bid") * col("alpha1_max"))
       .withColumn("cpa1_history", when(col("cpa1")>col("cpa1_max"), col("cpa1_max")).otherwise(col("cpa1")))
-    cvr1Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa1_result_hourly")
+//    cvr1Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa1_result_hourly")
 
     // cvr2
     val sqlRequest2 =
@@ -202,19 +204,19 @@ object OcpcCPAhistory {
       .select("unitid", "adclass", "cvr2cnt", "alpha2", "avg_bid", "cpa2", "new_adclass", "alpha2_max")
       .withColumn("cpa2_max", col("avg_bid") * col("alpha2_max"))
       .withColumn("cpa2_history", when(col("cpa2")>col("cpa2_max"), col("cpa2_max")).otherwise(col("cpa2")))
-    cvr2Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa2_result_hourly")
+//    cvr2Result.write.mode("overwrite").saveAsTable("test.ocpc_cpa2_result_hourly")
 
     // 关联结果
     val result = data
       .join(cvr1Result, Seq("unitid", "adclass"), "left_outer")
       .join(cvr2Result, Seq("unitid", "adclass"), "left_outer")
       .join(adclassCPA, Seq("new_adclass"), "left_outer")
+      .withColumn("conversion_goal", when(col("cpa2_history").isNull, 1).otherwise(2))
       .withColumn("cpa1_history", when(col("alpha1_max").isNull, col("avg_cpa1")).otherwise(col("cpa1_history")))
       .withColumn("cpa2_history", when(col("alpha2_max").isNull, col("avg_cpa2")).otherwise(col("cpa2_history")))
-      .select("unitid", "adclass", "cpa1_history", "cpa2_history")
+      .select("unitid", "adclass", "cpa1_history", "cpa2_history", "conversion_goal")
       .withColumn("cpa1_history", when(col("cpa1_history").isNull, -1).otherwise(col("cpa1_history")))
       .withColumn("cpa2_history", when(col("cpa2_history").isNull, -1).otherwise(col("cpa2_history")))
-      .withColumn("conversion_goal", when(col("cpa2_history") <= 0, 1).otherwise(2))
       .withColumn("cpa_history", when(col("conversion_goal") === 1, col("cpa1_history")).otherwise(col("cpa2_history")))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
 //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_debug")

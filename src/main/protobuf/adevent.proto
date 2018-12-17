@@ -1,0 +1,518 @@
+syntax = "proto3";
+package adevent;
+
+enum ActionType {
+    IMPRESSION = 0;
+    CLICK = 1;
+    CONVERSION = 2;
+    ONSITE_CONVERSION = 3;
+    API_CONVERSION = 4;
+}
+
+enum MediaType {
+    UNKNOWN = 0;
+    APP = 1;
+    WEB = 2;
+    WAP = 3;
+}
+
+enum AdslotType {
+    SLOT_UNKNOWN   = 0;
+    LIST_FEED   = 1;
+    CONTENT_FEED = 2;
+    SLOT_INTERACT = 3;
+    SLOT_SPLASH = 4;
+    SLOT_BANNER = 5;
+    SLOT_VIDEO = 6;
+    SLOT_MOTIVATE = 7;
+};
+
+enum NetworkType {
+    NET_UNKNOWN =	0;
+    NET_WIFI 	= 	1;
+    NET_2G		= 	2;
+    NET_3G		= 	3;
+    NET_4G		=	4;
+};
+
+enum OSType {
+    OS_UNKNOWN = 0;
+    OS_ANDROID = 1;
+    OS_IOS		= 2;
+    OS_WP 		= 3;
+};
+
+enum BrowserType {
+    UnknownBrowser = 0;
+    MQQBrowser = 1;
+    Chrome = 2;
+    UCBrowser = 3;
+    BaiduBrowser = 4;
+    MiuiBrowser = 5;
+    QvodBrowser = 6;
+    IEMobileBrowser = 7;
+    MicroMessenger = 8;
+    QQChat         = 9;
+};
+
+enum DeviceIdType {
+    DEVID_UNKNOWN = 0;
+    DEVID_IMEI = 1;
+    DEVID_MAC  = 2;
+    DEVID_IDFA = 3;
+    DEVID_AAID = 4;
+    DEVID_LSCOOKIE = 5;
+    DEVID_ANDROIDID = 6;
+    DEVID_IMSI = 7;
+    DEVID_TKID = 8;
+};
+
+enum AdType {
+    ADTYPE_UNKNOWN  = 0;
+    TEXT			= 1;
+    IMAGE			= 2;
+    ICON_TEXT 		= 3;
+    THREE_ICON_TEXT	= 4;
+    AD_INTERACT		= 5;
+    AD_SPLASH       = 6;
+    AD_BANNER       = 7;
+    AD_VIDEO        = 8;
+    AD_MOTIVATE     = 9;
+};
+
+enum AdSrc {
+    ADSRC_UNKNOWN = 0;
+    CPC = 1;
+    INMOBI = 2;
+    TANXSSP = 3;
+    BOTTOMINIG = 4; //打底广告
+    HUZHONG = 5;
+    FANCY = 6;
+    GDT = 7;
+    MOBVISTA = 8;
+    VANKA = 9;
+    IFLYTEK = 10;
+    WINQ = 11;
+    VLION = 12;
+    YOUDAO = 13;
+    MOMO = 14;
+    QUYUANSU = 15;
+    TOUTIAO = 16;
+    QIHU = 17;
+    XINGU = 18;
+    GANJIWANG = 19;
+    YOUXIN = 20;
+};
+
+enum InteractionType {
+    NO_INTERACT = 0;
+    SURFING		= 1;
+    DOWNLOAD	= 2;
+    DIALING		= 3;
+    MESSAGE 	= 4;
+    MAIL		= 5;
+    GP			= 6;
+};
+
+enum MaterialLevel {
+    MATERIAL_LEVEL_UNKNOWN = 0;
+    MATERIAL_LEVEL_1 = 1;//很正规
+    MATERIAL_LEVEL_2 = 2;//无敏感词擦边球
+    MATERIAL_LEVEL_3 = 3;//有少量敏感词
+    MATERIAL_LEVEL_4 = 4;//尺度较大
+};
+
+enum ClientType {
+    CLIENT_UNKNOWN 	= 0;
+    NATIVESDK 	= 1;
+    JSSDK 		= 2;
+    OPENAPI		= 3;
+    HZ          = 4;
+    FUN         = 5;
+    QTT         = 6;
+    BOBO        = 7;
+};
+
+message Media {
+    MediaType type 	= 1;
+    string appsid 	= 2;
+    string channelid = 3;
+    AppInfo	app =4;
+    SiteInfo site = 5;
+    uint32 category = 6;
+    string subaccountid = 7;
+    string dtu_id = 8;
+};
+
+message Size {
+    uint32 height = 1;
+    uint32 width  = 2;
+};
+
+message Adslot {
+    string 	id = 1;
+    AdslotType type 	= 2;
+    Size size = 3;
+    uint32 	capacity = 4; //广告位容量
+    uint64 inittime = 5; //js 加载时间
+    uint32 apseq = 6; //轮播的第几次请求
+    string apuid = 7; //前端生成的uid
+    uint32 buildtype = 8;//渲染类型
+    float floorbid = 9; //竞价底价
+    float cpmbid = 10; //出价
+    string channel = 11; //栏目名称
+    int32 pagenum = 12; // 当前页面第几次请求
+    string bookid = 13; // 相同站点不同页面标记
+    int32 discount = 14; //广告位打折值，单位%
+    int32 flooracp = 15; //最低单价
+    int32 exp_style = 16; //实验样式id
+    string exp_feature = 17; //实验功能id
+};
+
+message Network {
+    NetworkType	type = 1;
+    string ip = 2;
+};
+
+message DeviceId {
+    DeviceIdType type = 1;
+    string id = 2;
+    bool original = 3; // 是否是原生的设备ID
+};
+
+message Device {
+    OSType os = 1;
+    Version osversion = 2;
+    repeated DeviceId ids = 3;
+    string brand = 4;
+    string model = 5;
+    bytes useragent = 6;
+    bytes cookie = 7;
+    BrowserType browser = 8;
+    string matchimei = 9;
+    string uid = 10;
+    int32 screen_w = 11;
+    int32 screen_h = 12;
+    string matchidfa = 13;
+    uint32 phoneprice = 14;
+    uint32 phonelevel = 15; // 1 高端 2 中高 3中低 4低端
+    string brand_title = 16; //设备品牌名称
+};
+
+message Client {
+    ClientType type = 1;
+    Version	version = 2;
+    string requestId = 3;
+    bool isValid = 4;
+    string SDK_security_check_version = 5;
+    string security_strategy = 6;//该流量上命中的安全性策略
+};
+
+message Dsp {
+    AdSrc src = 1;
+    string dspmediaid = 2;
+    int32 retAdsNum = 3;
+    int64 timecost = 4;
+    string targetHost = 5;
+    int64 ioTimeCost = 6;
+    int64 materialTime = 7;
+    int64 showFreqTime = 8;
+    int64 reqBsAllTime = 9;
+    int64 blackMediaFilterTime = 10;
+    int64 fixClickTime = 11;
+    string dspadslotid = 12;
+};
+
+message Location {
+    uint32 country = 1;
+    uint32 province = 2;
+    uint32 city = 3;
+    uint32 isp = 4;
+    uint32 city_level = 5;
+    double lnt = 6; // 经度
+    double lat = 7; // 纬度
+    int64 locTime = 8; // 获取经纬度的时间
+}
+
+
+message UserProfile {
+    repeated UserTag tags = 1; // 兴趣点
+    uint32 age = 2; //年龄 0 不限 1 <18,2 18-23,3 24-30，4 31-40，5 41-49，6 50+
+    uint32 sex = 3; //性别 1男 2女 0未知
+    uint32 coin = 4; // 用户金币数
+    uint32 pcategory =5; // 趣头条用户类别
+    uint32 antispam = 6; // 是否是antispam用户
+    uint32 share_coin = 7; // 金币增长数
+    uint32 newuser = 8; // 新老用户 1老用户 2新用户
+    uint32 req_count = 9; //同一用户一天内的请求次数
+    uint32 click_count = 10; //同一用户一天内的点击次数
+    string province = 11; //省份
+    string city = 12; //城市
+    string member_id = 13; //趣头条用户id
+    int32 lx_type = 14; //0 未知, 1 内  2 外
+    int32 lx_package = 15;
+    uint32 long_req_count = 16; //同一用户20天内的请求次数
+    string user_create_time = 17; // 用户注册时间
+    repeated UserTag dmpTags = 18; // 兴趣点
+}
+
+message SiteInfo {
+    string domain = 1;
+    string urls = 2;
+    string title = 3;
+    string config = 4;
+    int64 content_id = 5;
+    int32 category = 6;
+    repeated string key_words_list = 7;
+};
+
+
+message Version {
+    uint32 major = 1;
+    uint32 minor = 2;
+    uint32 micro = 3;
+    uint32 build = 4;
+};
+
+message UserTag {
+    int32 id = 1;
+    int32 score = 2;
+}
+
+message AppInfo {
+    string packagename = 1;
+    string version = 2;
+    string name = 3;
+    int32 versioncode = 4;
+};
+
+message AdInfo {
+    AdType type = 1;
+    AdSrc src  = 2;
+    InteractionType interaction = 3;
+    uint32 ideaid = 4;
+    uint32 unitid = 5;
+    uint32 planid = 6;
+    uint32 userid = 7;
+    uint32 bid = 8;
+    uint32 price = 9;
+    uint64 basectr = 10;
+    uint64 basecpm = 11;
+    uint32 adclass = 12;
+    int32 usertype = 13; // 用户类型 0正常户 1黑五类
+    uint64 expctr = 14; //
+    uint64 expcpm = 15; // 试验cpm
+    uint64 cvr = 16; // cvr * 10^6
+    uint64 cvr_threshold = 17; //cvr_threshold 0-100 客户设置
+    uint64 cvr_thres = 18;// cvr_threshold 真实值*10^6
+    repeated uint32 materialid = 19; //素材id
+    uint32 trigger_type = 20; // 0 默认触发  1兴趣触发
+    int32 discount = 21; //广告最终的提权值，单位%
+    int32 show_count = 22; //记录广告所在单元，在此用户下的一天的显示次数
+    string dsp_media_id = 23; //第三方dsp的媒体id，或appid
+    string dsp_adslot_id = 24; //第三方dsp的广告位id
+    string adid_str = 25; //广告位id的字符串，用于第三方广告源
+    MaterialLevel material_level = 26; // 素材等级
+    int32 click_count = 27; //记录广告所在单元，在此用户下的一天的点击次数
+    int32 long_click_count = 28; //记录广告所在单元，在此用户下总共点击次数
+    uint32 real_bid = 29; //被cvr智能优化后的价格
+    string title = 30; //广告的标题
+    string desc = 31; //广告的描述
+    repeated string img_urls = 32; //广告的图片地址
+    string click_url = 33; //广告点击地址
+    int32 siteid = 34; //建站id，0：非建站
+    uint64 lastcpm = 35; // 最终计算价格的cpm
+    int32 coin = 36; // 激励广告金币数
+    AppInfo app_info = 37; //下载类广告应用信息
+    uint64 cvr_old = 38; // 给cvr1.0和cvr2.0用 cvr * 10^6
+    uint64 raw_ctr = 39; //ml原始ctr
+    uint64 raw_cvr = 40; //ml原始cvr
+    string ctr_model_name = 41;
+    string cvr_model_name = 42;
+    uint64 boost_cpm = 43; //冷启动cpm
+    uint64 is_new_ad = 44; //是否为新广告
+    uint64 boost_win = 45; //是否为通过boost赢得竞价
+    uint32 bid_ocpc = 46; //当启用ocpc时计算出的bid值
+    uint32 is_ocpc = 47; //是否启用ocpc
+    string ocpc_log = 48; //记录ocpc计算中的变量，供ocpc观测使用
+    uint32 ocpc_step = 49; // 标记进行的是ocpc的哪个阶段，0：未启用ocpc，1：第一阶段(cpc计价)，2：第二阶段(ocpc计价)
+    int64 ocpc_bid_update_time = 50; //ocpc出价最后更新时间
+    int64 calc_ocpc_bid_result = 51; //ocpc计价的结果
+    double bid_adjustment = 52; //二价率调整值
+    int32 is_content_category = 53; //是否支持详情页定向广告
+    int32 is_api_callback = 54;
+    int32 conversion_goal = 55; // 转化目标，1.安装，2.激活，3.表单，
+    int32 dynamic_material_type = 56; //动态商品库 1：vip
+    VipDmt vip_dmt = 57; //唯品会动态库参数
+};
+
+message VipDmt {
+    int32 vip_first_category = 1; // vip的类型
+    int64 vip_price = 2; // vip的现价
+    int64 vip_value = 3; // vip的原价
+}
+
+message AdActionEvent {
+    int64  timestamp = 1;
+    string insertionID = 2;  // unique key for each ad insertion
+    string searchID = 3;
+    string uid = 4;       // client user ID (not advertiser ID)
+    map<int32, int32> actionMap = 5;   //action type =>  action num
+
+    int64 searchTimestamp = 6;
+    Media media = 7;
+    Adslot adslot = 8;
+    Device device = 9;
+    AdInfo ad = 10;
+    repeated Dsp dspList = 11; // 请求DSP的信息
+    bool debug = 12;
+    Client client = 13;
+    Network network = 14;
+    repeated string exptags = 15;
+    Location location = 16;
+    string sourceip = 17;
+    uint32 intertype = 18; // 检索接入类型 1 json , 2 proto
+    UserProfile userprofile = 19; // 用户信息
+    repeated uint32 dupplanfilter = 20; // 同一plan过滤
+    repeated uint32 lowcpmfilter = 21; // 低于最低cpm过滤
+    repeated uint32 lowcvrfilter = 22; // 过滤低cvr广告
+    uint64 timecost = 24;
+    bool https = 25; //是否https请求
+    string ctrtarget = 26; // ctr 请求地址
+    repeated uint32 dupuserfilter = 27; // 同一user过滤
+    string dsp_strategy = 28; //命中的dsp分流方案
+    repeated uint32 lowacpfilter = 29; //低于最低单价过滤
+    repeated uint32 zerobid = 30; //过滤价格计算为0广告
+    string	hostname = 31; //as主机名
+    repeated int64 abtest_ids = 32; //abtest id
+    repeated int64 abtest_used_ids = 33; //abtest used id
+    uint32 click_timestamp = 34;
+    Network show_network = 35;
+    Network click_network = 36;
+    string click_ua = 37; //动作发生时的UserAgent
+    Antispam  antispam = 38;  //反作弊信息
+    Extra extra = 39;
+    uint32 show_timestamp = 40;
+    uint32 video_show_time = 41;
+    Charge charge = 42; //计费信息
+    int32 is_fill = 43;
+    int32 is_show = 44;
+    int32 is_click = 45;
+    int32 spam_click = 46; //作弊点击数
+}
+
+message FeatureGroup {
+    map<string, double> namedValue = 1;
+    repeated string strClass = 2;
+    repeated int32 intClass = 3;
+    repeated double vector = 4;
+}
+
+enum ModelType {
+    MTYPE_NONE = 0;
+    MTYPE_CTR = 1;
+    MTYPE_CVR = 2;
+    MYTPE_API_CVR = 3;
+}
+
+message AdScoringEvent {
+    int64 timestamp = 1;
+    string insertionID = 2;  // unique key for each ad insertion
+    int32 userID = 3;
+    int32 ideaID = 4; // various Ad internal ids
+    string uid = 5;
+    string version = 6;
+    ModelType modelType = 7;
+    map<string, FeatureGroup> featureGroups = 100;
+}
+
+message AdTrainingStream {
+    int64  timestamp = 1;
+    string insertionID = 2;  // unique key for each ad insertion
+    AdScoringEvent ase = 3;
+    AdActionEvent aae = 4;   // various Ad internal ids
+}
+
+// 反作弊规则
+enum AntispamRule {
+    DUP_SEARCH_ID   = 0;   // 单次检索多次点击
+    OUT_TIME_SPAN   = 1;   // 超出时间窗口
+    DUP_USER        = 2;   // 用户重复点击
+    NEW_USER_RATE   = 3;   // 新用户比例
+    INVALID_COOKIE  = 4;   // 无效Cookie
+    INVALID_REGION  = 5;   // 无效地域
+    NEW_COOKIE      = 6;   // 新Cookie
+    NO_COOKIE       = 7;   // 缺少Cookie
+    NO_DEVICE_INFO  = 8;   // 缺少设备信息
+    NO_DEVICE_ID    = 9;  // 缺少设备ID
+    ON_MASK         = 10;  // 蒙版点击
+    DUP_IP          = 11;  // IP点击重复
+    JS_CLICK_DELTA  = 12;  // JS点击时间差
+    SAME_POSITION   = 13;  // 同位置点击
+    NO_EXTRA        = 14;  // 缺少Extra信息
+    NO_REFERER      = 15;  // 缺少Referer
+    CK_DISPATCHTIME = 16;  // CK内Dispatch Time校验出错
+    RANDOM          = 17;  // 随机过滤
+    GIFT            = 18;  // 赠送点击
+    BAD_METHOD      = 19;  // 非GET或POST请求
+    SERVER_REQUEST  = 20;  // 服务器请求（通过UA判断）
+    MAX_CTR         = 21;  // CTR阈值
+    DIFF_UA         = 22;  // UA不同
+    MAX_CLICK       = 23;  // 每日最大点击数量
+    TRAIN_MODEL     = 24;  // 模型过滤
+    IP_ISP          = 25;  // ISP过滤
+    IP_BLACK        = 26;  // IP 黑名单过滤
+}
+
+// 反作弊信息
+message Antispam {
+    message Flags {
+        bool   search_click_count_hit_cache = 1;
+        uint32 search_click_count           = 2;
+        bool   device_click_count_hit_cache = 3;
+        uint32 device_click_count           = 4;
+    }
+    uint32       score = 1;  // 得分
+    repeated AntispamRule rules = 2;  // 触发规则
+    Flags        flags = 3;  // 反作弊统计用标记
+    float      predict = 4;  // 反作弊预估的值
+}
+
+message Extra {
+    message Item {
+        uint32 id    = 1;  // 字段ID
+        string value = 2;  // 字段值
+    }
+    repeated Item   unknown       = 1;   // 未知字段
+    uint32 touch_x       = 2;   // 点击坐标X
+    uint32 touch_y       = 3;   // 点击坐标Y
+    uint32 press_time    = 4;   // 按压时间
+    uint32 scroll_num    = 5;   // 滚屏次数
+    uint32 scroll_time   = 6;   // 滚屏时间
+    uint32 width         = 7;   // 广告位实际宽度
+    uint32 height        = 8;   // 广告位实际高度
+    double click_delta   = 9;   // 展现和点击的时间差
+    bool   on_mask       = 10;  // 蒙版事件
+    uint32 dispatch_time = 11;  // CK构造时间
+}
+
+message Charge {
+    ChargeType type               = 1;  // 计费类型
+    uint32     price              = 2;  // 价格
+    bool       success            = 3;  // 计费成功
+    //EventType  trigger_event_type = 4;  // 计费触发事件
+    bool       over_budget        = 5;  // 超预算
+    bool       over_deficit       = 6;  // 超赤字
+    bool       low_balance        = 7;  // 余额不足
+    uint32     cash               = 8;  // 现金消费
+    uint32     coupon             = 9;  // 优惠券消费
+}
+
+// 计费相关
+enum ChargeType {
+CHARGE_FREE = 0;
+CHARGE_CPC  = 1;
+CHARGE_CPM  = 2;
+CHARGE_CPA  = 3;
+}
+
