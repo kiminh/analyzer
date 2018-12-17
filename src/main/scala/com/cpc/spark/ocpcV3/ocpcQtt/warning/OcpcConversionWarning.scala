@@ -15,7 +15,7 @@ object OcpcConversionWarning {
      */
     val date = args(0).toString
 
-    val spark = SparkSession.builder().appName(s"ocpc QTT cvr warning: $date, $hour").enableHiveSupport().getOrCreate()
+    val spark = SparkSession.builder().appName(s"ocpc QTT cvr warning: $date").enableHiveSupport().getOrCreate()
 
     // 比较数据
     val cmp1 = checkCvrNum(date, spark)
