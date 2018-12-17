@@ -88,12 +88,12 @@ object prepare_bsCvr_dnnPredictSample {
       //hash("f10")($"interaction").alias("f10"),
       //hash("f11")($"bid").alias("f11"),
       //hash("f4")($"ideaid").alias("f4"),
-      hash("f5")($"unitid").alias("f4"),
+      hash("f4")($"unitid").alias("f4"),
       //("f6")($"planid").alias("f6"),
-      hash("f7")($"userid").alias("f5"),
+      hash("f5")($"userid").alias("f5"),
       //hash("f16")($"is_new_ad").alias("f16"),
-      hash("f8")($"adclass").alias("f6"),
-      hash("f9")($"site_id").alias("f7"),$"unitid")
+      hash("f6")($"adclass").alias("f6"),
+      hash("f7")($"site_id").alias("f7"),$"unitid")
     ideaid_hash.show(10)
 
     val sql =
@@ -139,15 +139,15 @@ object prepare_bsCvr_dnnPredictSample {
         //hash("f16")($"is_new_ad").alias("f16"),
         //hash("f8")($"adclass").alias("f8"),
         //hash("f9")($"site_id").alias("f9"),
-        hash("f10")($"os").alias("f8"),
+        hash("f8")($"os").alias("f8"),
         //hash("f20")($"network").alias("f20"),
-        hash("f11")($"phone_price").alias("f9"),
-        hash("f12")($"brand").alias("f10"),
-        hash("f13")($"province").alias("f11"),
-        hash("f14")($"city").alias("f12"),
-        hash("f15")($"city_level").alias("f13"),
-        hash("f16")($"uid").alias("f14"),
-        hash("f17")($"age").alias("f15"),
+        hash("f9")($"phone_price").alias("f9"),
+        hash("f10")($"brand").alias("f10"),
+        hash("f11")($"province").alias("f11"),
+        hash("f12")($"city").alias("f12"),
+        hash("f13")($"city_level").alias("f13"),
+        hash("f14")($"uid").alias("f14"),
+        hash("f15")($"age").alias("f15"),
         //hash("f28")($"hour").alias("f28"),
 
         mkSparseFeature_m(array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
