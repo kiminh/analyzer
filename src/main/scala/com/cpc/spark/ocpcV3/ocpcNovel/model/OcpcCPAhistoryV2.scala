@@ -46,11 +46,10 @@ object OcpcCPAhistoryV2 {
       .select("unitid", "new_adclass", "cpa1_history_qtt", "cpa2_history_qtt", "cpa1_history_novel", "cpa2_history_novel", "cpa1", "cpa2")
 
     // 按照策略挑选合适的cpa以及确定对应的conversion_goal
-    // TODO
     val result = getResult(data, date, hour, spark)
     val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
-    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2_bak")
-//    result.write.mode("overwrite").insertInto(tableName)
+//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
+    result.write.mode("overwrite").insertInto(tableName)
     println(s"save data into table: $tableName")
 
   }
