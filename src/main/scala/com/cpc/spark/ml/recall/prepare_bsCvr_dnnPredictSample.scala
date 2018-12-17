@@ -65,34 +65,35 @@ object prepare_bsCvr_dnnPredictSample {
     jdbcProp.put("driver", "com.mysql.jdbc.Driver")
 
     //从adv后台mysql获取人群包的url
+    /**
     val table="(select id as ideaid, plan_id as planid, user_id as userid, adslot_type, type as adtype, clk_site_id as site_id, category as adclass from adv.idea where status=0 and audit=1) as tmp"
     val idea = spark.read.jdbc(jdbcUrl, table, jdbcProp).distinct()
     idea.printSchema()
 
     idea.show(5)
-    val table1="(select id as unitid, ideas from adv.unit where status = 0) as tmp1"
-    val unit = spark.read.jdbc(jdbcUrl, table1, jdbcProp).select($"unitid", explode(split($"ideas", ",")).alias("ideaid")).
-      filter("ideaid is not null").distinct()
+      */
+    val table1="(select id as unitid, user_id as userid from adv.unit where status = 0) as tmp1"
+    val unit = spark.read.jdbc(jdbcUrl, table1, jdbcProp).filter("userid is not null and unitid is not null").distinct()
 
-    val table2=s"(select idea_id as ideaid from (SELECT idea_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by idea_id) t order by cnt desc limit 100) as tmp2"
+    val table2=s"(select unit_id as unitid from (SELECT unit_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by unit_id) t order by cnt desc limit 100) as tmp2"
     val costTop100 = spark.read.jdbc(jdbcUrl, table2, jdbcProp)
 
-    val idea_info = costTop100.join(idea, Seq("ideaid")).join(unit,  Seq("ideaid"))
+    val unit_info = costTop100.join(unit, Seq("unitid"))
 
-    val ideaid_hash = idea_info.select(hash("f1")($"adslot_type").alias("f1"),
+    val ideaid_hash = unit_info.select(hash("f1")($"adslot_type").alias("f1"),
       //hash("f6")($"adslotid").alias("f6"),
       //hash("f2")($"sex").alias("f2"),
       //hash("f8")($"dtu_id").alias("f8"),
       hash("f3")($"adtype").alias("f3"),
       //hash("f10")($"interaction").alias("f10"),
       //hash("f11")($"bid").alias("f11"),
-      hash("f4")($"ideaid").alias("f4"),
-      hash("f5")($"unitid").alias("f5"),
-      hash("f6")($"planid").alias("f6"),
-      hash("f7")($"userid").alias("f7"),
+      //hash("f4")($"ideaid").alias("f4"),
+      hash("f5")($"unitid").alias("f4"),
+      //("f6")($"planid").alias("f6"),
+      hash("f7")($"userid").alias("f5"),
       //hash("f16")($"is_new_ad").alias("f16"),
-      hash("f8")($"adclass").alias("f8"),
-      hash("f9")($"site_id").alias("f9"),$"ideaid")
+      hash("f8")($"adclass").alias("f6"),
+      hash("f9")($"site_id").alias("f7"),$"unitid")
     ideaid_hash.show(10)
 
     val sql =
@@ -138,22 +139,22 @@ object prepare_bsCvr_dnnPredictSample {
         //hash("f16")($"is_new_ad").alias("f16"),
         //hash("f8")($"adclass").alias("f8"),
         //hash("f9")($"site_id").alias("f9"),
-        hash("f10")($"os").alias("f10"),
+        hash("f10")($"os").alias("f8"),
         //hash("f20")($"network").alias("f20"),
-        hash("f11")($"phone_price").alias("f11"),
-        hash("f12")($"brand").alias("f12"),
-        hash("f13")($"province").alias("f13"),
-        hash("f14")($"city").alias("f14"),
-        hash("f15")($"city_level").alias("f15"),
-        hash("f16")($"uid").alias("f16"),
-        hash("f17")($"age").alias("f17"),
+        hash("f11")($"phone_price").alias("f9"),
+        hash("f12")($"brand").alias("f10"),
+        hash("f13")($"province").alias("f11"),
+        hash("f14")($"city").alias("f12"),
+        hash("f15")($"city_level").alias("f13"),
+        hash("f16")($"uid").alias("f14"),
+        hash("f17")($"age").alias("f15"),
         //hash("f28")($"hour").alias("f28"),
 
         mkSparseFeature_m(array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
           $"m11", $"m12", $"m13", $"m14", $"m15",$"m16", $"m17", $"m18", $"m19", $"m20",$"m21", $"m22",$"m23", $"m24",$"m25",$"m26"))
           .alias("sparse"), $"uid"
       ).select(
-      $"f2", $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17",
+      $"f2", $"f8", $"f9", $"f10", $"f11", $"f12", $"f13", $"f14", $"f15",
       $"sparse".getField("_1").alias("idx0"),
       $"sparse".getField("_2").alias("idx1"),
       $"sparse".getField("_3").alias("idx2"),
@@ -167,14 +168,14 @@ object prepare_bsCvr_dnnPredictSample {
     bideaid_hash.show(10)
 
     val result_temp1 = result_temp.crossJoin(bideaid_hash).select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
-        $"f10", $"f11", $"f12", $"f13", $"f14", $"f15", $"f16", $"f17").alias("dense"),
+        $"f10", $"f11", $"f12", $"f13", $"f14", $"f15").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
         $"idx0",
         $"idx1",
         $"idx2",
         $"id_arr",
-        $"uid", $"ideaid"
+        $"uid", $"unitid"
       )//.persist(StorageLevel.DISK_ONLY)
 
     result_temp1.show(10)
@@ -187,9 +188,9 @@ object prepare_bsCvr_dnnPredictSample {
         (x._2, x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
           x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"),
-          x._1.getAs[String]("uid"), x._1.getAs[Long]("ideaid"))
+          x._1.getAs[String]("uid"), x._1.getAs[Long]("unitid"))
       }
-      .toDF("sample_idx", "dense", "idx0", "idx1", "idx2", "id_arr", "uid", "ideaid")
+      .toDF("sample_idx", "dense", "idx0", "idx1", "idx2", "id_arr", "uid", "unitid")
 
   }
 
