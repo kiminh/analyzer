@@ -18,17 +18,17 @@ import scala.sys.process._
   * @version 1.0
   *
   */
-class DNNSample(spark: SparkSession, trDate: String, trPath: String,
-                teDate: String, tePath: String) extends Serializable {
+class DNNSampleV2(spark: SparkSession, trDate: String, trPath: String,
+                  teDate: String, tePath: String, adslotidChoose: String) extends Serializable {
 
-  def saveTrain(p: String = trPath, num_partitions: Int = 1000): Unit = {
+  def saveTrain(p: String = trPath, num_partitions: Int = 1000, adslotidChoose: String): Unit = {
     println("Starting preparing data for train")
 
     /*val st = traindata.sample(withReplacement = true, 0.01).count
 
     println(s"训练数据总量：${st * 100}")*/
 
-    val data = getTrainSample(spark, trDate)
+    val data = getTrainSample(spark, trDate, adslotidChoose)
       .repartition(if (trDate.length == 13) 100 else num_partitions)
 
     data.write
@@ -85,7 +85,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
     * @param date  ：需要准备的训练数据的日期
     * @return
     */
-  def getTrainSample(spark: SparkSession, date: String): DataFrame = {
+  def getTrainSample(spark: SparkSession, date: String, adslotidChoose: String): DataFrame = {
     println("==========================")
     println("YOU MUST OVERWRITE THIS 'getTrainSample' METHOD!!!")
     println("==========================")

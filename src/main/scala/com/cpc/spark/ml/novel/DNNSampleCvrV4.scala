@@ -12,14 +12,14 @@ object DNNSampleCvrV4 {
 
     val Array(trdate, trpath, tedate, tepath,adslotidChoose) = args
 
-    val sample = new DNNSampleCvrV4(spark, trdate, trpath, tedate, tepath)
-    sample.saveTrain(trpath,100)
+    val sample = new DNNSampleCvrV4(spark, trdate, trpath, tedate, tepath, adslotidChoose)
+    sample.saveTrain(trpath,100, adslotidChoose)
   }
 }
 
 class DNNSampleCvrV4(spark: SparkSession, trdate: String = "", trpath: String = "",
-                   tedate: String = "", tepath: String = "")
-  extends DNNSample(spark, trdate, trpath, tedate, tepath) {
+                   tedate: String = "", tepath: String = "", adslotidChoose: String = "")
+  extends DNNSampleV2(spark, trdate, trpath, tedate, tepath, adslotidChoose) {
 
   /**
     * as features：id 类特征的 one hot feature    ====== 前缀 f+index+"#" 如 f0#,f1#,f2#..
@@ -28,12 +28,12 @@ class DNNSampleCvrV4(spark: SparkSession, trdate: String = "", trpath: String = 
     * @param adtype
     * @return
     */
-  private def getAsFeature(date: String, adslotidChoose: Int = 0): DataFrame = {
+  private def getAsFeature(date: String, adslotidChoose: String): DataFrame = {
     import spark.implicits._
     var adslot="ideaid > 0"
-    if(adslotidChoose == 1){
+    if(adslotidChoose == '1'){
       adslot="adslotid in ('7834151','7199174')"
-    }else if (adslotidChoose == 2){
+    }else if (adslotidChoose == '2'){
       adslot="adslotid not in ('7834151','7199174')"
     }
     println(adslot)
@@ -353,7 +353,7 @@ class DNNSampleCvrV4(spark: SparkSession, trdate: String = "", trpath: String = 
     spark.read.parquet("/user/cpc/wy/novel/features/ad")
   }
 
-  override def getTrainSample(spark: SparkSession, date: String, adslotidChoose: Int): DataFrame = {
+  override def getTrainSample(spark: SparkSession, date: String, adslotidChoose: String): DataFrame = {
     import spark.implicits._
 
     var data: DataFrame = null
