@@ -32,6 +32,8 @@ object OperateMySQL {
         val date = args(0)
         val sql = s"delete from report2.report_novel_evaluation where `date` = '$date'"
 
+        println(sql)
+
         del(sql)
     }
 }
