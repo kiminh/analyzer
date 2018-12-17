@@ -24,7 +24,7 @@ object DNNSample_test {
     spark.udf.register("hashSeq", hashSeq4Hive _)
     val Array(trdate, trpath, tedate, tepath) = args
 
-    val sample = new DNNSampleV6(spark, trdate, trpath, tedate, tepath)
+    val sample = new DNNSample_test(spark, trdate, trpath, tedate, tepath)
     sample.saveTrain()
     //sample.saveTest(gauc = false)
   }
@@ -84,7 +84,6 @@ class DNNSample_test(spark: SparkSession, trdate: String = "", trpath: String = 
        |from dl_cpc.cpc_union_log where `date` = '$date'
        |  and isshow = 1 and ideaid > 0 and adslot_type = $adslot_type
        |  and media_appsid in ("80000001", "80000002")
-       |  and adslotid in (7096368,7132208,7034978,7453081,7903746)
        |  and uid not like "%.%"
        |  and uid not like "%000000%"
        |  and length(uid) in (14, 15, 36)
