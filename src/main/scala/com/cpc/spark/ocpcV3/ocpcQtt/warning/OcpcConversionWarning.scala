@@ -61,7 +61,7 @@ object OcpcConversionWarning {
          |LEFT JOIN
          |  (SELECT
          |    searchid,
-         |    label as icvr
+         |    label as iscvr
          |   FROM
            |    dl_cpc.ml_cvr_feature_v2
          |   WHERE
