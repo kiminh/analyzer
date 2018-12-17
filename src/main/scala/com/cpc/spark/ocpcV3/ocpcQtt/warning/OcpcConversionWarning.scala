@@ -154,6 +154,8 @@ object OcpcConversionWarning {
       .select("ideaid", "history_cost", "history_ctrcnt", "history_cvrcnt", "history_cvr", "history_cpa")
 
     // 比较当日数据与历史数据
+    currentData.printSchema()
+    historyData.printSchema()
     val resultDF = currentData
       .join(historyData, Seq("ideaid"), "inner")
       .select("ideaid", "cost", "ctrcnt", "cvrcnt", "cvr", "cpa", "history_cost", "history_ctrcnt", "history_cvrcnt", "history_cvr", "history_cpa")
