@@ -17,11 +17,10 @@ object Save2Redis {
           |1) string to describe data
           |2) key prefix
         """.stripMargin)
-
-      val Array(str, prefix) = args
-
-      Utils.save2Redis(str, prefix)
-
+      System.exit(1)
     }
+    val Array(str, prefix) = args
+    Utils.save2Redis(str, prefix)
+
   }
 }
