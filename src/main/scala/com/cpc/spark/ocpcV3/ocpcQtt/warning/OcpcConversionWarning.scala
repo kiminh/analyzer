@@ -155,9 +155,9 @@ object OcpcConversionWarning {
 
     // 比较当日数据与历史数据
     currentData.printSchema()
-    historyData.printSchema()
+    finalHistoryData.printSchema()
     val resultDF = currentData
-      .join(historyData, Seq("ideaid"), "inner")
+      .join(finalHistoryData, Seq("ideaid"), "inner")
       .select("ideaid", "cost", "ctrcnt", "cvrcnt", "cvr", "cpa", "history_cost", "history_ctrcnt", "history_cvrcnt", "history_cvr", "history_cpa")
       .withColumn("cost_percent", abs(col("cost") - col("history_cost")) * 1.0 / col("history_cost"))
       .withColumn("ctrcnt_percent", abs(col("ctrcnt") - col("history_ctrcnt")) * 1.0 / col("history_ctrcnt"))
