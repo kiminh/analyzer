@@ -1,19 +1,19 @@
-package com.cpc.spark.ml.dnn.cvr
+package com.cpc.spark.ml.dnn.video
 
 import com.cpc.spark.common.Murmur3Hash
 import com.cpc.spark.ml.dnn.DNNSample
-import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.functions.array
 
 /**
-  * 二类电商cvr
-  * created time : 2018/12/05 15:00
+  * 视频广告ctr
+  * created time : 2018/12/7 15:42
   *
   * @author zhj
   * @version 1.0
   *
   */
-object CvrSampleV4 {
+object CtrSampleV4 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
@@ -21,12 +21,12 @@ object CvrSampleV4 {
 
     val Array(trdate, trpath, tedate, tepath) = args
 
-    val sample = new CvrSampleV4(spark, trdate, trpath, tedate, tepath)
+    val sample = new CtrSampleV4(spark, trdate, trpath, tedate, tepath)
     sample.saveTrain()
   }
 }
 
-class CvrSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
+class CtrSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
                   tedate: String = "", tepath: String = "")
   extends DNNSample(spark, trdate, trpath, tedate, tepath) {
 
@@ -37,7 +37,9 @@ class CvrSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
     println(raw_data_path)
 
     spark.read.parquet(raw_data_path)
-      .select($"cvr_label".alias("label"),
+      //TODO: 筛选出视频广告的数据
+      .filter("----------------------------")
+      .select($"label",
         $"uid",
         $"ideaid",
         hash("f0#")($"media_type").alias("f0"),
@@ -77,7 +79,7 @@ class CvrSampleV4(spark: SparkSession, trdate: String = "", trpath: String = "",
         $"label",
         $"uid",
         $"ideaid"
-      )
+      ).repartition(1000, $"uid")
   }
 
   private def getUdFeature(date: String): DataFrame = {

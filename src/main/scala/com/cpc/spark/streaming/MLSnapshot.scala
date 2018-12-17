@@ -32,7 +32,7 @@ object MLSnapshot {
         }
 
         Logger.getRootLogger.setLevel(Level.WARN)
-        val Array(brokers, topics, seconds) = args
+        val Array(brokers, topics, seconds, oldbrokers) = args
         println(args.mkString(" "))
 
         val spark = SparkSession.builder()
@@ -260,7 +260,7 @@ object MLSnapshot {
             val mapString: Seq[(String, String)] = Seq(("Topic", "mlSnapshot_cpc_show_new"))
             val mapFloat: Seq[(String, Float)] = Seq(("ProcessingTime", costTime.toFloat))
             data2Kafka.setMessage(currentBatchEndTime, null, mapFloat, null, mapString)
-            data2Kafka.sendMessage(brokers, cpc_mlsnapshot_warning)
+            data2Kafka.sendMessage(oldbrokers, cpc_mlsnapshot_warning)
             data2Kafka.close()
         }
 
