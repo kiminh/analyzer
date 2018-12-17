@@ -66,7 +66,7 @@ object OcpcCPAhistoryV2 {
     calendar.add(Calendar.DATE, -1)
     val start_date = calendar.getTime
     val date1 = sdf.format(start_date)
-    calendar.add(Calendar.DATE, -3)
+    calendar.add(Calendar.DATE, -2)
     val start_date2 = calendar.getTime
     val date2 = sdf.format(start_date2)
     val selectCondition = s"`date` between '$date2' and '$date1'"
