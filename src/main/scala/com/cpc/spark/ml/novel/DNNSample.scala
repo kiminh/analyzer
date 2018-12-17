@@ -85,7 +85,7 @@ class DNNSample(spark: SparkSession, trDate: String, trPath: String,
     * @param date  ：需要准备的训练数据的日期
     * @return
     */
-  def getTrainSample(spark: SparkSession, date: String): DataFrame = {
+  def getTrainSample(spark: SparkSession, date: String, cvradslotid: Int = 0): DataFrame = {
     println("==========================")
     println("YOU MUST OVERWRITE THIS 'getTrainSample' METHOD!!!")
     println("==========================")

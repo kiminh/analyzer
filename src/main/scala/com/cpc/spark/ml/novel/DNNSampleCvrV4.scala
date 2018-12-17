@@ -10,9 +10,9 @@ object DNNSampleCvrV4 {
       .enableHiveSupport()
       .getOrCreate()
 
-    val Array(trdate, trpath, tedate, tepath) = args
+    val Array(trdate, trpath, tedate, tepath,adslotidChoose) = args
 
-    val sample = new DNNSampleCvr(spark, trdate, trpath, tedate, tepath)
+    val sample = new DNNSampleCvrV4(spark, trdate, trpath, tedate, tepath)
     sample.saveTrain(trpath,100)
   }
 }
@@ -28,8 +28,15 @@ class DNNSampleCvrV4(spark: SparkSession, trdate: String = "", trpath: String = 
     * @param adtype
     * @return
     */
-  private def getAsFeature(date: String): DataFrame = {
+  private def getAsFeature(date: String, adslotidChoose: Int = 0): DataFrame = {
     import spark.implicits._
+    var adslot="ideaid > 0"
+    if(adslotidChoose == 1){
+      adslot="adslotid in ('7834151','7199174')"
+    }else if (adslotidChoose == 2){
+      adslot="adslotid not in ('7834151','7199174')"
+    }
+    println(adslot)
     val as_sql =
       s"""
          |select
@@ -51,7 +58,7 @@ class DNNSampleCvrV4(spark: SparkSession, trdate: String = "", trpath: String = 
          |from dl_cpc.cpc_novel_union_log where `date` = '$date'
          |  and isclick = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
-         |  and adslotid in ('7834151','7199174')
+         |  and '$adslot'
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and length(uid) in (14, 15, 36)
@@ -132,7 +139,7 @@ class DNNSampleCvrV4(spark: SparkSession, trdate: String = "", trpath: String = 
          |  a.hour
          |from
          |  (select *
-         |from dl_cpc.cpc_union_log where `date` = '$date' and hour=$hour
+         |from dl_cpc.cpc_novel_union_log where `date` = '$date' and hour=$hour
          |  and isclick = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
@@ -346,13 +353,13 @@ class DNNSampleCvrV4(spark: SparkSession, trdate: String = "", trpath: String = 
     spark.read.parquet("/user/cpc/wy/novel/features/ad")
   }
 
-  override def getTrainSample(spark: SparkSession, date: String): DataFrame = {
+  override def getTrainSample(spark: SparkSession, date: String, adslotidChoose: Int): DataFrame = {
     import spark.implicits._
 
     var data: DataFrame = null
 
     if (date.length == 10) {
-      data = getAsFeature(date)
+      data = getAsFeature(date,adslotidChoose)
         .join(getUdFeature(date), Seq("uid"), "left")
     }
     else if (date.length == 13) {
