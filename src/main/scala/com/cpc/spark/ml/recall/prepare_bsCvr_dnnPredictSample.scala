@@ -80,7 +80,7 @@ object prepare_bsCvr_dnnPredictSample {
 
     val unit_info = costTop100.join(unit, Seq("unitid")).join(idea, Seq("userid"))
 
-    val ideaid_hash = unit_info.select(hash("f1")($"adslot_type").alias("f1"),
+    val unit_hash = unit_info.select(hash("f1")($"adslot_type").alias("f1"),
       //hash("f6")($"adslotid").alias("f6"),
       //hash("f2")($"sex").alias("f2"),
       //hash("f8")($"dtu_id").alias("f8"),
@@ -94,7 +94,7 @@ object prepare_bsCvr_dnnPredictSample {
       //hash("f16")($"is_new_ad").alias("f16"),
       hash("f6")($"adclass").alias("f6"),
       hash("f7")($"site_id").alias("f7"),$"unitid")
-    ideaid_hash.show(10)
+    unit_hash.show(10)
 
     val sql =
       s"""
@@ -164,10 +164,10 @@ object prepare_bsCvr_dnnPredictSample {
 
     result_temp.show(10)
 
-    val bideaid_hash = broadcast(ideaid_hash).persist(StorageLevel.DISK_ONLY)
-    bideaid_hash.show(10)
+    val bunit_hash = broadcast(unit_hash).persist(StorageLevel.DISK_ONLY)
+    bunit_hash.show(10)
 
-    val result_temp1 = result_temp.crossJoin(bideaid_hash).select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
+    val result_temp1 = result_temp.crossJoin(bunit_hash).select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
         $"f10", $"f11", $"f12", $"f13", $"f14", $"f15").alias("dense"),
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
