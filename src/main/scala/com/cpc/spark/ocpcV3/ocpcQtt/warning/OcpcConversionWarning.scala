@@ -14,7 +14,6 @@ object OcpcConversionWarning {
     2. 单日回传转化中大量转化无法被有效关联
      */
     val date = args(0).toString
-    val hour = args(1).toString
 
     val spark = SparkSession.builder().appName(s"ocpc QTT cvr warning: $date, $hour").enableHiveSupport().getOrCreate()
 
