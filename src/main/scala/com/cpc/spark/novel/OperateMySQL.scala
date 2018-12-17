@@ -29,7 +29,8 @@ object OperateMySQL {
     }
 
     def main(args: Array[String]): Unit = {
-        val sql = "delete from report2.report_novel_evaluation where `date` = '2018-12-12'"
+        val date = args(0)
+        val sql = s"delete from report2.report_novel_evaluation where `date` = '$date'"
 
         del(sql)
     }

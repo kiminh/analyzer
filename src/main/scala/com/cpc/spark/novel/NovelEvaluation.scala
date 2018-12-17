@@ -69,30 +69,19 @@ object NovelEvaluation {
 
         novelEval.show(10)
 
+
+
         novelEval
-//          .rdd
-//          .map(x =>
-//              ReportNovelEvaluation(show_num = x.getAs[Long]("show_num"),
-//                  cpc_dsp_show_num = x.getAs[Long]("cpc_dsp_show_num"),
-//                  cpc_dsp_rate = x.getAs[Double]("cpc_dsp_rate"),
-//                  cpc_show_num = x.getAs[Long]("cpc_show_num"),
-//                  cpc_rate = x.getAs[Double]("cpc_rate"),
-//                  click_num = x.getAs[Long]("click_num"),
-//                  cpc_dsp_click_num = x.getAs[Long]("cpc_dsp_click_num"),
-//                  cpc_dsp_ctr = x.getAs[Double]("cpc_dsp_ctr"),
-//                  cpc_click_num = x.getAs[Long]("cpc_click_num"),
-//                  cpc_ctr = x.getAs[Double]("cpc_ctr"),
-//                  cpc_dsp_total_price = x.getAs[Double]("cpc_dsp_total_price"),
-//                  cpc_total_price = x.getAs[Double]("cpc_total_price"),
-//                  cpc_cpm = x.getAs[Double]("cpc_cpm"),
-//                  cpc_arpu = x.getAs[Double]("cpc_arpu"))
-//          ).toDF()
           .repartition(1)
           .write
           .mode("overwrite")
           .insertInto("dl_cpc.report_novel_evaluation")
 
         println("insert into dl_cpc.report_novel_evaluation success!")
+
+        val novelEvalDelSql = s"delete from report2.report_novel_evaluation where `date` = '$date'"
+
+        OperateMySQL.del(novelEvalDelSql)
 
         val conf = ConfigFactory.load()
         val mariadb_write_prop = new Properties()
@@ -179,24 +168,6 @@ object NovelEvaluation {
         val novelEvalDetail = spark.sql(novelEvalDetailSql).cache()
 
         novelEvalDetail
-//          .rdd
-//          .map(x =>
-//              ReportNovelEvaluationDetail(tag = x.getAs[String]("tag"),
-//                  show_num = x.getAs[Long]("show_num"),
-//                  cpc_dsp_show_num = x.getAs[Long]("cpc_dsp_show_num"),
-//                  cpc_dsp_rate = x.getAs[Double]("cpc_dsp_rate"),
-//                  cpc_show_num = x.getAs[Long]("cpc_show_num"),
-//                  cpc_rate = x.getAs[Double]("cpc_rate"),
-//                  click_num = x.getAs[Long]("click_num"),
-//                  cpc_dsp_click_num = x.getAs[Long]("cpc_dsp_click_num"),
-//                  cpc_dsp_ctr = x.getAs[Double]("cpc_dsp_ctr"),
-//                  cpc_click_num = x.getAs[Long]("cpc_click_num"),
-//                  cpc_ctr = x.getAs[Double]("cpc_ctr"),
-//                  cpc_dsp_total_price = x.getAs[Double]("cpc_dsp_total_price"),
-//                  cpc_total_price = x.getAs[Double]("cpc_total_price"),
-//                  cpc_cpm = x.getAs[Double]("cpc_cpm"),
-//                  cpc_arpu = x.getAs[Double]("cpc_arpu"))
-//          ).toDF()
           .repartition(1)
           .write
           .mode("overwrite")
@@ -204,40 +175,12 @@ object NovelEvaluation {
 
         println("insert into dl_cpc.report_novel_evaluation_detail success!")
 
+        val novelEvalDetailDelSql = s"delete from report2.report_novel_evaluation_detail where `date` = '$date'"
+        OperateMySQL.del(novelEvalDetailDelSql)
+
         novelEvalDetail.write.mode(SaveMode.Append)
           .jdbc(mariadb_write_url, "report2.report_novel_evaluation_detail", mariadb_write_prop)
         println("insert into report2.report_novel_evaluation_detail success!")
         novelEvalDetail.unpersist()
     }
-    case class ReportNovelEvaluation(var show_num:Long = 0,
-                                     var cpc_dsp_show_num:Long = 0,
-                                     var cpc_dsp_rate:Double = 0,
-                                     var cpc_show_num:Long = 0,
-                                     var cpc_rate:Double = 0,
-                                     var click_num:Long = 0,
-                                     var cpc_dsp_click_num:Long = 0,
-                                     var cpc_dsp_ctr:Double = 0,
-                                     var cpc_click_num:Long = 0,
-                                     var cpc_ctr:Double = 0,
-                                     var cpc_dsp_total_price:Double = 0,
-                                     var cpc_total_price:Double = 0,
-                                     var cpc_cpm:Double = 0,
-                                     var cpc_arpu:Double = 0,
-                                     var date:String = "")
-    case class ReportNovelEvaluationDetail(var tag:String = "",
-                                           var show_num:Long = 0,
-                                           var cpc_dsp_show_num:Long = 0,
-                                           var cpc_dsp_rate:Double = 0,
-                                           var cpc_show_num:Long = 0,
-                                           var cpc_rate:Double = 0,
-                                           var click_num:Long = 0,
-                                           var cpc_dsp_click_num:Long = 0,
-                                           var cpc_dsp_ctr:Double = 0,
-                                           var cpc_click_num:Long = 0,
-                                           var cpc_ctr:Double = 0,
-                                           var cpc_dsp_total_price:Double = 0,
-                                           var cpc_total_price:Double = 0,
-                                           var cpc_cpm:Double = 0,
-                                           var cpc_arpu:Double = 0,
-                                           var date:String = "")
 }
