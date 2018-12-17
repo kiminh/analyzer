@@ -21,8 +21,10 @@ object OcpcConversionWarning {
     val cmp1 = checkCvrNum(date, spark)
     val cmp2 = checkCvrUseful(date, spark)
 
-    cmp1.write.mode("overwrite").saveAsTable("test.ocpc_warning_cvr_num_daily")
-    cmp2.write.mode("overwrite").saveAsTable("test.ocpc_warning_cvr_percent_daily")
+//    cmp1.write.mode("overwrite").saveAsTable("test.ocpc_warning_cvr_num_daily")
+//    cmp2.write.mode("overwrite").saveAsTable("test.ocpc_warning_cvr_percent_daily")
+    cmp1.write.mode("overwrite").insertInto("dl_cpc.ocpc_warning_cvr_num_daily")
+    cmp2.write.mode("overwrite").insertInto("dl_cpc.ocpc_warning_cvr_percent_daily")
 
 
   }
