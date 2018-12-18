@@ -173,11 +173,11 @@ object TopCtrIdeaV2 {
             null
           }
       }
-      .filter(x => x != null && x.user_id == 1001028 && x.user_id == 1501897 &&
+      .filter(x => x != null && x.user_id != 1001028 && x.user_id != 1501897 &&
         (
-          (110110100 == x.adclass && isStringCotainsSomeChars(x.title, Seq("千", "万", "十万", "百万", "1000", "10000", "买车", "买房", "暴富", "马云"))) ||
-            (125100100 == x.adclass && isStringCotainsSomeChars(x.title, Seq("千", "万", "十万", "百万", "1000", "10000", "买车", "买房", "暴富", "马云"))) ||
-            (100101109 == x.adclass && isStringCotainsSomeChars(x.title, Seq("提现", "现金", "充值", "真金")))
+          (110110100 != x.adclass && isStringCotainsSomeChars(x.title, Seq("千", "万", "十万", "百万", "1000", "10000", "买车", "买房", "暴富", "马云"))) ||
+            (125100100 != x.adclass && isStringCotainsSomeChars(x.title, Seq("千", "万", "十万", "百万", "1000", "10000", "买车", "买房", "暴富", "马云"))) ||
+            (100101109 != x.adclass && isStringCotainsSomeChars(x.title, Seq("提现", "现金", "充值", "真金")))
           )
       ) //推荐素材去掉test用户 1001028 1501897； 过滤违规关键词
 
