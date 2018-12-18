@@ -770,7 +770,7 @@ object OcpcSampleToRedis {
       .withColumn("cali_value", lit(1.0))
       .withColumn("cvr3_cali", lit(1.0))
       .join(prevTable, Seq("ideaid", "adclass"), "left_outer")
-      .withColumn("k_value_middle", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 5.0).otherwise(col("new_k")))
+      .withColumn("k_value_middle", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 4.0).otherwise(col("new_k")))
       .withColumn("k_value", when(col("flag")===0, col("prev_k")).otherwise(col("k_value_middle")))
 
 
