@@ -405,6 +405,49 @@ object Utils {
   }
 
   /**
+    * sdk栏位下载app的转化数
+    *   1. interaction=2& Sdk栏位(sdk_natvie):
+    * 转化数：trace_op1 = “INCITE_OPEN_SUCCESS”
+    *   2.一级行业为应用下载(100)&SDK栏位：
+    * trace_op1 = “INCITE_OPEN_SUCCESS”
+    *
+    * @param traces
+    * @param version
+    * @return
+    */
+  def cvrPositive_sdk_dlapp(traces: Seq[Row], version: String): Int = {
+
+    var sdk_dlapp = 0
+    var sdk_dlapp_active = 0
+
+    traces.foreach {
+      r =>
+        if ((!r.isNullAt(0)) && (!r.isNullAt(1))){
+          val adclass = r.getAs[Int]("adclass")
+          val client_type = r.getAs[String]("client_type")
+          val interaction = r.getAs[Int]("interaction")
+
+          if ((interaction == 2 && client_type == "NATIVESDK") || ((adclass.toString.length > 3 && adclass.toString.substring(0, 3).toInt == 100) && (client_type == "NATIVESDK"))) {
+            sdk_dlapp = 1
+          }
+
+          var trace_op1 = r.getAs[String]("trace_op1")
+          if (sdk_dlapp > 0 && trace_op1 == "INCITE_OPEN_SUCCESS") {
+            sdk_dlapp_active = 1
+          }
+        }
+    }
+
+    if (sdk_dlapp_active > 0) {
+      1
+    } else {
+      0
+    }
+
+
+  }
+
+  /**
     * 激励下载转化
     *
     * @param traces
