@@ -1,6 +1,10 @@
 package com.cpc.spark.coin
 
-import org.apache.spark.sql.SparkSession
+import java.util.Properties
+
+import com.cpc.spark.novel.OperateMySQL
+import com.typesafe.config.ConfigFactory
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
   * @author Jinbao
@@ -85,6 +89,20 @@ object ReportCoinMetrics {
           .mode("overwrite")
           .insertInto("dl_cpc.cpc_report_coin_ideaid_metrics")
 
+        val conf = ConfigFactory.load()
+        val mariadb_write_prop = new Properties()
+
+        val mariadb_write_url = conf.getString("mariadb.report2_write.url")
+        mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
+        mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
+        mariadb_write_prop.put("driver", conf.getString("mariadb.report2_write.driver"))
+
+        val ideaidMetricsDelSql = s"delete from report2.report_coin_ideaid_metrics where `date` = '$date'"
+        OperateMySQL.del(ideaidMetricsDelSql)
+        ideaidMetrics.write.mode(SaveMode.Append)
+          .jdbc(mariadb_write_url, "report2.report_coin_ideaid_metrics", mariadb_write_prop)
+        println("insert into report2.report_coin_ideaid_metrics success!")
+
         val useridSql =
             s"""
                |select
@@ -155,6 +173,10 @@ object ReportCoinMetrics {
           .mode("overwrite")
           .insertInto("dl_cpc.cpc_report_coin_userid_metrics")
 
-
+        val useridMetricsDelSql = s"delete from report2.report_coin_userid_metrics where `date` = '$date'"
+        OperateMySQL.del(useridMetricsDelSql)
+        useridMetrics.write.mode(SaveMode.Append)
+          .jdbc(mariadb_write_url, "report2.report_coin_userid_metrics", mariadb_write_prop)
+        println("insert into report2.report_coin_userid_metrics success!")
     }
 }
