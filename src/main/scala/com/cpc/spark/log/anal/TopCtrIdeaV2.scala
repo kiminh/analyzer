@@ -174,10 +174,10 @@ object TopCtrIdeaV2 {
           }
       }
       .filter(x => x != null && x.user_id != 1001028 && x.user_id != 1501897 &&
-          (
-          (Seq(110100100, 110110100).contains(x.adclass) && isStringCotainsSomeChars(x.title, Seq("千", "万", "十万", "百万", "1000", "10000", "买车", "买房", "暴富", "马云"))) ||
-          (Seq(125100100).contains(x.adclass) && isStringCotainsSomeChars(x.title, Seq("千", "万", "十万", "百万", "1000", "10000", "买车", "买房", "暴富", "马云"))) ||
-          (Seq(100100100, 100101100, 100101109).contains(x.adclass) && isStringCotainsSomeChars(x.title, Seq("提现", "现金", "充值", "真金")))
+        (
+          (110110100 == x.adclass && isStringCotainsSomeChars(x.title, Seq("千", "万", "十万", "百万", "1000", "10000", "买车", "买房", "暴富", "马云"))) ||
+            (125100100 == x.adclass && isStringCotainsSomeChars(x.title, Seq("千", "万", "十万", "百万", "1000", "10000", "买车", "买房", "暴富", "马云"))) ||
+            (100101109 == x.adclass && isStringCotainsSomeChars(x.title, Seq("提现", "现金", "充值", "真金")))
           )
       ) //推荐素材去掉test用户 1001028 1501897； 过滤违规关键词
 
@@ -358,12 +358,13 @@ object TopCtrIdeaV2 {
   }
 
   def isStringCotainsSomeChars(str: String, seq: Seq[String]): Boolean = {
+    var b: Boolean = false
     for (s <- seq) {
       if (str.contains(s)) {
-        return true
+        b = true
       }
     }
-    return false
+    b
   }
 
   private case class Adinfo(
