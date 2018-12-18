@@ -7,6 +7,7 @@ import com.cpc.spark.ocpc.OcpcUtils._
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions.{col, collect_set, concat_ws, lit}
+import org.apache.spark.ml.feature.OneHotEncoder
 
 import scala.collection.mutable
 
@@ -16,35 +17,29 @@ object OcpcKHourly {
 
     val date = args(0).toString
     val hour = args(1).toString
-    val hourCnt = args(2).toInt
+    val dayCnt = 7
 
     // TODO 分段拟合
-    getK(date, hour, 48, spark)
+    getK(date, hour, dayCnt, spark)
   }
 
-  def getK(date: String, hour: String, hourCnt: Int, spark: SparkSession) = {
+  def getK(date: String, hour: String, dayCnt: Int, spark: SparkSession) = {
     // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -hourCnt)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
-    val selectCondition2 = getTimeRangeSql3(date1, hour1, date, hour)
+    calendar.add(Calendar.DATE, -dayCnt)
+    val start_date = calendar.getTime
+    val date1 = dateConverter.format(start_date)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
+    val selectCondition2 = getTimeRangeSql3(date1, hour, date, hour)
 
     val sqlRequest1 =
       s"""
          |select
          |  ideaid,
-         |  (case when hour < '07' then 't1'
-         |        when hour >= '07' and hour < '18' then 't2'
-         |        else 't3' end) as time_span,
+         |  hour,
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) as k_ratio2,
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5) as k_ratio3,
          |  ocpc_log_dict['cpagiven'] as cpagiven,
@@ -61,16 +56,18 @@ object OcpcKHourly {
          |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $selectCondition) b on a.searchid = b.searchid
          |  left outer join
          |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $selectCondition) c on a.searchid = c.searchid
-         |group by ideaid,
-         |  (case when hour < '07' then 't1'
-         |        when hour >= '07' and hour < '18' then 't2'
-         |        else 't3' end),
+         |group by
+         |  ideaid,
+         |  hour,
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) ,
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5),
          |  ocpc_log_dict['cpagiven']
       """.stripMargin
 
     println(sqlRequest1)
+    val rawData = spark.sql(sqlRequest1)
+    val encoder = new OneHotEncoder()
+
 
     val tablename = "dl_cpc.cpc_ocpc_v2_regression_timespan_middle"
     spark.sql(sqlRequest1)
