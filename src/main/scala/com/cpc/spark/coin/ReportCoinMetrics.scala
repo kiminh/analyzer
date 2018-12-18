@@ -153,6 +153,6 @@ object ReportCoinMetrics {
         ideaidMetrics.repartition(1)
           .write
           .mode("overwrite")
-          .insertInto("dl_cpc.cpc_report_coin_userid_metrics")
+          .insertInto("dl_cpc.cpc_report_coin_ideaid_metrics")
     }
 }
