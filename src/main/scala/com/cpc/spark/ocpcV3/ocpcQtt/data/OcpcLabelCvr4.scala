@@ -10,6 +10,9 @@ object OcpcLabelCvr4 {
 
     val spark = SparkSession.builder().appName(s"ocpc cvr4 label").enableHiveSupport().getOrCreate()
     val result = getLabel(date, hour, spark)
+    result.write.mode("overwrite").saveAsTable("test.ocpcv3_qtt_cvr4_data_hourly")
+//    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_qtt_cvr4_data_hourly")
+    println("successfully save data into table: dl_cpc.ocpcv3_cvr3_data_hourly")
   }
 
   def getLabel(date: String, hour: String, spark: SparkSession) = {
