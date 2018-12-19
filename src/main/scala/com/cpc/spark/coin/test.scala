@@ -17,7 +17,7 @@ object test {
 
         val sql =
             s"""
-               |select '$date' as `date`,
+               |select
                |    userid,
                |    show_num,
                |    coin_show_num,
@@ -26,7 +26,7 @@ object test {
                |    coin_click_num,
                |    round(coin_click_num/click_num, 6) as coin_click_rate,
                |    round(click_num/show_num, 6) as ctr,
-               |    round(coin_click_num/coin_show_num) as coin_ctr,
+               |    round(coin_click_num/coin_show_num, 6) as coin_ctr,
                |    convert_num,
                |    coin_convert_num,
                |    round(coin_convert_num/convert_num,6) ascoin_convert_rate,
@@ -39,7 +39,8 @@ object test {
                |    round(click_total_price*10/click_num,6) as acp,
                |    round(click_total_price*10/uid_num,6) as arpu,
                |    round(show_num/uid_num,6) as aspu,
-               |    round(convert_num*100/uid_num,6) as acpu
+               |    round(convert_num*100/uid_num,6) as acpu,
+               |    '$date' as `date`,
                |from
                |(
                |    select userid,
