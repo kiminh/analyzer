@@ -51,7 +51,7 @@ object report_userprofile_effect {
          |  a.userid,
          |  a.isclick,
          |  a.isshow,
-         |  a.price
+         |  a.price,
          |  a.tag,
          |  a.interests,
          |  b.label2 as iscvr1,
