@@ -94,8 +94,7 @@ object report_userprofile_effect {
          |  tmpTable
          |GROUP BY userid,tag
        """.stripMargin
-    val data = spark.sql(result)
-    data.show()
+    spark.sql(result)
   }
 
 }
