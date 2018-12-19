@@ -4,8 +4,7 @@
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
-queue=root.develop.adhoc.cpc
-#queue=root.production.algo.cpc
+queue=root.cpc.develop
 className=$1
 date=$2
 hour=$3
