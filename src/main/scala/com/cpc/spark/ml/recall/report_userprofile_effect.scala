@@ -91,7 +91,7 @@ object report_userprofile_effect {
          |  SUM(CASE WHEN isshow == 1 and interests like '%' + tag + '=100%' then 1 else 0 end) as showWithTag
          |FROM
          |  tmpTable
-         |GROUP BY userid,GROUP BY userid,tag
+         |GROUP BY userid,tag
        """.stripMargin
     spark.sql(result)
   }
