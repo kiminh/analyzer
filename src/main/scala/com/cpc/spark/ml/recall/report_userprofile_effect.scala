@@ -78,7 +78,7 @@ object report_userprofile_effect {
 
     val result =
       s"""
-         |insert into dl_cpc.cpc_profileTag_report_daily partition(date='$date')
+         |insert into dl_cpc.cpc_profileTag_report_daily partition(`date`='$date')
          |Select
          |  userid,
          |  tag,
