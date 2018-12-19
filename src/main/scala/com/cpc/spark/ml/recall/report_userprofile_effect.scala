@@ -78,7 +78,7 @@ object report_userprofile_effect {
 
     val result =
       s"""
-         |insert into dl_cpc.cpc_profileTag_report_daily partition(`date`='$date')
+         |insert into dl_cpc.cpc_profileTag_report_daily partition (`date`='$date')
          |Select
          |  userid,
          |  tag,
@@ -94,7 +94,8 @@ object report_userprofile_effect {
          |  tmpTable
          |GROUP BY userid,tag
        """.stripMargin
-    spark.sql(result)
+    val data = spark.sql(result)
+    data.show()
   }
 
 }
