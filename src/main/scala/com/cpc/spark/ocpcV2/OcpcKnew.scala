@@ -68,8 +68,10 @@ object OcpcKnew {
          |  (select searchid, label2 as label1 from dl_cpc.ml_cvr_feature_v1 where $dtCondition) b on a.searchid = b.searchid
          |  left outer join
          |  (select searchid, label as label2 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) c on a.searchid = c.searchid
+         |  left outer join
          |  (select searchid, 1 as label3 from dl_cpc.site_form_unionlog where $dtCondition group by searchid) d on a.searchid=d.searchid
-         |group by ideaid,
+         |group by
+         |  ideaid,
          |  round(ocpc_log_dict['kvalue'] * 100.0 / 5),
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5),
          |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5),
