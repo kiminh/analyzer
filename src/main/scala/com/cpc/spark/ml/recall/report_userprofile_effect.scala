@@ -86,7 +86,6 @@ object report_userprofile_effect {
          |  SUM(CASE WHEN isclick == 1 and not interests like '%' + tag + '=100%' then 1 else 0 end) as ctrWithoutTag,
          |  SUM(CASE WHEN (iscvr1 == 1 or iscvr2 == 1) and not interests like '%' + tag + '=100%' then 1 else 0 end) as cvrWithoutTag,
          |  SUM(CASE WHEN isshow == 1 and not interests like '%' + tag + '=100%' then 1 else 0 end) as showWithoutTag,
-         |
          |  SUM(CASE WHEN isclick == 1 and interests like '%' + tag + '=100%' and price is not null then price else 0 end) as costWithTag,
          |  SUM(CASE WHEN isclick == 1 and interests like '%' + tag + '=100%' then 1 else 0 end) as ctrWithTag,
          |  SUM(CASE WHEN (iscvr1 == 1 or iscvr2 == 1) and interests like '%' + tag + '=100%'  then 1 else 0 end) as cvrWithTag,
