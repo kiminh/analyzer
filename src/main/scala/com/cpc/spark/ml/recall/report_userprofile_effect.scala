@@ -75,10 +75,10 @@ object report_userprofile_effect {
 
     // recalculation with groupby of userid and uid
     base.createOrReplaceTempView("tmpTable")
+    //insert into dl_cpc.cpc_profileTag_report_daily partition (`date`='$date')
 
     val result =
       s"""
-         |insert into dl_cpc.cpc_profileTag_report_daily partition (`date`='$date')
          |Select
          |  userid,
          |  tag,
@@ -90,11 +90,10 @@ object report_userprofile_effect {
          |  SUM(CASE WHEN isclick == 1 and interests like '%' + tag + '=100%' then 1 else 0 end) as ctrWithTag,
          |  SUM(CASE WHEN (iscvr1 == 1 or iscvr2 == 1) and interests like '%' + tag + '=100%'  then 1 else 0 end) as cvrWithTag,
          |  SUM(CASE WHEN isshow == 1 and interests like '%' + tag + '=100%' then 1 else 0 end) as showWithTag
-         |FROM
-         |  tmpTable
-         |GROUP BY userid,tag
+         |FROM tmpTable GROUP BY userid,tag
        """.stripMargin
-    spark.sql(result)
+    val data = spark.sql(result)
+    data.show(50)
   }
 
 }
