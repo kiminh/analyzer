@@ -51,7 +51,7 @@ object report_userprofile_effect {
          |  a.searchid,
          |  a.uid,
          |  a.userid,
-         |  a.isclick,
+         |  COALESCE(a.isclick, 0) as isclick,
          |  a.isshow,
          |  COALESCE(a.price, 0) price,
          |  a.tag,
