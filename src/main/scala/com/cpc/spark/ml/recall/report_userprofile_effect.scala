@@ -53,11 +53,11 @@ object report_userprofile_effect {
          |  a.userid,
          |  a.isclick,
          |  a.isshow,
-         |  a.price,
+         |  COALESCE(a.price, 0),
          |  a.tag,
          |  a.interests,
-         |  b.label2 as iscvr1,
-         |  c.label3 as iscvr2
+         |  COALESCE(b.label2, 0) as iscvr1,
+         |  COALESCE(c.label3, 0) as iscvr2
          |from
          |  unionlog_table as a
          |left join
@@ -82,11 +82,11 @@ object report_userprofile_effect {
          |Select
          |  userid,
          |  tag,
-         |  SUM(CASE WHEN isclick == 1 and not interests like '%' + tag + '=100%' and price is not null then price else 0 end) as costWithoutTag,
+         |  SUM(CASE WHEN isclick == 1 and not interests like '%' + tag + '=100%' then price else 0 end) as costWithoutTag,
          |  SUM(CASE WHEN isclick == 1 and not interests like '%' + tag + '=100%' then 1 else 0 end) as ctrWithoutTag,
          |  SUM(CASE WHEN (iscvr1 == 1 or iscvr2 == 1) and not interests like '%' + tag + '=100%' then 1 else 0 end) as cvrWithoutTag,
          |  SUM(CASE WHEN isshow == 1 and not interests like '%' + tag + '=100%' then 1 else 0 end) as showWithoutTag,
-         |  SUM(CASE WHEN isclick == 1 and interests like '%' + tag + '=100%' and price is not null then price else 0 end) as costWithTag,
+         |  SUM(CASE WHEN isclick == 1 and interests like '%' + tag + '=100%' then price else 0 end) as costWithTag,
          |  SUM(CASE WHEN isclick == 1 and interests like '%' + tag + '=100%' then 1 else 0 end) as ctrWithTag,
          |  SUM(CASE WHEN (iscvr1 == 1 or iscvr2 == 1) and interests like '%' + tag + '=100%'  then 1 else 0 end) as cvrWithTag,
          |  SUM(CASE WHEN isshow == 1 and interests like '%' + tag + '=100%' then 1 else 0 end) as showWithTag
