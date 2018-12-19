@@ -3,7 +3,7 @@
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
-queue=root.develop.adhoc.cpc
+queue=root.cpc.develop
 date=$1
 
 jars=(

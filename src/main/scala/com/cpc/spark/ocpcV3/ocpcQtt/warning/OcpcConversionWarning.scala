@@ -21,10 +21,10 @@ object OcpcConversionWarning {
     val cmp1 = checkCvrNum(date, spark)
     val cmp2 = checkCvrUseful(date, spark)
 
-    cmp1.write.mode("overwrite").saveAsTable("test.ocpc_warning_cvr_num_daily")
-    cmp2.write.mode("overwrite").saveAsTable("test.ocpc_warning_cvr_percent_daily")
-//    cmp1.write.mode("overwrite").insertInto("dl_cpc.ocpc_warning_cvr_num_daily")
-//    cmp2.write.mode("overwrite").insertInto("dl_cpc.ocpc_warning_cvr_percent_daily")
+//    cmp1.write.mode("overwrite").saveAsTable("test.ocpc_warning_cvr_num_daily")
+//    cmp2.write.mode("overwrite").saveAsTable("test.ocpc_warning_cvr_percent_daily")
+    cmp1.write.mode("overwrite").insertInto("dl_cpc.ocpc_warning_cvr_num_daily")
+    cmp2.write.mode("overwrite").insertInto("dl_cpc.ocpc_warning_cvr_percent_daily")
 
 
   }
@@ -225,7 +225,7 @@ object OcpcConversionWarning {
     val currentCtrData = getCtrData(date, 0, spark)
     val currentCvrData = getCvrData(date, 0, spark)
     val currentData = currentCtrData
-      .join(currentCvrData, Seq("ideaid"), "outer")
+      .join(currentCvrData, Seq("ideaid"), "left_outer")
       .select("ideaid", "cvr1cnt", "cvr1cnt_total", "cvr2cnt", "cvr2cnt_total")
       .na.fill(0, Seq("cvr1cnt", "cvr1cnt_total", "cvr2cnt", "cvr2cnt_total"))
 
@@ -233,19 +233,19 @@ object OcpcConversionWarning {
     val historyCtrData1 = getCtrData(date, 1, spark)
     val historyCvrData1 = getCvrData(date, 1, spark)
     val historyData1 = historyCtrData1
-      .join(historyCvrData1, Seq("ideaid"), "outer")
+      .join(historyCvrData1, Seq("ideaid"), "left_outer")
       .select("ideaid", "cvr1cnt", "cvr1cnt_total", "cvr2cnt", "cvr2cnt_total")
 
     val historyCtrData2 = getCtrData(date, 2, spark)
     val historyCvrData2 = getCvrData(date, 2, spark)
     val historyData2 = historyCtrData2
-      .join(historyCvrData2, Seq("ideaid"), "outer")
+      .join(historyCvrData2, Seq("ideaid"), "left_outer")
       .select("ideaid", "cvr1cnt", "cvr1cnt_total", "cvr2cnt", "cvr2cnt_total")
 
     val historyCtrData3 = getCtrData(date, 3, spark)
     val historyCvrData3 = getCvrData(date, 3, spark)
     val historyData3 = historyCtrData3
-      .join(historyCvrData3, Seq("ideaid"), "outer")
+      .join(historyCvrData3, Seq("ideaid"), "left_outer")
       .select("ideaid", "cvr1cnt", "cvr1cnt_total", "cvr2cnt", "cvr2cnt_total")
 
     val historyFinalData = historyData1
