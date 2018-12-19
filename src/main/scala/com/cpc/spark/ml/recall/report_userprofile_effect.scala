@@ -53,7 +53,7 @@ object report_userprofile_effect {
          |  a.userid,
          |  a.isclick,
          |  a.isshow,
-         |  COALESCE(a.price, 0),
+         |  COALESCE(a.price, 0) price,
          |  a.tag,
          |  a.interests,
          |  COALESCE(b.label2, 0) as iscvr1,
