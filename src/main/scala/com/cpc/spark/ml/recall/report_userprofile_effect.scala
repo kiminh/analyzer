@@ -31,9 +31,11 @@ object report_userprofile_effect {
          |        where date='$date'
          |        and media_appsid  in ("80000001", "80000002")
          |        and isshow = 1
+         |        and isclick is not null
          |        and ext['antispam'].int_value = 0
          |        and ideaid > 0
          |        and adsrc = 1
+         |        and userid is not null
          |      ) a
          |right join
          |      (select tag, userid from dl_cpc.cpc_tag_userid_all group by tag, userid) b
@@ -80,12 +82,12 @@ object report_userprofile_effect {
          |Select
          |  userid,
          |  tag,
-         |  SUM(CASE WHEN isclick == 1 and not interests like '%' + tag + '=100%' then price else 0 end) as costWithoutTag,
+         |  SUM(CASE WHEN isclick == 1 and not interests like '%' + tag + '=100%' and price is not null then price else 0 end) as costWithoutTag,
          |  SUM(CASE WHEN isclick == 1 and not interests like '%' + tag + '=100%' then 1 else 0 end) as ctrWithoutTag,
          |  SUM(CASE WHEN (iscvr1 == 1 or iscvr2 == 1) and not interests like '%' + tag + '=100%' then 1 else 0 end) as cvrWithoutTag,
          |  SUM(CASE WHEN isshow == 1 and not interests like '%' + tag + '=100%' then 1 else 0 end) as showWithoutTag,
          |
-         |  SUM(CASE WHEN isclick == 1 and interests like '%' + tag + '=100%' then price else 0 end) as costWithTag,
+         |  SUM(CASE WHEN isclick == 1 and interests like '%' + tag + '=100%' and price is not null then price else 0 end) as costWithTag,
          |  SUM(CASE WHEN isclick == 1 and interests like '%' + tag + '=100%' then 1 else 0 end) as ctrWithTag,
          |  SUM(CASE WHEN (iscvr1 == 1 or iscvr2 == 1) and interests like '%' + tag + '=100%'  then 1 else 0 end) as cvrWithTag,
          |  SUM(CASE WHEN isshow == 1 and interests like '%' + tag + '=100%' then 1 else 0 end) as showWithTag
