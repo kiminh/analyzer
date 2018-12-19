@@ -103,7 +103,7 @@ object OcpcRegressionV2 {
       .agg(collect_set("str").as("liststr"))
       .select("unitid", "liststr").collect()
 
-    val targetK = 2.0
+    val targetK = 2.5
     var resList = new mutable.ListBuffer[(String, Double, String, String)]()
     for (row <- res) {
       val unitid = row(0).toString
