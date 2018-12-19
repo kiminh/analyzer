@@ -13,7 +13,7 @@ object report_userprofile_effect {
     cal.add(Calendar.DATE, -1)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
-    var sqlRequest1 =
+    val sqlRequest1 =
       s"""
          | select
          |  a.searchid,
