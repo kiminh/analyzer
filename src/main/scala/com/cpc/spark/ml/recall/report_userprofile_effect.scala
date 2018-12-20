@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.storage.StorageLevel
 
 object report_userprofile_effect {
   def main(args: Array[String]): Unit = {
@@ -42,7 +43,8 @@ object report_userprofile_effect {
          |on a.userid=b.userid
       """.stripMargin
     println(sqlRequest1)
-    val unionlog = spark.sql(sqlRequest1).repartition(5000)
+    val unionlog = spark.sql(sqlRequest1).repartition(5000).persist(StorageLevel.DISK_ONLY)
+    println(unionlog.count())
     unionlog.createOrReplaceTempView("unionlog_table")
 
     val sqlRequest2 =
@@ -71,7 +73,8 @@ object report_userprofile_effect {
        """.stripMargin
 
     println(sqlRequest2)
-    val base = spark.sql(sqlRequest2)
+    val base = spark.sql(sqlRequest2).repartition(5000).persist(StorageLevel.MEMORY_AND_DISK_SER)
+    print("base——count" + base.count())
 
     // recalculation with groupby of userid and uid
     base.createOrReplaceTempView("tmpTable")
@@ -94,6 +97,8 @@ object report_userprofile_effect {
        """.stripMargin
 
     spark.sql(result)
+    unionlog.unpersist()
+    base.unpersist()
   }
 
 }
