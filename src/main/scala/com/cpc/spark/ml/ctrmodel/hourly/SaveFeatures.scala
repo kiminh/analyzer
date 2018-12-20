@@ -45,7 +45,7 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    saveDataFromLog(spark, date, hour)
+    //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
     //saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
     saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr
@@ -888,54 +888,133 @@ object SaveFeatures {
     println("info_flow log", info_flow.count(), info_flow.filter(r => r.getAs[Int]("label2") > 0).count())
 
     val cvrlog = info_flow.join(conv_motivate, info_flow("searhc_id") === conv_motivate("searchid"), "full")
+      .rdd
       .map { r =>
-        val search_id = r.getAs[String]("search_id")
+        var feature = Feature("", 0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0)
+        var search_id = r.getAs[String]("search_id")
         val searchid = r.getAs[String]("searchid")
         if (search_id == null) {
-          (searchid, r.getAs[String]("ideaidid"), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, r.getAs[String]("label_motivate"))
+          //(searchid, r.getAs[Int]("ideaidid"), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, r.getAs[Int]("label_motivate"))
+          feature.searchid = searchid
+          feature.ideaid = r.getAs[Int]("ideaidid")
+          feature.label_motivate = r.getAs[Int]("label_motivate")
         }
         if (searchid == null) {
-          (search_id, r.getAs[String]("search_id"), r.getAs[String]("ideaid_id"), r.getAs[String]("label"),
-            r.getAs[String]("label2"), r.getAs[String]("label_type"), r.getAs[String]("label_sdk_dlapp"),
-            r.getAs[String]("active1"), r.getAs[String]("active2"), r.getAs[String]("active3"),
-            r.getAs[String]("active4"), r.getAs[String]("active5"), r.getAs[String]("active6"),
-            r.getAs[String]("disactive"), r.getAs[String]("active_href"), r.getAs[String]("installed"),
-            r.getAs[String]("report_user_stayinwx"), 0)
+          /*(search_id, r.getAs[Int]("ideaid_id"), r.getAs[Int]("label"),
+            r.getAs[Int]("label2"), r.getAs[Int]("label_type"), r.getAs[Int]("label_sdk_dlapp"),
+            r.getAs[Int]("active1"), r.getAs[Int]("active2"), r.getAs[Int]("active3"),
+            r.getAs[Int]("active4"), r.getAs[Int]("active5"), r.getAs[Int]("active6"),
+            r.getAs[Int]("disactive"), r.getAs[Int]("active_href"), r.getAs[Int]("installed"),
+            r.getAs[Int]("report_user_stayinwx"), 0)*/
+          feature.searchid = search_id
+          feature.ideaid = r.getAs[Int]("ideaid_id")
+          feature.label = r.getAs[Int]("label")
+          feature.label = r.getAs[Int]("label2")
+          feature.label = r.getAs[Int]("label_type")
+          feature.label = r.getAs[Int]("label_sdk_dlapp")
+          feature.label = r.getAs[Int]("active1")
+          feature.label = r.getAs[Int]("active2")
+          feature.label = r.getAs[Int]("active3")
+          feature.label = r.getAs[Int]("active4")
+          feature.label = r.getAs[Int]("active5")
+          feature.label = r.getAs[Int]("active6")
+          feature.label = r.getAs[Int]("disactive")
+          feature.label = r.getAs[Int]("active_href")
+          feature.label = r.getAs[Int]("installed")
+          feature.label = r.getAs[Int]("report_user_stayinwx")
         }
         if (search_id != null && searchid != null) {
-          (search_id, r.getAs[String]("search_id"), r.getAs[String]("ideaid_id"), r.getAs[String]("label"),
-            r.getAs[String]("label2"), r.getAs[String]("label_type"), r.getAs[String]("label_sdk_dlapp"),
-            r.getAs[String]("active1"), r.getAs[String]("active2"), r.getAs[String]("active3"),
-            r.getAs[String]("active4"), r.getAs[String]("active5"), r.getAs[String]("active6"),
-            r.getAs[String]("disactive"), r.getAs[String]("active_href"), r.getAs[String]("installed"),
-            r.getAs[String]("report_user_stayinwx"), r.getAs[String]("label_motivate"))
+          /*(search_id, r.getAs[Int]("ideaid_id"), r.getAs[Int]("label"),
+            r.getAs[Int]("label2"), r.getAs[Int]("label_type"), r.getAs[Int]("label_sdk_dlapp"),
+            r.getAs[Int]("active1"), r.getAs[Int]("active2"), r.getAs[Int]("active3"),
+            r.getAs[Int]("active4"), r.getAs[Int]("active5"), r.getAs[Int]("active6"),
+            r.getAs[Int]("disactive"), r.getAs[Int]("active_href"), r.getAs[Int]("installed"),
+            r.getAs[Int]("report_user_stayinwx"), r.getAs[Int]("label_motivate"))*/
+          feature.searchid = search_id
+          feature.ideaid = r.getAs[Int]("ideaid_id")
+          feature.label = r.getAs[Int]("label")
+          feature.label = r.getAs[Int]("label2")
+          feature.label = r.getAs[Int]("label_type")
+          feature.label = r.getAs[Int]("label_sdk_dlapp")
+          feature.label = r.getAs[Int]("active1")
+          feature.label = r.getAs[Int]("active2")
+          feature.label = r.getAs[Int]("active3")
+          feature.label = r.getAs[Int]("active4")
+          feature.label = r.getAs[Int]("active5")
+          feature.label = r.getAs[Int]("active6")
+          feature.label = r.getAs[Int]("disactive")
+          feature.label = r.getAs[Int]("active_href")
+          feature.label = r.getAs[Int]("installed")
+          feature.label = r.getAs[Int]("report_user_stayinwx")
+          feature.label = r.getAs[Int]("label_motivate")
         }
+        feature
       }
       .toDF("search_id", "idea_id", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
         "disactive", "active_href", "installed", "report_user_stayinwx", "label_motivate")
-      .join(conv_motivate, info_flow("searhc_id") === conv_motivate("searchid"), "full")
+      .join(conv_motivate, info_flow("searhc_id") === conv_motivate("searchid"), "full").rdd
       .map { r =>
+        var feature = Feature("", 0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,  0)
         val search_id = r.getAs[String]("search_id")
         val searchid = r.getAs[String]("searchid")
         if (search_id == null) {
-          (searchid, r.getAs[String]("ideaidid"), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, r.getAs[String]("label_api"))
+          //(searchid, r.getAs[Int]("ideaidid"), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, r.getAs[Int]("label_api"))
+          feature.searchid = searchid
+          feature.ideaid = r.getAs[Int]("ideaidid")
+          feature.label_motivate = r.getAs[Int]("label_api")
         }
         if (searchid == null) {
-          (search_id, r.getAs[String]("search_id"), r.getAs[String]("ideaid_id"), r.getAs[String]("label"),
-            r.getAs[String]("label2"), r.getAs[String]("label_type"), r.getAs[String]("label_sdk_dlapp"),
-            r.getAs[String]("active1"), r.getAs[String]("active2"), r.getAs[String]("active3"),
-            r.getAs[String]("active4"), r.getAs[String]("active5"), r.getAs[String]("active6"),
-            r.getAs[String]("disactive"), r.getAs[String]("active_href"), r.getAs[String]("installed"),
-            r.getAs[String]("report_user_stayinwx"), r.getAs[String]("label_motivate"), 0)
+          /*(search_id, r.getAs[Int]("ideaid_id"), r.getAs[Int]("label"),
+            r.getAs[Int]("label2"), r.getAs[Int]("label_type"), r.getAs[Int]("label_sdk_dlapp"),
+            r.getAs[Int]("active1"), r.getAs[Int]("active2"), r.getAs[Int]("active3"),
+            r.getAs[Int]("active4"), r.getAs[Int]("active5"), r.getAs[Int]("active6"),
+            r.getAs[Int]("disactive"), r.getAs[Int]("active_href"), r.getAs[Int]("installed"),
+            r.getAs[Int]("report_user_stayinwx"), r.getAs[Int]("label_motivate"), 0)*/
+          feature.searchid = search_id
+          feature.ideaid = r.getAs[Int]("ideaid_id")
+          feature.label = r.getAs[Int]("label")
+          feature.label = r.getAs[Int]("label2")
+          feature.label = r.getAs[Int]("label_type")
+          feature.label = r.getAs[Int]("label_sdk_dlapp")
+          feature.label = r.getAs[Int]("active1")
+          feature.label = r.getAs[Int]("active2")
+          feature.label = r.getAs[Int]("active3")
+          feature.label = r.getAs[Int]("active4")
+          feature.label = r.getAs[Int]("active5")
+          feature.label = r.getAs[Int]("active6")
+          feature.label = r.getAs[Int]("disactive")
+          feature.label = r.getAs[Int]("active_href")
+          feature.label = r.getAs[Int]("installed")
+          feature.label = r.getAs[Int]("report_user_stayinwx")
+          feature.label = r.getAs[Int]("label_motivate")
         }
         if (search_id != null && searchid != null) {
-          (search_id, r.getAs[String]("search_id"), r.getAs[String]("ideaid_id"), r.getAs[String]("label"),
-            r.getAs[String]("label2"), r.getAs[String]("label_type"), r.getAs[String]("label_sdk_dlapp"),
-            r.getAs[String]("active1"), r.getAs[String]("active2"), r.getAs[String]("active3"),
-            r.getAs[String]("active4"), r.getAs[String]("active5"), r.getAs[String]("active6"),
-            r.getAs[String]("disactive"), r.getAs[String]("active_href"), r.getAs[String]("installed"),
-            r.getAs[String]("report_user_stayinwx"), r.getAs[String]("label_motivate"), r.getAs[String]("label_api"))
+          /*(search_id, r.getAs[String]("search_id"), r.getAs[Int]("ideaid_id"), r.getAs[Int]("label"),
+            r.getAs[Int]("label2"), r.getAs[Int]("label_type"), r.getAs[Int]("label_sdk_dlapp"),
+            r.getAs[Int]("active1"), r.getAs[Int]("active2"), r.getAs[Int]("active3"),
+            r.getAs[Int]("active4"), r.getAs[Int]("active5"), r.getAs[Int]("active6"),
+            r.getAs[Int]("disactive"), r.getAs[Int]("active_href"), r.getAs[Int]("installed"),
+            r.getAs[Int]("report_user_stayinwx"), r.getAs[Int]("label_motivate"), r.getAs[Int]("label_api"))*/
+          feature.searchid = search_id
+          feature.ideaid = r.getAs[Int]("ideaid_id")
+          feature.label = r.getAs[Int]("label")
+          feature.label = r.getAs[Int]("label2")
+          feature.label = r.getAs[Int]("label_type")
+          feature.label = r.getAs[Int]("label_sdk_dlapp")
+          feature.label = r.getAs[Int]("active1")
+          feature.label = r.getAs[Int]("active2")
+          feature.label = r.getAs[Int]("active3")
+          feature.label = r.getAs[Int]("active4")
+          feature.label = r.getAs[Int]("active5")
+          feature.label = r.getAs[Int]("active6")
+          feature.label = r.getAs[Int]("disactive")
+          feature.label = r.getAs[Int]("active_href")
+          feature.label = r.getAs[Int]("installed")
+          feature.label = r.getAs[Int]("report_user_stayinwx")
+          feature.label = r.getAs[Int]("label_motivate")
+          feature.label = r.getAs[Int]("label_api")
         }
+        feature
       }
       .toDF("searchid", "ideaid", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
         "disactive", "active_href", "installed", "report_user_stayinwx", "label_motivate", "label_api")
@@ -1000,6 +1079,28 @@ object SaveFeatures {
     "(" + dateHourList.mkString(" or ") + ")"
   }
 
+
 }
+
+case class Feature(
+                    var searchid: String = "",
+                    var ideaid: Int = 0,
+                    var label: Int = 0,
+                    var label2: Int = 0,
+                    var label_type: Int = 0,
+                    var label_sdk_dlapp: Int = 0,
+                    var active1: Int = 0,
+                    var active2: Int = 0,
+                    var active3: Int = 0,
+                    var active4: Int = 0,
+                    var active5: Int = 0,
+                    var active6: Int = 0,
+                    var disactive: Int = 0,
+                    var active_href: Int = 0,
+                    var installed: Int = 0,
+                    var report_user_stayinwx: Int = 0,
+                    var label_motivate: Int = 0,
+                    var label_ap: Int = 0
+                  )
 
 
