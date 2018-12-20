@@ -886,7 +886,7 @@ object SaveFeatures {
 
     println("info_flow log", info_flow.count(), info_flow.filter(r => r.getAs[Int]("label2") > 0).count())
 
-    val cvrlog = info_flow.join(conv_motivate, info_flow("searhc_id") === conv_motivate("searchid"), "full")
+    val cvrlog = info_flow.join(conv_motivate, info_flow("search_id") === conv_motivate("searchid") && info_flow("idea_id") === conv_motivate("ideaid"), "full")
       .rdd
       .map { r =>
         var feature = Feature("", 0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0)
@@ -951,7 +951,7 @@ object SaveFeatures {
       }
       .toDF("search_id", "idea_id", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
         "disactive", "active_href", "installed", "report_user_stayinwx", "label_motivate")
-      .join(conv_motivate, info_flow("searhc_id") === conv_motivate("searchid"), "full")
+      .join(conv_motivate, info_flow("search_id") === conv_motivate("searchid") && info_flow("idea_id") === conv_motivate("ideaid"), "full")
       .rdd
       .map { r =>
         var feature = Feature("", 0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,  0)
