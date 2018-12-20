@@ -13,8 +13,10 @@ object OcpcUnionlogNovel {
     val hour = args(1).toString
 
     val result = getOcpcUnionlog(date, hour, spark)
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_unionlog_label_hourly")
-    println("successfully save data into table: dl_cpc.ocpcv3_unionlog_label_hourly")
+    val tableName = "test.ocpcv3_unionlog_label_hourly_v2"
+    result.write.mode("overwrite").saveAsTable(tableName)
+//    result.write.mode("overwrite").insertInto(tableName)
+    println(s"successfully save data into table: $tableName")
   }
 
   def getOcpcUnionlog(date: String, hour: String, spark: SparkSession) = {
@@ -28,6 +30,7 @@ object OcpcUnionlogNovel {
          |    uid,
          |    ideaid,
          |    unitid,
+         |    adslotid,
          |    price,
          |    bid,
          |    userid,
@@ -69,44 +72,11 @@ object OcpcUnionlogNovel {
          |  label2=1
        """.stripMargin
     println(sqlRequest2)
-    val labelData1 = spark.sql(sqlRequest2).distinct()
-
-    // cvr2: api回传类
-    val sqlRequest3 =
-      s"""
-         |SELECT
-         |  searchid,
-         |  1 as iscvr2
-         |FROM
-         |  dl_cpc.ml_cvr_feature_v2
-         |WHERE
-         |  where $selectWhere
-         |AND
-         |  label=1
-       """.stripMargin
-    println(sqlRequest3)
-    val labelData2 = spark.sql(sqlRequest3).distinct()
-
-    // 表单类
-    val sqlRequest4 =
-      s"""
-         |SELECT
-         |  searchid,
-         |  1 as iscvr3
-         |FROM
-         |  dl_cpc.ml_cvr_feature_v1
-         |WHERE
-         |  where $selectWhere
-         |AND
-         |  label2=1
-       """.stripMargin
-    println(sqlRequest4)
-    val labelData3 = spark.sql(sqlRequest4).distinct()
+    val labelData = spark.sql(sqlRequest2).distinct()
 
     val resultDF = rawData
-      .join(labelData1, Seq("searchid"), "left_outer")
-      .join(labelData2, Seq("searchid"), "left_outer")
-      .join(labelData3, Seq("searchid"), "left_outer")
+      .join(labelData, Seq("searchid"), "left_outer")
+      .select("searchid", "uid", "ideaid", "unitid", "adslotid", "price", "bid", "userid", "media_appsid", "adclass", "exp_cvr", "isclick", "isshow", "exptags string", "is_api_callback", "cpa_given", "ocpc_log", "ocpc_log_dict", "iscvr1")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 

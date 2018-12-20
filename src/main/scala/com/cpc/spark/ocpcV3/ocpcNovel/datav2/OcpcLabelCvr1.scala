@@ -12,8 +12,10 @@ object OcpcLabelCvr1 {
     val hour = args(1).toString
 
     val result = getLabel(date, hour, spark)
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr1_data_hourly")
-    println("successfully save data into table: dl_cpc.ocpcv3_cvr1_data_hourly")
+    val tableName = "test.ocpcv3_cvr1_data_hourly_v2"
+    result.write.mode("overwrite").saveAsTable(tableName)
+//    result.write.mode("overwrite").insertInto(tableName)
+    println(s"successfully save data into table: $tableName")
   }
 
   def getLabel(date: String, hour: String, spark: SparkSession) = {
@@ -43,7 +45,6 @@ object OcpcLabelCvr1 {
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)
-         |and ext_int['is_api_callback']!=1
       """.stripMargin
     println(sqlRequest1)
     val rawData = spark.sql(sqlRequest1)
