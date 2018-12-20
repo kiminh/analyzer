@@ -700,8 +700,7 @@ object SaveFeatures {
     /* 没有api回传标记，直接上报到trace */
     val sql_api_callback =
       s"""
-         |select tr.trace_type as flag1
-         |      ,tr.searchid
+         |select tr.searchid
          |      ,un.userid
          |      ,un.uid
          |      ,un.ideaid
@@ -724,8 +723,8 @@ object SaveFeatures {
     /* 应用商城api转化 */
     val sql_api_moti =
       s"""
-         |select tr.trace_type as flag1
-         |      ,tr.searchid
+         |select
+         |       tr.searchid
          |      ,un.userid
          |      ,un.uid
          |      ,un.ideaid
@@ -755,7 +754,7 @@ object SaveFeatures {
        """.stripMargin.format(date, hour, get3DaysBefore(date, hour), yesterday)
     println("sql_api_moti: " + sql_api_moti)
 
-    val userApiBackRDD = (spark.sql(sql_api)).union(spark.sql(sql_api)).union(spark.sql(sql_api_moti))
+    val userApiBackRDD = (spark.sql(sql_api)).union(spark.sql(sql_api_callback)).union(spark.sql(sql_api_moti))
       .rdd
       .map {
         x =>
@@ -952,7 +951,8 @@ object SaveFeatures {
       }
       .toDF("search_id", "idea_id", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
         "disactive", "active_href", "installed", "report_user_stayinwx", "label_motivate")
-      .join(conv_motivate, info_flow("searhc_id") === conv_motivate("searchid"), "full").rdd
+      .join(conv_motivate, info_flow("searhc_id") === conv_motivate("searchid"), "full")
+      .rdd
       .map { r =>
         var feature = Feature("", 0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,  0)
         val search_id = r.getAs[String]("search_id")
