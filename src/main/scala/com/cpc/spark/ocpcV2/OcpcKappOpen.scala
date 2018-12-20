@@ -25,7 +25,7 @@ object OcpcKappOpen {
     val cal = Calendar.getInstance()
     cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0)
     // todo  reset the observation window
-    for (t <- 0 to 72) {
+    for (t <- 0 to 48) {
       if (t > 0) {
         cal.add(Calendar.HOUR, -1)
       }
