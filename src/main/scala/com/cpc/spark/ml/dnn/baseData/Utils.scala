@@ -1,5 +1,7 @@
 package com.cpc.spark.ml.dnn.baseData
 
+import java.io.File
+
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.commons.codec.binary.Base64
@@ -44,6 +46,12 @@ object Utils {
       .rdd.map(x => Base64.decodeBase64(x.getString(0)))
       .map(x => (new BytesWritable(x), NullWritable.get()))
       .saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)
+
+    //保存count文件
+    val count = spark.sql(sql).count
+    s"echo $count" #> new File("count") !
+
+    s"hadoop fs -put count $path" !
   }
 
   //保存multihot特征到redis
