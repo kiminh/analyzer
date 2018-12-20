@@ -101,7 +101,7 @@ object userAdBehaviorFeature {
         hashSeq("m23", "int")($"r_adclass_4_7").alias("m23")
       )
     val day = getDay(date, 1)
-    ud_features.coalesce(50).write.mode("overwrite")
+    ud_features.repartition(100).write.mode("overwrite")
       .parquet(s"/user/cpc/features/adBehaviorFeature/$day")
   }
   /**
