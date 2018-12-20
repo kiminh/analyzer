@@ -13,6 +13,9 @@ import org.apache.spark.sql.functions._
 import com.cpc.spark.udfs.Udfs_wj._
 
 object OcpcKnew {
+  /*
+  OcpcK的升级：增加对二类电商的专门回归模型支持
+   */
 
   def main(args: Array[String]): Unit = {
 
