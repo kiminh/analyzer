@@ -74,7 +74,7 @@ object userAdBehaviorFeature {
     println(ud_sql2)
     println("-------------------------------------------------")
 
-    val ud_features = spark.sql(ud_sql1)
+    val ud_features = spark.sql(ud_sql1).repartition(5000)
       //.join(spark.sql(ud_sql2), Seq("uid"), "outer")
       .select($"uid",
         hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
