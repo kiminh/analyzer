@@ -59,7 +59,7 @@ object OcpcKappOpen {
          |from
          |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1) a
          |  left outer join
-         |  (select searchid, label_sdk_dlapp as label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition where label_sdk_dlapp=1) b on a.searchid = b.searchid
+         |  (select searchid, label_sdk_dlapp as label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition and label_sdk_dlapp=1) b on a.searchid = b.searchid
          |  left outer join
          |  (select searchid, label as label3 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) c on a.searchid = c.searchid
          |group by ideaid,
