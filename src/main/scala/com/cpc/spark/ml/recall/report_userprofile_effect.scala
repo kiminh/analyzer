@@ -37,7 +37,7 @@ object report_userprofile_effect {
          |        and adsrc = 1
          |        and userid is not null
          |      ) a
-         |right join
+         |join
          |      (select tag, userid from dl_cpc.cpc_tag_userid_all group by tag, userid) b
          |on a.userid=b.userid
       """.stripMargin
