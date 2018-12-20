@@ -48,6 +48,7 @@ object OcpcCheckData {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    data.write.mode("overwrite").saveAsTable("test.ocpc_check_ideaid_ctr20181220_hourly_bak")
+//    data.write.mode("overwrite").saveAsTable("test.ocpc_check_ideaid_ctr20181220_hourly_bak")
+    data.write.mode("overwrite").insertInto("test.ocpc_check_ideaid_ctr20181220_hourly")
   }
 }
