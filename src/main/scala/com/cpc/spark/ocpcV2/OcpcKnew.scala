@@ -98,6 +98,7 @@ object OcpcKnew {
       .withColumn("hour", lit(hour))
 
 
+
     data.write.mode("overwrite").saveAsTable(tablename)
 //    data.write.mode("overwrite").insertInto(tablename)
 
@@ -109,7 +110,7 @@ object OcpcKnew {
       .join(ratio2Data, Seq("ideaid", "date", "hour"), "outer")
       .join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3", "date", "hour")
-        res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k_new")
+    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k_new")
 //    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k_new")
 
   }
