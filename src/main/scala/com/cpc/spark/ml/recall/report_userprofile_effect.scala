@@ -13,6 +13,8 @@ object report_userprofile_effect {
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -1)
     val date = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
+    cal.add(Calendar.DATE, -179)
+    val date1 = new SimpleDateFormat("yyyy-MM-dd").format(cal.getTime)
 
     val sqlRequest1 =
       s"""
@@ -39,7 +41,7 @@ object report_userprofile_effect {
          |        and userid is not null
          |      ) a
          |join
-         |      (select tag, userid from dl_cpc.cpc_tag_userid_all group by tag, userid) b
+         |      (select tag, userid from dl_cpc.cpc_tag_userid_all where thedate>'$date1' group by tag, userid) b
          |on a.userid=b.userid
       """.stripMargin
     println(sqlRequest1)
