@@ -138,7 +138,7 @@ object UserBehaviorCvrBS {
     spark.sql(
       s"""
          |alter table dl_cpc.cpc_user_behaviors_recall_cvr add partition(load_date='$date')
-         |location '/warehouse/dl_cpc.db/cpc_user_behaviors_recall_cvr/load_date='$date'
+         |location '/warehouse/dl_cpc.db/cpc_user_behaviors_recall_cvr/load_date=$date'
       """.stripMargin)
 
     //汇总三天数据
