@@ -444,7 +444,7 @@ object SaveFeatures {
           (x._1, active_third, uid, userid, ideaid, search_time, adclass, media_appsid, planid, unitid)
       }
       .filter(x => x._2 != -1) //过滤空值
-      .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time","adclass", "media_appsid", "planid", "unitid")
+      .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time", "adclass", "media_appsid", "planid", "unitid")
 
     println("user api back: " + userApiBackRDD.count())
 
@@ -541,7 +541,7 @@ object SaveFeatures {
         x =>
           val convert = Utils.cvrPositiveV(x._2, version)
           val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version) //新cvr
-          val convert_sdk_dlapp = Utils.cvrPositive_sdk_dlapp(x._2, version) //sdk栏位下载app的转化数
+        val convert_sdk_dlapp = Utils.cvrPositive_sdk_dlapp(x._2, version) //sdk栏位下载app的转化数
 
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
@@ -621,7 +621,7 @@ object SaveFeatures {
       """.stripMargin.format(date, hour, date, hour)) // //
 
     //输出标记文件
-    s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !  //
+    s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" ! //
 
   }
 
