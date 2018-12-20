@@ -43,7 +43,7 @@ object report_userprofile_effect {
          |on a.userid=b.userid
       """.stripMargin
     println(sqlRequest1)
-    val unionlog = spark.sql(sqlRequest1).repartition(5000).persist(StorageLevel.DISK_ONLY)
+    val unionlog = spark.sql(sqlRequest1).repartition(10000).persist(StorageLevel.DISK_ONLY)
     println(unionlog.count())
     unionlog.createOrReplaceTempView("unionlog_table")
 
@@ -73,7 +73,7 @@ object report_userprofile_effect {
        """.stripMargin
 
     println(sqlRequest2)
-    val base = spark.sql(sqlRequest2).repartition(5000).persist(StorageLevel.MEMORY_AND_DISK_SER)
+    val base = spark.sql(sqlRequest2).repartition(10000).persist(StorageLevel.MEMORY_AND_DISK_SER)
     print("base——count" + base.count())
 
     // recalculation with groupby of userid and uid
