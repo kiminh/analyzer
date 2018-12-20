@@ -40,7 +40,7 @@ object OcpcCheckData {
          |and isshow=1
          |and adslot_type in (1,2,3)
          |and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
-         |and ideaid in (2450708,2450542,2450447,2432700,2374508,2442830);
+         |and ideaid in (2450708,2450542,2450447,2432700,2374508,2442830)
        """.stripMargin
     println(sqlRequest)
     val data = spark
