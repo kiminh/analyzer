@@ -58,12 +58,27 @@ object OcpcKexp {
       .join(kv2, Seq("ideaid"), "outer")
       .join(expIdeas, Seq("ideaid"), "left_outer")
       .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "flag", "conversion_goal")
-      .withColumn("k_ratio2", when(col("flag") === 1 && col("conversion_goal") === 1, col("k_ratio2_v2")).otherwise(col("k_ratio2_v1")))
+      .withColumn("k_ratio2", when(col("flag") === 1 && col("conversion_goal") < 3, col("k_ratio2_v2")).otherwise(col("k_ratio2_v1")))
       .withColumn("k_ratio3", when(col("flag") === 1, col("k_ratio3_v2")).otherwise(col("k_ratio3_v1")))
 
-    kvalue.write.mode("overwrite").saveAsTable("test.ocpc_k_exp_middle_hourly")
+    kvalue
+      .select("k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "flag", "k_ratio2", "k_ratio3")
+      .write.mode("overwrite")
+      .saveAsTable("test.ocpc_k_exp_middle_hourly_bak")
+
+    kvalue
+      .write.mode("overwrite")
+      .saveAsTable("test.ocpc_k_exp_middle_hourly")
+//    k_ratio2_v1     double  NULL
+//    k_ratio3_v1     double  NULL
+//    k_ratio2_v2     double  NULL
+//    k_ratio3_v2     double  NULL
+//    flag    int     NULL
+//    k_ratio2        double  NULL
+//    k_ratio3        double  NULL
 
 //    kvalue
+//      .select("k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "flag", "k_ratio2", "k_ratio3")
 //      .withColumn("date", lit(date))
 //      .withColumn("hour", lit(hour))
 //      .write
