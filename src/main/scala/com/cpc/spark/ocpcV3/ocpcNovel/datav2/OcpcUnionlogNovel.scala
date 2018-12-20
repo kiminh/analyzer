@@ -40,7 +40,6 @@ object OcpcUnionlogNovel {
          |    isclick,
          |    isshow,
          |    exptags,
-         |    ext_int['is_api_callback'] as is_api_callback,
          |    ext_int['bid_ocpc'] as cpa_given,
          |    ext_string['ocpc_log'] as ocpc_log
          |from dl_cpc.cpc_union_log
@@ -76,7 +75,7 @@ object OcpcUnionlogNovel {
 
     val resultDF = rawData
       .join(labelData, Seq("searchid"), "left_outer")
-      .select("searchid", "uid", "ideaid", "unitid", "adslotid", "price", "bid", "userid", "media_appsid", "adclass", "exp_cvr", "isclick", "isshow", "exptags string", "is_api_callback", "cpa_given", "ocpc_log", "ocpc_log_dict", "iscvr1")
+      .select("uid", "ideaid", "unitid", "price", "bid", "userid", "media_appsid", "adclass", "exp_cvr", "isclick", "isshow", "exptags", "cpa_given", "ocpc_log", "ocpc_log_dict", "iscvr1")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
