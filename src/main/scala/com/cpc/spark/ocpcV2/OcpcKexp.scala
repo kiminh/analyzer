@@ -14,8 +14,8 @@ object OcpcKexp {
 
     val result = selectKbyEXP(date, hour, spark)
     val tableName = "ocpc_regression_k_final"
-//    result.write.mode("overwrite").saveAsTable("test." + tableName)
-    result.write.mode("overwrite").insertInto("dl_cpc." + tableName)
+    result.write.mode("overwrite").saveAsTable("test." + tableName)
+//    result.write.mode("overwrite").insertInto("dl_cpc." + tableName)
     println(s"save data into table: $tableName")
   }
 
@@ -23,12 +23,21 @@ object OcpcKexp {
     import spark.implicits._
 
     val selectCondition = s"`date`='$date' and `hour`='$hour'"
-    val kv1 = spark
-      .table("dl_cpc.ocpc_v2_k")
+
+    val ocpcConversionGoal = spark.table("test.ocpc_idea_update_time_" + hour)
+    val kv1Raw = spark
+      .table("dl_cpc.ocpc_v2_k_new")
       .where(selectCondition)
-      .withColumn("k_ratio2_v1", col("k_ratio2"))
-      .withColumn("k_ratio3_v1", col("k_ratio3"))
-      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1")
+      .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3")
+
+    val kv1 = kv1Raw
+      .join(ocpcConversionGoal, Seq("ideaid"), "left_outer")
+      .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3", "conversion_goal")
+      .withColumn("k2", when(col("conversion_goal").isNotNull && col("conversion_goal")===3, col("k_ratio3")).otherwise(col("k_ratio1")))
+      .withColumn("k3", col("k_ratio2"))
+      .withColumn("k_ratio2_v1", col("k2"))
+      .withColumn("k_ratio3_v1", col("k3"))
+      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "conversion_goal")
 
     val kv2 = spark
       .table("dl_cpc.ocpc_regression_k")
@@ -48,16 +57,18 @@ object OcpcKexp {
     val kvalue = kv1
       .join(kv2, Seq("ideaid"), "outer")
       .join(expIdeas, Seq("ideaid"), "left_outer")
-      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "flag")
-      .withColumn("k_ratio2", when(col("flag") === 1, col("k_ratio2_v2")).otherwise(col("k_ratio2_v1")))
+      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "flag", "conversion_goal")
+      .withColumn("k_ratio2", when(col("flag") === 1 && col("conversion_goal") === 1, col("k_ratio2_v2")).otherwise(col("k_ratio2_v1")))
       .withColumn("k_ratio3", when(col("flag") === 1, col("k_ratio3_v2")).otherwise(col("k_ratio3_v1")))
 
-    kvalue
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .write
-      .mode("overwrite")
-      .insertInto("dl_cpc.ocpc_k_exp_middle_hourly")
+    kvalue.write.mode("overwrite").saveAsTable("test.ocpc_k_exp_middle_hourly")
+
+//    kvalue
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .write
+//      .mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_k_exp_middle_hourly")
 
 
     kvalue.show(10)
