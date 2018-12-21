@@ -178,7 +178,7 @@ object prepare_bsCvr_dnnPredictSample {
         $"uid", $"unitid"
       )//.persist(StorageLevel.DISK_ONLY)
 
-    result_temp1.show(10)
+    //result_temp1.show(10)
 
     //result_temp1.unpersist()
     //ideaid_hash.unpersist()
