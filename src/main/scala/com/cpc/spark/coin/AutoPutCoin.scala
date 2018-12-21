@@ -21,7 +21,7 @@ object AutoPutCoin {
 
         val ml_cvr_feature_v1 = args(1) //"test.ml_cvr_feature_v1"
 
-        val coinTable = "test.coin2"
+        val coinTable = "test.coin3" //TODO
 
         val date = args(2)
 
@@ -66,8 +66,12 @@ object AutoPutCoin {
                |and media_appsid in ('80000001','80000002')
                |and ideaid > 0
                |and adslot_type in (1, 2, 3)
+               |and ext['adclass'].int_value not in (134100100, 107101100, 107102100, 107103100, 107104100, 107105100, 107106100, 107107100, 107108100)
+               |and ideaid not in (2391911, 2385002, 2388289, 2391495, 2381868, 2391641, 2330249, 2384970, 2391533, 2360176, 2391895, 2391881, 2390834)
+               |and (userid not in (1550745,1522853,1548882,1530359,1534763,1533743,1538013,1538252,1515505,1552588,1549938,1546988,1557909,1552587)
+               |or ext['usertype'].int_value != 2)
              """.stripMargin
-
+        println(apiUnionLogSql)
         val apiUnionLog = spark.sql(apiUnionLogSql)
         println("apiUnionLog 's count is " + apiUnionLog.rdd.count())
         val apiUnionNth = getNth(apiUnionLog, p)
@@ -75,15 +79,38 @@ object AutoPutCoin {
         println("apiUnionNth 's count is " + apiUnionNth.count())
         val mlFeatureSql =
             s"""
-               |select ideaid,exp_cvr
-               |from $ml_cvr_feature_v1
-               |where ($datehour)
-               |and label2 = 1
-               |and media_appsid in ('80000001','80000002')
-               |and adslot_type in (1, 2, 3)
-               |and ideaid > 0
-               |and adclass not in (134100100, 107101100, 107102100, 107103100, 107104100, 107105100, 107106100, 107107100, 107108100)
-               |and ideaid not in (2391911, 2385002, 2388289, 2391495, 2381868, 2391641, 2330249, 2384970, 2391533, 2360176, 2391895, 2391881, 2390834)
+               |select a.ideaid as ideaid,exp_cvr
+               |    from
+               |    (
+               |        select ideaid,exp_cvr
+               |        from dl_cpc.ml_cvr_feature_v1
+               |        where ($datehour)
+               |        and label2 = 1
+               |        and media_appsid in ('80000001','80000002')
+               |        and adslot_type in (1, 2, 3)
+               |        and ideaid > 0
+               |        and adclass not in (134100100, 107101100, 107102100, 107103100, 107104100, 107105100, 107106100, 107107100, 107108100)
+               |        and ideaid not in (2391911, 2385002, 2388289, 2391495, 2381868, 2391641, 2330249, 2384970, 2391533, 2360176, 2391895, 2391881, 2390834)
+               |    ) a left outer join
+               |    (
+               |        select x.id as ideaid ,x.user_id as userid,y.account_type as account_type
+               |        from
+               |        (
+               |            select id,user_id
+               |            from src_cpc.cpc_idea
+               |            group by id,user_id
+               |         ) x left outer join
+               |         (
+               |            select id, account_type
+               |            from src_cpc.cpc_user_p
+               |            where account_type = 2
+               |            group by id, account_type
+               |         ) y
+               |         on x.user_id = y.id
+               |    ) b
+               |    on a.ideaid = b.ideaid
+               |    where b.userid in (1550745,1522853,1548882,1530359,1534763,1533743,1538013,1538252,1515505,1552588,1549938,1546988,1557909,1552587)
+               |    or b.account_type is null
              """.stripMargin
         println(mlFeatureSql)
         val mlFeature = spark.sql(mlFeatureSql)
@@ -212,25 +239,25 @@ object AutoPutCoin {
     }
 
     case class coin(var ideaid: Int = 0,
-                    var label_exp_cvr: Int = 0,
-                    var label_min: Int = 0,
-                    var label_max: Int = 0,
+                    var label_exp_cvr: Int = 9999999,
+                    var label_min: Int = 9999999,
+                    var label_max: Int = 9999999,
                     var label_num: Int = 0,
-                    var label_5th: Int = 0,
-                    var label_6th: Int = 0,
-                    var label_7th: Int = 0,
-                    var label_8th: Int = 0,
-                    var label_9th: Int = 0,
+                    var label_5th: Int = 9999999,
+                    var label_6th: Int = 9999999,
+                    var label_7th: Int = 9999999,
+                    var label_8th: Int = 9999999,
+                    var label_9th: Int = 9999999,
 
-                    var api_exp_cvr: Int = 0,
-                    var api_min: Int = 0,
-                    var api_max: Int = 0,
+                    var api_exp_cvr: Int = 9999999,
+                    var api_min: Int = 9999999,
+                    var api_max: Int = 9999999,
                     var api_num: Int = 0,
-                    var api_5th: Int = 0,
-                    var api_6th: Int = 0,
-                    var api_7th: Int = 0,
-                    var api_8th: Int = 0,
-                    var api_9th: Int = 0,
+                    var api_5th: Int = 9999999,
+                    var api_6th: Int = 9999999,
+                    var api_7th: Int = 9999999,
+                    var api_8th: Int = 9999999,
+                    var api_9th: Int = 9999999,
                     var date: String = "",
                     var hour: String = "")
 }

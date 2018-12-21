@@ -79,7 +79,8 @@ object ConsumeKafkaTopic {
 
     base_data.foreachRDD {
       rs =>
-        rs.take(10).foreach(x => println(x))
+        //rs.take(10).foreach(x => println(x))
+        rs.foreach(x => println(x))
         println("##batch end##############################")
     }
     ssc.start()

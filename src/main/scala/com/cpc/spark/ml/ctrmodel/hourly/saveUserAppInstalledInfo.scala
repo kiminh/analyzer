@@ -141,10 +141,11 @@ object saveUserAppInstalledInfo {
     sum.foreach(println)
 
     //保存当天的数据
-    pkgs.map(x => (x._1, x._2._1))
+    added.map(x => (x._1, x._2._1))
       .toDF("uid", "pkgs")
+      .coalesce(1)
       .write
-      .mode(SaveMode.Overwrite)
+      .mode(SaveMode.Append)
       .parquet(outpath)
 
     val sql =
