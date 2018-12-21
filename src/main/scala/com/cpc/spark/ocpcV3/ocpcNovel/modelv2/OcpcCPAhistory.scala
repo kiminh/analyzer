@@ -1,4 +1,4 @@
-package com.cpc.spark.ocpcV3.ocpcNovel.model
+package com.cpc.spark.ocpcV3.ocpcNovel.modelv2
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -11,15 +11,15 @@ import org.apache.spark.sql.types.IntegerType
 import com.cpc.spark.udfs.Udfs_wj._
 
 
-object OcpcCPAhistoryV2 {
+object OcpcCPAhistory {
   def main(args: Array[String]): Unit = {
     /*
     选取cpa_history的基本策略：
     1. 抽取基础表
     2. 分别计算该广告单元在趣头条上前一天的历史cpa，在米读小说上前一天的历史cpa以及行业类别的历史cpa
     3. 根据unitid和行业类别关联相关数据
-    4. 如果趣头条上至少有一个类别的转化数，给定conversion_goal，如果趣头条上一个类别的转化数都没有，按照米读小说上的转化数给定cpa，如果两类都没有，默认转化目标为1
-    5. 按照如下顺序根据转化目标选取合适的cpa：趣头条cpa->米读小说cpa->行业类别cpa
+    4. 按照如下顺序根据转化目标选取合适的cpa：趣头条cpa->米读小说cpa->行业类别cpa
+    5. conversion_goal默认设为1
     6. 输出数据
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -48,7 +48,7 @@ object OcpcCPAhistoryV2 {
     // 按照策略挑选合适的cpa以及确定对应的conversion_goal
     val result = getResult(data, date, hour, spark)
     val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
-//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
+    //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
     result.write.mode("overwrite").insertInto(tableName)
     println(s"save data into table: $tableName")
 
@@ -220,7 +220,7 @@ object OcpcCPAhistoryV2 {
 
 
     val adclassTable = "dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly"
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_adclass_hourly")
+    //    resultDF.write.mode("overwrite").saveAsTable(adclassTable)
     resultDF.write.mode("overwrite").insertInto(adclassTable)
     resultDF
   }
@@ -325,21 +325,17 @@ object OcpcCPAhistoryV2 {
       .withColumn("cpa_qtt", when(col("conversion_goal")===1, col("cpa1_history_qtt")).otherwise(col("cpa2_history_qtt")))
       .withColumn("cpa_novel", when(col("conversion_goal")===1, col("cpa1_history_novel")).otherwise(col("cpa2_history_novel")))
       .withColumn("cpa_adclass", when(col("conversion_goal")===1, col("cpa1")).otherwise(col("cpa2")))
-      .withColumn("cpa_src_middle", when(col("cpa_qtt").isNull, "novel").otherwise("qtt"))
-      .withColumn("cpa_src", when(col("cpa_src_middle")==="novel" && col("cpa_novel").isNull, "adclass").otherwise(col("cpa_src_middle")))
-      .withColumn("cpa_history", when(col("cpa_src")==="qtt", col("cpa_qtt")).otherwise(when(col("cpa_src")==="novel", col("cpa_novel")).otherwise(col("cpa_adclass"))))
+      .withColumn("cpa_history_middle", when(col("cpa_qtt").isNull, col("cpa_novel")).otherwise(col("cpa_qtt")))
+      .withColumn("cpa_history", when(col("cpa_history_middle").isNull, col("cpa_adclass")).otherwise(col("cpa_history_middle")))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
-//      .withColumn("cpa_history_middle", when(col("cpa_qtt").isNull, col("cpa_novel")).otherwise(col("cpa_qtt")))
-//      .withColumn("cpa_history", when(col("cpa_history_middle").isNull, col("cpa_adclass")).otherwise(col("cpa_history_middle")))
 
-
-    // TODO 删除临时表，更换成dl_cpc中间表
-    data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .write
-      .mode("overwrite")
-      .saveAsTable("test.ocpcv3_cpa_history_v2_final_middle")
+    //    // TODO 删除临时表
+    //    data
+    //      .withColumn("date", lit(date))
+    //      .withColumn("hour", lit(hour))
+    //      .write
+    //      .mode("overwrite")
+    //      .saveAsTable("test.ocpcv3_cpa_history_v2_final_middle")
 
     val resultDF = data
       .select("unitid", "new_adclass", "cpa_history", "conversion_goal")
@@ -351,3 +347,4 @@ object OcpcCPAhistoryV2 {
   }
 
 }
+
