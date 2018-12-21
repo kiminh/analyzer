@@ -14,8 +14,8 @@ object OcpcKexp {
 
     val result = selectKbyEXP(date, hour, spark)
     val tableName = "ocpc_regression_k_final"
-//    result.write.mode("overwrite").saveAsTable("test." + tableName)
-    result.write.mode("overwrite").insertInto("dl_cpc." + tableName)
+    result.write.mode("overwrite").saveAsTable("test." + tableName)
+//    result.write.mode("overwrite").insertInto("dl_cpc." + tableName)
     println(s"save data into table: $tableName")
   }
 
@@ -46,8 +46,15 @@ object OcpcKexp {
       .withColumn("k_ratio3_v2", col("k_ratio3"))
       .select("ideaid", "k_ratio2_v2", "k_ratio3_v2")
 
+    val kv3 = spark
+      .table("dl_cpc.ocpc_v2_app_open_k")
+      .where(selectCondition)
+      .withColumn("k_ratio2_v3", col("k_ratio2"))
+      .withColumn("k_ratio3_v3", col("k_ratio3"))
+      .select("ideaid", "k_ratio2_v3", "k_ratio3_v3")
+
     // 读取实验ideaid列表
-    val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
+    val filename = "/user/cpc/wangjun/ocpc_exp_ideas_test.txt"
     val data = spark.sparkContext.textFile(filename)
     val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     rawRDD.foreach(println)
@@ -56,10 +63,12 @@ object OcpcKexp {
     // 根据实验id列表，替换k值
     val kvalue = kv1
       .join(kv2, Seq("ideaid"), "outer")
+      .join(kv3, Seq("ideaid"), "outer")
       .join(expIdeas, Seq("ideaid"), "left_outer")
       .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "flag", "conversion_goal")
       .withColumn("k_ratio2", when(col("flag") === 1 && col("conversion_goal") < 3, col("k_ratio2_v2")).otherwise(col("k_ratio2_v1")))
       .withColumn("k_ratio3", when(col("flag") === 1, col("k_ratio3_v2")).otherwise(col("k_ratio3_v1")))
+      .withColumn("k_ratio2", when(col("flag") === 2 && col("conversion_goal") === 1, col("k_ratio2_v3")).otherwise(col("k_ratio2")))
 
 
 //    ideaid  string  NULL
@@ -72,12 +81,13 @@ object OcpcKexp {
 //    k_ratio3        double  NULL
 
     kvalue
-      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "flag", "k_ratio2", "k_ratio3")
+      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "flag", "k_ratio2", "k_ratio3")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write
       .mode("overwrite")
-      .insertInto("dl_cpc.ocpc_k_exp_middle_hourly")
+      .saveAsTable("test.ocpc_k_exp_middle_hourly")
+//      .insertInto("dl_cpc.ocpc_k_exp_middle_hourly_v2")
 
 
     kvalue.show(10)
