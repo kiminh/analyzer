@@ -50,7 +50,7 @@ object OcpcCPAhistoryV2 {
     val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
 //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
     result.write.mode("overwrite").insertInto(tableName)
-//    println(s"save data into table: $tableName")
+    println(s"save data into table: $tableName")
 
   }
 
