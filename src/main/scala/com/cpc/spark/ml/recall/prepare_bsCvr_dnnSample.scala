@@ -75,7 +75,7 @@ object prepare_bsCvr_dnnSample {
          |  ext['client_type'].string_value as sdk_type,
          |  adslot_type, adslotid,
          |  adtype, interaction, bid, ideaid, unitid, planid, userid,
-         |  ext_int['is_new_ad'] as is_new_ad, ext['adclass'].int_value as adclass, ext['charge_type'] as charge_type
+         |  ext_int['is_new_ad'] as is_new_ad, ext['adclass'].int_value as adclass, ext['charge_type'] as charge_type,
          |  ext_int['siteid'] as site_id,
          |  os, network, ext['phone_price'].int_value as phone_price,
          |  ext['brand_title'].string_value as brand,
