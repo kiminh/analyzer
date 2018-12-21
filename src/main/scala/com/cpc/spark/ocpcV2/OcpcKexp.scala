@@ -54,7 +54,7 @@ object OcpcKexp {
       .select("ideaid", "k_ratio2_v3", "k_ratio3_v3")
 
     // 读取实验ideaid列表
-    val filename = "/user/cpc/wangjun/ocpc_exp_ideas_test.txt"
+    val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
     val data = spark.sparkContext.textFile(filename)
     val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     rawRDD.foreach(println)
