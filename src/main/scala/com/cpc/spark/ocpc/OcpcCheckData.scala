@@ -11,36 +11,66 @@ object OcpcCheckData {
 
     val sqlRequest =
       s"""
-         |select
-         |    uid,
-         |    timestamp,
-         |    searchid,
-         |    userid,
-         |    ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
-         |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
-         |    isclick,
-         |    isshow,
-         |    ideaid,
-         |    exptags,
-         |    price,
-         |    ext_int['bid_ocpc'] as bid_ocpc,
-         |    ext_int['is_ocpc'] as is_ocpc,
-         |    ext_string['ocpc_log'] as ocpc_log
-         |from
-         |    dl_cpc.cpc_union_log
-         |WHERE
-         |    `date` = '$date'
-         |and
-         |    `hour` = '$hour'
-         |and
-         |    media_appsid  in ("80000001", "80000002")
-         |and
-         |    ext['antispam'].int_value = 0
-         |and adsrc = 1
-         |and isshow=1
-         |and adslot_type in (1,2,3)
-         |and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
-         |and ideaid in (2450708,2450542,2450447,2432700,2374508,2442830)
+         |SELECT
+         |    b.*,
+         |    c.iscvr
+         |FROM
+         |    (SELECT
+         |        t.userid,
+         |        t.cost
+         |    FROM
+         |        (SELECT
+         |            userid,
+         |            SUM(case when isclick=1 then price else 0 end) as cost
+         |        FROM
+         |            test.ocpcv3_complete_data20181208
+         |        GROUP BY userid) as t
+         |    ORDER BY t.cost DESC
+         |    limit 100) as a
+         |LEFT JOIN
+         |    (select
+         |        uid,
+         |        timestamp,
+         |        searchid,
+         |        userid,
+         |        unitid,
+         |        ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
+         |        ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
+         |        isclick,
+         |        isshow,
+         |        ideaid,
+         |        exptags,
+         |        price,
+         |        bid,
+         |        adslotid,
+         |        ext["adclass"].int_value as adclass,
+         |        ext_int['bid_ocpc'] as bid_ocpc,
+         |        ext_int['is_ocpc'] as is_ocpc,
+         |        ext_string['ocpc_log'] as ocpc_log,
+         |        ext['usertype'].int_value as usertype,
+         |        hour
+         |    from
+         |        dl_cpc.cpc_union_log
+         |    WHERE
+         |        `date` = "$date" and `hour`='$hour'
+         |    and
+         |        media_appsid  in ("80001098","80001292","80000001", "80000002")
+         |    and
+         |        ext['antispam'].int_value = 0
+         |    and adsrc = 1
+         |    and adslot_type in (1,2,3)) b
+         |ON
+         |    a.userid=b.userid
+         |LEFT JOIN
+         |    (
+         |        select
+         |            searchid,
+         |            label2 as iscvr
+         |        from dl_cpc.ml_cvr_feature_v1
+         |        WHERE `date` = "$date" and `hour` = '$hour'
+         |    ) c
+         | on
+         |    b.searchid = c.searchid;
        """.stripMargin
     println(sqlRequest)
     val data = spark
@@ -48,7 +78,7 @@ object OcpcCheckData {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    data.write.mode("overwrite").saveAsTable("test.ocpc_check_ideaid_ctr20181220_hourly_bak")
-    data.write.mode("overwrite").insertInto("test.ocpc_check_ideaid_ctr20181220_hourly")
+    data.write.mode("overwrite").saveAsTable("test.test_ocpc_complete_probe_20181208_new")
+//    data.write.mode("overwrite").insertInto("test.test_ocpc_complete_probe_20181208_new")
   }
 }
