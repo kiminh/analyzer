@@ -219,6 +219,7 @@ object OcpcCPAhistoryV2 {
       .withColumn("hour", lit(hour))
 
 
+
     val adclassTable = "dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly"
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_adclass_hourly")
     resultDF.write.mode("overwrite").insertInto(adclassTable)
@@ -333,13 +334,12 @@ object OcpcCPAhistoryV2 {
 //      .withColumn("cpa_history", when(col("cpa_history_middle").isNull, col("cpa_adclass")).otherwise(col("cpa_history_middle")))
 
 
-    // TODO 删除临时表，更换成dl_cpc中间表
     data
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write
       .mode("overwrite")
-      .saveAsTable("test.ocpcv3_cpa_history_v2_final_middle")
+      .insertInto("dl_cpc.ocpcv3_cpa_history_v2_final_middle")
 
     val resultDF = data
       .select("unitid", "new_adclass", "cpa_history", "conversion_goal")
