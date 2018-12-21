@@ -47,8 +47,7 @@ object OcpcCheckData {
          |        ext_int['bid_ocpc'] as bid_ocpc,
          |        ext_int['is_ocpc'] as is_ocpc,
          |        ext_string['ocpc_log'] as ocpc_log,
-         |        ext['usertype'].int_value as usertype,
-         |        hour
+         |        ext['usertype'].int_value as usertype
          |    from
          |        dl_cpc.cpc_union_log
          |    WHERE
@@ -78,7 +77,7 @@ object OcpcCheckData {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    data.write.mode("overwrite").saveAsTable("test.test_ocpc_complete_probe_20181208_new")
-//    data.write.mode("overwrite").insertInto("test.test_ocpc_complete_probe_20181208_new")
+//    data.write.mode("overwrite").saveAsTable("test.test_ocpc_complete_probe_20181208_new")
+    data.write.mode("overwrite").insertInto("test.test_ocpc_complete_probe_20181208_new_bak")
   }
 }
