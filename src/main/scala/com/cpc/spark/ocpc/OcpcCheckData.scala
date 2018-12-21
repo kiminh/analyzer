@@ -81,4 +81,5 @@ object OcpcCheckData {
 //    data.write.mode("overwrite").saveAsTable("test.test_ocpc_complete_probe_20181208_new")
     data.write.mode("overwrite").insertInto("test.test_ocpc_complete_probe_20181208_new_v1")
   }
+
 }
