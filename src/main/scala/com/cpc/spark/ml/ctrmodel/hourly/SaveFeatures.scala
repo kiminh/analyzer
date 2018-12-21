@@ -881,7 +881,7 @@ object SaveFeatures {
             active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
             active_map.getOrElse("report_user_stayinwx", 0))
       }
-      .toDF("searchid", "ideaid", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
+      .toDF("search_id", "idea_id", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
         "disactive", "active_href", "installed", "report_user_stayinwx")
 
     println("info_flow log", info_flow.count(), info_flow.filter(r => r.getAs[Int]("label2") > 0).count())
