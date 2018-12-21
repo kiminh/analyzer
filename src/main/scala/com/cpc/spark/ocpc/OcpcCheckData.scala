@@ -70,7 +70,7 @@ object OcpcCheckData {
          |        WHERE `date` = "$date" and `hour` = '$hour'
          |    ) c
          | on
-         |    b.searchid = c.searchid;
+         |    b.searchid = c.searchid
        """.stripMargin
     println(sqlRequest)
     val data = spark
