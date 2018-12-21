@@ -46,11 +46,12 @@ object OcpcCPAhistoryV2 {
       .select("unitid", "new_adclass", "cpa1_history_qtt", "cpa2_history_qtt", "cpa1_history_novel", "cpa2_history_novel", "cpa1", "cpa2")
 
     // 按照策略挑选合适的cpa以及确定对应的conversion_goal
+    // TODO 测试
     val result = getResult(data, date, hour, spark)
-    val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
-//    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
-    result.write.mode("overwrite").insertInto(tableName)
-    println(s"save data into table: $tableName")
+//    val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
+    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
+//    result.write.mode("overwrite").insertInto(tableName)
+//    println(s"save data into table: $tableName")
 
   }
 
@@ -219,9 +220,10 @@ object OcpcCPAhistoryV2 {
       .withColumn("hour", lit(hour))
 
 
-    val adclassTable = "dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly"
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_adclass_hourly")
-    resultDF.write.mode("overwrite").insertInto(adclassTable)
+    // TODO 测试
+//    val adclassTable = "dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly"
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_adclass_hourly")
+//    resultDF.write.mode("overwrite").insertInto(adclassTable)
     resultDF
   }
 
@@ -333,13 +335,12 @@ object OcpcCPAhistoryV2 {
 //      .withColumn("cpa_history", when(col("cpa_history_middle").isNull, col("cpa_adclass")).otherwise(col("cpa_history_middle")))
 
 
-    // TODO 删除临时表，更换成dl_cpc中间表
     data
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write
       .mode("overwrite")
-      .saveAsTable("test.ocpcv3_cpa_history_v2_final_middle")
+      .insertInto("dl_cpc.ocpcv3_cpa_history_v2_final_middle")
 
     val resultDF = data
       .select("unitid", "new_adclass", "cpa_history", "conversion_goal")
