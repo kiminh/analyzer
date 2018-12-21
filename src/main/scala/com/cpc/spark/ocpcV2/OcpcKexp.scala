@@ -80,14 +80,14 @@ object OcpcKexp {
 //    k_ratio2        double  NULL
 //    k_ratio3        double  NULL
 
+//    test.ocpc_k_exp_middle_hourly
     kvalue
       .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "flag", "k_ratio2", "k_ratio3")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write
       .mode("overwrite")
-      .saveAsTable("test.ocpc_k_exp_middle_hourly")
-//      .insertInto("dl_cpc.ocpc_k_exp_middle_hourly_v2")
+      .insertInto("dl_cpc.ocpc_k_exp_middle_hourly")
 
 
     kvalue.show(10)
