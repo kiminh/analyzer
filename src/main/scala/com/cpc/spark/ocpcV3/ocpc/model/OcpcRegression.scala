@@ -184,7 +184,7 @@ object OcpcRegression {
 
   def getKWithRatioType(spark: SparkSession, tablename: String, conversionGoal: Int, date: String, hour: String): Dataset[Row] = {
 
-    val condition = s"`date` = '$date' and hour = '$hour' and conversion_goal = $conversionGoal"
+    val condition = s"`date` = '$date' and hour = '$hour' and version = 'v1' and conversion_goal = $conversionGoal"
     println("getKWithRatioType", condition)
     val res = spark.table(tablename).where(condition)
       .withColumn("str", concat_ws(" ", col(s"k_ratio"), col("ratio"), col("click_cnt")))
@@ -198,6 +198,8 @@ object OcpcRegression {
       val identifier = row(0).toString
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
         val y = x.trim.split("\\s+")
+        // todo 测试打印
+        println(y)
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
