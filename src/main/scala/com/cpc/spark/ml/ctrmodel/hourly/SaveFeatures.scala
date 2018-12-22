@@ -891,7 +891,28 @@ object SaveFeatures {
     val clicklog = spark.sql(sqlStmt)
     println("click log", clicklog.count())
 
-    clicklog.join(cvrlog, Seq("searchid", "ideaid"))
+
+    val sqlStmt_motivate =
+      """
+        |select searchid,sex,age,os,isp,network,
+        |       city,media_appsid,ext['phone_level'].int_value as phone_level,`timestamp`,adtype,
+        |       m.planid,m.unitid,m.ideaid,ext['adclass'].int_value as adclass,adslotid,
+        |       adslot_type,ext['pagenum'].int_value as pagenum,ext['bookid'].string_value as bookid,
+        |       ext['brand_title'].string_value as brand_title,
+        |       ext['user_req_ad_num'].int_value as user_req_ad_num,
+        |       ext['user_req_num'].int_value as user_req_num,uid,
+        |       ext['click_count'].int_value as user_click_num,
+        |       ext['click_unit_count'].int_value as user_click_unit_num,
+        |       ext['long_click_count'].int_value as user_long_click_count,
+        |       ext['exp_ctr'].int_value as exp_ctr,
+        |       ext['exp_cvr'].int_value as exp_cvr,
+        |       ext['usertype'].int_value as usertype
+        |from dl_cpc.cpc_union_log
+        |lateral view explode(motivation) c as m
+        |where `date` = "%s" and `hour` = "%s" and isclick = 1
+      """.stripMargin.format(date, hour)
+
+    (clicklog.join(cvrlog, Seq("searchid", "ideaid"))).union(spark.sql(sqlStmt_motivate).join(cvrlog, Seq("searchid", "ideaid")))
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
