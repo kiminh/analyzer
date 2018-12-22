@@ -160,9 +160,10 @@ object OcpcRegression {
       .withColumn("conversion_goal", lit(2))
 
     val tablename = "test.ocpc_regression_middle_hourly"
+    // TODO 修改identifier
     val result = data1
       .union(data2)
-      .withColumn("identifier", lit(identifier))
+      .withColumn("identifier", col("unitid"))
       .select("identifier", "k_ratio", "cpagiven", "cpa", "ratio", "click_cnt", "cvr_cnt", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
