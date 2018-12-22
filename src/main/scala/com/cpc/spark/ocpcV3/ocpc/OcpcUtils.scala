@@ -18,6 +18,7 @@ object OcpcUtils {
         selectionID = selectionID + ", " + confList.get(i)
       }
     }
+    println(s"####### $selectionID ##############")
     selectionID
   }
 
@@ -32,6 +33,7 @@ object OcpcUtils {
         selectionID = selectionID + "|" + confList.get(i)
       }
     }
+    println(s"####### $selectionID ##############")
     selectionID
   }
 
