@@ -190,7 +190,7 @@ object OcpcCPAhistory {
     /*
     抽取趣头条广告的行业类别cpa
      */
-    val resultDF = base
+    val data = base
       .filter(s"media_appsid in ('80000001', '80000002')")
       .groupBy("new_adclass")
       .agg(
@@ -199,13 +199,19 @@ object OcpcCPAhistory {
         sum(col("cvr2cnt")).alias("cvr2cnt"))
       .withColumn("cpa1", col("cost") * 1.0 / col("cvr1cnt"))
       .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
+
+    data.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_adclass_hourly_bak")
+
+    val resultDF = data
+      .select("new_adclass", "cpa1", "cpa2")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .withColumn("version", lit("v1"))
 
 
-
-//    val adclassTable = "dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly"
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_adclass_hourly")
+    //    val adclassTable = "dl_cpc.ocpc_cpa_history_adclass_hourly"
+
 //    resultDF.write.mode("overwrite").insertInto(adclassTable)
     resultDF
   }
@@ -320,9 +326,11 @@ object OcpcCPAhistory {
       .saveAsTable("test.ocpc_cpa_history_middle_hourly")
 
     val resultDF = data
-      .select("unitid", "new_adclass", "cpa_history", "conversion_goal")
+      .withColumn("identifier", col("unitid"))
+      .select("identifier", "new_adclass", "cpa_history", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .withColumn("version", lit("v1"))
 
     resultDF
 
