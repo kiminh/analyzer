@@ -23,7 +23,7 @@ object OcpcCheckData {
          |            userid,
          |            SUM(case when isclick=1 then price else 0 end) as cost
          |        FROM
-         |            test.ocpcv3_complete_data20181208
+         |            test.ocpcv3_complete_data20181220
          |        GROUP BY userid) as t
          |    ORDER BY t.cost DESC
          |    limit 100) as a
