@@ -327,7 +327,7 @@ object OcpcCPAhistory {
 
     val resultDF = data
       .withColumn("identifier", col("unitid"))
-      .select("identifier", "new_adclass", "cpa_history", "conversion_goal")
+      .select("identifier", "new_adclass", "cpa_src", "cpa_history", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("v1"))
