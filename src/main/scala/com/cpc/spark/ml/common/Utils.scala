@@ -409,7 +409,7 @@ object Utils {
     * @param version
     * @return
     */
-  def cvrPositive_sdk_dlapp(traces: Seq[Row], version: String): (Int, Int) = {
+  def cvrPositive_sdk_dlapp(traces: Seq[Row], version: String): Int = {
 
     var sdk_dlapp = 0
     var sdk_dlapp_active = 0
@@ -433,9 +433,9 @@ object Utils {
     }
 
     if (sdk_dlapp_active > 0) {
-      (1, 12)
+      1
     } else {
-      (1, 12)
+      0
     }
 
 
@@ -454,9 +454,9 @@ object Utils {
     }
 
     if (active_motivate > 0) {
-      (1, 13)
+      (1, 12)
     } else {
-      (0, 13)
+      (0, 12)
     }
 
   }
@@ -473,9 +473,9 @@ object Utils {
         }
     }
     if (active_api > 0) {
-      (1, 14)
+      (1, 13)
     } else {
-      (0, 14)
+      (0, 13)
     }
   }
 

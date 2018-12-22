@@ -800,14 +800,32 @@ object SaveFeatures {
           var convert_sdk_dlapp = 0
           var label_type = 0
 
-          if (flag == "conv_motivate") {//激励下载转化
-            (convert2, label_type) = Utils.cvrPositive_motivate(x._2, version)
-          } else if (flag == "conv_api") {//Api回传转化
-            (convert2, label_type) = Utils.cvrPositive_api(x._2, version)
-          } else if (flag == "conv_info_flow") {//信息流转化
-            convert = Utils.cvrPositiveV(x._2, version)
-            (convert2, label_type) = Utils.cvrPositiveV2(x._2, version)
-            (convert_sdk_dlapp, label_type) = Utils.cvrPositive_sdk_dlapp(x._2, version) //sdk栏位下载app的转化数
+          if (flag == "conv_motivate") {
+            //激励下载转化
+            val (convert_motivate, label_type_motivate) = Utils.cvrPositive_motivate(x._2, version)
+            val conv_motivate = Utils.cvrPositiveV(x._2, version)
+
+            convert = conv_motivate
+            convert2 = convert_motivate
+            label_type = label_type_motivate
+          } else if (flag == "conv_api") {
+            //Api回传转化
+            val (convert_api, label_type_api) = Utils.cvrPositive_api(x._2, version)
+            val conv_api = Utils.cvrPositiveV(x._2, version)
+
+            convert = conv_api
+            convert2 = convert_api
+            label_type = label_type_api
+          } else if (flag == "conv_info_flow") {
+            //信息流转化
+            val conv = Utils.cvrPositiveV(x._2, version)
+            val (conv2, label_type_info_flow) = Utils.cvrPositiveV2(x._2, version)
+            val conv_sdk_dlapp = Utils.cvrPositive_sdk_dlapp(x._2, version) //sdk栏位下载app的转化数
+
+            convert = conv
+            convert2 = conv2
+            label_type = label_type_info_flow
+            convert_sdk_dlapp = conv_sdk_dlapp
           }
 
           //存储active行为数据
@@ -869,7 +887,7 @@ object SaveFeatures {
         |       ext['exp_cvr'].int_value as exp_cvr,
         |       ext['usertype'].int_value as usertype
         |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isclick = 1
-          """.stripMargin.format(date, hour)
+      """.stripMargin.format(date, hour)
     println(sqlStmt)
     val clicklog = spark.sql(sqlStmt)
     println("click log", clicklog.count())
