@@ -159,7 +159,7 @@ object OcpcRegression {
       .sql(sqlRequest5)
       .withColumn("conversion_goal", lit(2))
 
-    val tablename = "test.ocpc_regression_middle_hourly"
+    val tablename = "dl_cpc.ocpc_regression_middle_hourly"
     // TODO 修改identifier
     val result = data1
       .union(data2)
@@ -169,8 +169,8 @@ object OcpcRegression {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("v1"))
 
-    result.write.mode("overwrite").saveAsTable(tablename)
-//    result.write.mode("overwrite").insertInto(tablename)
+//    result.write.mode("overwrite").saveAsTable(tablename)
+    result.write.mode("overwrite").insertInto(tablename)
 
     val ratio1Data = getKWithRatioType(spark, tablename, 1, date, hour)
     val ratio2Data = getKWithRatioType(spark, tablename, 2, date, hour)
@@ -179,8 +179,8 @@ object OcpcRegression {
       .union(ratio2Data)
       .select("identifier", "k_ratio", "conversion_goal", "date", "hour")
       .withColumn("version", lit("v1"))
-    res.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
-//    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v3_novel_k_regression_v2")
+//    res.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
+    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
   }
 
   def getKWithRatioType(spark: SparkSession, tablename: String, conversionGoal: Int, date: String, hour: String): Dataset[Row] = {
