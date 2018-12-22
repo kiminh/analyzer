@@ -81,103 +81,103 @@ object OcpcRegression {
          |  media_appsid in ('80000001', '80000002')
        """.stripMargin
     println(sqlRequest1)
-//    val ctrData = spark.sql(sqlRequest1)
-//
-//    val sqlRequest2 =
-//      s"""
-//         |SELECT
-//         |  searchid,
-//         |  label2 as label1
-//         |FROM
-//         |  dl_cpc.ml_cvr_feature_v1
-//         |WHERE
-//         |  $selectCondition
-//       """.stripMargin
-//    println(sqlRequest2)
-//    val cvr1Data = spark.sql(sqlRequest2)
-//
-//    val sqlRequest3 =
-//      s"""
-//         |SELECT
-//         |  searchid,
-//         |  label as label2
-//         |FROM
-//         |  dl_cpc.ml_cvr_feature_v2
-//         |WHERE
-//         |  $selectCondition
-//       """.stripMargin
-//    println(sqlRequest3)
-//    val cvr2Data = spark.sql(sqlRequest3)
-//
-//    val base = ctrData
-//      .join(cvr1Data, Seq("searchid"), "left_outer")
-//      .join(cvr2Data, Seq("searchid"), "left_outer")
-//
-//    base.createOrReplaceTempView("base_table")
-//
-//    val sqlRequest4 =
-//      s"""
-//         |select
-//         |  $selectorID,
-//         |  round(kvalue * 100.0 / 5) as k_ratio,
-//         |  cpagiven,
-//         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0)) as cpa,
-//         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0))/cpagiven as ratio,
-//         |  sum(isclick) click_cnt,
-//         |  sum(COALESCE(label1,0)) cvr_cnt
-//         |from
-//         |  base_table
-//         |group by $selectorID,
-//         |  round(kvalue * 100.0 / 5),
-//         |  cpagiven
-//      """.stripMargin
-//
-//    println(sqlRequest4)
-//    val data1 = spark
-//      .sql(sqlRequest4)
-//      .withColumn("conversion_goal", lit(1))
-//
-//    val sqlRequest5 =
-//      s"""
-//         |select
-//         |  $selectorID,
-//         |  round(kvalue * 100.0 / 5) as k_ratio,
-//         |  cpagiven,
-//         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0)) as cpa,
-//         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0))/cpagiven as ratio,
-//         |  sum(isclick) click_cnt,
-//         |  sum(COALESCE(label2,0)) cvr_cnt
-//         |from
-//         |  base_table
-//         |group by $selectorID,
-//         |  round(kvalue * 100.0 / 5),
-//         |  cpagiven
-//      """.stripMargin
-//
-//    println(sqlRequest5)
-//    val data2 = spark
-//      .sql(sqlRequest5)
-//      .withColumn("conversion_goal", lit(2))
-//
-//    val tablename = "test.ocpc_regression_middle_hourly"
-//    val result = data1
-//      .union(data2)
-//      .withColumn("identifier", lit(identifier))
-//      .select("identifier", "k_ratio", "cpagiven", "cpa", "ratio", "click_cnt", "cvr_cnt", "conversion_goal")
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//
-//    result.write.mode("overwrite").saveAsTable(tablename)
-////    result.write.mode("overwrite").insertInto(tablename)
-//
-//    val ratio1Data = getKWithRatioType(spark, tablename, 1, date, hour)
-//    val ratio2Data = getKWithRatioType(spark, tablename, 2, date, hour)
-//
-//    val res = ratio1Data
-//      .union(ratio2Data)
-//      .select("identifier", "k_ratio", "conversion_goal", "date", "hour")
-//      .withColumn("version", lit("v1"))
-//    res.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
+    val ctrData = spark.sql(sqlRequest1)
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label2 as label1
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v1
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest2)
+    val cvr1Data = spark.sql(sqlRequest2)
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as label2
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v2
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest3)
+    val cvr2Data = spark.sql(sqlRequest3)
+
+    val base = ctrData
+      .join(cvr1Data, Seq("searchid"), "left_outer")
+      .join(cvr2Data, Seq("searchid"), "left_outer")
+
+    base.createOrReplaceTempView("base_table")
+
+    val sqlRequest4 =
+      s"""
+         |select
+         |  $selectorID,
+         |  round(kvalue * 100.0 / 5) as k_ratio,
+         |  cpagiven,
+         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0)) as cpa,
+         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0))/cpagiven as ratio,
+         |  sum(isclick) click_cnt,
+         |  sum(COALESCE(label1,0)) cvr_cnt
+         |from
+         |  base_table
+         |group by $selectorID,
+         |  round(kvalue * 100.0 / 5),
+         |  cpagiven
+      """.stripMargin
+
+    println(sqlRequest4)
+    val data1 = spark
+      .sql(sqlRequest4)
+      .withColumn("conversion_goal", lit(1))
+
+    val sqlRequest5 =
+      s"""
+         |select
+         |  $selectorID,
+         |  round(kvalue * 100.0 / 5) as k_ratio,
+         |  cpagiven,
+         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0)) as cpa,
+         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0))/cpagiven as ratio,
+         |  sum(isclick) click_cnt,
+         |  sum(COALESCE(label2,0)) cvr_cnt
+         |from
+         |  base_table
+         |group by $selectorID,
+         |  round(kvalue * 100.0 / 5),
+         |  cpagiven
+      """.stripMargin
+
+    println(sqlRequest5)
+    val data2 = spark
+      .sql(sqlRequest5)
+      .withColumn("conversion_goal", lit(2))
+
+    val tablename = "test.ocpc_regression_middle_hourly"
+    val result = data1
+      .union(data2)
+      .withColumn("identifier", lit(identifier))
+      .select("identifier", "k_ratio", "cpagiven", "cpa", "ratio", "click_cnt", "cvr_cnt", "conversion_goal")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+    result.write.mode("overwrite").saveAsTable(tablename)
+//    result.write.mode("overwrite").insertInto(tablename)
+
+    val ratio1Data = getKWithRatioType(spark, tablename, 1, date, hour)
+    val ratio2Data = getKWithRatioType(spark, tablename, 2, date, hour)
+
+    val res = ratio1Data
+      .union(ratio2Data)
+      .select("identifier", "k_ratio", "conversion_goal", "date", "hour")
+      .withColumn("version", lit("v1"))
+    res.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
 //    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v3_novel_k_regression_v2")
   }
 
