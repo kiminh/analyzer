@@ -36,12 +36,10 @@ object OcpcCPAhistory {
 
     // 按照要求生成相关基础数据表
     val baseData = getBaseData(date, hour, days, spark)
-    baseData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_base_hourly")
     val qttData = getQttCPA(baseData, date, hour, spark)
-    qttData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_qtt_hourly")
     val adclassData = getAdclassCPA(baseData, date, hour, spark).select("new_adclass", "cpa1", "cpa2")
+    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_adclass_hourly")
     val qttAlpha = checkCPAhistory(qttData, alpha, "qtt", date, hour, spark)
-    qttAlpha.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_qtt_alpha_hourly")
 
     // 数据表关联
     val data = baseData
@@ -200,19 +198,12 @@ object OcpcCPAhistory {
       .withColumn("cpa1", col("cost") * 1.0 / col("cvr1cnt"))
       .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
 
-    data.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_adclass_hourly_bak")
-
     val resultDF = data
       .select("new_adclass", "cpa1", "cpa2")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("v1"))
 
-
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_adclass_hourly")
-    //    val adclassTable = "dl_cpc.ocpc_cpa_history_adclass_hourly"
-
-//    resultDF.write.mode("overwrite").insertInto(adclassTable)
     resultDF
   }
 
@@ -318,12 +309,12 @@ object OcpcCPAhistory {
 
     data.show(10)
 
-    data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .write
-      .mode("overwrite")
-      .saveAsTable("test.ocpc_cpa_history_middle_hourly")
+//    data
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .write
+//      .mode("overwrite")
+//      .saveAsTable("test.ocpc_cpa_history_middle_hourly")
 
     val resultDF = data
       .withColumn("identifier", col("unitid"))
