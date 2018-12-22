@@ -29,7 +29,7 @@ object OcpcRunOver {
     val dataCount = data.count()
     println(s"data count is $dataCount")
 
-    data.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
+    data.write.mode("overwrite").saveAsTable("dl_cpc.new_pb_ocpc_with_pcvr")
 
     // 保存pb文件
     savePbPack(data)
