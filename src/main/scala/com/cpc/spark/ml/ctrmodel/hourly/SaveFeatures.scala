@@ -641,8 +641,17 @@ object SaveFeatures {
       s"""
          |select   a.searchid
          |        ,a.ideaid
+         |        ,7  as adslot_type
+         |        ,"unknown" as client_type
+         |        ,-1 as adclass
+         |        ,-1 as siteid
+         |        ,-1 as adsrc
+         |        ,-1 as interaction
+         |        ,"unknown" as uid
+         |        ,a.userid
          |        ,b.trace_type
          |        ,b.trace_op1
+         |        ,b.duration
          |        ,"conv_motivate" as flag
          |from (select * from dl_cpc.cpc_motivation_log
          |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick = 1) a
@@ -656,158 +665,39 @@ object SaveFeatures {
          |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
          | where t2.id is null
         """.stripMargin.format(date, hour, yesterday, date, hour)
-
     println("sql_motivate: " + sql_motivate)
-
-    val conv_motivate = spark.sql(sql_motivate)
-      .rdd
-      .map {
-        x =>
-          ((x.getAs[String]("searchid"), x.getAs[Int]("ideaid")), Seq(x))
-      }
-      .reduceByKey(_ ++ _)
-      .map { x =>
-        val (convert, label_type) = Utils.cvrPositiveV3(x._2, version)
-        //(x._1._1, x._1._2, convert)
-        (x._1._1, x._1._2, convert)
-      }.toDF("searchid", "ideaid", "label_motivate")
-    println("conv_motivate: " + conv_motivate.count())
 
 
     /* 用户Api回传转化 */
     val sql_api =
       s"""
-         |select tr.searchid
-         |      ,un.userid
-         |      ,un.uid
-         |      ,un.ideaid
-         |      ,un.date
-         |      ,un.hour
-         |      ,un.adclass
-         |      ,un.media_appsid
-         |      ,un.planid
-         |      ,un.unitid
-         |      ,tr.trace_type
-         |      ,"conv_api" as flag
-         |from (select searchid, userid, uid, planid, unitid, ideaid, adslot_type, isclick, ext['adclass'].int_value as adclass, media_appsid, planid, unitid, date, hour
-         |      from dl_cpc.cpc_user_api_callback_union_log where %s) as un
-         |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
-         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
-         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
+         |select   a.searchid
+         |        ,a.ideaid
+         |        ,a.adslot_type
+         |        ,a.ext["client_type"].string_value as client_type
+         |        ,a.ext["adclass"].int_value  as adclass
+         |        ,a.ext_int['siteid'] as siteid
+         |        ,a.adsrc
+         |        ,a.interaction
+         |        ,a.uid
+         |        ,a.userid
+         |        ,b.trace_type
+         |        ,b.trace_op1
+         |        ,b.duration
+         |        ,"conv_api" as flag
+         |from (select * from dl_cpc.cpc_user_api_callback_union_log where %s and adslot_type <> 7) as a
+         |    join dl_cpc.logparsed_cpc_trace_minute as b
+         |        on a.searchid = b.searchid and a.ideaid = b.opt['ideaid']
+         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on a.userid = t2.id
+         |where  b.`thedate` = "%s" and b.`thehour` = "%s" and t2.id is null
        """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour)
     println("sql_api: " + sql_api)
 
     /* 没有api回传标记，直接上报到trace */
     val sql_api_callback =
       s"""
-         |select tr.searchid
-         |      ,un.userid
-         |      ,un.uid
-         |      ,un.ideaid
-         |      ,un.date
-         |      ,un.hour
-         |      ,un.adclass
-         |      ,un.media_appsid
-         |      ,un.planid
-         |      ,un.unitid
-         |      ,tr.trace_type
-         |      ,"conv_api" as flag
-         |from (select a.searchid, a.userid, a.uid ,a.planid ,a.unitid ,a.ideaid, ext['adclass'].int_value as adclass, media_appsid, planid, unitid, a.date, a.hour from dl_cpc.cpc_union_log a
-         |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type <> 7 and a.isclick = 1) as un
-         |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
-         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
-         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and t2.id is null
-       """.stripMargin.format(date, before1hour, hour, yesterday, date, hour)
-    println("sql_api_callback: " + sql_api_callback)
-
-    /* 应用商城api转化 */
-    val sql_api_moti =
-      s"""
-         |select
-         |       tr.searchid
-         |      ,un.userid
-         |      ,un.uid
-         |      ,un.ideaid
-         |      ,un.date
-         |      ,un.hour
-         |      ,un.adclass
-         |      ,un.media_appsid
-         |      ,un.planid
-         |      ,un.unitid
-         |      ,tr.trace_type
-         |      ,"conv_api" as flag
-         |from (
-         |      select searchid
-         |            ,opt['ideaid'] as ideaid
-         |            ,trace_type
-         |      from dl_cpc.logparsed_cpc_trace_minute
-         |      where `thedate` = "%s" and `thehour` = "%s" and trace_type = 'active_third'
-         |   ) as tr
-         |join
-         |   (  select searchid, userid, "" as uid, planid, unitid, ideaid, adclass, media_appsid, date, hour
-         |      from dl_cpc.cpc_motivation_log
-         |      where %s and isclick = 1
-         |   ) as un
-         |on tr.searchid = un.searchid and tr.ideaid = un.ideaid
-         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
-         |where t2.id is null
-       """.stripMargin.format(date, hour, get3DaysBefore(date, hour), yesterday)
-    println("sql_api_moti: " + sql_api_moti)
-
-    val userApiBackRDD = (spark.sql(sql_api)).union(spark.sql(sql_api_callback)).union(spark.sql(sql_api_moti))
-      .rdd
-      .map {
-        x =>
-          (x.getAs[String]("searchid"), Seq(x))
-      }
-      .map {
-        x =>
-          var active_third = 0
-          var uid = ""
-          var userid = 0
-          var ideaid = 0
-          var adclass = 0
-          var media_appsid = ""
-          var planid = 0
-          var unitid = 0
-          var date = ""
-          var hour = ""
-          var search_time = ""
-          x._2.foreach(
-            x => {
-              uid = x.getAs[String]("uid")
-              userid = x.getAs[Int]("userid")
-              ideaid = x.getAs[Int]("ideaid")
-              adclass = x.getAs[Int]("adclass")
-              media_appsid = x.getAs[String]("media_appsid")
-              planid = x.getAs[Int]("planid")
-              unitid = x.getAs[Int]("unitid")
-              date = x.getAs[String]("date")
-              hour = x.getAs[String]("hour")
-              search_time = date + " " + hour
-
-              if (!x.isNullAt(0)) { //trace_type为null时过滤
-                val trace_type = x.getAs[String]("trace_type")
-                if (trace_type == "active_third") {
-                  active_third = 1
-                }
-              } else {
-                active_third = -1
-              }
-            }
-          )
-          (x._1, ideaid, active_third, search_time)
-      }
-      .filter(x => x._2 != -1) //过滤空值
-      .toDF("searchid", "ideaid", "label_api", "search_time")
-
-    println("user api back: " + userApiBackRDD.count())
-
-
-    /* 信息流转化：加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) */
-    val info_flow = spark.sql(
-      s"""
-         |select  a.searchid as search_id
+         |select  a.searchid
+         |       ,a.ideaid
          |       ,a.adslot_type
          |       ,a.ext["client_type"].string_value as client_type
          |       ,a.ext["adclass"].int_value  as adclass
@@ -816,7 +706,67 @@ object SaveFeatures {
          |       ,a.interaction
          |       ,a.uid
          |       ,a.userid
-         |       ,a.ideaid as idea_id
+         |       ,b.trace_type
+         |       ,b.trace_op1
+         |       ,b.duration
+         |       ,"conv_api" as flag
+         |from ( select * from dl_cpc.cpc_union_log
+         |       where `date`="%s" and hour>="%s" and hour<="%s" and ext_int['is_api_callback'] = 0 and adslot_type <> 7 and isclick = 1
+         |      ) a
+         |    join dl_cpc.logparsed_cpc_trace_minute b on a.searchid = b.searchid and a.ideaid = b.opt['ideaid']
+         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on a.userid = t2.id
+         |where  b.`thedate` = "%s" and b.`thehour` = "%s" and t2.id is null
+       """.stripMargin.format(date, before1hour, hour, yesterday, date, hour)
+    println("sql_api_callback: " + sql_api_callback)
+
+    /* 应用商城api转化 */
+    val sql_api_moti =
+      s"""
+         |select  a.searchid
+         |       ,a.ideaid
+         |       ,7  as adslot_type
+         |       ,"unknown" as client_type
+         |       ,-1 as adclass
+         |       ,-1 as siteid
+         |       ,-1 as adsrc
+         |       ,-1 as interaction
+         |       ,"unknown" as uid
+         |       ,a.userid
+         |       ,b.trace_type
+         |       ,b.trace_op1
+         |       ,b.duration
+         |       ,"conv_api" as flag
+         |from ( select * from dl_cpc.cpc_motivation_log where %s and isclick = 1) a
+         |  join ( select searchid
+         |            ,opt['ideaid'] as ideaid
+         |            ,trace_type
+         |            ,trace_op1
+         |            ,duration
+         |      from dl_cpc.logparsed_cpc_trace_minute
+         |      where `thedate` = "%s" and `thehour` = "%s" and trace_type = 'active_third'
+         |   ) b
+         |on a.searchid = b.searchid and a.ideaid = b.ideaid
+         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on a.userid = t2.id
+         |where t2.id is null
+       """.stripMargin.format(get3DaysBefore(date, hour), date, hour, yesterday)
+    println("sql_api_moti: " + sql_api_moti)
+
+    val userApiBackRDD = (spark.sql(sql_api)).union(spark.sql(sql_api_callback)).union(spark.sql(sql_api_moti))
+
+
+    /* 信息流转化：加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) */
+    val sql_info_flow =
+      s"""
+         |select  a.searchid
+         |       ,a.ideaid
+         |       ,a.adslot_type
+         |       ,a.ext["client_type"].string_value as client_type
+         |       ,a.ext["adclass"].int_value  as adclass
+         |       ,a.ext_int['siteid'] as siteid
+         |       ,a.adsrc
+         |       ,a.interaction
+         |       ,a.uid
+         |       ,a.userid
          |       ,b.trace_type
          |       ,b.trace_op1
          |       ,b.duration
@@ -830,20 +780,35 @@ object SaveFeatures {
          |            from dl_cpc.cpc_union_trace_log
          |            where `date` = "%s" and `hour` = "%s"
          |         ) b
-         |    on a.searchid=b.searchid
+         |    on a.searchid=b.searchid and a.ideaid = b.opt['ideaid']
          | where t2.id is null
-            """.stripMargin.format(date, hour, yesterday, date, hour))
+            """.stripMargin.format(date, hour, yesterday, date, hour)
+    println("sql_info_flow: " + sql_info_flow)
+
+    val cvrlog = (spark.sql(sql_motivate)).union(spark.sql(sql_api)).union(spark.sql(sql_api_callback)).union(spark.sql(sql_api_moti)).union(spark.sql(sql_info_flow))
       .rdd
       .map {
         x =>
-          ((x.getAs[String]("search_id"), x.getAs[Int]("idea_id")), Seq(x))
+          ((x.getAs[String]("searchid"), x.getAs[Int]("ideaid"), x.getAs[String]("flag")), Seq(x))
       }
       .reduceByKey(_ ++ _)
       .map {
         x =>
-          val convert = Utils.cvrPositiveV(x._2, version)
-          val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version) //新cvr
-        val convert_sdk_dlapp = Utils.cvrPositive_sdk_dlapp(x._2, version) //sdk栏位下载app的转化数
+          val flag = x._1._3
+          var convert = 0
+          var convert2 = 0
+          var convert_sdk_dlapp = 0
+          var label_type = 0
+
+          if (flag == "conv_motivate") {//激励下载转化
+            (convert2, label_type) = Utils.cvrPositive_motivate(x._2, version)
+          } else if (flag == "conv_api") {//Api回传转化
+            (convert2, label_type) = Utils.cvrPositive_api(x._2, version)
+          } else if (flag == "conv_info_flow") {//信息流转化
+            convert = Utils.cvrPositiveV(x._2, version)
+            (convert2, label_type) = Utils.cvrPositiveV2(x._2, version)
+            (convert_sdk_dlapp,label_type) = Utils.cvrPositive_sdk_dlapp(x._2, version) //sdk栏位下载app的转化数
+          }
 
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
@@ -880,148 +845,12 @@ object SaveFeatures {
             active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
             active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
             active_map.getOrElse("report_user_stayinwx", 0))
-      }
-      .toDF("search_id", "idea_id", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
-        "disactive", "active_href", "installed", "report_user_stayinwx")
 
-    println("info_flow log", info_flow.count(), info_flow.filter(r => r.getAs[Int]("label2") > 0).count())
-
-    val cvrlog = info_flow.join(conv_motivate, info_flow("search_id") === conv_motivate("searchid") && info_flow("idea_id") === conv_motivate("ideaid"), "full")
-      .rdd
-      .map { r =>
-        var feature = Feature("", 0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0)
-        var search_id = r.getAs[String]("search_id")
-        val searchid = r.getAs[String]("searchid")
-        if (search_id == null) {
-          //(searchid, r.getAs[Int]("ideaidid"), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, r.getAs[Int]("label_motivate"))
-          feature.searchid = searchid
-          feature.ideaid = r.getAs[Int]("ideaidid")
-          feature.label_motivate = r.getAs[Int]("label_motivate")
-        }
-        if (searchid == null) {
-          /*(search_id, r.getAs[Int]("ideaid_id"), r.getAs[Int]("label"),
-            r.getAs[Int]("label2"), r.getAs[Int]("label_type"), r.getAs[Int]("label_sdk_dlapp"),
-            r.getAs[Int]("active1"), r.getAs[Int]("active2"), r.getAs[Int]("active3"),
-            r.getAs[Int]("active4"), r.getAs[Int]("active5"), r.getAs[Int]("active6"),
-            r.getAs[Int]("disactive"), r.getAs[Int]("active_href"), r.getAs[Int]("installed"),
-            r.getAs[Int]("report_user_stayinwx"), 0)*/
-          feature.searchid = search_id
-          feature.ideaid = r.getAs[Int]("ideaid_id")
-          feature.label = r.getAs[Int]("label")
-          feature.label = r.getAs[Int]("label2")
-          feature.label = r.getAs[Int]("label_type")
-          feature.label = r.getAs[Int]("label_sdk_dlapp")
-          feature.label = r.getAs[Int]("active1")
-          feature.label = r.getAs[Int]("active2")
-          feature.label = r.getAs[Int]("active3")
-          feature.label = r.getAs[Int]("active4")
-          feature.label = r.getAs[Int]("active5")
-          feature.label = r.getAs[Int]("active6")
-          feature.label = r.getAs[Int]("disactive")
-          feature.label = r.getAs[Int]("active_href")
-          feature.label = r.getAs[Int]("installed")
-          feature.label = r.getAs[Int]("report_user_stayinwx")
-        }
-        if (search_id != null && searchid != null) {
-          /*(search_id, r.getAs[Int]("ideaid_id"), r.getAs[Int]("label"),
-            r.getAs[Int]("label2"), r.getAs[Int]("label_type"), r.getAs[Int]("label_sdk_dlapp"),
-            r.getAs[Int]("active1"), r.getAs[Int]("active2"), r.getAs[Int]("active3"),
-            r.getAs[Int]("active4"), r.getAs[Int]("active5"), r.getAs[Int]("active6"),
-            r.getAs[Int]("disactive"), r.getAs[Int]("active_href"), r.getAs[Int]("installed"),
-            r.getAs[Int]("report_user_stayinwx"), r.getAs[Int]("label_motivate"))*/
-          feature.searchid = search_id
-          feature.ideaid = r.getAs[Int]("ideaid_id")
-          feature.label = r.getAs[Int]("label")
-          feature.label = r.getAs[Int]("label2")
-          feature.label = r.getAs[Int]("label_type")
-          feature.label = r.getAs[Int]("label_sdk_dlapp")
-          feature.label = r.getAs[Int]("active1")
-          feature.label = r.getAs[Int]("active2")
-          feature.label = r.getAs[Int]("active3")
-          feature.label = r.getAs[Int]("active4")
-          feature.label = r.getAs[Int]("active5")
-          feature.label = r.getAs[Int]("active6")
-          feature.label = r.getAs[Int]("disactive")
-          feature.label = r.getAs[Int]("active_href")
-          feature.label = r.getAs[Int]("installed")
-          feature.label = r.getAs[Int]("report_user_stayinwx")
-          feature.label = r.getAs[Int]("label_motivate")
-        }
-        feature
-      }
-      .toDF("search_id", "idea_id", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
-        "disactive", "active_href", "installed", "report_user_stayinwx", "label_motivate", "label_api")
-      .join(conv_motivate, info_flow("search_id") === conv_motivate("searchid") && info_flow("idea_id") === conv_motivate("ideaid"), "full")
-      .rdd
-      .map { r =>
-        var feature = Feature("", 0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,   0, 0, 0, 0,  0)
-        val search_id = r.getAs[String]("search_id")
-        val searchid = r.getAs[String]("searchid")
-        if (search_id == null) {
-          //(searchid, r.getAs[Int]("ideaidid"), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, r.getAs[Int]("label_api"))
-          feature.searchid = searchid
-          feature.ideaid = r.getAs[Int]("ideaidid")
-          feature.label_motivate = r.getAs[Int]("label_api")
-        }
-        if (searchid == null) {
-          /*(search_id, r.getAs[Int]("ideaid_id"), r.getAs[Int]("label"),
-            r.getAs[Int]("label2"), r.getAs[Int]("label_type"), r.getAs[Int]("label_sdk_dlapp"),
-            r.getAs[Int]("active1"), r.getAs[Int]("active2"), r.getAs[Int]("active3"),
-            r.getAs[Int]("active4"), r.getAs[Int]("active5"), r.getAs[Int]("active6"),
-            r.getAs[Int]("disactive"), r.getAs[Int]("active_href"), r.getAs[Int]("installed"),
-            r.getAs[Int]("report_user_stayinwx"), r.getAs[Int]("label_motivate"), 0)*/
-          feature.searchid = search_id
-          feature.ideaid = r.getAs[Int]("ideaid_id")
-          feature.label = r.getAs[Int]("label")
-          feature.label = r.getAs[Int]("label2")
-          feature.label = r.getAs[Int]("label_type")
-          feature.label = r.getAs[Int]("label_sdk_dlapp")
-          feature.label = r.getAs[Int]("active1")
-          feature.label = r.getAs[Int]("active2")
-          feature.label = r.getAs[Int]("active3")
-          feature.label = r.getAs[Int]("active4")
-          feature.label = r.getAs[Int]("active5")
-          feature.label = r.getAs[Int]("active6")
-          feature.label = r.getAs[Int]("disactive")
-          feature.label = r.getAs[Int]("active_href")
-          feature.label = r.getAs[Int]("installed")
-          feature.label = r.getAs[Int]("report_user_stayinwx")
-          feature.label = r.getAs[Int]("label_motivate")
-        }
-        if (search_id != null && searchid != null) {
-          /*(search_id, r.getAs[String]("search_id"), r.getAs[Int]("ideaid_id"), r.getAs[Int]("label"),
-            r.getAs[Int]("label2"), r.getAs[Int]("label_type"), r.getAs[Int]("label_sdk_dlapp"),
-            r.getAs[Int]("active1"), r.getAs[Int]("active2"), r.getAs[Int]("active3"),
-            r.getAs[Int]("active4"), r.getAs[Int]("active5"), r.getAs[Int]("active6"),
-            r.getAs[Int]("disactive"), r.getAs[Int]("active_href"), r.getAs[Int]("installed"),
-            r.getAs[Int]("report_user_stayinwx"), r.getAs[Int]("label_motivate"), r.getAs[Int]("label_api"))*/
-          feature.searchid = search_id
-          feature.ideaid = r.getAs[Int]("ideaid_id")
-          feature.label = r.getAs[Int]("label")
-          feature.label = r.getAs[Int]("label2")
-          feature.label = r.getAs[Int]("label_type")
-          feature.label = r.getAs[Int]("label_sdk_dlapp")
-          feature.label = r.getAs[Int]("active1")
-          feature.label = r.getAs[Int]("active2")
-          feature.label = r.getAs[Int]("active3")
-          feature.label = r.getAs[Int]("active4")
-          feature.label = r.getAs[Int]("active5")
-          feature.label = r.getAs[Int]("active6")
-          feature.label = r.getAs[Int]("disactive")
-          feature.label = r.getAs[Int]("active_href")
-          feature.label = r.getAs[Int]("installed")
-          feature.label = r.getAs[Int]("report_user_stayinwx")
-          feature.label = r.getAs[Int]("label_motivate")
-          feature.label = r.getAs[Int]("label_api")
-        }
-        feature
       }
       .toDF("searchid", "ideaid", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
-        "disactive", "active_href", "installed", "report_user_stayinwx", "label_motivate", "label_api")
+        "disactive", "active_href", "installed", "report_user_stayinwx")
 
-    println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getAs[Int]("label2") > 0).count(),
-      cvrlog.filter(r => r.getAs[Int]("label_motivate") > 0).count(),
-      cvrlog.filter(r => r.getAs[Int]("label_api") > 0).count())
+    println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getAs[Int]("label2") > 0).count())
 
 
     val sqlStmt =
@@ -1040,7 +869,6 @@ object SaveFeatures {
         |       ext['exp_cvr'].int_value as exp_cvr,
         |       ext['usertype'].int_value as usertype
         |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isclick = 1
-        |
           """.stripMargin.format(date, hour)
     println(sqlStmt)
     val clicklog = spark.sql(sqlStmt)
@@ -1082,25 +910,5 @@ object SaveFeatures {
 
 }
 
-case class Feature(
-                    var searchid: String = "",
-                    var ideaid: Int = 0,
-                    var label: Int = 0,
-                    var label2: Int = 0,
-                    var label_type: Int = 0,
-                    var label_sdk_dlapp: Int = 0,
-                    var active1: Int = 0,
-                    var active2: Int = 0,
-                    var active3: Int = 0,
-                    var active4: Int = 0,
-                    var active5: Int = 0,
-                    var active6: Int = 0,
-                    var disactive: Int = 0,
-                    var active_href: Int = 0,
-                    var installed: Int = 0,
-                    var report_user_stayinwx: Int = 0,
-                    var label_motivate: Int = 0,
-                    var label_api: Int = 0
-                  )
 
 

@@ -200,13 +200,7 @@ object Utils {
     }
   }
 
-  /**
-    * 新cvr计算逻辑
-    *
-    * @param traces
-    * @param version
-    * @return
-    */
+  /* 新cvr计算逻辑 */
   def cvrPositiveV2(traces: Seq[Row], version: String): (Int, Int) = {
     var active5 = 0
     var active3 = 0
@@ -235,46 +229,46 @@ object Utils {
 
     traces.foreach {
       r =>
-        if ((!r.isNullAt(0)) && (!r.isNullAt(1))) { //trace_type和trace_op1为null时过滤
-          r.getAs[String]("trace_type") match {
-            case "active5" => active5 += 1
-            case "active3" => active3 += 1
-            case "disactive" => disactive += 1
-            case "active_href" => active_href += 1
-            case "nosite_disactive" => nosite_disactive += 1
-            case "nosite_active5" => nosite_active5 += 1
-            case _ =>
-          }
-
-
-          //加粉类：建站&sdk
-          if (r.getAs[String]("trace_op1").toLowerCase == "report_user_stayinwx") {
-            conversion_sdk_wechat += 1
-          }
-
-          //直接下载类、落地页下载类
-          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_pkgadded") {
-            conversion_sdk_download += 1
-          }
-
-          //落地页套户、其他类非建站测试
-          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" ||
-            (r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type") != "active5"))) {
-            js_site_active_other_test += 1
-          }
-
-          //其它类：建站
-          if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
-            r.getAs[String]("trace_type") == "active3" || r.getAs[String]("trace_type") == "active4") {
-            js_site_active_other += 1
-          }
-
-          //其它类：非建站
-          if (r.getAs[String]("trace_type").startsWith("nosite_active") && (r.getAs[String]("trace_type") != "nosite_active5")) {
-            nosite_active += 1
-          }
-
+        //if ((!r.isNullAt(0)) && (!r.isNullAt(1))) { //trace_type和trace_op1为null时过滤
+        r.getAs[String]("trace_type") match {
+          case "active5" => active5 += 1
+          case "active3" => active3 += 1
+          case "disactive" => disactive += 1
+          case "active_href" => active_href += 1
+          case "nosite_disactive" => nosite_disactive += 1
+          case "nosite_active5" => nosite_active5 += 1
+          case _ =>
         }
+
+
+        //加粉类：建站&sdk
+        if (r.getAs[String]("trace_op1").toLowerCase == "report_user_stayinwx") {
+          conversion_sdk_wechat += 1
+        }
+
+        //直接下载类、落地页下载类
+        if (r.getAs[String]("trace_op1").toLowerCase == "report_download_pkgadded") {
+          conversion_sdk_download += 1
+        }
+
+        //落地页套户、其他类非建站测试
+        if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" ||
+          (r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type") != "active5"))) {
+          js_site_active_other_test += 1
+        }
+
+        //其它类：建站
+        if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
+          r.getAs[String]("trace_type") == "active3" || r.getAs[String]("trace_type") == "active4") {
+          js_site_active_other += 1
+        }
+
+        //其它类：非建站
+        if (r.getAs[String]("trace_type").startsWith("nosite_active") && (r.getAs[String]("trace_type") != "nosite_active5")) {
+          nosite_active += 1
+        }
+
+      // }
     }
 
     traces.foreach {
@@ -422,7 +416,7 @@ object Utils {
 
     traces.foreach {
       r =>
-        if ((!r.isNullAt(0)) && (!r.isNullAt(1))){
+        if ((!r.isNullAt(0)) && (!r.isNullAt(1))) {
           val adclass = r.getAs[Int]("adclass")
           val client_type = r.getAs[String]("client_type")
           val interaction = r.getAs[Int]("interaction")
@@ -447,27 +441,15 @@ object Utils {
 
   }
 
-  /**
-    * 激励下载转化
-    *
-    * @param traces
-    * @param version
-    * @return
-    */
-  def cvrPositiveV3(traces: Seq[Row], version: String): (Int, Int) = {
-
+  /* 激励下载转化 */
+  def cvrPositive_motivate(traces: Seq[Row], version: String): (Int, Int) = {
     var label_type = 0
-
     var active_motivate = 0
 
     traces.foreach {
       r =>
-        if ((!r.isNullAt(0)) && (!r.isNullAt(1))) { //trace_type和trace_op1为null时过滤
-          //激励转化
-          if (r.getAs[String]("trace_type") == "sdk_incite" && r.getAs[String]("trace_op1").toLowerCase == "open_app") {
-            active_motivate += 1
-          }
-
+        if (r.getAs[String]("trace_type") == "sdk_incite" && r.getAs[String]("trace_op1").toLowerCase == "open_app") {
+          active_motivate += 1
         }
     }
 
@@ -479,6 +461,23 @@ object Utils {
 
   }
 
+  /* Api回传转化 */
+  def cvrPositive_api(traces: Seq[Row], version: String): (Int, Int) = {
+    var label_type = 0
+    var active_api = 0
+
+    traces.foreach {
+      r =>
+        if (r.getAs[String]("trace_type") == "active_third") {
+          active_api += 1
+        }
+    }
+    if (active_api > 0) {
+      (1, 13)
+    } else {
+      (0, 13)
+    }
+  }
 
 }
 
