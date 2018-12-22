@@ -22,13 +22,14 @@ object OcpcUtils {
   }
 
   def getIdentifierString() = {
-    val conf = ConfigFactory.load("ocpc")
+    val confList = ConfigFactory
+      .load("ocpc")
+      .getStringList("ocpc_all.ocpc_regression.identifier")
 
-    val identifiers = conf.getStringList("ocpc_all.cpa_history.identifier")
     var selectionID = ""
-    for (item <- identifiers) {
+    for (i <- 0 until confList.size()) {
       if (selectionID.length() > 0) {
-        selectionID = selectionID + "|" + item
+        selectionID = selectionID + "|" + confList.get(i)
       }
     }
     selectionID
