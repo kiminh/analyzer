@@ -23,7 +23,7 @@ object OcpcCheckData {
          |            userid,
          |            SUM(case when isclick=1 then price else 0 end) as cost
          |        FROM
-         |            test.ocpcv3_complete_data20181208
+         |            test.ocpcv3_complete_data20181220
          |        GROUP BY userid) as t
          |    ORDER BY t.cost DESC
          |    limit 100) as a
@@ -40,6 +40,7 @@ object OcpcCheckData {
          |        isshow,
          |        ideaid,
          |        exptags,
+         |        media_appsid,
          |        price,
          |        bid,
          |        adslotid,
@@ -78,6 +79,7 @@ object OcpcCheckData {
       .withColumn("hour", lit(hour))
 
 //    data.write.mode("overwrite").saveAsTable("test.test_ocpc_complete_probe_20181208_new")
-    data.write.mode("overwrite").insertInto("test.test_ocpc_complete_probe_20181208_new_bak")
+    data.write.mode("overwrite").insertInto("test.test_ocpc_complete_probe_20181208_new_v1")
   }
+
 }

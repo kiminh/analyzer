@@ -58,7 +58,11 @@ object OcpcKexp {
     val data = spark.sparkContext.textFile(filename)
     val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     rawRDD.foreach(println)
-    val expIdeas = rawRDD.toDF("ideaid", "flag").distinct()
+    val expIdeas = rawRDD
+      .toDF("ideaid", "flag")
+      .groupBy("ideaid")
+      .agg(min(col("flag")).alias("flag"))
+      .distinct()
 
     // 根据实验id列表，替换k值
     val kvalue = kv1
