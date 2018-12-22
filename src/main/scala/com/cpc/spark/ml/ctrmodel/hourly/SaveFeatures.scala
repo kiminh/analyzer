@@ -267,7 +267,7 @@ object SaveFeatures {
       }
       .reduceByKey(_ ++ _)
       .map { x =>
-        val (convert, label_type) = Utils.cvrPositiveV3(x._2, version)
+        val (convert, label_type) = Utils.cvrPositive_motivate(x._2, version)
         (x._1._1, x._1._2, convert)
       }.toDF("searchid", "ideaid", "label")
     println("motivate: " + motivateRDD.count())
