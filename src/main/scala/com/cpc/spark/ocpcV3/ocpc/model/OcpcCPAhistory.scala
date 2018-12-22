@@ -47,7 +47,7 @@ object OcpcCPAhistory {
       .distinct()
       .join(qttAlpha, Seq("unitid", "new_adclass"), "left_outer")
       .join(adclassData, Seq("new_adclass"), "left_outer")
-      .select("unitid", "new_adclass", "cpa1_history_qtt", "cpa2_history_qtt", "cpa1", "cpa2")
+      .select("unitid", "new_adclass", "cpa1_history_qtt", "cpa2_history_qtt", "cpa_adclass")
 
     // 按照策略挑选合适的cpa以及确定对应的conversion_goal
     val result = getResult(data, date, hour, spark)
@@ -193,13 +193,12 @@ object OcpcCPAhistory {
       .groupBy("new_adclass")
       .agg(
         sum(col("total_cost")).alias("cost"),
-        sum(col("cvr1cnt")).alias("cvr1cnt"),
-        sum(col("cvr2cnt")).alias("cvr2cnt"))
-      .withColumn("cpa1", col("cost") * 1.0 / col("cvr1cnt"))
-      .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
+        sum(col("cvr1cnt")).alias("cvr1cnt"))
+      .withColumn("cpa_adclass", col("cost") * 1.0 / col("cvr1cnt"))
 
     val resultDF = data
-      .select("new_adclass", "cpa1", "cpa2")
+      .select("new_adclass", "cpa_adclass")
+      .withColumn("conversion_goal", lit(1))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("v1"))
@@ -282,14 +281,9 @@ object OcpcCPAhistory {
          |  new_adclass,
          |  cpa1_history_qtt,
          |  cpa2_history_qtt,
-         |  cpa1,
-         |  cpa2,
-         |  (case when cpa1_history_qtt is null and cpa2_history_qtt is null then 0
-         |        when cpa1_history_qtt is null and cpa2_history_qtt is not null then 2
-         |        else 1 end) as qtt_conversion,
-         |  (case when cpa1 is null and cpa2 is null then 0
-         |        when cpa1 is null and cpa2 is not null then 2
-         |        else 1 end) as adclass_conversion
+         |  cpa_adclass,
+         |  (case when cpa2_history_qtt is not null then 2
+         |        else 1 end) as conversion_goal
          |FROM
          |  base_table
        """.stripMargin
@@ -298,10 +292,7 @@ object OcpcCPAhistory {
     rawData.printSchema()
 
     val data = rawData
-      .withColumn("conversion_goal", udfConversionGoalV1()(col("qtt_conversion"), col("adclass_conversion")))
-      .filter(s"conversion_goal>0")
       .withColumn("cpa_qtt", when(col("conversion_goal")===1, col("cpa1_history_qtt")).otherwise(col("cpa2_history_qtt")))
-      .withColumn("cpa_adclass", when(col("conversion_goal")===1, col("cpa1")).otherwise(col("cpa2")))
       .withColumn("cpa_src", when(col("cpa_qtt").isNull, "adclass").otherwise("qtt"))
       .withColumn("cpa_history", when(col("cpa_src")==="qtt", col("cpa_qtt")).otherwise(col("cpa_adclass")))
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
