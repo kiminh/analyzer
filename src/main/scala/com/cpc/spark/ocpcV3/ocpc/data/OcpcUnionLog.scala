@@ -13,8 +13,8 @@ object OcpcUnionLog {
     val hour = args(1).toString
 
     val result = getOcpcUnionlog(date, hour, spark)
-    result.write.mode("overwrite").saveAsTable("test.ocpc_union_log_hourly")
-//    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_union_log_hourly")
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_union_log_hourly")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_union_log_hourly")
     println("successfully save data into table: dl_cpc.ocpc_union_log_hourly")
   }
 
@@ -79,9 +79,6 @@ object OcpcUnionLog {
          |    ext_int,
          |    ext_string,
          |    ext_float,
-         |    motive,
-         |    motivation,
-         |    motive_ext,
          |    ext_string['ocpc_log'] as ocpc_log
          |from dl_cpc.cpc_union_log
          |where $selectWhere
