@@ -166,6 +166,7 @@ object OcpcRegression {
       .select("identifier", "k_ratio", "cpagiven", "cpa", "ratio", "click_cnt", "cvr_cnt", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .withColumn("version", lit("v1"))
 
     result.write.mode("overwrite").saveAsTable(tablename)
 //    result.write.mode("overwrite").insertInto(tablename)
