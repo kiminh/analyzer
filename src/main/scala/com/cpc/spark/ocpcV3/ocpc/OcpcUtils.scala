@@ -7,9 +7,38 @@ import com.typesafe.config.ConfigFactory
 
 
 object OcpcUtils {
-  def getOcpcLogDiv(date: String, hour: String, hourCnt: Int) = {
+  def getIdentifierSql() = {
     val conf = ConfigFactory.load("ocpc")
 
-    val targetK = conf.getDouble("ocpc_all.targetK")
+    val identifiers = conf.getStringList("ocpc_all.cpa_history.identifier")
+    var selectionID = ""
+    for (item <- identifiers) {
+      if (selectionID.length() > 0) {
+        selectionID = selectionID + ", " + item
+      }
+    }
+    selectionID
+  }
+
+  def getIdentifierString() = {
+    val conf = ConfigFactory.load("ocpc")
+
+    val identifiers = conf.getStringList("ocpc_all.cpa_history.identifier")
+    var selectionID = ""
+    for (item <- identifiers) {
+      if (selectionID.length() > 0) {
+        selectionID = selectionID + "|" + item
+      }
+    }
+    selectionID
+  }
+
+  def getTimeRangeSql2(startDate: String, startHour: String, endDate: String, endHour: String): String = {
+    if (startDate.equals(endDate)) {
+      return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
+    }
+    return s"((`date` = '$startDate' and hour > '$startHour') " +
+      s"or (`date` = '$endDate' and hour <= '$endHour') " +
+      s"or (`date` > '$startDate' and `date` < '$endDate'))"
   }
 }
