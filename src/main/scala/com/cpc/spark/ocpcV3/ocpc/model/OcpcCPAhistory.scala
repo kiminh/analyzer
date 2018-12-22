@@ -37,7 +37,7 @@ object OcpcCPAhistory {
     // 按照要求生成相关基础数据表
     val baseData = getBaseData(date, hour, days, spark)
     val qttData = getQttCPA(baseData, date, hour, spark)
-    val adclassData = getAdclassCPA(baseData, date, hour, spark).select("new_adclass", "cpa1", "cpa2")
+    val adclassData = getAdclassCPA(baseData, date, hour, spark)
     adclassData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_adclass_hourly")
     val qttAlpha = checkCPAhistory(qttData, alpha, "qtt", date, hour, spark)
 
