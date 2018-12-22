@@ -61,8 +61,8 @@ object OcpcRegression {
 //    val dtCondition = "(%s)".format(datehourlist.mkString(" or "))
 //    val dtCondition2 = "(%s)".format(datehourlist2.mkString(" or "))
 
-    val selectorID = getIdentifierSql()
-    val identifier = getIdentifierString()
+    val selectorID = conf.getString("ocpc_all.ocpc_regression.select_keys")
+    val identifier = conf.getString("ocpc_all.ocpc_regression.identifier")
 
     val sqlRequest1 =
       s"""
