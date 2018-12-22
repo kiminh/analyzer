@@ -15,8 +15,8 @@ object OcpcCheckResultWithList {
     val date = args(0).toString
     val hour = args(1).toString
 
-    val result = getResult(date, hour, spark)
-    val tableName = "test.ocpc_check_exp_result20181213"
+    val result = getDetailResult(date, hour, spark)
+    val tableName = "test.ocpc_check_exp_result20181222"
     result.write.mode("overwrite").saveAsTable(tableName)
     println(s"successfully save data into table: $tableName")
   }
@@ -43,5 +43,39 @@ object OcpcCheckResultWithList {
 
     resultDF
   }
+
+  def getDetailResult(date: String, hour: String, spark: SparkSession) = {
+    import spark.implicits._
+
+    val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
+    val data = spark.sparkContext.textFile(filename)
+    val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+    rawRDD.foreach(println)
+    val expDF = rawRDD.toDF("ideaid", "flag").filter(s"flag=2").distinct()
+    expDF.write.mode("overwrite").saveAsTable("test.ocpc_exp_ideaid_list")
+
+    val ctrData = spark
+      .table("dl_cpc.ocpc_unionlog")
+      .where(s"`dt`='$date'")
+      .withColumn("ideaid", col("idea_id"))
+      .select("searchid", "ideaid", "ocpc_log_dict", "exp_ctr", "exp_cvr", "price", "isclick", "isshow", "hour")
+
+    val cvrData = spark
+      .table("dl_cpc.ml_cvr_feature_v1")
+      .where(s"`date`='$date'")
+      .select("searchid", "label_sdk_dlapp")
+      .withColumn("iscvr", col("label_sdk_dlapp"))
+      .select("searchid", "iscvr")
+      .distinct()
+
+    val rawData = ctrData.join(cvrData, Seq("searchid"), "left_outer")
+
+    val resultDF = rawData
+      .join(expDF, Seq("ideaid"), "inner")
+      .select("searchid", "ideaid", "ocpc_log_dict", "exp_ctr", "exp_cvr", "price", "isclick", "isshow", "iscvr", "hour")
+
+    resultDF
+  }
+
 
 }
