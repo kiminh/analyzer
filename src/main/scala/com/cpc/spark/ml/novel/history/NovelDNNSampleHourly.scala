@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.novel
+package com.cpc.spark.ml.novel.history
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -10,14 +10,15 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**
   * dnn ctr v3  小时任务
-  * 共28个dense，19个multi hot特征，
+  * 共28个dense，15个multi hot特征，
   * created time : 2018/11/01 14:34
   *
   * @author zhj
   * @version 1.0
   *
   */
-object NovelDNNSampleHourlyV2 {
+@deprecated
+object NovelDNNSampleHourly {
 
   Logger.getRootLogger.setLevel(Level.WARN)
 
@@ -42,7 +43,7 @@ object NovelDNNSampleHourlyV2 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/wy/dnn_novel_v2/dnntrain-$date-$hour")
+      .save(s"/user/cpc/wy/dnn_novel_v1/dnntrain-$date-$hour")
     train.take(10).foreach(println)
 
     train.sample(withReplacement = false, 0.1).repartition(100)
@@ -50,7 +51,7 @@ object NovelDNNSampleHourlyV2 {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/wy/dnn_novel_v2/dnntest-$date-$hour")
+      .save(s"/user/cpc/wy/dnn_novel_v1/dnntest-$date-$hour")
 
     train.unpersist()
   }
@@ -58,7 +59,7 @@ object NovelDNNSampleHourlyV2 {
   def getSample(spark: SparkSession, date: String, hour: String): DataFrame = {
     import spark.implicits._
 
-    val behavior_data = spark.read.parquet("/user/cpc/wy/novel_behavior_v2")
+    val behavior_data = spark.read.parquet("/user/cpc/wy/novel_behavior")
 
     val userAppIdx = getUidApp(spark, date)
       .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))
@@ -130,7 +131,7 @@ object NovelDNNSampleHourlyV2 {
         hash("f28")($"hour").alias("f28"),
 
         array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
-          $"m11", $"m12", $"m13", $"m14", $"m15", $"m16", $"m17", $"m18", $"m19").alias("raw_sparse")
+          $"m11", $"m12", $"m13", $"m14", $"m15").alias("raw_sparse")
       )
 
       .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",

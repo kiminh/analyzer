@@ -1,4 +1,4 @@
-package com.cpc.spark.ml.novel
+package com.cpc.spark.ml.novel.history
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -18,7 +18,8 @@ import org.apache.spark.sql.functions.udf
   * @version 1.0
   *
   */
-object Behavior2RedisNovelCvr {
+@deprecated
+object Behavior2RedisNovelV2 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
@@ -26,6 +27,12 @@ object Behavior2RedisNovelCvr {
 
     import spark.implicits._
     val date = args(0) //today
+
+    val data2 = spark.sql(
+      s"""
+         |select * from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
+      """.stripMargin)
+      .select("uid","book_id","first_category_id","second_category_id","third_category_id")
 
     val data = spark.sql(
       s"""
@@ -37,32 +44,27 @@ object Behavior2RedisNovelCvr {
          |       collect_set(if(load_date='${getDay(date, 3)}',show_ideaid,null)) as s_ideaid_3,
          |       collect_set(if(load_date='${getDay(date, 3)}',show_adclass,null)) as s_adclass_3,
          |
+         |
          |       collect_set(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
          |       collect_set(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
+         |
          |       collect_set(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
          |       collect_set(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
+         |
          |       collect_set(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
          |       collect_set(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3,
+         |
          |       collect_set(if(load_date>='${getDay(date, 7)}'
          |                  and load_date<='${getDay(date, 4)}',click_ideaid,null)) as c_ideaid_4_7,
          |       collect_list(if(load_date>='${getDay(date, 7)}'
-         |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7,
+         |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7
          |
-         |       collect_set(if(load_date='${getDay(date, 1)}',cvr_ideaid,null)) as r_ideaid_1,
-         |       collect_set(if(load_date='${getDay(date, 1)}',cvr_adclass,null)) as r_adclass_1,
-         |       collect_set(if(load_date='${getDay(date, 2)}',cvr_ideaid,null)) as r_ideaid_2,
-         |       collect_set(if(load_date='${getDay(date, 2)}',cvr_adclass,null)) as r_adclass_2,
-         |       collect_set(if(load_date='${getDay(date, 3)}',cvr_ideaid,null)) as r_ideaid_3,
-         |       collect_set(if(load_date='${getDay(date, 3)}',cvr_adclass,null)) as r_adclass_3,
-         |       collect_set(if(load_date>='${getDay(date, 7)}'
-         |                  and load_date<='${getDay(date, 4)}',cvr_ideaid,null)) as r_ideaid_4_7,
-         |       collect_list(if(load_date>='${getDay(date, 7)}'
-         |                  and load_date<='${getDay(date, 4)}',cvr_adclass,null)) as r_adclass_4_7
-         |
-         |from dl_cpc.cpc_user_behaviors_novel_cvr
+         |from dl_cpc.cpc_user_behaviors_novel
          |where load_date in ('${getDays(date, 1, 7)}')
+         |    and rn <= 1000
          |group by uid
       """.stripMargin)
+      .join(data2,Seq("uid"),"left")
       .select(
         $"uid",
         hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
@@ -79,21 +81,17 @@ object Behavior2RedisNovelCvr {
         hashSeq("m13", "int")($"c_adclass_3").alias("m13"),
         hashSeq("m14", "int")($"c_adclass_4_7").alias("m14"),
         hashSeq("m15", "int")($"c_adclass_4_7").alias("m15"),
-        hashSeq("m16", "int")($"r_ideaid_1").alias("m16"),
-        hashSeq("m17", "int")($"r_ideaid_2").alias("m17"),
-        hashSeq("m18", "int")($"r_ideaid_3").alias("m18"),
-        hashSeq("m19", "int")($"r_adclass_1").alias("m19"),
-        hashSeq("m20", "int")($"r_adclass_2").alias("m20"),
-        hashSeq("m21", "int")($"r_adclass_3").alias("m21"),
-        hashSeq("m22", "int")($"r_ideaid_4_7").alias("m22"),
-        hashSeq("m23", "int")($"r_adclass_4_7").alias("m23")
+        hashSeq("m16", "int")($"book_id").alias("m16"),
+        hashSeq("m17", "int")($"first_category_id").alias("m17"),
+        hashSeq("m18", "int")($"second_category_id").alias("m18"),
+        hashSeq("m19", "int")($"third_category_id").alias("m19")
       )
       .persist()
 
-    println("dnn novel cvr用户行为特征总数：" + data.count())
+    println("dnn novel 用户行为特征总数：" + data.count())
 
     data.coalesce(20).write.mode("overwrite")
-      .parquet(s"/user/cpc/wy/novel_behavior_cvr/behavior-$date")
+      .parquet("/user/cpc/wy/novel_behavior_v2")
 
 
     val conf = ConfigFactory.load()
@@ -104,8 +102,8 @@ object Behavior2RedisNovelCvr {
       p.foreach { rec =>
         var group = Seq[Int]()
         var hashcode = Seq[Long]()
-        val uid = "n2_" + rec.getString(0)
-        for (i <- 1 to 22) {
+        val uid = "n3_" + rec.getString(0)
+        for (i <- 1 to 18) {
           val f = rec.getAs[Seq[Long]](i)
           group = group ++ Array.tabulate(f.length)(x => i)
           hashcode = hashcode ++ f

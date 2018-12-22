@@ -1,24 +1,24 @@
-package com.cpc.spark.ml.novel
+package com.cpc.spark.ml.novel.history
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.common.Murmur3Hash
-import com.cpc.spark.ml.novel.Behavior2RedisNovelCvr.getDay
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions.{array, udf}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**
   * dnn ctr v3  小时任务
-  * 共28个dense，23个multi hot特征，
+  * 共28个dense，19个multi hot特征，
   * created time : 2018/11/01 14:34
   *
   * @author zhj
   * @version 1.0
   *
   */
-object NovelDNNSampleHourlyCvr {
+@deprecated
+object NovelDNNSampleHourlyV2 {
 
   Logger.getRootLogger.setLevel(Level.WARN)
 
@@ -31,9 +31,9 @@ object NovelDNNSampleHourlyCvr {
       .enableHiveSupport()
       .getOrCreate()
     val date = args(0)
-//    val hour = args(1)
+    val hour = args(1)
 
-    val train = getSample(spark, date).persist()
+    val train = getSample(spark, date, hour).persist()
 
     val n = train.count()
     println("训练数据：total = %d, 正比例 = %.4f".format(n, train.where("label=array(1,0)").count.toDouble / n))
@@ -43,7 +43,7 @@ object NovelDNNSampleHourlyCvr {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/wy/dnn_novel_cvr_v1/dnntrain-$date")
+      .save(s"/user/cpc/wy/dnn_novel_v2/dnntrain-$date-$hour")
     train.take(10).foreach(println)
 
     train.sample(withReplacement = false, 0.1).repartition(100)
@@ -51,47 +51,46 @@ object NovelDNNSampleHourlyCvr {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/wy/dnn_novel_cvr_v1/dnntest-$date")
+      .save(s"/user/cpc/wy/dnn_novel_v2/dnntest-$date-$hour")
 
     train.unpersist()
   }
 
-  def getSample(spark: SparkSession, date: String): DataFrame = {
+  def getSample(spark: SparkSession, date: String, hour: String): DataFrame = {
     import spark.implicits._
-    val day = getDay(date, 1)
-    val behavior_data = spark.read.parquet(s"/user/cpc/wy/novel_behavior_cvr/behavior-$day")
+
+    val behavior_data = spark.read.parquet("/user/cpc/wy/novel_behavior_v2")
 
     val userAppIdx = getUidApp(spark, date)
       .select($"uid", hashSeq("m1", "string")($"pkgs").alias("m1"))
 
     val sql =
       s"""
-         |select
-         |  if(iscvr>0, array(1,0), array(0,1)) as label,
+         |select if(isclick>0, array(1,0), array(0,1)) as label,
          |  media_type, media_appsid as mediaid,
          |  ext['channel'].int_value as channel,
          |  ext['client_type'].string_value as sdk_type,
+         |
          |  adslot_type, adslotid,
+         |
          |  adtype, interaction, bid, ideaid, unitid, planid, userid,
          |  ext_int['is_new_ad'] as is_new_ad, ext['adclass'].int_value as adclass,
          |  ext_int['siteid'] as site_id,
+         |
          |  os, network, ext['phone_price'].int_value as phone_price,
          |  ext['brand_title'].string_value as brand,
+         |
          |  province, city, ext['city_level'].int_value as city_level,
+         |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id,
-         |  a.hour
-         |from
-         |  (select *
-         |from dl_cpc.cpc_union_log where `date` = '$day'
-         |  and isclick = 1 and ideaid > 0
+         |
+         |  hour
+         |
+         |from dl_cpc.cpc_union_log where `date` = '$date' and hour = $hour
+         |  and isshow = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
-         |) a
-         |inner join
-         |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
-         |  WHERE `date` = '$day'
-         |) b on a.searchid = b.searchid
       """.stripMargin
     println("--------------------------------")
     println(sql)
@@ -132,8 +131,7 @@ object NovelDNNSampleHourlyCvr {
         hash("f28")($"hour").alias("f28"),
 
         array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
-          $"m11", $"m12", $"m13", $"m14", $"m15",$"m16", $"m17", $"m18", $"m19", $"m20",$"m21", $"m22",$"m23")
-          .alias("raw_sparse")
+          $"m11", $"m12", $"m13", $"m14", $"m15", $"m16", $"m17", $"m18", $"m19").alias("raw_sparse")
       )
 
       .select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
@@ -202,9 +200,9 @@ object NovelDNNSampleHourlyCvr {
   def getUidApp(spark: SparkSession, date: String): DataFrame = {
     import spark.implicits._
     spark.sql(
-      s"""
-        |select * from dl_cpc.cpc_user_installed_apps where `load_date` = date_add('$date', -1)
-      """.stripMargin).rdd
+      """
+        |select * from dl_cpc.cpc_user_installed_apps where `load_date` = "%s"
+      """.stripMargin.format(date)).rdd
       .map(x => (x.getAs[String]("uid"), x.getAs[Seq[String]]("pkgs")))
       .reduceByKey(_ ++ _)
       .map(x => (x._1, x._2.distinct))
