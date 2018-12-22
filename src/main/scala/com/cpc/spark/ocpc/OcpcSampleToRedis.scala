@@ -749,13 +749,14 @@ object OcpcSampleToRedis {
   }
 
   def resetK(date: String, hour: String, regressionK: DataFrame, pidK: DataFrame, spark: SparkSession) = {
-    var prevTable = getPrevK(date, hour, 1, spark)
-    var hourCnt=1
-    while (hourCnt < 11) {
+    // todo
+    var prevTable = getPrevK(date, hour, 25, spark)
+    var hourCnt=25
+    while (hourCnt < 36) {
       val cnt = prevTable.count()
       println(s"check prevTable Count: $cnt, at hourCnt = $hourCnt")
       if (cnt>0) {
-        hourCnt = 11
+        hourCnt = 36
       } else {
         hourCnt += 1
         prevTable = getPrevK(date, hour, hourCnt, spark)
