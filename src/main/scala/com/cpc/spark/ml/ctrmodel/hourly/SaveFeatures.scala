@@ -807,7 +807,7 @@ object SaveFeatures {
           } else if (flag == "conv_info_flow") {//信息流转化
             convert = Utils.cvrPositiveV(x._2, version)
             (convert2, label_type) = Utils.cvrPositiveV2(x._2, version)
-            (convert_sdk_dlapp,label_type) = Utils.cvrPositive_sdk_dlapp(x._2, version) //sdk栏位下载app的转化数
+            (convert_sdk_dlapp, label_type) = Utils.cvrPositive_sdk_dlapp(x._2, version) //sdk栏位下载app的转化数
           }
 
           //存储active行为数据
