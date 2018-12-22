@@ -43,18 +43,18 @@ object OcpcCPAhistory {
     val qttAlpha = checkCPAhistory(qttData, alpha, "qtt", date, hour, spark)
     qttAlpha.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_qtt_alpha_hourly")
 
-//    // 数据表关联
-//    val data = baseData
-//      .select("unitid", "new_adclass")
-//      .distinct()
-//      .join(qttAlpha, Seq("unitid", "new_adclass"), "left_outer")
-//      .join(adclassData, Seq("new_adclass"), "left_outer")
-//      .select("unitid", "new_adclass", "cpa1_history_qtt", "cpa2_history_qtt", "cpa1_history_novel", "cpa2_history_novel", "cpa1", "cpa2")
-//
-//    // 按照策略挑选合适的cpa以及确定对应的conversion_goal
-//    val result = getResult(data, date, hour, spark)
+    // 数据表关联
+    val data = baseData
+      .select("unitid", "new_adclass")
+      .distinct()
+      .join(qttAlpha, Seq("unitid", "new_adclass"), "left_outer")
+      .join(adclassData, Seq("new_adclass"), "left_outer")
+      .select("unitid", "new_adclass", "cpa1_history_qtt", "cpa2_history_qtt", "cpa1", "cpa2")
+
+    // 按照策略挑选合适的cpa以及确定对应的conversion_goal
+    val result = getResult(data, date, hour, spark)
 //    val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
-//    //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
+    result.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_hourly")
 //    result.write.mode("overwrite").insertInto(tableName)
 //    println(s"save data into table: $tableName")
 
@@ -272,50 +272,45 @@ object OcpcCPAhistory {
     resultDF
   }
 
-//  def getResult(base: DataFrame, date: String, hour: String, spark: SparkSession) = {
-//    /*
-//    1. 确定转化目标
-//    2. 根据转化目标和cpa优先级选择最终cpa
-//     */
-//    base.createOrReplaceTempView("base_table")
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  unitid,
-//         |  new_adclass,
-//         |  cpa1_history_qtt,
-//         |  cpa2_history_qtt,
-//         |  cpa1_history_novel,
-//         |  cpa2_history_novel,
-//         |  cpa1,
-//         |  cpa2,
-//         |  (case when cpa1_history_qtt is null and cpa2_history_qtt is null then 0
-//         |        when cpa1_history_qtt is null and cpa2_history_qtt is not null then 2
-//         |        else 1 end) as qtt_conversion,
-//         |  (case when cpa1_history_novel is null and cpa2_history_novel is null then 0
-//         |        when cpa1_history_novel is null and cpa2_history_novel is not null then 2
-//         |        else 1 end) as novel_conversion,
-//         |  (case when cpa1 is null and cpa2 is null then 0
-//         |        when cpa1 is null and cpa2 is not null then 2
-//         |        else 1 end) as adclass_conversion
-//         |FROM
-//         |  base_table
-//       """.stripMargin
-//    println(sqlRequest)
-//    val rawData = spark.sql(sqlRequest)
-//    rawData.printSchema()
-//
-//    val data = rawData
-//      .withColumn("conversion_goal", udfNovelConversionGoal()(col("qtt_conversion"), col("novel_conversion"), col("adclass_conversion")))
-//      .withColumn("cpa_qtt", when(col("conversion_goal")===1, col("cpa1_history_qtt")).otherwise(col("cpa2_history_qtt")))
-//      .withColumn("cpa_novel", when(col("conversion_goal")===1, col("cpa1_history_novel")).otherwise(col("cpa2_history_novel")))
-//      .withColumn("cpa_adclass", when(col("conversion_goal")===1, col("cpa1")).otherwise(col("cpa2")))
-//      .withColumn("cpa_src_middle", when(col("cpa_qtt").isNull, "novel").otherwise("qtt"))
-//      .withColumn("cpa_src", when(col("cpa_src_middle")==="novel" && col("cpa_novel").isNull, "adclass").otherwise(col("cpa_src_middle")))
-//      .withColumn("cpa_history", when(col("cpa_src")==="qtt", col("cpa_qtt")).otherwise(when(col("cpa_src")==="novel", col("cpa_novel")).otherwise(col("cpa_adclass"))))
-//      .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
-//
-//
+  def getResult(base: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    1. 确定转化目标
+    2. 根据转化目标和cpa优先级选择最终cpa
+     */
+    base.createOrReplaceTempView("base_table")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  new_adclass,
+         |  cpa1_history_qtt,
+         |  cpa2_history_qtt,
+         |  cpa1,
+         |  cpa2,
+         |  (case when cpa1_history_qtt is null and cpa2_history_qtt is null then 0
+         |        when cpa1_history_qtt is null and cpa2_history_qtt is not null then 2
+         |        else 1 end) as qtt_conversion,
+         |  (case when cpa1 is null and cpa2 is null then 0
+         |        when cpa1 is null and cpa2 is not null then 2
+         |        else 1 end) as adclass_conversion
+         |FROM
+         |  base_table
+       """.stripMargin
+    println(sqlRequest)
+    val rawData = spark.sql(sqlRequest)
+    rawData.printSchema()
+
+    val data = rawData
+      .withColumn("conversion_goal", udfConversionGoalV1()(col("qtt_conversion"), col("adclass_conversion")))
+      .filter(s"conversion_goal>0")
+      .withColumn("cpa_qtt", when(col("conversion_goal")===1, col("cpa1_history_qtt")).otherwise(col("cpa2_history_qtt")))
+      .withColumn("cpa_adclass", when(col("conversion_goal")===1, col("cpa1")).otherwise(col("cpa2")))
+      .withColumn("cpa_src", when(col("cpa_qtt").isNull, "adclass").otherwise("qtt"))
+      .withColumn("cpa_history", when(col("cpa_src")==="qtt", col("cpa_qtt")).otherwise(col("cpa_adclass")))
+      .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
+
+
+    data.show(10)
 //
 //    data
 //      .withColumn("date", lit(date))
@@ -323,14 +318,14 @@ object OcpcCPAhistory {
 //      .write
 //      .mode("overwrite")
 //      .insertInto("dl_cpc.ocpcv3_cpa_history_v2_final_middle")
-//
-//    val resultDF = data
-//      .select("unitid", "new_adclass", "cpa_history", "conversion_goal")
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//
-//    resultDF
-//
-//  }
+
+    val resultDF = data
+      .select("unitid", "new_adclass", "cpa_history", "conversion_goal")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+    resultDF
+
+  }
 
 }
