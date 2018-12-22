@@ -210,7 +210,7 @@ object OcpcRegression {
     }
 
     val data = spark.createDataFrame(resList)
-      .toDF("identifier", "k", "conversion_goal", "date", "hour")
+      .toDF("identifier", "k_ratio", "conversion_goal", "date", "hour")
     data
   }
 
