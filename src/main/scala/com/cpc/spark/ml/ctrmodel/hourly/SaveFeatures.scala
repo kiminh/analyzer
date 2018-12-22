@@ -950,7 +950,7 @@ object SaveFeatures {
         feature
       }
       .toDF("search_id", "idea_id", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
-        "disactive", "active_href", "installed", "report_user_stayinwx", "label_motivate")
+        "disactive", "active_href", "installed", "report_user_stayinwx", "label_motivate", "label_api")
       .join(conv_motivate, info_flow("search_id") === conv_motivate("searchid") && info_flow("idea_id") === conv_motivate("ideaid"), "full")
       .rdd
       .map { r =>
@@ -1100,7 +1100,7 @@ case class Feature(
                     var installed: Int = 0,
                     var report_user_stayinwx: Int = 0,
                     var label_motivate: Int = 0,
-                    var label_ap: Int = 0
+                    var label_api: Int = 0
                   )
 
 
