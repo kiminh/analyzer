@@ -57,7 +57,6 @@ object OcpcCheckResultWithList {
     val ctrData = spark
       .table("dl_cpc.ocpc_unionlog")
       .where(s"`dt`='$date'")
-      .withColumn("ideaid", col("idea_id"))
       .select("searchid", "ideaid", "ocpc_log_dict", "exp_ctr", "exp_cvr", "price", "isclick", "isshow", "hour")
 
     val cvrData = spark
