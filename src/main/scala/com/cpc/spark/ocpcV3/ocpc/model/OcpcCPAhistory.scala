@@ -38,7 +38,7 @@ object OcpcCPAhistory {
     val baseData = getBaseData(date, hour, days, spark)
     val qttData = getQttCPA(baseData, date, hour, spark)
     val adclassData = getAdclassCPA(baseData, date, hour, spark)
-    adclassData.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_adclass_hourly")
+    adclassData.write.mode("overwrite").insertInto("dl_cpc.ocpc_cpa_history_adclass_hourly")
     val qttAlpha = checkCPAhistory(qttData, alpha, "qtt", date, hour, spark)
 
     // 数据表关联
@@ -51,10 +51,10 @@ object OcpcCPAhistory {
 
     // 按照策略挑选合适的cpa以及确定对应的conversion_goal
     val result = getResult(data, date, hour, spark)
-//    val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
-    result.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_hourly")
-//    result.write.mode("overwrite").insertInto(tableName)
-//    println(s"save data into table: $tableName")
+    val tableName = "dl_cpc.ocpc_cpa_history_hourly"
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_cpa_history_hourly")
+    result.write.mode("overwrite").insertInto(tableName)
+    println(s"save data into table: $tableName")
 
   }
 
