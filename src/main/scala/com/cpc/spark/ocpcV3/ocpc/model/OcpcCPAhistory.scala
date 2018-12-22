@@ -31,8 +31,8 @@ object OcpcCPAhistory {
 
     // 获取参数
     val conf = ConfigFactory.load("ocpc")
-    val days = conf.getInt("cpa_history.cpa_days")
-    val alpha = conf.getDouble("cpa_history.cpa_alpha")
+    val days = conf.getInt("ocpc_all.cpa_history.cpa_days")
+    val alpha = conf.getDouble("ocpc_all.cpa_history.cpa_alpha")
 
     // 按照要求生成相关基础数据表
     val baseData = getBaseData(date, hour, days, spark)
