@@ -784,7 +784,8 @@ object SaveFeatures {
             """.stripMargin.format(date, hour, yesterday, date, hour)
     println("sql_info_flow: " + sql_info_flow)
 
-    val cvrlog = (spark.sql(sql_motivate)).union(spark.sql(sql_api)).union(spark.sql(sql_api_callback)).union(spark.sql(sql_api_moti)).union(spark.sql(sql_info_flow))
+    //val cvrlog = (spark.sql(sql_motivate)).union(spark.sql(sql_api)).union(spark.sql(sql_api_callback)).union(spark.sql(sql_api_moti)).union(spark.sql(sql_info_flow))
+    val cvrlog = spark.sql(sql_info_flow)
       .rdd
       .map {
         x =>
@@ -912,7 +913,8 @@ object SaveFeatures {
         |where `date` = "%s" and `hour` = "%s" and isclick = 1
       """.stripMargin.format(date, hour)
 
-    (clicklog.join(cvrlog, Seq("searchid", "ideaid"))).union(spark.sql(sqlStmt_motivate).join(cvrlog, Seq("searchid", "ideaid")))
+    //(clicklog.join(cvrlog, Seq("searchid", "ideaid"))).union(spark.sql(sqlStmt_motivate).join(cvrlog, Seq("searchid", "ideaid")))
+    clicklog.join(cvrlog, Seq("searchid", "ideaid"))
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
