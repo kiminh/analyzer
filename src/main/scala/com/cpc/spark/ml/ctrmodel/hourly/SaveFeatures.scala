@@ -756,7 +756,9 @@ object SaveFeatures {
     /* 信息流转化：加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) */
     val sql_info_flow =
       s"""
-         |select  a.searchid
+         |select  b.trace_type as flag1
+         |       ,b.trace_op1 as flag2
+         |       ,a.searchid
          |       ,a.ideaid
          |       ,a.adslot_type
          |       ,a.ext["client_type"].string_value as client_type
@@ -808,6 +810,7 @@ object SaveFeatures {
             convert = conv_motivate
             convert2 = convert_motivate
             label_type = label_type_motivate
+            println("##########")
           } else if (flag == "conv_api") {
             //Api回传转化
             val (convert_api, label_type_api) = Utils.cvrPositive_api(x._2, version)
@@ -816,6 +819,7 @@ object SaveFeatures {
             convert = conv_api
             convert2 = convert_api
             label_type = label_type_api
+            println("@@@@@@@@")
           } else if (flag == "conv_info_flow") {
             //信息流转化
             val conv = Utils.cvrPositiveV(x._2, version)
@@ -826,6 +830,7 @@ object SaveFeatures {
             convert2 = conv2
             label_type = label_type_info_flow
             convert_sdk_dlapp = conv_sdk_dlapp
+            println("--------")
           }
 
           //存储active行为数据

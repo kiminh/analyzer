@@ -229,7 +229,7 @@ object Utils {
 
     traces.foreach {
       r =>
-        //if ((!r.isNullAt(0)) && (!r.isNullAt(1))) { //trace_type和trace_op1为null时过滤
+        if ((!r.isNullAt(0)) && (!r.isNullAt(1))) { //trace_type和trace_op1为null时过滤
         r.getAs[String]("trace_type") match {
           case "active5" => active5 += 1
           case "active3" => active3 += 1
@@ -268,7 +268,7 @@ object Utils {
           nosite_active += 1
         }
 
-      // }
+       }
     }
 
     traces.foreach {
