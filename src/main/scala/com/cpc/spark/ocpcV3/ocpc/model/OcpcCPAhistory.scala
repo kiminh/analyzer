@@ -311,13 +311,13 @@ object OcpcCPAhistory {
 
 
     data.show(10)
-//
-//    data
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .write
-//      .mode("overwrite")
-//      .insertInto("dl_cpc.ocpcv3_cpa_history_v2_final_middle")
+
+    data
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .write
+      .mode("overwrite")
+      .saveAsTable("test.ocpc_cpa_history_middle_hourly")
 
     val resultDF = data
       .select("unitid", "new_adclass", "cpa_history", "conversion_goal")
