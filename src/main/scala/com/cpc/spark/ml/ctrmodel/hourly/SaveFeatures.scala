@@ -687,7 +687,7 @@ object SaveFeatures {
          |        ,"conv_api" as flag
          |from (select * from dl_cpc.cpc_user_api_callback_union_log where %s and adslot_type <> 7) as a
          |    join dl_cpc.logparsed_cpc_trace_minute as b
-         |        on a.searchid = b.searchid and a.ideaid = b.opt['ideaid']
+         |        on a.searchid = b.searchid
          |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on a.userid = t2.id
          |where  b.`thedate` = "%s" and b.`thehour` = "%s" and t2.id is null
        """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour)
@@ -713,7 +713,7 @@ object SaveFeatures {
          |from ( select * from dl_cpc.cpc_union_log
          |       where `date`="%s" and hour>="%s" and hour<="%s" and ext_int['is_api_callback'] = 0 and adslot_type <> 7 and isclick = 1
          |      ) a
-         |    join dl_cpc.logparsed_cpc_trace_minute b on a.searchid = b.searchid and a.ideaid = b.opt['ideaid']
+         |    join dl_cpc.logparsed_cpc_trace_minute b on a.searchid = b.searchid
          |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on a.userid = t2.id
          |where  b.`thedate` = "%s" and b.`thehour` = "%s" and t2.id is null
        """.stripMargin.format(date, before1hour, hour, yesterday, date, hour)
@@ -751,7 +751,6 @@ object SaveFeatures {
        """.stripMargin.format(get3DaysBefore(date, hour), date, hour, yesterday)
     println("sql_api_moti: " + sql_api_moti)
 
-    val userApiBackRDD = (spark.sql(sql_api)).union(spark.sql(sql_api_callback)).union(spark.sql(sql_api_moti))
 
 
     /* 信息流转化：加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) */
@@ -780,7 +779,7 @@ object SaveFeatures {
          |            from dl_cpc.cpc_union_trace_log
          |            where `date` = "%s" and `hour` = "%s"
          |         ) b
-         |    on a.searchid=b.searchid and a.ideaid = b.opt['ideaid']
+         |    on a.searchid=b.searchid
          | where t2.id is null
             """.stripMargin.format(date, hour, yesterday, date, hour)
     println("sql_info_flow: " + sql_info_flow)
