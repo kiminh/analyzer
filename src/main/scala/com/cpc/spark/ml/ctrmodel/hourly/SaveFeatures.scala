@@ -22,7 +22,7 @@ object SaveFeatures {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   private var version = "v1"
-  private var versionV2 = "v2_test" //
+  private var versionV2 = "v2"
 
 
   def main(args: Array[String]): Unit = {
@@ -504,9 +504,7 @@ object SaveFeatures {
     */
     val cvrlog = spark.sql(
       s"""
-         |select  b.trace_type as flag1
-         |       ,b.trace_op1 as flag2
-         |       ,a.searchid as search_id
+         |select  a.searchid as search_id
          |       ,a.adslot_type
          |       ,a.ext["client_type"].string_value as client_type
          |       ,a.ext["adclass"].int_value  as adclass
@@ -523,7 +521,7 @@ object SaveFeatures {
          |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "") a
          |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
          |        on a.userid = t2.id
-         |    left join
+         |    join
          |        (select *
          |            from dl_cpc.cpc_union_trace_log
          |            where `date` = "%s" and `hour` = "%s"
@@ -549,7 +547,7 @@ object SaveFeatures {
           //active1,active2,active3,active4,active5,active6,disactive,active_auto,active_auto_download,active_auto_submit,active_wx,active_third
           x._2.foreach(
             x => {
-              if ((!x.isNullAt(0)) && (!x.isNullAt(1))) { //过滤 cpc_union_log有cpc_union_trace_log 没有的
+              //if ((!x.isNullAt(0)) && (!x.isNullAt(1))) { //过滤 cpc_union_log有cpc_union_trace_log 没有的
                 val trace_type = x.getAs[String]("trace_type")
                 val trace_op1 = x.getAs[String]("trace_op1")
 
@@ -570,7 +568,7 @@ object SaveFeatures {
                   active_map += ("report_user_stayinwx" -> 1)
                 }
 
-              }
+              //}
             }
           )
 
@@ -610,20 +608,20 @@ object SaveFeatures {
     val clicklog = spark.sql(sqlStmt)
     println("click log", clicklog.count())
 
-    clicklog.join(cvrlog, Seq("searchid", "ideaid")) //2
+    clicklog.join(cvrlog, Seq("searchid", "ideaid"))
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
     spark.sql(
       """
-        |ALTER TABLE dl_cpc.ml_cvr_feature_v1_test add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2_test/%s/%s'
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
 
 
     //输出标记文件
-    //s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" ! //3
+    s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !
 
   }
 

@@ -145,7 +145,7 @@ object Utils {
     var installed = 0
     traces.foreach {
       t =>
-        if (!t.isNullAt(0)) { //trace_type为null时过滤
+        //if (!t.isNullAt(0)) { //trace_type为null时过滤
           t.getAs[String]("trace_type") match {
             case s if s.startsWith("active") => active += 1
 
@@ -168,7 +168,7 @@ object Utils {
 
             case _ =>
           }
-        }
+        //}
 
     }
 
@@ -229,7 +229,7 @@ object Utils {
 
     traces.foreach {
       r =>
-        if ((!r.isNullAt(0)) && (!r.isNullAt(1))) { //trace_type和trace_op1为null时过滤
+        //if ((!r.isNullAt(0)) && (!r.isNullAt(1))) { //trace_type和trace_op1为null时过滤
           r.getAs[String]("trace_type") match {
             case "active5" => active5 += 1
             case "active3" => active3 += 1
@@ -268,7 +268,7 @@ object Utils {
             nosite_active += 1
           }
 
-        }
+       // }
     }
 
     traces.foreach {
@@ -416,7 +416,7 @@ object Utils {
 
     traces.foreach {
       r =>
-        if ((!r.isNullAt(0)) && (!r.isNullAt(1))) {
+        //if ((!r.isNullAt(0)) && (!r.isNullAt(1))) {
           val adclass = r.getAs[Int]("adclass")
           val client_type = r.getAs[String]("client_type")
           val interaction = r.getAs[Int]("interaction")
@@ -429,7 +429,7 @@ object Utils {
           if (sdk_dlapp > 0 && trace_op1 == "INCITE_OPEN_SUCCESS") {
             sdk_dlapp_active = 1
           }
-        }
+       // }
     }
 
     if (sdk_dlapp_active > 0) {
