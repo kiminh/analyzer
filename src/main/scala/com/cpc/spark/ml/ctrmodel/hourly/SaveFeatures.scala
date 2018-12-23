@@ -22,7 +22,7 @@ object SaveFeatures {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   private var version = "v1"
-  private var versionV2 = "v2"
+  private var versionV2 = "v2_test" //
 
 
   def main(args: Array[String]): Unit = {
@@ -610,27 +610,17 @@ object SaveFeatures {
     val clicklog = spark.sql(sqlStmt)
     println("click log", clicklog.count())
 
-    /*clicklog.join(cvrlog, Seq("searchid", "ideaid")) //2
+    clicklog.join(cvrlog, Seq("searchid", "ideaid")) //2
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
     spark.sql(
       """
-        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
-      """.stripMargin.format(date, hour, date, hour))*/
-
-    clicklog.join(cvrlog, Seq("searchid", "ideaid"))
-      .repartition(1)
-      .write
-      .mode(SaveMode.Overwrite)
-      .parquet("/warehouse/test.db/ml_cvr_feature_v1/%s/%s".format(date, hour))
-    spark.sql(
-      """
-        |ALTER TABLE test.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/warehouse/test.db/ml_cvr_feature_v1/%s/%s'
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1_test add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2_test/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
+
 
     //输出标记文件
     //s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" ! //3
