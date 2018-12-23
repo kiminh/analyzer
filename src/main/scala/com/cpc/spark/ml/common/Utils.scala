@@ -145,42 +145,37 @@ object Utils {
     var installed = 0
     traces.foreach {
       t =>
-        //if (!t.isNullAt(0)) { //trace_type为null时过滤
-          t.getAs[String]("trace_type") match {
-            case s if s.startsWith("active") => active += 1
+        t.getAs[String]("trace_type") match {
+          case s if s.startsWith("active") => active += 1
 
-            case "disactive" => disactive += 1
+          case "disactive" => disactive += 1
 
-            case "buttonClick" => click += 1
+          case "buttonClick" => click += 1
 
-            case "clickMonitor" => mclick += 1
+          case "clickMonitor" => mclick += 1
 
-            //case "inputFocus" => click += 1
+          //case "inputFocus" => click += 1
 
-            case "press" => click += 1
+          case "press" => click += 1
 
-            case "zombie" => zombie += 1
+          case "zombie" => zombie += 1
 
-            case "stay" =>
-              if (t.getAs[Int]("duration") > stay) {
-                stay = t.getAs[Int]("duration")
-              }
+          case "stay" =>
+            if (t.getAs[Int]("duration") > stay) {
+              stay = t.getAs[Int]("duration")
+            }
 
-            case _ =>
-          }
-        //}
-
+          case _ =>
+        }
     }
 
     traces.foreach {
       t =>
-        if (!t.isNullAt(1)) { //trace_op1为null时过滤
           t.getAs[String]("trace_op1") match {
             case "REPORT_DOWNLOAD_INSTALLED" => installed += 1
 
             case _ =>
           }
-        }
     }
 
 
@@ -229,46 +224,43 @@ object Utils {
 
     traces.foreach {
       r =>
-        //if ((!r.isNullAt(0)) && (!r.isNullAt(1))) { //trace_type和trace_op1为null时过滤
-          r.getAs[String]("trace_type") match {
-            case "active5" => active5 += 1
-            case "active3" => active3 += 1
-            case "disactive" => disactive += 1
-            case "active_href" => active_href += 1
-            case "nosite_disactive" => nosite_disactive += 1
-            case "nosite_active5" => nosite_active5 += 1
-            case _ =>
-          }
+        r.getAs[String]("trace_type") match {
+          case "active5" => active5 += 1
+          case "active3" => active3 += 1
+          case "disactive" => disactive += 1
+          case "active_href" => active_href += 1
+          case "nosite_disactive" => nosite_disactive += 1
+          case "nosite_active5" => nosite_active5 += 1
+          case _ =>
+        }
 
+        //加粉类：建站&sdk
+        if (r.getAs[String]("trace_op1").toLowerCase == "report_user_stayinwx") {
+          conversion_sdk_wechat += 1
+        }
 
-          //加粉类：建站&sdk
-          if (r.getAs[String]("trace_op1").toLowerCase == "report_user_stayinwx") {
-            conversion_sdk_wechat += 1
-          }
+        //直接下载类、落地页下载类
+        if (r.getAs[String]("trace_op1").toLowerCase == "report_download_pkgadded") {
+          conversion_sdk_download += 1
+        }
 
-          //直接下载类、落地页下载类
-          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_pkgadded") {
-            conversion_sdk_download += 1
-          }
+        //落地页套户、其他类非建站测试
+        if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" ||
+          (r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type") != "active5"))) {
+          js_site_active_other_test += 1
+        }
 
-          //落地页套户、其他类非建站测试
-          if (r.getAs[String]("trace_op1").toLowerCase == "report_download_installed" ||
-            (r.getAs[String]("trace_type").startsWith("active") && (r.getAs[String]("trace_type") != "active5"))) {
-            js_site_active_other_test += 1
-          }
+        //其它类：建站
+        if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
+          r.getAs[String]("trace_type") == "active3" || r.getAs[String]("trace_type") == "active4") {
+          js_site_active_other += 1
+        }
 
-          //其它类：建站
-          if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
-            r.getAs[String]("trace_type") == "active3" || r.getAs[String]("trace_type") == "active4") {
-            js_site_active_other += 1
-          }
+        //其它类：非建站
+        if (r.getAs[String]("trace_type").startsWith("nosite_active") && (r.getAs[String]("trace_type") != "nosite_active5")) {
+          nosite_active += 1
+        }
 
-          //其它类：非建站
-          if (r.getAs[String]("trace_type").startsWith("nosite_active") && (r.getAs[String]("trace_type") != "nosite_active5")) {
-            nosite_active += 1
-          }
-
-       // }
     }
 
     traces.foreach {
@@ -416,20 +408,19 @@ object Utils {
 
     traces.foreach {
       r =>
-        //if ((!r.isNullAt(0)) && (!r.isNullAt(1))) {
-          val adclass = r.getAs[Int]("adclass")
-          val client_type = r.getAs[String]("client_type")
-          val interaction = r.getAs[Int]("interaction")
+        val adclass = r.getAs[Int]("adclass")
+        val client_type = r.getAs[String]("client_type")
+        val interaction = r.getAs[Int]("interaction")
 
-          if ((interaction == 2 && client_type == "NATIVESDK") || ((adclass.toString.length > 3 && adclass.toString.substring(0, 3).toInt == 100) && (client_type == "NATIVESDK"))) {
-            sdk_dlapp = 1
-          }
+        if ((interaction == 2 && client_type == "NATIVESDK") || ((adclass.toString.length > 3 && adclass.toString.substring(0, 3).toInt == 100) && (client_type == "NATIVESDK"))) {
+          sdk_dlapp = 1
+        }
 
-          var trace_op1 = r.getAs[String]("trace_op1")
-          if (sdk_dlapp > 0 && trace_op1 == "INCITE_OPEN_SUCCESS") {
-            sdk_dlapp_active = 1
-          }
-       // }
+        var trace_op1 = r.getAs[String]("trace_op1")
+        if (sdk_dlapp > 0 && trace_op1 == "INCITE_OPEN_SUCCESS") {
+          sdk_dlapp_active = 1
+        }
+
     }
 
     if (sdk_dlapp_active > 0) {

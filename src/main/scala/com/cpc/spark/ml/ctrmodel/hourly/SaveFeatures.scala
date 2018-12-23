@@ -47,8 +47,8 @@ object SaveFeatures {
 
     //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
-    saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
-    //saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr
+    //saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
+    saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr
     println("SaveFeatures_done")
   }
 
@@ -238,7 +238,7 @@ object SaveFeatures {
     cal.add(Calendar.HOUR, -1)
     val fDate = dateFormat.format(cal.getTime)
     val before1hour = fDate.substring(11, 13)
-/*//1
+
     //激励下载转化  取有点击的
     val motivateRDD = spark.sql(
       s"""
@@ -252,7 +252,7 @@ object SaveFeatures {
          |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick = 1) a
          |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
          |        on a.userid = t2.id
-         |    left join
+         |    join
          |        (select *
          |            from dl_cpc.logparsed_cpc_trace_minute
          |            where `thedate` = "%s" and `thehour` = "%s"
@@ -284,46 +284,26 @@ object SaveFeatures {
       """.stripMargin.format(date, hour, date, hour))
 
 
-    //用户Api回传数据(如已经安装但未激活) cvr计算
-    //    val userApiBackRDD = spark.sql(
-    //      s"""
-    //         |select   b.trace_type as flag1
-    //         |        ,a.searchid
-    //         |        ,a.uid
-    //         |        ,a.userid
-    //         |        ,a.ideaid
-    //         |        ,b.trace_type
-    //         |from (select * from dl_cpc.cpc_union_log
-    //         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "") a
-    //         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
-    //         |        on a.userid = t2.id
-    //         |    left join
-    //         |        (select *
-    //         |            from dl_cpc.cpc_union_trace_log
-    //         |            where `date` = "%s" and `hour` = "%s"
-    //         |         ) b
-    //         |    on a.searchid=b.searchid
-    //         | where t2.id is null
-    //       """.stripMargin.format(date, hour, yesterday, date, hour))
+    //用户Api回传
     val sql =
-    s"""
-       |select tr.trace_type as flag1
-       |      ,tr.searchid
-       |      ,un.userid
-       |      ,un.uid
-       |      ,un.ideaid
-       |      ,un.date
-       |      ,un.hour
-       |      ,un.adclass
-       |      ,un.media_appsid
-       |      ,un.planid
-       |      ,un.unitid
-       |      ,tr.trace_type
-       |from (select searchid, userid, uid, planid, unitid, ideaid, adslot_type, isclick, ext['adclass'].int_value as adclass, media_appsid, planid, unitid, date, hour
-       |from dl_cpc.cpc_user_api_callback_union_log where %s) as un
-       |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
-       |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
-       |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
+      s"""
+         |select tr.trace_type as flag1
+         |      ,tr.searchid
+         |      ,un.userid
+         |      ,un.uid
+         |      ,un.ideaid
+         |      ,un.date
+         |      ,un.hour
+         |      ,un.adclass
+         |      ,un.media_appsid
+         |      ,un.planid
+         |      ,un.unitid
+         |      ,tr.trace_type
+         |from (select searchid, userid, uid, planid, unitid, ideaid, adslot_type, isclick, ext['adclass'].int_value as adclass, media_appsid, planid, unitid, date, hour
+         |from dl_cpc.cpc_user_api_callback_union_log where %s) as un
+         |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
+         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
+         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
        """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour)
     println("sql: " + sql)
 
@@ -382,23 +362,6 @@ object SaveFeatures {
          |where t2.id is null
        """.stripMargin.format(date, hour, get3DaysBefore(date, hour), yesterday)
     println("sql_moti: " + sql_moti)
-
-    //    val userApiBackRDD = spark.sql(
-    //            """
-    //              |select tr.trace_type as flag1
-    //              |      ,tr.searchid
-    //              |      ,un.userid
-    //              |      ,un.uid
-    //              |      ,un.ideaid
-    //              |      ,un.date
-    //              |      ,un.hour
-    //              |      ,tr.trace_type
-    //              |from dl_cpc.logparsed_cpc_trace_minute as tr
-    //              |left join
-    //              |(select searchid, userid, planid, uid, ideaid, adslot_type, isclick, date, hour from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
-    //              |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
-    //              |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
-    //            """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour))
 
     val userApiBackRDD = (spark.sql(sql)).union(spark.sql(sql2)).union(spark.sql(sql_moti))
       .rdd
@@ -461,7 +424,7 @@ object SaveFeatures {
       """.stripMargin.format(date, hour, date, hour))
 
     s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v2_done/$date-$hour.ok" !
-*/
+
 
     //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算
 
@@ -539,36 +502,32 @@ object SaveFeatures {
       .map {
         x =>
           val convert = Utils.cvrPositiveV(x._2, version)
-          val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version) //新cvr
-        val convert_sdk_dlapp = Utils.cvrPositive_sdk_dlapp(x._2, version) //sdk栏位下载app的转化数
+          val (convert2, label_type) = Utils.cvrPositiveV2(x._2, version)
+          val convert_sdk_dlapp = Utils.cvrPositive_sdk_dlapp(x._2, version) //sdk栏位下载app的转化数
 
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
-          //active1,active2,active3,active4,active5,active6,disactive,active_auto,active_auto_download,active_auto_submit,active_wx,active_third
           x._2.foreach(
             x => {
-              //if ((!x.isNullAt(0)) && (!x.isNullAt(1))) { //过滤 cpc_union_log有cpc_union_trace_log 没有的
-                val trace_type = x.getAs[String]("trace_type")
-                val trace_op1 = x.getAs[String]("trace_op1")
+              val trace_type = x.getAs[String]("trace_type")
+              val trace_op1 = x.getAs[String]("trace_op1")
 
-                trace_type match {
-                  case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
-                    || s == "active6" || s == "disactive" || s == "active_href")
-                  => active_map += (s -> 1)
-                  case _ =>
-                }
+              trace_type match {
+                case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
+                  || s == "active6" || s == "disactive" || s == "active_href")
+                => active_map += (s -> 1)
+                case _ =>
+              }
 
-                //增加下载激活字段,trace_op1=="REPORT_DOWNLOAD_PKGADDED"(包含apkdown和lpdown下载安装), 则installed记为1，否则为0
-                if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
-                  active_map += ("installed" -> 1)
-                }
+              //增加下载激活字段,trace_op1=="REPORT_DOWNLOAD_PKGADDED"(包含apkdown和lpdown下载安装), 则installed记为1，否则为0
+              if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
+                active_map += ("installed" -> 1)
+              }
 
-                //REPORT_USER_STAYINWX：用户点击落地页里的加微信链接跳转到微信然后10秒内没有回来,表示已经转化，REPORT_USER_STAYINWX记为1，否则为0
-                if (trace_op1 == "REPORT_USER_STAYINWX") {
-                  active_map += ("report_user_stayinwx" -> 1)
-                }
-
-              //}
+              //REPORT_USER_STAYINWX：用户点击落地页里的加微信链接跳转到微信然后10秒内没有回来,表示已经转化，REPORT_USER_STAYINWX记为1，否则为0
+              if (trace_op1 == "REPORT_USER_STAYINWX") {
+                active_map += ("report_user_stayinwx" -> 1)
+              }
             }
           )
 
@@ -751,7 +710,6 @@ object SaveFeatures {
     println("sql_api_moti: " + sql_api_moti)
 
 
-
     /* 信息流转化：加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) */
     val sql_info_flow =
       s"""
@@ -775,7 +733,7 @@ object SaveFeatures {
          |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "") a
          |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
          |        on a.userid = t2.id
-         |    left join
+         |    join
          |        (select *
          |            from dl_cpc.cpc_union_trace_log
          |            where `date` = "%s" and `hour` = "%s"
@@ -785,8 +743,7 @@ object SaveFeatures {
             """.stripMargin.format(date, hour, yesterday, date, hour)
     println("sql_info_flow: " + sql_info_flow)
 
-    //val cvrlog = (spark.sql(sql_motivate)).union(spark.sql(sql_api)).union(spark.sql(sql_api_callback)).union(spark.sql(sql_api_moti)).union(spark.sql(sql_info_flow))
-    val cvrlog = spark.sql(sql_info_flow)
+    val cvrlog = (spark.sql(sql_motivate)).union(spark.sql(sql_api)).union(spark.sql(sql_api_callback)).union(spark.sql(sql_api_moti)).union(spark.sql(sql_info_flow))
       .rdd
       .map {
         x =>
@@ -809,7 +766,6 @@ object SaveFeatures {
             convert = conv_motivate
             convert2 = convert_motivate
             label_type = label_type_motivate
-            println("##########")
           } else if (flag == "conv_api") {
             //Api回传转化
             val (convert_api, label_type_api) = Utils.cvrPositive_api(x._2, version)
@@ -818,7 +774,6 @@ object SaveFeatures {
             convert = conv_api
             convert2 = convert_api
             label_type = label_type_api
-            println("@@@@@@@@")
           } else if (flag == "conv_info_flow") {
             //信息流转化
             val conv = Utils.cvrPositiveV(x._2, version)
@@ -829,15 +784,12 @@ object SaveFeatures {
             convert2 = conv2
             label_type = label_type_info_flow
             convert_sdk_dlapp = conv_sdk_dlapp
-            println("--------")
           }
 
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
-          //active1,active2,active3,active4,active5,active6,disactive,active_auto,active_auto_download,active_auto_submit,active_wx,active_third
           x._2.foreach(
             x => {
-              if ((!x.isNullAt(0)) && (!x.isNullAt(1))) { //过滤 cpc_union_log有cpc_union_trace_log 没有的
                 val trace_type = x.getAs[String]("trace_type")
                 val trace_op1 = x.getAs[String]("trace_op1")
 
@@ -858,7 +810,6 @@ object SaveFeatures {
                   active_map += ("report_user_stayinwx" -> 1)
                 }
 
-              }
             }
           )
 
@@ -917,8 +868,7 @@ object SaveFeatures {
         |where `date` = "%s" and `hour` = "%s" and isclick = 1
       """.stripMargin.format(date, hour)
 
-    //(clicklog.join(cvrlog, Seq("searchid", "ideaid"))).union(spark.sql(sqlStmt_motivate).join(cvrlog, Seq("searchid", "ideaid")))
-    clicklog.join(cvrlog, Seq("searchid", "ideaid"))
+    (clicklog.join(cvrlog, Seq("searchid", "ideaid"))).union(spark.sql(sqlStmt_motivate).join(cvrlog, Seq("searchid", "ideaid")))
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
