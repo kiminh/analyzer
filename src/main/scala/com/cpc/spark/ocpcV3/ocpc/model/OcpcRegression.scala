@@ -3,8 +3,9 @@ package com.cpc.spark.ocpcV3.ocpc.model
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpc.utils.OcpcUtils.{getTimeRangeSql2, getTimeRangeSql3}
 import com.cpc.spark.udfs.Udfs_wj.udfSqrt
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
+import com.typesafe.config.ConfigFactory
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
@@ -23,114 +24,195 @@ object OcpcRegression {
   }
 
   def calculateK(date: String, hour: String, spark: SparkSession) = {
-    val datehourlist = scala.collection.mutable.ListBuffer[String]()
-    val datehourlist2 = scala.collection.mutable.ListBuffer[String]()
-    val cal = Calendar.getInstance()
-    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0)
-    for (t <- 0 to 72) {
-      if (t > 0) {
-        cal.add(Calendar.HOUR, -1)
-      }
-      val sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-      val dd = sf.format(cal.getTime())
-      val d1 = dd.substring(0, 10)
-      val h1 = dd.substring(11, 13)
-      val datecond = s"`date` = '$d1' and hour = '$h1'"
-      val datecond2 = s"`dt` = '$d1' and hour = '$h1'"
-      datehourlist += datecond
-      datehourlist2 += datecond2
-    }
+//    val datehourlist = scala.collection.mutable.ListBuffer[String]()
+//    val datehourlist2 = scala.collection.mutable.ListBuffer[String]()
+//    val cal = Calendar.getInstance()
+//    cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0)
+//    for (t <- 0 to 72) {
+//      if (t > 0) {
+//        cal.add(Calendar.HOUR, -1)
+//      }
+//      val sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+//      val dd = sf.format(cal.getTime())
+//      val d1 = dd.substring(0, 10)
+//      val h1 = dd.substring(11, 13)
+//      val datecond = s"`date` = '$d1' and hour = '$h1'"
+//      val datecond2 = s"`dt` = '$d1' and hour = '$h1'"
+//      datehourlist += datecond
+//      datehourlist2 += datecond2
+//    }
 
-    val dtCondition = "(%s)".format(datehourlist.mkString(" or "))
-    val dtCondition2 = "(%s)".format(datehourlist2.mkString(" or "))
+    // 取历史数据
+    val conf = ConfigFactory.load("ocpc")
+    val hourCnt = conf.getInt("ocpc_all.ocpc_regression.hour_cnt")
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourCnt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+//
+//    val dtCondition = "(%s)".format(datehourlist.mkString(" or "))
+//    val dtCondition2 = "(%s)".format(datehourlist2.mkString(" or "))
 
-    val statSql =
+    val selectorID = conf.getString("ocpc_all.ocpc_regression.select_keys")
+    val identifier = conf.getString("ocpc_all.ocpc_regression.identifier")
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  $selectorID,
+         |  isclick,
+         |  price,
+         |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
+         |  cast(ocpc_log_dict['kvalue'] as double) as kvalue
+         |FROM
+         |  dl_cpc.ocpc_union_log_hourly
+         |WHERE
+         |  $selectCondition
+         |and
+         |  media_appsid in ('80000001', '80000002')
+       """.stripMargin
+    println(sqlRequest1)
+    val ctrData = spark.sql(sqlRequest1)
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label2 as label1
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v1
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest2)
+    val cvr1Data = spark.sql(sqlRequest2)
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as label2
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v2
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest3)
+    val cvr2Data = spark.sql(sqlRequest3)
+
+    val base = ctrData
+      .join(cvr1Data, Seq("searchid"), "left_outer")
+      .join(cvr2Data, Seq("searchid"), "left_outer")
+
+    base.createOrReplaceTempView("base_table")
+
+    val sqlRequest4 =
       s"""
          |select
-         |  a.unitid,
-         |  round(a.ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio1,
-         |  round(a.ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio2,
-         |  a.ocpc_log_dict['cpagiven'] as cpagiven,
-         |  sum(if(a.isclick=1,price,0))/sum(COALESCE(a.label1,0)) as cpa1,
-         |  sum(if(a.isclick=1,price,0))/sum(COALESCE(b.label2,0)) as cpa2,
-         |  sum(if(a.isclick=1,price,0))/sum(COALESCE(a.label1,0))/a.ocpc_log_dict['cpagiven'] as ratio1,
-         |  sum(if(a.isclick=1,price,0))/sum(COALESCE(b.label2,0))/a.ocpc_log_dict['cpagiven'] as ratio2,
-         |  sum(a.isclick) clickCnt,
-         |  sum(COALESCE(a.label1,0)) cvr1Cnt,
-         |  sum(COALESCE(b.label2,0)) cvr2Cnt
+         |  $selectorID,
+         |  round(kvalue * 100.0 / 5) as k_ratio,
+         |  cpagiven,
+         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0)) as cpa,
+         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0))/cpagiven as ratio,
+         |  sum(isclick) click_cnt,
+         |  sum(COALESCE(label1,0)) cvr_cnt
          |from
-         |  (select searchid, unitid, isclick, price, ocpc_log_dict, iscvr1 as label1 from dl_cpc.ocpcv3_unionlog_label_hourly where $dtCondition and ocpc_log_dict['kvalue'] is not null and isclick=1 and media_appsid in ("80001098","80001292")) as a
-         |LEFT JOIN
-         |  (select searchid, label as label2 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) as b
-         |on
-         |  a.searchid=b.searchid
-         |group by a.unitid,
-         |  round(a.ocpc_log_dict['kvalue'] * 100.0 / 5),
-         |  round(a.ocpc_log_dict['kvalue'] * 100.0 / 5),
-         |  a.ocpc_log_dict['cpagiven']
+         |  base_table
+         |group by $selectorID,
+         |  round(kvalue * 100.0 / 5),
+         |  cpagiven
       """.stripMargin
 
-    println(statSql)
+    println(sqlRequest4)
+    val data1 = spark
+      .sql(sqlRequest4)
+      .withColumn("conversion_goal", lit(1))
 
-    val tablename = "dl_cpc.ocpc_v3_novel_regression_middle_v2"
-    val rawData = spark.sql(statSql)
+    val sqlRequest5 =
+      s"""
+         |select
+         |  $selectorID,
+         |  round(kvalue * 100.0 / 5) as k_ratio,
+         |  cpagiven,
+         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0)) as cpa,
+         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0))/cpagiven as ratio,
+         |  sum(isclick) click_cnt,
+         |  sum(COALESCE(label2,0)) cvr_cnt
+         |from
+         |  base_table
+         |group by $selectorID,
+         |  round(kvalue * 100.0 / 5),
+         |  cpagiven
+      """.stripMargin
 
+    println(sqlRequest5)
+    val data2 = spark
+      .sql(sqlRequest5)
+      .withColumn("conversion_goal", lit(2))
 
-    val data = rawData
-      .select("unitid", "k_ratio1", "k_ratio2", "cpagiven", "cpa1", "cpa2", "ratio1", "ratio2", "clickCnt", "cvr1Cnt", "cvr2Cnt")
+    val tablename = "dl_cpc.ocpc_regression_middle_hourly"
+    // TODO 修改identifier
+    val result = data1
+      .union(data2)
+      .withColumn("identifier", col("unitid"))
+      .select("identifier", "k_ratio", "cpagiven", "cpa", "ratio", "click_cnt", "cvr_cnt", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .withColumn("version", lit("v1"))
 
-    //    data.write.mode("overwrite").saveAsTable(tablename)
-    data.write.mode("overwrite").insertInto(tablename)
+//    result.write.mode("overwrite").saveAsTable(tablename)
+    result.write.mode("overwrite").insertInto(tablename)
 
-    val ratio1Data = getKWithRatioType(spark, tablename, "ratio1", date, hour)
-    val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
+    val ratio1Data = getKWithRatioType(spark, tablename, 1, date, hour)
+    val ratio2Data = getKWithRatioType(spark, tablename, 2, date, hour)
 
-    val res = ratio1Data.join(ratio2Data, Seq("unitid", "date", "hour"), "outer")
-      .select("unitid", "k_ratio1", "k_ratio2", "date", "hour")
-    //    res.write.mode("overwrite").saveAsTable("test.ocpc_v3_novel_k_regression_v2")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v3_novel_k_regression_v2")
+    val res = ratio1Data
+      .union(ratio2Data)
+      .select("identifier", "k_ratio", "conversion_goal", "date", "hour")
+      .withColumn("version", lit("v1"))
+//    res.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
+    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
   }
 
-  def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
+  def getKWithRatioType(spark: SparkSession, tablename: String, conversionGoal: Int, date: String, hour: String): Dataset[Row] = {
 
-    val condition = s"`date` = '$date' and hour = '$hour' and $ratioType is not null"
+    val condition = s"`date` = '$date' and hour = '$hour' and version = 'v1' and conversion_goal = $conversionGoal and ratio is not null"
     println("getKWithRatioType", condition)
     val res = spark.table(tablename).where(condition)
-      .withColumn("str", concat_ws(" ", col(s"k_$ratioType"), col(s"$ratioType"), col("clickCnt")))
-      .groupBy("unitid")
+      .withColumn("str", concat_ws(" ", col(s"k_ratio"), col("ratio"), col("click_cnt")))
+      .groupBy("identifier")
       .agg(collect_set("str").as("liststr"))
-      .select("unitid", "liststr").collect()
+      .select("identifier", "liststr").collect()
 
 
-    val cpaSrcMap = getCPAsrcMap(date, hour, spark)
-    var resList = new mutable.ListBuffer[(String, Double, String, String)]()
-    //    var testList = new mutable.ListBuffer[(String, Double, Double, Double, Double, Double)]()
+    var resList = new mutable.ListBuffer[(String, Double, Int, String, String)]()
     for (row <- res) {
-      val unitid = row(0).toString
+      val identifier = row(0).toString
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
         val y = x.trim.split("\\s+")
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
-      // TODO 根据cpa_src决定targetK
-      val targetK = getTargetK(unitid, cpaSrcMap, date, hour, spark)
+      val targetK = 0.95
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
-      println("unitid " + unitid, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
-      //      testList.append((unitid, coffList(0), coffList(1), k, realk, targetK))
+      println("identifier " + identifier, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
       if (coffList(1)>0 && realk > 0) {
-        resList.append((unitid, realk, date, hour))
+        resList.append((identifier, realk, conversionGoal, date, hour))
       }
     }
-    //    // TODO
-    //    val testData = spark.createDataFrame(testList).toDF("unitid", "coff0", "coff1", "k", "realk", "target_k")
-    //    testData.write.mode("overwrite").saveAsTable("test.ocpcv3_regression_check_target_" + ratioType)
-
 
     val data = spark.createDataFrame(resList)
-      .toDF("unitid", s"k_$ratioType", "date", "hour")
+      .toDF("identifier", "k_ratio", "conversion_goal", "date", "hour")
     data
   }
 
@@ -160,30 +242,30 @@ object OcpcRegression {
     res.toList
   }
 
-  def getCPAsrcMap(date: String, hour: String, spark: SparkSession) = {
-    val data = spark
-      .table("dl_cpc.ocpcv3_cpa_history_v2_final_middle")
-      .where(s"`date`='$date' and `hour`='$hour'")
-
-    var cpaMap = mutable.LinkedHashMap[String, String]()
-    for(row <- data.collect()) {
-      val unitid = row.getAs[Int]("unitid").toString
-      val cpaSrc = row.getAs[String]("cpa_src")
-      cpaMap += (unitid -> cpaSrc)
-    }
-    cpaMap
-  }
-
-  def getTargetK(unitid: String, cpaSRC: mutable.LinkedHashMap[String, String], date: String, hour: String, spark: SparkSession) = {
-    val cpasrc = cpaSRC.getOrElse(unitid, "qtt")
-    var targetK = 1.8
-    if (cpasrc == "novel") {
-      targetK = 1.0
-    } else {
-      targetK = 1.8
-    }
-    targetK
-  }
+//  def getCPAsrcMap(date: String, hour: String, spark: SparkSession) = {
+//    val data = spark
+//      .table("dl_cpc.ocpcv3_cpa_history_v2_final_middle")
+//      .where(s"`date`='$date' and `hour`='$hour'")
+//
+//    var cpaMap = mutable.LinkedHashMap[String, String]()
+//    for(row <- data.collect()) {
+//      val unitid = row.getAs[Int]("unitid").toString
+//      val cpaSrc = row.getAs[String]("cpa_src")
+//      cpaMap += (unitid -> cpaSrc)
+//    }
+//    cpaMap
+//  }
+//
+//  def getTargetK(unitid: String, cpaSRC: mutable.LinkedHashMap[String, String], date: String, hour: String, spark: SparkSession) = {
+//    val cpasrc = cpaSRC.getOrElse(unitid, "qtt")
+//    var targetK = 1.8
+//    if (cpasrc == "novel") {
+//      targetK = 1.0
+//    } else {
+//      targetK = 1.8
+//    }
+//    targetK
+//  }
 
 
 }

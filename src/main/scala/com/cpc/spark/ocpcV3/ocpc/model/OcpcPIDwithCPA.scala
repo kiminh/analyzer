@@ -13,6 +13,8 @@ import org.apache.spark.sql.types.IntegerType
 
 object OcpcPIDwithCPA {
   def main(args: Array[String]): Unit = {
+
+    // TODO 需要修改
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
 
     val date = args(0).toString

@@ -7,9 +7,42 @@ import com.typesafe.config.ConfigFactory
 
 
 object OcpcUtils {
-  def getOcpcLogDiv(date: String, hour: String, hourCnt: Int) = {
-    val conf = ConfigFactory.load("ocpc")
+  def getIdentifierSql() = {
+    val confList = ConfigFactory
+      .load("ocpc")
+      .getStringList("ocpc_all.ocpc_regression.identifier")
 
-    val targetK = conf.getDouble("ocpc_all.targetK")
+    var selectionID = ""
+    for (i <- 0 until confList.size()) {
+      if (selectionID.length() > 0) {
+        selectionID = selectionID + ", " + confList.get(i)
+      }
+    }
+    println(s"####### $selectionID ##############")
+    selectionID
+  }
+
+  def getIdentifierString() = {
+    val confList = ConfigFactory
+      .load("ocpc")
+      .getStringList("ocpc_all.ocpc_regression.identifier")
+
+    var selectionID = ""
+    for (i <- 0 until confList.size()) {
+      if (selectionID.length() > 0) {
+        selectionID = selectionID + "|" + confList.get(i)
+      }
+    }
+    println(s"####### $selectionID ##############")
+    selectionID
+  }
+
+  def getTimeRangeSql2(startDate: String, startHour: String, endDate: String, endHour: String): String = {
+    if (startDate.equals(endDate)) {
+      return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
+    }
+    return s"((`date` = '$startDate' and hour > '$startHour') " +
+      s"or (`date` = '$endDate' and hour <= '$endHour') " +
+      s"or (`date` > '$startDate' and `date` < '$endDate'))"
   }
 }
