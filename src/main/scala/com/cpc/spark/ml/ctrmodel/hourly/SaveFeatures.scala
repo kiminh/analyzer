@@ -47,8 +47,8 @@ object SaveFeatures {
 
     //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
-    saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
-    //saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr
+    //saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
+    saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr
     println("SaveFeatures_done")
   }
 
@@ -713,9 +713,7 @@ object SaveFeatures {
     /* 信息流转化：加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) */
     val sql_info_flow =
       s"""
-         |select  b.trace_type as flag1
-         |       ,b.trace_op1 as flag2
-         |       ,a.searchid
+         |select  a.searchid
          |       ,a.ideaid
          |       ,a.adslot_type
          |       ,a.ext["client_type"].string_value as client_type
@@ -869,6 +867,7 @@ object SaveFeatures {
       """.stripMargin.format(date, hour)
 
     (clicklog.join(cvrlog, Seq("searchid", "ideaid"))).union(spark.sql(sqlStmt_motivate).join(cvrlog, Seq("searchid", "ideaid")))
+      .distinct()
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
