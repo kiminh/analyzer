@@ -47,8 +47,8 @@ object SaveFeatures {
 
     //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
-    //saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
-    saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr
+    saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
+    //saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr
     println("SaveFeatures_done")
   }
 
@@ -238,7 +238,7 @@ object SaveFeatures {
     cal.add(Calendar.HOUR, -1)
     val fDate = dateFormat.format(cal.getTime)
     val before1hour = fDate.substring(11, 13)
-
+/*//1
     //激励下载转化  取有点击的
     val motivateRDD = spark.sql(
       s"""
@@ -461,7 +461,7 @@ object SaveFeatures {
       """.stripMargin.format(date, hour, date, hour))
 
     s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v2_done/$date-$hour.ok" !
-
+*/
 
     //加粉类、直接下载类、落地页下载类、其他类(落地页非下载非加粉类) cvr计算
 
@@ -610,7 +610,7 @@ object SaveFeatures {
     val clicklog = spark.sql(sqlStmt)
     println("click log", clicklog.count())
 
-    clicklog.join(cvrlog, Seq("searchid", "ideaid"))
+    /*clicklog.join(cvrlog, Seq("searchid", "ideaid")) //2
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
@@ -619,10 +619,21 @@ object SaveFeatures {
       """
         |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
         | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
-      """.stripMargin.format(date, hour, date, hour)) // //
+      """.stripMargin.format(date, hour, date, hour))*/
+
+    clicklog.join(cvrlog, Seq("searchid", "ideaid"))
+      .repartition(1)
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet("/warehouse/test.db/ml_cvr_feature_v1/%s/%s".format(date, hour))
+    spark.sql(
+      """
+        |ALTER TABLE test.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/warehouse/test.db/ml_cvr_feature_v1/%s/%s'
+      """.stripMargin.format(date, hour, date, hour))
 
     //输出标记文件
-    s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" ! //
+    //s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" ! //3
 
   }
 
