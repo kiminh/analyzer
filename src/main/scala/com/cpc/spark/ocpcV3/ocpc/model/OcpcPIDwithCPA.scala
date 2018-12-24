@@ -215,7 +215,7 @@ object OcpcPIDwithCPA {
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .groupBy("unitid", "new_adclass")
       .agg(avg(col("kvalue")).alias("kvalue1"))
-      .withColumn("identifier", col("unitid").cast(String))
+      .withColumn("identifier", col("unitid"))
       .select("identifier", "new_adclass", "kvalue1")
     case1.printSchema()
 
