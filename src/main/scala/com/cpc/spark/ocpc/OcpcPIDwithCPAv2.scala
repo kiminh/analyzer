@@ -174,8 +174,11 @@ object OcpcPIDwithCPAv2 {
 
     // case2
     // table name for previous calculation: test.new_pb_ocpc_with_pcvr
+    // todo 表名
     val case2 = spark
-      .table("dl_cpc.new_pb_ocpc_with_pcvr")
+//      .table("dl_cpc.new_pb_ocpc_with_pcvr")
+      .table("dl_cpc.ocpc_pb_result_table_v5")
+      .where(s"`date`='2018-12-24' and `hour`='11'")
       .withColumn("kvalue2", col("k_value"))
       .select("ideaid", "adclass", "kvalue2")
       .distinct()
