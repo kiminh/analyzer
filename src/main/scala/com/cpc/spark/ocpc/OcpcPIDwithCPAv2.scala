@@ -304,7 +304,7 @@ object OcpcPIDwithCPAv2 {
 
     rawData.createOrReplaceTempView("raw_table")
     // TODO 删除临时表
-    rawData.write.mode("overwrite").saveAsTable("test.ocpc_k_value_raw_table")
+    rawData.write.mode("overwrite").saveAsTable("test.ocpc_k_value_raw_table_bak")
 //    rawData
 //      .withColumn("date", lit(date))
 //      .withColumn("hour", lit(hour))
@@ -325,7 +325,7 @@ object OcpcPIDwithCPAv2 {
 
 
     // TODO 删除临时表
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_update_k_v2")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_update_k_v2_bak")
     resultDF
   }
 
@@ -460,7 +460,7 @@ object OcpcPIDwithCPAv2 {
 
 
     //TODO 删除临时表
-    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v3")
+    cpaRatio.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio_v3_bak")
 //    cpaRatio
 //      .withColumn("date", lit(date))
 //      .withColumn("hour", lit(hour))
@@ -561,7 +561,7 @@ object OcpcPIDwithCPAv2 {
 
 
     // TODO 删除临时表
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_with_cvr3_k")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_with_cvr3_k_bak")
     val finalDF = resultDF.select("ideaid", "adclass", "flag", "cvr3_cvr_cnt", "cpa_ratio_cvr3")
     finalDF
   }
