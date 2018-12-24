@@ -439,7 +439,6 @@ object OcpcSampleToPb {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  1.0 as k_value,
          |  a.hpcvr,
          |  1.0 as cali_value,
          |  1.0 as cvr3_cali,
@@ -450,7 +449,8 @@ object OcpcSampleToPb {
          |        else a.k_value2 end) as kvalue1,
          |  (case when a.k_value3>2.0 then 2.0
          |        when a.k_value3<0 then 0.0
-         |        else a.k_value3 end) as kvalue2
+         |        else a.k_value3 end) as kvalue2,
+         |  b.conversion_goal
          |FROM
          |  base_table as a
          |LEFT JOIN
@@ -461,6 +461,8 @@ object OcpcSampleToPb {
     println(sqlRequest)
     val resultDF = spark
       .sql(sqlRequest)
+      .withColumn("k_value", when(col("conversion_goal") === 1 || col("conversion_goal") === 3, col("kvalue1")).otherwise(col("kvalue2")))
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2")
 
     resultDF
   }
