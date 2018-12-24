@@ -177,7 +177,7 @@ object OcpcPIDwithCPAv2 {
     // todo 表名
     val case2 = spark
 //      .table("dl_cpc.new_pb_ocpc_with_pcvr")
-      .table("dl_cpc.ocpc_pb_result_table_v5")
+      .table("dl_cpc.ocpc_pb_result_table_v6")
       .where(s"`date`='2018-12-24' and `hour`='11'")
       .withColumn("kvalue2", col("k_value"))
       .select("ideaid", "adclass", "kvalue2")
@@ -610,88 +610,6 @@ object OcpcPIDwithCPAv2 {
     resultDF
   }
 
-  def getAvgKV3(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
-    /**
-      * 计算修正前的k基准值
-      * case1：前6个小时有isclick=1的数据，统计这批数据的k均值作为基准值
-      * case2：前6个小时没有isclick=1的数据，将前一个小时的数据作为基准值
-      * case3: 在主表（7*24）中存在，但是不属于前两种情况的，初始值0.694
-      */
 
-    historyData
-      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-      .createOrReplaceTempView("raw_table")
-
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  searchid,
-         |  ideaid,
-         |  adclass,
-         |  isshow,
-         |  isclick,
-         |  iscvr,
-         |  ocpc_log,
-         |  ocpc_log_dict['kvalue'] as kvalue,
-         |  hour
-         |FROM
-         |  raw_table
-       """.stripMargin
-    println(sqlRequest2)
-    val rawData = spark.sql(sqlRequest2)
-
-    // case1
-    val case1 = rawData
-      .filter("isclick=1")
-      .groupBy("ideaid", "adclass", "hour")
-      .agg(
-        sum(col("kvalue")).alias("hourly_k"),
-        sum(col("isclick")).alias("hourly_ctr_cnt"))
-      .filter("hourly_k>0")
-      .withColumn("weight", udfCalculateWeightByHour(hour)(col("hour")))
-      .withColumn("weighted_k", col("weight")*col("hourly_k"))
-      .withColumn("weighted_ctr_cnt", col("weight")*col("hourly_ctr_cnt"))
-      .groupBy("ideaid", "adclass")
-      .agg(
-        sum(col("weighted_k")).alias("total_k"),
-        sum(col("weighted_ctr_cnt")).alias("total_ctr_cnt"))
-      .withColumn("kvalue1", col("total_k") / col("total_ctr_cnt"))
-      .select("ideaid", "adclass", "kvalue1")
-
-    //TODO 删除case3
-    val case3 = rawData
-      .filter("isclick=1")
-      .groupBy("ideaid", "adclass")
-      .agg(avg(col("kvalue")).alias("kvalue3")).select("ideaid", "adclass", "kvalue3")
-
-
-
-    //      .agg(avg(col("kvalue")).alias("kvalue1")).select("ideaid", "adclass", "kvalue1")
-
-    // case2
-    // table name for previous calculation: test.new_pb_ocpc_with_pcvr
-    val case2 = spark
-      .table("dl_cpc.new_pb_ocpc_with_pcvr")
-      .withColumn("kvalue2", col("k_value"))
-      .select("ideaid", "adclass", "kvalue2")
-      .distinct()
-
-    // 优先case1，然后case2，最后case3
-    // TODO 删除case3
-    val resultDF = baseData
-      .join(case1, Seq("ideaid", "adclass"), "left_outer")
-      .select("ideaid", "adclass", "kvalue1")
-      .join(case2, Seq("ideaid", "adclass"), "left_outer")
-      .select("ideaid", "adclass", "kvalue1", "kvalue2")
-      .withColumn("kvalue_new", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
-      .withColumn("kvalue", when(col("kvalue_new").isNull, 0.694).otherwise(col("kvalue_new")))
-      .join(case3, Seq("ideaid", "adclass"), "left_outer")
-
-    resultDF.show(10)
-    // TODO 删除临时表
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_avg_k_value_v3")
-    resultDF
-
-  }
 
 }
