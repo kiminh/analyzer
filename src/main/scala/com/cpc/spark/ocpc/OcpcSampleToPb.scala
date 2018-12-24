@@ -115,7 +115,6 @@ object OcpcSampleToPb {
     println(result.length)
     useridData.writeTo(new FileOutputStream(filename))
 
-    //    dataset.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr")
     println("complete save data into protobuffer")
 
   }
@@ -417,8 +416,9 @@ object OcpcSampleToPb {
       .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cvr3_cnt", "k_value2", "k_value3")
     result.createOrReplaceTempView("base_table")
 
-    val ocpcIdeas = getIdeaUpdates(spark)
-    ocpcIdeas.write.mode("overwrite").saveAsTable("ocpc_idea_update")
+//    val ocpcIdeas = getIdeaUpdates(spark)
+    val ocpcIdeas = spark.table("test.ocpc_idea_update_time_12")
+    ocpcIdeas.createOrReplaceTempView("ocpc_idea_update")
     val sqlRequest =
       s"""
          |SELECT
