@@ -296,7 +296,7 @@ object OcpcSampleToRedis {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case when b.conversion_goal=1 and a.k_value>2.5 then 2.5
+         |  (case when b.conversion_goal=1 and a.k_value>3.0 then 3.0
          |        when b.conversion_goal!=1 and a.k_value>2.0 then 2.0
          |        when b.conversion_goal is null and a.k_value>2.0 then 2.0
          |        when a.k_value<0.00001 then 0.00001
@@ -770,7 +770,7 @@ object OcpcSampleToRedis {
       .withColumn("cali_value", lit(1.0))
       .withColumn("cvr3_cali", lit(1.0))
       .join(prevTable, Seq("ideaid", "adclass"), "left_outer")
-      .withColumn("k_value_middle", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 5.0).otherwise(col("new_k")))
+      .withColumn("k_value_middle", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 4.0).otherwise(col("new_k")))
       .withColumn("k_value", when(col("flag")===0, col("prev_k")).otherwise(col("k_value_middle")))
 
 

@@ -10,11 +10,12 @@ object OcpcDailyReport {
   var mariadb_write_url = ""
   val mariadb_write_prop = new Properties()
   def main(args: Array[String]): Unit = {
-    val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
-
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
+
+    val spark = SparkSession.builder().appName(s"ocpc novel hourly summary: $date, $hour").enableHiveSupport().getOrCreate()
+
 
     val summaryReport = getHourlyReport(date, hour, spark)
     val tableName = "dl_cpc.ocpcv3_novel_report_summary_hourly"
@@ -37,7 +38,7 @@ object OcpcDailyReport {
          |    SUM(case when is_cpa_ok=1 and is_step2=1 then 1 else 0 end) as low_cpa_adnum,
          |    SUM(case when is_cpa_ok=0 and is_step2=1 then 1 else 0 end) as high_cpa_adnum,
          |    SUM(case when is_step2=1 then cost else 0 end) as step2_cost,
-         |    SUM(case when is_step2=1 and is_cpa_ok=0 then cost else 0 end) as step2_cpa_high_cost,
+         |    SUM(case when is_step2=1 and is_cpa_ok=0 then (cost - cpa_given * conversion * 2) else 0 end) as step2_cpa_high_cost,
          |    SUM(impression) as impression,
          |    SUM(click) as click,
          |    SUM(conversion) as conversion,
@@ -63,7 +64,7 @@ object OcpcDailyReport {
          |    SUM(case when is_cpa_ok=1 and is_step2=1 then 1 else 0 end) as low_cpa_adnum,
          |    SUM(case when is_cpa_ok=0 and is_step2=1 then 1 else 0 end) as high_cpa_adnum,
          |    SUM(case when is_step2=1 then cost else 0 end) as step2_cost,
-         |    SUM(case when is_step2=1 and is_cpa_ok=0 then cost else 0 end) as step2_cpa_high_cost,
+         |    SUM(case when is_step2=1 and is_cpa_ok=0 then (cost - cpa_given * conversion * 2) else 0 end) as step2_cpa_high_cost,
          |    SUM(impression) as impression,
          |    SUM(click) as click,
          |    SUM(conversion) as conversion,

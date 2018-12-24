@@ -23,12 +23,21 @@ object OcpcKexp {
     import spark.implicits._
 
     val selectCondition = s"`date`='$date' and `hour`='$hour'"
-    val kv1 = spark
-      .table("dl_cpc.ocpc_v2_k")
+
+    val ocpcConversionGoal = spark.table("test.ocpc_idea_update_time_" + hour)
+    val kv1Raw = spark
+      .table("dl_cpc.ocpc_v2_k_new")
       .where(selectCondition)
-      .withColumn("k_ratio2_v1", col("k_ratio2"))
-      .withColumn("k_ratio3_v1", col("k_ratio3"))
-      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1")
+      .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3")
+
+    val kv1 = kv1Raw
+      .join(ocpcConversionGoal, Seq("ideaid"), "left_outer")
+      .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3", "conversion_goal")
+      .withColumn("k2", when(col("conversion_goal").isNotNull && col("conversion_goal")===3, col("k_ratio3")).otherwise(col("k_ratio1")))
+      .withColumn("k3", col("k_ratio2"))
+      .withColumn("k_ratio2_v1", col("k2"))
+      .withColumn("k_ratio3_v1", col("k3"))
+      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "conversion_goal")
 
     val kv2 = spark
       .table("dl_cpc.ocpc_regression_k")
@@ -37,22 +46,47 @@ object OcpcKexp {
       .withColumn("k_ratio3_v2", col("k_ratio3"))
       .select("ideaid", "k_ratio2_v2", "k_ratio3_v2")
 
+    val kv3 = spark
+      .table("dl_cpc.ocpc_v2_app_open_k")
+      .where(selectCondition)
+      .withColumn("k_ratio2_v3", col("k_ratio2"))
+      .withColumn("k_ratio3_v3", col("k_ratio3"))
+      .select("ideaid", "k_ratio2_v3", "k_ratio3_v3")
+
     // 读取实验ideaid列表
     val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
     val data = spark.sparkContext.textFile(filename)
     val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     rawRDD.foreach(println)
-    val expIdeas = rawRDD.toDF("ideaid", "flag").distinct()
+    val expIdeas = rawRDD
+      .toDF("ideaid", "flag")
+      .groupBy("ideaid")
+      .agg(min(col("flag")).alias("flag"))
+      .distinct()
 
     // 根据实验id列表，替换k值
     val kvalue = kv1
       .join(kv2, Seq("ideaid"), "outer")
+      .join(kv3, Seq("ideaid"), "outer")
       .join(expIdeas, Seq("ideaid"), "left_outer")
-      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "flag")
-      .withColumn("k_ratio2", when(col("flag") === 1, col("k_ratio2_v2")).otherwise(col("k_ratio2_v1")))
+      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "flag", "conversion_goal")
+      .withColumn("k_ratio2", when(col("flag") === 1 && col("conversion_goal") < 3, col("k_ratio2_v2")).otherwise(col("k_ratio2_v1")))
       .withColumn("k_ratio3", when(col("flag") === 1, col("k_ratio3_v2")).otherwise(col("k_ratio3_v1")))
+      .withColumn("k_ratio2", when(col("flag") === 2 && col("conversion_goal") === 1, col("k_ratio2_v3")).otherwise(col("k_ratio2")))
 
+
+//    ideaid  string  NULL
+//    k_ratio2_v1     double  NULL
+//    k_ratio3_v1     double  NULL
+//    k_ratio2_v2     double  NULL
+//    k_ratio3_v2     double  NULL
+//    flag    int     NULL
+//    k_ratio2        double  NULL
+//    k_ratio3        double  NULL
+
+//    test.ocpc_k_exp_middle_hourly
     kvalue
+      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "flag", "k_ratio2", "k_ratio3")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write
