@@ -314,10 +314,18 @@ object OcpcPIDwithCPAv2 {
 
 //    val cvr3Data = getActivationData(date, hour, spark)
 
+    val prevK = spark
+      .table("dl_cpc.new_pb_ocpc_with_pcvr")
+      .groupBy("ideaid", "adclass")
+      .agg(min(col("k_value")).alias("prevK"))
+      .distinct()
+
     val resultDF = rawData
       .select("ideaid", "adclass", "updated_k2", "updated_k3")
-      .withColumn("k_value2", when(col("updated_k2").isNull, 0.694).otherwise(col("updated_k2")))
-      .withColumn("k_value3", when(col("updated_k3").isNull, 0.694).otherwise(col("updated_k3")))
+      .join(prevK, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "adclass", "updated_k2", "updated_k3", "prevK")
+      .withColumn("k_value2", when(col("updated_k2").isNull, col("prevK")).otherwise(col("updated_k2")))
+      .withColumn("k_value3", when(col("updated_k3").isNull, col("prevK")).otherwise(col("updated_k3")))
       .select("ideaid", "adclass", "k_value2", "updated_k2", "k_value3", "updated_k3")
     //      .join(cvr3Data, Seq("ideaid"), "left_outer")
     //      .select("ideaid", "adclass", "new_k_value", "updated_k", "flag")
