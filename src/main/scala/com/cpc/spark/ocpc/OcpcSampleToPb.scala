@@ -363,6 +363,7 @@ object OcpcSampleToPb {
       .withColumn("k_value3_middle", when(col("new_k3").isNotNull && col("prev_k3").isNotNull && col("new_k3")>col("prev_k3"), col("prev_k3") + (col("new_k3") - col("prev_k3")) * 1.0 / 4.0).otherwise(col("new_k3")))
       .withColumn("k_value2", when(col("flag")===0, col("prev_k2")).otherwise(col("k_value2_middle")))
       .withColumn("k_value3", when(col("flag")===0, col("prev_k3")).otherwise(col("k_value3_middle")))
+      .select("ideaid", "adclass", "k_ratio2_regression", "k_ratio3_regression", "k_ratio2_pid", "k_ratio3_pid", "new_k2", "new_k3", "prev_k2", "prev_k3", "ctrcnt", "k_value2_middle", "k_value3_middle", "k_value2", "k_value3")
 
     finalData.write.mode("overwrite").saveAsTable("test.ocpc_check_pb_middle20181224")
 
