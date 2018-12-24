@@ -464,7 +464,7 @@ object OcpcSampleToPb {
       .withColumn("k_value", when(col("conversion_goal") === 1 || col("conversion_goal") === 3, col("kvalue1")).otherwise(col("kvalue2")))
     result.write.mode("overwrite").saveAsTable("test.ocpc_complete_pb_table20181224")
 
-    val resultDF = result.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2")
+    val resultDF = result.selectExpr("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cast(cali_value as double) cali_value", "cast(cvr3_cali as double) cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2")
 
     resultDF
   }
