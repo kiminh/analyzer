@@ -45,10 +45,10 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    //saveDataFromLog(spark, date, hour)
+    saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
-    //saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
-    saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr
+    saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
+    //saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr
     println("SaveFeatures_done")
   }
 
@@ -242,9 +242,7 @@ object SaveFeatures {
     //激励下载转化  取有点击的
     val motivateRDD = spark.sql(
       s"""
-         |select   b.trace_type as flag1
-         |        ,b.trace_op1 as flag2
-         |        ,a.searchid
+         |select   a.searchid
          |        ,a.ideaid
          |        ,b.trace_type
          |        ,b.trace_op1
@@ -287,8 +285,7 @@ object SaveFeatures {
     //用户Api回传
     val sql =
       s"""
-         |select tr.trace_type as flag1
-         |      ,tr.searchid
+         |select tr.searchid
          |      ,un.userid
          |      ,un.uid
          |      ,un.ideaid
@@ -310,8 +307,7 @@ object SaveFeatures {
     //没有api回传标记，直接上报到trace
     val sql2 =
       s"""
-         |select tr.trace_type as flag1
-         |      ,tr.searchid
+         |select tr.searchid
          |      ,un.userid
          |      ,un.uid
          |      ,un.ideaid
@@ -333,8 +329,7 @@ object SaveFeatures {
     //应用商城api转化
     val sql_moti =
       s"""
-         |select tr.trace_type as flag1
-         |      ,tr.searchid
+         |select tr.searchid
          |      ,un.userid
          |      ,un.uid
          |      ,un.ideaid
@@ -395,14 +390,11 @@ object SaveFeatures {
               hour = x.getAs[String]("hour")
               search_time = date + " " + hour
 
-              if (!x.isNullAt(0)) { //trace_type为null时过滤
-                val trace_type = x.getAs[String]("trace_type")
-                if (trace_type == "active_third") {
-                  active_third = 1
-                }
-              } else {
-                active_third = -1
+              val trace_type = x.getAs[String]("trace_type")
+              if (trace_type == "active_third") {
+                active_third = 1
               }
+
             }
           )
           (x._1, active_third, uid, userid, ideaid, search_time, adclass, media_appsid, planid, unitid)
@@ -788,25 +780,25 @@ object SaveFeatures {
           var active_map: Map[String, Int] = Map()
           x._2.foreach(
             x => {
-                val trace_type = x.getAs[String]("trace_type")
-                val trace_op1 = x.getAs[String]("trace_op1")
+              val trace_type = x.getAs[String]("trace_type")
+              val trace_op1 = x.getAs[String]("trace_op1")
 
-                trace_type match {
-                  case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
-                    || s == "active6" || s == "disactive" || s == "active_href")
-                  => active_map += (s -> 1)
-                  case _ =>
-                }
+              trace_type match {
+                case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
+                  || s == "active6" || s == "disactive" || s == "active_href")
+                => active_map += (s -> 1)
+                case _ =>
+              }
 
-                //增加下载激活字段,trace_op1=="REPORT_DOWNLOAD_PKGADDED"(包含apkdown和lpdown下载安装), 则installed记为1，否则为0
-                if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
-                  active_map += ("installed" -> 1)
-                }
+              //增加下载激活字段,trace_op1=="REPORT_DOWNLOAD_PKGADDED"(包含apkdown和lpdown下载安装), 则installed记为1，否则为0
+              if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
+                active_map += ("installed" -> 1)
+              }
 
-                //REPORT_USER_STAYINWX：用户点击落地页里的加微信链接跳转到微信然后10秒内没有回来,表示已经转化，REPORT_USER_STAYINWX记为1，否则为0
-                if (trace_op1 == "REPORT_USER_STAYINWX") {
-                  active_map += ("report_user_stayinwx" -> 1)
-                }
+              //REPORT_USER_STAYINWX：用户点击落地页里的加微信链接跳转到微信然后10秒内没有回来,表示已经转化，REPORT_USER_STAYINWX记为1，否则为0
+              if (trace_op1 == "REPORT_USER_STAYINWX") {
+                active_map += ("report_user_stayinwx" -> 1)
+              }
 
             }
           )
