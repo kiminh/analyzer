@@ -43,9 +43,20 @@ object OcpcSampleToPb {
     val apiCvr = getAPIcvr(date, hour, spark)
     val resultK = getK(date, hour, spark)
 
-    val resultDF = assemblyPB(baseData, hpcvr, apiCvr, resultK, date, hour, spark)
+    val currentPb = baseData
+      .join(hpcvr, Seq("ideaid", "adclass"), "left_outer")
+      .join(apiCvr, Seq("ideaid", "adclass"), "left_outer")
+      .join(resultK, Seq("ideaid", "adclass"), "left_outer")
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "hpcvr", "cvr3_cnt", "k_value2", "k_value3")
+      .withColumn("kvalue1_init", col("k_value2"))
+      .withColumn("kvalue2_init", col("k_value3"))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_bak")
+    val result = initK(currentPb, date, hour,spark)
+    result.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_bak")
+
+    val resultDF = assemblyPB(result, date, hour, spark)
+
+
     savePbPack(resultDF)
 
   }
@@ -409,13 +420,9 @@ object OcpcSampleToPb {
   }
 
 //  baseData, hpcvr, apiCvr, resultK, date, hour, spark
-  def assemblyPB(baseData: DataFrame, hpcvr: DataFrame, apiCvr: DataFrame, resultK: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    val result = baseData
-      .join(hpcvr, Seq("ideaid", "adclass"), "left_outer")
-      .join(apiCvr, Seq("ideaid", "adclass"), "left_outer")
-      .join(resultK, Seq("ideaid", "adclass"), "left_outer")
-      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "hpcvr", "cvr3_cnt", "k_value2", "k_value3")
-    result.createOrReplaceTempView("base_table")
+  def assemblyPB(base: DataFrame, date: String, hour: String, spark: SparkSession) = {
+
+    base.createOrReplaceTempView("base_table")
 
 //    val ocpcIdeas = getIdeaUpdates(spark)
     val ocpcIdeas = spark.table("test.ocpc_idea_update_time_12")
@@ -458,6 +465,34 @@ object OcpcSampleToPb {
     resultDF
   }
 
+  def initK(currentPb: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    // 对于刚进入ocpc阶段但是有cpc历史数据的广告依据历史转化率给出k的初值
+    // 取历史数据
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val end_date = sdf.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(end_date)
+    calendar.add(Calendar.DATE, -7)
+    val dt = calendar.getTime
+    val date1 = sdf.format(dt)
+    val selectCondition = getTimeRangeSql3(date1, hour, date, hour)
+
+    val ocpcHistoryData = spark
+      .table("dl_cpc.ocpc_unionlog")
+      .where(selectCondition)
+      .select("ideaid", "adclass")
+      .withColumn("is_ocpc_flag", lit(1))
+      .distinct()
+
+    val resultDF = currentPb
+      .join(ocpcHistoryData, Seq("ideaid", "adclass"), "left_outer")
+      .withColumn("kvalue1_middle", when(col("is_ocpc_flag").isNull, col("cvr_cnt") * 1.0 / (col("ctr_cnt") * col("hpcvr"))).otherwise(col("kvalue1_init")))
+      .withColumn("kvalue2_middle", when(col("is_ocpc_flag").isNull, col("cvr3_cnt") * 1.0 / (col("ctr_cnt") * col("hpcvr"))).otherwise(col("kvalue2_init")))
+      .withColumn("kvalue1", when(col("kvalue1_middle").isNull, 0.0).otherwise(col("kvalue1_middle")))
+      .withColumn("kvalue2", when(col("kvalue2_middle").isNull, 0.0).otherwise(col("kvalue2_middle")))
+
+    resultDF
+  }
 
 }
 
