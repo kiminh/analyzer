@@ -312,10 +312,10 @@ object OcpcPIDwithCPAv2 {
 //      .mode("overwrite")
 //      .insertInto("dl_cpc.ocpc_k_value_raw_table")
 
-    val cvr3Data = getActivationData(date, hour, spark)
+//    val cvr3Data = getActivationData(date, hour, spark)
 
     val resultDF = rawData
-      .select("ideaid", "adclass", "updated_k")
+      .select("ideaid", "adclass", "updated_k2", "updated_k3")
       .withColumn("k_value2", when(col("updated_k2").isNull, 0.694).otherwise(col("updated_k2")))
       .withColumn("k_value3", when(col("updated_k3").isNull, 0.694).otherwise(col("updated_k3")))
       .select("ideaid", "adclass", "k_value2", "updated_k2", "k_value3", "updated_k3")
