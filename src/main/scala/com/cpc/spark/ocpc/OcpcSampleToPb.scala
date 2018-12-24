@@ -414,7 +414,7 @@ object OcpcSampleToPb {
       .join(hpcvr, Seq("ideaid", "adclass"), "left_outer")
       .join(apiCvr, Seq("ideaid", "adclass"), "left_outer")
       .join(resultK, Seq("ideaid", "adclass"), "left_outer")
-      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cvr3_cnt", "k_value2", "k_value3")
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "hpcvr", "cvr3_cnt", "k_value2", "k_value3")
     result.createOrReplaceTempView("base_table")
 
 //    val ocpcIdeas = getIdeaUpdates(spark)
