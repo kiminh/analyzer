@@ -45,7 +45,7 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    saveDataFromLog(spark, date, hour)
+    //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
     saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
     //saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr
