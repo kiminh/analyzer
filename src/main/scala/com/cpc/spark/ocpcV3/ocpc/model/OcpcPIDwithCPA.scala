@@ -4,8 +4,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 
-//import com.cpc.spark.ocpc.OcpcUtils._
-//import com.cpc.spark.udfs.Udfs_wj._
+import com.cpc.spark.ocpc.OcpcUtils._
+import com.cpc.spark.udfs.Udfs_wj._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.IntegerType
@@ -36,13 +36,13 @@ object OcpcPIDwithCPA {
       * 基于前6个小时的平均k值和那段时间的cpa_ratio，按照更加详细的分段函数对k值进行计算
       */
 
-//    val baseData = getBaseTable(date, hour, spark)
-//    println("################ baseData #################")
-//    baseData.show(10)
+    val baseData = getBaseTable(date, hour, spark)
+    println("################ baseData #################")
+    baseData.show(10)
     val historyData = getHistoryData(date, hour, 6, spark)
     println("################# historyData ####################")
     historyData.show(10)
-    val avgK = getAvgK(baseData, historyData, date, hour, spark)
+    val avgK = getAvgK(historyData, date, hour, spark)
     println("################# avgK table #####################")
     avgK.show(10)
     val cpaRatio = getCPAratio(baseData, historyData, date, hour, spark)
@@ -54,39 +54,39 @@ object OcpcPIDwithCPA {
     newK
   }
 
-//  def getBaseTable(endDate: String, hour: String, spark: SparkSession) :DataFrame ={
-//    // 计算日期周期
-//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-//    val date = dateConverter.parse(endDate)
-//    val calendar = Calendar.getInstance
-//    calendar.setTime(date)
-//    calendar.add(Calendar.DATE, -7)
-//    val dt = calendar.getTime
-//    val startDate = dateConverter.format(dt)
-//    val selectCondition = getTimeRangeSql(startDate, hour, endDate, hour)
-//
-//    // 累积计算最近一周数据
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  unitid,
-//         |  adclass
-//         |FROM
-//         |  dl_cpc.ocpcv3_ctr_data_hourly
-//         |WHERE $selectCondition
-//         |  and media_appsid in ("80001098", "80001292")
-//       """.stripMargin
-//    println(sqlRequest)
-//    val baseData = spark
-//      .sql(sqlRequest)
-//      .withColumn("new_adclass", col("adclass")/1000)
-//      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
-//      .select("unitid", "new_adclass")
-//      .distinct()
-//
-//    baseData
-//
-//  }
+  def getBaseTable(endDate: String, hour: String, spark: SparkSession) :DataFrame ={
+    // 计算日期周期
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val date = dateConverter.parse(endDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(date)
+    calendar.add(Calendar.DATE, -7)
+    val dt = calendar.getTime
+    val startDate = dateConverter.format(dt)
+    val selectCondition = getTimeRangeSql(startDate, hour, endDate, hour)
+
+    // 累积计算最近一周数据
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adclass
+         |FROM
+         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |WHERE $selectCondition
+         |  and media_appsid in ("80001098", "80001292")
+       """.stripMargin
+    println(sqlRequest)
+    val baseData = spark
+      .sql(sqlRequest)
+      .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+      .select("unitid", "new_adclass")
+      .distinct()
+
+    baseData
+
+  }
 
   def getHistoryData(date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
     /**
@@ -255,6 +255,17 @@ object OcpcPIDwithCPA {
 
     val cvr1History = getCvr1History(date, hour, 6, spark)
     val cvr2History = getCvr2History(date,hour, 6, spark)
+    val cvr1Data = historyData
+      .join(cvr1History, Seq("searchid"), "left_outer")
+      .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+      .select("identifier", "new_adclass", "iscvr")
+      .groupBy("identifier", "new_adclass")
+      .agg(sum(col("iscvr")).alias("cvr1cnt"))
+      .select("identifier", "new_adclass", "cvr1cnt")
+
+
+    // TODO 修正代码
     val cvr2Data=getCvr2HistoryData(date, hour, 6, spark)
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
