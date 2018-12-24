@@ -440,15 +440,15 @@ object OcpcSampleToPb {
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
          |  a.hpcvr,
-         |  cast(1.0 as double) as cali_value,
-         |  cast(1.0 as double) as cvr3_cali,
+         |  1.0 as cali_value,
+         |  1.0 as cvr3_cali,
          |  a.cvr3_cnt,
          |  (case when b.conversion_goal=1 and a.k_value2>3.0 then 3.0
          |        when b.conversion_goal!=1 and a.k_value2>2.0 then 2.0
-         |        when a.k_value2<0 then 0.0
+         |        when a.k_value2<0 or a.k_value2 is null then 0.0
          |        else a.k_value2 end) as kvalue1,
          |  (case when a.k_value3>2.0 then 2.0
-         |        when a.k_value3<0 then 0.0
+         |        when a.k_value3<0 or a.k_value3 is null then 0.0
          |        else a.k_value3 end) as kvalue2,
          |  b.conversion_goal
          |FROM
