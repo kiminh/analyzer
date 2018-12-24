@@ -328,10 +328,10 @@ object OcpcSampleToPb {
   def getPIDk(date: String, hour: String, spark: SparkSession) = {
     val resultDF = spark
       .table("test.ocpc_k_value_table_bak")
-      .select("ideaid", "k_value2", "k_value3")
+      .select("ideaid", "adclass", "k_value2", "k_value3")
       .withColumn("k_ratio2_pid", col("k_value2"))
       .withColumn("k_ratio3_pid", col("k_value3"))
-      .select("ideaid", "k_ratio2_pid", "k_ratio3_pid")
+      .select("ideaid", "adclass", "k_ratio2_pid", "k_ratio3_pid")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
