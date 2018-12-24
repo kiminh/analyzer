@@ -440,8 +440,8 @@ object OcpcSampleToPb {
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
          |  a.hpcvr,
-         |  1.0 as cali_value,
-         |  1.0 as cvr3_cali,
+         |  cast(1.0 as double) as cali_value,
+         |  cast(1.0 as double) as cvr3_cali,
          |  a.cvr3_cnt,
          |  (case when b.conversion_goal=1 and a.k_value2>3.0 then 3.0
          |        when b.conversion_goal!=1 and a.k_value2>2.0 then 2.0
@@ -459,10 +459,12 @@ object OcpcSampleToPb {
          |  a.ideaid=b.ideaid
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark
+    val result = spark
       .sql(sqlRequest)
       .withColumn("k_value", when(col("conversion_goal") === 1 || col("conversion_goal") === 3, col("kvalue1")).otherwise(col("kvalue2")))
-      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2")
+    result.write.mode("overwrite").saveAsTable("test.ocpc_complete_pb_table20181224")
+
+    val resultDF = result.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2")
 
     resultDF
   }
