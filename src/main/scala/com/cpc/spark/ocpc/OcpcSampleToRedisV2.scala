@@ -65,10 +65,10 @@ object OcpcSampleToRedisV2 {
 
     rawBase.createOrReplaceTempView("base_table")
 
-    val ocpcIdeas = getIdeaUpdates(spark)
+//    val ocpcIdeas = getIdeaUpdates(spark)
     //    ocpcIdeas.createOrReplaceTempView("ocpc_idea_update_time")
     //    ocpcIdeas.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_ideaid_list")
-    ocpcIdeas.write.mode("overwrite").saveAsTable("test.ocpcv3_ideaid_list_" + hour)
+//    ocpcIdeas.write.mode("overwrite").saveAsTable("test.ocpcv3_ideaid_list_" + hour)
 
     val base = rawBase.select("userid", "ideaid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "total_cnt")
 
@@ -150,7 +150,9 @@ object OcpcSampleToRedisV2 {
 
 
     // 根据中间表加入k值
-    val pidKtable = "test.ocpc_k_value_table_" + hour
+    // todo pidKtable表名
+//    val pidKtable = "test.ocpc_k_value_table_" + hour
+    val pidKtable = "test.ocpc_k_value_table_bak"
     val sqlRequest3 =
       s"""
          |SELECT
@@ -163,7 +165,8 @@ object OcpcSampleToRedisV2 {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  b.k_value,
+         |  b.k_value2,
+         |  b.k_value3,
          |  (case when a.cvr3_cnt is null then 0 else a.cvr3_cnt end) as cvr3_cnt
          |FROM
          |  (SELECT
@@ -180,7 +183,7 @@ object OcpcSampleToRedisV2 {
          |   FROM
          |    ocpc_new_cvr_table) a
          |LEFT JOIN
-         |   (SELECT ideaid, adclass, cast(k_value as double) as k_value FROM $pidKtable) as b
+         |   (SELECT ideaid, adclass, cast(k_value2 as double) as k_value2, cast(k_value3 as double) as k_value3 FROM $pidKtable) as b
          |ON
          |   a.ideaid=b.ideaid
          |and
@@ -224,7 +227,8 @@ object OcpcSampleToRedisV2 {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case when a.k_value is null then 0.694 else a.k_value end) as raw_k_value,
+         |  (case when a.k_value2 is null then 0.694 else a.k_value2 end) as raw_k_value2,
+         |  (case when a.k_value3 is null then 0.694 else a.k_value3 end) as raw_k_value3,
          |  b.hpcvr,
          |  (case when c.cali_value is null or c.cali_value=0 then 1.0 else c.cali_value end) as cali_value,
          |  1.0 as cvr3_cali,
@@ -247,7 +251,7 @@ object OcpcSampleToRedisV2 {
 
     println(sqlRequest4)
 
-    val regressionK = getRegressionK(end_date, hour, spark)
+//    val regressionK = getRegressionK(end_date, hour, spark)
 
     val cvr3Ideaid = spark
       .table("test.ocpcv3_ideaid_list_" + hour)
@@ -258,7 +262,7 @@ object OcpcSampleToRedisV2 {
     //    finalData1.write.mode("overwrite").saveAsTable("test.ocpc_debug_k_values_bak")
 
 
-    val finalData2 = resetK(end_date, hour, regressionK, finalData1, spark)
+    val finalData2 = resetK(end_date, hour, finalData1, spark)
 
 
     // 对于刚进入ocpc阶段但是有cpc历史数据的广告依据历史转化率给出k的初值
@@ -273,10 +277,10 @@ object OcpcSampleToRedisV2 {
 
     val finalData3New = finalData2
       .join(ocpcHistoryData, Seq("ideaid", "adclass"), "left_outer")
-      .withColumn("k_value", when(col("is_ocpc_flag").isNull, col("cvr_cnt") * 1.0 / (col("ctr_cnt") * col("hpcvr"))).otherwise(col("k_value")))
-      .join(cvr3Ideaid, Seq("ideaid"), "left_outer")
-      .withColumn("k_value", when(col("conversion_goal")===2 && col("is_ocpc_flag").isNull, col("cvr3_cnt") * 1.0 / (col("ctr_cnt") * col("hpcvr"))).otherwise(col("k_value")))
-      .filter("k_value!=0 and k_value is not null")
+      .withColumn("k_value2", when(col("is_ocpc_flag").isNull, col("cvr_cnt") * 1.0 / (col("ctr_cnt") * col("hpcvr"))).otherwise(col("k_value2")))
+      .withColumn("k_value3", when(col("is_ocpc_flag").isNull, col("cvr3_cnt") * 1.0 / (col("ctr_cnt") * col("hpcvr"))).otherwise(col("k_value3")))
+      .withColumn("k_value2", when(col("k_value2").isNull, 0.0).otherwise(col("k_value2")))
+      .withColumn("k_value3", when(col("k_value3").isNull, 0.0).otherwise(col("k_value3")))
 
 
     finalData3New.createOrReplaceTempView("raw_final_data")
@@ -296,17 +300,25 @@ object OcpcSampleToRedisV2 {
          |  a.adclass_cost,
          |  a.adclass_ctr_cnt,
          |  a.adclass_cvr_cnt,
-         |  (case when b.conversion_goal=1 and a.k_value>3.0 then 3.0
-         |        when b.conversion_goal!=1 and a.k_value>2.0 then 2.0
-         |        when b.conversion_goal is null and a.k_value>2.0 then 2.0
-         |        when a.k_value<0.00001 then 0.00001
-         |        else a.k_value end) as k_value,
+         |  (case when b.conversion_goal=1 and a.k_value2>3.0 then 3.0
+         |        when b.conversion_goal!=1 and a.k_value2>2.0 then 2.0
+         |        when b.conversion_goal is null and a.k_value2>2.0 then 2.0
+         |        when a.k_value2<0.00001 then 0.00001
+         |        else a.k_value2 end) as k_value,
          |  a.hpcvr,
          |  a.cali_value,
          |  a.cvr3_cali,
-         |  a.cvr3_cnt
+         |  a.cvr3_cnt,
+         |  (case when b.conversion_goal=1 and a.k_value2>3.0 then 3.0
+         |        when b.conversion_goal!=1 and a.k_value2>2.0 then 2.0
+         |        when b.conversion_goal is null and a.k_value2>2.0 then 2.0
+         |        when a.k_value2<0 then 0.0
+         |        else a.k_value2 end) as k_value2,
+         |  (case when a.k_value3>2.0 then 2.0
+         |        when a.k_value3<0 then 0.0
+         |        else a.k_value3 end) as k_value3
          |FROM
-         |  (SELECT * FROM raw_final_data WHERE k_value is not null or is_ocpc_flag is not null) as a
+         |  (SELECT * FROM raw_final_data) as a
          |LEFT JOIN
          |  $ocpcTable as b
          |ON
@@ -315,9 +327,9 @@ object OcpcSampleToRedisV2 {
     println(sqlRequest5)
     val finalData3 = spark.sql(sqlRequest5)
 
-    //    finalData3.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak2_bak")
+    finalData3.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_complete_bak2_bak")
 
-    val finalData = finalData3.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt")
+    val finalData = finalData3.select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "k_value2", "k_value3")
 
 
 //
@@ -520,32 +532,32 @@ object OcpcSampleToRedisV2 {
 
   }
 
-  def readInnocence(spark: SparkSession) ={
-    import spark.implicits._
-
-    val filename = "/user/cpc/wangjun/ocpc_ideaid.txt"
-    val data = spark.sparkContext.textFile(filename)
-
-    val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
-    //    dataRDD.foreach(println)
-
-    dataRDD.toDF("ideaid", "flag").createOrReplaceTempView("innocence_list")
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  ideaid,
-         |  flag
-         |FROM
-         |  innocence_list
-         |GROUP BY ideaid, flag
-       """.stripMargin
-
-    val resultDF = spark.sql(sqlRequest)
-
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_innocence_idea_list_bak")
-    resultDF
-  }
+//  def readInnocence(spark: SparkSession) ={
+//    import spark.implicits._
+//
+//    val filename = "/user/cpc/wangjun/ocpc_ideaid.txt"
+//    val data = spark.sparkContext.textFile(filename)
+//
+//    val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+//    //    dataRDD.foreach(println)
+//
+//    dataRDD.toDF("ideaid", "flag").createOrReplaceTempView("innocence_list")
+//
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  ideaid,
+//         |  flag
+//         |FROM
+//         |  innocence_list
+//         |GROUP BY ideaid, flag
+//       """.stripMargin
+//
+//    val resultDF = spark.sql(sqlRequest)
+//
+//    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_innocence_idea_list_bak")
+//    resultDF
+//  }
 
 
   def calculateHPCVR(endDate: String, hour: String, spark: SparkSession) ={
@@ -748,7 +760,7 @@ object OcpcSampleToRedisV2 {
 
   }
 
-  def resetK(date: String, hour: String, regressionK: DataFrame, pidK: DataFrame, spark: SparkSession) = {
+  def resetK(date: String, hour: String, pidK: DataFrame, spark: SparkSession) = {
     var prevTable = getPrevK(date, hour, 1, spark)
     var hourCnt=1
     while (hourCnt < 11) {
@@ -763,16 +775,25 @@ object OcpcSampleToRedisV2 {
 
     }
 
+    val regressionK = spark
+      .table("dl_cpc.ocpc_regression_k_final")
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .select("ideaid", "k_ratio2", "k_ratio3")
+
 
     val finalData = pidK
       .join(regressionK, Seq("ideaid"), "left_outer")
-      .withColumn("new_k", when(col("regression_k_value")>0, col("regression_k_value")).otherwise(col("raw_k_value")))
+      .withColumn("new_k2", when(col("k_ratio2")>0, col("k_ratio2")).otherwise(col("raw_k_value2")))
+      .withColumn("new_k3", when(col("k_ratio3")>0, col("k_ratio3")).otherwise(col("raw_k_value3")))
       .withColumn("cali_value", lit(1.0))
       .withColumn("cvr3_cali", lit(1.0))
       .join(prevTable, Seq("ideaid", "adclass"), "left_outer")
-      .withColumn("k_value_middle", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k")>col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 4.0).otherwise(col("new_k")))
-      .withColumn("k_value", when(col("flag")===0, col("prev_k")).otherwise(col("k_value_middle")))
+      .withColumn("k_value2_middle", when(col("new_k2").isNotNull && col("prev_k2").isNotNull && col("new_k2")>col("prev_k2"), col("prev_k2") + (col("new_k2") - col("prev_k2")) * 1.0 / 4.0).otherwise(col("new_k2")))
+      .withColumn("k_value3_middle", when(col("new_k3").isNotNull && col("prev_k3").isNotNull && col("new_k3")>col("prev_k3"), col("prev_k3") + (col("new_k3") - col("prev_k3")) * 1.0 / 4.0).otherwise(col("new_k3")))
+      .withColumn("k_value2", when(col("flag")===0, col("prev_k2")).otherwise(col("k_value2_middle")))
+      .withColumn("k_value3", when(col("flag")===0, col("prev_k3")).otherwise(col("k_value3_middle")))
 
+    finalData.write.mode("overwrite").saveAsTable("test.ocpc_check_pb_middle20181224")
 
     finalData
   }
@@ -792,10 +813,11 @@ object OcpcSampleToRedisV2 {
     val hour1 = tmpDateValue(1)
 
     val prevK = spark
-      .table("dl_cpc.ocpc_pb_result_table_v5")
+      .table("dl_cpc.ocpc_pb_result_table_v6")
       .where(s"`date`='$date1' and `hour`='$hour1'")
-      .withColumn("prev_k", col("k_value"))
-      .select("ideaid", "adclass", "prev_k", "date", "hour")
+      .withColumn("prev_k2", col("k_value2"))
+      .withColumn("prev_k3", col("k_value3"))
+      .select("ideaid", "adclass", "prev_k2", "prev_k3", "date", "hour")
 
     val prevCtr = spark
       .table("dl_cpc.ocpc_uid_userid_track_label2")
@@ -806,7 +828,7 @@ object OcpcSampleToRedisV2 {
 
     val prevTable = prevK
       .join(prevCtr, Seq("ideaid", "adclass"), "left_outer")
-      .select("ideaid", "adclass", "prev_k", "ctrcnt")
+      .select("ideaid", "adclass", "prev_k2", "prev_k3", "ctrcnt")
       .withColumn("flag", when(col("ctrcnt").isNotNull && col("ctrcnt")>0, 1).otherwise(0))
       .withColumn("date", lit(date1))
       .withColumn("hour", lit(hour1))
