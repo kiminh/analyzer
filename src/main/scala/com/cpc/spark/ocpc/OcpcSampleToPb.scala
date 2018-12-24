@@ -328,7 +328,7 @@ object OcpcSampleToPb {
     val resultDF = regressionK
       .select("ideaid", "k_ratio2", "k_ratio3")
       .withColumn("k_ratio2_regression", col("k_ratio2"))
-      .withColumn("k_ratio3_regression", col("k_ratio2"))
+      .withColumn("k_ratio3_regression", col("k_ratio3"))
       .select("ideaid", "k_ratio2_regression", "k_ratio3_regression")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
