@@ -315,7 +315,8 @@ object OcpcPIDwithCPAv2 {
 //    val cvr3Data = getActivationData(date, hour, spark)
 
     val prevK = spark
-      .table("dl_cpc.new_pb_ocpc_with_pcvr")
+      .table("dl_cpc.ocpc_pb_result_table_v5")
+      .where(s"`date`='$date' and `hour`='$hour'")
       .groupBy("ideaid", "adclass")
       .agg(min(col("k_value")).alias("prevK"))
       .distinct()
