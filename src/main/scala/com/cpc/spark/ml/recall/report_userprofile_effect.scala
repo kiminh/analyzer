@@ -21,6 +21,7 @@ object report_userprofile_effect {
          | select
          |  a.searchid,
          |  a.uid,
+         |  a.ideaid,
          |  a.userid,
          |  a.isclick,
          |  a.isshow,
@@ -29,7 +30,7 @@ object report_userprofile_effect {
          |  b.tag
          | from
          |      (
-         |        select userid, isshow, isclick, searchid, uid, interests, price, ext['charge_type'].int_value as charge_type
+         |        select userid,ideaid, isshow, isclick, searchid, uid, interests, price, ext['charge_type'].int_value as charge_type
          |        from dl_cpc.cpc_union_log
          |        where date='$date'
          |        and media_appsid  in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
@@ -67,16 +68,16 @@ object report_userprofile_effect {
          |from
          |  unionlog_table as a
          |left join
-         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where date='$date') as b
+         |  (select searchid,ideaid, label2 from dl_cpc.ml_cvr_feature_v1 where date='$date') as b
          |on
-         |  a.searchid=b.searchid
+         |  a.searchid=b.searchid and a.ideaid=b.ideaid
          |left join
-         |  (select searchid, label as label3 from dl_cpc.ml_cvr_feature_v2 where date='$date') as c
+         |  (select searchid,ideaid, label as label3 from dl_cpc.ml_cvr_feature_v2 where date='$date') as c
          |on
-         |  a.searchid=c.searchid
+         |  a.searchid=c.searchid and a.ideaid=c.ideaid
          |left join
-         |  (select searchid, label as label4 from dl_cpc.ml_cvr_feature_motivate where date='$date') as d
-         |on a.searchid=d.searchid
+         |  (select searchid,ideaid, label as label4 from dl_cpc.ml_cvr_feature_motivate where date='$date') as d
+         |on a.searchid=d.searchid and a.ideaid=d.ideaid
        """.stripMargin
 
     println(sqlRequest2)
