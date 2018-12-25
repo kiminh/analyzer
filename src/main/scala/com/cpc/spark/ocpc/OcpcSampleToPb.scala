@@ -338,8 +338,9 @@ object OcpcSampleToPb {
   }
 
   def getPIDk(date: String, hour: String, spark: SparkSession) = {
+    // todo  更换表名
     val resultDF = spark
-      .table("test.ocpc_k_value_table_bak")
+      .table("test.ocpc_k_value_table_20181225")
       .select("ideaid", "adclass", "k_value2", "k_value3")
       .withColumn("k_ratio2_pid", col("k_value2"))
       .withColumn("k_ratio3_pid", col("k_value3"))

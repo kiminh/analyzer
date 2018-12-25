@@ -207,7 +207,7 @@ object OcpcPIDwithCPAv3 {
          |  cvr2cnt,
          |  cvr3cnt,
          |  cpa2,
-         |  cpa3
+         |  cpa3,
          |  (case when cpa_given is null then 1.0
          |        when cvr2cnt is null or cvr2cnt = 0 then 0.8
          |        when cvr2cnt>0 then cpa_given * 1.0 / cpa2
@@ -221,7 +221,8 @@ object OcpcPIDwithCPAv3 {
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
-
+    // TODO 临时表
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio20181225")
     resultDF
 
   }
@@ -255,6 +256,8 @@ object OcpcPIDwithCPAv3 {
       .withColumn("updated_k3", udfUpdateK()(col("cpa3_ratio"), col("kvalue")))
       .withColumn("k_value2", col("updated_k2"))
       .withColumn("k_value3", col("updated_k3"))
+
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_updated_k_table20181225")
 
     resultDF
 
