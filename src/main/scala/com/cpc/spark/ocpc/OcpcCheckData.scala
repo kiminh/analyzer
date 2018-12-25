@@ -110,9 +110,9 @@ object OcpcCheckData {
          |FROM
          |    dl_cpc.ocpc_pb_result_table_v5
          |WHERE
-         |    `date`='2018-12-24'
+         |    `date`='$date'
          |AND
-         |    `hour`='11'
+         |    `hour`='$hour'
        """.stripMargin
     println(sqlRequest)
     val data = spark

@@ -344,7 +344,6 @@ object OcpcPIDwithCPAv2 {
   }
 
   /*******************************************************************/
-  // TODO: 下一阶段优化目标，考虑24小时的cpa表现，按权重计算
   def calculateKv3(date: String, hour: String, spark: SparkSession) :DataFrame ={
     /**
       * 计算新版k值
@@ -534,24 +533,6 @@ object OcpcPIDwithCPAv2 {
 
 
     data.createOrReplaceTempView("data_table")
-    //    val sqlRequest =
-    //      s"""
-    //         |SELECT
-    //         |  ideaid,
-    //         |  adclass,
-    //         |  cost,
-    //         |  cpa_given,
-    //         |  cvr3_cvr_cnt,
-    //         |  hourly_ctr_cnt,
-    //         |  flag,
-    //         |  (case when cpa_given is null then 1.0
-    //         |        when '$hour'>'05' and (hourly_ctr_cnt<5 or hourly_ctr_cnt is null) then -1
-    //         |        when hourly_ctr_cnt>=10 and (cvr3_cvr_cnt=0 or cvr3_cvr_cnt is null) then 0.8
-    //         |        when cvr3_cvr_cnt>0 then cpa_given * cvr3_cvr_cnt * 1.0 / cost
-    //         |        else 1.0 end) as cpa_ratio_cvr3
-    //         |FROM
-    //         |  data_table
-    //       """.stripMargin
 
     val sqlRequest =
       s"""
