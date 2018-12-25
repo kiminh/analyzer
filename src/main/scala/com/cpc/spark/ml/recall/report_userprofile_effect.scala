@@ -72,11 +72,11 @@ object report_userprofile_effect {
          |on
          |  a.searchid=b.searchid and a.ideaid=b.ideaid
          |left join
-         |  (select searchid,ideaid, label as label3 from dl_cpc.ml_cvr_feature_v2 where date='$date') as c
+         |  (select searchid,ideaid, label as label3 from dl_cpc.ml_cvr_feature_v2 where date='$date' group by searchid,ideaid, label) as c
          |on
          |  a.searchid=c.searchid and a.ideaid=c.ideaid
          |left join
-         |  (select searchid,ideaid, label as label4 from dl_cpc.ml_cvr_feature_motivate where date='$date') as d
+         |  (select searchid,ideaid, label as label4 from dl_cpc.ml_cvr_feature_motivate where date='$date' group by searchid,ideaid, label) as d
          |on a.searchid=d.searchid and a.ideaid=d.ideaid
        """.stripMargin
 
