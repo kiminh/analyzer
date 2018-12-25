@@ -43,10 +43,10 @@ object OcpcPIDwithCPAv3 {
       .withColumn("hour", lit(hour))
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_hourly")
-//    resultDF
-//      .write
-//      .mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_k_value_table_hourly")
+    resultDF
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_k_value_table_hourly")
 
 
   }
