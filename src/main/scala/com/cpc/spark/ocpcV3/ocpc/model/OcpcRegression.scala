@@ -164,7 +164,7 @@ object OcpcRegression {
     val result = data1
       .union(data2)
       .withColumn("identifier", col("unitid"))
-      .select("identifier", "k_ratio", "cpagiven", "cpa", "ratio", "click_cnt", "cvr_cnt", "conversion_goal")
+      .selectExpr("cast(identifier as string) identifier", "k_ratio", "cpagiven", "cpa", "ratio", "click_cnt", "cvr_cnt", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("v1"))

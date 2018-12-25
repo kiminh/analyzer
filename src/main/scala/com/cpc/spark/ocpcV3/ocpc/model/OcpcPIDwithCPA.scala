@@ -3,7 +3,7 @@ package com.cpc.spark.ocpcV3.ocpc.model
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.common.Utils.getTimeRangeSql
+
 import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -42,7 +42,7 @@ object OcpcPIDwithCPA {
     val historyData = getHistoryData(date, hour, 6, spark)
     println("################# historyData ####################")
     historyData.show(10)
-    val avgK = getAvgK(baseData, historyData, date, hour, spark)
+    val avgK = getAvgK(historyData, date, hour, spark)
     println("################# avgK table #####################")
     avgK.show(10)
     val cpaRatio = getCPAratio(baseData, historyData, date, hour, spark)
@@ -107,6 +107,7 @@ object OcpcPIDwithCPA {
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
 
+    // 暂时使用unitid做identifier
     val sqlRequest =
       s"""
          |SELECT
@@ -116,14 +117,82 @@ object OcpcPIDwithCPA {
          |  isshow,
          |  isclick,
          |  price,
-         |  ocpc_log,
+         |  ocpc_log_dict,
+         |  ocpc_log_dict['cpagiven'] as cpagiven,
+         |  ocpc_log_dict['kvalue'] as kvalue,
          |  hour
          |FROM
-         |  dl_cpc.ocpcv3_unionlog_label_hourly
+         |  dl_cpc.ocpc_union_log_hourly
          |WHERE
          |  $selectCondition
          |and
-         |media_appsid in ('80001098', '80001292')
+         |  media_appsid in ('80000001', '80000002')
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+    resultDF
+  }
+
+  def getCvr1History(date: String, hour: String, hourCnt: Int, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourCnt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  lable2 as iscvr
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v1
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  label2=1
+         |GROUP BY searchid, label2
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+    resultDF
+  }
+
+  def getCvr2History(date: String, hour: String, hourCnt: Int, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourCnt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  lable as iscvr
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v2
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  label=1
+         |GROUP BY searchid, label
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
@@ -131,7 +200,7 @@ object OcpcPIDwithCPA {
   }
 
 
-  def getAvgK(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
+  def getAvgK(historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
     /**
       * 计算修正前的k基准值
       * case1：前6个小时有isclick=1的数据，统计这批数据的k均值作为基准值
@@ -139,60 +208,32 @@ object OcpcPIDwithCPA {
       * case3: 在主表（7*24）中存在，但是不属于前两种情况的，初始值0.694
       */
 
-    historyData
-      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-      .createOrReplaceTempView("raw_table")
-
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  searchid,
-         |  unitid,
-         |  adclass,
-         |  isshow,
-         |  isclick,
-         |  ocpc_log,
-         |  ocpc_log_dict['kvalue'] as kvalue,
-         |  hour
-         |FROM
-         |  raw_table
-       """.stripMargin
-    println(sqlRequest2)
-    val rawData = spark.sql(sqlRequest2)
-
     // case1
-    val case1 = rawData
+    val case1 = historyData
       .filter("isclick=1")
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .groupBy("unitid", "new_adclass")
       .agg(avg(col("kvalue")).alias("kvalue1"))
-      .select("unitid", "new_adclass", "kvalue1")
+      .withColumn("identifier", col("unitid"))
+      .select("identifier", "new_adclass", "kvalue1")
+    case1.printSchema()
 
     // case2
-    // table name: dl_cpc.ocpcv3_novel_pb_hourly
-    //    ocpcv3_novel_pb_v2_hourly
-    // TODO 去重
+    // TODO 去重，测试表
     val case2 = spark
-      .table("test.ocpcv3_novel_pb_v2_hourly")
+      .table("test.ocpc_pb_hourly")
       .withColumn("kvalue2", col("kvalue"))
-      .select("unitid", "kvalue2")
+      .select("identifier", "kvalue2")
       .distinct()
-    //    val case2 = spark
-    //      .table("test.ocpcv3_novel_pb_v1_hourly")
-    //      .withColumn("kvalue2", col("kvalue"))
-    //      .groupBy("unitid")
-    //      .agg(avg(col("kvalue2")).alias("kvalue2"))
-    //      .select("unitid", "kvalue2")
-    //      .distinct()
+    case2.printSchema()
 
     // 优先case1，然后case2，最后case3
-    val resultDF = baseData
-      .join(case1, Seq("unitid", "new_adclass"), "left_outer")
-      .select("unitid", "new_adclass", "kvalue1")
-      .join(case2, Seq("unitid"), "left_outer")
-      .select("unitid", "new_adclass", "kvalue1", "kvalue2")
+    val resultDF = case1
+      .join(case2, Seq("identifier"), "outer")
+      .select("identifier", "new_adclass", "kvalue1", "kvalue2")
       .withColumn("kvalue", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
+      .filter(s"kvalue is not null")
 
     resultDF.show(10)
     resultDF
@@ -202,25 +243,29 @@ object OcpcPIDwithCPA {
   def getCPAratio(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
     /**
       * 计算前6个小时每个广告创意的cpa_given/cpa_real的比值
-      * case1：hourly_ctr_cnt<10，可能出价过低，需要提高k值，所以比值应该大于1
-      * case2：hourly_ctr_cnt>=10但是没有cvr_cnt，可能出价过高，需要降低k值，所以比值应该小于1
-      * case3：hourly_ctr_cnt>=10且有cvr_cnt，按照定义计算比值即可
       */
 
     // 获得cpa_given
-    // TODO 表名
-    val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
+    val tableName = "dl_cpc.ocpc_cpa_history_hourly"
     val cpaGiven = spark
       .table(tableName)
-      .where(s"`date`='$date' and `hour`='$hour'")
+      .where(s"`date`='$date' and `hour`='$hour' and `version`='v1'")
       .withColumn("cpa_given", col("cpa_history"))
-      .select("unitid", "new_adclass", "cpa_given", "conversion_goal")
+      .select("identifier", "new_adclass", "cpa_given", "conversion_goal")
 
-    val cvr1Data=getCvr1HistoryData(date, hour, 6, spark)
+    val cvr1History = getCvr1History(date, hour, 6, spark)
+    val cvr2History = getCvr2History(date,hour, 6, spark)
+    val cvr1Data = historyData
+      .join(cvr1History, Seq("searchid"), "left_outer")
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
-      .groupBy("unitid", "new_adclass")
-      .agg(sum(col("cvr1cnt")).alias("cvr1cnt"))
+      .select("identifier", "new_adclass", "iscvr")
+      .groupBy("identifier", "new_adclass")
+      .agg(sum(col("iscvr")).alias("cvr1cnt"))
+      .select("identifier", "new_adclass", "cvr1cnt")
+
+
+    // TODO 修正代码
     val cvr2Data=getCvr2HistoryData(date, hour, 6, spark)
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))

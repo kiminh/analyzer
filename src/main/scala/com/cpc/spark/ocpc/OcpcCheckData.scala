@@ -9,6 +9,10 @@ object OcpcCheckData {
     val date = args(0).toString
     val hour = args(1).toString
 
+    program2(date, hour, spark)
+  }
+
+  def program1(date: String, hour: String, spark: SparkSession) = {
     val sqlRequest =
       s"""
          |SELECT
@@ -78,8 +82,45 @@ object OcpcCheckData {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    data.write.mode("overwrite").saveAsTable("test.test_ocpc_complete_probe_20181208_new")
+    //    data.write.mode("overwrite").saveAsTable("test.test_ocpc_complete_probe_20181208_new")
     data.write.mode("overwrite").insertInto("test.test_ocpc_complete_probe_20181208_new_v1")
+  }
+
+  def program2(date: String, hour: String, spark: SparkSession) = {
+//    dl_cpc.ocpc_pb_result_table_v6
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    ideaid,
+         |    userid,
+         |    adclass,
+         |    cost,
+         |    ctr_cnt,
+         |    cvr_cnt,
+         |    adclass_cost,
+         |    adclass_ctr_cnt,
+         |    adclass_cvr_cnt,
+         |    k_value,
+         |    hpcvr,
+         |    1.0 as cali_value,
+         |    1.0 as cvr3_cali,
+         |    cvr3_cnt,
+         |    k_value as kvalue1,
+         |    k_value as kvalue2
+         |FROM
+         |    dl_cpc.ocpc_pb_result_table_v5
+         |WHERE
+         |    `date`='$date'
+         |AND
+         |    `hour`='$hour'
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark
+        .sql(sqlRequest)
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+    data.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v6")
+    data.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
   }
 
 }
