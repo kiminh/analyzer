@@ -92,13 +92,14 @@ object report_userprofile_effect {
          |Select
          |  userid,
          |  tag,
-         |  SUM(CASE WHEN isclick == 1 and not interests like concat("%", tag, "=100%") then price else 0 end) as costWithoutTag,
+         |  SUM(CASE WHEN isshow == 1 and not interests like concat("%", tag, "=100%") then price else 0 end) as costWithoutTag,
          |  SUM(CASE WHEN isclick == 1 and not interests like concat("%", tag, "=100%") then 1 else 0 end) as ctrWithoutTag,
-         |  SUM(CASE WHEN (iscvr1 == 1 or iscvr2 == 1) and not interests like concat("%", tag, "=100%") then 1 else 0 end) as cvrWithoutTag,
+         |  SUM(CASE WHEN (iscvr1 == 1 or iscvr2 == 1 or iscvr3 == 1) and not interests like concat("%", tag, "=100%") then 1 else 0 end) as cvrWithoutTag,
          |  SUM(CASE WHEN isshow == 1 and not interests like concat("%", tag, "=100%") then 1 else 0 end) as showWithoutTag,
-         |  SUM(CASE WHEN isclick == 1 and interests like concat("%", tag, "=100%") then price else 0 end) as costWithTag,
+
+         |  SUM(CASE WHEN isshow == 1 and interests like concat("%", tag, "=100%") then price else 0 end) as costWithTag,
          |  SUM(CASE WHEN isclick == 1 and interests like concat("%", tag, "=100%") then 1 else 0 end) as ctrWithTag,
-         |  SUM(CASE WHEN (iscvr1 == 1 or iscvr2 == 1) and interests like concat("%", tag, "=100%")  then 1 else 0 end) as cvrWithTag,
+         |  SUM(CASE WHEN (iscvr1 == 1 or iscvr2 == 1 or iscvr3 == 1) and interests like concat("%", tag, "=100%")  then 1 else 0 end) as cvrWithTag,
          |  SUM(CASE WHEN isshow == 1 and interests like concat("%", tag, "=100%") then 1 else 0 end) as showWithTag
          |FROM tmpTable GROUP BY userid,tag
        """.stripMargin
