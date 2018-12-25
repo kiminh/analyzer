@@ -81,8 +81,8 @@ object report_userprofile_effect {
        """.stripMargin
 
     println(sqlRequest2)
-    val base = spark.sql(sqlRequest2).repartition(10000).persist(StorageLevel.MEMORY_AND_DISK_SER)
-    print("base——count" + base.count())
+    val base = spark.sql(sqlRequest2).repartition(10000)//.persist(StorageLevel.MEMORY_AND_DISK_SER)
+    //print("base——count" + base.count())
 
     // recalculation with groupby of userid and uid
     base.createOrReplaceTempView("tmpTable")
