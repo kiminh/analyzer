@@ -256,8 +256,8 @@ object OcpcPIDwithCPAv3 {
     val resultDF = rawData
       .withColumn("ratio_tag_cvr2", udfSetRatioCase()(col("cpa2_ratio")))
       .withColumn("ratio_tag_cvr3", udfSetRatioCase()(col("cpa3_ratio")))
-      .withColumn("updated_k2", udfUpdateK()(col("cpa2_ratio"), col("kvalue")))
-      .withColumn("updated_k3", udfUpdateK()(col("cpa3_ratio"), col("kvalue")))
+      .withColumn("updated_k2", udfUpdateK()(col("ratio_tag_cvr2"), col("kvalue")))
+      .withColumn("updated_k3", udfUpdateK()(col("ratio_tag_cvr3"), col("kvalue")))
       .withColumn("k_value2", col("updated_k2"))
       .withColumn("k_value3", col("updated_k3"))
 
