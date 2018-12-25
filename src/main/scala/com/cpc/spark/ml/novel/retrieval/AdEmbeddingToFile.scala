@@ -16,7 +16,7 @@ import scala.collection.mutable
 object AdEmbeddingToFile {
   val localDir = "/home/cpc/scheduled_job/ad_embedding/"
   val destDir = "/home/cpc/model_server/data/"
-  val hdfsDir = "/user/cpc/hzh/dssm/ad-output/"
+  val hdfsDir = "/user/cpc/wy/novel/dssm/ad-output/"
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .appName("dssm-ad-embedding-upload")
@@ -45,7 +45,7 @@ object AdEmbeddingToFile {
       version = "v0",
       allEmbeddings = mm.toMap
     )
-    val filename = s"ad_embeddings.pb"
+    val filename = s"novel_ad_embeddings.pb"
     val localPath = localDir + filename
     val outFile = new File(localPath)
     outFile.getParentFile.mkdirs()

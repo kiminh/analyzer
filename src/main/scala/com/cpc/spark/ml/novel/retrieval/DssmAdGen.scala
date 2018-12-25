@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.novel.retrieval
 
-import com.cpc.spark.ml.novel.retrieval.DssmRetrieval._
+import com.cpc.spark.ml.dnn.retrieval.DssmRetrieval._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.array
@@ -14,7 +14,7 @@ object DssmAdGen {
 
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
-      .appName("dssm-ad-gen-novel")
+      .appName("dssm-ad-gen")
       .enableHiveSupport()
       .getOrCreate()
 
@@ -30,7 +30,7 @@ object DssmAdGen {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/wy/dssm/ad-info-v0/" + date)
+      .save("/user/cpc/wy/novel/dssm/ad-info-v0/" + date)
   }
 
   def getData(spark: SparkSession, date: String): DataFrame = {
@@ -47,20 +47,32 @@ object DssmAdGen {
          |  max(planid) as planid,
          |  max(userid) as userid,
          |  max(ext['adclass'].int_value) as adclass,
-         |  max(ext_int['siteid']) as site_id,
-         |  max(split(ext['materialid'].string_value, ',')) as material_ids
-         |from dl_cpc.cpc_union_log where `date` = '$date'
+         |  max(ext_int['siteid']) as site_id
+         |from dl_cpc.cpc_novel_union_log where `date` = '$date'
          |  and isshow = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
-         |  and length(uid) > 1
+         |  and length(uid) in (14, 15, 36)
          |group by ideaid
       """.stripMargin
+
+    //广告分词
+    val title_sql =
+      """
+        |select id as ideaid,
+        |       split(tokens,' ') as words
+        |from dl_cpc.ideaid_title
+      """.stripMargin
+
     println("--------------------------------")
     println(sql)
     println("--------------------------------")
 
+    val ad_features = spark.sql(title_sql)
+      .select($"ideaid",
+        hashSeq("am1", "string")($"words").alias("am1"))
+
     val re =
-      spark.sql(sql).withColumn("am1", hashSeq("am1", "string")($"material_ids"))
+      spark.sql(sql).join(ad_features, Seq("ideaid"), "outer")
 
     re.select(
       $"ideaid",

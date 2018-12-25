@@ -49,7 +49,7 @@ object DssmRetrieval {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/wy/dssm/train-v0/" + date)
+      .save("/user/cpc/wy/novel/dssm/train-v0/" + date)
   }
 
   def getHistoryFeature(spark: SparkSession, date: String): DataFrame = {
@@ -99,7 +99,7 @@ object DssmRetrieval {
         hashSeq("um12", "int")($"c_adclass_2").alias("um12"),
         hashSeq("um13", "int")($"c_adclass_3").alias("um13"),
 
-        hashSeq("um14", "int")($"c_adclass_4_7").alias("um14"),
+        hashSeq("um14", "int")($"c_ideaid_4_7").alias("um14"),
         hashSeq("um15", "int")($"c_adclass_4_7").alias("um15")
       )
 
@@ -135,22 +135,35 @@ object DssmRetrieval {
          |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id,
          |
-         |  split(ext['materialid'].string_value, ',') as material_ids,
-         |
          |  hour
          |
          |from dl_cpc.cpc_union_log where `date` = '$date'
          |  and isshow = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
-         |  and length(uid) > 1
+         |  and uid not like "%.%"
+         |  and uid not like "%000000%"
+         |  and length(uid) in (14, 15, 36)
       """.stripMargin
+
+    //广告分词
+    val title_sql =
+      """
+        |select id as ideaid,
+        |       split(tokens,' ') as words
+        |from dl_cpc.ideaid_title
+      """.stripMargin
+
     println("--------------------------------")
     println(sql)
     println("--------------------------------")
 
+    val ad_features = spark.sql(title_sql)
+      .select($"ideaid",
+        hashSeq("am1", "string")($"words").alias("am1"))
+
     val re =
       spark.sql(sql).sample(withReplacement = false, sampleRate)
-        .withColumn("am1", hashSeq("am1", "string")($"material_ids"))
+        .join(ad_features, Seq("ideaid"), "leftouter")
         .join(userAppIdx, Seq("uid"), "leftouter")
         .join(userHistory, Seq("uid"), "leftouter")
 

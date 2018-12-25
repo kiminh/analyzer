@@ -5,7 +5,7 @@ import mlmodel.mlmodel.RetrievalEmbedding
 import org.apache.spark.sql.SparkSession
 
 object UserEmbeddingToRedis {
-  val hdfsDir = "/user/cpc/hzh/dssm/user-output/"
+  val hdfsDir = "/user/cpc/wy/novel/dssm/user-output/"
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .appName("dssm-user-embedding-upload")
