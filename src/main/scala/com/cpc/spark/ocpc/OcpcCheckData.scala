@@ -120,6 +120,7 @@ object OcpcCheckData {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
     data.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v6")
+    data.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
   }
 
 }
