@@ -339,9 +339,9 @@ object OcpcSampleToPb {
   }
 
   def getPIDk(date: String, hour: String, spark: SparkSession) = {
-    // todo  更换表名
     val resultDF = spark
-      .table("test.ocpc_k_value_table_20181225")
+      .table("dl_cpc.ocpc_k_value_table_hourly")
+      .where(s"`date`='$date' and `hour`='$hour'")
       .select("ideaid", "adclass", "k_value2", "k_value3")
       .withColumn("k_ratio2_pid", col("k_value2"))
       .withColumn("k_ratio3_pid", col("k_value3"))
@@ -427,7 +427,7 @@ object OcpcSampleToPb {
     base.createOrReplaceTempView("base_table")
 
 //    val ocpcIdeas = getIdeaUpdates(spark)
-    val ocpcIdeas = spark.table("test.ocpc_idea_update_time_12")
+    val ocpcIdeas = spark.table("test.ocpc_idea_update_time_" + hour)
     ocpcIdeas.createOrReplaceTempView("ocpc_idea_update")
     val sqlRequest =
       s"""
