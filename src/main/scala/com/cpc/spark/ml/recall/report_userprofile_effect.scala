@@ -75,7 +75,7 @@ object report_userprofile_effect {
          |on
          |  a.searchid=c.searchid
          |left join
-         |  (select searchid, laebl as label4 from dl_cpc.ml_cvr_feature_motivate where date='$date') as d
+         |  (select searchid, label as label4 from dl_cpc.ml_cvr_feature_motivate where date='$date') as d
          |on a.searchid=d.searchid
        """.stripMargin
 
