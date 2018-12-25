@@ -52,11 +52,12 @@ object OcpcSampleToPb {
       .withColumn("kvalue2_init", col("k_value3"))
 
     val result = initK(currentPb, date, hour,spark)
-    result.write.mode("overwrite").saveAsTable("test.new_pb_ocpc_with_pcvr_bak")
+
 
     val resultDF = assemblyPB(result, date, hour, spark)
 
     resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
+    resultDF.write.mode("overwrite").insertInto("ocpc_pb_result_table_v6")
 
     savePbPack(resultDF)
 
@@ -378,7 +379,6 @@ object OcpcSampleToPb {
       .withColumn("k_value3", when(col("flag")===0, col("prev_k3")).otherwise(col("k_value3_middle")))
       .select("ideaid", "adclass", "k_ratio2_regression", "k_ratio3_regression", "k_ratio2_pid", "k_ratio3_pid", "new_k2", "new_k3", "prev_k2", "prev_k3", "ctrcnt", "k_value2_middle", "k_value3_middle", "k_value2", "k_value3")
 
-    finalData.write.mode("overwrite").saveAsTable("test.ocpc_check_pb_middle20181224")
 
     finalData
   }
@@ -467,10 +467,11 @@ object OcpcSampleToPb {
       .withColumn("k_value", when(col("conversion_goal") === 1 || col("conversion_goal") === 3, col("kvalue1")).otherwise(col("kvalue2")))
       .filter(s"kvalue1 != 0 or kvalue2 != 0 or conversion_goal is not null")
 
-    result.write.mode("overwrite").saveAsTable("test.ocpc_complete_pb_table20181224")
 
     val resultDF = result
       .selectExpr("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cast(cali_value as double) cali_value", "cast(cvr3_cali as double) cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
 
     resultDF
   }

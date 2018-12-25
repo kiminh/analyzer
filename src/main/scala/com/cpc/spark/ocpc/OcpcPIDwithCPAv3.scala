@@ -27,10 +27,8 @@ object OcpcPIDwithCPAv3 {
     val hour = args(1).toString
 
 //    test.ocpc_k_value_table_ + hour
-    // TODO prevTable 更换
     val prevTable = spark
-      .table("dl_cpc.ocpc_pb_result_table_v6")
-      .where(s"`date`='2018-12-24' and `hour`='11'")
+      .table("dl_cpc.ocpc_qtt_prev_pb")
 
     val advIdeaid = spark.table("test.ocpc_idea_update_time_" + hour)
 
@@ -38,9 +36,17 @@ object OcpcPIDwithCPAv3 {
     val kvalue = getHistoryK(historyData, prevTable, date, hour, spark)
     val cpaHistory = getCPAhistory(historyData, date, hour, spark)
     val cpaRatio = calculateCPAratio(cpaHistory, advIdeaid, date, hour, spark)
-    val resultDF = updateK(kvalue, cpaRatio, date, hour, spark)
+    val result = updateK(kvalue, cpaRatio, date, hour, spark)
+    val resultDF = result
+      .select("ideaid", "adclass", "k_value2", "k_value3")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_20181225")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_hourly")
+//    resultDF
+//      .write
+//      .mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_k_value_table_hourly")
 
 
   }
@@ -225,8 +231,6 @@ object OcpcPIDwithCPAv3 {
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
-    // TODO 临时表
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cpa_ratio20181225")
     resultDF
 
   }
@@ -248,7 +252,6 @@ object OcpcPIDwithCPAv3 {
       */
 
     // 关联得到基础表
-    //    baseData.write.mode("overwrite").saveAsTable("test.ocpc_base_table")
     val rawData = kvalue
       .join(cpaRatio, Seq("ideaid", "adclass"), "outer")
       .select("ideaid", "adclass", "cpa2_ratio", "cpa3_ratio", "kvalue")
@@ -261,7 +264,6 @@ object OcpcPIDwithCPAv3 {
       .withColumn("k_value2", col("updated_k2"))
       .withColumn("k_value3", col("updated_k3"))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_updated_k_table20181225")
 
     resultDF
 
