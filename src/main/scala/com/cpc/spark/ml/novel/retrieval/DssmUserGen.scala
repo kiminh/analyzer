@@ -96,7 +96,7 @@ object DssmUserGen {
          |  max(ext['city_level'].int_value) as city_level,
          |  max(age) as age,
          |  max(sex) as sex
-         | from dl_cpc.cpc_union_log
+         | from dl_cpc.cpc_novel_union_log
          |  where `date` = '$date'
          |  and isshow = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")

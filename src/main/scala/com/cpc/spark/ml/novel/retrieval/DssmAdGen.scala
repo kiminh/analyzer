@@ -48,7 +48,7 @@ object DssmAdGen {
          |  max(userid) as userid,
          |  max(ext['adclass'].int_value) as adclass,
          |  max(ext_int['siteid']) as site_id
-         |from dl_cpc.cpc_novel_union_log where `date` = '$date'
+         |from dl_cpc.cpc_union_log where `date` = '$date'
          |  and isshow = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
          |  and length(uid) in (14, 15, 36)
