@@ -178,16 +178,18 @@ object OcpcPIDwithCPAv3 {
     val cpa2 = costData
       .join(cvr2Data, Seq("ideaid", "adclass"), "left_outer")
       .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
-      .select("ideaid", "adclass", "cpa2", "cvr2cnt")
+      .withColumn("cost2", col("cost"))
+      .select("ideaid", "adclass", "cpa2", "cvr2cnt", "cost2")
     // cvr3
     val cpa3 = costData
       .join(cvr3Data, Seq("ideaid", "adclass"), "left_outer")
       .withColumn("cpa3", col("cost") * 1.0 / col("cvr3cnt"))
-      .select("ideaid", "adclass", "cpa3", "cvr3cnt")
+      .withColumn("cost3", col("cost"))
+      .select("ideaid", "adclass", "cpa3", "cvr3cnt", "cost3")
 
     val resultDF = cpa2
       .join(cpa3, Seq("ideaid", "adclass"), "outer")
-      .select("ideaid", "adclass", "cpa2", "cpa3", "cvr2cnt", "cvr3cnt")
+      .select("ideaid", "adclass", "cpa2", "cpa3", "cvr2cnt", "cvr3cnt", "cost2", "cost3")
 
     resultDF
   }
@@ -195,7 +197,7 @@ object OcpcPIDwithCPAv3 {
   def calculateCPAratio(cpaHistory: DataFrame, advIdeaid: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val rawData = advIdeaid
       .join(cpaHistory, Seq("ideaid"), "left_outer")
-      .select("ideaid", "adclass", "cpa2", "cpa3", "cvr2cnt", "cvr3cnt", "cpa_given")
+      .select("ideaid", "adclass", "cpa2", "cpa3", "cvr2cnt", "cvr3cnt", "cost2", "cost3", "cpa_given")
     rawData.createOrReplaceTempView("raw_table")
 
     val sqlRequest =
@@ -204,6 +206,8 @@ object OcpcPIDwithCPAv3 {
          |  ideaid,
          |  adclass,
          |  cpa_given,
+         |  cost2,
+         |  cost3,
          |  cvr2cnt,
          |  cvr3cnt,
          |  cpa2,
