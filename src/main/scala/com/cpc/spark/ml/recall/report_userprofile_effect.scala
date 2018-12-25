@@ -24,15 +24,15 @@ object report_userprofile_effect {
          |  a.userid,
          |  a.isclick,
          |  a.isshow,
-         |  a.price,
+         |  case when charge_type=2 and a.price is not null then a.price*1.0/1000 else a.price end as price,
          |  a.interests,
          |  b.tag
          | from
          |      (
-         |        select userid, isshow, isclick, searchid, uid, interests, price
+         |        select userid, isshow, isclick, searchid, uid, interests, price, ext['charge_type'].int_value as charge_type
          |        from dl_cpc.cpc_union_log
          |        where date='$date'
-         |        and media_appsid  in ("80000001", "80000002")
+         |        and media_appsid  in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
          |        and isshow = 1
          |        and isclick is not null
          |        and ext['antispam'].int_value = 0
@@ -45,6 +45,7 @@ object report_userprofile_effect {
          |on a.userid=b.userid
       """.stripMargin
     println(sqlRequest1)
+    //charge_type 1 cpc, 2 cpm, 3 cpa, 0 free
     val unionlog = spark.sql(sqlRequest1).repartition(10000).persist(StorageLevel.DISK_ONLY)
     println(unionlog.count())
     unionlog.createOrReplaceTempView("unionlog_table")
@@ -61,7 +62,8 @@ object report_userprofile_effect {
          |  a.tag,
          |  a.interests,
          |  COALESCE(b.label2, 0) as iscvr1,
-         |  COALESCE(c.label3, 0) as iscvr2
+         |  COALESCE(c.label3, 0) as iscvr2,
+         |  COALESCE(d.label4, 0) as iscvr3
          |from
          |  unionlog_table as a
          |left join
@@ -72,6 +74,9 @@ object report_userprofile_effect {
          |  (select searchid, label as label3 from dl_cpc.ml_cvr_feature_v2 where date='$date') as c
          |on
          |  a.searchid=c.searchid
+         |left join
+         |  (select searchid, laebl as label4 from dl_cpc.ml_cvr_feature_motivate where date='$date') as d
+         |on a.searchid=d.searchid
        """.stripMargin
 
     println(sqlRequest2)
