@@ -12,7 +12,7 @@ import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
-import userprofile.Userprofile.UserProfile
+
 
 import scala.collection.mutable.ListBuffer
 import userocpc.userocpc._
@@ -506,6 +506,8 @@ object OcpcSampleToPb {
       .withColumn("kvalue2_middle", when(col("is_ocpc_flag").isNull, col("cvr3_cnt") * 1.0 / (col("ctr_cnt") * col("hpcvr"))).otherwise(col("kvalue2_init")))
       .withColumn("kvalue1", when(col("kvalue1_middle").isNull, 0.0).otherwise(col("kvalue1_middle")))
       .withColumn("kvalue2", when(col("kvalue2_middle").isNull, 0.0).otherwise(col("kvalue2_middle")))
+
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_kvalue_init20181226")
 
     resultDF
   }
