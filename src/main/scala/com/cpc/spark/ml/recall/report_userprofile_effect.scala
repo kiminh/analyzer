@@ -30,7 +30,7 @@ object report_userprofile_effect {
          |  b.tag
          | from
          |      (
-         |        select userid,ideaid, isshow, isclick, searchid, uid, interests, case when isclick=1 then price else 0 end as price, ext['charge_type'].int_value as charge_type
+         |        select userid,ideaid, isshow, isclick, searchid, uid, interests, case when isclick=1 or ext['charge_type'].int_value=2 then price else 0 end as price, ext['charge_type'].int_value as charge_type
          |        from dl_cpc.cpc_union_log
          |        where date='$date'
          |        and media_appsid  in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
@@ -41,7 +41,7 @@ object report_userprofile_effect {
          |        and userid is not null
          |        and adslot_type!=7
          |        union
-         |        select info.userid,info.ideaid, info.isshow, info.isclick, searchid, uid, interests, case when info.isclick=1 then info.price else 0 end as price, ext['charge_type'].int_value as charge_type
+         |        select info.userid,info.ideaid, info.isshow, info.isclick, searchid, uid, interests, case when info.isclick=1 or ext['charge_type'].int_value=2 then info.price else 0 end as price, ext['charge_type'].int_value as charge_type
          |        from dl_cpc.cpc_union_log
          |        lateral view explode(motivation) b AS info
          |        where date='$date'
