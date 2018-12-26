@@ -343,8 +343,10 @@ object InsertReportSdkTrace {
           |WHERE cutl.date="%s" AND cul.date="%s" AND cutl.hour="%s" AND cul.hour="%s"
           |AND cutl.trace_type in("lpload")
           |AND cul.ext["adclass"].int_value=110110100
-          |AND cul.isclick>0 AND cul.adsrc=1 AND cul.adslot_type=2
-          |-- AND cul.adslotid in("7034978","7453081","7903746")
+          |AND cul.isclick>0 AND cul.adsrc=1
+          |AND cul.ext["client_type"].string_value="JSSDK"
+          |AND cul.media_appsid in ("80000001","80000002", "80000006", "800000062", "80000064", "80000066", "80000141")
+          |-- AND (cul.adslot_type=2 OR cul.adslotid in("7568984","7412553","7167188","7338626","7648822","7867058","7189096","7443868"))
         """.stripMargin.format(argDay, argDay, argHour, argHour))
       .rdd
       .map {
@@ -376,8 +378,10 @@ object InsertReportSdkTrace {
           |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
           |WHERE cutl.date="%s" AND cul.date="%s" AND cutl.hour="%s" AND cul.hour="%s"
           |AND cutl.trace_type in("apkdown") AND cul.interaction=2
-          |AND cul.isclick>0 AND cul.adsrc=1 AND cul.adslot_type=2
-          |-- AND cul.adslotid in("7034978","7453081","7903746")
+          |AND cul.isclick>0 AND cul.adsrc=1
+          |AND cul.ext["client_type"].string_value="JSSDK"
+          |AND cul.media_appsid in ("80000001","80000002", "80000006", "800000062", "80000064", "80000066", "80000141")
+          |-- AND cul.adslot_type=2 OR cul.adslotid in("7568984","7412553","7167188","7338626","7648822","7867058","7189096","7443868"))
         """.stripMargin.format(argDay, argDay, argHour, argHour))
       .rdd
       .map {
