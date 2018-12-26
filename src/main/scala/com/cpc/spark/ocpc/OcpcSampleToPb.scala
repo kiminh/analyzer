@@ -433,6 +433,7 @@ object OcpcSampleToPb {
   def assemblyPB(base: DataFrame, date: String, hour: String, spark: SparkSession) = {
 
     base.createOrReplaceTempView("base_table")
+    base.write.mode("overwrite").saveAsTable("test.ocpc_base_table20181226")
 
 //    val ocpcIdeas = getIdeaUpdates(spark)
     val ocpcIdeas = spark.table("test.ocpc_idea_update_time_" + hour)
@@ -453,14 +454,15 @@ object OcpcSampleToPb {
          |  1.0 as cali_value,
          |  1.0 as cvr3_cali,
          |  a.cvr3_cnt,
-         |  (case when b.conversion_goal=1 and a.k_value2>3.0 then 3.0
-         |        when b.conversion_goal!=1 and a.k_value2>2.0 then 2.0
-         |        when b.conversion_goal is null and a.k_value2>2.0 then 2.0
-         |        when a.k_value2<0 or a.k_value2 is null then 0.0
-         |        else a.k_value2 end) as kvalue1,
-         |  (case when a.k_value3>2.0 then 2.0
-         |        when a.k_value3<0 or a.k_value3 is null then 0.0
-         |        else a.k_value3 end) as kvalue2,
+         |  (case when b.conversion_goal=1 and a.kvalue1>3.0 then 3.0
+         |        when b.conversion_goal!=1 and a.kvalue1>2.0 then 2.0
+         |        when b.conversion_goal is null and a.kvalue1>2.0 then 2.0
+         |        when a.kvalue1<0 or a.kvalue1 is null then 0.0
+         |        else a.kvalue1 end) as kvalue1,
+         |  (case when a.kvalue2>2.0 then 2.0
+         |        when a.kvalue2<0 or a.kvalue2 is null then 0.0
+         |        else a.kvalue2 end) as kvalue2,
+         |  a.is_ocpc_flag,
          |  b.conversion_goal
          |FROM
          |  base_table as a
@@ -474,8 +476,8 @@ object OcpcSampleToPb {
       .sql(sqlRequest)
       .na.fill(0.0, Seq("kvalue1", "kvalue2"))
       .withColumn("k_value", when(col("conversion_goal") === 1 || col("conversion_goal") === 3, col("kvalue1")).otherwise(col("kvalue2")))
-//      .filter(s"kvalue1 != 0 or kvalue2 != 0 or conversion_goal is not null")
-//      .filter("k_value > 0")
+      .filter(s"kvalue1 != 0 or kvalue2 != 0 or conversion_goal is not null")
+      .filter("k_value > 0")
 
 
     val resultDF = result
