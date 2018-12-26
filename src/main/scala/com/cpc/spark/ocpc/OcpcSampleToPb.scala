@@ -410,10 +410,10 @@ object OcpcSampleToPb {
       .select("ideaid", "adclass", "prev_k2", "prev_k3", "date", "hour")
 
     val prevCtr = spark
-      .table("dl_cpc.ocpc_uid_userid_track_label2")
+      .table("dl_cpc.ocpc_unionlog")
       .where(s"`date`='$date1' and `hour`='$hour1'")
       .groupBy("ideaid", "adclass")
-      .agg(sum(col("ctr_cnt")).alias("ctrcnt"))
+      .agg(sum(col("isclick")).alias("ctrcnt"))
       .select("ideaid", "adclass", "ctrcnt")
 
     val prevTable = prevK
@@ -452,6 +452,7 @@ object OcpcSampleToPb {
          |  a.cvr3_cnt,
          |  (case when b.conversion_goal=1 and a.k_value2>3.0 then 3.0
          |        when b.conversion_goal!=1 and a.k_value2>2.0 then 2.0
+         |        when b.conversion_goal is null and a.k_value2>2.0 then 2.0
          |        when a.k_value2<0 or a.k_value2 is null then 0.0
          |        else a.k_value2 end) as kvalue1,
          |  (case when a.k_value3>2.0 then 2.0
