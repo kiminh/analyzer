@@ -137,7 +137,7 @@ object DssmRetrieval {
          |
          |  hour
          |
-         |from dl_cpc.cpc_union_log where `date` = '$date'
+         |from dl_cpc.cpc_novel_union_log where `date` = '$date'
          |  and isshow = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"

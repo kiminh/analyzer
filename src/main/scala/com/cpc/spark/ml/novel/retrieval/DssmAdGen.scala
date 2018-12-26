@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.novel.retrieval
 
-import com.cpc.spark.ml.dnn.retrieval.DssmRetrieval._
+import com.cpc.spark.ml.novel.retrieval.DssmRetrieval._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.array
