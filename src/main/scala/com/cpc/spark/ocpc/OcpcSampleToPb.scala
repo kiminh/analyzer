@@ -477,7 +477,7 @@ object OcpcSampleToPb {
       .sql(sqlRequest)
       .na.fill(0.0, Seq("kvalue1", "kvalue2"))
       .withColumn("k_value", when(col("conversion_goal") === 2, col("kvalue2")).otherwise(col("kvalue1")))
-//      .withColumn("k_value", when(col("ideaid") === , col("kvalue2")).otherwise(col("k_value")))
+      .withColumn("k_value", when(col("ideaid") === 2470672, col("kvalue2")).otherwise(col("k_value")))
       .filter(s"kvalue1 != 0 or kvalue2 != 0 or conversion_goal is not null")
       .filter("k_value > 0")
 
