@@ -411,7 +411,7 @@ object OcpcSampleToPb {
 
     val prevCtr = spark
       .table("dl_cpc.ocpc_unionlog")
-      .where(s"`date`='$date1' and `hour`='$hour1'")
+      .where(s"`dt`='$date1' and `hour`='$hour1'")
       .groupBy("ideaid", "adclass")
       .agg(sum(col("isclick")).alias("ctrcnt"))
       .select("ideaid", "adclass", "ctrcnt")
