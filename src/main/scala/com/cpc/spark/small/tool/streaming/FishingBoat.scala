@@ -290,9 +290,11 @@ object FishingBoat {
           val usertype = if (x.ext.contains("usertype")) x.ext.get("usertype").get.int_value else 0
           infoMap += ("usertype" -> usertype.toString)
 
-          //ext_int['exp_style']
-          val exp_style = if(x.ext_int.contains("exp_style")) x.ext_int.get("exp_style").get else 0.toLong
+          val exp_style = if (x.ext_int.contains("exp_style")) x.ext_int.get("exp_style").get else 0.toLong
           infoMap += ("exp_style" -> exp_style.toString)
+
+          val hostname = if (x.ext_string.contains("hostname")) x.ext_string.get("hostname").get else ""
+          infoMap += ("hostname" -> hostname.toString)
 
           if (x.exptags.length > 0) {
             val tmpArr = x.exptags.split(",")
@@ -347,14 +349,14 @@ object FishingBoat {
         .cache()
 
       val deviceAllData = baseAllData
-        .filter(_.get("isshow").get.toString.toLong > 0)
+        //.filter(_.get("isshow").get.toString.toLong > 0)
         .map {
-          x =>
-            val info = broadcastTaskList.value.get(i).get
-            val confJson = info._2
-            val isshow = x.get("isshow").get.toString.toLong
-            ((getKey(x, confJson), x.get("uid").get), (1))
-        }
+        x =>
+          val info = broadcastTaskList.value.get(i).get
+          val confJson = info._2
+          val isshow = x.get("isshow").get.toString.toLong
+          ((getKey(x, confJson), x.get("uid").get), (1))
+      }
         .filter(_._1._1.size > 0)
         .reduceByKey {
           (a, b) =>
@@ -436,8 +438,7 @@ object FishingBoat {
               |(
               | SELECT id,task_config
               | FROM fishing_boat_task
-              | WHERE task_status=0
-              | ORDER BY create_time ASC
+              | WHERE task_status=0 AND start_time<=NOW() AND end_time>NOW()
               | LIMIT %d
               |) xx
             """.stripMargin.format(taskNum.toInt), mariaReport2dbProp)
@@ -496,6 +497,10 @@ object FishingBoat {
       if (info.contains(gval)) {
         keyMap += (gval -> info.get(gval).get)
       }
+    }
+
+    if (keyMap.size == 0 && jsonObj.has("is_group_contrast") && jsonObj.get("is_group_contrast").getAsString == "1") {
+      keyMap += ("group_contrast" -> "group_contrast")
     }
 
     keyMap

@@ -49,7 +49,7 @@ object InsertReportGameCenter {
 
     val traceData = ctx.sql(
       """
-        |SELECT catl.trace_type
+        |SELECT catl.trace_type,opt["game_source"]
         |FROM dl_cpc.logparsed_cpc_trace_minute catl
         |WHERE catl.thedate="%s" AND catl.thehour="%s" AND catl.trace_type IS NOT NULL
       """.stripMargin.format(argDay, argHour))
@@ -57,61 +57,69 @@ object InsertReportGameCenter {
       .map {
         x =>
           val traceType = x.getString(0)
+          val gameSource = if (x.get(1) != null && x.getString(1).length > 0) x.getString(1) else "qtt"
           var total = 0
           if (traceType.startsWith("load_gameCenter") || traceType.startsWith("active_game")) {
             total = 1
           }
-          (traceType, (traceType, total))
+          ((traceType, gameSource), (traceType, gameSource, total))
       }
-      .filter(_._2._2 > 0)
+      .filter(_._2._3 > 0)
       .reduceByKey {
         (a, b) =>
-          (a._1, a._2 + b._2)
+          (a._1, a._2, a._3 + b._3)
       }
       .map {
         x =>
           val traceType = x._2._1
-          val total = x._2._2.toLong
+          val gameSource = x._2._2
+          val total = x._2._3.toLong
           val date = argDay
           val hour = argHour.toInt
-          (traceType, total, date, hour)
+          (traceType, total, gameSource, date, hour)
       }
       .repartition(50)
       .cache()
     println("traceData count", traceData.count())
 
-    val pvCount = ctx.sql(
+    val uvSeq = ctx.sql(
       """
-        |SELECT catl.trace_type,ip
+        |SELECT DISTINCT catl.trace_type,opt["device"],opt["game_source"]
         |FROM dl_cpc.logparsed_cpc_trace_minute catl
         |WHERE catl.thedate="%s" AND catl.thehour="%s" AND catl.trace_type IS NOT NULL
         |AND catl.trace_op1 IS NOT NULL AND catl.trace_op2 IS NOT NULL
-        |AND catl.ip IS NOT NULL
+        |AND catl.ip IS NOT NULL AND catl.trace_type="load_gameCenter"
       """.stripMargin.format(argDay, argHour))
       .rdd
-      .filter(_.getString(0) == "load_gameCenter")
       .map {
         x =>
-          val ip = x.getString(1)
-          (ip, (1))
+          val device = if (x.get(1) != null) x.getString(1) else ""
+          val gameSource = if (x.get(2) != null && x.getString(2).length > 0) x.getString(2) else "qtt"
+          ((gameSource), (1.toLong))
       }
       .reduceByKey {
         (a, b) =>
-          (1)
+          (a + b)
       }
-      .count()
-    println("pvCount is ", pvCount)
+      .map {
+        x =>
+          val gameSource = x._1
+          val pvCount = x._2
+          ("gameCenter_uv", pvCount, gameSource, argDay, argHour.toInt)
+      }
+      .take(100)
+      .toSeq
 
-    val pvData = ctx.sparkContext.parallelize(Seq(("gameCenter_uv", pvCount, argDay, argHour.toInt)))
+    println("uvSeq is ", uvSeq.length)
 
+    val uvData = ctx.sparkContext.parallelize(uvSeq)
 
-    var insertDataFrame = ctx.createDataFrame(pvData.union(traceData))
-      .toDF("target_type", "target_value", "date", "hour")
+    var insertDataFrame = ctx.createDataFrame(uvData.union(traceData))
+      .toDF("target_type", "target_value", "game_source", "date", "hour")
 
     println("insertDataFrame count", insertDataFrame.count())
 
-
-    insertDataFrame.show(30)
+    insertDataFrame.show(5)
 
     clearReportGameCenter(argDay, argHour)
 
@@ -119,6 +127,7 @@ object InsertReportGameCenter {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_game_center", mariadbProp)
+
     println("InsertReportGameCenter_done")
   }
 
