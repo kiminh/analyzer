@@ -343,7 +343,7 @@ object OcpcSampleToRedisV2 {
 //      .insertInto("dl_cpc.ocpc_pb_result_table_v5")
 
     // 保存pb文件
-    savePbPack(finalData)
+//    savePbPack(finalData)
   }
 
 
