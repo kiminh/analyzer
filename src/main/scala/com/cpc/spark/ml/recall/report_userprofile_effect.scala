@@ -25,7 +25,7 @@ object report_userprofile_effect {
          |  a.userid,
          |  a.isclick,
          |  a.isshow,
-         |  case when charge_type=2 and a.price is not null then a.price*1.0/1000 else a.price end as price,
+         |  case when charge_type=2 then a.price*1.0/1000 else a.price end as price,
          |  a.interests,
          |  b.tag
          | from
@@ -40,6 +40,15 @@ object report_userprofile_effect {
          |        and ideaid > 0
          |        and adsrc = 1
          |        and userid is not null
+         |        and adslot_type!=7
+         |        union
+         |        select info.userid,info.ideaid, info.isshow, info.isclick, searchid, uid, interests, info.price, ext['charge_type'].int_value as charge_type
+         |        from dl_cpc.cpc_union_log
+         |        lateral view explode(motivation) b AS info
+         |        where date='$date'
+         |        and media_appsid  in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
+         |        and ext['antispam'].int_value = 0
+         |        and adslot_type=7
          |      ) a
          |join
          |      (select tag, userid from dl_cpc.cpc_tag_userid_all where thedate>'$date1' group by tag, userid) b
