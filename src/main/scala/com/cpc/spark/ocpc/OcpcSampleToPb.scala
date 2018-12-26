@@ -51,6 +51,8 @@ object OcpcSampleToPb {
       .withColumn("kvalue1_init", col("k_value2"))
       .withColumn("kvalue2_init", col("k_value3"))
 
+    currentPb.write.mode("overwrite").saveAsTable("test.ocpc_check_currentpb20181226")
+
     val result = initK(currentPb, date, hour,spark)
 
 
@@ -476,8 +478,8 @@ object OcpcSampleToPb {
       .sql(sqlRequest)
       .na.fill(0.0, Seq("kvalue1", "kvalue2"))
       .withColumn("k_value", when(col("conversion_goal") === 1 || col("conversion_goal") === 3, col("kvalue1")).otherwise(col("kvalue2")))
-      .filter(s"kvalue1 != 0 or kvalue2 != 0 or conversion_goal is not null")
-      .filter("k_value > 0")
+//      .filter(s"kvalue1 != 0 or kvalue2 != 0 or conversion_goal is not null")
+//      .filter("k_value > 0")
 
 
     val resultDF = result
