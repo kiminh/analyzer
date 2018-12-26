@@ -24,5 +24,6 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
+    --conf "spark.sql.shuffle.partitions=1000" \
     --class com.cpc.spark.ml.novel.retrieval.DssmRetrieval \
     /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2018-12-24 1
