@@ -30,24 +30,24 @@ object report_userprofile_effect {
          |  b.tag
          | from
          |      (
-         |        select userid,ideaid, isshow, isclick, searchid, uid, interests, price, ext['charge_type'].int_value as charge_type
+         |        select userid,ideaid, isshow, isclick, searchid, uid, interests, case when isclick=1 then price else 0 end as price, ext['charge_type'].int_value as charge_type
          |        from dl_cpc.cpc_union_log
          |        where date='$date'
          |        and media_appsid  in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
          |        and isshow = 1
-         |        and isclick is not null
          |        and ext['antispam'].int_value = 0
          |        and ideaid > 0
          |        and adsrc = 1
          |        and userid is not null
          |        and adslot_type!=7
          |        union
-         |        select info.userid,info.ideaid, info.isshow, info.isclick, searchid, uid, interests, info.price, ext['charge_type'].int_value as charge_type
+         |        select info.userid,info.ideaid, info.isshow, info.isclick, searchid, uid, interests, case when info.isclick=1 then info.price else 0 end as price, ext['charge_type'].int_value as charge_type
          |        from dl_cpc.cpc_union_log
          |        lateral view explode(motivation) b AS info
          |        where date='$date'
          |        and media_appsid  in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
          |        and ext['antispam'].int_value = 0
+         |        and info.isshow=1
          |        and adslot_type=7
          |      ) a
          |join
