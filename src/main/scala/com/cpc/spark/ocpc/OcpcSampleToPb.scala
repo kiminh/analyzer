@@ -509,7 +509,7 @@ object OcpcSampleToPb {
       .withColumn("kvalue1", when(col("kvalue1_middle").isNull, 0.0).otherwise(col("kvalue1_middle")))
       .withColumn("kvalue2", when(col("kvalue2_middle").isNull, 0.0).otherwise(col("kvalue2_middle")))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_kvalue_init20181226")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_kvalue_init20181226")
 
     resultDF
   }
