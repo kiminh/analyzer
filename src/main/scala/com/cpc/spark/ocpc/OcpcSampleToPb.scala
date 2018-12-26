@@ -60,7 +60,7 @@ object OcpcSampleToPb {
 //    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v6")
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_current_pb20181226")
 
-    savePbPack(resultDF)
+//    savePbPack(resultDF)
 
   }
 
@@ -225,6 +225,7 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_base20181226")
     resultDF
   }
 
@@ -257,7 +258,7 @@ object OcpcSampleToPb {
       .sql(sqlRequest)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr20181226")
     resultDF
   }
 
@@ -298,6 +299,7 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_api20181226")
     resultDF
   }
 
@@ -310,6 +312,7 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_k20181226")
     resultDF
   }
 
