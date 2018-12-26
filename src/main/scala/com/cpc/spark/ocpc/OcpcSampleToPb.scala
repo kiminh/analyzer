@@ -51,18 +51,17 @@ object OcpcSampleToPb {
       .withColumn("kvalue1_init", col("k_value2"))
       .withColumn("kvalue2_init", col("k_value3"))
 
-//    currentPb.write.mode("overwrite").saveAsTable("test.ocpc_check_currentpb20181226")
 
     val result = initK(currentPb, date, hour,spark)
 
 
     val resultDF = assemblyPB(result, date, hour, spark)
 
-//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
-//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v6")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_current_pb20181226")
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v6")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_current_pb20181226")
 
-//    savePbPack(resultDF)
+    savePbPack(resultDF)
 
   }
 
@@ -227,7 +226,6 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_base20181226")
     resultDF
   }
 
@@ -260,7 +258,7 @@ object OcpcSampleToPb {
       .sql(sqlRequest)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr20181226")
+
     resultDF
   }
 
@@ -301,7 +299,7 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_api20181226")
+
     resultDF
   }
 
@@ -314,7 +312,7 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_k20181226")
+
     resultDF
   }
 
@@ -516,7 +514,7 @@ object OcpcSampleToPb {
       .withColumn("kvalue1", when(col("kvalue1_middle").isNull, 0.0).otherwise(col("kvalue1_middle")))
       .withColumn("kvalue2", when(col("kvalue2_middle").isNull, 0.0).otherwise(col("kvalue2_middle")))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_kvalue_init20181226")
+
 
     resultDF
   }
