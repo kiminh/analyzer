@@ -51,7 +51,7 @@ object OcpcSampleToPb {
       .withColumn("kvalue1_init", col("k_value2"))
       .withColumn("kvalue2_init", col("k_value3"))
 
-    currentPb.write.mode("overwrite").saveAsTable("test.ocpc_check_currentpb20181226")
+//    currentPb.write.mode("overwrite").saveAsTable("test.ocpc_check_currentpb20181226")
 
     val result = initK(currentPb, date, hour,spark)
 
@@ -227,7 +227,7 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_base20181226")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_base20181226")
     resultDF
   }
 
@@ -260,7 +260,7 @@ object OcpcSampleToPb {
       .sql(sqlRequest)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr20181226")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hpcvr20181226")
     resultDF
   }
 
@@ -301,7 +301,7 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_api20181226")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_api20181226")
     resultDF
   }
 
@@ -314,7 +314,7 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_k20181226")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_k20181226")
     resultDF
   }
 
@@ -435,7 +435,6 @@ object OcpcSampleToPb {
   def assemblyPB(base: DataFrame, date: String, hour: String, spark: SparkSession) = {
 
     base.createOrReplaceTempView("base_table")
-    base.write.mode("overwrite").saveAsTable("test.ocpc_base_table20181226")
 
 //    val ocpcIdeas = getIdeaUpdates(spark)
     val ocpcIdeas = spark.table("test.ocpc_idea_update_time_" + hour)
@@ -478,8 +477,9 @@ object OcpcSampleToPb {
       .sql(sqlRequest)
       .na.fill(0.0, Seq("kvalue1", "kvalue2"))
       .withColumn("k_value", when(col("conversion_goal") === 2, col("kvalue2")).otherwise(col("kvalue1")))
+//      .withColumn("k_value", when(col("ideaid") === , col("kvalue2")).otherwise(col("k_value")))
       .filter(s"kvalue1 != 0 or kvalue2 != 0 or conversion_goal is not null")
-      .filter("kvalue > 0")
+      .filter("k_value > 0")
 
 
     val resultDF = result
@@ -516,7 +516,7 @@ object OcpcSampleToPb {
       .withColumn("kvalue1", when(col("kvalue1_middle").isNull, 0.0).otherwise(col("kvalue1_middle")))
       .withColumn("kvalue2", when(col("kvalue2_middle").isNull, 0.0).otherwise(col("kvalue2_middle")))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_kvalue_init20181226")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_kvalue_init20181226")
 
     resultDF
   }
