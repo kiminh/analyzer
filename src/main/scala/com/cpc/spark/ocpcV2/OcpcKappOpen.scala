@@ -143,6 +143,7 @@ object OcpcKappOpen {
       .select("searchid", "timestamp", "uid", "ideaid", "label", "date", "hour")
 
     joinData.createOrReplaceTempView("join_table")
+    joinData.write.mode("overwrite").saveAsTable("test.ocpc_join_data20181227")
 
     val sqlRequest =
       s"""
@@ -165,7 +166,7 @@ object OcpcKappOpen {
          |        hour,
          |        row_number() over(partition by uid, ideaid order by timestamp) as seq
          |    FROM
-         |        join_table) t
+         |        test.ocpc_join_data20181227) t
          |WHERE
          |    t.seq=1
        """.stripMargin
