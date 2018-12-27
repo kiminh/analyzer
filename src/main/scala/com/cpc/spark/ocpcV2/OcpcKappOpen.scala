@@ -136,7 +136,7 @@ object OcpcKappOpen {
 
     val joinData = ctrData
       .join(cvrData, Seq("searchid"), "inner")
-      .select("searchid", "timestampe", "uid", "label", "date", "hour")
+      .select("searchid", "timestamp", "uid", "label", "date", "hour")
 
     joinData.createOrReplaceTempView("join_table")
 
