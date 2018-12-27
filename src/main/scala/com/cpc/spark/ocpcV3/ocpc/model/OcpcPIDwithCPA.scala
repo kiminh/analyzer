@@ -72,7 +72,7 @@ object OcpcPIDwithCPA {
          |  searchid,
          |  unitid,
          |  cast(unitid as string) identifier,
-         |  adclass,
+         |  ext['adclass'].int_value as adclass,
          |  isshow,
          |  isclick,
          |  iscvr,
