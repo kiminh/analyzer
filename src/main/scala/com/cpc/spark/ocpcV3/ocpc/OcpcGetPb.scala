@@ -94,6 +94,7 @@ object OcpcGetPb {
       .select("identifier", "new_adclass")
       .distinct()
 
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_base_ctr_20181227")
     resultDF
   }
 
