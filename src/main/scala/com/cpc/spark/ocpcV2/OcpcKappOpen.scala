@@ -101,6 +101,10 @@ object OcpcKappOpen {
 
   }
 
+  def filterRepeatedUid(date: String, hour: String, spark: SparkSession) = {
+
+  }
+
   def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
 
     val condition = s"`date` = '$date' and hour = '$hour' and $ratioType is not null"

@@ -66,9 +66,9 @@ object OcpcGetPb {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("v1"))
 
-//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb")
-//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb")
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
 
     savePbPack(resultDF, "v1")
   }
@@ -94,7 +94,7 @@ object OcpcGetPb {
       .select("identifier", "new_adclass")
       .distinct()
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_base_ctr_20181227")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_base_ctr_20181227")
     resultDF
   }
 
@@ -204,7 +204,7 @@ object OcpcGetPb {
 
   def savePbPack(dataset: Dataset[Row], version: String): Unit = {
     var list = new ListBuffer[SingleRecord]
-    val filename = s"Ocpc_" + version + ".pb"
+    val filename = s"Ocpc_" + version + "_unknown.pb"
     println("size of the dataframe")
     println(dataset.count)
     dataset.show(10)
