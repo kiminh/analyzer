@@ -160,7 +160,6 @@ object OcpcRegression {
       .withColumn("conversion_goal", lit(2))
 
     val tablename = "dl_cpc.ocpc_regression_middle_hourly"
-    // TODO 修改identifier
     val result = data1
       .union(data2)
       .withColumn("identifier", col("unitid"))
