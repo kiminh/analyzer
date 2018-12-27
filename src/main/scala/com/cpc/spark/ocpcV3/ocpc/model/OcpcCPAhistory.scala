@@ -287,7 +287,7 @@ object OcpcCPAhistory {
          |  cpa_history_qtt,
          |  cpa_adclass,
          |  conversion_goal,
-         |  (case when cpa_history_qtt is null then cpa_adclass,
+         |  (case when cpa_history_qtt is null then cpa_adclass
          |        else cpa_history_qtt end) as cpa_history,
          |  (case when cpa_history_qtt is null then 'adclass'
          |        else 'qtt' end) as cpa_src
