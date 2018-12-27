@@ -199,6 +199,8 @@ object OcpcPIDwithCPA {
       .select("identifier", "cpa", "cvrcnt", "cost", "cpagiven", "conversion_goal")
 
     val resultDF = cpa1.union(cpa2)
+    println("cpa history: ")
+    resultDF.show(10)
 
     resultDF
   }
@@ -224,6 +226,8 @@ object OcpcPIDwithCPA {
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
+    println("cpa ratio:")
+    resultDF.show(10)
     resultDF
 
   }
