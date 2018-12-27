@@ -14,7 +14,7 @@ import scala.collection.mutable
   * date: 11/14/18
   */
 object AdEmbeddingToFile {
-  val localDir = "/home/cpc/scheduled_job/ad_embedding/"
+  val localDir = "/home/cpc/wy/scheduled_job/ad_embedding/"
   val destDir = "/home/cpc/model_server/data/"
   val hdfsDir = "/user/cpc/wy/novel/dssm/ad-output/"
   def main(args: Array[String]): Unit = {

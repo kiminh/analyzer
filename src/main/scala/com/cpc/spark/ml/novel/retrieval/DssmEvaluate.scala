@@ -1,7 +1,7 @@
 package com.cpc.spark.ml.novel.retrieval
 
-import com.cpc.spark.ml.dnn.retrieval.UserEmbeddingToRedis.{hdfsDir => userHDFSDir}
-import com.cpc.spark.ml.dnn.retrieval.AdEmbeddingToFile.{hdfsDir => adHDFSDir}
+import com.cpc.spark.ml.novel.retrieval.UserEmbeddingToRedis.{hdfsDir => userHDFSDir}
+import com.cpc.spark.ml.novel.retrieval.AdEmbeddingToFile.{hdfsDir => adHDFSDir}
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
