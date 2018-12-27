@@ -147,7 +147,7 @@ object OcpcGetPb {
     val cvr2Data = ocpcUnionlog
       .join(rawCvr2, Seq("searchid"), "left_outer")
       .groupBy("identifier")
-      .agg(sum(col("iscvr")).alias("cvrcnt"))
+      .agg(sum(col("iscvr2")).alias("cvrcnt"))
       .withColumn("conversion_goal", lit(2))
       .select("identifier", "cvrcnt", "conversion_goal")
 
