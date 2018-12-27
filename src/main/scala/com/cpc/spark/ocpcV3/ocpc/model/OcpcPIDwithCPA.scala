@@ -28,7 +28,7 @@ object OcpcPIDwithCPA {
 
     // TODO 表名
     val prevTable = spark
-      .table("test.ocpc_prev_pb")
+      .table("dl_cpc.ocpc_prev_pb")
 
 
     val historyData = getHistory(date, hour, spark)
