@@ -127,15 +127,12 @@ object OcpcKappOpen {
       .withColumn("date", col("dt"))
       .select("searchid", "timestamp", "uid", "ideaid", "date", "hour")
 
-    ctrData.write.mode("overwrite").saveAsTable("test.ocpc_ctr_data20181227")
-
     val cvrData = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(selectCondition2)
       .filter("label_sdk_dlapp=1")
       .withColumn("label", col("label_sdk_dlapp"))
       .select("searchid", "label", "date", "hour")
-    cvrData.write.mode("overwrite").saveAsTable("test.ocpc_cvr_data20181227")
 
 
     val joinData = ctrData
@@ -143,7 +140,6 @@ object OcpcKappOpen {
       .select("searchid", "timestamp", "uid", "ideaid", "label", "date", "hour")
 
     joinData.createOrReplaceTempView("join_table")
-    joinData.write.mode("overwrite").saveAsTable("test.ocpc_join_data20181227")
 
     val sqlRequest =
       s"""
@@ -164,7 +160,7 @@ object OcpcKappOpen {
          |        label,
          |        date,
          |        hour,
-         |        row_number() over(partition by uid, ideaid, date order by timestamp) as seq
+         |        row_number() over(partition by uid, ideaid order by timestamp) as seq
          |    FROM
          |        test.ocpc_join_data20181227) t
          |WHERE
