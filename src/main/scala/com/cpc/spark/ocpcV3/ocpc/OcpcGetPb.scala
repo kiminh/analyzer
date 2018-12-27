@@ -83,7 +83,7 @@ object OcpcGetPb {
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
     val resultDF = spark
-      .table("dl_cpc.ocpcv3_ctr_data_hourly")
+      .table("dl_cpc.ocpc_ctr_data_hourly")
       .where(selectCondition)
       .withColumn("identifier", col("unitid"))
       .filter("isclick=1")
