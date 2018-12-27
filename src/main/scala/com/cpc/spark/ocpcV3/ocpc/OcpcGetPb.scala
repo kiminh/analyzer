@@ -87,7 +87,7 @@ object OcpcGetPb {
       .where(selectCondition)
       .withColumn("identifier", col("unitid"))
       .filter("isclick=1")
-      .select("identifier", "adclass")
+      .selectExpr("cast(identifier as string) identifier", "adclass")
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .select("identifier", "new_adclass")
