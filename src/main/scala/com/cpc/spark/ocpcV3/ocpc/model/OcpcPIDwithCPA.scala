@@ -75,7 +75,6 @@ object OcpcPIDwithCPA {
          |  ext['adclass'].int_value as adclass,
          |  isshow,
          |  isclick,
-         |  iscvr,
          |  price,
          |  ocpc_log,
          |  ocpc_log_dict,
