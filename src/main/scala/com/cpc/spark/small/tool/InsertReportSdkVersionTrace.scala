@@ -53,7 +53,8 @@ object InsertReportSdkVersionTrace {
           |SELECT cul.searchid,adslotid,ext["client_version"].string_value,isfill,isshow,isclick
           |FROM dl_cpc.cpc_union_log cul
           |WHERE cul.date="%s" AND cul.hour="%s" AND cul.ext["client_type"].string_value="NATIVESDK"
-          |AND cul.adslotid in("1027423","1029077","1024335") AND cul.adsrc in(0,1) AND ext["client_version"].string_value IS NOT NULL
+          |AND cul.adslotid in("1027423","1029077","1024335","1018971","7268884")
+          |AND cul.adsrc in(0,1) AND ext["client_version"].string_value IS NOT NULL
           |AND ext["client_version"].string_value <>"" AND ext["client_version"].string_value <>"0.0.0.0"
         """.stripMargin.format(argDay, argHour))
       .rdd
@@ -116,7 +117,7 @@ object InsertReportSdkVersionTrace {
           |WHERE cutl.date="%s" AND cul.date="%s"
           |AND cutl.hour="%s" AND cul.hour="%s"
           |AND cul.ext["client_type"].string_value="NATIVESDK"
-          |AND cul.adslotid in("1027423","1029077","1024335")
+          |AND cul.adslotid in("1027423","1029077","1024335","1018971","7268884")
           |AND ext["client_version"].string_value IS NOT NULL AND ext["client_version"].string_value <>""
           |AND ext["client_version"].string_value <>"0.0.0.0"
           |AND cul.isclick>0 AND cul.adsrc=1 AND cutl.trace_type in("lpload","apkdown")

@@ -1,4 +1,4 @@
-package com.cpc.spark.ocpcV3.ocpc.model
+package com.cpc.spark.ocpc
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -12,7 +12,7 @@ import org.apache.spark.sql.functions._
 import sun.java2d.loops.DrawGlyphListAA
 
 
-object OcpcPIDwithCPA {
+object OcpcPIDwithCPAv3 {
   def main(args: Array[String]): Unit = {
     /*
     根据PID控制调整k值：
@@ -26,27 +26,27 @@ object OcpcPIDwithCPA {
     val date = args(0).toString
     val hour = args(1).toString
 
-    // TODO 表名
+//    test.ocpc_k_value_table_ + hour
     val prevTable = spark
-      .table("dl_cpc.ocpc_prev_pb")
+      .table("dl_cpc.ocpc_qtt_prev_pb")
 
+    val advIdeaid = spark.table("test.ocpc_idea_update_time_" + hour)
 
     val historyData = getHistory(date, hour, spark)
     val kvalue = getHistoryK(historyData, prevTable, date, hour, spark)
     val cpaHistory = getCPAhistory(historyData, date, hour, spark)
-    val cpaRatio = calculateCPAratio(cpaHistory, date, hour, spark)
+    val cpaRatio = calculateCPAratio(cpaHistory, advIdeaid, date, hour, spark)
     val result = updateK(kvalue, cpaRatio, date, hour, spark)
     val resultDF = result
-      .select("identifier", "k_value", "conversion_goal")
+      .select("ideaid", "adclass", "k_value2", "k_value3")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("version", lit("v1"))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
-//    resultDF
-//      .write
-//      .mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_pid_k_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_hourly")
+    resultDF
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_k_value_table_hourly")
 
 
   }
@@ -70,8 +70,7 @@ object OcpcPIDwithCPA {
       s"""
          |SELECT
          |  searchid,
-         |  unitid,
-         |  cast(unitid as string) identifier,
+         |  ideaid,
          |  adclass,
          |  isshow,
          |  isclick,
@@ -80,14 +79,11 @@ object OcpcPIDwithCPA {
          |  ocpc_log,
          |  ocpc_log_dict,
          |  ocpc_log_dict['kvalue'] as kvalue,
-         |  ocpc_log_dict['cpagiven'] as cpagiven,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_union_log_hourly
+         |  dl_cpc.ocpc_unionlog
          |WHERE
          |  $selectCondition
-         |AND
-         |  media_appsid in ('80000001', '80000002')
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
@@ -103,20 +99,20 @@ object OcpcPIDwithCPA {
     // case1
     val case1 = historyData
       .filter("isclick=1")
-      .groupBy("identifier")
+      .groupBy("ideaid", "adclass")
       .agg(avg(col("kvalue")).alias("kvalue1"))
-      .select("identifier", "kvalue1")
+      .select("ideaid", "adclass", "kvalue1")
 
     // case2
     val case2 = prevPb
-      .withColumn("kvalue2", col("kvalue"))
-      .select("identifier", "kvalue2")
+      .withColumn("kvalue2", col("k_value"))
+      .select("ideaid", "adclass", "kvalue2")
       .distinct()
 
     // 优先case1，然后case2，最后case3
     val resultDF = case1
-      .join(case2, Seq("identifier"), "outer")
-      .select("identifier", "kvalue1", "kvalue2")
+      .join(case2, Seq("ideaid", "adclass"), "outer")
+      .select("ideaid", "adclass", "kvalue1", "kvalue2")
       .withColumn("kvalue", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
 
     resultDF
@@ -134,11 +130,9 @@ object OcpcPIDwithCPA {
     // cost data
     val costData = historyData
       .filter("isclick=1")
-      .groupBy("identifier")
-      .agg(
-        sum(col("price")).alias("cost"),
-        avg(col("cpagiven")).alias("cpagiven"))
-      .select("identifier", "cost", "cpagiven")
+      .groupBy("ideaid", "adclass")
+      .agg(sum(col("price")).alias("cost"))
+      .select("ideaid", "adclass", "cost")
 
     // cvr data
     // 取历史数据
@@ -155,75 +149,83 @@ object OcpcPIDwithCPA {
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
 
-    val rawCvr1 = spark
+    val rawCvr2 = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(selectCondition)
-      .withColumn("iscvr1", col("label2"))
-      .select("searchid", "iscvr1")
-      .filter("iscvr1=1")
-      .distinct()
-
-    val rawCvr2 = spark
-      .table("dl_cpc.ml_cvr_feature_v2")
-      .where(selectCondition)
-      .withColumn("iscvr2", col("label"))
+      .withColumn("iscvr2", col("label2"))
       .select("searchid", "iscvr2")
       .filter("iscvr2=1")
       .distinct()
 
-    // cvr1
-    val cvr1Data = historyData
-      .join(rawCvr1, Seq("searchid"), "left_outer")
-      .groupBy("identifier")
-      .agg(sum(col("iscvr1")).alias("cvr1cnt"))
-      .select("identifier", "cvr1cnt")
+    val rawCvr3 = spark
+      .table("dl_cpc.ml_cvr_feature_v2")
+      .where(selectCondition)
+      .withColumn("iscvr3", col("label"))
+      .select("searchid", "iscvr3")
+      .filter("iscvr3=1")
+      .distinct()
 
     // cvr2
     val cvr2Data = historyData
       .join(rawCvr2, Seq("searchid"), "left_outer")
-      .groupBy("identifier")
+      .groupBy("ideaid", "adclass")
       .agg(sum(col("iscvr2")).alias("cvr2cnt"))
-      .select("identifier", "cvr2cnt")
+      .select("ideaid", "adclass", "cvr2cnt")
+
+    // cvr3
+    val cvr3Data = historyData
+      .join(rawCvr3, Seq("searchid"), "left_outer")
+      .groupBy("ideaid", "adclass")
+      .agg(sum(col("iscvr3")).alias("cvr3cnt"))
+      .select("ideaid", "adclass", "cvr3cnt")
 
     // 计算cpa
-    // cvr1
-    val cpa1 = costData
-      .join(cvr1Data, Seq("identifier"), "left_outer")
-      .withColumn("cpa", col("cost") * 1.0 / col("cvr1cnt"))
-      .withColumn("cost", col("cost"))
-      .withColumn("cpagiven", col("cpagiven"))
-      .withColumn("conversion_goal", lit(1))
-      .select("identifier", "cpa", "cvrcnt", "cost", "cpagiven", "conversion_goal")
     // cvr2
     val cpa2 = costData
-      .join(cvr2Data, Seq("identifier"), "left_outer")
-      .withColumn("cpa", col("cost") * 1.0 / col("cvr2cnt"))
-      .withColumn("cost", col("cost"))
-      .withColumn("cpagiven", col("cpagiven"))
-      .withColumn("conversion_goal", lit(2))
-      .select("identifier", "cpa", "cvrcnt", "cost", "cpagiven", "conversion_goal")
+      .join(cvr2Data, Seq("ideaid", "adclass"), "left_outer")
+      .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
+      .withColumn("cost2", col("cost"))
+      .select("ideaid", "adclass", "cpa2", "cvr2cnt", "cost2")
+    // cvr3
+    val cpa3 = costData
+      .join(cvr3Data, Seq("ideaid", "adclass"), "left_outer")
+      .withColumn("cpa3", col("cost") * 1.0 / col("cvr3cnt"))
+      .withColumn("cost3", col("cost"))
+      .select("ideaid", "adclass", "cpa3", "cvr3cnt", "cost3")
 
-    val resultDF = cpa1.union(cpa2)
+    val resultDF = cpa2
+      .join(cpa3, Seq("ideaid", "adclass"), "outer")
+      .select("ideaid", "adclass", "cpa2", "cpa3", "cvr2cnt", "cvr3cnt", "cost2", "cost3")
 
     resultDF
   }
 
-  def calculateCPAratio(cpaHistory: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    cpaHistory.createOrReplaceTempView("raw_table")
+  def calculateCPAratio(cpaHistory: DataFrame, advIdeaid: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val rawData = advIdeaid
+      .join(cpaHistory, Seq("ideaid"), "left_outer")
+      .select("ideaid", "adclass", "cpa2", "cpa3", "cvr2cnt", "cvr3cnt", "cost2", "cost3", "cpa_given")
+    rawData.createOrReplaceTempView("raw_table")
 
     val sqlRequest =
       s"""
          |SELECT
-         |  identifier
-         |  cpagiven,
-         |  cost,
-         |  cvrcnt,
-         |  cpa,
-         |  (case when cpagiven is null then 1.0
-         |        when cvrcnt is null or cvrcnt = 0 then 0.8
-         |        when cvrcnt>0 then cpagiven * 1.0 / cpa
-         |        else 1.0 end) as cpa_ratio,
-         |   conversion_goal
+         |  ideaid,
+         |  adclass,
+         |  cpa_given,
+         |  cost2,
+         |  cost3,
+         |  cvr2cnt,
+         |  cvr3cnt,
+         |  cpa2,
+         |  cpa3,
+         |  (case when cpa_given is null then 1.0
+         |        when cvr2cnt is null or cvr2cnt = 0 then 0.8
+         |        when cvr2cnt>0 then cpa_given * 1.0 / cpa2
+         |        else 1.0 end) as cpa2_ratio,
+         |  (case when cpa_given is null then 1.0
+         |        when cvr3cnt is null or cvr3cnt = 0 then 0.8
+         |        when cvr3cnt>0 then cpa_given * 1.0 / cpa3
+         |        else 1.0 end) as cpa3_ratio
          |FROM
          |  raw_table
        """.stripMargin
@@ -251,13 +253,16 @@ object OcpcPIDwithCPA {
 
     // 关联得到基础表
     val rawData = kvalue
-      .join(cpaRatio, Seq("identifier"), "outer")
-      .select("identifier", "cpa_ratio", "conversion_goal", "kvalue")
+      .join(cpaRatio, Seq("ideaid", "adclass"), "outer")
+      .select("ideaid", "adclass", "cpa2_ratio", "cpa3_ratio", "kvalue")
 
     val resultDF = rawData
-      .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
-      .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
-      .withColumn("k_value", col("updated_k"))
+      .withColumn("ratio_tag_cvr2", udfSetRatioCase()(col("cpa2_ratio")))
+      .withColumn("ratio_tag_cvr3", udfSetRatioCase()(col("cpa3_ratio")))
+      .withColumn("updated_k2", udfUpdateK()(col("ratio_tag_cvr2"), col("kvalue")))
+      .withColumn("updated_k3", udfUpdateK()(col("ratio_tag_cvr3"), col("kvalue")))
+      .withColumn("k_value2", col("updated_k2"))
+      .withColumn("k_value3", col("updated_k3"))
 
 
     resultDF
