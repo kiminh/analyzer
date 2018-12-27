@@ -301,6 +301,7 @@ object OcpcCPAhistory {
     val data = rawData
       .withColumn("cpa_history", when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
 
+    // 对于暗投，pb文件中每个identifier只能有一个conversion goal，在这里进行控制
     val data1 = data
       .filter(s"conversion_goal=1")
       .withColumn("cpa1_history", col("cpa_history"))
