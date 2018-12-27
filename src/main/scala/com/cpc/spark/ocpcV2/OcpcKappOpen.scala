@@ -125,7 +125,7 @@ object OcpcKappOpen {
       .where(selectCondition1)
       .filter("isclick=1")
       .withColumn("date", col("dt"))
-      .select("searchid", "timestamp", "uid", "date", "hour")
+      .select("searchid", "timestamp", "uid", "ideaid", "date", "hour")
 
     val cvrData = spark
       .table("dl_cpc.ml_cvr_feature_v1")
@@ -136,7 +136,7 @@ object OcpcKappOpen {
 
     val joinData = ctrData
       .join(cvrData, Seq("searchid"), "inner")
-      .select("searchid", "timestamp", "uid", "label", "date", "hour")
+      .select("searchid", "timestamp", "uid", "ideaid", "label", "date", "hour")
 
     joinData.createOrReplaceTempView("join_table")
 
@@ -146,6 +146,7 @@ object OcpcKappOpen {
          |    t.searchid,
          |    t.timestamp,
          |    t.uid,
+         |    t.ideaid,
          |    t.label,
          |    t.date,
          |    t.hour
@@ -154,6 +155,7 @@ object OcpcKappOpen {
          |        searchid,
          |        timestamp,
          |        uid,
+         |        ideaid,
          |        label,
          |        date,
          |        hour,
