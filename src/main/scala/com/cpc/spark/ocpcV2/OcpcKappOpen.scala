@@ -124,7 +124,7 @@ object OcpcKappOpen {
       .table("dl_cpc.ocpc_unionlog")
       .where(selectCondition1)
       .filter("isclick=1")
-      .select("searchid", "timestampe", "uid", "date", "hour")
+      .select("searchid", "timestamp", "uid", "date", "hour")
 
     val cvrData = spark
       .table("dl_cpc.ml_cvr_feature_v1")
