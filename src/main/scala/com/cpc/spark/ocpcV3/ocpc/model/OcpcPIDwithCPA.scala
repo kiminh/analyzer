@@ -188,13 +188,13 @@ object OcpcPIDwithCPA {
     // cvr1
     val cpa1 = costData
       .join(cvr1Data, Seq("identifier"), "left_outer")
-      .withColumn("cpa", col("cost") * 1.0 / col("cvr1cnt"))
+      .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
       .withColumn("conversion_goal", lit(1))
       .select("identifier", "cpa", "cvrcnt", "cost", "cpagiven", "conversion_goal")
     // cvr2
     val cpa2 = costData
       .join(cvr2Data, Seq("identifier"), "left_outer")
-      .withColumn("cpa", col("cost") * 1.0 / col("cvr2cnt"))
+      .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
       .withColumn("conversion_goal", lit(2))
       .select("identifier", "cpa", "cvrcnt", "cost", "cpagiven", "conversion_goal")
 
