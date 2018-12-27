@@ -50,7 +50,7 @@ object InsertDspOutIncome {
          |  ext_string["dsp_adslotid_by_src_22"] as dsp_adslot_id,
          |  sum(
          |    CASE
-         |      WHEN isshow == 1 THEN price/1000
+         |      WHEN isshow == 1 THEN bid/1000
          |      ELSE 0
          |    END
          |  ) AS dsp_income,
