@@ -163,7 +163,7 @@ object OcpcKappOpen {
          |        label,
          |        date,
          |        hour,
-         |        row_number() over(partition by uid order by timestamp) as seq
+         |        row_number() over(partition by uid, ideaid order by timestamp) as seq
          |    FROM
          |        join_table) t
          |WHERE
