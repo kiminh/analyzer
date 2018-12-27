@@ -855,7 +855,7 @@ object SaveFeatures {
         |       ext['usertype'].int_value as usertype
         |from dl_cpc.cpc_union_log
         |lateral view explode(motivation) c as m
-        |where `date` = "%s" and `hour` = "%s" and isclick = 1 and adslot_type = 7
+        |where `date` = "%s" and `hour` = "%s" and m.isclick = 1 and adslot_type = 7
       """.stripMargin.format(date, hour)
 
     (clicklog.join(cvrlog, Seq("searchid", "ideaid"))).union(spark.sql(sqlStmt_motivate).join(cvrlog, Seq("searchid", "ideaid")))
