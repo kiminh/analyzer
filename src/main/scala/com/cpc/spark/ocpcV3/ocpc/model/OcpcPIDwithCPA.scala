@@ -86,6 +86,8 @@ object OcpcPIDwithCPA {
          |  dl_cpc.ocpc_union_log_hourly
          |WHERE
          |  $selectCondition
+         |AND
+         |  media_appsid in ('80000001', '80000002')
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
