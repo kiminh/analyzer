@@ -12,7 +12,7 @@ import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
-import userprofile.Userprofile.UserProfile
+
 
 import scala.collection.mutable.ListBuffer
 import userocpc.userocpc._
@@ -51,6 +51,7 @@ object OcpcSampleToPb {
       .withColumn("kvalue1_init", col("k_value2"))
       .withColumn("kvalue2_init", col("k_value3"))
 
+
     val result = initK(currentPb, date, hour,spark)
 
 
@@ -58,8 +59,9 @@ object OcpcSampleToPb {
 
     resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
     resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v6")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_current_pb20181226")
 
-//    savePbPack(resultDF)
+    savePbPack(resultDF)
 
   }
 
@@ -88,9 +90,11 @@ object OcpcSampleToPb {
       val caliValue = record.getAs[Double]("cali_value")
       val cvr3Cali = record.getAs[Double]("cvr3_cali")
       val cvr3Cnt = record.getAs[Long]("cvr3_cnt")
+      val k_value1 = record.getAs[Double]("kvalue1")
+      val k_value2 = record.getAs[Double]("kvalue2")
 
       if (cnt % 500 == 0) {
-        println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali, cvr3Cnt:$cvr3Cnt")
+        println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali, cvr3Cnt:$cvr3Cnt, kvalue1:$k_value1, kvalue2:$k_value2")
       }
       cnt += 1
 
@@ -114,7 +118,9 @@ object OcpcSampleToPb {
           hpcvr = hpcvr,
           calibration = caliValue,
           cvr3Cali = cvr3Cali,
-          cvr3Cnt = cvr3Cnt
+          cvr3Cnt = cvr3Cnt,
+          kvalue1 = k_value1,
+          kvalue2 = k_value2
         )
         list += currentItem
 
@@ -293,6 +299,7 @@ object OcpcSampleToPb {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
+
     resultDF
   }
 
@@ -304,6 +311,7 @@ object OcpcSampleToPb {
       .select("ideaid", "adclass", "k_value2", "k_value3")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+
 
     resultDF
   }
@@ -405,10 +413,10 @@ object OcpcSampleToPb {
       .select("ideaid", "adclass", "prev_k2", "prev_k3", "date", "hour")
 
     val prevCtr = spark
-      .table("dl_cpc.ocpc_uid_userid_track_label2")
-      .where(s"`date`='$date1' and `hour`='$hour1'")
+      .table("dl_cpc.ocpc_unionlog")
+      .where(s"`dt`='$date1' and `hour`='$hour1'")
       .groupBy("ideaid", "adclass")
-      .agg(sum(col("ctr_cnt")).alias("ctrcnt"))
+      .agg(sum(col("isclick")).alias("ctrcnt"))
       .select("ideaid", "adclass", "ctrcnt")
 
     val prevTable = prevK
@@ -445,13 +453,15 @@ object OcpcSampleToPb {
          |  1.0 as cali_value,
          |  1.0 as cvr3_cali,
          |  a.cvr3_cnt,
-         |  (case when b.conversion_goal=1 and a.k_value2>3.0 then 3.0
-         |        when b.conversion_goal!=1 and a.k_value2>2.0 then 2.0
-         |        when a.k_value2<0 or a.k_value2 is null then 0.0
-         |        else a.k_value2 end) as kvalue1,
-         |  (case when a.k_value3>2.0 then 2.0
-         |        when a.k_value3<0 or a.k_value3 is null then 0.0
-         |        else a.k_value3 end) as kvalue2,
+         |  (case when b.conversion_goal=1 and a.kvalue1>3.0 then 3.0
+         |        when b.conversion_goal!=1 and a.kvalue1>2.0 then 2.0
+         |        when b.conversion_goal is null and a.kvalue1>2.0 then 2.0
+         |        when a.kvalue1<0 or a.kvalue1 is null then 0.0
+         |        else a.kvalue1 end) as kvalue1,
+         |  (case when a.kvalue2>2.0 then 2.0
+         |        when a.kvalue2<0 or a.kvalue2 is null then 0.0
+         |        else a.kvalue2 end) as kvalue2,
+         |  a.is_ocpc_flag,
          |  b.conversion_goal
          |FROM
          |  base_table as a
@@ -464,8 +474,9 @@ object OcpcSampleToPb {
     val result = spark
       .sql(sqlRequest)
       .na.fill(0.0, Seq("kvalue1", "kvalue2"))
-      .withColumn("k_value", when(col("conversion_goal") === 1 || col("conversion_goal") === 3, col("kvalue1")).otherwise(col("kvalue2")))
+      .withColumn("k_value", when(col("conversion_goal") === 2, col("kvalue2")).otherwise(col("kvalue1")))
       .filter(s"kvalue1 != 0 or kvalue2 != 0 or conversion_goal is not null")
+      .filter("k_value > 0")
 
 
     val resultDF = result
@@ -501,6 +512,8 @@ object OcpcSampleToPb {
       .withColumn("kvalue2_middle", when(col("is_ocpc_flag").isNull, col("cvr3_cnt") * 1.0 / (col("ctr_cnt") * col("hpcvr"))).otherwise(col("kvalue2_init")))
       .withColumn("kvalue1", when(col("kvalue1_middle").isNull, 0.0).otherwise(col("kvalue1_middle")))
       .withColumn("kvalue2", when(col("kvalue2_middle").isNull, 0.0).otherwise(col("kvalue2_middle")))
+
+
 
     resultDF
   }

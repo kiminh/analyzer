@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package ocpc;
+
+message SingleRecord {
+    string identifier = 1;
+    int32 conversiongoal = 2;
+    double kvalue = 3;
+    double cpagiven = 4;
+    int64 cvrcnt = 5;
+}
+
+
+message OcpcList {
+    repeated SingleRecord adrecord = 1;
+}
