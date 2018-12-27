@@ -47,8 +47,8 @@ object SaveFeatures {
 
     //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
-    saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
-    //saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr
+    //saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
+    saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr
     println("SaveFeatures_done")
   }
 
@@ -728,7 +728,7 @@ object SaveFeatures {
          |            from dl_cpc.cpc_union_trace_log
          |            where `date` = "%s" and `hour` = "%s"
          |         ) b
-         |    on a.searchid=b.searchid
+         |    on a.searchid = b.searchid
          | where t2.id is null
             """.stripMargin.format(date, hour, yesterday, date, hour)
     println("sql_info_flow: " + sql_info_flow)
@@ -831,7 +831,7 @@ object SaveFeatures {
         |       ext['exp_ctr'].int_value as exp_ctr,
         |       ext['exp_cvr'].int_value as exp_cvr,
         |       ext['usertype'].int_value as usertype
-        |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isclick = 1
+        |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isclick = 1 and adslot_type <> 7
       """.stripMargin.format(date, hour)
     println(sqlStmt)
     val clicklog = spark.sql(sqlStmt)
@@ -855,7 +855,7 @@ object SaveFeatures {
         |       ext['usertype'].int_value as usertype
         |from dl_cpc.cpc_union_log
         |lateral view explode(motivation) c as m
-        |where `date` = "%s" and `hour` = "%s" and isclick = 1
+        |where `date` = "%s" and `hour` = "%s" and isclick = 1 and adslot_type = 7
       """.stripMargin.format(date, hour)
 
     (clicklog.join(cvrlog, Seq("searchid", "ideaid"))).union(spark.sql(sqlStmt_motivate).join(cvrlog, Seq("searchid", "ideaid")))
