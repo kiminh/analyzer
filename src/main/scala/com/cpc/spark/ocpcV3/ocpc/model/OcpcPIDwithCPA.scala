@@ -42,11 +42,11 @@ object OcpcPIDwithCPA {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("v1"))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
-//    resultDF
-//      .write
-//      .mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_pid_k_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+    resultDF
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pid_k_hourly")
 
 
   }
