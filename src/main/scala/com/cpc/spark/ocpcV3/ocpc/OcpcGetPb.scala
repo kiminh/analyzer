@@ -5,7 +5,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
-import ocpc.Ocpc
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{DoubleType, IntegerType}
@@ -69,7 +68,7 @@ object OcpcGetPb {
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
 
-//    savePbPack(resultDF, "v1")
+    savePbPack(resultDF, "v1")
   }
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
@@ -116,7 +115,7 @@ object OcpcGetPb {
       .where(selectCondition)
       .withColumn("identifier", col("unitid"))
       .filter("isclick=1")
-      .select("searchid", "identifier")
+      .selectExpr("searchid", "cast(identifier as string) identifier")
 
     // cvr data
 
