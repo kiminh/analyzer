@@ -76,7 +76,7 @@ object prepare_bsCvr_dnnPredictSample {
     val table1="(select id as unitid, user_id as userid, plan_id as planid, adslot_type, charge_type from adv.unit) as tmp1"
     val unit = spark.read.jdbc(jdbcUrl, table1, jdbcProp).filter("userid is not null and unitid is not null").distinct()
 
-    val table2=s"(select unit_id as unitid from (SELECT unit_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by unit_id) t order by cnt desc limit 200) as tmp2"
+    val table2=s"(select unit_id as unitid from (SELECT unit_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by unit_id) t order by cnt desc limit 500) as tmp2"
     val costTop100 = spark.read.jdbc(jdbcUrl, table2, jdbcProp)
 
     val unit_info = costTop100.join(unit, Seq("unitid"))//.join(idea, Seq("userid"))
@@ -161,7 +161,7 @@ object prepare_bsCvr_dnnPredictSample {
       $"sparse".getField("_3").alias("idx2"),
       $"sparse".getField("_4").alias("id_arr"),
       $"uid"
-    ).repartition(40000).persist(StorageLevel.DISK_ONLY)
+    ).repartition(90000).persist(StorageLevel.DISK_ONLY)
 
     result_temp.show(10)
 
