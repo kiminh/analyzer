@@ -66,7 +66,8 @@ object OcpcGetPb {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("v1"))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb")
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
 
     savePbPack(resultDF, "v1")
   }
