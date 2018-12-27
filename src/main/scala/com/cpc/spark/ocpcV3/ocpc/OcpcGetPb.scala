@@ -86,7 +86,6 @@ object OcpcGetPb {
       .table("dl_cpc.ocpc_ctr_data_hourly")
       .where(selectCondition)
       .withColumn("identifier", col("unitid"))
-      .filter("isclick=1")
       .selectExpr("cast(identifier as string) identifier", "adclass")
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
