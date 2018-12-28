@@ -79,16 +79,33 @@ object OcpcGetPb {
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -7)
+    calendar.add(Calendar.DATE, -7)
     val startdate = calendar.getTime
     val date1 = dateConverter.format(startdate)
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) as identifier,
+         |  adclass
+         |FROM
+         |  dl_cpc.ocpc_ctr_data_hourly
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+//    val resultDF = spark
+//      .table("dl_cpc.ocpcv3_ctr_data_hourly")
+//      .where(selectCondition)
+//      .withColumn("identifier", col("unitid"))
+//      .selectExpr("cast(identifier as string) identifier", "adclass")
+//      .withColumn("new_adclass", col("adclass")/1000)
+//      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+//      .select("identifier", "new_adclass")
+//      .distinct()
+    println(sqlRequest)
     val resultDF = spark
-      .table("dl_cpc.ocpc_ctr_data_hourly")
-      .where(selectCondition)
-      .withColumn("identifier", col("unitid"))
-      .selectExpr("cast(identifier as string) identifier", "adclass")
+      .sql(sqlRequest)
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .select("identifier", "new_adclass")

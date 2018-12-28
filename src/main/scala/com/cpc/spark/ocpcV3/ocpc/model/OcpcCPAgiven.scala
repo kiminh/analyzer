@@ -25,7 +25,8 @@ object OcpcCPAgiven {
 
     // 链接adv数据库
     val cpaGiven = getCPAgiven(date, hour, spark)
-    cpaGiven.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_hourly")
+//    cpaGiven.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_hourly")
+    cpaGiven.write.mode("overwrite").insertInto("dl_cpc.ocpc_cpa_given_hourly")
   }
 
   def getCPAgiven(date: String, hour: String, spark: SparkSession) = {
@@ -33,7 +34,7 @@ object OcpcCPAgiven {
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -45,10 +46,13 @@ object OcpcCPAgiven {
 
     val base = data
       .withColumn("unitid", col("id"))
-      .select("unitid", "ideas", "bid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal")
+      .withColumn("userid", col("user_id"))
+      .select("unitid", "userid", "ideas", "bid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal")
 
 
-    val ideaTable = base.withColumn("ideaid", explode(split(col("ideas"), "[,]"))).select("unitid", "ideaid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal")
+    val ideaTable = base
+      .withColumn("ideaid", explode(split(col("ideas"), "[,]")))
+      .select("unitid", "userid", "ideaid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal")
 
     ideaTable.createOrReplaceTempView("ideaid_update_time")
 
@@ -56,6 +60,7 @@ object OcpcCPAgiven {
       s"""
          |SELECT
          |    unitid,
+         |    userid,
          |    ideaid,
          |    ocpc_bid as cpa_given,
          |    cast(conversion_goal as int) as conversion_goal,

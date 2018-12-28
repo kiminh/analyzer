@@ -73,6 +73,7 @@ object OcpcGetPbV2 {
     val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
     resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly")
     resultDF.write.mode("overwrite").insertInto(tableName)
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
 
     savePbPack(resultDF)
 
@@ -111,6 +112,7 @@ object OcpcGetPbV2 {
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .select("unitid", "new_adclass")
       .distinct()
+//    ctrData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_ctr_data_hourly_v2")
 
     // cvr data
     // cvr1 or cvr3 data
