@@ -85,11 +85,28 @@ object OcpcGetPb {
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
     // todo 表名：ocpc_ctr_data_hourly
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) as identifier,
+         |  adclass
+         |FROM
+         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+//    val resultDF = spark
+//      .table("dl_cpc.ocpcv3_ctr_data_hourly")
+//      .where(selectCondition)
+//      .withColumn("identifier", col("unitid"))
+//      .selectExpr("cast(identifier as string) identifier", "adclass")
+//      .withColumn("new_adclass", col("adclass")/1000)
+//      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+//      .select("identifier", "new_adclass")
+//      .distinct()
+    println(sqlRequest)
     val resultDF = spark
-      .table("dl_cpc.ocpcv3_ctr_data_hourly")
-      .where(selectCondition)
-      .withColumn("identifier", col("unitid"))
-      .selectExpr("cast(identifier as string) identifier", "adclass")
+      .sql(sqlRequest)
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .select("identifier", "new_adclass")
