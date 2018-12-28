@@ -25,7 +25,8 @@ object OcpcCPAgiven {
 
     // 链接adv数据库
     val cpaGiven = getCPAgiven(date, hour, spark)
-    cpaGiven.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_hourly")
+//    cpaGiven.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_hourly")
+    cpaGiven.write.mode("overwrite").insertInto("dl_cpc.ocpc_cpa_given_hourly")
   }
 
   def getCPAgiven(date: String, hour: String, spark: SparkSession) = {
