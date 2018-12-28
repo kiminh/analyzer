@@ -88,8 +88,8 @@ object InsertDspOutIncome {
 
     /* 2.外媒dsp结算信息自动化，类似于1，少了一个adslot_id维度 */
     var dspOutIncomeLog = df.groupBy("date", "dsp_adslot_id")
-      .agg("dsp_income"->"sum", "dsp_click"->"sum", "dsp_impression"->"sum")
-      .toDF()
+      .agg("dsp_income" -> "sum", "dsp_click" -> "sum", "dsp_impression" -> "sum")
+      .toDF("date", "dsp_adslot_id", "dsp_income", "dsp_click", "dsp_impression")
 
     for (log <- dspOutIncomeLog.collect()) {
       val dsp_adslot_id = log.getAs[String]("dsp_adslot_id")
