@@ -43,6 +43,7 @@ object InsertDspOutIncome {
       .getOrCreate()
     import spark.implicits._
 
+    /* 1.外媒dsp结算信息自动化 */
     val sql =
       s"""
          |SELECT
@@ -77,8 +78,50 @@ object InsertDspOutIncome {
       val dsp_impression = log.getAs[Long]("dsp_impression")
       updateData(table, day, dsp_adslot_id, dsp_income, dsp_click, dsp_impression)
     }
+    println("~~~~~~write to union.dsp_out_income successfully")
 
-    println("~~~~~~write to mysql successfully")
+
+    /* 2.外媒dsp结算信息自动化，类似于1，多了一个adslot_id维度 */
+    val sql2 =
+      s"""
+         |SELECT
+         |  `date`,
+         |  adslotid,
+         |  ext_string["dsp_adslotid_by_src_22"] as dsp_adslot_id,
+         |  sum(
+         |    CASE
+         |      WHEN isshow == 1 THEN bid/1000
+         |      ELSE 0
+         |    END
+         |  ) AS dsp_income,
+         |  sum(isclick) as dsp_click,
+         |  sum(isshow) as dsp_impression
+         |FROM
+         |  dl_cpc.cpc_union_log
+         |WHERE
+         |  adsrc = 22
+         |  AND isshow = 1
+         |  AND `date` = "$day"
+         |GROUP BY
+         |  `date`,
+         |  adslotid,
+         |  ext_string["dsp_adslotid_by_src_22"]
+       """.stripMargin
+    println("sql2: " + sql2)
+
+    var dspIncomeLog = spark.sql(sql2).collect()
+
+    for (log <- dspIncomeLog) {
+      val dsp_adslot_id = log.getAs[String]("dsp_adslot_id")
+      val adslot_id = log.getAs[Long]("adslotid")
+      val dsp_income = log.getAs[Double]("dsp_income")
+      val dsp_click = log.getAs[Long]("dsp_click")
+      val dsp_impression = log.getAs[Long]("dsp_impression")
+      updateDspIncomeTable(day, dsp_adslot_id, adslot_id, dsp_income, dsp_click, dsp_impression)
+    }
+    println("~~~~~~write to union.dsp_income successfully")
+
+    println("----- done -----")
     spark.stop()
   }
 
@@ -99,6 +142,34 @@ object InsertDspOutIncome {
            |dsp_impression = %s
            |where `date` = "%s" and dsp_adslot_id = "%s" and ad_src = 22
       """.stripMargin.format(dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id)
+      println("sql" + sql);
+      stmt.executeUpdate(sql);
+
+    } catch {
+      case e: Exception => println("exception caught: " + e)
+    }
+  }
+
+  def updateDspIncomeTable(day: String, dsp_adslot_id: String, adslot_id: Long, dsp_income: Double, dsp_click: Long, dsp_impression: Long): Unit = {
+    println("#####: " + "dsp_income, " + day + ", " + dsp_adslot_id + ", " + dsp_income + ", " + dsp_click + ", " + dsp_impression)
+    try {
+      Class.forName(mariadbProp.getProperty("driver"))
+      val conn = DriverManager.getConnection(
+        mariadbUrl,
+        mariadbProp.getProperty("user"),
+        mariadbProp.getProperty("password"))
+      val stmt = conn.createStatement()
+      val sql =
+        s"""
+           |update union.dsp_income
+           |set media_income = %s,
+           |dsp_click = %s,
+           |dsp_impression = %s
+           |where `date` = "%s"
+           |   and dsp_adslot_id = "%s"
+           |   and adslot_id = "%s"
+           |   and ad_src = 22
+      """.stripMargin.format(dsp_income, dsp_click, dsp_impression, day, dsp_adslot_id, adslot_id)
       println("sql" + sql);
       stmt.executeUpdate(sql);
 
