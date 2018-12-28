@@ -30,12 +30,13 @@ object prepare_bsCvr_dnnPredictSample {
 
     val sampleDay = getDay(date, 1)
 
-    predictionSample.repartition(2000)
+    predictionSample.repartition(5000)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
       .save(s"/user/cpc/sample/recall/dnn_recall_cvr_v1/dnnprediction-$sampleDay")
+
     //train.take(10).foreach(println)
 
     predictionSample.unpersist()
