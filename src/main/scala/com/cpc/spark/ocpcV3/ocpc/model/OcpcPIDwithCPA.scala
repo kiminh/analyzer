@@ -42,11 +42,11 @@ object OcpcPIDwithCPA {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("v1"))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
-//    resultDF
-//      .write
-//      .mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_pid_k_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+    resultDF
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pid_k_hourly")
 
 
   }
@@ -64,7 +64,7 @@ object OcpcPIDwithCPA {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
 
     val sqlRequest =
       s"""
@@ -72,10 +72,9 @@ object OcpcPIDwithCPA {
          |  searchid,
          |  unitid,
          |  cast(unitid as string) identifier,
-         |  adclass,
+         |  ext['adclass'].int_value as adclass,
          |  isshow,
          |  isclick,
-         |  iscvr,
          |  price,
          |  ocpc_log,
          |  ocpc_log_dict,
@@ -175,31 +174,27 @@ object OcpcPIDwithCPA {
     val cvr1Data = historyData
       .join(rawCvr1, Seq("searchid"), "left_outer")
       .groupBy("identifier")
-      .agg(sum(col("iscvr1")).alias("cvr1cnt"))
-      .select("identifier", "cvr1cnt")
+      .agg(sum(col("iscvr1")).alias("cvrcnt"))
+      .select("identifier", "cvrcnt")
 
     // cvr2
     val cvr2Data = historyData
       .join(rawCvr2, Seq("searchid"), "left_outer")
       .groupBy("identifier")
-      .agg(sum(col("iscvr2")).alias("cvr2cnt"))
-      .select("identifier", "cvr2cnt")
+      .agg(sum(col("iscvr2")).alias("cvrcnt"))
+      .select("identifier", "cvrcnt")
 
     // 计算cpa
     // cvr1
     val cpa1 = costData
       .join(cvr1Data, Seq("identifier"), "left_outer")
-      .withColumn("cpa", col("cost") * 1.0 / col("cvr1cnt"))
-      .withColumn("cost", col("cost"))
-      .withColumn("cpagiven", col("cpagiven"))
+      .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
       .withColumn("conversion_goal", lit(1))
       .select("identifier", "cpa", "cvrcnt", "cost", "cpagiven", "conversion_goal")
     // cvr2
     val cpa2 = costData
       .join(cvr2Data, Seq("identifier"), "left_outer")
-      .withColumn("cpa", col("cost") * 1.0 / col("cvr2cnt"))
-      .withColumn("cost", col("cost"))
-      .withColumn("cpagiven", col("cpagiven"))
+      .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
       .withColumn("conversion_goal", lit(2))
       .select("identifier", "cpa", "cvrcnt", "cost", "cpagiven", "conversion_goal")
 
@@ -214,7 +209,7 @@ object OcpcPIDwithCPA {
     val sqlRequest =
       s"""
          |SELECT
-         |  identifier
+         |  identifier,
          |  cpagiven,
          |  cost,
          |  cvrcnt,

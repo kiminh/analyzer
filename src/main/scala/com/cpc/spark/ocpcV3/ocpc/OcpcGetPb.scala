@@ -5,7 +5,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
-import ocpc.Ocpc
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{DoubleType, IntegerType}
@@ -67,9 +66,11 @@ object OcpcGetPb {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("v1"))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb")
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
 
-//    savePbPack(resultDF, "v1")
+    savePbPack(resultDF, "v1")
   }
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
@@ -84,16 +85,16 @@ object OcpcGetPb {
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
     val resultDF = spark
-      .table("dl_cpc.ocpcv3_ctr_data_hourly")
+      .table("dl_cpc.ocpc_ctr_data_hourly")
       .where(selectCondition)
       .withColumn("identifier", col("unitid"))
-      .filter("isclick=1")
-      .select("identifier", "adclass")
+      .selectExpr("cast(identifier as string) identifier", "adclass")
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .select("identifier", "new_adclass")
       .distinct()
 
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_base_ctr_20181227")
     resultDF
   }
 
@@ -116,7 +117,7 @@ object OcpcGetPb {
       .where(selectCondition)
       .withColumn("identifier", col("unitid"))
       .filter("isclick=1")
-      .select("searchid", "identifier")
+      .selectExpr("searchid", "cast(identifier as string) identifier")
 
     // cvr data
 
@@ -149,7 +150,7 @@ object OcpcGetPb {
     val cvr2Data = ocpcUnionlog
       .join(rawCvr2, Seq("searchid"), "left_outer")
       .groupBy("identifier")
-      .agg(sum(col("iscvr")).alias("cvrcnt"))
+      .agg(sum(col("iscvr2")).alias("cvrcnt"))
       .withColumn("conversion_goal", lit(2))
       .select("identifier", "cvrcnt", "conversion_goal")
 
@@ -203,7 +204,7 @@ object OcpcGetPb {
 
   def savePbPack(dataset: Dataset[Row], version: String): Unit = {
     var list = new ListBuffer[SingleRecord]
-    val filename = s"Ocpc_" + version + ".pb"
+    val filename = s"Ocpc_" + version + "_unknown.pb"
     println("size of the dataframe")
     println(dataset.count)
     dataset.show(10)

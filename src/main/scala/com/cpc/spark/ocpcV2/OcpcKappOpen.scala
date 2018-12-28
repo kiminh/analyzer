@@ -4,13 +4,14 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.ocpc.utils.OcpcUtils._
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSql2
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 
 import scala.collection.mutable
 import org.apache.spark.sql.functions._
-
 import com.cpc.spark.udfs.Udfs_wj._
+import com.typesafe.config.ConfigFactory
 
 object OcpcKappOpen {
 
@@ -24,7 +25,6 @@ object OcpcKappOpen {
     val datehourlist2 = scala.collection.mutable.ListBuffer[String]()
     val cal = Calendar.getInstance()
     cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0)
-    // todo  reset the observation window
     for (t <- 0 to 72) {
       if (t > 0) {
         cal.add(Calendar.HOUR, -1)
@@ -42,6 +42,9 @@ object OcpcKappOpen {
     val dtCondition = "(%s)".format(datehourlist.mkString(" or "))
     val dtCondition2 = "(%s)".format(datehourlist2.mkString(" or "))
 
+    val openAppData = filterRepeatedUid(date, hour, 72, spark)
+    openAppData.createOrReplaceTempView("open_app_data")
+//    openAppData.write.mode("overwrite").saveAsTable("test.ocpc_check_app_20181227")
 
     val statSql =
       s"""
@@ -60,7 +63,7 @@ object OcpcKappOpen {
          |from
          |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1) a
          |  left outer join
-         |  (select searchid, label_sdk_dlapp as label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition and label_sdk_dlapp=1) b on a.searchid = b.searchid
+         |  (select searchid, label as label2 from open_app_data where $dtCondition and label=1) b on a.searchid = b.searchid
          |  left outer join
          |  (select searchid, label as label3 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) c on a.searchid = c.searchid
          |group by ideaid,
@@ -99,6 +102,73 @@ object OcpcKappOpen {
 //    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_app_open_k")
     res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_app_open_k")
 
+  }
+
+  def filterRepeatedUid(date: String, hour: String, hourCnt: Int, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourCnt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition1 = getTimeRangeSql3(date1, hour1, date, hour)
+    val selectCondition2 = getTimeRangeSql2(date1, hour1, date, hour)
+
+    val ctrData = spark
+      .table("dl_cpc.ocpc_unionlog")
+      .where(selectCondition1)
+      .filter("isclick=1")
+      .withColumn("date", col("dt"))
+      .select("searchid", "timestamp", "uid", "ideaid", "date", "hour")
+
+    val cvrData = spark
+      .table("dl_cpc.ml_cvr_feature_v1")
+      .where(selectCondition2)
+      .filter("label_sdk_dlapp=1")
+      .withColumn("label", col("label_sdk_dlapp"))
+      .select("searchid", "label", "date", "hour")
+
+
+    val joinData = ctrData
+      .join(cvrData.select("searchid", "label"), Seq("searchid"), "inner")
+      .select("searchid", "timestamp", "uid", "ideaid", "label", "date", "hour")
+
+    joinData.createOrReplaceTempView("join_table")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    t.searchid,
+         |    t.timestamp,
+         |    t.uid,
+         |    t.ideaid,
+         |    t.label,
+         |    t.date,
+         |    t.hour
+         |FROM
+         |    (SELECT
+         |        searchid,
+         |        timestamp,
+         |        uid,
+         |        ideaid,
+         |        label,
+         |        date,
+         |        hour,
+         |        row_number() over(partition by uid, ideaid order by timestamp) as seq
+         |    FROM
+         |        test.ocpc_join_data20181227) t
+         |WHERE
+         |    t.seq=1
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+    resultDF
   }
 
   def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
