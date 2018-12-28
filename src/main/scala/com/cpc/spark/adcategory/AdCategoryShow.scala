@@ -1,5 +1,6 @@
 package com.cpc.spark.adcategory
 
+import com.cpc.spark.common.Utils.sendMail
 import com.redis.RedisClient
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 
@@ -34,6 +35,16 @@ object AdCategoryShow {
     println(sqlRequest)
 
     val dataset = spark.sql(sqlRequest)
+
+    dataset.filter("category=0").collect().foreach{
+      x=>{
+        val unknown=x.getLong(1)
+        if (unknown>100000000){
+          sendMail("adcategory errors", "errors",
+            Seq("wangyao@qutoutiao.net"))
+        }
+      }
+    }
 
     val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
     redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
