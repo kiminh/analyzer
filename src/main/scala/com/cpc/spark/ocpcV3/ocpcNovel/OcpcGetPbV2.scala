@@ -75,7 +75,7 @@ object OcpcGetPbV2 {
     resultDF.write.mode("overwrite").insertInto(tableName)
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
 
-//    savePbPack(resultDF)
+    savePbPack(resultDF)
 
   }
 
