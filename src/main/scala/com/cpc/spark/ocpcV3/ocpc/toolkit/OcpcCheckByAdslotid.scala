@@ -88,7 +88,7 @@ object OcpcCheckByAdslotid {
          |and isshow=1
          |and adslot_type in (1,2,3)
          |and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
-         |and length(ocpc_log)>0
+         |and length(ext_string['ocpc_log'])>0
          |and adslotid='$adslotid'
        """.stripMargin
 
