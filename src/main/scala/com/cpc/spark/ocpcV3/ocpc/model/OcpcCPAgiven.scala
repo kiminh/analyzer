@@ -60,9 +60,9 @@ object OcpcCPAgiven {
          |    ocpc_bid as cpa_given,
          |    cast(conversion_goal as int) as conversion_goal,
          |    ocpc_bid_update_time as update_timestamp,
-         |    from_unixtime(t.ocpc_bid_update_time) as update_time,
-         |    from_unixtime(t.ocpc_bid_update_time, 'yyyy-MM-dd') as update_date,
-         |    from_unixtime(t.ocpc_bid_update_time, 'HH') as update_hour
+         |    from_unixtime(ocpc_bid_update_time) as update_time,
+         |    from_unixtime(ocpc_bid_update_time, 'yyyy-MM-dd') as update_date,
+         |    from_unixtime(ocpc_bid_update_time, 'HH') as update_hour
          |FROM
          |    ideaid_update_time
        """.stripMargin
