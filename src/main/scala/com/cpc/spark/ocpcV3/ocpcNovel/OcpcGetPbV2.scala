@@ -71,10 +71,11 @@ object OcpcGetPbV2 {
       .withColumn("hour", lit(hour))
 
     val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly")
-    resultDF.write.mode("overwrite").insertInto(tableName)
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly")
+//    resultDF.write.mode("overwrite").insertInto(tableName)
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
 
-    savePbPack(resultDF)
+//    savePbPack(resultDF)
 
   }
 
@@ -167,7 +168,7 @@ object OcpcGetPbV2 {
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
 
     val resultDF = result.select("unitid", "new_adclass", "cvr1cnt", "cvr2cnt")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly_v2")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly_v2")
 
     // 返回结果
     resultDF.show(10)
