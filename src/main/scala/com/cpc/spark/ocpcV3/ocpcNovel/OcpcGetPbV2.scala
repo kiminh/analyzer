@@ -112,6 +112,7 @@ object OcpcGetPbV2 {
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .select("unitid", "new_adclass")
       .distinct()
+    ctrData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_ctr_data_hourly_v2")
 
     // cvr data
     // cvr1 or cvr3 data
@@ -168,7 +169,7 @@ object OcpcGetPbV2 {
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
 
     val resultDF = result.select("unitid", "new_adclass", "cvr1cnt", "cvr2cnt")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly_v2")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly_v2")
 
     // 返回结果
     resultDF.show(10)
