@@ -79,7 +79,7 @@ object OcpcGetPb {
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -7)
+    calendar.add(Calendar.DATE, -7)
     val startdate = calendar.getTime
     val date1 = dateConverter.format(startdate)
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
