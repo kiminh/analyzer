@@ -83,15 +83,14 @@ object OcpcGetPb {
     val startdate = calendar.getTime
     val date1 = dateConverter.format(startdate)
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
-
-    // todo 表名：ocpc_ctr_data_hourly
+    
     val sqlRequest =
       s"""
          |SELECT
          |  cast(unitid as string) as identifier,
          |  adclass
          |FROM
-         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |  dl_cpc.ocpc_ctr_data_hourly
          |WHERE
          |  $selectCondition
        """.stripMargin
