@@ -44,7 +44,7 @@ object OcpcKappOpen {
 
     val openAppData = filterRepeatedUid(date, hour, 72, spark)
     openAppData.createOrReplaceTempView("open_app_data")
-    openAppData.write.mode("overwrite").saveAsTable("test.ocpc_check_app_20181227")
+//    openAppData.write.mode("overwrite").saveAsTable("test.ocpc_check_app_20181227")
 
     val statSql =
       s"""
@@ -77,7 +77,7 @@ object OcpcKappOpen {
     val realCvr3 = getIdeaidCvr3Ratio(date, hour, spark)
 
 
-    val tablename = "test.cpc_ocpc_v2_app_open_middle"
+    val tablename = "dl_cpc.cpc_ocpc_v2_app_open_middle"
     val rawData = spark.sql(statSql)
 
 
@@ -91,16 +91,16 @@ object OcpcKappOpen {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    data.write.mode("overwrite").saveAsTable(tablename)
-//    data.write.mode("overwrite").insertInto(tablename)
+//    data.write.mode("overwrite").saveAsTable(tablename)
+    data.write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
 
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio2", "k_ratio3", "date", "hour")
-    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_app_open_k")
-//    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_app_open_k")
+//    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_app_open_k")
+    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_app_open_k")
 
   }
 
