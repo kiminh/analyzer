@@ -66,9 +66,9 @@ object OcpcGetPb {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("v1"))
 
-//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb")
-//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb")
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
 
     savePbPack(resultDF, "v1")
   }
@@ -83,7 +83,7 @@ object OcpcGetPb {
     val startdate = calendar.getTime
     val date1 = dateConverter.format(startdate)
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
-    
+
     val sqlRequest =
       s"""
          |SELECT
@@ -111,7 +111,7 @@ object OcpcGetPb {
       .select("identifier", "new_adclass")
       .distinct()
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_base_ctr_20181227")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_base_ctr_20181227")
     resultDF
   }
 

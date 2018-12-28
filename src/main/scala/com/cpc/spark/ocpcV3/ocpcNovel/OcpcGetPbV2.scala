@@ -53,8 +53,8 @@ object OcpcGetPbV2 {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
 
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly_middle")
-//    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v2_hourly_middle")
+//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly_middle")
+    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v2_hourly_middle")
 
     val resultDF = data
       .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0 and conversion_goal>0")
@@ -71,9 +71,9 @@ object OcpcGetPbV2 {
       .withColumn("hour", lit(hour))
 
     val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly")
-//    resultDF.write.mode("overwrite").insertInto(tableName)
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly")
+    resultDF.write.mode("overwrite").insertInto(tableName)
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
 
 //    savePbPack(resultDF)
 
@@ -112,7 +112,7 @@ object OcpcGetPbV2 {
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .select("unitid", "new_adclass")
       .distinct()
-    ctrData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_ctr_data_hourly_v2")
+//    ctrData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_ctr_data_hourly_v2")
 
     // cvr data
     // cvr1 or cvr3 data
