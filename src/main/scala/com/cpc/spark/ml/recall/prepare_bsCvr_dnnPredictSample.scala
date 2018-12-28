@@ -23,10 +23,10 @@ object prepare_bsCvr_dnnPredictSample {
     val date = args(0)
     //    val hour = args(1)
 
-    val predictionSample = getSample(spark, date).persist()
+    val predictionSample = getSample(spark, date)//.persist()
 
-    val n = predictionSample.count()
-    println("训练数据：total = %d".format(n))
+    //val n = predictionSample.count()
+    //println("训练数据：total = %d".format(n))
 
     val sampleDay = getDay(date, 1)
 
@@ -161,7 +161,7 @@ object prepare_bsCvr_dnnPredictSample {
       $"sparse".getField("_3").alias("idx2"),
       $"sparse".getField("_4").alias("id_arr"),
       $"uid"
-    ).repartition(90000).persist(StorageLevel.DISK_ONLY)
+    ).repartition(40000).persist(StorageLevel.DISK_ONLY)
 
     result_temp.show(10)
 
