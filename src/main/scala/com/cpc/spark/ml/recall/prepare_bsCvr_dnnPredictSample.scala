@@ -30,7 +30,7 @@ object prepare_bsCvr_dnnPredictSample {
 
     val sampleDay = getDay(date, 1)
 
-    predictionSample.repartition(5000)
+    predictionSample//.repartition(6000)
       .write
       .mode("overwrite")
       .format("tfrecords")
