@@ -88,11 +88,11 @@ object Utils {
 
     val sql = generateSql(str, "redis")
     spark.sql(sql).sample(withReplacement = false, 0.01)
-      .rdd.map(x => prefix + x.getString(0) + Base64.decodeBase64(x.getString(1)))
+      .rdd.map(x => (prefix + x.getString(0), Base64.decodeBase64(x.getString(1))))
       .coalesce(10)
-      .toDF("value")
+      .toDF("key", "value")
       .write
-      .text("/user/cpc/dnn/eval/redis/")
+      .parquet("/user/cpc/dnn/eval/redis/")
 
     val size = "hadoop fs -du -h /user/cpc/dnn/eval" #| "grep redis" !!
 
