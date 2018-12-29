@@ -89,7 +89,6 @@ object OcpcCheckByAdslotid {
          |and isshow=1
          |and adslot_type in (1,2,3)
          |and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
-         |and length(ext_string['ocpc_log'])>0
          |and adslotid='$adslotid'
        """.stripMargin
 
@@ -120,8 +119,8 @@ object OcpcCheckByAdslotid {
     val data = ctrData
       .join(cvr1Data, Seq("searchid"), "left_outer")
       .join(cvr2Data, Seq("searchid"), "left_outer")
-    
-    val tableName = "test.ocpc_check_adslotid20181228"
+
+    val tableName = "test.ocpc_check_adslotid20181228_bak"
     data.write.mode("overwrite").saveAsTable(tableName)
 
     val sqlRequest2 =
