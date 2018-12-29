@@ -98,7 +98,7 @@ object Utils {
 
     val Array(num, unit, _*) = size.split(" ")
 
-    println(s"the data of $str will take ${num.toFloat * 100} $unit volumn of redis ")
+    println(s"the data of $str will take ${num.toFloat * 200} $unit volumn of redis ")
 
 
   }
