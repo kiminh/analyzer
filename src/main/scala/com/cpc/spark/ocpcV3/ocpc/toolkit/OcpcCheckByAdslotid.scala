@@ -121,8 +121,9 @@ object OcpcCheckByAdslotid {
       .join(cvr1Data, Seq("searchid"), "left_outer")
       .join(cvr2Data, Seq("searchid"), "left_outer")
 
-    data.createOrReplaceTempView("base_table")
-    data.write.mode("overwrite").saveAsTable("test.ocpc_check_adslotid20181229")
+//    data.createOrReplaceTempView("base_table")
+    val tableName = "test.ocpc_check_adslotid" + date
+    data.write.mode("overwrite").saveAsTable(tableName)
 
     val sqlRequest2 =
       s"""
@@ -145,7 +146,7 @@ object OcpcCheckByAdslotid {
          |  date,
          |  hour
          |FROM
-         |  base_table
+         |  $tableName
        """.stripMargin
     println(sqlRequest2)
 
