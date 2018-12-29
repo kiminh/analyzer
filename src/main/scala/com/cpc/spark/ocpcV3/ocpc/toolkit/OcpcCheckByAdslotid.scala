@@ -64,6 +64,7 @@ object OcpcCheckByAdslotid {
          |    searchid,
          |    userid,
          |    unitid,
+         |    ideaid,
          |    ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
          |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
          |    isclick,
