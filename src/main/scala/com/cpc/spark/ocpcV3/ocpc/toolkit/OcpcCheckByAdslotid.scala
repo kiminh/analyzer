@@ -122,6 +122,7 @@ object OcpcCheckByAdslotid {
       .join(cvr2Data, Seq("searchid"), "left_outer")
 
     data.createOrReplaceTempView("base_table")
+    data.write.mode("overwrite").saveAsTable("test.ocpc_check_adslotid20181229")
 
     val sqlRequest2 =
       s"""
