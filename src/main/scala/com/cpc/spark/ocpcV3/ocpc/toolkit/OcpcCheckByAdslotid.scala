@@ -120,8 +120,7 @@ object OcpcCheckByAdslotid {
     val data = ctrData
       .join(cvr1Data, Seq("searchid"), "left_outer")
       .join(cvr2Data, Seq("searchid"), "left_outer")
-
-//    data.createOrReplaceTempView("base_table")
+    
     val tableName = "test.ocpc_check_adslotid20181228"
     data.write.mode("overwrite").saveAsTable(tableName)
 
