@@ -18,7 +18,9 @@ object InsertAdslotHot {
 
   def main(args: Array[String]): Unit = {
 
+    return
     Logger.getRootLogger.setLevel(Level.WARN)
+
 
     val argDay = args(0).toString
     val argHour = args(1).toString

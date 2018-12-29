@@ -37,7 +37,7 @@ object InsertReportGameCenterProduct {
 
     val traceData = ctx.sql(
       """
-        |SELECT catl.trace_type,catl.trace_op1,catl.trace_op2,catl.trace_op3
+        |SELECT catl.trace_type,catl.trace_op1,catl.trace_op2,catl.trace_op3,opt["game_source"]
         |FROM dl_cpc.logparsed_cpc_trace_minute catl
         |WHERE catl.thedate="%s" AND catl.thehour="%s" AND catl.trace_type IS NOT NULL
         |AND catl.trace_op1 IS NOT NULL AND catl.trace_op2 IS NOT NULL
@@ -50,8 +50,9 @@ object InsertReportGameCenterProduct {
           val traceOp1 = x.getString(1)
           val traceOp2 = x.getString(2)
           val traceOp3 = x.getString(3)
+          val gameSource = if (x.get(4) != null && x.getString(4).length > 0) x.getString(4) else "qtt"
 
-          ((traceOp2, traceOp3), (1.toLong))
+          ((traceOp2, traceOp3, gameSource), (1.toLong))
       }
       .reduceByKey {
         (a, b) =>
@@ -68,10 +69,12 @@ object InsertReportGameCenterProduct {
 
           var traceOp3 = x._1._2
 
+          val gameSource = x._1._3
+
           val total = x._2
           val date = argDay
           val hour = argHour.toInt
-          (traceOp3, traceOp2, total, date, hour)
+          (traceOp3, traceOp2, gameSource, total, date, hour)
       }
       .filter {
         x =>
@@ -81,11 +84,11 @@ object InsertReportGameCenterProduct {
 
 
     var insertDataFrame = ctx.createDataFrame(traceData)
-      .toDF("product_type", "product_id", "total", "date", "hour")
+      .toDF("product_type", "product_id", "game_source", "total", "date", "hour")
 
     println("insertDataFrame count", insertDataFrame.count())
 
-    insertDataFrame.show(10)
+    insertDataFrame.show(5)
 
     clearReportGameCenterProduct(argDay, argHour)
 

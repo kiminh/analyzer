@@ -81,7 +81,7 @@ object OcpcRegressionV2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    //    data.write.mode("overwrite").saveAsTable(tablename)
+//    data.write.mode("overwrite").saveAsTable(tablename)
     data.write.mode("overwrite").insertInto(tablename)
 
     val ratio1Data = getKWithRatioType(spark, tablename, "ratio1", date, hour)
@@ -89,7 +89,7 @@ object OcpcRegressionV2 {
 
     val res = ratio1Data.join(ratio2Data, Seq("unitid", "date", "hour"), "outer")
       .select("unitid", "k_ratio1", "k_ratio2", "date", "hour")
-    //    res.write.mode("overwrite").saveAsTable("test.ocpc_v3_novel_k_regression_v2")
+//    res.write.mode("overwrite").saveAsTable("test.ocpc_v3_novel_k_regression_v2")
     res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v3_novel_k_regression_v2")
   }
 
@@ -103,8 +103,10 @@ object OcpcRegressionV2 {
       .agg(collect_set("str").as("liststr"))
       .select("unitid", "liststr").collect()
 
-    val targetK = 2.0
+
+    val cpaSrcMap = getCPAsrcMap(date, hour, spark)
     var resList = new mutable.ListBuffer[(String, Double, String, String)]()
+//    var testList = new mutable.ListBuffer[(String, Double, Double, Double, Double, Double)]()
     for (row <- res) {
       val unitid = row(0).toString
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
@@ -112,13 +114,21 @@ object OcpcRegressionV2 {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
+      // TODO 根据cpa_src决定targetK
+      val targetK = getTargetK(unitid, cpaSrcMap, date, hour, spark)
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
       println("unitid " + unitid, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
+//      testList.append((unitid, coffList(0), coffList(1), k, realk, targetK))
       if (coffList(1)>0 && realk > 0) {
         resList.append((unitid, realk, date, hour))
       }
     }
+//    // TODO
+//    val testData = spark.createDataFrame(testList).toDF("unitid", "coff0", "coff1", "k", "realk", "target_k")
+//    testData.write.mode("overwrite").saveAsTable("test.ocpcv3_regression_check_target_" + ratioType)
+
+
     val data = spark.createDataFrame(resList)
       .toDF("unitid", s"k_$ratioType", "date", "hour")
     data
@@ -148,6 +158,31 @@ object OcpcRegressionV2 {
       res.append(c)
     }
     res.toList
+  }
+
+  def getCPAsrcMap(date: String, hour: String, spark: SparkSession) = {
+    val data = spark
+      .table("dl_cpc.ocpcv3_cpa_history_v2_final_middle")
+      .where(s"`date`='$date' and `hour`='$hour'")
+
+    var cpaMap = mutable.LinkedHashMap[String, String]()
+    for(row <- data.collect()) {
+      val unitid = row.getAs[Int]("unitid").toString
+      val cpaSrc = row.getAs[String]("cpa_src")
+      cpaMap += (unitid -> cpaSrc)
+    }
+    cpaMap
+  }
+
+  def getTargetK(unitid: String, cpaSRC: mutable.LinkedHashMap[String, String], date: String, hour: String, spark: SparkSession) = {
+    val cpasrc = cpaSRC.getOrElse(unitid, "qtt")
+    var targetK = 1.8
+    if (cpasrc == "novel") {
+      targetK = 1.0
+    } else {
+      targetK = 1.8
+    }
+    targetK
   }
 
 
