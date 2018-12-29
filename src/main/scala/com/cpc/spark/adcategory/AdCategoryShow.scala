@@ -39,7 +39,7 @@ object AdCategoryShow {
     dataset.filter("category=0").collect().foreach{
       x=>{
         val unknown=x.getLong(1)
-        if (unknown>100000000){
+        if (unknown>300000000){
           sendMail("adcategory errors", "errors",
             Seq("wangyao@qutoutiao.net"))
         }
