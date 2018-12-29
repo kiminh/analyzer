@@ -48,7 +48,6 @@ object report_userprofile_effect {
          |        and media_appsid  in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
          |        and ext['antispam'].int_value = 0
          |        and info.isshow=1
-         |        and interest like '%=100'
          |        and adslot_type=7
          |      ) a
          |join
