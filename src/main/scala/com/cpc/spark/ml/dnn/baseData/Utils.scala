@@ -91,7 +91,7 @@ object Utils {
       .rdd.map(x => (prefix + x.getString(0), Base64.decodeBase64(x.getString(1))))
       .coalesce(10)
       .toDF("key", "value")
-      .write
+      .write.mode("overwrite")
       .parquet("/user/cpc/dnn/eval/redis/")
 
     val size = "hadoop fs -du -h /user/cpc/dnn/eval" #| "grep redis" !!
