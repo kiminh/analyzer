@@ -22,7 +22,7 @@ object report_userprofile_effect {
          |  a.searchid,
          |  a.uid,
          |  a.ideaid,
-         |  a.userid,
+         |  b.userid,
          |  a.isclick,
          |  a.isshow,
          |  case when charge_type=2 then a.price*1.0/1000 else a.price end as price,
@@ -30,7 +30,7 @@ object report_userprofile_effect {
          |  b.tag
          | from
          |      (
-         |        select userid,ideaid, isshow, isclick, searchid, uid, interests, case when isclick=1 or ext['charge_type'].int_value=2 then price else 0 end as price, ext['charge_type'].int_value as charge_type
+         |        select userid,ideaid, isshow, isclick, searchid, uid, interests, case when isclick=1 or ext['charge_type'].int_value=2 then price else 0 end as price, ext['charge_type'].int_value as charge_type, ext['adclass'].int_value as adclass
          |        from dl_cpc.cpc_union_log
          |        where date='$date'
          |        and media_appsid  in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
@@ -41,20 +41,20 @@ object report_userprofile_effect {
          |        and userid is not null
          |        and adslot_type!=7
          |        union
-         |        select info.userid,info.ideaid, info.isshow, info.isclick, searchid, uid, interests, case when info.isclick=1 or ext['charge_type'].int_value=2 then info.price else 0 end as price, ext['charge_type'].int_value as charge_type
+         |        select info.userid,info.ideaid, info.isshow, info.isclick, searchid, uid, interests, case when info.isclick=1 or ext['charge_type'].int_value=2 then info.price else 0 end as price, ext['charge_type'].int_value as charge_type, ext['adclass'].int_value as adclass
          |        from dl_cpc.cpc_union_log
          |        lateral view explode(motivation) b AS info
          |        where date='$date'
          |        and media_appsid  in ("80000001", "80000002", "80000006", "800000062", "80000064", "80000066","80000141")
          |        and ext['antispam'].int_value = 0
          |        and info.isshow=1
+         |        and interest like '%=100'
          |        and adslot_type=7
          |      ) a
          |join
          |      (select tag, userid from dl_cpc.cpc_tag_userid_all where thedate>'$date1' group by tag, userid) b
-         |on a.userid=b.userid
+         |on a.userid=b.userid or a.adclass=b.userid
       """.stripMargin
-    println(sqlRequest1)
     //charge_type 1 cpc, 2 cpm, 3 cpa, 0 free
     val unionlog = spark.sql(sqlRequest1).repartition(10000).persist(StorageLevel.DISK_ONLY)
     println(unionlog.count())
