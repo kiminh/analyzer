@@ -21,40 +21,22 @@ object OcpcCheckByAdslotid {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
-    val date = args(0).toString
-    val hour = args(1).toString
-    val adslotid = args(2).toString
-    val hourCnt = args(3).toInt
+    val adslotid = args(0).toString
 
     // 根据日期和小时还有adslotid收集过滤数据
-    val rawData = filterData(date, hour, hourCnt, adslotid, spark)
-    val detailData = calculateOcpcDetail(rawData, date, hour, spark)
-    val summaryData = calculateOcpcSummary(rawData, date, hour, spark)
+    val resultDF = filterData(adslotid, spark)
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_adslotid" + adslotid)
+//    val detailData = calculateOcpcDetail(rawData, spark)
+//    val summaryData = calculateOcpcSummary(rawData, spark)
 
-    detailData.write.mode("overwrite").saveAsTable("test.ocpc_check_adslotid20181228detail")
-    summaryData.write.mode("overwrite").saveAsTable("test.ocpc_check_adslotid20181228summary")
+//    detailData.write.mode("overwrite").saveAsTable("test.ocpc_check_adslotid20181228detail")
+//    summaryData.write.mode("overwrite").saveAsTable("test.ocpc_check_adslotid20181228summary")
   }
 
-  def filterData(date: String, hour: String, hourCnt: Int, adslotid: String, spark: SparkSession) = {
+  def filterData(adslotid: String, spark: SparkSession) = {
     /*
     分别搜集ctr、cvr1和cvr2的data
      */
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -hourCnt)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
-
-
-
     // ctr数据
     val sqlRequest1 =
       s"""
@@ -80,7 +62,9 @@ object OcpcCheckByAdslotid {
          |from
          |    dl_cpc.cpc_union_log
          |WHERE
-         |    $selectCondition
+         |    `date`='2018-12-29'
+         |and
+         |    `hour` between '10' and '12'
          |and
          |    media_appsid  in ("80000001", "80000002")
          |and
@@ -97,59 +81,60 @@ object OcpcCheckByAdslotid {
       .sql(sqlRequest1)
       .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
 
-    // cvr1
-    val cvr1Data = spark
-      .table("dl_cpc.ml_cvr_feature_v1")
-      .where(selectCondition)
-      .withColumn("iscvr1", col("label2"))
-      .filter("iscvr1=1")
-      .select("searchid", "iscvr1")
-      .distinct()
-
-    // cvr2
-    val cvr2Data = spark
-      .table("dl_cpc.ml_cvr_feature_v2")
-      .where(selectCondition)
-      .withColumn("iscvr2", col("label"))
-      .filter("iscvr2=1")
-      .select("searchid", "iscvr2")
-      .distinct()
-
-    // 数据关联
-    val data = ctrData
-      .join(cvr1Data, Seq("searchid"), "left_outer")
-      .join(cvr2Data, Seq("searchid"), "left_outer")
-
-    val tableName = "test.ocpc_check_adslotid20181228_bak"
-    data.write.mode("overwrite").saveAsTable(tableName)
-
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  searchid,
-         |  unitid,
-         |  userid,
-         |  isclick,
-         |  price,
-         |  exp_ctr,
-         |  exp_cvr,
-         |  is_ocpc,
-         |  ocpc_log_dict['cpagiven'] as cpagiven,
-         |  ocpc_log_dict['kvalue'] as kvalue,
-         |  ocpc_log_dict['dynamicbid'] as dynamicbid,
-         |  ocpc_log_dict['ocpcstep'] as ocpcstep,
-         |  (case when length(ocpc_log) > 0 then 1 else 0 end) as ocpc_flag,
-         |  iscvr1,
-         |  iscvr2,
-         |  date,
-         |  hour
-         |FROM
-         |  $tableName
-       """.stripMargin
-    println(sqlRequest2)
-
-    val resultDF = spark.table(sqlRequest2)
-    resultDF
+    ctrData
+//    // cvr1
+//    val cvr1Data = spark
+//      .table("dl_cpc.ml_cvr_feature_v1")
+//      .where(selectCondition)
+//      .withColumn("iscvr1", col("label2"))
+//      .filter("iscvr1=1")
+//      .select("searchid", "iscvr1")
+//      .distinct()
+//
+//    // cvr2
+//    val cvr2Data = spark
+//      .table("dl_cpc.ml_cvr_feature_v2")
+//      .where(selectCondition)
+//      .withColumn("iscvr2", col("label"))
+//      .filter("iscvr2=1")
+//      .select("searchid", "iscvr2")
+//      .distinct()
+//
+//    // 数据关联
+//    val data = ctrData
+//      .join(cvr1Data, Seq("searchid"), "left_outer")
+//      .join(cvr2Data, Seq("searchid"), "left_outer")
+//
+//    val tableName = "test.ocpc_check_adslotid20181228_bak"
+//    data.write.mode("overwrite").saveAsTable(tableName)
+//
+//    val sqlRequest2 =
+//      s"""
+//         |SELECT
+//         |  searchid,
+//         |  unitid,
+//         |  userid,
+//         |  isclick,
+//         |  price,
+//         |  exp_ctr,
+//         |  exp_cvr,
+//         |  is_ocpc,
+//         |  ocpc_log_dict['cpagiven'] as cpagiven,
+//         |  ocpc_log_dict['kvalue'] as kvalue,
+//         |  ocpc_log_dict['dynamicbid'] as dynamicbid,
+//         |  ocpc_log_dict['ocpcstep'] as ocpcstep,
+//         |  (case when length(ocpc_log) > 0 then 1 else 0 end) as ocpc_flag,
+//         |  iscvr1,
+//         |  iscvr2,
+//         |  date,
+//         |  hour
+//         |FROM
+//         |  $tableName
+//       """.stripMargin
+//    println(sqlRequest2)
+//
+//    val resultDF = spark.table(sqlRequest2)
+//    resultDF
 
   }
 
