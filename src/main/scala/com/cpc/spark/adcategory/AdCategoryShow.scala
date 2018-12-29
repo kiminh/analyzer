@@ -46,21 +46,21 @@ object AdCategoryShow {
       }
     }
 
-    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
-    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
-
-    dataset.collect().foreach {
-        record => {
-          val id = record.get(0).toString
-          var key = "ad_category_" + id
-          val show = record.getLong(1)
-          println(key,show)
-
-    redis.setex(key, 3600 * 24 * 30, show)
-
-          }
-        }
-    redis.disconnect
+//    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+//    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+//
+//    dataset.collect().foreach {
+//        record => {
+//          val id = record.get(0).toString
+//          var key = "ad_category_" + id
+//          val show = record.getLong(1)
+//          println(key,show)
+//
+//    redis.setex(key, 3600 * 24 * 30, show)
+//
+//          }
+//        }
+//    redis.disconnect
   }
 }
 
