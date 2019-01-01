@@ -195,4 +195,14 @@ object Udfs_wj{
     }
     conversionGoal
   })
+
+  def udfConversionGoalV1() = udf((conversion1: Int, conversion2: Int) => {
+    var conversionGoal = 1
+    if (conversion1 == 0) {
+      conversionGoal = conversion2
+    } else {
+      conversionGoal = conversion1
+    }
+    conversionGoal
+  })
 }

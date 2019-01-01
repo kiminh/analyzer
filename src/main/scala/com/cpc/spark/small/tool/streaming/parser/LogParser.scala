@@ -427,6 +427,7 @@ object LogParser {
     val data = Event.parse_show_log(txt)
     if (data != null) {
       val body = data.event
+
       val extInt = mutable.Map[String, Long]()
       extInt.update("exp_style", body.getAd.getStyleId.toLong)
       val ext = mutable.Map[String, ExtValue]()
@@ -437,6 +438,10 @@ object LogParser {
       ext.update("client_type", ExtValue(string_value = body.getClient.getType.name()))
       ext.update("client_version", ExtValue(string_value = "%s.%s.%s.%s".format(body.getClient.getVersion.getMajor,
         body.getClient.getVersion.getMinor, body.getClient.getVersion.getMicro, body.getClient.getVersion.getBuild)))
+
+      val extString = mutable.Map[String, String]()
+      extString.update("hostname", body.getSearchMachine)
+
       log = UnionLog(
         searchid = body.getSearchId,
         exptags = body.getExptagsList.toArray.filter(_ != "").mkString(","),
@@ -451,7 +456,8 @@ object LogParser {
         adsrc = body.getDspInfo.getDsp.getNumber,
         uid = body.getDevice.getUid,
         ext = ext,
-        ext_int = extInt
+        ext_int = extInt,
+        ext_string = extString.toMap
       )
     }
     log
@@ -630,6 +636,10 @@ object LogParser {
             interRows = interRows :+ "%d=%d".format(in.getInterestid, in.getScore)
           }
         }
+
+        val extString = mutable.Map[String, String]()
+        extString.update("hostname", body.getSearchMachine)
+
         log = UnionLog(
           searchid = body.getSearchId,
           timestamp = body.getEventTimestamp,
@@ -671,7 +681,8 @@ object LogParser {
           interests = interRows.mkString(","),
           adsrc = body.getDspInfo.getDsp.getNumber,
           ext = ext.toMap,
-          ext_int = extInt
+          ext_int = extInt,
+          ext_string = extString.toMap
         )
       }
     }

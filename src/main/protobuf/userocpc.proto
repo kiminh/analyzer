@@ -17,6 +17,8 @@ message SingleUser {
     double calibration = 12;
     double cvr3Cali = 13;
     int64 cvr3Cnt = 14;
+    double kvalue1 = 15;
+    double kvalue2 = 16;
 }
 
 
