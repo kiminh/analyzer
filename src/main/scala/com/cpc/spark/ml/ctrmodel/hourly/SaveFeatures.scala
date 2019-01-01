@@ -577,6 +577,7 @@ object SaveFeatures {
 
   }
 
+  /* 三张表合成一张表 */
   def saveCvrDataV3(spark: SparkSession, date: String, hour: String, yesterday: String, version: String): Unit = {
     import spark.implicits._
 
@@ -873,6 +874,7 @@ object SaveFeatures {
 
   }
 
+  /* 将信息流和应用商城的合成一张表 */
   def saveCvrDataV4(spark: SparkSession, date: String, hour: String, yesterday: String, version: String): Unit = {
     import spark.implicits._
 
@@ -883,7 +885,7 @@ object SaveFeatures {
     val fDate = dateFormat.format(cal.getTime)
     val before1hour = fDate.substring(11, 13)
 
-
+    /*
     /* 用户Api回传转化 */
     val sql_api =
       s"""
@@ -1024,8 +1026,8 @@ object SaveFeatures {
         | LOCATION  '/warehouse/test.db/ml_cvr_feature_v2/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
 
-    //s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v2_done/$date-$hour.ok" !
-
+    s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v2_done/$date-$hour.ok" !
+    */
 
     /* 应用商城下载转化 */
     val sql_motivate =
@@ -1090,7 +1092,7 @@ object SaveFeatures {
             """.stripMargin.format(date, hour, yesterday, date, hour)
     println("sql_info_flow: " + sql_info_flow)
 
-    val cvrlog = (spark.sql(sql_motivate)).union(spark.sql(sql_api)).union(spark.sql(sql_api_callback)).union(spark.sql(sql_api_moti)).union(spark.sql(sql_info_flow))
+    val cvrlog = (spark.sql(sql_motivate)).union(spark.sql(sql_info_flow))
       .rdd
       .map {
         x =>
@@ -1113,14 +1115,6 @@ object SaveFeatures {
             convert = conv_motivate
             convert2 = convert_motivate
             label_type = label_type_motivate
-          } else if (flag == "conv_api") {
-            //Api回传转化
-            val (convert_api, label_type_api) = Utils.cvrPositive_api(x._2, version)
-            val conv_api = Utils.cvrPositiveV(x._2, version)
-
-            convert = conv_api
-            convert2 = convert_api
-            label_type = label_type_api
           } else if (flag == "conv_info_flow") {
             //信息流转化
             val conv = Utils.cvrPositiveV(x._2, version)
@@ -1216,7 +1210,7 @@ object SaveFeatures {
       """.stripMargin.format(date, hour)
 
     (clicklog.join(cvrlog, Seq("searchid", "ideaid"))).union(spark.sql(sqlStmt_motivate).join(cvrlog, Seq("searchid", "ideaid")))
-      .distinct()
+    ((clicklog.union(spark.sql(sqlStmt_motivate))).join(cvrlog, Seq("searchid", "ideaid")))
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
