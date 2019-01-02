@@ -78,8 +78,7 @@ object OcpcCheckByAdslotid {
     val ctrData = spark
       .sql(sqlRequest1)
       .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-
-    ctrData
+    
     // cvr1
     val cvr1Data = spark
       .table("dl_cpc.ml_cvr_feature_v1")
