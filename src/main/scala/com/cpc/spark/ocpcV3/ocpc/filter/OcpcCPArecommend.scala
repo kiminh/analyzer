@@ -38,6 +38,7 @@ object OcpcCPArecommend{
     val cpaData = cpa1Data
       .union(cpa2Data)
       .union(cpa3Data)
+      .select("ideaid", "unitid", "userid", "cpa", "cost", "cvrcnt", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
@@ -123,7 +124,7 @@ object OcpcCPArecommend{
       .join(cvrData, Seq("ideaid"), "inner")
       .filter("cvrcnt is not null and cvrcnt>0")
       .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
-      .select("ideaid", "unitid", "userid", "cpa")
+      .select("ideaid", "unitid", "userid", "cpa", "cost", "cvrcnt")
       .filter("cpa is not null and cpa > 0")
 
     resultDF
