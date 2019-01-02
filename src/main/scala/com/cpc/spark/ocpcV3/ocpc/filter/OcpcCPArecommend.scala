@@ -38,7 +38,7 @@ object OcpcCPArecommend{
     val cpaData = cpa1Data
       .union(cpa2Data)
       .union(cpa3Data)
-      .select("ideaid", "userid", "cpa", "cost", "cvrcnt", "conversion_goal")
+      .select("ideaid", "userid", "adclass", "cpa", "cost", "cvrcnt", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
@@ -69,8 +69,8 @@ object OcpcCPArecommend{
       s"""
          |SELECT
          |  ideaid,
-         |  unitid,
          |  userid,
+         |  adclass,
          |  total_price
          |FROM
          |  dl_cpc.ocpc_ctr_data_hourly
@@ -83,9 +83,9 @@ object OcpcCPArecommend{
     println(sqlRequest)
     val resultDF = spark
       .sql(sqlRequest)
-      .groupBy("ideaid", "userid")
+      .groupBy("ideaid", "userid", "adclass")
       .agg(sum(col("total_price")).alias("cost"))
-      .select("ideaid", "userid", "cost")
+      .select("ideaid", "userid", "adclass", "cost")
 
     resultDF
   }
@@ -113,9 +113,9 @@ object OcpcCPArecommend{
       .table(tableName)
       .where(selectCondition)
       .filter(s"media_appsid in ('80000001', '80000002')")
-      .groupBy("ideaid")
+      .groupBy("ideaid", "userid", "adclass")
       .agg(sum(col(cvrType + "_cnt")).alias("cvrcnt"))
-      .select("ideaid", "cvrcnt")
+      .select("ideaid", "userid", "adclass", "cvrcnt")
       .filter("cvrcnt>30 and cvrcnt is not null")
 
 
@@ -124,10 +124,10 @@ object OcpcCPArecommend{
 
   def calculateCPA(costData: DataFrame, cvrData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val resultDF = costData
-      .join(cvrData, Seq("ideaid"), "inner")
+      .join(cvrData, Seq("ideaid", "userid", "adclass"), "inner")
       .filter("cvrcnt is not null and cvrcnt>0")
       .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
-      .select("ideaid", "userid", "cpa", "cost", "cvrcnt")
+      .select("ideaid", "userid", "adclass", "cpa", "cost", "cvrcnt")
       .filter("cpa is not null and cpa > 0")
 
     resultDF
