@@ -56,8 +56,10 @@ object Utils {
 
     //保存count文件
     println("total num is :" + acc.sum)
-    val count = spark.sql(sql).count
-    s"echo $count" #> new File("count") !
+    s"echo ${acc.sum}" #> new File("count") !
+    if (acc.sum == 0) {
+      System.exit(1)
+    }
 
     s"hadoop fs -put count $path" !
   }
