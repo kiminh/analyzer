@@ -57,11 +57,12 @@ object Utils {
     //保存count文件
     println("total num is :" + acc.sum)
     s"echo ${acc.sum}" #> new File("count") !
+
+    s"hadoop fs -put count $path" !
+
     if (acc.sum == 0) {
       System.exit(1)
     }
-
-    s"hadoop fs -put count $path" !
   }
 
   //保存multihot特征到redis
