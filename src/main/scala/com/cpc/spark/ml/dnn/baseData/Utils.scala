@@ -11,6 +11,7 @@ import org.tensorflow.hadoop.io.TFRecordFileOutputFormat
 
 import sys.process._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.util.LongAccumulator
 
 /**
   *
@@ -41,13 +42,19 @@ object Utils {
 
     }
 
+    val acc = new LongAccumulator
+
     spark.sql(sql)
       .repartition(numPartitions)
       .rdd.map(x => Base64.decodeBase64(x.getString(0)))
-      .map(x => (new BytesWritable(x), NullWritable.get()))
+      .map(x => {
+        acc.add(1L)
+        (new BytesWritable(x), NullWritable.get())
+      })
       .saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)
 
     //保存count文件
+    println("total num is :" + acc.sum)
     val count = spark.sql(sql).count
     s"echo $count" #> new File("count") !
 
