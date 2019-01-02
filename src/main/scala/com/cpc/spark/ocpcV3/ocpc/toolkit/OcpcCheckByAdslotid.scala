@@ -104,32 +104,36 @@ object OcpcCheckByAdslotid {
 
     val tableName = "test.ocpc_check_adslotid20181231"
     data.write.mode("overwrite").saveAsTable(tableName)
-
-    val sqlRequest2 =
-      s"""
-         |SELECT
-         |  unitid,
-         |  userid,
-         |  isclick,
-         |  price,
-         |  exp_ctr,
-         |  exp_cvr,
-         |  is_ocpc,
-         |  ocpc_log_dict['cpagiven'] as cpagiven,
-         |  ocpc_log_dict['kvalue'] as kvalue,
-         |  ocpc_log_dict['dynamicbid'] as dynamicbid,
-         |  ocpc_log_dict['ocpcstep'] as ocpcstep,
-         |  (case when length(ocpc_log) > 0 then 1 else 0 end) as ocpc_flag,
-         |  iscvr1,
-         |  iscvr2,
-         |  date,
-         |  hour
-         |FROM
-         |  $tableName
-       """.stripMargin
-    println(sqlRequest2)
-
-    val resultDF = spark.table(sqlRequest2)
+    data.show(10)
+    val resultDF = data
+      .selectExpr("searchid", "unitid", "userid", "isclick", "price", "exp_ctr", "exp_cvr", "is_ocpc", "cast(ocpc_log_dict['cpagiven'] as double) cpagiven", "cast(ocpc_log_dict['kvalue'] as double) kvalue", "cast(ocpc_log_dict['dynamicbid'] as double) dynamicbid", "cast(ocpc_log_dict['ocpcstep'] as int) ocpcstep", "iscvr1", "iscvr2", "date", "hour")
+//
+//    val sqlRequest2 =
+//      s"""
+//         |SELECT
+//         |  searchid,
+//         |  unitid,
+//         |  userid,
+//         |  isclick,
+//         |  price,
+//         |  exp_ctr,
+//         |  exp_cvr,
+//         |  is_ocpc,
+//         |  ocpc_log_dict['cpagiven'] as cpagiven,
+//         |  ocpc_log_dict['kvalue'] as kvalue,
+//         |  ocpc_log_dict['dynamicbid'] as dynamicbid,
+//         |  ocpc_log_dict['ocpcstep'] as ocpcstep,
+//         |  (case when length(ocpc_log) > 0 then 1 else 0 end) as ocpc_flag,
+//         |  iscvr1,
+//         |  iscvr2,
+//         |  date,
+//         |  hour
+//         |FROM
+//         |  $tableName
+//       """.stripMargin
+//    println(sqlRequest2)
+//
+//    val resultDF = spark.table(sqlRequest2)
     resultDF
 
   }
