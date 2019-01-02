@@ -42,8 +42,8 @@ object OcpcCPArecommend{
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    cpaData.write.mode("overwrite").saveAsTable("test.ocpc_qtt_cpa_recommend_hourly")
-    cpaData.write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_cpa_recommend_hourly")
+    cpaData.write.mode("overwrite").saveAsTable("test.ocpc_qtt_cpa_recommend_hourly")
+//    cpaData.write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_qtt_cpa_recommend_hourly")
 
   }
