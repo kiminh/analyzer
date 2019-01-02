@@ -38,12 +38,12 @@ object OcpcCPArecommend{
     val cpaData = cpa1Data
       .union(cpa2Data)
       .union(cpa3Data)
-      .select("ideaid", "unitid", "userid", "cpa", "cost", "cvrcnt", "conversion_goal")
+      .select("ideaid", "userid", "cpa", "cost", "cvrcnt", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-//    cpaData.write.mode("overwrite").saveAsTable("test.ocpc_qtt_cpa_recommend_hourly")
-    cpaData.write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_cpa_recommend_hourly")
+    cpaData.write.mode("overwrite").saveAsTable("test.ocpc_qtt_cpa_recommend_hourly")
+//    cpaData.write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_qtt_cpa_recommend_hourly")
 
   }
@@ -83,9 +83,9 @@ object OcpcCPArecommend{
     println(sqlRequest)
     val resultDF = spark
       .sql(sqlRequest)
-      .groupBy("ideaid", "unitid", "userid")
+      .groupBy("ideaid", "userid")
       .agg(sum(col("total_price")).alias("cost"))
-      .select("ideaid", "unitid", "userid", "cost")
+      .select("ideaid", "userid", "cost")
 
     resultDF
   }
@@ -127,7 +127,7 @@ object OcpcCPArecommend{
       .join(cvrData, Seq("ideaid"), "inner")
       .filter("cvrcnt is not null and cvrcnt>0")
       .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
-      .select("ideaid", "unitid", "userid", "cpa", "cost", "cvrcnt")
+      .select("ideaid", "userid", "cpa", "cost", "cvrcnt")
       .filter("cpa is not null and cpa > 0")
 
     resultDF
