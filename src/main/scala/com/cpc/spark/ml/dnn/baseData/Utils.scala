@@ -43,6 +43,7 @@ object Utils {
     }
 
     val acc = new LongAccumulator
+    spark.sparkContext.register(acc)
 
     spark.sql(sql)
       .repartition(numPartitions)
