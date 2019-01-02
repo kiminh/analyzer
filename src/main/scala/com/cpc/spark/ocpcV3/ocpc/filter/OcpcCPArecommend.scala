@@ -76,6 +76,8 @@ object OcpcCPArecommend{
          |  dl_cpc.ocpc_ctr_data_hourly
          |WHERE
          |  $selectCondition
+         |AND
+         |  media_appsid in ("80000001", "80000002")
        """.stripMargin
     println("############## getCost function ###############")
     println(sqlRequest)
@@ -110,6 +112,7 @@ object OcpcCPArecommend{
     val resultDF = spark
       .table(tableName)
       .where(selectCondition)
+      .filter(s"media_appsid in ('80000001', '80000002')")
       .groupBy("ideaid")
       .agg(sum(col(cvrType + "_cnt")).alias("cvrcnt"))
       .select("ideaid", "cvrcnt")
