@@ -87,7 +87,7 @@ object OcpcCPCdata {
          |and ext['antispam'].int_value = 0
          |and ideaid > 0
          |and adsrc = 1
-         |and is_ocpc = 1
+         |and ext_int['is_ocpc'] = 1
       """.stripMargin
     println(sqlRequest1)
     val rawData = spark
