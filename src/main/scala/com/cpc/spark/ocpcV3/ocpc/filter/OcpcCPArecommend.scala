@@ -42,8 +42,8 @@ object OcpcCPArecommend{
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    cpaData.write.mode("overwrite").saveAsTable("test.ocpc_qtt_cpa_recommend_hourly")
-//    cpaData.write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_cpa_recommend_hourly")
+//    cpaData.write.mode("overwrite").saveAsTable("test.ocpc_qtt_cpa_recommend_hourly")
+    cpaData.write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_qtt_cpa_recommend_hourly")
 
   }
@@ -113,7 +113,7 @@ object OcpcCPArecommend{
       .groupBy("ideaid")
       .agg(sum(col(cvrType + "_cnt")).alias("cvrcnt"))
       .select("ideaid", "cvrcnt")
-      .filter("cvrcnt>0")
+      .filter("cvrcnt>30 and cvrcnt is not null")
 
 
     resultDF
