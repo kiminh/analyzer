@@ -1,0 +1,651 @@
+syntax = "proto2";
+
+package eventprotocol;
+
+//// 基础数据区开始
+
+// 枚举类型声明部分
+
+// 设备类型
+enum DeviceType {
+    UNKNOWN_DEVICE_TYPE = 0;  // 未知设备类型
+    PC                  = 1;  // 台式与笔记本
+    PHONE               = 2;  // 智能电话
+    TABLET              = 3;  // 平板
+    TV                  = 4;  // 智能电视与机顶盒
+}
+
+// 媒体类型
+enum MediaType {
+    APP = 1;  // 应用
+    WEB = 2;  // 传统站点
+    WAP = 3;  // 移动站点
+}
+
+// 操作系统类型
+enum OSType {
+    UNKNOWN_OS_TYPE = 0;  // 未知操作系统
+    ANDROID         = 1;  // Android
+    IOS             = 2;  // iOS
+    WP              = 3;  // Windows Phone
+}
+
+// 设备ID类型
+enum DeviceIDType {
+    IMEI      = 1;  // IMEI
+    MAC       = 2;  // MAC
+    IDFA      = 3;  // IDFA (iOS)
+    AAID      = 4;  // Android Advertising ID
+    OPENUDID  = 5;  // Open UDID
+    ANDROIDID = 6;  // Android ID
+    UDID      = 7;  // UDID (iOS)
+    ODIN      = 8;  // ODIN
+    DUID      = 9;  // DUID (Windows Phone)
+}
+
+
+// 广告推广类型
+enum PromotionType {
+    NOACTION = 0;  // 无推广动作
+    LP       = 1;  // 继续访问
+    DOWNLOAD = 2;  // 下载应用
+    DAIL     = 3;  // 拨打电话
+    SMS      = 4;  // 发送短信
+    EMAIL    = 5;  // 发送邮件
+}
+
+// 网络类型
+enum NetworkType {
+    WIFI             = 1;  // Wi-Fi
+    CELLULAR_UNKNOWN = 2;  // 未知移动网络
+    CELLULAR_2G      = 3;  // 2G移动网络
+    CELLULAR_3G      = 4;  // 3G移动网络
+    CELLULAR_4G      = 5;  // 4G移动网络
+}
+
+// 地理坐标类型
+enum GeoType {
+    WGS84 = 1;  // 国际标准
+    GCJ02 = 2;  // 国测局标准
+    BD09  = 3;  // 百度标准
+}
+
+// 广告客户端类型,弃用
+enum ClientType {
+    NATIVESDK = 1;  // 原生SDK
+    JSSDK     = 2;  // JSSDK
+    OPENAPI   = 3;  // 开放API
+}
+
+// 地理定位来源
+enum GeoSource {
+    NATIVE = 1;  // 系统原生API
+    BAIDU  = 2;  // 百度地图SDK
+}
+
+
+// 基础数据结构体类型声明部分
+
+// 通用版本类型
+message Version {
+    required uint32 major = 1;  // 主版本号
+    optional uint32 minor = 2;  // 次版本号
+    optional uint32 micro = 3;  // 三位版本号
+    optional uint32 build = 4;  // 四位版本号
+}
+
+// 通用尺寸类型
+message Size {
+    required uint32 width  = 1;  // 宽度
+    required uint32 height = 2;  // 高度
+}
+
+// 应用信息
+// 联盟自有流量请求可不携带分类信息
+message App {
+    required string package_name = 1;  // 包名
+    repeated uint32 categories   = 2;  // 分类
+}
+
+// 站点信息
+// 联盟自有流量请求可不携带分类信息
+message Site {
+    required bytes  domain     = 1;  // 域名
+    repeated uint32 categories = 2;  // 分类
+    optional bytes  url        = 3;  // 页面URL
+}
+
+// 浏览器
+message Browser {
+    optional string user_agent = 1;  // User-Agent
+}
+
+// 媒体信息
+message Media {
+    required string    id             = 1;  // 媒体ID
+    required string    channel_id     = 2;  // 渠道ID
+    required MediaType type           = 3;  // 媒体类型
+    optional App       app            = 4;  // 应用
+    optional Site      site           = 5;  // 站点
+    optional Browser   browser        = 6;  // 浏览器
+    optional string    sub_account_id = 7;  // 子账号ID
+}
+
+// WiFi热点
+message WiFi {
+    required string mac  = 1;  // MAC地址
+    required int32  rssi = 2;  // 信号强度
+}
+
+// 网络环境
+message Network {
+    optional string      ip = 1;                 // IPv4
+    optional NetworkType type = 2;               // 网络连接类型
+    optional uint32      cellular_operator = 3;  // 运营商
+    optional string      cellular_id = 4;        // 基站ID
+    repeated WiFi        wifis = 5;              // 周边WiFi热点
+}
+
+// 设备ID
+// 精简ID针对有辅助字符的ID类型，如MAC和IDFA
+message DeviceID {
+    required DeviceIDType type    = 1;  // 类型
+    required bytes        id      = 2;  // ID
+    optional bool         compact = 3;  // 是否精简
+    optional bool         md5     = 4;  // 是否MD5签名
+}
+
+// 设备信息
+message Device {
+    required DeviceType type           = 1;  // 设备类型
+    repeated DeviceID   ids            = 2;  // 可用设备ID列表
+    required OSType     os_type        = 3;  // 操作系统类型
+    required Version    os_version     = 4;  // 操作系统版本
+    optional string     brand          = 5;  // 品牌
+    optional string     model          = 6;  // 型号
+    optional Size       screen_size    = 7;  // 屏幕尺寸
+    optional double     screen_density = 8;  // 屏幕像素密度
+}
+
+// 设备
+message Geo {
+    required GeoType   type       = 1;  // 地理坐标类型
+    required double    longitude  = 2;  // 经度
+    required double    latitude   = 3;  // 纬度
+    optional uint32    timestampe = 4;  // 时间戳
+    optional GeoSource source     = 5;  // 定位信息来源
+}
+
+// 广告客户端
+message Client {
+    required ClientType type    = 1;  // 客户端类型
+    required Version    version = 2;  // 客户端版本
+}
+
+
+// 扩展特征结构体类型声明部分
+
+// 计费相关
+enum ChargeType {
+    FREE = 0;
+    CPC  = 1;
+    CPM  = 2;
+    CPA  = 3;
+}
+
+// 广告源相关
+enum Dsp {
+	CPC_DSP = 1;
+	INMOBI_DSP = 2;
+	TANX_SSP_DSP = 3;
+	BOTTOMING = 4; //打底广告
+    HUZHONG_DSP = 5;
+    FANCY_DSP = 6;
+    GDT_DSP = 7;
+    MOBVISTA_DSP = 8;
+    VANKA_DSP = 9;
+    IFLYTEK_DSP = 10;
+    WINQ_DSP = 11;
+    VLION_DSP = 12;
+    YOUDAO_DSP = 13;
+    MOMO_DSP = 14;
+    QUYUANSU_DSP = 15;
+    TOUTIAO_DSP = 16;
+    QIHU_DSP = 17;
+    XINGU_DSP = 18;
+    GANJIWANG_DSP = 19;
+    YOUXIN_DSP = 20;
+    INMOBI_VIDEO_DSP = 21;
+    MANISRTB_DSP = 22;
+    CTRIP_DSP = 23;
+}
+
+// DSP计费相关字段
+message DspInfo {
+    required Dsp    dsp        = 1;  // DSP类型
+    optional string media_id   = 2;  // DSP提供媒体ID
+    optional string channel_id = 3;  // DSP提供渠道ID
+    optional int32  timecost   = 4;  // DSP请求花费时间
+    optional string adslot_id  = 5;  // DSP提供的广告位ID
+}
+
+// 反作弊规则
+enum AntispamRule {
+    DUP_SEARCH_ID   = 1;   // 单次检索多次点击
+    OUT_TIME_SPAN   = 2;   // 超出时间窗口
+    DUP_USER        = 3;   // 用户重复点击
+    NEW_USER_RATE   = 4;   // 新用户比例
+    INVALID_COOKIE  = 5;   // 无效Cookie
+    INVALID_REGION  = 6;   // 无效地域
+    NEW_COOKIE      = 7;   // 新Cookie
+    NO_COOKIE       = 8;   // 缺少Cookie
+    NO_DEVICE_INFO  = 9;   // 缺少设备信息
+    NO_DEVICE_ID    = 10;  // 缺少设备ID
+    ON_MASK         = 11;  // 蒙版点击
+    DUP_IP          = 12;  // IP点击重复
+    JS_CLICK_DELTA  = 13;  // JS点击时间差
+    SAME_POSITION   = 14;  // 同位置点击
+    NO_EXTRA        = 15;  // 缺少Extra信息
+    NO_REFERER      = 16;  // 缺少Referer
+    CK_DISPATCHTIME = 17;  // CK内Dispatch Time校验出错
+    RANDOM          = 18;  // 随机过滤
+    GIFT            = 19;  // 赠送点击
+    BAD_METHOD      = 20;  // 非GET或POST请求
+    SERVER_REQUEST  = 21;  // 服务器请求（通过UA判断）
+    MAX_CTR         = 22;  // CTR阈值
+    DIFF_UA         = 23;  // UA不同
+    MAX_CLICK       = 24;  // 每日最大点击数量
+    TRAIN_MODEL     = 25;  // 模型过滤
+    IP_ISP          = 26;  // ISP过滤
+    IP_BLACK        = 27;  // IP 黑名单过滤
+}
+
+//// 基础数据区结束
+
+//// 事件数据区开始
+// 事件URL格式：http://rcv.clicash.com/[EVENT_NAME]?[EVENT_HEAD].[EVENT_BODY].[EVENT_EXTRA_ACTION_INFO]
+//   EVENT_NAME：事件名称，用于分流
+//   EVENT_HEAD：对应Event.head，使用标准URL Safe Base64编码
+//   EVENT_BODY：对应Event.body，使用Head指定编码
+//   EVENT_EXTRA_ACTION_INFO：客户端反馈额外运行时参数，填充Event.body.action中部分字段
+
+message Event {
+    message Head {
+        enum CryptoType {
+            JESGOO_BASE64 = 0;
+        }
+        enum DecodingError {
+            NO_ERROR                  = 0;
+            FORMAT_ERROR              = 1;
+            PREFIX_ERROR              = 2;
+            HEAD_BASE64_ERROR         = 3;
+            HEAD_PROTOBUF_ERROR       = 4;
+            UNKNOWN_CRYPTO_TYPE       = 5;
+            BODY_BASE64_ERROR         = 6;
+            BODY_PROTOBUF_ERROR       = 7;
+            EXTRA_RSA_ERROR           = 8;
+            EXTRA_FORMAT_ERROR        = 9;
+            APPEND_TARGET_PARAM_ERROR = 10;
+        }
+        required CryptoType    crypto_type    = 1;
+        required uint32        crypto_param   = 2;
+        optional bool          decode_success = 3 [default=true];
+        repeated DecodingError decode_errors  = 4;
+    }
+    message Body {
+        enum EventType {
+            // 基础事件范围 0 ~ 9
+            CLICK            = 0;   // 点击
+            IMPRESSION       = 1;   // 展现
+            ACTIVATION       = 2;   // 激活
+            DOWNLOAD         = 3;   // 下载
+            INSTALL          = 4;   // 安装
+            ORDER            = 5;   // 下订单
+            // SDK监控事件范围 10 ~ 29
+            INSTALL_PACKAGES = 10;  // 终端安装列表探测事件
+            // 内部事件，可以理解为其他外部触发事件触发的内部事件
+            CHARGE           = 30;  // 计费
+        }
+        // 点击跳转类型
+        enum RedirectType {
+            DIRECT             = 0;  // 302
+            SYNC_TRACING       = 1;  // 内嵌iframe，同步追踪
+            DELAY_TRACING      = 2;  // JS脚本跳转，延迟到达
+            DELAY_POST_TRACING = 3;  // 延迟到达，但最终跳使用POST方法
+            NO_DIRECT = 4;  // 不跳转,返回200
+        }
+        enum AdRedirectType {
+            AD_NO_DIRECT            = 0;  // 不跳转
+            AD_DIRECT               = 1;  // 302
+            AD_SYNC_TRACING         = 2;  // 内嵌iframe，同步追踪
+            AD_DELAY_TRACING        = 3;  // JS脚本跳转，延迟到达
+            AD_DELAY_POST_TRACING   = 4;  // 延迟到达，但最终跳使用POST方法
+        }
+        // 广告位类型
+        enum AdslotType {
+            LIST_FEED      = 1;  //列表页信息流
+            CONTENT_FEED   = 2;  //详情页信息流
+            SLOT_INTERACT  = 3;  //互动广告
+            SLOT_SPLASH    = 4;  //开屏广告
+            SLOT_BANNER    = 5;  //横幅广告
+            SLOT_VIDEO     = 6;  //视频广告
+            SLOT_MOTIVATE  = 7;  //激励广告
+        }
+        // 浏览器类型
+        enum BrowserType {
+            UnknownBrowser  = 0;  // 未知浏览器
+            MQQBrowser      = 1;  // QQ浏览器
+            Chrome          = 2;  // Chrome
+            UCBrowser       = 3;  // UC浏览器
+            BaiduBrowser    = 4;  // 百度浏览器
+            MiuiBrowser     = 5;  // MIUI浏览器
+            QvodBrowser     = 6;  // QVOD
+            IEMobileBrowser = 7;  // IE
+            MicroMessenger  = 8;  // 微信
+            QQChat          = 9;  // qq聊天框
+        };
+        // 地域
+        message Region {
+            required uint32 country  = 1;  // 国家
+            required uint32 province = 2;  // 省份
+            required uint32 city     = 3;  // 城市
+            optional uint32 isp = 4;
+        }
+        // 设备ID类型
+        enum DeviceIdType {
+            DEVID_UNKNOWN = 0;  // 未知设备ID
+            DEVID_IMEI    = 1;  // IMEI
+            DEVID_MAC     = 2;  // MAC
+            DEVID_IDFA    = 3;  // IDFA
+        };
+        // 设备ID
+        message DeviceId {
+            required DeviceIdType type     = 1;  // 设备ID类型
+            required string          id       = 2;  // ID
+            optional bool          original = 3;  // 是否是原生的设备ID
+        };
+        // 设备信息
+        message Device {
+            optional OSType      os        = 1;  // 操作系统类型
+            optional Version     osversion = 2;  // 操作系统版本
+            repeated DeviceId    ids       = 3;  // 设备ID
+            optional string      brand     = 4;  // 品牌
+            optional string      model     = 5;  // 型号
+            optional bytes       useragent = 6;  // UserAgent
+            optional BrowserType browser   = 7;  // 浏览器
+            optional string      uid       = 8;  // app内用户id
+            optional string      ua_sign   = 9;  // UserAgent签名，fmt.Sprintf("%x", md5.Sum([]byte(request.UserAgent())))
+            optional int32 screen_w = 10;
+            optional int32 screen_h = 11;
+            optional uint32 phoneprice = 12;
+            optional uint32 phonelevel = 13; // 1 高端 2 中高 3中低 4低端
+
+        };
+        // 媒体信息
+        message Media {
+            required string     media_id       = 1;  // 媒体ID
+            optional string     channel_id     = 2;  // 渠道ID
+            optional string     package_name   = 3;  // 包名
+            optional Version    version        = 4;  // 版本
+            optional string     adslot_id      = 5;  // 广告位ID
+            optional AdslotType adslot_type    = 6;  // 广告位类型
+            optional string     sub_account_id = 7;  // 子账号ID
+            optional string     user_id        = 8;  // 用户id
+        }
+        // 广告类型
+        enum AdType {
+            TEXT                = 1;  // 文字广告
+            IMAGE               = 2;  // 图片广告
+            TEXT_ICON           = 3;  // 图文广告
+            THREE_TEXT_ICON     = 4;  // 组图广告
+            AD_INTERACT		    = 5;  // 互动广告
+            AD_SPLASH           = 6;  // 开屏广告
+            AD_BANNER           = 7;  // 横幅广告
+            AD_VIDEO            = 8;  // 视频广告
+            AD_MOTIVATE         = 9;  // 激励广告
+            AD_VERTICAL_VIDEO   = 10;  // 竖屏视频广告
+        };
+        // 交互类型
+        enum InteractionType {
+            NO_INTERACT    = 0;  // 无动作
+            INTER_SURFING  = 1;  // 访问网页
+            INTER_DOWNLOAD = 2;  // 下载
+            INTER_DIALING  = 3;  // 打电话
+            INTER_MESSAGE  = 4;  // 发消息
+            INTER_MAIL     = 5;  // 发邮件
+            INTER_GP       = 6;  // gp类型
+        };
+        // 广告信息
+        message Ad {
+            optional uint32          user_id     = 1;   // 广告主ID
+            optional uint32          plan_id     = 2;   // 计划ID
+            optional uint32          group_id    = 3;   // 推广组ID
+            optional uint32          product_id  = 4;   // 推广产品ID
+            optional uint32          unit_id     = 5;   // 推广单元ID
+            optional uint32          template_id = 6;   // 模板ID
+            optional AdType          type        = 7;   // 广告类型
+            optional InteractionType interaction = 8;   // 交互类型
+            optional uint32          score       = 9;   // 应用内返还给用户的分数或钱
+            optional string          domain      = 10;  // 广告的domain
+            optional string          adidstr     = 11;  // 广告id,jesgoo签名
+            optional int32           class     = 12;  // 广告class
+            optional AdRedirectType  redirect_type    = 13;  // 跳转类型
+            optional int32           coin = 14; //广告的金币数
+            optional int32           style_id = 15; //广告的样式号
+            optional int32           ctr = 16; // 请求ml返回的ctr
+            optional int32           cvr = 17; // 请求ml返回的cvr
+            optional string          ctr_host = 18; // 请求ctr的ml节点
+            optional string          cvr_host = 19; // 请求cvr的ml节点
+        }
+        message InterestItem {
+            optional uint64 interestid = 1; // 兴趣id
+            optional uint64 score = 2; // 兴趣评分
+        }
+        message UserProfile {
+            repeated InterestItem interests = 1; // 兴趣点
+            optional uint32 age = 2; //年龄 0 不限 1 <18,2 18-23,3 24-30，4 31-40，5 41-49，6 50+
+            optional uint32 sex = 3; //性别 1男 2女 0未知
+            optional uint32 coin = 4; // 用户金币数
+            optional uint32 pcategory =5; // 趣头条用户类别
+            optional uint32 antispam = 6; // 是否是antispam用户
+            optional uint32 share_coin = 7; // 金币增长数
+            optional uint32 newuser = 8; // 新老用户 1老用户 2新用户
+        }
+        // 反作弊信息
+        message Antispam {
+            message Flags {
+                optional bool   search_click_count_hit_cache = 1;
+                optional uint32 search_click_count           = 2;
+                optional bool   device_click_count_hit_cache = 3;
+                optional uint32 device_click_count           = 4;
+            }
+            required uint32       score = 1;  // 得分
+            repeated AntispamRule rules = 2;  // 触发规则
+            optional Flags        flags = 3;  // 反作弊统计用标记
+            optional float      predict = 4;  // 反作弊预估的值
+        }
+        // 计费信息
+        message Charge {
+            required ChargeType type               = 1;  // 计费类型
+            required uint32     price              = 2;  // 价格
+            optional bool       success            = 3;  // 计费成功
+            optional EventType  trigger_event_type = 4;  // 计费触发事件
+            optional bool       over_budget        = 5;  // 超预算
+            optional bool       over_deficit       = 6;  // 超赤字
+            optional bool       low_balance        = 7;  // 余额不足
+            optional uint32     cash               = 8;  // 现金消费
+            optional uint32     coupon             = 9;  // 优惠券消费
+        }
+        // 广告动作
+        message Action {
+            optional string       target_url       = 1;  // 目标地址
+            optional RedirectType redirect_type    = 2;  // 跳转类型
+            optional uint32       trace_level      = 3;  // 追踪级别，位或值，1为到达追踪，2为时间点追踪
+            optional bool         is_post          = 4;  // 通过Post方法提交数据
+            repeated string       click_monitors   = 5;  // 并行发送的点击监控地址
+            repeated uint32       trace_timepoints = 6;  // 追踪时间点
+            optional string       ad_target_url    = 7;  // 最终广告到达页地址
+            optional string       user_agent       = 8;  // 动作发生时的UserAgent
+            optional string       referer_host     = 9;  // 动作发生时的Referer的域名
+        }
+        // 通用应用信息，用于安装激活探测和本地安装列表等
+        message App {
+            required string package_name      = 1;  // 包名
+            optional uint32 install_time      = 2;  // 首次安装时间
+            optional uint32 update_time       = 3;  // 最后更新时间
+            optional uint32 last_running_time = 4;  // 最后运行时间
+            optional Version version          = 5;  // 版本
+        }
+        // 客户端类型
+        enum ClientType {
+            NATIVESDK     = 1;  // 原生SDK
+            JSSDK         = 2;  // JSSDK
+            OPENAPI       = 3;  // 开放API
+            HZ          = 4;
+            FUN         = 5;
+            QTT         = 6;
+            BOBO        = 7;
+        };
+        // 客户端信息
+        message Client {
+            required ClientType type    = 1;  // 客户端类型
+            optional Version    version = 2;  // 客户端版本
+        };
+        // 地域
+        message Location {
+            optional uint32 country  = 1;  // 国家ID
+            optional uint32 province = 2;  // 省份ID
+            optional uint32 city     = 3;  // 城市ID
+            repeated uint32 isps     = 4;  // ISP ID
+        };
+
+        required EventType type             = 1;   // 事件类型
+        optional string    search_id        = 2;   // 检索ID
+        optional uint32    search_timestamp = 3;   // 检索时间戳
+        optional uint32    search_ip        = 4;   // 检索IP
+        optional uint32    event_timestamp  = 5;   // 事件时间戳
+        optional uint32    event_ip         = 6;   // 事件IP
+        optional Media     media            = 7;   // 媒体信息
+        optional Region    region           = 8;   // 地域信息
+        optional Ad        ad               = 9;   // 广告信息
+        optional Charge    charge           = 10;  // 计费信息
+        optional Dsp       dsp              = 11;  // 废弃字段，使用dsp_info字段
+        optional Action    action           = 12;  // 交互动作信息
+        repeated App       apps             = 13;  // 激活事件的应用信息，安装列表探测等使用
+        optional DspInfo   dsp_info         = 14;  // DSP相关信息，取代dsp字段
+        repeated string    exptags          = 15;  // 实验标记
+        optional string    cookie           = 16;  // 设备ID
+        optional Device    device           = 17;  // 设备信息
+        optional Client    client           = 18;  // 客户端信息
+        optional Antispam  antispam         = 19;  // 反作弊信息
+        optional string    search_machine   = 20;  // 检索机器
+        optional string    event_machine    = 21;  // 事件处理机器
+        optional Location  search_location  = 22;  // 查询IP定位结果
+        optional Location  event_location   = 23;  // 事件IP定位结果
+        // 特殊标记位范围 100 ~ 999
+        optional bool      debug            = 100;  // 调试标志，为True时所有统计与计费系统需要忽略此事件
+        optional uint64    event_id         = 101;  // 事件ID
+        optional UserProfile   userprofile   = 102;  // 事件ID
+        optional Network network             =103;
+        optional string    event_referer  = 104;   // 点击referer
+        optional uint32    event_isp_tag    = 105;   // event_isp_tag
+        optional uint32    show_time    = 106;   //如果是视频广告，记录展示曝光时间点
+    }
+
+    message Extra {
+        message Item {
+            required uint32 id    = 1;  // 字段ID
+            required string value = 2;  // 字段值
+        }
+        repeated Item   unknown       = 1;   // 未知字段
+        optional uint32 touch_x       = 2;   // 点击坐标X
+        optional uint32 touch_y       = 3;   // 点击坐标Y
+        optional uint32 press_time    = 4;   // 按压时间
+        optional uint32 scroll_num    = 5;   // 滚屏次数
+        optional uint32 scroll_time   = 6;   // 滚屏时间
+        optional uint32 width         = 7;   // 广告位实际宽度
+        optional uint32 height        = 8;   // 广告位实际高度
+        optional double click_delta   = 9;   // 展现和点击的时间差
+        optional bool   on_mask       = 10;  // 蒙版事件
+        optional uint32 dispatch_time = 11;  // CK构造时间
+    }
+
+    required Head  head  = 1;  // 事件头
+    required Body  body  = 2;  // 事件内容
+    optional Extra extra = 3;  // 时间补充字段
+}
+
+// 锁屏用户数据
+message LockerUProfile {
+    required uint32 timestamp = 1;  // 最后一次修改时间戳
+    optional uint32 count     = 2;  // 当日点击数
+}
+// 标准URL-Safe BASE64码表：ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijlmnopqrstuvwxyz0123456789-_
+// 自定义码表[0-63]：
+// 0Ge5Q6wnuBML3Wg-8s7kAjOr2xohRHif1CczEXDKq_VaUPJdYpy9TSNvIFmbZ4tl
+// 1RPspa70TiZum_6tKNIFOVJ4o3gBGkdLlvhCnQHWDxEA5cq8fYzj2XU9MwrS-ybe
+// 2txfHr4BFaqSOTVn_CuYozeygvbcL1RNKs8MkWUPG0JpmXd5l6hDIAjw7i9E-Q3Z
+// 3c5gtSlVFoEXsehLaMJwI0Rv6U7xmWuzCYABP_TDp-QfdKniNrq2Ob419jHkGZy8
+// 456tTGIcm3EK7_RQpBA2uezWXjqnHPsi9bV-Zx8vSgkwaMlCoJ1DyfLFr0UYNhdO
+// 5zDkOUe_q7a2TN-Y3fvrnsCHZxhBIdcESPj8GuWXLgib4QwJo6yVtMF0Kp1mA9Rl
+// 6bgkOJjx8mPI9Y_hWANypSoFtnDadivQ31crfR0uC-K2qzE4UslMXGBTL5Vw7HeZ
+// 7zXOg9UZp0sa2vWGJP3TCBYR-6eIfHVnmdKwMrbuSlo8LFNthAkqcDy4QxE5ji1_
+// 8iMsWOQuApUEhoITJfjbYdLqrcF3m17XwNa_B4lVSC-Deny0KPtG6z2k5gx9vZHR
+// 9gdocC-fpejPiYnHF7l0XrWUAaS3OI_Nm2uDkyZbVGRJq5vt1QzhM6xTLw4BsK8E
+// aJEr4IWdD3Zxw8ClmNzGPHFL9usbKTvXU-2eAkiV16ScBOy7pqgQnR0_j5MYftho
+// bZqml65BeDJETLrNpMAC-tIOhVXsnf1w9_Szv7gP2xaWKR0cQ4F3Uuo8YHGdjiky
+// cIJjl64KtC_doMuUeEq0fv831F2kDnNshAbzVaZTprYHB-mWXwygQ7RGxi9PL5SO
+// dZgpqwv-321tRL5ITib0X8Uy64kKjoQuOsrGENxMBfY9WDea7HcmJnAC_PzSlFVh
+// eUOghPNMEVoxkiG7YQL0Zmjc_IWsdl2FtRufySH4DvATBwbXCK9z5-par8J61nq3
+// fP1pUQ3_moNy-7FXHAGT8uKL4wszIVMjaRdhi25E9O0kWntrBvScl6DZgqbxYJCe
+// g43jISvAuK6UND0qYma2QXxRPyBib1l_zCtke5VpsEJOMf7LdZHGcFnw-hW9o8Tr
+// humQGil2xCkHY391US7DvZVEbe_PR4NXWqKgrFfJApd60Bt8yno5IMawsj-OLzcT
+// i2MxZ56X0LWSQGzpONHwPje_lA1nftYIvRTr-9UJs4DkydcgoVqBCu3bE7Kh8mFa
+// jk9A_YBn6aqWt1yfm38SLJ7z-c42erUEHxhb5dROGgNoIusvKCDXQMTp0lZiPwVF
+// kCBHjyTZmhSEwfY8JPdX9MpoKWuL61FQDtOnzab-s3INrc4qi0e7lA_gxUV5R2Gv
+// lToWfMpEHAcir_JLRdBDSkaU5hPnmOCqVZ2KXNzI4uwGx01Ys379egtQ8yF-vbj6
+// m36NTQ82RhD4E-tMfxjs0CPoLbirI_WBZHgnFcypezvkadXSGwO95lAKYJ7Uu1qV
+// niOyHQ6oFbWzeM1qmu4tV9grTkldhGj20NELD3pRU8ZSAa7-wxKJsYcPBI5_vCXf
+// odnysI_h-FGKmJQ2NvUwgVLcaOHCbSDAqlxp85Zurjzi4Mft793RYPe6TE01XkWB
+// p0tGYHmhNTfdFkMQbUc1axCq4y5viXD89suS3BAIPL67VKrWolOgzwRZ_eE2jJ-n
+// qrw0jSf_3pxth-LZnPoBITkGAvl7gQKdF69CVyWaD5izE4mN8ecMRHYOu2UJs1Xb
+// rjUafJvNocE3D8TiQYVAHLp7WbSnzemqugBy5lIFk10_2CdM-Gh69Ksx4XRZtOwP
+// sPWiyNlL3rGBI8gtfxpDbAoUe_5uhzMjZd09cTCamEwYJF6k14QvnVK7Oq-R2HXS
+// tHir6_aKGnqf1RQABh3IzSwYysp4kWdUPCce2l7ZV8XJO9MmLbg50NT-vFuEoxjD
+// uvfDMaj4s7hUr0GBSxWqyV6z-gnLH9QCFoJZwPK8_1lXYON2RpATId5bimEtce3k
+// vy01f3dLjbn4RQuSpiEhKV_XaMB6l2cgxFI-8oUWPAY95wtmZkJNzHOCqrTe7sGD
+// wDmOP9vQr_tyguqxobLHzjMC50-IAJiB4EZf1nh36sl8VWTXYGF2d7UaeSkcKpRN
+// xyqhnozlE_1cV8mukNLTtHfW6r5gw2Se09A4BC3OvJdIXFpsRDiM7YbPGUajKQZ-
+// y6D3Z4lYsGaxOd0nE9irmRthB7ILkPW-NbCjQpSUe12gcFK8uvofzXq5_TAHMJVw
+// zH-ExpCWvMa4iPKkDdeTwq3_moAIQFXSUYGgBbL07NftO2r8nJ6lsRyu5cZhV91j
+// ApKPs5S8LviIeqzyGMEmkrUhJdRgx-Q12VZFlTt9b7Y3NoBc_uOaD0CfWXHn4jw6
+// BTUcJEezrnZg1YKoD3Iy_aGNOPCQtiljm90LvVWXkx48p5AHhf-dqSu67MsFwb2R
+// Cfxmu205MWqpTElyPLQhODzjG36JwdsYVINZvSr471tAk_nea-R89oHbFKBicgXU
+// De9UpodQBKy12HC_f6xRkYOgXv-7PNEWbuLA0qaGTScs54inrwJmZzjMF3IlVh8t
+// E1RkI23NpneclxgmPyZ685Twv4aGrfCQsib-0Md9JhDO7F_VUSHqKYouAWjtBXLz
+// Fu1SjpgwfAm5hU3DGdYnEsIX-kl_oaN62KWctPb098CezHZqOR4vVB7yQLixTrJM
+// Gv7QT10t6edVH59gcLWOEAblzRkPyFCYNXf4I82iMmwUB_3Z-axKSspnojuJhqrD
+// H-lduv6Xih9fQmF3O4JxMY7pcIjTnoatSs0CZBe15U_RyrLgPN8EwkAKGbDzW2Vq
+// I9h-UfpFRlVGb_O10Zai3sq7dALjyDte2SzvMCBcYuxK5H8JwNXTPkEWr6gQno4m
+// J-fYWMd6jFomtR5SP9lcqEn4aHAVx0ONILrCsyQi_pwTUhg73BvKDz2u1ZkXe8bG
+// KboJvRSdBLe_r9EDz8HO-Z5GI0PW7cQuNns63gAhtYilTkqwyCF1xUVaM2m4Xfpj
+// LmPDzctkaYWfSZn4yRCIBl253dw8sb9VxJEAXU6erN_Ou0GvMQg-Ko1iT7FhqpjH
+// M1DFQXKTH-fJtUwBpngi04odZV3eYO9GuW86NrLh7xEslRP2z_aCkIjAcym5qSbv
+// NuzOPiFag3dWUewMmyTEB5kYhcxDL2fbr_V8nRC9HGI0ZQ67KXo-lAqvJSs41jtp
+// OXE5d2WJIKelZS0wj3tN6xvhP1QMrF8-nDka7HTyLi_YgVCGAzubomUf49BRcqps
+// PIoQ0Vd-DgF9aYLHyGtvBcX61x8mJ_AKMU5bR3sruwTlfh42knSejNiWEqp7OZCz
+// QrfzshiqxbpXZGuPV4_HL62on8YwSWITAc-eyO3djvKgNa5mE7tD10BFCMkJUl9R
+// R3kYn_jgNAOJCdSwHol84aQbD7U-IhBciV20EuKM9tfrFxZ6XqzvmpLW1GPT5sey
+// SLfn20Wt7oU1zMqrYkJcFZ9BmaOueV3sPTKQ5N-xbiI8DC6yp4gAvXGHlwhdRE_j
+// T3JinH-K2NPsx4MuacYrXvdmWZjeOAQfp9C8tDz075qE1yVUBRb_L6whSGFoklIg
+// UCvz-5K34p9OBSL8tkImg21wGYFfl6NaciZnDx7sRW0b_eyoAEQPrXqMjhHTduJV
+// V4miLp8wCY0QGx7oB6_FvjWJeRs2dZK5XDNOAkhUbuMcHanT3zEIlgyr9tf-1SPq
+// Wxd0EnjzS6DXcIR1qUoJMmF_fGa8uHs5h9A3VkbTiCZvNplLryKwQY4BOPg7et-2
+// XYc4wekTRE8ZoxQ9dtiyO-3aAfuIjVsCFh_7Jp20rqm5SHWL1lBbnUNzDKvGPMg6
+// YHS9KRLhdqbMtaeX6wG4QNp21sBFrIV_y7DlCzOx80UiumWAnT5-PkgocJEf3jZv
+// Z_FmazrYTKXHW-4sSbk86D5VPyfN13gBu9deJE7q2ontjQOGhxwiCclUAMvLp0IR
+// _rJb0Up6R2hNDWFAH3LswnYd7zPQo1M8KxyIjBugESqTGZtmleifcVkCX9v5-aO4
+// -6mTYvy7KRxCr2elEiWbL5qMoc9G1_3untsdpjwDAzFVhZSgBN0aIOU4QkH8fJXP
+//// 事件数据区结束
+
+

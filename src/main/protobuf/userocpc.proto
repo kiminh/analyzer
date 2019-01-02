@@ -12,10 +12,22 @@ message SingleUser {
     string adclassCost = 7;
     string adclassCtrcnt = 8;
     string adclassCvrcnt = 9;
-    string kvalue=10;
+    string kvalue = 10;
+    double hpcvr = 11;
+    double calibration = 12;
+    double cvr3Cali = 13;
+    int64 cvr3Cnt = 14;
+    double kvalue1 = 15;
+    double kvalue2 = 16;
 }
 
 
 message UserOcpc {
     repeated SingleUser user = 1;
+}
+
+message BidAdjustmentConfig {
+    map<int32, double> ideaRate = 1;
+    map<string, double> adslotidRate = 2;
+    double globalRate = 3;
 }

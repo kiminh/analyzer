@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package dnnmodel;
+
+message Tensor {
+    string name = 1;
+    repeated int32 dims = 2;
+    repeated float float_data = 3;
+}
+
+message Operation {
+    string name = 1;
+    string W_name = 2;
+    string B_name = 3;
+    string IN_name = 4;
+    int32 type = 5;
+}
+
+message DNNGraph {
+    repeated Tensor tensors = 1;
+    repeated Operation ops = 2;
+}
+
+message ID2idx {
+    string key = 1;
+    repeated uint64 values = 2;
+}
+
+message ad_idx {
+    repeated ID2idx ideaid = 1;
+}
+

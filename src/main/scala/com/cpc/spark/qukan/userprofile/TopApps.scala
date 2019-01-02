@@ -2,6 +2,7 @@ package com.cpc.spark.qukan.userprofile
 
 import com.cpc.spark.qukan.parser.HdfsParser
 import org.apache.spark.sql.{SaveMode, SparkSession}
+import com.cpc.spark.common.Utils.sendMail
 
 /**
   * Created by roydong on 12/07/2018.
@@ -48,6 +49,22 @@ object TopApps {
       """.stripMargin.format(date, date))
 
     pkgs.take(100).foreach(println)
+
+    //topApps 活跃用户数top100
+    val topApps_top100 = pkgs.take(100)
+
+    var txt = ""
+    for (i <- 0 until topApps_top100.length) {
+      val t = topApps_top100(i)
+      txt = txt + "%s %s\n".format(t._1, t._2)
+    }
+
+    val b = sendMail(txt, "%s topApps 活跃用户数top100".format(date), Seq("zhanghongyang@aiclk.com", "dongwei@aiclk.com",
+      "zhangting@qutoutiao.net", "huxinjie@aiclk.com", "sujiaqi@qutoutiao.net", "weijinxian@qutoutiao.net"))
+    if (!b) {
+      println("发送邮件失败")
+    }
+
   }
 }
 

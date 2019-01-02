@@ -514,6 +514,52 @@ object LogParser {
     log
   }
 
+  /**
+    * 添加deviceid字段  2018-10-29
+    *
+    * @param txt
+    * @return
+    */
+  def parseCfgLog_v2(txt: String): CfgLog = {
+    var log: CfgLog = null
+    val data = Cfg.parseData(txt)
+    if (data != null) {
+      val body = data.cfg
+      var aid = body.getAdSlotId
+      val (date, hour) = getDateHourFromTime(body.getTimestamp)
+      if (aid.length <= 0) {
+        aid = body.getAidList.toArray().mkString(",")
+      }
+
+      var deviceId = ""
+      val formCount = body.getForm.getValuesCount
+      if (formCount > 0) {
+        for (i <- 0 until formCount) {
+          if (body.getForm.getValues(i).getKey == "dc") {
+            deviceId = body.getForm.getValues(i).getValue
+          }
+        }
+      }
+
+      log = CfgLog(
+        aid = aid,
+        log_type = body.getUrlPath,
+        search_timestamp = body.getTimestamp,
+        request_url = body.getRequestUrl,
+        resp_body = body.getRespBody,
+        redirect_url = body.getRedirectUrl,
+        template_conf = body.getTemplateConfList().toArray.mkString(","),
+        adslot_conf = body.getAdslotConf,
+        date = date,
+        hour = hour,
+        ip = body.getIp,
+        ua = body.getUa,
+        deviceid = deviceId
+      )
+    }
+    log
+  }
+
   def parseClickLog(txt: String): UnionLog = {
     var log: UnionLog = null
     val data = Event.parse_click_log(txt)

@@ -73,6 +73,7 @@ object AnalClickLog {
     println(444)
 
     spark.createDataFrame(clicklog)
+      .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))

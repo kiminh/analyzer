@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package ocpcnovel;
+
+message SingleUnit {
+    string unitid = 1;
+    double kvalue = 2;
+    double cpaHistory = 3;
+    int64 cvr2Cnt = 4;
+    int64 cvr3Cnt = 5;
+    double cpa3History = 6;
+    int32 conversiongoal = 7;
+}
+
+
+message OcpcNovelList {
+    repeated SingleUnit adunit = 1;
+}

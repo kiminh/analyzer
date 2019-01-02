@@ -161,7 +161,7 @@ object InsertReportSiteBuilding {
         x =>
           (x._2)
       }
-      .filter(_.siteid > 0)
+      .filter(x=>(x.siteid > 0 && x.trace_type.length<200 && x.traceOp1.length<200))
       .repartition(50)
       .cache()
     println("traceData count", traceData.count())

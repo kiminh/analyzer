@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package autoCoin;
+
+message AutoCoin {
+    int32 ideaid = 1;
+    int32 label2_exp_cvr = 2;
+    int32 api_exp_cvr = 3;
+}
+
+message Coin {
+    repeated AutoCoin coin = 1;
+}

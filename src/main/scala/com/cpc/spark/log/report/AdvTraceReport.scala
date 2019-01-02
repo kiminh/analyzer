@@ -15,7 +15,19 @@ case class AdvTraceReport(
                            trace_op1: String = "",
                            duration: Int = 0,
                            auto: Int = 0,
-                           total_num:Int =0,
-                           impression:Int =0,
-                           click:Int =0
-                         )
+                           total_num: Int = 0,
+                           impression: Int = 0,
+                           click: Int = 0
+                         ) {
+
+  val key = (this.user_id, this.plan_id, this.unit_id, this.idea_id, this.date, this.hour, this.trace_type, this.trace_op1, this.duration, this.auto)
+
+  def sum(o: AdvTraceReport): AdvTraceReport = {
+    this.copy(
+      total_num = this.total_num + o.total_num,
+      impression = this.impression + o.impression,
+      click = this.click + o.click
+    )
+  }
+
+}

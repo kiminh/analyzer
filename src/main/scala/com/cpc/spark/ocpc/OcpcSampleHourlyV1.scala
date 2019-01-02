@@ -1,7 +1,7 @@
 package com.cpc.spark.ocpc
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions.lit
+import org.apache.spark.sql.functions._
 
 object OcpcSampleHourlyV1 {
   def main(args: Array[String]): Unit = {
@@ -11,7 +11,22 @@ object OcpcSampleHourlyV1 {
     val dt = args(0)
     val hour = args(1)
     var selectWhere = s"`date`='$dt' and hour = '$hour'"
-    var sqlRequest =
+
+    val siteFormData = spark
+      .table("dl_cpc.site_form_unionlog")
+      .where(s"`date`='$dt' and `hour`='$hour' and ideaid!=0")
+      .select("ideaid", "searchid")
+      .withColumn("label", lit(1))
+      .distinct()
+    siteFormData.createOrReplaceTempView("site_form_data")
+
+    siteFormData
+      .select("ideaid")
+      .withColumn("flag", lit(1))
+      .distinct()
+      .createOrReplaceTempView("site_form_ideas")
+
+    var sqlRequest1 =
       s"""
          | select
          |  a.searchid,
@@ -22,7 +37,7 @@ object OcpcSampleHourlyV1 {
          |  a.ext['adclass'].int_value as adclass,
          |  a.isclick,
          |  a.isshow,
-         |  b.label2 as iscvr
+         |  b.flag
          | from
          |      (
          |        select *
@@ -36,15 +51,43 @@ object OcpcSampleHourlyV1 {
          |        and adsrc = 1
          |        and adslot_type in (1,2,3)
          |      ) a
-         |inner join
-         |      (
-         |        select searchid, label2
-         |        from dl_cpc.ml_cvr_feature_v1
-         |        where $selectWhere
-         |      ) b on a.searchid = b.searchid
+         |left join
+         |      site_form_ideas b
+         |on a.ideaid=b.ideaid
       """.stripMargin
-    println(sqlRequest)
-    val base = spark.sql(sqlRequest)
+    println(sqlRequest1)
+    val unionlog = spark.sql(sqlRequest1)
+    unionlog.createOrReplaceTempView("unionlog_table")
+
+    val sqlRequest2 =
+      s"""
+         |select
+         |  a.searchid,
+         |  a.uid,
+         |  a.ideaid,
+         |  a.price,
+         |  a.userid,
+         |  a.adclass,
+         |  a.isclick,
+         |  a.isshow,
+         |  a.flag,
+         |  b.label2 as iscvr1,
+         |  c.label as iscvr2
+         |from
+         |  unionlog_table as a
+         |left join
+         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $selectWhere) as b
+         |on
+         |  a.searchid=b.searchid
+         |left join
+         |  (select searchid, 1 as label from dl_cpc.site_form_unionlog where $selectWhere) as c
+         |on
+         |  a.searchid=c.searchid
+       """.stripMargin
+    println(sqlRequest2)
+    val base = spark
+      .sql(sqlRequest2)
+      .withColumn("iscvr", when(col("flag")===1, col("iscvr2")).otherwise(col("iscvr1")))
 
     // recalculation with groupby of userid and uid
     base.createOrReplaceTempView("tmpTable")
@@ -68,11 +111,14 @@ object OcpcSampleHourlyV1 {
     val result = groupBy.withColumn("date", lit(dt))
       .withColumn("hour", lit(hour))
 
+
     // save data
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track")
+    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track_label2")
+
+    result.show(10)
 
 
 
-    println("successfully save data into table dl_cpc.ocpc_uid_userid_track")
+    println("successfully save data into table dl_cpc.ocpc_uid_userid_track_label2")
   }
 }

@@ -79,7 +79,7 @@ object InsertReportUserBid {
           |WHERE `date`='%s' AND hour="%s"
           |	AND media_appsid in ('80000001','80000002','80000006','800000062','80000064','80000066','80000141')
           |	AND ext['antispam'].int_value=0 AND ideaid>0 AND userid>0
-          |	AND adsrc=1
+          |	AND adsrc=1 AND ext["charge_type"].int_value=1
           |GROUP BY userid,adslot_type,
           |         CASE
           |           WHEN ext_int["cvr_threshold_by_user"]=200 THEN "cvr2"

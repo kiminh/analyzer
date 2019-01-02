@@ -46,7 +46,8 @@ object InsertReportApkDownTarget {
                    finish: Long = 0,
                    pkgadded: Long = 0,
                    traceType: String = "",
-                   userid: Int = 0
+                   userid: Int = 0,
+                   instHijack: Long = 0
                  )
 
 
@@ -177,7 +178,7 @@ object InsertReportApkDownTarget {
         |FROM dl_cpc.cpc_union_trace_log cutl
         |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
         |WHERE cutl.date="%s" AND cul.date="%s" AND cutl.trace_type in("lpload")
-        |AND cutl.trace_op1 in("REPORT_DOWNLOAD_START","REPORT_DOWNLOAD_FINISH","REPORT_DOWNLOAD_PKGADDED")
+        |AND cutl.trace_op1 in("REPORT_DOWNLOAD_START","REPORT_DOWNLOAD_FINISH","REPORT_DOWNLOAD_PKGADDED","REPORT_DOWNLOAD_INST_HIJACK")
         |AND cul.ext["client_type"].string_value="NATIVESDK"
         |AND cul.isclick>0 AND cul.adsrc=1 AND adslot_type<>7
       """.stripMargin.format(argDay, argDay))
@@ -190,18 +191,21 @@ object InsertReportApkDownTarget {
           var start: Int = 0
           var finish: Int = 0
           var pkgadded: Int = 0
+          var instHijack: Int = 0
           if (trace_op1 == "REPORT_DOWNLOAD_START") {
             start = 1
           } else if (trace_op1 == "REPORT_DOWNLOAD_FINISH") {
             finish = 1
           } else if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
             pkgadded = 1
+          } else if (trace_op1 == "REPORT_DOWNLOAD_INST_HIJACK") {
+            instHijack = 1
           }
-          (searchid, (Info(searchid, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, start, finish, pkgadded, trace_type, 0)))
+          (searchid, (Info(searchid, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, start, finish, pkgadded, trace_type, 0, instHijack)))
       }
       .repartition(50)
 
-    //println("lploadTraceData count", lploadTraceData.count())
+    println("lploadTraceData count", lploadTraceData.count())
 
 
     val lploadAllData = lploadUnionData
@@ -211,8 +215,8 @@ object InsertReportApkDownTarget {
           val searchid = if (a.planid != -1) a.searchid else b.searchid
           val planid = if (a.planid != -1) a.planid else b.planid
           val unitid = if (a.planid != -1) a.unitid else b.unitid
-          val isshow = if (a.planid != -1) a.isshow else b.isshow
-          val isclick = if (a.planid != -1) a.isclick else b.isclick
+          val isshow = a.isshow + b.isshow
+          val isclick = a.isclick + b.isclick
           val sex = if (a.planid != -1) a.sex else b.sex
           val age = if (a.planid != -1) a.age else b.age
           val os = if (a.planid != -1) a.os else b.os
@@ -232,23 +236,24 @@ object InsertReportApkDownTarget {
           val finish = a.finish + b.finish
           val pkgadded = a.pkgadded + b.pkgadded
           val traceType = "lpload"
+          val instHijack = a.instHijack + b.instHijack
           //if (a.traceType.length > 0) a.traceType else b.traceType
           var userid = if (a.userid > 0) a.userid else b.userid
 
           Info(searchid, planid, unitid, isshow, isclick, sex, age, os, province, phoneLevel, hour, network, userLevel, qukanNewUser, adslotType,
-            mediaid, adslotid, brand, browserType, isStudent, start, finish, pkgadded, traceType, userid)
+            mediaid, adslotid, brand, browserType, isStudent, start, finish, pkgadded, traceType, userid, instHijack)
       }
       .map {
         x =>
           val info = x._2
           Info(info.searchid, info.planid, info.unitid, info.isshow, info.isclick, info.sex, info.age, info.os, info.province, info.phoneLevel, info.hour,
             info.network, info.userLevel, info.qukanNewUser, info.adslotType, info.mediaid, info.adslotid, info.brand, info.browserType,
-            info.isStudent, info.start, info.finish, info.pkgadded, "lpload", info.userid)
+            info.isStudent, info.start, info.finish, info.pkgadded, "lpload", info.userid, info.instHijack)
       }
       .filter { x => x.unitid > 0 && x.planid > 0 }
       .repartition(50)
       .cache()
-    //println("lploadAllData count", lploadAllData.count())
+    println("lploadAllData count", lploadAllData.count())
 
 
     val motivationUnionData = ctx
@@ -256,7 +261,7 @@ object InsertReportApkDownTarget {
         """
           |SELECT searchid,m.planid,m.unitid,m.isshow,m.isclick,sex,age,os,province,ext['phone_level'].int_value,hour,
           |network,coin,ext['qukan_new_user'].int_value,adslot_type,media_appsid,adslotid,brand,ext_int["browser_type"],
-          |interests,userid,m.ideaid
+          |interests,m.userid,m.ideaid
           |FROM dl_cpc.cpc_union_log cul
           |lateral view explode(motivation) b as m
           |WHERE `date`="%s" AND (m.isshow+m.isclick)>0 AND ext["client_type"].string_value="NATIVESDK" AND cul.adsrc=1
@@ -314,7 +319,7 @@ object InsertReportApkDownTarget {
         |select DISTINCT searchid,trace_type,trace_op1,opt["ideaid"]
         |from dl_cpc.logparsed_cpc_trace_minute
         |where trace_type="sdk_incite" and `thedate`="%s"
-        |and trace_op1 in("DOWNLOAD_START","DOWNLOAD_FINISH","INSTALL_FINISH") AND opt["ideaid"]>0
+        |and trace_op1 in("DOWNLOAD_START","DOWNLOAD_FINISH","INSTALL_FINISH","INSTALL_HIJACK") AND opt["ideaid"]>0
       """.stripMargin.format(argDay))
       .rdd
       .map {
@@ -326,14 +331,17 @@ object InsertReportApkDownTarget {
           var start: Int = 0
           var finish: Int = 0
           var pkgadded: Int = 0
+          var instHijack: Int = 0
           if (trace_op1 == "DOWNLOAD_START") {
             start = 1
           } else if (trace_op1 == "DOWNLOAD_FINISH") {
             finish = 1
           } else if (trace_op1 == "INSTALL_FINISH") {
             pkgadded = 1
+          } else if (trace_op1 == "INSTALL_HIJACK") {
+            instHijack = 1
           }
-          ((searchid, ideaid), (Info(searchid, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, start, finish, pkgadded, trace_type, 0)))
+          ((searchid, ideaid), (Info(searchid, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, start, finish, pkgadded, trace_type, 0, instHijack)))
       }
       .repartition(50)
 
@@ -347,8 +355,8 @@ object InsertReportApkDownTarget {
           val searchid = if (a.planid != -1) a.searchid else b.searchid
           val planid = if (a.planid != -1) a.planid else b.planid
           val unitid = if (a.planid != -1) a.unitid else b.unitid
-          val isshow = if (a.planid != -1) a.isshow else b.isshow
-          val isclick = if (a.planid != -1) a.isclick else b.isclick
+          val isshow = a.isshow + b.isshow
+          val isclick = a.isclick + b.isclick
           val sex = if (a.planid != -1) a.sex else b.sex
           val age = if (a.planid != -1) a.age else b.age
           val os = if (a.planid != -1) a.os else b.os
@@ -370,23 +378,23 @@ object InsertReportApkDownTarget {
           val traceType = "sdk_incite"
           //if (a.traceType.length > 0) a.traceType else b.traceType
           var userid = if (a.userid > 0) a.userid else b.userid
-
+          val instHijack = a.instHijack + b.instHijack
           Info(searchid, planid, unitid, isshow, isclick, sex, age, os, province, phoneLevel, hour, network, userLevel, qukanNewUser, adslotType,
-            mediaid, adslotid, brand, browserType, isStudent, start, finish, pkgadded, traceType, userid)
+            mediaid, adslotid, brand, browserType, isStudent, start, finish, pkgadded, traceType, userid, instHijack)
       }
       .map {
         x =>
           val info = x._2
           Info(info.searchid, info.planid, info.unitid, info.isshow, info.isclick, info.sex, info.age, info.os, info.province, info.phoneLevel, info.hour,
             info.network, info.userLevel, info.qukanNewUser, info.adslotType, info.mediaid, info.adslotid, info.brand, info.browserType,
-            info.isStudent, info.start, info.finish, info.pkgadded, "sdk_incite", info.userid)
+            info.isStudent, info.start, info.finish, info.pkgadded, "sdk_incite", info.userid, info.instHijack)
       }
       .filter { x => x.unitid > 0 && x.planid > 0 }
       .repartition(50)
       .cache()
 
-    //    println("motivationAllData count", motivationAllData.count())
-    //    motivationAllData.take(10).foreach(println)
+    //println("motivationAllData count", motivationAllData.count())
+    //motivationAllData.take(10).foreach(println)
 
     var siteData = ctx.read.jdbc(mariaAdvdbUrl,
       """
@@ -469,7 +477,7 @@ object InsertReportApkDownTarget {
         |FROM dl_cpc.cpc_union_trace_log cutl
         |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
         |WHERE cutl.date="%s" AND cul.date="%s" AND cutl.trace_type in("apkdown")
-        |AND cutl.trace_op1 in("REPORT_DOWNLOAD_START","REPORT_DOWNLOAD_FINISH","REPORT_DOWNLOAD_PKGADDED")
+        |AND cutl.trace_op1 in("REPORT_DOWNLOAD_START","REPORT_DOWNLOAD_FINISH","REPORT_DOWNLOAD_PKGADDED","REPORT_DOWNLOAD_INST_HIJACK")
         |AND cul.ext["client_type"].string_value="NATIVESDK"
         |AND cul.isclick>0 AND cul.adsrc=1 AND adslot_type<>7
         |AND cul.ext_int["siteid"]>0 AND cul.ext_int["siteid"] in (%s)
@@ -483,14 +491,17 @@ object InsertReportApkDownTarget {
           var start: Int = 0
           var finish: Int = 0
           var pkgadded: Int = 0
+          var instHijack: Int = 0
           if (trace_op1 == "REPORT_DOWNLOAD_START") {
             start = 1
           } else if (trace_op1 == "REPORT_DOWNLOAD_FINISH") {
             finish = 1
           } else if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
             pkgadded = 1
+          } else if (trace_op1 == "REPORT_DOWNLOAD_INST_HIJACK") {
+            instHijack = 1
           }
-          (searchid, (Info(searchid, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, start, finish, pkgadded, trace_type, 0)))
+          (searchid, (Info(searchid, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, start, finish, pkgadded, trace_type, 0, instHijack)))
       }
       .repartition(50)
 
@@ -501,8 +512,8 @@ object InsertReportApkDownTarget {
           val searchid = if (a.planid != -1) a.searchid else b.searchid
           val planid = if (a.planid != -1) a.planid else b.planid
           val unitid = if (a.planid != -1) a.unitid else b.unitid
-          val isshow = if (a.planid != -1) a.isshow else b.isshow
-          val isclick = if (a.planid != -1) a.isclick else b.isclick
+          val isshow = a.isshow + b.isshow
+          val isclick = a.isclick + b.isclick
           val sex = if (a.planid != -1) a.sex else b.sex
           val age = if (a.planid != -1) a.age else b.age
           val os = if (a.planid != -1) a.os else b.os
@@ -524,16 +535,16 @@ object InsertReportApkDownTarget {
           val traceType = "site_building"
           //if (a.traceType.length > 0) a.traceType else b.traceType
           var userid = if (a.userid > 0) a.userid else b.userid
-
+          val instHijack = a.instHijack + b.instHijack
           Info(searchid, planid, unitid, isshow, isclick, sex, age, os, province, phoneLevel, hour, network, userLevel, qukanNewUser, adslotType,
-            mediaid, adslotid, brand, browserType, isStudent, start, finish, pkgadded, traceType, userid)
+            mediaid, adslotid, brand, browserType, isStudent, start, finish, pkgadded, traceType, userid, instHijack)
       }
       .map {
         x =>
           val info = x._2
           Info(info.searchid, info.planid, info.unitid, info.isshow, info.isclick, info.sex, info.age, info.os, info.province, info.phoneLevel, info.hour,
             info.network, info.userLevel, info.qukanNewUser, info.adslotType, info.mediaid, info.adslotid, info.brand, info.browserType,
-            info.isStudent, info.start, info.finish, info.pkgadded, "site_building", info.userid)
+            info.isStudent, info.start, info.finish, info.pkgadded, "site_building", info.userid, info.instHijack)
       }
       .filter { x => x.unitid > 0 && x.planid > 0 }
       .repartition(50)
@@ -604,7 +615,7 @@ object InsertReportApkDownTarget {
         |FROM dl_cpc.cpc_union_trace_log cutl
         |INNER JOIN dl_cpc.cpc_union_log cul ON cutl.searchid=cul.searchid
         |WHERE cutl.date="%s" AND cul.date="%s" AND cutl.trace_type in("apkdown")
-        |AND cutl.trace_op1 in("REPORT_DOWNLOAD_START","REPORT_DOWNLOAD_FINISH","REPORT_DOWNLOAD_PKGADDED")
+        |AND cutl.trace_op1 in("REPORT_DOWNLOAD_START","REPORT_DOWNLOAD_FINISH","REPORT_DOWNLOAD_PKGADDED","REPORT_DOWNLOAD_INST_HIJACK")
         |AND cul.ext["client_type"].string_value="NATIVESDK"
         |AND cul.interaction=2
         |AND cul.isclick>0 AND cul.adsrc=1 AND adslot_type<>7
@@ -618,14 +629,17 @@ object InsertReportApkDownTarget {
           var start: Int = 0
           var finish: Int = 0
           var pkgadded: Int = 0
+          var instHijack: Int = 0
           if (trace_op1 == "REPORT_DOWNLOAD_START") {
             start = 1
           } else if (trace_op1 == "REPORT_DOWNLOAD_FINISH") {
             finish = 1
           } else if (trace_op1 == "REPORT_DOWNLOAD_PKGADDED") {
             pkgadded = 1
+          } else if (trace_op1 == "REPORT_DOWNLOAD_INST_HIJACK") {
+            instHijack = 1
           }
-          (searchid, (Info(searchid, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, start, finish, pkgadded, trace_type, 0)))
+          (searchid, (Info(searchid, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "", 0, 0, start, finish, pkgadded, trace_type, 0, instHijack)))
       }
       .repartition(50)
 
@@ -639,8 +653,8 @@ object InsertReportApkDownTarget {
           val searchid = if (a.planid != -1) a.searchid else b.searchid
           val planid = if (a.planid != -1) a.planid else b.planid
           val unitid = if (a.planid != -1) a.unitid else b.unitid
-          val isshow = if (a.planid != -1) a.isshow else b.isshow
-          val isclick = if (a.planid != -1) a.isclick else b.isclick
+          val isshow = a.isshow + b.isshow
+          val isclick = a.isclick + b.isclick
           val sex = if (a.planid != -1) a.sex else b.sex
           val age = if (a.planid != -1) a.age else b.age
           val os = if (a.planid != -1) a.os else b.os
@@ -662,16 +676,16 @@ object InsertReportApkDownTarget {
           val traceType = "apkdown"
           //if (a.traceType.length > 0) a.traceType else b.traceType
           var userid = if (a.userid > 0) a.userid else b.userid
-
+          val instHijack = a.instHijack + b.instHijack
           Info(searchid, planid, unitid, isshow, isclick, sex, age, os, province, phoneLevel, hour, network, userLevel, qukanNewUser, adslotType,
-            mediaid, adslotid, brand, browserType, isStudent, start, finish, pkgadded, traceType, userid)
+            mediaid, adslotid, brand, browserType, isStudent, start, finish, pkgadded, traceType, userid, instHijack)
       }
       .map {
         x =>
           val info = x._2
           Info(info.searchid, info.planid, info.unitid, info.isshow, info.isclick, info.sex, info.age, info.os, info.province, info.phoneLevel, info.hour,
             info.network, info.userLevel, info.qukanNewUser, info.adslotType, info.mediaid, info.adslotid, info.brand, info.browserType,
-            info.isStudent, info.start, info.finish, info.pkgadded, "apkdown", info.userid)
+            info.isStudent, info.start, info.finish, info.pkgadded, "apkdown", info.userid, info.instHijack)
       }
       .filter { x => x.unitid > 0 && x.planid > 0 }
       .repartition(50)
@@ -681,7 +695,7 @@ object InsertReportApkDownTarget {
 
     //-----
     var insertDataFramelpload = ctx.createDataFrame(getInsertAllData(lploadAllData, argDay, broadcastBrandMaps))
-      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date")
+      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date", "inst_hijack")
       .repartition(50)
 
     insertDataFramelpload.show(10)
@@ -691,11 +705,11 @@ object InsertReportApkDownTarget {
       .mode(SaveMode.Append)
       .jdbc(mariaReportdbUrl, "report.report_apk_down_target", mariaReportdbProp)
     println("insertDataFramelpload over!")
-
-
-    //-----
+    //
+    //
+    //    //-----
     var insertDataFrameSite = ctx.createDataFrame(getInsertAllData(siteAllData, argDay, broadcastBrandMaps))
-      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date")
+      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date", "inst_hijack")
       .repartition(50)
 
     insertDataFrameSite.show(10)
@@ -705,11 +719,11 @@ object InsertReportApkDownTarget {
       .mode(SaveMode.Append)
       .jdbc(mariaReportdbUrl, "report.report_apk_down_target", mariaReportdbProp)
     println("insertDataFrameSite over!")
-
-
+    //
+    //
     //-----
     var insertDataFrameallDatax = ctx.createDataFrame(getInsertAllData(allDatax, argDay, broadcastBrandMaps))
-      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date")
+      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date", "inst_hijack")
       .repartition(50)
 
     insertDataFrameallDatax.show(10)
@@ -720,9 +734,9 @@ object InsertReportApkDownTarget {
       .jdbc(mariaReportdbUrl, "report.report_apk_down_target", mariaReportdbProp)
     println("insertDataFrameallDatax over!")
 
-    //-----
+
     var insertDataFrameMotivation = ctx.createDataFrame(getInsertAllData(motivationAllData, argDay, broadcastBrandMaps))
-      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date")
+      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "trace_type", "target_type", "target_value", "dstart", "dfinish", "dpkgadded", "date", "inst_hijack")
       .repartition(50)
 
     insertDataFrameMotivation.show(10)
@@ -753,7 +767,8 @@ object InsertReportApkDownTarget {
           val finish = info.finish
           val pkgadded = info.pkgadded
           val traceType = info.traceType
-          ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+          val instHijack = info.instHijack
+          ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack))
       }
     val studentData = getTargetData(inputStudentData, "student", argDay)
     //println("studentData count is", studentData.count())
@@ -780,7 +795,8 @@ object InsertReportApkDownTarget {
           val finish = info.finish
           val pkgadded = info.pkgadded
           val traceType = info.traceType
-          ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+          val instHijack = info.instHijack
+          ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack))
       }
 
     val brandData = getTargetData(inputBrandData, "brand", argDay)
@@ -819,7 +835,8 @@ object InsertReportApkDownTarget {
           val finish = info.finish
           val pkgadded = info.pkgadded
           val traceType = info.traceType
-          ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+          val instHijack = info.instHijack
+          ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack))
       }
 
     val browserTypeData = getTargetData(inputBrowserTypeData, "browser_type", argDay)
@@ -841,7 +858,8 @@ object InsertReportApkDownTarget {
         val finish = info.finish
         val pkgadded = info.pkgadded
         val traceType = info.traceType
-        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+        val instHijack = info.instHijack
+        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack))
     }
     val adslotIdData = getTargetData(inputAdslotIdData, "adslot_id", argDay)
     //println("adslotIdData count is", adslotIdData.count())
@@ -862,11 +880,11 @@ object InsertReportApkDownTarget {
         val finish = info.finish
         val pkgadded = info.pkgadded
         val traceType = info.traceType
-        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+        val instHijack = info.instHijack
+        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack))
     }
     val sexData = getTargetData(inputSexData, "sex", argDay)
     //println("sex count is", sexData.count())
-
     insertAllData = insertAllData.union(sexData)
 
     val inputAgeData = allData
@@ -884,7 +902,8 @@ object InsertReportApkDownTarget {
         val finish = info.finish
         val pkgadded = info.pkgadded
         val traceType = info.traceType
-        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+        val instHijack = info.instHijack
+        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack))
     }
     val ageData = getTargetData(inputAgeData, "age", argDay)
     //println("ageData count is", ageData.count())
@@ -906,7 +925,8 @@ object InsertReportApkDownTarget {
         val finish = info.finish
         val pkgadded = info.pkgadded
         val traceType = info.traceType
-        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+        val instHijack = info.instHijack
+        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack))
     }
     val osData = getTargetData(inputOsData, "os", argDay)
     //println("osData count is", osData.count())
@@ -928,7 +948,8 @@ object InsertReportApkDownTarget {
         val finish = info.finish
         val pkgadded = info.pkgadded
         val traceType = info.traceType
-        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+        val instHijack = info.instHijack
+        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, info.instHijack))
     }
     val provinceData = getTargetData(inputProvinceData, "province", argDay)
     //println("provinceData count is", provinceData.count())
@@ -949,7 +970,8 @@ object InsertReportApkDownTarget {
         val finish = info.finish
         val pkgadded = info.pkgadded
         val traceType = info.traceType
-        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+        val instHijack = info.instHijack
+        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, info.instHijack))
     }
 
     val phoneLevelData = getTargetData(inputPhoneLevelData, "phone_level", argDay)
@@ -972,7 +994,8 @@ object InsertReportApkDownTarget {
         val finish = info.finish
         val pkgadded = info.pkgadded
         val traceType = info.traceType
-        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+        val instHijack = info.instHijack
+        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack))
     }
 
     val hourData = getTargetData(inputHourData, "hour", argDay)
@@ -995,7 +1018,8 @@ object InsertReportApkDownTarget {
         val finish = info.finish
         val pkgadded = info.pkgadded
         val traceType = info.traceType
-        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+        val instHijack = info.instHijack
+        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack))
     }
 
     val networkData = getTargetData(inputNetworkData, "network_type", argDay).cache()
@@ -1018,7 +1042,8 @@ object InsertReportApkDownTarget {
         val finish = info.finish
         val pkgadded = info.pkgadded
         val traceType = info.traceType
-        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+        val instHijack = info.instHijack
+        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack))
     }
 
     val userLevelData = getTargetData(inputUserLevelData, "user_level", argDay)
@@ -1040,7 +1065,8 @@ object InsertReportApkDownTarget {
         val finish = info.finish
         val pkgadded = info.pkgadded
         val traceType = info.traceType
-        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+        val instHijack = info.instHijack
+        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack))
     }
 
     val qukanNewUserData = getTargetData(inputQukanNewUserData, "user_orient", argDay)
@@ -1062,7 +1088,8 @@ object InsertReportApkDownTarget {
         val finish = info.finish
         val pkgadded = info.pkgadded
         val traceType = info.traceType
-        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+        val instHijack = info.instHijack
+        ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack))
     }
 
     val adslotTypeData = getTargetData(inputAdslotTypeData, "adslot_type", argDay)
@@ -1089,7 +1116,8 @@ object InsertReportApkDownTarget {
           val finish = info.finish
           val pkgadded = info.pkgadded
           val traceType = info.traceType
-          ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded))
+          val instHijack = info.instHijack
+          ((unitid, traceType, typeVal), (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack))
       }
     val quAdslotTypeData = getTargetData(inputQuAdslotTypeData, "adslot_type_media", argDay)
     //println("quAdslotTypeData count is", quAdslotTypeData.count())
@@ -1097,8 +1125,8 @@ object InsertReportApkDownTarget {
     insertAllData.union(quAdslotTypeData).repartition(50)
   }
 
-  def getTargetData(data: RDD[((Int, String, Int), (Int, Int, Int, Long, Long, String, Int, Long, Long, Long))],
-                    targetType: String, argDay: String): (RDD[(Int, Int, Int, Long, Long, String, String, Int, Long, Long, Long, String)]) = {
+  def getTargetData(data: RDD[((Int, String, Int), (Int, Int, Int, Long, Long, String, Int, Long, Long, Long, Long))],
+                    targetType: String, argDay: String): (RDD[(Int, Int, Int, Long, Long, String, String, Int, Long, Long, Long, String, Long)]) = {
     data
       .reduceByKey {
         (a, b) =>
@@ -1112,7 +1140,8 @@ object InsertReportApkDownTarget {
           val start = a._8 + b._8
           val finish = a._9 + b._9
           val pkgadded = a._10 + b._10
-          (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded)
+          val instHijack = a._11 + b._11
+          (userid, planid, unitid, isshow, isclick, traceType, typeVal, start, finish, pkgadded, instHijack)
       }
       .map {
         x =>
@@ -1126,7 +1155,8 @@ object InsertReportApkDownTarget {
           val start = x._2._8
           val finish = x._2._9
           val pkgadded = x._2._10
-          (userid, planid, unitid, isshow, isclick, traceType, targetType, typeVal, start, finish, pkgadded, argDay)
+          val instHijack = x._2._11
+          (userid, planid, unitid, isshow, isclick, traceType, targetType, typeVal, start, finish, pkgadded, argDay, instHijack)
       }
       .repartition(50)
   }
