@@ -113,9 +113,9 @@ object OcpcCPArecommend{
       .table(tableName)
       .where(selectCondition)
       .filter(s"media_appsid in ('80000001', '80000002')")
-      .groupBy("ideaid", "userid", "adclass")
+      .groupBy("ideaid", "adclass")
       .agg(sum(col(cvrType + "_cnt")).alias("cvrcnt"))
-      .select("ideaid", "userid", "adclass", "cvrcnt")
+      .select("ideaid", "adclass", "cvrcnt")
       .filter("cvrcnt>30 and cvrcnt is not null")
 
 
@@ -124,7 +124,7 @@ object OcpcCPArecommend{
 
   def calculateCPA(costData: DataFrame, cvrData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val resultDF = costData
-      .join(cvrData, Seq("ideaid", "userid", "adclass"), "inner")
+      .join(cvrData, Seq("ideaid", "adclass"), "inner")
       .filter("cvrcnt is not null and cvrcnt>0")
       .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
       .select("ideaid", "userid", "adclass", "cpa", "cost", "cvrcnt")
