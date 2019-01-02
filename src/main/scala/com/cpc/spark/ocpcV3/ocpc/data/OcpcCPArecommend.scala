@@ -13,17 +13,17 @@ object OcpcCPArecommend {
       .enableHiveSupport().getOrCreate()
 
     // 根据is_ocpc和length(ocpc_log)<=0来确定
-    val
-    // 计算cpc阶段广告的实际cpa
-    val rawData = getCPCstageAd(date, hour, spark)
-    val resultDF = calculateCPArecommend(rawData, date, hour, spark)
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cpa_recommend_hourly")
+    // 计算cpc阶段广告的实际cpa
+//    val rawData = getCPCstageAd(date, hour, spark)
+//    val resultDF = calculateCPArecommend(rawData, date, hour, spark)
+//
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cpa_recommend_hourly")
 
   }
 
   def getCPCstageAd(date: String, hour: String, spark: SparkSession) = {
-    val data =
+
   }
 
   def calculateCPArecommend(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
