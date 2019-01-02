@@ -110,6 +110,7 @@ object OcpcCPArecommend{
       .groupBy("ideaid")
       .agg(sum(col(cvrType + "_cnt")).alias("cvrcnt"))
       .select("ideaid", "cvrcnt")
+      .filter("cvrcnt>0")
 
 
     resultDF
@@ -117,10 +118,11 @@ object OcpcCPArecommend{
 
   def calculateCPA(costData: DataFrame, cvrData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val resultDF = costData
-      .join(cvrData, Seq("ideaid"), "left_outer")
+      .join(cvrData, Seq("ideaid"), "inner")
       .filter("cvrcnt is not null and cvrcnt>0")
       .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
       .select("ideaid", "unitid", "userid", "cpa")
+      .filter("cpa is not null and cpa > 0")
 
     resultDF
   }
