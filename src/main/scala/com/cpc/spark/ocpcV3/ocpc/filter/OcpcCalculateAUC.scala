@@ -23,14 +23,16 @@ object OcpcCalculateAUC {
 
     // 抽取数据
     val data = getData(date, hour, spark)
+    val tableName = "test.ocpc_calc_auc20190103"
+    data.write.mode("overwrite").saveAsTable(tableName)
 
     // 计算auc
     // cvr1
-    val auc1Data = getAuc(data, 1, date, hour, spark)
+    val auc1Data = getAuc(tableName, 1, date, hour, spark)
     // cvr2
-    val auc2Data = getAuc(data, 2, date, hour, spark)
+    val auc2Data = getAuc(tableName, 2, date, hour, spark)
     // cvr3
-    val auc3Data = getAuc(data, 3, date, hour, spark)
+    val auc3Data = getAuc(tableName, 3, date, hour, spark)
 
     // 合并数据
     val aucData = auc1Data.union(auc2Data).union(auc3Data)
@@ -151,14 +153,14 @@ object OcpcCalculateAUC {
     resultDF
   }
 
-  def getAuc(rawData: DataFrame, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getAuc(tableName: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     import spark.implicits._
     //获取模型标签
 
 //    val aucGaucBuffer = ListBuffer[AucGauc.AucGauc]()
-    val data = rawData.filter(s"conversion_goal=$conversionGoal")
+    val data = spark.table(tableName).where(s"conversion_goal=$conversionGoal")
     val aucList = new mutable.ListBuffer[(String, Double)]()
-    val ideaidList = data.select("ideaid").distinct()
+    val ideaidList = data.select("ideaid").distinct().cache()
     val ideaidCNT = ideaidList.count()
     println(s"################ count of ideaid list: $ideaidCNT ################")
 
@@ -170,7 +172,7 @@ object OcpcCalculateAUC {
         println(s"############### ideaid=$ideaid ################")
       }
       cnt += 1
-      val ideaidData = data.filter(s"ideaid=$ideaid").cache()
+      val ideaidData = data.filter(s"ideaid=$ideaid")
       val scoreAndLabel = ideaidData
         .select("score", "label")
         .rdd
@@ -182,8 +184,10 @@ object OcpcCalculateAUC {
         aucList.append((ideaid, aucROC))
 
       }
-      ideaidData.unpersist()
+//      ideaidData.unpersist()
     }
+
+    ideaidList.unpersist()
     val resultDF = spark
       .createDataFrame(aucList)
       .toDF("ideaid", "auc")
