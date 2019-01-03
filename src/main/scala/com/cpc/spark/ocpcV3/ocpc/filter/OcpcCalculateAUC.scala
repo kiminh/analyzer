@@ -173,11 +173,12 @@ object OcpcCalculateAUC {
         println(s"############### ideaid=$ideaid ################")
       }
       cnt += 1
-      val ideaidData = data.filter(s"ideaid=$ideaid").cache()
+      val ideaidData = data.filter(s"ideaid=$ideaid")
       val scoreAndLabel = ideaidData
         .select("score", "label")
         .rdd
         .map(x=>(x.getAs[Int]("score").toDouble, x.getAs[Int]("label").toDouble))
+        .cache()
       val scoreAndLabelNum = scoreAndLabel.count()
       if (scoreAndLabelNum > 0) {
         val metrics = new BinaryClassificationMetrics(scoreAndLabel)
@@ -185,7 +186,7 @@ object OcpcCalculateAUC {
         aucList.append((ideaid, aucROC))
 
       }
-      ideaidData.unpersist()
+      scoreAndLabel.unpersist()
     }
 
     ideaidList.unpersist()
