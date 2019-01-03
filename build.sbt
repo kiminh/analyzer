@@ -28,6 +28,7 @@ libraryDependencies ++= Seq(
   "com.google.code.gson" % "gson" % "2.8.1",
   "com.alibaba" % "fastjson" % "1.2.39",
   "org.scalaj" %% "scalaj-http" % "2.3.0",
+  "net.debasishg" %% "redisclient" % "3.9",
   "org.apache.commons" % "commons-math3" % "3.5",
   "commons-codec" % "commons-codec" % "1.9"
 )
@@ -62,7 +63,8 @@ assemblyExcludedJars in assembly := {
     "spark-streaming-kafka-0-8-assembly_2.11-2.1.0.jar",
     "xgboost4j-0.7.jar",
     "xgboost4j-spark-0.7.jar",
-    "scala-library-2.11.8.jar"
+    "scala-library-2.11.8.jar",
+    "scala-redis_2.11-1.0.jar"
   )
   (fullClasspath in assembly).value.filter {
     x => jars.contains(x.data.getName)
