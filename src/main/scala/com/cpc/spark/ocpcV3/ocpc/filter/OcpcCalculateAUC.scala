@@ -163,7 +163,7 @@ object OcpcCalculateAUC {
     //按ideaid遍历
     var cnt = 0
     for (row <- ideaidList.collect()) {
-      val ideaid = row.getAs[String]("ideaid")
+      val ideaid = row.getAs[Int]("ideaid").toString
       if (cnt % 500 == 0) {
         println(s"############### ideaid=$ideaid ################")
       }
