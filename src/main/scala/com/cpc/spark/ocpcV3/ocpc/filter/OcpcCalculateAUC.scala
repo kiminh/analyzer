@@ -71,7 +71,7 @@ object OcpcCalculateAUC {
     val scoreData = spark.sql(sqlRequest)
 
     // 取历史区间: cvr数据
-    calendar.add(Calendar.DATE, 3)
+    calendar.add(Calendar.DATE, 2)
     val yesterday1 = calendar.getTime
     val date2 = dateConverter.format(yesterday1)
     val selectCondition2 = s"`date` between '$date1' and '$date2'"
