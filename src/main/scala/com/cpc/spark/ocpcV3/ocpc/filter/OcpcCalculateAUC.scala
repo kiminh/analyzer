@@ -147,7 +147,7 @@ object OcpcCalculateAUC {
       .union(result2)
       .union(result3)
       .na.fill(0, Seq("label"))
-    resultDF.show(10)
+//    resultDF.show(10)
     resultDF
   }
 
@@ -170,7 +170,7 @@ object OcpcCalculateAUC {
         println(s"############### ideaid=$ideaid ################")
       }
       cnt += 1
-      val ideaidData = data.filter(s"ideaid=$ideaid")
+      val ideaidData = data.filter(s"ideaid=$ideaid").cache()
       val scoreAndLabel = ideaidData
         .select("score", "label")
         .rdd
@@ -182,6 +182,7 @@ object OcpcCalculateAUC {
         aucList.append((ideaid, aucROC))
 
       }
+      ideaidData.unpersist()
     }
     val resultDF = spark
       .createDataFrame(aucList)
