@@ -39,20 +39,15 @@ object OcpcCalculateAUC {
   }
 
   def getData(date: String, hour: String, spark: SparkSession) = {
-    // 取历史区间
-    val hourCnt = 6
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
+    // 取历史区间: score数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -hourCnt)
+    calendar.add(Calendar.DATE, -1)
     val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition1 = s"`date`='$date1'"
 
     // 取数据: score数据
     val sqlRequest =
@@ -62,7 +57,7 @@ object OcpcCalculateAUC {
          |    ideaid,
          |    ext['exp_cvr'].int_value as score
          |from dl_cpc.cpc_union_log
-         |where $selectCondition
+         |where $selectCondition1
          |and isclick = 1
          |and ext['exp_ctr'].int_value is not null
          |and media_appsid  in ("80000001", "80000002")
@@ -75,30 +70,61 @@ object OcpcCalculateAUC {
     println(sqlRequest)
     val scoreData = spark.sql(sqlRequest)
 
+    // 取历史区间: cvr数据
+    calendar.add(Calendar.DATE, 3)
+    val yesterday1 = calendar.getTime
+    val date2 = dateConverter.format(yesterday1)
+    val selectCondition2 = s"`date` between '$date1' and '$date2'"
     // cvr1数据
-    val cvr1Data = spark
-      .table("dl_cpc.ml_cvr_feature_v1")
-      .where(selectCondition)
-      .selectExpr("searchid", "label2 as label")
-      .filter("label=1")
-      .distinct()
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label2 as label
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v1
+         |WHERE
+         |  $selectCondition2
+         |AND
+         |  label2=1
+         |GROUP BY searchid, label2
+       """.stripMargin
+    println(sqlRequest1)
+    val cvr1Data = spark.sql(sqlRequest1)
 
     // cvr2数据
-    val cvr2Data = spark
-      .table("dl_cpc.ml_cvr_feature_v2")
-      .where(selectCondition)
-      .selectExpr("searchid", "label")
-      .filter("label=1")
-      .distinct()
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v2
+         |WHERE
+         |  $selectCondition2
+         |AND
+         |  label=1
+         |GROUP BY searchid, label
+       """.stripMargin
+    println(sqlRequest2)
+    val cvr2Data = spark.sql(sqlRequest2)
 
     // cvr3数据
-    val cvr3Data = spark
-      .table("dl_cpc.site_form_unionlog")
-      .where(selectCondition)
-      .filter("ideaid > 0")
-      .withColumn("label", lit(1))
-      .select("searchid", "label")
-      .distinct()
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  1 as label
+         |FROM
+         |  dl_cpc.site_form_unionlog
+         |WHERE
+         |  $selectCondition2
+         |AND
+         |  ideaid>0
+       """.stripMargin
+    println(sqlRequest3)
+    val cvr3Data = spark.sql(sqlRequest3).distinct()
+
 
     // 关联数据
     val result1 = scoreData
