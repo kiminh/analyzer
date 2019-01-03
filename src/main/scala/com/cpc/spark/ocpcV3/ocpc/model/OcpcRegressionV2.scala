@@ -154,6 +154,8 @@ object OcpcRegressionV2 {
          |  $selectCondition
          |AND
          |  label_type!=12
+         |AND
+         |  $mediaSelection
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
@@ -174,6 +176,7 @@ object OcpcRegressionV2 {
 
     var resList = new mutable.ListBuffer[(String, Double)]()
     for (row <- res) {
+      println(row)
       val identifier = row(0).toString
       val pointList = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map(x => {
         val y = x.trim.split("\\s+")
