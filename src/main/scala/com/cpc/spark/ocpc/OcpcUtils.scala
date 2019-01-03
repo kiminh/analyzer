@@ -406,6 +406,8 @@ object OcpcUtils {
        |        $selectCondition
        |    AND
        |        label2=1
+       |    AND
+       |        label_type!=12
        |    GROUP BY searchid, label2) as b
        |ON
        |    a.searchid=b.searchid

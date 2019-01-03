@@ -76,7 +76,7 @@ object OcpcSampleHourlyV1 {
          |from
          |  unionlog_table as a
          |left join
-         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $selectWhere) as b
+         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $selectWhere and label_type!=12) as b
          |on
          |  a.searchid=b.searchid
          |left join

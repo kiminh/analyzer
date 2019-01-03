@@ -68,7 +68,7 @@ object OcpcKnew {
          |from
          |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1) a
          |  left outer join
-         |  (select searchid, label2 as label1 from dl_cpc.ml_cvr_feature_v1 where $dtCondition) b on a.searchid = b.searchid
+         |  (select searchid, label2 as label1 from dl_cpc.ml_cvr_feature_v1 where $dtCondition and label_type!=12) b on a.searchid = b.searchid
          |  left outer join
          |  (select searchid, label as label2 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) c on a.searchid = c.searchid
          |  left outer join
@@ -86,7 +86,7 @@ object OcpcKnew {
     val realCvr3 = getIdeaidCvr3Ratio(date, hour, spark)
 
 
-    val tablename = "dl_cpc.cpc_ocpc_v2_middle_new"
+    val tablename = "test.cpc_ocpc_v2_middle_new"
     val rawData = spark.sql(statSql)
 
 
@@ -102,8 +102,8 @@ object OcpcKnew {
 
 
 
-//    data.write.mode("overwrite").saveAsTable(tablename)
-    data.write.mode("overwrite").insertInto(tablename)
+    data.write.mode("overwrite").saveAsTable(tablename)
+//    data.write.mode("overwrite").insertInto(tablename)
 
     val ratio1Data = getKWithRatioType(spark, tablename, "ratio1", date, hour)
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
@@ -113,8 +113,8 @@ object OcpcKnew {
       .join(ratio2Data, Seq("ideaid", "date", "hour"), "outer")
       .join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3", "date", "hour")
-//    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k_new")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k_new")
+    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k_new")
+//    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k_new")
 
   }
 
@@ -332,7 +332,7 @@ object OcpcKnew {
     val rawData2 = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(s"`date`='$date' and `hour` <= '$hour'")
-      .filter("label2=1")
+      .filter("label2=1 and label_type!=12")
       .withColumn("label", col("label2"))
       .select("ideaid", "label", "searchid")
       .distinct()

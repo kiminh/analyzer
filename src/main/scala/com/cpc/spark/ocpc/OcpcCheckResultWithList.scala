@@ -62,6 +62,7 @@ object OcpcCheckResultWithList {
     val cvrData = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(s"`date`='$date'")
+      .filter(s"label_type!=12")
       .select("searchid", "label_sdk_dlapp")
       .withColumn("iscvr", col("label_sdk_dlapp"))
       .select("searchid", "iscvr")
