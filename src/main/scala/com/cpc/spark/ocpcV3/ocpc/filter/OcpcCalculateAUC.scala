@@ -115,7 +115,10 @@ object OcpcCalculateAUC {
       .select("searchid", "ideaid", "score", "label", "conversion_goal")
 
     // 合并数据
-    val resultDF = result1.union(result2).union(result3)
+    val resultDF = result1
+      .union(result2)
+      .union(result3)
+      .na.fill(0, Seq("label"))
     resultDF.show(10)
     resultDF
   }
@@ -127,14 +130,14 @@ object OcpcCalculateAUC {
 //    val aucGaucBuffer = ListBuffer[AucGauc.AucGauc]()
     val data = rawData.filter(s"conversion_goal=$conversionGoal")
     val aucList = new mutable.ListBuffer[(String, Double)]()
-    val ideaidList = data.select("ideaid").distinct().rdd.map(x=>x.toString())
+    val ideaidList = data.select("ideaid").distinct()
     val ideaidCNT = ideaidList.count()
     println(s"################ count of ideaid list: $ideaidCNT ################")
 
-    //按栏位遍历
+    //按ideaid遍历
     var cnt = 0
-    for (ideaid <- ideaidList.collect()) {
-
+    for (row <- ideaidList.collect()) {
+      val ideaid = row.getAs[String]("ideaid")
       if (cnt % 500 == 0) {
         println(s"############### ideaid=$ideaid ################")
       }
@@ -151,69 +154,6 @@ object OcpcCalculateAUC {
         aucList.append((ideaid, aucROC))
 
       }
-//      dataFilterDaslotType.cache()
-//      //按模型遍历
-//      for (exp <- exptag) {
-//        val dataFilterExp = dataFilterDaslotType.filter(s"exptag = '$exp'")
-//        val scoreAndLable = dataFilterExp.select($"score",$"label")
-//          .rdd
-//          .map(x => (x.getAs[Int]("score").toDouble, x.getAs[Int]("label").toDouble))
-//        val scoreAndLabelNum = scoreAndLable.count()
-//        if (scoreAndLabelNum > 0) {
-//          val metrics = new BinaryClassificationMetrics(scoreAndLable)
-//          val aucROC = metrics.areaUnderROC
-//
-//          val aucAndSum = dataFilterExp
-//            .select($"uid",$"score",$"label")
-//            .rdd
-//            .map(x => (x.getAs[String]("uid"),
-//              (x.getAs[Int]("score"), x.getAs[Int]("label"))))
-//            .combineByKey(
-//              x => List(x),
-//              (x: List[(Int, Int)], y: (Int, Int)) => y :: x,
-//              (x: List[(Int, Int)], y: List[(Int, Int)]) => x ::: y
-//            )
-//            .mapValues(x => {
-//              val label = x.map(x => x._2)
-//              val max = x.map(x => x._1).max + 2
-//              val pos = Array.fill(max)(0)
-//              val neg = Array.fill(max)(0)
-//              val n = label.sum //正样本数
-//              val m = x.length - n  //负样本数
-//
-//              for ((s,l) <- x){
-//                if (l == 0) neg(s) += 1
-//                else pos(s) += 1
-//              }
-//
-//              var negSum = 0
-//              var auc: Double = 0
-//              for (i <- 0 to max - 1) {
-//                auc += 1.0 * pos(i) * negSum + pos(i) * neg(i) * 0.5
-//                negSum += neg(i)
-//              }
-//              val result = if (m <= 0 || n <= 0) (0.0, 0.0) else (auc / (1.0 * m * n), 0.0 + m + n)
-//              result
-//            })
-//            .map(x => x._2)
-//
-//          //计算分子
-//          val auc = aucAndSum.map(x => x._1 * x._2).reduce((x, y) => x+y)
-//          //计算分母
-//          val sum = aucAndSum.map(x => x._2).reduce((x, y) => x+y)
-//
-//          val gaucROC = if (sum > 1e-6) auc / sum else 0.0
-//
-//          aucGaucBuffer += AucGauc.AucGauc(auc = aucROC,
-//            gauc = gaucROC,
-//            adslot_type = adslot_type,
-//            model = s"%$exp%",
-//            date = date,
-//            hour = hour)
-//
-//        }
-//      }
-//      dataFilterDaslotType.unpersist()
     }
     val resultDF = spark
       .createDataFrame(aucList)
@@ -221,6 +161,5 @@ object OcpcCalculateAUC {
       .withColumn("conversion_goal", lit(conversionGoal))
 
     resultDF
-//    aucGaucBuffer.toList
   }
 }
