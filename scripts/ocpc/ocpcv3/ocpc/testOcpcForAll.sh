@@ -4,7 +4,7 @@
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
-queue=root.cpc.develop
+queue=root.cpc.bigdata
 
 className=$1
 date=$2
@@ -19,7 +19,7 @@ jars=(
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
-    --executor-memory 100g --driver-memory 20g \
+    --executor-memory 40g --driver-memory 20g \
     --executor-cores 10 --num-executors 20  \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
