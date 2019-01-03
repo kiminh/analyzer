@@ -22,20 +22,21 @@ object OcpcCalculateAUC {
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val data = getData(date, hour, spark)
+//    val data = getData(date, hour, spark)
     val tableName = "test.ocpc_calc_auc20190103"
-    data.write.mode("overwrite").saveAsTable(tableName)
+//    data.write.mode("overwrite").saveAsTable(tableName)
 
     // 计算auc
     // cvr1
     val auc1Data = getAuc(tableName, 1, date, hour, spark)
-    // cvr2
-    val auc2Data = getAuc(tableName, 2, date, hour, spark)
-    // cvr3
-    val auc3Data = getAuc(tableName, 3, date, hour, spark)
-
-    // 合并数据
-    val aucData = auc1Data.union(auc2Data).union(auc3Data)
+//    // cvr2
+//    val auc2Data = getAuc(tableName, 2, date, hour, spark)
+//    // cvr3
+//    val auc3Data = getAuc(tableName, 3, date, hour, spark)
+//
+//    // 合并数据
+//    val aucData = auc1Data.union(auc2Data).union(auc3Data)
+    val aucData = auc1Data
     aucData.show(10)
     aucData.write.mode("overwrite").saveAsTable("test.ocpc_qtt_auc_ideaid20190103")
   }
@@ -172,7 +173,7 @@ object OcpcCalculateAUC {
         println(s"############### ideaid=$ideaid ################")
       }
       cnt += 1
-      val ideaidData = data.filter(s"ideaid=$ideaid")
+      val ideaidData = data.filter(s"ideaid=$ideaid").cache()
       val scoreAndLabel = ideaidData
         .select("score", "label")
         .rdd
@@ -184,7 +185,7 @@ object OcpcCalculateAUC {
         aucList.append((ideaid, aucROC))
 
       }
-//      ideaidData.unpersist()
+      ideaidData.unpersist()
     }
 
     ideaidList.unpersist()
