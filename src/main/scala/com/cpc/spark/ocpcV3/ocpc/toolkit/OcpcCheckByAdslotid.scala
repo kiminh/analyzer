@@ -83,6 +83,7 @@ object OcpcCheckByAdslotid {
     val cvr1Data = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(selectCondition)
+      .filter(s"label_type!=12")
       .withColumn("iscvr1", col("label2"))
       .filter("iscvr1=1")
       .select("searchid", "iscvr1")

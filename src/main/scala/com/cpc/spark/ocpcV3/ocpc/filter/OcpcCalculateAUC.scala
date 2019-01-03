@@ -87,6 +87,8 @@ object OcpcCalculateAUC {
          |  $selectCondition2
          |AND
          |  label2=1
+         |AND
+         |  label_type!=12
          |GROUP BY searchid, label2
        """.stripMargin
     println(sqlRequest1)

@@ -92,6 +92,8 @@ object OcpcRegression {
          |  dl_cpc.ml_cvr_feature_v1
          |WHERE
          |  $selectCondition
+         |AND
+         |  label_type!=12
        """.stripMargin
     println(sqlRequest2)
     val cvr1Data = spark.sql(sqlRequest2)
