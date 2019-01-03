@@ -169,9 +169,7 @@ object OcpcCalculateAUC {
     var cnt = 0
     for (row <- ideaidList.collect()) {
       val ideaid = row.getAs[Int]("ideaid").toString
-      if (cnt % 500 == 0) {
-        println(s"############### ideaid=$ideaid ################")
-      }
+      println(s"############### ideaid=$ideaid, cnt=$cnt ################")
       cnt += 1
       val ideaidData = data.filter(s"ideaid=$ideaid")
       val scoreAndLabel = ideaidData
