@@ -128,10 +128,17 @@ object OcpcCalculateAUC {
     val data = rawData.filter(s"conversion_goal=$conversionGoal")
     val aucList = new mutable.ListBuffer[(String, Double)]()
     val ideaidList = data.select("ideaid").distinct().rdd.map(x=>x.toString())
+    val ideaidCNT = ideaidList.count()
+    println(s"################ count of ideaid list: $ideaidCNT ################")
 
     //按栏位遍历
+    var cnt = 0
     for (ideaid <- ideaidList.collect()) {
 
+      if (cnt % 500 == 0) {
+        println(s"############### ideaid=$ideaid ################")
+      }
+      cnt += 1
       val ideaidData = data.filter(s"ideaid=$ideaid")
       val scoreAndLabel = ideaidData
         .select("score", "label")
