@@ -58,6 +58,7 @@ class DNNSampleCvr(spark: SparkSession, trdate: String = "", trpath: String = ""
          |inner join
          |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
          |  WHERE `date` = '$date'
+         |  and label_type !=12
          |) b on a.searchid = b.searchid
       """.stripMargin
     println("============= as features ==============")
