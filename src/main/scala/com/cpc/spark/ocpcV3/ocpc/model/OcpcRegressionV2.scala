@@ -167,11 +167,14 @@ object OcpcRegressionV2 {
 
   def getKWithRatio(baseData: DataFrame, date: String, hour: String, spark: SparkSession) = {
 
-    val res = baseData
+    val rawData = baseData
       .withColumn("str", concat_ws(" ", col(s"k_ratio"), col("ratio"), col("click_cnt")))
       .groupBy("identifier")
       .agg(collect_set("str").as("liststr"))
-      .select("identifier", "liststr").collect()
+      .select("identifier", "liststr")
+    rawData.write.mode("overwrite").saveAsTable("test.ocpc_check_regression20190103")
+
+    val res = rawData.collect()
 
 
     var resList = new mutable.ListBuffer[(String, Double)]()
