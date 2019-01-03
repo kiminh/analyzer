@@ -65,7 +65,7 @@ object OcpcCalculateAUC {
          |where $selectCondition
          |and isclick = 1
          |and ext['exp_ctr'].int_value is not null
-         |and media_appsid  in ('80001098', '80001292')
+         |and media_appsid  in ("80000001", "80000002")
          |and ext['antispam'].int_value = 0
          |and ideaid > 0 and adsrc = 1
          |and ext_int['dsp_adnum_by_src_1'] > 1
