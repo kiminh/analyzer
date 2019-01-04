@@ -1063,7 +1063,7 @@ object SaveFeatures {
         |ALTER TABLE dl_cpc.ml_cvr_feature_v2 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
         | LOCATION  '/user/cpc/lrmodel/cvrdata_userapiback/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
-
+    s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v2_done/$date-$hour.ok" !
 
     /* 应用商城下载转化 */
     val sql_motivate =
