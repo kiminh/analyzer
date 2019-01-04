@@ -19,7 +19,7 @@ object OcpcCalculateAUC {
     val conversionGoal = args(2).toString
     val spark = SparkSession
       .builder()
-      .appName(s"ocpc ideaid auc: $date, $hour")
+      .appName(s"ocpc userid auc: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
 //    // 抽取数据
@@ -27,7 +27,7 @@ object OcpcCalculateAUC {
     val tableName1 = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
 //    data.write.mode("overwrite").saveAsTable(tableName1)
 
-    // 过滤去除当天cvrcntt<100的ideaid
+    // 过滤去除当天cvrcntt<100的userid
     val cvThreshold = 100
     val processedData = filterData(tableName1, cvThreshold, date, hour, spark)
     val tableName2 = "test.ocpc_auc_filter_conversiongoal_" + conversionGoal
@@ -35,7 +35,7 @@ object OcpcCalculateAUC {
     // 计算auc
     val aucData = getAuc(tableName2, date, hour, spark)
     val resultDF = aucData.withColumn("conversion_goal", lit(conversionGoal))
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_auc_data20190104")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_auc_data20190104_bak")
   }
 
   def getData(conversionGoal: String, date: String, hour: String, spark: SparkSession) = {
@@ -54,7 +54,7 @@ object OcpcCalculateAUC {
       s"""
          |select
          |    searchid,
-         |    ideaid,
+         |    userid,
          |    ext['exp_cvr'].int_value as score
          |from dl_cpc.cpc_union_log
          |where $selectCondition1
@@ -131,7 +131,7 @@ object OcpcCalculateAUC {
     // 关联数据
     val resultDF = scoreData
       .join(cvrData, Seq("searchid"), "left_outer")
-      .select("searchid", "ideaid", "score", "label")
+      .select("searchid", "userid", "score", "label")
       .na.fill(0, Seq("label"))
 //    resultDF.show(10)
     resultDF
@@ -140,14 +140,14 @@ object OcpcCalculateAUC {
   def filterData(tableName: String, cvThreshold: Int, date: String, hour: String, spark: SparkSession) = {
     val rawData = spark.table(tableName)
     val dataIdea = rawData
-      .groupBy("ideaid")
+      .groupBy("userid")
       .agg(sum(col("label")).alias("cvrcnt"))
-      .select("ideaid", "cvrcnt")
+      .select("userid", "cvrcnt")
       .filter(s"cvrcnt >= $cvThreshold")
 
     val resultDF = rawData
-      .join(dataIdea, Seq("ideaid"), "inner")
-      .select("searchid", "ideaid", "score", "label")
+      .join(dataIdea, Seq("userid"), "inner")
+      .select("searchid", "userid", "score", "label")
 
     resultDF
   }
@@ -161,18 +161,18 @@ object OcpcCalculateAUC {
 
 
     val aucList = new mutable.ListBuffer[(String, Double)]()
-    val ideaidList = data.select("ideaid").distinct().cache()
-    val ideaidCNT = ideaidList.count()
-    println(s"################ count of ideaid list: $ideaidCNT ################")
+    val useridList = data.select("userid").distinct().cache()
+    val useridCnt = useridList.count()
+    println(s"################ count of userid list: $useridCnt ################")
 
-    //按ideaid遍历
+    //按userid遍历
     var cnt = 0
-    for (row <- ideaidList.collect()) {
-      val ideaid = row.getAs[Int]("ideaid").toString
-      println(s"############### ideaid=$ideaid, cnt=$cnt ################")
+    for (row <- useridList.collect()) {
+      val userid = row.getAs[Int]("userid").toString
+      println(s"############### userid=$userid, cnt=$cnt ################")
       cnt += 1
-      val ideaidData = data.filter(s"ideaid=$ideaid")
-      val scoreAndLabel = ideaidData
+      val userData = data.filter(s"userid=$userid")
+      val scoreAndLabel = userData
         .select("score", "label")
         .rdd
         .map(x=>(x.getAs[Int]("score").toDouble, x.getAs[Int]("label").toDouble))
@@ -181,16 +181,16 @@ object OcpcCalculateAUC {
       if (scoreAndLabelNum > 0) {
         val metrics = new BinaryClassificationMetrics(scoreAndLabel)
         val aucROC = metrics.areaUnderROC
-        aucList.append((ideaid, aucROC))
+        aucList.append((userid, aucROC))
 
       }
       scoreAndLabel.unpersist()
     }
 
-    ideaidList.unpersist()
+    useridList.unpersist()
     val resultDF = spark
       .createDataFrame(aucList)
-      .toDF("ideaid", "auc")
+      .toDF("userid", "auc")
 
     resultDF
   }
