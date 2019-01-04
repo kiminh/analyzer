@@ -38,7 +38,7 @@ object OcpcSuggestCpa{
     val cpaData = cpa1Data
       .union(cpa2Data)
       .union(cpa3Data)
-      .select("ideaid", "userid", "adclass", "conversion_goal", "cost", "click", "cvrcnt", "cpa", "acb", "cal_bid", "pcvr", "post_cvr", "pcoc")
+      .select("ideaid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
@@ -59,8 +59,9 @@ object OcpcSuggestCpa{
          |  ideaid,
          |  userid,
          |  adclass,
-         |  total_price,
+         |  show_cnt,
          |  ctr_cnt,
+         |  total_price,
          |  total_bid,
          |  total_pcvr
          |FROM
@@ -75,11 +76,12 @@ object OcpcSuggestCpa{
     val resultDF = spark
       .sql(sqlRequest)
       .groupBy("ideaid", "userid", "adclass")
-      .agg(sum(col("total_price")).alias("cost"),
+      .agg(sum(col("show_cnt")).alias("show"),
         sum(col("ctr_cnt")).alias("click"),
+        sum(col("total_price")).alias("cost"),
         sum(col("total_bid")).alias("click_bid_sum"),
         sum(col("total_pcvr")).alias("click_pcvr_sum"))
-      .select("ideaid", "userid", "adclass", "cost", "click", "click_bid_sum", "click_pcvr_sum")
+      .select("ideaid", "userid", "adclass", "show", "click", "cost", "click_bid_sum", "click_pcvr_sum")
 
     resultDF
   }
@@ -109,13 +111,16 @@ object OcpcSuggestCpa{
     val resultDF = costData
       .join(cvrData, Seq("ideaid", "adclass"), "inner")
       .filter("cvrcnt is not null and cvrcnt>0")
-      .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
+      .withColumn("post_ctr", col("click") * 1.0 / col("show"))
+      .withColumn("acp", col("cost") * 1.0 / col("click"))
       .withColumn("acb", col("click_bid_sum") * 1.0 / col("click"))
+      .withColumn("jfb", col("cost") * 1.0 / col("click_bid_sum"))
+      .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
       .withColumn("pcvr", col("click_pcvr_sum") * 1.0 / col("click"))
       .withColumn("post_cvr", col("cvrcnt") * 1.0 / col("click"))
       .withColumn("cal_bid", col("cost") * 1.0 / col("cvrcnt") * (col("click_pcvr_sum") * 1.0 / col("click")))
       .withColumn("pcoc", col("click_pcvr_sum") * 1.0 / col("cvrcnt"))
-      .select("ideaid", "userid", "adclass", "cpa", "cost", "cvrcnt", "click", "acb", "pcvr", "post_cvr", "cal_bid", "pcoc")
+      .select("ideaid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "cal_bid", "pcoc")
       .filter("cpa is not null and cpa > 0")
 
     resultDF
