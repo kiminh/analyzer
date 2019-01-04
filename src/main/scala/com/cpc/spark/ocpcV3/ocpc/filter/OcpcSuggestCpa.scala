@@ -38,7 +38,7 @@ object OcpcSuggestCpa{
     val cpaData = cpa1Data
       .union(cpa2Data)
       .union(cpa3Data)
-      .select("ideaid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid")
+      .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
@@ -56,7 +56,7 @@ object OcpcSuggestCpa{
     val sqlRequest =
       s"""
          |SELECT
-         |  ideaid,
+         |  unitid,
          |  userid,
          |  adclass,
          |  show_cnt,
@@ -75,13 +75,13 @@ object OcpcSuggestCpa{
     println(sqlRequest)
     val resultDF = spark
       .sql(sqlRequest)
-      .groupBy("ideaid", "userid", "adclass")
+      .groupBy("unitid", "userid", "adclass")
       .agg(sum(col("show_cnt")).alias("show"),
         sum(col("ctr_cnt")).alias("click"),
         sum(col("total_price")).alias("cost"),
         sum(col("total_bid")).alias("click_bid_sum"),
         sum(col("total_pcvr")).alias("click_pcvr_sum"))
-      .select("ideaid", "userid", "adclass", "show", "click", "cost", "click_bid_sum", "click_pcvr_sum")
+      .select("unitid", "userid", "adclass", "show", "click", "cost", "click_bid_sum", "click_pcvr_sum")
 
     resultDF
   }
@@ -98,9 +98,9 @@ object OcpcSuggestCpa{
       .table(tableName)
       .where(selectCondition)
       .filter(s"media_appsid in ('80000001', '80000002')")
-      .groupBy("ideaid", "adclass")
+      .groupBy("unitid", "adclass")
       .agg(sum(col(cvrType + "_cnt")).alias("cvrcnt"))
-      .select("ideaid", "adclass", "cvrcnt")
+      .select("unitid", "adclass", "cvrcnt")
       .filter("cvrcnt>30 and cvrcnt is not null")
 
 
@@ -109,7 +109,7 @@ object OcpcSuggestCpa{
 
   def calculateCPA(costData: DataFrame, cvrData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val resultDF = costData
-      .join(cvrData, Seq("ideaid", "adclass"), "inner")
+      .join(cvrData, Seq("unitid", "adclass"), "inner")
       .filter("cvrcnt is not null and cvrcnt>0")
       .withColumn("post_ctr", col("click") * 1.0 / col("show"))
       .withColumn("acp", col("cost") * 1.0 / col("click"))
@@ -120,7 +120,7 @@ object OcpcSuggestCpa{
       .withColumn("post_cvr", col("cvrcnt") * 1.0 / col("click"))
       .withColumn("cal_bid", col("cost") * 1.0 / col("cvrcnt") * (col("click_pcvr_sum") * 1.0 / col("click")))
       .withColumn("pcoc", col("click_pcvr_sum") * 1.0 / col("cvrcnt"))
-      .select("ideaid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "cal_bid", "pcoc")
+      .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "cal_bid", "pcoc")
       .filter("cpa is not null and cpa > 0")
 
     resultDF
