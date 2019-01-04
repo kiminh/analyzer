@@ -96,8 +96,6 @@ object Utils {
       .enableHiveSupport()
       .getOrCreate()
 
-    val conf = ConfigFactory.load()
-
     val sql = generateSql(str, "redis")
     print(sql)
 
