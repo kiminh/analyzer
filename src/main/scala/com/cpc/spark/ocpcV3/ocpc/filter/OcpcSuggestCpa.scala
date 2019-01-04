@@ -58,11 +58,14 @@ object OcpcSuggestCpa{
       .withColumn("original_conversion", col("conversion_goal"))
       .withColumn("conversion_goal", when(col("conversion_goal") === 3, 1).otherwise(col("conversion_goal")))
       .join(kvalue, Seq("unitid", "conversion_goal"), "left_outer")
+      .withColumn("cal_bid", col("cpa") * col("pcvr") * col("kvalue"))
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
+//    test.ocpc_suggest_cpa_recommend_hourly20190104
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly")
+//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: test.ocpc_suggest_cpa_recommend_hourly")
 
   }
