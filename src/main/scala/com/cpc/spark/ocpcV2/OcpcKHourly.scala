@@ -53,7 +53,7 @@ object OcpcKHourly {
          |from
          |  (select * from dl_cpc.ocpc_unionlog where $selectCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1) a
          |  left outer join
-         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $selectCondition) b on a.searchid = b.searchid
+         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $selectCondition and label_type!=12) b on a.searchid = b.searchid
          |  left outer join
          |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $selectCondition) c on a.searchid = c.searchid
          |group by

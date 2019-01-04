@@ -40,7 +40,7 @@ object OcpcSpecificAd {
          |      (
          |        select searchid, label
          |        from dl_cpc.ml_cvr_feature_v1
-         |        where $selectWhere
+         |        where $selectWhere and label_type!=12
          |      ) b on a.searchid = b.searchid
       """.stripMargin
     println(sqlRequest)

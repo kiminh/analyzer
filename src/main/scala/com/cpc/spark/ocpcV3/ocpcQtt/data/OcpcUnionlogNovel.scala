@@ -66,6 +66,8 @@ object OcpcUnionlogNovel {
          |  where $selectWhere
          |AND
          |  label2=1
+         |AND
+         |  label_type!=12
        """.stripMargin
     println(sqlRequest2)
     val labelData1 = spark.sql(sqlRequest2).distinct()
@@ -98,6 +100,8 @@ object OcpcUnionlogNovel {
          |  where $selectWhere
          |AND
          |  label2=1
+         |AND
+         |  label_type!=12
        """.stripMargin
     println(sqlRequest4)
     val labelData3 = spark.sql(sqlRequest4).distinct()

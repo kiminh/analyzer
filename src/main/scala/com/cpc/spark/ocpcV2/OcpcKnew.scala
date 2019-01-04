@@ -68,7 +68,7 @@ object OcpcKnew {
          |from
          |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1) a
          |  left outer join
-         |  (select searchid, label2 as label1 from dl_cpc.ml_cvr_feature_v1 where $dtCondition) b on a.searchid = b.searchid
+         |  (select searchid, label2 as label1 from dl_cpc.ml_cvr_feature_v1 where $dtCondition and label_type!=12) b on a.searchid = b.searchid
          |  left outer join
          |  (select searchid, label as label2 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) c on a.searchid = c.searchid
          |  left outer join
@@ -332,7 +332,7 @@ object OcpcKnew {
     val rawData2 = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(s"`date`='$date' and `hour` <= '$hour'")
-      .filter("label2=1")
+      .filter("label2=1 and label_type!=12")
       .withColumn("label", col("label2"))
       .select("ideaid", "label", "searchid")
       .distinct()

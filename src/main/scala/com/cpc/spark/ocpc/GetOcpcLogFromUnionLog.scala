@@ -57,7 +57,7 @@ object GetOcpcLogFromUnionLog {
          |      (
          |        select searchid, label2
          |        from dl_cpc.ml_cvr_feature_v1
-         |        where $timeRange
+         |        where $timeRange and label_type!=12
          |      ) b on a.searchid = b.searchid
       """.stripMargin
 
@@ -156,7 +156,7 @@ object GetOcpcLogFromUnionLog {
          |      (
          |        select searchid, label2
          |        from dl_cpc.ml_cvr_feature_v1
-         |        where $timeRange
+         |        where $timeRange and label_type!=12
          |      ) b on a.searchid = b.searchid
       """.stripMargin
 

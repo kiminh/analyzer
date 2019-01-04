@@ -12,7 +12,10 @@ import org.apache.spark.sql.functions._
 import sun.java2d.loops.DrawGlyphListAA
 
 
-object OcpcPIDwithCPA {
+object OcpcPIDwithCPAv2 {
+  /*
+  用于ocpc明投的相关代码
+   */
   def main(args: Array[String]): Unit = {
     /*
     根据PID控制调整k值：
@@ -23,35 +26,45 @@ object OcpcPIDwithCPA {
      */
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
 
+    // bash: 2019-01-02 12 version2 novel
     val date = args(0).toString
     val hour = args(1).toString
+    val version = args(2).toString
+    val media = args(3).toString
+    var mediaSelection = s"media_appsid in ('80000001', '80000002')"
+    if (media == "qtt") {
+      mediaSelection = s"media_appsid in ('80000001', '80000002')"
+    } else {
+      mediaSelection = s"media_appsid in ('80001098','80001292')"
+    }
 
     // TODO 表名
     val prevTable = spark
-      .table("dl_cpc.ocpc_prev_pb")
+      .table("test.ocpc_prev_pb_hourly")
+      .where(s"version='$version'")
+    val cvrData = getCVR1data(date, hour, spark)
 
-
-    val historyData = getHistory(date, hour, spark)
+    val historyData = getHistory(mediaSelection, date, hour, spark)
     val kvalue = getHistoryK(historyData, prevTable, date, hour, spark)
-    val cpaHistory = getCPAhistory(historyData, date, hour, spark)
+    val cpaHistory = getCPAhistory(historyData, cvrData, 1, date, hour, spark)
     val cpaRatio = calculateCPAratio(cpaHistory, date, hour, spark)
     val result = updateK(kvalue, cpaRatio, date, hour, spark)
     val resultDF = result
       .select("identifier", "k_value", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("version", lit("v1"))
+      .withColumn("version", lit(version))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
-    resultDF
-      .write
-      .mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pid_k_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+//    resultDF
+//      .write
+//      .mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_pid_k_hourly")
 
 
   }
 
-  def getHistory(date: String, hour: String, spark: SparkSession) = {
+  def getHistory(mediaSelection: String, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
@@ -86,10 +99,39 @@ object OcpcPIDwithCPA {
          |WHERE
          |  $selectCondition
          |AND
-         |  media_appsid in ('80000001', '80000002')
+         |  $mediaSelection
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
+    resultDF
+  }
+
+  def getCVR1data(date: String, hour: String, spark: SparkSession) = {
+    /*
+    根据需要调整获取cvr的函数
+     */
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -24)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+
+    val resultDF = spark
+      .table("dl_cpc.ml_cvr_feature_v1")
+      .where(selectCondition)
+      .filter(s"label_type!=12")
+      .withColumn("iscvr", col("label2"))
+      .select("searchid", "iscvr")
+      .filter("iscvr=1")
+      .distinct()
     resultDF
   }
 
@@ -121,13 +163,12 @@ object OcpcPIDwithCPA {
     resultDF
   }
 
-  def getCPAhistory(historyData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getCPAhistory(historyData: DataFrame, cvrRaw: DataFrame, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     /*
     计算cpa_history，分为cvr2和cvr3
     1. 获取cost
-    2. 获取cvr2
-    3. 获取cvr3
-    4. 分别计算cpa_history
+    2. 获取cvr
+    3. 计算cpa_history
      */
 
     // cost data
@@ -140,66 +181,19 @@ object OcpcPIDwithCPA {
       .select("identifier", "cost", "cpagiven")
 
     // cvr data
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -24)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
-
-    val rawCvr1 = spark
-      .table("dl_cpc.ml_cvr_feature_v1")
-      .where(selectCondition)
-      .filter(s"label_type!=12")
-      .withColumn("iscvr1", col("label2"))
-      .select("searchid", "iscvr1")
-      .filter("iscvr1=1")
-      .distinct()
-
-    val rawCvr2 = spark
-      .table("dl_cpc.ml_cvr_feature_v2")
-      .where(selectCondition)
-      .withColumn("iscvr2", col("label"))
-      .select("searchid", "iscvr2")
-      .filter("iscvr2=1")
-      .distinct()
-
-    // cvr1
-    val cvr1Data = historyData
-      .join(rawCvr1, Seq("searchid"), "left_outer")
+    // 用searchid关联
+    val cvrData = historyData
+      .join(cvrRaw, Seq("searchid"), "left_outer")
       .groupBy("identifier")
-      .agg(sum(col("iscvr1")).alias("cvrcnt"))
-      .select("identifier", "cvrcnt")
-
-    // cvr2
-    val cvr2Data = historyData
-      .join(rawCvr2, Seq("searchid"), "left_outer")
-      .groupBy("identifier")
-      .agg(sum(col("iscvr2")).alias("cvrcnt"))
+      .agg(sum(col("iscvr")).alias("cvrcnt"))
       .select("identifier", "cvrcnt")
 
     // 计算cpa
-    // cvr1
-    val cpa1 = costData
-      .join(cvr1Data, Seq("identifier"), "left_outer")
+    val resultDF = costData
+      .join(cvrData, Seq("identifier"), "left_outer")
       .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
-      .withColumn("conversion_goal", lit(1))
+      .withColumn("conversion_goal", lit(conversionGoal))
       .select("identifier", "cpa", "cvrcnt", "cost", "cpagiven", "conversion_goal")
-    // cvr2
-    val cpa2 = costData
-      .join(cvr2Data, Seq("identifier"), "left_outer")
-      .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
-      .withColumn("conversion_goal", lit(2))
-      .select("identifier", "cpa", "cvrcnt", "cost", "cpagiven", "conversion_goal")
-
-    val resultDF = cpa1.union(cpa2)
 
     resultDF
   }
@@ -261,4 +255,5 @@ object OcpcPIDwithCPA {
   }
 
 }
+
 

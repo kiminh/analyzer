@@ -86,6 +86,8 @@ object OcpcMonitor {
          |            `date` = '$date'
          |        and
          |            `hour` = '$hour'
+         |        and
+         |            label_type!=12
          |    ) b on a.searchid = b.searchid
        """.stripMargin
 
@@ -221,7 +223,7 @@ object OcpcMonitor {
          |            searchid,
          |            label2 as iscvr
          |        from dl_cpc.ml_cvr_feature_v1
-         |        WHERE $selectCondition
+         |        WHERE $selectCondition and label_type!=12
          |    ) b on a.searchid = b.searchid
        """.stripMargin
     println(sqlRequest1)

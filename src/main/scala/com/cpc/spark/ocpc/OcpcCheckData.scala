@@ -71,7 +71,7 @@ object OcpcCheckData {
          |            searchid,
          |            label2 as iscvr
          |        from dl_cpc.ml_cvr_feature_v1
-         |        WHERE `date` = "$date" and `hour` = '$hour'
+         |        WHERE `date` = "$date" and `hour` = '$hour' and label_type!=12
          |    ) c
          | on
          |    b.searchid = c.searchid

@@ -130,7 +130,7 @@ object OcpcKappOpen {
     val cvrData = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(selectCondition2)
-      .filter("label_sdk_dlapp=1")
+      .filter("label_sdk_dlapp=1 and label_type!=12")
       .withColumn("label", col("label_sdk_dlapp"))
       .select("searchid", "label", "date", "hour")
 
@@ -317,7 +317,7 @@ object OcpcKappOpen {
     val rawData2 = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(s"`date`='$date' and `hour` <= '$hour'")
-      .filter("label2=1")
+      .filter("label2=1 and label_type!=12")
       .withColumn("label", col("label2"))
       .select("ideaid", "label", "searchid")
       .distinct()

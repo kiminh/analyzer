@@ -152,6 +152,7 @@ object OcpcPIDwithCPAv3 {
     val rawCvr2 = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(selectCondition)
+      .filter(s"label_type!=12")
       .withColumn("iscvr2", col("label2"))
       .select("searchid", "iscvr2")
       .filter("iscvr2=1")
