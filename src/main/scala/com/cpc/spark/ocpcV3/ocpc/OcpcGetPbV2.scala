@@ -41,33 +41,33 @@ object OcpcGetPbV2 {
     val kvalue = getK(cpaHistory, date, hour, spark)
 
     // 组装数据
-    val data = base
-      .join(cpaHistory, Seq("identifier", "new_adclass"), "left_outer")
-      .select("identifier", "new_adclass", "cpa_history", "conversion_goal")
-      .join(adclassCPA, Seq("new_adclass"), "left_outer")
-      .withColumn("conversion_goal", when(col("cpa_history").isNull && col("conversion_goal").isNull, lit(1)).otherwise(col("conversion_goal")))
-      .withColumn("cpa_given", when(col("cpa_history").isNull && col("conversion_goal") === 1, col("cpa_adclass")).otherwise(col("cpa_history")))
-      .filter("cpa_given is not null and conversion_goal is not null")
-
-    val resultDF = data
-      .groupBy("identifier", "conversion_goal")
-      .agg(avg(col("cpa_given")).alias("cpa_given"))
-      .join(cvrData, Seq("identifier", "conversion_goal"), "left_outer")
-      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt")
-      .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
-      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt", "kvalue")
-      .withColumn("cvrcnt", when(col("cvrcnt").isNull, 0).otherwise(col("cvrcnt")))
-      .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
-      .selectExpr("cast(identifier as string) identifier", "conversion_goal", "cpa_given", "cast(cvrcnt as bigint) cvrcnt", "cast(kvalue as double) kvalue")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit("v1"))
-
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb")
-    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
-
-    savePbPack(resultDF, "v1")
+//    val data = base
+//      .join(cpaHistory, Seq("identifier", "new_adclass"), "left_outer")
+//      .select("identifier", "new_adclass", "cpa_history", "conversion_goal")
+//      .join(adclassCPA, Seq("new_adclass"), "left_outer")
+//      .withColumn("conversion_goal", when(col("cpa_history").isNull && col("conversion_goal").isNull, lit(1)).otherwise(col("conversion_goal")))
+//      .withColumn("cpa_given", when(col("cpa_history").isNull && col("conversion_goal") === 1, col("cpa_adclass")).otherwise(col("cpa_history")))
+//      .filter("cpa_given is not null and conversion_goal is not null")
+//
+//    val resultDF = data
+//      .groupBy("identifier", "conversion_goal")
+//      .agg(avg(col("cpa_given")).alias("cpa_given"))
+//      .join(cvrData, Seq("identifier", "conversion_goal"), "left_outer")
+//      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt")
+//      .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
+//      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt", "kvalue")
+//      .withColumn("cvrcnt", when(col("cvrcnt").isNull, 0).otherwise(col("cvrcnt")))
+//      .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
+//      .selectExpr("cast(identifier as string) identifier", "conversion_goal", "cpa_given", "cast(cvrcnt as bigint) cvrcnt", "cast(kvalue as double) kvalue")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit("v1"))
+//
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb")
+//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
+//    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
+//
+//    savePbPack(resultDF, "v1")
   }
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
