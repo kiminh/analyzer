@@ -30,6 +30,7 @@ object OcpcGetPbV2 {
     val hour = args(1).toString
     val version = args(2).toString
     val media = args(3).toString
+    val isKnown = args(4).toInt
     var mediaSelection = s"media_appsid in ('80000001', '80000002')"
     if (media == "qtt") {
       mediaSelection = s"media_appsid in ('80000001', '80000002')"
@@ -43,40 +44,22 @@ object OcpcGetPbV2 {
     //    dl_cpc.ocpc_pb_result_hourly
     //    dl_cpc.ocpc_prev_pb
 
-//    // 读取数据
-//    val base = getBaseData(date, hour, spark)
-//    val cvrData = getCVR(date, hour, spark)
-//    val cpaHistory = getCPAgiven(date, hour, spark)
-//    val kvalue = getK(cpaHistory, date, hour, spark)
+    // 读取数据
+    val conversionGoal = 1
+    val base = getBaseData(mediaSelection, date, hour, spark)
+    val cvrData = getOcpcCVR(mediaSelection, conversionGoal, date, hour, spark)
+    val initKdata = getInitK(mediaSelection, conversionGoal, date, hour, spark)
+//    val cpaGiven = getCPAgiven("adv", version, date, hour, spark)
+    val kvalue = getK(version, date, hour, spark)
 
     // 组装数据
-//    val data = base
-//      .join(cpaHistory, Seq("identifier", "new_adclass"), "left_outer")
-//      .select("identifier", "new_adclass", "cpa_history", "conversion_goal")
-//      .join(adclassCPA, Seq("new_adclass"), "left_outer")
-//      .withColumn("conversion_goal", when(col("cpa_history").isNull && col("conversion_goal").isNull, lit(1)).otherwise(col("conversion_goal")))
-//      .withColumn("cpa_given", when(col("cpa_history").isNull && col("conversion_goal") === 1, col("cpa_adclass")).otherwise(col("cpa_history")))
-//      .filter("cpa_given is not null and conversion_goal is not null")
-//
-//    val resultDF = data
-//      .groupBy("identifier", "conversion_goal")
-//      .agg(avg(col("cpa_given")).alias("cpa_given"))
-//      .join(cvrData, Seq("identifier", "conversion_goal"), "left_outer")
-//      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt")
-//      .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
-//      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt", "kvalue")
-//      .withColumn("cvrcnt", when(col("cvrcnt").isNull, 0).otherwise(col("cvrcnt")))
-//      .withColumn("kvalue", when(col("kvalue").isNull, 0.0).otherwise(col("kvalue")))
-//      .selectExpr("cast(identifier as string) identifier", "conversion_goal", "cpa_given", "cast(cvrcnt as bigint) cvrcnt", "cast(kvalue as double) kvalue")
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit("v1"))
-//
-//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb")
+    val resultDF = assemblyPBknown(mediaSelection, base, cvrData, initKdata, kvalue, version, date, hour, spark)
+
+    resultDF.write.mode("overwrite").insertInto("test.ocpc_prev_pb_hourly")
 //    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
-//    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
-//
-//    savePbPack(resultDF, "v1")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly")
+
+    savePbPack(resultDF, version, isKnown)
   }
 
   def getBaseData(mediaSelection: String, date: String, hour: String, spark: SparkSession) = {
@@ -93,8 +76,7 @@ object OcpcGetPbV2 {
     val sqlRequest =
       s"""
          |SELECT
-         |  cast(unitid as string) as identifier,
-         |  adclass
+         |  cast(unitid as string) as identifier
          |FROM
          |  dl_cpc.ocpc_ctr_data_hourly
          |WHERE
@@ -104,18 +86,113 @@ object OcpcGetPbV2 {
        """.stripMargin
 
     println(sqlRequest)
-    val resultDF = spark
-      .sql(sqlRequest)
-      .withColumn("new_adclass", col("adclass")/1000)
-      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
-      .select("identifier", "new_adclass")
-      .distinct()
+    val resultDF = spark.sql(sqlRequest).distinct()
 
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_base_ctr_20181227")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_base_ctr_20181227")
     resultDF
   }
 
-  def getCVR(date: String, hour: String, spark: SparkSession) = {
+  def getInitK(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+    /*
+    直接获取所有的identifier的转化数据
+     */
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -7)
+    val startdate = calendar.getTime
+    val date1 = dateConverter.format(startdate)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
+
+    // ctr数据
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  SUM(total_price) as total_cost,
+         |  SUM(ctr_cnt) as ctrcnt,
+         |  SUM(total_pcvr) as total_pcvr
+         |FROM
+         |  dl_cpc.ocpc_ctr_data_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
+         |GROUP BY unitid
+       """.stripMargin
+    println(sqlRequest1)
+    val ctrData = spark
+      .sql(sqlRequest1)
+      .selectExpr("cast(unitid as string) identifier", "total_cost", "ctrcnt", "total_pcvr")
+
+    // 根据conversionGoal选择cv的sql脚本
+    var sqlRequest2 = ""
+    if (conversionGoal == 1) {
+      // cvr1数据
+      sqlRequest2 =
+        s"""
+           |SELECT
+           |  searchid,
+           |  unitid,
+           |  label2 as label
+           |FROM
+           |  dl_cpc.ml_cvr_feature_v1
+           |WHERE
+           |  $selectCondition
+           |AND
+           |  $mediaSelection
+           |AND
+           |  label2=1
+           |AND
+           |  label_type!=12
+           |GROUP BY searchid, unitid, label2
+       """.stripMargin
+    } else {
+      // cvr2数据
+      sqlRequest2 =
+        s"""
+           |SELECT
+           |  searchid,
+           |  unitid,
+           |  label
+           |FROM
+           |  dl_cpc.ml_cvr_feature_v2
+           |WHERE
+           |  $selectCondition
+           |AND
+           |  $mediaSelection
+           |AND
+           |  label=1
+           |GROUP BY searchid, unitid, label
+       """.stripMargin
+    }
+    println(sqlRequest2)
+    val cvrData = spark
+      .sql(sqlRequest2)
+      .groupBy("unitid")
+      .agg(sum(col("label")).alias("complete_cvrcnt"))
+      .na.fill(0, Seq("cvrcnt"))
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .selectExpr("cast(unitid as string) identifier", "cvrcnt", "conversion_goal")
+
+    // 数据关联
+    val result = ctrData
+      .join(cvrData, Seq("identifier"), "left_outer")
+      .select("identifier", "cvrcnt", "conversion_goal", "total_cost", "ctrcnt", "total_pcvr")
+      .na.fill(0, Seq("cvrcnt"))
+      .filter("cvrcnt > 0")
+      .withColumn("hcvr", col("cvrcnt") * 1.0 / col("ctrcnt"))
+      .withColumn("hpcvr", col("total_pcvr") * 1.0 / col("ctrcnt"))
+      .withColumn("init_k", col("hcvr") * 1.0 / col("hpcvr"))
+
+    val resultDF = result.select("identifier", "conversion_goal", "init_k")
+
+    resultDF
+  }
+
+  def getOcpcCVR(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     /*
     根据ocpc_union_log_hourly关联到正在跑ocpc的广告数据
      */
@@ -132,64 +209,116 @@ object OcpcGetPbV2 {
     val ocpcUnionlog = spark
       .table("dl_cpc.ocpc_union_log_hourly")
       .where(selectCondition)
+      .filter(mediaSelection)
       .withColumn("identifier", col("unitid"))
       .filter("isclick=1")
       .selectExpr("searchid", "cast(identifier as string) identifier")
 
     // cvr data
+    // 根据conversionGoal选择cv的sql脚本
+    var sqlRequest = ""
+    if (conversionGoal == 1) {
+      // cvr1数据
+      sqlRequest =
+        s"""
+           |SELECT
+           |  searchid,
+           |  label2 as label
+           |FROM
+           |  dl_cpc.ml_cvr_feature_v1
+           |WHERE
+           |  $selectCondition
+           |AND
+           |  $mediaSelection
+           |AND
+           |  label2=1
+           |AND
+           |  label_type!=12
+           |GROUP BY searchid, label2
+       """.stripMargin
+    } else {
+      // cvr2数据
+      sqlRequest =
+        s"""
+           |SELECT
+           |  searchid,
+           |  label
+           |FROM
+           |  dl_cpc.ml_cvr_feature_v2
+           |WHERE
+           |  $selectCondition
+           |AND
+           |  $mediaSelection
+           |AND
+           |  label=1
+           |GROUP BY searchid, label
+       """.stripMargin
+    }
+    println(sqlRequest)
+    val rawCvr = spark.sql(sqlRequest)
 
-
-    val rawCvr1 = spark
-      .table("dl_cpc.ml_cvr_feature_v1")
-      .where(selectCondition)
-      .filter(s"label_type!=12")
-      .withColumn("iscvr1", col("label2"))
-      .select("searchid", "iscvr1")
-      .filter("iscvr1=1")
-      .distinct()
-
-    val rawCvr2 = spark
-      .table("dl_cpc.ml_cvr_feature_v2")
-      .where(selectCondition)
-      .withColumn("iscvr2", col("label"))
-      .select("searchid", "iscvr2")
-      .filter("iscvr2=1")
-      .distinct()
-
-    // cvr1
-    val cvr1Data = ocpcUnionlog
-      .join(rawCvr1, Seq("searchid"), "left_outer")
+    // 数据汇总
+    val resultDF = ocpcUnionlog
+      .join(rawCvr, Seq("searchid"), "left_outer")
       .groupBy("identifier")
-      .agg(sum(col("iscvr1")).alias("cvrcnt"))
-      .withColumn("conversion_goal", lit(1))
+      .agg(sum(col("label")).alias("cvrcnt"))
+      .withColumn("conversion_goal", lit(conversionGoal))
       .select("identifier", "cvrcnt", "conversion_goal")
 
-    // cvr2
-    val cvr2Data = ocpcUnionlog
-      .join(rawCvr2, Seq("searchid"), "left_outer")
-      .groupBy("identifier")
-      .agg(sum(col("iscvr2")).alias("cvrcnt"))
-      .withColumn("conversion_goal", lit(2))
-      .select("identifier", "cvrcnt", "conversion_goal")
-
-    // 数据关联
-    val resultDF = cvr1Data.union(cvr2Data)
     resultDF
   }
 
-  def getCPAgiven(date: String, hour: String, spark: SparkSession) = {
+  def getCPAgiven(src: String, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     根据cpahistory来获得cpagiven
      */
+    // 根据数据源选择sql脚本
+    var sqlRequest = ""
+    if (src == "history") {
+      sqlRequest =
+        s"""
+           |SELECT
+           |  *
+           |FROM
+           |  dl_cpc.ocpc_cpa_history_hourly
+           |WHERE
+           |  `date` = '$date' and `hour` = '$hour' and version = '$version'
+         """.stripMargin
+    } else {
+      sqlRequest =
+        s"""
+           |SELECT
+           |    t.unitid,
+           |    cast(t.unitid as string) as identifier,
+           |    t.cpa_given,
+           |    t.conversion_goal
+           |FROM
+           |    (SELECT
+           |        unitid,
+           |        cpa_given,
+           |        conversion_goal,
+           |        update_timestamp,
+           |        row_number() over(partition by unitid order by update_timestamp desc) as seq
+           |    FROM
+           |        dl_cpc.ocpc_cpa_given_hourly
+           |    WHERE
+           |        `date`='$date'
+           |    AND
+           |        `hour`='$hour') as t
+           |WHERE
+           |    t.seq=1
+         """.stripMargin
+    }
+    println(sqlRequest)
     val resultDF = spark
-      .table("dl_cpc.ocpc_cpa_history_hourly")
-      .where(s"`date` = '$date' and `hour` = '$hour' and version = 'v1'")
+      .sql(sqlRequest)
+      .select("identifier", "cpa_given", "conversion_goal")
 
     resultDF
 
   }
 
-  def getK(cpaGiven: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getK(version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     pidK和regressionK外关联，优先regressionK
      */
@@ -197,14 +326,14 @@ object OcpcGetPbV2 {
     // pidK
     val pidK = spark
       .table("dl_cpc.ocpc_pid_k_hourly")
-      .where(s"`date` = '$date' and `hour` = '$hour' and version = 'v1'")
+      .where(s"`date` = '$date' and `hour` = '$hour' and version = '$version'")
       .withColumn("pid_k", col("k_value"))
       .select("identifier", "pid_k", "conversion_goal")
 
     // regressionK
     val regressionK = spark
       .table("dl_cpc.ocpc_k_regression_hourly")
-      .where(s"`date` = '$date' and `hour` = '$hour' and version = 'v1'")
+      .where(s"`date` = '$date' and `hour` = '$hour' and version = '$version'")
       .withColumn("regression_k", col("k_ratio"))
       .select("identifier", "regression_k", "conversion_goal")
 
@@ -218,11 +347,79 @@ object OcpcGetPbV2 {
 
   }
 
+  def getOcpcFlag(mediaSelection: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    根据历史记录判断某个identifer是否有ocpc记录：
+    如果有，ocpc_flag=1
+    否则，ocpc_flag=0
+     */
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -7)
+    val startdate = calendar.getTime
+    val date1 = dateConverter.format(startdate)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) as identifier
+         |FROM
+         |  dl_cpc.ocpc_union_log_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  $mediaSelection
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark
+      .sql(sqlRequest)
+      .distinct()
+      .withColumn("ocpc_flag", lit(1))
+      .select("identifier", "ocpc_flag")
+
+    resultDF
+  }
+
+//  base, cvrData, cvrCompleteData, cpaGiven, kvalue, version, date, hour, spark
+  def assemblyPBknown(mediaSelection: String, base: DataFrame, cvrData: DataFrame, initK: DataFrame, kvalue: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
+    val ocpc_flag = getOcpcFlag(mediaSelection, date, hour, spark)
+
+    val data = base
+      .join(cvrData, Seq("identifier"), "left_outer")
+      .withColumn("cpa_given", lit(1))
+      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt")
+      .join(ocpc_flag, Seq("identifier"), "left_outer")
+      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt", "ocpc_flag")
+      .join(initK, Seq("identifier", "conversion_goal"), "left_outer")
+      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt", "ocpc_flag", "init_k")
+      .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
+      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt", "ocpc_flag", "init_k", "kvalue")
+      .withColumn("cvrcnt", when(col("cvrcnt").isNull, 0).otherwise(col("cvrcnt")))
+
+    val resultDF = data
+      .withColumn("kvalue", when(col("ocpc_flag")===1, col("init_k")).otherwise(col("kvalue")))
+      .selectExpr("cast(identifier as string) identifier", "conversion_goal", "cpa_given", "cast(cvrcnt as bigint) cvrcnt", "cast(kvalue as double) kvalue")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+
+    resultDF
+  }
 
 
-  def savePbPack(dataset: Dataset[Row], version: String): Unit = {
+
+  def savePbPack(dataset: Dataset[Row], version: String, isKnown: Int): Unit = {
     var list = new ListBuffer[SingleRecord]
-    val filename = s"Ocpc_" + version + "_unknown.pb"
+    var filename = ""
+    if (isKnown == 1) {
+      filename = s"Ocpc_" + version + "_known.pb"
+    } else {
+      filename = s"Ocpc_" + version + "_unknown.pb"
+    }
     println("size of the dataframe")
     println(dataset.count)
     dataset.show(10)
