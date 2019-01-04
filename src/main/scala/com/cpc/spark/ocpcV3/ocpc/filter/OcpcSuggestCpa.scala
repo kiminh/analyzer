@@ -54,6 +54,9 @@ object OcpcSuggestCpa{
 //      .withColumn("date", lit(date))
 //      .withColumn("hour", lit(hour))
 
+    println("cpa data: ###################")
+    cpaData.show(10)
+
     val resultDF = cpaData
       .join(aucData, Seq("userid", "conversion_goal"), "left_outer")
       .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc")
