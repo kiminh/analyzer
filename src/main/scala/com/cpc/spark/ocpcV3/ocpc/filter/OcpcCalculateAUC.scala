@@ -24,15 +24,17 @@ object OcpcCalculateAUC {
       .enableHiveSupport().getOrCreate()
 
 //    // 抽取数据
-    val data = getData(conversionGoal, version, date, hour, spark)
-    val tableName1 = "test.ocpc_auc_raw_conversiongoal"
-    data.write.mode("overwrite").saveAsTable(tableName1)
+//    val data = getData(conversionGoal, version, date, hour, spark)
+    val tableName1 = "dl_cpc.ocpc_auc_raw_conversiongoal"
+////    data.write.mode("overwrite").saveAsTable(tableName1)
+//    data.write.mode("overwrite").insertInto(tableName1)
 
     // 过滤去除当天cvrcntt<100的userid
     val cvThreshold = 100
     val processedData = filterData(tableName1, cvThreshold, conversionGoal, version, date, hour, spark)
-    val tableName2 = "test.ocpc_auc_filter_conversiongoal"
-    processedData.write.mode("overwrite").saveAsTable(tableName2)
+    val tableName2 = "dl_cpc.ocpc_auc_filter_conversiongoal"
+//    processedData.write.mode("overwrite").saveAsTable(tableName2)
+    processedData.write.mode("overwrite").insertInto(tableName2)
     // 计算auc
     val aucData = getAuc(tableName2, conversionGoal, version, date, hour, spark)
     val resultDF = aucData
