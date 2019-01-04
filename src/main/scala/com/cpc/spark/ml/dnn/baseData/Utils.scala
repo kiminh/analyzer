@@ -12,6 +12,7 @@ import org.tensorflow.hadoop.io.TFRecordFileOutputFormat
 import sys.process._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.LongAccumulator
+import redis.clients.jedis.{HostAndPort, JedisCluster}
 
 /**
   *
@@ -86,6 +87,29 @@ object Utils {
             redis.setex(rec._1, 3600 * 24 * 7, rec._2)
           }
           redis.disconnect
+        }
+      }
+  }
+
+  def save2RedisCluster(str: String, prefix: String): Unit = {
+    val spark = SparkSession.builder()
+      .enableHiveSupport()
+      .getOrCreate()
+
+    val conf = ConfigFactory.load()
+
+    val sql = generateSql(str, "redis")
+    print(sql)
+
+    spark.sql(sql).repartition(20)
+      .rdd.map(x => (prefix + x.getString(0), Base64.decodeBase64(x.getString(1))))
+      .foreachPartition {
+        p => {
+          val jedis = new JedisCluster(new HostAndPort("192.168.83.62", 7001))
+          p.foreach { rec =>
+            jedis.setex(rec._1.getBytes(), 3600 * 24 * 7, rec._2)
+          }
+          jedis.close()
         }
       }
   }
