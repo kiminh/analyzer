@@ -24,13 +24,14 @@ object OcpcCalculateAUC {
 
 //    // 抽取数据
 //    val data = getData(conversionGoal, date, hour, spark)
-//    val tableName1 = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
+    val tableName1 = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
 //    data.write.mode("overwrite").saveAsTable(tableName1)
-//
-//    // 过滤去除当天cvrcntt<30的ideaid
-//    val processedData = filterData(tableName1, date, hour, spark)
+
+    // 过滤去除当天cvrcntt<100的ideaid
+    val cvThreshold = 100
+    val processedData = filterData(tableName1, cvThreshold, date, hour, spark)
     val tableName2 = "test.ocpc_auc_filter_conversiongoal_" + conversionGoal
-//    processedData.write.mode("overwrite").saveAsTable(tableName2)
+    processedData.write.mode("overwrite").saveAsTable(tableName2)
     // 计算auc
     val aucData = getAuc(tableName2, date, hour, spark)
     val resultDF = aucData.withColumn("conversion_goal", lit(conversionGoal))
@@ -136,13 +137,13 @@ object OcpcCalculateAUC {
     resultDF
   }
 
-  def filterData(tableName: String, date: String, hour: String, spark: SparkSession) = {
+  def filterData(tableName: String, cvThreshold: Int, date: String, hour: String, spark: SparkSession) = {
     val rawData = spark.table(tableName)
     val dataIdea = rawData
       .groupBy("ideaid")
       .agg(sum(col("label")).alias("cvrcnt"))
       .select("ideaid", "cvrcnt")
-      .filter(s"cvrcnt >= 30")
+      .filter(s"cvrcnt >= $cvThreshold")
 
     val resultDF = rawData
       .join(dataIdea, Seq("ideaid"), "inner")
