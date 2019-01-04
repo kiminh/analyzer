@@ -43,11 +43,11 @@ object OcpcGetPbV2 {
     //    dl_cpc.ocpc_pb_result_hourly
     //    dl_cpc.ocpc_prev_pb
 
-    // 读取数据
-    val base = getBaseData(date, hour, spark)
-    val cvrData = getCVR(date, hour, spark)
-    val cpaHistory = getCPAgiven(date, hour, spark)
-    val kvalue = getK(cpaHistory, date, hour, spark)
+//    // 读取数据
+//    val base = getBaseData(date, hour, spark)
+//    val cvrData = getCVR(date, hour, spark)
+//    val cpaHistory = getCPAgiven(date, hour, spark)
+//    val kvalue = getK(cpaHistory, date, hour, spark)
 
     // 组装数据
 //    val data = base
