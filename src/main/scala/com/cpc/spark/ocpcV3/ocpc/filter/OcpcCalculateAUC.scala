@@ -23,12 +23,16 @@ object OcpcCalculateAUC {
 
     // 抽取数据
 //    val data = getData(date, hour, spark)
-    val tableName = "test.ocpc_calc_auc20190103"
-//    data.write.mode("overwrite").saveAsTable(tableName)
+    val tableName1 = "test.ocpc_calc_auc20190103"
+//    data.write.mode("overwrite").saveAsTable(tableName1)
 
+    // 过滤当天cvrcntt<15的ideaid
+    val processedData = filterData(tableName1, date, hour, spark)
+    val tableName2 = "test.ocpc_calc_auc_filtered20190103"
+    processedData.write.mode("overwrite").saveAsTable(tableName2)
     // 计算auc
     // cvr1
-    val auc1Data = getAuc(tableName, 1, date, hour, spark)
+    val auc1Data = getAuc(tableName2, 1, date, hour, spark)
 //    // cvr2
 //    val auc2Data = getAuc(tableName, 2, date, hour, spark)
 //    // cvr3
@@ -154,12 +158,29 @@ object OcpcCalculateAUC {
     resultDF
   }
 
+  def filterData(tableName: String, date: String, hour: String, spark: SparkSession) = {
+    val rawData = spark.table(tableName)
+    val dataIdea = rawData
+      .groupBy("ideaid", "conversion_goal")
+      .agg(sum(col("label")).alias("cvrcnt"))
+      .select("ideaid", "conversion_goal", "cvrcnt")
+      .filter(s"cvrcnt >= 15")
+
+    val resultDF = rawData
+      .join(dataIdea, Seq("ideaid", "conversion_goal"), "inner")
+      .select("searchid", "ideaid", "score", "label", "conversion_goal")
+
+    resultDF
+  }
+
   def getAuc(tableName: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     import spark.implicits._
     //获取模型标签
 
 //    val aucGaucBuffer = ListBuffer[AucGauc.AucGauc]()
     val data = spark.table(tableName).where(s"conversion_goal=$conversionGoal")
+
+
     val aucList = new mutable.ListBuffer[(String, Double)]()
     val ideaidList = data.select("ideaid").distinct().cache()
     val ideaidCNT = ideaidList.count()

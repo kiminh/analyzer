@@ -4,7 +4,7 @@
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
-queue=root.cpc.bigdata
+queue=root.cpc.develop
 
 className=$1
 date=$2
