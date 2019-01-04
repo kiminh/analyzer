@@ -26,6 +26,7 @@ object OcpcPIDwithCPAv2 {
      */
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
 
+    // bash: 2019-01-02 12 version2 novel
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
