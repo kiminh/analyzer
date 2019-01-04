@@ -62,7 +62,7 @@ object OcpcSuggestCpa{
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    cpaData.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
     println("successfully save data into table: test.ocpc_suggest_cpa_recommend_hourly")
 
   }
