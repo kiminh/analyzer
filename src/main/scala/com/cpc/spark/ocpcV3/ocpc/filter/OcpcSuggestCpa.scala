@@ -10,7 +10,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 
 
-object OcpcCPArecommend{
+object OcpcSuggestCpa{
   def main(args: Array[String]): Unit = {
     // 计算日期周期
     val date = args(0).toString
@@ -42,9 +42,8 @@ object OcpcCPArecommend{
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    cpaData.write.mode("overwrite").saveAsTable("test.ocpc_qtt_cpa_recommend_hourly")
-//    cpaData.write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_cpa_recommend_hourly")
-    println("successfully save data into table: dl_cpc.ocpc_qtt_cpa_recommend_hourly")
+    cpaData.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly")
+    println("successfully save data into table: test.ocpc_suggest_cpa_recommend_hourly")
 
   }
 
@@ -61,7 +60,9 @@ object OcpcCPArecommend{
          |  userid,
          |  adclass,
          |  total_price,
-		 |	
+         |  ctr_cnt,
+         |  total_bid,
+         |  total_pcvr
          |FROM
          |  dl_cpc.ocpc_ctr_data_hourly
          |WHERE
@@ -74,8 +75,11 @@ object OcpcCPArecommend{
     val resultDF = spark
       .sql(sqlRequest)
       .groupBy("ideaid", "userid", "adclass")
-      .agg(sum(col("total_price")).alias("cost"))
-      .select("ideaid", "userid", "adclass", "cost")
+      .agg(sum(col("total_price")).alias("cost"),
+        sum(col("ctr_cnt")).alias("click"),
+        sum(col("total_bid")).alias("click_bid_sum"),
+        sum(col("total_pcvr")).alias("click_pcvr_sum"))
+      .select("ideaid", "userid", "adclass", "cost", "click", "click_bid_sum", "click_pcvr_sum")
 
     resultDF
   }
@@ -83,18 +87,7 @@ object OcpcCPArecommend{
   def getCVR(cvrType: String, date: String, hour: String, spark: SparkSession) = {
     // 取历史区间
     val hourCnt = 72
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -hourCnt)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+	val selectCondition = getTimeRangeSqlCondition(date, hour, hourCnt)
 
     // 取数据
     val tableName = "dl_cpc.ocpcv3_" + cvrType + "_data_hourly"
@@ -117,7 +110,9 @@ object OcpcCPArecommend{
       .join(cvrData, Seq("ideaid", "adclass"), "inner")
       .filter("cvrcnt is not null and cvrcnt>0")
       .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
-      .select("ideaid", "userid", "adclass", "cpa", "cost", "cvrcnt")
+      .withColumn("abid", col("click_bid_sum") * 1.0 / col("click"))
+      .withColumn("pcvr", col("click_pcvr_sum") * 1.0 / col("click"))
+      .select("ideaid", "userid", "adclass", "cpa", "cost", "cvrcnt", "click", "abid", "pcvr")
       .filter("cpa is not null and cpa > 0")
 
     resultDF
