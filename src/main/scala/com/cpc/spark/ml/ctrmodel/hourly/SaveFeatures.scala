@@ -45,7 +45,7 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    //saveDataFromLog(spark, date, hour)
+    saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
     //saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
     //saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr，逻辑和saveCvrDataV2一致， 将转化的3张表合并到一张表
@@ -931,90 +931,83 @@ object SaveFeatures {
       """.stripMargin.format(date, hour, date, hour))
 
 
-    /* 用户Api回传转化 */
-    val sql_api =
+    //用户Api回传
+    val sql =
       s"""
-         |select   a.searchid
-         |        ,a.ideaid
-         |        ,a.adslot_type
-         |        ,a.ext["client_type"].string_value as client_type
-         |        ,a.ext["adclass"].int_value  as adclass
-         |        ,a.ext_int['siteid'] as siteid
-         |        ,a.adsrc
-         |        ,a.interaction
-         |        ,a.uid
-         |        ,a.userid
-         |        ,b.trace_type
-         |        ,b.trace_op1
-         |        ,b.duration
-         |        ,"conv_api" as flag
-         |from (select * from dl_cpc.cpc_user_api_callback_union_log where %s and adslot_type <> 7) as a
-         |    join dl_cpc.logparsed_cpc_trace_minute as b
-         |        on a.searchid = b.searchid
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on a.userid = t2.id
-         |where  b.`thedate` = "%s" and b.`thehour` = "%s" and t2.id is null
+         |select tr.searchid
+         |      ,un.userid
+         |      ,un.uid
+         |      ,un.ideaid
+         |      ,un.date
+         |      ,un.hour
+         |      ,un.adclass
+         |      ,un.media_appsid
+         |      ,un.planid
+         |      ,un.unitid
+         |      ,tr.trace_type
+         |from (select searchid, userid, uid, planid, unitid, ideaid, adslot_type, isclick, ext['adclass'].int_value as adclass, media_appsid, planid, unitid, date, hour
+         |from dl_cpc.cpc_user_api_callback_union_log where %s) as un
+         |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
+         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
+         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
        """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour)
-    println("sql_api: " + sql_api)
+    println("sql: " + sql)
 
-    /* 没有api回传标记，直接上报到trace */
-    val sql_api_callback =
+    //没有api回传标记，直接上报到trace
+    val sql2 =
       s"""
-         |select  a.searchid
-         |       ,a.ideaid
-         |       ,a.adslot_type
-         |       ,a.ext["client_type"].string_value as client_type
-         |       ,a.ext["adclass"].int_value  as adclass
-         |       ,a.ext_int['siteid'] as siteid
-         |       ,a.adsrc
-         |       ,a.interaction
-         |       ,a.uid
-         |       ,a.userid
-         |       ,b.trace_type
-         |       ,b.trace_op1
-         |       ,b.duration
-         |       ,"conv_api" as flag
-         |from ( select * from dl_cpc.cpc_union_log
-         |       where `date`="%s" and hour>="%s" and hour<="%s" and ext_int['is_api_callback'] = 0 and adslot_type <> 7 and isclick = 1
-         |      ) a
-         |    join dl_cpc.logparsed_cpc_trace_minute b on a.searchid = b.searchid
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on a.userid = t2.id
-         |where  b.`thedate` = "%s" and b.`thehour` = "%s" and t2.id is null
+         |select tr.searchid
+         |      ,un.userid
+         |      ,un.uid
+         |      ,un.ideaid
+         |      ,un.date
+         |      ,un.hour
+         |      ,un.adclass
+         |      ,un.media_appsid
+         |      ,un.planid
+         |      ,un.unitid
+         |      ,tr.trace_type
+         |from (select a.searchid, a.userid, a.uid ,a.planid ,a.unitid ,a.ideaid, ext['adclass'].int_value as adclass, media_appsid, planid, unitid, a.date, a.hour from dl_cpc.cpc_union_log a
+         |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type <> 7 and a.isclick = 1) as un
+         |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
+         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
+         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and t2.id is null
        """.stripMargin.format(date, before1hour, hour, yesterday, date, hour)
-    println("sql_api_callback: " + sql_api_callback)
+    println("sql2: " + sql2)
 
-    /* 应用商城api转化 */
-    val sql_api_moti =
+    //应用商城api转化
+    val sql_moti =
       s"""
-         |select  a.searchid
-         |       ,a.ideaid
-         |       ,7  as adslot_type
-         |       ,"unknown" as client_type
-         |       ,-1 as adclass
-         |       ,-1 as siteid
-         |       ,-1 as adsrc
-         |       ,-1 as interaction
-         |       ,"unknown" as uid
-         |       ,a.userid
-         |       ,b.trace_type
-         |       ,b.trace_op1
-         |       ,b.duration
-         |       ,"conv_api" as flag
-         |from ( select * from dl_cpc.cpc_motivation_log where %s and isclick = 1) a
-         |  join ( select searchid
+         |select tr.searchid
+         |      ,un.userid
+         |      ,un.uid
+         |      ,un.ideaid
+         |      ,un.date
+         |      ,un.hour
+         |      ,un.adclass
+         |      ,un.media_appsid
+         |      ,un.planid
+         |      ,un.unitid
+         |      ,tr.trace_type
+         |from (
+         |      select searchid
          |            ,opt['ideaid'] as ideaid
          |            ,trace_type
-         |            ,trace_op1
-         |            ,duration
          |      from dl_cpc.logparsed_cpc_trace_minute
          |      where `thedate` = "%s" and `thehour` = "%s" and trace_type = 'active_third'
-         |   ) b
-         |on a.searchid = b.searchid and a.ideaid = b.ideaid
-         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on a.userid = t2.id
+         |   ) as tr
+         |join
+         |   (  select searchid, userid, "" as uid, planid, unitid, ideaid, adclass, media_appsid, date, hour
+         |      from dl_cpc.cpc_motivation_log
+         |      where %s and isclick = 1
+         |   ) as un
+         |on tr.searchid = un.searchid and tr.ideaid = un.ideaid
+         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
          |where t2.id is null
-       """.stripMargin.format(get3DaysBefore(date, hour), date, hour, yesterday)
-    println("sql_api_moti: " + sql_api_moti)
+       """.stripMargin.format(date, hour, get3DaysBefore(date, hour), yesterday)
+    println("sql_moti: " + sql_moti)
 
-    val userApiBackRDD = (spark.sql(sql_api)).union(spark.sql(sql_api_callback)).union(spark.sql(sql_api_moti))
+    val userApiBackRDD = (spark.sql(sql)).union(spark.sql(sql2)).union(spark.sql(sql_moti))
       .rdd
       .map {
         x =>
@@ -1064,14 +1057,12 @@ object SaveFeatures {
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
-      .parquet("/warehouse/test.db/ml_cvr_feature_v2/%s/%s".format(date, hour))
+      .parquet("/user/cpc/lrmodel/cvrdata_userapiback/%s/%s".format(date, hour))
     spark.sql(
       """
-        |ALTER TABLE test.ml_cvr_feature_v2 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/warehouse/test.db/ml_cvr_feature_v2/%s/%s'
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v2 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_userapiback/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
-
-    s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v2_done/$date-$hour.ok" !
 
 
     /* 应用商城下载转化 */
@@ -1254,17 +1245,28 @@ object SaveFeatures {
         |where `date` = "%s" and `hour` = "%s" and m.isclick = 1 and adslot_type = 7
       """.stripMargin.format(date, hour)
 
-    (clicklog.join(cvrlog, Seq("searchid", "ideaid"))).union(spark.sql(sqlStmt_motivate).join(cvrlog, Seq("searchid", "ideaid")))
+    //(clicklog.join(cvrlog, Seq("searchid", "ideaid"))).union(spark.sql(sqlStmt_motivate).join(cvrlog, Seq("searchid", "ideaid")))
     ((clicklog.union(spark.sql(sqlStmt_motivate))).join(cvrlog, Seq("searchid", "ideaid")))
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
-      .parquet("/warehouse/test.db/ml_cvr_feature_v1/%s/%s".format(date, hour))
-    spark.sql(
+      //.parquet("/warehouse/test.db/ml_cvr_feature_v1/%s/%s".format(date, hour))  //test
+      .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
+    /*spark.sql(                                                                   //test
       """
         |ALTER TABLE test.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
         | LOCATION  '/warehouse/test.db/ml_cvr_feature_v1/%s/%s'
+      """.stripMargin.format(date, hour, date, hour))*/
+
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
+
+
+    //输出标记文件
+    s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !
 
   }
 
