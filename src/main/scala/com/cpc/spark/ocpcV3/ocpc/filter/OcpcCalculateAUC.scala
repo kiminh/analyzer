@@ -75,9 +75,10 @@ object OcpcCalculateAUC {
     val date2 = dateConverter.format(yesterday1)
     val selectCondition2 = s"`date` between '$date1' and '$date2'"
     // 根据conversionGoal选择cv的sql脚本
+    var sqlRequest2 = ""
     if (conversionGoal == "1") {
       // cvr1数据
-      val sqlRequest =
+      sqlRequest2 =
         s"""
            |SELECT
            |  searchid,
@@ -94,7 +95,7 @@ object OcpcCalculateAUC {
        """.stripMargin
     } else if (conversionGoal == "2") {
       // cvr2数据
-      val sqlRequest =
+      sqlRequest2 =
         s"""
            |SELECT
            |  searchid,
@@ -109,7 +110,7 @@ object OcpcCalculateAUC {
        """.stripMargin
     } else {
       // cvr3数据
-      val sqlRequest =
+      sqlRequest2 =
         s"""
            |SELECT
            |  searchid,
@@ -122,8 +123,8 @@ object OcpcCalculateAUC {
            |  ideaid>0
        """.stripMargin
     }
-    println(sqlRequest)
-    val cvrData = spark.sql(sqlRequest)
+    println(sqlRequest2)
+    val cvrData = spark.sql(sqlRequest2)
 
 
     // 关联数据
