@@ -29,6 +29,15 @@ object OcpcGetPbV2 {
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
+    val media = args(3).toString
+    var mediaSelection = s"media_appsid in ('80000001', '80000002')"
+    if (media == "qtt") {
+      mediaSelection = s"media_appsid in ('80000001', '80000002')"
+    } else if (media == "novel") {
+      mediaSelection = s"media_appsid in ('80001098','80001292')"
+    } else {
+      mediaSelection = s"media_appsid in ('80000001', '80000002', '80001098','80001292')"
+    }
 
     // 明投：可以有重复identifier
     //    dl_cpc.ocpc_pb_result_hourly
@@ -70,7 +79,7 @@ object OcpcGetPbV2 {
 //    savePbPack(resultDF, "v1")
   }
 
-  def getBaseData(date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(mediaSelection: String, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -90,6 +99,8 @@ object OcpcGetPbV2 {
          |  dl_cpc.ocpc_ctr_data_hourly
          |WHERE
          |  $selectCondition
+         |AND
+         |  $mediaSelection
        """.stripMargin
 
     println(sqlRequest)

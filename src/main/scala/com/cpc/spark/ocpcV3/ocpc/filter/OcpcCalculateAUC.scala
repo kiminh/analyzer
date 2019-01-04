@@ -22,15 +22,15 @@ object OcpcCalculateAUC {
       .appName(s"ocpc ideaid auc: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
-    // 抽取数据
-    val data = getData(conversionGoal, date, hour, spark)
-    val tableName1 = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
-    data.write.mode("overwrite").saveAsTable(tableName1)
-
-    // 过滤去除当天cvrcntt<30的ideaid
-    val processedData = filterData(tableName1, date, hour, spark)
+//    // 抽取数据
+//    val data = getData(conversionGoal, date, hour, spark)
+//    val tableName1 = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
+//    data.write.mode("overwrite").saveAsTable(tableName1)
+//
+//    // 过滤去除当天cvrcntt<30的ideaid
+//    val processedData = filterData(tableName1, date, hour, spark)
     val tableName2 = "test.ocpc_auc_filter_conversiongoal_" + conversionGoal
-    processedData.write.mode("overwrite").saveAsTable(tableName2)
+//    processedData.write.mode("overwrite").saveAsTable(tableName2)
     // 计算auc
     val aucData = getAuc(tableName2, date, hour, spark)
     val resultDF = aucData.withColumn("conversion_goal", lit(conversionGoal))
