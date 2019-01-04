@@ -67,10 +67,11 @@ object OcpcSuggestCpa{
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .withColumn("version", lit("qtt_demo"))
 
 //    test.ocpc_suggest_cpa_recommend_hourly20190104
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly")
-//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly")
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: test.ocpc_suggest_cpa_recommend_hourly")
 
   }
