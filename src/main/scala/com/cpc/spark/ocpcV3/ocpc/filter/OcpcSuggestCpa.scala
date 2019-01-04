@@ -33,7 +33,6 @@ object OcpcSuggestCpa{
     val cpa3 = calculateCPA(costData, cvr3Data, date, hour, spark)
 
     // 读取auc数据表
-    // todo 使用dl_cpc表
     val aucData = getAUC(version, date, hour, spark)
 
 
