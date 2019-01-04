@@ -146,6 +146,7 @@ object SaveFeatures {
     println(path, num)
   }
 
+  @deprecated
   def saveCvrData(spark: SparkSession, date: String, hour: String, version: String): Unit = {
     import spark.implicits._
     val cvrlog = spark.sql(
@@ -230,6 +231,7 @@ object SaveFeatures {
       """.stripMargin.format(date, hour, date, hour))
   }
 
+  @deprecated
   def saveCvrDataV2(spark: SparkSession, date: String, hour: String, yesterday: String, version: String): Unit = {
     import spark.implicits._
 
@@ -578,6 +580,7 @@ object SaveFeatures {
   }
 
   /* 三张表合成一张表 */
+  @deprecated
   def saveCvrDataV3(spark: SparkSession, date: String, hour: String, yesterday: String, version: String): Unit = {
     import spark.implicits._
 
@@ -885,7 +888,49 @@ object SaveFeatures {
     val fDate = dateFormat.format(cal.getTime)
     val before1hour = fDate.substring(11, 13)
 
-    /*
+    //激励下载转化  取有点击的
+    val motivateRDD = spark.sql(
+      s"""
+         |select   a.searchid
+         |        ,a.ideaid
+         |        ,b.trace_type
+         |        ,b.trace_op1
+         |from (select * from dl_cpc.cpc_motivation_log
+         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick = 1) a
+         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
+         |        on a.userid = t2.id
+         |    join
+         |        (select *
+         |            from dl_cpc.logparsed_cpc_trace_minute
+         |            where `thedate` = "%s" and `thehour` = "%s"
+         |         ) b
+         |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
+         | where t2.id is null
+        """.stripMargin.format(date, hour, yesterday, date, hour))
+      .rdd
+      .map {
+        x =>
+          ((x.getAs[String]("searchid"), x.getAs[Int]("ideaid")), Seq(x))
+      }
+      .reduceByKey(_ ++ _)
+      .map { x =>
+        val (convert, label_type) = Utils.cvrPositive_motivate(x._2, version)
+        (x._1._1, x._1._2, convert)
+      }.toDF("searchid", "ideaid", "label")
+    println("motivate: " + motivateRDD.count())
+
+    motivateRDD
+      .repartition(1)
+      .write
+      .mode(SaveMode.Overwrite)
+      .parquet("/user/cpc/lrmodel/cvrdata_motivate/%s/%s".format(date, hour))
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.ml_cvr_feature_motivate add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_motivate/%s/%s'
+      """.stripMargin.format(date, hour, date, hour))
+
+
     /* 用户Api回传转化 */
     val sql_api =
       s"""
@@ -1027,7 +1072,7 @@ object SaveFeatures {
       """.stripMargin.format(date, hour, date, hour))
 
     s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v2_done/$date-$hour.ok" !
-    */
+
 
     /* 应用商城下载转化 */
     val sql_motivate =
