@@ -34,9 +34,8 @@ object OcpcSuggestCpa{
 
     // 读取auc数据表
     // todo 使用dl_cpc表
-    val aucData = spark
-      .table("dl_cpc.ocpc_userid_auc_daily")
-      .where(s"`date`='$date' and version='$version'")
+    val aucData = getAUC(version, date, hour, spark)
+
 
     // 读取k值数据
     val kvalue = getPbK(date, hour, spark)
@@ -79,6 +78,29 @@ object OcpcSuggestCpa{
     resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: test.ocpc_suggest_cpa_recommend_hourly")
 
+  }
+
+  def getAUC(version: String, date: String, hour: String, spark: SparkSession) = {
+    val auc1Data = spark
+      .table("dl_cpc.ocpc_userid_auc_daily")
+      .where(s"`date`='$date' and version='$version' and conversion_goal='1'")
+      .select("userid", "auc")
+      .withColumn("conversion_goal", lit(1))
+
+    val auc2Data = spark
+      .table("dl_cpc.ocpc_userid_auc_daily")
+      .where(s"`date`='$date' and version='$version' and conversion_goal='2'")
+      .select("userid", "auc")
+      .withColumn("conversion_goal", lit(2))
+
+    val auc3Data = spark
+      .table("dl_cpc.ocpc_userid_auc_daily")
+      .where(s"`date`='$date' and version='$version' and conversion_goal='3'")
+      .select("userid", "auc")
+      .withColumn("conversion_goal", lit(3))
+
+    val resultDF = auc1Data.union(auc2Data).union(auc3Data)
+    resultDF
   }
 
   def getPbK(date: String, hour: String, spark: SparkSession) = {
