@@ -38,7 +38,7 @@ object OcpcSuggestCpa{
     val cpaData = cpa1Data
       .union(cpa2Data)
       .union(cpa3Data)
-      .select("ideaid", "userid", "adclass", "cpa", "cost", "click", "cvrcnt", "acb", "pcvr", "conversion_goal")
+      .select("ideaid", "userid", "adclass", "conversion_goal", "cost", "click", "cvrcnt", "cpa", "acb", "cal_bid", "pcvr", "post_cvr", "pcoc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
@@ -112,7 +112,10 @@ object OcpcSuggestCpa{
       .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
       .withColumn("acb", col("click_bid_sum") * 1.0 / col("click"))
       .withColumn("pcvr", col("click_pcvr_sum") * 1.0 / col("click"))
-      .select("ideaid", "userid", "adclass", "cpa", "cost", "cvrcnt", "click", "acb", "pcvr")
+      .withColumn("post_cvr", col("cvrcnt") * 1.0 / col("click"))
+      .withColumn("cal_bid", col("cost") * 1.0 / col("cvrcnt") * (col("click_pcvr_sum") * 1.0 / col("click")))
+      .withColumn("pcoc", col("click_pcvr_sum") * 1.0 / col("cvrcnt"))
+      .select("ideaid", "userid", "adclass", "cpa", "cost", "cvrcnt", "click", "acb", "pcvr", "post_cvr", "cal_bid", "pcoc")
       .filter("cpa is not null and cpa > 0")
 
     resultDF
