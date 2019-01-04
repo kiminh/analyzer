@@ -36,8 +36,8 @@ object OcpcCalculateAUC {
     // 计算auc
     val aucData = getAuc(tableName2, conversionGoal, version, date, hour, spark)
     val resultDF = aucData
-      .withColumn("date", lit(date))
       .withColumn("conversion_goal", lit(conversionGoal))
+      .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 //    test.ocpc_check_auc_data20190104_bak
     resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily")
@@ -140,8 +140,8 @@ object OcpcCalculateAUC {
       .select("searchid", "userid", "score", "label")
       .na.fill(0, Seq("label"))
       .select("searchid", "userid", "score", "label")
-      .withColumn("date", lit(date))
       .withColumn("conversion_goal", lit(conversionGoal))
+      .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 //    resultDF.show(10)
     resultDF
@@ -161,8 +161,8 @@ object OcpcCalculateAUC {
     val resultDF = rawData
       .join(dataIdea, Seq("userid"), "inner")
       .select("searchid", "userid", "score", "label")
-      .withColumn("date", lit(date))
       .withColumn("conversion_goal", lit(conversionGoal))
+      .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
     resultDF
