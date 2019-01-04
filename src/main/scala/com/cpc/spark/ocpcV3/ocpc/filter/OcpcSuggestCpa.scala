@@ -16,6 +16,7 @@ object OcpcSuggestCpa{
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
+    val version = "qtt_demo"
     val spark = SparkSession
       .builder()
       .appName(s"ocpc cpc stage data: $date, $hour")
@@ -34,7 +35,8 @@ object OcpcSuggestCpa{
     // 读取auc数据表
     // todo 使用dl_cpc表
     val aucData = spark
-      .table("test.ocpc_userid_auc_daily")
+      .table("dl_cpc.ocpc_userid_auc_daily")
+      .where(s"`date`='$date' and version='$version'")
 
     // 读取k值数据
     val kvalue = getPbK(date, hour, spark)
@@ -67,7 +69,7 @@ object OcpcSuggestCpa{
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("version", lit("qtt_demo"))
+      .withColumn("version", lit(version))
 
 //    test.ocpc_suggest_cpa_recommend_hourly20190104
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly")
