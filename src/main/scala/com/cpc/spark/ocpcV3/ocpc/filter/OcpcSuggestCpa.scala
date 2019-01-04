@@ -3,6 +3,7 @@ package com.cpc.spark.ocpcV3.ocpc.filter
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.common.Utils.getTimeRangeSql
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSqlCondition
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.SparkSession
@@ -30,6 +31,15 @@ object OcpcSuggestCpa{
     val cpa2 = calculateCPA(costData, cvr2Data, date, hour, spark)
     val cpa3 = calculateCPA(costData, cvr3Data, date, hour, spark)
 
+    // 读取auc数据表
+    // todo 使用dl_cpc表
+    val aucData = spark
+      .table("test.ocpc_userid_auc_daily")
+
+    // 读取k值数据
+    val kvalue = getPbK(date, hour, spark)
+
+
     // 调整字段
     val cpa1Data = cpa1.withColumn("conversion_goal", lit(1))
     val cpa2Data = cpa2.withColumn("conversion_goal", lit(2))
@@ -39,12 +49,68 @@ object OcpcSuggestCpa{
       .union(cpa2Data)
       .union(cpa3Data)
       .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+
+    val resultDF = cpaData
+      .join(aucData, Seq("userid", "conversion_goal"), "left_outer")
+      .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc")
+      .withColumn("original_conversion", col("conversion_goal"))
+      .withColumn("conversion_goal", when(col("conversion_goal") === 3, 1).otherwise(col("conversion_goal")))
+      .join(kvalue, Seq("unitid", "conversion_goal"), "left_outer")
+      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    cpaData.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly")
+    cpaData.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
     println("successfully save data into table: test.ocpc_suggest_cpa_recommend_hourly")
 
+  }
+
+  def getPbK(date: String, hour: String, spark: SparkSession) = {
+    // 计算日期周期
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val end_date = sdf.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(end_date)
+    calendar.add(Calendar.DATE, -7)
+    val dt = calendar.getTime
+    val date1 = sdf.format(dt)
+    val selectCondition = getTimeRangeSql(date1, hour, date, hour)
+
+    // 关联ideaid与unitid
+    val data = spark
+      .table("dl_cpc.ocpc_ctr_data_hourly")
+      .where(selectCondition)
+      .select("ideaid", "unitid")
+      .distinct()
+
+    // 获取kvalue
+    val kvalue1 = spark
+      .table("dl_cpc.ocpc_pb_result_table_v6")
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .select("ideaid", "kvalue1")
+      .join(data, Seq("ideaid"), "inner")
+      .select("unitid", "kvalue1")
+      .groupBy("unitid")
+      .agg(avg(col("kvalue1")).alias("kvalue"))
+      .select("unitid", "kvalue")
+      .withColumn("conversion_goal", lit(1))
+
+    val kvalue2 = spark
+      .table("dl_cpc.ocpc_pb_result_table_v6")
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .select("ideaid", "kvalue2")
+      .join(data, Seq("ideaid"), "inner")
+      .select("unitid", "kvalue2")
+      .groupBy("unitid")
+      .agg(avg(col("kvalue2")).alias("kvalue"))
+      .select("unitid", "kvalue")
+      .withColumn("conversion_goal", lit(2))
+
+    val resultDF = kvalue1.union(kvalue2).select("unitid", "kvalue", "conversion_goal")
+
+    resultDF
   }
 
   def getCost(date: String, hour: String, spark: SparkSession) = {

@@ -35,7 +35,8 @@ object OcpcCalculateAUC {
     // 计算auc
     val aucData = getAuc(tableName2, date, hour, spark)
     val resultDF = aucData.withColumn("conversion_goal", lit(conversionGoal))
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_auc_data20190104_bak")
+//    test.ocpc_check_auc_data20190104_bak
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_userid_auc_daily")
   }
 
   def getData(conversionGoal: String, date: String, hour: String, spark: SparkSession) = {
