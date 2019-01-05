@@ -62,7 +62,7 @@ object update_tag_userid_all {
 
     //从adv后台mysql获取人群包的url
     val table1="(select plan_id as planid, user_id as userid from adv.idea group by plan_id, user_id) as tmp"
-    val ideaid = spark.read.jdbc(jdbcUrl, table1, jdbcProp).createTempView("temp_table")
+    spark.read.jdbc(jdbcUrl, table1, jdbcProp).createTempView("temp_table")
 
     val sqlRequest5 =
       s"""
