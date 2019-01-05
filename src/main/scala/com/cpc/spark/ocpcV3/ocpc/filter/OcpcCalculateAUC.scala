@@ -17,28 +17,34 @@ object OcpcCalculateAUC {
     val date = args(0).toString
     val hour = args(1).toString
     val conversionGoal = args(2).toString
+    val version = "qtt_demo"
     val spark = SparkSession
       .builder()
       .appName(s"ocpc userid auc: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
-//    // 抽取数据
-    val data = getData(conversionGoal, date, hour, spark)
-    val tableName1 = "test.ocpc_auc_raw_conversiongoal_bak_" + conversionGoal
-    data.write.mode("overwrite").saveAsTable(tableName1)
+    // 抽取数据
+    val data = getData(conversionGoal, version, date, hour, spark)
+    val tableName1 = "dl_cpc.ocpc_auc_raw_conversiongoal"
+    data.write.mode("overwrite").insertInto(tableName1)
 
     // 过滤去除当天cvrcntt<100的userid
     val cvThreshold = 100
-    val processedData = filterData(tableName1, cvThreshold, date, hour, spark)
-    val tableName2 = "test.ocpc_auc_filter_conversiongoal_bak_" + conversionGoal
-    processedData.write.mode("overwrite").saveAsTable(tableName2)
+    val processedData = filterData(tableName1, cvThreshold, conversionGoal, version, date, hour, spark)
+    val tableName2 = "dl_cpc.ocpc_auc_filter_conversiongoal"
+    processedData.write.mode("overwrite").insertInto(tableName2)
     // 计算auc
-    val aucData = getAuc(tableName2, date, hour, spark)
-    val resultDF = aucData.withColumn("conversion_goal", lit(conversionGoal))
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_auc_data20190104_bak")
+    val aucData = getAuc(tableName2, conversionGoal, version, date, hour, spark)
+    val resultDF = aucData
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
+//    test.ocpc_check_auc_data20190104_bak
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_userid_auc_daily")
   }
 
-  def getData(conversionGoal: String, date: String, hour: String, spark: SparkSession) = {
+  def getData(conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
     // 取历史区间: score数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -133,12 +139,19 @@ object OcpcCalculateAUC {
       .join(cvrData, Seq("searchid"), "left_outer")
       .select("searchid", "userid", "score", "label")
       .na.fill(0, Seq("label"))
+      .select("searchid", "userid", "score", "label")
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
 //    resultDF.show(10)
     resultDF
   }
 
-  def filterData(tableName: String, cvThreshold: Int, date: String, hour: String, spark: SparkSession) = {
-    val rawData = spark.table(tableName)
+  def filterData(tableName: String, cvThreshold: Int, conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
+    val rawData = spark
+      .table(tableName)
+      .where(s"`date`='$date' and conversion_goal='$conversionGoal' and version='$version'")
+
     val dataIdea = rawData
       .groupBy("userid")
       .agg(sum(col("label")).alias("cvrcnt"))
@@ -148,16 +161,21 @@ object OcpcCalculateAUC {
     val resultDF = rawData
       .join(dataIdea, Seq("userid"), "inner")
       .select("searchid", "userid", "score", "label")
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
 
     resultDF
   }
 
-  def getAuc(tableName: String, date: String, hour: String, spark: SparkSession) = {
+  def getAuc(tableName: String, conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
     import spark.implicits._
     //获取模型标签
 
 //    val aucGaucBuffer = ListBuffer[AucGauc.AucGauc]()
-    val data = spark.table(tableName)
+    val data = spark
+      .table(tableName)
+      .where(s"`date`='$date' and conversion_goal='$conversionGoal' and version='$version'")
 
 
     val aucList = new mutable.ListBuffer[(String, Double)]()
@@ -176,7 +194,7 @@ object OcpcCalculateAUC {
         .select("score", "label")
         .rdd
         .map(x=>(x.getAs[Int]("score").toDouble, x.getAs[Int]("label").toDouble))
-        .cache()
+//        .cache()
       val scoreAndLabelNum = scoreAndLabel.count()
       if (scoreAndLabelNum > 0) {
         val metrics = new BinaryClassificationMetrics(scoreAndLabel)
@@ -184,7 +202,7 @@ object OcpcCalculateAUC {
         aucList.append((userid, aucROC))
 
       }
-      scoreAndLabel.unpersist()
+//      scoreAndLabel.unpersist()
     }
 
     useridList.unpersist()
