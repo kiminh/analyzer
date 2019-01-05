@@ -45,7 +45,7 @@ object update_tag_userid_all {
       s"""
          | insert into dl_cpc.cpc_tag_all
          | select ta.tag,'$date' from ftp_tag_userid ta left join dl_cpc.cpc_tag_all tb
-         |  on ta.profile_tag=tb.tag where tb.tag is null group by ta.tag
+         |  on ta.tag=tb.tag where tb.tag is null group by ta.tag
       """.stripMargin
     println(sqlRequest3)
     spark.sql(sqlRequest3)
