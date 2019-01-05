@@ -62,8 +62,6 @@ object OcpcSuggestCpa{
       .withColumn("kvalue", col("kvalue") * 1.0 / 0.9)
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue")
       .withColumn("is_recommend", when(col("auc").isNotNull && col("auc")>0.65, 1).otherwise(0))
-      .withColumn("is_recommend", when(col("conversion_goal")===1 && col("pcoc") < 0.7, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("conversion_goal")===1 && col("pcoc") > 1.5, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cvrcnt") < 60, 0).otherwise(col("is_recommend")))
