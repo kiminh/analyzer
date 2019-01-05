@@ -55,7 +55,7 @@ object report_userprofile_effect {
          |on a.userid=b.userid or a.adclass=b.userid
       """.stripMargin
     //charge_type 1 cpc, 2 cpm, 3 cpa, 0 free
-    val unionlog = spark.sql(sqlRequest1).repartition(10000).persist(StorageLevel.DISK_ONLY)
+    val unionlog = spark.sql(sqlRequest1).repartition(80000).persist(StorageLevel.DISK_ONLY)
     println(unionlog.count())
     unionlog.createOrReplaceTempView("unionlog_table")
 
@@ -71,8 +71,7 @@ object report_userprofile_effect {
          |  a.tag,
          |  a.interests,
          |  COALESCE(b.label2, 0) as iscvr1,
-         |  COALESCE(c.label3, 0) as iscvr2,
-         |  COALESCE(d.label4, 0) as iscvr3
+         |  COALESCE(c.label3, 0) as iscvr2
          |from
          |  unionlog_table as a
          |left join
@@ -83,13 +82,10 @@ object report_userprofile_effect {
          |  (select searchid,ideaid, max(label) as label3 from dl_cpc.ml_cvr_feature_v2 where date='$date' group by searchid,ideaid) as c
          |on
          |  a.searchid=c.searchid and a.ideaid=c.ideaid
-         |left join
-         |  (select searchid,ideaid, max(label) as label4 from dl_cpc.ml_cvr_feature_motivate where date='$date' group by searchid,ideaid) as d
-         |on a.searchid=d.searchid and a.ideaid=d.ideaid
        """.stripMargin
 
     println(sqlRequest2)
-    val base = spark.sql(sqlRequest2).repartition(10000).persist(StorageLevel.MEMORY_AND_DISK_SER)
+    val base = spark.sql(sqlRequest2).repartition(80000).persist(StorageLevel.MEMORY_AND_DISK_SER)
     print("base——count" + base.count())
 
     // recalculation with groupby of userid and uid
@@ -103,11 +99,11 @@ object report_userprofile_effect {
          |  tag,
          |  SUM(CASE WHEN interests not like concat(tag, "=100%") and interests not like concat("%,", tag, "=100%") then price else 0 end) as costWithoutTag,
          |  SUM(CASE WHEN interests not like concat(tag, "=100%") and interests not like concat("%,", tag, "=100%") then isclick else 0 end) as ctrWithoutTag,
-         |  SUM(CASE WHEN (iscvr1 = 1 or iscvr2 = 1 or iscvr3 = 1) and (interests not like concat(tag, "=100%") and interests not like concat("%,", tag, "=100%")) then 1 else 0 end) as cvrWithoutTag,
+         |  SUM(CASE WHEN (iscvr1 = 1 or iscvr2 = 1) and (interests not like concat(tag, "=100%") and interests not like concat("%,", tag, "=100%")) then 1 else 0 end) as cvrWithoutTag,
          |  SUM(CASE WHEN interests not like concat(tag, "=100%") and interests not like concat("%,", tag, "=100%") then isshow else 0 end) as showWithoutTag,
          |  SUM(CASE WHEN interests like concat(tag, "=100%") or interests like concat("%,", tag, "=100%") then price else 0 end) as costWithTag,
          |  SUM(CASE WHEN interests like concat(tag, "=100%") or interests like concat("%,", tag, "=100%") then isclick else 0 end) as ctrWithTag,
-         |  SUM(CASE WHEN (iscvr1 = 1 or iscvr2 = 1 or iscvr3 = 1) and (interests like concat(tag, "=100%") or interests like concat("%,", tag, "=100%"))  then 1 else 0 end) as cvrWithTag,
+         |  SUM(CASE WHEN (iscvr1 = 1 or iscvr2 = 1) and (interests like concat(tag, "=100%") or interests like concat("%,", tag, "=100%"))  then 1 else 0 end) as cvrWithTag,
          |  SUM(CASE WHEN interests like concat(tag, "=100%") or interests like concat("%,", tag, "=100%") then isshow else 0 end) as showWithTag
          |FROM tmpTable GROUP BY userid,tag
        """.stripMargin
