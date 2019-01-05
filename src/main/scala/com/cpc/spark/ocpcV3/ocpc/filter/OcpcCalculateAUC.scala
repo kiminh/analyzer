@@ -28,8 +28,14 @@ object OcpcCalculateAUC {
     val tableName1 = "dl_cpc.ocpc_auc_raw_conversiongoal"
     data.write.mode("overwrite").insertInto(tableName1)
 
-    // 过滤去除当天cvrcntt<100的userid
-    val cvThreshold = 100
+    // 设置cv门槛
+    var cvThreshold = 100
+    if (conversionGoal == "3") {
+      cvThreshold = 30
+    } else {
+      cvThreshold = 100
+    }
+
     val processedData = filterData(tableName1, cvThreshold, conversionGoal, version, date, hour, spark)
     val tableName2 = "dl_cpc.ocpc_auc_filter_conversiongoal"
     processedData.write.mode("overwrite").insertInto(tableName2)
