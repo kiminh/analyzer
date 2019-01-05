@@ -58,7 +58,7 @@ object OcpcSuggestCpa{
       .withColumn("original_conversion", col("conversion_goal"))
       .withColumn("conversion_goal", when(col("conversion_goal") === 3, 1).otherwise(col("conversion_goal")))
       .join(kvalue, Seq("unitid", "conversion_goal"), "left_outer")
-      .withColumn("cal_bid", col("cpa") * col("pcvr") * col("kvalue"))
+      .withColumn("cal_bid", col("cpa") * col("pcvr") * col("kvalue") / col("jfb"))
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue")
       .withColumn("is_recommend", when(col("auc").isNotNull && col("auc")>0.65, 1).otherwise(0))
       .withColumn("is_recommend", when(col("conversion_goal")===1 && col("pcoc") < 0.7, 0).otherwise(col("is_recommend")))
@@ -119,7 +119,7 @@ object OcpcSuggestCpa{
 
     // 获取kvalue
     val kvalue1 = spark
-      .table("dl_cpc.ocpc_qtt_prev_pb")
+      .table("dl_cpc.ocpc_pb_result_table_v6")
       .where(s"`date`='$date' and `hour`='$hour'")
       .select("ideaid", "kvalue1")
       .join(data, Seq("ideaid"), "inner")
@@ -130,7 +130,7 @@ object OcpcSuggestCpa{
       .withColumn("conversion_goal", lit(1))
 
     val kvalue2 = spark
-      .table("dl_cpc.ocpc_qtt_prev_pb")
+      .table("dl_cpc.ocpc_pb_result_table_v6")
       .where(s"`date`='$date' and `hour`='$hour'")
       .select("ideaid", "kvalue2")
       .join(data, Seq("ideaid"), "inner")
