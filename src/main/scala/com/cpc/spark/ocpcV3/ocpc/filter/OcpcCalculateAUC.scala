@@ -158,6 +158,9 @@ object OcpcCalculateAUC {
       .table(tableName)
       .where(s"`date`='$date' and conversion_goal='$conversionGoal' and version='$version'")
 
+    val filterCondition = s"when conversion_goal is $conversionGoal: cvrcnt >= $cvThreshold"
+    println("############ filter function #######################")
+    println(filterCondition)
     val dataIdea = rawData
       .groupBy("userid")
       .agg(sum(col("label")).alias("cvrcnt"))
