@@ -75,15 +75,15 @@ object update_tag_userid_all {
     spark.sql(sqlRequest5)
 
 
-    val sqlRequest5 =
+    val sqlRequest6 =
       s"""
          | insert into dl_cpc.cpc_tag_userid_all
          | select ta.tag,ta.userid,'$date' from (select tag, userid from dl_cpc.cpc_tag_all join dl_cpc.cpc_userid_all) ta left join dl_cpc.cpc_tag_userid_all tb
          |  on ta.userid=tb.userid and ta.tag=tb.tag where tb.tag is null
       """.stripMargin
 
-    println(sqlRequest5)
-    spark.sql(sqlRequest5)
+    println(sqlRequest6)
+    spark.sql(sqlRequest6)
   }
 
 }
