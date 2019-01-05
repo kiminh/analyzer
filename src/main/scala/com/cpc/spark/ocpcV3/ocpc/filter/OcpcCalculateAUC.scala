@@ -50,11 +50,11 @@ object OcpcCalculateAUC {
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-    val selectCondition1 = s"`date`='$date1'"
-
+//    calendar.add(Calendar.DATE, 2)
+//    val yesterday = calendar.getTime
+//    val date1 = dateConverter.format(yesterday)
+//    val selectCondition1 = s"`date`='$date1'"
+    val selectCondition1 = s"`date`='$date'"
     // 取数据: score数据
     val sqlRequest =
       s"""
@@ -76,11 +76,11 @@ object OcpcCalculateAUC {
     println(sqlRequest)
     val scoreData = spark.sql(sqlRequest)
 
-    // 取历史区间: cvr数据
+//    // 取历史区间: cvr数据
     calendar.add(Calendar.DATE, 2)
-    val yesterday1 = calendar.getTime
-    val date2 = dateConverter.format(yesterday1)
-    val selectCondition2 = s"`date` between '$date1' and '$date2'"
+    val secondDay = calendar.getTime
+    val date2 = dateConverter.format(secondDay)
+    val selectCondition2 = s"`date` between '$date' and '$date2'"
     // 根据conversionGoal选择cv的sql脚本
     var sqlRequest2 = ""
     if (conversionGoal == "1") {
