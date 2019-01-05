@@ -1,7 +1,7 @@
 package com.cpc.spark.ml.recall
 
-import java.text.SimpleDateFormat
 import java.util.{Calendar, Properties}
+import java.text.SimpleDateFormat
 
 import org.apache.spark.sql.SparkSession
 
@@ -58,6 +58,22 @@ object update_tag_userid_all {
       """.stripMargin
     println(sqlRequest4)
     spark.sql(sqlRequest4)
+
+
+    //从adv后台mysql获取人群包的url
+    val table1="(select plan_id as planid, user_id as userid from adv.idea group by plan_id, user_id) as tmp"
+    val ideaid = spark.read.jdbc(jdbcUrl, table1, jdbcProp).createTempView("temp_table")
+
+    val sqlRequest5 =
+      s"""
+         | insert into dl_cpc.cpc_userid_all
+         | select ta.userid,'$date' from (select t1.userid from temp_table t1 join
+         | (select planid from dl_cpc.ml_cvr_feature_v1 where date='$date') t2 on t1.planid=t2.planid group by t1.userid) ta
+         | left join dl_cpc.cpc_userid_all tb on ta.userid=tb.userid where tb.userid is null group by ta.userid
+      """.stripMargin
+    println(sqlRequest5)
+    spark.sql(sqlRequest5)
+
 
     val sqlRequest5 =
       s"""
