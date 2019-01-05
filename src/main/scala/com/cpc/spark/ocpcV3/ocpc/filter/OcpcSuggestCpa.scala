@@ -66,6 +66,7 @@ object OcpcSuggestCpa{
       .withColumn("is_recommend", when(col("conversion_goal")===1 && col("pcoc") > 1.5, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("cvrcnt") < 60, 0).otherwise(col("is_recommend")))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
