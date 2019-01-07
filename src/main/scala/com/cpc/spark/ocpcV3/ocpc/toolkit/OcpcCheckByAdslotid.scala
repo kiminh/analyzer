@@ -28,8 +28,8 @@ object OcpcCheckByAdslotid {
 
     // 根据日期和小时还有adslotid收集过滤数据
     val resultDF = filterData(adslotid, date, spark)
-    val tableName = "test.ocpc_check_adslotid"
-    resultDF.write.mode("overwrite").saveAsTable(tableName)
+    val tableName = "dl_cpc.ocpc_check_adslotid"
+    resultDF.write.mode("overwrite").insertInto(tableName)
     resultDF.show(10)
   }
 
@@ -39,7 +39,6 @@ object OcpcCheckByAdslotid {
      */
     val selectCondition = s"`date`='$date'"
     // ctr数据
-    // todo 去除小时限制
     val sqlRequest1 =
       s"""
          |select
@@ -63,8 +62,6 @@ object OcpcCheckByAdslotid {
          |    dl_cpc.cpc_union_log
          |WHERE
          |    $selectCondition
-         |and
-         |    `hour` = '12'
          |and
          |    media_appsid  in ("80000001", "80000002")
          |and
