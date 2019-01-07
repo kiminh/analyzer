@@ -25,7 +25,7 @@ object OcpcCheckByAdslotid {
 //    val adslotid = args(1).toString
     val adslotidInt = 1026459
     val adslotid = adslotidInt.toString
-    
+
     // 根据日期和小时还有adslotid收集过滤数据
     val rawData = filterData(adslotid, date, spark)
 //    val detailData = calculateOcpcDetail(rawData, spark)
