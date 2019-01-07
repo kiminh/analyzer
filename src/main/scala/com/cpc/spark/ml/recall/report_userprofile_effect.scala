@@ -182,7 +182,7 @@ val sqlRequest2 =
     val result2 =
       s"""
          |insert into dl_cpc.cpc_profileTag_report_daily partition (`date`='$date')
-         |Select ta.userid, ta.tag, cost-ta.costWithTag, ctr-ctrWithTag, cvt-cvrWithTag, show-showWithTag,
+         |Select ta.userid, ta.tag, cost-ta.costWithTag, ctr-ctrWithTag, cvr-cvrWithTag, show-showWithTag,
          |costWithTag, ctrWithTag, cvrWithTag, showWithTag
          |from withtag ta left join total tb on ta.userid=tb.userid
        """.stripMargin
