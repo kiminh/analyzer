@@ -95,8 +95,6 @@ object UserDayIntermediate {
                |    ) final
                |group by
                |    final.uid
-               |;
-               |
              """.stripMargin
 
         val r = spark.sql(sql)
