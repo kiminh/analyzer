@@ -61,7 +61,7 @@ val sqlRequest1 =
      |  a.searchid,
      |  a.uid,
      |  a.ideaid,
-     |  b.userid,
+     |  a.userid,
      |  a.isclick,
      |  a.isshow,
      |  case when charge_type=2 then a.price*1.0/1000 else a.price end as price,
