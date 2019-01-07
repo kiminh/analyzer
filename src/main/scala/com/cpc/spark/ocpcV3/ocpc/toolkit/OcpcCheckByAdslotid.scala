@@ -41,6 +41,7 @@ object OcpcCheckByAdslotid {
      */
     val selectCondition = s"`date`='$date'"
     // ctr数据
+    // todo 去除小时限制
     val sqlRequest1 =
       s"""
          |select
@@ -59,13 +60,13 @@ object OcpcCheckByAdslotid {
          |    price,
          |    ext_int['bid_ocpc'] as bid_ocpc,
          |    ext_int['is_ocpc'] as is_ocpc,
-         |    ext_string['ocpc_log'] as ocpc_log,
-         |    date,
-         |    hour
+         |    ext_string['ocpc_log'] as ocpc_log
          |from
          |    dl_cpc.cpc_union_log
          |WHERE
          |    $selectCondition
+         |and
+         |    `hour` = '12'
          |and
          |    media_appsid  in ("80000001", "80000002")
          |and
@@ -106,11 +107,14 @@ object OcpcCheckByAdslotid {
       .join(cvr1Data, Seq("searchid"), "left_outer")
       .join(cvr2Data, Seq("searchid"), "left_outer")
 
-    val tableName = "test.ocpc_check_adslotid20181231"
-    data.write.mode("overwrite").saveAsTable(tableName)
-    data.show(10)
+
     val resultDF = data
-      .selectExpr("searchid", "unitid", "userid", "isclick", "price", "exp_ctr", "exp_cvr", "is_ocpc", "cast(ocpc_log_dict['cpagiven'] as double) cpagiven", "cast(ocpc_log_dict['kvalue'] as double) kvalue", "cast(ocpc_log_dict['dynamicbid'] as double) dynamicbid", "cast(ocpc_log_dict['ocpcstep'] as int) ocpcstep", "iscvr1", "iscvr2", "date", "hour")
+      .selectExpr("searchid", "unitid", "userid", "isclick", "price", "exp_ctr", "exp_cvr", "is_ocpc", "cast(ocpc_log_dict['cpagiven'] as double) cpagiven", "cast(ocpc_log_dict['kvalue'] as double) kvalue", "cast(ocpc_log_dict['dynamicbid'] as double) dynamicbid", "cast(ocpc_log_dict['ocpcstep'] as int) ocpcstep", "iscvr1", "iscvr2")
+      .withColumn("date", lit(date))
+
+    val tableName = "test.ocpc_check_adslotid20181231"
+    resultDF.write.mode("overwrite").saveAsTable(tableName)
+    resultDF.show(10)
 //
 //    val sqlRequest2 =
 //      s"""
