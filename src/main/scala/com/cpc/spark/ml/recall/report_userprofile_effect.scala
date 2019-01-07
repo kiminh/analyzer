@@ -173,8 +173,9 @@ val sqlRequest2 =
          |  isshow,
          |  price,
          |  iscvr,
-         |  split(interest, '=')[1] as tag
-         |FROM tmpTable lateral view explode(split(interests, ',')) a as interest) ta group by userid, tag
+         |  split(interest, '=')[0] as tag
+         |FROM tmpTable lateral view explode(split(interests, ',')) a as interest
+         |where interest like '%=100') ta group by userid, tag
        """.stripMargin
 
     spark.sql(result1).createOrReplaceTempView("withtag")
