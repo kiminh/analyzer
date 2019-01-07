@@ -21,10 +21,13 @@ object OcpcCheckByAdslotid {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
-    val adslotid = args(0).toString
-
+    val date = args(0).toString
+//    val adslotid = args(1).toString
+    val adslotidInt = 1026459
+    val adslotid = adslotidInt.toString
+    
     // 根据日期和小时还有adslotid收集过滤数据
-    val rawData = filterData(adslotid, spark)
+    val rawData = filterData(adslotid, date, spark)
 //    val detailData = calculateOcpcDetail(rawData, spark)
 //    val summaryData = calculateOcpcSummary(rawData, spark)
 
@@ -32,11 +35,11 @@ object OcpcCheckByAdslotid {
 //    summaryData.write.mode("overwrite").saveAsTable("test.ocpc_check_adslotid20181228summary")
   }
 
-  def filterData(adslotid: String, spark: SparkSession) = {
+  def filterData(adslotid: String, date: String, spark: SparkSession) = {
     /*
     分别搜集ctr、cvr1和cvr2的data
      */
-    val selectCondition = s"`date`='2018-12-31'"
+    val selectCondition = s"`date`='$date'"
     // ctr数据
     val sqlRequest1 =
       s"""
