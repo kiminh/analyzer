@@ -20,7 +20,7 @@ object OcpcCalculateAUC {
     val version = "qtt_demo"
     val spark = SparkSession
       .builder()
-      .appName(s"ocpc userid auc: $date, $hour")
+      .appName(s"ocpc userid auc: $date, $hour, $conversionGoal")
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
