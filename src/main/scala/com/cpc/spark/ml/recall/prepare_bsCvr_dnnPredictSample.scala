@@ -80,6 +80,13 @@ object prepare_bsCvr_dnnPredictSample {
         |join adv.unit tb on ta.unit_id=tb.id where adslot_type=1 and audience_orient>0 order by cnt desc limit 100) temp
       """.stripMargin
 
+    spark.read.jdbc(jdbcUrl, table2, jdbcProp).select("unitid").createTempView("unitid_table")
+
+    val table3=
+      s"""insert overwrite table dl_cpc.cpc_recall_bsExp_unitid partition (`date`='$day')
+         |select unitid from unitid_table
+      """.stripMargin
+    spark.sql(table3)
 
     val unit_info = spark.read.jdbc(jdbcUrl, table2, jdbcProp)
 
