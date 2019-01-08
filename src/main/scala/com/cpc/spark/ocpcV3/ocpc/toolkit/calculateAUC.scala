@@ -13,8 +13,10 @@ object calculateAUC {
       .appName(s"model auc")
       .enableHiveSupport().getOrCreate()
 
+    val tableName = args(0).toString
+    println(s"table name: $tableName")
     val data = spark
-      .table("test.check_cvr_model20190108")
+      .table(tableName)
       .na.fill(0, Seq("label"))
 
 
