@@ -87,7 +87,7 @@ object prepare_bsCvr_dnnPredictSample {
          |select unitid from unitid_table
       """.stripMargin
     spark.sql(table3)
-    
+
     val unit_info = spark.read.jdbc(jdbcUrl, table2, jdbcProp)
 
     val unit_hash = unit_info.select(hash("f1")($"adslot_type").alias("f1"),
