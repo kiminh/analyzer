@@ -21,7 +21,7 @@ object calculateAUC {
 
     for (row <- model.collect()) {
       val modelName = row.getAs[String]("model")
-      val singleData = data.filter(s"model=$modelName")
+      val singleData = data.filter(s"model='$modelName'")
 
       val scoreAndLabel = singleData
         .select("score", "label")
