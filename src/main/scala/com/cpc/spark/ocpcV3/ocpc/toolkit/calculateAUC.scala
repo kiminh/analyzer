@@ -2,6 +2,7 @@ package com.cpc.spark.ocpcV3.ocpc.toolkit
 
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 
 import scala.collection.mutable
 
@@ -14,6 +15,7 @@ object calculateAUC {
 
     val data = spark
       .table("test.check_cvr_model20190108")
+      .na.fill(0, Seq("label"))
 
 
     val aucList = new mutable.ListBuffer[(String, Double)]()
