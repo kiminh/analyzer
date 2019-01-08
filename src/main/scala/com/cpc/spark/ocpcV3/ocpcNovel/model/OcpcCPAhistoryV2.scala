@@ -85,6 +85,8 @@ object OcpcCPAhistoryV2 {
          |  dl_cpc.ocpcv3_ctr_data_hourly
          |WHERE
          |  $selectCondition
+         |AND
+         |  media_appsid in ('80000001', '80000002', '80001098', '80001292')
        """.stripMargin
     println(sqlRequest1)
     val costData = spark
@@ -110,6 +112,8 @@ object OcpcCPAhistoryV2 {
          |  dl_cpc.ocpcv3_cvr1_data_hourly
          |WHERE
          |  $selectCondition
+         |AND
+         |  media_appsid in ('80000001', '80000002', '80001098', '80001292')
        """.stripMargin
     println(sqlRequest2)
     val cvr1Data = spark
@@ -132,6 +136,8 @@ object OcpcCPAhistoryV2 {
          |  dl_cpc.ocpcv3_cvr2_data_hourly
          |WHERE
          |  $selectCondition
+         |AND
+         |  media_appsid in ('80000001', '80000002', '80001098', '80001292')
        """.stripMargin
     println(sqlRequest3)
     val cvr2Data = spark

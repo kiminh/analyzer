@@ -21,22 +21,23 @@ object OcpcCheckByAdslotid {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
-    val adslotid = args(0).toString
+    val date = args(0).toString
+//    val adslotid = args(1).toString
+    val adslotidInt = 1026459
+    val adslotid = adslotidInt.toString
 
     // 根据日期和小时还有adslotid收集过滤数据
-    val rawData = filterData(adslotid, spark)
-//    val detailData = calculateOcpcDetail(rawData, spark)
-//    val summaryData = calculateOcpcSummary(rawData, spark)
-
-//    detailData.write.mode("overwrite").saveAsTable("test.ocpc_check_adslotid20181228detail")
-//    summaryData.write.mode("overwrite").saveAsTable("test.ocpc_check_adslotid20181228summary")
+    val resultDF = filterData(adslotid, date, spark)
+    val tableName = "dl_cpc.ocpc_check_adslotid"
+    resultDF.write.mode("overwrite").insertInto(tableName)
+    resultDF.show(10)
   }
 
-  def filterData(adslotid: String, spark: SparkSession) = {
+  def filterData(adslotid: String, date: String, spark: SparkSession) = {
     /*
     分别搜集ctr、cvr1和cvr2的data
      */
-    val selectCondition = s"`date`='2018-12-31'"
+    val selectCondition = s"`date`='$date'"
     // ctr数据
     val sqlRequest1 =
       s"""
@@ -56,9 +57,7 @@ object OcpcCheckByAdslotid {
          |    price,
          |    ext_int['bid_ocpc'] as bid_ocpc,
          |    ext_int['is_ocpc'] as is_ocpc,
-         |    ext_string['ocpc_log'] as ocpc_log,
-         |    date,
-         |    hour
+         |    ext_string['ocpc_log'] as ocpc_log
          |from
          |    dl_cpc.cpc_union_log
          |WHERE
@@ -103,39 +102,14 @@ object OcpcCheckByAdslotid {
       .join(cvr1Data, Seq("searchid"), "left_outer")
       .join(cvr2Data, Seq("searchid"), "left_outer")
 
-    val tableName = "test.ocpc_check_adslotid20181231"
-    data.write.mode("overwrite").saveAsTable(tableName)
-    data.show(10)
+
     val resultDF = data
-      .selectExpr("searchid", "unitid", "userid", "isclick", "price", "exp_ctr", "exp_cvr", "is_ocpc", "cast(ocpc_log_dict['cpagiven'] as double) cpagiven", "cast(ocpc_log_dict['kvalue'] as double) kvalue", "cast(ocpc_log_dict['dynamicbid'] as double) dynamicbid", "cast(ocpc_log_dict['ocpcstep'] as int) ocpcstep", "iscvr1", "iscvr2", "date", "hour")
-//
-//    val sqlRequest2 =
-//      s"""
-//         |SELECT
-//         |  searchid,
-//         |  unitid,
-//         |  userid,
-//         |  isclick,
-//         |  price,
-//         |  exp_ctr,
-//         |  exp_cvr,
-//         |  is_ocpc,
-//         |  ocpc_log_dict['cpagiven'] as cpagiven,
-//         |  ocpc_log_dict['kvalue'] as kvalue,
-//         |  ocpc_log_dict['dynamicbid'] as dynamicbid,
-//         |  ocpc_log_dict['ocpcstep'] as ocpcstep,
-//         |  (case when length(ocpc_log) > 0 then 1 else 0 end) as ocpc_flag,
-//         |  iscvr1,
-//         |  iscvr2,
-//         |  date,
-//         |  hour
-//         |FROM
-//         |  $tableName
-//       """.stripMargin
-//    println(sqlRequest2)
-//
-//    val resultDF = spark.table(sqlRequest2)
+      .selectExpr("searchid", "unitid", "userid", "isclick", "price", "exp_ctr", "exp_cvr", "is_ocpc", "cast(ocpc_log_dict['cpagiven'] as double) cpagiven", "cast(ocpc_log_dict['kvalue'] as double) kvalue", "cast(ocpc_log_dict['dynamicbid'] as double) dynamicbid", "cast(ocpc_log_dict['ocpcstep'] as int) ocpcstep", "iscvr1", "iscvr2")
+      .withColumn("date", lit(date))
+
     resultDF
+
+
 
   }
 
