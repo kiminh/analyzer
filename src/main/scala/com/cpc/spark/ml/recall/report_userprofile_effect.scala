@@ -160,7 +160,7 @@ val sqlRequest2 =
          |FROM tmpTable GROUP BY userid
        """.stripMargin
 
-    spark.sql(result).createOrReplaceTempView("total")
+    spark.sql(result).repartition(100).createOrReplaceTempView("total")
 
     val result1 =
       s"""
@@ -178,7 +178,7 @@ val sqlRequest2 =
          |where interest like '%=100') ta group by userid, tag
        """.stripMargin
 
-    spark.sql(result1).createOrReplaceTempView("withtag")
+    spark.sql(result1).repartition(100).createOrReplaceTempView("withtag")
 
     val result2 =
       s"""
