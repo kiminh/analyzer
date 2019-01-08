@@ -10,7 +10,7 @@ object OcpcTraceAdType {
     val date = args(0).toString
     val hour = args(1).toString
 
-    traceAdType(date, hour, spark)
+//    traceAdType(date, hour, spark)
 
   }
 
