@@ -47,7 +47,7 @@ object OcpcBaseCtr {
          |from dl_cpc.cpc_union_log
          |where $selectWhere
          |and isclick is not null
-         |and media_appsid in ("80001098","80001292","80000001", "80000002")
+         |and media_appsid in ("80001098","80001292","80000001", "80000002", "80002819")
          |and isshow = 1
          |and ext['antispam'].int_value = 0
          |and ideaid > 0

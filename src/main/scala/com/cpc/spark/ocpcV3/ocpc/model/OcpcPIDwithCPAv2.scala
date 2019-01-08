@@ -34,8 +34,10 @@ object OcpcPIDwithCPAv2 {
     var mediaSelection = s"media_appsid in ('80000001', '80000002')"
     if (media == "qtt") {
       mediaSelection = s"media_appsid in ('80000001', '80000002')"
-    } else {
+    } else if(media == "novel"){
       mediaSelection = s"media_appsid in ('80001098','80001292')"
+    } else {
+      mediaSelection = s"media_appsid = '80002819'"
     }
 
     // TODO 表名

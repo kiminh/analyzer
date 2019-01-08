@@ -93,6 +93,8 @@ object OcpcGetPb {
          |  dl_cpc.ocpc_ctr_data_hourly
          |WHERE
          |  $selectCondition
+         |AND
+         |  media_appsid in ("80000001", "80000002")
        """.stripMargin
 //    val resultDF = spark
 //      .table("dl_cpc.ocpcv3_ctr_data_hourly")

@@ -40,7 +40,7 @@ object OcpcLabelCvr2 {
          |AND
          |  label=1
          |AND
-         |  media_appsid in ("80001098","80001292","80000001", "80000002")
+         |  media_appsid in ("80001098","80001292","80000001", "80000002", "80002819")
        """.stripMargin
     println(sqlRequest2)
     val labelData = spark.sql(sqlRequest2)
