@@ -38,7 +38,7 @@ object InsertReportAdslotTarget {
           |SELECT searchid,media_appsid,adslotid,adslot_type,isshow,isclick,sex,age,os,province,ext['phone_level'].int_value,
           |hour,ext['os_version'].string_value,ext["adclass"].int_value,isfill,price,interests
           |FROM dl_cpc.cpc_union_log
-          |WHERE date="%s" and userid <>1501897 AND (isshow+isclick)>1
+          |WHERE date="%s" and userid <>1501897 AND isshow=1
         """.stripMargin.format(argDay))
       .rdd
       .map {
@@ -279,7 +279,8 @@ object InsertReportAdslotTarget {
       .repartition(50)
       .cache()
     //println("osVersionData count", osVersionData.count())
-    insertData = insertData.union(osVersionData)
+    insertData = insertData.union(osVersionData).repartition(50)
+    println("insertData mk1 count", insertData.count())
 
     val sexData = allData
       .map {
@@ -386,7 +387,8 @@ object InsertReportAdslotTarget {
       .repartition(50)
       .cache()
     //println("ageData count", ageData.count())
-    insertData = insertData.union(ageData)
+    insertData = insertData.union(ageData).repartition(50)
+    println("insertData mk2 count", insertData.count())
 
     val osData = allData
       .map {
@@ -492,7 +494,8 @@ object InsertReportAdslotTarget {
       .repartition(50)
       .cache()
     //println("provinceData count", provinceData.count())
-    insertData = insertData.union(provinceData)
+    insertData = insertData.union(provinceData).repartition(50)
+    println("insertData mk3 count", insertData.count())
 
     val phoneLevelData = allData
       .map {
@@ -598,7 +601,8 @@ object InsertReportAdslotTarget {
       .repartition(50)
       .cache()
     //println("hourData count", hourData.count())
-    insertData = insertData.union(hourData)
+    insertData = insertData.union(hourData).repartition(50)
+    println("insertData mk4 count", insertData.count())
 
     val categoryData = allData
       .map {
