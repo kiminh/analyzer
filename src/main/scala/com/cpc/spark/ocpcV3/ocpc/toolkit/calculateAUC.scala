@@ -20,6 +20,7 @@ object calculateAUC {
       .na.fill(0, Seq("label"))
 
 
+
     val aucList = new mutable.ListBuffer[(String, Double)]()
     val model = data.select("model").distinct().cache()
 

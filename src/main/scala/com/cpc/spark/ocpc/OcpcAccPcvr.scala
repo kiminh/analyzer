@@ -68,7 +68,11 @@ object OcpcAccPcvr {
     val resultDF = spark.sql(sqlRequest2)
 
 
-    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pcvr_history")
+    resultDF
+      .repartition(10)
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pcvr_history")
 
   }
 
