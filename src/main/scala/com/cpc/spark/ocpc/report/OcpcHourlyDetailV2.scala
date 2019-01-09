@@ -186,8 +186,8 @@ object OcpcHourlyDetailV2 {
     val aucList = new mutable.ListBuffer[(BigInt, BigInt, Int, Double)]()
 
     for (row <- key.collect()) {
-      val ideaid = row.getAs[BigInt]("ideaid")
-      val userid = row.getAs[BigInt]("userid")
+      val ideaid = row.getAs[Int]("ideaid")
+      val userid = row.getAs[Int]("userid")
       val conversion_goal = row.getAs[Int]("conversion_goal")
       val selectCondition = s"ideaid=$ideaid and userid=$userid and conversion_goal=$conversion_goal"
       println(selectCondition)
