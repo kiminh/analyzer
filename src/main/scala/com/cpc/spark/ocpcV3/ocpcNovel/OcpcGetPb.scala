@@ -52,7 +52,8 @@ object OcpcGetPb {
       .withColumn("hour", lit(hour))
 
 //    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly_middle")
-    data.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly_middle")
+    data
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly_middle")
 
 //    unitid          int,
 //    cpa_history     double,
@@ -67,7 +68,8 @@ object OcpcGetPb {
 
     result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v1_hourly")
     // 原表名：dl_cpc.ocpcv3_novel_pb_hourly
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly")
+    result
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v1_hourly")
 
     // 输出pb文件
     savePbPack(result)
