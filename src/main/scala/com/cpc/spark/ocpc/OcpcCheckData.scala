@@ -83,7 +83,8 @@ object OcpcCheckData {
       .withColumn("hour", lit(hour))
 
     //    data.write.mode("overwrite").saveAsTable("test.test_ocpc_complete_probe_20181208_new")
-    data.write.mode("overwrite").insertInto("test.test_ocpc_complete_probe_20181208_new_v1")
+    data
+      .repartition(10).write.mode("overwrite").insertInto("test.test_ocpc_complete_probe_20181208_new_v1")
   }
 
   def program2(date: String, hour: String, spark: SparkSession) = {
@@ -119,7 +120,7 @@ object OcpcCheckData {
         .sql(sqlRequest)
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
-    data.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v6")
+    data.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v6")
     data.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
   }
 

@@ -61,6 +61,7 @@ object OcpcTraceAdType {
 
 
     rawData
+      .repartition(10)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write
