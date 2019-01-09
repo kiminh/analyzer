@@ -198,7 +198,7 @@ object OcpcHourlyDetailV2 {
       val scoreAndLabel = singleData
         .select("score", "label")
         .rdd
-        .map(x=>(x.getAs[Int]("score").toDouble, x.getAs[Int]("label").toDouble))
+        .map(x=>(x.getAs[Double]("score").toDouble, x.getAs[Int]("label").toDouble))
       val scoreAndLabelNum = scoreAndLabel.count()
       if (scoreAndLabelNum > 0) {
         val metrics = new BinaryClassificationMetrics(scoreAndLabel)
@@ -230,7 +230,7 @@ object OcpcHourlyDetailV2 {
       val scoreAndLabel = singleData
         .select("score", "label")
         .rdd
-        .map(x=>(x.getAs[Int]("score").toDouble, x.getAs[Int]("label").toDouble))
+        .map(x=>(x.getAs[Double]("score").toDouble, x.getAs[Int]("label").toDouble))
       val scoreAndLabelNum = scoreAndLabel.count()
       if (scoreAndLabelNum > 0) {
         val metrics = new BinaryClassificationMetrics(scoreAndLabel)
