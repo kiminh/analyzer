@@ -103,7 +103,8 @@ object OcpcKnew {
 
 
 //    data.write.mode("overwrite").saveAsTable(tablename)
-    data.write.mode("overwrite").insertInto(tablename)
+    data
+      .repartition(10).write.mode("overwrite").insertInto(tablename)
 
     val ratio1Data = getKWithRatioType(spark, tablename, "ratio1", date, hour)
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
@@ -114,7 +115,8 @@ object OcpcKnew {
       .join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3", "date", "hour")
 //    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k_new")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k_new")
+    res
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k_new")
 
   }
 
