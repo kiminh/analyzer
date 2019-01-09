@@ -69,7 +69,7 @@ object OcpcAccPcvr {
 
 
     resultDF
-      .repartition(10)
+      .repartition(2)
       .write
       .mode("overwrite")
       .insertInto("dl_cpc.ocpc_pcvr_history")

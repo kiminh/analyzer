@@ -71,7 +71,7 @@ object OcpcAccPact {
 
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pcvr3_history")
     resultDF
-      .repartition(10)
+      .repartition(2)
       .write
       .mode("overwrite")
       .insertInto("dl_cpc.ocpc_pcvr3_history")
