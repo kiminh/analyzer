@@ -26,14 +26,14 @@ object OcpcHourlyDetailV2 {
 
     // 汇总表数据
     val conversionData1 = calculateByConversionGoal(rawData, date, hour, spark)
-    val conversionData2 = calculateAUCbyConversionGoal(rawData, date, hour, spark)
-    val conversionData = conversionData1
-      .join(conversionData2, Seq("conversion_goal"), "left_outer")
-      .select("conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
+//    val conversionData2 = calculateAUCbyConversionGoal(rawData, date, hour, spark)
+//    val conversionData = conversionData1
+//      .join(conversionData2, Seq("conversion_goal"), "left_outer")
+//      .select("conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
 
     // 存储数据
-    ideaidData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190109")
-    conversionData.write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly20190109")
+//    ideaidData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190109")
+    conversionData1.write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly20190109")
 
 
   }
