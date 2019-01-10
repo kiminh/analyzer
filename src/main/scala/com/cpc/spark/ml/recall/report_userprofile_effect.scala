@@ -176,6 +176,7 @@ val sqlRequest2 =
          |  isshow,
          |  price,
          |  iscvr,
+         |  iscvr1,
          |  split(interest, '=')[0] as tag
          |FROM tmpTable lateral view explode(split(interests, ',')) a as interest
          |where interest like '%=100') ta group by userid, tag,unitid,ideaid,adslot_type
