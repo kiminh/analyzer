@@ -183,7 +183,7 @@ object OcpcHourlyDetailV2 {
 
   def calculateAUCbyIdeaid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val key = data.select("ideaid", "userid", "conversion_goal").distinct()
-    val aucList = new mutable.ListBuffer[(BigInt, BigInt, Int, Double)]()
+    val aucList = new mutable.ListBuffer[(Int, Int, Int, Double)]()
     var cnt = 0
 
     for (row <- key.collect()) {
