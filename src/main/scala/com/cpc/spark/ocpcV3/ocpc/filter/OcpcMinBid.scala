@@ -34,7 +34,7 @@ object OcpcMinBid {
       s"""
          |SELECT
          |  ideaid,
-         |  percentile(bid, 0.05) as minBid
+         |  percentile(bid, 0.05) as min_bid
          |FROM
          |  base_data
          |GROUP BY ideaid
