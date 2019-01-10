@@ -139,7 +139,6 @@ val sqlRequest2 =
      |  a.searchid=c.searchid and a.ideaid=c.ideaid
     """.stripMargin
 
-    println(sqlRequest2)
     val base = spark.sql(sqlRequest2).repartition(10000).persist(StorageLevel.MEMORY_AND_DISK_SER)
     print("base——count" + base.count())
 
@@ -161,7 +160,7 @@ val sqlRequest2 =
          |FROM tmpTable GROUP BY userid,unitid,ideaid,adslot_type
        """.stripMargin
 
-    print(result)
+
     spark.sql(result).repartition(5000).createOrReplaceTempView("total")
 
     val result1 =
