@@ -200,7 +200,7 @@ val sqlRequest2 =
          | (ta.costWithTag*1.0/ta.cvrWithTag)/((cost-ta.costWithTag)*1.0/(cvr-ta.cvrWithTag))
          |from withtag ta left join total tb on ta.userid=tb.userid and ta.unitid=tb.unitid and ta.ideaid=tb.ideaid and ta.adslot_type=tb.adslot_type
        """.stripMargin
-    
+
     print(result2)
     spark.sql(result2)
 
