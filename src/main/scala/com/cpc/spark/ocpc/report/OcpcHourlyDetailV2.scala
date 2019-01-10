@@ -51,7 +51,7 @@ object OcpcHourlyDetailV2 {
          |  userid,
          |  isclick,
          |  isshow,
-         |  exp_cvr * 1.0 / 1000000 as exp_cvr,
+         |  exp_cvr,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['dynamicbid'] as double) as bid,
          |  cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
@@ -174,7 +174,7 @@ object OcpcHourlyDetailV2 {
          |  sum(case when isclick=1 then bid else 0 end) * 1.0 / sum(isclick) as acb
          |FROM
          |  base_data
-         |GROUP BY ideaid, userid, conversion_goal
+         |GROUP BY conversion_goal
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
