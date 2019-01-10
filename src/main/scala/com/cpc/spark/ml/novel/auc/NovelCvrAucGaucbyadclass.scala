@@ -2,7 +2,7 @@ package com.cpc.spark.ml.novel.auc
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
-
+import com.cpc.spark.ml.novel.auc.CalcMetrics
 import scala.collection.mutable.ListBuffer
 
 /**
