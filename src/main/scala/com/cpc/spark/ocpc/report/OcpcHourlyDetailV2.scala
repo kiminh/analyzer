@@ -15,8 +15,8 @@ object OcpcHourlyDetailV2 {
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcHourlyDetailV2: $date, $hour").enableHiveSupport().getOrCreate()
 
-//    val rawData = getOcpcLog(date, hour, spark)
-    val rawData = spark.table("test.ocpc_detail_report_hourly20190109")
+    val rawData = getOcpcLog(date, hour, spark)
+
     // 详情表数据
     val ideaidData1 = calculateByIdeaid(rawData, date, hour, spark)
     val ideaidData2 = calculateAUCbyIdeaid(rawData, date, hour, spark)
@@ -32,7 +32,7 @@ object OcpcHourlyDetailV2 {
       .select("conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
 
     // 存储数据
-//    ideaidData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190109")
+    ideaidData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190109")
     conversionData.write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly20190109")
 
 
