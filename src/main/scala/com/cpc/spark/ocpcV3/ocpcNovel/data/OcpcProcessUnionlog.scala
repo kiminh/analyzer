@@ -7,6 +7,7 @@ import java.util.Calendar
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import com.cpc.spark.ocpc.utils.OcpcUtils._
+import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 
 object OcpcProcessUnionlog {
   def main(args: Array[String]): Unit = {
@@ -39,6 +40,7 @@ object OcpcProcessUnionlog {
          |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
          |    isclick,
          |    isshow,
+         |    ext_string['ocpc_log'] as ocpc_log,
          |    ext_int['is_api_callback'] as is_api_callback
          |from dl_cpc.cpc_union_log
          |where $selectWhere
@@ -51,7 +53,9 @@ object OcpcProcessUnionlog {
          |and adslot_type in (1,2,3)
       """.stripMargin
     println(sqlRequest)
-    val rawData = spark.sql(sqlRequest)
+    val rawData = spark
+      .sql(sqlRequest)
+      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
     rawData.createOrReplaceTempView("raw_table")
 
     // 展现数、点击数、花费
@@ -65,7 +69,9 @@ object OcpcProcessUnionlog {
          |  SUM(case when isclick=1 then price else 0 end) as total_price,
          |  SUM(isshow) as show_cnt,
          |  SUM(isclick) as ctr_cnt,
-         |  SUM(case when isclick=1 then bid else 0 end) as total_bid
+         |  SUM(case when isclick=1 and length(ocpc_log)>0 then ocpc_log_dict['dynamicbid']
+         |           when isclick=1 and length(ocpc_log)<=0 then bid
+         |           else 0 end) as total_bid
          |FROM
          |  raw_table
          |GROUP BY ideaid, unitid, adclass, media_appsid
