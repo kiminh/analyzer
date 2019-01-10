@@ -11,6 +11,8 @@ import org.tensorflow.hadoop.io.TFRecordFileOutputFormat
 
 import sys.process._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.util.LongAccumulator
+import redis.clients.jedis.{HostAndPort, JedisCluster}
 
 /**
   *
@@ -41,17 +43,27 @@ object Utils {
 
     }
 
+    val acc = new LongAccumulator
+    spark.sparkContext.register(acc)
+
     spark.sql(sql)
       .repartition(numPartitions)
       .rdd.map(x => Base64.decodeBase64(x.getString(0)))
-      .map(x => (new BytesWritable(x), NullWritable.get()))
+      .map(x => {
+        acc.add(1L)
+        (new BytesWritable(x), NullWritable.get())
+      })
       .saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)
 
     //保存count文件
-    val count = spark.sql(sql).count
-    s"echo $count" #> new File("count") !
+    println("total num is :" + acc.sum)
+    s"echo ${acc.sum}" #> new File("count") !
 
     s"hadoop fs -put count $path" !
+
+    if (acc.sum == 0) {
+      System.exit(1)
+    }
   }
 
   //保存multihot特征到redis
@@ -75,6 +87,27 @@ object Utils {
             redis.setex(rec._1, 3600 * 24 * 7, rec._2)
           }
           redis.disconnect
+        }
+      }
+  }
+
+  def save2RedisCluster(str: String, prefix: String): Unit = {
+    val spark = SparkSession.builder()
+      .enableHiveSupport()
+      .getOrCreate()
+
+    val sql = generateSql(str, "redis")
+    print(sql)
+
+    spark.sql(sql).repartition(20)
+      .rdd.map(x => (prefix + x.getString(0), Base64.decodeBase64(x.getString(1))))
+      .foreachPartition {
+        p => {
+          val jedis = new JedisCluster(new HostAndPort("192.168.83.62", 7001))
+          p.foreach { rec =>
+            jedis.setex(rec._1.getBytes(), 3600 * 24 * 7, rec._2)
+          }
+          jedis.close()
         }
       }
   }
