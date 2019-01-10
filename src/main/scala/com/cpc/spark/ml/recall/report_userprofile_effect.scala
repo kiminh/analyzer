@@ -161,7 +161,8 @@ val sqlRequest2 =
          |FROM tmpTable GROUP BY userid,unitid,ideaid,adslot_type
        """.stripMargin
 
-    spark.sql(result).repartition(100).createOrReplaceTempView("total")
+    print(result)
+    spark.sql(result).repartition(5000).createOrReplaceTempView("total")
 
     val result1 =
       s"""
@@ -182,7 +183,8 @@ val sqlRequest2 =
          |where interest like '%=100') ta group by userid, tag,unitid,ideaid,adslot_type
        """.stripMargin
 
-    spark.sql(result1).repartition(100).createOrReplaceTempView("withtag")
+    print(result1)
+    spark.sql(result1).repartition(5000).createOrReplaceTempView("withtag")
     val result2 =
       s"""
          |insert into dl_cpc.cpc_profileTag_report_daily_v1 partition (`date`='$date')
@@ -198,7 +200,8 @@ val sqlRequest2 =
          | (ta.costWithTag*1.0/ta.cvrWithTag)/((cost-ta.costWithTag)*1.0/(cvr-ta.cvrWithTag))
          |from withtag ta left join total tb on ta.userid=tb.userid and ta.unitid=tb.unitid and ta.ideaid=tb.ideaid and ta.adslot_type=tb.adslot_type
        """.stripMargin
-
+    
+    print(result2)
     spark.sql(result2)
 
 /**
