@@ -93,6 +93,7 @@ object OcpcSampleToPb {
       val cvr3Cnt = record.getAs[Long]("cvr3_cnt")
       val k_value1 = record.getAs[Double]("kvalue1")
       val k_value2 = record.getAs[Double]("kvalue2")
+      val min_bid = 0.5
 
       if (cnt % 500 == 0) {
         println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali, cvr3Cnt:$cvr3Cnt, kvalue1:$k_value1, kvalue2:$k_value2")
@@ -121,7 +122,8 @@ object OcpcSampleToPb {
           cvr3Cali = cvr3Cali,
           cvr3Cnt = cvr3Cnt,
           kvalue1 = k_value1,
-          kvalue2 = k_value2
+          kvalue2 = k_value2,
+          minBid = min_bid
         )
         list += currentItem
 

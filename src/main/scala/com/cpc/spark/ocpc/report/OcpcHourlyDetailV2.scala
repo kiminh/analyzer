@@ -184,6 +184,7 @@ object OcpcHourlyDetailV2 {
   def calculateAUCbyIdeaid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val key = data.select("ideaid", "userid", "conversion_goal").distinct()
     val aucList = new mutable.ListBuffer[(BigInt, BigInt, Int, Double)]()
+    var cnt = 0
 
     for (row <- key.collect()) {
       val ideaid = row.getAs[Int]("ideaid")
@@ -203,9 +204,10 @@ object OcpcHourlyDetailV2 {
       if (scoreAndLabelNum > 0) {
         val metrics = new BinaryClassificationMetrics(scoreAndLabel)
         val aucROC = metrics.areaUnderROC
-        println(s"### result is $aucROC ###")
+        println(s"### result is $aucROC, cnt=$cnt ###")
         aucList.append((ideaid, userid, conversion_goal, aucROC))
       }
+      cnt += 1
     }
 
     val resultDF = spark
@@ -218,6 +220,7 @@ object OcpcHourlyDetailV2 {
   def calculateAUCbyConversionGoal(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val key = data.select("conversion_goal").distinct()
     val aucList = new mutable.ListBuffer[(Int, Double)]()
+    var cnt = 0
 
     for (row <- key.collect()) {
       val conversion_goal = row.getAs[Int]("conversion_goal")
@@ -235,9 +238,10 @@ object OcpcHourlyDetailV2 {
       if (scoreAndLabelNum > 0) {
         val metrics = new BinaryClassificationMetrics(scoreAndLabel)
         val aucROC = metrics.areaUnderROC
-        println(s"### result is $aucROC ###")
+        println(s"### result is $aucROC, cnt=$cnt ###")
         aucList.append((conversion_goal, aucROC))
       }
+      cnt += 1
     }
 
     val resultDF = spark
