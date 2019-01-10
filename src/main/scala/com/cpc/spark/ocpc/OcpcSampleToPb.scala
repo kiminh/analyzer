@@ -127,7 +127,7 @@ object OcpcSampleToPb {
           kvalue1 = k_value1,
           kvalue2 = k_value2,
           minBid = min_bid,
-          cpaSugest = cpa_suggest,
+          cpaSuggest = cpa_suggest,
           t = t_span,
           cpcBid = cpc_bid
         )

@@ -20,7 +20,7 @@ message SingleUser {
     double kvalue1 = 15;
     double kvalue2 = 16;
     double minBid = 17;
-    double cpaSugest = 18;
+    double cpaSuggest = 18;
     int64 t = 19;
     double cpcBid = 20;
 }
