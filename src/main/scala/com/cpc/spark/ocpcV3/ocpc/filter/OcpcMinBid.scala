@@ -89,7 +89,7 @@ object OcpcMinBid {
          |    isshow,
          |    isclick,
          |    price,
-         |    ext_string['ocpc_log'] as ocpc_log,
+         |    ocpc_log,
          |    (case when length(ocpc_log) > 0 then ocpc_log_dict['dynamicbid']
          |          else original_bid end) as bid,
          |    (case when length(ocpc_log) > 0 then 1
