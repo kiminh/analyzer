@@ -51,7 +51,7 @@ object OcpcHourlyDetailV2 {
          |  userid,
          |  isclick,
          |  isshow,
-         |  exp_cvr,
+         |  cast(exp_cvr as double) as exp_cvr,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['dynamicbid'] as double) as bid,
          |  cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
