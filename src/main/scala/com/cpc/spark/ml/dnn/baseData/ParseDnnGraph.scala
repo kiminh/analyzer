@@ -21,7 +21,13 @@ object ParseDnnGraph {
     val graph = dnnmodel.Dnnmodel.DNNGraph.parseFrom(file)
 
     for (l <- graph.getTensorsList) {
-      val out_name = dir + "/" + l.getName + "_" + l.getDimsList.mkString("-")
+      var out_name = ""
+      if (dir.endsWith("/")) {
+        out_name = dir + l.getName + "_" + l.getDimsList.mkString("-")
+      } else {
+        out_name = dir + "/" + l.getName + "_" + l.getDimsList.mkString("-")
+      }
+
       val writer = new PrintWriter(new File(out_name))
       writer.write(l.getFloatDataList.mkString(","))
       writer.close()
