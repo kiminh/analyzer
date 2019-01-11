@@ -13,9 +13,9 @@ import scala.io.Source
 object ParseDnnGraph {
   def main(args: Array[String]): Unit = {
     val file = args(0)
-    val graph = new dnnmodel.Dnnmodel.DNNGraph
+    val graph = new dnnmodel.Dnnmodel.DNNGraph()
     val data = Source.fromFile(file)
     print(data.getLines())
-    //graph.parseFrom()
+//    graph.parseFrom()
   }
 }
