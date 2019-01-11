@@ -244,7 +244,8 @@ val sqlRequest2 =
       write.mode(SaveMode.Append).jdbc(mariaReport2dbUrl, "report2.cpc_profileTag_report", mariaReport2dbProp)
 
     unionlog.unpersist()
-    base.unpersist()/**
+    base.unpersist()
+    /**
     val result2 =
       s"""
          |insert into dl_cpc.cpc_profileTag_report_daily partition (`date`='$date')
