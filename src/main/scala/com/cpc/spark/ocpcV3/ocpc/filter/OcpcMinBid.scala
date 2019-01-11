@@ -120,7 +120,8 @@ object OcpcMinBid {
          |    user_city,
          |    city_level,
          |    adsrc,
-         |    adclass
+         |    adclass,
+         |    hour
          |from ctr_data
        """.stripMargin
     println(sqlRequest2)
