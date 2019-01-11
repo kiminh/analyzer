@@ -85,7 +85,6 @@ object OcpcMinBid {
          |    ext['adclass'].int_value as adclass
          |from dl_cpc.cpc_union_log
          |where $selectCondition
-         |and `hour` <= '08'
          |and isshow = 1
          |and ext['exp_ctr'].int_value is not null
          |and media_appsid  in ("80000001", "80000002")
