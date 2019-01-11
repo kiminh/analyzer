@@ -39,7 +39,7 @@ object OcpcCalculateAUC {
   }
 
   def getOcpcLog(date: String, hour: String, spark: SparkSession) = {
-    val selectCondition1 = s"`dt` = '$date' and `hour` <= '$hour'"
+    val selectCondition1 = s"`date` = '$date' and `hour` <= '$hour'"
     val selectCondition2 = s"`date` = '$date' and `hour` <= '$hour'"
 
     // ctrData
