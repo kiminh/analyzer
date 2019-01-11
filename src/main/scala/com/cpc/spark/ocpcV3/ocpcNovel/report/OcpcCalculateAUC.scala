@@ -198,7 +198,7 @@ object OcpcCalculateAUC {
     val newData = data
       .withColumn("score", col("exp_cvr") * 1000000)
       .withColumn("label", col("iscvr"))
-      .selectExpr("conversion_goal", "cast(score as int) score", "label")
+      .selectExpr("cast(conversion_goal as string) conversion_goal", "cast(score as int) score", "label")
     val result = utils.getGauc(spark, newData, "conversion_goal")
     val resultRDD = result.rdd.map(row => {
       val identifier = row.getAs[String]("name").toInt
