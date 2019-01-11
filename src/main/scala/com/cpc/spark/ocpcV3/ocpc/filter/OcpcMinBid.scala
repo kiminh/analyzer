@@ -127,7 +127,7 @@ object OcpcMinBid {
     println(sqlRequest2)
     val data = spark.sql(sqlRequest2)
     val resultDF = data
-      .selectExpr("searchid", "ideaid", "original_bid", "price", "cast(bid as int) as bid", "ocpc_flag", "is_ocpc", "isshow", "isclick", "ocpc_log", "adslot_id", "adslot_type", "user_city", "city_level", "adsrc", "adclass", "hour")
+      .selectExpr("searchid", "ideaid", "original_bid", "price", "cast(bid as int) as bid", "ocpc_flag", "is_ocpc", "isshow", "isclick", "ocpc_log", "adslotid", "adslot_type", "user_city", "city_level", "adsrc", "adclass", "hour")
 
     resultDF
   }
