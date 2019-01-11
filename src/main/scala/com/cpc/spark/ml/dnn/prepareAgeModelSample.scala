@@ -72,7 +72,6 @@ object prepareAgeModelSample {
       .save(s"/user/cpc/dnn/age/dnntest")
     train.unpersist()
   }
-
   def getSample(spark: SparkSession): DataFrame = {
     import spark.implicits._
 
