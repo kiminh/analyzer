@@ -185,6 +185,8 @@ object OcpcCalculateAUC {
       (userid, conversionGoal, auc)
     })
     val resultDF = resultRDD.toDF("userid", "conversion_goal", "auc")
+    println("calcualte by userid:")
+    resultDF.show(10)
     resultDF
 
   }
@@ -203,6 +205,8 @@ object OcpcCalculateAUC {
       (identifier, auc)
     })
     val resultDF = resultRDD.toDF("conversion_goal", "auc")
+    println("calcualte by conversion_goal:")
+    resultDF.show(10)
     resultDF
 
   }
