@@ -6,6 +6,10 @@ cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
 queue=root.cpc.develop
 
+date=$1
+hour=$2
+version=$3
+media=$4
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
