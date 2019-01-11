@@ -23,16 +23,16 @@ object OcpcMinBid {
     val spark = SparkSession.builder().appName(s"OcpcMinBid: $date, $hour").enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val baseData = getBaseData(date, hour, spark)
-    baseData.repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
-//    val baseData = spark.table("test.ocpc_check_min_bid_base")
-
-    val resultDF = calculateMinBid(baseData, date, hour, spark)
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
-
+//    val baseData = getBaseData(date, hour, spark)
+//    baseData.repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
+////    val baseData = spark.table("test.ocpc_check_min_bid_base")
+//
+//    val resultDF = calculateMinBid(baseData, date, hour, spark)
+//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
+    val resultDF = spark.table("test.ocpc_check_min_bid")
     val data = resultDF.filter(s"cnt >= min_cnt")
 
-    savePbPack(resultDF, "test_minbid.pb")
+    savePbPack(data, "test_minbid.pb")
   }
 
   def savePbPack(dataset: Dataset[Row], filename: String): Unit = {
