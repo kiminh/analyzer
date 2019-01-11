@@ -179,9 +179,9 @@ object OcpcCalculateAUC {
     result.show(10)
     val resultRDD = result.rdd.map(row => {
       val identifier = row.getAs[String]("name")
-      val identifierList = identifier.split("-").map(x=>(x(0).toInt, x(1).toInt))
-      val userid = identifierList(0)
-      val conversionGoal = identifierList(1)
+      val identifierList = identifier.trim.split("-")
+      val userid = identifierList(0).toInt
+      val conversionGoal = identifierList(1).toInt
       val auc = row.getAs[Double]("auc")
       (userid, conversionGoal, auc)
     })
