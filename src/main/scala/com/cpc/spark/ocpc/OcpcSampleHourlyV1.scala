@@ -113,7 +113,8 @@ object OcpcSampleHourlyV1 {
 
 
     // save data
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track_label2")
+    result
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track_label2")
 
     result.show(10)
 

@@ -187,8 +187,10 @@ object OcpcHourlyReport {
     //    noApiData.write.mode("overwrite").saveAsTable("test.ocpc_check_hourly_report_noapi")
     //    apiData.write.mode("overwrite").saveAsTable("test.ocpc_check_hourly_report_api")
 
-    noApiData.write.mode("overwrite").insertInto("dl_cpc.ocpc_check_hourly_report_noapi")
-    apiData.write.mode("overwrite").insertInto("dl_cpc.ocpc_check_hourly_report_api")
+    noApiData
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_hourly_report_noapi")
+    apiData
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_hourly_report_api")
   }
 
 

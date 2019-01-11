@@ -8,7 +8,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import com.cpc.spark.ocpc.utils.OcpcUtils._
 
-object OcpcBaseCtr {
+object OcpcBaseCtrCPC {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
@@ -17,9 +17,9 @@ object OcpcBaseCtr {
     val hour = args(1).toString
     val resultDF = preprocessUnionlog(date, hour, spark)
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ctr_data_hourly")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ctr_data_hourly")
-    println("successfully save data into table dl_cpc.ocpc_ctr_data_hourly")
+      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_ctr_cpc_data_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ctr_cpc_data_hourly")
+    println("successfully save data into table dl_cpc.ocpc_ctr_cpc_data_hourly")
   }
 
   def preprocessUnionlog(date: String, hour: String, spark: SparkSession) = {
@@ -42,6 +42,7 @@ object OcpcBaseCtr {
          |    adslot_type,
          |    adtype,
          |    ext['adclass'].int_value as adclass,
+         |    ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
          |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
          |    isclick,
          |    isshow
@@ -49,6 +50,7 @@ object OcpcBaseCtr {
          |where $selectWhere
          |and isclick is not null
          |and media_appsid in ("80001098","80001292","80000001", "80000002", "80002819")
+         |and length(ext_string['ocpc_log'])<=0
          |and isshow = 1
          |and ext['antispam'].int_value = 0
          |and ideaid > 0
@@ -76,6 +78,7 @@ object OcpcBaseCtr {
          |  SUM(isshow) as show_cnt,
          |  SUM(isclick) as ctr_cnt,
          |  SUM(case when isclick=1 then bid else 0 end) as total_bid,
+         |  SUM(case when isshow=1 then exp_ctr else 0 end) as total_pctr,
          |  SUM(case when isclick=1 then exp_cvr else 0 end) as total_pcvr
          |FROM
          |  raw_table
@@ -85,7 +88,7 @@ object OcpcBaseCtr {
     val data = spark.sql(sqlRequest1)
 
     val resultDF = data
-      .select("ideaid", "userid", "unitid", "adclass", "media_type", "media_appsid", "adslotid", "adslot_type", "adtype", "total_price", "show_cnt", "ctr_cnt", "total_bid", "total_pcvr")
+      .select("ideaid", "userid", "unitid", "adclass", "media_type", "media_appsid", "adslotid", "adslot_type", "adtype", "total_price", "show_cnt", "ctr_cnt", "total_bid", "total_pctr", "total_pcvr")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 

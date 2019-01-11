@@ -13,6 +13,9 @@ import scala.collection.mutable.ListBuffer
 
 object OcpcPreprocessAUC {
   def main(args: Array[String]): Unit = {
+    /*
+    构建计算auc、推荐cpa、cpcBid以及minBid的基础表
+     */
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString

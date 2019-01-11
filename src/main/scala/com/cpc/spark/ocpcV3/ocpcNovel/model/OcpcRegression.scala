@@ -82,7 +82,8 @@ object OcpcRegression {
       .withColumn("hour", lit(hour))
 
 //    data.write.mode("overwrite").saveAsTable(tablename)
-    data.write.mode("overwrite").insertInto(tablename)
+    data
+      .repartition(10).write.mode("overwrite").insertInto(tablename)
 
     val ratio1Data = getKWithRatioType(spark, tablename, "ratio1", date, hour)
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
@@ -90,7 +91,8 @@ object OcpcRegression {
     val res = ratio1Data.join(ratio2Data, Seq("unitid", "date", "hour"), "outer")
       .select("unitid", "k_ratio1", "k_ratio2", "date", "hour")
 //    res.write.mode("overwrite").saveAsTable("test.ocpc_v3_novel_k_regression")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v3_novel_k_regression")
+    res
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_v3_novel_k_regression")
   }
 
   def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
