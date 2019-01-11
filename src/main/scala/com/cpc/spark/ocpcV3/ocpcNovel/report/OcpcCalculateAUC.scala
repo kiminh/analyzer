@@ -23,7 +23,7 @@ object OcpcCalculateAUC {
     val unitData2 = calculateAUCbyUserid(rawData, date, hour, spark)
     val unitData = unitData1
       .join(unitData2, Seq("userid", "conversion_goal"), "left_outer")
-      .select("ideaid", "userid", "conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
+      .select("unitid", "userid", "conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
 
     unitData.write.mode("overwrite").saveAsTable("test.ocpc_novel_detail_report_hourly20190111")
 
