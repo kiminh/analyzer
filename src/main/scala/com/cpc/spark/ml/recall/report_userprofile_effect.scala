@@ -1,12 +1,15 @@
 package com.cpc.spark.ml.recall
 
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Properties}
 
-import org.apache.spark.sql.SparkSession
+import com.typesafe.config.ConfigFactory
+import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.storage.StorageLevel
 
 object report_userprofile_effect {
+  var mariaReport2dbUrl = ""
+  val mariaReport2dbProp = new Properties()
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
@@ -195,17 +198,50 @@ val sqlRequest2 =
          | ta.ctrWithTag, ctr-ctrWithTag, ctrWithTag*1.0/ctr,
          | ta.costWithTag, cost-ta.costWithTag,
          | ta.apicvrWithTag, ta.cvrWithTag,
-         | ta.costWithTag*1.0/ta.apicvrWithTag, ta.costWithTag*1.0/ta.cvrWithTag,
+         | ta.apicvrWithTag*1.0/ta.costWithTag, ta.cvrWithTag*1.0/ta.costWithTag,
          | apiCvr-ta.apicvrWithTag, cvr-ta.cvrWithTag,
-         | (cost-ta.costWithTag)*1.0/(apiCvr-ta.apicvrWithTag), (cost-ta.costWithTag)*1.0/(cvr-ta.cvrWithTag),
-         | (ta.costWithTag*1.0/ta.apicvrWithTag)/((cost-ta.costWithTag)*1.0/(apiCvr-ta.apicvrWithTag)),
-         | (ta.costWithTag*1.0/ta.cvrWithTag)/((cost-ta.costWithTag)*1.0/(cvr-ta.cvrWithTag))
+         | (apiCvr-ta.apicvrWithTag)*1.0/(cost-ta.costWithTag), (cvr-ta.cvrWithTag)*1.0/(cost-ta.costWithTag),
+         | (ta.apicvrWithTag*1.0/ta.costWithTag)/((apiCvr-ta.apicvrWithTag)*1.0/(cost-ta.costWithTag)),
+         | (ta.cvrWithTag*1.0/ta.costWithTag)/((cvr-ta.cvrWithTag)*1.0/(cost-ta.costWithTag))
          |from withtag ta left join total tb on ta.userid=tb.userid and ta.unitid=tb.unitid and ta.ideaid=tb.ideaid and ta.adslot_type=tb.adslot_type
        """.stripMargin
 
     print(result2)
     spark.sql(result2)
 
+    //    连接adv_test
+    val jdbcProp = new Properties()
+    val jdbcUrl = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com"
+    jdbcProp.put("user", "adv_live_read")
+    jdbcProp.put("password", "seJzIPUc7xU")
+    jdbcProp.put("driver", "com.mysql.jdbc.Driver")
+
+    //从adv后台mysql获取人群包的url
+    val table="(select value as tag, name from adv.audience_dict where status = 1 group by value,name) as tmp"
+    spark.read.jdbc(jdbcUrl, table, jdbcProp).createTempView("tag_table")
+
+    val conf = ConfigFactory.load()
+    mariaReport2dbUrl = conf.getString("mariadb.report2_write.url")
+    mariaReport2dbProp.put("user", conf.getString("mariadb.report2_write.user"))
+    mariaReport2dbProp.put("password", conf.getString("mariadb.report2_write.password"))
+    mariaReport2dbProp.put("driver", conf.getString("mariadb.report2_write.driver"))
+
+    spark.sql(
+      s"""
+        |select ta.userid,ta.tag,tb.name,ctrwithtag,ctrwithouttag, ctrwithtag*1.0/ctrwithouttag, costwithtag, costwithouttag,
+        |apicvrwithtag, cvrwithtag, apicvrwithtag*1.0/costwithtag, cvrwithtag*1.0/costwithtag,
+        |apicvrwithouttag, cvrwithouttag, apicvrwithouttag*1.0/costwithouttag, cvrwithouttag*1.0/costwithouttag,
+        |(apicvrwithtag*1.0/costwithtag)/(apicvrwithouttag*1.0/costwithouttag),
+        |(cvrwithtag*1.0/costwithtag)/(cvrwithouttag*1.0/costwithouttag),'$date' from
+        |(select userid,tag,sum(ctrwithtag) ctrwithtag,sum(ctrwithouttag) ctrwithouttag,sum(costwithtag) costwithtag,
+        |sum(costwithouttag) costwithouttag, sum(apicvrwithtag) apicvrwithtag, sum(cvrwithtag) cvrwithtag,
+        |sum(apicvrwithouttag) apicvrwithouttag, sum(cvrwithouttag) cvrwithouttag from dl_cpc.cpc_profileTag_report_daily_v1
+        |where date='$date' group by userid, tag) ta left join tag_table tb on ta.tag=tb.tag left join dl_cpc.cpc_userid_tag tc
+        |on ta.tag=tc.profile_tag and ta.userid = tc.userid where tb.tag is not null or tc.profile_tag is not null
+      """.stripMargin)
+      .write
+      .mode(SaveMode.Append)
+      .jdbc(mariaReport2dbUrl, "report2.cpc_profileTag_report", mariaReport2dbProp)
 /**
     val result2 =
       s"""
