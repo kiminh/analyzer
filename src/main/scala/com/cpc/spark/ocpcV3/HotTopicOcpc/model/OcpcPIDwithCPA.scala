@@ -54,7 +54,7 @@ object OcpcPIDwithCPA {
       .withColumn("version", lit(version) )
 
     //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
-    resultDF
+    resultDF.repartition(10)
       .write
       .mode("overwrite" )
       .insertInto("dl_cpc.ocpc_pid_k_hourly" )
