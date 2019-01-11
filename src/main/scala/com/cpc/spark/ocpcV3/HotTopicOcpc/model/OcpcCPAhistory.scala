@@ -191,7 +191,6 @@ object OcpcCPAhistory {
     .withColumn("cpa1", col("cost") * 1.0 / col("cvr1cnt"))
     .withColumn("avg_bid", col("bid") * 1.0 / col("ctrcnt"))
     .withColumn("alpha1", col("cpa1") * 1.0 / col("avg_bid"))
-    .withColumn("alpha2", col("cpa2") * 1.0 / col("avg_bid"))
     .withColumn("date", lit(date)) //添加一列，取值全为date
     .withColumn("hour", lit(hour))
 
@@ -216,8 +215,8 @@ object OcpcCPAhistory {
       .withColumn("hour", lit(hour))
 
     val adclassTable = "dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly"
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_adclass_hourly")
-    resultDF.write.mode("overwrite").insertInto(adclassTable)
+        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_cpahistory20199111")
+//    resultDF.write.mode("overwrite").insertInto(adclassTable)
     resultDF
   }
 
