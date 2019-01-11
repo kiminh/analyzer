@@ -78,7 +78,7 @@ object OcpcBaseCtrCPC {
          |  SUM(isshow) as show_cnt,
          |  SUM(isclick) as ctr_cnt,
          |  SUM(case when isclick=1 then bid else 0 end) as total_bid,
-         |  SUM(case when isclick=1 then exp_ctr else 0 end) as total_pctr
+         |  SUM(case when isclick=1 then exp_ctr else 0 end) as total_pctr,
          |  SUM(case when isclick=1 then exp_cvr else 0 end) as total_pcvr
          |FROM
          |  raw_table
