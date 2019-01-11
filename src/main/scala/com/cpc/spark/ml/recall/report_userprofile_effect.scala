@@ -192,7 +192,7 @@ val sqlRequest2 =
     spark.sql(result1).repartition(5000).createOrReplaceTempView("withtag")
     val result2 =
       s"""
-         |insert into dl_cpc.cpc_profileTag_report_daily_v1 partition (`date`='$date')
+         |insert overwrite table dl_cpc.cpc_profileTag_report_daily_v1 partition (`date`='$date')
          |Select ta.userid,ta.unitid, ta.ideaid, ta.adslot_type, ta.tag,
          | ta.showWithTag, show-showWithTag,
          | ta.ctrWithTag, ctr-ctrWithTag, ctrWithTag*1.0/ctr,
