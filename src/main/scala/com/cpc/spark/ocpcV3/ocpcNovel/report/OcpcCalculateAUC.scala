@@ -3,6 +3,7 @@ package com.cpc.spark.ocpcV3.ocpcNovel.report
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import com.cpc.spark.ocpcV3.utils
 
 import scala.collection.mutable
 
@@ -167,71 +168,41 @@ object OcpcCalculateAUC {
   }
 
   def calculateAUCbyUserid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    val key = data.select("userid", "conversion_goal").distinct()
-    val aucList = new mutable.ListBuffer[(Int, Int, Double)]()
-    var cnt = 0
+    import spark.implicits._
 
-    for (row <- key.collect()) {
-      val userid = row.getAs[Int]("userid")
-      val conversion_goal = row.getAs[Int]("conversion_goal")
-      val selectCondition = s"userid=$userid and conversion_goal=$conversion_goal"
-      println(selectCondition)
-      val singleData = data
-        .withColumn("score", col("exp_cvr"))
-        .withColumn("label", col("iscvr"))
-        .filter(selectCondition)
-      val scoreAndLabel = singleData
-        .select("score", "label")
-        .rdd
-        .map(x=>(x.getAs[Double]("score").toDouble, x.getAs[Int]("label").toDouble))
-      val scoreAndLabelNum = scoreAndLabel.count()
-      if (scoreAndLabelNum > 0) {
-        val metrics = new BinaryClassificationMetrics(scoreAndLabel)
-        val aucROC = metrics.areaUnderROC
-        println(s"### result is $aucROC, cnt=$cnt ###")
-        aucList.append((userid, conversion_goal, aucROC))
-      }
-      cnt += 1
-    }
-
-    val resultDF = spark
-      .createDataFrame(aucList)
-      .toDF("ideaid", "userid", "conversion_goal", "auc")
-
+    val newData = data
+      .withColumn("identifier", concat_ws("-", col("userid"), col("conversion_goal")))
+      .withColumn("score", col("exp_cvr"))
+      .withColumn("label", col("iscvr"))
+      .select("identifier", "score", "label")
+    val result = utils.getGauc(spark, newData, "identifier")
+    val resultRDD = result.rdd.map(row => {
+      val identifier = row.getAs[String]("identifier")
+      val identifierList = identifier.split("-").map(x=>(x(0).toInt, x(1).toInt))
+      val userid = identifierList(0)
+      val conversionGoal = identifierList(1)
+      val auc = row.getAs[Double]("auc")
+      (userid, conversionGoal, auc)
+    })
+    val resultDF = resultRDD.toDF("userid", "conversion_goal", "auc")
     resultDF
+
   }
 
   def calculateAUCbyConversionGoal(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    val key = data.select("conversion_goal").distinct()
-    val aucList = new mutable.ListBuffer[(Int, Double)]()
-    var cnt = 0
+    import spark.implicits._
 
-    for (row <- key.collect()) {
-      val conversion_goal = row.getAs[Int]("conversion_goal")
-      val selectCondition = s"conversion_goal=$conversion_goal"
-      println(selectCondition)
-      val singleData = data
-        .withColumn("score", col("exp_cvr"))
-        .withColumn("label", col("iscvr"))
-        .filter(selectCondition)
-      val scoreAndLabel = singleData
-        .select("score", "label")
-        .rdd
-        .map(x=>(x.getAs[Double]("score").toDouble, x.getAs[Int]("label").toDouble))
-      val scoreAndLabelNum = scoreAndLabel.count()
-      if (scoreAndLabelNum > 0) {
-        val metrics = new BinaryClassificationMetrics(scoreAndLabel)
-        val aucROC = metrics.areaUnderROC
-        println(s"### result is $aucROC, cnt=$cnt ###")
-        aucList.append((conversion_goal, aucROC))
-      }
-      cnt += 1
-    }
-
-    val resultDF = spark
-      .createDataFrame(aucList)
-      .toDF("conversion_goal", "auc")
-
+    val newData = data
+      .withColumn("score", col("exp_cvr"))
+      .withColumn("label", col("iscvr"))
+      .select("conversion_goal", "score", "label")
+    val result = utils.getGauc(spark, newData, "identifier")
+    val resultRDD = result.rdd.map(row => {
+      val identifier = row.getAs[String]("conversion_goal").toInt
+      val auc = row.getAs[Double]("auc")
+      (identifier, auc)
+    })
+    val resultDF = resultRDD.toDF("conversion_goal", "auc")
     resultDF
 
   }
