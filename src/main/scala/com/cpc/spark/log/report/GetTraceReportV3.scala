@@ -12,9 +12,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import scala.collection.mutable.ListBuffer
 import org.apache.spark.sql.functions._
 
-/**
-  * Created on ${Date} ${Time}
-  */
+
 object GetTraceReportV3 {
   var mariadbUrl = ""
 
