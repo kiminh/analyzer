@@ -18,13 +18,13 @@ object OcpcHourlyDetailV2 {
     val rawData = getOcpcLog(date, hour, spark)
 
     // 详情表数据
-//    val ideaidData1 = calculateByIdeaid(rawData, date, hour, spark)
-//    val ideaidData2 = calculateAUCbyIdeaid(rawData, date, hour, spark)
-//    val ideaidData = ideaidData1
-//      .join(ideaidData2, Seq("ideaid", "userid", "conversion_goal"), "left_outer")
-//      .select("ideaid", "userid", "conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
-//
-//    ideaidData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190109")
+    val ideaidData1 = calculateByIdeaid(rawData, date, hour, spark)
+    val ideaidData2 = calculateAUCbyIdeaid(rawData, date, hour, spark)
+    val ideaidData = ideaidData1
+      .join(ideaidData2, Seq("ideaid", "userid", "conversion_goal"), "left_outer")
+      .select("ideaid", "userid", "conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
+
+    ideaidData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190109")
 
     // 汇总表数据
     val conversionData1 = calculateByConversionGoal(rawData, date, hour, spark)
