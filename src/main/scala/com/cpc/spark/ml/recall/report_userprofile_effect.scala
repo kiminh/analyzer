@@ -58,7 +58,7 @@ object report_userprofile_effect {
          |on a.userid=b.userid or a.adclass=b.userid
       """.stripMargin
   */
-  /**
+
 val sqlRequest1 =
   s"""
      | select
@@ -209,7 +209,7 @@ val sqlRequest2 =
 
     print(result2)
     spark.sql(result2)
-    */
+
 
     //    连接adv_test
     val jdbcProp = new Properties()
@@ -230,21 +230,21 @@ val sqlRequest2 =
 
     spark.sql(
       s"""
-        |select ta.userid,ta.tag,tb.name,ctrwithtag,ctrwithouttag, ctrwithtag*1.0/ctrwithouttag, costwithtag, costwithouttag,
-        |apicvrwithtag, cvrwithtag, apicvrwithtag*1.0/costwithtag, cvrwithtag*1.0/costwithtag,
-        |apicvrwithouttag, cvrwithouttag, apicvrwithouttag*1.0/costwithouttag, cvrwithouttag*1.0/costwithouttag,
-        |(apicvrwithtag*1.0/costwithtag)/(apicvrwithouttag*1.0/costwithouttag),
-        |(cvrwithtag*1.0/costwithtag)/(cvrwithouttag*1.0/costwithouttag),'$date' from
+        |select ta.userid,ta.tag,tb.name,ctrwithtag,ctrwithouttag, ctrwithtag*1.0/(ctrwithouttag + ctrwithtag) as ratio, costwithtag, costwithouttag,
+        |apicvrwithtag, cvrwithtag, apicvrwithtag*1.0/costwithtag apiroiwithtag, cvrwithtag*1.0/costwithtag as roiwithtag,
+        |apicvrwithouttag, cvrwithouttag, apicvrwithouttag*1.0/costwithouttag as apiroiwithouttag, cvrwithouttag*1.0/costwithouttag as roiwithouttag,
+        |(apicvrwithtag*1.0/costwithtag)/(apicvrwithouttag*1.0/costwithouttag) as apiperformance,
+        |(cvrwithtag*1.0/costwithtag)/(cvrwithouttag*1.0/costwithouttag) as performance,'$date' from
         |(select userid,tag,sum(ctrwithtag) ctrwithtag,sum(ctrwithouttag) ctrwithouttag,sum(costwithtag) costwithtag,
         |sum(costwithouttag) costwithouttag, sum(apicvrwithtag) apicvrwithtag, sum(cvrwithtag) cvrwithtag,
         |sum(apicvrwithouttag) apicvrwithouttag, sum(cvrwithouttag) cvrwithouttag from dl_cpc.cpc_profileTag_report_daily_v1
         |where date='$date' group by userid, tag) ta left join tag_table tb on ta.tag=tb.tag left join dl_cpc.cpc_userid_tag tc
         |on ta.tag=tc.profile_tag and ta.userid = tc.userid where tb.tag is not null or tc.profile_tag is not null
-      """.stripMargin)
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariaReport2dbUrl, "report2.cpc_profileTag_report", mariaReport2dbProp)
-/**
+      """.stripMargin).
+      write.mode(SaveMode.Append).jdbc(mariaReport2dbUrl, "report2.cpc_profileTag_report", mariaReport2dbProp)
+
+    unionlog.unpersist()
+    base.unpersist()/**
     val result2 =
       s"""
          |insert into dl_cpc.cpc_profileTag_report_daily partition (`date`='$date')
@@ -255,8 +255,7 @@ val sqlRequest2 =
 
     spark.sql(result2)
 
-    unionlog.unpersist()
-    base.unpersist()
+
   */
     /**
     val result =
