@@ -19,9 +19,9 @@ object OcpcCalculateAUC {
 
     // 详情表数据
     val unitData1 = calculateByUnitid(rawData, date, hour, spark)
-    val unitData2 = calculateAUCbyUnitid(rawData, date, hour, spark)
+    val unitData2 = calculateAUCbyUserid(rawData, date, hour, spark)
     val unitData = unitData1
-      .join(unitData2, Seq("ideaid", "userid", "conversion_goal"), "left_outer")
+      .join(unitData2, Seq("userid", "conversion_goal"), "left_outer")
       .select("ideaid", "userid", "conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
 
     unitData.write.mode("overwrite").saveAsTable("test.ocpc_novel_detail_report_hourly20190111")
@@ -166,16 +166,15 @@ object OcpcCalculateAUC {
     resultDF
   }
 
-  def calculateAUCbyUnitid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    val key = data.select("unitid", "userid", "conversion_goal").distinct()
-    val aucList = new mutable.ListBuffer[(Int, Int, Int, Double)]()
+  def calculateAUCbyUserid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val key = data.select("userid", "conversion_goal").distinct()
+    val aucList = new mutable.ListBuffer[(Int, Int, Double)]()
     var cnt = 0
 
     for (row <- key.collect()) {
-      val unitid = row.getAs[Int]("unitid")
       val userid = row.getAs[Int]("userid")
       val conversion_goal = row.getAs[Int]("conversion_goal")
-      val selectCondition = s"unitid=$unitid and userid=$userid and conversion_goal=$conversion_goal"
+      val selectCondition = s"userid=$userid and conversion_goal=$conversion_goal"
       println(selectCondition)
       val singleData = data
         .withColumn("score", col("exp_cvr"))
@@ -190,7 +189,7 @@ object OcpcCalculateAUC {
         val metrics = new BinaryClassificationMetrics(scoreAndLabel)
         val aucROC = metrics.areaUnderROC
         println(s"### result is $aucROC, cnt=$cnt ###")
-        aucList.append((unitid, userid, conversion_goal, aucROC))
+        aucList.append((userid, conversion_goal, aucROC))
       }
       cnt += 1
     }
