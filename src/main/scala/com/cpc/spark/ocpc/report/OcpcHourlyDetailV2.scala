@@ -1,5 +1,6 @@
 package com.cpc.spark.ocpc.report
 
+import com.cpc.spark.ocpcV3.utils
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
@@ -181,75 +182,120 @@ object OcpcHourlyDetailV2 {
     resultDF
   }
 
+
   def calculateAUCbyIdeaid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val key = data.select("ideaid", "userid", "conversion_goal").distinct()
-    val aucList = new mutable.ListBuffer[(Int, Int, Int, Double)]()
-    var cnt = 0
+    import spark.implicits._
 
-    for (row <- key.collect()) {
-      val ideaid = row.getAs[Int]("ideaid")
-      val userid = row.getAs[Int]("userid")
-      val conversion_goal = row.getAs[Int]("conversion_goal")
-      val selectCondition = s"ideaid=$ideaid and userid=$userid and conversion_goal=$conversion_goal"
-      println(selectCondition)
-      val singleData = data
-        .withColumn("score", col("exp_cvr"))
-        .withColumn("label", col("iscvr"))
-        .filter(selectCondition)
-      val scoreAndLabel = singleData
-        .select("score", "label")
-        .rdd
-        .map(x=>(x.getAs[Double]("score").toDouble, x.getAs[Int]("label").toDouble))
-      val scoreAndLabelNum = scoreAndLabel.count()
-      if (scoreAndLabelNum > 0) {
-        val metrics = new BinaryClassificationMetrics(scoreAndLabel)
-        val aucROC = metrics.areaUnderROC
-        println(s"### result is $aucROC, cnt=$cnt ###")
-        aucList.append((ideaid, userid, conversion_goal, aucROC))
-      }
-      cnt += 1
-    }
-
-    val resultDF = spark
-      .createDataFrame(aucList)
-      .toDF("ideaid", "userid", "conversion_goal", "auc")
-
+    val newData = data
+      .withColumn("identifier", concat_ws("-", col("ideaid"), col("userid"), col("conversion_goal")))
+      .withColumn("score", col("exp_cvr") * 1000000)
+      .withColumn("label", col("iscvr"))
+      .selectExpr("identifier", "cast(score as int) score", "label")
+    val result = utils.getGauc(spark, newData, "identifier")
+    result.show(10)
+    val resultRDD = result.rdd.map(row => {
+      val identifier = row.getAs[String]("name")
+      val identifierList = identifier.trim.split("-")
+      val ideaid = identifierList(0).toInt
+      val userid = identifierList(1).toInt
+      val conversionGoal = identifierList(2).toInt
+      val auc = row.getAs[Double]("auc")
+      (ideaid, userid, conversionGoal, auc)
+    })
+    val resultDF = resultRDD.toDF("ideaid", "userid", "conversion_goal", "auc")
     resultDF
   }
 
   def calculateAUCbyConversionGoal(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    val key = data.select("conversion_goal").distinct()
-    val aucList = new mutable.ListBuffer[(Int, Double)]()
-    var cnt = 0
+    import spark.implicits._
 
-    for (row <- key.collect()) {
-      val conversion_goal = row.getAs[Int]("conversion_goal")
-      val selectCondition = s"conversion_goal=$conversion_goal"
-      println(selectCondition)
-      val singleData = data
-        .withColumn("score", col("exp_cvr"))
-        .withColumn("label", col("iscvr"))
-        .filter(selectCondition)
-      val scoreAndLabel = singleData
-        .select("score", "label")
-        .rdd
-        .map(x=>(x.getAs[Double]("score").toDouble, x.getAs[Int]("label").toDouble))
-      val scoreAndLabelNum = scoreAndLabel.count()
-      if (scoreAndLabelNum > 0) {
-        val metrics = new BinaryClassificationMetrics(scoreAndLabel)
-        val aucROC = metrics.areaUnderROC
-        println(s"### result is $aucROC, cnt=$cnt ###")
-        aucList.append((conversion_goal, aucROC))
-      }
-      cnt += 1
-    }
-
-    val resultDF = spark
-      .createDataFrame(aucList)
-      .toDF("conversion_goal", "auc")
-
+    val newData = data
+      .withColumn("score", col("exp_cvr") * 1000000)
+      .withColumn("label", col("iscvr"))
+      .selectExpr("cast(conversion_goal as string) conversion_goal", "cast(score as int) score", "label")
+    val result = utils.getGauc(spark, newData, "conversion_goal")
+    val resultRDD = result.rdd.map(row => {
+      val identifier = row.getAs[String]("name").toInt
+      val auc = row.getAs[Double]("auc")
+      (identifier, auc)
+    })
+    val resultDF = resultRDD.toDF("conversion_goal", "auc")
+    println("calcualte by conversion_goal:")
+    resultDF.show(10)
     resultDF
 
   }
+//
+//  def calculateAUCbyIdeaid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+//    val key = data.select("ideaid", "userid", "conversion_goal").distinct()
+//    val aucList = new mutable.ListBuffer[(Int, Int, Int, Double)]()
+//    var cnt = 0
+//
+//    for (row <- key.collect()) {
+//      val ideaid = row.getAs[Int]("ideaid")
+//      val userid = row.getAs[Int]("userid")
+//      val conversion_goal = row.getAs[Int]("conversion_goal")
+//      val selectCondition = s"ideaid=$ideaid and userid=$userid and conversion_goal=$conversion_goal"
+//      println(selectCondition)
+//      val singleData = data
+//        .withColumn("score", col("exp_cvr"))
+//        .withColumn("label", col("iscvr"))
+//        .filter(selectCondition)
+//      val scoreAndLabel = singleData
+//        .select("score", "label")
+//        .rdd
+//        .map(x=>(x.getAs[Double]("score").toDouble, x.getAs[Int]("label").toDouble))
+//      val scoreAndLabelNum = scoreAndLabel.count()
+//      if (scoreAndLabelNum > 0) {
+//        val metrics = new BinaryClassificationMetrics(scoreAndLabel)
+//        val aucROC = metrics.areaUnderROC
+//        println(s"### result is $aucROC, cnt=$cnt ###")
+//        aucList.append((ideaid, userid, conversion_goal, aucROC))
+//      }
+//      cnt += 1
+//    }
+//
+//    val resultDF = spark
+//      .createDataFrame(aucList)
+//      .toDF("ideaid", "userid", "conversion_goal", "auc")
+//
+//    resultDF
+//  }
+//
+//  def calculateAUCbyConversionGoal(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+//    val key = data.select("conversion_goal").distinct()
+//    val aucList = new mutable.ListBuffer[(Int, Double)]()
+//    var cnt = 0
+//
+//    for (row <- key.collect()) {
+//      val conversion_goal = row.getAs[Int]("conversion_goal")
+//      val selectCondition = s"conversion_goal=$conversion_goal"
+//      println(selectCondition)
+//      val singleData = data
+//        .withColumn("score", col("exp_cvr"))
+//        .withColumn("label", col("iscvr"))
+//        .filter(selectCondition)
+//      val scoreAndLabel = singleData
+//        .select("score", "label")
+//        .rdd
+//        .map(x=>(x.getAs[Double]("score").toDouble, x.getAs[Int]("label").toDouble))
+//      val scoreAndLabelNum = scoreAndLabel.count()
+//      if (scoreAndLabelNum > 0) {
+//        val metrics = new BinaryClassificationMetrics(scoreAndLabel)
+//        val aucROC = metrics.areaUnderROC
+//        println(s"### result is $aucROC, cnt=$cnt ###")
+//        aucList.append((conversion_goal, aucROC))
+//      }
+//      cnt += 1
+//    }
+//
+//    val resultDF = spark
+//      .createDataFrame(aucList)
+//      .toDF("conversion_goal", "auc")
+//
+//    resultDF
+//
+//  }
 
 }
