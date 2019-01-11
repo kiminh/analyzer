@@ -58,6 +58,7 @@ object report_userprofile_effect {
          |on a.userid=b.userid or a.adclass=b.userid
       """.stripMargin
   */
+  /**
 val sqlRequest1 =
   s"""
      | select
@@ -208,6 +209,7 @@ val sqlRequest2 =
 
     print(result2)
     spark.sql(result2)
+    */
 
     //    连接adv_test
     val jdbcProp = new Properties()
@@ -252,10 +254,10 @@ val sqlRequest2 =
        """.stripMargin
 
     spark.sql(result2)
-*/
+
     unionlog.unpersist()
     base.unpersist()
-
+  */
     /**
     val result =
       s"""
