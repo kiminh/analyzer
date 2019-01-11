@@ -8,7 +8,7 @@ import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import ocpcminbidv1.Ocpcminbidv1
 import ocpcminbidv1.ocpcminbidv1.{BidList, SingleRecord}
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
-import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.functions._
 
 import scala.collection.mutable.ListBuffer
 
@@ -29,6 +29,8 @@ object OcpcMinBid {
 
     val resultDF = calculateMinBid(baseData, date, hour, spark)
     resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
+
+    val data = resultDF.filter(s"cnt >= min_cnt")
 
     savePbPack(resultDF, "test_minbid.pb")
   }
@@ -116,7 +118,8 @@ object OcpcMinBid {
          |  adsrc,
          |  adclass,
          |  ocpc_flag,
-         |  percentile(bid, 0.05) as min_bid
+         |  percentile(bid, 0.05) as min_bid,
+         |  count(1) as cnt
          |FROM
          |  base_data
          |WHERE
@@ -124,7 +127,25 @@ object OcpcMinBid {
          |GROUP BY hour, adslotid, adslot_type, user_city, city_level, adsrc, adclass, ocpc_flag
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
+    val rawData = spark.sql(sqlRequest)
+    rawData.createOrReplaceTempView("raw_data")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  percentile(cnt, 0.75) as min_cnt
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest2)
+    val cntData = spark.sql(sqlRequest2)
+    cntData.show(10)
+    val minCnt = cntData.first().getAs[Double]("min_cnt")
+    println(s"minCnt is $minCnt")
+
+    val resultDF = rawData.withColumn("min_cnt", lit(minCnt))
+
+
     resultDF
   }
 
