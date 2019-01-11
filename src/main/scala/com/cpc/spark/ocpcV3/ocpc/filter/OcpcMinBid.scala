@@ -1,11 +1,16 @@
 package com.cpc.spark.ocpcV3.ocpc.filter
 
+import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import ocpcminbidv1.Ocpcminbidv1
+import ocpcminbidv1.ocpcminbidv1.{BidList, SingleRecord}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions.col
+
+import scala.collection.mutable.ListBuffer
 
 
 object OcpcMinBid {
@@ -25,6 +30,75 @@ object OcpcMinBid {
     val resultDF = calculateMinBid(baseData, date, hour, spark)
     resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
 
+    savePbPack(resultDF, "test_minbid.pb")
+  }
+
+  def savePbPack(dataset: Dataset[Row], filename: String): Unit = {
+    var list = new ListBuffer[SingleRecord]
+    println("size of the dataframe")
+    println(dataset.count)
+    dataset.show(10)
+    dataset.printSchema()
+    var cnt = 0
+
+    for (record <- dataset.collect()) {
+//      int32 hour = 1;
+//      string adslotid = 2;
+//      int32 adslotType = 3;
+//      string userCity = 4;
+//      int32 cityLevel = 5;
+//      int32 adsrc = 6;
+//      int32 adclass = 7;
+//      int32 isOcpc = 8;
+//      double minBid = 9;
+
+      //hour    string  NULL
+      //adslotid        string  NULL
+      //adslot_type     int     NULL
+      //user_city       string  NULL
+      //city_level      int     NULL
+      //adsrc   int     NULL
+      //adclass int     NULL
+      //ocpc_flag       int     NULL
+      //min_bid double  NULL
+      val hour = record.getAs[String]("hour").toInt
+      val adslotid = record.getAs[String]("adslotid")
+      val adslot_type = record.getAs[Int]("adslot_type")
+      val user_city = record.getAs[String]("user_city")
+      val city_level = record.getAs[Int]("city_level")
+      val adsrc = record.getAs[Int]("adsrc")
+      val adclass = record.getAs[Int]("adclass")
+      val ocpc_flag = record.getAs[Int]("ocpc_flag")
+      val min_bid = record.getAs[Double]("min_bid")
+
+      if (cnt % 100 == 0) {
+        println(s"hour:$hour, adslotid:$adslotid, adslot_type:$adslot_type, user_city:$user_city, city_level:$city_level, adsrc:$adsrc, adclass:$adclass, ocpc_flag:$ocpc_flag, min_bid:$min_bid")
+      }
+      cnt += 1
+      val currentItem = SingleRecord(
+        hour = hour,
+        adslotid = adslotid,
+        adslotType = adslot_type,
+        userCity = user_city,
+        cityLevel = city_level,
+        adsrc = adsrc,
+        adclass = adclass,
+        isOcpc = ocpc_flag,
+        minBid = min_bid
+      )
+      list += currentItem
+
+    }
+    val result = list.toArray[SingleRecord]
+    val adRecordList = BidList(
+      adrecord = result
+    )
+
+    println("length of the array")
+    println(result.length)
+    adRecordList.writeTo(new FileOutputStream(filename))
+
+    println("complete save data into protobuffer")
 
   }
 
