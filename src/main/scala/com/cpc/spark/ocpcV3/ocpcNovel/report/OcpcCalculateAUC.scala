@@ -24,8 +24,12 @@ object OcpcCalculateAUC {
     val unitData = unitData1
       .join(unitData2, Seq("userid", "conversion_goal"), "left_outer")
       .select("unitid", "userid", "conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
 
-    unitData.write.mode("overwrite").saveAsTable("test.ocpc_novel_detail_report_hourly20190111")
+//    unitData.write.mode("overwrite").saveAsTable("test.ocpc_novel_detail_report_hourly20190111")
+    unitData
+      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_auc_report_detail_hourly")
 
     // 汇总表数据
     val conversionData1 = calculateByConversionGoal(rawData, date, hour, spark)
@@ -33,8 +37,12 @@ object OcpcCalculateAUC {
     val conversionData = conversionData1
       .join(conversionData2, Seq("conversion_goal"), "left_outer")
       .select("conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
 
-    conversionData.write.mode("overwrite").saveAsTable("test.ocpc_novel_summary_report_hourly20190111")
+//    conversionData.write.mode("overwrite").saveAsTable("test.ocpc_novel_summary_report_hourly20190111")
+    conversionData
+      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_auc_report_summary_hourly")
 
 
   }
