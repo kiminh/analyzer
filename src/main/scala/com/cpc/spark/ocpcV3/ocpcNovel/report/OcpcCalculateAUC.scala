@@ -178,7 +178,7 @@ object OcpcCalculateAUC {
     val result = utils.getGauc(spark, newData, "identifier")
     result.show(10)
     val resultRDD = result.rdd.map(row => {
-      val identifier = row.getAs[String]("identifier")
+      val identifier = row.getAs[String]("name")
       val identifierList = identifier.split("-").map(x=>(x(0).toInt, x(1).toInt))
       val userid = identifierList(0)
       val conversionGoal = identifierList(1)
@@ -201,7 +201,7 @@ object OcpcCalculateAUC {
       .select("conversion_goal", "cast(score as int) score", "label")
     val result = utils.getGauc(spark, newData, "conversion_goal")
     val resultRDD = result.rdd.map(row => {
-      val identifier = row.getAs[String]("conversion_goal").toInt
+      val identifier = row.getAs[String]("name").toInt
       val auc = row.getAs[Double]("auc")
       (identifier, auc)
     })
