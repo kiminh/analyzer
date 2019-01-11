@@ -56,14 +56,14 @@ object OcpcMinBid {
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
     // 取历史区间: score数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date`='$date1'"
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+//    val today = dateConverter.parse(date)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(today)
+//    calendar.add(Calendar.DATE, -1)
+//    val yesterday = calendar.getTime
+//    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`date`='$date' and `hour` <= '$hour'"
     // todo 时间区间： hour
     val sqlRequest =
       s"""
