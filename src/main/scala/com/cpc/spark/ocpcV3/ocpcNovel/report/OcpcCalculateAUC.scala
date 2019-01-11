@@ -172,9 +172,9 @@ object OcpcCalculateAUC {
 
     val newData = data
       .withColumn("identifier", concat_ws("-", col("userid"), col("conversion_goal")))
-      .withColumn("score", col("exp_cvr"))
+      .withColumn("score", col("exp_cvr") * 1000000)
       .withColumn("label", col("iscvr"))
-      .select("identifier", "score", "label")
+      .selectExpr("identifier", "cast(score as int) score", "label")
     val result = utils.getGauc(spark, newData, "identifier")
     val resultRDD = result.rdd.map(row => {
       val identifier = row.getAs[String]("identifier")
@@ -195,9 +195,9 @@ object OcpcCalculateAUC {
     import spark.implicits._
 
     val newData = data
-      .withColumn("score", col("exp_cvr"))
+      .withColumn("score", col("exp_cvr") * 1000000)
       .withColumn("label", col("iscvr"))
-      .select("conversion_goal", "score", "label")
+      .select("conversion_goal", "cast(score as int) score", "label")
     val result = utils.getGauc(spark, newData, "identifier")
     val resultRDD = result.rdd.map(row => {
       val identifier = row.getAs[String]("conversion_goal").toInt
