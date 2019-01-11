@@ -1,5 +1,7 @@
 package com.cpc.spark.ml.dnn.baseData
 
+import java.io.{File, FileInputStream, PrintWriter}
+import scala.collection.JavaConversions._
 import scala.io.Source
 
 /**
@@ -12,8 +14,17 @@ import scala.io.Source
   */
 object ParseDnnGraph {
   def main(args: Array[String]): Unit = {
-    val file = args(0)
-    val data = Source.fromFile(file)
-    print(data.getLines())
+
+    val Array(src, dir, _*) = args
+    val file = new FileInputStream(src)
+
+    val graph = dnnmodel.Dnnmodel.DNNGraph.parseFrom(file)
+
+    for (l <- graph.getTensorsList) {
+      val out_name = dir + "/" + l.getName + "_" + l.getDimsList.mkString("-")
+      val writer = new PrintWriter(new File(out_name))
+      writer.write(l.getFloatDataList.mkString(","))
+      writer.close()
+    }
   }
 }
