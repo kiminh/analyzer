@@ -30,7 +30,9 @@ libraryDependencies ++= Seq(
   "org.scalaj" %% "scalaj-http" % "2.3.0",
   "net.debasishg" %% "redisclient" % "3.9",
   "org.apache.commons" % "commons-math3" % "3.5",
-  "commons-codec" % "commons-codec" % "1.9"
+  "commons-codec" % "commons-codec" % "1.9",
+  "redis.clients" % "jedis" % "2.9.0"
+
 )
 
 assemblyMergeStrategy in assembly := {
