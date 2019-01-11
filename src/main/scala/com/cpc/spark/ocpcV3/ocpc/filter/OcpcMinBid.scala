@@ -111,6 +111,7 @@ object OcpcMinBid {
          |    isclick,
          |    price,
          |    ocpc_log,
+         |    is_ocpc,
          |    (case when length(ocpc_log) > 0 then ocpc_log_dict['dynamicbid']
          |          else original_bid end) as bid,
          |    (case when length(ocpc_log) > 0 and is_ocpc=1 then 1
