@@ -229,8 +229,6 @@ object OcpcHourlyDetailV2 {
       (identifier, auc)
     })
     val resultDF = resultRDD.toDF("conversion_goal", "auc")
-    println("calcualte by conversion_goal:")
-    resultDF.show(10)
     resultDF
 
   }
