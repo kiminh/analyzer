@@ -20,7 +20,7 @@ object GetTraceReportV3 {
 
   var mariadb_amateur_url = ""
   val mariadb_amateur_prop = new Properties()
-
+ 
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       System.err.println(
