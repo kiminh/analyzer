@@ -267,7 +267,7 @@ object OcpcCPAhistory {
       .withColumn("conversion_goal" , lit(1) )
       .withColumn("cpa_src_middle", when(col("cpa1_history_qtt").isNull, "hottopic").otherwise("qtt") )
       .withColumn("cpa_src",        when(col("cpa_src_middle")==="hottopic" && col("cpa1_history_hottopic").isNull, "adclass").otherwise(col("cpa_src_middle")))
-      .withColumn("cpa_history",    when(col("cpa_src")==="qtt", col("cpa1_history_qtt")).otherwise(when(col("cpa_src")==="novel", col("cpa1_history_novel")).otherwise(col("cpa1"))))
+      .withColumn("cpa_history",    when(col("cpa_src")==="qtt", col("cpa1_history_qtt")).otherwise(when(col("cpa_src")==="hottopic", col("cpa1_history_hottopic")).otherwise(col("cpa1"))))
       .withColumn("cpa_history",    when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
 
     data
