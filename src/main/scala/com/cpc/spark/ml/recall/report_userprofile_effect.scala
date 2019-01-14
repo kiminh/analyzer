@@ -241,7 +241,7 @@ val sqlRequest2 =
         |where date='$date' group by userid, tag) ta left join tag_table tb on ta.tag=tb.tag left join dl_cpc.cpc_userid_tag tc
         |on ta.tag=tc.profile_tag and ta.userid = tc.userid where tb.tag is not null or tc.profile_tag is not null
       """.stripMargin).
-      write.mode(SaveMode.Append).jdbc(mariaReport2dbUrl, "report2.cpc_profileTag_report", mariaReport2dbProp)
+      write.mode(SaveMode.Append).jdbc(mariaReport2dbUrl, "report2.cpc_profiletag_report", mariaReport2dbProp)
 
     unionlog.unpersist()
     base.unpersist()
