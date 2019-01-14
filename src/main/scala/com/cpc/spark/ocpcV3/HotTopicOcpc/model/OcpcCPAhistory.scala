@@ -73,7 +73,7 @@ object OcpcCPAhistory {
          |  adclass,
          |  media_appsid,
          |  total_price as total_cost,
-         |  total_bid as total_bid,
+         |  total_bid   as total_bid,
          |  ctr_cnt
          |FROM
          |  dl_cpc.ocpcv3_ctr_data_hourly
@@ -91,7 +91,7 @@ object OcpcCPAhistory {
         sum( col("total_cost") ).alias("total_cost"),
         sum( col("total_bid")  ).alias("total_bid" ),
         sum( col("ctr_cnt")    ).alias("ctrcnt"    ) )
-      .select("unitid", "new_adclass", "media_appsid", "total_cost", "total_bid", "ctrcnt")
+      .select("unitid", "new_adclass", "media_appsid", "total_cost", "total_bid", "ctrcnt" )
 
     // 非api回传类转化数 ( ml_cvr_feature_v1 )
     val sqlRequest2 =
@@ -159,11 +159,11 @@ object OcpcCPAhistory {
       .filter(s"media_appsid in ('80000001', '80000002')" )
       .groupBy("unitid", "new_adclass" )
       .agg(
-        sum(col("total_cost")).alias("cost"),
-        sum(col("cvr1cnt")).alias("cvr1cnt"),
+        sum(col("total_cost")).alias("cost"   ),
+        sum(col("cvr1cnt"   )).alias("cvr1cnt"),
         //  sum(col("cvr2cnt")).alias("cvr2cnt"),
-        sum(col("total_bid")).alias("bid"),
-        sum(col("ctrcnt"   )).alias("ctrcnt"))
+        sum(col("total_bid" )).alias("bid"    ),
+        sum(col("ctrcnt"    )).alias("ctrcnt" ) )
       .withColumn("cpa1", col("cost") * 1.0 / col("cvr1cnt") )
       // .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
       .withColumn("avg_bid", col("bid") * 1.0 / col("ctrcnt" ) )
