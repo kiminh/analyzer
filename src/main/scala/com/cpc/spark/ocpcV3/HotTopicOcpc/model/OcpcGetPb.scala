@@ -55,7 +55,7 @@ object OcpcGetPb {
     // 组装数据
     val resultDF = assemblyPBknown(mediaSelection, base, cvrData, initKdata, kvalue, version, date, hour, spark)
 
-//    resultDF.write.mode("overwrite").insertInto( "test.ocpc_hottopic_prev_pb_hourly"  ) //只有版本分区
+    resultDF.write.mode("overwrite").insertInto( "test.ocpc_hottopic_prev_pb_hourly"  ) //只有版本分区
     // resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly") //只有日期、小时、版本分区。
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_pb_result_hourly" )
 
