@@ -63,10 +63,10 @@ object OcpcGetPb {
       .selectExpr("cast(identifier as string) identifier", "conversion_goal", "cpa_given", "cast(cvrcnt as bigint) cvrcnt", "cast(kvalue as double) kvalue")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("version", lit("v1"))
+      .withColumn("version", lit("hottopic_v1"))
 
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb")
-    resultDF.write.mode("overwrite").insertInto( "dl_cpc.ocpc_pb_result_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb" )
+    resultDF.write.mode("overwrite").insertInto( "dl_cpc.ocpc_pb_result_hourly" )
     //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
 
     savePbPack( resultDF, "v1" )
