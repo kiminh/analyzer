@@ -175,7 +175,7 @@ object OcpcGetPb {
     val cvrData = spark
       .sql(sqlRequest2)
       .groupBy("unitid")
-      .agg(sum(col("label")).alias("complete_cvrcnt"))
+      .agg(sum(col("label")).alias("cvrcnt"))
       .na.fill(0, Seq("cvrcnt"))
       .withColumn("conversion_goal", lit(conversionGoal))
       .selectExpr("cast(unitid as string) identifier", "cvrcnt", "conversion_goal")
