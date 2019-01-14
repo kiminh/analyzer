@@ -38,7 +38,7 @@ object OcpcPIDwithCPA {
     }
 
     val prevTable = spark
-      .table("test.ocpc_prev_pb_hourly" )
+      .table("test.ocpc_hottopic_prev_pb_hourly" )
       .where(s"version='$version'" )
     val cvrData = getCVR1data( date, hour, spark )  //返回dl_cpc.ml_cvr_feature_v1中在date日，hour时之前24h内label_type!=12且有转化的search_id
 
