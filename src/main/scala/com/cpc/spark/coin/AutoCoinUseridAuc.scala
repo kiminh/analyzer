@@ -35,6 +35,7 @@ object AutoCoinUseridAuc {
                |        and userid not in (1001028, 1501875)
                |        and adslotid not in ("7774304","7636999","7602943","7783705","7443868","7917491","7868332")
                |        and round(ext["adclass"].int_value/1000) != 132101
+               |
                |        and adslot_type in (1,2)
                |    ) a
                |    left outer join
@@ -48,27 +49,30 @@ object AutoCoinUseridAuc {
 
         val data = spark.sql(unionSql).cache()
         val resultListBuffer = scala.collection.mutable.ListBuffer[AucUid]()
+        //分栏位
         for (adslot_type <- 1 to 2) {
             val dataFilter = data.filter(s"adslot_type = $adslot_type")
-
-            if (dataFilter.count()>0) {
-                val aucList = CalcMetrics.getGauc(spark,dataFilter,"userid").collect()
-                aucList.foreach(x => {
-                    val userid = x.getAs[String]("name")
-                    val auc = x.getAs[Double]("auc")
-                    resultListBuffer += AucUid(userid = userid,
-                        auc = auc,
-                        adslot_type = adslot_type,
-                        date = date)
-                })
-
-            }
+            val auc = CalcMetrics.getAuc(spark,dataFilter)
+            println(adslot_type, auc)
         }
-        val result = resultListBuffer.toList.toDF()
-        result.repartition(1)
-          .write
-          .mode("overwrite")
-          .insertInto("dl_cpc.cpc_qtt_cvr_userid_auc")
+        //分userid
+        val aucList = CalcMetrics.getGauc(spark,data,"userid").collect()
+        aucList.foreach(x => {
+
+            val userid = x.getAs[String]("name")
+            val auc = x.getAs[Double]("auc")
+            println(userid,auc)
+        })
+        //预估cvr均值
+        data.groupBy("userid").agg("score" -> "avg","label" -> "avg")
+          .rdd
+          .collect()
+          .map(x => {
+              val userid = x.get(0).toString
+              val expCvr = x.get(1).toString.toDouble
+              val cvr = x.get(2).toString.toDouble
+              println(userid,expCvr,cvr)
+          })
     }
     case class AucUid(var userid:String = "",
                       var auc:Double = 0,
