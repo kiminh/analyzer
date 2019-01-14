@@ -2,6 +2,7 @@ package com.cpc.spark.coin
 
 import com.cpc.spark.tools.CalcMetrics
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 
 /**
   * @author Jinbao
@@ -55,6 +56,7 @@ object AutoCoinUseridAuc {
             val auc = CalcMetrics.getAuc(spark,dataFilter)
             println(adslot_type, auc)
         }
+        //val d1 = CalcMetrics.getGauc(spark,data,"userid")
         //分userid
         val aucList = CalcMetrics.getGauc(spark,data,"userid").collect()
           .map(x => {
@@ -70,14 +72,20 @@ object AutoCoinUseridAuc {
 //            val auc = x.getAs[Double]("auc")
 //            println(userid,auc)
 //        })
+//        val d2 = data.groupBy("userid")
+//          .agg(avg("score").as("expCvr"),avg("label").as("cvr"))
         //预估cvr均值
-        val cvrList = data.groupBy("userid").agg("score" -> "avg","label" -> "avg")
+        val cvrList = data.groupBy("userid")
+          .agg(avg("score").as("expCvr"),avg("label").as("cvr"))
           .rdd
           .collect()
           .map(x => {
-              val userid = x.get(0).toString
-              val expCvr = x.get(1).toString.toDouble
-              val cvr = x.get(2).toString.toDouble
+              val userid = x.getAs[String]("userid")
+              val expCvr = x.getAs[Double]("expCvr")
+              val cvr = x.getAs[Double]("cvr")
+              //val userid = x.get(0).toString
+//              val expCvr = x.get(1).toString.toDouble
+//              val cvr = x.get(2).toString.toDouble
               println(userid,expCvr,cvr)
               (userid,expCvr,cvr)
           })
