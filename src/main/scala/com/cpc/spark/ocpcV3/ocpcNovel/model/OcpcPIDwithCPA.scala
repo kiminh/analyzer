@@ -19,7 +19,8 @@ object OcpcPIDwithCPA {
 
     val result = calculateKv2(date, hour, spark)
 //    result.write.mode("overwrite").saveAsTable("test.ocpc_novel_k_value_table")
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_k_value_table")
+    result
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_novel_k_value_table")
 
 
   }

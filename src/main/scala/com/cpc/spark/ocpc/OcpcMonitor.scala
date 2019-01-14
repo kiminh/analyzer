@@ -97,7 +97,8 @@ object OcpcMonitor {
 
     dataDF.show(10)
 
-    dataDF.write.mode("append").insertInto("dl_cpc.ocpc_result_unionlog_table_bak")
+    dataDF
+      .repartition(10).write.mode("append").insertInto("dl_cpc.ocpc_result_unionlog_table_bak")
   }
 
   def getHoursReport(date: String, hour: String, spark: SparkSession): Unit = {

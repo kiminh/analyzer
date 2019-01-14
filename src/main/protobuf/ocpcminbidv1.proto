@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package ocpcminbidv1;
+//hour    string  NULL
+//adslotid        string  NULL
+//adslot_type     int     NULL
+//user_city       string  NULL
+//city_level      int     NULL
+//adsrc   int     NULL
+//adclass int     NULL
+//ocpc_flag       int     NULL
+//min_bid double  NULL
+message SingleRecord {
+    int32 hour = 1;
+    string adslotid = 2;
+    int32 adslotType = 3;
+    string userCity = 4;
+    int32 cityLevel = 5;
+    int32 adsrc = 6;
+    int32 adclass = 7;
+    int32 isOcpc = 8;
+    double minBid = 9;
+}
+
+
+message BidList {
+    repeated SingleRecord adrecord = 1;
+}

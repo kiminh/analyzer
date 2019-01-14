@@ -30,6 +30,7 @@ object OcpcDetailReport {
     cmpModel
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .repartition(10)
       .write
       .mode("overwrite")
       .insertInto(tableName1)
@@ -40,6 +41,7 @@ object OcpcDetailReport {
     cmpUnitid
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .repartition(10)
       .write
       .mode("overwrite")
       .insertInto(tableName2)
@@ -50,6 +52,7 @@ object OcpcDetailReport {
     result
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .repartition(10)
       .write
       .mode("overwrite")
       .insertInto(tableName3)

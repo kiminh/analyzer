@@ -73,6 +73,7 @@ object OcpcKHourly {
     spark.sql(sqlRequest1)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .repartition(10)
       .write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
@@ -80,7 +81,8 @@ object OcpcKHourly {
 
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "time_span", "date", "hour"), "outer")
       .select("ideaid", "time_span", "k_ratio2", "k_ratio3", "date", "hour")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k_timespan_regression")
+    res
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k_timespan_regression")
 
 
 
