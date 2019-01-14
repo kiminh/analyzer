@@ -57,14 +57,21 @@ object AutoCoinUseridAuc {
         }
         //分userid
         val aucList = CalcMetrics.getGauc(spark,data,"userid").collect()
-        aucList.foreach(x => {
+          .map(x => {
+              val userid = x.getAs[String]("name")
+              val auc = x.getAs[Double]("auc")
+              println(userid,auc)
+              (userid,auc)
+          })
+          .toList
 
-            val userid = x.getAs[String]("name")
-            val auc = x.getAs[Double]("auc")
-            println(userid,auc)
-        })
+//        aucList.foreach(x => {
+//            val userid = x.getAs[String]("name")
+//            val auc = x.getAs[Double]("auc")
+//            println(userid,auc)
+//        })
         //预估cvr均值
-        data.groupBy("userid").agg("score" -> "avg","label" -> "avg")
+        val cvrList = data.groupBy("userid").agg("score" -> "avg","label" -> "avg")
           .rdd
           .collect()
           .map(x => {
@@ -72,10 +79,23 @@ object AutoCoinUseridAuc {
               val expCvr = x.get(1).toString.toDouble
               val cvr = x.get(2).toString.toDouble
               println(userid,expCvr,cvr)
+              (userid,expCvr,cvr)
           })
+        for (auc <- aucList) {
+            for (cvr <- cvrList) {
+                if (auc._1 == cvr._1) {
+                    resultListBuffer += AucUid(userid = auc._1,auc=auc._2,expCvr = cvr._2,cvr=cvr._3,date=date)
+                }
+            }
+        }
+        resultListBuffer.toList.toDF()
+          .write
+          .mode("overwrite")
+          .insertInto("dl_cpc.cpc_qtt_cvr_userid_auc")
     }
     case class AucUid(var userid:String = "",
                       var auc:Double = 0,
-                      var adslot_type:Int = 0,
+                      var expCvr:Double = 0,
+                      var cvr:Double = 0,
                       var date:String = "")
 }
