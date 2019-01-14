@@ -54,7 +54,7 @@ object AutoCoinUseridAuc {
             if (dataFilter.count()>0) {
                 val aucList = CalcMetrics.getGauc(spark,dataFilter,"userid").collect()
                 aucList.foreach(x => {
-                    val userid = x.getAs[String]("userid")
+                    val userid = x.getAs[String]("name")
                     val auc = x.getAs[Double]("auc")
                     resultListBuffer += AucUid(userid = userid,
                         auc = auc,
