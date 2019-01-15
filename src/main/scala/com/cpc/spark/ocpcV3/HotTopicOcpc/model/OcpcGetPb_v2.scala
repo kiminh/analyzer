@@ -40,7 +40,7 @@ object OcpcGetPb_v2 {
     cvrData.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_cvrData")
     val cpaHistory = getCPAgiven(version, date, hour, spark)
     cpaHistory.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_cpaHistory")
-    val kvalue = getK(cpaHistory, version, date, hour, spark)
+    val kvalue = getK( version, date, hour, spark)
     kvalue.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_kvalue")
     val adclassCPA = spark
       .table("dl_cpc.ocpc_cpa_history_adclass_hourly")
