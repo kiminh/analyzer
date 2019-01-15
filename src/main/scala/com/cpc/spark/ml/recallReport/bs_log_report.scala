@@ -9,14 +9,14 @@ import com.cpc.spark.streaming.tools.Encoding
 
 object bs_log_report {
   def main(args: Array[String]): Unit = {
-    //val beforeNdays = args(0).toInt
+    val beforeNdays = args(0).toInt
     val spark = SparkSession.builder()
       .appName("bs log report")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
     val cal1 = Calendar.getInstance()
-    cal1.add(Calendar.DATE, -2)
+    cal1.add(Calendar.DATE, -beforeNdays)
     val tardate = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
 
     val stmt: String =
@@ -140,7 +140,7 @@ object bs_log_report {
                      var group_student_num:Int=0,
                      var group_acc_user_type_num:Int=0,
                      var group_new_user_num:Int=0,
-                     var group_content_category_num: Int,
+                     var group_content_category_num:Int=0,
                      var group_black_install_pkg_num:Int=0,
                      var group_white_install_pkg_num:Int=0,
                      var group_show_count_num:Int=0,
