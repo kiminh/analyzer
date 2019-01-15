@@ -128,7 +128,6 @@ object bs_log_report {
   */
   }
 }
-
 case class BsLog1(
                    var searchid: String="",
                   var involved_group_num :Int=0,
