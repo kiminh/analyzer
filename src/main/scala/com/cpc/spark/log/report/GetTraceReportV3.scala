@@ -193,6 +193,7 @@ object GetTraceReportV3 {
          |                   ,trace_op3
          |                   ,opt['adslotid']
          |        ) ta
+         |        group by ta.ideaid, ta.appname, ta.adslotid, ta.trace_type, ta.trace_op1
          |    ) a
          |join (
          |    select a.userid, a.planid, a.unitid, a.ideaid, a.`date`, a.hour, b.show, b.click
