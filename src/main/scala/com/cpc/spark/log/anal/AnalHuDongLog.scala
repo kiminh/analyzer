@@ -82,9 +82,10 @@ object AnalHuDongLog {
         x =>
           var flag = false
           logTypeArr.foreach {
-            logType => if (logType == x.getAs[String]("trace_type")) {
-              flag = true
-            }
+            logType =>
+              if (logType == x.getAs[String]("trace_type")) {
+                flag = true
+              }
           }
           flag
       }.map {
@@ -94,6 +95,7 @@ object AnalHuDongLog {
       case ((adslot_id, log_type, date1, hour1), count) =>
         HuDongLog(adslot_id, log_type, date1, hour1, count)
     }
+      .filter(x => x.adslot_id > 0)
     println(11111)
     clearReportHourData("report_hudong", date, hour)
     spark.createDataFrame(hudongLog)
