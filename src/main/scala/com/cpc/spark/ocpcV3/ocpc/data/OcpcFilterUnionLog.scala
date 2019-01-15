@@ -79,8 +79,7 @@ object OcpcFilterUnionLog {
          |    ext,
          |    ext_int,
          |    ext_string,
-         |    ext_float,
-         |    ext_string['ocpc_log'] as ocpc_log
+         |    ext_float
          |from dl_cpc.cpc_union_log
          |where $selectWhere
          |and (isshow>0 or isclick>0)
