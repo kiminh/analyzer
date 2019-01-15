@@ -217,7 +217,7 @@ object GetTraceReportV3 {
     val toResult = ctx.sql(sql)
       .rdd
       .map(x =>
-        AdvTraceReport(x.getAs[Long]("user_id").toInt,
+        AdvTraceReport(x.getAs[Int]("user_id"),
           x.getAs[Int]("plan_id"),
           x.getAs[Int]("unit_id"),
           x.getAs[String]("idea_id").toInt,
