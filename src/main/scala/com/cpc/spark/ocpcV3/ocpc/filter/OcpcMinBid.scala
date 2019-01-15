@@ -41,7 +41,7 @@ object OcpcMinBid {
 
     val data = resultDF.filter(s"cnt >= min_cnt")
 
-    savePbPack(data, "test_minbid.pb")
+    savePbPack(data, "ocpc_minbid.pb")
   }
 
   def savePbPack(dataset: Dataset[Row], filename: String): Unit = {
