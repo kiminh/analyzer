@@ -160,31 +160,55 @@ object OcpcMinBid {
 //    val date1 = dateConverter.format(yesterday)
     val selectCondition = s"`dt`='$date' and `hour` <= '$hour'"
     // todo 时间区间： hour
+//    val sqlRequest =
+//      s"""
+//         |select
+//         |    searchid,
+//         |    ideaid,
+//         |    bid as original_bid,
+//         |    isshow,
+//         |    isclick,
+//         |    price,
+//         |    ext_int['is_ocpc'] as is_ocpc,
+//         |    ext_string['ocpc_log'] as ocpc_log,
+//         |    hour,
+//         |    adslotid,
+//         |    adslot_type,
+//         |    ext_string['user_city'] as user_city,
+//         |    ext['city_level'].int_value as city_level,
+//         |    adsrc,
+//         |    ext['adclass'].int_value as adclass
+//         |from test.filtered_union_log_hourly
+//         |where $selectCondition
+//         |and ext['exp_ctr'].int_value is not null
+//         |and media_appsid  in ("80000001", "80000002")
+//         |and ideaid > 0 and adsrc = 1
+//         |and userid > 0
+//         |and (ext['charge_type'] IS NULL OR ext['charge_type'].int_value = 1)
+//       """.stripMargin
     val sqlRequest =
-      s"""
-         |select
-         |    searchid,
-         |    ideaid,
-         |    bid as original_bid,
-         |    isshow,
-         |    isclick,
-         |    price,
-         |    ext_int['is_ocpc'] as is_ocpc,
-         |    ext_string['ocpc_log'] as ocpc_log,
-         |    hour,
-         |    adslotid,
-         |    adslot_type,
-         |    ext_string['user_city'] as user_city,
-         |    ext['city_level'].int_value as city_level,
-         |    adsrc,
-         |    ext['adclass'].int_value as adclass
-         |from test.filtered_union_log_hourly
-         |where $selectCondition
-         |and ext['exp_ctr'].int_value is not null
-         |and media_appsid  in ("80000001", "80000002")
-         |and ideaid > 0 and adsrc = 1
-         |and userid > 0
-         |and (ext['charge_type'] IS NULL OR ext['charge_type'].int_value = 1)
+    s"""
+       |select
+       |    searchid,
+       |    ideaid,
+       |    bid as original_bid,
+       |    isshow,
+       |    isclick,
+       |    price,
+       |    is_ocpc,
+       |    ocpc_log,
+       |    hour,
+       |    adslotid,
+       |    adslot_type,
+       |    user_city,
+       |    city_level,
+       |    adsrc,
+       |    adclass
+       |from test.filtered_union_log_hourly
+       |where $selectCondition
+       |and media_appsid  in ("80000001", "80000002")
+       |and ideaid > 0 and adsrc = 1
+       |and userid > 0
        """.stripMargin
     println(sqlRequest)
     val ctrData = spark
