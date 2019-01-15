@@ -133,7 +133,7 @@ object OcpcMinBid {
          |  base_data
          |WHERE
          |  ocpc_flag=1
-         |GROUP BY hour, adslotid, adslot_type, user_city, city_level, adsrc, adclass, ocpc_flag
+         |GROUP BY hr, adslotid, adslot_type, user_city, city_level, adsrc, adclass, ocpc_flag
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
