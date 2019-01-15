@@ -23,16 +23,25 @@ object OcpcMinBid {
     val spark = SparkSession.builder().appName(s"OcpcMinBid: $date, $hour").enableHiveSupport().getOrCreate()
 
     // 抽取数据
-//    val baseData = getBaseData(date, hour, spark)
-//    baseData.repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
-////    val baseData = spark.table("test.ocpc_check_min_bid_base")
-//
-//    val resultDF = calculateMinBid(baseData, date, hour, spark)
-//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
-    val resultDF = spark.table("test.ocpc_check_min_bid")
+    val baseData = getBaseData(date, hour, spark)
+    baseData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base")
+//      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
+
+    val resultDF = calculateMinBid(baseData, date, hour, spark)
+    resultDF
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
+
     val data = resultDF.filter(s"cnt >= min_cnt")
 
-    savePbPack(data, "test_minbid.pb")
+    savePbPack(data, "ocpc_minbid.pb")
   }
 
   def savePbPack(dataset: Dataset[Row], filename: String): Unit = {
@@ -63,7 +72,7 @@ object OcpcMinBid {
       //adclass int     NULL
       //ocpc_flag       int     NULL
       //min_bid double  NULL
-      val hour = record.getAs[String]("hour").toInt
+      val hour = record.getAs[String]("hr").toInt
       val adslotid = record.getAs[String]("adslotid")
       val adslot_type = record.getAs[Int]("adslot_type")
       val user_city = record.getAs[String]("user_city")
@@ -110,7 +119,7 @@ object OcpcMinBid {
     val sqlRequest =
       s"""
          |SELECT
-         |  hour,
+         |  hr,
          |  adslotid,
          |  adslot_type,
          |  user_city,
@@ -118,13 +127,13 @@ object OcpcMinBid {
          |  adsrc,
          |  adclass,
          |  ocpc_flag,
-         |  percentile(bid, 0.05) as min_bid,
+         |  percentile(bid, 0.03) as min_bid,
          |  count(1) as cnt
          |FROM
          |  base_data
          |WHERE
          |  ocpc_flag=1
-         |GROUP BY hour, adslotid, adslot_type, user_city, city_level, adsrc, adclass, ocpc_flag
+         |GROUP BY hr, adslotid, adslot_type, user_city, city_level, adsrc, adclass, ocpc_flag
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
@@ -160,34 +169,55 @@ object OcpcMinBid {
 //    val date1 = dateConverter.format(yesterday)
     val selectCondition = s"`date`='$date' and `hour` <= '$hour'"
     // todo 时间区间： hour
+//    val sqlRequest =
+//      s"""
+//         |select
+//         |    searchid,
+//         |    ideaid,
+//         |    bid as original_bid,
+//         |    isshow,
+//         |    isclick,
+//         |    price,
+//         |    ext_int['is_ocpc'] as is_ocpc,
+//         |    ext_string['ocpc_log'] as ocpc_log,
+//         |    hour,
+//         |    adslotid,
+//         |    adslot_type,
+//         |    ext_string['user_city'] as user_city,
+//         |    ext['city_level'].int_value as city_level,
+//         |    adsrc,
+//         |    ext['adclass'].int_value as adclass
+//         |from test.filtered_union_log_hourly
+//         |where $selectCondition
+//         |and ext['exp_ctr'].int_value is not null
+//         |and media_appsid  in ("80000001", "80000002")
+//         |and ideaid > 0 and adsrc = 1
+//         |and userid > 0
+//         |and (ext['charge_type'] IS NULL OR ext['charge_type'].int_value = 1)
+//       """.stripMargin
     val sqlRequest =
-      s"""
-         |select
-         |    searchid,
-         |    ideaid,
-         |    bid as original_bid,
-         |    isshow,
-         |    isclick,
-         |    price,
-         |    ext_int['is_ocpc'] as is_ocpc,
-         |    ext_string['ocpc_log'] as ocpc_log,
-         |    hour,
-         |    adslotid,
-         |    adslot_type,
-         |    ext_string['user_city'] as user_city,
-         |    ext['city_level'].int_value as city_level,
-         |    adsrc,
-         |    ext['adclass'].int_value as adclass
-         |from dl_cpc.cpc_union_log
-         |where $selectCondition
-         |and isshow = 1
-         |and ext['exp_ctr'].int_value is not null
-         |and media_appsid  in ("80000001", "80000002")
-         |and ext['antispam'].int_value = 0
-         |and ideaid > 0 and adsrc = 1
-         |and ext_int['dsp_adnum_by_src_1'] > 1
-         |and userid > 0
-         |and (ext['charge_type'] IS NULL OR ext['charge_type'].int_value = 1)
+    s"""
+       |select
+       |    searchid,
+       |    ideaid,
+       |    bid as original_bid,
+       |    isshow,
+       |    isclick,
+       |    price,
+       |    is_ocpc,
+       |    ocpc_log,
+       |    hour as hr,
+       |    adslotid,
+       |    adslot_type,
+       |    user_city,
+       |    city_level,
+       |    adsrc,
+       |    adclass
+       |from dl_cpc.filtered_union_log_hourly
+       |where $selectCondition
+       |and media_appsid  in ("80000001", "80000002")
+       |and ideaid > 0 and adsrc = 1
+       |and userid > 0
        """.stripMargin
     println(sqlRequest)
     val ctrData = spark
@@ -216,13 +246,13 @@ object OcpcMinBid {
          |    city_level,
          |    adsrc,
          |    adclass,
-         |    hour
+         |    hr
          |from ctr_data
        """.stripMargin
     println(sqlRequest2)
     val data = spark.sql(sqlRequest2)
     val resultDF = data
-      .selectExpr("searchid", "ideaid", "original_bid", "price", "cast(bid as int) as bid", "ocpc_flag", "is_ocpc", "isshow", "isclick", "ocpc_log", "adslotid", "adslot_type", "user_city", "city_level", "adsrc", "adclass", "hour")
+      .selectExpr("searchid", "ideaid", "original_bid", "price", "cast(bid as int) as bid", "ocpc_flag", "is_ocpc", "isshow", "isclick", "ocpc_log", "adslotid", "adslot_type", "user_city", "city_level", "adsrc", "adclass", "hr")
 
     resultDF
   }
