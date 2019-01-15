@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#sh testOcpcForGetPb_v2.sh model.OcpcGetPb_v2 2019-01-12 12 hottopic_v1
+#sh testOcpcForGetPb_v2.sh 2019-01-14 12 hottopicv1
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current

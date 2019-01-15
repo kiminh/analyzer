@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#sh testOcpcForHotTopic.sh model.OcpcCPAhistory 2019-01-11 12
+#sh testOcpcForHotTopic.sh model.OcpcCPAhistory 2019-01-14 12
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#sh testOcpcForPID_CPA.sh model.OcpcPIDwithCPA 2019-01-08 12 v1 hottopic
+#sh testOcpcForPID_CPA.sh 2019-01-14 12 hottopicv1 hottopic
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
