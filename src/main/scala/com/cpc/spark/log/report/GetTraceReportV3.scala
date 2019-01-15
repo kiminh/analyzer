@@ -174,7 +174,7 @@ object GetTraceReportV3 {
          |                ,a.adslotid
          |                ,a.trace_type
          |                ,a.trace_op1
-         |                ,sum(if(a.trace_op1 ='OPEN_APP' and a.num > 0, 1, a.num)) as total_num
+         |                ,sum(if(a.num > 0, 1, a.num)) as total_num
          |        from (
          |                select opt["appname"] as appname
          |                    ,trace_type
