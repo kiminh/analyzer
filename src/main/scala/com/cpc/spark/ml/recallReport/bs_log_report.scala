@@ -9,14 +9,14 @@ import com.cpc.spark.streaming.tools.Encoding
 
 object bs_log_report {
   def main(args: Array[String]): Unit = {
-    val beforeNdays = args(0).toInt
+    //val beforeNdays = args(0).toInt
     val spark = SparkSession.builder()
       .appName("bs log report")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
     val cal1 = Calendar.getInstance()
-    cal1.add(Calendar.DATE, -beforeNdays)
+    cal1.add(Calendar.DATE, -1)
     val tardate = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
 
     val stmt: String =
