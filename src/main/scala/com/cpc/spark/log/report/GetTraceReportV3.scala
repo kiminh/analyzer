@@ -168,7 +168,7 @@ object GetTraceReportV3 {
       s"""
          |select b.userid as user_id, b.planid as plan_id, b.unitid as unit_id, a.*, 0 as duration, 0 as auto, b.`date`, b.hour, b.show, b.click
          |from (
-         |        select   ta.ideaid
+         |        select   ta.idea_id
          |                ,ta.appname
          |                ,ta.adslotid
          |                ,ta.trace_type
@@ -178,7 +178,7 @@ object GetTraceReportV3 {
          |                select opt["appname"] as appname
          |                    ,trace_type
          |                    ,trace_op1
-         |                    ,opt['ideaid'] as ideaid
+         |                    ,opt['ideaid'] as idea_id
          |                    ,trace_op3
          |                    ,opt['adslotid'] as adslotid
          |                    ,count(1) as num
@@ -193,7 +193,7 @@ object GetTraceReportV3 {
          |                   ,trace_op3
          |                   ,opt['adslotid']
          |        ) ta
-         |        group by ta.ideaid, ta.appname, ta.adslotid, ta.trace_type, ta.trace_op1
+         |        group by ta.idea_id, ta.appname, ta.adslotid, ta.trace_type, ta.trace_op1
          |    ) a
          |join (
          |    select a.userid, a.planid, a.unitid, a.ideaid, a.`date`, a.hour, b.show, b.click
