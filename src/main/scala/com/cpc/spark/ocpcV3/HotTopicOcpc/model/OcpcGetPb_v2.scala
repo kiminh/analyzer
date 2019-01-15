@@ -66,10 +66,10 @@ object OcpcGetPb_v2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    //    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb")
+        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_prev_pb")
     //    resultDF
     //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
+        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_pb_result_hourly")
 
     savePbPack(resultDF, version)
   }
