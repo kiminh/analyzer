@@ -204,7 +204,7 @@ object OcpcMinBid {
        |    city_level,
        |    adsrc,
        |    adclass
-       |from test.filtered_union_log_hourly
+       |from dl_cpc.filtered_union_log_hourly
        |where $selectCondition
        |and media_appsid  in ("80000001", "80000002")
        |and ideaid > 0 and adsrc = 1
