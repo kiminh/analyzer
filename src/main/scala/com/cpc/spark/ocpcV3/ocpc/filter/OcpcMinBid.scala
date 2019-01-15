@@ -23,13 +23,13 @@ object OcpcMinBid {
     val spark = SparkSession.builder().appName(s"OcpcMinBid: $date, $hour").enableHiveSupport().getOrCreate()
 
     // 抽取数据
-//    val baseData = getBaseData(date, hour, spark)
-//    baseData.repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
-////    val baseData = spark.table("test.ocpc_check_min_bid_base")
-//
-//    val resultDF = calculateMinBid(baseData, date, hour, spark)
-//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
-    val resultDF = spark.table("test.ocpc_check_min_bid")
+    val baseData = getBaseData(date, hour, spark)
+    baseData.repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
+//    val baseData = spark.table("test.ocpc_check_min_bid_base")
+
+    val resultDF = calculateMinBid(baseData, date, hour, spark)
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
+//    val resultDF = spark.table("test.ocpc_check_min_bid")
     val data = resultDF.filter(s"cnt >= min_cnt")
 
     savePbPack(data, "test_minbid.pb")
@@ -118,7 +118,7 @@ object OcpcMinBid {
          |  adsrc,
          |  adclass,
          |  ocpc_flag,
-         |  percentile(bid, 0.05) as min_bid,
+         |  percentile(bid, 0.03) as min_bid,
          |  count(1) as cnt
          |FROM
          |  base_data
@@ -158,7 +158,7 @@ object OcpcMinBid {
 //    calendar.add(Calendar.DATE, -1)
 //    val yesterday = calendar.getTime
 //    val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date`='$date' and `hour` <= '$hour'"
+    val selectCondition = s"`dt`='$date' and `hour` <= '$hour'"
     // todo 时间区间： hour
     val sqlRequest =
       s"""
@@ -178,14 +178,11 @@ object OcpcMinBid {
          |    ext['city_level'].int_value as city_level,
          |    adsrc,
          |    ext['adclass'].int_value as adclass
-         |from dl_cpc.cpc_union_log
+         |from dl_cpc.slim_union_log
          |where $selectCondition
-         |and isshow = 1
          |and ext['exp_ctr'].int_value is not null
          |and media_appsid  in ("80000001", "80000002")
-         |and ext['antispam'].int_value = 0
          |and ideaid > 0 and adsrc = 1
-         |and ext_int['dsp_adnum_by_src_1'] > 1
          |and userid > 0
          |and (ext['charge_type'] IS NULL OR ext['charge_type'].int_value = 1)
        """.stripMargin
