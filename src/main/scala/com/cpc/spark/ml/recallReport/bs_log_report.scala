@@ -4,31 +4,34 @@ import org.apache.spark.sql.SparkSession
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import bslog.Bslog.{GroupStats, NoticeLogBody}
+import bslog.Bslog.NoticeLogBody
 import com.cpc.spark.streaming.tools.Encoding
-import org.apache.spark.sql.functions._
 
 object bs_log_report {
   def main(args: Array[String]): Unit = {
+    val beforeNdays = args(0).toInt
     val spark = SparkSession.builder()
       .appName("bs log report")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
     val cal1 = Calendar.getInstance()
-    cal1.add(Calendar.DATE, -1)
-    val tardate = new SimpleDateFormat("yyyyMMdd").format(cal1.getTime)
+    cal1.add(Calendar.DATE, -beforeNdays)
+    val tardate = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
 
-    val stmt =
+    val stmt: String =
       s"""
-        |select split(raw, ' ')[5] as raw from dl_cpc.cpc_basedata_recall_log where day='$tardate'
-      """.stripMargin.format(tardate)
+        |select trim(split(raw, '\\\\*')[1]) as raw from dl_cpc.cpc_basedata_recall_log
+        |where day='$tardate' and length(trim(split(raw, '\\\\*')[1]))>0
+      """.stripMargin
+    spark.sql(stmt).show
+    var excp = 0
     val pbData = spark.sql(stmt).rdd.map{
       r =>
         val pb = r.getAs[String]("raw")
-        val up = NoticeLogBody.parseFrom(Encoding.base64Decoder(pb).toArray).toBuilder
-        val exptags = up.getExptagsList.toString
-        if(exptags.contains("bsfilterdetail")){
+        try{
+          val up = NoticeLogBody.parseFrom(Encoding.base64Decoder(pb).toArray).toBuilder
+          val exptags = up.getExptagsList.toString
           val searchid = up.getSearchid
           val involved_group_num = up.getGroupStats.getInvolvedGroupNum
           val group_media_num = up.getGroupStats.getGroupMediaNum
@@ -76,17 +79,21 @@ object bs_log_report {
             rnd_idea_num=rnd_idea_num.toInt,
             exptags=exptags.substring(1, exptags.length()-1)
           )
-        } else null
+        } catch {
+          case ex: Exception => excp += 1; null
+        }
+
     }.filter(_ != null).toDF("searchid", "involved_group_num", "group_media_num", "group_region_num", "group_l_v_num", "group_os_type_num",
       "group_p_l_num", "group_dislike_num", "group_interest_num", "group_student_num", "group_acc_user_type_num", "group_new_user_num",
       "group_content_category_num", "group_black_install_pkg_num", "group_white_install_pkg_num", "group_show_count_num",
       "group_click_count_num","matched_group_num", "len_groups",
       "involved_idea_num", "matched_idea_num", "rnd_idea_num", "exptags")
-    pbData.createTempView("temp_table6")
+    pbData.createOrReplaceTempView("temp_table")
+    println(excp)
     val insertIntoTable =
       s"""
          |insert overwrite table dl_cpc.recall_filter_number_report partition (`date`='$tardate')
-         |select * from temp_table6
+         |select * from temp_table
       """.stripMargin
     spark.sql(insertIntoTable)
 /**
