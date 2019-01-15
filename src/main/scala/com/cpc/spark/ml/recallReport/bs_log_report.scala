@@ -24,7 +24,6 @@ object bs_log_report {
         |select trim(split(raw, '\\\\*')[1]) as raw from dl_cpc.cpc_basedata_recall_log
         |where day='$tardate' and length(trim(split(raw, '\\\\*')[1]))>0
       """.stripMargin
-    spark.sql(stmt).show
     val excp = spark.sparkContext.longAccumulator
     val pbData = spark.sql(stmt).rdd.map{
       r =>
