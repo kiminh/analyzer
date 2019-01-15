@@ -24,12 +24,21 @@ object OcpcMinBid {
 
     // 抽取数据
     val baseData = getBaseData(date, hour, spark)
-    baseData.repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
-//    val baseData = spark.table("test.ocpc_check_min_bid_base")
+    baseData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base")
+//      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
 
     val resultDF = calculateMinBid(baseData, date, hour, spark)
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
-//    val resultDF = spark.table("test.ocpc_check_min_bid")
+    resultDF
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
+
     val data = resultDF.filter(s"cnt >= min_cnt")
 
     savePbPack(data, "test_minbid.pb")
@@ -63,7 +72,7 @@ object OcpcMinBid {
       //adclass int     NULL
       //ocpc_flag       int     NULL
       //min_bid double  NULL
-      val hour = record.getAs[String]("hour").toInt
+      val hour = record.getAs[String]("hr").toInt
       val adslotid = record.getAs[String]("adslotid")
       val adslot_type = record.getAs[Int]("adslot_type")
       val user_city = record.getAs[String]("user_city")
@@ -110,7 +119,7 @@ object OcpcMinBid {
     val sqlRequest =
       s"""
          |SELECT
-         |  hour,
+         |  hr,
          |  adslotid,
          |  adslot_type,
          |  user_city,
@@ -197,7 +206,7 @@ object OcpcMinBid {
        |    price,
        |    is_ocpc,
        |    ocpc_log,
-       |    hour,
+       |    hour as hr,
        |    adslotid,
        |    adslot_type,
        |    user_city,
@@ -237,13 +246,13 @@ object OcpcMinBid {
          |    city_level,
          |    adsrc,
          |    adclass,
-         |    hour
+         |    hr
          |from ctr_data
        """.stripMargin
     println(sqlRequest2)
     val data = spark.sql(sqlRequest2)
     val resultDF = data
-      .selectExpr("searchid", "ideaid", "original_bid", "price", "cast(bid as int) as bid", "ocpc_flag", "is_ocpc", "isshow", "isclick", "ocpc_log", "adslotid", "adslot_type", "user_city", "city_level", "adsrc", "adclass", "hour")
+      .selectExpr("searchid", "ideaid", "original_bid", "price", "cast(bid as int) as bid", "ocpc_flag", "is_ocpc", "isshow", "isclick", "ocpc_log", "adslotid", "adslot_type", "user_city", "city_level", "adsrc", "adclass", "hr")
 
     resultDF
   }
