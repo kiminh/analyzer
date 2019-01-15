@@ -178,7 +178,7 @@ object OcpcMinBid {
          |    ext['city_level'].int_value as city_level,
          |    adsrc,
          |    ext['adclass'].int_value as adclass
-         |from dl_cpc.slim_union_log
+         |from test.filtered_union_log_hourly
          |where $selectCondition
          |and ext['exp_ctr'].int_value is not null
          |and media_appsid  in ("80000001", "80000002")
