@@ -168,12 +168,12 @@ object GetTraceReportV3 {
       s"""
          |select b.planid as plan_id, b.unitid as unit_id, a.*, 0 as duration, 0 as auto, b.`date`, b.hour, b.show, b.click
          |from (
-         |        select   a.ideaid as idea_id
-         |                ,a.appname
-         |                ,a.adslotid
-         |                ,a.trace_type
-         |                ,a.trace_op1
-         |                ,sum(if(a.num > 0, 1, a.num)) as total_num
+         |        select   ta.ideaid
+         |                ,ta.appname
+         |                ,ta.adslotid
+         |                ,ta.trace_type
+         |                ,ta.trace_op1
+         |                ,sum(if(ta.num > 0, 1, ta.num)) as total_num
          |        from (
          |                select opt["appname"] as appname
          |                    ,trace_type
@@ -210,7 +210,7 @@ object GetTraceReportV3 {
          |            group by ideaid
          |        ) b on a.ideaid = b.ideaid
          |    ) b
-         |on a.idea_id = b.ideaid
+         |on a.ideaid = b.ideaid
       """.stripMargin.format(date, hour, date, hour, date, hour)
 
     val toResult = ctx.sql(sql)
