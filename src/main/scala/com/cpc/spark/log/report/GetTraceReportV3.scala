@@ -168,8 +168,7 @@ object GetTraceReportV3 {
       s"""
          |select b.planid as plan_id, b.unitid as unit_id, a.*, 0 as duration, 0 as auto, b.`date`, b.hour, b.show, b.click
          |from (
-         |        select   b.user_id
-         |                ,a.ideaid as idea_id
+         |        select   a.ideaid as idea_id
          |                ,a.appname
          |                ,a.adslotid
          |                ,a.trace_type
@@ -193,10 +192,7 @@ object GetTraceReportV3 {
          |                   ,opt['ideaid']
          |                   ,trace_op3
          |                   ,opt['adslotid']
-         |        ) a
-         |        left join src_cpc.cpc_idea b
-         |        on a.ideaid = b.id
-         |        group by b.user_id,a.ideaid,a.appname,a.adslotid,a.trace_type,a.trace_op1
+         |        ) ta
          |    ) a
          |join (
          |    select a.userid, a.planid, a.unitid, a.ideaid, a.`date`, a.hour, b.show, b.click
@@ -214,7 +210,7 @@ object GetTraceReportV3 {
          |            group by ideaid
          |        ) b on a.ideaid = b.ideaid
          |    ) b
-         |on a.user_id = b.userid and a.idea_id = b.ideaid
+         |on a.idea_id = b.ideaid
       """.stripMargin.format(date, hour, date, hour, date, hour)
 
     val toResult = ctx.sql(sql)
