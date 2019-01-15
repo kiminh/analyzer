@@ -25,7 +25,7 @@ object bs_log_report {
         |where day='$tardate' and length(trim(split(raw, '\\\\*')[1]))>0
       """.stripMargin
     spark.sql(stmt).show
-    var excp = 0
+    val excp = spark.sparkContext.longAccumulator
     val pbData = spark.sql(stmt).rdd.map{
       r =>
         val pb = r.getAs[String]("raw")
@@ -80,7 +80,7 @@ object bs_log_report {
             exptags=exptags.substring(1, exptags.length()-1)
           )
         } catch {
-          case ex: Exception => excp += 1; null
+          case ex: Exception => excp.add(1); null
         }
 
     }.filter(_ != null).toDF("searchid", "involved_group_num", "group_media_num", "group_region_num", "group_l_v_num", "group_os_type_num",
@@ -89,7 +89,7 @@ object bs_log_report {
       "group_click_count_num","matched_group_num", "len_groups",
       "involved_idea_num", "matched_idea_num", "rnd_idea_num", "exptags")
     pbData.createOrReplaceTempView("temp_table")
-    println(excp)
+    println(excp.value)
     val insertIntoTable =
       s"""
          |insert overwrite table dl_cpc.recall_filter_number_report partition (`date`='$tardate')
