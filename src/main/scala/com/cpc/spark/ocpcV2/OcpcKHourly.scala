@@ -53,7 +53,7 @@ object OcpcKHourly {
          |from
          |  (select * from dl_cpc.ocpc_unionlog where $selectCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1) a
          |  left outer join
-         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $selectCondition) b on a.searchid = b.searchid
+         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $selectCondition and label_type!=12) b on a.searchid = b.searchid
          |  left outer join
          |  (select searchid, iscvr as label3 from dl_cpc.cpc_api_union_log where $selectCondition) c on a.searchid = c.searchid
          |group by
@@ -73,6 +73,7 @@ object OcpcKHourly {
     spark.sql(sqlRequest1)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .repartition(10)
       .write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
@@ -80,7 +81,8 @@ object OcpcKHourly {
 
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "time_span", "date", "hour"), "outer")
       .select("ideaid", "time_span", "k_ratio2", "k_ratio3", "date", "hour")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k_timespan_regression")
+    res
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k_timespan_regression")
 
 
 

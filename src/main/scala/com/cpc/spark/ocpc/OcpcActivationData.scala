@@ -48,7 +48,8 @@ object OcpcActivationData {
 
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_adclass_label3_track")
 
-    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_ideaid_adclass_label3_track")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ideaid_adclass_label3_track")
 
   }
 }

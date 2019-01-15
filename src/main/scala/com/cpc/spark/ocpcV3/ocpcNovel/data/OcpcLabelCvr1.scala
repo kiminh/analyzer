@@ -12,7 +12,8 @@ object OcpcLabelCvr1 {
     val hour = args(1).toString
 
     val result = getLabel(date, hour, spark)
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr1_data_hourly")
+    result
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr1_data_hourly")
     println("successfully save data into table: dl_cpc.ocpcv3_cvr1_data_hourly")
   }
 
@@ -36,7 +37,7 @@ object OcpcLabelCvr1 {
          |from dl_cpc.cpc_union_log
          |where $selectWhere
          |and isclick is not null
-         |and media_appsid in ("80001098","80001292","80000001", "80000002")
+         |and media_appsid in ("80001098","80001292","80000001", "80000002", "80002819")
          |and isshow = 1
          |and ext['antispam'].int_value = 0
          |and ideaid > 0
@@ -59,6 +60,8 @@ object OcpcLabelCvr1 {
          |  where $selectWhere
          |AND
          |  label2=1
+         |AND
+         |  label_type != 12
        """.stripMargin
     println(sqlRequest2)
     val labelData = spark.sql(sqlRequest2).distinct()

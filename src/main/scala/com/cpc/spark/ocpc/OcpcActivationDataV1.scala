@@ -50,7 +50,8 @@ object OcpcActivationDataV1 {
 
     //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_adclass_label3_track")
 
-    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_ideaid_adclass_label3_track_v1")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ideaid_adclass_label3_track_v1")
 
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_adclass_label3_track_v1")
   }
@@ -108,7 +109,11 @@ object OcpcActivationDataV1 {
 
 
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ideaid_adclass_label3_track_v1")
-    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_ideaid_adclass_label3_track_v1")
+    resultDF
+      .repartition(10)
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_ideaid_adclass_label3_track_v1")
 
   }
 }

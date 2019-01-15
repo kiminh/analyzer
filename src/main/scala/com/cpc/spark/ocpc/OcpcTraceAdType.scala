@@ -10,7 +10,7 @@ object OcpcTraceAdType {
     val date = args(0).toString
     val hour = args(1).toString
 
-    traceAdType(date, hour, spark)
+//    traceAdType(date, hour, spark)
 
   }
 
@@ -61,12 +61,23 @@ object OcpcTraceAdType {
 
 
     rawData
+      .repartition(10)
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .write
       .mode("overwrite")
       .insertInto("dl_cpc.ocpc_track_ad_type_hourly")
 
+//    ideaid  int     NULL
+//    adclass int     NULL
+//    timestamp       int     NULL
+//    siteid  bigint  NULL
+//    date    string  NULL
+//    hour    string  NULL
+//    # Partition Information
+//    # col_name      data_type       comment
+//    date    string  NULL
+//    hour    string  NULL
 
   }
 }

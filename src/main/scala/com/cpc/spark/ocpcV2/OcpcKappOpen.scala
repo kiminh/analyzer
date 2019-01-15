@@ -92,7 +92,8 @@ object OcpcKappOpen {
       .withColumn("hour", lit(hour))
 
 //    data.write.mode("overwrite").saveAsTable(tablename)
-    data.write.mode("overwrite").insertInto(tablename)
+    data
+      .repartition(10).write.mode("overwrite").insertInto(tablename)
 
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
     val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
@@ -100,7 +101,8 @@ object OcpcKappOpen {
     val res = ratio2Data.join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio2", "k_ratio3", "date", "hour")
 //    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_app_open_k")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_app_open_k")
+    res
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_app_open_k")
 
   }
 
@@ -130,7 +132,7 @@ object OcpcKappOpen {
     val cvrData = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(selectCondition2)
-      .filter("label_sdk_dlapp=1")
+      .filter("label_sdk_dlapp=1 and label_type!=12")
       .withColumn("label", col("label_sdk_dlapp"))
       .select("searchid", "label", "date", "hour")
 
@@ -317,7 +319,7 @@ object OcpcKappOpen {
     val rawData2 = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(s"`date`='$date' and `hour` <= '$hour'")
-      .filter("label2=1")
+      .filter("label2=1 and label_type!=12")
       .withColumn("label", col("label2"))
       .select("ideaid", "label", "searchid")
       .distinct()

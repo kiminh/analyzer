@@ -11,14 +11,15 @@ object OcpcLabelCvr3 {
     val date = args(0).toString
     val hour = args(1).toString
 
-//    // TODO  如何判断究竟用哪一个表？
-//    val result1 = getLabelFromAdv(date, hour, spark)
+    val result1 = getLabelFromAdv(date, hour, spark)
 //    result1.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr3_data_hourly")
-//    println("successfully save data into table: dl_cpc.ocpcv3_cvr3_data_hourly")
-
-    val result2 = getLabel(date, hour, spark)
-    result2.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr3_data_hourly")
+    result1
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr3_data_hourly")
     println("successfully save data into table: dl_cpc.ocpcv3_cvr3_data_hourly")
+
+//    val result2 = getLabel(date, hour, spark)
+//    result2.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr3_data_hourly")
+//    println("successfully save data into table: dl_cpc.ocpcv3_cvr3_data_hourly")
   }
 
   def getLabelFromAdv(date: String, hour: String, spark: SparkSession) = {
@@ -41,7 +42,7 @@ object OcpcLabelCvr3 {
          |from dl_cpc.cpc_union_log
          |where $selectWhere
          |and isclick is not null
-         |and media_appsid in ("80001098","80001292","80000001", "80000002")
+         |and media_appsid in ("80001098","80001292","80000001", "80000002", "80002819")
          |and isshow = 1
          |and ext['antispam'].int_value = 0
          |and ideaid > 0
@@ -68,9 +69,9 @@ object OcpcLabelCvr3 {
 
     val resultDF = rawData
       .join(labelData, Seq("searchid"), "left_outer")
-      .groupBy("ideaid", "adclass", "media_appsid")
+      .groupBy("ideaid", "unitid", "adclass", "media_appsid")
       .agg(sum(col("label")).alias("cvr3_cnt"))
-      .select("ideaid", "adclass", "media_appsid", "cvr3_cnt")
+      .select("ideaid", "unitid", "adclass", "media_appsid", "cvr3_cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
@@ -123,6 +124,8 @@ object OcpcLabelCvr3 {
          |  where $selectWhere
          |AND
          |  label2=1
+         |AND
+         |  label_type!=12
        """.stripMargin
     println(sqlRequest2)
     val labelData = spark.sql(sqlRequest2).distinct()

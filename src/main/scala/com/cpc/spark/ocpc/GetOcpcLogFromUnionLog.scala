@@ -57,7 +57,7 @@ object GetOcpcLogFromUnionLog {
          |      (
          |        select searchid, label2
          |        from dl_cpc.ml_cvr_feature_v1
-         |        where $timeRange
+         |        where $timeRange and label_type!=12
          |      ) b on a.searchid = b.searchid
       """.stripMargin
 
@@ -114,7 +114,11 @@ object GetOcpcLogFromUnionLog {
     resultDF.printSchema()
     result.show(10)
 
-    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_unionlog")
+    resultDF
+      .repartition(10)
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_unionlog")
   }
 
   def getUnionlogV2(date: String, hour: String, spark: SparkSession) = {
@@ -156,7 +160,7 @@ object GetOcpcLogFromUnionLog {
          |      (
          |        select searchid, label2
          |        from dl_cpc.ml_cvr_feature_v1
-         |        where $timeRange
+         |        where $timeRange and label_type!=12
          |      ) b on a.searchid = b.searchid
       """.stripMargin
 
@@ -186,7 +190,8 @@ object GetOcpcLogFromUnionLog {
     println("first 10 rows: ")
     resultDF.show(10)
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_unionlog_v2")
-    resultDF.write.mode("append").insertInto("dl_cpc.ocpc_unionlog_v2")
+    resultDF
+      .repartition(10).write.mode("append").insertInto("dl_cpc.ocpc_unionlog_v2")
   }
 
 }

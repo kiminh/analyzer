@@ -67,7 +67,8 @@ object OcpcGetPb {
       .withColumn("version", lit("v1"))
 
     resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb")
-    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
 
     savePbPack(resultDF, "v1")
@@ -93,6 +94,8 @@ object OcpcGetPb {
          |  dl_cpc.ocpc_ctr_data_hourly
          |WHERE
          |  $selectCondition
+         |AND
+         |  media_appsid in ("80000001", "80000002")
        """.stripMargin
 //    val resultDF = spark
 //      .table("dl_cpc.ocpcv3_ctr_data_hourly")
@@ -142,6 +145,7 @@ object OcpcGetPb {
     val rawCvr1 = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(selectCondition)
+      .filter(s"label_type!=12")
       .withColumn("iscvr1", col("label2"))
       .select("searchid", "iscvr1")
       .filter("iscvr1=1")

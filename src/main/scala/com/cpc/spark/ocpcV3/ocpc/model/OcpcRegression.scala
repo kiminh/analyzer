@@ -92,6 +92,8 @@ object OcpcRegression {
          |  dl_cpc.ml_cvr_feature_v1
          |WHERE
          |  $selectCondition
+         |AND
+         |  label_type!=12
        """.stripMargin
     println(sqlRequest2)
     val cvr1Data = spark.sql(sqlRequest2)
@@ -169,7 +171,8 @@ object OcpcRegression {
       .withColumn("version", lit("v1"))
 
 //    result.write.mode("overwrite").saveAsTable(tablename)
-    result.write.mode("overwrite").insertInto(tablename)
+    result
+      .repartition(10).write.mode("overwrite").insertInto(tablename)
 
     val ratio1Data = getKWithRatioType(spark, tablename, 1, date, hour)
     val ratio2Data = getKWithRatioType(spark, tablename, 2, date, hour)
@@ -179,7 +182,8 @@ object OcpcRegression {
       .select("identifier", "k_ratio", "conversion_goal", "date", "hour")
       .withColumn("version", lit("v1"))
 //    res.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
+    res
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
   }
 
   def getKWithRatioType(spark: SparkSession, tablename: String, conversionGoal: Int, date: String, hour: String): Dataset[Row] = {
