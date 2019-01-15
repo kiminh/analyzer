@@ -13,7 +13,8 @@ object OcpcFilterUnionLog {
     val hour = args(1).toString
 
     val result = getOcpcUnionlog(date, hour, spark)
-    result.write.mode("overwrite").saveAsTable("test.filtered_union_log_hourly")
+    result
+      .repartition(100).write.mode("overwrite").saveAsTable("test.filtered_union_log_hourly")
 //    result
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_hourly")
     println("successfully save data into table: dl_cpc.filtered_union_log_hourly")
