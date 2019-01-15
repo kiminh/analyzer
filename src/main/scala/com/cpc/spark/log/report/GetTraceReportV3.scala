@@ -166,7 +166,7 @@ object GetTraceReportV3 {
   def saveTraceReport_Motivate(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
     val sql =
       s"""
-         |select b.planid as plan_id, b.unitid as unit_id, a.*, 0 as duration, 0 as auto, b.`date`, b.hour, b.show, b.click
+         |select b.userid as user_id, b.planid as plan_id, b.unitid as unit_id, a.*, 0 as duration, 0 as auto, b.`date`, b.hour, b.show, b.click
          |from (
          |        select   ta.ideaid
          |                ,ta.appname
