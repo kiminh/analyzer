@@ -211,7 +211,7 @@ object GetTraceReportV3 {
          |            group by ideaid
          |        ) b on a.ideaid = b.ideaid
          |    ) b
-         |on a.ideaid = b.ideaid
+         |on a.idea_id = b.ideaid
       """.stripMargin.format(date, hour, date, hour, date, hour)
 
     val toResult = ctx.sql(sql)
