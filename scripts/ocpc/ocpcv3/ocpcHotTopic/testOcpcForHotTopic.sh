@@ -1,14 +1,14 @@
 #!/bin/bash
 
-#sh testOcpcForHotTopic.sh model.OcpcCPAhistory 2019-01-14 12
+#sh testOcpcForHotTopic.sh 2019-01-14 12 hottopicv1
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
 queue=root.cpc.develop
 
-className=$1
-date=$2
-hour=$3
+date=$1
+hour=$2
+version=$3
 
 jars=(
     "$cur/lib/mysql-connector-java-5.1.41-bin.jar"
@@ -24,5 +24,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.ocpcV3.HotTopicOcpc.${className} \
-    /home/cpc/sunjianqiang/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $date $hour
+    --class com.cpc.spark.ocpcV3.HotTopicOcpc.model.OcpcCPAhistory \
+    /home/cpc/sunjianqiang/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $date $hour $version
