@@ -102,7 +102,7 @@ object OcpcGetPb_v2 {
          |WHERE
          |  $selectCondition
          |AND
-         |  media_appsid in ("80000001", "80000002")
+         |  media_appsid in ("80000001", "80000002", "80002819")
        """.stripMargin
     //    val resultDF = spark
     //      .table("dl_cpc.ocpcv3_ctr_data_hourly")
@@ -142,6 +142,7 @@ object OcpcGetPb_v2 {
     val ocpcUnionlog = spark
       .table("dl_cpc.ocpc_union_log_hourly")
       .where(selectCondition)
+      .filter(s"media_appsid = '80002819'")
       .withColumn("identifier", col("unitid"))
       .filter("isclick=1")
       .selectExpr("searchid", "cast(identifier as string) identifier")
