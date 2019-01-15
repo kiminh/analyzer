@@ -35,16 +35,11 @@ object OcpcFilterUnionLog {
          |    media_appsid,
          |    adslotid,
          |    adslot_type,
-         |    adnum,
-         |    isfill,
          |    adtype,
          |    adsrc,
          |    interaction,
          |    bid,
-         |    cpmbid,
          |    price,
-         |    ctr,
-         |    cpm,
          |    ideaid,
          |    unitid,
          |    planid,
@@ -60,8 +55,8 @@ object OcpcFilterUnionLog {
          |    isclick,
          |    duration,
          |    userid,
-         |    ext,
-         |    ext_int,
+         |    ext['adclass'].int_value as adclass,
+         |    ext_int['is_ocpc'] as is_ocpc,
          |    ext_string['ocpc_log'] as ocpc_log
          |from dl_cpc.cpc_union_log
          |where $selectWhere
@@ -70,7 +65,6 @@ object OcpcFilterUnionLog {
     println(sqlRequest)
     val rawData = spark
       .sql(sqlRequest)
-      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
 
 
     val resultDF = rawData
