@@ -55,9 +55,11 @@ object OcpcFilterUnionLog {
          |    isclick,
          |    duration,
          |    userid,
-         |    ext,
-         |    ext_int,
-         |    ext_string
+         |    ext_int['is_ocpc'] as is_ocpc,
+         |    ext_string['ocpc_log'] as ocpc_log,
+         |    ext_string['user_city'] as user_city,
+         |    ext['city_level'].int_value as city_level,
+         |    ext['adclass'].int_value as adclass
          |from dl_cpc.cpc_union_log
          |where $selectWhere
          |and (isshow>0 or isclick>0)
