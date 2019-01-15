@@ -281,7 +281,7 @@ object OcpcCPAhistory {
       .selectExpr("cast(unitid as string) identifier", "new_adclass", "cpa_src", "cpa_history", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("version", lit("hottopic1"))
+      .withColumn("version", lit("hottopicv1"))
     resultDF
 
   }
