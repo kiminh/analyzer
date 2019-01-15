@@ -95,7 +95,7 @@ object OcpcSampleToPb {
       val k_value2 = record.getAs[Double]("kvalue2")
       val min_bid = 0.2
       val cpa_suggest = 1.0
-      val t_span = 30
+      val t_span = 1.0
       val cpc_bid = 10
 
       if (cnt % 500 == 0) {
