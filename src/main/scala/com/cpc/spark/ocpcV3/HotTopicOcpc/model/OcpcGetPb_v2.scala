@@ -35,13 +35,18 @@ object OcpcGetPb_v2 {
 
     // 读取数据
     val base = getBaseData(date, hour, spark)
+    base.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_base")
     val cvrData = getCVR(date, hour, spark)
+    cvrData.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_cvrData")
     val cpaHistory = getCPAgiven(version, date, hour, spark)
+    cpaHistory.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_cpaHistory")
     val kvalue = getK(cpaHistory, version, date, hour, spark)
+    kvalue.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_kvalue")
     val adclassCPA = spark
       .table("dl_cpc.ocpc_cpa_history_adclass_hourly")
       .where(s"`date`='$date' and `hour`='$hour' and `version`='$version'")
       .select("new_adclass", "cpa_adclass")
+    adclassCPA.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_adclassCPA")
 
     // 组装数据
     val data = base
@@ -51,6 +56,7 @@ object OcpcGetPb_v2 {
       .withColumn("conversion_goal", when(col("cpa_history").isNull && col("conversion_goal").isNull, lit(1)).otherwise(col("conversion_goal")))
       .withColumn("cpa_given", when(col("cpa_history").isNull && col("conversion_goal") === 1, col("cpa_adclass")).otherwise(col("cpa_history")))
       .filter("cpa_given is not null and conversion_goal is not null")
+    data.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_data")
 
     val resultDF = data
       .groupBy("identifier", "conversion_goal")
