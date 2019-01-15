@@ -158,7 +158,7 @@ object OcpcMinBid {
 //    calendar.add(Calendar.DATE, -1)
 //    val yesterday = calendar.getTime
 //    val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`dt`='$date' and `hour` <= '$hour'"
+    val selectCondition = s"`date`='$date' and `hour` <= '$hour'"
     // todo 时间区间： hour
 //    val sqlRequest =
 //      s"""
