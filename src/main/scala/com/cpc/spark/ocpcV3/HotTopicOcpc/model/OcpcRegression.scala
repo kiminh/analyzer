@@ -56,7 +56,6 @@ object OcpcRegression {
     //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
     resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
 
-
   }
 
   def getMiddleData(mediaSelection: String, version: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {

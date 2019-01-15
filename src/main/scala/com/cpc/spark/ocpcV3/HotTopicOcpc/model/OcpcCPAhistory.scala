@@ -23,6 +23,7 @@ object OcpcCPAhistory {
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
+    val version = args(2).toString
 
     // 按照要求生成相关基础数据表
     val baseData     = getBaseData(            date, hour, spark)
@@ -38,11 +39,11 @@ object OcpcCPAhistory {
       .distinct()
       .join(     qttAlpha, Seq("unitid", "new_adclass"), "left_outer")
       .join(hottopicAlpha, Seq("unitid", "new_adclass"), "left_outer")
-      .join(  adclassData, Seq("new_adclass"), "left_outer")
+      .join(  adclassData, Seq("new_adclass"),           "left_outer")
       .select("unitid", "new_adclass", "cpa1_history_qtt", "cpa1_history_hottopic", "cpa1")
 
     // 按照策略挑选合适的cpa以及确定对应的conversion_goal
-    val result = getResult(data, date, hour, spark)
+    val result = getResult(data, date, hour, version, spark)
     val tableName = "dl_cpc.ocpc_cpa_history_hourly" // 改成一张没有人用的表 dl_cpc.ocpc_cpa_history_hourly
     result.write.mode("overwrite").insertInto(tableName)
     println(s"save data into table: $tableName")
@@ -203,7 +204,7 @@ object OcpcCPAhistory {
      */
     val resultDF = base
       .filter(s"media_appsid in ('80000001', '80000002')")
-      .groupBy("new_adclass")
+      .groupBy("new_adclass" )
       .agg(
         sum(col("total_cost")).alias("cost"),
         sum(col("cvr1cnt")).alias("cvr1cnt")  //,
@@ -257,7 +258,7 @@ object OcpcCPAhistory {
     resultDF
   }
 
-  def getResult(base: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getResult(base: DataFrame, date: String, hour: String, version: String, spark: SparkSession) = {
     /*
     1. 确定转化目标
     2. 根据转化目标和cpa优先级选择最终cpa
@@ -281,9 +282,8 @@ object OcpcCPAhistory {
       .selectExpr("cast(unitid as string) identifier", "new_adclass", "cpa_src", "cpa_history", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .withColumn("version", lit("hottopicv1"))
+      .withColumn("version", lit(version) )
     resultDF
-
   }
 
 }

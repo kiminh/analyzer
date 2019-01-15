@@ -72,9 +72,10 @@ object OcpcGetPb_v2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_prev_pb")
-    //    resultDF
-    //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
+//        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_prev_pb")
+      resultDF.repartition(10).write.mode("overwrite").insertInto("test.ocpc_hottopic_prev_pb_hourly")
+        resultDF
+          .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
         resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_pb_result_hourly")
 
     savePbPack(resultDF, version)
@@ -198,7 +199,7 @@ object OcpcGetPb_v2 {
 
   }
 
-  def getK(cpaGiven: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getK(version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     pidK和regressionK外关联，优先regressionK
      */
