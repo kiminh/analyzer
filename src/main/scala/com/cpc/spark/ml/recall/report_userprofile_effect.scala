@@ -230,11 +230,11 @@ val sqlRequest2 =
 
     spark.sql(
       s"""
-        |select ta.userid,ta.tag,tb.name,ctrwithtag,ctrwithouttag, ctrwithtag*1.0/(ctrwithouttag + ctrwithtag) as ratio, costwithtag, costwithouttag,
-        |apicvrwithtag, cvrwithtag, apicvrwithtag*1.0/costwithtag apiroiwithtag, cvrwithtag*1.0/costwithtag as roiwithtag,
-        |apicvrwithouttag, cvrwithouttag, apicvrwithouttag*1.0/costwithouttag as apiroiwithouttag, cvrwithouttag*1.0/costwithouttag as roiwithouttag,
+        |select cast(ta.userid as int),cast(ta.tag as int),tb.name,cast(ctrwithtag as int), cast(ctrwithouttag as int), cast(ctrwithtag*1.0/(ctrwithouttag + ctrwithtag) as double) as ratio, costwithtag, costwithouttag,
+        |cast(apicvrwithtag as int), cast(cvrwithtag as int), apicvrwithtag*1.0/costwithtag apiroiwithtag, cvrwithtag*1.0/costwithtag as roiwithtag,
+        |cast(apicvrwithouttag as int), cast(cvrwithouttag as int), apicvrwithouttag*1.0/costwithouttag as apiroiwithouttag, cvrwithouttag*1.0/costwithouttag as roiwithouttag,
         |(apicvrwithtag*1.0/costwithtag)/(apicvrwithouttag*1.0/costwithouttag) as apiperformance,
-        |(cvrwithtag*1.0/costwithtag)/(cvrwithouttag*1.0/costwithouttag) as performance,'$date' from
+        |(cvrwithtag*1.0/costwithtag)/(cvrwithouttag*1.0/costwithouttag) as performance,to_date('$date') as date from
         |(select userid,tag,sum(ctrwithtag) ctrwithtag,sum(ctrwithouttag) ctrwithouttag,sum(costwithtag) costwithtag,
         |sum(costwithouttag) costwithouttag, sum(apicvrwithtag) apicvrwithtag, sum(cvrwithtag) cvrwithtag,
         |sum(apicvrwithouttag) apicvrwithouttag, sum(cvrwithouttag) cvrwithouttag from dl_cpc.cpc_profileTag_report_daily_v1
