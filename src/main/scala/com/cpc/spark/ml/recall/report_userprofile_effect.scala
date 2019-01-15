@@ -230,7 +230,7 @@ val sqlRequest2 =
 
     spark.sql(
       s"""
-        |select cast(ta.userid as int),cast(ta.tag as int),tb.name,cast(ctrwithtag as int), cast(ctrwithouttag as int), cast(ctrwithtag*1.0/(ctrwithouttag + ctrwithtag) as double) as ctrratio, costwithtag, costwithouttag,
+        |select cast(ta.userid as int),cast(ta.tag as int),coalesce(tb.name, '') as name,cast(ctrwithtag as int), cast(ctrwithouttag as int), cast(ctrwithtag*1.0/(ctrwithouttag + ctrwithtag) as double) as ctrratio, costwithtag, costwithouttag,
         |cast(apicvrwithtag as int), cast(cvrwithtag as int), apicvrwithtag*1.0/costwithtag apiroiwithtag, cvrwithtag*1.0/costwithtag as roiwithtag,
         |cast(apicvrwithouttag as int), cast(cvrwithouttag as int), apicvrwithouttag*1.0/costwithouttag as apiroiwithouttag, cvrwithouttag*1.0/costwithouttag as roiwithouttag,
         |(apicvrwithtag*1.0/costwithtag)/(apicvrwithouttag*1.0/costwithouttag) as apiperformance,
