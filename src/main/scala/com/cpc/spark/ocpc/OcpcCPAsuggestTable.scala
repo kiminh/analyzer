@@ -52,6 +52,7 @@ object OcpcCPAsuggestTable {
     val data = prevTable
       .join(rawData, Seq("ideaid", "conversion_goal"), "outer")
       .select("ideaid", "conversion_goal", "cpa_suggest", "t", "days", "new_cpa", "ocpc_flag")
+      .na.fill(0, Seq("t", "days"))
     data.show(10)
 
     val resultDF = updateCPAsuggest(data, date, hour, spark)
@@ -95,7 +96,8 @@ object OcpcCPAsuggestTable {
          |  ideaid,
          |  conversion_goal,
          |  new_cpa_suggest as cpa_suggest,
-         |  1.0 / new_t as t
+         |  1.0 / new_t as t,
+         |  days
          |FROM
          |  suggest_table
        """.stripMargin
