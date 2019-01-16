@@ -72,7 +72,7 @@ object OcpcSampleToPb {
 //    val rawData = data
 //      .withColumn("conversion_goal", when(col("k_value")===col("kvalue2"), 2).otherwise(1))
 
-    val rawData1 = data.filter(s"k_value1=kvalue1")
+    val rawData1 = data.filter(s"k_value=kvalue1")
     val rawData2 = data.filter(s"k_value!=kvalue1")
     val ocpcSuggest1 = ocpcSuggest
       .filter("conversion_goal=1")
