@@ -38,10 +38,10 @@ object OcpcCPAsuggestTable {
     ocpcData.show(10)
     val rawData = cpaSuggest
       .join(ocpcData, Seq("ideaid"), "left_outer")
-      .select("ideaid", "conversion_goal", "cpa_suggest", "ocpc_flag")
+      .select("ideaid", "unitid", "conversion_goal", "cpa_suggest", "ocpc_flag")
       .na.fill(0, Seq("ocpc_flag"))
       .withColumn("new_cpa", col("cpa_suggest"))
-      .select("ideaid", "conversion_goal", "new_cpa", "ocpc_flag")
+      .select("ideaid", "unitid", "conversion_goal", "new_cpa", "ocpc_flag")
     rawData.show(10)
 
     // 将cpasuggest与结果表外关联
@@ -51,11 +51,12 @@ object OcpcCPAsuggestTable {
     // 根据ocpcflag选择是否更新cpasuggest与t
     val data = prevTable
       .join(rawData, Seq("ideaid", "conversion_goal"), "outer")
-      .select("ideaid", "conversion_goal", "cpa_suggest", "t", "days", "new_cpa", "ocpc_flag")
+      .select("ideaid", "unitid", "conversion_goal", "cpa_suggest", "t", "days", "new_cpa", "ocpc_flag")
       .na.fill(0, Seq("t", "days"))
     data.show(10)
 
     val resultDF = updateCPAsuggest(data, date, hour, spark)
+    resultDF.show(10)
     // 重新存取结果表
     resultDF
       .withColumn("date", lit(date))
@@ -71,6 +72,7 @@ object OcpcCPAsuggestTable {
       s"""
          |SELECT
          |  ideaid,
+         |  unitid,
          |  conversion_goal,
          |  (case when ocpc_flag=1 then cpa_suggest else new_cpa end) as new_cpa_suggest,
          |  (case when ocpc_flag=1 then days + 1 else 0 end) as days,
@@ -94,6 +96,7 @@ object OcpcCPAsuggestTable {
       s"""
          |SELECT
          |  ideaid,
+         |  unitid,
          |  conversion_goal,
          |  new_cpa_suggest as cpa_suggest,
          |  1.0 / new_t as t,
@@ -147,11 +150,8 @@ object OcpcCPAsuggestTable {
     // 关联
     val resultDF = data
       .join(relationData, Seq("unitid"), "left_outer")
-      .select("ideaid", "conversion_goal", "cpa_suggest")
+      .select("ideaid", "unitid", "conversion_goal", "cpa_suggest")
       .filter("ideaid is not null")
-      .groupBy("ideaid", "conversion_goal")
-      .agg(avg(col("cpa_suggest")).alias("cpa_suggest"))
-      .select("ideaid", "conversion_goal", "cpa_suggest")
 
     resultDF
 
