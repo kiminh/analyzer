@@ -29,7 +29,9 @@ object OcpcCPAhistory {
     val baseData     = getBaseData(            date, hour, spark)
     val qttData      = getQttCPA(    baseData, date, hour, spark)
     val hottopicData = getHotTopicCPA( baseData, date, hour, spark)
-    val adclassData = getAdclassCPA(baseData, date, hour, version, spark).select("new_adclass", "cpa1" )
+    val adclassData = getAdclassCPA(baseData, date, hour, version, spark)
+      .withColumn("cpa1", col("cpa_adclass"))
+      .select("new_adclass", "cpa1" )
     val qttAlpha    = checkCPAhistory(qttData, 0.8, "qtt", date, hour, spark )
     val hottopicAlpha  = checkCPAhistory( hottopicData, 0.8, "hottopic", date, hour, spark )
 
