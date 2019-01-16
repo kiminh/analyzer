@@ -28,18 +28,18 @@ object OcpcMinBid {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base")
-//      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
+//      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base")
+      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
 
     val resultDF = calculateMinBid(baseData, date, hour, spark)
     resultDF
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid")
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
 
-    val data = resultDF.filter(s"cnt >= 3000")
+    val data = resultDF.filter(s"cnt >= min_cnt")
 
     savePbPack(data, "ocpc_minbid.pb")
   }
@@ -116,16 +116,15 @@ object OcpcMinBid {
   def calculateMinBid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     data.createOrReplaceTempView("base_data")
 //    hour,adslotid, user_city,city_level, adtype,adsrc,adclass,is_ocpc
+//    hour,adslotid,city_level,,adsrc,ad_second_class,ocpc_flag
     val sqlRequest =
       s"""
          |SELECT
          |  hr,
          |  adslotid,
-         |  adslot_type,
-         |  user_city,
          |  city_level,
          |  adsrc,
-         |  adclass,
+         |  floor(adclass/1000) as ad_second_class,
          |  ocpc_flag,
          |  percentile(bid, 0.03) as min_bid,
          |  count(1) as cnt
@@ -133,7 +132,7 @@ object OcpcMinBid {
          |  base_data
          |WHERE
          |  ocpc_flag=1
-         |GROUP BY hr, adslotid, adslot_type, user_city, city_level, adsrc, adclass, ocpc_flag
+         |GROUP BY hr, adslotid, city_level, adsrc, floor(adclass/1000), ocpc_flag
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
