@@ -56,7 +56,11 @@ object OcpcCPAsuggestTable {
 
     val resultDF = updateCPAsuggest(data, date, hour, spark)
     // 重新存取结果表
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cpa_suggest_hourly")
+    resultDF
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("qtt_demo"))
+      .write.mode("overwrite").saveAsTable("test.ocpc_cpa_suggest_hourly")
   }
 
   def updateCPAsuggest(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
