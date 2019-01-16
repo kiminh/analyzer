@@ -78,17 +78,17 @@ object OcpcSampleToPb {
       .filter("conversion_goal=1")
       .withColumn("t1", col("t"))
       .withColumn("cpa_suggest1", col("cpa_suggest"))
-      .select("t1", "cpa_suggest1")
+      .select("ideaid", "t1", "cpa_suggest1")
     val ocpcSuggest2 = ocpcSuggest
       .filter("conversion_goal=2")
       .withColumn("t2", col("t"))
       .withColumn("cpa_suggest2", col("cpa_suggest"))
-      .select("t2", "cpa_suggest2")
+      .select("ideaid", "t2", "cpa_suggest2")
     val ocpcSuggest3 = ocpcSuggest
       .filter("conversion_goal=3")
       .withColumn("t3", col("t"))
       .withColumn("cpa_suggest3", col("cpa_suggest"))
-      .select("t3", "cpa_suggest3")
+      .select("ideaid", "t3", "cpa_suggest3")
 
     val data1 = rawData1
       .join(ocpcSuggest1, Seq("ideaid"), "left_outer")
