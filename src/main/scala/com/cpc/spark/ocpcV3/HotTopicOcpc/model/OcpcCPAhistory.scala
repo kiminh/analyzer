@@ -220,10 +220,10 @@ object OcpcCPAhistory {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-//    val adclassTable = "dl_cpc.ocpc_cpa_history_adclass_hourly"
-    resultDF.write.mode("overwrite").saveAsTable("test.sjq_ocpc_hottopic_cpahistory")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto(adclassTable)
+    val adclassTable = "dl_cpc.ocpc_cpa_history_adclass_hourly"
+//    resultDF.write.mode("overwrite").saveAsTable("test.sjq_ocpc_hottopic_cpahistory")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto(adclassTable)
     resultDF
   }
 
