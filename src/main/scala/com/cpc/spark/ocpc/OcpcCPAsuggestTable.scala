@@ -50,7 +50,7 @@ object OcpcCPAsuggestTable {
 
     // 根据ocpcflag选择是否更新cpasuggest与t
     val data = prevTable
-      .join(rawData, Seq("ideaid", "conversion_goal"), "outer")
+      .join(rawData, Seq("ideaid", "unitid", "conversion_goal"), "outer")
       .select("ideaid", "unitid", "conversion_goal", "cpa_suggest", "t", "days", "new_cpa", "ocpc_flag")
       .na.fill(0, Seq("t", "days"))
     data.show(10)
