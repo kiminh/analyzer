@@ -56,22 +56,38 @@ object HotTopicCtrAuc {
         val time2=System.currentTimeMillis()
         println("ctrModelNames cost is " + (time2-time1))
         //分行业
-        val adclassAucList = CalcMetrics.getGauc(spark,union,"adclass").rdd
-          .map(x => {
-              val adclass = x.getAs[String]("name")
-              val auc = x.getAs[Double]("auc")
-              val sum = x.getAs[Double]("sum")
-              (adclass,auc,sum)
-          })
+        val adclassList = union.select("adclass")
+          .distinct()
           .collect()
-        for(adclassAuc <- adclassAucList) {
-            DetailAucListBuffer += DetailAuc(tag = "adclass",
-                name = adclassAuc._1,
-                auc = adclassAuc._2,
-                sum = adclassAuc._3,
+          .map(x => x.getAs[String]("adclass"))
+        println("adclassList 's num is " + adclassList.length)
+        for (adclass <- adclassList) {
+            val adclassUnion = union.filter(s"adclass = '$adclass'")
+            val adclassAuc = CalcMetrics.getAuc(spark,adclassUnion)
+
+            DetailAucListBuffer += DetailAuc(tag = "ctr_model_name",
+                name = adclass,
+                auc = adclassAuc,
+                sum = adclassUnion.count().toDouble,
                 media = media,
                 day = date)
         }
+//        val adclassAucList = CalcMetrics.getGauc(spark,union,"adclass").rdd
+//          .map(x => {
+//              val adclass = x.getAs[String]("name")
+//              val auc = x.getAs[Double]("auc")
+//              val sum = x.getAs[Double]("sum")
+//              (adclass,auc,sum)
+//          })
+//          .collect()
+//        for(adclassAuc <- adclassAucList) {
+//            DetailAucListBuffer += DetailAuc(tag = "adclass",
+//                name = adclassAuc._1,
+//                auc = adclassAuc._2,
+//                sum = adclassAuc._3,
+//                media = media,
+//                day = date)
+//        }
         val time3=System.currentTimeMillis()
         println("adclassAucList cost is " + (time3-time2))
         //分栏位
