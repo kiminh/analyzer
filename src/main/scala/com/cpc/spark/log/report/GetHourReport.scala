@@ -51,11 +51,14 @@ object GetHourReport {
     mariadb_amateur_prop.put("user", conf.getString("mariadb.amateur_write.user"))
     mariadb_amateur_prop.put("password", conf.getString("mariadb.amateur_write.password"))
     mariadb_amateur_prop.put("driver", conf.getString("mariadb.amateur_write.driver"))
+    
     val ctx = SparkSession.builder()
-      .appName("[cpc] get hour report from %s %s/%s".format(table, date, hour))
+      .appName("[cpc] get hour report from %s %s/%s"
+        .format(table, date, hour))
       .enableHiveSupport()
       .getOrCreate()
-    import spark.implicits._
+
+    import ctx.implicits._
 
 
     // fym: modified sql to adapt to new unionlog table structure.
