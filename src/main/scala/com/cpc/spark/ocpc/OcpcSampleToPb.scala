@@ -42,6 +42,7 @@ object OcpcSampleToPb {
     val hpcvr = getHpcvr(date, hour, spark)
     val apiCvr = getAPIcvr(date, hour, spark)
     val resultK = getK(date, hour, spark)
+    val ocpcSuggest = getOcpcSuggest(date, hour, spark)
 
     val currentPb = baseData
       .join(hpcvr, Seq("ideaid", "adclass"), "left_outer")
@@ -52,18 +53,75 @@ object OcpcSampleToPb {
       .withColumn("kvalue2_init", col("k_value3"))
 
 
-    val result = initK(currentPb, date, hour,spark)
+    val result1 = initK(currentPb, date, hour,spark)
+    val result2 = assemblyPB(result1, date, hour, spark)
+    val resultDF = processCPAsuggest(result2, ocpcSuggest, date, hour, spark)
 
 
-    val resultDF = assemblyPB(result, date, hour, spark)
 
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v6")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_current_pb20181226")
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v6")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_current_pb20181226")
 
     savePbPack(resultDF)
 
+  }
+
+  def processCPAsuggest(data: DataFrame, ocpcSuggest: DataFrame, date: String, hour: String, spark: SparkSession) = {
+//    val rawData = data
+//      .withColumn("conversion_goal", when(col("k_value")===col("kvalue2"), 2).otherwise(1))
+
+    val rawData1 = data.filter(s"k_value1=kvalue1")
+    val rawData2 = data.filter(s"k_value!=kvalue1")
+    val ocpcSuggest1 = ocpcSuggest
+      .filter("conversion_goal=1")
+      .withColumn("t1", col("t"))
+      .withColumn("cpa_suggest1", col("cpa_suggest"))
+      .select("t1", "cpa_suggest1")
+    val ocpcSuggest2 = ocpcSuggest
+      .filter("conversion_goal=2")
+      .withColumn("t2", col("t"))
+      .withColumn("cpa_suggest2", col("cpa_suggest"))
+      .select("t2", "cpa_suggest2")
+    val ocpcSuggest3 = ocpcSuggest
+      .filter("conversion_goal=3")
+      .withColumn("t3", col("t"))
+      .withColumn("cpa_suggest3", col("cpa_suggest"))
+      .select("t3", "cpa_suggest3")
+
+    val data1 = rawData1
+      .join(ocpcSuggest1, Seq("ideaid"), "left_outer")
+      .join(ocpcSuggest3, Seq("ideaid"), "left_outer")
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t1", "cpa_suggest1", "t3", "cpa_suggest3")
+      .withColumn("t", when(col("cpa_suggest3").isNotNull, col("t3")).otherwise(col("t1")))
+      .withColumn("cpa_suggest", when(col("cpa_suggest3").isNotNull, col("cpa_suggest3")).otherwise(col("cpa_suggest1")))
+      .na.fill(0.0, Seq("t", "cpa_suggest"))
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t", "cpa_suggest")
+
+    val data2 = rawData2
+      .join(ocpcSuggest2, Seq("ideaid"), "left_outer")
+      .withColumn("t", col("t2"))
+      .withColumn("cpa_suggest", col("cpa_suggest2"))
+      .na.fill(0.0, Seq("t", "cpa_suggest"))
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t", "cpa_suggest")
+
+    val resultDF = data1.union(data2)
+
+    resultDF
+
+  }
+
+  def getOcpcSuggest(date: String, hour: String, spark: SparkSession) = {
+    val data = spark
+      .table("dl_cpc.ocpc_cpa_suggest_once")
+      .where(s"version='qtt_demo'")
+      .select("ideaid", "conversion_goal", "t", "cpa_sugggest")
+      .groupBy("ideaid", "conversion_goal")
+      .agg(avg(col("t")).alias("t"), avg(col("cpa_suggest")).alias("cpa_suggest"))
+      .select("ideaid", "conversion_goal", "t", "cpa_sugggest")
+
+    data
   }
 
 
@@ -94,8 +152,8 @@ object OcpcSampleToPb {
       val k_value1 = record.getAs[Double]("kvalue1")
       val k_value2 = record.getAs[Double]("kvalue2")
       val min_bid = 0.2
-      val cpa_suggest = 1.0
-      val t_span = 0.0
+      val cpa_suggest = record.getAs[Double]("cpa_suggest")
+      val t_span = 3.0
       val cpc_bid = 10
 
       if (cnt % 500 == 0) {
