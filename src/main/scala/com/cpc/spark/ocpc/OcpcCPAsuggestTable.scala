@@ -76,7 +76,7 @@ object OcpcCPAsuggestTable {
          |  unitid,
          |  conversion_goal,
          |  (case when ocpc_flag=1 then cpa_suggest else new_cpa end) as new_cpa_suggest,
-         |  (case when ocpc_flag=1 then days + 1 else 0 end) as days,
+         |  (case when ocpc_flag=1 then days + 1 else 1 end) as days,
          |  new_cpa,
          |  cpa_suggest,
          |  ocpc_flag,
