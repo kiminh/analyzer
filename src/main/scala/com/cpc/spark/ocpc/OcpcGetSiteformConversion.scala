@@ -39,7 +39,11 @@ object OcpcGetSiteformConversion {
     resultDF.show(10)
 
 //    resultDF.write.mode("overwrite").saveAsTable("test.site_form_unionlog")
-    resultDF.write.mode("overwrite").insertInto("dl_cpc.site_form_unionlog")
+    resultDF
+      .repartition(10)
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.site_form_unionlog")
 
   }
 

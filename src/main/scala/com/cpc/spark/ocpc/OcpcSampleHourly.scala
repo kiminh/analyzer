@@ -42,7 +42,7 @@ object OcpcSampleHourly {
          |      (
          |        select searchid, label
          |        from dl_cpc.ml_cvr_feature_v1
-         |        where $selectWhere
+         |        where $selectWhere and label_type!=12
          |      ) b on a.searchid = b.searchid
       """.stripMargin
     println(sqlRequest)
@@ -71,7 +71,8 @@ object OcpcSampleHourly {
       .withColumn("hour", lit(hour))
 
     // save data
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track")
+    result
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track")
 
 
 

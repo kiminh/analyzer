@@ -19,6 +19,10 @@ message SingleUser {
     int64 cvr3Cnt = 14;
     double kvalue1 = 15;
     double kvalue2 = 16;
+    double minBid = 17;
+    double cpaSuggest = 18;
+    double t = 19;
+    double cpcBid = 20;
 }
 
 

@@ -11,7 +11,8 @@ object OcpcLabelCvr4 {
     val spark = SparkSession.builder().appName(s"ocpc cvr4 label").enableHiveSupport().getOrCreate()
     val result = getLabel(date, hour, spark)
 //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_qtt_cvr4_data_hourly")
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_qtt_cvr4_data_hourly")
+    result
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_qtt_cvr4_data_hourly")
     println("successfully save data into table: dl_cpc.ocpcv3_qtt_cvr4_data_hourly")
   }
 
@@ -56,6 +57,8 @@ object OcpcLabelCvr4 {
          |  where $selectWhere
          |AND
          |  label_sdk_dlapp=1
+         |AND
+         |  label_type!=12
        """.stripMargin
     println(sqlRequest2)
     val labelData = spark.sql(sqlRequest2).distinct()

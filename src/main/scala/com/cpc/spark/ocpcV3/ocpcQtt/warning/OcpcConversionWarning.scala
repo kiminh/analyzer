@@ -71,6 +71,8 @@ object OcpcConversionWarning {
          |    $selectCondition2
          |   AND
          |    label2=1
+         |   AND
+         |    label_type!=12
          |   GROUP BY searchid, label2) as b
          |ON
          |    a.searchid=b.searchid
@@ -128,6 +130,8 @@ object OcpcConversionWarning {
          |  `date` = '$date1'
          |AND
          |  label2=1
+         |AND
+         |  label_type!=12
          |GROUP BY ideaid, searchid, label2
        """.stripMargin
     println(sqlRequest1)

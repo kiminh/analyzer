@@ -36,7 +36,8 @@ object OcpcHourlySummary {
       .withColumn("hour", lit(hour))
 
     // 输出数据到hive表
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly")
+    result
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly")
 
 //     输出数据到mysql
     val resultDF = result

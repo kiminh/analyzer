@@ -44,6 +44,7 @@ object OcpcPIDwithCPAv3 {
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_hourly")
     resultDF
+      .repartition(10)
       .write
       .mode("overwrite")
       .insertInto("dl_cpc.ocpc_k_value_table_hourly")
@@ -152,6 +153,7 @@ object OcpcPIDwithCPAv3 {
     val rawCvr2 = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(selectCondition)
+      .filter(s"label_type!=12")
       .withColumn("iscvr2", col("label2"))
       .select("searchid", "iscvr2")
       .filter("iscvr2=1")

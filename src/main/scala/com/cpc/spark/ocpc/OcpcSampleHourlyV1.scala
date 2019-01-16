@@ -76,7 +76,7 @@ object OcpcSampleHourlyV1 {
          |from
          |  unionlog_table as a
          |left join
-         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $selectWhere) as b
+         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $selectWhere and label_type!=12) as b
          |on
          |  a.searchid=b.searchid
          |left join
@@ -113,7 +113,8 @@ object OcpcSampleHourlyV1 {
 
 
     // save data
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track_label2")
+    result
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track_label2")
 
     result.show(10)
 

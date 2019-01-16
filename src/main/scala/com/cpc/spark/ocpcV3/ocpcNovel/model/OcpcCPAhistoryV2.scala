@@ -49,7 +49,8 @@ object OcpcCPAhistoryV2 {
     val result = getResult(data, date, hour, spark)
     val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
 //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
-    result.write.mode("overwrite").insertInto(tableName)
+    result
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
     println(s"save data into table: $tableName")
 
   }
@@ -85,6 +86,8 @@ object OcpcCPAhistoryV2 {
          |  dl_cpc.ocpcv3_ctr_data_hourly
          |WHERE
          |  $selectCondition
+         |AND
+         |  media_appsid in ('80000001', '80000002', '80001098', '80001292')
        """.stripMargin
     println(sqlRequest1)
     val costData = spark
@@ -110,6 +113,8 @@ object OcpcCPAhistoryV2 {
          |  dl_cpc.ocpcv3_cvr1_data_hourly
          |WHERE
          |  $selectCondition
+         |AND
+         |  media_appsid in ('80000001', '80000002', '80001098', '80001292')
        """.stripMargin
     println(sqlRequest2)
     val cvr1Data = spark
@@ -132,6 +137,8 @@ object OcpcCPAhistoryV2 {
          |  dl_cpc.ocpcv3_cvr2_data_hourly
          |WHERE
          |  $selectCondition
+         |AND
+         |  media_appsid in ('80000001', '80000002', '80001098', '80001292')
        """.stripMargin
     println(sqlRequest3)
     val cvr2Data = spark
@@ -222,7 +229,8 @@ object OcpcCPAhistoryV2 {
 
     val adclassTable = "dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly"
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_adclass_hourly")
-    resultDF.write.mode("overwrite").insertInto(adclassTable)
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto(adclassTable)
     resultDF
   }
 
@@ -337,6 +345,7 @@ object OcpcCPAhistoryV2 {
     data
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .repartition(10)
       .write
       .mode("overwrite")
       .insertInto("dl_cpc.ocpcv3_cpa_history_v2_final_middle")

@@ -21,7 +21,8 @@ object OcpcPIDwithCPAV2 {
     val result = calculateKv2(date, hour, spark)
     val tableName = "dl_cpc.ocpc_novel_k_value_table_v2"
 //    result.write.mode("overwrite").saveAsTable(tableName)
-    result.write.mode("overwrite").insertInto(tableName)
+    result
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
     println(s"successfully save data into table: $tableName")
 
 
@@ -87,9 +88,6 @@ object OcpcPIDwithCPAV2 {
   }
 
   def getHistoryData(date: String, hour: String, hourCnt: Int, spark: SparkSession) :DataFrame ={
-    /**
-      * 按照给定的时间区间获取从OcpcMonitor程序的结果表获取历史数据
-      */
 
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -134,7 +132,6 @@ object OcpcPIDwithCPAV2 {
       * 计算修正前的k基准值
       * case1：前6个小时有isclick=1的数据，统计这批数据的k均值作为基准值
       * case2：前6个小时没有isclick=1的数据，将前一个小时的数据作为基准值
-      * case3: 在主表（7*24）中存在，但是不属于前两种情况的，初始值0.694
       */
 
     historyData
@@ -184,7 +181,7 @@ object OcpcPIDwithCPAV2 {
     //      .select("unitid", "kvalue2")
     //      .distinct()
 
-    // 优先case1，然后case2，最后case3
+    // 优先case1，然后case2
     val resultDF = baseData
       .join(case1, Seq("unitid", "new_adclass"), "left_outer")
       .select("unitid", "new_adclass", "kvalue1")

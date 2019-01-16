@@ -92,6 +92,8 @@ object OcpcRegression {
          |  dl_cpc.ml_cvr_feature_v1
          |WHERE
          |  $selectCondition
+         |AND
+         |  label_type!=12
        """.stripMargin
     println(sqlRequest2)
     val cvr1Data = spark.sql(sqlRequest2)
@@ -160,7 +162,6 @@ object OcpcRegression {
       .withColumn("conversion_goal", lit(2))
 
     val tablename = "dl_cpc.ocpc_regression_middle_hourly"
-    // TODO 修改identifier
     val result = data1
       .union(data2)
       .withColumn("identifier", col("unitid"))
@@ -170,7 +171,8 @@ object OcpcRegression {
       .withColumn("version", lit("v1"))
 
 //    result.write.mode("overwrite").saveAsTable(tablename)
-    result.write.mode("overwrite").insertInto(tablename)
+    result
+      .repartition(10).write.mode("overwrite").insertInto(tablename)
 
     val ratio1Data = getKWithRatioType(spark, tablename, 1, date, hour)
     val ratio2Data = getKWithRatioType(spark, tablename, 2, date, hour)
@@ -180,7 +182,8 @@ object OcpcRegression {
       .select("identifier", "k_ratio", "conversion_goal", "date", "hour")
       .withColumn("version", lit("v1"))
 //    res.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
-    res.write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
+    res
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
   }
 
   def getKWithRatioType(spark: SparkSession, tablename: String, conversionGoal: Int, date: String, hour: String): Dataset[Row] = {
@@ -242,30 +245,6 @@ object OcpcRegression {
     res.toList
   }
 
-//  def getCPAsrcMap(date: String, hour: String, spark: SparkSession) = {
-//    val data = spark
-//      .table("dl_cpc.ocpcv3_cpa_history_v2_final_middle")
-//      .where(s"`date`='$date' and `hour`='$hour'")
-//
-//    var cpaMap = mutable.LinkedHashMap[String, String]()
-//    for(row <- data.collect()) {
-//      val unitid = row.getAs[Int]("unitid").toString
-//      val cpaSrc = row.getAs[String]("cpa_src")
-//      cpaMap += (unitid -> cpaSrc)
-//    }
-//    cpaMap
-//  }
-//
-//  def getTargetK(unitid: String, cpaSRC: mutable.LinkedHashMap[String, String], date: String, hour: String, spark: SparkSession) = {
-//    val cpasrc = cpaSRC.getOrElse(unitid, "qtt")
-//    var targetK = 1.8
-//    if (cpasrc == "novel") {
-//      targetK = 1.0
-//    } else {
-//      targetK = 1.8
-//    }
-//    targetK
-//  }
 
 
 }

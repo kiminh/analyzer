@@ -5,7 +5,6 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
-import ocpc.Ocpc
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{DoubleType, IntegerType}
@@ -67,9 +66,12 @@ object OcpcGetPb {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("v1"))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_prev_pb")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_prev_pb")
 
-//    savePbPack(resultDF, "v1")
+    savePbPack(resultDF, "v1")
   }
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
@@ -78,22 +80,41 @@ object OcpcGetPb {
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -7)
+    calendar.add(Calendar.DATE, -7)
     val startdate = calendar.getTime
     val date1 = dateConverter.format(startdate)
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) as identifier,
+         |  adclass
+         |FROM
+         |  dl_cpc.ocpc_ctr_data_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  media_appsid in ("80000001", "80000002")
+       """.stripMargin
+//    val resultDF = spark
+//      .table("dl_cpc.ocpcv3_ctr_data_hourly")
+//      .where(selectCondition)
+//      .withColumn("identifier", col("unitid"))
+//      .selectExpr("cast(identifier as string) identifier", "adclass")
+//      .withColumn("new_adclass", col("adclass")/1000)
+//      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
+//      .select("identifier", "new_adclass")
+//      .distinct()
+    println(sqlRequest)
     val resultDF = spark
-      .table("dl_cpc.ocpcv3_ctr_data_hourly")
-      .where(selectCondition)
-      .withColumn("identifier", col("unitid"))
-      .filter("isclick=1")
-      .select("identifier", "adclass")
+      .sql(sqlRequest)
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .select("identifier", "new_adclass")
       .distinct()
 
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_base_ctr_20181227")
     resultDF
   }
 
@@ -116,7 +137,7 @@ object OcpcGetPb {
       .where(selectCondition)
       .withColumn("identifier", col("unitid"))
       .filter("isclick=1")
-      .select("searchid", "identifier")
+      .selectExpr("searchid", "cast(identifier as string) identifier")
 
     // cvr data
 
@@ -124,6 +145,7 @@ object OcpcGetPb {
     val rawCvr1 = spark
       .table("dl_cpc.ml_cvr_feature_v1")
       .where(selectCondition)
+      .filter(s"label_type!=12")
       .withColumn("iscvr1", col("label2"))
       .select("searchid", "iscvr1")
       .filter("iscvr1=1")
@@ -149,7 +171,7 @@ object OcpcGetPb {
     val cvr2Data = ocpcUnionlog
       .join(rawCvr2, Seq("searchid"), "left_outer")
       .groupBy("identifier")
-      .agg(sum(col("iscvr")).alias("cvrcnt"))
+      .agg(sum(col("iscvr2")).alias("cvrcnt"))
       .withColumn("conversion_goal", lit(2))
       .select("identifier", "cvrcnt", "conversion_goal")
 
@@ -203,7 +225,7 @@ object OcpcGetPb {
 
   def savePbPack(dataset: Dataset[Row], version: String): Unit = {
     var list = new ListBuffer[SingleRecord]
-    val filename = s"Ocpc_" + version + ".pb"
+    val filename = s"Ocpc_" + version + "_unknown.pb"
     println("size of the dataframe")
     println(dataset.count)
     dataset.show(10)

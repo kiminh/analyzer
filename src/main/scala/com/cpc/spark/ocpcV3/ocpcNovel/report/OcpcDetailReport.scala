@@ -30,6 +30,7 @@ object OcpcDetailReport {
     cmpModel
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .repartition(10)
       .write
       .mode("overwrite")
       .insertInto(tableName1)
@@ -40,6 +41,7 @@ object OcpcDetailReport {
     cmpUnitid
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .repartition(10)
       .write
       .mode("overwrite")
       .insertInto(tableName2)
@@ -50,6 +52,7 @@ object OcpcDetailReport {
     result
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .repartition(10)
       .write
       .mode("overwrite")
       .insertInto(tableName3)
@@ -100,7 +103,7 @@ object OcpcDetailReport {
          |            searchid,
          |            label2 as iscvr
          |        from dl_cpc.ml_cvr_feature_v1
-         |        WHERE $selectCondition
+         |        WHERE $selectCondition and label_type!=12
          |    ) b on a.searchid = b.searchid
        """.stripMargin
 
@@ -182,7 +185,7 @@ object OcpcDetailReport {
          |            searchid,
          |            label2 as iscvr
          |        from dl_cpc.ml_cvr_feature_v1
-         |        WHERE $selectCondition
+         |        WHERE $selectCondition and label_type!=12
          |    ) as c
          |on  b.searchid = c.searchid
        """.stripMargin

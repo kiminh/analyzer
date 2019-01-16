@@ -20,7 +20,8 @@ object OcpcHourlyReport {
     val rawData = getHourlyReport(date, hour, spark)
     val result = calculateData(rawData, date, hour, spark)
     val tableName = "dl_cpc.ocpcv3_novel_report_detail_hourly"
-    result.write.mode("overwrite").insertInto(tableName)
+    result
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
 //    result.write.mode("overwrite").saveAsTable(tableName)
     println(s"successfully save table into $tableName")
     saveDataToReport(result, spark)
@@ -65,6 +66,8 @@ object OcpcHourlyReport {
          |    $selectCondition
          |AND
          |    label2=1
+         |AND
+         |    label_type!=12
        """.stripMargin
     println(sqlRequest2)
     val cvr1Data = spark.sql(sqlRequest2).distinct()

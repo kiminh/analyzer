@@ -121,6 +121,8 @@ object OcpcLabelCvr3 {
          |  where $selectWhere
          |AND
          |  label2=1
+         |AND
+         |  label_type!=12
        """.stripMargin
     println(sqlRequest2)
     val labelData = spark.sql(sqlRequest2).distinct()

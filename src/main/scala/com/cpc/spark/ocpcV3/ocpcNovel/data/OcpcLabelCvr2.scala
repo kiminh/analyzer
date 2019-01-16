@@ -18,7 +18,8 @@ object OcpcLabelCvr2 {
     // TODO 测试
     val result = getLabelBak(date, hour, spark)
 //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr2_data_hourly")
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr2_data_hourly")
+    result
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr2_data_hourly")
     println("successfully save data into table: dl_cpc.ocpcv3_cvr2_data_hourly")
   }
 
@@ -40,7 +41,7 @@ object OcpcLabelCvr2 {
          |AND
          |  label=1
          |AND
-         |  media_appsid in ("80001098","80001292","80000001", "80000002")
+         |  media_appsid in ("80001098","80001292","80000001", "80000002", "80002819")
        """.stripMargin
     println(sqlRequest2)
     val labelData = spark.sql(sqlRequest2)

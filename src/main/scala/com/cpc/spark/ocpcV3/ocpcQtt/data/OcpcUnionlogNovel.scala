@@ -13,7 +13,8 @@ object OcpcUnionlogNovel {
     val hour = args(1).toString
 
     val result = getOcpcUnionlog(date, hour, spark)
-    result.write.mode("overwrite").insertInto("test.ocpcv3_qtt_unionlog_label_hourly")
+    result
+      .repartition(10).write.mode("overwrite").insertInto("test.ocpcv3_qtt_unionlog_label_hourly")
 //    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_qtt_unionlog_label_hourly")
     println("successfully save data into table: dl_cpc.ocpcv3_unionlog_label_hourly")
   }
@@ -66,6 +67,8 @@ object OcpcUnionlogNovel {
          |  where $selectWhere
          |AND
          |  label2=1
+         |AND
+         |  label_type!=12
        """.stripMargin
     println(sqlRequest2)
     val labelData1 = spark.sql(sqlRequest2).distinct()
@@ -98,6 +101,8 @@ object OcpcUnionlogNovel {
          |  where $selectWhere
          |AND
          |  label2=1
+         |AND
+         |  label_type!=12
        """.stripMargin
     println(sqlRequest4)
     val labelData3 = spark.sql(sqlRequest4).distinct()
