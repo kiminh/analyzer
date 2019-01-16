@@ -10,7 +10,7 @@ object HotTopicCtrAuc {
     def main(args: Array[String]): Unit = {
         val date = args(0)
         val spark = SparkSession.builder()
-          .appName(s"HotTopicUnionLog date = $date")
+          .appName(s"HotTopicCtrAuc date = $date")
           .enableHiveSupport()
           .getOrCreate()
         import spark.implicits._
@@ -42,7 +42,7 @@ object HotTopicCtrAuc {
           .collect()
           .map(x => x.getAs[String]("ctr_model_name"))
         for (ctrModelName <- ctrModelNames) {
-            val ctrModelUnion = union.filter(s"ctr_model_name = $ctrModelName")
+            val ctrModelUnion = union.filter(s"ctr_model_name = '$ctrModelName'")
             val ctrModelAuc = CalcMetrics.getAuc(spark,ctrModelUnion)
             DetailAucListBuffer += DetailAuc(tag = "ctr_model_name",
                 name = ctrModelName,
@@ -74,7 +74,7 @@ object HotTopicCtrAuc {
           .collect()
           .map(x => x.getAs[String]("adslot_id"))
         for (adslotId <- adslotIds) {
-            val adslotIdUnion = union.filter(s"adslot_id = $adslotId")
+            val adslotIdUnion = union.filter(s"adslot_id = '$adslotId'")
             val adslotIdAuc = CalcMetrics.getAuc(spark,adslotIdUnion)
             DetailAucListBuffer += DetailAuc(tag = "adslot_id",
                 name = adslotId,
@@ -106,7 +106,7 @@ object HotTopicCtrAuc {
           .collect()
           .map(x => x.getAs[String]("adslot_type"))
         for (adslotType <- adslotTypes) {
-            val adslotIdUnion = union.filter(s"adslot_type = $adslotType")
+            val adslotIdUnion = union.filter(s"adslot_type = '$adslotType'")
             val adslotIdAuc = CalcMetrics.getAuc(spark,adslotIdUnion)
             DetailAucListBuffer += DetailAuc(tag = "adslot_type",
                 name = adslotType,
