@@ -29,7 +29,7 @@ object OcpcCPAhistory {
     val baseData     = getBaseData(            date, hour, spark)
     val qttData      = getQttCPA(    baseData, date, hour, spark)
     val hottopicData = getHotTopicCPA( baseData, date, hour, spark)
-    val adclassData = getAdclassCPA(baseData, date, hour, spark).select("new_adclass", "cpa1" )
+    val adclassData = getAdclassCPA(baseData, date, hour, version, spark).select("new_adclass", "cpa1" )
     val qttAlpha    = checkCPAhistory(qttData, 0.8, "qtt", date, hour, spark )
     val hottopicAlpha  = checkCPAhistory( hottopicData, 0.8, "hottopic", date, hour, spark )
 
@@ -198,7 +198,7 @@ object OcpcCPAhistory {
     resultDF
   }
 
-  def getAdclassCPA(base: DataFrame, date: String, hour: String, spark: SparkSession) = {  // 与cvr2有关的都去掉
+  def getAdclassCPA(base: DataFrame, date: String, hour: String, version: String, spark: SparkSession) = {  // 与cvr2有关的都去掉
     /*
     抽取趣头条广告的行业类别cpa
      */
@@ -210,14 +210,18 @@ object OcpcCPAhistory {
         sum(col("cvr1cnt")).alias("cvr1cnt")  //,
         //        sum(col("cvr2cnt")).alias("cvr2cnt")
       )
-      .withColumn("cpa1", col("cost") * 1.0/col("cvr1cnt") )
+      .withColumn("cpa_adclass", col("cost") * 1.0/col("cvr1cnt") )
+      .withColumn("conversion_goal", lit(1))
+      .select("new_adclass", "cpa_adclass", "conversion_goal")
       //      .withColumn("cpa2", col("cost") * 1.0 / col("cvr2cnt"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
 
-//    val adclassTable = "dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly"
+//    val adclassTable = "dl_cpc.ocpc_cpa_history_adclass_hourly"
     resultDF.write.mode("overwrite").saveAsTable("test.sjq_ocpc_hottopic_cpahistory")
-//    resultDF.write.mode("overwrite").insertInto(adclassTable)
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto(adclassTable)
     resultDF
   }
 
