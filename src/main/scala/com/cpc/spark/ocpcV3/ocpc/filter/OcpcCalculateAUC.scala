@@ -193,6 +193,7 @@ object OcpcCalculateAUC {
     val aucList = new mutable.ListBuffer[(String, Double)]()
     val useridList = data.select("userid").distinct().cache()
     val useridCnt = useridList.count()
+    data.printSchema()
     println(s"################ count of userid list: $useridCnt ################")
 
     //按userid遍历
@@ -205,7 +206,7 @@ object OcpcCalculateAUC {
       val scoreAndLabel = userData
         .select("score", "label")
         .rdd
-        .map(x=>(x.getAs[Long]("score").toDouble, x.getAs[Int]("label").toDouble))
+        .map(x=>(x.getAs[Int]("score").toDouble, x.getAs[Int]("label").toDouble))
 //        .cache()
       val scoreAndLabelNum = scoreAndLabel.count()
       if (scoreAndLabelNum > 0) {
