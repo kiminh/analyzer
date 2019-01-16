@@ -51,7 +51,7 @@ object GetHourReport {
     mariadb_amateur_prop.put("user", conf.getString("mariadb.amateur_write.user"))
     mariadb_amateur_prop.put("password", conf.getString("mariadb.amateur_write.password"))
     mariadb_amateur_prop.put("driver", conf.getString("mariadb.amateur_write.driver"))
-    
+
     val ctx = SparkSession.builder()
       .appName("[cpc] get hour report from %s %s/%s"
         .format(table, date, hour))
@@ -74,7 +74,7 @@ object GetHourReport {
          |      exp_ctr,
          |      if(charge_type=2,"cpm","cpc") as charge_type_cpm_or_cpc,
          |      if(charge_type=2,price/1000,price) as charge_fee
-         |from dl_cpc.%s where `day` = "%s" and `hour` = "%s" and isfill = 1 and adslot_id > 0 and adsrc <= 1;
+         |from dl_cpc.%s where `day` = "%s" and `hour` = "%s" and isfill = 1 and adslot_id > 0 and adsrc <= 1
        """.stripMargin.format(table, date, hour))
       .rdd
       .cache()
@@ -100,7 +100,7 @@ object GetHourReport {
          |       hour,
          |       0 as spam_click
          |from dl_cpc.%s
-         |where `day`="%s" and `hour`="%s" and adslot_type=7 and ideaid>=0 and adsrc <= 1;
+         |where `day`="%s" and `hour`="%s" and adslot_type=7 and ideaid>=0 and adsrc <= 1
         """.stripMargin.format(table, date, hour))
       .map {
         x =>
