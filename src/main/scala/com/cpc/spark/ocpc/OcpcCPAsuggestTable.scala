@@ -58,7 +58,12 @@ object OcpcCPAsuggestTable {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cpa_suggest_hourly")
-//      .write.mode("overwrite").saveAsTable("test.ocpc_cpa_suggest_hourly")
+
+    resultDF
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_cpa_suggest_once")
   }
 
   def updateCPAsuggest(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
