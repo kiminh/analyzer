@@ -41,6 +41,7 @@ object HotTopicCtrAuc {
           .distinct()
           .collect()
           .map(x => x.getAs[String]("ctr_model_name"))
+        println("ctrModelNames 's num is " + ctrModelNames.length)
         for (ctrModelName <- ctrModelNames) {
             val ctrModelUnion = union.filter(s"ctr_model_name = '$ctrModelName'")
             val ctrModelAuc = CalcMetrics.getAuc(spark,ctrModelUnion)
@@ -73,6 +74,7 @@ object HotTopicCtrAuc {
           .distinct()
           .collect()
           .map(x => x.getAs[String]("adslot_id"))
+        println("adslotIds 's num is " + adslotIds.length)
         for (adslotId <- adslotIds) {
             val adslotIdUnion = union.filter(s"adslot_id = '$adslotId'")
             val adslotIdAuc = CalcMetrics.getAuc(spark,adslotIdUnion)
@@ -86,7 +88,7 @@ object HotTopicCtrAuc {
         //分广告主
         val userIdAucList = CalcMetrics.getGauc(spark,union,"userid").rdd
           .map(x => {
-              val userid = x.getAs[String]("userid")
+              val userid = x.getAs[String]("name")
               val auc = x.getAs[Double]("auc")
               val sum = x.getAs[Double]("sum")
               (userid,auc,sum)
@@ -105,6 +107,7 @@ object HotTopicCtrAuc {
           .distinct()
           .collect()
           .map(x => x.getAs[String]("adslot_type"))
+        println("adslotTypes 's num is " + adslotTypes.length)
         for (adslotType <- adslotTypes) {
             val adslotIdUnion = union.filter(s"adslot_type = '$adslotType'")
             val adslotIdAuc = CalcMetrics.getAuc(spark,adslotIdUnion)
