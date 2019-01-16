@@ -118,10 +118,10 @@ object OcpcSampleToPb {
     val data = spark
       .table("dl_cpc.ocpc_cpa_suggest_once")
       .where(s"version='qtt_demo'")
-      .select("ideaid", "conversion_goal", "t", "cpa_sugggest")
+      .select("ideaid", "conversion_goal", "t", "cpa_suggest")
       .groupBy("ideaid", "conversion_goal")
       .agg(avg(col("t")).alias("t"), avg(col("cpa_suggest")).alias("cpa_suggest"))
-      .select("ideaid", "conversion_goal", "t", "cpa_sugggest")
+      .select("ideaid", "conversion_goal", "t", "cpa_suggest")
 
     data
   }
