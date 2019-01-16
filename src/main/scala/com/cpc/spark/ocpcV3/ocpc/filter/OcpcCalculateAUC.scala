@@ -63,20 +63,20 @@ object OcpcCalculateAUC {
 //    val yesterday = calendar.getTime
 //    val date1 = dateConverter.format(yesterday)
 //    val selectCondition1 = s"`date`='$date1'"
-    val selectCondition1 = s"`date`='$date'"
+    val selectCondition1 = s"`dt`='$date'"
     // 取数据: score数据
     val sqlRequest =
       s"""
          |select
          |    searchid,
          |    userid,
-         |    ext['exp_cvr'].int_value as score
-         |from dl_cpc.cpc_union_log
+         |    exp_cvr as score
+         |from dl_cpc.slim_union_log
          |where $selectCondition1
          |and isclick = 1
          |and media_appsid  in ("80000001", "80000002")
          |and ideaid > 0 and adsrc = 1
-         |and userid > 0)
+         |and userid > 0
        """.stripMargin
     println(sqlRequest)
     val scoreData = spark.sql(sqlRequest)
