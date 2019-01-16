@@ -33,36 +33,32 @@ object OcpcCPAsuggestTable {
 
     // 抽取数据，并关联cpasuggest与ocpcflag
     val cpaSuggest = getSuggestTable(date, hour, spark)
-    cpaSuggest.show(10)
     val ocpcData = getOcpcFlag(date, hour, spark)
-    ocpcData.show(10)
     val rawData = cpaSuggest
       .join(ocpcData, Seq("ideaid"), "left_outer")
       .select("ideaid", "unitid", "conversion_goal", "cpa_suggest", "ocpc_flag")
       .na.fill(0, Seq("ocpc_flag"))
       .withColumn("new_cpa", col("cpa_suggest"))
       .select("ideaid", "unitid", "conversion_goal", "new_cpa", "ocpc_flag")
-    rawData.show(10)
 
     // 将cpasuggest与结果表外关联
     val prevTable = getPrevTable(date, hour, spark)
-    prevTable.show(10)
 
     // 根据ocpcflag选择是否更新cpasuggest与t
     val data = prevTable
       .join(rawData, Seq("ideaid", "unitid", "conversion_goal"), "outer")
       .select("ideaid", "unitid", "conversion_goal", "cpa_suggest", "t", "days", "new_cpa", "ocpc_flag")
       .na.fill(0, Seq("t", "days"))
-    data.show(10)
 
     val resultDF = updateCPAsuggest(data, date, hour, spark)
-    resultDF.show(10)
+
     // 重新存取结果表
     resultDF
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-      .write.mode("overwrite").saveAsTable("test.ocpc_cpa_suggest_hourly_bak")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cpa_suggest_hourly")
+//      .write.mode("overwrite").saveAsTable("test.ocpc_cpa_suggest_hourly")
   }
 
   def updateCPAsuggest(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -87,8 +83,6 @@ object OcpcCPAsuggestTable {
     val rawData = spark
       .sql(sqlRequest1)
       .withColumn("new_t", sqrt(col("days")))
-
-    rawData.write.mode("overwrite").saveAsTable("test.ocpc_check_cpasuggest_update20190116")
 
     rawData.createOrReplaceTempView("suggest_table")
 
@@ -214,7 +208,7 @@ object OcpcCPAsuggestTable {
 
     // 抽取数据
     val data = spark
-      .table("test.ocpc_cpa_suggest_hourly")
+      .table("dl_cpc.ocpc_cpa_suggest_hourly")
       .where(selectCondition)
 
     data
