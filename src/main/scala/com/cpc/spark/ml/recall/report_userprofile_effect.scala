@@ -230,15 +230,24 @@ val sqlRequest2 =
 
     spark.sql(
       s"""
-        |select cast(ta.userid as int),cast(ta.tag as int),coalesce(tb.name, 'Unknown') as name,
-        |cast(coalesce(ctrwithtag,0) as int) as ctrwithtag, cast(coalesce(ctrwithouttag,0) as int) as ctrwithouttag,
+        |select
+        |cast(coalesce(ta.userid,0) as int) as userid,
+        |cast(coalesce(ta.tag,0) as int) as tag,
+        |coalesce(tb.name, 'Unknown') as name,
+        |cast(coalesce(ctrwithtag,0) as int) as ctrwithtag,
+        |cast(coalesce(ctrwithouttag,0) as int) as ctrwithouttag,
         |cast(coalesce(ctrwithtag*1.0/(ctrwithouttag + ctrwithtag),0.0) as double) as ctrratio,
         |coalesce(costwithtag,0) as costwithtag, coalesce(costwithouttag,0) as costwithouttag,
         |cast(coalesce(apicvrwithtag,0) as int) as apicvrwithtag, cast(coalesce(cvrwithtag,0) as int) as cvrwithtag,
-        |coalesce(apicvrwithtag*1.0/costwithtag,0.0) as apiroiwithtag, coalesce(cvrwithtag*1.0/costwithtag,0.0) as roiwithtag,
-        |cast(apicvrwithouttag as int), cast(cvrwithouttag as int), apicvrwithouttag*1.0/costwithouttag as apiroiwithouttag, cvrwithouttag*1.0/costwithouttag as roiwithouttag,
+        |coalesce(apicvrwithtag*1.0/costwithtag,0.0) as apiroiwithtag,
+        |coalesce(cvrwithtag*1.0/costwithtag,0.0) as roiwithtag,
+        |cast(coalesce(apicvrwithouttag,0) as int) as apicvrwithouttag,
+        |cast(coalesce(cvrwithouttag,0) as int) as cvrwithouttag,
+        |coalesce(apicvrwithouttag*1.0/costwithouttag,0.0) as apiroiwithouttag,
+        |coalesce(cvrwithouttag*1.0/costwithouttag,0) as roiwithouttag,
         |coalesce((apicvrwithtag*1.0/costwithtag)/(apicvrwithouttag*1.0/costwithouttag),0.0) as apiperformance,
-        |coalesce((cvrwithtag*1.0/costwithtag)/(cvrwithouttag*1.0/costwithouttag),0.0) as performance,to_date('$date') as date from
+        |coalesce((cvrwithtag*1.0/costwithtag)/(cvrwithouttag*1.0/costwithouttag),0.0) as performance,
+        |to_date('$date') as date from
         |(select userid,tag,sum(ctrwithtag) ctrwithtag,sum(ctrwithouttag) ctrwithouttag,sum(costwithtag) costwithtag,
         |sum(costwithouttag) costwithouttag, sum(apicvrwithtag) apicvrwithtag, sum(cvrwithtag) cvrwithtag,
         |sum(apicvrwithouttag) apicvrwithouttag, sum(cvrwithouttag) cvrwithouttag from dl_cpc.cpc_profileTag_report_daily_v1
