@@ -17,11 +17,13 @@ object OcpcCPAsuggestTable {
     /*
     每天根据是否有ocpc的广告记录更新cpc阶段的推荐cpa并存储到pb文件中
     1. 根据日期抽取前一天的推荐cpa
-    2. 从ocpc_union_log_hourly判断是否有ocpc广告记录，并将标签（ocpc_flag）关联到推荐cpa表上
+    2. 从ocpc_union_log_hourly判断是否有ocpc广告的点击记录，并将标签（ocpc_flag）关联到推荐cpa表上
     3. 将推荐cpa表与dl_cpc.ocpc_cpc_cpa_suggest_hourly进行外关联
     4. 根据ocpc_flag判断是否更新cpa_suggest和t
       a. 如果ocpc_flag=1即当天有ocpc广告记录，则更新cpa_suggest和t: t = 1/sqrt(day)
       b. 如果ocpc_flag=0或null，则不更新cpa_suggest和t
+
+    结果表：dl_cpc.ocpc_cpa_suggest_hourly
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
@@ -29,7 +31,137 @@ object OcpcCPAsuggestTable {
     val date = args(0).toString
     val hour = args(1).toString
 
+    // 抽取数据，并关联cpasuggest与ocpcflag
+    val cpaSuggest = getSuggestTable(date, hour, spark)
+    val ocpcData = getOcpcFlag(date, hour, spark)
+    val rawData = cpaSuggest
+      .join(ocpcData, Seq("ideaid"), "left_outer")
+      .select("ideaid", "conversion_goal", "cpa_suggest", "ocpc_flag")
+      .na.fill(0, Seq("ocpc_flag"))
+      .withColumn("new_cpa", col("cpa_suggest"))
+      .select("ideaid", "conversion_goal", "new_cpa", "ocpc_flag")
 
+    // 将cpasuggest与结果表外关联
+    val prevTable = getPrevTable(date, hour, spark)
+
+    // 根据ocpcflag选择是否更新cpasuggest与t
+    val data = prevTable
+      .join(rawData, Seq("ideaid", "conversion_goal"), "left_outer")
+      .select("ideaid", "conversion_goal", "cpa_suggest", "t", "new_cpa", "ocpc_flag")
+
+    // 重新存取结果表
+
+  }
+
+  def getSuggestTable(date: String, hour: String, spark: SparkSession) = {
+    // 计算日期周期
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val end_date = sdf.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(end_date)
+    calendar.add(Calendar.DATE, -1)
+    val dt = calendar.getTime
+    val date1 = sdf.format(dt)
+    val selectCondition = s"`date`='$date1' and `hour` = '23' and version='qtt_demo'"
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  conversion_goal,
+         |  cpa
+         |FROM
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |WHERE
+         |  $selectCondition
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark
+      .sql(sqlRequest)
+      .groupBy("unitid", "conversion_goal")
+      .agg(avg(col("cpa")).alias("cpa_suggest"))
+      .select("unitid", "conversion_goal", "cpa_suggest")
+
+    // 关联到ideaid
+    val relationData = spark
+      .table("dl_cpc.ocpc_ctr_data_hourly")
+      .where(s"`date`='$date1'")
+      .select("ideaid", "unitid")
+      .distinct()
+
+    // 关联
+    val resultDF = data
+      .join(relationData, Seq("unitid"), "left_outer")
+      .select("ideaid", "conversion_goal", "cpa_suggest")
+      .filter("ideaid is not null")
+      .groupBy("ideaid", "conversion_goal")
+      .agg(avg(col("cpa_suggest")).alias("cpa_suggest"))
+      .select("ideaid", "conversion_goal", "cpa_suggest")
+
+    resultDF
+
+  }
+
+  def getOcpcFlag(date: String, hour: String, spark: SparkSession) = {
+    // 计算日期周期
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val end_date = sdf.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(end_date)
+    calendar.add(Calendar.DATE, -1)
+    val dt = calendar.getTime
+    val date1 = sdf.format(dt)
+    val selectCondition = s"`dt`='$date1'"
+
+    // 抽取ocpc_unionlog的数据
+    val data = spark
+      .table("dl_cpc.ocpc_unionlog")
+      .where(selectCondition)
+      .filter("isclick>1 and length(ocpc_log)>0")
+      .withColumn("ocpc_flag", lit(1))
+      .select("ideaid", "ocpc_flag")
+      .distinct()
+
+    data
+  }
+
+  def getPrevTable(date: String, hour: String, spark: SparkSession) = {
+    var hourCnt = 1
+    var prevTable = getPrevByHour(date, hour, hourCnt, spark)
+    while (hourCnt < 11) {
+      val cnt = prevTable.count()
+      println(s"check prevTable Count: $cnt, at hourCnt = $hourCnt")
+      if (cnt > 0) {
+        hourCnt = 11
+      } else {
+        hourCnt += 1
+        prevTable = getPrevByHour(date, hour, hourCnt, spark)
+      }
+    }
+    prevTable
+  }
+
+  def getPrevByHour(date: String, hour: String, hourCnt: Int, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourCnt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = s"`date`='$date1' and `hour` = '$hour1' and version = 'qtt_demo'"
+
+    // 抽取数据
+    val data = spark
+      .table("dl_cpc.ocpc_cpa_suggest_hourly")
+      .where(selectCondition)
+
+    data
   }
 
 }
