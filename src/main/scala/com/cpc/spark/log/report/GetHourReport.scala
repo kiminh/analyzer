@@ -189,12 +189,12 @@ object GetHourReport {
         else "%s.report_media_charge_hourly".format(databaseToGo),
         mariadbProp)
 
-    chargedata.write
+    /*chargedata.write
       .mode(SaveMode.Append)
       .jdbc(mariadb_amateur_url,
         if (if_test == 1) "%s.test_report_media_charge_hourly".format(databaseToGo)
         else "%s.report_media_charge_hourly".format(databaseToGo),
-        mariadb_amateur_prop)
+        mariadb_amateur_prop)*/
 
     println("charge", chargeData.count())
 
@@ -785,7 +785,7 @@ object GetHourReport {
         """.stripMargin.format(tbl, date, hour.toInt)
       stmt.executeUpdate(sql)
 
-      if (tbl == "report_media_charge_hourly") {
+      /*if (tbl == "report_media_charge_hourly") {
         val conn_amateur = DriverManager.getConnection(
           mariadb_amateur_url,
           mariadb_amateur_prop.getProperty("user"),
@@ -793,7 +793,7 @@ object GetHourReport {
         )
         val stmt_amateur = conn_amateur.createStatement()
         stmt_amateur.executeUpdate(sql)
-      }
+      }*/
 
     } catch {
       case e: Exception => println("exception caught: " + e);
