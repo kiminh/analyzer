@@ -33,21 +33,26 @@ object OcpcCPAsuggestTable {
 
     // 抽取数据，并关联cpasuggest与ocpcflag
     val cpaSuggest = getSuggestTable(date, hour, spark)
+    cpaSuggest.show(10)
     val ocpcData = getOcpcFlag(date, hour, spark)
+    ocpcData.show(10)
     val rawData = cpaSuggest
       .join(ocpcData, Seq("ideaid"), "left_outer")
       .select("ideaid", "conversion_goal", "cpa_suggest", "ocpc_flag")
       .na.fill(0, Seq("ocpc_flag"))
       .withColumn("new_cpa", col("cpa_suggest"))
       .select("ideaid", "conversion_goal", "new_cpa", "ocpc_flag")
+    rawData.show(10)
 
     // 将cpasuggest与结果表外关联
     val prevTable = getPrevTable(date, hour, spark)
+    prevTable.show(10)
 
     // 根据ocpcflag选择是否更新cpasuggest与t
     val data = prevTable
       .join(rawData, Seq("ideaid", "conversion_goal"), "left_outer")
       .select("ideaid", "conversion_goal", "cpa_suggest", "t", "days", "new_cpa", "ocpc_flag")
+    data.show(10)
 
     val resultDF = updateCPAsuggest(data, date, hour, spark)
     // 重新存取结果表
