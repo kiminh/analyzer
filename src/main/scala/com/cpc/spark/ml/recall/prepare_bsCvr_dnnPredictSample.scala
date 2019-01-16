@@ -75,9 +75,13 @@ object prepare_bsCvr_dnnPredictSample {
     */
     val table2=
       s"""
-        |(select id as unitid, user_id as userid, plan_id as planid, adslot_type, charge_type from
+        |(select id as unitid, tb.user_id as userid, plan_id as planid, adslot_type, charge_type from
         |(SELECT unit_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by unit_id) ta
-        |join adv.unit tb on ta.unit_id=tb.id where adslot_type=1 and audience_orient>0 order by cnt desc limit 100) temp
+        |join adv.unit tb on ta.unit_id=tb.id
+        |left join (select user_id from adv.look_like where type=2 group by user_id) tc on tb.user_id=tc.user_id
+        |where adslot_type=1 and audience_orient>0 and tc.user_id is null and tb.user_id not in (1522853, 1539639,
+        |1543604, 1559789, 1543604, 1567471, 1524409, 1566975, 1559495, 1562662)
+        | order by cnt desc limit 100) temp
       """.stripMargin
 
     spark.read.jdbc(jdbcUrl, table2, jdbcProp).select("unitid").createTempView("unitid_table")

@@ -69,7 +69,7 @@ object prepare_bsCvr_dnnSample {
     val sql =
       s"""
          |select
-         |  if(iscvr>0, array(1,0), array(0,1)) as label,
+         |  if(iscvr>0 or label3>0, array(1,0), array(0,1)) as label,
          |  media_type, media_appsid as mediaid,
          |  channel,
          |  sdk_type,
@@ -116,10 +116,14 @@ object prepare_bsCvr_dnnSample {
          |  and uid not like "%000000%"
          |  and adslot_type=7
          |) a
-         |inner join
-         |(select searchid, ideaid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
-         |  WHERE `date` = '$day'
+         |left join
+         |(select searchid, ideaid, max(label2) as iscvr from dl_cpc.ml_cvr_feature_v1
+         |  WHERE `date` = '$day' group by searchid,ideaid
          |) b on a.searchid = b.searchid and a.ideaid=b.ideaid
+         |left join
+         |(select searchid,ideaid, max(label) as label3 from dl_cpc.ml_cvr_feature_v2 where date='$day' group by searchid,ideaid) as c
+         |on
+         |a.searchid=c.searchid and a.ideaid=c.ideaid where iscvr is not null or label3 is not null
       """.stripMargin
     println("--------------------------------")
     println(sql)
