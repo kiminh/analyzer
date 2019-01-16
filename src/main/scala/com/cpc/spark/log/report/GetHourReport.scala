@@ -55,7 +55,7 @@ object GetHourReport {
       .appName("[cpc] get hour report from %s %s/%s".format(table, date, hour))
       .enableHiveSupport()
       .getOrCreate()
-    import ctx.implicits._
+    import spark.implicits._
 
 
     // fym: modified sql to adapt to new unionlog table structure.
