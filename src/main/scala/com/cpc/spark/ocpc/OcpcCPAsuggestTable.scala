@@ -126,7 +126,7 @@ object OcpcCPAsuggestTable {
       s"""
          |SELECT
          |  unitid,
-         |  conversion_goal,
+         |  original_conversion,
          |  cpa
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
@@ -136,6 +136,7 @@ object OcpcCPAsuggestTable {
     println(sqlRequest)
     val data = spark
       .sql(sqlRequest)
+      .withColumn("conversion_goal", col("original_conversion"))
       .groupBy("unitid", "conversion_goal")
       .agg(avg(col("cpa")).alias("cpa_suggest"))
       .select("unitid", "conversion_goal", "cpa_suggest")
