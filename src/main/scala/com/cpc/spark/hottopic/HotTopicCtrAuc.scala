@@ -36,6 +36,7 @@ object HotTopicCtrAuc {
 
         val union = spark.sql(sql).cache()
         val DetailAucListBuffer = scala.collection.mutable.ListBuffer[DetailAuc]()
+        val time1=System.currentTimeMillis()
         //分模型
         val ctrModelNames = union.select("ctr_model_name")
           .distinct()
@@ -52,6 +53,8 @@ object HotTopicCtrAuc {
                 media = media,
                 day = date)
         }
+        val time2=System.currentTimeMillis()
+        println("ctrModelNames cost is " + (time2-time1))
         //分行业
         val adclassAucList = CalcMetrics.getGauc(spark,union,"adclass").rdd
           .map(x => {
@@ -69,6 +72,8 @@ object HotTopicCtrAuc {
                 media = media,
                 day = date)
         }
+        val time3=System.currentTimeMillis()
+        println("adclassAucList cost is " + (time3-time2))
         //分栏位
         val adslotIds = union.select("adslot_id")
           .distinct()
@@ -85,6 +90,8 @@ object HotTopicCtrAuc {
                 media = media,
                 day = date)
         }
+        val time4=System.currentTimeMillis()
+        println("adslotIds cost is " + (time4-time3))
         //分广告主
         val userIdAucList = CalcMetrics.getGauc(spark,union,"userid").rdd
           .map(x => {
@@ -102,6 +109,8 @@ object HotTopicCtrAuc {
                 media = media,
                 day = date)
         }
+        val time5=System.currentTimeMillis()
+        println("userIdAucList cost is " + (time5-time4))
         //分栏位类型
         val adslotTypes = union.select("adslot_type")
           .distinct()
@@ -118,6 +127,8 @@ object HotTopicCtrAuc {
                 media = media,
                 day = date)
         }
+        val time6=System.currentTimeMillis()
+        println("adslotTypes cost is " + (time6-time5))
 
         val detailAuc = DetailAucListBuffer.toList.toDF()
 
