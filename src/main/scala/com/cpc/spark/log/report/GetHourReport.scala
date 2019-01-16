@@ -14,7 +14,7 @@ import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
 /**
   * Created by Roy on 2017/4/26.
-  * refined by fym on 2019/01/15 for integration with new base-data routine.
+  * refined by fym on 2019/01/16 for integration with new base-data routine.
   */
 object GetHourReport {
 
@@ -26,10 +26,10 @@ object GetHourReport {
   val mariadb_amateur_prop = new Properties()
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 2) {
+    if (args.length < 4) {
       System.err.println(
         s"""
-           |Usage: GetHourReport <hive_table> <date:string> <hour:string> <databaseToGo:string>
+           |Usage: GetHourReport <hive_table> <date:string> <hour:string> <databaseToGo:string> [<if_test:int>]
            |
         """.stripMargin)
       System.exit(1)
@@ -39,6 +39,7 @@ object GetHourReport {
     val date = args(1)
     val hour = args(2)
     val databaseToGo = args(3)
+    val if_test = if (args.length > 4) args(4).toInt else 0
 
     val conf = ConfigFactory.load()
     mariadbUrl = conf.getString("mariadb.url")
@@ -181,13 +182,15 @@ object GetHourReport {
       .mode(SaveMode.Append)
       .jdbc(
         mariadbUrl,
-        "%s.report_media_charge_hourly".format(databaseToGo),
+        if (if_test == 1) "%s.test_report_media_charge_hourly".format(databaseToGo)
+        else "%s.report_media_charge_hourly".format(databaseToGo),
         mariadbProp)
 
     chargedata.write
       .mode(SaveMode.Append)
       .jdbc(mariadb_amateur_url,
-        "%s.report_media_charge_hourly".format(databaseToGo),
+        if (if_test == 1) "%s.test_report_media_charge_hourly".format(databaseToGo)
+        else "%s.report_media_charge_hourly".format(databaseToGo),
         mariadb_amateur_prop)
 
     println("charge", chargeData.count())
@@ -238,7 +241,8 @@ object GetHourReport {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl,
-        "%s.report_media_geo_hourly".format(databaseToGo),
+        if (if_test == 1) "%s.test_report_media_geo_hourly".format(databaseToGo)
+        else "%s.report_media_geo_hourly".format(databaseToGo),
         mariadbProp)
     println("geo", geoData.count())
 
@@ -287,7 +291,8 @@ object GetHourReport {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl,
-        "%s.report_media_os_hourly".format(databaseToGo),
+        if (if_test == 1) "%s.test_report_media_os_hourly".format(databaseToGo)
+        else "%s.report_media_os_hourly".format(databaseToGo),
         mariadbProp)
     println("os", osData.count())
 
@@ -359,7 +364,8 @@ object GetHourReport {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl,
-        "%s.report_req_dsp_hourly".format(databaseToGo),
+        if (if_test == 1) "%s.test_report_req_dsp_hourly".format(databaseToGo)
+        else "%s.report_req_dsp_hourly".format(databaseToGo),
         mariadbProp)
     println("dsp", dspdata.count())
 
@@ -417,7 +423,8 @@ object GetHourReport {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl,
-        "%s.report_media_fill_hourly".format(databaseToGo),
+        if (if_test == 1) "%s.test_report_media_fill_hourly".format(databaseToGo)
+        else "%s.report_media_fill_hourly".format(databaseToGo),
         mariadbProp)
     println("fill", fillData.count())
 
@@ -488,6 +495,19 @@ object GetHourReport {
 
     // get cvr data
     // fym: cpc_userid_test_dim 是按日分区的 有取不到数据的风险
+
+    val calBeforeYesterDay = Calendar.getInstance()
+    val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd")
+
+    calBeforeYesterDay.set(Calendar.YEAR, date.split("-")(0).toInt)
+    calBeforeYesterDay.set(Calendar.MONTH, date.split("-")(1).toInt - 1)
+    calBeforeYesterDay.set(Calendar.DAY_OF_MONTH, date.split("-")(2).toInt)
+    calBeforeYesterDay.set(Calendar.HOUR_OF_DAY, 0)
+    calBeforeYesterDay.set(Calendar.MINUTE, 0)
+    calBeforeYesterDay.set(Calendar.SECOND, 0)
+    // minus 2 days to get a sure-to-be partition.
+    calBeforeYesterDay.add(Calendar.HOUR_OF_DAY,-48)
+    
     val cvrlog = ctx.sql(
       //      s"""
       //         |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
@@ -512,7 +532,15 @@ object GetHourReport {
          |         ) b
          |    on a.searchid=b.searchid
          |where b.searchid is not null and t2.id is null
-        """.stripMargin.format(date, hour, date, date, hour))
+        """
+          .stripMargin
+          .format(
+            date,
+            hour,
+            partitionPathFormat
+              .format(calBeforeYesterDay.getTime())/*date*/,
+            date,
+            hour))
       .rdd
       .map {
         x =>
@@ -575,7 +603,8 @@ object GetHourReport {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl,
-        "%s.report_ctr_prediction_hourly".format(databaseToGo),
+        if (if_test == 1) "%s.test_report_ctr_prediction_hourly".format(databaseToGo)
+        else "%s.report_ctr_prediction_hourly".format(databaseToGo),
         mariadbProp)
     println("ctr", ctrCvrData.count())
 
@@ -725,7 +754,8 @@ object GetHourReport {
     userCharge.write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl,
-        "%s.report_user_charge_hourly".format(databaseToGo),
+        if (if_test == 1) "%s.test_report_user_charge_hourly".format(databaseToGo)
+        else "%s.report_user_charge_hourly".format(databaseToGo),
         mariadbProp)
 
     println("userCharge", userCharge.count())
