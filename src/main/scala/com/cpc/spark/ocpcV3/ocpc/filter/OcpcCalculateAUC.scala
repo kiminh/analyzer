@@ -206,7 +206,7 @@ object OcpcCalculateAUC {
       val scoreAndLabel = userData
         .select("score", "label")
         .rdd
-        .map(x=>(x.getAs[Int]("score").toDouble, x.getAs[Int]("label").toDouble))
+        .map(x=>(x.getAs[Long]("score").toDouble, x.getAs[Int]("label").toDouble))
 //        .cache()
       val scoreAndLabelNum = scoreAndLabel.count()
       if (scoreAndLabelNum > 0) {
