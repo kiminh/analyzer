@@ -64,7 +64,7 @@ object OcpcMinBid {
       val adslotid = record.getAs[String]("adslotid")
       val city_level = record.getAs[Int]("city_level")
       val adsrc = record.getAs[Int]("adsrc")
-      val ad_second_class = record.getAs[Int]("ad_second_class")
+      val ad_second_class = record.getAs[Long]("ad_second_class").toInt
       val ocpc_flag = record.getAs[Int]("ocpc_flag")
       val min_bid = record.getAs[Double]("min_bid")
 
