@@ -47,9 +47,53 @@ object OcpcCPAsuggestTable {
     // 根据ocpcflag选择是否更新cpasuggest与t
     val data = prevTable
       .join(rawData, Seq("ideaid", "conversion_goal"), "left_outer")
-      .select("ideaid", "conversion_goal", "cpa_suggest", "t", "new_cpa", "ocpc_flag")
+      .select("ideaid", "conversion_goal", "cpa_suggest", "t", "days", "new_cpa", "ocpc_flag")
 
+    val resultDF = updateCPAsuggest(data, date, hour, spark)
     // 重新存取结果表
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_cpa_suggest_hourly")
+  }
+
+  def updateCPAsuggest(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    data.createOrReplaceTempView("base_table")
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  conversion_goal,
+         |  (case when ocpc_flag=1 then cpa_suggest else new_cpa end) as new_cpa_suggest,
+         |  (case when ocpc_flag=1 then days + 1 else 0 end) as days,
+         |  new_cpa,
+         |  cpa_suggest,
+         |  ocpc_flag,
+         |  t
+         |FROM
+         |  base_table
+       """.stripMargin
+    println(sqlRequest1)
+    val rawData = spark
+      .sql(sqlRequest1)
+      .withColumn("new_t", sqrt(col("days")))
+
+    rawData.write.mode("overwrite").saveAsTable("test.ocpc_check_cpasuggest_update20190116")
+
+    rawData.createOrReplaceTempView("suggest_table")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  ideaid,
+         |  conversion_goal,
+         |  new_cpa_suggest as cpa_suggest,
+         |  1.0 / new_t as t
+         |FROM
+         |  suggest_table
+       """.stripMargin
+    println(sqlRequest2)
+    val resultDF = spark.sql(sqlRequest2)
+
+    resultDF
 
   }
 
@@ -158,7 +202,7 @@ object OcpcCPAsuggestTable {
 
     // 抽取数据
     val data = spark
-      .table("dl_cpc.ocpc_cpa_suggest_hourly")
+      .table("test.ocpc_cpa_suggest_hourly")
       .where(selectCondition)
 
     data
