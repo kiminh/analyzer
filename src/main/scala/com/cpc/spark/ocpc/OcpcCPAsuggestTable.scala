@@ -181,35 +181,31 @@ object OcpcCPAsuggestTable {
   }
 
   def getPrevTable(date: String, hour: String, spark: SparkSession) = {
-    var hourCnt = 1
-    var prevTable = getPrevByHour(date, hour, hourCnt, spark)
-    while (hourCnt < 11) {
+    var dayCnt = 1
+    var prevTable = getPrevByHour(date, hour, dayCnt, spark)
+    while (dayCnt < 11) {
       val cnt = prevTable.count()
-      println(s"check prevTable Count: $cnt, at hourCnt = $hourCnt")
+      println(s"check prevTable Count: $cnt, at dayCnt = $dayCnt")
       if (cnt > 0) {
-        hourCnt = 11
+        dayCnt = 11
       } else {
-        hourCnt += 1
-        prevTable = getPrevByHour(date, hour, hourCnt, spark)
+        dayCnt += 1
+        prevTable = getPrevByHour(date, hour, dayCnt, spark)
       }
     }
     prevTable
   }
 
-  def getPrevByHour(date: String, hour: String, hourCnt: Int, spark: SparkSession) = {
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
+  def getPrevByHour(date: String, hour: String, dayCnt: Int, spark: SparkSession) = {
+    // 计算日期周期
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val end_date = sdf.parse(date)
     val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -hourCnt)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = s"`date`='$date1' and `hour` = '$hour1' and version = 'qtt_demo'"
+    calendar.setTime(end_date)
+    calendar.add(Calendar.DATE, -dayCnt)
+    val dt = calendar.getTime
+    val date1 = sdf.format(dt)
+    val selectCondition = s"`date`='$date1' and `hour` = '$hour' and version = 'qtt_demo'"
 
     // 抽取数据
     val data = spark
