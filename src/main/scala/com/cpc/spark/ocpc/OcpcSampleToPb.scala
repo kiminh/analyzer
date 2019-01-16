@@ -96,6 +96,7 @@ object OcpcSampleToPb {
       .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t1", "cpa_suggest1", "t3", "cpa_suggest3")
       .withColumn("t", when(col("cpa_suggest3").isNotNull, col("t3")).otherwise(col("t1")))
       .withColumn("cpa_suggest", when(col("cpa_suggest3").isNotNull, col("cpa_suggest3")).otherwise(col("cpa_suggest1")))
+      .withColumn("t", when(col("cpa_suggest").isNull, 0.0).otherwise(col("t")))
       .na.fill(0.0, Seq("t", "cpa_suggest"))
       .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t", "cpa_suggest")
 
@@ -103,6 +104,7 @@ object OcpcSampleToPb {
       .join(ocpcSuggest2, Seq("ideaid"), "left_outer")
       .withColumn("t", col("t2"))
       .withColumn("cpa_suggest", col("cpa_suggest2"))
+      .withColumn("t", when(col("cpa_suggest").isNull, 0.0).otherwise(col("t")))
       .na.fill(0.0, Seq("t", "cpa_suggest"))
       .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t", "cpa_suggest")
 
@@ -153,8 +155,11 @@ object OcpcSampleToPb {
       val k_value2 = record.getAs[Double]("kvalue2")
       val min_bid = 0.2
       val cpa_suggest = record.getAs[Double]("cpa_suggest")
-      val t_span = 3.0
+      var t_span = record.getAs[Double]("t")
       val cpc_bid = 10
+      if (t_span != 0.0) {
+        t_span = 3.0
+      }
 
       if (cnt % 500 == 0) {
         println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali, cvr3Cnt:$cvr3Cnt, kvalue1:$k_value1, kvalue2:$k_value2, minBid:$min_bid, cpaSuggest:$cpa_suggest, t:$t_span, cpcBid:$cpc_bid")
