@@ -6,7 +6,7 @@ import com.cpc.spark.tools.CalcMetrics
   * @author Jinbao
   * @date 2019/1/16 10:44
   */
-object HotTopicCtrAuc {
+object HotTopicAuc {
     def main(args: Array[String]): Unit = {
         val date = args(0)
         val spark = SparkSession.builder()
