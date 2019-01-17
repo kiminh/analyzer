@@ -66,7 +66,7 @@ object OcpcCalculateAUC {
       .withColumn("version", lit(version))
 //    test.ocpc_check_auc_data20190104_bak
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily_v2")
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_userid_auc_daily")
   }
 
