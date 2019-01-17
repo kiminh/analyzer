@@ -17,7 +17,7 @@ object HotTopicCtrAuc {
         val media = "hot_topic"
         val sql =
             s"""
-               |select exp_ctr as score,
+               |select ext['exp_ctr'].int_value as score,
                |  isclick as label,
                |  ext_string['ctr_model_name'] as ctr_model_name,
                |  cast(ext['adclass'].int_value as string) as adclass,
