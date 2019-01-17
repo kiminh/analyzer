@@ -20,8 +20,8 @@ object OcpcCPAsuggestTable {
     2. 从ocpc_union_log_hourly判断是否有ocpc广告的点击记录，并将标签（ocpc_flag）关联到推荐cpa表上
     3. 将推荐cpa表与dl_cpc.ocpc_cpc_cpa_suggest_hourly进行外关联
     4. 根据ocpc_flag判断是否更新cpa_suggest和t
-      a. 如果ocpc_flag=1即当天有ocpc广告记录，则更新cpa_suggest和t: t = 1/sqrt(day)
-      b. 如果ocpc_flag=0或null，则不更新cpa_suggest和t
+      a. 如果ocpc_flag=1即当天有ocpc广告记录，则更新days: days+1
+      b. 如果ocpc_flag=0或null，则更新cpa_suggest
 
     结果表：dl_cpc.ocpc_cpa_suggest_hourly
      */
