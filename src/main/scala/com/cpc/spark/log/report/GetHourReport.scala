@@ -406,7 +406,7 @@ object GetHourReport {
         if (if_test == 1) "%s.test_report_req_dsp_hourly".format(databaseToGo)
         else "%s.report_req_dsp_hourly".format(databaseToGo),
         mariadbProp)
-    println("dsp", dspdata.count())*/
+    println("dsp", dspdata.count())
 
     val fillLog = spark.sql(
       s"""
@@ -466,7 +466,7 @@ object GetHourReport {
         if (if_test == 1) "%s.test_report_media_fill_hourly".format(databaseToGo)
         else "%s.report_media_fill_hourly".format(databaseToGo),
         mariadbProp)
-    println("fill", fillData.count())
+    println("fill", fillData.count())*/
 
 
     val unionLog_tmp = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0).cache()
