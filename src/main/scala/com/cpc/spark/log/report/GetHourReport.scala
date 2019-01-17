@@ -567,7 +567,7 @@ object GetHourReport {
          |         on a.userid = t2.id
          |    left join
          |        (select *
-         |            from dl_cpc.cpc_basedata_trace_log
+         |            from dl_cpc.cpc_basedata_trace_event
          |            where `day` = "%s" and `hour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid
@@ -585,7 +585,7 @@ object GetHourReport {
       .rdd
       .map {
         x =>
-          (x.getAs[String]("searchid"), Seq(x))
+          (x.getAs[String]("search_id"), Seq(x))
       }
       .reduceByKey(_ ++ _)
       .map {
