@@ -4,6 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSql2
+import com.cpc.spark.ocpcV3.utils
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
@@ -25,9 +26,12 @@ object OcpcCalculateAUC {
 
     // 抽取数据
     val data = getData(conversionGoal, version, date, hour, spark)
-    val tableName1 = "dl_cpc.ocpc_auc_raw_conversiongoal"
+//    val tableName1 = "dl_cpc.ocpc_auc_raw_conversiongoal"
+//    data
+//      .repartition(10).write.mode("overwrite").insertInto(tableName1)
+    val tableName1 = "test.ocpc_auc_raw_conversiongoal"
     data
-      .repartition(10).write.mode("overwrite").insertInto(tableName1)
+      .repartition(10).write.mode("overwrite").saveAsTable(tableName1)
 
     // 设置cv门槛
     var cvThreshold = 100
@@ -38,9 +42,13 @@ object OcpcCalculateAUC {
     }
 
     val processedData = filterData(tableName1, cvThreshold, conversionGoal, version, date, hour, spark)
-    val tableName2 = "dl_cpc.ocpc_auc_filter_conversiongoal"
+//    val tableName2 = "dl_cpc.ocpc_auc_filter_conversiongoal"
+//    processedData
+//      .repartition(10).write.mode("overwrite").insertInto(tableName2)
+    val tableName2 = "test.ocpc_auc_filter_conversiongoal"
     processedData
-      .repartition(10).write.mode("overwrite").insertInto(tableName2)
+      .repartition(10).write.mode("overwrite").saveAsTable(tableName2)
+
     // 计算auc
     val aucData = getAuc(tableName2, conversionGoal, version, date, hour, spark)
     val resultDF = aucData
@@ -48,9 +56,9 @@ object OcpcCalculateAUC {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 //    test.ocpc_check_auc_data20190104_bak
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_userid_auc_daily")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_userid_auc_daily")
   }
 
   def getData(conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
@@ -176,49 +184,69 @@ object OcpcCalculateAUC {
     resultDF
   }
 
-  def getAuc(tableName: String, conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
-    import spark.implicits._
-    //获取模型标签
 
-//    val aucGaucBuffer = ListBuffer[AucGauc.AucGauc]()
+  def getAuc(tableName: String, conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
     val data = spark
       .table(tableName)
       .where(s"`date`='$date' and conversion_goal='$conversionGoal' and version='$version'")
+    import spark.implicits._
 
+    val newData = data
+      .withColumn("score", col("exp_cvr"))
+      .withColumn("label", col("iscvr"))
+      .selectExpr("userid", "cast(score as int) score", "label")
+      .coalesce(400)
 
-    val aucList = new mutable.ListBuffer[(String, Double)]()
-    val useridList = data.select("userid").distinct().cache()
-    val useridCnt = useridList.count()
-    data.printSchema()
-    println(s"################ count of userid list: $useridCnt ################")
-
-    //按userid遍历
-    var cnt = 0
-    for (row <- useridList.collect()) {
-      val userid = row.getAs[Int]("userid").toString
-      println(s"############### userid=$userid, cnt=$cnt ################")
-      cnt += 1
-      val userData = data.filter(s"userid=$userid")
-      val scoreAndLabel = userData
-        .select("score", "label")
-        .rdd
-        .map(x=>(x.getAs[Long]("score").toDouble, x.getAs[Int]("label").toDouble))
-//        .cache()
-      val scoreAndLabelNum = scoreAndLabel.count()
-      if (scoreAndLabelNum > 0) {
-        val metrics = new BinaryClassificationMetrics(scoreAndLabel)
-        val aucROC = metrics.areaUnderROC
-        aucList.append((userid, aucROC))
-
-      }
-//      scoreAndLabel.unpersist()
-    }
-
-    useridList.unpersist()
-    val resultDF = spark
-      .createDataFrame(aucList)
-      .toDF("userid", "auc")
-
+    val result = utils.getGauc(spark, newData, "userid")
+    val resultRDD = result.rdd.map(row => {
+      val identifier = row.getAs[String]("name")
+      val auc = row.getAs[Double]("auc")
+      (identifier, auc)
+    })
+    val resultDF = resultRDD.toDF("userid", "auc")
     resultDF
   }
+
+//  def getAuc(tableName: String, conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
+//    import spark.implicits._
+//    //获取模型标签
+//
+//    val data = spark
+//      .table(tableName)
+//      .where(s"`date`='$date' and conversion_goal='$conversionGoal' and version='$version'")
+//
+//
+//    val aucList = new mutable.ListBuffer[(String, Double)]()
+//    val useridList = data.select("userid").distinct().cache()
+//    val useridCnt = useridList.count()
+//    data.printSchema()
+//    println(s"################ count of userid list: $useridCnt ################")
+//
+//    //按userid遍历
+//    var cnt = 0
+//    for (row <- useridList.collect()) {
+//      val userid = row.getAs[Int]("userid").toString
+//      println(s"############### userid=$userid, cnt=$cnt ################")
+//      cnt += 1
+//      val userData = data.filter(s"userid=$userid")
+//      val scoreAndLabel = userData
+//        .select("score", "label")
+//        .rdd
+//        .map(x=>(x.getAs[Long]("score").toDouble, x.getAs[Int]("label").toDouble))
+//      val scoreAndLabelNum = scoreAndLabel.count()
+//      if (scoreAndLabelNum > 0) {
+//        val metrics = new BinaryClassificationMetrics(scoreAndLabel)
+//        val aucROC = metrics.areaUnderROC
+//        aucList.append((userid, aucROC))
+//
+//      }
+//    }
+//
+//    useridList.unpersist()
+//    val resultDF = spark
+//      .createDataFrame(aucList)
+//      .toDF("userid", "auc")
+//
+//    resultDF
+//  }
 }
