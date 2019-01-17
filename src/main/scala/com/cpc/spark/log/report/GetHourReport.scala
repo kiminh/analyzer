@@ -311,7 +311,7 @@ object GetHourReport {
          |  a.searchid,
          |  a.isclick,
          |  a.isfill,
-         |  a.isshow
+         |  a.isshow,
          |  a.price,
          |  a.media_appsid,
          |  a.adslot_id,
