@@ -33,7 +33,8 @@ object ReportCoinMetrics {
                |        and ext['city_level'].int_value != 1
                |        AND (ext["charge_type"] IS NULL OR ext["charge_type"].int_value = 1)
                |        and userid not in (1001028, 1501875)
-               |        and adslotid not in ("7774304","7636999","7602943","7783705")
+               |        and adslotid not in ("7774304","7636999","7602943","7783705","7443868","7917491","7868332")
+               |        and round(ext["adclass"].int_value/1000) != 132101
                |        and adslot_type in (1,2)
                |    ) a
                |    left outer join
@@ -79,13 +80,13 @@ object ReportCoinMetrics {
                |(
                |    select ideaid,
                |        sum(isshow) as show_num, --展示数
-               |        sum(if (isshow=1 and ext_int['exp_style'] = 510127, 1, 0)) as coin_show_num, --金币展示数
+               |        sum(if (isshow=1 and ext_int['is_auto_coin'] = 1, 1, 0)) as coin_show_num, --金币展示数
                |        sum(isclick) as click_num, --点击数
-               |        sum(if (isclick=1 and ext_int['exp_style'] =510127, 1, 0)) as coin_click_num, --金币点击数
+               |        sum(if (isclick=1 and ext_int['is_auto_coin'] = 1, 1, 0)) as coin_click_num, --金币点击数
                |        sum(case when label2 = 1 then 1 else 0 end) as convert_num, --转化数
-               |        sum(case when label2 = 1 and ext_int['exp_style'] = 510127 then 1 else 0 end) as coin_convert_num, --金币样式转化数
+               |        sum(case when label2 = 1 and ext_int['is_auto_coin'] = 1 then 1 else 0 end) as coin_convert_num, --金币样式转化数
                |        sum(case WHEN isclick = 1 then price else 0 end) as click_total_price, --点击总价
-               |        sum(case WHEN isclick = 1 and ext_int['exp_style'] = 510127 then price else 0 end) as coin_click_total_price, --金币点击总价
+               |        sum(case WHEN isclick = 1 and ext_int['is_auto_coin'] = 1 then price else 0 end) as coin_click_total_price, --金币点击总价
                |        count(distinct uid) as uid_num --用户数
                |    from union
                |    group by ideaid
@@ -144,13 +145,13 @@ object ReportCoinMetrics {
                |(
                |    select userid,
                |        sum(isshow) as show_num, --展示数
-               |        sum(if (isshow=1 and ext_int['exp_style'] = 510127, 1, 0)) as coin_show_num, --金币展示数
+               |        sum(if (isshow=1 and ext_int['is_auto_coin'] = 1, 1, 0)) as coin_show_num, --金币展示数
                |        sum(isclick) as click_num, --点击数
-               |        sum(if (isclick=1 and ext_int['exp_style'] =510127, 1, 0)) as coin_click_num, --金币点击数
+               |        sum(if (isclick=1 and ext_int['is_auto_coin'] = 1, 1, 0)) as coin_click_num, --金币点击数
                |        sum(case when label2 = 1 then 1 else 0 end) as convert_num, --转化数
-               |        sum(case when label2 = 1 and ext_int['exp_style'] = 510127 then 1 else 0 end) as coin_convert_num, --金币样式转化数
+               |        sum(case when label2 = 1 and ext_int['is_auto_coin'] = 1 then 1 else 0 end) as coin_convert_num, --金币样式转化数
                |        sum(case WHEN isclick = 1 then price else 0 end) as click_total_price, --点击总价
-               |        sum(case WHEN isclick = 1 and ext_int['exp_style'] = 510127 then price else 0 end) as coin_click_total_price, --金币点击总价
+               |        sum(case WHEN isclick = 1 and ext_int['is_auto_coin'] = 1 then price else 0 end) as coin_click_total_price, --金币点击总价
                |        count(distinct uid) as uid_num --用户数
                |    from union
                |    group by userid
