@@ -79,7 +79,7 @@ object GetHourReport {
       .rdd
       .cache()
 
-    println(unionLog1.count())
+    println("unionlog1", unionLog1.count())
 
     val unionLog = unionLog1.filter(x => x.getAs[String]("charge_type") == "cpc")
 
@@ -134,7 +134,7 @@ object GetHourReport {
             click = isclick + spam_click,
             charged_click = isclick,
             spam_click = spam_click,
-            date = x.getAs[String]("date"),
+            date = x.getAs[String]("day"),
             hour = x.getAs[String]("hour").toInt
           )
           (charge.key, (charge, charge_fee))
@@ -175,7 +175,7 @@ object GetHourReport {
             click = isclick + spam_click,
             charged_click = isclick,
             spam_click = spam_click,
-            date = x.getAs[String]("date"),
+            date = x.getAs[String]("day"),
             hour = x.getAs[String]("hour").toInt
           )
           (charge.key, (charge, charge_fee))
@@ -237,7 +237,7 @@ object GetHourReport {
             charged_click = isclick,
             spam_click = spam_click,
             cash_cost = realCost,
-            date = x.getAs[String]("date"),
+            date = x.getAs[String]("day"),
             hour = x.getAs[String]("hour").toInt
           )
           (report.key, report)
@@ -287,7 +287,7 @@ object GetHourReport {
             charged_click = isclick,
             spam_click = spam_click,
             cash_cost = realCost,
-            date = x.getAs[String]("date"),
+            date = x.getAs[String]("day"),
             hour = x.getAs[String]("hour").toInt
           )
           (report.key, report)
@@ -308,10 +308,15 @@ object GetHourReport {
     val dsplog = spark.sql(
       s"""
          |select *
-         |from dl_cpc.$table
-         |where day='$date' and hour='$hour'
-      """.stripMargin)
-    //val dsplog = spark.read.parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
+         |from dl_cpc.%s
+         |where day="%s" and hour="%s"
+      """
+        .format(table, date, hour)
+        .stripMargin
+        .trim)
+    println("dsplog", dsplog.count())
+
+    //val dsplog = spark.read.parquet("/warehouse/dl_cpc.db/%s/day=%s/hour=%s".format(table, date, hour))
     val dspdata = dsplog.rdd
       .flatMap {
         x =>
@@ -392,6 +397,7 @@ object GetHourReport {
            """.stripMargin.format(table, date, hour))
       //      .as[UnionLog]
       .rdd
+    println("filllog", fillLog.count())
 
     val fillData = fillLog
       .map {
@@ -419,7 +425,7 @@ object GetHourReport {
             charged_click = isclick,
             spam_click = spam_click,
             cash_cost = realCost,
-            date = x.getAs[String]("date"),
+            date = x.getAs[String]("day"),
             hour = x.getAs[String]("hour").toInt
           )
           (report.key, report)
@@ -496,7 +502,7 @@ object GetHourReport {
             cash_cost = cost,
             click = isclick,
             exp_click = expctr,
-            date = "%s %s:00:00".format(u.getAs[String]("date"), u.getAs[String]("hour"))
+            date = "%s %s:00:00".format(u.getAs[String]("day"), u.getAs[String]("hour"))
           )
           (u.getAs[String]("searchid"), ctr)
       }
@@ -524,15 +530,15 @@ object GetHourReport {
       s"""
          |select a.searchid as search_id
          |       ,a.adslot_type
-         |       ,a.ext["client_type"].string_value as client_type
-         |       ,a.ext["adclass"].int_value  as adclass
-         |       ,a.ext_int['siteid'] as siteid
+         |       ,a.client_type as client_type
+         |       ,a.adclass as adclass
+         |       ,a.siteid as siteid
          |       ,a.adsrc
          |       ,a.interaction
          |       ,b.*
-         |from (select * from dl_cpc.cpc_union_log
+         |from (select * from dl_cpc.%s
          |        where `date` = "%s" and `hour` = "%s" ) a
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
+         |    left join (select id from bdm.cpc_userid_test_dim where day="%s") t2
          |         on a.userid = t2.id
          |    left join
          |        (select *
@@ -544,6 +550,7 @@ object GetHourReport {
         """
           .stripMargin
           .format(
+            table,
             date,
             hour,
             partitionPathFormat
@@ -563,6 +570,8 @@ object GetHourReport {
           (x._1, (convert, convert2))
         //(x._1, convert)
       }
+
+    println("cvrlog", cvrlog.count())
 
     val ctrCvrData = ctrData.leftOuterJoin(cvrlog)
       //.map { x => x._2._1.copy(cvr_num = x._2._2.getOrElse(0)) }
@@ -744,7 +753,7 @@ object GetHourReport {
             //charged_click = isclick,
             //spam_click = spam_click,
             cash_cost = realCost,
-            date = x.getAs[String]("date"),
+            date = x.getAs[String]("day"),
             hour = x.getAs[String]("hour").toInt
           )
           ((charge.user_id, charge.adslot_type), charge)
