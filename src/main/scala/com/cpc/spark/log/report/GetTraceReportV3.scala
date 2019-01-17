@@ -12,9 +12,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import scala.collection.mutable.ListBuffer
 import org.apache.spark.sql.functions._
 
-/**
-  * Created on ${Date} ${Time}
-  */
+
 object GetTraceReportV3 {
   var mariadbUrl = ""
 
@@ -22,7 +20,7 @@ object GetTraceReportV3 {
 
   var mariadb_amateur_url = ""
   val mariadb_amateur_prop = new Properties()
-
+ 
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {
       System.err.println(

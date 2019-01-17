@@ -74,13 +74,9 @@ object OcpcCalculateAUC {
          |from dl_cpc.cpc_union_log
          |where $selectCondition1
          |and isclick = 1
-         |and ext['exp_ctr'].int_value is not null
          |and media_appsid  in ("80000001", "80000002")
-         |and ext['antispam'].int_value = 0
          |and ideaid > 0 and adsrc = 1
-         |and ext_int['dsp_adnum_by_src_1'] > 1
-         |and userid > 0
-         |and (ext['charge_type'] IS NULL OR ext['charge_type'].int_value = 1)
+         |and userid > 0)
        """.stripMargin
     println(sqlRequest)
     val scoreData = spark.sql(sqlRequest)
