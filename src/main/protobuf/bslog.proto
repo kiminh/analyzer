@@ -50,8 +50,8 @@ message SearchCond {
     repeated int32 acc_class = 6;
     repeated int32 black_class = 7;
     repeated int32 acc_user_type = 8;
-    optional MaterialType material_styles = 9;
-    optional Interaction interactions = 10;
+    optional MaterialType material_styles = 9; //弃用
+    optional Interaction interactions = 10; //弃用
     optional int32 slot_width = 11;
     optional int32 slot_height = 12;
     optional string keyword = 13;
@@ -68,6 +68,8 @@ message SearchCond {
     optional int32 network = 24;
     optional bool only_site = 25;
     optional bool direct_uid = 26;
+    repeated MaterialType material_styles_s = 27;
+    repeated Interaction interactions_s = 28;
 };
 
 message GroupStats {
