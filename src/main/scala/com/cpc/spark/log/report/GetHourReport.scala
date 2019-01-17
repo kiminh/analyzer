@@ -466,7 +466,7 @@ object GetHourReport {
         if (if_test == 1) "%s.test_report_media_fill_hourly".format(databaseToGo)
         else "%s.report_media_fill_hourly".format(databaseToGo),
         mariadbProp)
-    println("fill", fillData.count())
+    println("fill", fillData.count())*/
 
 
     val unionLog_tmp = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0).cache()
@@ -649,10 +649,10 @@ object GetHourReport {
         if (if_test == 1) "%s.test_report_ctr_prediction_hourly".format(databaseToGo)
         else "%s.report_ctr_prediction_hourly".format(databaseToGo),
         mariadbProp)
-    println("ctr", ctrCvrData.count())*/
+    println("ctr", ctrCvrData.count())
 
-    /*
-    val cvrlog = spark.sql(
+
+    /*val cvrlog = spark.sql(
       s"""
          |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
         """.stripMargin.format(date, hour))
@@ -744,10 +744,10 @@ object GetHourReport {
     cvrData.write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_cvr_prediction_hourly", mariadbProp)
-    println("cvr", cvrData.count())
-    */
+    println("cvr", cvrData.count())*/
 
-    val userCharge = unionLog
+
+    /*val userCharge = unionLog
       .map {
         x =>
           var isclick = x.getAs[Int]("isclick")
@@ -801,7 +801,7 @@ object GetHourReport {
         else "%s.report_user_charge_hourly".format(databaseToGo),
         mariadbProp)
 
-    println("userCharge", userCharge.count())
+    println("userCharge", userCharge.count())*/
 
 
     unionLog.unpersist()
