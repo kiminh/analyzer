@@ -19,12 +19,12 @@ object HotTopicCtrAuc {
             s"""
                |select exp_ctr as score,
                |  isclick as label,
-               |  ctr_model_name,
-               |  cast(adclass as string) as adclass,
-               |  cast(adslot_id as string) as adslot_id,
+               |  ext_string['ctr_model_name'] as ctr_model_name,
+               |  cast(ext['adclass'].int_value as string) as adclass,
+               |  cast(adslotid as string) as adslot_id,
                |  cast(userid as string) as userid,
                |  cast(adslot_type as string) as adslot_type
-               |from dl_cpc.cpc_basedata_union_events
+               |from dl_cpc.cpc_hot_topic_union_log
                |where day = '$date'
                |and media_appsid in ('80002819')
                |and adsrc = 1
