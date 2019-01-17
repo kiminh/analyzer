@@ -192,7 +192,7 @@ object OcpcCalculateAUC {
     import spark.implicits._
 
     val newData = data
-      .selectExpr("userid", "cast(score as int) score", "label")
+      .selectExpr("cast(userid as string) userid", "cast(score as int) score", "label")
       .coalesce(400)
 
     val result = utils.getGauc(spark, newData, "userid")
