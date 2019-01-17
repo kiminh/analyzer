@@ -31,7 +31,7 @@ object HotTopicCtrAuc {
                |and isshow = 1
                |and ideaid > 0
                |and userid > 0
-               |and (charge_type is null or charge_type = 1)
+               |and (ext["charge_type"] IS NULL OR ext["charge_type"].int_value = 1)
              """.stripMargin
 
         val union = spark.sql(sql).cache()
