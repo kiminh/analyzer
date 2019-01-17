@@ -52,18 +52,18 @@ object GetHourReport {
     mariadb_amateur_prop.put("password", conf.getString("mariadb.amateur_write.password"))
     mariadb_amateur_prop.put("driver", conf.getString("mariadb.amateur_write.driver"))
 
-    val ctx = SparkSession.builder()
+    val spark = SparkSession.builder()
       .appName("[cpc] get hour report from %s %s/%s"
         .format(table, date, hour))
       .enableHiveSupport()
       .getOrCreate()
 
-    import ctx.implicits._
+    import spark.implicits._
 
 
     // fym: modified sql to adapt to new unionlog table structure.
     // note: replace charge_type_cpm_or_cpc on charge_type to remove ambiguity
-    val unionLog1 = ctx.sql(
+    val unionLog1 = spark.sql(
       s"""
          |select *,
          |      spam_click,
@@ -79,10 +79,12 @@ object GetHourReport {
       .rdd
       .cache()
 
+    println(unionLog1.count())
+
     val unionLog = unionLog1.filter(x => x.getAs[String]("charge_type") == "cpc")
 
     // 激励广告数据（只加到charge表）
-    val motive_data = ctx.sql(
+    val motive_data = spark.sql(
       s"""
          |select unitid,
          |       planid,
@@ -138,6 +140,10 @@ object GetHourReport {
           (charge.key, (charge, charge_fee))
       }.rdd
 
+    println("motive", motive_data.count())
+
+
+
     val chargeData = unionLog1
       .filter(_.getAs[Int]("adslot_type") != 7)
       .map {
@@ -180,7 +186,7 @@ object GetHourReport {
 
 
     clearReportHourData("report_media_charge_hourly", date, hour)
-    val chargedata = ctx.createDataFrame(chargeData).persist
+    val chargedata = spark.createDataFrame(chargeData).persist
     chargedata.write
       .mode(SaveMode.Append)
       .jdbc(
@@ -240,7 +246,7 @@ object GetHourReport {
       .map(_._2)
 
     clearReportHourData("report_media_geo_hourly", date, hour)
-    ctx.createDataFrame(geoData)
+    spark.createDataFrame(geoData)
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl,
@@ -290,7 +296,7 @@ object GetHourReport {
       .map(_._2)
 
     clearReportHourData("report_media_os_hourly", date, hour)
-    ctx.createDataFrame(osData)
+    spark.createDataFrame(osData)
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl,
@@ -299,13 +305,13 @@ object GetHourReport {
         mariadbProp)
     println("os", osData.count())
 
-    val dsplog = ctx.sql(
+    val dsplog = spark.sql(
       s"""
          |select *
          |from dl_cpc.$table
          |where day='$date' and hour='$hour'
       """.stripMargin)
-    //val dsplog = ctx.read.parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
+    //val dsplog = spark.read.parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
     val dspdata = dsplog.rdd
       .flatMap {
         x =>
@@ -363,7 +369,7 @@ object GetHourReport {
       .map(x => x._2)
 
     clearReportHourData2("report_req_dsp_hourly", date + " " + hour + ":00:00")
-    ctx.createDataFrame(dspdata)
+    spark.createDataFrame(dspdata)
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl,
@@ -372,7 +378,7 @@ object GetHourReport {
         mariadbProp)
     println("dsp", dspdata.count())
 
-    val fillLog = ctx.sql(
+    val fillLog = spark.sql(
       s"""
          |select *,
          |      spam_click,
@@ -422,7 +428,7 @@ object GetHourReport {
       .map(_._2)
 
     clearReportHourData("report_media_fill_hourly", date, hour)
-    ctx.createDataFrame(fillData)
+    spark.createDataFrame(fillData)
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl,
@@ -511,7 +517,7 @@ object GetHourReport {
     // minus 2 days to get a sure-to-be partition.
     calBeforeYesterDay.add(Calendar.HOUR_OF_DAY,-48)
     
-    val cvrlog = ctx.sql(
+    val cvrlog = spark.sql(
       //      s"""
       //         |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
       //            """.stripMargin.format(date, hour))
@@ -602,7 +608,7 @@ object GetHourReport {
       }
 
     clearReportHourData("report_ctr_prediction_hourly", "%s %s:00:00".format(date, hour), "0")
-    ctx.createDataFrame(ctrCvrData)
+    spark.createDataFrame(ctrCvrData)
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl,
@@ -612,7 +618,7 @@ object GetHourReport {
     println("ctr", ctrCvrData.count())
 
     /*
-    val cvrlog = ctx.sql(
+    val cvrlog = spark.sql(
       s"""
          |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
         """.stripMargin.format(date, hour))
@@ -753,7 +759,7 @@ object GetHourReport {
 
 
     clearReportHourData("report_user_charge_hourly", date, hour)
-    //    val userChargedata = ctx.createDataFrame(userCharge)
+    //    val userChargedata = spark.createDataFrame(userCharge)
     userCharge.write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl,
@@ -766,7 +772,7 @@ object GetHourReport {
 
     unionLog.unpersist()
 
-    ctx.stop()
+    spark.stop()
     println("GetHourReport_done")
   }
 
