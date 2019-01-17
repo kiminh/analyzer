@@ -29,6 +29,9 @@ object OcpcCalculateAUC {
     val tableName1 = "dl_cpc.ocpc_auc_raw_conversiongoal"
     data
       .repartition(10).write.mode("overwrite").insertInto(tableName1)
+
+    // 获取userid与industry之间的关联表
+    val useridIndustry = getIndustry(date, hour, spark)
 //    val tableName1 = "test.ocpc_auc_raw_conversiongoal"
 //    data
 //      .repartition(10).write.mode("overwrite").saveAsTable(tableName1)
@@ -51,14 +54,68 @@ object OcpcCalculateAUC {
 
     // 计算auc
     val aucData = getAuc(tableName1, conversionGoal, version, date, hour, spark)
-    val resultDF = aucData
+    val result = aucData
+      .join(useridIndustry, Seq("userid"), "left_outer")
+      .select("userid", "auc", "industry")
+
+    val resultDF = result
       .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 //    test.ocpc_check_auc_data20190104_bak
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_userid_auc_daily")
+  }
+
+  def getIndustry(date: String, hour: String, spark: SparkSession) = {
+    // 取历史区间: score数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    val selectCondition1 = s"`dt`='$date'"
+    // 取数据: score数据
+    val sqlRequest =
+      s"""
+         |select
+         |    userid,
+         |    industry,
+         |    count(distinct searchid) as cnt
+         |from dl_cpc.slim_union_log
+         |where $selectCondition1
+         |and isclick = 1
+         |and media_appsid  in ("80000001", "80000002")
+         |and ideaid > 0 and adsrc = 1
+         |and userid > 0
+         |group by userid, industry
+       """.stripMargin
+    println(sqlRequest)
+    val rawData = spark.sql(sqlRequest)
+    // todo 临时表
+    rawData.write.mode("overwrite").saveAsTable("test.userid_industry_check20190117")
+
+    rawData.createOrReplaceTempView("raw_data")
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |    t.userid,
+         |    t.industry
+         |FROM
+         |    (SELECT
+         |        userid,
+         |        industry,
+         |        cnt,
+         |        row_number() over(partition by userid order by cnt desc) as seq
+         |    FROM
+         |        raw_data) as t
+         |WHERE
+         |    t.seq=0
+       """.stripMargin
+    println(sqlRequest2)
+    val resultDF = spark.sql(sqlRequest2)
+
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_userid_auc_daily")
   }
 
   def getData(conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
