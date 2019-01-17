@@ -552,7 +552,7 @@ object GetHourReport {
       //      s"""
       //         |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
       //            """.stripMargin.format(date, hour))
-      s"""
+      /*s"""
          |select a.searchid as search_id
          |       ,a.adslot_type
          |       ,a.client_type as client_type
@@ -572,6 +572,9 @@ object GetHourReport {
          |         ) b
          |    on a.searchid=b.searchid
          |where b.searchid is not null and t2.id is null
+        """*/
+        s"""
+         |select * from test.tmp_reporting_600
         """
           .stripMargin
           .format(
