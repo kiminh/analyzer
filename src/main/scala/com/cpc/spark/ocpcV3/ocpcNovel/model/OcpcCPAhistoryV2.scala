@@ -49,7 +49,8 @@ object OcpcCPAhistoryV2 {
     val result = getResult(data, date, hour, spark)
     val tableName = "dl_cpc.ocpcv3_novel_cpa_history_hourly_v2"
 //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cpa_history_hourly_v2")
-    result.write.mode("overwrite").insertInto(tableName)
+    result
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
     println(s"save data into table: $tableName")
 
   }
@@ -228,7 +229,8 @@ object OcpcCPAhistoryV2 {
 
     val adclassTable = "dl_cpc.ocpcv3_cpa_history_v2_adclass_hourly"
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_cpa_history_v2_adclass_hourly")
-    resultDF.write.mode("overwrite").insertInto(adclassTable)
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto(adclassTable)
     resultDF
   }
 
@@ -343,6 +345,7 @@ object OcpcCPAhistoryV2 {
     data
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
+      .repartition(10)
       .write
       .mode("overwrite")
       .insertInto("dl_cpc.ocpcv3_cpa_history_v2_final_middle")

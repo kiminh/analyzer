@@ -71,7 +71,8 @@ object OcpcSampleHourly {
       .withColumn("hour", lit(hour))
 
     // save data
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track")
+    result
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_uid_userid_track")
 
 
 

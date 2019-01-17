@@ -44,6 +44,7 @@ object OcpcPIDwithCPAv3 {
 
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_value_table_hourly")
     resultDF
+      .repartition(10)
       .write
       .mode("overwrite")
       .insertInto("dl_cpc.ocpc_k_value_table_hourly")

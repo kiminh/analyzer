@@ -26,7 +26,8 @@ object OcpcCalculateAUC {
     // 抽取数据
     val data = getData(conversionGoal, version, date, hour, spark)
     val tableName1 = "dl_cpc.ocpc_auc_raw_conversiongoal"
-    data.write.mode("overwrite").insertInto(tableName1)
+    data
+      .repartition(10).write.mode("overwrite").insertInto(tableName1)
 
     // 设置cv门槛
     var cvThreshold = 100
@@ -38,7 +39,8 @@ object OcpcCalculateAUC {
 
     val processedData = filterData(tableName1, cvThreshold, conversionGoal, version, date, hour, spark)
     val tableName2 = "dl_cpc.ocpc_auc_filter_conversiongoal"
-    processedData.write.mode("overwrite").insertInto(tableName2)
+    processedData
+      .repartition(10).write.mode("overwrite").insertInto(tableName2)
     // 计算auc
     val aucData = getAuc(tableName2, conversionGoal, version, date, hour, spark)
     val resultDF = aucData
@@ -46,7 +48,8 @@ object OcpcCalculateAUC {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 //    test.ocpc_check_auc_data20190104_bak
-    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily")
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_userid_auc_daily")
   }
 
@@ -71,13 +74,9 @@ object OcpcCalculateAUC {
          |from dl_cpc.cpc_union_log
          |where $selectCondition1
          |and isclick = 1
-         |and ext['exp_ctr'].int_value is not null
          |and media_appsid  in ("80000001", "80000002")
-         |and ext['antispam'].int_value = 0
          |and ideaid > 0 and adsrc = 1
-         |and ext_int['dsp_adnum_by_src_1'] > 1
-         |and userid > 0
-         |and (ext['charge_type'] IS NULL OR ext['charge_type'].int_value = 1)
+         |and userid > 0)
        """.stripMargin
     println(sqlRequest)
     val scoreData = spark.sql(sqlRequest)

@@ -18,7 +18,8 @@ object OcpcLabelCvr2 {
     // TODO 测试
     val result = getLabelBak(date, hour, spark)
 //    result.write.mode("overwrite").saveAsTable("test.ocpcv3_cvr2_data_hourly")
-    result.write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr2_data_hourly")
+    result
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_cvr2_data_hourly")
     println("successfully save data into table: dl_cpc.ocpcv3_cvr2_data_hourly")
   }
 

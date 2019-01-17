@@ -56,8 +56,10 @@ object OcpcGetPbV2 {
     // 组装数据
     val resultDF = assemblyPBknown(mediaSelection, base, cvrData, initKdata, kvalue, version, date, hour, spark)
 
-    resultDF.write.mode("overwrite").insertInto("test.ocpc_prev_pb_hourly")
-//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_prev_pb_hourly")
+//    resultDF
+    // .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly")
 
     savePbPack(resultDF, version, isKnown)
@@ -102,7 +104,7 @@ object OcpcGetPbV2 {
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -7)
+    calendar.add(Calendar.DATE, -7)
     val startdate = calendar.getTime
     val date1 = dateConverter.format(startdate)
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
@@ -202,7 +204,7 @@ object OcpcGetPbV2 {
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -7)
+    calendar.add(Calendar.DATE, -7)
     val startdate = calendar.getTime
     val date1 = dateConverter.format(startdate)
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
