@@ -84,7 +84,7 @@ object GetHourReport {
     val unionLog = unionLog1.filter(x => x.getAs[String]("charge_type_cpm_or_cpc") == "cpc")
 
     // 激励广告数据（只加到charge表）
-    val motive_data = spark.sql(
+    /*val motive_data = spark.sql(
       s"""
          |select unitid,
          |       planid,
@@ -303,20 +303,38 @@ object GetHourReport {
         if (if_test == 1) "%s.test_report_media_os_hourly".format(databaseToGo)
         else "%s.report_media_os_hourly".format(databaseToGo),
         mariadbProp)
-    println("os", osData.count())
+    println("os", osData.count())*/
 
     val dsplog = spark.sql(
       s"""
-         |select *
-         |from dl_cpc.%s
-         |where day="%s" and hour="%s"
+         |select
+         |  a.searchid,
+         |  a.isclick,
+         |  a.isfill,
+         |  a.isshow
+         |  a.price,
+         |  a.media_appsid,
+         |  a.adslot_id,
+         |  a.adslot_type,
+         |  a.adsrc,
+         |  a.dsp_num,
+         |  b.src as dsp_src,
+         |  b.mediaid as dsp_mediaid,
+         |  b.adslotid as dsp_adslot_id,
+         |  b.adnum as dsp_adnum
+         |from dl_cpc.%s a
+         |left join dl_cpc.%s b on a.searchid=b.searchid and b.day="%s" and b.hour="%s"
+         |where a.day="%s" and a.hour="%s"
       """
-        .format(table, date, hour)
+        .format(
+          table,
+          "cpc_basedata_search_dsp",
+          date,
+          hour)
         .stripMargin
         .trim)
     println("dsplog", dsplog.count())
 
-    //val dsplog = spark.read.parquet("/warehouse/dl_cpc.db/%s/day=%s/hour=%s".format(table, date, hour))
     val dspdata = dsplog.rdd
       .flatMap {
         x =>
@@ -328,25 +346,31 @@ object GetHourReport {
           if (realCost > 10000 || realCost < 0) {
             realCost = 0
           }
+          val adsrc = x.getAs[Int]("adsrc")
+          val dsp_src = x.getAs[Int]("dsp_src")
 
-          val report = ReqDspReport(
+          Seq(ReqDspReport(
             media_id = x.getAs[String]("media_appsid").toInt,
             adslot_id = x.getAs[String]("adslot_id").toInt,
             adslot_type = x.getAs[Int]("adslot_type"),
             request = 1,
-            date = "%s %s:00:00".format(date, hour)
-          )
-          val adsrc = x.getAs[Int]("adsrc").toLong
+            date = "%s %s:00:00".format(date, hour),
+            dsp_src = dsp_src,
+            dsp_mediaid = x.getAs[String]("dsp_mediaid"),
+            dsp_adslot_id = x.getAs[String]("dsp_adslot_id"),
+            dsp_adnum = x.getAs[Int]("dsp_adnum"),
+            fill = if (adsrc == dsp_src) x.getAs[Int]("isfill") else 0,
+            shows = if (adsrc == dsp_src) x.getAs[Int]("isshow") else 0,
+            click = if (adsrc == dsp_src) isclick else 0,
+            cash_cost = if (adsrc == dsp_src) realCost else 0
+          ))
 
-          val extInt = x.getAs[Map[String, Long]]("ext_int")
-          val extString = x.getAs[Map[String, String]]("ext_string")
-          val dspnum = extInt.getOrElse("dsp_num", 0L)
-          var rows = Seq[ReqDspReport]()
-          for (i <- 0 until dspnum.toInt) {
-            val src = extInt.getOrElse("dsp_src_" + i, 0L)
+          /*for (i <- 0 until dspnum.toInt) {
+
+            /*val src = extInt.getOrElse("dsp_src_" + i, 0L)
             val mediaid = extString.getOrElse("dsp_mediaid_" + i, "")
             val adslot_id = extString.getOrElse("dsp_adslot_id_" + i, "")
-            val adnum = extInt.getOrElse("dsp_adnum_" + i, 0L)
+            val adnum = extInt.getOrElse("dsp_adnum_" + i, 0L)*/
 
             val fill = if (src == adsrc) x.getAs[Int]("isfill") else 0
             val shows = if (src == adsrc) x.getAs[Int]("isshow") else 0
@@ -362,8 +386,7 @@ object GetHourReport {
               click = dsp_click,
               cash_cost = dsp_cash
             )
-          }
-          rows
+          }*/
       }
       .map {
         x =>
@@ -782,7 +805,7 @@ object GetHourReport {
     unionLog.unpersist()
 
     spark.stop()
-    println("GetHourReport_done")
+    println("-- successfully generated hourly report --")
   }
 
 
