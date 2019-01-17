@@ -330,6 +330,8 @@ object GetHourReport {
           table,
           "cpc_basedata_search_dsp",
           date,
+          hour,
+          date,
           hour)
         .stripMargin
         .trim)
