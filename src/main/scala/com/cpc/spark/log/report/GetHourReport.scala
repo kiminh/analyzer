@@ -303,7 +303,7 @@ object GetHourReport {
         if (if_test == 1) "%s.test_report_media_os_hourly".format(databaseToGo)
         else "%s.report_media_os_hourly".format(databaseToGo),
         mariadbProp)
-    println("os", osData.count())*/
+    println("os", osData.count())
 
     val dsplog = spark.sql(
       s"""
@@ -406,7 +406,7 @@ object GetHourReport {
         if (if_test == 1) "%s.test_report_req_dsp_hourly".format(databaseToGo)
         else "%s.report_req_dsp_hourly".format(databaseToGo),
         mariadbProp)
-    println("dsp", dspdata.count())
+    println("dsp", dspdata.count())*/
 
     val fillLog = spark.sql(
       s"""
