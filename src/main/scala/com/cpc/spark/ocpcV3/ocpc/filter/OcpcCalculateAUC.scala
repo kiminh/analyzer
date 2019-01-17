@@ -32,7 +32,7 @@ object OcpcCalculateAUC {
 
     // 获取userid与industry之间的关联表
     val useridIndustry = getIndustry(date, hour, spark)
-    useridIndustry.write.mode("overwrite").saveAsTable("test.userid_industry_check20190117a")
+
 //    val tableName1 = "test.ocpc_auc_raw_conversiongoal"
 //    data
 //      .repartition(10).write.mode("overwrite").saveAsTable(tableName1)
@@ -55,7 +55,7 @@ object OcpcCalculateAUC {
 
     // 计算auc
     val aucData = getAuc(tableName1, conversionGoal, version, date, hour, spark)
-    aucData.write.mode("overwrite").saveAsTable("test.userid_industry_check20190117b")
+
     val result = aucData
       .join(useridIndustry, Seq("userid"), "left_outer")
       .select("userid", "auc", "industry")
@@ -65,9 +65,9 @@ object OcpcCalculateAUC {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 //    test.ocpc_check_auc_data20190104_bak
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_userid_auc_daily")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_userid_auc_daily")
   }
 
   def getIndustry(date: String, hour: String, spark: SparkSession) = {
@@ -94,8 +94,6 @@ object OcpcCalculateAUC {
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
-    // todo 临时表
-    rawData.write.mode("overwrite").saveAsTable("test.userid_industry_check20190117")
 
     rawData.createOrReplaceTempView("raw_data")
     val sqlRequest2 =
