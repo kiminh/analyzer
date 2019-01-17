@@ -52,12 +52,13 @@ object GetOcpcLogFromUnionLog {
          |        and adsrc = 1
          |        and adslot_type in (1,2,3)
          |        and ext_int['is_ocpc'] = 1
+         |        and searchid is not null
          |      ) a
          |left join
          |      (
          |        select searchid, label2
          |        from dl_cpc.ml_cvr_feature_v1
-         |        where $timeRange and label_type!=12
+         |        where $timeRange and label_type!=12 and searchid is not null
          |      ) b on a.searchid = b.searchid
       """.stripMargin
 
@@ -70,7 +71,7 @@ object GetOcpcLogFromUnionLog {
 
     val siteFormData = spark
       .table("dl_cpc.site_form_unionlog")
-      .where(s"`date`='$date' and `hour`='$hour' and ideaid!=0")
+      .where(s"`date`='$date' and `hour`='$hour' and ideaid!=0 and searchid is not null")
       .select("ideaid", "searchid")
       .withColumn("iscvr2", lit(1))
       .distinct()
