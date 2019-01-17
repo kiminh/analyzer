@@ -112,7 +112,7 @@ object OcpcCalculateAUC {
          |    FROM
          |        raw_data) as t
          |WHERE
-         |    t.seq=0
+         |    t.seq=1
        """.stripMargin
     println(sqlRequest2)
     val resultDF = spark.sql(sqlRequest2)
