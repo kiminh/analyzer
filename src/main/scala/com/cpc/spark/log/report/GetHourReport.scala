@@ -81,7 +81,7 @@ object GetHourReport {
 
     println("unionlog1", unionLog1.count())
 
-    val unionLog = unionLog1.filter(x => x.getAs[String]("charge_type") == "cpc")
+    val unionLog = unionLog1.filter(x => x.getAs[String]("charge_type_cpm_or_cpc") == "cpc")
 
     // 激励广告数据（只加到charge表）
     val motive_data = spark.sql(
@@ -150,7 +150,7 @@ object GetHourReport {
         x =>
           var isclick = x.getAs[Int]("isclick")
           var spam_click = x.getAs[Int]("spam_click")
-          val chargeType = x.getAs[String]("charge_type")
+          val chargeType = x.getAs[String]("charge_type_cpm_or_cpc")
           var charge_fee = {
             if (isclick > 0 || chargeType == "cpm")
               x.getAs[Double]("charge_fee")
