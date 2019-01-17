@@ -79,19 +79,19 @@ object OcpcSuggestCpa{
 
   def getAUC(version: String, date: String, hour: String, spark: SparkSession) = {
     val auc1Data = spark
-      .table("dl_cpc.ocpc_userid_auc_daily")
+      .table("dl_cpc.ocpc_userid_auc_daily_v2")
       .where(s"`date`='$date' and version='$version' and conversion_goal='1'")
       .select("userid", "auc")
       .withColumn("conversion_goal", lit(1))
 
     val auc2Data = spark
-      .table("dl_cpc.ocpc_userid_auc_daily")
+      .table("dl_cpc.ocpc_userid_auc_daily_v2")
       .where(s"`date`='$date' and version='$version' and conversion_goal='2'")
       .select("userid", "auc")
       .withColumn("conversion_goal", lit(2))
 
     val auc3Data = spark
-      .table("dl_cpc.ocpc_userid_auc_daily")
+      .table("dl_cpc.ocpc_userid_auc_daily_v2")
       .where(s"`date`='$date' and version='$version' and conversion_goal='3'")
       .select("userid", "auc")
       .withColumn("conversion_goal", lit(3))
