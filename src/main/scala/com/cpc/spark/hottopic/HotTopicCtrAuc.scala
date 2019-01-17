@@ -25,7 +25,7 @@ object HotTopicCtrAuc {
                |  cast(userid as string) as userid,
                |  cast(adslot_type as string) as adslot_type
                |from dl_cpc.cpc_hot_topic_union_log
-               |where day = '$date'
+               |where `date` = '$date'
                |and media_appsid in ('80002819')
                |and adsrc = 1
                |and isshow = 1
