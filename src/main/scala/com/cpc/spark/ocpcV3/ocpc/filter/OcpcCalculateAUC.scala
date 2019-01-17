@@ -32,6 +32,7 @@ object OcpcCalculateAUC {
 
     // 获取userid与industry之间的关联表
     val useridIndustry = getIndustry(date, hour, spark)
+    useridIndustry.write.mode("overwrite").saveAsTable("test.userid_industry_check20190117a")
 //    val tableName1 = "test.ocpc_auc_raw_conversiongoal"
 //    data
 //      .repartition(10).write.mode("overwrite").saveAsTable(tableName1)
@@ -54,6 +55,7 @@ object OcpcCalculateAUC {
 
     // 计算auc
     val aucData = getAuc(tableName1, conversionGoal, version, date, hour, spark)
+    aucData.write.mode("overwrite").saveAsTable("test.userid_industry_check20190117b")
     val result = aucData
       .join(useridIndustry, Seq("userid"), "left_outer")
       .select("userid", "auc", "industry")
