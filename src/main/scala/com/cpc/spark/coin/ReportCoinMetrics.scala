@@ -3,7 +3,9 @@ package com.cpc.spark.coin
 import java.util.Properties
 
 import com.cpc.spark.novel.OperateMySQL
+import com.cpc.spark.tools.CalcMetrics
 import com.typesafe.config.ConfigFactory
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
@@ -158,7 +160,20 @@ object ReportCoinMetrics {
                |) c
              """.stripMargin
 
-        val useridMetrics = spark.sql(useridSql).cache()
+        val useridAucListSql =
+            s"""
+               |select userid,ext['exp_cvr'].int_value as score,label2 as label
+               |from union
+             """.stripMargin
+
+        val useridAucList = spark.sql(useridAucListSql)
+
+        val uAuc = CalcMetrics.getGauc(spark,useridAucList,"userid")
+          .select("name","auc")
+          .withColumn("userid",string2Int(col("name")))
+          .drop("name")
+
+        val useridMetrics = spark.sql(useridSql).join(uAuc,Seq("userid"),"left_outer").cache()
 
         useridMetrics.repartition(1)
           .write
@@ -172,4 +187,11 @@ object ReportCoinMetrics {
         println("insert into report2.report_coin_userid_metrics success!")
         useridMetrics.unpersist()
     }
+    def string2Int = udf((name:String) => {
+        name.toInt
+    })
 }
+
+/**
+  * ALTER TABLE dl_cpc.cpc_report_coin_userid_metrics ADD COLUMNS (auc double);
+  */
