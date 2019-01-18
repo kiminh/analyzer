@@ -30,7 +30,7 @@ object prepare_bsCvr_dnnSample {
 
     val sampleDay = getDay(date, 1)
 
-    val Array(traindata, testdata) = train.randomSplit(Array(0.95, 0.05), 1)
+    val Array(traindata, testdata) = train.randomSplit(Array(0.9, 0.1), 1)
 
     traindata.repartition(1000)
       .write
