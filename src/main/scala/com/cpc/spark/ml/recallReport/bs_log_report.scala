@@ -54,6 +54,9 @@ object bs_log_report {
           val matched_idea_num = up.getMatchedIdeaNum
           val rnd_idea_num = up.getRndIdeaNum
           val adslot_type = up.getSearchCond.getAdSlotStyle
+          val req_io_time = up.getReqIoTime
+          val process_time = up.getProcessTime
+
           BsLog1(
             searchid=searchid,
             involved_group_num=involved_group_num.toInt,
@@ -78,7 +81,9 @@ object bs_log_report {
             matched_idea_num=matched_idea_num.toInt,
             rnd_idea_num=rnd_idea_num.toInt,
             exptags=exptags.substring(1, exptags.length()-1),
-            adslot_type=adslot_type.toString
+            adslot_type=adslot_type.toString,
+            req_io_time=req_io_time.toInt,
+            process_time=process_time.toInt
           )
         } catch {
           case ex: Exception => excp.add(1); null
@@ -88,7 +93,7 @@ object bs_log_report {
       "group_p_l_num", "group_dislike_num", "group_interest_num", "group_student_num", "group_acc_user_type_num", "group_new_user_num",
       "group_content_category_num", "group_black_install_pkg_num", "group_white_install_pkg_num", "group_show_count_num",
       "group_click_count_num","matched_group_num", "len_groups",
-      "involved_idea_num", "matched_idea_num", "rnd_idea_num", "exptags", "adslot_type")
+      "involved_idea_num", "matched_idea_num", "rnd_idea_num", "exptags", "adslot_type", "req_io_time", "process_time")
     pbData.createOrReplaceTempView("temp_table")
     println(excp.value)
     val insertIntoTable =
@@ -152,6 +157,8 @@ object bs_log_report {
                      var matched_idea_num:Int=0,
                      var rnd_idea_num:Int=0,
                      var exptags: String="",
-                     var adslot_type: String=""
+                     var adslot_type: String="",
+                     var req_io_time: Int=0,
+                     var process_time: Int=0
                    )
 }
