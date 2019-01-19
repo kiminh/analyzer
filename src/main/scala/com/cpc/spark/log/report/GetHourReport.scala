@@ -84,7 +84,7 @@ object GetHourReport {
     val unionLog = unionLog1.filter(x => x.getAs[String]("charge_type_cpm_or_cpc") == "cpc")
 
     // 激励广告数据（只加到charge表）
-    /*val motive_data = spark.sql(
+    val motive_data = spark.sql(
       s"""
          |select unitid,
          |       planid,
@@ -466,13 +466,13 @@ object GetHourReport {
         if (if_test == 1) "%s.test_report_media_fill_hourly".format(databaseToGo)
         else "%s.report_media_fill_hourly".format(databaseToGo),
         mariadbProp)
-    println("fill", fillData.count())*/
+    println("fill", fillData.count())
 
 
     val unionLog_tmp = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0).cache()
 
     //取展示top10 的adclass
-    val topAdclass = unionLog_tmp
+    /*val topAdclass = unionLog_tmp
       .map(x => (x.getAs[Int]("adclass"), 1))
       .reduceByKey(_ + _)
       .sortBy(x => x._2, false)
@@ -652,7 +652,7 @@ object GetHourReport {
         if (if_test == 1) "%s.test_report_ctr_prediction_hourly".format(databaseToGo)
         else "%s.report_ctr_prediction_hourly".format(databaseToGo),
         mariadbProp)
-    println("ctr", ctrCvrData.count())
+    println("ctr", ctrCvrData.count())*/
 
 
     /*val cvrlog = spark.sql(
@@ -750,7 +750,7 @@ object GetHourReport {
     println("cvr", cvrData.count())*/
 
 
-    /*val userCharge = unionLog
+    val userCharge = unionLog
       .map {
         x =>
           var isclick = x.getAs[Int]("isclick")
@@ -804,7 +804,7 @@ object GetHourReport {
         else "%s.report_user_charge_hourly".format(databaseToGo),
         mariadbProp)
 
-    println("userCharge", userCharge.count())*/
+    println("userCharge", userCharge.count())
 
 
     unionLog.unpersist()
