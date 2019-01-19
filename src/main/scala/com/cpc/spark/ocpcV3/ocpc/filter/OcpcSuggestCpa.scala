@@ -73,25 +73,25 @@ object OcpcSuggestCpa{
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly")
     resultDF
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
-    println("successfully save data into table: test.ocpc_suggest_cpa_recommend_hourly")
+    println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
 
   def getAUC(version: String, date: String, hour: String, spark: SparkSession) = {
     val auc1Data = spark
-      .table("dl_cpc.ocpc_userid_auc_daily")
+      .table("dl_cpc.ocpc_userid_auc_daily_v2")
       .where(s"`date`='$date' and version='$version' and conversion_goal='1'")
       .select("userid", "auc")
       .withColumn("conversion_goal", lit(1))
 
     val auc2Data = spark
-      .table("dl_cpc.ocpc_userid_auc_daily")
+      .table("dl_cpc.ocpc_userid_auc_daily_v2")
       .where(s"`date`='$date' and version='$version' and conversion_goal='2'")
       .select("userid", "auc")
       .withColumn("conversion_goal", lit(2))
 
     val auc3Data = spark
-      .table("dl_cpc.ocpc_userid_auc_daily")
+      .table("dl_cpc.ocpc_userid_auc_daily_v2")
       .where(s"`date`='$date' and version='$version' and conversion_goal='3'")
       .select("userid", "auc")
       .withColumn("conversion_goal", lit(3))
@@ -202,7 +202,6 @@ object OcpcSuggestCpa{
       .groupBy("unitid", "adclass")
       .agg(sum(col(cvrType + "_cnt")).alias("cvrcnt"))
       .select("unitid", "adclass", "cvrcnt")
-      .filter("cvrcnt>30 and cvrcnt is not null")
 
 
     resultDF
@@ -211,7 +210,7 @@ object OcpcSuggestCpa{
   def calculateCPA(costData: DataFrame, cvrData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val resultDF = costData
       .join(cvrData, Seq("unitid", "adclass"), "inner")
-      .filter("cvrcnt is not null and cvrcnt>0")
+      .na.fill(0, Seq("cvrcnt"))
       .withColumn("post_ctr", col("click") * 1.0 / col("show"))
       .withColumn("acp", col("cost") * 1.0 / col("click"))
       .withColumn("acb", col("click_bid_sum") * 1.0 / col("click"))
@@ -222,7 +221,6 @@ object OcpcSuggestCpa{
       .withColumn("cal_bid", col("cost") * 1.0 / col("cvrcnt") * (col("click_pcvr_sum") * 1.0 / col("click")))
       .withColumn("pcoc", col("click_pcvr_sum") * 1.0 / col("cvrcnt"))
       .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "cal_bid", "pcoc")
-      .filter("cpa is not null and cpa > 0")
 
     resultDF
   }

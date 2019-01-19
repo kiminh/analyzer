@@ -1,7 +1,7 @@
 package com.cpc.spark.ocpcV3.ocpc.data
 
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
 object OcpcFilterUnionLog {
@@ -12,15 +12,56 @@ object OcpcFilterUnionLog {
     val date = args(0).toString
     val hour = args(1).toString
 
-    val result = getOcpcUnionlog(date, hour, spark)
-//    result
-//      .repartition(100).write.mode("overwrite").saveAsTable("test.filtered_union_log_hourly")
-    result
+    val data = getUnionlog(date, hour, spark)
+
+    data
       .repartition(100).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_hourly")
     println("successfully save data into table: dl_cpc.filtered_union_log_hourly")
+
+    // 按需求增加需要进行抽取的数据表
+    val bidData = getBidUnionlog(data, date, hour, spark)
+    bidData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_bid_hourly")
+
   }
 
-  def getOcpcUnionlog(date: String, hour: String, spark: SparkSession) = {
+  def getBidUnionlog(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val data = rawData.withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+
+    data.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  ideaid,
+         |  unitid,
+         |  planid,
+         |  userid,
+         |  uid,
+         |  adslotid,
+         |  adslot_type,
+         |  adtype,
+         |  adsrc,
+         |  exptags,
+         |  media_type,
+         |  media_appsid,
+         |  bid as original_bid,
+         |  (case when length(ocpc_log)>0 then cast(ocpc_log_dict['dynamicbid'] as int)
+         |        else bid end) as bid,
+         |  ocpc_log
+         |FROM
+         |  base_data
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+
+    resultDF
+  }
+
+
+  def getUnionlog(date: String, hour: String, spark: SparkSession) = {
     var selectWhere = s"(`date`='$date' and hour = '$hour')"
 
     // 拿到基础数据
