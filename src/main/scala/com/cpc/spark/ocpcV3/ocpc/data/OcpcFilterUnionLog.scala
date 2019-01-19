@@ -23,7 +23,7 @@ object OcpcFilterUnionLog {
     bidData
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-    bidData.repartition(5).write.mode("overwrite").saveAsTable("test.check_bid_20190119")
+      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_bid_hourly")
 
   }
 
