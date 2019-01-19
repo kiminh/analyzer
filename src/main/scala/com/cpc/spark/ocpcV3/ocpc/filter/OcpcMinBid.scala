@@ -84,6 +84,56 @@ object OcpcMinBid {
       list += currentItem
 
     }
+//    17 7732880 1 2 100101 0 0
+//    17 7732880 1 2 100102 0 0
+//    18 7732880 1 2 100101 0 0
+//    18 7732880 1 2 100102 0 0
+    val currentItem1 = SingleBidv2(
+      hour = 17,
+      adslotid = "7732880",
+      cityLevel = 1,
+      adsrc = 2,
+      adSecondClass = 100101,
+      isOcpc = 0,
+      minBid = 0.0
+    )
+    list += currentItem1
+
+    val currentItem2 = SingleBidv2(
+      hour = 17,
+      adslotid = "7732880",
+      cityLevel = 1,
+      adsrc = 2,
+      adSecondClass = 100102,
+      isOcpc = 0,
+      minBid = 0.0
+    )
+    list += currentItem2
+
+    val currentItem3 = SingleBidv2(
+      hour = 18,
+      adslotid = "7732880",
+      cityLevel = 1,
+      adsrc = 2,
+      adSecondClass = 100101,
+      isOcpc = 0,
+      minBid = 0.0
+    )
+    list += currentItem3
+
+    val currentItem4 = SingleBidv2(
+      hour = 18,
+      adslotid = "7732880",
+      cityLevel = 1,
+      adsrc = 2,
+      adSecondClass = 100102,
+      isOcpc = 0,
+      minBid = 0.0
+    )
+    list += currentItem4
+
+
+
     val result = list.toArray[SingleBidv2]
     val adRecordList = BidListV2(
       adrecord = result
