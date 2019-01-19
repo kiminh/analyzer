@@ -16,7 +16,7 @@ object unit_auc {
     val cal1 = Calendar.getInstance()
     cal1.add(Calendar.DATE, -1)
     val tardate = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    val testset_result = spark.read.parquet("hdfs://emr-cluster/user/cpc/result/cvrTrain")
+    val testset_result = spark.read.parquet("hdfs://emr-cluster/user/cpc/result/cvrtrain")
     val DetailAucListBuffer = scala.collection.mutable.ListBuffer[DetailAuc]()
     val id_tag = "unitid"
 
