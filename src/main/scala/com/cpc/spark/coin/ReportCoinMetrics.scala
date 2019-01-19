@@ -23,10 +23,18 @@ object ReportCoinMetrics {
 
         val unionSql =
             s"""
-               |select *
+               |select ideaid,
+               |    isshow,
+               |    ext_int,
+               |    isclick,
+               |    label2,
+               |    price,
+               |    uid,
+               |    userid,
+               |    ext
                |from
                |    (
-               |        select *
+               |        select ideaid,isshow,ext_int,isclick,price,uid,userid
                |        from dl_cpc.cpc_union_log
                |        where `date`='$date'
                |        and media_appsid  in ("80000001", "80000002") and isshow = 1
@@ -162,7 +170,7 @@ object ReportCoinMetrics {
 
         val useridAucListSql =
             s"""
-               |select userid,ext['exp_cvr'].int_value as score,label2 as label
+               |select cast(userid as string) as userid,ext['exp_cvr'].int_value as score,label2 as label
                |from union
              """.stripMargin
 
