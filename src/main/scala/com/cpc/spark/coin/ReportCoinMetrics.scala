@@ -34,7 +34,7 @@ object ReportCoinMetrics {
                |    ext
                |from
                |    (
-               |        select searchid,ideaid,isshow,ext_int,isclick,price,uid,userid
+               |        select searchid,ideaid,isshow,ext_int,isclick,price,uid,userid,ext
                |        from dl_cpc.cpc_union_log
                |        where `date`='$date'
                |        and media_appsid  in ("80000001", "80000002") and isshow = 1
