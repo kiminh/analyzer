@@ -173,7 +173,11 @@ object ReportCoinMetrics {
           .withColumn("userid",string2Int(col("name")))
           .drop("name")
 
-        val useridMetrics = spark.sql(useridSql).join(uAuc,Seq("userid"),"left_outer").cache()
+        val useridMetrics = spark.sql(useridSql).join(uAuc,Seq("userid"),"left_outer")
+          .select("userid","show_num","coin_show_num","coin_show_rate","click_num","coin_click_num","coin_click_rate"
+          ,"ctr","coin_ctr","convert_num","coin_convert_num","coin_convert_rate","cvr","coin_cvr","click_total_price",
+          "coin_click_total_price","uid_num","cpm","acp","arpu","aspu","acpu","auc","date")
+          .cache()
 
         useridMetrics.show(20)
 
