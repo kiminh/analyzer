@@ -181,7 +181,14 @@ object ReportCoinMetrics {
           .withColumn("userid",string2Int(col("name")))
           .drop("name")
 
-        val useridMetrics = spark.sql(useridSql).join(uAuc,Seq("userid"),"left_outer")
+        uAuc.show(20)
+        println("uAuc 's count is " + uAuc.count())
+
+        val useridOtherMetrics = spark.sql(useridSql)
+        useridOtherMetrics.show(10)
+        println("useridOtherMetrics 's count is " + useridOtherMetrics.count())
+        val useridMetrics = useridOtherMetrics
+          .join(uAuc,Seq("userid"),"left_outer")
           .select("userid","show_num","coin_show_num","coin_show_rate","click_num","coin_click_num","coin_click_rate"
           ,"ctr","coin_ctr","convert_num","coin_convert_num","coin_convert_rate","cvr","coin_cvr","click_total_price",
           "coin_click_total_price","uid_num","cpm","acp","arpu","aspu","acpu","auc","date")
@@ -189,16 +196,16 @@ object ReportCoinMetrics {
 
         useridMetrics.show(20)
 
-        useridMetrics.repartition(1)
-          .write
-          .mode("overwrite")
-          .insertInto("dl_cpc.cpc_report_coin_userid_metrics")
-
-        val useridMetricsDelSql = s"delete from report2.report_coin_userid_metrics where `date` = '$date'"
-        OperateMySQL.del(useridMetricsDelSql)
-        useridMetrics.write.mode(SaveMode.Append)
-          .jdbc(mariadb_write_url, "report2.report_coin_userid_metrics", mariadb_write_prop)
-        println("insert into report2.report_coin_userid_metrics success!")
+//        useridMetrics.repartition(1)
+//          .write
+//          .mode("overwrite")
+//          .insertInto("dl_cpc.cpc_report_coin_userid_metrics")
+//
+//        val useridMetricsDelSql = s"delete from report2.report_coin_userid_metrics where `date` = '$date'"
+//        OperateMySQL.del(useridMetricsDelSql)
+//        useridMetrics.write.mode(SaveMode.Append)
+//          .jdbc(mariadb_write_url, "report2.report_coin_userid_metrics", mariadb_write_prop)
+//        println("insert into report2.report_coin_userid_metrics success!")
         useridMetrics.unpersist()
     }
     def string2Int = udf((name:String) => {
