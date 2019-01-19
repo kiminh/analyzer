@@ -1,10 +1,10 @@
 package com.cpc.spark.ocpc
 
-import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 
-object OcpcHourlyReport {
+object OcpcHourlyReportV2 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession
       .builder()
@@ -58,6 +58,59 @@ object OcpcHourlyReport {
     val ocpcStep2 = spark.sql(sqlRequest2)
     ocpcStep2.write.mode("overwrite").saveAsTable("test.ocpc_hourly_step2_percent")
 
+    // 增加cvr1和cvr3
+    val sqlRequestCvr1 =
+      s"""
+         |SELECT
+         |  a.searchid,
+         |  a.ideaid,
+         |  b.label2 as label
+         |FROM
+         |  test.ocpc_hourly_complete_data as a
+         |LEFT JOIN
+         |  (SELECT
+         |    searchid,
+         |    label2
+         |  FROM
+         |    dl_cpc.ml_cvr_feature_v1
+         |  WHERE
+         |    `date`='$date' and `hour` <= '$hour'
+         |  AND
+         |    label_type!=12
+         |  GROUP BY searchid, label2) as b
+         |ON
+         |  a.searchid=b.searchid
+       """.stripMargin
+    println(sqlRequestCvr1)
+    val label1DataRaw = spark.sql(sqlRequestCvr1).groupBy("ideaid").agg(sum(col("label")).alias("cvr_cnt"))
+    label1DataRaw.write.mode("overwrite").saveAsTable("test.ocpc_label1_hourly_data_raw")
+
+
+    val sqlRequestCvr3 =
+      s"""
+         |SELECT
+         |  a.searchid,
+         |  a.ideaid,
+         |  b.label
+         |FROM
+         |  test.ocpc_hourly_complete_data as a
+         |LEFT JOIN
+         |  (SELECT
+         |    searchid,
+         |    1 as label
+         |  FROM
+         |    dl_cpc.site_form_unionlog
+         |  WHERE
+         |    `date`='$date' and `hour` <= '$hour'
+         |  AND
+         |    ideaid>0
+         |  GROUP BY searchid) as b
+         |ON
+         |  a.searchid=b.searchid
+       """.stripMargin
+    println(sqlRequestCvr3)
+    val label3DataRaw = spark.sql(sqlRequestCvr3).groupBy("ideaid").agg(sum(col("label")).alias("cvr_cnt"))
+    label3DataRaw.write.mode("overwrite").saveAsTable("test.ocpc_label3_hourly_data_raw")
 
     val sqlRequest3 =
       s"""
@@ -73,8 +126,8 @@ object OcpcHourlyReport {
          |GROUP BY ideaid
        """.stripMargin
 
-    val label3Data = spark.sql(sqlRequest3)
-    label3Data.write.mode("overwrite").saveAsTable("test.ocpc_label3_hourly_data")
+    val label2DataRaw = spark.sql(sqlRequest3)
+    label2DataRaw.write.mode("overwrite").saveAsTable("test.ocpc_label2_hourly_data_raw")
 
 
     val sqlRequest4 =
@@ -93,8 +146,8 @@ object OcpcHourlyReport {
          |GROUP BY ideaid
        """.stripMargin
 
-    val label2Data = spark.sql(sqlRequest4)
-    label2Data.write.mode("overwrite").saveAsTable("test.ocpc_label2_hourly_data")
+    val costData = spark.sql(sqlRequest4)
+    costData.write.mode("overwrite").saveAsTable("test.ocpc_cost_hourly_data")
 
     val sqlRequest5 =
       s"""
@@ -172,7 +225,7 @@ object OcpcHourlyReport {
          |ON
          |    a.ideaid=b.ideaid
          |INNER JOIN
-         |    test.ocpc_label3_hourly_data as c
+         |    test.ocpc_label2_hourly_data as c
          |ON
          |    a.ideaid=c.ideaid
          |INNER JOIN
