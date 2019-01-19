@@ -49,7 +49,8 @@ object OcpcFilterUnionLog {
          |  media_appsid,
          |  bid as original_bid,
          |  (case when length(ocpc_log)>0 then cast(ocpc_log_dict['dynamicbid'] as int)
-         |        else bid end) as bid
+         |        else bid end) as bid,
+         |  ocpc_log
          |FROM
          |  base_data
        """.stripMargin
