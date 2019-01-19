@@ -513,7 +513,7 @@ object OcpcSampleToPb {
     val hour1 = tmpDateValue(1)
 
     val prevK = spark
-      .table("dl_cpc.ocpc_pb_result_table_v6")
+      .table("dl_cpc.ocpc_pb_result_table_v7")
       .where(s"`date`='$date1' and `hour`='$hour1'")
       .withColumn("prev_k2", col("kvalue1"))
       .withColumn("prev_k3", col("kvalue2"))
