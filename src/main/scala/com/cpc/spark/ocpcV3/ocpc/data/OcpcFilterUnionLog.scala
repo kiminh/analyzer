@@ -14,9 +14,9 @@ object OcpcFilterUnionLog {
 
     val data = getUnionlog(date, hour, spark)
 
-    data
-      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_hourly")
-    println("successfully save data into table: dl_cpc.filtered_union_log_hourly")
+//    data
+//      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_hourly")
+//    println("successfully save data into table: dl_cpc.filtered_union_log_hourly")
 
     // 按需求增加需要进行抽取的数据表
     val bidData = getBidUnionlog(data, date, hour, spark)
