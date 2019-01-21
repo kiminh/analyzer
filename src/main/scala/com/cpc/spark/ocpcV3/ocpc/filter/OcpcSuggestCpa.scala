@@ -3,8 +3,8 @@ package com.cpc.spark.ocpcV3.ocpc.filter
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.common.Utils.getTimeRangeSql
-import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.{getTimeRangeSql2, getTimeRangeSqlCondition}
+import com.cpc.spark.common.Utils._
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
@@ -95,7 +95,7 @@ object OcpcSuggestCpa{
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
 
     val sqlRequest =
       s"""
@@ -118,14 +118,14 @@ object OcpcSuggestCpa{
     val sqlRequest2 =
       s"""
          |SELECT
-         |    t.userid,
+         |    t.unitid,
          |    t.industry
          |FROM
          |    (SELECT
-         |        userid,
+         |        unitid,
          |        industry,
          |        cnt,
-         |        row_number() over(partition by userid order by cnt desc) as seq
+         |        row_number() over(partition by unitid order by cnt desc) as seq
          |    FROM
          |        raw_data) as t
          |WHERE
