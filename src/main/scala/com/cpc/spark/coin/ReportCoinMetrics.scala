@@ -183,6 +183,7 @@ object ReportCoinMetrics {
           .withColumn("userid",string2Int(col("name")))
           .drop("name")
           .select("userid","auc")
+          .cache()
         //uAuc.write.mode("overwrite").saveAsTable("test.uauc")
         uAuc.createOrReplaceTempView("uauc")
 
