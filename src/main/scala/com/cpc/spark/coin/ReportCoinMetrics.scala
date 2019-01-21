@@ -189,7 +189,7 @@ object ReportCoinMetrics {
         val useridSql =
             s"""
                |select
-               |    userid,
+               |    c.userid as userid,
                |    show_num,
                |    coin_show_num,
                |    if (show_num!=0,round(coin_show_num/show_num, 6),0) as coin_show_rate,
