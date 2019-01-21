@@ -58,20 +58,17 @@ object OcpcSampleToPb {
     val resultDF = getCPCbid(result3, date, hour, spark)
 
 
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
-
-//    result2.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
-//    result2
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v6")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_current_pb20181226")
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190121")
 
     savePbPack(resultDF)
 
   }
 
   def getCPCbid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    import spark.implicits._
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -83,14 +80,45 @@ object OcpcSampleToPb {
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
     println(selectCondition)
 
-    val bidData = spark
+    val bidData1 = spark
       .table("dl_cpc.filtered_union_log_bid_hourly")
       .where(selectCondition)
-      .filter(s"media_appsid in ('80001098','80001292','80000001', '80000002', '80002819')")
+      .filter(s"media_appsid in ('80000001', '80000002')")
+      .filter(s"length(ocpc_log) > 0")
       .select("ideaid", "bid")
       .groupBy("ideaid")
-      .agg(avg(col("bid")).alias("cpc_bid"))
+      .agg(avg(col("bid")).alias("cpc_bid1"))
+      .select("ideaid", "cpc_bid1")
+
+    // 读取实验ideaid列表
+    val filename = "/user/cpc/wangjun/ocpc_bid_ideas.txt"
+    val expData = spark.sparkContext.textFile(filename)
+    val rawRDD = expData.map(x => (x.split(",")(0).toInt, x.split(",")(1).toDouble))
+    rawRDD.foreach(println)
+    val bidData2 = rawRDD
+      .toDF("ideaid", "cpc_bid2")
+      .groupBy("ideaid")
+      .agg(avg(col("cpc_bid2")).alias("cpc_bid2"))
+
+
+    // 读取实验ideaid列表
+    val filename2 = "/user/cpc/wangjun/ocpc_ab_ideas.txt"
+    val expData2 = spark.sparkContext.textFile(filename2)
+    val rawRDD2 = expData2.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+    rawRDD2.foreach(println)
+    val bidDataIdeas = rawRDD2
+      .toDF("ideaid", "flag")
+      .filter(s"flag=1")
+      .distinct()
+
+    val bidData = bidDataIdeas
+      .join(bidData1, Seq("ideaid"), "left_outer")
+      .join(bidData2, Seq("ideaid"), "left_outer")
+      .select("ideaid", "cpc_bid1", "cpc_bid2")
+      .withColumn("cpc_bid", when(col("cpc_bid2").isNull, col("cpc_bid1")).otherwise(col("cpc_bid2")))
       .select("ideaid", "cpc_bid")
+      .filter(s"cpc_bid is not null")
+
 
     // 数据关联
     val resultDF = data

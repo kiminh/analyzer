@@ -84,6 +84,10 @@ object OcpcMinBid {
       list += currentItem
 
     }
+
+
+
+
     val result = list.toArray[SingleBidv2]
     val adRecordList = BidListV2(
       adrecord = result
@@ -114,8 +118,6 @@ object OcpcMinBid {
          |  count(1) as cnt
          |FROM
          |  base_data
-         |WHERE
-         |  ocpc_flag=1
          |GROUP BY hr, adslotid, city_level, adsrc, floor(adclass/1000), ocpc_flag
        """.stripMargin
     println(sqlRequest)
