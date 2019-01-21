@@ -58,9 +58,9 @@ object ReportCoinMetrics {
 
         val union = spark.sql(unionSql)
         //保存到临时表里
-        union.write.mode("overwrite").saveAsTable("test.union")
+        //union.write.mode("overwrite").saveAsTable("test.union")
 
-//        union.createOrReplaceTempView("union")
+        union.createOrReplaceTempView("union")
 
 //        val ideaidSql =
 //            s"""
@@ -173,7 +173,7 @@ object ReportCoinMetrics {
         val useridAucListSql =
             s"""
                |select cast(userid as string) as userid,ext['exp_cvr'].int_value as score,label2 as label
-               |from test.union
+               |from union
              """.stripMargin
 
         val useridAucList = spark.sql(useridAucListSql)
@@ -183,7 +183,8 @@ object ReportCoinMetrics {
           .withColumn("userid",string2Int(col("name")))
           .drop("name")
           .select("userid","auc")
-        uAuc.write.mode("overwrite").saveAsTable("test.uauc")
+        //uAuc.write.mode("overwrite").saveAsTable("test.uauc")
+        uAuc.createOrReplaceTempView("uauc")
 
         val useridSql =
             s"""
@@ -224,17 +225,12 @@ object ReportCoinMetrics {
                |        sum(case WHEN isclick = 1 then price else 0 end) as click_total_price, --点击总价
                |        sum(case WHEN isclick = 1 and ext_int['is_auto_coin'] = 1 then price else 0 end) as coin_click_total_price, --金币点击总价
                |        count(distinct uid) as uid_num --用户数
-               |    from test.union
+               |    from union
                |    group by userid
                |) c
-               |left outer join test.uauc d
+               |left outer join uauc d
                |on c.userid = d.userid
              """.stripMargin
-
-
-
-        uAuc.show(20)
-        println("uAuc 's count is " + uAuc.count())
 
         val useridMetrics = spark.sql(useridSql).cache()
 //        useridOtherMetrics.show(10)
@@ -260,12 +256,7 @@ object ReportCoinMetrics {
         println("insert into report2.report_coin_userid_metrics success!")
         useridMetrics.unpersist()
 
-        val deluAucSql = "delete from test.uauc"
 
-        spark.sql(deluAucSql)
-
-        val deleteUnionSql = "delete from test.union"
-        spark.sql(deleteUnionSql)
     }
     def string2Int = udf((name:String) => {
         name.toInt
