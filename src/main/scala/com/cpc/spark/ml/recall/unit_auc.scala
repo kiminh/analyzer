@@ -5,6 +5,7 @@ import java.util.Calendar
 
 import com.cpc.spark.tools.CalcMetrics
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
 
 object unit_auc {
   def main(args: Array[String]): Unit = {
@@ -16,14 +17,14 @@ object unit_auc {
     val cal1 = Calendar.getInstance()
     cal1.add(Calendar.DATE, -1)
     val tardate = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
-    val testset_result = spark.read.parquet("hdfs://emr-cluster/user/cpc/result/cvrtrain")
+    val testset_result = spark.read.parquet("hdfs://emr-cluster/user/cpc/result/cvrtrain").withColumn("score", $"prediction" * 1000000).
+      select(expr("cast (unitid as string)").alias("unitid"), expr("cast (label as int)").alias("label"), expr("cast (round(score, 0) as int)").alias("score"))
     val DetailAucListBuffer = scala.collection.mutable.ListBuffer[DetailAuc]()
     val id_tag = "unitid"
 
     //分广告主
-    val unitIdAucList = CalcMetrics.getGauc(spark,testset_result,"unitid").rdd
-      .map(x => {
-        val unitid = x.getAs[String]("unitid")
+    val unitIdAucList = CalcMetrics.getGauc(spark,testset_result,"unitid").rdd.map(x => {
+        val unitid = x.getAs[String]("name")
         val auc = x.getAs[Double]("auc")
         val sum = x.getAs[Double]("sum")
         (unitid,auc,sum)
@@ -39,7 +40,7 @@ object unit_auc {
 
     val detailAuc = DetailAucListBuffer.toList.toDF()
 
-    detailAuc.createOrReplaceTempView("unitid_table")
+    detailAuc.repartition(100).createOrReplaceTempView("unitid_table")
     spark.sql(
       s"""
         |insert overwrite table dl_cpc.cpc_id_bscvr_auc partition (day='$tardate', tag='$id_tag')
