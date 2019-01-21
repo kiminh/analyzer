@@ -30,7 +30,7 @@ object prepare_bsCvr_dnnSample {
 
     val sampleDay = getDay(date, 1)
 
-    val Array(traindata, testdata) = train.randomSplit(Array(0.95, 0.05), 1)
+    val Array(traindata, testdata) = train.randomSplit(Array(0.9, 0.1), 1)
 
     traindata.repartition(1000)
       .write
@@ -133,7 +133,7 @@ object prepare_bsCvr_dnnSample {
       .join(profileData, Seq("uid"), "leftouter")
       .join(uidRequest, Seq("uid"), "leftouter")
       .join(behavior_data, Seq("uid"), "leftouter")
-      .select($"label",
+      .select($"label", $"unitid",
 
         //hash("f1")($"media_type").alias("f1"),
         //hash("f2")($"mediaid").alias("f2"),
@@ -174,11 +174,11 @@ object prepare_bsCvr_dnnSample {
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
         mkSparseFeature_m($"raw_sparse").alias("sparse"),
-        $"label"
+        $"label",$"unitid"
       )
 
       .select(
-        $"label",
+        $"label",$"unitid",
         $"dense",
         $"sparse".getField("_1").alias("idx0"),
         $"sparse".getField("_2").alias("idx1"),
@@ -188,11 +188,12 @@ object prepare_bsCvr_dnnSample {
 
       .rdd.zipWithUniqueId()
       .map { x =>
-        (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
+        (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Int]("unitid"),
+          x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
           x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
       }
-      .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
+      .toDF("sample_idx", "label", "unitid", "dense", "idx0", "idx1", "idx2", "id_arr")
   }
 
   /**

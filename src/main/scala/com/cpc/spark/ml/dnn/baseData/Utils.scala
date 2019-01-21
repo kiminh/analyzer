@@ -59,6 +59,8 @@ object Utils {
     println("total num is :" + acc.sum)
     s"echo ${acc.sum}" #> new File("count") !
 
+    Thread.sleep(1000)
+
     s"hadoop fs -put count $path" !
 
     if (acc.sum == 0) {

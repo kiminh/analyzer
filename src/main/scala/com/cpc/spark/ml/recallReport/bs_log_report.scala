@@ -53,6 +53,13 @@ object bs_log_report {
           val involved_idea_num = up.getInvolvedIdeaNum
           val matched_idea_num = up.getMatchedIdeaNum
           val rnd_idea_num = up.getRndIdeaNum
+          val adslot_type = up.getSearchCond.getAdSlotStyle
+          val req_io_time = up.getReqIoTime
+          val process_time = up.getProcessTime
+          val ad_slot_id = up.getSearchCond.getAdSlotId
+          val media_class = up.getSearchCond.getMediaClassList.toString
+          val hostname = up.getHostname
+
           BsLog1(
             searchid=searchid,
             involved_group_num=involved_group_num.toInt,
@@ -76,7 +83,13 @@ object bs_log_report {
             involved_idea_num=involved_idea_num.toInt,
             matched_idea_num=matched_idea_num.toInt,
             rnd_idea_num=rnd_idea_num.toInt,
-            exptags=exptags.substring(1, exptags.length()-1)
+            exptags=exptags.substring(1, exptags.length()-1),
+            adslot_type=adslot_type.toString,
+            req_io_time=req_io_time.toInt,
+            process_time=process_time.toInt,
+            ad_slot_id=ad_slot_id.toString,
+            media_class=media_class.substring(1, media_class.length()-1),
+            hostname=hostname.toString
           )
         } catch {
           case ex: Exception => excp.add(1); null
@@ -86,7 +99,8 @@ object bs_log_report {
       "group_p_l_num", "group_dislike_num", "group_interest_num", "group_student_num", "group_acc_user_type_num", "group_new_user_num",
       "group_content_category_num", "group_black_install_pkg_num", "group_white_install_pkg_num", "group_show_count_num",
       "group_click_count_num","matched_group_num", "len_groups",
-      "involved_idea_num", "matched_idea_num", "rnd_idea_num", "exptags")
+      "involved_idea_num", "matched_idea_num", "rnd_idea_num", "exptags", "adslot_type", "req_io_time", "process_time",
+      "ad_slot_id", "media_class", "hostname")
     pbData.createOrReplaceTempView("temp_table")
     println(excp.value)
     val insertIntoTable =
@@ -149,6 +163,12 @@ object bs_log_report {
                      var involved_idea_num:Int=0,
                      var matched_idea_num:Int=0,
                      var rnd_idea_num:Int=0,
-                     var exptags: String=""
+                     var exptags: String="",
+                     var adslot_type: String="",
+                     var req_io_time: Int=0,
+                     var process_time: Int=0,
+                     var ad_slot_id: String="",
+                     var media_class: String="",
+                     var hostname: String=""
                    )
 }

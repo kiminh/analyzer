@@ -81,12 +81,13 @@ object OcpcActivationDataV1 {
          |and ideaid > 0
          |and adsrc = 1
          |and adslot_type in (1,2,3)
+         |and searchid is not null
       """.stripMargin
     println(sqlRequest)
     val base = spark.sql(sqlRequest)
 
     val ctrData = base
-      .filter("isclick=1")
+      .filter("isclick=1 and searchid is not null")
       .groupBy("ideaid", "adclass")
       .agg(
         sum(col("price")).alias("cost"),
@@ -95,7 +96,7 @@ object OcpcActivationDataV1 {
 
     val cvrData = spark
       .table("dl_cpc.ml_cvr_feature_v2")
-      .where(s"`date`='$date' and `hour`='$hour'")
+      .where(s"`date`='$date' and `hour`='$hour' and searchid is not null")
       .groupBy("ideaid")
       .agg(sum(col("label")).alias("cvr_cnt"))
       .select("ideaid", "cvr_cnt")

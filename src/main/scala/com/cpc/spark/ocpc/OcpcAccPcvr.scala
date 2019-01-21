@@ -40,6 +40,7 @@ object OcpcAccPcvr {
          |and adslot_type in (1,2,3)
          |and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
          |and isclick=1
+         |and searchid is not null
        """.stripMargin
 
     println(sqlRequest)
