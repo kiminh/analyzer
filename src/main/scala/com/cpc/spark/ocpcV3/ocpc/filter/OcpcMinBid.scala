@@ -128,7 +128,7 @@ object OcpcMinBid {
     val sqlRequest2 =
       s"""
          |SELECT
-         |  percentile(cnt, 0.75) as min_cnt
+         |  percentile(cnt, 0.97) as min_cnt
          |FROM
          |  raw_data
        """.stripMargin
