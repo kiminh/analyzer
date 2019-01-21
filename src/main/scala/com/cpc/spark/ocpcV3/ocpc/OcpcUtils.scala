@@ -58,6 +58,15 @@ object OcpcUtils {
       s"or (`dt` > '$startDate' and `dt` < '$endDate'))"
   }
 
+  def getTimeRangeSql4(startDate: String, startHour: String, endDate: String, endHour: String): String = {
+    if (startDate.equals(endDate)) {
+      return s"(`date` = '$startDate' and hour <= '$endHour' and hour >= '$startHour')"
+    }
+    return s"((`date` = '$startDate' and hour >= '$startHour') " +
+      s"or (`date` = '$endDate' and hour <= '$endHour') " +
+      s"or (`date` > '$startDate' and `date` < '$endDate'))"
+  }
+
   def getTimeRangeSqlCondition(endDate: String, endHour: String, hourCnt: Int): String = {
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val endDay = endDate + " " + endHour

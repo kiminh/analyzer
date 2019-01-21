@@ -3,7 +3,7 @@ package com.cpc.spark.ocpcV3.ocpcNovel.data
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSql2
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
@@ -71,7 +71,7 @@ object OcpcLabelCvr3 {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date, hour, date1, hour1)
+    val selectCondition = getTimeRangeSql4(date, hour, date1, hour1)
 
     val sqlRequest2 =
       s"""
