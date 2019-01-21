@@ -109,7 +109,7 @@ object OcpcSuggestCpa{
          |and media_appsid  in ("80000001", "80000002")
          |and ideaid > 0 and adsrc = 1
          |and userid > 0
-         |group by userid, industry
+         |group by unitid, industry
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
