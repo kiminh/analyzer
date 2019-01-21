@@ -56,7 +56,7 @@ object ReportCoinMetrics {
                |    on a.searchid = b.searchid
              """.stripMargin
 
-        val union = spark.sql(unionSql)
+        val union = spark.sql(unionSql).cache()
         //保存到临时表里
         //union.write.mode("overwrite").saveAsTable("test.union")
 
