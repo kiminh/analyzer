@@ -56,7 +56,7 @@ object ReportCoinMetrics {
                |    on a.searchid = b.searchid
              """.stripMargin
 
-        val union = spark.sql(unionSql).cache()
+        val union = spark.sql(unionSql)
         //保存到临时表里
         //union.write.mode("overwrite").saveAsTable("test.union")
 
@@ -170,22 +170,22 @@ object ReportCoinMetrics {
 //               |) c
 //             """.stripMargin
 
-        val useridAucListSql =
-            s"""
-               |select cast(userid as string) as userid,ext['exp_cvr'].int_value as score,label2 as label
-               |from union
-             """.stripMargin
-
-        val useridAucList = spark.sql(useridAucListSql)
-
-        val uAuc = CalcMetrics.getGauc(spark,useridAucList,"userid")
-          .select("name","auc")
-//          .withColumn("userid",string2Int(col("name")))
-//          .drop("name")
-//          .select("userid","auc")
-//          .cache()
-        //uAuc.write.mode("overwrite").saveAsTable("test.uauc")
-        uAuc.createOrReplaceTempView("uauc")
+//        val useridAucListSql =
+//            s"""
+//               |select cast(userid as string) as userid,ext['exp_cvr'].int_value as score,label2 as label
+//               |from union
+//             """.stripMargin
+//
+//        val useridAucList = spark.sql(useridAucListSql)
+//
+//        val uAuc = CalcMetrics.getGauc(spark,useridAucList,"userid")
+//          .select("name","auc")
+////          .withColumn("userid",string2Int(col("name")))
+////          .drop("name")
+////          .select("userid","auc")
+////          .cache()
+//        //uAuc.write.mode("overwrite").saveAsTable("test.uauc")
+//        uAuc.createOrReplaceTempView("uauc")
 
         val useridSql =
             s"""
@@ -212,6 +212,7 @@ object ReportCoinMetrics {
                |    if (uid_num!=0,round(click_total_price*10/uid_num,6),0) as arpu,
                |    if (uid_num!=0,round(show_num/uid_num,6),0) as aspu,
                |    if (uid_num!=0,round(convert_num*100/uid_num,6),0) as acpu,
+               |    0.5 as auc
                |    '$date' as `date`
                |from
                |(
@@ -230,46 +231,46 @@ object ReportCoinMetrics {
                |) c
              """.stripMargin
 
-        val useridOtherMetrics = spark.sql(useridSql).cache()
+//        val useridOtherMetrics = spark.sql(useridSql).cache()
+//
+//        useridOtherMetrics.createOrReplaceTempView("userid_other")
+//
+//        val sql =
+//            s"""
+//               |select a.userid as userid,
+//               |  show_num,
+//               |  coin_show_num,
+//               |  coin_show_rate,
+//               |  click_num,
+//               |  coin_click_num,
+//               |  coin_click_rate,
+//               |  ctr,
+//               |  coin_ctr,
+//               |  convert_num,
+//               |  coin_convert_num,
+//               |  coin_convert_rate,
+//               |  cvr,
+//               |  coin_cvr,
+//               |  click_total_price,
+//               |  coin_click_total_price,
+//               |  uid_num,
+//               |  cpm,
+//               |  acp,
+//               |  arpu,
+//               |  aspu,
+//               |  acpu,
+//               |  b.auc as auc,
+//               |  '$date' as `date`
+//               |from userid_other a left outer join
+//               |(
+//               |  select cast(name as bigint) userid,
+//               |    auc
+//               |  from uauc
+//               |) b
+//               |on a.userid = b.userid
+//             """.stripMargin
 
-        useridOtherMetrics.createOrReplaceTempView("userid_other")
-
-        val sql =
-            s"""
-               |select a.userid as userid,
-               |  show_num,
-               |  coin_show_num,
-               |  coin_show_rate,
-               |  click_num,
-               |  coin_click_num,
-               |  coin_click_rate,
-               |  ctr,
-               |  coin_ctr,
-               |  convert_num,
-               |  coin_convert_num,
-               |  coin_convert_rate,
-               |  cvr,
-               |  coin_cvr,
-               |  click_total_price,
-               |  coin_click_total_price,
-               |  uid_num,
-               |  cpm,
-               |  acp,
-               |  arpu,
-               |  aspu,
-               |  acpu,
-               |  b.auc as auc,
-               |  '$date' as `date`
-               |from userid_other a left outer join
-               |(
-               |  select cast(name as bigint) userid,
-               |    auc
-               |  from uauc
-               |) b
-               |on a.userid = b.userid
-             """.stripMargin
-
-        val useridMetrics = spark.sql(sql).cache()
+        val useridMetrics = spark.sql(useridSql).cache()
 //        useridOtherMetrics.show(10)
 //        println("useridOtherMetrics 's count is " + useridOtherMetrics.count())
 //        val useridMetrics = useridOtherMetrics
@@ -279,7 +280,7 @@ object ReportCoinMetrics {
 //          "coin_click_total_price","uid_num","cpm","acp","arpu","aspu","acpu","auc","date")
 //          .cache()
 
-        useridMetrics.show(20)
+//        useridMetrics.show(20)
 
         useridMetrics.repartition(1)
           .write
