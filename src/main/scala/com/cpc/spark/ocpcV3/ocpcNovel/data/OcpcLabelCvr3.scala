@@ -62,7 +62,7 @@ object OcpcLabelCvr3 {
          |FROM
          |  dl_cpc.site_form_unionlog
          |WHERE
-         |  where $selectWhere
+         |  where `date`='$date'
        """.stripMargin
     println(sqlRequest2)
     val labelData = spark.sql(sqlRequest2).distinct()
