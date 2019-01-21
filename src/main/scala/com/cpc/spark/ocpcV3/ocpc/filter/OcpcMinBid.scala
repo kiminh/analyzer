@@ -27,16 +27,16 @@ object OcpcMinBid {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-//      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base")
-      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
+      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base")
+//      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
 
     val resultDF = calculateMinBid(baseData, date, hour, spark)
     resultDF
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid")
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
 
     val data = resultDF.filter(s"cnt >= min_cnt")
 
@@ -118,8 +118,6 @@ object OcpcMinBid {
          |  count(1) as cnt
          |FROM
          |  base_data
-         |WHERE
-         |  ocpc_flag=1
          |GROUP BY hr, adslotid, city_level, adsrc, floor(adclass/1000), ocpc_flag
        """.stripMargin
     println(sqlRequest)
