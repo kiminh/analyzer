@@ -38,7 +38,7 @@ object OcpcMinBid {
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid")
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
 
-    val data = resultDF.filter(s"cnt >= min_cnt")
+    val data = resultDF.filter(s"cnt >= min_cnt and ocpc_flag=1")
 
     savePbPack(data, "ocpc_minbidv2.pb")
   }
@@ -128,7 +128,7 @@ object OcpcMinBid {
     val sqlRequest2 =
       s"""
          |SELECT
-         |  percentile(cnt, 0.97) as min_cnt
+         |  percentile(cnt, 0.75) as min_cnt
          |FROM
          |  raw_data
        """.stripMargin
