@@ -63,12 +63,13 @@ object Utils {
 
     s"hadoop fs -put count $path" !
 
-    val cnt = "cat count".stripLineEnd
-    if (cnt == "") {
+    val cnt = "cat count" !!
+
+    if (cnt.stripLineEnd == "") {
       println("ERROR : there is no number in count file")
       System.exit(1)
     } else {
-      println(s"the number in count file : $cnt")
+      println(s"the number in count file : ${cnt.stripLineEnd}")
     }
   }
 
