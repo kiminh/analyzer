@@ -212,7 +212,7 @@ object ReportCoinMetrics {
                |    if (uid_num!=0,round(click_total_price*10/uid_num,6),0) as arpu,
                |    if (uid_num!=0,round(show_num/uid_num,6),0) as aspu,
                |    if (uid_num!=0,round(convert_num*100/uid_num,6),0) as acpu,
-               |    0.5 as auc
+               |    0.5 as auc,
                |    '$date' as `date`
                |from
                |(
@@ -230,6 +230,8 @@ object ReportCoinMetrics {
                |    group by userid
                |) c
              """.stripMargin
+
+        println(useridSql)
 
 //        val useridOtherMetrics = spark.sql(useridSql).cache()
 //
