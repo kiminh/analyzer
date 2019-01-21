@@ -190,7 +190,7 @@ val sqlRequest2 =
        """.stripMargin
 
     print(result1)
-    spark.sql(result1).repartition(5000).createOrReplaceTempView("withtag")
+    spark.sql(result1).repartition(500).createOrReplaceTempView("withtag")
     val result2 =
       s"""
          |insert overwrite table dl_cpc.cpc_profileTag_report_daily_v1 partition (`date`='$date')
@@ -219,7 +219,7 @@ val sqlRequest2 =
     jdbcProp.put("driver", "com.mysql.jdbc.Driver")
 
     //从adv后台mysql获取人群包的url
-    val table="(select value as tag, name from adv.audience_dict where status = 1 group by value,name) as tmp"
+    val table="(select value as tag, name from adv.audience_dict where status = 0 group by value,name) as tmp"
     spark.read.jdbc(jdbcUrl, table, jdbcProp).createTempView("tag_table")
 
     val conf = ConfigFactory.load()
@@ -245,8 +245,8 @@ val sqlRequest2 =
         |cast(coalesce(cvrwithouttag,0) as int) as cvrwithouttag,
         |coalesce(apicvrwithouttag*1.0/costwithouttag,0.0) as apiroiwithouttag,
         |coalesce(cvrwithouttag*1.0/costwithouttag,0) as roiwithouttag,
-        |coalesce((apicvrwithtag*1.0/costwithtag)/(apicvrwithouttag*1.0/costwithouttag),0.0) as apiperformance,
-        |coalesce((cvrwithtag*1.0/costwithtag)/(cvrwithouttag*1.0/costwithouttag),0.0) as performance,
+        |if((apicvrwithouttag*1.0/costwithouttag)=0.0, 1.0, coalesce((apicvrwithtag*1.0/costwithtag)/(apicvrwithouttag*1.0/costwithouttag),0.0)) as apiperformance,
+        |if((cvrwithouttag*1.0/costwithouttag)=0.0, 1.0, coalesce((cvrwithtag*1.0/costwithtag)/(cvrwithouttag*1.0/costwithouttag),0.0)) as performance,
         |to_date('$date') as date from
         |(select userid,tag,sum(ctrwithtag) ctrwithtag,sum(ctrwithouttag) ctrwithouttag,sum(costwithtag) costwithtag,
         |sum(costwithouttag) costwithouttag, sum(apicvrwithtag) apicvrwithtag, sum(cvrwithtag) cvrwithtag,

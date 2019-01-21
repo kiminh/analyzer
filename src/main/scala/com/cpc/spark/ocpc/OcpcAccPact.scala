@@ -41,6 +41,7 @@ object OcpcAccPact {
          |and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
          |and isclick=1
          |and ext_int['is_api_callback']=1
+         |and searchid is not null
        """.stripMargin
 
     println(sqlRequest)
