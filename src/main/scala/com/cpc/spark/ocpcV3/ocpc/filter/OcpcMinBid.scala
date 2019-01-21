@@ -38,7 +38,7 @@ object OcpcMinBid {
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid")
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
 
-    val data = resultDF.filter(s"cnt >= min_cnt and ocpc_flag=1")
+    val data = resultDF.orderBy(col("cnt")).limit(3000)
 
     savePbPack(data, "ocpc_minbidv2.pb")
   }
