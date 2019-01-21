@@ -56,15 +56,19 @@ object Utils {
       .saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)
 
     //保存count文件
-    println("total num is :" + acc.sum)
+    println(s"total num is : ${acc.sum}")
     s"echo ${acc.sum}" #> new File("count") !
 
     Thread.sleep(1000)
 
     s"hadoop fs -put count $path" !
 
-    if (acc.sum == 0) {
+    val cnt = "cat count".stripLineEnd
+    if (cnt == "") {
+      println("ERROR : there is no number in count file")
       System.exit(1)
+    } else {
+      println(s"the number in count file : $cnt")
     }
   }
 
