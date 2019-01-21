@@ -190,7 +190,7 @@ val sqlRequest2 =
        """.stripMargin
 
     print(result1)
-    spark.sql(result1).repartition(5000).createOrReplaceTempView("withtag")
+    spark.sql(result1).repartition(500).createOrReplaceTempView("withtag")
     val result2 =
       s"""
          |insert overwrite table dl_cpc.cpc_profileTag_report_daily_v1 partition (`date`='$date')
