@@ -120,9 +120,9 @@ object OcpcSuggestCpa{
 
     // 获取kvalue
 //    ocpc_qtt_prev_pb
-//    ocpc_pb_result_table_v6
+//    ocpc_pb_result_table_v7
     val kvalue1 = spark
-      .table("dl_cpc.ocpc_pb_result_table_v6")
+      .table("dl_cpc.ocpc_pb_result_table_v7")
       .where(s"`date`='$date' and `hour`='$hour'")
       .select("ideaid", "kvalue1")
       .join(data, Seq("ideaid"), "inner")
@@ -133,7 +133,7 @@ object OcpcSuggestCpa{
       .withColumn("conversion_goal", lit(1))
 
     val kvalue2 = spark
-      .table("dl_cpc.ocpc_pb_result_table_v6")
+      .table("dl_cpc.ocpc_pb_result_table_v7")
       .where(s"`date`='$date' and `hour`='$hour'")
       .select("ideaid", "kvalue2")
       .join(data, Seq("ideaid"), "inner")
