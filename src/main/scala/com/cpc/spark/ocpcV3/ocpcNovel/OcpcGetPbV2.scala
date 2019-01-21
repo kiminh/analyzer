@@ -72,7 +72,7 @@ object OcpcGetPbV2 {
       .withColumn("hour", lit(hour))
 
     val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
     resultDF
       .repartition(10).write.mode("overwrite").insertInto(tableName)
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
