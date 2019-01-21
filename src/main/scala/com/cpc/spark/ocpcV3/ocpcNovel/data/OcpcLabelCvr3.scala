@@ -1,5 +1,9 @@
 package com.cpc.spark.ocpcV3.ocpcNovel.data
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 
@@ -54,6 +58,21 @@ object OcpcLabelCvr3 {
     val rawData = spark.sql(sqlRequest1)
     rawData.createOrReplaceTempView("raw_table")
 
+
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, 2)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql4(date, hour, date1, hour1)
+
     val sqlRequest2 =
       s"""
          |SELECT
@@ -62,7 +81,7 @@ object OcpcLabelCvr3 {
          |FROM
          |  dl_cpc.site_form_unionlog
          |WHERE
-         |  where `date`='$date'
+         |  $selectCondition
        """.stripMargin
     println(sqlRequest2)
     val labelData = spark.sql(sqlRequest2).distinct()

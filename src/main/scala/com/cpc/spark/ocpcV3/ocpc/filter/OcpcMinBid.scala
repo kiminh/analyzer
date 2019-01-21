@@ -38,7 +38,7 @@ object OcpcMinBid {
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid")
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
 
-    val data = resultDF.filter(s"cnt >= min_cnt")
+    val data = resultDF.orderBy(desc("cnt")).limit(3000)
 
     savePbPack(data, "ocpc_minbidv2.pb")
   }
@@ -63,7 +63,8 @@ object OcpcMinBid {
       val hour = record.getAs[String]("hr").toInt
       val adslotid = record.getAs[String]("adslotid")
       val city_level = record.getAs[Int]("city_level")
-      val adsrc = record.getAs[Int]("adsrc")
+      // todo: adsrcc=2
+      val adsrc = 2
       val ad_second_class = record.getAs[Long]("ad_second_class").toInt
       val ocpc_flag = record.getAs[Int]("ocpc_flag")
       val min_bid = record.getAs[Double]("min_bid")

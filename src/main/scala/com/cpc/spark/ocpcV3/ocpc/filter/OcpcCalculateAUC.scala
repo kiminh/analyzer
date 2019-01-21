@@ -77,7 +77,7 @@ object OcpcCalculateAUC {
     val calendar = Calendar.getInstance
     calendar.setTime(today)
     val selectCondition1 = s"`dt`='$date'"
-    // 取数据: score数据
+
     val sqlRequest =
       s"""
          |select
