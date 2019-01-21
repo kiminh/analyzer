@@ -170,7 +170,5 @@ object bs_log_report {
                      var ad_slot_id: String="",
                      var media_class: String="",
                      var hostname: String=""
-
-
                    )
 }
