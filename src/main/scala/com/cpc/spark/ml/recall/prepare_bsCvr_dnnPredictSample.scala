@@ -73,18 +73,25 @@ object prepare_bsCvr_dnnPredictSample {
 
     idea.show(5)
     */
-    val table2=
+    val adv=
       s"""
-        |(select id as unitid, tb.user_id as userid, plan_id as planid, adslot_type, charge_type from
+        |(select id as unitid, tb.user_id as userid, plan_id as planid, adslot_type, charge_type, cnt from
         |(SELECT unit_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date='$day' group by unit_id) ta
         |join adv.unit tb on ta.unit_id=tb.id
         |left join (select user_id from adv.look_like where type=2 group by user_id) tc on tb.user_id=tc.user_id
         |where adslot_type=1 and audience_orient>0 and tc.user_id is null and tb.user_id not in (1522853, 1539639,
-        |1543604, 1559789, 1543604, 1567471, 1524409, 1566975, 1559495, 1562662)
-        | order by cnt desc limit 100) temp
+        |1543604, 1559789, 1543604, 1567471, 1524409, 1566975, 1559495, 1562662)) temp
       """.stripMargin
 
-    spark.read.jdbc(jdbcUrl, table2, jdbcProp).select("unitid").createTempView("unitid_table")
+    spark.read.jdbc(jdbcUrl, adv, jdbcProp).createOrReplaceTempView("adv")
+    val table2=
+      s"""
+         |select ta.unitid,ta.userid,ta.planid,ta.adslot_type,ta.charge_type from adv ta join
+         |(select id as unitid from dl_cpc.cpc_id_bscvr_auc where tag='unitid' and day='$day' and auc>0.8 group by id) tb
+         |on ta.unitid=tb.unitid order by ta.cnt desc limit 100
+         |""".stripMargin
+
+    spark.sql(table2).select("unitid").createTempView("unitid_table")
 
     val table3=
       s"""insert overwrite table dl_cpc.cpc_recall_bsExp_unitid partition (`date`='$day')
@@ -92,7 +99,8 @@ object prepare_bsCvr_dnnPredictSample {
       """.stripMargin
     spark.sql(table3)
 
-    val unit_info = spark.read.jdbc(jdbcUrl, table2, jdbcProp)
+    val unit_info = spark.sql(table2)
+    unit_info.count
 
     val unit_hash = unit_info.select(hash("f1")($"adslot_type").alias("f1"),
       //hash("f6")($"adslotid").alias("f6"),
