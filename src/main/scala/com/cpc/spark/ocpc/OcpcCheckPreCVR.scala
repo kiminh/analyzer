@@ -19,9 +19,11 @@ object OcpcCheckPreCVR {
     val data = getSuggestUnitid(date, hour, spark)
     // 根据slim_unionlog计算平均预测cvr
     val result = cmpPreCvr(data, date, hour, spark)
+
+    result.repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_check_pcvr20190122")
   }
 
-  def cmpPreCvr(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def cmpPreCvr(unitidList: DataFrame, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -31,6 +33,7 @@ object OcpcCheckPreCVR {
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
 
+    // slim_unionlog数据
     val sqlRequest =
       s"""
          |SELECT
@@ -45,9 +48,37 @@ object OcpcCheckPreCVR {
          |AND isclick=1
        """.stripMargin
     println(sqlRequest)
-    val rawData = spark.sql(sqlRequest)
+    val slimUnionlog = spark.sql(sqlRequest)
 
-    rawData
+    // 数据关联
+    val rawData = unitidList
+      .join(slimUnionlog, Seq("unitid"), "left_outer")
+      .select("searchid", "unitid", "exp_cvr", "date")
+    rawData.createOrReplaceTempView("raw_data")
+
+    // 计算两天的数据
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  date,
+         |  sum(exp_cvr) * 0.0000001 / sum(isclick) as pcvr
+         |FROM
+         |  raw_data
+         |GROUP BY unitid, date
+       """.stripMargin
+    println(sqlRequest2)
+    val data = spark.sql(sqlRequest2)
+
+    val data1 = data.filter(s"`date`='$date1'").withColumn("pcvr1", col("pcvr")).select("unitid", "pcvr1")
+    val data2 = data.filter(s"`date`='$date'").withColumn("pcvr2", col("pcvr")).select("unitid", "pcvr2")
+
+    val resultDF = data1
+      .join(data2, Seq("unitid"), "outer")
+      .select("unitid", "pcvr1", "pcvr2")
+
+    resultDF
+
   }
 
   def getSuggestUnitid(date: String, hour: String, spark: SparkSession) = {
