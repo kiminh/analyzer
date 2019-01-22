@@ -45,8 +45,7 @@ object OcpcFilterUnionLog {
     abData
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
-      .repartition(50).write.mode("overwrite").saveAsTable("test.filtered_union_log_exptag_hourly" )
-//      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_bid_hourly")
+      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_exptag_hourly")
   }
 
   def getAbUnionlog(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
