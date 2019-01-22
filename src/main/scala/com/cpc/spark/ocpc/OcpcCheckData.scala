@@ -10,7 +10,8 @@ object OcpcCheckData {
     val hour = args(1).toString
 
     val result = program(date, hour, spark)
-    result.write.mode("overwrite").saveAsTable("test.ocpc_unionlog")
+    result
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_unionlog")
   }
 
   def program(date: String, hour: String, spark: SparkSession) = {
