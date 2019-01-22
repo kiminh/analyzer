@@ -53,7 +53,7 @@ object OcpcCheckPreCVR {
     // 数据关联
     val rawData = unitidList
       .join(slimUnionlog, Seq("unitid"), "left_outer")
-      .select("searchid", "unitid", "exp_cvr", "date")
+      .select("searchid", "unitid", "industry", "exp_cvr", "date")
     rawData.createOrReplaceTempView("raw_data")
 
     // 计算两天的数据
@@ -61,21 +61,22 @@ object OcpcCheckPreCVR {
       s"""
          |SELECT
          |  unitid,
+         |  industry,
          |  date,
          |  sum(exp_cvr) * 0.0000001 / count(1) as pcvr
          |FROM
          |  raw_data
-         |GROUP BY unitid, date
+         |GROUP BY unitid, industry, date
        """.stripMargin
     println(sqlRequest2)
     val data = spark.sql(sqlRequest2)
 
-    val data1 = data.filter(s"`date`='$date1'").withColumn("pcvr1", col("pcvr")).select("unitid", "pcvr1")
-    val data2 = data.filter(s"`date`='$date'").withColumn("pcvr2", col("pcvr")).select("unitid", "pcvr2")
+    val data1 = data.filter(s"`date`='$date1'").withColumn("pcvr1", col("pcvr")).select("unitid", "industry", "pcvr1")
+    val data2 = data.filter(s"`date`='$date'").withColumn("pcvr2", col("pcvr")).select("unitid", "industry", "pcvr2")
 
     val resultDF = data1
-      .join(data2, Seq("unitid"), "outer")
-      .select("unitid", "pcvr1", "pcvr2")
+      .join(data2, Seq("unitid", "industry"), "outer")
+      .select("unitid", "industry", "pcvr1", "pcvr2")
 
     resultDF
 
@@ -94,7 +95,8 @@ object OcpcCheckPreCVR {
     val sqlRequest =
       s"""
          |SELECT
-         |  unitid
+         |  unitid,
+         |  industry
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
          |WHERE
