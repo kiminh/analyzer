@@ -62,7 +62,7 @@ object OcpcCheckPreCVR {
          |SELECT
          |  unitid,
          |  date,
-         |  sum(exp_cvr) * 0.0000001 / sum(isclick) as pcvr
+         |  sum(exp_cvr) * 0.0000001 / count(1) as pcvr
          |FROM
          |  raw_data
          |GROUP BY unitid, date
