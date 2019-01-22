@@ -42,7 +42,7 @@ object OcpcCheckPreCVR {
          |  exp_cvr,
          |  dt as date
          |FROM
-         |  dl_cpc.slim_unionlog
+         |  dl_cpc.slim_union_log
          |WHERE
          |  (`dt`='$date1' or `dt`='$date')
          |AND isclick=1
