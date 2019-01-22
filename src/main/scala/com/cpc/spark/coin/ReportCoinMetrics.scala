@@ -170,70 +170,117 @@ object ReportCoinMetrics {
 //               |) c
 //             """.stripMargin
 
-//        val useridAucListSql =
-//            s"""
-//               |select cast(userid as string) as userid,ext['exp_cvr'].int_value as score,label2 as label
-//               |from union
-//             """.stripMargin
-//
-//        val useridAucList = spark.sql(useridAucListSql)
-//
-//        val uAuc = CalcMetrics.getGauc(spark,useridAucList,"userid")
-//          .select("name","auc")
-////          .withColumn("userid",string2Int(col("name")))
-////          .drop("name")
-////          .select("userid","auc")
-////          .cache()
-//        //uAuc.write.mode("overwrite").saveAsTable("test.uauc")
+        val useridAucListSql =
+            s"""
+               |select cast(userid as string) as userid,ext['exp_cvr'].int_value as score,label2 as label
+               |from union
+             """.stripMargin
+
+        val useridAucList = spark.sql(useridAucListSql).cache()
+
+        val uAuc = CalcMetrics.getGauc(spark,useridAucList,"userid")
+          .select("name","auc")
+          .withColumn("userid",string2Int(col("name")))
+          .drop("name")
+          .select("userid","auc")
+
+        val testTable = s"test.uauc_$date"
+
+        uAuc.write.mode("overwrite").saveAsTable(testTable)
 //        uAuc.createOrReplaceTempView("uauc")
 
-//        val useridSql =
-//            s"""
-//               |select
-//               |    c.userid as userid,
-//               |    show_num,
-//               |    coin_show_num,
-//               |    if (show_num!=0,round(coin_show_num/show_num, 6),0) as coin_show_rate,
-//               |    click_num,
-//               |    coin_click_num,
-//               |    if (click_num!=0,round(coin_click_num/click_num, 6),0) as coin_click_rate,
-//               |    if (show_num!=0,round(click_num/show_num, 6),0) as ctr,
-//               |    if (coin_show_num!=0,round(coin_click_num/coin_show_num, 6),0) as coin_ctr,
-//               |    convert_num,
-//               |    coin_convert_num,
-//               |    if (convert_num!=0,round(coin_convert_num/convert_num,6),0) as coin_convert_rate,
-//               |    if (click_num!=0,round(convert_num/click_num, 6),0) as cvr,
-//               |    if (coin_click_num!=0,round(coin_convert_num/coin_click_num, 6),0) as coin_cvr,
-//               |    click_total_price,
-//               |    coin_click_total_price,
-//               |    uid_num,
-//               |    if (show_num!=0,round(click_total_price*10/show_num,6),0) as cpm,
-//               |    if (click_num!=0,round(click_total_price*10/click_num,6),0) as acp,
-//               |    if (uid_num!=0,round(click_total_price*10/uid_num,6),0) as arpu,
-//               |    if (uid_num!=0,round(show_num/uid_num,6),0) as aspu,
-//               |    if (uid_num!=0,round(convert_num*100/uid_num,6),0) as acpu,
-//               |    0.5 as auc,
-//               |    '$date' as `date`
-//               |from
-//               |(
-//               |    select userid,
-//               |        sum(isshow) as show_num, --展示数
-//               |        sum(if (isshow=1 and ext_int['is_auto_coin'] = 1, 1, 0)) as coin_show_num, --金币展示数
-//               |        sum(isclick) as click_num, --点击数
-//               |        sum(if (isclick=1 and ext_int['is_auto_coin'] = 1, 1, 0)) as coin_click_num, --金币点击数
-//               |        sum(case when label2 = 1 then 1 else 0 end) as convert_num, --转化数
-//               |        sum(case when label2 = 1 and ext_int['is_auto_coin'] = 1 then 1 else 0 end) as coin_convert_num, --金币样式转化数
-//               |        sum(case WHEN isclick = 1 then price else 0 end) as click_total_price, --点击总价
-//               |        sum(case WHEN isclick = 1 and ext_int['is_auto_coin'] = 1 then price else 0 end) as coin_click_total_price, --金币点击总价
-//               |        count(distinct uid) as uid_num --用户数
-//               |    from union
-//               |    group by userid
-//               |) c
-//             """.stripMargin
+        val useridSql =
+            s"""
+               |select
+               |    c.userid as userid,
+               |    show_num,
+               |    coin_show_num,
+               |    if (show_num!=0,round(coin_show_num/show_num, 6),0) as coin_show_rate,
+               |    click_num,
+               |    coin_click_num,
+               |    if (click_num!=0,round(coin_click_num/click_num, 6),0) as coin_click_rate,
+               |    if (show_num!=0,round(click_num/show_num, 6),0) as ctr,
+               |    if (coin_show_num!=0,round(coin_click_num/coin_show_num, 6),0) as coin_ctr,
+               |    convert_num,
+               |    coin_convert_num,
+               |    if (convert_num!=0,round(coin_convert_num/convert_num,6),0) as coin_convert_rate,
+               |    if (click_num!=0,round(convert_num/click_num, 6),0) as cvr,
+               |    if (coin_click_num!=0,round(coin_convert_num/coin_click_num, 6),0) as coin_cvr,
+               |    click_total_price,
+               |    coin_click_total_price,
+               |    uid_num,
+               |    if (show_num!=0,round(click_total_price*10/show_num,6),0) as cpm,
+               |    if (click_num!=0,round(click_total_price*10/click_num,6),0) as acp,
+               |    if (uid_num!=0,round(click_total_price*10/uid_num,6),0) as arpu,
+               |    if (uid_num!=0,round(show_num/uid_num,6),0) as aspu,
+               |    if (uid_num!=0,round(convert_num*100/uid_num,6),0) as acpu,
+               |    '$date' as `date`
+               |from
+               |(
+               |    select userid,
+               |        sum(isshow) as show_num, --展示数
+               |        sum(if (isshow=1 and ext_int['is_auto_coin'] = 1, 1, 0)) as coin_show_num, --金币展示数
+               |        sum(isclick) as click_num, --点击数
+               |        sum(if (isclick=1 and ext_int['is_auto_coin'] = 1, 1, 0)) as coin_click_num, --金币点击数
+               |        sum(case when label2 = 1 then 1 else 0 end) as convert_num, --转化数
+               |        sum(case when label2 = 1 and ext_int['is_auto_coin'] = 1 then 1 else 0 end) as coin_convert_num, --金币样式转化数
+               |        sum(case WHEN isclick = 1 then price else 0 end) as click_total_price, --点击总价
+               |        sum(case WHEN isclick = 1 and ext_int['is_auto_coin'] = 1 then price else 0 end) as coin_click_total_price, --金币点击总价
+               |        count(distinct uid) as uid_num --用户数
+               |    from union
+               |    group by userid
+               |) c
+             """.stripMargin
 //
-//        println(useridSql)
+        println(useridSql)
 
-//        val useridOtherMetrics = spark.sql(useridSql).cache()
+        val useridOtherMetrics = spark.sql(useridSql)
+
+        val testTable2 = s"test.userid_other_$date"
+
+        useridOtherMetrics.write.mode("overwrite").saveAsTable(testTable2)
+
+        val resultSql =
+            s"""
+               |select a.userid as userid,
+               |  show_num,
+               |  coin_show_num,
+               |  coin_show_rate,
+               |  click_num,
+               |  coin_click_num,
+               |  coin_click_rate,
+               |  ctr,
+               |  coin_ctr,
+               |  convert_num,
+               |  coin_convert_num,
+               |  coin_convert_rate,
+               |  cvr,
+               |  coin_cvr,
+               |  click_total_price,
+               |  coin_click_total_price,
+               |  uid_num,
+               |  cpm,
+               |  acp,
+               |  arpu,
+               |  aspu,
+               |  acpu,
+               |  b.auc as auc,
+               |  '$date' as `date`
+               |from $testTable2 a left outer join
+               |(
+               |  select cast(name as bigint) userid,
+               |    auc
+               |  from $testTable
+               |) b
+               |on a.userid = b.userid
+             """.stripMargin
+
+        val result = spark.sql(resultSql)
+
+        result.repartition(1)
+          .write
+          .mode("overwrite")
+          .insertInto("dl_cpc.cpc_report_coin_userid_metrics")
 //
 //        useridOtherMetrics.createOrReplaceTempView("userid_other")
 //
@@ -296,65 +343,65 @@ object ReportCoinMetrics {
 //        println("insert into report2.report_coin_userid_metrics success!")
 //        useridMetrics.unpersist()
 
-        val useridSqlnoAuto =
-            s"""
-               |select
-               |    c.userid as userid,
-               |    show_num,
-               |    coin_show_num,
-               |    if (show_num!=0,round(coin_show_num/show_num, 6),0) as coin_show_rate,
-               |    click_num,
-               |    coin_click_num,
-               |    if (click_num!=0,round(coin_click_num/click_num, 6),0) as coin_click_rate,
-               |    if (show_num!=0,round(click_num/show_num, 6),0) as ctr,
-               |    if (coin_show_num!=0,round(coin_click_num/coin_show_num, 6),0) as coin_ctr,
-               |    convert_num,
-               |    coin_convert_num,
-               |    if (convert_num!=0,round(coin_convert_num/convert_num,6),0) as coin_convert_rate,
-               |    if (click_num!=0,round(convert_num/click_num, 6),0) as cvr,
-               |    if (coin_click_num!=0,round(coin_convert_num/coin_click_num, 6),0) as coin_cvr,
-               |    click_total_price,
-               |    coin_click_total_price,
-               |    uid_num,
-               |    if (show_num!=0,round(click_total_price*10/show_num,6),0) as cpm,
-               |    if (click_num!=0,round(click_total_price*10/click_num,6),0) as acp,
-               |    if (uid_num!=0,round(click_total_price*10/uid_num,6),0) as arpu,
-               |    if (uid_num!=0,round(show_num/uid_num,6),0) as aspu,
-               |    if (uid_num!=0,round(convert_num*100/uid_num,6),0) as acpu,
-               |    0.5 as auc,
-               |    '$date' as `date`
-               |from
-               |(
-               |    select userid,
-               |        sum(isshow) as show_num, --展示数
-               |        sum(if (isshow=1 and ext_int['is_auto_coin'] = 0 and ext_int['exp_style'] = 510127, 1, 0)) as coin_show_num, --金币展示数
-               |        sum(isclick) as click_num, --点击数
-               |        sum(if (isclick=1 and ext_int['is_auto_coin'] = 0 and ext_int['exp_style'] = 510127, 1, 0)) as coin_click_num, --金币点击数
-               |        sum(case when label2 = 1 then 1 else 0 end) as convert_num, --转化数
-               |        sum(case when label2 = 1 and ext_int['is_auto_coin'] = 0 and ext_int['exp_style'] = 510127 then 1 else 0 end) as coin_convert_num, --金币样式转化数
-               |        sum(case WHEN isclick = 1 then price else 0 end) as click_total_price, --点击总价
-               |        sum(case WHEN isclick = 1 and ext_int['is_auto_coin'] = 0 and ext_int['exp_style'] = 510127 then price else 0 end) as coin_click_total_price, --金币点击总价
-               |        count(distinct uid) as uid_num --用户数
-               |    from union
-               |    group by userid
-               |) c
-             """.stripMargin
-
-        println(useridSqlnoAuto)
-
-        val useridMetricsnoAuto = spark.sql(useridSqlnoAuto).cache()
-
-        useridMetricsnoAuto.repartition(1)
-          .write
-          .mode("overwrite")
-          .insertInto("dl_cpc.cpc_report_coin_userid_metrics_no_auto")
-
-        val useridMetricsDelSqlnoAuto = s"delete from report2.report_coin_userid_metrics_no_auto where `date` = '$date'"
-        OperateMySQL.del(useridMetricsDelSqlnoAuto)
-        useridMetricsnoAuto.write.mode(SaveMode.Append)
-          .jdbc(mariadb_write_url, "report2.report_coin_userid_metrics_no_auto", mariadb_write_prop)
-        println("insert into report2.report_coin_userid_metrics_no_auto success!")
-        useridMetricsnoAuto.unpersist()
+//        val useridSqlnoAuto =
+//            s"""
+//               |select
+//               |    c.userid as userid,
+//               |    show_num,
+//               |    coin_show_num,
+//               |    if (show_num!=0,round(coin_show_num/show_num, 6),0) as coin_show_rate,
+//               |    click_num,
+//               |    coin_click_num,
+//               |    if (click_num!=0,round(coin_click_num/click_num, 6),0) as coin_click_rate,
+//               |    if (show_num!=0,round(click_num/show_num, 6),0) as ctr,
+//               |    if (coin_show_num!=0,round(coin_click_num/coin_show_num, 6),0) as coin_ctr,
+//               |    convert_num,
+//               |    coin_convert_num,
+//               |    if (convert_num!=0,round(coin_convert_num/convert_num,6),0) as coin_convert_rate,
+//               |    if (click_num!=0,round(convert_num/click_num, 6),0) as cvr,
+//               |    if (coin_click_num!=0,round(coin_convert_num/coin_click_num, 6),0) as coin_cvr,
+//               |    click_total_price,
+//               |    coin_click_total_price,
+//               |    uid_num,
+//               |    if (show_num!=0,round(click_total_price*10/show_num,6),0) as cpm,
+//               |    if (click_num!=0,round(click_total_price*10/click_num,6),0) as acp,
+//               |    if (uid_num!=0,round(click_total_price*10/uid_num,6),0) as arpu,
+//               |    if (uid_num!=0,round(show_num/uid_num,6),0) as aspu,
+//               |    if (uid_num!=0,round(convert_num*100/uid_num,6),0) as acpu,
+//               |    0.5 as auc,
+//               |    '$date' as `date`
+//               |from
+//               |(
+//               |    select userid,
+//               |        sum(isshow) as show_num, --展示数
+//               |        sum(if (isshow=1 and ext_int['is_auto_coin'] = 0 and ext_int['exp_style'] = 510127, 1, 0)) as coin_show_num, --金币展示数
+//               |        sum(isclick) as click_num, --点击数
+//               |        sum(if (isclick=1 and ext_int['is_auto_coin'] = 0 and ext_int['exp_style'] = 510127, 1, 0)) as coin_click_num, --金币点击数
+//               |        sum(case when label2 = 1 then 1 else 0 end) as convert_num, --转化数
+//               |        sum(case when label2 = 1 and ext_int['is_auto_coin'] = 0 and ext_int['exp_style'] = 510127 then 1 else 0 end) as coin_convert_num, --金币样式转化数
+//               |        sum(case WHEN isclick = 1 then price else 0 end) as click_total_price, --点击总价
+//               |        sum(case WHEN isclick = 1 and ext_int['is_auto_coin'] = 0 and ext_int['exp_style'] = 510127 then price else 0 end) as coin_click_total_price, --金币点击总价
+//               |        count(distinct uid) as uid_num --用户数
+//               |    from union
+//               |    group by userid
+//               |) c
+//             """.stripMargin
+//
+//        println(useridSqlnoAuto)
+//
+//        val useridMetricsnoAuto = spark.sql(useridSqlnoAuto).cache()
+//
+//        useridMetricsnoAuto.repartition(1)
+//          .write
+//          .mode("overwrite")
+//          .insertInto("dl_cpc.cpc_report_coin_userid_metrics_no_auto")
+//
+//        val useridMetricsDelSqlnoAuto = s"delete from report2.report_coin_userid_metrics_no_auto where `date` = '$date'"
+//        OperateMySQL.del(useridMetricsDelSqlnoAuto)
+//        useridMetricsnoAuto.write.mode(SaveMode.Append)
+//          .jdbc(mariadb_write_url, "report2.report_coin_userid_metrics_no_auto", mariadb_write_prop)
+//        println("insert into report2.report_coin_userid_metrics_no_auto success!")
+//        useridMetricsnoAuto.unpersist()
 
 
 
