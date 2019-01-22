@@ -180,13 +180,10 @@ object ReportCoinMetrics {
                |from union
              """.stripMargin
 
-        val useridAucList = spark.sql(useridAucListSql).cache()
+        val useridAucList = spark.sql(useridAucListSql)
 
         val uAuc = CalcMetrics.getGauc(spark,useridAucList,"userid")
           .select("name","auc")
-          .withColumn("userid",string2Int(col("name")))
-          .drop("name")
-          .select("userid","auc")
 
         val testTable = s"test.uauc_$tmpDate"
 
@@ -285,6 +282,11 @@ object ReportCoinMetrics {
           .write
           .mode("overwrite")
           .insertInto("dl_cpc.cpc_report_coin_userid_metrics")
+        val useridMetricsDelSql = s"delete from report2.report_coin_userid_metrics where `date` = '$date'"
+        OperateMySQL.del(useridMetricsDelSql)
+        result.write.mode(SaveMode.Append)
+        .jdbc(mariadb_write_url, "report2.report_coin_userid_metrics", mariadb_write_prop)
+        println("insert into report2.report_coin_userid_metrics success!")
 //
 //        useridOtherMetrics.createOrReplaceTempView("userid_other")
 //
@@ -407,7 +409,7 @@ object ReportCoinMetrics {
 //        println("insert into report2.report_coin_userid_metrics_no_auto success!")
 //        useridMetricsnoAuto.unpersist()
 
-
+        val delSql1 = s"drop table "
 
     }
     def string2Int = udf((name:String) => {
