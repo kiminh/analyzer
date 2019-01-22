@@ -6,6 +6,9 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 
 object OcpcHourlyReportV2 {
   def main(args: Array[String]): Unit = {
+    /*
+
+     */
     val spark = SparkSession
       .builder()
       .appName("OcpcHourlyReport")
@@ -15,7 +18,7 @@ object OcpcHourlyReportV2 {
     val date = args(0).toString
     val hour = args(1).toString
 
-    getHourlyReport(date, hour, spark)
+//    getHourlyReport(date, hour, spark)
   }
 
   def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
@@ -28,7 +31,8 @@ object OcpcHourlyReportV2 {
       .table("dl_cpc.ocpc_unionlog")
       .where(s"`dt`='$date' and `hour` <= '$hour'")
       .withColumn("bid_ocpc", col("cpa_given"))
-    rawData.write.mode("overwrite").saveAsTable("test.ocpc_hourly_complete_data")
+      .filter(s"length(ocpc_log)>0")
+//    rawData.write.mode("overwrite").saveAsTable("test.ocpc_hourly_complete_data")
 
 
 //    noApiData

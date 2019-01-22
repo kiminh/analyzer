@@ -8,6 +8,7 @@ import org.apache.spark.sql.{Dataset, Row}
 
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import redis.clients.jedis.{HostAndPort, JedisCluster}
 
 object RedisUtil {
 
@@ -190,6 +191,23 @@ object RedisUtil {
     redis.setex(key, 7 * 24 * 60 * 60, ftrl.toJsonString)
     redis.setex(key2, 7 * 24 * 60 * 60, ftrl.toJsonString)
     redis.disconnect
+    return (key, key2)
+  }
+
+  def ftrlToRedisWithTypeV2(ftrl: Ftrl, typename: String, version: Int, date: String, hour: String): (String, String) = {
+    /*
+    新版redis数据
+     */
+    val jedis = new JedisCluster(new HostAndPort("192.168.83.62", 7001))
+//    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
+//    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
+    val key = s"ftrl-$typename-$version"
+    val key2 = s"ftrl-$typename-$version-$date-$hour"
+    println(s"key=$key, key2=$key2")
+    jedis.setex(key, 7 * 24 * 60 * 60, ftrl.toJsonString)
+    jedis.setex(key2, 7 * 24 * 60 * 60, ftrl.toJsonString)
+
+
     return (key, key2)
   }
 
