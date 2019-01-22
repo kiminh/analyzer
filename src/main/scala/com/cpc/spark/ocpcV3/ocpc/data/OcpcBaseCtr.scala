@@ -17,9 +17,9 @@ object OcpcBaseCtr {
     val date = args(0).toString
     val hour = args(1).toString
     val resultDF = preprocessUnionlog(date, hour, spark)
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ctr_data_hourly")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ctr_data_hourly")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ctr_data_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ctr_data_hourly")
     println("successfully save data into table dl_cpc.ocpc_ctr_data_hourly")
   }
 
@@ -77,7 +77,7 @@ object OcpcBaseCtr {
          |    adslot_type,
          |    adtype,
          |    adclass,
-         |    exp_cvr,
+         |    cast(exp_cvr as double) as exp_cvr,
          |    isclick,
          |    isshow,
          |    ocpc_log,
