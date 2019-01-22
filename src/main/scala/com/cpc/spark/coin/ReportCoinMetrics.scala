@@ -349,12 +349,12 @@ object ReportCoinMetrics {
           .mode("overwrite")
           .insertInto("dl_cpc.cpc_report_coin_userid_metrics_no_auto")
 
-//        val useridMetricsDelSqlnoAuto = s"delete from report2.report_coin_userid_metrics_no_auto where `date` = '$date'"
-//        OperateMySQL.del(useridMetricsDelSqlnoAuto)
-//        useridMetricsnoAuto.write.mode(SaveMode.Append)
-//          .jdbc(mariadb_write_url, "report2.report_coin_userid_metrics_no_auto", mariadb_write_prop)
-//        println("insert into report2.report_coin_userid_metrics success!")
-//        useridMetricsnoAuto.unpersist()
+        val useridMetricsDelSqlnoAuto = s"delete from report2.report_coin_userid_metrics_no_auto where `date` = '$date'"
+        OperateMySQL.del(useridMetricsDelSqlnoAuto)
+        useridMetricsnoAuto.write.mode(SaveMode.Append)
+          .jdbc(mariadb_write_url, "report2.report_coin_userid_metrics_no_auto", mariadb_write_prop)
+        println("insert into report2.report_coin_userid_metrics_no_auto success!")
+        useridMetricsnoAuto.unpersist()
 
 
 
