@@ -11,7 +11,7 @@ object OcpcCheckData {
 
     val result = program(date, hour, spark)
     result
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_unionlog")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unionlog")
   }
 
   def program(date: String, hour: String, spark: SparkSession) = {
