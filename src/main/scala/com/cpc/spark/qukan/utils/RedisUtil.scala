@@ -206,8 +206,6 @@ object RedisUtil {
     println(s"key=$key, key2=$key2")
     jedis.setex(key, 7 * 24 * 60 * 60, ftrl.toJsonString)
     jedis.setex(key2, 7 * 24 * 60 * 60, ftrl.toJsonString)
-
-
     return (key, key2)
   }
 
