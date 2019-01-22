@@ -29,8 +29,8 @@ object HotTopicDailyMetrics {
                |    round(sum(case WHEN isclick = 1 then price else 0 end)*10/count(distinct uid),6) as arpu,
                |    round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isclick),6) as acp,
                |    round(sum(isshow)/count(distinct uid),6) as aspu, --人均展示率
-               |    round(sum(case WHEN label2 = 1 then 1 else 0 end)*100/count(distinct uid),6) as acpu --人均转化率
-               |
+               |    round(sum(case WHEN label2 = 1 then 1 else 0 end)*100/count(distinct uid),6) as acpu, --人均转化率
+               |    '$date' as date
                |from
                |(
                |    select a.*,b.label2 as label2
