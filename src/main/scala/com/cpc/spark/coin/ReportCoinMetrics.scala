@@ -21,6 +21,10 @@ object ReportCoinMetrics {
           .getOrCreate()
         import spark.implicits._
 
+        val tmpDate = date.replace("-","")
+
+        println(tmpDate)
+
         val unionSql =
             s"""
                |select ideaid,
@@ -184,7 +188,7 @@ object ReportCoinMetrics {
           .drop("name")
           .select("userid","auc")
 
-        val testTable = s"test.uauc_$date"
+        val testTable = s"test.uauc_$tmpDate"
 
         uAuc.write.mode("overwrite").saveAsTable(testTable)
 //        uAuc.createOrReplaceTempView("uauc")
@@ -236,7 +240,7 @@ object ReportCoinMetrics {
 
         val useridOtherMetrics = spark.sql(useridSql)
 
-        val testTable2 = s"test.userid_other_$date"
+        val testTable2 = s"test.userid_other_$tmpDate"
 
         useridOtherMetrics.write.mode("overwrite").saveAsTable(testTable2)
 
