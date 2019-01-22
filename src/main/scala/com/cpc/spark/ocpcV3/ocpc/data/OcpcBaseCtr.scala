@@ -18,8 +18,8 @@ object OcpcBaseCtr {
     val hour = args(1).toString
     val resultDF = preprocessUnionlog(date, hour, spark)
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ctr_data_hourly")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ctr_data_hourly")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ctr_data_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_ctr_data_hourly")
     println("successfully save data into table dl_cpc.ocpc_ctr_data_hourly")
   }
 
@@ -87,7 +87,6 @@ object OcpcBaseCtr {
        """.stripMargin
     println(sqlRequestBase)
     val rawData = spark.sql(sqlRequestBase)
-    rawData.write.mode("overwrite").saveAsTable("test.ocpc_base_ctr20190122")
     rawData.createOrReplaceTempView("raw_table")
 
     // 展现数、点击数、花费
