@@ -26,8 +26,8 @@ object OcpcHotTopicHourlyReport {
     println(s"successfully save table into $tableName")
 
     val result1 = result
-      .withColumnRenamed("unitid","idea_id")
       .withColumnRenamed("userid","user_id" )
+      .withColumnRenamed("unitid","idea_id")
       .withColumn("pre_cvr", lit(0) )
       .withColumn("post_cvr",lit(0) )
       .withColumn("q_factor", lit(0))
@@ -37,7 +37,7 @@ object OcpcHotTopicHourlyReport {
     result1.printSchema()
 
 
-//    saveDataToReport(result1, spark)
+    saveDataToReport(result1, spark)
   }
 
   def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
