@@ -22,6 +22,16 @@ object OcpcHotTopicDailyReport {
       .repartition(10).write.mode("overwrite").insertInto(tableName)
     //    summaryReport.write.mode("overwrite").saveAsTable(tableName)
     println(s"successfully save table into $tableName")
+
+    val summaryReport1 = summaryReport
+      .withColumn("pre_cvr", lit(0))
+      .withColumn("post_cvr", lit(0))
+      .withColumn("q_factor", lit(0))
+      .withColumn("acb", lit(0))
+      .withColumn("auc", lit(0)).select( "conversion_goal",
+      "total_adnum","step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost","acp", "pre_cvr", "post_cvr",
+      "q_factor", "acb", "auc", "date", "hour" )
+    
     saveDataToReport(summaryReport, spark)
   }
 
