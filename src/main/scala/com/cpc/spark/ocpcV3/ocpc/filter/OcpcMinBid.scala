@@ -23,11 +23,11 @@ object OcpcMinBid {
 
     // 抽取数据
     val baseData = getBaseData(date, hour, spark)
-    baseData
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base")
+//    baseData
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit("qtt_demo"))
+//      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base")
 //      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
 
     val resultDF = calculateMinBid(baseData, date, hour, spark)
