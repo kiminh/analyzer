@@ -24,7 +24,17 @@ object OcpcHotTopicHourlyReport {
       .repartition(10).write.mode("overwrite").insertInto(tableName)
     //    result.write.mode("overwrite").saveAsTable(tableName)
     println(s"successfully save table into $tableName")
-    saveDataToReport(result, spark)
+
+    val result1 = result
+      .withColumnRenamed("unitid", "idea_id")
+      .withColumnRenamed("userid","user_id" )
+      .withColumn("pre_cvr", lit(0) )
+      .withColumn("post_cvr",lit(0) )
+      .withColumn("q_factor", lit(0))
+      .withColumn("acb", lit(0))
+      .withColumn("auc", lit(0))
+
+    saveDataToReport(result1, spark)
   }
 
   def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
