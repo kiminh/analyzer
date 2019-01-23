@@ -29,7 +29,7 @@ object OcpcHotTopicHourlyReport {
 //      .withColumnRenamed("userid","user_id" )
 //      .withColumnRenamed("unitid","idea_id")
         .withColumn("user_id",col("userid"))
-      .withColumn("ideaid", col("unitid"))
+      .withColumn("idea_id", col("unitid"))
       .withColumn("pre_cvr", lit(0) )
       .withColumn("post_cvr",lit(0) )
       .withColumn("q_factor", lit(0))
