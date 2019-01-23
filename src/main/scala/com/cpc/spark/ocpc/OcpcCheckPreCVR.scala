@@ -51,35 +51,29 @@ object OcpcCheckPreCVR {
        """.stripMargin
     println(sqlRequest)
     val slimUnionlog = spark.sql(sqlRequest)
-
-    // 数据关联
-    val rawData = unitidList
-      .join(slimUnionlog, Seq("unitid"), "left_outer")
-      .select("searchid", "unitid", "userid", "industry", "exp_cvr", "date")
-    rawData.createOrReplaceTempView("raw_data")
+    slimUnionlog.createOrReplaceTempView("raw_data")
 
     // 计算两天的数据
     val sqlRequest2 =
       s"""
          |SELECT
          |  unitid,
-         |  userid,
-         |  industry,
-         |  conversion_goal,
          |  date,
          |  sum(exp_cvr) * 0.0000001 / count(1) as pcvr
          |FROM
          |  raw_data
-         |GROUP BY unitid, userid, industry, conversion_goal, date
+         |GROUP BY unitid, date
        """.stripMargin
     println(sqlRequest2)
     val data = spark.sql(sqlRequest2)
 
-    val data1 = data.filter(s"`date`='$date1'").withColumn("pcvr1", col("pcvr")).select("unitid", "userid", "industry", "conversion_goal", "pcvr1")
-    val data2 = data.filter(s"`date`='$date'").withColumn("pcvr2", col("pcvr")).select("unitid", "userid", "industry", "conversion_goal", "pcvr2")
+    val data1 = data.filter(s"`date`='$date1'").withColumn("pcvr1", col("pcvr")).select("unitid", "pcvr1")
+    val data2 = data.filter(s"`date`='$date'").withColumn("pcvr2", col("pcvr")).select("unitid", "pcvr2")
 
     val result = data1
-      .join(data2, Seq("unitid", "userid", "industry", "conversion_goal"), "outer")
+      .join(data2, Seq("unitid"), "outer")
+      .select("unitid", "pcvr1", "pcvr2")
+      .join(unitidList, Seq("unitid"), "inner")
       .select("unitid", "userid", "industry", "conversion_goal", "pcvr1", "pcvr2")
 
     // 抽取在投ocpc广告的名单
@@ -93,7 +87,7 @@ object OcpcCheckPreCVR {
 
     // 关联数据
     val resultDF = result
-      .join(ocpcList, Seq("unitid", "conversion_goal"), "left_outer")
+      .join(ocpcList, Seq("unitid"), "left_outer")
       .withColumn("is_ocpc", when(col("flag")===1, 1).otherwise(0))
       .select("unitid", "userid", "industry", "conversion_goal", "pcvr1", "pcvr2", "is_ocpc")
 
