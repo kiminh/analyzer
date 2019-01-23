@@ -81,9 +81,10 @@ object OcpcCheckPreCVR {
       .select("unitid", "industry", "pcvr1", "pcvr2")
 
     // 抽取在投ocpc广告的名单
+    val ocpcSelectCondition = s"`date`='$date' and `hour`='$hour2'"
     val ocpcList = spark
       .table("dl_cpc.ocpc_cpa_given_hourly")
-      .where(s"`date`='$date' and `hour`='$hour2'")
+      .where(ocpcSelectCondition)
       .select("unitid")
       .withColumn("flag", lit(1))
       .distinct()
