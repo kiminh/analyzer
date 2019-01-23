@@ -31,8 +31,8 @@ object OcpcHotTopicDailyReport {
       .withColumn("auc", lit(0)).select( "conversion_goal",
       "total_adnum","step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost","acp", "pre_cvr", "post_cvr",
       "q_factor", "acb", "auc", "date", "hour" )
-    
-    saveDataToReport(summaryReport, spark)
+
+    saveDataToReport(summaryReport1, spark)
   }
 
   def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
