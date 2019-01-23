@@ -14,16 +14,17 @@ object OcpcCheckPreCVR {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
     val date = args(0).toString
     val hour = args(1).toString
+    val hour2 = args(2).toString
 
     // 抽取推荐cpa的unitid
     val data = getSuggestUnitid(date, hour, spark)
     // 根据slim_unionlog计算平均预测cvr
-    val result = cmpPreCvr(data, date, hour, spark)
+    val result = cmpPreCvr(data, date, hour, hour2, spark)
 
     result.repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_check_pcvr20190122")
   }
 
-  def cmpPreCvr(unitidList: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def cmpPreCvr(unitidList: DataFrame, date: String, hour: String, hour2: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -75,9 +76,23 @@ object OcpcCheckPreCVR {
     val data1 = data.filter(s"`date`='$date1'").withColumn("pcvr1", col("pcvr")).select("unitid", "industry", "pcvr1")
     val data2 = data.filter(s"`date`='$date'").withColumn("pcvr2", col("pcvr")).select("unitid", "industry", "pcvr2")
 
-    val resultDF = data1
+    val result = data1
       .join(data2, Seq("unitid", "industry"), "outer")
       .select("unitid", "industry", "pcvr1", "pcvr2")
+
+    // 抽取在投ocpc广告的名单
+    val ocpcList = spark
+      .table("dl_cpc.ocpc_cpa_given_hourly")
+      .where(s"`date`='$date' and `hour`='$hour2'")
+      .select("unitid")
+      .withColumn("flag", lit(1))
+      .distinct()
+
+    // 关联数据
+    val resultDF = result
+      .join(ocpcList, Seq("unitid"), "left_outer")
+      .withColumn("is_ocpc", when(col("flag")===1, 1).otherwise(0))
+      .select("unitid", "industry", "pcvr1", "pcvr2", "is_ocpc")
 
     resultDF
 
