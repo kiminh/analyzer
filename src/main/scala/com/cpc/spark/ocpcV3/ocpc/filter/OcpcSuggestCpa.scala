@@ -130,7 +130,8 @@ object OcpcSuggestCpa{
   def getOcpcFlag(date: String, hour: String, spark: SparkSession) = {
     val data = spark
       .table("dl_cpc.ocpc_cpa_given_hourly")
-      .where("unitid")
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .select("unitid")
       .withColumn("ocpc_flag", lit(1))
       .distinct()
 
