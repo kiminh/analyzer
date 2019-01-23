@@ -55,7 +55,7 @@ object OcpcCheckPreCVR {
     // 数据关联
     val rawData = unitidList
       .join(slimUnionlog, Seq("unitid"), "left_outer")
-      .select("searchid", "unitid", "industry", "exp_cvr", "date")
+      .select("searchid", "unitid", "userid", "industry", "exp_cvr", "date")
     rawData.createOrReplaceTempView("raw_data")
 
     // 计算两天的数据
@@ -63,22 +63,23 @@ object OcpcCheckPreCVR {
       s"""
          |SELECT
          |  unitid,
+         |  userid,
          |  industry,
          |  date,
          |  sum(exp_cvr) * 0.0000001 / count(1) as pcvr
          |FROM
          |  raw_data
-         |GROUP BY unitid, industry, date
+         |GROUP BY unitid, userid, industry, date
        """.stripMargin
     println(sqlRequest2)
     val data = spark.sql(sqlRequest2)
 
-    val data1 = data.filter(s"`date`='$date1'").withColumn("pcvr1", col("pcvr")).select("unitid", "industry", "pcvr1")
-    val data2 = data.filter(s"`date`='$date'").withColumn("pcvr2", col("pcvr")).select("unitid", "industry", "pcvr2")
+    val data1 = data.filter(s"`date`='$date1'").withColumn("pcvr1", col("pcvr")).select("unitid", "userid", "industry", "pcvr1")
+    val data2 = data.filter(s"`date`='$date'").withColumn("pcvr2", col("pcvr")).select("unitid", "userid", "industry", "pcvr2")
 
     val result = data1
-      .join(data2, Seq("unitid", "industry"), "outer")
-      .select("unitid", "industry", "pcvr1", "pcvr2")
+      .join(data2, Seq("unitid", "userid", "industry"), "outer")
+      .select("unitid", "userid", "industry", "pcvr1", "pcvr2")
 
     // 抽取在投ocpc广告的名单
     val ocpcSelectCondition = s"`date`='$date' and `hour`='$hour2'"
@@ -93,7 +94,7 @@ object OcpcCheckPreCVR {
     val resultDF = result
       .join(ocpcList, Seq("unitid"), "left_outer")
       .withColumn("is_ocpc", when(col("flag")===1, 1).otherwise(0))
-      .select("unitid", "industry", "pcvr1", "pcvr2", "is_ocpc")
+      .select("unitid", "userid", "industry", "pcvr1", "pcvr2", "is_ocpc")
 
     resultDF
 
@@ -113,6 +114,7 @@ object OcpcCheckPreCVR {
       s"""
          |SELECT
          |  unitid,
+         |  userid,
          |  industry
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
