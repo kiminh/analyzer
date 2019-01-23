@@ -22,7 +22,7 @@ object OcpcHotTopicDailyReport {
       .repartition(10).write.mode("overwrite").insertInto(tableName)
     //    summaryReport.write.mode("overwrite").saveAsTable(tableName)
     println(s"successfully save table into $tableName")
-//    saveDataToReport(summaryReport, spark) // 我： 删掉
+    saveDataToReport(summaryReport, spark)
   }
 
   def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
@@ -108,7 +108,7 @@ object OcpcHotTopicDailyReport {
 
   def saveDataToReport(data: DataFrame, spark: SparkSession) = {
     val conf = ConfigFactory.load()
-    val tableName = "report2.report_ocpc_novel_data_summary"
+    val tableName = "report2.report_ocpc_hottopic_data_summary"
     mariadb_write_url = conf.getString("mariadb.report2_write.url")
     mariadb_write_prop.put("user", conf.getString("mariadb.report2_write.user"))
     mariadb_write_prop.put("password", conf.getString("mariadb.report2_write.password"))
