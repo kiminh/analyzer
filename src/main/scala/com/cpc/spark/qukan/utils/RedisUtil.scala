@@ -199,8 +199,6 @@ object RedisUtil {
     新版redis数据
      */
     val jedis = new JedisCluster(new HostAndPort("192.168.83.62", 7001))
-//    val redis = new RedisClient("r-2ze5dd7d4f0c6364.redis.rds.aliyuncs.com", 6379)
-//    redis.auth("J9Q4wJTZbCk4McdiO8U5rIJW")
     val key = s"ftrl-$typename-$version"
     val key2 = s"ftrl-$typename-$version-$date-$hour"
     println(s"key=$key, key2=$key2")
