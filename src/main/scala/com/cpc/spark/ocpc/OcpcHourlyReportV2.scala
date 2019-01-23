@@ -7,7 +7,9 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 object OcpcHourlyReportV2 {
   def main(args: Array[String]): Unit = {
     /*
-
+    新版报表程序
+    1. 从ocpc_unionlog拉取ocpc广告记录
+    2. 采用数据关联方式获取
      */
     val spark = SparkSession
       .builder()

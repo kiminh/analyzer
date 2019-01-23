@@ -25,9 +25,9 @@ object OcpcCPAgiven {
 
     // 链接adv数据库
     val cpaGiven = getCPAgiven(date, hour, spark)
-//    cpaGiven.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_hourly")
-    cpaGiven
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cpa_given_hourly")
+    cpaGiven.write.mode("overwrite").saveAsTable("test.ocpc_cpa_given_hourly")
+//    cpaGiven
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cpa_given_hourly")
   }
 
   def getCPAgiven(date: String, hour: String, spark: SparkSession) = {
@@ -35,7 +35,7 @@ object OcpcCPAgiven {
     val user = "adv_live_read"
     val passwd = "seJzIPUc7xU"
     val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
 
     val data = spark.read.format("jdbc")
       .option("url", url)
@@ -48,12 +48,12 @@ object OcpcCPAgiven {
     val base = data
       .withColumn("unitid", col("id"))
       .withColumn("userid", col("user_id"))
-      .select("unitid", "userid", "ideas", "bid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal")
+      .select("unitid", "userid", "ideas", "bid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "status")
 
 
     val ideaTable = base
       .withColumn("ideaid", explode(split(col("ideas"), "[,]")))
-      .select("unitid", "userid", "ideaid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal")
+      .select("unitid", "userid", "ideaid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "status")
 
     ideaTable.createOrReplaceTempView("ideaid_update_time")
 
@@ -68,7 +68,8 @@ object OcpcCPAgiven {
          |    ocpc_bid_update_time as update_timestamp,
          |    from_unixtime(ocpc_bid_update_time) as update_time,
          |    from_unixtime(ocpc_bid_update_time, 'yyyy-MM-dd') as update_date,
-         |    from_unixtime(ocpc_bid_update_time, 'HH') as update_hour
+         |    from_unixtime(ocpc_bid_update_time, 'HH') as update_hour,
+         |    status
          |FROM
          |    ideaid_update_time
        """.stripMargin
