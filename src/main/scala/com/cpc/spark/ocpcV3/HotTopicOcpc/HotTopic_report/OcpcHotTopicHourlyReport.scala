@@ -26,8 +26,10 @@ object OcpcHotTopicHourlyReport {
     println(s"successfully save table into $tableName")
 
     val result1 = result
-      .withColumnRenamed("userid","user_id" )
-      .withColumnRenamed("unitid","idea_id")
+//      .withColumnRenamed("userid","user_id" )
+//      .withColumnRenamed("unitid","idea_id")
+        .withColumn("user_id",col("userid"))
+      .withColumn("ideaid", col("unitid"))
       .withColumn("pre_cvr", lit(0) )
       .withColumn("post_cvr",lit(0) )
       .withColumn("q_factor", lit(0))
