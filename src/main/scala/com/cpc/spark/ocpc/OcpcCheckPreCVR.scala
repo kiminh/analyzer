@@ -45,7 +45,7 @@ object OcpcCheckPreCVR {
          |  dl_cpc.slim_union_log
          |WHERE
          |  (`dt`='$date1' or `dt`='$date')
-         |AND `hour` >= '11'
+         |AND `hour` >= '$hour'
          |AND isclick=1
        """.stripMargin
     println(sqlRequest)
