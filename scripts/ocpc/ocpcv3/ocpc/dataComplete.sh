@@ -17,6 +17,9 @@ if [[ $? == 0 ]]; then
             echo "start the project!"
             sh testOcpcForAll.sh data.OcpcUnionLog $date $hour
             sh testOcpcForAll.sh data.OcpcBaseCtr $date $hour
+            sh testOcpcForAll.sh data.OcpcBaseCtrCPC $date $hour
+            sh testOcpcForAll.sh data.OcpcFilterUnionLog $date $hour
+            sh testOcpcForAll.sh model.OcpcCPAgiven $date $hour
 
             okfile=/user/cpc/wangjun/okdir/ocpc/ocpcNoTarget/data/${date}-${hour}.ok
 

@@ -42,6 +42,12 @@ object OcpcSuggestCpa{
     // unitid维度的industry
     val unitidIndustry = getIndustry(date, hour, spark)
 
+    // unitid维度判断是否已投ocpc
+    val unitidOcpc = getOcpcFlag(date, hour, spark)
+
+    // 判断user的usertype
+    val userTypes = getUserType(date, hour, spark)
+
 
     // 调整字段
     val cpa1Data = cpa1.withColumn("conversion_goal", lit(1))
@@ -70,6 +76,11 @@ object OcpcSuggestCpa{
       .withColumn("is_recommend", when(col("cvrcnt") < 60, 0).otherwise(col("is_recommend")))
       .join(unitidIndustry, Seq("unitid"), "left_outer")
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend")
+      .join(unitidOcpc, Seq("unitid"), "left_outer")
+      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag")
+      .na.fill(0, Seq("ocpc_flag"))
+      .join(userTypes, Seq("userid"), "left_outer")
+      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
@@ -80,6 +91,51 @@ object OcpcSuggestCpa{
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
+  }
+
+  def getUserType(date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -72)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  userid,
+         |  usertype
+         |FROM
+         |  dl_cpc.slim_union_log
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  media_appsid in ('80000001', '80000002')
+         |GROUP BY userid, usertype
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    data
+  }
+
+  def getOcpcFlag(date: String, hour: String, spark: SparkSession) = {
+    val data = spark
+      .table("dl_cpc.ocpc_cpa_given_hourly")
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .select("unitid")
+      .withColumn("ocpc_flag", lit(1))
+      .distinct()
+
+    data
   }
 
   def getIndustry(date: String, hour: String, spark: SparkSession) = {
