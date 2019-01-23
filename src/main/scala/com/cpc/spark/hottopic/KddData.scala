@@ -63,6 +63,8 @@ object KddData {
 
         val kdd = spark.sql(sql)
 
+        println("kdd 's num is " + kdd.count())
+
         kdd.repartition(200)
           .write
           .mode("overwrite")
