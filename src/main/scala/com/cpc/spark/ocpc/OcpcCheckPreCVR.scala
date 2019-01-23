@@ -65,21 +65,22 @@ object OcpcCheckPreCVR {
          |  unitid,
          |  userid,
          |  industry,
+         |  conversion_goal,
          |  date,
          |  sum(exp_cvr) * 0.0000001 / count(1) as pcvr
          |FROM
          |  raw_data
-         |GROUP BY unitid, userid, industry, date
+         |GROUP BY unitid, userid, industry, conversion_goal, date
        """.stripMargin
     println(sqlRequest2)
     val data = spark.sql(sqlRequest2)
 
-    val data1 = data.filter(s"`date`='$date1'").withColumn("pcvr1", col("pcvr")).select("unitid", "userid", "industry", "pcvr1")
-    val data2 = data.filter(s"`date`='$date'").withColumn("pcvr2", col("pcvr")).select("unitid", "userid", "industry", "pcvr2")
+    val data1 = data.filter(s"`date`='$date1'").withColumn("pcvr1", col("pcvr")).select("unitid", "userid", "industry", "conversion_goal", "pcvr1")
+    val data2 = data.filter(s"`date`='$date'").withColumn("pcvr2", col("pcvr")).select("unitid", "userid", "industry", "conversion_goal", "pcvr2")
 
     val result = data1
-      .join(data2, Seq("unitid", "userid", "industry"), "outer")
-      .select("unitid", "userid", "industry", "pcvr1", "pcvr2")
+      .join(data2, Seq("unitid", "userid", "industry", "conversion_goal"), "outer")
+      .select("unitid", "userid", "industry", "conversion_goal", "pcvr1", "pcvr2")
 
     // 抽取在投ocpc广告的名单
     val ocpcSelectCondition = s"`date`='$date' and `hour`='$hour2'"
@@ -92,9 +93,9 @@ object OcpcCheckPreCVR {
 
     // 关联数据
     val resultDF = result
-      .join(ocpcList, Seq("unitid"), "left_outer")
+      .join(ocpcList, Seq("unitid", "conversion_goal"), "left_outer")
       .withColumn("is_ocpc", when(col("flag")===1, 1).otherwise(0))
-      .select("unitid", "userid", "industry", "pcvr1", "pcvr2", "is_ocpc")
+      .select("unitid", "userid", "industry", "conversion_goal", "pcvr1", "pcvr2", "is_ocpc")
 
     resultDF
 
@@ -116,7 +117,7 @@ object OcpcCheckPreCVR {
          |  unitid,
          |  userid,
          |  industry,
-         |  conversion_goal
+         |  original_conversion as conversion_goal
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
          |WHERE
