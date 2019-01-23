@@ -28,13 +28,13 @@ object OcpcHotTopicHourlyReport {
     val result1 = result
 //      .withColumnRenamed("userid","user_id" )
 //      .withColumnRenamed("unitid","idea_id")
-        .withColumn("user_id",col("userid"))
-      .withColumn("idea_id", col("unitid"))
+        .withColumn("userid",col("userid"))
+      .withColumn("ideaid", col("unitid"))
       .withColumn("pre_cvr", lit(0) )
       .withColumn("post_cvr",lit(0) )
       .withColumn("q_factor", lit(0))
       .withColumn("acb", lit(0))
-      .withColumn("auc", lit(0)).select( "user_id", "idea_id","conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click",
+      .withColumn("auc", lit(0)).select( "userid", "ideaid","conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click",
       "conversion", "ctr", "click_cvr", "show_cvr",  "cost",  "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor","acb", "auc", "date",  "hour"  )
 
     result1.printSchema()
