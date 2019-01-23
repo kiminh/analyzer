@@ -115,7 +115,8 @@ object OcpcCheckPreCVR {
          |SELECT
          |  unitid,
          |  userid,
-         |  industry
+         |  industry,
+         |  conversion_goal
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
          |WHERE
