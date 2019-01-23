@@ -23,11 +23,11 @@ object OcpcMinBid {
 
     // 抽取数据
     val baseData = getBaseData(date, hour, spark)
-//    baseData
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit("qtt_demo"))
-//      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base")
+    baseData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base")
 //      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
 
     val resultDF = calculateMinBid(baseData, date, hour, spark)
@@ -35,8 +35,8 @@ object OcpcMinBid {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid")
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
 
     val data = resultDF.orderBy(desc("cnt")).limit(3000)
 
@@ -110,7 +110,7 @@ object OcpcMinBid {
       s"""
          |SELECT
          |  hr,
-         |  adslot_type,
+         |  adslotid,
          |  city_level,
          |  adsrc,
          |  floor(adclass/1000) as ad_second_class,
@@ -119,7 +119,7 @@ object OcpcMinBid {
          |  count(1) as cnt
          |FROM
          |  base_data
-         |GROUP BY hr, adslot_type, city_level, adsrc, floor(adclass/1000), ocpc_flag
+         |GROUP BY hr, adslotid, city_level, adsrc, floor(adclass/1000), ocpc_flag
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
