@@ -40,7 +40,7 @@ object OcpcMinBid {
 
     val data = resultDF.orderBy(desc("cnt")).limit(3000)
 
-//    savePbPack(data, "ocpc_minbidv2.pb")
+    savePbPack(data, "ocpc_minbidv2.pb")
   }
 
   def savePbPack(dataset: Dataset[Row], filename: String): Unit = {
