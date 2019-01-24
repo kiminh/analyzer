@@ -222,7 +222,7 @@ object OcpcGetPb_v2 {
     val resultDF = pidK
       .join(regressionK, Seq("identifier", "conversion_goal"), "outer")
       .withColumn("kvalue", when(col("regression_k").isNull, col("pid_k")).otherwise(col("regression_k")))
-      .withColumn("kvalue", when(col("kvalue") < 0.0, 0.0).otherwise(when(col("kvalue")>2.0, 2.0).otherwise(col("kvalue"))))
+      .withColumn("kvalue", when(col("kvalue") < 0.0, 0.0).otherwise(when(col("kvalue")>10.0, 10.0).otherwise(col("kvalue"))))
 
 
     resultDF
