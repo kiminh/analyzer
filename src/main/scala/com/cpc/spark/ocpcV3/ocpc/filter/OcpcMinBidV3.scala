@@ -50,7 +50,6 @@ object OcpcMinBidV3 {
 //    percentile(cpm, 0.03) as min_cpm,
 //    count(1) as cnt
     resultDF
-      .selectExpr("hr", "adslot_type", "city_level", "ad_second_class", "ocpc_flag", "min_bid", "cast(min_cpm as bigint) min_cpm", "cnt", "min_cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
@@ -170,7 +169,9 @@ object OcpcMinBidV3 {
     val minCnt = cntData.first().getAs[Double]("min_cnt")
     println(s"minCnt is $minCnt")
 
-    val resultDF = rawData.withColumn("min_cnt", lit(minCnt))
+    val resultDF = rawData
+      .withColumn("min_cnt", lit(minCnt))
+      .selectExpr("hr", "cast(adslot_type as bigint) adslot_type", "city_level", "ad_second_class", "ocpc_flag", "min_bid", "cast(min_cpm as bigint) min_cpm", "cnt", "min_cnt")
 
 
     resultDF
