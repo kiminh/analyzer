@@ -86,26 +86,25 @@ object OcpcMinBidV3 {
 ////      double minBid = 6;
 ////      int64 minCpm = 7;
 //      val hour = record.getAs[String]("hr").toInt
-//      val adslotid = record.getAs[String]("adslotid")
+//      val adslottype = record.getAs[BigInt]("adslot_type")
 //      val city_level = record.getAs[Int]("city_level")
-//      // todo: adsrcc=2
-//      val adsrc = 2
 //      val ad_second_class = record.getAs[Long]("ad_second_class").toInt
 //      val ocpc_flag = record.getAs[Int]("ocpc_flag")
 //      val min_bid = record.getAs[Double]("min_bid")
+//      val min_cpm = record.getAs[BigInt]("min_cpm")
 //
 //      if (cnt % 100 == 0) {
-//        println(s"hour:$hour, adslotid:$adslotid, city_level:$city_level, adsrc:$adsrc, ad_second_class:$ad_second_class, ocpc_flag:$ocpc_flag, min_bid:$min_bid")
+//        println(s"hour:$hour, adslot_type:$adslottype, city_level:$city_level, ad_second_class:$ad_second_class, ocpc_flag:$ocpc_flag, min_bid:$min_bid, min_cpm:$min_cpm")
 //      }
 //      cnt += 1
-//      val currentItem = SingleBidv2(
+//      val currentItem = SingleMinCpm(
 //        hour = hour,
-//        adslotid = adslotid,
+//        adslotType = adslottype,
 //        cityLevel = city_level,
-//        adsrc = adsrc,
 //        adSecondClass = ad_second_class,
 //        isOcpc = ocpc_flag,
-//        minBid = min_bid
+//        minBid = min_bid,
+//        minCpm = min_cpm
 //      )
 //      list += currentItem
 //
