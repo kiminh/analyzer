@@ -38,7 +38,7 @@ object OcpcLightBulb{
     println(s"total size of the data is: $cnt")
     val conf = ConfigFactory.load("ocpc")
     for (record <- data.collect()) {
-      val identifier = record.getAs[BigInt]("unitid").toString
+      val identifier = record.getAs[Int]("unitid").toString
       val cpa1 = record.getAs[Double]("cpa1")
       val cpa2 = record.getAs[Double]("cpa2")
       val cpa3 = record.getAs[Double]("cpa3")
