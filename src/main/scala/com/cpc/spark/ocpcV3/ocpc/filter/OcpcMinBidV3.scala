@@ -24,12 +24,6 @@ object OcpcMinBidV3 {
 
     // 抽取数据
     val baseData1 = getBaseData(date, hour, spark)
-    baseData1
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit("qtt_demo"))
-//      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base")
-      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
 
     // 抽取expctr
     val expCtrData = getPreCtr(date, hour, spark)
@@ -38,6 +32,13 @@ object OcpcMinBidV3 {
       .join(expCtrData, Seq("searchid"), "inner")
       .select("searchid", "ideaid", "original_bid", "price", "bid", "ocpc_flag", "is_ocpc", "isshow", "isclick", "ocpc_log", "adslotid", "adslot_type", "user_city", "city_level", "adsrc", "adclass", "hr", "exp_ctr")
       .withColumn("cpm", col("bid") * col("exp_ctr"))
+
+    baseData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("qtt_demo"))
+//      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base_v2")
+      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
 
     val resultDF = calculateMinBid(baseData, date, hour, spark)
 
@@ -53,7 +54,7 @@ object OcpcMinBidV3 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_v2")
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
 
     val data = resultDF.filter(s"cnt>=300")
