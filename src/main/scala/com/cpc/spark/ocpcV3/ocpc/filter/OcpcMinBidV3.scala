@@ -5,7 +5,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
-import mincpm.mincpm.{SingleMinCpm, MinCpmList}
+import mincpm.Mincpm
+import mincpm.mincpm.{MinCpmList, SingleMinCpm}
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -48,7 +49,7 @@ object OcpcMinBidV3 {
 
     val data = resultDF.orderBy(desc("cnt")).limit(3000)
 
-    savePbPack(data, "ocpc_minbidv3.pb")
+    savePbPack(data, "ad_mincpm.pb")
   }
 
   def getPreCtr(date: String, hour: String, spark: SparkSession) = {
@@ -77,52 +78,49 @@ object OcpcMinBidV3 {
     dataset.printSchema()
     var cnt = 0
 
-//    for (record <- dataset.collect()) {
-////      int32 hour = 1;
-////      int64 adslotType = 2;
-////      int32 cityLevel = 3;
-////      int32 adSecondClass = 4;
-////      int32 isOcpc = 5;
-////      double minBid = 6;
-////      int64 minCpm = 7;
-//      val hour = record.getAs[String]("hr").toInt
-//      val adslottype = record.getAs[BigInt]("adslot_type")
-//      val city_level = record.getAs[Int]("city_level")
-//      val ad_second_class = record.getAs[Long]("ad_second_class").toInt
-//      val ocpc_flag = record.getAs[Int]("ocpc_flag")
-//      val min_bid = record.getAs[Double]("min_bid")
-//      val min_cpm = record.getAs[BigInt]("min_cpm")
-//
-//      if (cnt % 100 == 0) {
-//        println(s"hour:$hour, adslot_type:$adslottype, city_level:$city_level, ad_second_class:$ad_second_class, ocpc_flag:$ocpc_flag, min_bid:$min_bid, min_cpm:$min_cpm")
-//      }
-//      cnt += 1
-//      val currentItem = SingleMinCpm(
-//        hour = hour,
-//        adslotType = adslottype,
-//        cityLevel = city_level,
-//        adSecondClass = ad_second_class,
-//        isOcpc = ocpc_flag,
-//        minBid = min_bid,
-//        minCpm = min_cpm
-//      )
-//      list += currentItem
-//
-//    }
-//
-//
-//
-//
-//    val result = list.toArray[SingleBidv2]
-//    val adRecordList = BidListV2(
-//      adrecord = result
-//    )
-//
-//    println("length of the array")
-//    println(result.length)
-//    adRecordList.writeTo(new FileOutputStream(filename))
-//
-//    println("complete save data into protobuffer")
+    for (record <- dataset.collect()) {
+//      int32 hour = 1;
+//      int64 adslotType = 2;
+//      int32 cityLevel = 3;
+//      int32 adSecondClass = 4;
+//      int32 isOcpc = 5;
+//      double minBid = 6;
+//      int64 minCpm = 7;
+      val hr = record.getAs[String]("hr").toInt
+      val adslot_type = record.getAs[Long]("adslot_type")
+      val city_level = record.getAs[Int]("city_level")
+      val ad_second_class = record.getAs[Long]("ad_second_class").toInt
+      val ocpc_flag = record.getAs[Int]("ocpc_flag")
+      val min_bid = record.getAs[Double]("min_bid")
+      val min_cpm = record.getAs[Long]("min_cpm")
+
+      if (cnt % 100 == 0) {
+        println(s"hour:$hr, adslot_type:$adslot_type, city_level:$city_level, ad_second_class:$ad_second_class, ocpc_flag:$ocpc_flag, min_bid:$min_bid, min_cpm:$min_cpm")
+      }
+      cnt += 1
+      val currentItem = SingleMinCpm(
+        hour = hr,
+        adslotType = adslot_type,
+        cityLevel = city_level,
+        adSecondClass = ad_second_class,
+        isOcpc = ocpc_flag,
+        minBid = min_bid,
+        minCpm = min_cpm
+      )
+      list += currentItem
+
+    }
+
+    val result = list.toArray[SingleMinCpm]
+    val adRecordList = MinCpmList(
+      adrecord = result
+    )
+
+    println("length of the array")
+    println(result.length)
+    adRecordList.writeTo(new FileOutputStream(filename))
+
+    println("complete save data into protobuffer")
 
   }
 
