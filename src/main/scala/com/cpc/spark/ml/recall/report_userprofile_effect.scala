@@ -129,18 +129,14 @@ val sqlRequest2 =
      |  a.isshow,
      |  COALESCE(a.price, 0) price,
      |  a.interests,
-     |  case when b.label2=1 then 1 else 0 end as iscvr,
-     |  case when c.label3=1 then 1 else 0 end as iscvr1
+     |  case when b.label=1 then 1 else 0 end as iscvr
      |from
      |  unionlog_table as a
      |left join
-     |  (select searchid,ideaid, max(label2) as label2 from dl_cpc.ml_cvr_feature_v1 where date='$date' group by searchid,ideaid) as b
+     |  (select searchid,ideaid, 1 as label from dl_cpc.dl_conversion_by_industry
+     |  where pt='$date' and pt in ('elds', 'wzcp', 'yysc', 'feedapp', 'others') and isreport=1 group by searchid,ideaid) as b
      |on
      |  a.searchid=b.searchid and a.ideaid=b.ideaid
-     |left join
-     |  (select searchid,ideaid, max(label) as label3 from dl_cpc.ml_cvr_feature_v2 where date='$date' group by searchid,ideaid) as c
-     |on
-     |  a.searchid=c.searchid and a.ideaid=c.ideaid
     """.stripMargin
 
     val base = spark.sql(sqlRequest2).repartition(10000).persist(StorageLevel.MEMORY_AND_DISK_SER)
@@ -159,7 +155,6 @@ val sqlRequest2 =
          |  SUM(price) as cost,
          |  SUM(isclick) as ctr,
          |  SUM(iscvr) as cvr,
-         |  SUM(iscvr1) as apiCvr,
          |  SUM(isshow) as show
          |FROM tmpTable GROUP BY userid,unitid,ideaid,adslot_type
        """.stripMargin
@@ -171,7 +166,7 @@ val sqlRequest2 =
       s"""
          |select userid, tag,unitid,ideaid,adslot_type,
          |SUM(price) as costWithTag, SUM(isclick) as ctrWithTag, SUM(iscvr) as cvrWithTag,
-         |SUM(iscvr1) as apicvrWithTag, SUM(isshow) as showWithTag
+         |SUM(isshow) as showWithTag
          |from (Select
          |  searchid,
          |  uid,
@@ -183,7 +178,6 @@ val sqlRequest2 =
          |  isshow,
          |  price,
          |  iscvr,
-         |  iscvr1,
          |  split(interest, '=')[0] as tag
          |FROM tmpTable lateral view explode(split(interests, ',')) a as interest
          |where interest like '%=100') ta group by userid, tag,unitid,ideaid,adslot_type
@@ -193,17 +187,13 @@ val sqlRequest2 =
     spark.sql(result1).repartition(500).createOrReplaceTempView("withtag")
     val result2 =
       s"""
-         |insert overwrite table dl_cpc.cpc_profileTag_report_daily_v1 partition (`date`='$date')
+         |insert overwrite table dl_cpc.cpc_profileTag_report_daily_v2 partition (`date`='$date')
          |Select ta.userid,ta.unitid, ta.ideaid, ta.adslot_type, ta.tag,
          | ta.showWithTag, show-showWithTag,
-         | ta.ctrWithTag, ctr-ctrWithTag, ctrWithTag*1.0/ctr,
+         | ta.ctrWithTag, ctr-ctrWithTag,
          | ta.costWithTag, cost-ta.costWithTag,
-         | ta.apicvrWithTag, ta.cvrWithTag,
-         | ta.apicvrWithTag*1.0/ta.costWithTag, ta.cvrWithTag*1.0/ta.costWithTag,
-         | apiCvr-ta.apicvrWithTag, cvr-ta.cvrWithTag,
-         | (apiCvr-ta.apicvrWithTag)*1.0/(cost-ta.costWithTag), (cvr-ta.cvrWithTag)*1.0/(cost-ta.costWithTag),
-         | (ta.apicvrWithTag*1.0/ta.costWithTag)/((apiCvr-ta.apicvrWithTag)*1.0/(cost-ta.costWithTag)),
-         | (ta.cvrWithTag*1.0/ta.costWithTag)/((cvr-ta.cvrWithTag)*1.0/(cost-ta.costWithTag))
+         | ta.cvrWithTag,
+         | cvr-ta.cvrWithTag
          |from withtag ta left join total tb on ta.userid=tb.userid and ta.unitid=tb.unitid and ta.ideaid=tb.ideaid and ta.adslot_type=tb.adslot_type
        """.stripMargin
 
@@ -236,21 +226,13 @@ val sqlRequest2 =
         |coalesce(tb.name, 'Unknown') as name,
         |cast(coalesce(ctrwithtag,0) as int) as ctrwithtag,
         |cast(coalesce(ctrwithouttag,0) as int) as ctrwithouttag,
-        |cast(coalesce(ctrwithtag*1.0/(ctrwithouttag + ctrwithtag),0.0) as double) as ctrratio,
         |coalesce(costwithtag,0) as costwithtag, coalesce(costwithouttag,0) as costwithouttag,
-        |cast(coalesce(apicvrwithtag,0) as int) as apicvrwithtag, cast(coalesce(cvrwithtag,0) as int) as cvrwithtag,
-        |coalesce(apicvrwithtag*1.0/costwithtag,0.0) as apiroiwithtag,
-        |coalesce(cvrwithtag*1.0/costwithtag,0.0) as roiwithtag,
-        |cast(coalesce(apicvrwithouttag,0) as int) as apicvrwithouttag,
+        |cast(coalesce(cvrwithtag,0) as int) as cvrwithtag,
         |cast(coalesce(cvrwithouttag,0) as int) as cvrwithouttag,
-        |coalesce(apicvrwithouttag*1.0/costwithouttag,0.0) as apiroiwithouttag,
-        |coalesce(cvrwithouttag*1.0/costwithouttag,0) as roiwithouttag,
-        |if((apicvrwithouttag*1.0/costwithouttag)=0.0, 1.0, coalesce((apicvrwithtag*1.0/costwithtag)/(apicvrwithouttag*1.0/costwithouttag),0.0)) as apiperformance,
-        |if((cvrwithouttag*1.0/costwithouttag)=0.0, 1.0, coalesce((cvrwithtag*1.0/costwithtag)/(cvrwithouttag*1.0/costwithouttag),0.0)) as performance,
         |to_date('$date') as date from
         |(select userid,tag,sum(ctrwithtag) ctrwithtag,sum(ctrwithouttag) ctrwithouttag,sum(costwithtag) costwithtag,
-        |sum(costwithouttag) costwithouttag, sum(apicvrwithtag) apicvrwithtag, sum(cvrwithtag) cvrwithtag,
-        |sum(apicvrwithouttag) apicvrwithouttag, sum(cvrwithouttag) cvrwithouttag from dl_cpc.cpc_profileTag_report_daily_v1
+        |sum(costwithouttag) costwithouttag, sum(cvrwithtag) cvrwithtag,
+        |sum(cvrwithouttag) cvrwithouttag from dl_cpc.cpc_profileTag_report_daily_v2
         |where date='$date' group by userid, tag) ta left join tag_table tb on ta.tag=tb.tag left join dl_cpc.cpc_userid_tag tc
         |on ta.tag=tc.profile_tag and ta.userid = tc.userid where tb.tag is not null or tc.profile_tag is not null
       """.stripMargin).
