@@ -20,6 +20,8 @@ object GetIdeaTitle {
                |select uid,click_title
                |from dl_cpc.kdd_uid_data
                |where `date`='$date'
+               |and click_title is not null
+               |and length(click_title) > 0
              """.stripMargin
 
         val data = spark.sql(sql).rdd.map(x => x.getAs[String]("uid") + "|" + x.getAs[String]("click_title"))
