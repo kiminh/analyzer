@@ -36,11 +36,21 @@ object OcpcMinBidV3 {
 
     val baseData = baseData1
       .join(expCtrData, Seq("searchid"), "inner")
-      .select("searchid", "ideaid", "original_bid", "price", "cast(bid as int) as bid", "ocpc_flag", "is_ocpc", "isshow", "isclick", "ocpc_log", "adslotid", "adslot_type", "user_city", "city_level", "adsrc", "adclass", "hr", "exp_ctr")
+      .select("searchid", "ideaid", "original_bid", "price", "bid", "ocpc_flag", "is_ocpc", "isshow", "isclick", "ocpc_log", "adslotid", "adslot_type", "user_city", "city_level", "adsrc", "adclass", "hr", "exp_ctr")
       .withColumn("cpm", col("bid") * col("exp_ctr"))
 
     val resultDF = calculateMinBid(baseData, date, hour, spark)
+
+//    hr,
+//    adslot_type,
+//    city_level,
+//    floor(adclass/1000) as ad_second_class,
+//    ocpc_flag,
+//    percentile(bid, 0.03) as min_bid,
+//    percentile(cpm, 0.03) as min_cpm,
+//    count(1) as cnt
     resultDF
+      .selectExpr("hr", "adslot_type", "city_level", "ad_second_class", "ocpc_flag", "min_bid", "cast(min_cpm as bigint) min_cpm", "cnt", "min_cnt")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
