@@ -254,7 +254,6 @@ object OcpcMinBidV3 {
          |    city_level,
          |    adsrc,
          |    adclass,
-         |
          |    hr
          |from ctr_data
        """.stripMargin
