@@ -77,53 +77,53 @@ object OcpcMinBidV3 {
     dataset.printSchema()
     var cnt = 0
 
-    for (record <- dataset.collect()) {
-//      int32 hour = 1;
-//      int64 adslotType = 2;
-//      int32 cityLevel = 3;
-//      int32 adSecondClass = 4;
-//      int32 isOcpc = 5;
-//      double minBid = 6;
-//      int64 minCpm = 7;
-      val hour = record.getAs[String]("hr").toInt
-      val adslotid = record.getAs[String]("adslotid")
-      val city_level = record.getAs[Int]("city_level")
-      // todo: adsrcc=2
-      val adsrc = 2
-      val ad_second_class = record.getAs[Long]("ad_second_class").toInt
-      val ocpc_flag = record.getAs[Int]("ocpc_flag")
-      val min_bid = record.getAs[Double]("min_bid")
-
-      if (cnt % 100 == 0) {
-        println(s"hour:$hour, adslotid:$adslotid, city_level:$city_level, adsrc:$adsrc, ad_second_class:$ad_second_class, ocpc_flag:$ocpc_flag, min_bid:$min_bid")
-      }
-      cnt += 1
-      val currentItem = SingleBidv2(
-        hour = hour,
-        adslotid = adslotid,
-        cityLevel = city_level,
-        adsrc = adsrc,
-        adSecondClass = ad_second_class,
-        isOcpc = ocpc_flag,
-        minBid = min_bid
-      )
-      list += currentItem
-
-    }
-
-
-
-
-    val result = list.toArray[SingleBidv2]
-    val adRecordList = BidListV2(
-      adrecord = result
-    )
-
-    println("length of the array")
-    println(result.length)
-    adRecordList.writeTo(new FileOutputStream(filename))
-
-    println("complete save data into protobuffer")
+//    for (record <- dataset.collect()) {
+////      int32 hour = 1;
+////      int64 adslotType = 2;
+////      int32 cityLevel = 3;
+////      int32 adSecondClass = 4;
+////      int32 isOcpc = 5;
+////      double minBid = 6;
+////      int64 minCpm = 7;
+//      val hour = record.getAs[String]("hr").toInt
+//      val adslotid = record.getAs[String]("adslotid")
+//      val city_level = record.getAs[Int]("city_level")
+//      // todo: adsrcc=2
+//      val adsrc = 2
+//      val ad_second_class = record.getAs[Long]("ad_second_class").toInt
+//      val ocpc_flag = record.getAs[Int]("ocpc_flag")
+//      val min_bid = record.getAs[Double]("min_bid")
+//
+//      if (cnt % 100 == 0) {
+//        println(s"hour:$hour, adslotid:$adslotid, city_level:$city_level, adsrc:$adsrc, ad_second_class:$ad_second_class, ocpc_flag:$ocpc_flag, min_bid:$min_bid")
+//      }
+//      cnt += 1
+//      val currentItem = SingleBidv2(
+//        hour = hour,
+//        adslotid = adslotid,
+//        cityLevel = city_level,
+//        adsrc = adsrc,
+//        adSecondClass = ad_second_class,
+//        isOcpc = ocpc_flag,
+//        minBid = min_bid
+//      )
+//      list += currentItem
+//
+//    }
+//
+//
+//
+//
+//    val result = list.toArray[SingleBidv2]
+//    val adRecordList = BidListV2(
+//      adrecord = result
+//    )
+//
+//    println("length of the array")
+//    println(result.length)
+//    adRecordList.writeTo(new FileOutputStream(filename))
+//
+//    println("complete save data into protobuffer")
 
   }
 
