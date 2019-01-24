@@ -70,26 +70,11 @@ object OcpcCheckPreCVR {
     val data1 = data.filter(s"`date`='$date1'").withColumn("pcvr1", col("pcvr")).select("unitid", "pcvr1")
     val data2 = data.filter(s"`date`='$date'").withColumn("pcvr2", col("pcvr")).select("unitid", "pcvr2")
 
-    val result = data1
+    val resultDF = data1
       .join(data2, Seq("unitid"), "outer")
       .select("unitid", "pcvr1", "pcvr2")
       .join(unitidList, Seq("unitid"), "inner")
-      .select("unitid", "userid", "industry", "conversion_goal", "pcvr1", "pcvr2")
-
-    // 抽取在投ocpc广告的名单
-    val ocpcSelectCondition = s"`date`='$date' and `hour`='$hour2'"
-    val ocpcList = spark
-      .table("dl_cpc.ocpc_cpa_given_hourly")
-      .where(ocpcSelectCondition)
-      .select("unitid")
-      .withColumn("flag", lit(1))
-      .distinct()
-
-    // 关联数据
-    val resultDF = result
-      .join(ocpcList, Seq("unitid"), "left_outer")
-      .withColumn("is_ocpc", when(col("flag")===1, 1).otherwise(0))
-      .select("unitid", "userid", "industry", "conversion_goal", "pcvr1", "pcvr2", "is_ocpc")
+      .select("unitid", "userid", "industry", "conversion_goal", "pcvr1", "pcvr2", "ocpc_flag", "usertype")
 
     resultDF
 
@@ -111,7 +96,9 @@ object OcpcCheckPreCVR {
          |  unitid,
          |  userid,
          |  industry,
-         |  original_conversion as conversion_goal
+         |  original_conversion as conversion_goal,
+         |  ocpc_flag,
+         |  usertype
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
          |WHERE

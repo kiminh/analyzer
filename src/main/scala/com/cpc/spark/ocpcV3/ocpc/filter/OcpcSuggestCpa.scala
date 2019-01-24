@@ -112,7 +112,8 @@ object OcpcSuggestCpa{
       s"""
          |SELECT
          |  userid,
-         |  usertype
+         |  usertype,
+         |  count(1) as cnt
          |FROM
          |  dl_cpc.slim_union_log
          |WHERE
@@ -123,8 +124,28 @@ object OcpcSuggestCpa{
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
+    data.createOrReplaceTempView("base_data")
 
-    data
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |    t.userid,
+         |    t.usertype
+         |FROM
+         |    (SELECT
+         |        userid,
+         |        usertype,
+         |        cnt,
+         |        row_number() over(partition by userid order by cnt desc) as seq
+         |    FROM
+         |        base_data) as t
+         |WHERE
+         |    t.seq=1
+       """.stripMargin
+    println(sqlRequest2)
+    val resultDF = spark.sql(sqlRequest2)
+
+    resultDF
   }
 
   def getOcpcFlag(date: String, hour: String, spark: SparkSession) = {
