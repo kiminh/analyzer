@@ -26,17 +26,24 @@ object OcpcLightBulb{
 
     // 抽取数据
     val data = getRecommendationAd(date, hour, spark)
-    data.repartition(5).write.mode("overwrite").saveAsTable("test.check_data_ocpc_20190124")
+    data.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control")
 
     // 存入redis
-    saveDataToRedis(data, date, hour, spark)
+    saveDataToRedis("test.ocpc_qtt_light_control", date, hour, spark)
   }
 
-  def saveDataToRedis(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def saveDataToRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
+    val data = spark.table(tableName).repartition(10)
     data.show(10)
     val cnt = data.count()
     println(s"total size of the data is: $cnt")
     val conf = ConfigFactory.load("ocpc")
+    val host = conf.getString("adv_redis.host")
+    val port = conf.getInt("adv_redis.port")
+    val auth = conf.getString("adv_redis.auth")
+    println(s"host: $host")
+    println(s"port: $port")
+    println(s"auth: $auth")
     for (record <- data.collect()) {
       val identifier = record.getAs[Int]("unitid").toString
       val cpa1 = record.getAs[Double]("cpa1")
@@ -61,8 +68,8 @@ object OcpcLightBulb{
     }
 
 //    data.foreachPartition(iterator => {
-//      val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-//
+//      val redis = new RedisClient(host, port)
+//      redis.auth(auth)
 //      iterator.foreach{
 //        record => {
 //          val identifier = record.getAs[BigInt]("unitid").toString
@@ -81,8 +88,10 @@ object OcpcLightBulb{
 //            json.put("formsubmit_cpa", cpa3)
 //          }
 //          val value = json.toString
+//          redis.setex(key, 2 * 24 * 60 * 60, value)
 //        }
 //      }
+//      redis.disconnect
 //    })
   }
 
