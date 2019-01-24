@@ -25,10 +25,36 @@ object OcpcHourlyReportV2 {
     val rawData = getBaseData(date, hour, spark)
 
     // 分ideaid和conversion_goal统计转化成本
-//    val data = preprocessData(rawData, date, hour, spark)
+    val data = preprocessData(rawData, date, hour, spark)
 
     // 输出结果表
 //    val result = saveDataToHdfs(data, date, hour, spark)
+  }
+
+  def preprocessData(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+//    ideaid  int     NULL
+//    userid  int     NULL
+//    conversion_goal string  NULL
+//    step2_percent   double  NULL
+//    cpa_given       double  NULL
+//    cpa_real        double  NULL
+//    pcvr    double  NULL
+//    ctr     double  NULL
+//    click_cvr       double  NULL
+//    show_cvr        double  NULL
+//    price   double  NULL
+//    show_cnt        bigint  NULL
+//    ctr_cnt bigint  NULL
+//    cvr_cnt bigint  NULL
+//    avg_k   double  NULL
+//    recent_k        double  NULL
+    rawData.createOrReplaceTempView("raw_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |
+       """.stripMargin
+
   }
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
@@ -46,15 +72,20 @@ object OcpcHourlyReportV2 {
          |  isclick,
          |  isshow,
          |  price,
+         |  exp_cvr,
+         |  exp_ctr,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['dynamicbid'] as double) as bid,
          |  cast(ocpc_log_dict['kvalue'] as double) as kvalue,
          |  cast(ocpc_log_dict['conversiongoal'] as int) as conversiongoal,
-         |  cast(ocpc_log_dict['ocpcstep'] as int) as ocpcstep
+         |  cast(ocpc_log_dict['ocpcstep'] as int) as ocpcstep,
+         |  hour as hr
          |FROM
          |  dl_cpc.ocpc_unionlog
          |WHERE
          |  `dt`='$date' and `hour` <= '$hour'
+         |AND
+         |  isshow=1
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)
@@ -93,7 +124,8 @@ object OcpcHourlyReportV2 {
       .join(cvr1Data, Seq("searchid"), "left_outer")
       .join(cvr2Data, Seq("searchid"), "left_outer")
       .join(cvr3Data, Seq("searchid"), "left_outer")
-      .select("searchid", "ideaid", "userid", "isclick", "isshow", "price", "cpagiven", "bid", "kvalue", "conversiongoal", "ocpcstep", "iscvr1", "iscvr2", "iscvr3")
+      .withColumn("iscvr", when(col("conversiongoal") === 1, col("iscvr1")).otherwise(when(col("conversiongoal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
+      .select("searchid", "ideaid", "userid", "isclick", "isshow", "price", "cpagiven", "bid", "kvalue", "conversiongoal", "ocpcstep", "iscvr1", "iscvr2", "iscvr3", "iscvr")
 
     resultDF.show(10)
 
