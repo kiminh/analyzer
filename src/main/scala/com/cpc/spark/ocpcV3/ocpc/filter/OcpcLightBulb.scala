@@ -45,8 +45,8 @@ object OcpcLightBulb{
     println(s"port: $port")
     println(s"auth: $auth")
 
-//    val redis = new RedisClient(host, port)
-//    redis.auth(auth)
+    val redis = new RedisClient(host, port)
+    redis.auth(auth)
     for (t <- 1 to 5) {
       val identifier = "000000" + t.toString
       val cpa1 = 1.0
@@ -65,9 +65,9 @@ object OcpcLightBulb{
       }
       val value = json.toString
       println(s"key=$key, value=$value")
-//      redis.setex(key, 2 * 24 * 60 * 60, value)
+      redis.setex(key, 2 * 24 * 60 * 60, value)
     }
-//    redis.disconnect
+    redis.disconnect
 
 //    for (record <- data.collect()) {
 //      val identifier = record.getAs[Int]("unitid").toString
