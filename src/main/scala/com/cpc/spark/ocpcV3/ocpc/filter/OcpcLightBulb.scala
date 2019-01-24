@@ -54,7 +54,10 @@ object OcpcLightBulb{
         json.put("formsubmit_cpa", cpa3)
       }
       val value = json.toString
-      println(println(s"key=$key, value=$value"))
+      if (cpa2 > 0 || cpa3 > 0) {
+        println(s"key=$key, value=$value")
+      }
+
     }
 
 //    data.foreachPartition(iterator => {
