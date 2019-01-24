@@ -5,7 +5,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
-import ocpcminbidv2.ocpcminbidv2.{BidListV2, SingleBidv2}
+import mincpm.mincpm.{SingleMinCpm, MinCpmList}
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -27,8 +27,8 @@ object OcpcMinBidV3 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base")
-    //      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
+//      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base")
+      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
 
     // 抽取expctr
     val expCtrData = getPreCtr(date, hour, spark)
@@ -70,7 +70,7 @@ object OcpcMinBidV3 {
   }
 
   def savePbPack(dataset: Dataset[Row], filename: String): Unit = {
-    var list = new ListBuffer[SingleBidv2]
+    var list = new ListBuffer[SingleMinCpm]
     println("size of the dataframe")
     println(dataset.count)
     dataset.show(10)
@@ -78,14 +78,13 @@ object OcpcMinBidV3 {
     var cnt = 0
 
     for (record <- dataset.collect()) {
-      //      int32 hour = 1;
-      //      string adslotid = 2;
-      //      int32 cityLevel = 3;
-      //      int32 adsrc = 4;
-      //      int32 ad_second_class = 5;
-      //      int32 isOcpc = 6;
-      //      double minBid = 7;
-      //      hour,adslotid,city_level,,adsrc,ad_second_class,ocpc_flag
+//      int32 hour = 1;
+//      int64 adslotType = 2;
+//      int32 cityLevel = 3;
+//      int32 adSecondClass = 4;
+//      int32 isOcpc = 5;
+//      double minBid = 6;
+//      int64 minCpm = 7;
       val hour = record.getAs[String]("hr").toInt
       val adslotid = record.getAs[String]("adslotid")
       val city_level = record.getAs[Int]("city_level")
