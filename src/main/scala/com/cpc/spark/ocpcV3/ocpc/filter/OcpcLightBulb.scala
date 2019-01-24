@@ -43,31 +43,31 @@ object OcpcLightBulb{
     val auth = conf.getString("adv_redis.auth")
     println(s"host: $host")
     println(s"port: $port")
-    println(s"auth: $auth")
-
-    val redis = new RedisClient(host, port)
-    redis.auth(auth)
-    for (t <- 1 to 5) {
-      val identifier = "000000" + t.toString
-      val cpa1 = 1.0
-      val cpa2 = 1.0
-      val cpa3 = 1.0
-      var key = "algorithm_unit_ocpc_" + identifier
-      val json = new JSONObject()
-      if (cpa1 > 0) {
-        json.put("download_cpa", cpa1)
-      }
-      if (cpa2 > 0) {
-        json.put("appact_cpa", cpa2)
-      }
-      if (cpa3 > 0) {
-        json.put("formsubmit_cpa", cpa3)
-      }
-      val value = json.toString
-      println(s"key=$key, value=$value")
-      redis.setex(key, 2 * 24 * 60 * 60, value)
-    }
-    redis.disconnect
+//    println(s"auth: $auth")
+//
+//    val redis = new RedisClient(host, port)
+//    redis.auth(auth)
+//    for (t <- 1 to 5) {
+//      val identifier = "000000" + t.toString
+//      val cpa1 = 1.0
+//      val cpa2 = 1.0
+//      val cpa3 = 1.0
+//      var key = "algorithm_unit_ocpc_" + identifier
+//      val json = new JSONObject()
+//      if (cpa1 > 0) {
+//        json.put("download_cpa", cpa1)
+//      }
+//      if (cpa2 > 0) {
+//        json.put("appact_cpa", cpa2)
+//      }
+//      if (cpa3 > 0) {
+//        json.put("formsubmit_cpa", cpa3)
+//      }
+//      val value = json.toString
+//      println(s"key=$key, value=$value")
+//      redis.setex(key, 2 * 24 * 60 * 60, value)
+//    }
+//    redis.disconnect
 
 //    for (record <- data.collect()) {
 //      val identifier = record.getAs[Int]("unitid").toString
@@ -92,32 +92,32 @@ object OcpcLightBulb{
 //
 //    }
 
-//    data.foreachPartition(iterator => {
-//      val redis = new RedisClient(host, port)
-//      redis.auth(auth)
-//      iterator.foreach{
-//        record => {
-//          val identifier = record.getAs[Int]("unitid").toString
-//          val cpa1 = record.getAs[Double]("cpa1")
-//          val cpa2 = record.getAs[Double]("cpa2")
-//          val cpa3 = record.getAs[Double]("cpa3")
-//          var key = "algorithm_unit_ocpc_" + identifier
-//          val json = new JSONObject()
-//          if (cpa1 > 0) {
-//            json.put("download_cpa", cpa1)
-//          }
-//          if (cpa2 > 0) {
-//            json.put("appact_cpa", cpa2)
-//          }
-//          if (cpa3 > 0) {
-//            json.put("formsubmit_cpa", cpa3)
-//          }
-//          val value = json.toString
-//          redis.setex(key, 2 * 24 * 60 * 60, value)
-//        }
-//      }
-//      redis.disconnect
-//    })
+    data.foreachPartition(iterator => {
+      val redis = new RedisClient(host, port)
+      redis.auth(auth)
+      iterator.foreach{
+        record => {
+          val identifier = record.getAs[Int]("unitid").toString
+          val cpa1 = record.getAs[Double]("cpa1")
+          val cpa2 = record.getAs[Double]("cpa2")
+          val cpa3 = record.getAs[Double]("cpa3")
+          var key = "algorithm_unit_ocpc_" + identifier
+          val json = new JSONObject()
+          if (cpa1 > 0) {
+            json.put("download_cpa", cpa1)
+          }
+          if (cpa2 > 0) {
+            json.put("appact_cpa", cpa2)
+          }
+          if (cpa3 > 0) {
+            json.put("formsubmit_cpa", cpa3)
+          }
+          val value = json.toString
+          redis.setex(key, 2 * 24 * 60 * 60, value)
+        }
+      }
+      redis.disconnect
+    })
   }
 
   def getRecommendationAd(date: String, hour: String, spark: SparkSession) = {
