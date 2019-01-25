@@ -26,6 +26,7 @@ object OcpcHourlyReportV2 {
 
     // 分ideaid和conversion_goal统计转化成本
     val data = preprocessData(rawData, date, hour, spark)
+    data.write.mode("overwrite").saveAsTable("test.check_report_data20190125")
 
     // 输出结果表
 //    val result = saveDataToHdfs(data, date, hour, spark)
@@ -63,11 +64,24 @@ object OcpcHourlyReportV2 {
          |  sum(case when ocpc_step=2 then 1 else 0 end) * 1.0 / count(1) as step2_percent,
          |  sum(case when isclick=1 then cpaiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
          |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real,
-         |  sum(
-         |
-         |
+         |  sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pcvr,
+         |  sum(isclick) * 1.0 / sum(isshow) as ctr,
+         |  sum(iscvr) * 1.0 / sum(isclick) as click_cvr,
+         |  sum(iscvr) * 1.0 / sum(isshow) as show_cvr,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
+         |  sum(isshow) as show_cnt,
+         |  sum(isclick) as ctr_cnt,
+         |  sum(iscvr) as cvr_cnt,
+         |  sum(case when isclick=1 then kvalue else 0 end) * 1.0 / sum(isclick) as avg_k,
+         |  sum(case when isclick=1 and hr='$hour' then kvalue else 0 end) * 1.0 / sum(case when hr='$hour' then isclick else 0 end) as recent_k
+         |FROM
+         |  raw_data
+         |GROUP BY ideaid, userid, conversion_goal
        """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
 
+    resultDF
   }
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
