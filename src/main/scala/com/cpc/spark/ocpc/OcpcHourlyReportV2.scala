@@ -49,9 +49,15 @@ object OcpcHourlyReportV2 {
 //    avg_k   double  NULL
 //    recent_k        double  NULL
     rawData.createOrReplaceTempView("raw_data")
+
+
     val sqlRequest =
       s"""
          |SELECT
+         |  ideaid,
+         |  userid,
+         |  conversion_goal,
+         |
          |
        """.stripMargin
 
@@ -77,8 +83,8 @@ object OcpcHourlyReportV2 {
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['dynamicbid'] as double) as bid,
          |  cast(ocpc_log_dict['kvalue'] as double) as kvalue,
-         |  cast(ocpc_log_dict['conversiongoal'] as int) as conversiongoal,
-         |  cast(ocpc_log_dict['ocpcstep'] as int) as ocpcstep,
+         |  cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |  cast(ocpc_log_dict['ocpcstep'] as int) as ocpc_step,
          |  hour as hr
          |FROM
          |  dl_cpc.ocpc_unionlog
@@ -125,7 +131,7 @@ object OcpcHourlyReportV2 {
       .join(cvr2Data, Seq("searchid"), "left_outer")
       .join(cvr3Data, Seq("searchid"), "left_outer")
       .withColumn("iscvr", when(col("conversiongoal") === 1, col("iscvr1")).otherwise(when(col("conversiongoal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
-      .select("searchid", "ideaid", "userid", "isclick", "isshow", "price", "cpagiven", "bid", "kvalue", "conversiongoal", "ocpcstep", "iscvr1", "iscvr2", "iscvr3", "iscvr")
+      .select("searchid", "ideaid", "userid", "isclick", "isshow", "price", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "iscvr1", "iscvr2", "iscvr3", "iscvr")
 
     resultDF.show(10)
 
