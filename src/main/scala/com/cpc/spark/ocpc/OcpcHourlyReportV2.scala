@@ -45,10 +45,10 @@ object OcpcHourlyReportV2 {
     存储ideaid级别和conversion_goal级别的报表到hdfs
      */
     dataIdea
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v2")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v2")
 
     dataConversion
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v2")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v2")
   }
 
   def getDataByConversion(rawData: DataFrame, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
