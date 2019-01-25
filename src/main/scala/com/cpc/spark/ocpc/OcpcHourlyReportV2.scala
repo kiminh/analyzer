@@ -75,17 +75,17 @@ object OcpcHourlyReportV2 {
     3. 按照unitid维度统计cost
      */
     val data = spark
-      .table("dl_cpc.ocpcv3_ctr_data_hourly")
-      .where(s"`date`='$date' and `hour` <= '$hour' and media_appsid in ('80000001', '80000002')")
-      .withColumn("idea_id", col("ideaid"))
-      .withColumn("unit_id", col("unitid"))
-      .select("idea_id", "unit_id")
-      .distinct()
-//      .table("dl_cpc.ocpc_cpa_given_hourly")
-//      .where(s"`date`='$date' and status=0")
-//      .withColumn("unit_id", col("unitid"))
+//      .table("dl_cpc.ocpcv3_ctr_data_hourly")
+//      .where(s"`date`='$date' and `hour` <= '$hour' and media_appsid in ('80000001', '80000002')")
 //      .withColumn("idea_id", col("ideaid"))
-//      .select("unit_id", "idea_id").distinct()
+//      .withColumn("unit_id", col("unitid"))
+//      .select("idea_id", "unit_id")
+//      .distinct()
+      .table("dl_cpc.ocpc_cpa_given_hourly")
+      .where(s"`date`='$date' and status=0")
+      .withColumn("unit_id", col("unitid"))
+      .withColumn("idea_id", col("ideaid"))
+      .select("unit_id", "idea_id").distinct()
 
     val baseData = rawData
       .join(data, Seq("idea_id"), "inner")
