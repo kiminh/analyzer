@@ -134,7 +134,7 @@ val sqlRequest2 =
      |  unionlog_table as a
      |left join
      |  (select searchid,ideaid, 1 as label from dl_cpc.dl_conversion_by_industry
-     |  where pt='$date' and pt in ('elds', 'wzcp', 'yysc', 'feedapp', 'others') and isreport=1 group by searchid,ideaid) as b
+     |  where dt='$date' and pt in ('elds', 'wzcp', 'yysc', 'feedapp', 'others') and isreport=1 group by searchid,ideaid) as b
      |on
      |  a.searchid=b.searchid and a.ideaid=b.ideaid
     """.stripMargin
