@@ -32,22 +32,25 @@ object OcpcHourlyReportV2 {
   }
 
   def preprocessData(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
-//    ideaid  int     NULL
-//    userid  int     NULL
-//    conversion_goal string  NULL
-//    step2_percent   double  NULL
-//    cpa_given       double  NULL
-//    cpa_real        double  NULL
-//    pcvr    double  NULL
-//    ctr     double  NULL
-//    click_cvr       double  NULL
-//    show_cvr        double  NULL
-//    price   double  NULL
-//    show_cnt        bigint  NULL
-//    ctr_cnt bigint  NULL
-//    cvr_cnt bigint  NULL
-//    avg_k   double  NULL
-//    recent_k        double  NULL
+    /*
+    //    ideaid  int     NULL
+    //    userid  int     NULL
+    //    conversion_goal string  NULL
+    //    step2_percent   double  NULL
+    //    cpa_given       double  NULL
+    //    cpa_real        double  NULL
+    //    pcvr    double  NULL
+    //    ctr     double  NULL
+    //    click_cvr       double  NULL
+    //    show_cvr        double  NULL
+    //    price   double  NULL
+    //    show_cnt        bigint  NULL
+    //    ctr_cnt bigint  NULL
+    //    cvr_cnt bigint  NULL
+    //    avg_k   double  NULL
+    //    recent_k        double  NULL
+    "searchid", "ideaid", "userid", "isclick", "isshow", "price", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "iscvr1", "iscvr2", "iscvr3", "iscvr"
+     */
     rawData.createOrReplaceTempView("raw_data")
 
 
@@ -57,6 +60,10 @@ object OcpcHourlyReportV2 {
          |  ideaid,
          |  userid,
          |  conversion_goal,
+         |  sum(case when ocpc_step=2 then 1 else 0 end) * 1.0 / count(1) as step2_percent,
+         |  sum(case when isclick=1 then cpaiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr) as cpa_real,
+         |  sum(
          |
          |
        """.stripMargin
