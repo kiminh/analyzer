@@ -27,14 +27,79 @@ object OcpcHourlyReportV2 {
     // 拉取点击、消费、转化等基础数据
     val baseData = getBaseData(date, hour, spark)
 
-    // 分ideaid和conversion_goal统计转化成本
+    // 分ideaid和conversion_goal统计数据
     val rawDataIdea = preprocessDataByIdea(baseData, date, hour, spark)
-
     val dataIdea = getDataByIdea(rawDataIdea, date, hour, spark)
-    dataIdea.write.mode("overwrite").saveAsTable("test.check_data_report20190125")
 
-    // 输出结果表
-//    val result = saveDataToHdfs(data, date, hour, spark)
+    // 分conversion_goal统计数据
+    val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
+    rawDataConversion.write.mode("overwrite").saveAsTable("test.check_data_report20190125")
+  }
+
+  def preprocessDataByConversion(rawData: DataFrame, date: String, hour: String, spark: SparkSession) ={
+    /*
+    conversion_goal string  NULL
+    total_adnum     bigint  NULL
+    step2_adnum     bigint  NULL
+    low_cpa_adnum   bigint  NULL
+    high_cpa_adnum  bigint  NULL
+    step2_cost      double  NULL
+    step2_cpa_high_cost     double  NULL
+    impression      bigint  NULL
+    click   bigint  NULL
+    conversion      bigint  NULL
+    ctr     double  NULL
+    click_cvr       double  NULL
+    cost    double  NULL
+    acp     double  NULL
+    date    string  NULL
+    hour    string  NULL
+    "searchid", "ideaid", "userid", "isclick", "isshow", "price", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "iscvr1", "iscvr2", "iscvr3", "iscvr"
+     */
+    rawData.createOrReplaceTempView("raw_data")
+
+    val sqlRequest0 =
+      s"""
+         |SELECT
+         |  0 as conversion_goal,
+         |  COUNT(1) as total_adnum,
+         |  SUM(case when is_step2=1 then 1 else 0 end) as step2_adnum,
+         |  SUM(case when is_cpa_ok=1 and is_step2=1 then 1 else 0 end) as low_cpa_adnum,
+         |  SUM(case when is_cpa_ok=0 and is_step2=1 then 1 else 0 end) as high_cpa_adnum,
+         |  SUM(impression) as impression,
+         |  SUM(click) as click,
+         |  SUM(conversion) as conversion,
+         |  SUM(cost) as cost
+         |  SUM(cost) * 1.0 / SUM(click) as acp
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest0)
+    val result0 = spark.sql(sqlRequest0)
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  conversion_goal,
+         |  COUNT(1) as total_adnum,
+         |  SUM(case when is_step2=1 then 1 else 0 end) as step2_adnum,
+         |  SUM(case when is_cpa_ok=1 and is_step2=1 then 1 else 0 end) as low_cpa_adnum,
+         |  SUM(case when is_cpa_ok=0 and is_step2=1 then 1 else 0 end) as high_cpa_adnum,
+         |  SUM(impression) as impression,
+         |  SUM(click) as click,
+         |  SUM(conversion) as conversion,
+         |  SUM(cost) as cost
+         |  SUM(cost) * 1.0 / SUM(click) as acp
+         |FROM
+         |  raw_data
+         |GROUP BY conversion_goal
+       """.stripMargin
+    println(sqlRequest1)
+    val result1 = spark.sql(sqlRequest1)
+
+    val resultDF = result0.union(result1)
+
+    resultDF
   }
 
   def getDataByIdea(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
