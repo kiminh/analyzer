@@ -57,7 +57,7 @@ object GetIdeaTitle {
                |and length(show_title) > 0
              """.stripMargin
 
-        val showData = spark.sql(clickSql).rdd.map(x => x.getAs[String]("show_title"))
+        val showData = spark.sql(showSql).rdd.map(x => x.getAs[String]("show_title"))
 
         val data = reqData.union(clicData).union(showData).distinct()
 
