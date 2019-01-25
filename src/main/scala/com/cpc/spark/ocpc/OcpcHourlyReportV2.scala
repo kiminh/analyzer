@@ -34,7 +34,7 @@ object OcpcHourlyReportV2 {
     // 分conversion_goal统计数据
     val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
     val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
-    rawDataConversion.write.mode("overwrite").saveAsTable("test.check_data_report20190125")
+    costDataConversion.write.mode("overwrite").saveAsTable("test.check_data_report20190125")
   }
 
   def preprocessCostByConversion(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
