@@ -47,7 +47,7 @@ object OcpcHourlyReportV2 {
       .table("dl_cpc.ocpc_cpa_given_hourly").where(s"`date`='$date'")
       .withColumn("unit_id", col("unitid"))
       .withColumn("idea_id", col("ideaid"))
-      .select("unitid", "ideaid").distinct()
+      .select("unit_id", "idea_id").distinct()
 
     val baseData = rawData
       .join(data, Seq("idea_id"), "inner")
