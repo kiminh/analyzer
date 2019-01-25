@@ -118,7 +118,7 @@ object OcpcHourlyReportV2 {
          |  sum(isclick) * 1.0 / sum(isshow) as ctr,
          |  sum(iscvr) * 1.0 / sum(isclick) as click_cvr,
          |  sum(iscvr) * 1.0 / sum(isshow) as show_cvr,
-         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as acp,
+         |  sum(case when isclick=1 then price else 0 end) * 1.0 / sum(isclick) as price,
          |  sum(isshow) as show_cnt,
          |  sum(isclick) as ctr_cnt,
          |  sum(iscvr) as cvr_cnt,
