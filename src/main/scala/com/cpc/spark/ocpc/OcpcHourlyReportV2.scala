@@ -30,13 +30,14 @@ object OcpcHourlyReportV2 {
     // 分ideaid和conversion_goal统计数据
     val rawDataIdea = preprocessDataByIdea(baseData, date, hour, spark)
     val dataIdea = getDataByIdea(rawDataIdea, date, hour, spark)
+    dataIdea.write.mode("overwrite").saveAsTable("test.check_data_report20190125a")
 
     // 分conversion_goal统计数据
     val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
     val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
-    val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
+//    val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
 
-    dataConversion.write.mode("overwrite").saveAsTable("test.check_data_report20190125")
+    costDataConversion.write.mode("overwrite").saveAsTable("test.check_data_report20190125b")
   }
 
   def getDataByConversion(rawData: DataFrame, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -74,7 +75,8 @@ object OcpcHourlyReportV2 {
     3. 按照unitid维度统计cost
      */
     val data = spark
-      .table("dl_cpc.ocpc_cpa_given_hourly").where(s"`date`='$date'")
+      .table("dl_cpc.ocpc_cpa_given_hourly")
+      .where(s"`date`='$date' and status=0")
       .withColumn("unit_id", col("unitid"))
       .withColumn("idea_id", col("ideaid"))
       .select("unit_id", "idea_id").distinct()
