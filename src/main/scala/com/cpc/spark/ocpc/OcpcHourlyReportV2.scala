@@ -36,7 +36,19 @@ object OcpcHourlyReportV2 {
     val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
     val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
 
-    dataConversion.write.mode("overwrite").saveAsTable("test.check_data_report20190125")
+    // 存储数据到hadoop
+    saveDataToHDFS(dataIdea, dataConversion, date, hour, spark)
+  }
+
+  def saveDataToHDFS(dataIdea: DataFrame, dataConversion: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    存储ideaid级别和conversion_goal级别的报表到hdfs
+     */
+    dataIdea
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v2")
+
+    dataConversion
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v2")
   }
 
   def getDataByConversion(rawData: DataFrame, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
