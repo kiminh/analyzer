@@ -88,7 +88,7 @@ object OcpcHourlyReportV2 {
          |  SUM(impression) as impression,
          |  SUM(click) as click,
          |  SUM(conversion) as conversion,
-         |  SUM(cost) as cost
+         |  SUM(cost) as cost,
          |  SUM(cost) * 1.0 / SUM(click) as acp
          |FROM
          |  raw_data
