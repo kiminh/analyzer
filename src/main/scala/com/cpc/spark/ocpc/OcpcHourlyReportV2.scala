@@ -202,7 +202,13 @@ object OcpcHourlyReportV2 {
     println(sqlRequest1)
     val result1 = spark.sql(sqlRequest1)
 
-    val resultDF = result0.union(result1)
+    val resultDF = result0
+      .union(result1)
+      .withColumn("ctr", col("click") * 1.0 / col("impression"))
+      .withColumn("click_cvr", col("conversion") * 1.0 / col("click"))
+      .withColumn("click_cvr", when(col("click")===0, 1).otherwise(col("click_cvr")))
+      .withColumn("acp", col("cost") * 1.0 / col("click"))
+      .withColumn("acp", when(col("click")===0, 0).otherwise(col("acp")))
 
     resultDF
   }
