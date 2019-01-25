@@ -15,16 +15,51 @@ object GetIdeaTitle {
           .getOrCreate()
         import spark.implicits._
 
-        val sql =
+//        val sql =
+//            s"""
+//               |select click_title,valid_req_title,show_title
+//               |from dl_cpc.kdd_uid_data
+//               |where `date`='$date'
+//               |and click_title is not null
+//               |and length(click_title) > 0
+//             """.stripMargin
+//
+//        val data = spark.sql(sql).rdd.map(x => x.getAs[String]("uid") + "|" + x.getAs[String]("click_title"))
+
+        val reqSql =
             s"""
-               |select uid,click_title
+               |select valid_req_title
+               |from dl_cpc.kdd_uid_data
+               |where `date`='$date'
+               |and valid_req_title is not null
+               |and length(valid_req_title) > 0
+             """.stripMargin
+
+        val reqData = spark.sql(reqSql).rdd.map(x => x.getAs[String]("valid_req_title"))
+
+        val clickSql =
+            s"""
+               |select click_title
                |from dl_cpc.kdd_uid_data
                |where `date`='$date'
                |and click_title is not null
                |and length(click_title) > 0
              """.stripMargin
 
-        val data = spark.sql(sql).rdd.map(x => x.getAs[String]("uid") + "|" + x.getAs[String]("click_title"))
+        val clicData = spark.sql(clickSql).rdd.map(x => x.getAs[String]("click_title"))
+
+        val showSql =
+            s"""
+               |select show_title
+               |from dl_cpc.kdd_uid_data
+               |where `date`='$date'
+               |and show_title is not null
+               |and length(show_title) > 0
+             """.stripMargin
+
+        val showData = spark.sql(clickSql).rdd.map(x => x.getAs[String]("show_title"))
+
+        val data = reqData.union(clicData).union(showData).distinct()
 
         data.repartition(1).saveAsTextFile(s"hdfs://emr-cluster/warehouse/kdd/$date")
 
