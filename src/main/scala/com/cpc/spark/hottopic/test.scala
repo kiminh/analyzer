@@ -34,7 +34,7 @@ object test {
         val req = spark.sql(reqSql)
         val res = req.join(d,  req("valid_req_title")===d("title"))
 
-        res.show(20)
+        res.show(100)
     }
     case class tmp(var title:String = "", var titlesplit:String = "")
 }
