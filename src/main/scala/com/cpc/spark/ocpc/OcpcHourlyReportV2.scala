@@ -10,7 +10,10 @@ object OcpcHourlyReportV2 {
     新版报表程序
     1. 从ocpc_unionlog拉取ocpc广告记录
     2. 采用数据关联方式获取转化数据
-    3. 统计相关数据
+    3. 统计分ideaid级别相关数据
+    4. 统计分conversion_goal级别相关数据
+    5. 存储到hdfs
+    6. 存储到mysql
      */
     val spark = SparkSession
       .builder()
@@ -151,7 +154,7 @@ object OcpcHourlyReportV2 {
       .join(cvr1Data, Seq("searchid"), "left_outer")
       .join(cvr2Data, Seq("searchid"), "left_outer")
       .join(cvr3Data, Seq("searchid"), "left_outer")
-      .withColumn("iscvr", when(col("conversiongoal") === 1, col("iscvr1")).otherwise(when(col("conversiongoal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
+      .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
       .select("searchid", "ideaid", "userid", "isclick", "isshow", "price", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "iscvr1", "iscvr2", "iscvr3", "iscvr")
 
     resultDF.show(10)
