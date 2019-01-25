@@ -33,7 +33,80 @@ object OcpcHourlyReportV2 {
 
     // 分conversion_goal统计数据
     val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
+    val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
     rawDataConversion.write.mode("overwrite").saveAsTable("test.check_data_report20190125")
+  }
+
+  def preprocessCostByConversion(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    1. 从adv获取unitid与ideaid的对应list
+    2. 给rawdata增加unitid维度
+    3. 按照unitid维度统计cost
+     */
+    val data = spark
+      .table("dl_cpc.ocpc_cpa_given_hourly").where(s"`date`='$date'")
+      .withColumn("unit_id", col("unitid"))
+      .withColumn("idea_id", col("ideaid"))
+      .select("unitid", "ideaid").distinct()
+
+    val baseData = rawData
+      .join(data, Seq("idea_id"), "inner")
+      .select("user_id", "unit_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+      .withColumn("click_cpa_given", col("cpa_given") * col("click"))
+
+    baseData.createOrReplaceTempView("base_data")
+
+    // 计算step2的cost
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  unit_id,
+         |  conversion_goal,
+         |  sum(click_cpa_given) / sum(click) as cpa_given,
+         |  sum(cost) as cost,
+         |  sum(conversion) as conversion
+         |FROM
+         |  base_data
+         |WHERE
+         |  is_step2=1
+         |GROUP BY unit_id, conversion_goal
+       """.stripMargin
+    println(sqlRequest1)
+    val unitidData = spark
+      .sql(sqlRequest1)
+      .withColumn("cost_given", col("cpa_given") * col("conversion") * 1.0 / 0.8)
+      .withColumn("high_cpa_cost", col("cost") - col("cost_given"))
+      .withColumn("high_cpa_cost", when(col("high_cpa_cost") <= 0, 0.0).otherwise(col("high_cpa_cost")))
+    unitidData.createOrReplaceTempView("unitid_data")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  0 as conversion_goal,
+         |  SUM(cost) as step2_cost,
+         |  SUM(high_cpa_cost) as step2_cpa_high_cost
+         |FROM
+         |  unitid_data
+       """.stripMargin
+    println(sqlRequest2)
+    val totalCost = spark.sql(sqlRequest2)
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  conversion_goal,
+         |  SUM(cost) as step2_cost,
+         |  SUM(high_cpa_cost) as step2_cpa_high_cost
+         |FROM
+         |  unitid_data
+         |GROUP BY conversion_goal
+       """.stripMargin
+    println(sqlRequest3)
+    val splitCost = spark.sql(sqlRequest3)
+
+    val resultDF = totalCost.union(splitCost).na.fill(0, Seq("step2_cost", "step2_cpa_high_cost"))
+
+    resultDF
   }
 
   def preprocessDataByConversion(rawData: DataFrame, date: String, hour: String, spark: SparkSession) ={
