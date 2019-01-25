@@ -17,7 +17,7 @@ object test {
 
         val reqSql =
             s"""
-               |select substr(valid_req_title,0, length(valid_req_title) -1)
+               |select substr(valid_req_title,0, length(valid_req_title) -1) as valid_req_title
                |from dl_cpc.kdd_uid_data
                |where `date`='$date'
                |and valid_req_title is not null
