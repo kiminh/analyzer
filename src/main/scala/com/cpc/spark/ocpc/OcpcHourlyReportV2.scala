@@ -34,7 +34,37 @@ object OcpcHourlyReportV2 {
     // 分conversion_goal统计数据
     val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
     val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
-    costDataConversion.write.mode("overwrite").saveAsTable("test.check_data_report20190125")
+    val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
+
+    dataConversion.write.mode("overwrite").saveAsTable("test.check_data_report20190125")
+  }
+
+  def getDataByConversion(rawData: DataFrame, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    1. 获取新增数据如auc
+    2. 计算报表数据
+    3. 数据关联并存储到结果表
+     */
+
+    // 获取新增数据如auc
+    val aucData = spark
+      .table("dl_cpc.ocpc_qtt_auc_report_summary_hourly")
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .select("conversion_goal", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+
+    // 计算报表数据
+    val hourInt = hour.toInt
+
+    // 关联数据
+    val resultDF = rawData
+      .join(costData, Seq("conversion_goal"), "left_outer")
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp")
+      .join(aucData, Seq("conversion_goal"), "left_outer")
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+    resultDF
   }
 
   def preprocessCostByConversion(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -189,8 +219,6 @@ object OcpcHourlyReportV2 {
       .select("ideaid", "userid", "conversion_goal", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
 
     // 计算报表数据
-    val hourInt = hour.toInt
-
     val resultDF = rawData
       .withColumn("idea_id", col("ideaid"))
       .withColumn("user_id", col("userid"))
@@ -207,7 +235,7 @@ object OcpcHourlyReportV2 {
       .withColumn("cost", col("price") * col("click"))
       .withColumn("acp", col("price"))
       .withColumn("date", lit(date))
-      .withColumn("hour", lit(hourInt))
+      .withColumn("hour", lit(hour))
       .withColumn("recent_k", when(col("recent_k").isNull, 0.0).otherwise(col("recent_k")))
       .withColumn("cpa_real", when(col("cpa_real").isNull, 9999999.0).otherwise(col("cpa_real")))
 //      .select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "date", "hour")
