@@ -113,7 +113,7 @@ object ConvertionHourly {
             r.getAs[Int]("adclass"),
             r.getAs[Int]("media_id"),
             r.getAs[Int]("adslot_type"),
-            r.getAs[Int]("cvr_num")
+            r.getAs[Long]("cvr_num").toInt
           )
       }
 
