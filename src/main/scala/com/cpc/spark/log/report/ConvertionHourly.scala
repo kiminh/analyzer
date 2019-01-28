@@ -122,11 +122,11 @@ object ConvertionHourly {
   }
 
   def writeConversionHourlyTable(spark: SparkSession, result: RDD[AdvConversionHourly], date: String, hour: String): Unit = {
-    clearReportHourData("report_trace", date, hour)
+    clearReportHourData("convertion_hourly", date, hour)
     spark.createDataFrame(result)
       .write
       .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.convertion_hourly", mariadbProp)
+      .jdbc(mariadbUrl, "report2.convertion_hourly", mariadbProp)
   }
 
   def clearReportHourData(tbl: String, date: String, hour: String): Unit = {
@@ -140,7 +140,7 @@ object ConvertionHourly {
       val stmt = conn.createStatement()
       val sql =
         """
-          |delete from report.%s where `date` = "%s" and `hour` = %d
+          |delete from report2.%s where `date` = "%s" and `hour` = %d
         """.stripMargin.format(tbl, date, hour.toInt)
       stmt.executeUpdate(sql);
     } catch {
