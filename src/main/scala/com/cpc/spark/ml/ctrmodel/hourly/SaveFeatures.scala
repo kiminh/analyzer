@@ -1245,7 +1245,7 @@ object SaveFeatures {
         |       ext['exp_ctr'].int_value as exp_ctr,
         |       ext['exp_cvr'].int_value as exp_cvr,
         |       ext['usertype'].int_value as usertype,
-        |       userid
+        |       m.userid
         |from dl_cpc.cpc_union_log
         |lateral view explode(motivation) c as m
         |where `date` = "%s" and `hour` = "%s" and m.isclick = 1 and adslot_type = 7
