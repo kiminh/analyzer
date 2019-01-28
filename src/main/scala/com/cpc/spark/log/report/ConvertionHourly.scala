@@ -103,6 +103,11 @@ object ConvertionHourly {
       .rdd
       .map {
         r =>
+          var media_id = 0
+          val mediaid=r.getAs[String]("media_id")
+          if(r.getAs[String]("media_id")!=""){
+            media_id = mediaid.toInt
+          }
           AdvConversionHourly(r.getAs[Int]("user_id"),
             r.getAs[Int]("plan_id"),
             r.getAs[Int]("unit_id"),
@@ -111,7 +116,7 @@ object ConvertionHourly {
             r.getAs[String]("hour"),
             r.getAs[Int]("label_type"),
             r.getAs[Int]("adclass"),
-            r.getAs[String]("media_id").toInt,
+            media_id,
             r.getAs[Int]("adslot_type"),
             r.getAs[Long]("cvr_num").toInt
           )
