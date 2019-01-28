@@ -40,8 +40,8 @@ object OcpcHourlyReportV2 {
     saveDataToHDFS(dataIdea, dataConversion, "qtt_demo", date, hour, spark)
 
     // 存储数据到mysql
-    clearDataInMysql("report2.report_ocpc_data_detail", date, hour, spark)
-    saveDataToMysql(dataIdea, "report2.report_ocpc_data_detail", date, hour, spark)
+//    clearDataInMysql("report2.report_ocpc_data_detail", date, hour, spark)
+//    saveDataToMysql(dataIdea, "report2.report_ocpc_data_detail", date, hour, spark)
   }
 
   def clearDataInMysql(tableName: String, date: String, hour: String, spark: SparkSession) = {
