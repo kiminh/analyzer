@@ -38,10 +38,10 @@ object OcpcHourlyReportV2 {
     val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
 
     // 存储数据到hadoop
-    saveDataToHDFS(dataIdea, dataConversion, "qtt_demo", date, hour, spark)
+//    saveDataToHDFS(dataIdea, dataConversion, "qtt_demo", date, hour, spark)
 
     // 存储数据到mysql
-    saveDataToMysql(dataIdea, dataConversion, date, hour, spark)
+//    saveDataToMysql(dataIdea, dataConversion, date, hour, spark)
 
   }
 
@@ -131,6 +131,8 @@ object OcpcHourlyReportV2 {
       .join(data, Seq("idea_id"), "inner")
       .select("user_id", "unit_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
       .withColumn("click_cpa_given", col("cpa_given") * col("click"))
+
+    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_report20190128")
 
     baseData.createOrReplaceTempView("base_data")
 
