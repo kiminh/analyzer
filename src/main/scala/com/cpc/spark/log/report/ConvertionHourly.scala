@@ -94,7 +94,6 @@ object ConvertionHourly {
          |      ,ideaid
          |      ,date
          |      ,hour
-         |      ,label_type
          |      ,adclass
          |      ,media_appsid
          |      ,adslot_type
