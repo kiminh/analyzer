@@ -38,6 +38,22 @@ object OcpcHourlyReportV2 {
 
     // 存储数据到hadoop
     saveDataToHDFS(dataIdea, dataConversion, "qtt_demo", date, hour, spark)
+
+    // 存储数据到mysql
+    clearDataInMysql("report2.report_ocpc_data_detail", date, hour, spark)
+    saveDataToMysql(dataIdea, "report2.report_ocpc_data_detail", date, hour, spark)
+  }
+
+  def clearDataInMysql(tableName: String, date: String, hour: String, spark: SparkSession) = {
+    val hourInt = hour.toInt
+
+
+  }
+
+  def saveDataToMysql(data: DataFrame, tableName: String, date: String, hour: String, spark: SparkSession) = {
+    val hourInt = hour.toInt
+
+
   }
 
   def saveDataToHDFS(dataIdea: DataFrame, dataConversion: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {

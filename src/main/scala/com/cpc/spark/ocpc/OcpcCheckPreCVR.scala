@@ -102,7 +102,7 @@ object OcpcCheckPreCVR {
          |FROM
          |  dl_cpc.ocpc_ctr_data_hourly
          |WHERE
-         |  `date` between '$date1' and '$date'
+         |  `date` between '$date1'
          |GROUP BY unitid, ideaid
        """.stripMargin
     println(sqlRequest)
