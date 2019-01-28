@@ -34,10 +34,10 @@ object ConvertionHourly {
     println("date:" + date+", hour:" + hour)
 
     val conf = ConfigFactory.load()
-    mariadbUrl = conf.getString("mariadb.url")
-    mariadbProp.put("user", conf.getString("mariadb.user"))
-    mariadbProp.put("password", conf.getString("mariadb.password"))
-    mariadbProp.put("driver", conf.getString("mariadb.driver"))
+    mariadbUrl = conf.getString("mariadb.report2_write.url")
+    mariadbProp.put("user", conf.getString("mariadb.report2_write.user"))
+    mariadbProp.put("password", conf.getString("mariadb.report2_write.password"))
+    mariadbProp.put("driver", conf.getString("mariadb.report2_write.driver"))
 
     val spark = SparkSession.builder()
       .appName("cpc get trace hour report from %s/%s".format(date, hour))
