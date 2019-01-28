@@ -37,11 +37,13 @@ object OcpcHourlyReportV2 {
     val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
     val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
 
+    dataIdea.write.mode("overwrite").saveAsTable("test.report_ocpc_data_detail20190128")
+
     // 存储数据到hadoop
 //    saveDataToHDFS(dataIdea, dataConversion, "qtt_demo", date, hour, spark)
 
     // 存储数据到mysql
-    saveDataToMysql(dataIdea, dataConversion, date, hour, spark)
+//    saveDataToMysql(dataIdea, dataConversion, date, hour, spark)
 
 //    clearDataInMysql("report2.report_ocpc_data_detail", date, hour, spark)
 //    saveDataToMysql(dataIdea, "report2.report_ocpc_data_detail", date, hour, spark)
