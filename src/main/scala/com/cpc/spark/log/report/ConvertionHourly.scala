@@ -49,7 +49,7 @@ object ConvertionHourly {
          |select userid as user_id
          |      ,planid as plan_id
          |      ,unitid as unit_id
-         |      ,ideaid as isea_id
+         |      ,ideaid as idea_id
          |      ,date
          |      ,hour
          |      ,label_type
