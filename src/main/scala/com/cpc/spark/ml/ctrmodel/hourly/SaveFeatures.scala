@@ -1221,7 +1221,8 @@ object SaveFeatures {
         |       ext['long_click_count'].int_value as user_long_click_count,
         |       ext['exp_ctr'].int_value as exp_ctr,
         |       ext['exp_cvr'].int_value as exp_cvr,
-        |       ext['usertype'].int_value as usertype
+        |       ext['usertype'].int_value as usertype,
+        |       userid
         |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isclick = 1 and adslot_type <> 7
       """.stripMargin.format(date, hour)
     println(sqlStmt)
@@ -1243,7 +1244,8 @@ object SaveFeatures {
         |       ext['long_click_count'].int_value as user_long_click_count,
         |       ext['exp_ctr'].int_value as exp_ctr,
         |       ext['exp_cvr'].int_value as exp_cvr,
-        |       ext['usertype'].int_value as usertype
+        |       ext['usertype'].int_value as usertype,
+        |       userid
         |from dl_cpc.cpc_union_log
         |lateral view explode(motivation) c as m
         |where `date` = "%s" and `hour` = "%s" and m.isclick = 1 and adslot_type = 7
