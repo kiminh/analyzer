@@ -139,7 +139,7 @@ object OcpcHourlyReportV2 {
        |FROM
        |  dl_cpc.ocpcv3_unionlog_label_hourly
        |WHERE
-       |  `dt`='$date' and `hour` <= '$hour'
+       |  `date`='$date' and `hour` <= '$hour'
        |AND
        |  isshow=1
        """.stripMargin
