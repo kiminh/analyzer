@@ -2,6 +2,7 @@ package com.cpc.spark.ocpc
 
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import com.cpc.spark.tools.OperateMySQL
 
 
 object OcpcHourlyReportV2 {
@@ -40,20 +41,35 @@ object OcpcHourlyReportV2 {
     saveDataToHDFS(dataIdea, dataConversion, "qtt_demo", date, hour, spark)
 
     // 存储数据到mysql
+    saveDataToMysql(dataIdea, dataConversion, date, hour, spark)
+
 //    clearDataInMysql("report2.report_ocpc_data_detail", date, hour, spark)
 //    saveDataToMysql(dataIdea, "report2.report_ocpc_data_detail", date, hour, spark)
   }
 
-  def clearDataInMysql(tableName: String, date: String, hour: String, spark: SparkSession) = {
+  def saveDataToMysql(dataIdea: DataFrame, dataConversion: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val hourInt = hour.toInt
+    // 详情表
+    val dataIdeaMysql = dataIdea
+      .select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hourInt))
+    val reportTableIdea = "report2.report_ocpc_data_detail"
+    val delSQLidea = s"delete from $reportTableIdea where `date` = '$date' and hour = $hourInt"
 
+//    OperateMySQL.update(delSQLidea) //先删除历史数据
+    OperateMySQL.insert(dataIdeaMysql, reportTableIdea) //插入数据
 
-  }
+    // 汇总表
+    val dataConversionMysql = dataConversion
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hourInt))
+    val reportTableConversion = "report2.report_ocpc_data_summary_v2"
+    val delSQLconversion = s"delete from $reportTableConversion where `date` = '$date' and hour = $hourInt"
 
-  def saveDataToMysql(data: DataFrame, tableName: String, date: String, hour: String, spark: SparkSession) = {
-    val hourInt = hour.toInt
-
-
+//    OperateMySQL.update(delSQLconversion) //先删除历史数据
+    OperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
   }
 
   def saveDataToHDFS(dataIdea: DataFrame, dataConversion: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
