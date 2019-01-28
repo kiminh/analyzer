@@ -31,6 +31,8 @@ object OcpcHourlyReportV2 {
     val rawDataIdea = preprocessDataByIdea(baseData, date, hour, spark)
     val dataIdea = getDataByIdea(rawDataIdea, date, hour, spark)
 
+    dataIdea.write.mode("overwrite").saveAsTable("test.check_ocpc_novel20190128")
+
     // 分conversion_goal统计数据
 //    val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
 //    val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
