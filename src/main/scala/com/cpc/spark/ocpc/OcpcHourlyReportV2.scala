@@ -37,16 +37,12 @@ object OcpcHourlyReportV2 {
     val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
     val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
 
-    dataIdea.write.mode("overwrite").saveAsTable("test.report_ocpc_data_detail20190128")
-
     // 存储数据到hadoop
 //    saveDataToHDFS(dataIdea, dataConversion, "qtt_demo", date, hour, spark)
 
     // 存储数据到mysql
-//    saveDataToMysql(dataIdea, dataConversion, date, hour, spark)
+    saveDataToMysql(dataIdea, dataConversion, date, hour, spark)
 
-//    clearDataInMysql("report2.report_ocpc_data_detail", date, hour, spark)
-//    saveDataToMysql(dataIdea, "report2.report_ocpc_data_detail", date, hour, spark)
   }
 
   def saveDataToMysql(dataIdea: DataFrame, dataConversion: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -60,7 +56,7 @@ object OcpcHourlyReportV2 {
     val reportTableIdea = "report2.report_ocpc_data_detail"
     val delSQLidea = s"delete from $reportTableIdea where `date` = '$date' and hour = $hourInt"
 
-//    OperateMySQL.update(delSQLidea) //先删除历史数据
+    OperateMySQL.update(delSQLidea) //先删除历史数据
     OperateMySQL.insert(dataIdeaMysql, reportTableIdea) //插入数据
 
     // 汇总表
@@ -72,7 +68,7 @@ object OcpcHourlyReportV2 {
     val reportTableConversion = "report2.report_ocpc_data_summary_v2"
     val delSQLconversion = s"delete from $reportTableConversion where `date` = '$date' and hour = $hourInt"
 
-//    OperateMySQL.update(delSQLconversion) //先删除历史数据
+    OperateMySQL.update(delSQLconversion) //先删除历史数据
     OperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
   }
 
