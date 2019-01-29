@@ -492,7 +492,7 @@ object GetTraceReportV3 {
       trace =>
         val trace_type = trace.getAs[String]("trace_type")
 
-        ((trace.getAs[String]("searchid"), trace.getAs[String]("idea_id"), trace.getAs[Int]("auto")), trace)
+        ((trace.getAs[String]("searchid"), trace.getAs[Int]("idea_id"), trace.getAs[Int]("auto")), trace)
     }.reduceByKey {
       case (x, y) => x //去重
     }.map {x =>

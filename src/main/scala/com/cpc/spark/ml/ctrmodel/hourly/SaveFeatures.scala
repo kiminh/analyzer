@@ -43,7 +43,7 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    saveDataFromLog(spark, date, hour)
+    //saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
     //saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
     //saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr，逻辑和saveCvrDataV2一致， 将转化的3张表合并到一张表
@@ -1013,7 +1013,7 @@ object SaveFeatures {
       .rdd
       .map {
         x =>
-          ((x.getAs[String]("searchid"), x.getAs[String]("ideaid")), Seq(x))
+          ((x.getAs[String]("searchid"), x.getAs[Int]("ideaid")), Seq(x))
       }
       .reduceByKey(_ ++ _)
       .map {
