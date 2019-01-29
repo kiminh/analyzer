@@ -65,7 +65,7 @@ object OcpcSuggestCpa{
       .union(cpa3Data)
       .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid")
       .join(pcvrData, Seq("unitid", "conversion_goal"), "left_outer")
-      .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "pre_cvr", "post_cvr_real")
+      .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "pre_cvr", "post_cvr_real", "exp_cvr")
 
     cpaDataRaw.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190129")
 //      .withColumn("date", lit(date))
@@ -137,6 +137,8 @@ object OcpcSuggestCpa{
          |    dl_cpc.slim_union_log
          |WHERE
          |    $selectCondition
+         |AND
+         |    media_appsid  in ('80000001', '80000002')
          |AND
          |    isclick=1
          |AND antispam = 0
@@ -219,22 +221,22 @@ object OcpcSuggestCpa{
       .withColumn("pre_cvr", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
       .select("searchid", "unitid", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr", "post_cvr_cali")
 
-    caliData.write.mode("overwrite").saveAsTable("test.ocpc_check_suggest_cpa20190129")
-
     val finalData = caliData
       .groupBy("unitid")
       .agg(
         sum(col("pre_cvr")).alias("pre_cvr"),
+        sum(col("exp_cvr")).alias("exp_cvr"),
         sum(col("isclick")).alias("click")
       )
       .withColumn("pre_cvr", col("pre_cvr") * 1.0 / col("click"))
-      .select("unitid", "pre_cvr")
+      .withColumn("exp_cvr", col("exp_cvr") * 1.0 / col("click"))
+      .select("unitid", "pre_cvr", "exp_cvr")
 
     val resultDF = finalData
       .join(data, Seq("unitid"), "outer")
       .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("post_cvr_real", col("post_cvr"))
-      .select("unitid", "pre_cvr", "post_cvr_real", "conversion_goal")
+      .select("unitid", "exp_cvr", "pre_cvr", "post_cvr_real", "conversion_goal")
 
     resultDF
   }
