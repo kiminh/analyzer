@@ -750,7 +750,6 @@ object OcpcSampleToPb {
         .select("searchid", "ideaid", "adclass", "exp_cvr", "isclick", "iscvr", "post_cvr", "post_cvr_cali")
         .withColumn("pre_cvr", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
         .select("searchid", "ideaid", "adclass", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr", "post_cvr_cali")
-    caliData1.write.mode("overwrite").saveAsTable("test.check_new_k_20190129a")
 
     val finalData1 = caliData1
         .groupBy("ideaid", "adclass")
@@ -825,7 +824,6 @@ object OcpcSampleToPb {
         .select("searchid", "ideaid", "adclass", "exp_cvr", "isclick", "iscvr", "post_cvr", "post_cvr_cali")
         .withColumn("pre_cvr", when(col("exp_cvr")>col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
         .select("searchid", "ideaid", "adclass", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr", "post_cvr_cali")
-    caliData2.write.mode("overwrite").saveAsTable("test.check_new_k_20190129b")
 
     val finalData2 = caliData2
         .groupBy("ideaid", "adclass")
