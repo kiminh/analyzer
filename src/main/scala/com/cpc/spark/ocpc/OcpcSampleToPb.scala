@@ -741,13 +741,13 @@ object OcpcSampleToPb {
           sum(col("isclick")).alias("click"),
           sum(col("iscvr")).alias("conversion")
         )
-        .withColumn("post_cvr", col("conversion") * 1.0 / col("click"))
+        .withColumn("post_cvr", col("conversion") * 5.0 / col("click"))
         .select("ideaid", "adclass", "post_cvr")
 
     val caliData1 = data1
         .join(cvrData1, Seq("ideaid", "adclass"), "left_outer")
         .select("searchid", "ideaid", "adclass", "exp_cvr", "isclick", "iscvr", "post_cvr")
-        .withColumn("pre_cvr", when(col("exp_cvr")>col("post_cvr"), col("post_cvr")).otherwise(col("exp_cvr")))
+        .withColumn("pre_cvr", when(col("exp_cvr")> col("post_cvr"), col("post_cvr")).otherwise(col("exp_cvr")))
         .select("searchid", "ideaid", "adclass", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr")
 
     val finalData1 = caliData1
@@ -814,7 +814,7 @@ object OcpcSampleToPb {
           sum(col("isclick")).alias("click"),
           sum(col("iscvr")).alias("conversion")
         )
-        .withColumn("post_cvr", col("conversion") * 1.0 / col("click"))
+        .withColumn("post_cvr", col("conversion") * 5.0 / col("click"))
         .select("ideaid", "adclass", "post_cvr")
 
     val caliData2 = data2

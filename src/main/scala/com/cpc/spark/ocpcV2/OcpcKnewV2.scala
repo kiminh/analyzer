@@ -5,11 +5,10 @@ import java.util.Calendar
 
 import com.cpc.spark.ocpc.utils.OcpcUtils._
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
-import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 
 import scala.collection.mutable
 import org.apache.spark.sql.functions._
-
 import com.cpc.spark.udfs.Udfs_wj._
 
 object OcpcKnewV2 {
@@ -45,6 +44,32 @@ object OcpcKnewV2 {
 
     val dtCondition = "(%s)".format(datehourlist.mkString(" or "))
     val dtCondition2 = "(%s)".format(datehourlist2.mkString(" or "))
+
+    val rawSql =
+      s"""
+         |select
+         |    searchid,
+         |    ideaid,
+         |    ocpc_log_dict,
+         |    price,
+         |    isclick,
+         |    exp_cvr,
+         |    label_cvr1,
+         |    label_cvr2,
+         |    label_cvr3
+         |from
+         |    (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1 and ocpc_log_dict['cpcBid']>0 and exptags not like "%cpcBid%") a
+         |    left outer join
+         |    (select searchid, label2 as label_cvr1 from dl_cpc.ml_cvr_feature_v1 where $dtCondition and label_type!=12) b on a.searchid = b.searchid
+         |    left outer join
+         |    (select searchid, label as label_cvr2 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) c on a.searchid = c.searchid
+         |    left outer join
+         |    (select searchid, 1 as label_cvr3 from dl_cpc.site_form_unionlog where $dtCondition group by searchid) d on a.searchid=d.searchid
+       """.stripMargin
+    println(rawSql)
+    val dataRaw = spark.sql(rawSql)
+
+    val data1 = filterHighPreCVR(dataRaw, "cvr1", date, hour, spark)
 
 
     val statSql =
@@ -117,6 +142,34 @@ object OcpcKnewV2 {
     //    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k_new")
     res
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k_new")
+
+  }
+
+  def filterHighPreCVR(rawData: DataFrame, cvrType: String, date: String, hour: String, spark: SparkSession) = {
+//    searchid,
+//    ideaid,
+//    ocpc_log_dict,
+//    price,
+//    isclick,
+//    exp_cvr,
+//    label_cvr1,
+//    label_cvr2,
+//    label_cvr3
+    val data = rawData
+      .withColumn("label", col(s"label_$cvrType"))
+      .selectExpr("searchid", "ideaid", "ocpc_log_dict", "price", "isclick", "exp_cvr", "label")
+
+    val postCvrData = data
+      .groupBy("ideaid")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("label")).alias("conversion")
+      )
+      .withColumn("post_cvr", col("conversion") * 1.0 / col("click"))
+      .select("ideaid", "post_cvr")
+
+    val preCvrData = data
+//      .withColumn("pre_cvr", when(col("exp_cvr") > ))
 
   }
 
