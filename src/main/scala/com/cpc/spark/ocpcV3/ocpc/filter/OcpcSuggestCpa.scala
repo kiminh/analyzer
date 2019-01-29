@@ -54,12 +54,28 @@ object OcpcSuggestCpa{
     val cpa2Data = cpa2.withColumn("conversion_goal", lit(2))
     val cpa3Data = cpa3.withColumn("conversion_goal", lit(3))
 
-    val cpaData = cpa1Data
+    // 更新pre_cvr, post_cvr的计算规则
+    val pcvrData1 = getCVRv2(1, date, hour, spark)
+    val pcvrData2 = getCVRv2(2, date, hour, spark)
+    val pcvrData3 = getCVRv2(3, date, hour, spark)
+    val pcvrData = pcvrData1.union(pcvrData2).union(pcvrData3)
+
+    val cpaDataRaw = cpa1Data
       .union(cpa2Data)
       .union(cpa3Data)
       .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid")
+      .join(pcvrData, Seq("unitid"), "left_outer")
+      .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "pre_cvr", "post_cvr_real")
+
+    cpaDataRaw.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190129")
 //      .withColumn("date", lit(date))
 //      .withColumn("hour", lit(hour))
+
+    val cpaData = cpaDataRaw
+      .withColumn("pcvr", col("pre_cvr"))
+      .withColumn("post_cvr", col("post_cvr_real"))
+      .withColumn("pcoc", col("pcvr") * 1.0 / col("post_cvr"))
+
 
     val resultDF = cpaData
       .join(aucData, Seq("userid", "conversion_goal"), "left_outer")
@@ -86,11 +102,141 @@ object OcpcSuggestCpa{
       .withColumn("version", lit(version))
 
 //    test.ocpc_suggest_cpa_recommend_hourly20190104
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
+  }
+
+  def getCVRv2(conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -72)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
+    val selectCondition2 = getTimeRangeSql2(date1, hour1, date, hour)
+
+    // ctrData
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    searchid,
+         |    unitid,
+         |    exp_cvr,
+         |    isclick
+         |FROM
+         |    dl_cpc.slim_unionlog
+         |WHERE
+         |    $selectCondition
+         |AND
+         |    isclick=1
+         |AND ext['antispam'].int_value = 0
+         |AND ideaid > 0
+         |AND adsrc = 1
+         |AND adslot_type in (1,2,3)
+       """.stripMargin
+    println(sqlRequest1)
+    val ctrData = spark.sql(sqlRequest1)
+
+    // cvrData1
+    // 根据conversionGoal选择cv的sql脚本
+    var sqlRequest2 = ""
+    if (conversionGoal == 1) {
+      // cvr1数据
+      sqlRequest2 =
+        s"""
+           |SELECT
+           |  searchid,
+           |  1 as iscvr
+           |FROM
+           |  dl_cpc.ml_cvr_feature_v1
+           |WHERE
+           |  $selectCondition2
+           |AND
+           |  label2=1
+           |GROUP BY searchid
+       """.stripMargin
+    } else if (conversionGoal == 2) {
+      // cvr2数据
+      sqlRequest2 =
+        s"""
+           |SELECT
+           |  searchid,
+           |  1 as iscvr
+           |FROM
+           |  dl_cpc.ml_cvr_feature_v2
+           |WHERE
+           |  $selectCondition2
+           |AND
+           |  label=1
+           |GROUP BY searchid
+       """.stripMargin
+    } else {
+      sqlRequest2 =
+        s"""
+           |SELECT
+           |  searchid,
+           |  1 as iscvr
+           |FROM
+           |  dl_cpc.site_form_unionlog
+           |WHERE
+           |  $selectCondition2
+           |AND
+           |  label=1
+           |GROUP BY searchid
+       """.stripMargin
+    }
+    println(sqlRequest2)
+    val cvrRaw = spark.sql(sqlRequest2)
+
+    val cvrData = ctrData
+      .join(cvrRaw, Seq("searchid"), "left_outer")
+      .select("searchid", "unitid", "exp_cvr", "isclick", "iscvr")
+      .na.fill(0, Seq("iscvr"))
+
+
+    // conversiongoal=1
+    val data = cvrData
+      .groupBy("unitid")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("conversion")
+      )
+      .withColumn("post_cvr", col("conversion") * 1.0 / col("click"))
+      .withColumn("post_cvr_cali", col("post_cvr") * 5.0)
+      .select("unitid", "post_cvr", "post_cvr_cali", "conversion")
+
+    val caliData = data
+      .join(cvrData, Seq("unitid"), "left_outer")
+      .select("searchid", "unitid", "exp_cvr", "isclick", "iscvr", "post_cvr", "post_cvr_cali")
+      .withColumn("pre_cvr", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
+      .select("searchid", "unitid", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr", "post_cvr_cali")
+
+    val finalData = caliData
+      .groupBy("unitid")
+      .agg(
+        sum(col("pre_cvr")).alias("pre_cvr"),
+        sum(col("isclick")).alias("click")
+      )
+      .withColumn("pre_cvr", col("pre_cvr") * 1.0 / col("click"))
+      .select("unitid", "pre_cvr")
+
+    val resultDF = finalData
+      .join(data, Seq("unitid"), "outer")
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .withColumn("post_cvr_real", col("post_cvr"))
+      .select("unitid", "pre_cvr", "post_cvr_real", "conversion_goal")
+
+    resultDF
   }
 
   def getUserType(date: String, hour: String, spark: SparkSession) = {
