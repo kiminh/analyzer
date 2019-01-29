@@ -219,6 +219,8 @@ object OcpcSuggestCpa{
       .withColumn("pre_cvr", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
       .select("searchid", "unitid", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr", "post_cvr_cali")
 
+    caliData.write.mode("overwrite").saveAsTable("test.ocpc_check_suggest_cpa20190129")
+
     val finalData = caliData
       .groupBy("unitid")
       .agg(
