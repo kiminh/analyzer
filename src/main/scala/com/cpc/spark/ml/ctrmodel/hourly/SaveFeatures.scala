@@ -1158,7 +1158,7 @@ object SaveFeatures {
 
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
-          //active15 count
+          //active15 telephone
           var active15Seq = Seq[String]()
 
           x._2.foreach(
@@ -1185,7 +1185,7 @@ object SaveFeatures {
               }
 
               if (trace_type == "active15") {
-                active15Seq :+ trace_op2
+                active15Seq :+= trace_op2
               }
             }
           )
