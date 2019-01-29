@@ -1187,7 +1187,7 @@ object SaveFeatures {
             }
           )
 
-
+          //建站表单多次提交，计算多次，不去重
           if (active15_count <= 1) {
             Seq((x._1._1, x._1._2, convert, convert2, label_type, convert_sdk_dlapp,
               active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
