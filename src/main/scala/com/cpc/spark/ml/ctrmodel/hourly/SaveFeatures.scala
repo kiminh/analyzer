@@ -1188,7 +1188,7 @@ object SaveFeatures {
             }
           )
 
-          //建站表单多次提交，计算多次，不去重; 建站表单以active15
+          //建站表单多次提交，计算多次，不去重; 建站表单以active15为准
           if (active15Seq.length < 1) {
             Seq((x._1._1, x._1._2, convert, convert2, label_type, convert_sdk_dlapp,
               active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
@@ -1213,7 +1213,7 @@ object SaveFeatures {
 
       }
       .toDF("searchid", "ideaid", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
-        "disactive", "active_href", "installed", "report_user_stayinwx")
+        "disactive", "active_href", "installed", "report_user_stayinwx", "telephone")
 
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getAs[Int]("label2") > 0).count())
 
