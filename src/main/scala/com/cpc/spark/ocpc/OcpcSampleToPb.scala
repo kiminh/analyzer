@@ -711,7 +711,11 @@ object OcpcSampleToPb {
          |    AND
          |        isclick=1
          |    AND
-         |        media_appsid  in ('80000001', '80000002')) as a
+         |        media_appsid  in ('80000001', '80000002')
+         |    AND ext['antispam'].int_value = 0
+         |    AND ideaid > 0
+         |    AND adsrc = 1
+         |    AND adslot_type in (1,2,3)) as a
          |LEFT JOIN
          |    (SELECT
          |        searchid,
@@ -782,7 +786,11 @@ object OcpcSampleToPb {
          |    AND
          |        isclick=1
          |    AND
-         |        media_appsid  in ('80000001', '80000002')) as a
+         |        media_appsid  in ('80000001', '80000002')
+         |    AND ext['antispam'].int_value = 0
+         |    AND ideaid > 0
+         |    AND adsrc = 1
+         |    AND adslot_type in (1,2,3)) as a
          |LEFT JOIN
          |    (SELECT
          |        searchid,
