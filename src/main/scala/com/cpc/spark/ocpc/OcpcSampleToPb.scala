@@ -712,7 +712,7 @@ object OcpcSampleToPb {
          |        isclick=1
          |    AND
          |        media_appsid  in ('80000001', '80000002')
-         |    AND ext['antispam'].int_value = 0
+         |    AND antispam = 0
          |    AND ideaid > 0
          |    AND adsrc = 1
          |    AND adslot_type in (1,2,3)) as a
@@ -787,7 +787,7 @@ object OcpcSampleToPb {
          |        isclick=1
          |    AND
          |        media_appsid  in ('80000001', '80000002')
-         |    AND ext['antispam'].int_value = 0
+         |    AND antispam = 0
          |    AND ideaid > 0
          |    AND adsrc = 1
          |    AND adslot_type in (1,2,3)) as a
@@ -847,10 +847,6 @@ object OcpcSampleToPb {
       .withColumn("kvalue2_middle", when(col("is_ocpc_flag").isNull, col("kvalue2_middle")).otherwise(col("kvalue2_init")))
       .withColumn("kvalue1", when(col("kvalue1_middle").isNull, 0.0).otherwise(col("kvalue1_middle")))
       .withColumn("kvalue2", when(col("kvalue2_middle").isNull, 0.0).otherwise(col("kvalue2_middle")))
-
-
-
-
 
     resultDF
   }
