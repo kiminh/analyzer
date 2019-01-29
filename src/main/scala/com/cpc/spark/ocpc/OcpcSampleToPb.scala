@@ -61,10 +61,10 @@ object OcpcSampleToPb {
     val resultDF = getCPCbid(result3, date, hour, spark)
 
 
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
 
     savePbPack(resultDF)
 
@@ -702,7 +702,7 @@ object OcpcSampleToPb {
          |        searchid,
          |        ideaid,
          |        adclass,
-         |        exp_cvr,
+         |        exp_cvr * 1.0 / 1000000 as exp_cvr,
          |        isclick
          |    FROM
          |        dl_cpc.slim_union_log
@@ -778,7 +778,7 @@ object OcpcSampleToPb {
          |        searchid,
          |        ideaid,
          |        adclass,
-         |        exp_cvr,
+         |        exp_cvr * 1.0 / 1000000 as exp_cvr,
          |        isclick
          |    FROM
          |        dl_cpc.slim_union_log
