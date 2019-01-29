@@ -7,6 +7,7 @@ import java.util.Calendar
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import com.cpc.spark.ocpc.utils.OcpcUtils._
+import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 
 object OcpcBaseCtr {
   def main(args: Array[String]): Unit = {
@@ -34,17 +35,17 @@ object OcpcBaseCtr {
          |    unitid,
          |    adslotid,
          |    price,
-         |    bid,
+         |    bid as original_bid,
          |    userid,
          |    media_type,
          |    media_appsid,
-         |    adslotid,
          |    adslot_type,
          |    adtype,
          |    ext['adclass'].int_value as adclass,
          |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr,
          |    isclick,
-         |    isshow
+         |    isshow,
+         |    ext_string['ocpc_log'] as ocpc_log
          |from dl_cpc.cpc_union_log
          |where $selectWhere
          |and isclick is not null
@@ -56,7 +57,36 @@ object OcpcBaseCtr {
          |and adslot_type in (1,2,3)
       """.stripMargin
     println(sqlRequest)
-    val rawData = spark.sql(sqlRequest)
+    val base = spark
+      .sql(sqlRequest)
+      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+    base.createOrReplaceTempView("base_table")
+    val sqlRequestBase =
+      s"""
+         |select
+         |    searchid,
+         |    uid,
+         |    ideaid,
+         |    unitid,
+         |    adslotid,
+         |    price,
+         |    original_bid,
+         |    userid,
+         |    media_type,
+         |    media_appsid,
+         |    adslot_type,
+         |    adtype,
+         |    adclass,
+         |    cast(exp_cvr as double) as exp_cvr,
+         |    isclick,
+         |    isshow,
+         |    ocpc_log,
+         |    ocpc_log_dict,
+         |    (case when length(ocpc_log)>0 then cast(ocpc_log_dict['dynamicbid'] as int) else original_bid end) as bid
+         |from base_table
+       """.stripMargin
+    println(sqlRequestBase)
+    val rawData = spark.sql(sqlRequestBase)
     rawData.createOrReplaceTempView("raw_table")
 
     // 展现数、点击数、花费

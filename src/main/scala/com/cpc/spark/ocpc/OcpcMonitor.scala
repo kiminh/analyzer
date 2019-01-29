@@ -75,7 +75,8 @@ object OcpcMonitor {
          |    and adsrc = 1
          |    and adslot_type in (1,2,3)
          |    and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
-         |    AND ext_int['is_ocpc']=1) a
+         |    AND ext_int['is_ocpc']=1
+         |    and searchid is not null) a
          |left outer join
          |    (
          |        select
@@ -88,6 +89,7 @@ object OcpcMonitor {
          |            `hour` = '$hour'
          |        and
          |            label_type!=12
+         |        and searchid is not null
          |    ) b on a.searchid = b.searchid
        """.stripMargin
 

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package ocpcminbidv3;
+//hour,adslotid,city_level,,adsrc,ad_second_class,ocpc_flag
+message SingleBidv3 {
+    int32 hour = 1;
+    int32 adslotType = 2;
+    int32 cityLevel = 3;
+    int32 adSecondClass = 4;
+    int32 isOcpc = 5;
+    double minBid = 6;
+    double minCpm = 7;
+}
+
+
+message BidListV3 {
+    repeated SingleBidv3 adrecord = 1;
+}

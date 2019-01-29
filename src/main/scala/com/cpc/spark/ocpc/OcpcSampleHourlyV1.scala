@@ -14,7 +14,7 @@ object OcpcSampleHourlyV1 {
 
     val siteFormData = spark
       .table("dl_cpc.site_form_unionlog")
-      .where(s"`date`='$dt' and `hour`='$hour' and ideaid!=0")
+      .where(s"`date`='$dt' and `hour`='$hour' and ideaid!=0 and searchid is not null")
       .select("ideaid", "searchid")
       .withColumn("label", lit(1))
       .distinct()
@@ -50,6 +50,7 @@ object OcpcSampleHourlyV1 {
          |        and ideaid > 0
          |        and adsrc = 1
          |        and adslot_type in (1,2,3)
+         |        and searchid is not null
          |      ) a
          |left join
          |      site_form_ideas b
@@ -76,11 +77,11 @@ object OcpcSampleHourlyV1 {
          |from
          |  unionlog_table as a
          |left join
-         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $selectWhere and label_type!=12) as b
+         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $selectWhere and label_type!=12 and searchid is not null) as b
          |on
          |  a.searchid=b.searchid
          |left join
-         |  (select searchid, 1 as label from dl_cpc.site_form_unionlog where $selectWhere) as c
+         |  (select searchid, 1 as label from dl_cpc.site_form_unionlog where $selectWhere and searchid is not null) as c
          |on
          |  a.searchid=c.searchid
        """.stripMargin

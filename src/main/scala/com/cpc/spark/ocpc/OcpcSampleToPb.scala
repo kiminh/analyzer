@@ -13,13 +13,12 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.{Column, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 
-
 import scala.collection.mutable.ListBuffer
 import userocpc.userocpc._
 import java.io.FileOutputStream
 
 import com.cpc.spark.common.Utils.getTimeRangeSql
-import com.cpc.spark.ocpc.OcpcUtils.{getActData, getTimeRangeSql2}
+import com.cpc.spark.ocpc.OcpcUtils.{getActData, getTimeRangeSql2, getTimeRangeSql3}
 import com.cpc.spark.ocpc.utils.OcpcUtils._
 import org.apache.spark.sql.functions._
 
@@ -42,6 +41,7 @@ object OcpcSampleToPb {
     val hpcvr = getHpcvr(date, hour, spark)
     val apiCvr = getAPIcvr(date, hour, spark)
     val resultK = getK(date, hour, spark)
+    val ocpcSuggest = getOcpcSuggest(date, hour, spark)
 
     val currentPb = baseData
       .join(hpcvr, Seq("ideaid", "adclass"), "left_outer")
@@ -52,18 +52,141 @@ object OcpcSampleToPb {
       .withColumn("kvalue2_init", col("k_value3"))
 
 
-    val result = initK(currentPb, date, hour,spark)
+    val result1 = initK(currentPb, date, hour,spark)
+    val result2 = assemblyPB(result1, date, hour, spark)
+    val result3 = processCPAsuggest(result2, ocpcSuggest, date, hour, spark)
+    val resultDF = getCPCbid(result3, date, hour, spark)
 
 
-    val resultDF = assemblyPB(result, date, hour, spark)
-
-//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v6")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_current_pb20181226")
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190121")
 
     savePbPack(resultDF)
 
+  }
+
+  def getCPCbid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    import spark.implicits._
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -2)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
+    println(selectCondition)
+
+    val bidData1 = spark
+      .table("dl_cpc.filtered_union_log_bid_hourly")
+      .where(selectCondition)
+      .filter(s"media_appsid in ('80000001', '80000002')")
+      .filter(s"length(ocpc_log) > 0")
+      .select("ideaid", "bid")
+      .groupBy("ideaid")
+      .agg(avg(col("bid")).alias("cpc_bid1"))
+      .select("ideaid", "cpc_bid1")
+
+    // 读取实验ideaid列表
+    val filename = "/user/cpc/wangjun/ocpc_bid_ideas.txt"
+    val expData = spark.sparkContext.textFile(filename)
+    val rawRDD = expData.map(x => (x.split(",")(0).toInt, x.split(",")(1).toDouble))
+    rawRDD.foreach(println)
+    val bidData2 = rawRDD
+      .toDF("ideaid", "cpc_bid2")
+      .groupBy("ideaid")
+      .agg(avg(col("cpc_bid2")).alias("cpc_bid2"))
+
+
+    // 读取实验ideaid列表
+    val filename2 = "/user/cpc/wangjun/ocpc_ab_ideas.txt"
+    val expData2 = spark.sparkContext.textFile(filename2)
+    val rawRDD2 = expData2.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
+    rawRDD2.foreach(println)
+    val bidDataIdeas = rawRDD2
+      .toDF("ideaid", "flag")
+      .filter(s"flag=1")
+      .distinct()
+
+    val bidData = bidDataIdeas
+      .join(bidData1, Seq("ideaid"), "left_outer")
+      .join(bidData2, Seq("ideaid"), "left_outer")
+      .select("ideaid", "cpc_bid1", "cpc_bid2")
+      .withColumn("cpc_bid", when(col("cpc_bid2").isNull, col("cpc_bid1")).otherwise(col("cpc_bid2")))
+      .select("ideaid", "cpc_bid")
+      .filter(s"cpc_bid is not null")
+
+
+    // 数据关联
+    val resultDF = data
+      .join(bidData, Seq("ideaid"), "left_outer")
+      .na.fill(0.0, Seq("cpc_bid"))
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t", "cpa_suggest", "cpc_bid")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+    resultDF
+  }
+
+  def processCPAsuggest(data: DataFrame, ocpcSuggest: DataFrame, date: String, hour: String, spark: SparkSession) = {
+//    val rawData = data
+//      .withColumn("conversion_goal", when(col("k_value")===col("kvalue2"), 2).otherwise(1))
+
+    val rawData1 = data.filter(s"k_value=kvalue1")
+    val rawData2 = data.filter(s"k_value!=kvalue1")
+    val ocpcSuggest1 = ocpcSuggest
+      .filter("conversion_goal=1")
+      .withColumn("t1", col("t"))
+      .withColumn("cpa_suggest1", col("cpa_suggest"))
+      .select("ideaid", "t1", "cpa_suggest1")
+    val ocpcSuggest2 = ocpcSuggest
+      .filter("conversion_goal=2")
+      .withColumn("t2", col("t"))
+      .withColumn("cpa_suggest2", col("cpa_suggest"))
+      .select("ideaid", "t2", "cpa_suggest2")
+    val ocpcSuggest3 = ocpcSuggest
+      .filter("conversion_goal=3")
+      .withColumn("t3", col("t"))
+      .withColumn("cpa_suggest3", col("cpa_suggest"))
+      .select("ideaid", "t3", "cpa_suggest3")
+
+    val data1 = rawData1
+      .join(ocpcSuggest1, Seq("ideaid"), "left_outer")
+      .join(ocpcSuggest3, Seq("ideaid"), "left_outer")
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t1", "cpa_suggest1", "t3", "cpa_suggest3")
+      .withColumn("t", when(col("cpa_suggest3").isNotNull, col("t3")).otherwise(col("t1")))
+      .withColumn("cpa_suggest", when(col("cpa_suggest3").isNotNull, col("cpa_suggest3")).otherwise(col("cpa_suggest1")))
+      .withColumn("t", when(col("cpa_suggest").isNull, 0.0).otherwise(col("t")))
+      .na.fill(0.0, Seq("t", "cpa_suggest"))
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t", "cpa_suggest")
+
+    val data2 = rawData2
+      .join(ocpcSuggest2, Seq("ideaid"), "left_outer")
+      .withColumn("t", col("t2"))
+      .withColumn("cpa_suggest", col("cpa_suggest2"))
+      .withColumn("t", when(col("cpa_suggest").isNull, 0.0).otherwise(col("t")))
+      .na.fill(0.0, Seq("t", "cpa_suggest"))
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t", "cpa_suggest")
+
+    val resultDF = data1.union(data2)
+
+    resultDF
+
+  }
+
+  def getOcpcSuggest(date: String, hour: String, spark: SparkSession) = {
+    val data = spark
+      .table("dl_cpc.ocpc_cpa_suggest_once")
+      .where(s"version='qtt_demo'")
+      .select("ideaid", "conversion_goal", "t", "cpa_suggest")
+      .groupBy("ideaid", "conversion_goal")
+      .agg(avg(col("t")).alias("t"), avg(col("cpa_suggest")).alias("cpa_suggest"))
+      .select("ideaid", "conversion_goal", "t", "cpa_suggest")
+
+    data
   }
 
 
@@ -94,9 +217,12 @@ object OcpcSampleToPb {
       val k_value1 = record.getAs[Double]("kvalue1")
       val k_value2 = record.getAs[Double]("kvalue2")
       val min_bid = 0.2
-      val cpa_suggest = 1.0
-      val t_span = 30
-      val cpc_bid = 10
+      val cpa_suggest = record.getAs[Double]("cpa_suggest")
+      var t_span = record.getAs[Double]("t")
+      val cpc_bid = record.getAs[Double]("cpc_bid")
+      if (t_span != 0.0) {
+        t_span = 3.0
+      }
 
       if (cnt % 500 == 0) {
         println(s"ideaid:$ideaid, userId:$userId, adclassId:$adclassId, costValue:$costValue, ctrValue:$ctrValue, cvrValue:$cvrValue, adclassCost:$adclassCost, adclassCtr:$adclassCtr, adclassCvr:$adclassCvr, k:$k, hpcvr:$hpcvr, caliValue:$caliValue, cvr3Cali:$cvr3Cali, cvr3Cnt:$cvr3Cnt, kvalue1:$k_value1, kvalue2:$k_value2, minBid:$min_bid, cpaSuggest:$cpa_suggest, t:$t_span, cpcBid:$cpc_bid")
@@ -415,7 +541,7 @@ object OcpcSampleToPb {
     val hour1 = tmpDateValue(1)
 
     val prevK = spark
-      .table("dl_cpc.ocpc_pb_result_table_v6")
+      .table("dl_cpc.ocpc_pb_result_table_v7")
       .where(s"`date`='$date1' and `hour`='$hour1'")
       .withColumn("prev_k2", col("kvalue1"))
       .withColumn("prev_k3", col("kvalue2"))
