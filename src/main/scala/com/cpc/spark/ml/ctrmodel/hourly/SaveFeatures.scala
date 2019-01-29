@@ -1015,6 +1015,7 @@ object SaveFeatures {
         x =>
           (x.getAs[String]("searchid"), Seq(x))
       }
+      .reduceByKey(_ ++ _)
       .map {
         x =>
           var active_third = 0
