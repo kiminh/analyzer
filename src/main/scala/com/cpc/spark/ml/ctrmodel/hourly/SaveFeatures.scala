@@ -1071,6 +1071,7 @@ object SaveFeatures {
          |        ,a.userid
          |        ,b.trace_type
          |        ,b.trace_op1
+         |        ,b.trace_op2
          |        ,b.duration
          |        ,"conv_motivate" as flag
          |from (select * from dl_cpc.cpc_motivation_log
@@ -1103,6 +1104,7 @@ object SaveFeatures {
          |       ,a.userid
          |       ,b.trace_type
          |       ,b.trace_op1
+         |       ,b.trace_op2
          |       ,b.duration
          |       ,"conv_info_flow" as flag
          |from (select * from dl_cpc.cpc_union_log
