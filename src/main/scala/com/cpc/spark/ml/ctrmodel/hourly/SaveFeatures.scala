@@ -996,7 +996,7 @@ object SaveFeatures {
          |            ,opt['ideaid'] as ideaid
          |            ,trace_type
          |      from dl_cpc.logparsed_cpc_trace_minute
-         |      where `thedate` = "%s" and `thehour` = "%s" and trace_type = 'active_third'
+         |      where `thedate` = "%s" and `thehour` = "%s"
          |   ) as tr
          |join
          |   (  select searchid, userid, "" as uid, planid, unitid, ideaid, adclass, media_appsid, date, hour

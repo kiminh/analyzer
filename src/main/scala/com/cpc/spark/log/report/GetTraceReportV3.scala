@@ -397,7 +397,7 @@ object GetTraceReportV3 {
          |            ,duration
          |            ,auto
          |      from dl_cpc.logparsed_cpc_trace_minute
-         |      where `thedate` = "%s" and `thehour` = "%s" and trace_type = 'active_third'
+         |      where `thedate` = "%s" and `thehour` = "%s"
          |   ) as tr
          |join
          |   (  select searchid, userid, planid, unitid, ideaid, isshow, isclick, date, hour
@@ -491,9 +491,8 @@ object GetTraceReportV3 {
     }.map {
       trace =>
         val trace_type = trace.getAs[String]("trace_type")
-        //val trace_op1 = trace.getAs[String]("trace_op1")
 
-        ((trace.getAs[String]("searchid"), trace.getAs[Int]("auto")), trace)
+        ((trace.getAs[String]("searchid"), trace.getAs[String]("idea_id"), trace.getAs[Int]("auto")), trace)
     }.reduceByKey {
       case (x, y) => x //去重
     }.map {x =>
