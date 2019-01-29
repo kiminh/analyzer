@@ -705,7 +705,7 @@ object OcpcSampleToPb {
          |        exp_cvr,
          |        isclick
          |    FROM
-         |        dl_cpc.slim_unionlog
+         |        dl_cpc.slim_union_log
          |    WHERE
          |        $selectCondition
          |    AND
@@ -776,7 +776,7 @@ object OcpcSampleToPb {
          |        exp_cvr,
          |        isclick
          |    FROM
-         |        dl_cpc.slim_unionlog
+         |        dl_cpc.slim_union_log
          |    WHERE
          |        $selectCondition
          |    AND
