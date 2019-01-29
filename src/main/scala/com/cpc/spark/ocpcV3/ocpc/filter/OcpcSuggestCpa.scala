@@ -131,7 +131,7 @@ object OcpcSuggestCpa{
          |SELECT
          |    searchid,
          |    unitid,
-         |    exp_cvr,
+         |    exp_cvr * 1.0 / 1000000 as exp_cvr,
          |    isclick
          |FROM
          |    dl_cpc.slim_union_log
