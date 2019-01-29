@@ -1038,7 +1038,7 @@ object SaveFeatures {
                 active_third = 1
               }
           }
-          (x._1, active_third, uid, userid, ideaid, search_time, adclass, media_appsid, planid, unitid, adslot_type)
+          (x._1._1, active_third, uid, userid, ideaid, search_time, adclass, media_appsid, planid, unitid, adslot_type)
       }
       .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time", "adclass", "media_appsid", "planid", "unitid", "adslot_type")
 
