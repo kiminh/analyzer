@@ -31,7 +31,7 @@ object ConvertionHourly {
     val date = args(0)
     val hour = args(1)
     println("*******************")
-    println("date:" + date+", hour:" + hour)
+    println("date:" + date + ", hour:" + hour)
 
     val conf = ConfigFactory.load()
     mariadbUrl = conf.getString("mariadb.report2_write.url")
@@ -100,12 +100,13 @@ object ConvertionHourly {
        """.stripMargin
 
     val cvr = (spark.sql(sqlv1)).union(spark.sql(sqlv2))
+      .where("cvr_num > 0")
       .rdd
       .map {
         r =>
           var media_id = 0
-          val mediaid=r.getAs[String]("media_id")
-          if(r.getAs[String]("media_id")!=""){
+          val mediaid = r.getAs[String]("media_id")
+          if (r.getAs[String]("media_id") != "") {
             media_id = mediaid.toInt
           }
           AdvConversionHourly(r.getAs[Int]("user_id"),
