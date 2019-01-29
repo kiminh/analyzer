@@ -1157,12 +1157,13 @@ object SaveFeatures {
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
           //active15 count
-          var active15_count = 0
+          var active15Seq = Seq[String]()
 
           x._2.foreach(
             x => {
               val trace_type = x.getAs[String]("trace_type")
               val trace_op1 = x.getAs[String]("trace_op1")
+              val trace_op2 = x.getAs[String]("trace_op2")
 
               trace_type match {
                 case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
@@ -1182,29 +1183,29 @@ object SaveFeatures {
               }
 
               if (trace_type == "active15") {
-                active15_count += 1
+                active15Seq :+ trace_op2
               }
             }
           )
 
-          //建站表单多次提交，计算多次，不去重
-          if (active15_count <= 1) {
+          //建站表单多次提交，计算多次，不去重; 建站表单以active15
+          if (active15Seq.length < 1) {
             Seq((x._1._1, x._1._2, convert, convert2, label_type, convert_sdk_dlapp,
               active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
               active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
               active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
-              active_map.getOrElse("report_user_stayinwx", 0)))
+              active_map.getOrElse("report_user_stayinwx", 0), ""))
 
           } else {
 
-            var list = ListBuffer[(String, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int)]()
-            val tuple = (x._1._1, x._1._2, convert, convert2, label_type, convert_sdk_dlapp,
-              active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
-              active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
-              active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
-              active_map.getOrElse("report_user_stayinwx", 0))
+            var list = ListBuffer[(String, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, String)]()
 
-            for (i <- 0 until active15_count) {
+            for (telephone <- active15Seq) {
+              val tuple = (x._1._1, x._1._2, convert, convert2, label_type, convert_sdk_dlapp,
+                active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
+                active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
+                active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
+                active_map.getOrElse("report_user_stayinwx", 0), telephone)
               list += tuple
             }
             list.toSeq
