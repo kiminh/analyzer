@@ -1013,44 +1013,31 @@ object SaveFeatures {
       .rdd
       .map {
         x =>
-          (x.getAs[String]("searchid"), Seq(x))
+          ((x.getAs[String]("searchid"), x.getAs[String]("ideaid")), Seq(x))
       }
       .reduceByKey(_ ++ _)
       .map {
         x =>
+          val log = x._2.head
           var active_third = 0
-          var uid = ""
-          var userid = 0
-          var ideaid = 0
-          var adclass = 0
-          var media_appsid = ""
-          var planid = 0
-          var unitid = 0
-          var adslot_type = 0
-          var date = ""
-          var hour = ""
-          var search_time = ""
-          x._2.foreach(
-            x => {
-              uid = x.getAs[String]("uid")
-              userid = x.getAs[Int]("userid")
-              ideaid = x.getAs[Int]("ideaid")
-              adclass = x.getAs[Int]("adclass")
-              media_appsid = x.getAs[String]("media_appsid")
-              planid = x.getAs[Int]("planid")
-              unitid = x.getAs[Int]("unitid")
-              adslot_type = x.getAs[Int]("adslot_type")
-              date = x.getAs[String]("date")
-              hour = x.getAs[String]("hour")
-              search_time = date + " " + hour
-
+          var uid = log.getAs[String]("uid")
+          var userid = log.getAs[Int]("userid")
+          var ideaid = log.getAs[Int]("ideaid")
+          var adclass = log.getAs[Int]("adclass")
+          var media_appsid = log.getAs[String]("media_appsid")
+          var planid = log.getAs[Int]("planid")
+          var unitid = log.getAs[Int]("unitid")
+          var adslot_type = log.getAs[Int]("adslot_type")
+          var date = log.getAs[String]("date")
+          var hour = log.getAs[String]("hour")
+          var search_time = date + " " + hour
+          x._2.foreach {
+            x =>
               val trace_type = x.getAs[String]("trace_type")
               if (trace_type == "active_third") {
                 active_third = 1
               }
-
-            }
-          )
+          }
           (x._1, active_third, uid, userid, ideaid, search_time, adclass, media_appsid, planid, unitid, adslot_type)
       }
       .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time", "adclass", "media_appsid", "planid", "unitid", "adslot_type")
