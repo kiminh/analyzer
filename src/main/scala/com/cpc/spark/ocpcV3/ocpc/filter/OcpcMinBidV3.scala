@@ -146,8 +146,8 @@ object OcpcMinBidV3 {
        |  city_level,
        |  floor(adclass/1000) as ad_second_class,
        |  ocpc_flag,
-       |  percentile(bid, 0.03) as min_bid,
-       |  percentile(cpm, 0.03) as min_cpm,
+       |  percentile(bid, 0.01) as min_bid,
+       |  percentile(cpm, 0.05) as min_cpm,
        |  count(1) as cnt
        |FROM
        |  base_data
