@@ -52,18 +52,21 @@ object OcpcSampleToPb {
       .withColumn("kvalue2_init", col("k_value3"))
 
 
-    val result1 = initK(currentPb, date, hour,spark)
+    val result1 = initKv2(currentPb, date, hour,spark)
+    val resultTmp = initK(currentPb, date, hour, spark)
+    result1.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129a")
+    resultTmp.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129b")
     val result2 = assemblyPB(result1, date, hour, spark)
     val result3 = processCPAsuggest(result2, ocpcSuggest, date, hour, spark)
     val resultDF = getCPCbid(result3, date, hour, spark)
 
 
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190121")
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
 
-    savePbPack(resultDF)
+//    savePbPack(resultDF)
 
   }
 
@@ -647,6 +650,197 @@ object OcpcSampleToPb {
       .withColumn("kvalue2_middle", when(col("is_ocpc_flag").isNull, col("cvr3_cnt") * 1.0 / (col("ctr_cnt") * col("hpcvr"))).otherwise(col("kvalue2_init")))
       .withColumn("kvalue1", when(col("kvalue1_middle").isNull, 0.0).otherwise(col("kvalue1_middle")))
       .withColumn("kvalue2", when(col("kvalue2_middle").isNull, 0.0).otherwise(col("kvalue2_middle")))
+
+
+
+    resultDF
+  }
+
+  def initKv2(currentPb: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    通过slim_union_log关联的方式获取前72小时中的k值
+    1. 以searchid关联的方式关联k值与cvr
+    2. 计算各个ideaid的实际cvr
+    3. 按照实际cvr的2倍过滤过高cvr
+     */
+    // 对于刚进入ocpc阶段但是有cpc历史数据的广告依据历史转化率给出k的初值
+    // 取历史数据
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val end_date = sdf.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(end_date)
+    calendar.add(Calendar.DATE, -3)
+    val dt = calendar.getTime
+    val date1 = sdf.format(dt)
+    val selectCondition = getTimeRangeSql3(date1, hour, date, hour)
+
+    calendar.add(Calendar.DATE, -4)
+    val dt2 = calendar.getTime
+    val date2 = sdf.format(dt2)
+    val selectCondition2 = getTimeRangeSql3(date2, hour, date, hour)
+
+    println(selectCondition2)
+    val ocpcHistoryData = spark
+      .table("dl_cpc.ocpc_unionlog")
+      .where(selectCondition2)
+      .select("ideaid", "adclass")
+      .withColumn("is_ocpc_flag", lit(1))
+      .distinct()
+
+    // conversiongoal=1 or 3
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    a.searchid,
+         |    a.ideaid,
+         |    a.adclass,
+         |    a.exp_cvr,
+         |    a.isclick,
+         |    b.iscvr
+         |FROM
+         |    (SELECT
+         |        searchid,
+         |        ideaid,
+         |        adclass,
+         |        exp_cvr,
+         |        isclick
+         |    FROM
+         |        dl_cpc.slim_unionlog
+         |    WHERE
+         |        $selectCondition
+         |    AND
+         |        isclick=1
+         |    AND
+         |        media_appsid  in ('80000001', '80000002')) as a
+         |LEFT JOIN
+         |    (SELECT
+         |        searchid,
+         |        1 as iscvr
+         |    FROM
+         |        dl_cpc.ml_cvr_feature_v1
+         |    WHERE
+         |        `date`>='$date1'
+         |    AND
+         |        label_type in (1, 2, 3, 4, 5, 6)
+         |    AND
+         |        label2=1
+         |    GROUP BY searchid) as b
+         |ON
+         |    a.searchid=b.searchid
+       """.stripMargin
+    println(sqlRequest1)
+    val data1 = spark.sql(sqlRequest1)
+    val cvrData1 = data1
+        .na.fill(0, Seq("iscvr"))
+        .groupBy("ideaid", "adclass")
+        .agg(
+          sum(col("isclick")).alias("click"),
+          sum(col("iscvr")).alias("conversion")
+        )
+        .withColumn("post_cvr", col("conversion") * 1.0 / col("click"))
+        .select("ideaid", "adclass", "post_cvr")
+
+    val caliData1 = data1
+        .join(cvrData1, Seq("ideaid", "adclass"), "left_outer")
+        .select("searchid", "ideaid", "adclass", "exp_cvr", "isclick", "iscvr", "post_cvr")
+        .withColumn("pre_cvr", when(col("exp_cvr")>col("post_cvr"), col("post_cvr")).otherwise(col("exp_cvr")))
+        .select("searchid", "ideaid", "adclass", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr")
+
+    val finalData1 = caliData1
+        .groupBy("ideaid", "adclass")
+        .agg(
+          sum(col("pre_cvr")).alias("pre_cvr"),
+          sum(col("isclick")).alias("click")
+        )
+        .withColumn("pre_cvr", col("pre_cvr") * 1.0 / col("click"))
+        .select("ideaid", "adclass", "pre_cvr")
+        .join(cvrData1, Seq("ideaid", "adclass"), "left_outer")
+        .withColumn("kvalue1_middle", col("post_cvr") * 1.0 / col("pre_cvr"))
+        .select("ideaid", "adclass", "kvalue1_middle")
+
+    // conversiongoal=2
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |    a.searchid,
+         |    a.ideaid,
+         |    a.adclass,
+         |    a.exp_cvr,
+         |    a.isclick,
+         |    b.iscvr
+         |FROM
+         |    (SELECT
+         |        searchid,
+         |        ideaid,
+         |        adclass,
+         |        exp_cvr,
+         |        isclick
+         |    FROM
+         |        dl_cpc.slim_unionlog
+         |    WHERE
+         |        $selectCondition
+         |    AND
+         |        isclick=1
+         |    AND
+         |        media_appsid  in ('80000001', '80000002')) as a
+         |LEFT JOIN
+         |    (SELECT
+         |        searchid,
+         |        1 as iscvr
+         |    FROM
+         |        dl_cpc.ml_cvr_feature_v2
+         |    WHERE
+         |        `date`>='$date1'
+         |    AND
+         |        label=1
+         |    GROUP BY searchid) as b
+         |ON
+         |    a.searchid=b.searchid
+       """.stripMargin
+    println(sqlRequest2)
+    val data2 = spark.sql(sqlRequest2)
+    val cvrData2 = data2
+        .na.fill(0, Seq("iscvr"))
+        .groupBy("ideaid", "adclass")
+        .agg(
+          sum(col("isclick")).alias("click"),
+          sum(col("iscvr")).alias("conversion")
+        )
+        .withColumn("post_cvr", col("conversion") * 1.0 / col("click"))
+        .select("ideaid", "adclass", "post_cvr")
+
+    val caliData2 = data2
+        .join(cvrData2, Seq("ideaid", "adclass"), "left_outer")
+        .select("searchid", "ideaid", "adclass", "exp_cvr", "isclick", "iscvr", "post_cvr")
+        .withColumn("pre_cvr", when(col("exp_cvr")>col("post_cvr"), col("post_cvr")).otherwise(col("exp_cvr")))
+        .select("searchid", "ideaid", "adclass", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr")
+
+    val finalData2 = caliData2
+        .groupBy("ideaid", "adclass")
+        .agg(
+          sum(col("pre_cvr")).alias("pre_cvr"),
+          sum(col("isclick")).alias("click")
+        )
+        .withColumn("pre_cvr", col("pre_cvr") * 1.0 / col("click"))
+        .select("ideaid", "adclass", "pre_cvr")
+        .join(cvrData2, Seq("ideaid", "adclass"), "left_outer")
+        .withColumn("kvalue2_middle", col("post_cvr") * 1.0 / col("pre_cvr"))
+        .select("ideaid", "adclass", "kvalue2_middle")
+
+    val finalData = finalData1
+        .join(finalData2, Seq("ideaid", "adclass"), "outer")
+        .select("ideaid", "adclass", "kvalue1_middle", "kvalue2_middle")
+
+    // 关联currentPb和ocpc_flag
+    val resultDF = currentPb
+        .join(ocpcHistoryData, Seq("ideaid", "adclass"), "left_outer")
+        .join(finalData, Seq("ideaid", "adclass"), "left_outer")
+      .withColumn("kvalue1_middle", when(col("is_ocpc_flag").isNull, col("kvalue1_middle")).otherwise(col("kvalue1_init")))
+      .withColumn("kvalue2_middle", when(col("is_ocpc_flag").isNull, col("kvalue2_middle")).otherwise(col("kvalue2_init")))
+      .withColumn("kvalue1", when(col("kvalue1_middle").isNull, 0.0).otherwise(col("kvalue1_middle")))
+      .withColumn("kvalue2", when(col("kvalue2_middle").isNull, 0.0).otherwise(col("kvalue2_middle")))
+
+
 
 
 
