@@ -77,6 +77,10 @@ object OcpcKnewV2 {
       .withColumn("conversion_goal", lit(1))
     val data2 = dataRaw2
       .withColumn("conversion_goal", lit(2))
+    val data3 = dataRaw3
+      .withColumn("conversion_goal", lit(3))
+
+    val data = data1.union(data2).union(data3)
 
 //
 //    val statSql =
@@ -115,10 +119,10 @@ object OcpcKnewV2 {
 //
 //    println(statSql)
 
-    val realCvr3 = getIdeaidCvr3Ratio(date, hour, spark)
+//    val realCvr3 = getIdeaidCvr3Ratio(date, hour, spark)
 
 
-    val tablename = "dl_cpc.cpc_ocpc_v2_middle_new_v2"
+    val tablename = "test.cpc_ocpc_v2_middle_new_v2"
 //    val rawData = spark.sql(statSql)
 
 
@@ -138,17 +142,18 @@ object OcpcKnewV2 {
 //    data
 //      .repartition(10).write.mode("overwrite").insertInto(tablename)
 
-    val ratio1Data = getKWithRatioType(spark, tablename, "ratio1", date, hour)
-    val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
-    val ratio3Data = getKWithRatioType(spark, tablename, "ratio3", date, hour)
+    val ratio1Data = getKWithRatioType(spark, tablename, 1, date, hour)
+    val ratio2Data = getKWithRatioType(spark, tablename, 2, date, hour)
+    val ratio3Data = getKWithRatioType(spark, tablename, 3, date, hour)
 
     val res = ratio1Data
       .join(ratio2Data, Seq("ideaid", "date", "hour"), "outer")
       .join(ratio3Data, Seq("ideaid", "date", "hour"), "outer")
       .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3", "date", "hour")
-    //    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k_new")
-    res
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k_new")
+
+    res.write.mode("overwrite").saveAsTable("test.ocpc_v2_k_new")
+//    res
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_v2_k_new")
 
   }
 
@@ -192,18 +197,20 @@ object OcpcKnewV2 {
          |    ocpc_log_dict['cpagiven']
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
-
+    val resultDF = spark
+        .sql(sqlRequest)
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
 
     resultDF
   }
 
-  def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
+  def getKWithRatioType(spark: SparkSession, tablename: String, conversionGoal: Int, date: String, hour: String): Dataset[Row] = {
 
-    val condition = s"`date` = '$date' and hour = '$hour' and $ratioType is not null"
+    val condition = s"`date` = '$date' and hour = '$hour' and conversion_goal=$conversionGoal"
     println("getKWithRatioType", condition)
     val res = spark.table(tablename).where(condition)
-      .withColumn("str", concat_ws(" ", col(s"k_$ratioType"), col(s"$ratioType"), col("clickCnt")))
+      .withColumn("str", concat_ws(" ", col("k_ratio"), col("ratio"), col("clickCnt")))
       .groupBy("ideaid")
       .agg(collect_set("str").as("liststr"))
       .select("ideaid", "liststr").collect()
@@ -231,6 +238,14 @@ object OcpcKnewV2 {
       if (coffList(1)>0 && realk > 0) {
         resList.append((ideaid, realk, date, hour))
       }
+    }
+    var ratioType = "ratio1"
+    if (conversionGoal == 1) {
+      ratioType = "ratio1"
+    } else if (conversionGoal == 2) {
+      ratioType = "ratio2"
+    } else {
+      ratioType = "ratio3"
     }
     val data = spark.createDataFrame(resList)
       .toDF("ideaid", s"k_$ratioType", "date", "hour")
