@@ -139,7 +139,7 @@ object OcpcSuggestCpa{
          |    $selectCondition
          |AND
          |    isclick=1
-         |AND ext['antispam'].int_value = 0
+         |AND antispam = 0
          |AND ideaid > 0
          |AND adsrc = 1
          |AND adslot_type in (1,2,3)
