@@ -55,8 +55,8 @@ object OcpcKnewV2 {
          |    a.isclick,
          |    a.exp_cvr,
          |    b.label_cvr1,
-         |    b.label_cvr2,
-         |    b.label_cvr3
+         |    c.label_cvr2,
+         |    d.label_cvr3
          |from
          |    (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1 and ocpc_log_dict['cpcBid']>0 and exptags not like "%cpcBid%") a
          |    left outer join
