@@ -138,7 +138,7 @@ object OcpcKnewV2 {
 
 
 
-    //    data.write.mode("overwrite").saveAsTable(tablename)
+    data.write.mode("overwrite").saveAsTable(tablename)
 //    data
 //      .repartition(10).write.mode("overwrite").insertInto(tablename)
 
