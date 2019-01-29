@@ -101,14 +101,15 @@ object OcpcSuggestCpa{
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype")
       .join(modelData, Seq("unitid", "userid"), "left_outer")
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2")
+      .na.fill(-1, Seq("pcoc1", "pcoc2"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
 //    test.ocpc_suggest_cpa_recommend_hourly20190104
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
