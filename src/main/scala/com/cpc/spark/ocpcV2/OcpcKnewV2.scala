@@ -207,7 +207,7 @@ object OcpcKnewV2 {
 
   def getKWithRatioType(spark: SparkSession, tablename: String, conversionGoal: Int, date: String, hour: String): Dataset[Row] = {
 
-    val condition = s"`date` = '$date' and hour = '$hour' and conversion_goal=$conversionGoal"
+    val condition = s"`date` = '$date' and hour = '$hour' and conversion_goal=$conversionGoal and ratio is not null"
     println("getKWithRatioType", condition)
     val res = spark.table(tablename).where(condition)
       .withColumn("str", concat_ws(" ", col("k_ratio"), col("ratio"), col("clickCnt")))
