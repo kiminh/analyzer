@@ -75,6 +75,9 @@ object OcpcSuggestCpa{
       .withColumn("post_cvr", col("post_cvr_real"))
       .withColumn("pcoc", col("pcvr") * 1.0 / col("post_cvr"))
 
+    // 检查模型
+    val modelData = checkModelPCOC(date, hour, spark)
+
 
     val resultDF = cpaData
       .join(aucData, Seq("userid", "conversion_goal"), "left_outer")
@@ -96,16 +99,88 @@ object OcpcSuggestCpa{
       .na.fill(0, Seq("ocpc_flag"))
       .join(userTypes, Seq("userid"), "left_outer")
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype")
+      .join(modelData, Seq("unitid", "userid"), "left_outer")
+      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
 //    test.ocpc_suggest_cpa_recommend_hourly20190104
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
+  }
+
+  def checkModelPCOC(date: String, hour: String, spark: SparkSession) = {
+    /*
+    检查模型前后的pcoc，目前只覆盖二类电商
+     */
+    // 检查更新前模型的pcoc
+    val sqlRequest1 =
+      s"""
+         |select
+         |    A.unitid as unitid,
+         |    A.userid as userid,
+         |    sum(A.click) as click,
+         |    sum(A.conversion) as conversion,
+         |    avg(A.raw_cvr) as pre_cvr,
+         |    avg(A.conversion) as post_cvr,
+         |    avg(abs(A.raw_cvr - A.conversion)) as mae,
+         |    avg(A.raw_cvr) * 1.0 / avg(A.conversion) as pcoc1
+         |from
+         |    (
+         |        select
+         |            *
+         |        from
+         |            dl_cpc.ocpc_report_detail
+         |        where
+         |            dt='$date'
+         |            and pt='v1'
+         |            and click>0
+         |            and industry='elds'
+         |    ) A
+         |group by
+         |    A.unitid, A.userid
+       """.stripMargin
+    println(sqlRequest1)
+    val data1 = spark.sql(sqlRequest1)
+
+    // 检查更新后模型的pcoc
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |    t.unitid,
+         |    t.userid,
+         |    AVG(t.exp_cvr) as pre_cvr,
+         |    SUM(t.conversion) as post_cvr,
+         |    AVG(t.exp_cvr) * 1.0 / AVG(t.conversion) as pcoc2
+         |FROM
+         |    (SELECT
+         |        unitid,
+         |        userid,
+         |        click,
+         |        conversion,
+         |        exp_cvr
+         |    FROM
+         |        dl_cpc.ocpc_report_about_pcoc
+         |    WHERE
+         |        dt='2019-01-28'
+         |    AND
+         |        industry='elds'
+         |    AND
+         |        click=1) as t
+         |GROUP BY t.unitid, t.userid
+       """.stripMargin
+    println(sqlRequest2)
+    val data2 = spark.sql(sqlRequest2)
+
+    val resultDF = data1
+      .join(data2, Seq("unitid", "userid"), "outer")
+      .select("unitid", "userid", "pcoc1", "pcoc2")
+
+    resultDF
   }
 
   def getCVRv2(conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
