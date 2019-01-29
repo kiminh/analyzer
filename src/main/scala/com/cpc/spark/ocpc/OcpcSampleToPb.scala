@@ -53,9 +53,9 @@ object OcpcSampleToPb {
 
 
     val result1 = initKv2(currentPb, date, hour,spark)
-    val resultTmp = initK(currentPb, date, hour, spark)
-    result1.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129a")
-    resultTmp.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129b")
+//    val resultTmp = initK(currentPb, date, hour, spark)
+//    result1.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129a")
+//    resultTmp.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129b")
     val result2 = assemblyPB(result1, date, hour, spark)
     val result3 = processCPAsuggest(result2, ocpcSuggest, date, hour, spark)
     val resultDF = getCPCbid(result3, date, hour, spark)
