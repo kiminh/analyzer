@@ -64,9 +64,9 @@ object OcpcSampleToPb {
 //    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
     resultDF
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
 
-//    savePbPack(resultDF)
+    savePbPack(resultDF)
 
   }
 
