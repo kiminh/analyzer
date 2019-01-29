@@ -1126,7 +1126,7 @@ object SaveFeatures {
           ((x.getAs[String]("searchid"), x.getAs[Int]("ideaid"), x.getAs[String]("flag")), Seq(x))
       }
       .reduceByKey(_ ++ _)
-      .map {
+      .flatMap {
         x =>
           val flag = x._1._3
           var convert = 0
@@ -1156,6 +1156,9 @@ object SaveFeatures {
 
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
+          //active15 count
+          var active15_count = 0
+
           x._2.foreach(
             x => {
               val trace_type = x.getAs[String]("trace_type")
@@ -1178,14 +1181,34 @@ object SaveFeatures {
                 active_map += ("report_user_stayinwx" -> 1)
               }
 
+              if (trace_type == "active15") {
+                active15_count += 1
+              }
             }
           )
 
-          (x._1._1, x._1._2, convert, convert2, label_type, convert_sdk_dlapp,
-            active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
-            active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
-            active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
-            active_map.getOrElse("report_user_stayinwx", 0))
+
+          if (active15_count <= 1) {
+            Seq((x._1._1, x._1._2, convert, convert2, label_type, convert_sdk_dlapp,
+              active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
+              active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
+              active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
+              active_map.getOrElse("report_user_stayinwx", 0)))
+
+          } else {
+
+            var list = ListBuffer[(String, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int)]()
+            val tuple = (x._1._1, x._1._2, convert, convert2, label_type, convert_sdk_dlapp,
+              active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
+              active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
+              active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
+              active_map.getOrElse("report_user_stayinwx", 0))
+
+            for (i <- 0 until active15_count) {
+              list += tuple
+            }
+            list.toSeq
+          }
 
       }
       .toDF("searchid", "ideaid", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
