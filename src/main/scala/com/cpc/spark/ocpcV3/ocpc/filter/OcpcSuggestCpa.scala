@@ -64,7 +64,7 @@ object OcpcSuggestCpa{
       .union(cpa2Data)
       .union(cpa3Data)
       .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid")
-      .join(pcvrData, Seq("unitid"), "left_outer")
+      .join(pcvrData, Seq("unitid", "conversion_goal"), "left_outer")
       .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "pre_cvr", "post_cvr_real")
 
     cpaDataRaw.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190129")
