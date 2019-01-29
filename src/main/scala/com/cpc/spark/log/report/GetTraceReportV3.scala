@@ -327,6 +327,9 @@ object GetTraceReportV3 {
     val fDate = dateFormat.format(cal.getTime)
     val before1hour = fDate.substring(11, 13)
 
+    /*
+    trace_log(1h) join api_callback_union_log(3d)
+     */
     val sql =
       s"""
          |select tr.searchid
@@ -338,14 +341,19 @@ object GetTraceReportV3 {
          |      ,tr.trace_op1 as trace_op1
          |      ,tr.duration as duration
          |      ,tr.auto
+         |      ,un.isshow
+         |      ,un.isclick
          |from dl_cpc.logparsed_cpc_trace_minute as tr
          |left join
-         |(select searchid, userid, planid, unitid, ideaid, adslot_type, isclick, date, hour from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
+         |(select searchid, userid, planid, unitid, ideaid, adslot_type, isshow, isclick, date, hour from dl_cpc.cpc_user_api_callback_union_log where %s) as un on tr.searchid = un.searchid
          |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7
        """.stripMargin.format(get3DaysBefore(date, hour), date, hour)
     println(sql)
 
-    //没有api回传标记，直接上报到trace
+    /*
+    没有api回传标记，直接上报到trace
+    trace_log(1h) join union_log(2h, 除去api回传is_api_callback=0)
+     */
     val sql2 =
       s"""
          |select tr.searchid
@@ -357,15 +365,20 @@ object GetTraceReportV3 {
          |      ,tr.trace_op1 as trace_op1
          |      ,tr.duration as duration
          |      ,tr.auto
+         |      ,un.isshow
+         |      ,un.isclick
          |from dl_cpc.logparsed_cpc_trace_minute as tr
          |left join
-         |(select a.searchid, a.userid ,a.planid ,a.unitid ,a.ideaid from dl_cpc.cpc_union_log a
+         |(select a.searchid, a.userid ,a.planid ,a.unitid ,a.ideaid, a.isshow, a.isclick from dl_cpc.cpc_union_log a
          |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type<>7 and a.isclick=1) as un on tr.searchid = un.searchid
          |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"
        """.stripMargin.format(date, before1hour, hour, date, hour)
     println(sql2)
 
-    //应用商城api回传
+    /*
+    应用商城api回传
+    trace_log(1h) join motivation_log(3d, trace_type=active_third)
+    */
     val sql_moti =
       s"""
          |select tr.searchid
@@ -377,6 +390,8 @@ object GetTraceReportV3 {
          |      ,tr.trace_op1 as trace_op1
          |      ,tr.duration as duration
          |      ,tr.auto
+         |      ,un.isshow
+         |      ,un.isclick
          |from (
          |      select searchid
          |            ,opt['ideaid'] as ideaid
@@ -388,7 +403,7 @@ object GetTraceReportV3 {
          |      where `thedate` = "%s" and `thehour` = "%s" and trace_type = 'active_third'
          |   ) as tr
          |join
-         |   (  select searchid, userid, planid, unitid, ideaid, isclick, date, hour
+         |   (  select searchid, userid, planid, unitid, ideaid, isshow, isclick, date, hour
          |      from dl_cpc.cpc_motivation_log
          |      where %s and isclick = 1
          |   ) as un
@@ -411,6 +426,7 @@ object GetTraceReportV3 {
       .withColumn("hour", lit(hour))
       .rdd
 
+    /*
     /* 获取用户api回传、没有api回传标记、应用商城 每个ideaid 的点击和展示数 */
     //用户api回传
     val sql3 =
@@ -469,7 +485,8 @@ object GetTraceReportV3 {
     }
     val unionRdd = unionRdd_api.union(unionRdd_nonapi).union(unionRdd_moti)
       .reduceByKey((x, y) => (x._1 + y._1, x._2 + y._2))
-
+    println("idea show click sum:", unionRdd.count())
+    */
 
     val traceData = traceReport1.union(traceReport2).union(traceReport_moti).filter {
       trace =>
@@ -477,37 +494,46 @@ object GetTraceReportV3 {
     }.map {
       trace =>
         val trace_type = trace.getAs[String]("trace_type")
-        val trace_op1 = trace.getAs[String]("trace_op1")
+        //val trace_op1 = trace.getAs[String]("trace_op1")
 
-        ((trace.getAs[String]("searchid"), trace_type, trace_op1, trace.getAs[Int]("duration"), trace.getAs[Int]("auto")), trace)
+        ((trace.getAs[String]("searchid"), trace.getAs[Int]("auto")), trace)
     }.reduceByKey {
       case (x, y) => x //去重
-    }.map {
-      case ((searchid, trace_type, trace_op1, duration, auto), trace) =>
+    }.map {x =>
+      val trace = x._2
+      val trace_op1 = trace.getAs[String]("trace_op1")
+
         ((trace.getAs[Int]("user_id"),
           trace.getAs[Int]("plan_id"),
           trace.getAs[Int]("unit_id"),
           trace.getAs[Int]("idea_id"),
           trace.getAs[String]("date"),
           trace.getAs[String]("hour"),
-          trace.getAs[String]("trace_type"),
-          trace_op1,
-          trace.getAs[Int]("duration"),
+          //auto = 1表明强制注入的trace，要区别清楚
           trace.getAs[Int]("auto")), 1)
     }.reduceByKey {
       case (x, y) => (x + y)
-    }.map {
-      case ((user_id, plan_id, unit_id, idea_id, date, hour, trace_type, trace_op1, duration, auto), count) =>
-        (idea_id, (user_id, plan_id, unit_id, date, hour, trace_type, trace_op1, duration, auto, count))
-    }
-    val toResult = traceData.join(unionRdd).map {
-      case (idea_id, ((user_id, plan_id, unit_id, date, hour, trace_type, trace_op1, duration, auto, count), (impression, click))) =>
-        AdvTraceReport(user_id, plan_id, unit_id, idea_id, date, hour, trace_type, trace_op1, duration, auto, count, impression, click)
+    }.map {x =>
+      val trace = x._1
+      AdvTraceReport(
+        user_id = trace._1,
+        plan_id = trace._2,
+        unit_id = trace._3,
+        idea_id = trace._4,
+        date = trace._5,
+        hour = trace._6,
+        trace_type = "active_third",
+        trace_op1 = "",
+        duration = 0,
+        auto = trace._7,
+        total_num = x._2,
+        impression = 0,
+        click = 0
+      )
     }
 
-    println("count:" + toResult.count())
-    toResult
-
+    println("count:" + traceData.count())
+    traceData
   }
 
   def writeToTraceReport(ctx: SparkSession, toResult: RDD[AdvTraceReport], date: String, hour: String): Unit = {
