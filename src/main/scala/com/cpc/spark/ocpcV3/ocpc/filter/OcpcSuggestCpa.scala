@@ -190,8 +190,6 @@ object OcpcSuggestCpa{
            |  dl_cpc.site_form_unionlog
            |WHERE
            |  $selectCondition2
-           |AND
-           |  label=1
            |GROUP BY searchid
        """.stripMargin
     }
