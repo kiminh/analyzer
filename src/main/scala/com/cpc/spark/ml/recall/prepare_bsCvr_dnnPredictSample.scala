@@ -78,15 +78,14 @@ object prepare_bsCvr_dnnPredictSample {
       s"""
         |(select id as unitid, audience_orient,precition_tag from adv.unit ta
         |left join (select user_id,look_like_id as precition_tag from adv.look_like where type=2 and status=0 group by user_id) tb on ta.user_id=tb.user_id
-        |where audience_orient>0 and (tb.user_id is not null or ta.user_id in (1522853, 1539639,
-        |1543604, 1559789, 1543604, 1567471, 1524409, 1566975, 1559495, 1562662))) temp
+        |where audience_orient>0) temp
       """.stripMargin
     spark.read.jdbc(jdbcUrl, precision, jdbcProp).createOrReplaceTempView("precision")
 
     spark.sql(
       s"""
          |select distinct unitid from precision lateral view explode(split(audience_orient,',')) audience_orient as tag
-         |where tag in (select distinct precition_tag from precision)
+         |where tag in (select distinct precition_tag from precision where precition_tag is not null) or tag in ('297')
        """.stripMargin
     ).createOrReplaceTempView("precision_unit")
 
