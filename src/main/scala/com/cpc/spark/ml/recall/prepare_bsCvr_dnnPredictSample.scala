@@ -102,7 +102,7 @@ object prepare_bsCvr_dnnPredictSample {
       s"""
          |select ta.unitid,ta.userid,ta.planid,ta.adslot_type,ta.charge_type from (select * from adv where unitid
          |not in (select unitid from precision_unit)) ta join
-         |(select id as unitid from dl_cpc.cpc_id_bscvr_auc where tag='unitid' and day='$day' and auc>0.75 group by id) tb
+         |(select id as unitid from dl_cpc.cpc_id_bscvr_auc where tag='unitid' and day='$day' and auc>0.8 group by id) tb
          |on ta.unitid=tb.unitid order by ta.cnt desc limit 200
          |""".stripMargin
 
