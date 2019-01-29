@@ -1053,7 +1053,6 @@ object SaveFeatures {
           )
           (x._1, active_third, uid, userid, ideaid, search_time, adclass, media_appsid, planid, unitid, adslot_type)
       }
-      .filter(x => x._2 != -1) //过滤空值
       .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time", "adclass", "media_appsid", "planid", "unitid", "adslot_type")
 
     println("user api back: " + userApiBackRDD.count())
