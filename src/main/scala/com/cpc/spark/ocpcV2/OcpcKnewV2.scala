@@ -48,15 +48,15 @@ object OcpcKnewV2 {
     val rawSql =
       s"""
          |select
-         |    searchid,
-         |    ideaid,
-         |    ocpc_log_dict,
-         |    price,
-         |    isclick,
-         |    exp_cvr,
-         |    label_cvr1,
-         |    label_cvr2,
-         |    label_cvr3
+         |    a.searchid,
+         |    a.ideaid,
+         |    a.ocpc_log_dict,
+         |    a.price,
+         |    a.isclick,
+         |    a.exp_cvr,
+         |    b.label_cvr1,
+         |    b.label_cvr2,
+         |    b.label_cvr3
          |from
          |    (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1 and ocpc_log_dict['cpcBid']>0 and exptags not like "%cpcBid%") a
          |    left outer join
