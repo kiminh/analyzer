@@ -69,67 +69,74 @@ object OcpcKnewV2 {
     println(rawSql)
     val dataRaw = spark.sql(rawSql)
 
-    val data1 = filterHighPreCVR(dataRaw, "cvr1", date, hour, spark)
+    val dataRaw1 = filterHighPreCVR(dataRaw, "cvr1", date, hour, spark)
+    val dataRaw2 = filterHighPreCVR(dataRaw, "cvr2", date, hour, spark)
+    val dataRaw3 = filterHighPreCVR(dataRaw, "cvr3", date, hour, spark)
 
+    val data1 = dataRaw1
+      .withColumn("conversion_goal", lit(1))
+    val data2 = dataRaw2
+      .withColumn("conversion_goal", lit(2))
 
-    val statSql =
-      s"""
-         |select
-         |  ideaid,
-         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio1,
-         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) as k_ratio2,
-         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5) as k_ratio3,
-         |  ocpc_log_dict['cpagiven'] as cpagiven,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0)) as cpa1,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0)) as cpa2,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label3,0)) as cpa3,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0))/ocpc_log_dict['cpagiven'] as ratio1,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0))/ocpc_log_dict['cpagiven'] as ratio2,
-         |  sum(if(isclick=1,price,0))/sum(COALESCE(label3,0))/ocpc_log_dict['cpagiven'] as ratio3,
-         |  sum(isclick) clickCnt,
-         |  sum(COALESCE(label1,0)) cvr1Cnt,
-         |  sum(COALESCE(label2,0)) cvr2Cnt,
-         |  sum(COALESCE(label3,0)) cvr3Cnt
-         |from
-         |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1 and ocpc_log_dict['cpcBid']>0 and exptags not like "%cpcBid%") a
-         |  left outer join
-         |  (select searchid, label2 as label1 from dl_cpc.ml_cvr_feature_v1 where $dtCondition and label_type!=12) b on a.searchid = b.searchid
-         |  left outer join
-         |  (select searchid, label as label2 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) c on a.searchid = c.searchid
-         |  left outer join
-         |  (select searchid, 1 as label3 from dl_cpc.site_form_unionlog where $dtCondition group by searchid) d on a.searchid=d.searchid
-         |group by
-         |  ideaid,
-         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5),
-         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5),
-         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5),
-         |  ocpc_log_dict['cpagiven']
-      """.stripMargin
-
-    println(statSql)
+//
+//    val statSql =
+//      s"""
+//         |select
+//         |  ideaid,
+//         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio1,
+//         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5) as k_ratio2,
+//         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5) as k_ratio3,
+//         |  ocpc_log_dict['cpagiven'] as cpagiven,
+//         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0)) as cpa1,
+//         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0)) as cpa2,
+//         |  sum(if(isclick=1,price,0))/sum(COALESCE(label3,0)) as cpa3,
+//         |  sum(if(isclick=1,price,0))/sum(COALESCE(label1,0))/ocpc_log_dict['cpagiven'] as ratio1,
+//         |  sum(if(isclick=1,price,0))/sum(COALESCE(label2,0))/ocpc_log_dict['cpagiven'] as ratio2,
+//         |  sum(if(isclick=1,price,0))/sum(COALESCE(label3,0))/ocpc_log_dict['cpagiven'] as ratio3,
+//         |  sum(isclick) clickCnt,
+//         |  sum(COALESCE(label1,0)) cvr1Cnt,
+//         |  sum(COALESCE(label2,0)) cvr2Cnt,
+//         |  sum(COALESCE(label3,0)) cvr3Cnt
+//         |from
+//         |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1 and ocpc_log_dict['cpcBid']>0 and exptags not like "%cpcBid%") a
+//         |  left outer join
+//         |  (select searchid, label2 as label1 from dl_cpc.ml_cvr_feature_v1 where $dtCondition and label_type!=12) b on a.searchid = b.searchid
+//         |  left outer join
+//         |  (select searchid, label as label2 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) c on a.searchid = c.searchid
+//         |  left outer join
+//         |  (select searchid, 1 as label3 from dl_cpc.site_form_unionlog where $dtCondition group by searchid) d on a.searchid=d.searchid
+//         |group by
+//         |  ideaid,
+//         |  round(ocpc_log_dict['kvalue'] * 100.0 / 5),
+//         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cali'] * 100.0 / 5),
+//         |  round(ocpc_log_dict['kvalue'] * ocpc_log_dict['cvr3cali'] * 100.0 / 5),
+//         |  ocpc_log_dict['cpagiven']
+//      """.stripMargin
+//
+//    println(statSql)
 
     val realCvr3 = getIdeaidCvr3Ratio(date, hour, spark)
 
 
-    val tablename = "dl_cpc.cpc_ocpc_v2_middle_new"
-    val rawData = spark.sql(statSql)
+    val tablename = "dl_cpc.cpc_ocpc_v2_middle_new_v2"
+//    val rawData = spark.sql(statSql)
 
 
-    val data = rawData
-      .join(realCvr3, Seq("ideaid"), "left_outer")
-      .withColumn("cvr2_ratio", udfSqrt()(col("cvr_ratio")))
-      .withColumn("cpa2", col("cpa2") * 1.0 / col("cvr2_ratio"))
-      .withColumn("ratio2", col("ratio2") * 1.0 / col("cvr2_ratio"))
-      .withColumn("cvr2Cnt", col("cvr2Cnt") * col("cvr2_ratio"))
-      .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3", "cpagiven", "cpa1", "cpa2", "cpa3", "ratio1", "ratio2", "ratio3", "clickCnt", "cvr1Cnt", "cvr2Cnt", "cvr3Cnt")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
+//    val data = rawData
+//      .join(realCvr3, Seq("ideaid"), "left_outer")
+//      .withColumn("cvr2_ratio", udfSqrt()(col("cvr_ratio")))
+//      .withColumn("cpa2", col("cpa2") * 1.0 / col("cvr2_ratio"))
+//      .withColumn("ratio2", col("ratio2") * 1.0 / col("cvr2_ratio"))
+//      .withColumn("cvr2Cnt", col("cvr2Cnt") * col("cvr2_ratio"))
+//      .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3", "cpagiven", "cpa1", "cpa2", "cpa3", "ratio1", "ratio2", "ratio3", "clickCnt", "cvr1Cnt", "cvr2Cnt", "cvr3Cnt")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
 
 
 
     //    data.write.mode("overwrite").saveAsTable(tablename)
-    data
-      .repartition(10).write.mode("overwrite").insertInto(tablename)
+//    data
+//      .repartition(10).write.mode("overwrite").insertInto(tablename)
 
     val ratio1Data = getKWithRatioType(spark, tablename, "ratio1", date, hour)
     val ratio2Data = getKWithRatioType(spark, tablename, "ratio2", date, hour)
@@ -146,15 +153,6 @@ object OcpcKnewV2 {
   }
 
   def filterHighPreCVR(rawData: DataFrame, cvrType: String, date: String, hour: String, spark: SparkSession) = {
-//    searchid,
-//    ideaid,
-//    ocpc_log_dict,
-//    price,
-//    isclick,
-//    exp_cvr,
-//    label_cvr1,
-//    label_cvr2,
-//    label_cvr3
     val data = rawData
       .withColumn("label", col(s"label_$cvrType"))
       .selectExpr("searchid", "ideaid", "ocpc_log_dict", "price", "isclick", "exp_cvr", "label")
@@ -166,11 +164,38 @@ object OcpcKnewV2 {
         sum(col("label")).alias("conversion")
       )
       .withColumn("post_cvr", col("conversion") * 1.0 / col("click"))
-      .select("ideaid", "post_cvr")
+      .withColumn("post_cvr_cali", col("post_cvr") * 5.0)
+      .select("ideaid", "post_cvr", "post_cvr_cali")
 
-    val preCvrData = data
-//      .withColumn("pre_cvr", when(col("exp_cvr") > ))
+    val baseData = data
+      .join(postCvrData, Seq("ideaid"), "inner")
+      .filter(s"exp_cvr <= post_cvr_cali")
+      .select("searchid", "ideaid", "ocpc_log_dict", "price", "isclick", "exp_cvr", "label")
 
+    baseData.createOrReplaceTempView("base_table")
+
+    val sqlRequest =
+      s"""
+         |select
+         |    ideaid,
+         |    round(ocpc_log_dict['kvalue'] * 100.0 / 5) as k_ratio,
+         |    ocpc_log_dict['cpagiven'] as cpagiven,
+         |    sum(if(isclick=1,price,0))/sum(COALESCE(label,0)) as cpa,
+         |    sum(if(isclick=1,price,0))/sum(COALESCE(label,0))/ocpc_log_dict['cpagiven'] as ratio,
+         |    sum(isclick) clickCnt,
+         |    sum(COALESCE(label,0)) cvrCnt
+         |from
+         |    base_table
+         |group by
+         |    ideaid,
+         |    round(ocpc_log_dict['kvalue'] * 100.0 / 5),
+         |    ocpc_log_dict['cpagiven']
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+
+
+    resultDF
   }
 
   def getKWithRatioType(spark: SparkSession, tablename: String, ratioType: String, date: String, hour: String): Dataset[Row] = {
