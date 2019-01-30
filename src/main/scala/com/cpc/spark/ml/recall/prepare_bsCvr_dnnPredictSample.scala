@@ -73,7 +73,7 @@ object prepare_bsCvr_dnnPredictSample {
 
     idea.show(5)
     */
-
+/**
     val precision=
       s"""
         |(select id as unitid, audience_orient,precition_tag from adv.unit ta
@@ -105,6 +105,19 @@ object prepare_bsCvr_dnnPredictSample {
          |(select id as unitid from dl_cpc.cpc_id_bscvr_auc where tag='unitid' and day='$day' and auc>0.8 group by id) tb
          |on ta.unitid=tb.unitid order by ta.cnt desc limit 200
          |""".stripMargin
+  */
+    val adv=
+      s"""
+         |(select id as unitid, user_id as userid, plan_id as planid, adslot_type, charge_type from
+         |adv.unit) temp
+          """.stripMargin
+
+    spark.read.jdbc(jdbcUrl, adv, jdbcProp).createOrReplaceTempView("adv")
+    val table2=
+      s"""
+     |select unitid,userid,planid,adslot_type,charge_type from adv
+     |where unitid in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid group by unitid)
+     |""".stripMargin
 
     spark.sql(table2).select("unitid").createTempView("unitid_table")
 
