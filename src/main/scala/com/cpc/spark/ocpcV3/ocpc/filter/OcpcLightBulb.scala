@@ -158,7 +158,7 @@ object OcpcLightBulb{
            |        where date = '$date'
            |    ) as b
            |ON
-           |    a.unitid=b.unitid;
+           |    a.unitid=b.unitid
          """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
