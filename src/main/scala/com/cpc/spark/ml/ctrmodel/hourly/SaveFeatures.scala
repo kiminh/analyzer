@@ -43,7 +43,7 @@ object SaveFeatures {
       .enableHiveSupport()
       .getOrCreate()
 
-    //saveDataFromLog(spark, date, hour)
+    saveDataFromLog(spark, date, hour)
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
     //saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
     //saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr，逻辑和saveCvrDataV2一致， 将转化的3张表合并到一张表
@@ -1256,19 +1256,20 @@ object SaveFeatures {
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
-      .parquet("/warehouse/test.db/ml_cvr_feature_v1/%s/%s".format(date, hour))  //test
-      //.parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
-    spark.sql(                                                                   //test
+      //.parquet("/warehouse/test.db/ml_cvr_feature_v1/%s/%s".format(date, hour))  //test
+      .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
+
+    /*spark.sql(                                                                   //test
       """
         |ALTER TABLE test.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
         | LOCATION  '/warehouse/test.db/ml_cvr_feature_v1/%s/%s'
-      """.stripMargin.format(date, hour, date, hour))
+      """.stripMargin.format(date, hour, date, hour))*/
 
-//    spark.sql(
-//      """
-//        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-//        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
-//      """.stripMargin.format(date, hour, date, hour))
+    spark.sql(
+      """
+        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
+      """.stripMargin.format(date, hour, date, hour))
 
 
     //输出标记文件
