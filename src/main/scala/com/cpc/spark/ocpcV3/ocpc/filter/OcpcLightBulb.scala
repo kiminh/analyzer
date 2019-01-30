@@ -4,7 +4,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.alibaba.fastjson.JSONObject
-import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql3
+import com.cpc.spark.ocpc.OcpcUtils._
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -56,7 +56,7 @@ object OcpcLightBulb{
     calendar.add(Calendar.DATE, -7)
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
-    val selectCondition = getTimeRangeSql3(date1, hour, date, hour)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
     val sqlRequest =
       s"""
