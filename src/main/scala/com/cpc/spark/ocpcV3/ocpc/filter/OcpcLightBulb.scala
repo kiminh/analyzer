@@ -29,7 +29,7 @@ object OcpcLightBulb{
     data.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control")
 
     // 存入redis
-    saveDataToRedis("test.ocpc_qtt_light_control", date, hour, spark)
+//    saveDataToRedis("test.ocpc_qtt_light_control", date, hour, spark)
   }
 
   def saveDataToRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
