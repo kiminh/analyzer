@@ -87,6 +87,7 @@ object FtrlNewHourly {
     ftrl.train(spark, sample)
     // ftrl.print()
     RedisUtil.ftrlToRedisWithType(ftrl, typename, ftrlVersion, dt, hour)
+    RedisUtil.ftrlToRedisWithTypeV2(ftrl, typename, ftrlVersion, dt, hour)
 
 
     // upload

@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package mincpm;
+message SingleMinCpm {
+    int32 hour = 1;
+    int64 adslotType = 2;
+    int32 cityLevel = 3;
+    int32 adSecondClass = 4;
+    int32 isOcpc = 5;
+    double minBid = 6;
+    int64 minCpm = 7;
+}
+
+message MinCpmList {
+    repeated SingleMinCpm adrecord = 1;
+}
+
+

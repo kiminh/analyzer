@@ -19,12 +19,58 @@ object OcpcFilterUnionLog {
     println("successfully save data into table: dl_cpc.filtered_union_log_hourly")
 
     // 按需求增加需要进行抽取的数据表
+    // bid
     val bidData = getBidUnionlog(data, date, hour, spark)
     bidData
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_bid_hourly")
 
+    // 增加可供ab对比实验的数据表
+    val abData = getAbUnionlog(data, date, hour, spark)
+    abData
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_exptag_hourly")
+  }
+
+  def getAbUnionlog(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    var selectWhere = s"(`date`='$date' and hour = '$hour')"
+
+    // 拿到基础数据
+    var sqlRequest =
+      s"""
+         |SELECT
+         |    searchid,
+         |    ideaid,
+         |    unitid,
+         |    planid,
+         |    userid,
+         |    uid,
+         |    adslotid,
+         |    adslot_type,
+         |    adtype,
+         |    adsrc,
+         |    exptags,
+         |    media_type,
+         |    media_appsid,
+         |    ext['adclass'].int_value as adclass,
+         |    ext_string['ocpc_log'] as ocpc_log,
+         |    cast(ext['exp_ctr'].int_value * 1.0 / 1000000 as double) as exp_ctr,
+         |    cast(ext['exp_cvr'].int_value * 1.0 / 1000000 as double) as exp_cvr,
+         |    bid as original_bid,
+         |    price,
+         |    isshow,
+         |    isclick
+         |FROM
+         |    dl_cpc.cpc_union_log
+         |WHERE
+         |    $selectWhere
+         |and (isshow>0 or isclick>0)
+      """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+    resultDF
   }
 
   def getBidUnionlog(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
