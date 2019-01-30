@@ -1,6 +1,10 @@
 package com.cpc.spark.ocpcV3.ocpc.filter
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import com.alibaba.fastjson.JSONObject
+import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql3
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -23,13 +27,103 @@ object OcpcLightBulb{
       .appName(s"OcpcLightBulb: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
+    // 清楚redis里面的数据
+//    cleanRedis("test.ocpc_qtt_light_control", date, hour, spark)
+
 
     // 抽取数据
-    val data = getRecommendationAd(date, hour, spark)
-    data.repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control")
+    val cpcData = getRecommendationAd(date, hour, spark)
+    val ocpcData = getOcpcRecord(date, hour, spark)
+    val data = cpcData
+      .join(ocpcData, Seq("unitid"), "outer")
+      .select("unitid", "cpa1", "cpa2", "cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
+    data.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control20190130")
 
     // 存入redis
-    saveDataToRedis("test.ocpc_qtt_light_control", date, hour, spark)
+//    saveDataToRedis("test.ocpc_qtt_light_control", date, hour, spark)
+  }
+
+  def getOcpcRecord(date: String, hour: String, spark: SparkSession) = {
+    /*
+    抽取最近七天所有广告单元的投放记录
+     */
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -7)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = getTimeRangeSql3(date1, hour, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    searchid,
+         |    unitid,
+         |    timestamp,
+         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |    cast(ocpc_log_dict['cpagiven'] as double) as cpa_given,
+         |    row_number() over(partition by unitid order by timestamp desc) as seq
+         |FROM
+         |    dl_cpc.ocpc_union_log_hourly
+         |WHERE
+         |    $selectCondition
+         |AND
+         |    media_appsid  in ("80000001", "80000002")
+         |AND
+         |    ext_int['is_ocpc'] = 1
+       """.stripMargin
+    println(sqlRequest)
+    val rawData = spark.sql(sqlRequest)
+
+    val data = rawData
+      .filter(s"seq=1")
+      .select("unitid", "conversion_goal", "cpa_given")
+
+    val data1 = data.filter(s"conversion_goal=1").withColumn("ocpc_cpa1", col("cpa_given")).select("unitid", "ocpc_cpa1")
+    val data2 = data.filter(s"conversion_goal=2").withColumn("ocpc_cpa2", col("cpa_given")).select("unitid", "ocpc_cpa2")
+    val data3 = data.filter(s"conversion_goal=3").withColumn("ocpc_cpa3", col("cpa_given")).select("unitid", "ocpc_cpa3")
+
+    val resultDF = data1
+        .join(data2, Seq("unitid"), "outer")
+        .join(data3, Seq("unitid"), "outer")
+        .select("unitid", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
+        .na.fill(-1, Seq("ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
+
+    resultDF
+  }
+
+  def cleanRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    将对应key的值设成空的json字符串
+     */
+    val data = spark.table(tableName).repartition(2)
+    data.show(10)
+    val cnt = data.count()
+    println(s"total size of the data is: $cnt")
+    val conf = ConfigFactory.load("ocpc")
+    val host = conf.getString("adv_redis.host")
+    val port = conf.getInt("adv_redis.port")
+    val auth = conf.getString("adv_redis.auth")
+    println(s"host: $host")
+    println(s"port: $port")
+
+    data.foreachPartition(iterator => {
+      val redis = new RedisClient(host, port)
+      redis.auth(auth)
+      iterator.foreach{
+        record => {
+          val identifier = record.getAs[Int]("unitid").toString
+          var key = "algorithm_unit_ocpc_" + identifier
+          val json = new JSONObject()
+          val value = json.toString
+          redis.setex(key, 1 * 24 * 60 * 60, value)
+        }
+      }
+      redis.disconnect
+    })
   }
 
   def saveDataToRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
