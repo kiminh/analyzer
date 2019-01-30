@@ -1118,7 +1118,7 @@ object SaveFeatures {
          |         ) b
          |    on a.searchid = b.searchid
          | where t2.id is null
-            """.stripMargin.format(date, before1hour, hour, yesterday, date, hour)
+            """.stripMargin.format(date, "07", hour, yesterday, date, hour)
     println("sql_info_flow: " + sql_info_flow)
 
     val cvrlog = (spark.sql(sql_motivate)).union(spark.sql(sql_info_flow))
@@ -1237,7 +1237,7 @@ object SaveFeatures {
         |       ext['usertype'].int_value as usertype,
         |       userid
         |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` >= "%s" and `hour` <= "%s" and isclick = 1 and adslot_type <> 7
-      """.stripMargin.format(date, before1hour, hour)
+      """.stripMargin.format(date, "07", hour)
     println(sqlStmt)
     val clicklog = spark.sql(sqlStmt)
     println("click log", clicklog.count())
