@@ -122,19 +122,44 @@ object OcpcLightBulb{
 
   def getRecommendationAd(date: String, hour: String, spark: SparkSession) = {
     val selectCondition = s"`date`='$date' and `hour`='$hour' and version='qtt_demo'"
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  unitid,
+//         |  original_conversion as conversion_goal,
+//         |  cpa * 1.0 / 100 as cpa
+//         |FROM
+//         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+//         |WHERE
+//         |  $selectCondition
+//         |AND
+//         |  is_recommend=1
+//       """.stripMargin
     val sqlRequest =
-      s"""
-         |SELECT
-         |  unitid,
-         |  original_conversion as conversion_goal,
-         |  cpa * 1.0 / 100 as cpa
-         |FROM
-         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
-         |WHERE
-         |  $selectCondition
-         |AND
-         |  is_recommend=1
-       """.stripMargin
+        s"""
+           |select
+           |    a.unitid,
+           |	    a.original_conversion as cv_goal,
+           |    a.cpa / 100.0 as cpa
+           |FROM
+           |    (SELECT
+           |        *
+           |    FROM
+           |        dl_cpc.ocpc_suggest_cpa_recommend_hourly
+           |    WHERE
+           |        date = '$date'
+           |    and is_recommend = 1
+           |    and version = 'qtt_demo'
+           |    and industry in ('elds')) as a
+           |INNER JOIN
+           |    (
+           |        select distinct unitid, adslot_type
+           |        FROM dl_cpc.ocpc_ctr_data_hourly
+           |        where date = '$date'
+           |    ) as b
+           |ON
+           |    a.unitid=b.unitid;
+         """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
     val data1 = data.filter(s"conversion_goal=1").withColumn("cpa1", col("cpa")).select("unitid", "cpa1")
