@@ -35,8 +35,9 @@ object OcpcLightBulb{
     val cpcData = getRecommendationAd(date, hour, spark)
     val ocpcData = getOcpcRecord(date, hour, spark)
     val data = cpcData
-      .join(ocpcData, Seq("unitid"), "outer")
-      .select("unitid", "cpa1", "cpa2", "cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
+        .join(ocpcData, Seq("unitid"), "outer")
+        .select("unitid", "cpa1", "cpa2", "cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
+        .na.fill(-1, Seq("cpa1", "cpa2", "cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
     data.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control20190130")
 
     // 存入redis
