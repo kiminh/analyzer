@@ -107,9 +107,9 @@ object OcpcSuggestCpa{
       .withColumn("version", lit(version))
 
 //    test.ocpc_suggest_cpa_recommend_hourly20190104
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
@@ -482,8 +482,7 @@ object OcpcSuggestCpa{
 //    ocpc_qtt_prev_pb
 //    ocpc_pb_result_table_v7
     val kvalue1 = spark
-      .table("dl_cpc.ocpc_pb_result_table_v7")
-      .where(s"`date`='$date' and `hour`='$hour'")
+      .table("dl_cpc.ocpc_qtt_prev_pb")
       .select("ideaid", "kvalue1")
       .join(data, Seq("ideaid"), "inner")
       .select("unitid", "kvalue1")
@@ -493,8 +492,7 @@ object OcpcSuggestCpa{
       .withColumn("conversion_goal", lit(1))
 
     val kvalue2 = spark
-      .table("dl_cpc.ocpc_pb_result_table_v7")
-      .where(s"`date`='$date' and `hour`='$hour'")
+      .table("dl_cpc.ocpc_qtt_prev_pb")
       .select("ideaid", "kvalue2")
       .join(data, Seq("ideaid"), "inner")
       .select("unitid", "kvalue2")
