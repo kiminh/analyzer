@@ -167,7 +167,7 @@ object OcpcSuggestCpa{
          |    FROM
          |        dl_cpc.ocpc_report_about_pcoc
          |    WHERE
-         |        dt='2019-01-28'
+         |        dt='$date'
          |    AND
          |        industry='elds'
          |    AND
