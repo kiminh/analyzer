@@ -36,8 +36,11 @@ object OcpcLightBulb{
     // 抽取数据
     val cpcData = getRecommendationAd(date, hour, spark)
     val ocpcData = getOcpcRecord(date, hour, spark)
+    val ocpcUnit = getCPAgiven(date, hour, spark)
+    val ocpcRecord = ocpcData.join(ocpcUnit, Seq("unitid"), "inner").select("unitid", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
+
     val data = cpcData
-        .join(ocpcData, Seq("unitid"), "outer")
+        .join(ocpcRecord, Seq("unitid"), "outer")
         .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
     data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
@@ -279,5 +282,48 @@ object OcpcLightBulb{
     resultDF
   }
 
+  def getCPAgiven(date: String, hour: String, spark: SparkSession) = {
+    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+    val user = "adv_live_read"
+    val passwd = "seJzIPUc7xU"
+    val driver = "com.mysql.jdbc.Driver"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val base = data
+      .withColumn("unitid", col("id"))
+      .withColumn("userid", col("user_id"))
+      .select("unitid", "userid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "status")
+
+
+    base.createOrReplaceTempView("base_table")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    unitid,
+         |    userid,
+         |    conversion_goal
+         |    status
+         |FROM
+         |    base_table
+       """.stripMargin
+
+    println(sqlRequest)
+
+    val resultDF = spark.sql(sqlRequest)
+
+    resultDF.show(10)
+    resultDF
+
+
+  }
 
 }
