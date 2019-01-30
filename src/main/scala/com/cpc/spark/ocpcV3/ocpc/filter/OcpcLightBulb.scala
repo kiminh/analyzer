@@ -26,14 +26,14 @@ object OcpcLightBulb{
 
     // 抽取数据
     val data = getRecommendationAd(date, hour, spark)
-    data.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control")
+    data.repartition(1).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control")
 
     // 存入redis
-//    saveDataToRedis("test.ocpc_qtt_light_control", date, hour, spark)
+    saveDataToRedis("test.ocpc_qtt_light_control", date, hour, spark)
   }
 
   def saveDataToRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
-    val data = spark.table(tableName).repartition(10)
+    val data = spark.table(tableName).repartition(2)
     data.show(10)
     val cnt = data.count()
     println(s"total size of the data is: $cnt")
