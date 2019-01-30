@@ -1236,8 +1236,8 @@ object SaveFeatures {
         |       ext['exp_cvr'].int_value as exp_cvr,
         |       ext['usertype'].int_value as usertype,
         |       userid
-        |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isclick = 1 and adslot_type <> 7
-      """.stripMargin.format(date, hour)
+        |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` >= "%s" and `hour` <= "%s" and isclick = 1 and adslot_type <> 7
+      """.stripMargin.format(date, before1hour, hour)
     println(sqlStmt)
     val clicklog = spark.sql(sqlStmt)
     println("click log", clicklog.count())
