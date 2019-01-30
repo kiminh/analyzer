@@ -139,7 +139,7 @@ object OcpcLightBulb{
         s"""
            |select
            |    a.unitid,
-           |	    a.original_conversion as cv_goal,
+           |	    a.original_conversion as conversion_goal,
            |    a.cpa / 100.0 as cpa
            |FROM
            |    (SELECT
