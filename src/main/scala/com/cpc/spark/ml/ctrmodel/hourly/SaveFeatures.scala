@@ -895,16 +895,13 @@ object SaveFeatures {
          |        ,b.trace_op1
          |from (select * from dl_cpc.cpc_motivation_log
          |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick = 1) a
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
-         |        on a.userid = t2.id
          |    join
          |        (select *
          |            from dl_cpc.logparsed_cpc_trace_minute
          |            where `thedate` = "%s" and `thehour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
-         | where t2.id is null
-        """.stripMargin.format(date, hour, yesterday, date, hour))
+        """.stripMargin.format(date, hour, date, hour))
       .rdd
       .map {
         x =>
@@ -947,9 +944,8 @@ object SaveFeatures {
          |from (select searchid, userid, uid, planid, unitid, ideaid, adslot_type, isclick, ext['adclass'].int_value as adclass, media_appsid, planid, unitid, date, hour
          |from dl_cpc.cpc_user_api_callback_union_log where %s) as un
          |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
-         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
-         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
-       """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour)
+         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7
+       """.stripMargin.format(get3DaysBefore(date, hour), date, hour)
     println("sql: " + sql)
 
     //没有api回传标记，直接上报到trace
@@ -971,9 +967,8 @@ object SaveFeatures {
          |from dl_cpc.cpc_union_log a
          |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type <> 7 and a.isclick = 1) as un
          |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
-         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
-         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and t2.id is null
-       """.stripMargin.format(date, before1hour, hour, yesterday, date, hour)
+         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"
+       """.stripMargin.format(date, before1hour, hour, date, hour)
     println("sql2: " + sql2)
 
     //应用商城api转化
@@ -1004,9 +999,7 @@ object SaveFeatures {
          |      where %s and isclick = 1
          |   ) as un
          |on tr.searchid = un.searchid and tr.ideaid = un.ideaid
-         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
-         |where t2.id is null
-       """.stripMargin.format(date, hour, get3DaysBefore(date, hour), yesterday)
+       """.stripMargin.format(date, hour, get3DaysBefore(date, hour))
     println("sql_moti: " + sql_moti)
 
     val userApiBackRDD = (spark.sql(sql)).union(spark.sql(sql2)).union(spark.sql(sql_moti))
@@ -1076,15 +1069,12 @@ object SaveFeatures {
          |        ,"conv_motivate" as flag
          |from (select * from dl_cpc.cpc_motivation_log
          |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick = 1) a
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
-         |        on a.userid = t2.id
          |    join
          |        (select *
          |            from dl_cpc.logparsed_cpc_trace_minute
          |            where `thedate` = "%s" and `thehour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
-         | where t2.id is null
         """.stripMargin.format(date, hour, yesterday, date, hour)
     println("sql_motivate: " + sql_motivate)
 
@@ -1109,16 +1099,13 @@ object SaveFeatures {
          |       ,"conv_info_flow" as flag
          |from (select * from dl_cpc.cpc_union_log
          |        where `date` = "%s" and `hour` >= "%s" and `hour` <= "%s" and searchid is not null and searchid != "" and adslot_type <> 7) a
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
-         |        on a.userid = t2.id
          |    join
          |        (select *
          |            from dl_cpc.logparsed_cpc_trace_minute
          |            where `thedate` = "%s" and `thehour` = "%s"
          |         ) b
          |    on a.searchid = b.searchid
-         | where t2.id is null
-            """.stripMargin.format(date, "07", hour, yesterday, date, hour)
+            """.stripMargin.format(date, before1hour, hour, date, hour)
     println("sql_info_flow: " + sql_info_flow)
 
     val cvrlog = (spark.sql(sql_motivate)).union(spark.sql(sql_info_flow))
@@ -1237,7 +1224,7 @@ object SaveFeatures {
         |       ext['usertype'].int_value as usertype,
         |       userid
         |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` >= "%s" and `hour` <= "%s" and isclick = 1 and adslot_type <> 7
-      """.stripMargin.format(date, "07", hour)
+      """.stripMargin.format(date, before1hour, hour)
     println(sqlStmt)
     val clicklog = spark.sql(sqlStmt)
     println("click log", clicklog.count())
