@@ -1075,7 +1075,7 @@ object SaveFeatures {
          |            where `thedate` = "%s" and `thehour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
-        """.stripMargin.format(date, hour, yesterday, date, hour)
+        """.stripMargin.format(date, hour, date, hour)
     println("sql_motivate: " + sql_motivate)
 
 
