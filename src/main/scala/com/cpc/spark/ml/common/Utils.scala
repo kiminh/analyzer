@@ -1,11 +1,10 @@
 package com.cpc.spark.ml.common
 
-import com.cpc.spark.log.parser.{ExtValue, TraceLog}
+import com.cpc.spark.log.parser.TraceLog
 import com.typesafe.config.Config
 import org.apache.spark.sql.Row
 
-import scala.collection.mutable
-import sys.process._
+import scala.sys.process._
 
 /**
   * Created by roydong on 23/06/2017.
@@ -251,7 +250,7 @@ object Utils {
         }
 
         //其它类：建站
-        if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active2" ||
+        if (r.getAs[String]("trace_type") == "active1" || r.getAs[String]("trace_type") == "active15" ||
           r.getAs[String]("trace_type") == "active3" || r.getAs[String]("trace_type") == "active4") {
           js_site_active_other += 1
         }
@@ -272,33 +271,6 @@ object Utils {
         val client_type = r.getAs[String]("client_type")
         val interaction = r.getAs[Int]("interaction")
 
-
-        //判断广告类型
-        //第一类：建站&sdk：列表页、详情等sdk栏位,网赚+彩票 ：trace_op1 = “REPORT_USER_STAYINWX”
-        //第二类：建站&非sdk：详情页、互动位等其他非sdk栏位, 网赚+彩票 ：trace_type: active5-disactive
-        //第三类：非建站：对于所有类型(js+sdk+openapi), 3个栏位(表页、详情、互动), 网赚+彩票：trace_type = “active_href”
-        //第四类：直接下载类：interaction=2 +Sdk栏位(列表+详情): trace_op1 = “REPORT_DOWNLOAD_PKGADDED”
-        //第五类：落地页下载：interaction=1 +Sdk栏位(列表+详情):trace_op1 = “REPORT_DOWNLOAD_PKGADDED”
-        //第六、七类：其他类（落地页非下载非加粉类）
-        //建站：其他(非网赚非彩票非直接下载类)+所有类型(js+sdk+openapi)+所有栏位,即针对非以上1-4的情况的search_id/click 判断: trace_type: active1/active2/active3/active4/active5-disactive
-        //非建站：nosite_active1/nosite_active2/nosite_active3/nosite_active4/nosite_active5-nosite_disactive
-        //        if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
-        //          label_type = 1
-        //        } else if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid > 0 && (adslot_type == 2 || adslot_type == 3) && client_type != "NATIVESDK") {
-        //          label_type = 2
-        //        } else if ((adsrc == 0 || adsrc == 1) && (adclass == 110110100 || adclass == 125100100) && siteid <= 0 && (adslot_type == 1 || adslot_type == 2 || adslot_type == 3)) {
-        //          label_type = 3
-        //        } else if ((adsrc == 0 || adsrc == 1) && interaction == 2 && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
-        //          label_type = 4
-        //        } else if ((adsrc == 0 || adsrc == 1) && interaction == 1 && (adclass.toString.substring(0, 3).toInt == 100) && ((adslot_type == 1 || adslot_type == 2) && client_type == "NATIVESDK")) {
-        //          label_type = 5
-        //        } else {
-        //          if (siteid > 0) {
-        //            label_type = 6 //其它类建站
-        //          } else {
-        //            label_type = 7 //其它类非建站
-        //          }
-        //        }
 
         if ((adclass == 110110100 || adclass == 125100100) && siteid > 0 && client_type == "NATIVESDK") {
           label_type = 1
@@ -342,7 +314,6 @@ object Utils {
           }
         }
 
-
         // review， 落地页下载非sdk，其它
         else {
           if (siteid > 0) {
@@ -361,22 +332,6 @@ object Utils {
             }
           }
         }
-
-      //        if (label_type == 1 && conversion_sdk_wechat > 0) {
-      //          active_sdk_site_wz += 1
-      //        } else if (label_type == 2 && active5 > 0 && disactive == 0) {
-      //          active_js_site_wz += 1
-      //        } else if (label_type == 3 && active_href > 0) {
-      //          active_js_nonsite_wz += 1
-      //        } else if (label_type == 4 && conversion_sdk_download > 0) {
-      //          active_js_download += 1
-      //        } else if (label_type == 5 && conversion_sdk_download > 0) {
-      //          active_js_ldy_download += 1
-      //        } else if (label_type == 6 && js_site_active_other > 0 && disactive == 0) {
-      //          active_other_site += 1
-      //        } else if (label_type == 7 && nosite_active > 0 && nosite_disactive == 0) {
-      //          active_other_nonsite += 1
-      //        }
     }
 
 
