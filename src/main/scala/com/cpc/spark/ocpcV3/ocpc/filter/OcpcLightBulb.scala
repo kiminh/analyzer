@@ -126,7 +126,8 @@ object OcpcLightBulb{
           var key = "algorithm_unit_ocpc_" + identifier
           val json = new JSONObject()
           val value = json.toString
-          redis.setex(key, 1 * 24 * 60 * 60, value)
+//          redis.setex(key, 1 * 24 * 60 * 60, value)
+          redis.del(key)
         }
       }
       redis.disconnect
