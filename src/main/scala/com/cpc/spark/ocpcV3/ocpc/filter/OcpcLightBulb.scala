@@ -57,7 +57,7 @@ object OcpcLightBulb{
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
 //    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
-    val selectCondition = s"`dt`>='$date1'"
+    val selectCondition = s"`date`>='$date1'"
 
     val sqlRequest =
       s"""
