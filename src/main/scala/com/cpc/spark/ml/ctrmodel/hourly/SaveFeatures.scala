@@ -1108,7 +1108,7 @@ object SaveFeatures {
          |       ,b.duration
          |       ,"conv_info_flow" as flag
          |from (select * from dl_cpc.cpc_union_log
-         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and adslot_type <> 7) a
+         |        where `date` = "%s" and `hour` >= "%s" and `hour` <= "%s" and searchid is not null and searchid != "" and adslot_type <> 7) a
          |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
          |        on a.userid = t2.id
          |    join
@@ -1118,7 +1118,7 @@ object SaveFeatures {
          |         ) b
          |    on a.searchid = b.searchid
          | where t2.id is null
-            """.stripMargin.format(date, hour, yesterday, date, hour)
+            """.stripMargin.format(date, before1hour, hour, yesterday, date, hour)
     println("sql_info_flow: " + sql_info_flow)
 
     val cvrlog = (spark.sql(sql_motivate)).union(spark.sql(sql_info_flow))
@@ -1269,23 +1269,23 @@ object SaveFeatures {
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
-      //.parquet("/warehouse/test.db/ml_cvr_feature_v1/%s/%s".format(date, hour))  //test
-      .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
-    /*spark.sql(                                                                   //test
+      .parquet("/warehouse/test.db/ml_cvr_feature_v1/%s/%s".format(date, hour))  //test
+      //.parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
+    spark.sql(                                                                   //test
       """
         |ALTER TABLE test.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
         | LOCATION  '/warehouse/test.db/ml_cvr_feature_v1/%s/%s'
-      """.stripMargin.format(date, hour, date, hour))*/
-
-    spark.sql(
-      """
-        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
       """.stripMargin.format(date, hour, date, hour))
+
+//    spark.sql(
+//      """
+//        |ALTER TABLE dl_cpc.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+//        | LOCATION  '/user/cpc/lrmodel/cvrdata_v2/%s/%s'
+//      """.stripMargin.format(date, hour, date, hour))
 
 
     //输出标记文件
-    s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !
+    //s"hadoop fs -touchz /user/cpc/okdir/ml_cvr_feature_v1_done/$date-$hour.ok" !
 
   }
 
