@@ -71,7 +71,7 @@ object OcpcLightBulb{
          |    unitid,
          |    timestamp,
          |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
-         |    cast(ocpc_log_dict['cpagiven'] as double) as cpa_given,
+         |    cast(ocpc_log_dict['cpagiven'] as double) * 1.0 / 100 as cpa_given,
          |    row_number() over(partition by unitid order by timestamp desc) as seq
          |FROM
          |    dl_cpc.ocpc_union_log_hourly
