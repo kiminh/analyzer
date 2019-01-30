@@ -27,6 +27,8 @@ object OcpcLightBulb{
       .appName(s"OcpcLightBulb: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
+    val tableName = "test.ocpc_qtt_light_control20190130"
+
     // 清楚redis里面的数据
 //    cleanRedis("test.ocpc_qtt_light_control", date, hour, spark)
 
@@ -38,10 +40,10 @@ object OcpcLightBulb{
         .join(ocpcData, Seq("unitid"), "outer")
         .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
-    data.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control20190130")
+    data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
 
     // 存入redis
-    saveDataToRedis("test.ocpc_qtt_light_control", date, hour, spark)
+    saveDataToRedis(tableName, date, hour, spark)
   }
 
   def getOcpcRecord(date: String, hour: String, spark: SparkSession) = {
