@@ -34,16 +34,16 @@ object OcpcLightBulb{
 
 
     // 抽取数据
-    val cpcData = getRecommendationAd(date, hour, spark)
-    val ocpcData = getOcpcRecord(date, hour, spark)
-    val ocpcUnit = getCPAgiven(date, hour, spark)
-    val ocpcRecord = ocpcData.join(ocpcUnit, Seq("unitid"), "inner").select("unitid", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
-
-    val data = cpcData
-        .join(ocpcRecord, Seq("unitid"), "outer")
-        .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
-        .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
-    data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
+//    val cpcData = getRecommendationAd(date, hour, spark)
+//    val ocpcData = getOcpcRecord(date, hour, spark)
+//    val ocpcUnit = getCPAgiven(date, hour, spark)
+//    val ocpcRecord = ocpcData.join(ocpcUnit, Seq("unitid"), "inner").select("unitid", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
+//
+//    val data = cpcData
+//        .join(ocpcRecord, Seq("unitid"), "outer")
+//        .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
+//        .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
+//    data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
 
     // 存入redis
     saveDataToRedis(tableName, date, hour, spark)
