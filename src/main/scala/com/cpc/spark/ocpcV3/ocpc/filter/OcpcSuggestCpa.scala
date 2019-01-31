@@ -67,7 +67,7 @@ object OcpcSuggestCpa{
       .join(pcvrData, Seq("unitid", "conversion_goal"), "left_outer")
       .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "pre_cvr", "post_cvr_real", "exp_cvr")
 
-    cpaDataRaw.write.mode("overwtie").saveAsTable("test.check_ocpc_k_middle20190131b")
+    cpaDataRaw.write.mode("overwrite").saveAsTable("test.check_ocpc_k_middle20190131b")
 
 //      .withColumn("date", lit(date))
 //      .withColumn("hour", lit(hour))
