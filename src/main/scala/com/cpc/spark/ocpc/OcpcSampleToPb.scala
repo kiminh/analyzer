@@ -752,15 +752,18 @@ object OcpcSampleToPb {
         .groupBy("ideaid", "adclass")
         .agg(
           sum(col("pre_cvr")).alias("pre_cvr"),
-          sum(col("isclick")).alias("click")
+          sum(col("isclick")).alias("click"),
+          sum(col("iscvr")).alias("conversion")
         )
         .withColumn("pre_cvr", col("pre_cvr") * 1.0 / col("click"))
-        .select("ideaid", "adclass", "pre_cvr")
+        .withColumn("click1", col("click"))
+        .withColumn("conversion1", col("conversion"))
+        .select("ideaid", "adclass", "pre_cvr", "click1", "conversion1")
         .join(cvrData1, Seq("ideaid", "adclass"), "left_outer")
         .withColumn("kvalue1_middle", col("post_cvr") * 1.0 / col("pre_cvr"))
         .withColumn("pre_cvr1", col("pre_cvr"))
         .withColumn("post_cvr1", col("post_cvr"))
-        .select("ideaid", "adclass", "kvalue1_middle", "pre_cvr1", "post_cvr1")
+        .select("ideaid", "adclass", "kvalue1_middle", "pre_cvr1", "post_cvr1", "click1", "conversion1")
 
     // conversiongoal=2
     val sqlRequest2 =
@@ -828,19 +831,22 @@ object OcpcSampleToPb {
         .groupBy("ideaid", "adclass")
         .agg(
           sum(col("pre_cvr")).alias("pre_cvr"),
-          sum(col("isclick")).alias("click")
+          sum(col("isclick")).alias("click"),
+          sum(col("iscvr")).alias("conversion")
         )
         .withColumn("pre_cvr", col("pre_cvr") * 1.0 / col("click"))
-        .select("ideaid", "adclass", "pre_cvr")
+        .withColumn("click2", col("click"))
+        .withColumn("conversion2", col("conversion"))
+        .select("ideaid", "adclass", "pre_cvr", "click2", "conversion2")
         .join(cvrData2, Seq("ideaid", "adclass"), "left_outer")
         .withColumn("kvalue2_middle", col("post_cvr") * 1.0 / col("pre_cvr"))
         .withColumn("pre_cvr2", col("pre_cvr"))
         .withColumn("post_cvr2", col("post_cvr"))
-        .select("ideaid", "adclass", "kvalue2_middle", "pre_cvr2", "post_cvr2")
+        .select("ideaid", "adclass", "kvalue2_middle", "pre_cvr2", "post_cvr2", "click2", "conversion2")
 
     val finalData = finalData1
         .join(finalData2, Seq("ideaid", "adclass"), "outer")
-        .select("ideaid", "adclass", "kvalue1_middle", "kvalue2_middle", "pre_cvr1", "post_cvr1", "pre_cvr2", "post_cvr2")
+        .select("ideaid", "adclass", "kvalue1_middle", "kvalue2_middle", "pre_cvr1", "post_cvr1", "pre_cvr2", "post_cvr2", "click1", "conversion1", "click2", "conversion2")
 
     // 关联currentPb和ocpc_flag
     val resultDF = currentPb

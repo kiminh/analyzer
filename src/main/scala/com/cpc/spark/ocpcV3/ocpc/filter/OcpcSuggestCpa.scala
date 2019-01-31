@@ -187,6 +187,9 @@ object OcpcSuggestCpa{
   }
 
   def getCVRv2(conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+    /*
+    按新的标准计算pcvr和postcvr
+     */
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
