@@ -24,9 +24,9 @@ object OcpcSuggestCpa{
 
     // 计算costData和cvrData
     val costData = getCost(date, hour, spark)
-    val cvr1Data = getCVR("cvr1", date, hour, spark)
-    val cvr2Data = getCVR("cvr2", date, hour, spark)
-    val cvr3Data = getCVR("cvr3", date, hour, spark)
+    val cvr1Data = getCVRv2(1, date, hour, spark)
+    val cvr2Data = getCVRv2(2, date, hour, spark)
+    val cvr3Data = getCVRv2(3, date, hour, spark)
 
     val cpa1 = calculateCPA(costData, cvr1Data, date, hour, spark)
     val cpa2 = calculateCPA(costData, cvr2Data, date, hour, spark)
@@ -55,9 +55,9 @@ object OcpcSuggestCpa{
     val cpa3Data = cpa3.withColumn("conversion_goal", lit(3))
 
     // 更新pre_cvr, post_cvr的计算规则
-    val pcvrData1 = getCVRv2(1, date, hour, spark)
-    val pcvrData2 = getCVRv2(2, date, hour, spark)
-    val pcvrData3 = getCVRv2(3, date, hour, spark)
+    val pcvrData1 = getPreCvr(1, date, hour, spark)
+    val pcvrData2 = getPreCvr(2, date, hour, spark)
+    val pcvrData3 = getPreCvr(3, date, hour, spark)
     val pcvrData = pcvrData1.union(pcvrData2).union(pcvrData3)
 
     val cpaDataRaw = cpa1Data
@@ -114,6 +114,115 @@ object OcpcSuggestCpa{
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
+  }
+
+  def getCVRv2(conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -72)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
+    val selectCondition2 = getTimeRangeSql2(date1, hour1, date, hour)
+
+    // ctrData
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |    searchid,
+         |    unitid,
+         |    adclass,
+         |    isclick
+         |FROM
+         |    dl_cpc.slim_union_log
+         |WHERE
+         |    $selectCondition
+         |AND
+         |    media_appsid  in ('80000001', '80000002')
+         |AND
+         |    isclick=1
+         |AND antispam = 0
+         |AND ideaid > 0
+         |AND adsrc = 1
+         |AND adslot_type in (1,2,3)
+       """.stripMargin
+    println(sqlRequest1)
+    val ctrData = spark.sql(sqlRequest1)
+
+    // cvrData1
+    // 根据conversionGoal选择cv的sql脚本
+    var sqlRequest2 = ""
+    if (conversionGoal == 1) {
+      // cvr1数据
+      sqlRequest2 =
+        s"""
+           |SELECT
+           |  searchid,
+           |  1 as iscvr
+           |FROM
+           |  dl_cpc.ml_cvr_feature_v1
+           |WHERE
+           |  $selectCondition2
+           |AND
+           |  label2=1
+           |AND
+           |  label_type in (1, 2, 3, 4, 5)
+           |GROUP BY searchid
+       """.stripMargin
+    } else if (conversionGoal == 2) {
+      // cvr2数据
+      sqlRequest2 =
+        s"""
+           |SELECT
+           |  searchid,
+           |  1 as iscvr
+           |FROM
+           |  dl_cpc.ml_cvr_feature_v2
+           |WHERE
+           |  $selectCondition2
+           |AND
+           |  label=1
+           |GROUP BY searchid
+       """.stripMargin
+    } else {
+      sqlRequest2 =
+        s"""
+           |SELECT
+           |  searchid,
+           |  1 as iscvr
+           |FROM
+           |  dl_cpc.site_form_unionlog
+           |WHERE
+           |  $selectCondition2
+           |GROUP BY searchid
+       """.stripMargin
+    }
+    println(sqlRequest2)
+    val cvrRaw = spark.sql(sqlRequest2)
+
+    val cvrData = ctrData
+      .join(cvrRaw, Seq("searchid"), "left_outer")
+      .select("searchid", "unitid", "adclass", "isclick", "iscvr")
+      .na.fill(0, Seq("iscvr"))
+
+
+    // conversiongoal=1
+    val resultDF = cvrData
+      .groupBy("unitid", "adclass")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("cvrcnt")
+      )
+      .select("unitid", "adclass", "cvrcnt")
+
+    resultDF
   }
 
   def checkModelPCOC(date: String, hour: String, spark: SparkSession) = {
@@ -186,7 +295,7 @@ object OcpcSuggestCpa{
     resultDF
   }
 
-  def getCVRv2(conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getPreCvr(conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     /*
     按新的标准计算pcvr和postcvr
      */
@@ -558,7 +667,7 @@ object OcpcSuggestCpa{
   def getCVR(cvrType: String, date: String, hour: String, spark: SparkSession) = {
     // 取历史区间
     val hourCnt = 72
-	val selectCondition = getTimeRangeSqlCondition(date, hour, hourCnt)
+	  val selectCondition = getTimeRangeSqlCondition(date, hour, hourCnt)
 
     // 取数据
     val tableName = "dl_cpc.ocpcv3_" + cvrType + "_data_hourly"
