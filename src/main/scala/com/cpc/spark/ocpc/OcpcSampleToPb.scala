@@ -52,8 +52,8 @@ object OcpcSampleToPb {
       .withColumn("kvalue2_init", col("k_value3"))
 
 
-//    val result1 = initKv2(currentPb, date, hour,spark)
-    val result1 = initKv3(currentPb, date, hour,spark)
+    val result1 = initKv2(currentPb, date, hour,spark)
+//    val result1 = initKv3(currentPb, date, hour,spark)
 //    val resultTmp = initK(currentPb, date, hour, spark)
 //    result1.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129a")
 //    resultTmp.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129b")
@@ -65,7 +65,7 @@ object OcpcSampleToPb {
 //    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
 //    resultDF
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129a")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
 
 //    savePbPack(resultDF)
 
@@ -758,7 +758,7 @@ object OcpcSampleToPb {
         .select("ideaid", "adclass", "pre_cvr")
         .join(cvrData1, Seq("ideaid", "adclass"), "left_outer")
         .withColumn("kvalue1_middle", col("post_cvr") * 1.0 / col("pre_cvr"))
-        .select("ideaid", "adclass", "kvalue1_middle")
+        .select("ideaid", "adclass", "kvalue1_middle", "pre_cvr1", "post_cvr1")
 
     // conversiongoal=2
     val sqlRequest2 =
@@ -832,11 +832,11 @@ object OcpcSampleToPb {
         .select("ideaid", "adclass", "pre_cvr")
         .join(cvrData2, Seq("ideaid", "adclass"), "left_outer")
         .withColumn("kvalue2_middle", col("post_cvr") * 1.0 / col("pre_cvr"))
-        .select("ideaid", "adclass", "kvalue2_middle")
+        .select("ideaid", "adclass", "kvalue2_middle", "pre_cvr2", "post_cvr2")
 
     val finalData = finalData1
         .join(finalData2, Seq("ideaid", "adclass"), "outer")
-        .select("ideaid", "adclass", "kvalue1_middle", "kvalue2_middle")
+        .select("ideaid", "adclass", "kvalue1_middle", "kvalue2_middle", "pre_cvr1", "post_cvr1", "pre_cvr2", "post_cvr2")
 
     // 关联currentPb和ocpc_flag
     val resultDF = currentPb
@@ -846,6 +846,8 @@ object OcpcSampleToPb {
       .withColumn("kvalue2_middle", when(col("is_ocpc_flag").isNull, col("kvalue2_middle")).otherwise(col("kvalue2_init")))
       .withColumn("kvalue1", when(col("kvalue1_middle").isNull, 0.0).otherwise(col("kvalue1_middle")))
       .withColumn("kvalue2", when(col("kvalue2_middle").isNull, 0.0).otherwise(col("kvalue2_middle")))
+
+    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_k_middle20190131a")
 
     resultDF
   }
@@ -956,7 +958,7 @@ object OcpcSampleToPb {
       .select("ideaid", "adclass", "pre_cvr")
       .join(cvrData1, Seq("ideaid", "adclass"), "left_outer")
       .withColumn("kvalue1_middle", col("post_cvr") * 1.0 / col("pre_cvr"))
-      .select("ideaid", "adclass", "kvalue1_middle")
+      .select("ideaid", "adclass", "kvalue1_middle", "pre_cvr1", "post_cvr1")
 
     // conversiongoal=2
     val sqlRequest2 =
@@ -1023,18 +1025,18 @@ object OcpcSampleToPb {
     val finalData2 = caliData2
       .groupBy("ideaid", "adclass")
       .agg(
-        sum(col("pre_cvr")).alias("pre_cvr"),
+        sum(col("exp_cvr")).alias("pre_cvr"),
         sum(col("isclick")).alias("click")
       )
       .withColumn("pre_cvr", col("pre_cvr") * 1.0 / col("click"))
       .select("ideaid", "adclass", "pre_cvr")
       .join(cvrData2, Seq("ideaid", "adclass"), "left_outer")
       .withColumn("kvalue2_middle", col("post_cvr") * 1.0 / col("pre_cvr"))
-      .select("ideaid", "adclass", "kvalue2_middle")
+      .select("ideaid", "adclass", "kvalue2_middle", "pre_cvr2", "post_cvr2")
 
     val finalData = finalData1
       .join(finalData2, Seq("ideaid", "adclass"), "outer")
-      .select("ideaid", "adclass", "kvalue1_middle", "kvalue2_middle")
+      .select("ideaid", "adclass", "kvalue1_middle", "kvalue2_middle", "pre_cvr1", "post_cvr1", "pre_cvr2", "post_cvr2")
 
     // 关联currentPb和ocpc_flag
     val resultDF = currentPb
