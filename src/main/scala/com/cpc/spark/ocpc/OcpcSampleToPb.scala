@@ -63,9 +63,9 @@ object OcpcSampleToPb {
 
 
 //    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
 
 //    savePbPack(resultDF)
 
@@ -857,7 +857,7 @@ object OcpcSampleToPb {
       .withColumn("kvalue1", when(col("kvalue1_middle").isNull, 0.0).otherwise(col("kvalue1_middle")))
       .withColumn("kvalue2", when(col("kvalue2_middle").isNull, 0.0).otherwise(col("kvalue2_middle")))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_k_middle20190131a")
+    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_k_middle20190131a")
 
     resultDF
   }
