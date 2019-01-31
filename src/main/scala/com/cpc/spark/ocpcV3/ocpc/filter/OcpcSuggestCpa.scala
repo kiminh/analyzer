@@ -65,7 +65,7 @@ object OcpcSuggestCpa{
       .union(cpa3Data)
       .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid")
       .join(pcvrData, Seq("unitid", "conversion_goal"), "left_outer")
-      .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "pre_cvr", "post_cvr_real", "exp_cvr")
+      .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "pre_cvr", "post_cvr_real", "exp_cvr", "click", "conversion")
 
     cpaDataRaw.write.mode("overwrite").saveAsTable("test.check_ocpc_k_middle20190131b")
 
@@ -306,17 +306,18 @@ object OcpcSuggestCpa{
       .agg(
         sum(col("pre_cvr")).alias("pre_cvr"),
         sum(col("exp_cvr")).alias("exp_cvr"),
-        sum(col("isclick")).alias("click")
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr")).alias("conversion")
       )
       .withColumn("pre_cvr", col("pre_cvr") * 1.0 / col("click"))
       .withColumn("exp_cvr", col("exp_cvr") * 1.0 / col("click"))
-      .select("unitid", "pre_cvr", "exp_cvr")
+      .select("unitid", "pre_cvr", "exp_cvr", "click", "conversion")
 
     val resultDF = finalData
       .join(data, Seq("unitid"), "outer")
       .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("post_cvr_real", col("post_cvr"))
-      .select("unitid", "exp_cvr", "pre_cvr", "post_cvr_real", "conversion_goal")
+      .select("unitid", "exp_cvr", "pre_cvr", "post_cvr_real", "conversion_goal", "click", "conversion")
 
     resultDF
   }
