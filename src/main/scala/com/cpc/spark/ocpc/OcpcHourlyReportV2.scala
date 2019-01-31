@@ -38,10 +38,10 @@ object OcpcHourlyReportV2 {
     val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
 
     // 存储数据到hadoop
-//    saveDataToHDFS(dataIdea, dataConversion, "qtt_demo", date, hour, spark)
+    saveDataToHDFS(dataIdea, dataConversion, "qtt_demo", date, hour, spark)
 
     // 存储数据到mysql
-//    saveDataToMysql(dataIdea, dataConversion, date, hour, spark)
+    saveDataToMysql(dataIdea, dataConversion, date, hour, spark)
 
   }
 
