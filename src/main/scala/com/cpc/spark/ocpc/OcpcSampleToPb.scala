@@ -834,8 +834,8 @@ object OcpcSampleToPb {
         .select("ideaid", "adclass", "pre_cvr")
         .join(cvrData2, Seq("ideaid", "adclass"), "left_outer")
         .withColumn("kvalue2_middle", col("post_cvr") * 1.0 / col("pre_cvr"))
-        .withColumn("pre_cvr1", col("pre_cvr"))
-        .withColumn("post_cvr1", col("post_cvr"))
+        .withColumn("pre_cvr2", col("pre_cvr"))
+        .withColumn("post_cvr2", col("post_cvr"))
         .select("ideaid", "adclass", "kvalue2_middle", "pre_cvr2", "post_cvr2")
 
     val finalData = finalData1
