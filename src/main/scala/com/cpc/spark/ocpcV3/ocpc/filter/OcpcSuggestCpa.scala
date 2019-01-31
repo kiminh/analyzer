@@ -245,6 +245,8 @@ object OcpcSuggestCpa{
            |  $selectCondition2
            |AND
            |  label2=1
+           |AND
+           |  label_type in (1, 2, 3, 4, 5)
            |GROUP BY searchid
        """.stripMargin
     } else if (conversionGoal == 2) {
