@@ -66,7 +66,7 @@ object OcpcSuggestCpa{
       .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid")
       .join(pcvrData, Seq("unitid", "conversion_goal"), "left_outer")
       .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "pre_cvr", "post_cvr_real", "exp_cvr", "click_new", "conversion")
-    cpaDataRaw.write.mode("overwrite").saveAsTable("test.check_ocpc_k_middle20190131b")
+//    cpaDataRaw.write.mode("overwrite").saveAsTable("test.check_ocpc_k_middle20190131b")
 
 //      .withColumn("date", lit(date))
 //      .withColumn("hour", lit(hour))
@@ -108,9 +108,9 @@ object OcpcSuggestCpa{
       .withColumn("version", lit(version))
 
 //    test.ocpc_suggest_cpa_recommend_hourly20190104
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
@@ -600,7 +600,7 @@ object OcpcSuggestCpa{
 //    ocpc_pb_result_table_v7
 //    ocpc_qtt_prev_pb20190129
     val kvalue1 = spark
-      .table("test.ocpc_qtt_prev_pb20190129")
+      .table("dl_cpc.ocpc_qtt_prev_pb")
 //      .where(s"`date`='$date' and `hour`='$hour'")
       .select("ideaid", "kvalue1")
       .join(data, Seq("ideaid"), "inner")
@@ -611,7 +611,7 @@ object OcpcSuggestCpa{
       .withColumn("conversion_goal", lit(1))
 
     val kvalue2 = spark
-      .table("test.ocpc_qtt_prev_pb20190129")
+      .table("dl_cpc.ocpc_qtt_prev_pb")
 //      .where(s"`date`='$date' and `hour`='$hour'")
       .select("ideaid", "kvalue2")
       .join(data, Seq("ideaid"), "inner")
