@@ -170,7 +170,7 @@ object OcpcCalculateAUC {
 //    calendar.add(Calendar.DATE, 2)
 //    val secondDay = calendar.getTime
 //    val date2 = dateConverter.format(secondDay)
-    val selectCondition2 = s"`dt`>='$date1'"
+    val selectCondition2 = s"`date`>='$date1'"
     // 根据conversionGoal选择cv的sql脚本
     var sqlRequest2 = ""
     if (conversionGoal == "1") {
