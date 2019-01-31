@@ -61,7 +61,8 @@ object OcpcKappOpen {
          |  sum(COALESCE(label2,0)) cvr2Cnt,
          |  sum(COALESCE(label3,0)) cvr3Cnt
          |from
-         |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1 and ocpc_log_dict['cpcBid']>0 and exptags not like "%cpcBid%") a
+         |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1 and (ocpc_log_dict['cpcBid']=0 or
+         |     exptags not like "%cpcBid%")) a
          |  left outer join
          |  (select searchid, label as label2 from open_app_data where $dtCondition and label=1) b on a.searchid = b.searchid
          |  left outer join

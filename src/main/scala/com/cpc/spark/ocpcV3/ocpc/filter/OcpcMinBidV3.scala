@@ -4,6 +4,7 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import mincpm.Mincpm
 import mincpm.mincpm.{MinCpmList, SingleMinCpm}
@@ -63,7 +64,19 @@ object OcpcMinBidV3 {
   }
 
   def getPreCtr(date: String, hour: String, spark: SparkSession) = {
-    val selectCondition = s"`dt`='$date' and `hour` <= '$hour'"
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -72)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
     val sqlRequest =
       s"""
          |SELECT
@@ -147,7 +160,7 @@ object OcpcMinBidV3 {
        |  floor(adclass/1000) as ad_second_class,
        |  ocpc_flag,
        |  percentile(bid, 0.03) as min_bid,
-       |  percentile(cpm, 0.03) as min_cpm,
+       |  percentile(cpm, 0.06) as min_cpm,
        |  count(1) as cnt
        |FROM
        |  base_data
@@ -179,15 +192,19 @@ object OcpcMinBidV3 {
   }
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
-    // 取历史区间: score数据
-    //    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    //    val today = dateConverter.parse(date)
-    //    val calendar = Calendar.getInstance
-    //    calendar.setTime(today)
-    //    calendar.add(Calendar.DATE, -1)
-    //    val yesterday = calendar.getTime
-    //    val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date`='$date' and `hour` <= '$hour'"
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -72)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
     // todo 时间区间： hour
     //    val sqlRequest =
     //      s"""
