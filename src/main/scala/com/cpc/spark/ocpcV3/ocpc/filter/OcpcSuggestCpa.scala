@@ -293,7 +293,7 @@ object OcpcSuggestCpa{
       )
       .withColumn("post_cvr", col("conversion") * 1.0 / col("click"))
       .withColumn("post_cvr_cali", col("post_cvr") * 5.0)
-      .select("unitid", "post_cvr", "post_cvr_cali", "conversion")
+      .select("unitid", "post_cvr", "post_cvr_cali")
 
     val caliData = data
       .join(cvrData, Seq("unitid"), "left_outer")
