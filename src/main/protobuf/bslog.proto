@@ -1,0 +1,114 @@
+syntax = "proto2";
+
+package bslog;
+
+enum AdSlotType {
+    SLOT_UNKNOWN = 0;
+    LIST_FEED = 1; //列表页信息流
+    CONTENT_FEED = 2; //详情页信息流
+    INTERACT = 3; //互动广告位
+    SPLASH = 4; //开屏广告位
+    BANNER = 5; //横幅广告位
+    VIDEO = 6; //视频广告位
+    MOTIVATE = 7; //激励广告位
+}
+
+enum MaterialType {
+    MATERIAL_UNKNOWN = 0;
+    MATERIAL_ICON_TEXT = 1;
+    MATERIAL_IMAGE = 2;
+    MATERIAL_THIRD_ICON_TEXT = 3;
+    MATERIAL_VIDEO = 4;
+    MATERIAL_GIF = 5;
+    MATERIAL_TEXT = 6;
+    MATERIAL_INTERACT = 7; //互动广告
+    MATERIAL_SPLASH = 8; //开屏广告
+    MATERIAL_BANNER = 9; //横幅广告
+    MATERIAL_MOTIVATE = 10; //激励广告
+    MATERIAL_VERTICAL_VIDEO = 11; //竖屏视频广告
+}
+
+enum Interaction {
+    INTER_UNKNOWN = 0;
+    SURFING = 1;
+    DOWNLOAD = 2;
+}
+
+enum OSType {
+    OS_ALL = 0;
+    ANDROID = 1;
+    IOS = 2;
+    WINDOWS = 3;
+}
+
+message SearchCond {
+    optional string ad_slot_id = 1;
+    optional string appsid = 2;
+    optional string channelid = 3;
+    repeated int32 media_class = 4;
+    optional AdSlotType ad_slot_style = 5;
+    repeated int32 acc_class = 6;
+    repeated int32 black_class = 7;
+    repeated int32 acc_user_type = 8;
+    optional MaterialType material_styles = 9; //弃用
+    optional Interaction interactions = 10; //弃用
+    optional int32 slot_width = 11;
+    optional int32 slot_height = 12;
+    optional string keyword = 13;
+    repeated int32 white_material_level = 14;
+    repeated int32 regionals = 15;
+    optional OSType oS_type = 16;
+    optional int32 age = 17;
+    optional int32 gender = 18;
+    optional int32 coin = 19;
+    repeated int32 interests = 20;
+    optional int32 phoneLevel = 21;
+    optional int32 adnum = 22;
+    optional int32 newUser = 23;
+    optional int32 network = 24;
+    optional bool only_site = 25;
+    optional bool direct_uid = 26;
+    repeated MaterialType material_styles_s = 27;
+    repeated Interaction interactions_s = 28;
+};
+
+message GroupStats {
+    required int32 len_groups = 1;
+    required int32 group_media_num = 2;
+    required int32 group_region_num = 3;
+    required int32 group_l_v_num = 4;
+    required int32 group_os_type_num = 5;
+    required int32 group_p_l_num = 6;
+    required int32 group_dislike_num = 7;
+    required int32 group_interest_num = 8;
+    required int32 group_student_num = 9;
+    required int32 group_acc_user_type_num = 10;
+    required int32 group_new_user_num = 11;
+    required int32 group_content_category_num = 12;
+    required int32 group_black_install_pkg_num = 13;
+    required int32 group_white_install_pkg_num = 14;
+    required int32 group_show_count_num = 15;
+    required int32 group_click_count_num = 16;
+    required int32 matched_group_num = 17;
+    required int32 involved_group_num = 18;
+};
+
+message NoticeLogBody {
+    required string searchid = 1;
+    required int64 req_io_time = 2;
+    required int64 process_time = 3;
+    required string bs_rank_tag = 4;
+    required string ctr_version = 5;
+    repeated int64 module_times = 6;
+    required int64 rnd_idea_num = 7;
+    required int64 matched_idea_num = 8;
+    required int64 involved_idea_num = 9;
+    required int64 fG_cal_make_time = 10;
+    required int64 fG_for_loop_time = 11;
+    required int64 fG_assigment_time = 12;
+    required int64 fG_foor_loop_count = 13;
+    required SearchCond search_cond = 14;
+    required GroupStats group_stats = 15;
+    required string hostname = 16;
+    repeated string exptags = 17;
+};
