@@ -69,7 +69,7 @@ object OcpcKnew {
          |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1 and (ocpc_log_dict['cpcBid']=0 or
          |     exptags not like "%cpcBid%")) a
          |  left outer join
-         |  (select searchid, label2 as label1 from dl_cpc.ml_cvr_feature_v1 where $dtCondition and label_type!=12) b on a.searchid = b.searchid
+         |  (select searchid, label2 as label1 from dl_cpc.ml_cvr_feature_v1 where $dtCondition and label_type in (1, 2, 3, 4, 5)) b on a.searchid = b.searchid
          |  left outer join
          |  (select searchid, label as label2 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) c on a.searchid = c.searchid
          |  left outer join
