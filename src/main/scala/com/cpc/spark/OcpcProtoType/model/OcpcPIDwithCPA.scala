@@ -64,24 +64,6 @@ object OcpcPIDwithCPA {
       .insertInto("dl_cpc.ocpc_pid_k_hourly")
 
 
-//    val kvalue = getHistoryK(historyData, prevTable, date, hour, spark)
-//    val cpaHistory = getCPAhistory(historyData, cvrData, 1, date, hour, spark)
-//    val cpaRatio = calculateCPAratio(cpaHistory, date, hour, spark)
-//    val result = updateK(kvalue, cpaRatio, date, hour, spark)
-//    val resultDF = result
-//      .select("identifier", "k_value", "conversion_goal")
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-//
-//    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
-//    resultDF
-//      .repartition(10)
-//      .write
-//      .mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_pid_k_hourly")
-
-
   }
 
   def calculateKwithConversionGoal(conversionGoal: Int, hourInt: Int, prevTable: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) = {
