@@ -78,9 +78,11 @@ object OcpcPIDwithCPA {
      */
     val cvrData = getCVRdata(conversionGoal, hourInt, date, hour, spark)
     val kvalue = getHistoryK(historyData, prevTable, conversionGoal, date, hour, spark)
+    kvalue.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190201a")
     val cpaHistory = getCPAhistory(historyData, cvrData, conversionGoal, date, hour, spark)
     val cpaRatio = calculateCPAratio(cpaHistory, date, hour, spark)
     val result = updateK(kvalue, cpaRatio, date, hour, spark)
+    result.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190201b")
     val resultDF = result.select("identifier", "k_value", "conversion_goal")
     resultDF
   }
