@@ -222,7 +222,7 @@ object OcpcPIDwithCPA {
         .groupBy("identifier")
         .agg(
           sum(col("price")).alias("cost"),
-          sum(col("cpagiven")).alias("cpagiven"),
+          avg(col("cpagiven")).alias("cpagiven"),
           sum(col("iscvr")).alias("cvrcnt")
         )
         .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
