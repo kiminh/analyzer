@@ -118,9 +118,6 @@ object OcpcGetPb {
          |  $selectCondition
          |AND
          |  $mediaSelection
-         |and ideaid > 0
-         |and adsrc = 1
-         |and adslot_type in (1,2,3)
        """.stripMargin
 
     println(sqlRequest)
