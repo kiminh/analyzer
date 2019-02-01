@@ -118,8 +118,11 @@ object prepareAgeModelSample {
     //获取在app的请求时间分布
 
     val uidRequest = spark.read.parquet("/user/cpc/features/timeDistributionFeature")
+    val uidRequestDense = spark.read.parquet("/user/cpc/features/timeDistributionDenseFeature")
 
-    val sample = profileData.join(zfb, Seq("uid"), "leftouter").join(uidRequest, Seq("uid"), "leftouter").repartition(800)
+    val sample = profileData.join(zfb, Seq("uid"), "leftouter").
+      join(uidRequest, Seq("uid"), "leftouter").
+      join(uidRequestDense, Seq("uid"), "leftouter").repartition(800)
 
     sample.select($"uid", $"label", hashSeq("m1", "string")($"pkgs").alias("m1"),
       hashSeq("m2", "string")($"request").alias("m2"),
@@ -133,9 +136,36 @@ object prepareAgeModelSample {
       hash("f6")($"screen_w").alias("f6"),
       hash("f7")($"screen_h").alias("f7"),
       hash("f8")($"sex").alias("f8"),
-      hash("f9")($"antispam_score").alias("f9")).
+      hash("f9")($"antispam_score").alias("f9"),
+      hash("f10")($"requestTimeNum00").alias("f10"),
+      hash("f11")($"requestTimeNum01").alias("f11"),
+      hash("f12")($"requestTimeNum02").alias("f12"),
+      hash("f13")($"requestTimeNum03").alias("f13"),
+      hash("f14")($"requestTimeNum04").alias("f14"),
+      hash("f15")($"requestTimeNum05").alias("f15"),
+      hash("f16")($"requestTimeNum06").alias("f16"),
+      hash("f17")($"requestTimeNum07").alias("f17"),
+      hash("f18")($"requestTimeNum08").alias("f18"),
+      hash("f19")($"requestTimeNum09").alias("f19"),
+      hash("f20")($"requestTimeNum10").alias("f20"),
+      hash("f21")($"requestTimeNum11").alias("f21"),
+      hash("f22")($"requestTimeNum12").alias("f22"),
+      hash("f23")($"requestTimeNum13").alias("f23"),
+      hash("f24")($"requestTimeNum14").alias("f24"),
+      hash("f25")($"requestTimeNum15").alias("f25"),
+      hash("f26")($"requestTimeNum16").alias("f26"),
+      hash("f27")($"requestTimeNum17").alias("f27"),
+      hash("f28")($"requestTimeNum18").alias("f28"),
+      hash("f29")($"requestTimeNum19").alias("f29"),
+      hash("f30")($"requestTimeNum20").alias("f30"),
+      hash("f31")($"requestTimeNum21").alias("f31"),
+      hash("f32")($"requestTimeNum22").alias("f32"),
+      hash("f33")($"requestTimeNum23").alias("f33")
+    ).
       select($"uid", $"label",
-        array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9").alias("dense"),
+        array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9", $"f10", $"f11", $"f12", $"f13",
+          $"f14", $"f15", $"f16", $"f17", $"f18", $"f19", $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27",
+          $"f28", $"f29", $"f30", $"f31", $"f32", $"f33").alias("dense"),
         array($"m1", $"m2", $"m3", $"m4").alias("raw_sparse")
       ).select($"dense",
         mkSparseFeature_m($"raw_sparse").alias("sparse"),
