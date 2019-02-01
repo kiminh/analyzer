@@ -31,21 +31,10 @@ object OcpcRegression {
       mediaSelection = s"media_appsid = '80002819'"
     }
 
-    // 中间表
-    val middleData = getMiddleData(mediaSelection, 1, version, hourCnt, date, hour, spark)
-    val tablename = "test.ocpc_regression_middle_hourly"
-    val result = middleData
-      .selectExpr("cast(identifier as string) identifier", "k_ratio", "cpagiven", "cpa", "ratio", "click_cnt", "cvr_cnt", "conversion_goal")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
+    val result1 = calcualteKwithRegression(mediaSelection, 1, version, hourCnt, date, hour, spark)
 
-    result.write.mode("overwrite").saveAsTable(tablename)
-//    result
-//      .repartition(10).write.mode("overwrite").insertInto(tablename)
-//
-//    // 结果表
-//    val kvalue = getKWithRatio(middleData, date, hour, spark)
+    result1.write.mode("test.ocpc_k_regression_hourly")
+
 //    val resultDF = kvalue
 //      .withColumn("conversion_goal", lit(1))
 //      .select("identifier", "k_ratio", "conversion_goal")
@@ -57,6 +46,30 @@ object OcpcRegression {
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
 
 
+  }
+
+  def calcualteKwithRegression(mediaSelection: String, conversionGoal: Int, version: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
+    // 中间表
+    val middleData = getMiddleData(mediaSelection, conversionGoal, version, hourCnt, date, hour, spark)
+    val tablename = "test.ocpc_regression_middle_hourly"
+    val result = middleData
+      .selectExpr("cast(identifier as string) identifier", "k_ratio", "cpagiven", "cpa", "ratio", "click_cnt", "cvr_cnt", "conversion_goal")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+
+    result.write.mode("overwrite").saveAsTable(tablename)
+    //    result
+    //      .repartition(10).write.mode("overwrite").insertInto(tablename)
+
+    // 结果表
+    val kvalue = getKWithRatio(middleData, date, hour, spark)
+
+    val resultDF = kvalue
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .select("identifier", "k_ratio", "conversion_goal")
+
+    resultDF
   }
 
   def getMiddleData(mediaSelection: String, conversionGoal: Int, version: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
@@ -232,9 +245,7 @@ object OcpcRegression {
       .groupBy("identifier")
       .agg(collect_set("str").as("liststr"))
       .select("identifier", "liststr").collect()
-    //    rawData.write.mode("overwrite").saveAsTable("test.ocpc_check_regression20190103")
 
-    //    val res = rawData.collect()
 
 
     var resList = new mutable.ListBuffer[(String, Double)]()
