@@ -38,7 +38,7 @@ object HotTopicDailyMetrics {
                |    (
                |        select *
                |        from dl_cpc.cpc_hot_topic_union_log
-               |        where `date`='2019-01-20'
+               |        where `date`='$date'
                |        and media_appsid  in ("80002819") and isshow = 1
                |        and ext['antispam'].int_value = 0 and ideaid > 0
                |        and adsrc = 1
@@ -48,7 +48,7 @@ object HotTopicDailyMetrics {
                |    (
                |        select searchid, label2
                |        from dl_cpc.ml_cvr_feature_v1
-               |        where `date`='2019-01-20'
+               |        where `date`='$date'
                |    ) b
                |    on a.searchid = b.searchid
                |) final
