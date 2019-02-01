@@ -32,16 +32,19 @@ object OcpcRegression {
     }
 
     val result1 = calcualteKwithRegression(mediaSelection, 1, version, hourCnt, date, hour, spark)
+    val result2 = calcualteKwithRegression(mediaSelection, 2, version, hourCnt, date, hour, spark)
+    val result3 = calcualteKwithRegression(mediaSelection, 3, version, hourCnt, date, hour, spark)
+    val result = result1.union(result2).union(result3)
 
-    result1.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
 
-//    val resultDF = kvalue
-//      .withColumn("conversion_goal", lit(1))
-//      .select("identifier", "k_ratio", "conversion_goal")
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-//    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
+    val resultDF = result
+      .select("identifier", "k_ratio", "conversion_goal")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
 //    resultDF
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
 
