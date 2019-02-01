@@ -9,6 +9,8 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.storage.StorageLevel
 
+import scala.collection.mutable
+
 object prepareAgeModelSample {
   Logger.getRootLogger.setLevel(Level.WARN)
 
@@ -77,6 +79,7 @@ object prepareAgeModelSample {
 
     val calCur = Calendar.getInstance()
     val dateCur = new SimpleDateFormat("yyyyMMdd").format(calCur.getTime)
+    val day = new SimpleDateFormat("yyyy-MM-dd").format(calCur.getTime)
 
     val profileData = spark.read.parquet("/user/cpc/qtt-lookalike-sample/v1").
       select($"did".alias("uid"), $"apps._1".alias("pkgs"), $"words", $"terms", $"brand",
@@ -120,14 +123,21 @@ object prepareAgeModelSample {
     val uidRequest = spark.read.parquet("/user/cpc/features/timeDistributionFeature")
     val uidRequestDense = spark.read.parquet("/user/cpc/features/timeDistributionDenseFeature")
 
+    val uidActiveApp = spark.read.parquet("/user/cpc/userInstalledApp/{%s}".format(getDays(day, 1, 30))).rdd
+      .map(x => (x.getAs[String]("uid"),x.getAs[mutable.WrappedArray[String]]("used_pkgs")))
+      .reduceByKey(_ ++ _)
+      .map(x => (x._1,x._2.distinct)).toDF("uid", "used_pkgs")
+
     val sample = profileData.join(zfb, Seq("uid"), "leftouter").
       join(uidRequest, Seq("uid"), "leftouter").
-      join(uidRequestDense, Seq("uid"), "leftouter").repartition(800)
+      join(uidRequestDense, Seq("uid"), "leftouter").
+      join(uidActiveApp, Seq("uid"), "leftouter").repartition(800)
 
     sample.select($"uid", $"label", hashSeq("m1", "string")($"pkgs").alias("m1"),
       hashSeq("m2", "string")($"request").alias("m2"),
       hashSeq("m3", "string")($"words").alias("m3"),
       hashSeq("m4", "string")($"terms").alias("m4"),
+      hashSeq("m5", "string")($"used_pkgs").alias("m5"),
       hash("f1")($"brand").alias("f1"),
       hash("f2")($"province").alias("f2"),
       hash("f3")($"city").alias("f3"),
@@ -166,7 +176,7 @@ object prepareAgeModelSample {
         array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9", $"f10", $"f11", $"f12", $"f13",
           $"f14", $"f15", $"f16", $"f17", $"f18", $"f19", $"f20", $"f21", $"f22", $"f23", $"f24", $"f25", $"f26", $"f27",
           $"f28", $"f29", $"f30", $"f31", $"f32", $"f33").alias("dense"),
-        array($"m1", $"m2", $"m3", $"m4").alias("raw_sparse")
+        array($"m1", $"m2", $"m3", $"m4", $"m5").alias("raw_sparse")
       ).select($"dense",
         mkSparseFeature_m($"raw_sparse").alias("sparse"),
         $"label", $"uid"
@@ -203,7 +213,7 @@ object prepareAgeModelSample {
       cal.add(Calendar.DATE, -1)
       re = re :+ format.format(cal.getTime)
     }
-    re.mkString("','")
+    re.mkString(",")
   }
 
   /**
