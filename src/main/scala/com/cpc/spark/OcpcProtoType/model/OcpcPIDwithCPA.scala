@@ -55,7 +55,13 @@ object OcpcPIDwithCPA {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+
+    resultDF
+      .repartition(10)
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_pid_k_hourly")
 
 
 //    val kvalue = getHistoryK(historyData, prevTable, date, hour, spark)
