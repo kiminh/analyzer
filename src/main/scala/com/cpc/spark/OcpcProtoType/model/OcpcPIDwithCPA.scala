@@ -45,7 +45,18 @@ object OcpcPIDwithCPA {
 
     val historyData = getHistory(mediaSelection, date, hour, spark)
     val result1 = calculateKwithConversionGoal(1, 24, prevTable, historyData, date, hour, spark)
-    result1.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+    val result2 = calculateKwithConversionGoal(2, 24, prevTable, historyData, date, hour, spark)
+    val result3 = calculateKwithConversionGoal(3, 24, prevTable, historyData, date, hour, spark)
+    val result = result1.union(result2).union(result3)
+
+    val resultDF = result
+      .select("identifier", "k_value", "conversion_goal")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+
 
 //    val kvalue = getHistoryK(historyData, prevTable, date, hour, spark)
 //    val cpaHistory = getCPAhistory(historyData, cvrData, 1, date, hour, spark)
