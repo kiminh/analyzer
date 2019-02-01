@@ -33,7 +33,7 @@ object OcpcRegression {
 
     val result1 = calcualteKwithRegression(mediaSelection, 1, version, hourCnt, date, hour, spark)
 
-    result1.write.mode("test.ocpc_k_regression_hourly")
+    result1.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
 
 //    val resultDF = kvalue
 //      .withColumn("conversion_goal", lit(1))
