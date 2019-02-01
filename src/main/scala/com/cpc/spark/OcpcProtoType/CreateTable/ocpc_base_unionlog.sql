@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_base_unionlog
 (
     searchid        string,
-    timestamp       int,
+    `timestamp`       int,
     network         int,
     exptags         string,
     media_type      int,
