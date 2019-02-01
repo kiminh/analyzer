@@ -28,7 +28,8 @@ object OcpcPIDwithCPA {
     val hour = args(1).toString
     val version = args(2).toString
     val media = args(3).toString
-    var mediaSelection = s"media_appsid in ('80000001', '80000002')"
+    var mediaSelection = ""
+
     if (media == "qtt") {
       mediaSelection = s"media_appsid in ('80000001', '80000002')"
     } else if(media == "novel"){
@@ -39,29 +40,94 @@ object OcpcPIDwithCPA {
 
     // TODO 表名
     val prevTable = spark
-      .table("test.ocpc_prev_pb_hourly")
+      .table("dl_cpc.ocpc_prev_pb_once")
       .where(s"version='$version'")
-    val cvrData = getCVR1data(date, hour, spark)
 
     val historyData = getHistory(mediaSelection, date, hour, spark)
-    val kvalue = getHistoryK(historyData, prevTable, date, hour, spark)
-    val cpaHistory = getCPAhistory(historyData, cvrData, 1, date, hour, spark)
+    val result1 = calculateKwithConversionGoal(1, 24, prevTable, historyData, date, hour, spark)
+    result1.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+
+//    val kvalue = getHistoryK(historyData, prevTable, date, hour, spark)
+//    val cpaHistory = getCPAhistory(historyData, cvrData, 1, date, hour, spark)
+//    val cpaRatio = calculateCPAratio(cpaHistory, date, hour, spark)
+//    val result = updateK(kvalue, cpaRatio, date, hour, spark)
+//    val resultDF = result
+//      .select("identifier", "k_value", "conversion_goal")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//
+//    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+//    resultDF
+//      .repartition(10)
+//      .write
+//      .mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_pid_k_hourly")
+
+
+  }
+
+  def calculateKwithConversionGoal(conversionGoal: Int, hourInt: Int, prevTable: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    按照给定的conversion_goal, hourInt，历史数据计算该conversion_goal下各个identifier最新的k值
+    1. 获取cvr记录
+    2. 获取历史k值
+    3. 通过searchid关联，计算cpagiven与cpareal
+    4. 计算cpa_ratio
+    5. 根据cpa_ratio调整k值
+     */
+    val cvrData = getCVRdata(conversionGoal, hourInt, date, hour, spark)
+    val kvalue = getHistoryK(historyData, prevTable, conversionGoal, date, hour, spark)
+    val cpaHistory = getCPAhistory(historyData, cvrData, conversionGoal, date, hour, spark)
     val cpaRatio = calculateCPAratio(cpaHistory, date, hour, spark)
     val result = updateK(kvalue, cpaRatio, date, hour, spark)
-    val resultDF = result
-      .select("identifier", "k_value", "conversion_goal")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit(version))
-
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+    val resultDF = result.select("identifier", "k_value", "conversion_goal")
     resultDF
-      .repartition(10)
-      .write
-      .mode("overwrite")
-      .insertInto("dl_cpc.ocpc_pid_k_hourly")
+  }
 
+  def getCVRdata(conversionGoal: Int, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+    // cvr 分区
+    var cvrGoal = ""
+    if (conversionGoal == 1) {
+      cvrGoal = "cvr1"
+    } else if (conversionGoal == 2) {
+      cvrGoal = "cvr2"
+    } else {
+      cvrGoal = "cvr3"
+    }
 
+    // 时间分区
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -hourInt)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+
+    // 抽取数据
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  label as iscvr
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  ($selectCondition)
+         |AND
+         |  (cvr_goal = '$cvrGoal')
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark
+        .sql(sqlRequest)
+
+    resultDF
   }
 
   def getHistory(mediaSelection: String, date: String, hour: String, spark: SparkSession) = {
@@ -100,42 +166,15 @@ object OcpcPIDwithCPA {
          |  $selectCondition
          |AND
          |  $mediaSelection
+         |AND
+         |  ext_int['is_ocpc'] = 1
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
     resultDF
   }
 
-  def getCVR1data(date: String, hour: String, spark: SparkSession) = {
-    /*
-    根据需要调整获取cvr的函数
-     */
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -24)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
-
-    val resultDF = spark
-      .table("dl_cpc.ml_cvr_feature_v1")
-      .where(selectCondition)
-      .filter(s"label_type!=12")
-      .withColumn("iscvr", col("label2"))
-      .select("searchid", "iscvr")
-      .filter("iscvr=1")
-      .distinct()
-    resultDF
-  }
-
-  def getHistoryK(historyData: DataFrame, prevPb: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getHistoryK(historyData: DataFrame, prevPb: DataFrame, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     /**
       * 计算修正前的k基准值
       * case1：前6个小时有isclick=1的数据，统计这批数据的k均值作为基准值
@@ -150,6 +189,7 @@ object OcpcPIDwithCPA {
 
     // case2
     val case2 = prevPb
+      .filter(s"conversion_goal = $conversionGoal")
       .withColumn("kvalue2", col("kvalue"))
       .select("identifier", "kvalue2")
       .distinct()
@@ -166,34 +206,26 @@ object OcpcPIDwithCPA {
   def getCPAhistory(historyData: DataFrame, cvrRaw: DataFrame, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     /*
     计算cpa_history，分为cvr2和cvr3
-    1. 获取cost
-    2. 获取cvr
-    3. 计算cpa_history
+    1. 数据关联
+    2. 计算cost、cvr、cpa_history
      */
 
-    // cost data
-    val costData = historyData
-      .filter("isclick=1")
-      .groupBy("identifier")
-      .agg(
-        sum(col("price")).alias("cost"),
-        avg(col("cpagiven")).alias("cpagiven"))
-      .select("identifier", "cost", "cpagiven")
+    // 数据关联
+    val baseData = historyData
+        .filter(s"isclick=1")
+        .join(cvrRaw, Seq("searchid"), "left_outer")
+        .select("searchid", "identifier", "price", "kvalue", "cpagiven", "isclick", "iscvr")
 
-    // cvr data
-    // 用searchid关联
-    val cvrData = historyData
-      .join(cvrRaw, Seq("searchid"), "left_outer")
-      .groupBy("identifier")
-      .agg(sum(col("iscvr")).alias("cvrcnt"))
-      .select("identifier", "cvrcnt")
-
-    // 计算cpa
-    val resultDF = costData
-      .join(cvrData, Seq("identifier"), "left_outer")
-      .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
-      .withColumn("conversion_goal", lit(conversionGoal))
-      .select("identifier", "cpa", "cvrcnt", "cost", "cpagiven", "conversion_goal")
+    val resultDF = baseData
+        .groupBy("identifier")
+        .agg(
+          sum(col("price")).alias("cost"),
+          sum(col("cpagiven")).alias("cpagiven"),
+          sum(col("iscvr")).alias("cvrcnt")
+        )
+        .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
+        .withColumn("conversion_goal", lit(conversionGoal))
+        .select("identifier", "cost", "cpagiven", "cvrcnt", "cpa", "conversion_goal")
 
     resultDF
   }
