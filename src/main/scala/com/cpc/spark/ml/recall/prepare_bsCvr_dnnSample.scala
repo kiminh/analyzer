@@ -30,7 +30,7 @@ object prepare_bsCvr_dnnSample {
 
     val sampleDay = getDay(date, 1)
 
-    val Array(traindata, testdata) = train.randomSplit(Array(0.95, 0.05), 1)
+    val Array(traindata, testdata) = train.randomSplit(Array(0.9, 0.1), 1)
 
     traindata.repartition(1000)
       .write
@@ -69,7 +69,7 @@ object prepare_bsCvr_dnnSample {
     val sql =
       s"""
          |select
-         |  if(iscvr>0, array(1,0), array(0,1)) as label,
+         |  if(iscvr>0 or label3>0, array(1,0), array(0,1)) as label,
          |  media_type, media_appsid as mediaid,
          |  channel,
          |  sdk_type,
@@ -116,10 +116,14 @@ object prepare_bsCvr_dnnSample {
          |  and uid not like "%000000%"
          |  and adslot_type=7
          |) a
-         |inner join
-         |(select searchid, ideaid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
-         |  WHERE `date` = '$day'
+         |left join
+         |(select searchid, ideaid, max(label2) as iscvr from dl_cpc.ml_cvr_feature_v1
+         |  WHERE `date` = '$day' group by searchid,ideaid
          |) b on a.searchid = b.searchid and a.ideaid=b.ideaid
+         |left join
+         |(select searchid,ideaid, max(label) as label3 from dl_cpc.ml_cvr_feature_v2 where date='$day' group by searchid,ideaid) as c
+         |on
+         |a.searchid=c.searchid and a.ideaid=c.ideaid where iscvr is not null or label3 is not null
       """.stripMargin
     println("--------------------------------")
     println(sql)
@@ -129,7 +133,7 @@ object prepare_bsCvr_dnnSample {
       .join(profileData, Seq("uid"), "leftouter")
       .join(uidRequest, Seq("uid"), "leftouter")
       .join(behavior_data, Seq("uid"), "leftouter")
-      .select($"label",
+      .select($"label", $"unitid",
 
         //hash("f1")($"media_type").alias("f1"),
         //hash("f2")($"mediaid").alias("f2"),
@@ -170,11 +174,11 @@ object prepare_bsCvr_dnnSample {
         //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
         //mkSparseFeature1($"m1").alias("sparse"), $"label"
         mkSparseFeature_m($"raw_sparse").alias("sparse"),
-        $"label"
+        $"label",$"unitid"
       )
 
       .select(
-        $"label",
+        $"label",$"unitid",
         $"dense",
         $"sparse".getField("_1").alias("idx0"),
         $"sparse".getField("_2").alias("idx1"),
@@ -184,11 +188,12 @@ object prepare_bsCvr_dnnSample {
 
       .rdd.zipWithUniqueId()
       .map { x =>
-        (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Seq[Long]]("dense"),
+        (x._2, x._1.getAs[Seq[Int]]("label"), x._1.getAs[Int]("unitid"),
+          x._1.getAs[Seq[Long]]("dense"),
           x._1.getAs[Seq[Int]]("idx0"), x._1.getAs[Seq[Int]]("idx1"),
           x._1.getAs[Seq[Int]]("idx2"), x._1.getAs[Seq[Long]]("id_arr"))
       }
-      .toDF("sample_idx", "label", "dense", "idx0", "idx1", "idx2", "id_arr")
+      .toDF("sample_idx", "label", "unitid", "dense", "idx0", "idx1", "idx2", "id_arr")
   }
 
   /**
