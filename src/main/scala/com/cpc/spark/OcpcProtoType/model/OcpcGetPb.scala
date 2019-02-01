@@ -151,6 +151,7 @@ object OcpcGetPb {
       .table("dl_cpc.ocpc_union_log_hourly")
       .where(selectCondition2)
       .filter(mediaSelection)
+      .filter(s"ext_int['is_ocpc'] = 1")
       .selectExpr("cast(unitid as string) identifier")
       .withColumn("is_ocpc_flag", lit(1))
       .distinct()
@@ -206,7 +207,7 @@ object OcpcGetPb {
       )
       .withColumn("post_cvr", col("conversion") * 1.0 / col("click"))
       .withColumn("post_cvr_cali", col("post_cvr") * 5.0)
-      .select("ideaid", "adclass", "post_cvr", "post_cvr_cali")
+      .select("identifier", "post_cvr", "post_cvr_cali")
 
     val caliData = data
       .join(cvrData, Seq("identifier"), "left_outer")
