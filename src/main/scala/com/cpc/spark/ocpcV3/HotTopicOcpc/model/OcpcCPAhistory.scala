@@ -12,10 +12,10 @@ object OcpcCPAhistory {
     /*
     选取cpa_history的基本策略：
     1. 抽取基础表
-    2. 分别计算该广告单元在趣头条上前一天的历史cpa，在米读小说上前一天的历史cpa以及行业类别的历史cpa
+    2. 分别计算该广告单元在趣头条上前一天的历史cpa，在热点段子上前一天的历史cpa以及行业类别的历史cpa
     3. 根据unitid和行业类别关联相关数据
-    4. 如果趣头条上至少有一个类别的转化数，给定conversion_goal，如果趣头条上一个类别的转化数都没有，按照米读小说上的转化数给定cpa，如果两类都没有，默认转化目标为1
-    5. 按照如下顺序根据转化目标选取合适的cpa：趣头条cpa->米读小说cpa->行业类别cpa
+    4. 如果趣头条上至少有一个类别的转化数，给定conversion_goal，如果趣头条上一个类别的转化数都没有，按照热点段子上的转化数给定cpa，如果两类都没有，默认转化目标为1
+    5. 按照如下顺序根据转化目标选取合适的cpa：趣头条cpa->热点段子cpa->行业类别cpa
     6. 输出数据
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
@@ -26,14 +26,16 @@ object OcpcCPAhistory {
     val version = args(2).toString
 
     // 按照要求生成相关基础数据表
-    val baseData     = getBaseData(            date, hour, spark)
-    val qttData      = getQttCPA(    baseData, date, hour, spark)
-    val hottopicData = getHotTopicCPA( baseData, date, hour, spark)
-    val adclassData = getAdclassCPA(baseData, date, hour, version, spark)
+    val baseData     = getBaseData(            date, hour, spark) //按照unitid, new_adclass, media_appsid分组后date日、hour时汇总的total_cost, cvr1cnt, cvr2cnt, total_bid, ctrcnt
+    val qttData      = getQttCPA(    baseData, date, hour, spark) //baseData中qtt的unitid, new_adclass, cost, cvr1cnt, bid, ctrcnt, cpa1, avg_bid(bid/ctrcnt), alpha1(cpa1/avg_bid)
+    val hottopicData = getHotTopicCPA( baseData, date, hour, spark) //baseData中Hottopic的unitid, new_adclass, cost, cvr1cnt, bid, ctrcnt, cpa1, avg_bid(bid/ctrcnt), alpha1(cpa1/avg_bid)
+    val adclassData = getAdclassCPA(baseData, date, hour, version, spark) //baseData中qtt的new_adclass, cpa_adclass(cost/cvr1cnt), conversion_goal(全为1), date, hour, version
       .withColumn("cpa1", col("cpa_adclass"))
-      .select("new_adclass", "cpa1" )
-    val qttAlpha    = checkCPAhistory(qttData, 0.8, "qtt", date, hour, spark )
-    val hottopicAlpha  = checkCPAhistory( hottopicData, 0.8, "hottopic", date, hour, spark )
+      .select("new_adclass", "cpa1" ) // 没有筛选conversion_goal
+    val qttAlpha       = checkCPAhistory( qttData,      0.8, "qtt",      date, hour, spark ) // new_adclass, unitid, {cvr1cnt, cpa1, avg_bid, alpha1(cpa1/avg_bid), alpha1_max(与new_adclass对应),
+                                                                                                               // cpa1_max( avg_bid*alpha1_max),} cpa1_history_qtt( min(cpa1, cpa1_max) )
+    val hottopicAlpha  = checkCPAhistory( hottopicData, 0.8, "hottopic", date, hour, spark ) // new_adclass, unitid, {cvr1cnt, cpa1, avg_bid, alpha1(cpa1/avg_bid), alpha1_max(与new_adclass对应),
+                                                                                                               // cpa1_max( avg_bid*alpha1_max),} cpa1_history_hottopic( min(cpa1, cpa1_max) )
 
     // 数据表关联
     val data = baseData   //与cpa2有关的都去掉
@@ -45,7 +47,7 @@ object OcpcCPAhistory {
       .select("unitid", "new_adclass", "cpa1_history_qtt", "cpa1_history_hottopic", "cpa1")
 
     // 按照策略挑选合适的cpa以及确定对应的conversion_goal
-    val result = getResult(data, date, hour, version, spark)
+    val result = getResult(data, date, hour, version, spark) // identifier（unitid）, new_adclass, cpa_src(历史cpa来源), cpa_history（历史cpa）, conversion_goal（全为1）, date, hour, version
     val tableName = "dl_cpc.ocpc_cpa_history_hourly" // 改成一张没有人用的表 dl_cpc.ocpc_cpa_history_hourly
     result.write.mode("overwrite").insertInto(tableName)
     println(s"save data into table: $tableName")
@@ -53,7 +55,7 @@ object OcpcCPAhistory {
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
     /*
-    抽取基础表，只包括前一天在米读小说和趣头条上有记录的unitid和对应adclass
+    抽取基础表，只包括前一天在热点段子和趣头条上有记录的unitid和对应adclass
     */
     // 计算日期周期
     val sdf = new SimpleDateFormat("yyyy-MM-dd" )
@@ -85,9 +87,9 @@ object OcpcCPAhistory {
            and media_appsid in ('80000001', '80000002', '80002819')
        """.stripMargin
     println(sqlRequest1)
-    val costData = spark
+    val costData = spark //costData：将adclass的粒度变粗（new_adclass）, 再按unitid, new_adclass, media_appsid分组后重新汇总
       .sql(sqlRequest1)
-      .withColumn("new_adclass", col("adclass")/1000 )
+      .withColumn("new_adclass", col("adclass")/1000 )  // 一般是除以1000或1000000得到更粗的行业分类
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType) )
       .groupBy("unitid", "new_adclass", "media_appsid" )
       .agg(
@@ -103,7 +105,7 @@ object OcpcCPAhistory {
          |  unitid,
          |  adclass,
          |  media_appsid,
-         |  cvr1_cnt --ml_cvr_feature_v1中sum(label)
+         |  cvr1_cnt --ml_cvr_feature_v1中sum(label) 转化数
          |FROM
          |  dl_cpc.ocpcv3_cvr1_data_hourly
          |WHERE
@@ -111,7 +113,7 @@ object OcpcCPAhistory {
          |and media_appsid in ('80000001', '80000002', '80002819')
        """.stripMargin
     println(sqlRequest2)
-    val cvr1Data = spark
+    val cvr1Data = spark //cvr1Data：将adclass的粒度变粗（new_adclass）, 再按unitid, new_adclass, media_appsid分组后重新汇总
       .sql(sqlRequest2)
       .withColumn("new_adclass", col("adclass")/1000 )
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType) )
@@ -179,9 +181,9 @@ object OcpcCPAhistory {
 
 
 
-  def getHotTopicCPA(base: DataFrame, date: String, hour: String, spark: SparkSession) = {  // todo
+  def getHotTopicCPA(base: DataFrame, date: String, hour: String, spark: SparkSession) = {
     /*
-    抽取小说cpa数据
+    抽取热点段子cpa数据
      */
     val resultDF = base
       .filter(s"media_appsid = '80002819'" )
@@ -275,7 +277,7 @@ object OcpcCPAhistory {
       .withColumn("cpa_src_middle", when(col("cpa1_history_qtt").isNull, "hottopic").otherwise("qtt") )
       .withColumn("cpa_src",        when(col("cpa_src_middle")==="hottopic" && col("cpa1_history_hottopic").isNull, "adclass").otherwise(col("cpa_src_middle")))
       .withColumn("cpa_history",    when(col("cpa_src")==="qtt", col("cpa1_history_qtt")).otherwise(when(col("cpa_src")==="hottopic", col("cpa1_history_hottopic")).otherwise(col("cpa1"))))
-      .withColumn("cpa_history",    when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))
+      .withColumn("cpa_history",    when(col("cpa_history") > 50000, 50000).otherwise(col("cpa_history")))  //cpa_history不得超过50000
 
     data
       .withColumn("date", lit(date))
