@@ -44,9 +44,9 @@ object OcpcRegression {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
 
 
   }
@@ -54,16 +54,16 @@ object OcpcRegression {
   def calcualteKwithRegression(mediaSelection: String, conversionGoal: Int, version: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
     // 中间表
     val middleData = getMiddleData(mediaSelection, conversionGoal, version, hourCnt, date, hour, spark)
-    val tablename = "test.ocpc_regression_middle_hourly"
+    val tablename = "dl_cpc.ocpc_regression_middle_hourly_v2"
     val result = middleData
       .selectExpr("cast(identifier as string) identifier", "k_ratio", "cpagiven", "cpa", "ratio", "click_cnt", "cvr_cnt", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    result.write.mode("overwrite").saveAsTable(tablename)
-    //    result
-    //      .repartition(10).write.mode("overwrite").insertInto(tablename)
+//    result.write.mode("overwrite").saveAsTable(tablename)
+    result
+      .repartition(10).write.mode("overwrite").insertInto(tablename)
 
     // 结果表
     val kvalue = getKWithRatio(middleData, date, hour, spark)
