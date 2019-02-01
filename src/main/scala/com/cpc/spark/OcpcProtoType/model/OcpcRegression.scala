@@ -192,7 +192,7 @@ object OcpcRegression {
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  ($selectCondition)
+         |  $selectCondition
          |AND
          |  (cvr_goal = '$cvrGoal')
        """.stripMargin
