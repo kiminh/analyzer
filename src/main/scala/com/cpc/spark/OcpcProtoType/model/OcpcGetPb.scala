@@ -15,11 +15,18 @@ import scala.collection.mutable.ListBuffer
 object OcpcGetPb {
   def main(args: Array[String]): Unit = {
     /*
-    组装pb文件，由以下几个部分构成：
-    - unitid：标识符，广告单元
-    - cpahistory：历史cpa
-    - cvr1cnt和cvr2cnt：前72小时的转化数，转化数，决定是否进入第二阶段，同时作为主表
-    - kvalue：反馈系数，对cvr模型的系统偏差校准
+    pb文件格式：
+    string identifier = 1;
+    int32 conversiongoal = 2;
+    double kvalue = 3;
+    double cpagiven = 4;
+    int64 cvrcnt = 5;
+    对于明投广告，cpagiven=1， cvrcnt使用ocpc广告记录进行关联，k需要进行计算，每个conversiongoal都需要进行计算
+
+    计算步骤
+    1. 获取base_data
+    2. 按照conversiongoal, 计算cvrcnt，数据串联
+    3. 计算k
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
@@ -36,18 +43,27 @@ object OcpcGetPb {
     } else if (media == "novel") {
       mediaSelection = s"media_appsid in ('80001098','80001292')"
     } else {
-      mediaSelection = s"media_appsid in ('80000001', '80000002', '80001098','80001292')"
+      mediaSelection = s"media_appsid = '80002819'"
     }
 
-    // 明投：可以有重复identifier
-    //    dl_cpc.ocpc_pb_result_hourly
-    //    dl_cpc.ocpc_prev_pb
+//    // 明投：可以有重复identifier
+//    dl_cpc.ocpc_pb_result_hourly
+//    dl_cpc.ocpc_prev_pb
 
-    // 读取数据
-//    val conversionGoal = 1
-    val base = getBaseData(mediaSelection, date, hour, spark)
-    val result1 = getPbDataByConversion(base, mediaSelection, 1, version, date, hour, spark)
-    result1.write.mode("overwrite").saveAsTable("test.check_qtt_ocpc_pb20190201a")
+
+    // 获取base_data
+    val base1 = getBaseData(mediaSelection, 1, date, hour, spark)
+    val base2 = getBaseData(mediaSelection, 2, date, hour, spark)
+    val base3 = getBaseData(mediaSelection, 3, date, hour, spark)
+    val base = base1.union(base2).union(base3)
+    base.write.mode("overwrite").saveAsTable("test.check_qtt_ocpc_pb20190201a")
+
+    // 按照conversiongoal, 计算cvrcnt，数据串联
+    val cvrData1 = getOcpcCVR(mediaSelection, 1, date, hour, spark)
+    val cvrData2 = getOcpcCVR(mediaSelection, 2, date, hour, spark)
+    val cvrData3 = getOcpcCVR(mediaSelection, 3, date, hour, spark)
+    val cvrData = cvrData1.union(cvrData2).union(cvrData3)
+    cvrData.write.mode("overwrite").saveAsTable("test.check_qtt_ocpc_pb20190201b")
 
 //    val kvalue = getK(version, date, hour, spark)
 //
@@ -81,7 +97,7 @@ object OcpcGetPb {
     resultDF
   }
 
-  def getBaseData(mediaSelection: String, date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -97,7 +113,7 @@ object OcpcGetPb {
          |SELECT
          |  cast(unitid as string) as identifier
          |FROM
-         |  dl_cpc.ocpc_base_unionlog
+         |  dl_cpc.ocpc_ctr_data_hourly
          |WHERE
          |  $selectCondition
          |AND
@@ -108,7 +124,10 @@ object OcpcGetPb {
        """.stripMargin
 
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest).distinct()
+    val resultDF = spark
+      .sql(sqlRequest)
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .distinct()
 
     resultDF
   }
