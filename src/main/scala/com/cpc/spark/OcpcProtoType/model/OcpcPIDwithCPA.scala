@@ -260,15 +260,16 @@ object OcpcPIDwithCPA {
   def updateK(kvalue: DataFrame, cpaRatio: DataFrame, date: String, hour: String, spark: SparkSession) = {
     /**
       * 根据新的K基准值和cpa_ratio来在分段函数中重新定义k值
-      * case1：0.9 <= cpa_ratio <= 1.1，k基准值
-      * case2：0.8 <= cpa_ratio < 0.9，k / 1.1
-      * case2：1.1 < cpa_ratio <= 1.2，k * 1.1
-      * case3：0.6 <= cpa_ratio < 0.8，k / 1.2
-      * case3：1.2 < cpa_ratio <= 1.4，k * 1.2
-      * case4：0.4 <= cpa_ratio < 0.6，k / 1.4
-      * case5：1.4 < cpa_ratio <= 1.6，k * 1.4
-      * case6：cpa_ratio < 0.4，k / 1.6
-      * case7：cpa_ratio > 1.6，k * 1.6
+      * case1: ratio < 0, t1
+      * case2: ratio < 0.4, t2
+      * case3: 0.4 <= ratio < 0.6, t3
+      * case4: 0.6 <= ratio < 0.8, t4
+      * case5: 0.8 <= ratio < 0.9, t5
+      * case6: 0.9 <= ratio <= 1.1, t6
+      * case7: 1.1 < ratio <= 1.2, t7
+      * case8: 1.2 < ratio <= 1.4, t8
+      * case9: 1.4 < ratio <= 1.6, t9
+      * case10: ratio > 1.6, t10
       *
       * 上下限依然是0.2 到1.2
       */
@@ -276,7 +277,7 @@ object OcpcPIDwithCPA {
     // 关联得到基础表
     val rawData = kvalue
       .join(cpaRatio, Seq("identifier"), "outer")
-      .select("identifier", "cpa_ratio", "conversion_goal", "kvalue")
+      .select("identifier", "cpa", "cpagiven", "cpa_ratio", "conversion_goal", "kvalue")
 
     val resultDF = rawData
       .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
