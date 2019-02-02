@@ -51,7 +51,16 @@ object OcpcGetPb {
 //    dl_cpc.ocpc_pb_result_hourly_v2
 //    dl_cpc.ocpc_prev_pb_once
     val result = getPbByConversion(mediaSelection, conversionGoal, version, date, hour, spark)
-    result.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202")
+//    result.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202")
+    val resultDF = result
+        .withColumn("cpagiven", lit(1))
+        .select("identifier", "cpagiven", "cvrcnt", "kvalue", "conversion_goal")
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .withColumn("version", lit(version))
+
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 //
 //    // 组装数据
 //    val resultDF = assemblyPBknown(mediaSelection, base, cvrData, initKdata, kvalue, version, date, hour, spark)
