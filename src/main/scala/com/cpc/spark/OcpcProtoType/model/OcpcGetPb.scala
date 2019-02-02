@@ -23,10 +23,7 @@ object OcpcGetPb {
     int64 cvrcnt = 5;
     对于明投广告，cpagiven=1， cvrcnt使用ocpc广告记录进行关联，k需要进行计算，每个conversiongoal都需要进行计算
 
-    计算步骤
-    1. 获取base_data
-    2. 按照conversiongoal, 计算cvrcnt，数据串联
-    3. 计算k
+
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
@@ -49,27 +46,7 @@ object OcpcGetPb {
 //    // 明投：可以有重复identifier
 //    dl_cpc.ocpc_pb_result_hourly_v2
 //    dl_cpc.ocpc_prev_pb_once
-
-
-    // 获取base_data
-    val base1 = getBaseData(mediaSelection, 1, date, hour, spark)
-//    val base2 = getBaseData(mediaSelection, 2, date, hour, spark)
-//    val base3 = getBaseData(mediaSelection, 3, date, hour, spark)
-//    val base = base1.union(base2).union(base3)
-    base1.write.mode("overwrite").saveAsTable("test.check_qtt_ocpc_pb20190201a")
-
-    // 按照conversiongoal, 计算cvrcnt，数据串联
-    val cvrData1 = getOcpcCVR(mediaSelection, 1, date, hour, spark)
-//    val cvrData2 = getOcpcCVR(mediaSelection, 2, date, hour, spark)
-//    val cvrData3 = getOcpcCVR(mediaSelection, 3, date, hour, spark)
-//    val cvrData = cvrData1.union(cvrData2).union(cvrData3)
-    cvrData1.write.mode("overwrite").saveAsTable("test.check_qtt_ocpc_pb20190201b")
-
-    val kvalue1 = getKvalue(mediaSelection, 1, version, date, hour, spark)
-//    val kvalue2 = getKvalue(mediaSelection, 2, version, date, hour, spark)
-//    val kvalue3 = getKvalue(mediaSelection, 3, version, date, hour, spark)
-//    val kvalue = kvalue1.union(kvalue2).union(kvalue3)
-    kvalue1.write.mode("overwrite").saveAsTable("test.check_qtt_ocpc_pb20190201c")
+    val kvalue = getPbByConversion(mediaSelection, 1, version, date, hour, spark)
 //
 //    // 组装数据
 //    val resultDF = assemblyPBknown(mediaSelection, base, cvrData, initKdata, kvalue, version, date, hour, spark)
@@ -88,6 +65,26 @@ object OcpcGetPb {
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly")
 //
 //    savePbPack(resultDF, version, isKnown)
+  }
+
+  def getPbByConversion(mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    计算步骤
+    1. 获取base_data
+    2. 按照conversiongoal, 计算cvrcnt，数据串联
+    3. 计算k
+     */
+    val base = getBaseData(mediaSelection, conversionGoal, date, hour, spark)
+    val cvrData = getOcpcCVR(mediaSelection, conversionGoal, date, hour, spark)
+    val kvalue = getKvalue(mediaSelection, conversionGoal, version, date, hour, spark)
+
+    val resultDF = base
+      .join(cvrData, Seq("identifier", "conversion_goal"), "left_outer")
+      .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
+      .select("identifier", "conversion_goal", "cvrcnt", "kvalue")
+
+
+    resultDF
   }
 
   def getKvalue(mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
