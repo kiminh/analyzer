@@ -99,7 +99,7 @@ object OcpcSampleToPb {
 
     for (record <- dataset.collect()) {
       val identifier = record.getAs[String]("identifier")
-      val cpaGiven = record.getAs[Double]("cpa_given")
+      val cpaGiven = record.getAs[Double]("cpagiven")
       val kvalue = record.getAs[Double]("kvalue")
       val cvrCnt = record.getAs[Long]("cvrcnt")
       val conversionGoal = record.getAs[Int]("conversion_goal")
