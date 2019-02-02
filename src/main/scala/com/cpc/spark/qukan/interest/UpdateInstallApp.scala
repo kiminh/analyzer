@@ -3,17 +3,16 @@ package com.cpc.spark.qukan.interest
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
-import org.apache.spark.sql.{Row, SaveMode, SparkSession}
-import org.json4s._
-import org.json4s.native.JsonMethods._
-import com.cpc.spark.streaming.tools.{Encoding, Gzip}
-import com.cpc.spark.common.Utils
 import com.cpc.spark.qukan.parser.HdfsParser
+import com.cpc.spark.streaming.tools.Gzip
 import com.redis.RedisClient
+import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.json4s._
+import org.json4s.native.JsonMethods._
 import userprofile.Userprofile.{APPPackage, UserProfile}
-import com.redis.serialization.Parse.Implicits._
 
 
 /**
@@ -85,7 +84,7 @@ object UpdateInstallApp {
           }
         }
         if (op_type == "APP_LIST_ADD") {
-          (did, (apps, Seq[String](), Seq[String](), List[String]()))
+          (did, (apps, Seq[String](), Seq[String](), apps.toList))
         } else if (op_type == "APP_LIST_REMOVE") {
           (did, (Seq[String](), apps, Seq[String](), List[String]()))
         } else if (op_type == "APP_LIST_USE"){

@@ -4,6 +4,7 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import ocpcminbidv2.ocpcminbidv2.{BidListV2, SingleBidv2}
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
@@ -38,7 +39,7 @@ object OcpcMinBid {
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid")
 //      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
 
-    val data = resultDF.filter(s"cnt >= min_cnt")
+    val data = resultDF.orderBy(desc("cnt")).limit(3000)
 
     savePbPack(data, "ocpc_minbidv2.pb")
   }
@@ -63,7 +64,8 @@ object OcpcMinBid {
       val hour = record.getAs[String]("hr").toInt
       val adslotid = record.getAs[String]("adslotid")
       val city_level = record.getAs[Int]("city_level")
-      val adsrc = record.getAs[Int]("adsrc")
+      // todo: adsrcc=2
+      val adsrc = 2
       val ad_second_class = record.getAs[Long]("ad_second_class").toInt
       val ocpc_flag = record.getAs[Int]("ocpc_flag")
       val min_bid = record.getAs[Double]("min_bid")
@@ -84,6 +86,10 @@ object OcpcMinBid {
       list += currentItem
 
     }
+
+
+
+
     val result = list.toArray[SingleBidv2]
     val adRecordList = BidListV2(
       adrecord = result
@@ -114,8 +120,6 @@ object OcpcMinBid {
          |  count(1) as cnt
          |FROM
          |  base_data
-         |WHERE
-         |  ocpc_flag=1
          |GROUP BY hr, adslotid, city_level, adsrc, floor(adclass/1000), ocpc_flag
        """.stripMargin
     println(sqlRequest)
@@ -142,15 +146,19 @@ object OcpcMinBid {
   }
 
   def getBaseData(date: String, hour: String, spark: SparkSession) = {
-    // 取历史区间: score数据
-//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-//    val today = dateConverter.parse(date)
-//    val calendar = Calendar.getInstance
-//    calendar.setTime(today)
-//    calendar.add(Calendar.DATE, -1)
-//    val yesterday = calendar.getTime
-//    val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date`='$date' and `hour` <= '$hour'"
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -72)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
     // todo 时间区间： hour
 //    val sqlRequest =
 //      s"""
