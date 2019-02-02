@@ -84,8 +84,6 @@ object OcpcUnionlog {
 
     resultDF
 
-    resultDF
-
   }
 
   def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
