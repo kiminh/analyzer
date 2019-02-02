@@ -28,12 +28,16 @@ object OcpcGetPb {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
-    // bash: 2019-01-02 12 qtt_demo qtt 1
+    // bash: 2019-01-02 12 1 qtt_demo qtt 1
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(2).toString
-    val media = args(3).toString
-    val isKnown = args(4).toInt
+    val conversionGoal = args(2).toInt
+    val version = args(3).toString
+    val media = args(4).toString
+    val isKnown = args(5).toInt
+
+    println("parameters:")
+    println(s"date=$date, hour=$hour, conversionGoal=$conversionGoal, version=$version, media=$media, isKnown:$isKnown")
     var mediaSelection = s"media_appsid in ('80000001', '80000002')"
     if (media == "qtt") {
       mediaSelection = s"media_appsid in ('80000001', '80000002')"
@@ -46,8 +50,8 @@ object OcpcGetPb {
 //    // 明投：可以有重复identifier
 //    dl_cpc.ocpc_pb_result_hourly_v2
 //    dl_cpc.ocpc_prev_pb_once
-    val result1 = getPbByConversion(mediaSelection, 1, version, date, hour, spark)
-    result1.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202")
+    val result = getPbByConversion(mediaSelection, conversionGoal, version, date, hour, spark)
+    result.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202")
 //
 //    // 组装数据
 //    val resultDF = assemblyPBknown(mediaSelection, base, cvrData, initKdata, kvalue, version, date, hour, spark)
