@@ -128,7 +128,7 @@ object OcpcGetPb {
       .join(cpcKfinal, Seq("identifier"), "outer")
       .select("identifier", "ocpc_k", "cpc_k", "history_ocpc_flag")
       .na.fill(0, Seq("ocpc_k", "cpc_k", "history_ocpc_flag"))
-      .withColumn("kvalue", when(col("history_ocpc_flag") === 0, col("ocpc_k")).otherwise(col("cpc_k")))
+      .withColumn("kvalue", when(col("history_ocpc_flag") === 0, col("cpc_k")).otherwise(col("ocpc_k")))
       .withColumn("conversion_goal", lit(conversionGoal))
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
