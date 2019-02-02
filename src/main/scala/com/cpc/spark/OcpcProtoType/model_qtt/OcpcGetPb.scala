@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.model
+package com.cpc.spark.OcpcProtoType.model_qtt
 
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -53,7 +53,8 @@ object OcpcGetPb {
 //    result.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202")
     val resultDF = result
         .withColumn("cpagiven", lit(1))
-        .select("identifier", "cpagiven", "cvrcnt", "kvalue", "conversion_goal")
+        .select("identifier", "cpagiven", "cvrcnt", "kvalue")
+        .withColumn("conversion_goal", lit(conversionGoal))
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
