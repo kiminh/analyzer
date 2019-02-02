@@ -281,7 +281,7 @@ object OcpcGetPb {
       .na.fill(0, Seq("history_ocpc_flag"))
 
 
-    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202getcpck")
+//    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202getcpck")
 
     resultDF
   }
@@ -298,7 +298,7 @@ object OcpcGetPb {
       .withColumn("k_value", when(col("flag") === 0, col("prev_k")).otherwise(col("kvalue_middle")))
       .select("identifier", "regression_k", "pid_k", "new_k", "prev_k", "flag", "kvalue_middle", "k_value")
 
-    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202calculatekocpc")
+//    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202calculatekocpc")
     resultDF
   }
 
