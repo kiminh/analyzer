@@ -47,6 +47,7 @@ object OcpcGetPb {
 //    dl_cpc.ocpc_pb_result_hourly_v2
 //    dl_cpc.ocpc_prev_pb_once
     val kvalue = getPbByConversion(mediaSelection, 1, version, date, hour, spark)
+    kvalue.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202")
 //
 //    // 组装数据
 //    val resultDF = assemblyPBknown(mediaSelection, base, cvrData, initKdata, kvalue, version, date, hour, spark)
