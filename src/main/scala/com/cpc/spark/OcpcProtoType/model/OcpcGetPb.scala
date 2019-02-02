@@ -34,10 +34,9 @@ object OcpcGetPb {
     val conversionGoal = args(2).toInt
     val version = args(3).toString
     val media = args(4).toString
-    val isKnown = args(5).toInt
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, conversionGoal=$conversionGoal, version=$version, media=$media, isKnown:$isKnown")
+    println(s"date=$date, hour=$hour, conversionGoal=$conversionGoal, version=$version, media=$media")
     var mediaSelection = s"media_appsid in ('80000001', '80000002')"
     if (media == "qtt") {
       mediaSelection = s"media_appsid in ('80000001', '80000002')"
@@ -61,24 +60,18 @@ object OcpcGetPb {
 
     resultDF
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
-//
-//    // 组装数据
-//    val resultDF = assemblyPBknown(mediaSelection, base, cvrData, initKdata, kvalue, version, date, hour, spark)
-//    val cvrData = getOcpcCVR(mediaSelection, conversionGoal, date, hour, spark)
-//    val initKdata = getInitK(mediaSelection, conversionGoal, date, hour, spark)
-//    //    val cpaGiven = getCPAgiven("adv", version, date, hour, spark)
-//    val kvalue = getK(version, date, hour, spark)
-//
-//    // 组装数据
-//    val resultDF = assemblyPBknown(mediaSelection, base, cvrData, initKdata, kvalue, version, date, hour, spark)
-//
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("test.ocpc_prev_pb_hourly")
-//    //    resultDF
-//    // .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly")
-//
-//    savePbPack(resultDF, version, isKnown)
+
+    /*
+    identifier          string,
+    conversion_goal     int,
+    cpagiven            double,
+    cvrcnt              bigint,
+    kvalue              double
+    version
+     */
+    resultDF
+      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
   }
 
   def getPbByConversion(mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
