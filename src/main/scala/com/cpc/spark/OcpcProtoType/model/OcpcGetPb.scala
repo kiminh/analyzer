@@ -108,8 +108,8 @@ object OcpcGetPb {
      */
 
     // ocpc投放的k值
-    val regressionK = getRegressionK(conversionGoal, version, date, hour, spark)
-    val pidK = getPidK(conversionGoal, version, date, hour, spark)
+    val regressionK = getModelK(conversionGoal, version, "regression", date, hour, spark).withColumn("regression_k", col("kvalue"))
+    val pidK = getModelK(conversionGoal, version, "pid", date, hour, spark).withColumn("pid_k", col("kvalue"))
     val prevPb = getPrevPb(conversionGoal, version, date, hour, spark)
     val ocpcK = calculateKocpc(regressionK, pidK, prevPb, spark)
 
@@ -380,32 +380,15 @@ object OcpcGetPb {
   }
 
 
-  def getPidK(conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
-    val selectCondition = s"`date`='$date' and `hour`='$hour' and version='$version' and conversion_goal=$conversionGoal"
+  def getModelK(conversionGoal: Int, version: String, method: String, date: String, hour: String, spark: SparkSession) = {
+    val selectCondition = s"`date`='$date' and `hour`='$hour' and version='$version' and conversion_goal=$conversionGoal and method='$method'"
     val sqlRequest =
       s"""
          |SELECT
          |  identifier,
-         |  k_value as pid_k
+         |  kvalue
          |FROM
-         |  dl_cpc.ocpc_pid_k_hourly
-         |WHERE
-         |  $selectCondition
-       """.stripMargin
-    println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
-    resultDF
-  }
-
-  def getRegressionK(conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
-    val selectCondition = s"`date`='$date' and `hour`='$hour' and version='$version' and conversion_goal=$conversionGoal"
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  identifier,
-         |  k_ratio as regression_k
-         |FROM
-         |  dl_cpc.ocpc_k_regression_hourly
+         |  dl_cpc.ocpc_k_model_hourly
          |WHERE
          |  $selectCondition
        """.stripMargin
