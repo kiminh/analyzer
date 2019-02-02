@@ -16,12 +16,13 @@ object OcpcRegression {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
-    // bash: 2019-01-02 12 72 qtt_demo qtt
+    // bash: 2019-01-02 12 72 1 qtt_demo qtt
     val date = args(0).toString
     val hour = args(1).toString
     val hourCnt = args(2).toInt
-    val version = args(3).toString
-    val media = args(4).toString
+    val conversionGoal = args(3).toInt
+    val version = args(4).toString
+    val media = args(5).toString
     var mediaSelection = ""
     if (media == "qtt") {
       mediaSelection = s"media_appsid in ('80000001', '80000002')"
@@ -31,14 +32,12 @@ object OcpcRegression {
       mediaSelection = s"media_appsid = '80002819'"
     }
 
-    val result1 = calcualteKwithRegression(mediaSelection, 1, version, hourCnt, date, hour, spark)
-    val result2 = calcualteKwithRegression(mediaSelection, 2, version, hourCnt, date, hour, spark)
-    val result3 = calcualteKwithRegression(mediaSelection, 3, version, hourCnt, date, hour, spark)
-    val result = result1.union(result2).union(result3).withColumn("kvalue", col("k_ratio"))
+    val result = calcualteKwithRegression(mediaSelection, conversionGoal, version, hourCnt, date, hour, spark)
 
 //    result.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
 
     val resultDF = result
+      .withColumn("kvalue", col("k_ratio"))
       .select("identifier", "kvalue", "conversion_goal")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))

@@ -23,11 +23,13 @@ object OcpcPIDwithCPA {
      */
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
 
-    // bash: 2019-01-02 12 qtt_demo qtt
+    // bash: 2019-01-02 12 24 1 qtt_demo qtt
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(2).toString
-    val media = args(3).toString
+    val hourInt = args(2).toInt
+    val conversionGoal = args(3).toInt
+    val version = args(4).toString
+    val media = args(5).toString
     var mediaSelection = ""
 
     if (media == "qtt") {
@@ -44,12 +46,10 @@ object OcpcPIDwithCPA {
       .where(s"version='$version'")
 
     val historyData = getHistory(mediaSelection, date, hour, spark)
-    val result1 = calculateKwithConversionGoal(1, 24, prevTable, historyData, date, hour, spark)
-    val result2 = calculateKwithConversionGoal(2, 24, prevTable, historyData, date, hour, spark)
-    val result3 = calculateKwithConversionGoal(3, 24, prevTable, historyData, date, hour, spark)
-    val result = result1.union(result2).union(result3).withColumn("kvalue", col("k_value"))
+    val result = calculateKwithConversionGoal(conversionGoal, hourInt, prevTable, historyData, date, hour, spark)
 
     val resultDF = result
+        .withColumn("kvalue", col("k_value"))
         .select("identifier", "kvalue", "conversion_goal")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
