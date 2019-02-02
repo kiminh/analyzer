@@ -53,23 +53,23 @@ object OcpcGetPb {
 
     // 获取base_data
     val base1 = getBaseData(mediaSelection, 1, date, hour, spark)
-    val base2 = getBaseData(mediaSelection, 2, date, hour, spark)
-    val base3 = getBaseData(mediaSelection, 3, date, hour, spark)
-    val base = base1.union(base2).union(base3)
-    base.write.mode("overwrite").saveAsTable("test.check_qtt_ocpc_pb20190201a")
+//    val base2 = getBaseData(mediaSelection, 2, date, hour, spark)
+//    val base3 = getBaseData(mediaSelection, 3, date, hour, spark)
+//    val base = base1.union(base2).union(base3)
+    base1.write.mode("overwrite").saveAsTable("test.check_qtt_ocpc_pb20190201a")
 
     // 按照conversiongoal, 计算cvrcnt，数据串联
     val cvrData1 = getOcpcCVR(mediaSelection, 1, date, hour, spark)
-    val cvrData2 = getOcpcCVR(mediaSelection, 2, date, hour, spark)
-    val cvrData3 = getOcpcCVR(mediaSelection, 3, date, hour, spark)
-    val cvrData = cvrData1.union(cvrData2).union(cvrData3)
-    cvrData.write.mode("overwrite").saveAsTable("test.check_qtt_ocpc_pb20190201b")
+//    val cvrData2 = getOcpcCVR(mediaSelection, 2, date, hour, spark)
+//    val cvrData3 = getOcpcCVR(mediaSelection, 3, date, hour, spark)
+//    val cvrData = cvrData1.union(cvrData2).union(cvrData3)
+    cvrData1.write.mode("overwrite").saveAsTable("test.check_qtt_ocpc_pb20190201b")
 
     val kvalue1 = getKvalue(mediaSelection, 1, version, date, hour, spark)
-    val kvalue2 = getKvalue(mediaSelection, 2, version, date, hour, spark)
-    val kvalue3 = getKvalue(mediaSelection, 3, version, date, hour, spark)
-    val kvalue = kvalue1.union(kvalue2).union(kvalue3)
-    kvalue.write.mode("overwrite").saveAsTable("test.check_qtt_ocpc_pb20190201c")
+//    val kvalue2 = getKvalue(mediaSelection, 2, version, date, hour, spark)
+//    val kvalue3 = getKvalue(mediaSelection, 3, version, date, hour, spark)
+//    val kvalue = kvalue1.union(kvalue2).union(kvalue3)
+    kvalue1.write.mode("overwrite").saveAsTable("test.check_qtt_ocpc_pb20190201c")
 //
 //    // 组装数据
 //    val resultDF = assemblyPBknown(mediaSelection, base, cvrData, initKdata, kvalue, version, date, hour, spark)
