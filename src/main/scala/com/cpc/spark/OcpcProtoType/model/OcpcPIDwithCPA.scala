@@ -30,8 +30,10 @@ object OcpcPIDwithCPA {
     val conversionGoal = args(3).toInt
     val version = args(4).toString
     val media = args(5).toString
-    var mediaSelection = ""
 
+    println("parameters:")
+    println(s"date=$date, hour=$hour, hourInt=$hourInt, conversionGoal=$conversionGoal, version=$version, media=$media")
+    var mediaSelection = ""
     if (media == "qtt") {
       mediaSelection = s"media_appsid in ('80000001', '80000002')"
     } else if(media == "novel"){

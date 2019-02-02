@@ -23,6 +23,9 @@ object OcpcRegression {
     val conversionGoal = args(3).toInt
     val version = args(4).toString
     val media = args(5).toString
+
+    println("parameters:")
+    println(s"date=$date, hour=$hour, hourCnt=$hourCnt, conversionGoal=$conversionGoal, version=$version, media=$media")
     var mediaSelection = ""
     if (media == "qtt") {
       mediaSelection = s"media_appsid in ('80000001', '80000002')"
