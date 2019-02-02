@@ -61,17 +61,6 @@ object OcpcGetPb {
     resultDF
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
-    /*
-    identifier          string,
-    conversion_goal     int,
-    cpagiven            double,
-    cvrcnt              bigint,
-    kvalue              double
-    version
-     */
-    resultDF
-      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
   }
 
   def getPbByConversion(mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
