@@ -31,7 +31,7 @@ object OcpcDataDetail {
       .mode("overwrite")
       .insertInto("dl_cpc.ocpc_detail_report_hourly")
 
-    saveDataDetailToReport(result, spark)
+//    saveDataDetailToReport(result, spark)
   }
 
   def exportHourlyReport(date: String, hour: String, spark: SparkSession) = {

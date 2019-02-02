@@ -44,7 +44,7 @@ object OcpcHourlySummary {
         .withColumn("hour", lit(hourInt))
         .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "date", "hour")
 
-    saveDataSummaryToReport(resultDF, spark)
+//    saveDataSummaryToReport(resultDF, spark)
   }
 
   def joinData(date: String, hour: String, spark: SparkSession) = {
