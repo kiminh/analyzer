@@ -294,8 +294,8 @@ object OcpcGetPb {
   }
 
   def getPrevPb(conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
-    var prevTable = getPrevK(conversionGoal, date, hour, 1, spark)
     var hourCnt=1
+    var prevTable = getPrevK(conversionGoal, version, date, hour, hourCnt, spark)
     while (hourCnt < 11) {
       val cnt = prevTable.count()
       println(s"check prevTable Count: $cnt, at hourCnt = $hourCnt")
@@ -303,7 +303,7 @@ object OcpcGetPb {
         hourCnt = 11
       } else {
         hourCnt += 1
-        prevTable = getPrevK(conversionGoal, date, hour, hourCnt, spark)
+        prevTable = getPrevK(conversionGoal, version, date, hour, hourCnt, spark)
       }
 
     }
@@ -314,7 +314,7 @@ object OcpcGetPb {
     resultDF
   }
 
-  def getPrevK(conversionGoal: Int, date: String, hour: String, hourCnt: Int, spark: SparkSession) = {
+  def getPrevK(conversionGoal: Int, version: String, date: String, hour: String, hourCnt: Int, spark: SparkSession) = {
     /*
     1.  获取上一次的pb文件中的k值
     2.  获取从上一次生成pb文件到现在的时间段之间每个identifier的点击数，根据点击数是否为0来设置flag
@@ -331,7 +331,7 @@ object OcpcGetPb {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition1 = s"`date`='$date1' and `hour`='$hour1'"
+    val selectCondition1 = s"`date`='$date1' and `hour`='$hour1' and conversion_goal=$conversionGoal and version='$version'"
     val selectCondition2 = getTimeRangeSql2(date1, hour1, date, hour)
 
     // 获取上一次的pb文件中的k值
@@ -344,8 +344,6 @@ object OcpcGetPb {
          |  dl_cpc.ocpc_pb_result_hourly_v2
          |WHERE
          |  $selectCondition1
-         |AND
-         |  conversion_goal=$conversionGoal
        """.stripMargin
     println(sqlRequest1)
     val prevK = spark.sql(sqlRequest1)
