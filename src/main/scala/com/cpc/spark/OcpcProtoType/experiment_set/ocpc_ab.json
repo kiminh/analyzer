@@ -1,8 +1,3 @@
-{
-  "ab_experiment": {
-    "ab_switch": ["0000000"],
-    "cpc_bid": {
-      "0000000": 10
-    }
-  }
-}
+{"identifier": "0000000", "cpc_bid": 10}
+{"identifier": "0000001", "cpc_bid": 11}
+{"identifier": "1921347", "cpc_bid": -1}

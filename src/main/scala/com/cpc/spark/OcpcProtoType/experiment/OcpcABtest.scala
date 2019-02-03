@@ -15,9 +15,18 @@ object OcpcABtest {
     val date = args(0).toString
     val hour = args(1).toString
 
+    val data = readExpSet(date, hour, spark)
+
 
   }
 
+  def readExpSet(date: String, hour: String, spark: SparkSession) = {
+    val path = s"/user/cpc/wangjun/ocpc_exp/ocpc_ab.json"
+
+    val data = spark.read.format("json").json(path)
+
+    data.show(10)
+  }
 
 }
 
