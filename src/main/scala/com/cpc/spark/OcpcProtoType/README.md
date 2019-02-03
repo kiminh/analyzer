@@ -16,3 +16,8 @@
 
 ## CreateTable目录
 存放用于创建hive表的sql脚本
+
+## model_qtt目录
+用于存放趣头条的新版ocpc代码
+
+##
