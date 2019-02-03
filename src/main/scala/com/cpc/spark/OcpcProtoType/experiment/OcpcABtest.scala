@@ -23,10 +23,16 @@ object OcpcABtest {
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, media=$media")
-    val data = readExpSet(date, hour, spark)
+//    val data = readExpSet(date, hour, spark)
 
-    val dataWithCPC = getCPCbid(media, version, date, hour, spark)
-    dataWithCPC.show(10)
+    val result = getCPCbid(media, version, date, hour, spark)
+    val resultDF = result
+        .filter(s"cpc_bid is not null")
+        .withColumn("date", lit(date))
+        .withColumn("version", lit(version))
+
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cpc_bid_exp")
 
   }
 
@@ -141,10 +147,10 @@ object OcpcABtest {
       .join(cpcBid, Seq("identifier"), "outer")
       .select("identifier", "current_bid", "prev_bid", "prev_duration")
       .withColumn("is_update", when(col("current_bid").isNotNull, 1).otherwise(0))
-      .withColumn("bid", when(col("is_update") === 1, col("current_bid")).otherwise(col("prev_bid")))
+      .withColumn("cpc_bid", when(col("is_update") === 1, col("current_bid")).otherwise(col("prev_bid")))
       .withColumn("duration", when(col("is_update") === 1, 1).otherwise(col("prev_duration") + 1))
 
-    val resultDF = result.select("identifier", "bid", "duration")
+    val resultDF = result.select("identifier", "cpc_bid", "duration")
     resultDF
   }
 
