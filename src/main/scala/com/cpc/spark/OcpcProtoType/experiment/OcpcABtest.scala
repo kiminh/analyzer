@@ -53,7 +53,7 @@ object OcpcABtest {
     4. 读取前一天的cpcbid出价表
     5. 以外关联的方式，将第三步得到的新表中的出价记录替换第四步中的对应的identifier的cpc出价，保存结果到新的时间分区
      */
-    val conf_key = "medias." + media
+    val conf_key = "medias." + media + ".media_selection"
     val conf = ConfigFactory.load("ocpc")
     val mediaSelection = conf.getString(conf_key)
     // 计算最近三天的cpc出价
