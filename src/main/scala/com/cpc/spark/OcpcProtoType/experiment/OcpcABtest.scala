@@ -79,6 +79,9 @@ object OcpcABtest {
          |  length(ocpc_log) > 0
          |AND
          |  isclick=1
+         |AND ideaid > 0
+         |AND adsrc = 1
+         |AND adslot_type in (1,2,3)
          |GROUP BY cast(unitid as string)
        """.stripMargin
     println(sqlRequest1)
