@@ -24,3 +24,5 @@
 1. 新版ab实验代码
 2. 新版cpasuggest代码
 3. 测试阶段k值计算代码
+
+## experiment目录下代码的实验配置（json文件）
