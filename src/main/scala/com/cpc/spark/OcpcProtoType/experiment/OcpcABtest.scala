@@ -71,6 +71,8 @@ object OcpcABtest {
          |  $mediaSelection
          |AND
          |  length(ocpc_log) > 0
+         |AND
+         |  isclick=1
          |GROUP BY cast(unitid as string)
        """.stripMargin
     println(sqlRequest1)
@@ -141,8 +143,6 @@ object OcpcABtest {
       .withColumn("is_update", when(col("current_bid").isNotNull, 1).otherwise(0))
       .withColumn("bid", when(col("is_update") === 1, col("current_bid")).otherwise(col("prev_bid")))
       .withColumn("duration", when(col("is_update") === 1, 1).otherwise(col("prev_duration") + 1))
-
-    result.write.mode("overwrite").saveAsTable("test.check_ab_test20190203")
 
     val resultDF = result.select("identifier", "bid", "duration")
     resultDF
