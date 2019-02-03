@@ -25,7 +25,7 @@ object OcpcABtest {
     println(s"date=$date, hour=$hour, version=$version, media=$media")
     val data = readExpSet(date, hour, spark)
 
-    val dataWithCPC = getCPCbid(media, date, hour, spark)
+    val dataWithCPC = getCPCbid(media, version, date, hour, spark)
     dataWithCPC.show(10)
 
   }
@@ -44,7 +44,7 @@ object OcpcABtest {
     selectCondition
   }
 
-  def getCPCbid(media: String, date: String, hour: String, spark: SparkSession) = {
+  def getCPCbid(media: String, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     根据cpc阶段的历史出价数据计算用于ab实验的bid：
     1. 计算最近三天的cpc出价
@@ -105,10 +105,45 @@ object OcpcABtest {
       .select("identifier", "bid", "is_ocpc")
       .na.fill(0, Seq("is_ocpc"))
 
-    val cpcBid = joinData.filter(s"is_ocpc=0")
+    val cpcBid = joinData
+      .filter(s"is_ocpc=0")
+      .withColumn("current_bid", col("bid"))
+      .select("identifier", "current_bid")
 
     // 读取前一天的cpcbid出价表
-    cpcBid
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val startdate = calendar.getTime
+    val date1 = dateConverter.format(startdate)
+    val selectCondition3 = s"date = '$date1' and version = '$version'"
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  identifier,
+         |  cpc_bid as prev_bid,
+         |  duration as prev_duration
+         |FROM
+         |  $selectCondition3
+       """.stripMargin
+    println(sqlRequest3)
+    val prevBid = spark.sql(sqlRequest3)
+
+    // 以外关联的方式，将第三步得到的新表中的出价记录替换第四步中的对应的identifier的cpc出价，保存结果到新的时间分区
+    val result = prevBid
+      .join(cpcBid, Seq("identifier"), "outer")
+      .select("identifier", "current_bid", "prev_bid", "prev_duration")
+      .withColumn("is_update", when(col("current_bid").isNotNull, 1).otherwise(0))
+      .withColumn("bid", when(col("is_update") === 1, col("current_bid")).otherwise(col("prev_bid")))
+      .withColumn("duration", when(col("is_update") === 1, 1).otherwise(col("prev_duration") + 1))
+
+    result.write.mode("overwrite").saveAsTable("test.check_ab_test20190203")
+
+    val resultDF = result.select("identifier", "bid", "duration")
+    resultDF
   }
 
   def readExpSet(date: String, hour: String, spark: SparkSession) = {
