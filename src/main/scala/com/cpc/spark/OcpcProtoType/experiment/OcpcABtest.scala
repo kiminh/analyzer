@@ -127,6 +127,8 @@ object OcpcABtest {
          |  cpc_bid as prev_bid,
          |  duration as prev_duration
          |FROM
+         |  dl_cpc.ocpc_cpc_bid_exp
+         |WHERE
          |  $selectCondition3
        """.stripMargin
     println(sqlRequest3)
