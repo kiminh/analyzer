@@ -30,7 +30,12 @@ object AnalCfgLogV2 {
     val date = args(0)
     val hour = args(1)
     val cal = Calendar.getInstance()
-    cal.add(Calendar.HOUR, -2)
+    cal.set(Calendar.YEAR, date(0).toInt)
+    cal.set(Calendar.MONTH, date(1).toInt - 1)
+    cal.set(Calendar.DAY_OF_MONTH, date(2).toInt)
+    cal.set(Calendar.HOUR_OF_DAY, hour.toInt)
+    cal.set(Calendar.MINUTE, 0)
+    cal.set(Calendar.SECOND, 0)
     val table = "cpc_cfg_log"
     val spark = SparkSession.builder()
       .appName("cpc anal cfg log %s partition = %s".format(table, partitionPathFormat.format(cal.getTime)))
@@ -45,7 +50,7 @@ object AnalCfgLogV2 {
        """.stripMargin
     )
 
-    val cfglog = cfgData.repartition(100)
+    val cfglog = cfgData.repartition(1000)
       .rdd
       .map { x =>
         val raw = x.getAs[String]("raw")
@@ -56,7 +61,7 @@ object AnalCfgLogV2 {
 
 
     spark.createDataFrame(cfglog)
-      .repartition(1)
+      .repartition(5)
       .write
       .mode(SaveMode.Overwrite)
       .parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
