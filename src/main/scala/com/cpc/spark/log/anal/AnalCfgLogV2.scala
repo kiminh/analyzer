@@ -12,7 +12,7 @@ import scala.sys.process._
 /**
   * Created by Roy on 2017/4/18.
   */
-object AnalCfgLog {
+object AnalCfgLogV2 {
 
 
   val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd/HH")
