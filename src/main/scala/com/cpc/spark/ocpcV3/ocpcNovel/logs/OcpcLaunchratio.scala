@@ -40,7 +40,7 @@ object OcpcLaunchratio {
          |  ELSE "other" END
        """.stripMargin
     println(sql1)
-    spark.sql(sql1).write.mode("overwrite").saveAsTable("test.OcpcLaunchdata")
+    spark.sql(sql1).write.mode("overwrite").saveAsTable("dl_cpc.OcpcLaunchdata")
 
     val sql2=
       s"""
@@ -62,7 +62,7 @@ object OcpcLaunchratio {
 
     val data1=spark.sql(sql2)
 
-      spark.sql("select * from test.OcpcLaunchdata where media = 'qtt'").join(data1,Seq("unitid"))
+      spark.sql("select * from dl_cpc.OcpcLaunchdata where media = 'qtt'").join(data1,Seq("unitid"))
         .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata2")
 
     val sql3=
