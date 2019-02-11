@@ -46,8 +46,7 @@ object OcpcLaunchratio {
       s"""
          |select
          |  unitid,
-         |  case when qtt_money = 0 and novel_money > 0 then '1'
-         |  else '0' end as choose
+         |  if(qtt_money = 0 and novel_money > 0,1,0) as choose
          |from
          |(
          |  select
@@ -60,31 +59,33 @@ object OcpcLaunchratio {
          |) a
        """.stripMargin
 
-//    val data1=spark.sql(sql2)
-//
-//      spark.sql("select * from test.OcpcLaunchdata where media = 'qtt'").join(data1,Seq("unitid"))
-//        .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata2")
+    val data1=spark.sql(sql2)
+
+      spark.sql("select * from test.OcpcLaunchdata where media = 'qtt'").join(data1,Seq("unitid"))
+        .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata2")
 
     val sql3=
       s"""
          |select
-         |  mode,
-         |  sum(money_byunit) as money,
-         |  round(sum(isclick_byunit)*100 / sum(isshow_byunit),3) as ctr,
-         |  round(sum(money_byunit)*10/sum(isshow_byunit),3) as cpm,
-         |  round(sum(money_byunit)*10/sum(isclick_byunit),3) as acp
+         |  choose,
+         |  case when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
+         |  else 'cpc' end as mode,
+         |  sum(case WHEN isclick == 1 then price else 0 end) as money,
+         |  round(sum(isclick)*100 / sum(isshow),3) as ctr,
+         |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
+         |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3) as acp
          |from
          |(
-         |  select
-         |  distinct unitid,
-         |  case when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
-         |  else 'cpc' end as mode
+         |  select *
          |  from dl_cpc.cpc_novel_union_log
          |  WHERE `date` = '$date'
          |) a
-         |join test.OcpcLaunchdata2 b
+         |left join test.OcpcLaunchdata2 b
          |on a.unitid=b.unitid
-         |group by mode
+         |group by
+         |  choose,
+         |  case when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
+         |  else 'cpc' end
        """.stripMargin
 
     spark.sql(sql3).write.mode("overwrite").saveAsTable("test.OcpcLaunchdata3")
