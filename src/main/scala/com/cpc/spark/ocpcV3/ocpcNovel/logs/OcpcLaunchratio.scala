@@ -61,7 +61,7 @@ object OcpcLaunchratio {
 
     val data1=spark.sql(sql2)
 
-      spark.sql("select * from test.OcpcLaunchdata where media = 'qtt'").join(data1,Seq("unitid"))
+      spark.sql("select * from test.OcpcLaunchdata where media = 'novel'").join(data1,Seq("unitid"))
         .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata2")
 
     val sql3=
