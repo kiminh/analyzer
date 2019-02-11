@@ -54,6 +54,7 @@ object OcpcCPAsuggest {
 
   def saveDataToHive(rawData: DataFrame, date: String, version: String, expTag: String, spark: SparkSession) = {
     val data = rawData
+      .filter(s"cpa_suggest is not null and cpa_suggest > 0")
       .select("identifier", "cpa_suggest", "conversion_goal")
       .withColumn("t", lit(3))
       .withColumn("map_key", concat_ws("|", col("identifier"), col("conversion_goal")))
