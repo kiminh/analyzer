@@ -164,6 +164,8 @@ object OcpcCPAsuggest {
       .withColumn("cpa_suggest", when(col("is_update") === 1, col("current_cpa")).otherwise(col("prev_cpa")))
       .withColumn("duration", when(col("is_update") === 1, 1).otherwise(col("prev_duration") + 1))
 
+    result.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190211")
+
     val resultDF = result.select("identifier", "conversion_goal", "cpa_suggest", "duration")
     resultDF
 
