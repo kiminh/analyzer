@@ -59,13 +59,14 @@ object OcpcCPAsuggest {
       .withColumn("t", lit(3))
       .withColumn("map_key", concat_ws("|", col("identifier"), col("conversion_goal")))
       .withColumn("map_value", concat_ws("|", col("cpa_suggest"), col("t")))
+      .select("map_key", "map_value")
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
       .withColumn("exp_tag", lit(expTag))
 
     data.show(10)
-    data.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_setting20190211a")
-//    data.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_exp_setting")
+//    data.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_setting20190211a")
+    data.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_exp_setting")
   }
 
   def readCPAsuggest(version: String, date: String, hour: String, spark: SparkSession)= {
