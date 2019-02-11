@@ -23,7 +23,7 @@ object OcpcABtest {
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, media=$media")
-//    val data = readExpSet(date, hour, spark)
+    val data = readExpSet(date, hour, spark)
 
     val result = getCPCbid(media, version, date, hour, spark)
     val resultDF = result
