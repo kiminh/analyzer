@@ -47,10 +47,12 @@ object OcpcExperimentPb {
   def saveDataToPb(data: ListBuffer[(String, mutable.LinkedHashMap[String, String])], fileName: String) = {
     var list = new ListBuffer[SingleExpRecord]
     var filename = ""
+    val dataList = data.toList
+    val cnt = dataList.size
 
-    for (record <- data) {
-      val expTag = record(0)
-      val expMap = record(1)
+    for (index <- 0 to cnt) {
+      val expTag = dataList(index)._1.toString
+      val expMap = dataList(index)._2.toMap[String, String]
 
       println(expTag)
 
@@ -59,6 +61,8 @@ object OcpcExperimentPb {
         expConf = expMap
       )
       list += currentItem
+
+      println(currentItem)
 
     }
     val result = list.toArray[SingleExpRecord]
