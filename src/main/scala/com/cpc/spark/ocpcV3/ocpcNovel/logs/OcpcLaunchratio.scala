@@ -69,6 +69,7 @@ object OcpcLaunchratio {
       s"""
          |select
          |  mode,
+         |  sum(money_byunit) as money,
          |  round(sum(isclick_byunit)*100 / sum(isshow_byunit),3) as ctr,
          |  round(sum(money_byunit)*10/sum(isshow_byunit),3) as cpm,
          |  round(sum(money_byunit)*10/sum(isclick_byunit),3) as acp
