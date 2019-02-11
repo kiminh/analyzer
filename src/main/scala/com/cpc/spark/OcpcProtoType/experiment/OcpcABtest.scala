@@ -20,6 +20,7 @@ object OcpcABtest {
     val hour = args(1).toString
     val media = args(2).toString
     val version = args(3).toString
+    val expTag = "ab_test"
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, media=$media")
@@ -34,6 +35,21 @@ object OcpcABtest {
     resultDF
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cpc_bid_exp")
 
+    // 将数据存储到实验配置表中dl_cpc.ocpc_exp_setting
+    saveDataToHive(resultDF, date, version, expTag, spark)
+
+  }
+
+  def saveDataToHive(rawData: DataFrame, date: String, version: String, expTag: String, spark: SparkSession) = {
+    val data = rawData
+      .select("identifier", "cpc_bid")
+      .selectExpr("cast(identifier as string) map_key", "cast(cpc_bid as string) map_value")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
+      .withColumn("exp_tag", lit(expTag))
+
+    data.show(10)
+    data.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_exp_setting")
   }
 
   def getDurationByDay(date: String, hour: String, dayInt: Int, spark: SparkSession) = {
