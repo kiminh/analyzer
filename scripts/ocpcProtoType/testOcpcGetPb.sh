@@ -17,5 +17,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.OcpcProtoType.model.OcpcPIDwithCPA \
-    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 24 $3 qtt_demo qtt
+    --class com.cpc.spark.OcpcProtoType.model.OcpcGetPb \
+    /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $1 $2 $3 qtt_demo qtt 1

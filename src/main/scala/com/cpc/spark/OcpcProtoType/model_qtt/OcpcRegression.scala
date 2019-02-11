@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.model
+package com.cpc.spark.OcpcProtoType.model_qtt
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -41,7 +41,8 @@ object OcpcRegression {
 
     val resultDF = result
       .withColumn("kvalue", col("k_ratio"))
-      .select("identifier", "kvalue", "conversion_goal")
+      .select("identifier", "kvalue")
+      .withColumn("conversion_goal", lit(conversionGoal))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
