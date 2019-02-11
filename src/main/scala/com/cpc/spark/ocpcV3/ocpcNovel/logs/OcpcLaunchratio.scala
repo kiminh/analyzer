@@ -39,8 +39,8 @@ object OcpcLaunchratio {
          |  when media_appsid in ('80001098','80001292') then "novel"
          |  ELSE "other" END
        """.stripMargin
-
-    spark.sql(sql1).write.mode("overwrite").saveAsTable("test.OcpcLaunchdata")
+//
+//    spark.sql(sql1).write.mode("overwrite").saveAsTable("test.OcpcLaunchdata")
 
     val sql2=
       s"""
@@ -59,10 +59,10 @@ object OcpcLaunchratio {
          |) a
        """.stripMargin
 
-//    val data1=spark.sql(sql2)
+    val data1=spark.sql(sql2)
 
-//      spark.sql("select * from test.OcpcLaunchdata where media = 'qtt'").join(data1,Seq("unitid"))
-//        .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata2")
+      spark.sql("select * from test.OcpcLaunchdata where media = 'qtt'").join(data1,Seq("unitid"))
+        .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata2")
 
     val sql3=
       s"""
