@@ -23,7 +23,7 @@ object OcpcABtest {
     val expTag = "ab_test"
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version, media=$media")
+    println(s"date=$date, hour=$hour, version=$version, media=$media, expTag=$expTag")
     val data = readExpSet(date, hour, spark)
 
     val result = getCPCbid(media, version, date, hour, spark)

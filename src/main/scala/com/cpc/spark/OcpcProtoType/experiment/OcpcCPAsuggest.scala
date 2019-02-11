@@ -28,9 +28,10 @@ object OcpcCPAsuggest {
     val hour = args(1).toString
     val media = args(2).toString
     val version = args(3).toString
+    val expTag = "cpa_suggest"
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version, media=$media")
+    println(s"date=$date, hour=$hour, version=$version, media=$media, expTag=$expTag")
 
     // 读取今日的推荐cpa
     val suggestCPA = readCPAsuggest(version, date, hour, spark)
@@ -46,7 +47,24 @@ object OcpcCPAsuggest {
 //    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190211")
     resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cpc_cpa_exp")
 
+    // 将数据存储到实验配置表中dl_cpc.ocpc_exp_setting
+    saveDataToHive(resultDF, date, version, expTag, spark)
 
+  }
+
+  def saveDataToHive(rawData: DataFrame, date: String, version: String, expTag: String, spark: SparkSession) = {
+    val data = rawData
+      .select("identifier", "cpa_suggest", "conversion_goal")
+      .withColumn("t", lit(3))
+      .withColumn("map_key", concat_ws("|", col("identifier"), col("conversion_goal")))
+      .withColumn("map_value", concat_ws("|", col("cpa_suggest"), col("t")))
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
+      .withColumn("exp_tag", lit(expTag))
+
+    data.show(10)
+    data.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_exp_setting20190211a")
+//    data.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_exp_setting")
   }
 
   def readCPAsuggest(version: String, date: String, hour: String, spark: SparkSession)= {
