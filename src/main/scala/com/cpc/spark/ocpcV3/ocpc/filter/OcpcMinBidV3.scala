@@ -24,10 +24,10 @@ object OcpcMinBidV3 {
     val spark = SparkSession.builder().appName(s"OcpcMinBid: $date, $hour").enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val baseData1 = getBaseData(date, hour, 7, spark)
+    val baseData1 = getBaseData(date, hour, 3, spark)
 
     // 抽取expctr
-    val expCtrData = getPreCtr(date, hour, 7, spark)
+    val expCtrData = getPreCtr(date, hour, 3, spark)
 
     val baseData = baseData1
       .join(expCtrData, Seq("searchid"), "inner")
