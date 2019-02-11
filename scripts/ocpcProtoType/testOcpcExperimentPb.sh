@@ -21,5 +21,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.OcpcProtoType.experiment.OcpcCPAsuggest \
+    --class com.cpc.spark.OcpcProtoType.experiment.OcpcExperimentPb \
     /home/cpc/wangjun/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $date $hour qtt_demo ab_test|cpa_suggest
