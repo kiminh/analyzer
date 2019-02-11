@@ -39,8 +39,8 @@ object OcpcLaunchratio {
          |  when media_appsid in ('80001098','80001292') then "novel"
          |  ELSE "other" END
        """.stripMargin
-//
-//    spark.sql(sql1).write.mode("overwrite").saveAsTable("test.OcpcLaunchdata")
+
+    spark.sql(sql1).write.mode("overwrite").saveAsTable("test.OcpcLaunchdata")
 
     val sql2=
       s"""
@@ -52,10 +52,11 @@ object OcpcLaunchratio {
          |(
          |  select
          |  unitid,
-         |  sum(money) as sum_money,
-         |  sum(if(media=='qtt',money,0)) as qtt_money,
-         |  sum(if(media=='novel',money,0)) as novel_money
+         |  sum(money_byunit) as sum_money,
+         |  sum(if(media=='qtt',money_byunit,0)) as qtt_money,
+         |  sum(if(media=='novel',money_byunit,0)) as novel_money
          |  from test.OcpcLaunchdata
+         |  group by unitid
          |) a
        """.stripMargin
 
