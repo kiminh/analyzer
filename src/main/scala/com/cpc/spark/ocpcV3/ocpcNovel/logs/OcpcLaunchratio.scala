@@ -32,6 +32,8 @@ object OcpcLaunchratio {
          |group by
          |  dt,
          |  unitid,
+         |  usertype,
+         |  adclass,
          |  case
          |  when media_appsid in ('80000001','80000002') then "qtt"
          |  when media_appsid in ('80001098','80001292') then "novel"
