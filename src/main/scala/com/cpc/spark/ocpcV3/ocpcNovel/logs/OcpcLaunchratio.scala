@@ -59,10 +59,10 @@ object OcpcLaunchratio {
          |) a
        """.stripMargin
 
-    val data1=spark.sql(sql2)
-
-      spark.sql("select * from test.OcpcLaunchdata where media = 'novel'").join(data1,Seq("unitid"))
-        .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata2")
+//    val data1=spark.sql(sql2)
+//
+//      spark.sql("select * from test.OcpcLaunchdata where media = 'novel'").join(data1,Seq("unitid"))
+//        .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata2")
 
     val sql3=
       s"""
@@ -79,6 +79,13 @@ object OcpcLaunchratio {
          |  select *
          |  from dl_cpc.cpc_novel_union_log
          |  WHERE `date` = '$date'
+         |  and isshow = 1
+         |  and ext['antispam'].int_value = 0
+         |  and adsrc = 1
+         |  and media_appsid in ("80001098","80001292")
+         |  AND userid > 0
+         |  AND (ext["charge_type"] IS NULL
+         |       OR ext["charge_type"].int_value = 1)
          |) a
          |left join test.OcpcLaunchdata2 b
          |on a.unitid=b.unitid
