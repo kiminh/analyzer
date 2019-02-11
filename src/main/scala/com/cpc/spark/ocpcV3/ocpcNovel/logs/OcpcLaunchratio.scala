@@ -23,7 +23,7 @@ object OcpcLaunchratio {
          |  sum(isclick) as isclick_byunit,
          |  sum(isshow) as isshow_byunit
          |from dl_cpc.slim_union_log
-         |where dt= $date
+         |where dt= '$date'
          |and isshow = 1
          |and antispam = 0
          |and adsrc = 1
@@ -79,7 +79,7 @@ object OcpcLaunchratio {
          |  case when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
          |  else 'cpc' end as mode
          |  from dl_cpc.cpc_novel_union_log
-         |  WHERE `date` = $date
+         |  WHERE `date` = '$date'
          |) a
          |join test.OcpcLaunchdata2 b
          |on a.unitid=b.unitid
