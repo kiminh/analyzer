@@ -41,10 +41,10 @@ object OcpcSampleToPb {
     println(s"date=$date, hour=$hour, version=$version, isKnown:$isKnown")
     val resultDF  = getPbData(version, date, hour, spark)
 
-//    resultDF
-//        .withColumn("version", lit(version))
-//        .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+    resultDF
+        .withColumn("version", lit(version))
+        .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
   }
