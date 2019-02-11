@@ -36,8 +36,15 @@ object OcpcCPAsuggest {
     val suggestCPA = readCPAsuggest(version, date, hour, spark)
 
     // 和历史推荐cpa作比较，更新到最新的时间分区中
-    val resultDF = updateCPAsuggest(media, version, suggestCPA, date, hour, spark)
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190211")
+    val result = updateCPAsuggest(media, version, suggestCPA, date, hour, spark)
+
+    val resultDF = result
+        .select("identifier", "cpa_suggest", "conversion_goal", "duration")
+        .withColumn("date", lit(date))
+        .withColumn("version", lit(version))
+
+//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190211")
+    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cpc_cpa_exp")
 
 
   }
