@@ -36,7 +36,7 @@ object OcpcCPAsuggest {
     val suggestCPA = readCPAsuggest(version, date, hour, spark)
 
     // 和历史推荐cpa作比较，更新到最新的时间分区中
-    val resultDF = updateCPAsuggest(date, hour, spark)
+    val resultDF = updateCPAsuggest(media, version, suggestCPA, date, hour, spark)
     resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190211")
 
 
@@ -60,6 +60,8 @@ object OcpcCPAsuggest {
        """.stripMargin
     println(sqlRequest1)
     val data = spark.sql(sqlRequest1)
+
+    data
   }
 
   def getDurationByDay(date: String, hour: String, dayInt: Int, spark: SparkSession) = {
