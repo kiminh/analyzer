@@ -78,7 +78,7 @@ object OcpcExperimentPb {
   }
 
   def getExpData(expTags: String, version: String, date: String, spark: SparkSession) = {
-    val expTagList = expTags.split("|")
+    val expTagList = expTags.split(",")
     var result = new ListBuffer[(String, mutable.LinkedHashMap[String, String])]
     for (expTag <- expTagList) {
       val expData = getExpDataMapByTag(expTag, version, date, spark)
