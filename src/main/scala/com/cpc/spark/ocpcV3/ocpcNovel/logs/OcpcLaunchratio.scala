@@ -39,7 +39,7 @@ object OcpcLaunchratio {
          |  when media_appsid in ('80001098','80001292') then "novel"
          |  ELSE "other" END
        """.stripMargin
-
+    println(sql1)
     spark.sql(sql1).write.mode("overwrite").saveAsTable("test.OcpcLaunchdata")
 
     val sql2=
