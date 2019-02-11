@@ -40,7 +40,7 @@ object OcpcLaunchratio {
          |  ELSE "other" END
        """.stripMargin
     println(sql1)
-    spark.sql(sql1).write.mode("overwrite").saveAsTable("test.OcpcLaunchdata")
+//    spark.sql(sql1).write.mode("overwrite").saveAsTable("test.OcpcLaunchdata")
 
     val sql2=
       s"""
@@ -60,10 +60,10 @@ object OcpcLaunchratio {
          |) a
        """.stripMargin
 
-    val data1=spark.sql(sql2)
-
-      spark.sql("select * from test.OcpcLaunchdata where media = 'qtt'").join(data1,Seq("unitid"))
-        .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata2")
+//    val data1=spark.sql(sql2)
+//
+//      spark.sql("select * from test.OcpcLaunchdata where media = 'qtt'").join(data1,Seq("unitid"))
+//        .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata2")
 
     val sql3=
       s"""
@@ -76,7 +76,7 @@ object OcpcLaunchratio {
          |from
          |(
          |  select
-         |  unitid,
+         |  distinct unitid,
          |  case when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
          |  else 'cpc' end as mode
          |  from dl_cpc.cpc_novel_union_log
