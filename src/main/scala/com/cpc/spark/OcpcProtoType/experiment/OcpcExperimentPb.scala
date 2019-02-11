@@ -50,7 +50,8 @@ object OcpcExperimentPb {
     val dataList = data.toList
     val cnt = dataList.size
 
-    for (index <- 0 to cnt) {
+    for (index <- 0 to cnt - 1) {
+      println(s"############### exptag index: $index #########################")
       val expTag = dataList(index)._1.toString
       val expMap = dataList(index)._2.toMap[String, String]
 
