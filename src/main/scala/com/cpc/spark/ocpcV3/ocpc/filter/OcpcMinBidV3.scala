@@ -24,10 +24,10 @@ object OcpcMinBidV3 {
     val spark = SparkSession.builder().appName(s"OcpcMinBid: $date, $hour").enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val baseData1 = getBaseData(date, hour, 3, spark)
+    val baseData1 = getBaseData(date, hour, 7, spark)
 
     // 抽取expctr
-    val expCtrData = getPreCtr(date, hour, 3, spark)
+    val expCtrData = getPreCtr(date, hour, 7, spark)
 
     val baseData = baseData1
       .join(expCtrData, Seq("searchid"), "inner")
@@ -41,7 +41,7 @@ object OcpcMinBidV3 {
 //      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base_v2")
       .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
 
-    val resultDF = calculateMinBid(baseData, date, hour, spark)
+    val result = calculateMinBid(baseData, date, hour, spark)
 
 //    hr,
 //    adslot_type,
@@ -51,12 +51,15 @@ object OcpcMinBidV3 {
 //    percentile(bid, 0.03) as min_bid,
 //    percentile(cpm, 0.03) as min_cpm,
 //    count(1) as cnt
-    resultDF
+    val resultDF = result
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_v2")
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
+
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_v2")
+
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
 
     val data = resultDF.filter(s"cnt>=300")
 
