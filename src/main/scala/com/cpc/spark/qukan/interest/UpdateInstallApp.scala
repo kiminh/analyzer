@@ -77,7 +77,7 @@ object UpdateInstallApp {
                 JObject(pkg) <- pkgs
                 JField("name", JString(name)) <- pkg
                 JField("package_name", JString(package_name)) <- pkg
-                p = (package_name)
+                p = (package_name, name)
               } yield p
             } catch {
               case e: Exception => null
