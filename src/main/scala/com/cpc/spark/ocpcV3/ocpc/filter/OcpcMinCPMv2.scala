@@ -6,7 +6,7 @@ import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
-import mincpm.mincpm.{MinCpmList, SingleMinCpm}
+import mincpmv2.mincpmv2.{MinCpmList, SingleMinCpm}
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -48,21 +48,23 @@ object OcpcMinCPMv2 {
       .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base20190212")
 //      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
 
-//    val result = calculateMinBid(baseData, date, hour, spark)
-//
-//    val resultDF = result
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit("qtt_demo"))
+    val result = calculateMinBid(baseData, date, hour, spark)
+
+    val resultDF = result
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("qtt_demo"))
+
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid20190212")
 //
 //    resultDF
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_v2")
 //
 //    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
 //
-//    val data = resultDF.filter(s"cnt>=300")
-//
-//    savePbPack(data, "ad_mincpm.pb")
+    val data = resultDF.filter(s"cnt>=300")
+
+    savePbPack(data, "ad_mincpmv2.pb")
   }
 
   def getCvrData(cvrPt: String, date: String, hour: String, dayInt: Int, spark: SparkSession) = {
@@ -149,9 +151,12 @@ object OcpcMinCPMv2 {
       val ocpc_flag = record.getAs[Int]("ocpc_flag")
       val min_bid = record.getAs[Double]("min_bid")
       val min_cpm = record.getAs[Long]("min_cpm")
+      val cvr1Cnt = record.getAs[Long]("cvr1cnt")
+      val cvr2Cnt = record.getAs[Long]("cvr2cnt")
+      val cvr3Cnt = record.getAs[Long]("cvr3cnt")
 
       if (cnt % 100 == 0) {
-        println(s"hour:$hr, adslot_type:$adslot_type, city_level:$city_level, ad_second_class:$ad_second_class, ocpc_flag:$ocpc_flag, min_bid:$min_bid, min_cpm:$min_cpm")
+        println(s"hour:$hr, adslot_type:$adslot_type, city_level:$city_level, ad_second_class:$ad_second_class, ocpc_flag:$ocpc_flag, min_bid:$min_bid, min_cpm:$min_cpm, cvr1Cnt:$cvr1Cnt, cvr2Cnt:$cvr2Cnt, cvr3Cnt:$cvr3Cnt")
       }
       cnt += 1
       val currentItem = SingleMinCpm(
@@ -161,7 +166,10 @@ object OcpcMinCPMv2 {
         adSecondClass = ad_second_class,
         isOcpc = ocpc_flag,
         minBid = min_bid,
-        minCpm = min_cpm
+        minCpm = min_cpm,
+        cvGoal1Cvr = cvr1Cnt,
+        cvGoal2Cvr = cvr2Cnt,
+        cvGoal3Cvr = cvr3Cnt
       )
       list += currentItem
 
@@ -194,13 +202,16 @@ object OcpcMinCPMv2 {
        |  ocpc_flag,
        |  percentile(bid, 0.03) as min_bid,
        |  percentile(cpm, 0.06) as min_cpm,
-       |  count(1) as cnt
+       |  count(1) as cnt,
+       |  sum(cvr1) as cvr1cnt,
+       |  sum(cvr2) as cvr2cnt,
+       |  sum(cvr3) as cvr3cnt
        |FROM
        |  base_data
        |GROUP BY hr, adslot_type, city_level, floor(adclass/1000), ocpc_flag
        """.stripMargin
     println(sqlRequest)
-    val rawData = spark.sql(sqlRequest)
+    val rawData = spark.sql(sqlRequest).na.fill(0, Seq("cvr1cnt", "cvr2cnt", "cvr3cnt"))
     rawData.createOrReplaceTempView("raw_data")
 
     val sqlRequest2 =
@@ -218,7 +229,7 @@ object OcpcMinCPMv2 {
 
     val resultDF = rawData
       .withColumn("min_cnt", lit(minCnt))
-      .selectExpr("hr", "cast(adslot_type as bigint) adslot_type", "city_level", "ad_second_class", "ocpc_flag", "min_bid", "cast(min_cpm as bigint) min_cpm", "cnt", "min_cnt")
+      .selectExpr("hr", "cast(adslot_type as bigint) adslot_type", "city_level", "ad_second_class", "ocpc_flag", "min_bid", "cast(min_cpm as bigint) min_cpm", "cnt", "min_cnt", "cvr1cnt", "cvr2cnt", "cvr3cnt")
 
 
     resultDF
@@ -234,33 +245,6 @@ object OcpcMinCPMv2 {
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
-    // todo 时间区间： hour
-    //    val sqlRequest =
-    //      s"""
-    //         |select
-    //         |    searchid,
-    //         |    ideaid,
-    //         |    bid as original_bid,
-    //         |    isshow,
-    //         |    isclick,
-    //         |    price,
-    //         |    ext_int['is_ocpc'] as is_ocpc,
-    //         |    ext_string['ocpc_log'] as ocpc_log,
-    //         |    hour,
-    //         |    adslotid,
-    //         |    adslot_type,
-    //         |    ext_string['user_city'] as user_city,
-    //         |    ext['city_level'].int_value as city_level,
-    //         |    adsrc,
-    //         |    ext['adclass'].int_value as adclass
-    //         |from test.filtered_union_log_hourly
-    //         |where $selectCondition
-    //         |and ext['exp_ctr'].int_value is not null
-    //         |and media_appsid  in ("80000001", "80000002")
-    //         |and ideaid > 0 and adsrc = 1
-    //         |and userid > 0
-    //         |and (ext['charge_type'] IS NULL OR ext['charge_type'].int_value = 1)
-    //       """.stripMargin
     val sqlRequest =
     s"""
        |select
