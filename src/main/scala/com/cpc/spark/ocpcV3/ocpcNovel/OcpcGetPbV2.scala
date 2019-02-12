@@ -53,11 +53,11 @@ object OcpcGetPbV2 {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
 
-//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly_middle")
-    data
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v2_hourly_middle")
+    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly_middle")
+//    data
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v2_hourly_middle")
 
-    val resultDF = data
+    val result = data
       .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0 and conversion_goal>0")
       .groupBy("unitid")
       .agg(
@@ -71,14 +71,58 @@ object OcpcGetPbV2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
+    val mediaCost = getCostByMedia(result, date, hour, spark)
+
+    val resultDF = result
+      .join(mediaCost, Seq("unitid"), "inner")
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "date", "hour")
+
+    // todo 测试
     val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto(tableName)
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto(tableName)
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
 
     savePbPack(resultDF)
 
+  }
+
+  def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    // 计算日期周期
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val end_date = sdf.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(end_date)
+    calendar.add(Calendar.DATE, -7)
+    val start_date = calendar.getTime
+    val date1 = sdf.format(start_date)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
+    // cost data
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  (case when media_appsid in ('80001098', '80001292') then 'novel' else 'qtt' end) as media,
+         |  unitid,
+         |  sum(total_price) as cost
+         |FROM
+         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  media_appsid in ('80001098', '80001292', '80000001', '80000002')
+         |GROUP BY (case when media_appsid in ('80001098', '80001292') then 'novel' else 'qtt' end), unitid
+       """.stripMargin
+    println(sqlRequest1)
+    val rawData = spark.sql(sqlRequest1)
+
+    // 按照media抽取出在趣头条上有消费的广告
+    val resultDF = rawData
+      .filter(s"cost > 0 and media = 'qtt'")
+      .select("unitid")
+      .distinct()
+
+    resultDF
   }
 
   def getCVR(date: String, hour: String, spark: SparkSession) = {
@@ -105,6 +149,8 @@ object OcpcGetPbV2 {
          |  dl_cpc.ocpcv3_ctr_data_hourly
          |WHERE
          |  $selectCondition
+         |AND
+         |  media_appsid in ('80001098', '80001292', '80000001', '80000002')
        """.stripMargin
     println(sqlRequestCtrData)
     val ctrData = spark
