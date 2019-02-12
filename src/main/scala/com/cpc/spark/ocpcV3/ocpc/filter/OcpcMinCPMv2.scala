@@ -20,52 +20,84 @@ object OcpcMinCPMv2 {
     val hour = args(1).toString
 
     // spark app name
-    val spark = SparkSession.builder().appName(s"OcpcMinBid: $date, $hour").enableHiveSupport().getOrCreate()
+    val spark = SparkSession.builder().appName(s"OcpcMinCPMv2: $date, $hour").enableHiveSupport().getOrCreate()
 
     // 抽取数据
     val baseData1 = getBaseData(date, hour, 7, spark)
 
     // 抽取转化数据
-    
+    val cvrData1 = getCvrData("cvr1", date, hour, 7, spark)
+    val cvrData2 = getCvrData("cvr2", date, hour, 7, spark)
+    val cvrData3 = getCvrData("cvr3", date, hour, 7, spark)
 
     // 抽取expctr
     val expCtrData = getPreCtr(date, hour, 7, spark)
 
     val baseData = baseData1
       .join(expCtrData, Seq("searchid"), "inner")
-      .select("searchid", "ideaid", "original_bid", "price", "bid", "ocpc_flag", "is_ocpc", "isshow", "isclick", "ocpc_log", "adslotid", "adslot_type", "user_city", "city_level", "adsrc", "adclass", "hr", "exp_ctr")
+      .join(cvrData1, Seq("searchid"), "left_outer")
+      .join(cvrData2, Seq("searchid"), "left_outer")
+      .join(cvrData3, Seq("searchid"), "left_outer")
+      .select("searchid", "ideaid", "original_bid", "price", "bid", "ocpc_flag", "is_ocpc", "isshow", "isclick", "ocpc_log", "adslotid", "adslot_type", "user_city", "city_level", "adsrc", "adclass", "hr", "exp_ctr", "cvr1", "cvr2", "cvr3")
       .withColumn("cpm", col("bid") * col("exp_ctr"))
 
     baseData
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-      //      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base_v2")
-      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
+      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base20190212")
+//      .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
 
-    val result = calculateMinBid(baseData, date, hour, spark)
+//    val result = calculateMinBid(baseData, date, hour, spark)
+//
+//    val resultDF = result
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit("qtt_demo"))
+//
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_v2")
+//
+//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
+//
+//    val data = resultDF.filter(s"cnt>=300")
+//
+//    savePbPack(data, "ad_mincpm.pb")
+  }
 
-    //    hr,
-    //    adslot_type,
-    //    city_level,
-    //    floor(adclass/1000) as ad_second_class,
-    //    ocpc_flag,
-    //    percentile(bid, 0.03) as min_bid,
-    //    percentile(cpm, 0.03) as min_cpm,
-    //    count(1) as cnt
-    val resultDF = result
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("version", lit("qtt_demo"))
+  def getCvrData(cvrPt: String, date: String, hour: String, dayInt: Int, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -dayInt)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = s"`date` >= '$date1' and cvr_goal = '$cvrPt'"
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  1 as label
+         |FROM
+         |  dl_cpc.ocpc_label_cvr_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  label=1
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
+    val resultDF = data
+        .withColumn(cvrPt, col("label"))
+        .select("searchid", cvrPt)
+
+    resultDF.show(10)
 
     resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_v2")
-
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
-
-    val data = resultDF.filter(s"cnt>=300")
-
-//    savePbPack(data, "ad_mincpm.pb")
   }
 
   def getPreCtr(date: String, hour: String, dayInt: Int, spark: SparkSession) = {
