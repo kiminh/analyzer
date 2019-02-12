@@ -54,8 +54,8 @@ object OcpcGetPbV2 {
         .withColumn("hour", lit(hour))
 
     data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly_middle")
-//    data
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v2_hourly_middle")
+    data
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v2_hourly_middle")
 
     val result = data
       .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0 and conversion_goal>0")
@@ -77,18 +77,23 @@ object OcpcGetPbV2 {
       .join(mediaCost, Seq("unitid"), "inner")
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "date", "hour")
 
-    // todo 测试
+
     val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto(tableName)
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
 
     savePbPack(resultDF)
 
   }
 
   def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    过滤逻辑：
+    1. 统计最近七天分别在米读小说和趣头条上每个广告单元各自的消费
+    2. 仅保留在最近七天的趣头条上消费数大于0的广告单元
+     */
     // 计算日期周期
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val end_date = sdf.parse(date)
