@@ -44,7 +44,7 @@ object Antispam_TKID {
          |     select tkid
          |           ,count(1) as cnt
          |     from dl_cpc.cpc_basedata_union_events
-         |     where day = "${date_before5hours}" and hour=${hour_before5hours}
+         |     where day = "${date_before5hours}" and hour="${hour_before5hours}"
          |     group by tkid having count(1)>=200
          |     )a
          |inner join (
@@ -72,9 +72,10 @@ object Antispam_TKID {
     val tkid=res1.union(res2)
       .distinct()
       .select("tkid")
+      .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
-      .text("/user/cpc/zhy/model_server/data")
+      .text("/user/cpc/model_server/data/$date_before3hours/$hour_before3hours")
 
     println("antispam tkid done")
 
