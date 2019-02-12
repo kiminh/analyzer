@@ -153,9 +153,9 @@ object OcpcMinCPMv2 {
       val ocpc_flag = record.getAs[Int]("ocpc_flag")
       val min_bid = record.getAs[Double]("min_bid")
       val min_cpm = record.getAs[Long]("min_cpm")
-      val cvr1Cnt = record.getAs[Long]("cvr1cnt")
-      val cvr2Cnt = record.getAs[Long]("cvr2cnt")
-      val cvr3Cnt = record.getAs[Long]("cvr3cnt")
+      val cvr1Cnt = record.getAs[Long]("cvr1")
+      val cvr2Cnt = record.getAs[Long]("cvr2")
+      val cvr3Cnt = record.getAs[Long]("cvr3")
 
       if (cnt % 100 == 0) {
         println(s"hour:$hr, adslot_type:$adslot_type, city_level:$city_level, ad_second_class:$ad_second_class, ocpc_flag:$ocpc_flag, min_bid:$min_bid, min_cpm:$min_cpm, cvr1Cnt:$cvr1Cnt, cvr2Cnt:$cvr2Cnt, cvr3Cnt:$cvr3Cnt")
@@ -205,15 +205,15 @@ object OcpcMinCPMv2 {
        |  percentile(bid, 0.03) as min_bid,
        |  percentile(cpm, 0.06) as min_cpm,
        |  count(1) as cnt,
-       |  sum(cvr1) as cvr1cnt,
-       |  sum(cvr2) as cvr2cnt,
-       |  sum(cvr3) as cvr3cnt
+       |  sum(cvr1) * 1000000.0 / sum(isclick) as cvr1,
+       |  sum(cvr2) * 1000000.0 / sum(isclick) as cvr2,
+       |  sum(cvr3) * 1000000.0 / sum(isclick) as cvr3
        |FROM
        |  base_data
        |GROUP BY hr, adslot_type, city_level, floor(adclass/1000), ocpc_flag
        """.stripMargin
     println(sqlRequest)
-    val rawData = spark.sql(sqlRequest).na.fill(0, Seq("cvr1cnt", "cvr2cnt", "cvr3cnt"))
+    val rawData = spark.sql(sqlRequest).na.fill(0, Seq("cvr1", "cvr2", "cvr3"))
     rawData.createOrReplaceTempView("raw_data")
 
     val sqlRequest2 =
@@ -231,7 +231,7 @@ object OcpcMinCPMv2 {
 
     val resultDF = rawData
       .withColumn("min_cnt", lit(minCnt))
-      .selectExpr("hr", "cast(adslot_type as bigint) adslot_type", "city_level", "ad_second_class", "ocpc_flag", "min_bid", "cast(min_cpm as bigint) min_cpm", "cnt", "min_cnt", "cvr1cnt", "cvr2cnt", "cvr3cnt")
+      .selectExpr("hr", "cast(adslot_type as bigint) adslot_type", "city_level", "ad_second_class", "ocpc_flag", "min_bid", "cast(min_cpm as bigint) min_cpm", "cnt", "min_cnt", "cast(cvr1 as long) cvr1", "cast(cvr2 as long) cvr2", "cast(cvr3 as long) cvr3")
 
 
     resultDF
