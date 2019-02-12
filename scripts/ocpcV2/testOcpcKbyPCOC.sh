@@ -6,7 +6,7 @@ date=$1
 hour=$2
 
 #queue=root.develop.adhoc.cpc
-queue=root.production.algo.cpc
+queue=root.cpc.develop
 
 
 jars=(
@@ -22,5 +22,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.ocpcV2.OcpcK \
+    --class com.cpc.spark.ocpcV2.OcpcKbyPCOC \
     ../../target/scala-2.11/cpc-anal_2.11-0.1.jar $date $hour
