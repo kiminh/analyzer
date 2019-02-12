@@ -1,14 +1,15 @@
 package com.cpc.spark.qukan.userprofile
 
-import org.apache.spark.sql.SparkSession
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
-import userprofile.Userprofile.{InterestItem, UserProfile}
+import org.apache.spark.sql.SparkSession
+import userprofile.Userprofile.UserProfile
 
 /**
   * Created by roydong on 11/07/2018.
   */
+@deprecated
 object QttLaxinPackage {
 
   def main(args: Array[String]): Unit = {

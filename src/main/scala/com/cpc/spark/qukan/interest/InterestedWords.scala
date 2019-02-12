@@ -11,14 +11,15 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
-import userprofile.Userprofile.{APPPackage, InterestItem, UserProfile}
-import scala.collection.JavaConversions._
+import userprofile.Userprofile.{InterestItem, UserProfile}
 
+import scala.collection.JavaConversions._
 import scala.io.Source
 
 /**
   * Created by Roy on 2017/5/17.
   */
+@deprecated
 object InterestedWords {
 
   def main(args: Array[String]): Unit = {
