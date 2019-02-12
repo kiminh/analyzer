@@ -1,7 +1,8 @@
 package com.cpc.spark.small.tool
 
 import java.sql.DriverManager
-import java.util.Properties
+import java.text.SimpleDateFormat
+import java.util.{Date, Properties}
 
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
@@ -73,6 +74,7 @@ object InsertReportSiteBuildingTarget {
   def main(args: Array[String]): Unit = {
     Logger.getRootLogger.setLevel(Level.WARN)
     val argDay = args(0).toString
+    val argIsHour = args(1).toInt
 
     val confDav = ConfigFactory.load()
     mariaAdvdbUrl = confDav.getString("mariadb.adv.url")
@@ -651,24 +653,53 @@ object InsertReportSiteBuildingTarget {
       .repartition(50)
     //insertDataFrame.show(100)
 
+    if (insertDataFrame.count() > 0) {
+      val now: Date = new Date()
+      val dateFormat: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd")
+      val toDay = dateFormat.format(now)
 
-    //report
-    clearReportSiteBuildingTarget(argDay)
+      if ((toDay != argDay) && (argIsHour == 1)) {
+        println("toDay != argDay is", toDay != argDay, toDay, argDay, argIsHour)
+        return
+      }
 
-    insertDataFrame
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariaReportdbUrl, "report.report_site_building_target", mariaReportdbProp)
-    println("report over!")
+      //report
+      clearReportSiteBuildingTarget(argDay)
 
-    //amateur
-    clearReportSiteBuildingTargetByAmateur(argDay)
+      insertDataFrame
+        .write
+        .mode(SaveMode.Append)
+        .jdbc(mariaReportdbUrl, "report.report_site_building_target", mariaReportdbProp)
+      println("report over!")
 
-    insertDataFrame
-      .write
-      .mode(SaveMode.Append)
-      .jdbc(mariaAmateurdbUrl, "report.report_site_building_target", mariaAmateurdbProp)
-    println("Amateur over!")
+      //amateur
+      clearReportSiteBuildingTargetByAmateur(argDay)
+
+      insertDataFrame
+        .write
+        .mode(SaveMode.Append)
+        .jdbc(mariaAmateurdbUrl, "report.report_site_building_target", mariaAmateurdbProp)
+      println("Amateur over!")
+
+    }
+
+    //    //report
+    //    clearReportSiteBuildingTarget(argDay)
+    //
+    //    insertDataFrame
+    //      .write
+    //      .mode(SaveMode.Append)
+    //      .jdbc(mariaReportdbUrl, "report.report_site_building_target", mariaReportdbProp)
+    //    println("report over!")
+    //
+    //    //amateur
+    //    clearReportSiteBuildingTargetByAmateur(argDay)
+    //
+    //    insertDataFrame
+    //      .write
+    //      .mode(SaveMode.Append)
+    //      .jdbc(mariaAmateurdbUrl, "report.report_site_building_target", mariaAmateurdbProp)
+    //    println("Amateur over!")
 
     //insertDataFrame.unpersist()
 
