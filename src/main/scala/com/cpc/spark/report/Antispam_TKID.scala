@@ -45,21 +45,21 @@ object Antispam_TKID {
          |           ,count(1) as cnt
          |     from dl_cpc.cpc_basedata_union_events
          |     where day = "${date_before5hours}" and hour="${hour_before5hours}"
-         |     group by tkid having count(1)>=200
+         |     group by tkid having count(1)>=400
          |     )a
          |inner join (
          |          select tkid
          |                ,count(1) as cnt
          |          from dl_cpc.cpc_basedata_union_events
          |          where day = "${date_before4hours}" and hour="${hour_before4hours}"
-         |          group by tkid having count(1)>=200
+         |          group by tkid having count(1)>=400
          |          )b on b.tkid=a.tkid
          |inner join (
          |          select tkid
          |                ,count(1) as cnt
          |          from dl_cpc.cpc_basedata_union_events
          |          where day = "${date_before3hours}" and hour="${hour_before3hours}"
-         |          group by tkid having count(1)>=200
+         |          group by tkid having count(1)>=400
          |          )c on c.tkid=a.tkid
        """.stripMargin
 
