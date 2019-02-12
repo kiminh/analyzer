@@ -38,7 +38,7 @@ object OcpcKexp {
       .withColumn("k3", col("k_ratio2"))
       .withColumn("k_ratio2_v1", col("k2"))
       .withColumn("k_ratio3_v1", col("k3"))
-      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "conversion_goal")
+      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1")
 
     val kv2 = spark
       .table("dl_cpc.ocpc_regression_k")
@@ -55,11 +55,18 @@ object OcpcKexp {
       .select("ideaid", "k_ratio2_v3", "k_ratio3_v3")
 
     // todo
-    val kv4 = spark
+    val kv4Raw = spark
       .table("dl_cpc.ocpc_pcoc_k_hourly")
       .where(selectCondition)
-      .withColumn("k_ratio2_v4", col("k_ratio2"))
-      .withColumn("k_ratio3_v4", col("k_ratio3"))
+      .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3")
+
+    val kv4 = kv4Raw
+      .join(ocpcConversionGoal, Seq("ideaid"), "left_outer")
+      .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3", "conversion_goal")
+      .withColumn("k2", when(col("conversion_goal").isNotNull && col("conversion_goal")===3, col("k_ratio3")).otherwise(col("k_ratio1")))
+      .withColumn("k3", col("k_ratio2"))
+      .withColumn("k_ratio2_v4", col("k2"))
+      .withColumn("k_ratio3_v4", col("k3"))
       .select("ideaid", "k_ratio2_v4", "k_ratio3_v4")
 
     // 读取实验ideaid列表
@@ -79,12 +86,21 @@ object OcpcKexp {
       .join(kv2, Seq("ideaid"), "outer")
       .join(kv3, Seq("ideaid"), "outer")
       .join(kv4, Seq("ideaid"), "outer")
+      .join(ocpcConversionGoal, Seq("ideaid"), "left_outer")
       .join(expIdeas, Seq("ideaid"), "left_outer")
-      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "flag", "conversion_goal")
-      .withColumn("k_ratio2", when(col("flag") === 1 && col("conversion_goal") < 3, col("k_ratio2_v2")).otherwise(col("k_ratio2_v1")))
-      .withColumn("k_ratio3", when(col("flag") === 1, col("k_ratio3_v2")).otherwise(col("k_ratio3_v1")))
-      .withColumn("k_ratio2", when(col("flag") === 2 && col("conversion_goal") === 1, col("k_ratio2_v3")).otherwise(col("k_ratio2")))
-      .withColumn("k_ratio2", when(col("flag") === 3, col("k_ratio2_v4")).otherwise("k_ratio2"))
+      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "k_ratio2_v4", "k_ratio3_v4", "flag", "conversion_goal")
+      .withColumn("k_ratio2", col("k_ratio2_v1"))
+      .withColumn("k_ratio3", col("k_ratio3_v1"))
+      .withColumn("k_ratio2", when(col("flag") === 1, col("k_ratio2_v2")).otherwise(col("k_ratio2")))
+      .withColumn("k_ratio3", when(col("flag") === 1, col("k_ratio3_v2")).otherwise(col("k_ratio3")))
+      .withColumn("k_ratio2", when(col("flag") === 2, col("k_ratio2_v3")).otherwise(col("k_ratio2")))
+      .withColumn("k_ratio3", when(col("flag") === 2, col("k_ratio3_v3")).otherwise(col("k_ratio3")))
+      .withColumn("k_ratio2", when(col("flag") === 3, col("k_ratio2_v4")).otherwise(col("k_ratio2")))
+      .withColumn("k_ratio3", when(col("flag") === 3, col("k_ratio3_v4")).otherwise(col("k_ratio3")))
+//      .withColumn("k_ratio2", when(col("flag") === 1 && col("conversion_goal") < 3, col("k_ratio2_v2")).otherwise(col("k_ratio2_v1")))
+//      .withColumn("k_ratio3", when(col("flag") === 1, col("k_ratio3_v2")).otherwise(col("k_ratio3_v1")))
+//      .withColumn("k_ratio2", when(col("flag") === 2 && col("conversion_goal") === 1, col("k_ratio2_v3")).otherwise(col("k_ratio2")))
+
 
 
 //    ideaid  string  NULL
