@@ -15,8 +15,8 @@ import com.cpc.spark.udfs.Udfs_wj._
 object OcpcKbyPCOC {
   /*
   计算k值的新策略：需要jfb和pcoc，时间窗口为3天
-  1. 抽取基础数据表，包括searchid, ideaid, precvr, isclick, iscvr1, iscvr2, dynamicbid, price
-  2. 按ideaid统计数据：pcoc1, pcoc2, jfb
+  1. 抽取基础数据表，包括searchid, ideaid, precvr, isclick, iscvr1, iscvr2, iscvr3, dynamicbid, price
+  2. 按ideaid统计数据：pcoc1, pcoc2, pcoc3, jfb
   3. 生成结果表：k = 0.9 / (pcoc * jfb)
    */
 
@@ -38,16 +38,17 @@ object OcpcKbyPCOC {
 
     // 生成结果表：k = 0.9 / (pcoc * jfb)
     val result = calcualteResult
-      .withColumn("k_ratio2", udfPCOCtoK()(col("pcoc1"), col("jfb")))
-      .withColumn("k_ratio3", udfPCOCtoK()(col("pcoc2"), col("jfb")))
+      .withColumn("k_ratio1", udfPCOCtoK()(col("pcoc1"), col("jfb")))
+      .withColumn("k_ratio2", udfPCOCtoK()(col("pcoc2"), col("jfb")))
+      .withColumn("k_ratio3", udfPCOCtoK()(col("pcoc3"), col("jfb")))
 
     result.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190212")
-    val resultDF = result
-      .select("ideaid", "k_ratio2", "k_ratio3")
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-
-    resultDF.repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_k_hourly")
+//    val resultDF = result
+//      .select("ideaid", "k_ratio2", "k_ratio3")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//
+//    resultDF.repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_k_hourly")
 
   }
 
@@ -62,16 +63,19 @@ object OcpcKbyPCOC {
         sum(col("isclick")).alias("click"),
         sum(col("iscvr1")).alias("cv1"),
         sum(col("iscvr2")).alias("cv2"),
+        sum(col("iscvr3")).alias("cv3"),
         sum(col("price")).alias("total_price"),
         sum(col("dynamicbid")).alias("total_bid")
       )
       .withColumn("postcvr1", col("cv1") * 1.0 / col("click"))
       .withColumn("postcvr2", col("cv2") * 1.0 / col("click"))
+      .withColumn("postcvr3", col("cv3") * 1.0 / col("click"))
       .withColumn("jfb", col("total_price") * 1.0 / col("total_bid"))
       .withColumn("pcoc1", col("precvr") * 1.0 / col("postcvr1"))
       .withColumn("pcoc2", col("precvr") * 1.0 / col("postcvr2"))
+      .withColumn("pcoc3", col("precvr") * 1.0 / col("postcvr3"))
 
-    val resultDF = data.select("ideaid", "pcoc1", "pcoc2", "jfb")
+    val resultDF = data.select("ideaid", "pcoc1", "pcoc2", "pcoc3", "jfb")
     resultDF.show(10)
     resultDF
   }
@@ -159,11 +163,31 @@ object OcpcKbyPCOC {
     println(sqlRequest3)
     val cvr2Data = spark.sql(sqlRequest3)
 
+    // 抽取cvr3数据
+    val sqlRequest4 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  1 as iscvr3
+         |FROM
+         |  dl_cpc.site_form_unionlog
+         |WHERE
+         |  $selectCondition2
+         |AND
+         |  ideaid>0
+         |AND
+         |  searchid is not null
+         |GROUP BY searchid
+       """.stripMargin
+    println(sqlRequest4)
+    val cvr3Data = spark.sql(sqlRequest4)
+
     // 数据关联
     val resultDF = clickData
       .join(cvr1Data, Seq("searchid"), "left_outer")
       .join(cvr2Data, Seq("searchid"), "left_outer")
-      .select("searchid", "ideaid", "precvr", "isclick", "price", "dynamicbid", "iscvr1", "iscvr2")
+      .join(cvr3Data, Seq("searchid"), "left_outer")
+      .select("searchid", "ideaid", "precvr", "isclick", "price", "dynamicbid", "iscvr1", "iscvr2", "iscvr3")
 
     resultDF.show(10)
     resultDF
