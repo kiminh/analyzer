@@ -30,7 +30,7 @@ object Antispam_TKID {
          |     ) a
          |left join (
          |          SELECT distinct tk
-         |          from bdm.qukan_log_v3
+         |          from bdm.qukan_log_cmd_p_byhour
          |          where day="${date_before3hours}" and hour="${hour_before3hours}"
          |          ) b on b.tk=a.tkid
          |where show_cnt=0 and b.tk is null
