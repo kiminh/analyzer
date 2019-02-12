@@ -26,7 +26,7 @@ object OcpcCheckData {
          |AND
          |  `hour`='$hour'
          |AND
-         |  cast(adclass as string) not like "134%"
+         |  ideaid!=2531409
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)

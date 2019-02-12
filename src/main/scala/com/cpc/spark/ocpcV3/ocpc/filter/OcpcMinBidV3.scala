@@ -4,6 +4,7 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import mincpm.Mincpm
 import mincpm.mincpm.{MinCpmList, SingleMinCpm}
@@ -23,10 +24,10 @@ object OcpcMinBidV3 {
     val spark = SparkSession.builder().appName(s"OcpcMinBid: $date, $hour").enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val baseData1 = getBaseData(date, hour, spark)
+    val baseData1 = getBaseData(date, hour, 7, spark)
 
     // 抽取expctr
-    val expCtrData = getPreCtr(date, hour, spark)
+    val expCtrData = getPreCtr(date, hour, 7, spark)
 
     val baseData = baseData1
       .join(expCtrData, Seq("searchid"), "inner")
@@ -40,7 +41,7 @@ object OcpcMinBidV3 {
 //      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_base_v2")
       .repartition(50).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid_base")
 
-    val resultDF = calculateMinBid(baseData, date, hour, spark)
+    val result = calculateMinBid(baseData, date, hour, spark)
 
 //    hr,
 //    adslot_type,
@@ -50,20 +51,31 @@ object OcpcMinBidV3 {
 //    percentile(bid, 0.03) as min_bid,
 //    percentile(cpm, 0.03) as min_cpm,
 //    count(1) as cnt
-    resultDF
+    val resultDF = result
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_v2")
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
+
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_v2")
+
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid")
 
     val data = resultDF.filter(s"cnt>=300")
 
     savePbPack(data, "ad_mincpm.pb")
   }
 
-  def getPreCtr(date: String, hour: String, spark: SparkSession) = {
-    val selectCondition = s"`dt`='$date' and `hour` <= '$hour'"
+  def getPreCtr(date: String, hour: String, dayInt: Int, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -dayInt)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = getTimeRangeSql3(date1, hour, date, hour)
     val sqlRequest =
       s"""
          |SELECT
@@ -147,7 +159,7 @@ object OcpcMinBidV3 {
        |  floor(adclass/1000) as ad_second_class,
        |  ocpc_flag,
        |  percentile(bid, 0.03) as min_bid,
-       |  percentile(cpm, 0.03) as min_cpm,
+       |  percentile(cpm, 0.06) as min_cpm,
        |  count(1) as cnt
        |FROM
        |  base_data
@@ -178,16 +190,16 @@ object OcpcMinBidV3 {
     resultDF
   }
 
-  def getBaseData(date: String, hour: String, spark: SparkSession) = {
-    // 取历史区间: score数据
-    //    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    //    val today = dateConverter.parse(date)
-    //    val calendar = Calendar.getInstance
-    //    calendar.setTime(today)
-    //    calendar.add(Calendar.DATE, -1)
-    //    val yesterday = calendar.getTime
-    //    val date1 = dateConverter.format(yesterday)
-    val selectCondition = s"`date`='$date' and `hour` <= '$hour'"
+  def getBaseData(date: String, hour: String, dayInt: Int, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -dayInt)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
     // todo 时间区间： hour
     //    val sqlRequest =
     //      s"""

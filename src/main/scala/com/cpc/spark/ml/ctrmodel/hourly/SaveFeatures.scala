@@ -2,14 +2,12 @@ package com.cpc.spark.ml.ctrmodel.hourly
 
 
 import java.text.SimpleDateFormat
-import java.util.{Calendar, Properties}
+import java.util.Calendar
 
-import com.cpc.spark.log.parser.TraceLog
 import com.cpc.spark.ml.common.Utils
-import com.typesafe.config.ConfigFactory
-import org.apache.spark.rdd.RDD
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{Row, SaveMode, SparkSession}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 import scala.collection.mutable.{ListBuffer, Map}
 import scala.sys.process._
@@ -897,16 +895,13 @@ object SaveFeatures {
          |        ,b.trace_op1
          |from (select * from dl_cpc.cpc_motivation_log
          |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick = 1) a
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
-         |        on a.userid = t2.id
          |    join
          |        (select *
          |            from dl_cpc.logparsed_cpc_trace_minute
          |            where `thedate` = "%s" and `thehour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
-         | where t2.id is null
-        """.stripMargin.format(date, hour, yesterday, date, hour))
+        """.stripMargin.format(date, hour, date, hour))
       .rdd
       .map {
         x =>
@@ -941,6 +936,7 @@ object SaveFeatures {
          |      ,un.date
          |      ,un.hour
          |      ,un.adclass
+         |      ,un.adslot_type
          |      ,un.media_appsid
          |      ,un.planid
          |      ,un.unitid
@@ -948,9 +944,8 @@ object SaveFeatures {
          |from (select searchid, userid, uid, planid, unitid, ideaid, adslot_type, isclick, ext['adclass'].int_value as adclass, media_appsid, planid, unitid, date, hour
          |from dl_cpc.cpc_user_api_callback_union_log where %s) as un
          |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
-         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
-         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7 and t2.id is null
-       """.stripMargin.format(get3DaysBefore(date, hour), yesterday, date, hour)
+         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and un.isclick = 1 and un.adslot_type <> 7
+       """.stripMargin.format(get3DaysBefore(date, hour), date, hour)
     println("sql: " + sql)
 
     //没有api回传标记，直接上报到trace
@@ -963,16 +958,17 @@ object SaveFeatures {
          |      ,un.date
          |      ,un.hour
          |      ,un.adclass
+         |      ,un.adslot_type
          |      ,un.media_appsid
          |      ,un.planid
          |      ,un.unitid
          |      ,tr.trace_type
-         |from (select a.searchid, a.userid, a.uid ,a.planid ,a.unitid ,a.ideaid, ext['adclass'].int_value as adclass, media_appsid, planid, unitid, a.date, a.hour from dl_cpc.cpc_union_log a
+         |from (select a.searchid, a.userid, a.uid ,a.planid ,a.unitid ,a.ideaid, ext['adclass'].int_value as adclass, adslot_type, media_appsid, planid, unitid, a.date, a.hour
+         |from dl_cpc.cpc_union_log a
          |where a.`date`="%s" and a.hour>="%s" and a.hour<="%s" and a.ext_int['is_api_callback'] = 0 and a.adslot_type <> 7 and a.isclick = 1) as un
          |join dl_cpc.logparsed_cpc_trace_minute as tr on tr.searchid = un.searchid
-         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
-         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s" and t2.id is null
-       """.stripMargin.format(date, before1hour, hour, yesterday, date, hour)
+         |where  tr.`thedate` = "%s" and tr.`thehour` = "%s"
+       """.stripMargin.format(date, before1hour, hour, date, hour)
     println("sql2: " + sql2)
 
     //应用商城api转化
@@ -985,6 +981,7 @@ object SaveFeatures {
          |      ,un.date
          |      ,un.hour
          |      ,un.adclass
+         |      ,7 as adslot_type
          |      ,un.media_appsid
          |      ,un.planid
          |      ,un.unitid
@@ -994,7 +991,7 @@ object SaveFeatures {
          |            ,opt['ideaid'] as ideaid
          |            ,trace_type
          |      from dl_cpc.logparsed_cpc_trace_minute
-         |      where `thedate` = "%s" and `thehour` = "%s" and trace_type = 'active_third'
+         |      where `thedate` = "%s" and `thehour` = "%s"
          |   ) as tr
          |join
          |   (  select searchid, userid, "" as uid, planid, unitid, ideaid, adclass, media_appsid, date, hour
@@ -1002,54 +999,41 @@ object SaveFeatures {
          |      where %s and isclick = 1
          |   ) as un
          |on tr.searchid = un.searchid and tr.ideaid = un.ideaid
-         |left join (select id from bdm.cpc_userid_test_dim where day='%s') t2 on un.userid = t2.id
-         |where t2.id is null
-       """.stripMargin.format(date, hour, get3DaysBefore(date, hour), yesterday)
+       """.stripMargin.format(date, hour, get3DaysBefore(date, hour))
     println("sql_moti: " + sql_moti)
 
     val userApiBackRDD = (spark.sql(sql)).union(spark.sql(sql2)).union(spark.sql(sql_moti))
       .rdd
       .map {
         x =>
-          (x.getAs[String]("searchid"), Seq(x))
+          ((x.getAs[String]("searchid"), x.getAs[Int]("ideaid")), Seq(x))
       }
+      .reduceByKey(_ ++ _)
       .map {
         x =>
+          val log = x._2.head
           var active_third = 0
-          var uid = ""
-          var userid = 0
-          var ideaid = 0
-          var adclass = 0
-          var media_appsid = ""
-          var planid = 0
-          var unitid = 0
-          var date = ""
-          var hour = ""
-          var search_time = ""
-          x._2.foreach(
-            x => {
-              uid = x.getAs[String]("uid")
-              userid = x.getAs[Int]("userid")
-              ideaid = x.getAs[Int]("ideaid")
-              adclass = x.getAs[Int]("adclass")
-              media_appsid = x.getAs[String]("media_appsid")
-              planid = x.getAs[Int]("planid")
-              unitid = x.getAs[Int]("unitid")
-              date = x.getAs[String]("date")
-              hour = x.getAs[String]("hour")
-              search_time = date + " " + hour
-
+          var uid = log.getAs[String]("uid")
+          var userid = log.getAs[Int]("userid")
+          var ideaid = log.getAs[Int]("ideaid")
+          var adclass = log.getAs[Int]("adclass")
+          var media_appsid = log.getAs[String]("media_appsid")
+          var planid = log.getAs[Int]("planid")
+          var unitid = log.getAs[Int]("unitid")
+          var adslot_type = log.getAs[Int]("adslot_type")
+          var date = log.getAs[String]("date")
+          var hour = log.getAs[String]("hour")
+          var search_time = date + " " + hour
+          x._2.foreach {
+            x =>
               val trace_type = x.getAs[String]("trace_type")
               if (trace_type == "active_third") {
                 active_third = 1
               }
-
-            }
-          )
-          (x._1, active_third, uid, userid, ideaid, search_time, adclass, media_appsid, planid, unitid)
+          }
+          (x._1._1, active_third, uid, userid, ideaid, search_time, adclass, media_appsid, planid, unitid, adslot_type)
       }
-      .filter(x => x._2 != -1) //过滤空值
-      .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time", "adclass", "media_appsid", "planid", "unitid")
+      .toDF("searchid", "label", "uid", "userid", "ideaid", "search_time", "adclass", "media_appsid", "planid", "unitid", "adslot_type")
 
     println("user api back: " + userApiBackRDD.count())
 
@@ -1080,20 +1064,18 @@ object SaveFeatures {
          |        ,a.userid
          |        ,b.trace_type
          |        ,b.trace_op1
+         |        ,b.trace_op2
          |        ,b.duration
          |        ,"conv_motivate" as flag
          |from (select * from dl_cpc.cpc_motivation_log
          |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick = 1) a
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
-         |        on a.userid = t2.id
          |    join
          |        (select *
          |            from dl_cpc.logparsed_cpc_trace_minute
          |            where `thedate` = "%s" and `thehour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
-         | where t2.id is null
-        """.stripMargin.format(date, hour, yesterday, date, hour)
+        """.stripMargin.format(date, hour, date, hour)
     println("sql_motivate: " + sql_motivate)
 
 
@@ -1112,20 +1094,18 @@ object SaveFeatures {
          |       ,a.userid
          |       ,b.trace_type
          |       ,b.trace_op1
+         |       ,b.trace_op2
          |       ,b.duration
          |       ,"conv_info_flow" as flag
          |from (select * from dl_cpc.cpc_union_log
-         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and adslot_type <> 7) a
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
-         |        on a.userid = t2.id
+         |        where `date` = "%s" and `hour` >= "%s" and `hour` <= "%s" and searchid is not null and searchid != "" and adslot_type <> 7) a
          |    join
          |        (select *
-         |            from dl_cpc.cpc_union_trace_log
-         |            where `date` = "%s" and `hour` = "%s"
+         |            from dl_cpc.logparsed_cpc_trace_minute
+         |            where `thedate` = "%s" and `thehour` = "%s"
          |         ) b
          |    on a.searchid = b.searchid
-         | where t2.id is null
-            """.stripMargin.format(date, hour, yesterday, date, hour)
+            """.stripMargin.format(date, before1hour, hour, date, hour)
     println("sql_info_flow: " + sql_info_flow)
 
     val cvrlog = (spark.sql(sql_motivate)).union(spark.sql(sql_info_flow))
@@ -1135,7 +1115,7 @@ object SaveFeatures {
           ((x.getAs[String]("searchid"), x.getAs[Int]("ideaid"), x.getAs[String]("flag")), Seq(x))
       }
       .reduceByKey(_ ++ _)
-      .map {
+      .flatMap {
         x =>
           val flag = x._1._3
           var convert = 0
@@ -1165,10 +1145,14 @@ object SaveFeatures {
 
           //存储active行为数据
           var active_map: Map[String, Int] = Map()
+          //active15 telephone
+          var active15Seq = Seq[String]()
+
           x._2.foreach(
             x => {
               val trace_type = x.getAs[String]("trace_type")
               val trace_op1 = x.getAs[String]("trace_op1")
+              val trace_op2 = x.getAs[String]("trace_op2")
 
               trace_type match {
                 case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
@@ -1187,18 +1171,38 @@ object SaveFeatures {
                 active_map += ("report_user_stayinwx" -> 1)
               }
 
+              if (trace_type == "active15") {
+                active15Seq :+= trace_op2
+              }
             }
           )
 
-          (x._1._1, x._1._2, convert, convert2, label_type, convert_sdk_dlapp,
-            active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
-            active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
-            active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
-            active_map.getOrElse("report_user_stayinwx", 0))
+          //建站表单多次提交，计算多次，不去重; 建站表单以active15为准
+          if (active15Seq.length < 1) {
+            Seq((x._1._1, x._1._2, convert, convert2, label_type, convert_sdk_dlapp,
+              active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
+              active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
+              active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
+              active_map.getOrElse("report_user_stayinwx", 0), ""))
+
+          } else {
+
+            var list = ListBuffer[(String, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, String)]()
+
+            for (telephone <- active15Seq) {
+              val tuple = (x._1._1, x._1._2, convert, convert2, label_type, convert_sdk_dlapp,
+                active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
+                active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
+                active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
+                active_map.getOrElse("report_user_stayinwx", 0), telephone)
+              list += tuple
+            }
+            list.toSeq
+          }
 
       }
       .toDF("searchid", "ideaid", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
-        "disactive", "active_href", "installed", "report_user_stayinwx")
+        "disactive", "active_href", "installed", "report_user_stayinwx", "telephone")
 
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getAs[Int]("label2") > 0).count())
 
@@ -1217,9 +1221,10 @@ object SaveFeatures {
         |       ext['long_click_count'].int_value as user_long_click_count,
         |       ext['exp_ctr'].int_value as exp_ctr,
         |       ext['exp_cvr'].int_value as exp_cvr,
-        |       ext['usertype'].int_value as usertype
-        |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` = "%s" and isclick = 1 and adslot_type <> 7
-      """.stripMargin.format(date, hour)
+        |       ext['usertype'].int_value as usertype,
+        |       userid
+        |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` >= "%s" and `hour` <= "%s" and isclick = 1 and adslot_type <> 7
+      """.stripMargin.format(date, before1hour, hour)
     println(sqlStmt)
     val clicklog = spark.sql(sqlStmt)
     println("click log", clicklog.count())
@@ -1239,7 +1244,8 @@ object SaveFeatures {
         |       ext['long_click_count'].int_value as user_long_click_count,
         |       ext['exp_ctr'].int_value as exp_ctr,
         |       ext['exp_cvr'].int_value as exp_cvr,
-        |       ext['usertype'].int_value as usertype
+        |       ext['usertype'].int_value as usertype,
+        |       m.userid
         |from dl_cpc.cpc_union_log
         |lateral view explode(motivation) c as m
         |where `date` = "%s" and `hour` = "%s" and m.isclick = 1 and adslot_type = 7
@@ -1252,6 +1258,7 @@ object SaveFeatures {
       .mode(SaveMode.Overwrite)
       //.parquet("/warehouse/test.db/ml_cvr_feature_v1/%s/%s".format(date, hour))  //test
       .parquet("/user/cpc/lrmodel/cvrdata_%s/%s/%s".format(version, date, hour))
+
     /*spark.sql(                                                                   //test
       """
         |ALTER TABLE test.ml_cvr_feature_v1 add if not exists PARTITION(`date` = "%s", `hour` = "%s")

@@ -3,7 +3,7 @@ package com.cpc.spark.ocpcV3.ocpc.filter
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSql2
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.{getTimeRangeSql2, getTimeRangeSql3}
 import com.cpc.spark.ocpcV3.utils
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql._
@@ -71,12 +71,19 @@ object OcpcCalculateAUC {
   }
 
   def getIndustry(date: String, hour: String, spark: SparkSession) = {
-    // 取历史区间: score数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    val selectCondition1 = s"`dt`='$date'"
+    calendar.add(Calendar.HOUR, -24)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition1 = getTimeRangeSql3(date1, hour1, date, hour)
 
     val sqlRequest =
       s"""
@@ -119,16 +126,29 @@ object OcpcCalculateAUC {
   }
 
   def getData(conversionGoal: String, version: String, date: String, hour: String, spark: SparkSession) = {
-    // 取历史区间: score数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
+//    // 取历史区间: score数据
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+//    val today = dateConverter.parse(date)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(today)
+////    calendar.add(Calendar.DATE, 2)
+////    val yesterday = calendar.getTime
+////    val date1 = dateConverter.format(yesterday)
+////    val selectCondition1 = s"`date`='$date1'"
+//    val selectCondition1 = s"`dt`='$date'"
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-//    calendar.add(Calendar.DATE, 2)
-//    val yesterday = calendar.getTime
-//    val date1 = dateConverter.format(yesterday)
-//    val selectCondition1 = s"`date`='$date1'"
-    val selectCondition1 = s"`dt`='$date'"
+    calendar.add(Calendar.HOUR, -24)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition1 = getTimeRangeSql3(date1, hour1, date, hour)
     // 取数据: score数据
     val sqlRequest =
       s"""
@@ -147,10 +167,10 @@ object OcpcCalculateAUC {
     val scoreData = spark.sql(sqlRequest)
 
 //    // 取历史区间: cvr数据
-    calendar.add(Calendar.DATE, 2)
-    val secondDay = calendar.getTime
-    val date2 = dateConverter.format(secondDay)
-    val selectCondition2 = s"`date` between '$date' and '$date2'"
+//    calendar.add(Calendar.DATE, 2)
+//    val secondDay = calendar.getTime
+//    val date2 = dateConverter.format(secondDay)
+    val selectCondition2 = s"`date`>='$date1'"
     // 根据conversionGoal选择cv的sql脚本
     var sqlRequest2 = ""
     if (conversionGoal == "1") {

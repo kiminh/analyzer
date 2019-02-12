@@ -166,20 +166,19 @@ object GetTraceReportV3 {
   def saveTraceReport_Motivate(ctx: SparkSession, date: String, hour: String): RDD[AdvTraceReport] = {
     val sql =
       s"""
-         |select b.planid as plan_id, b.unitid as unit_id, a.*, 0 as duration, 0 as auto, b.`date`, b.hour, b.show, b.click
+         |select b.userid as user_id, b.planid as plan_id, b.unitid as unit_id, a.*, 0 as duration, 0 as auto, b.`date`, b.hour, b.show, b.click
          |from (
-         |        select   b.user_id
-         |                ,a.ideaid as idea_id
-         |                ,a.appname
-         |                ,a.adslotid
-         |                ,a.trace_type
-         |                ,a.trace_op1
-         |                ,sum(if(a.trace_op1 ='OPEN_APP' and a.num > 0, 1, a.num)) as total_num
+         |        select   ta.idea_id
+         |                ,ta.appname
+         |                ,ta.adslotid
+         |                ,ta.trace_type
+         |                ,ta.trace_op1
+         |                ,sum(if(ta.num > 0, 1, ta.num)) as total_num
          |        from (
          |                select opt["appname"] as appname
          |                    ,trace_type
          |                    ,trace_op1
-         |                    ,opt['ideaid'] as ideaid
+         |                    ,opt['ideaid'] as idea_id
          |                    ,trace_op3
          |                    ,opt['adslotid'] as adslotid
          |                    ,count(1) as num
@@ -193,10 +192,8 @@ object GetTraceReportV3 {
          |                   ,opt['ideaid']
          |                   ,trace_op3
          |                   ,opt['adslotid']
-         |        ) a
-         |        left join src_cpc.cpc_idea b
-         |        on a.ideaid = b.id
-         |        group by b.user_id,a.ideaid,a.appname,a.adslotid,a.trace_type,a.trace_op1
+         |        ) ta
+         |        group by ta.idea_id, ta.appname, ta.adslotid, ta.trace_type, ta.trace_op1
          |    ) a
          |join (
          |    select a.userid, a.planid, a.unitid, a.ideaid, a.`date`, a.hour, b.show, b.click
@@ -214,13 +211,13 @@ object GetTraceReportV3 {
          |            group by ideaid
          |        ) b on a.ideaid = b.ideaid
          |    ) b
-         |on a.user_id = b.userid and a.idea_id = b.ideaid
+         |on a.idea_id = b.ideaid
       """.stripMargin.format(date, hour, date, hour, date, hour)
 
     val toResult = ctx.sql(sql)
       .rdd
       .map(x =>
-        AdvTraceReport(x.getAs[Long]("user_id").toInt,
+        AdvTraceReport(x.getAs[Int]("user_id"),
           x.getAs[Int]("plan_id"),
           x.getAs[Int]("unit_id"),
           x.getAs[String]("idea_id").toInt,
@@ -400,7 +397,7 @@ object GetTraceReportV3 {
          |            ,duration
          |            ,auto
          |      from dl_cpc.logparsed_cpc_trace_minute
-         |      where `thedate` = "%s" and `thehour` = "%s" and trace_type = 'active_third'
+         |      where `thedate` = "%s" and `thehour` = "%s"
          |   ) as tr
          |join
          |   (  select searchid, userid, planid, unitid, ideaid, isshow, isclick, date, hour
@@ -494,9 +491,8 @@ object GetTraceReportV3 {
     }.map {
       trace =>
         val trace_type = trace.getAs[String]("trace_type")
-        //val trace_op1 = trace.getAs[String]("trace_op1")
 
-        ((trace.getAs[String]("searchid"), trace.getAs[Int]("auto")), trace)
+        ((trace.getAs[String]("searchid"), trace.getAs[Int]("idea_id"), trace.getAs[Int]("auto")), trace)
     }.reduceByKey {
       case (x, y) => x //去重
     }.map {x =>

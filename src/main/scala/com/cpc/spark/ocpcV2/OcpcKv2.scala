@@ -57,9 +57,10 @@ object OcpcKv2 {
          |  sum(COALESCE(label2,0)) cvr2Cnt,
          |  sum(COALESCE(label3,0)) cvr3Cnt
          |from
-         |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1 and ocpc_log_dict['cpcBid']>0 and exptags not like "%cpcBid%") a
+         |  (select * from dl_cpc.ocpc_unionlog where $dtCondition2 and ocpc_log_dict['kvalue'] is not null and isclick=1 and (ocpc_log_dict['cpcBid']=0 or
+         |     exptags not like "%cpcBid%")) a
          |  left outer join
-         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition and label_type!=12) b on a.searchid = b.searchid
+         |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1 where $dtCondition and label_type in (1, 2, 3, 4, 5, 6)) b on a.searchid = b.searchid
          |  left outer join
          |  (select searchid, label as label3 from dl_cpc.ml_cvr_feature_v2 where $dtCondition and label=1 group by searchid, label) c on a.searchid = c.searchid
          |group by ideaid,

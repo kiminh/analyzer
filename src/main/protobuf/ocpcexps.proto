@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package ocpcexps;
+
+message SingleExpRecord {
+    string expVersion = 1;
+    map<string, string> expConf = 2;
+}
+
+
+message OcpcExpList {
+    repeated SingleExpRecord exprecord = 1;
+}

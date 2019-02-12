@@ -72,7 +72,6 @@ object prepareAgeModelSample {
       .save(s"/user/cpc/dnn/age/dnntest")
     train.unpersist()
   }
-
   def getSample(spark: SparkSession): DataFrame = {
     import spark.implicits._
 
@@ -92,6 +91,7 @@ object prepareAgeModelSample {
         val did = r.getAs[String]("did")
         val birth = r.getAs[String]("birth")
         var label = Array(0, 0, 0, 0)
+        try{
         if (birth != "") {
           if ((dateCur.toInt - birth.toInt) / 10000 < 18) {
             label = Array(1, 0, 0, 0)
@@ -104,8 +104,11 @@ object prepareAgeModelSample {
           }
         } else {
           label = Array(0, 0, 0, 0)
+          }
         }
-
+        catch {
+          case ex: Exception => println(birth)
+        }
         if (label != Array(0, 0, 0, 0)) {
           (did, label)
         } else {

@@ -39,7 +39,7 @@ object update_tag_userid_all {
 
     //从adv后台mysql获取人群包的url
     val table=s"(select look_like_id as tag,user_id as userid from adv.look_like where status = 0 and modified_time>'$date') as tmp"
-    spark.read.jdbc(jdbcUrl, table, jdbcProp).createTempView("ftp_tag_userid")
+    spark.read.jdbc(jdbcUrl, table, jdbcProp).repartition(1).createTempView("ftp_tag_userid")
 
     val sqlRequest3 =
       s"""
@@ -62,7 +62,7 @@ object update_tag_userid_all {
 
     //从adv后台mysql获取人群包的url
     val table1="(select plan_id as planid, user_id as userid from adv.idea group by plan_id, user_id) as tmp"
-    spark.read.jdbc(jdbcUrl, table1, jdbcProp).createTempView("temp_table")
+    spark.read.jdbc(jdbcUrl, table1, jdbcProp).repartition(1).createTempView("temp_table")
 
     val sqlRequest5 =
       s"""
