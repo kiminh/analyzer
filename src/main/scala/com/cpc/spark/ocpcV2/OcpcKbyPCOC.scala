@@ -6,7 +6,7 @@ import java.util.Calendar
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.cpc.spark.ocpc.utils.OcpcUtils._
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
-import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 
 import scala.collection.mutable
 import org.apache.spark.sql.functions._
@@ -17,7 +17,7 @@ object OcpcKbyPCOC {
   计算k值的新策略：需要jfb和pcoc，时间窗口为3天
   1. 抽取基础数据表，包括searchid, ideaid, precvr, isclick, iscvr1, iscvr2, dynamicbid, price
   2. 按ideaid统计数据：pcoc1, pcoc2, jfb
-  3. 生成结果表
+  3. 生成结果表：k = 0.9 / (pcoc * jfb)
    */
 
   def main(args: Array[String]): Unit = {
@@ -34,10 +34,41 @@ object OcpcKbyPCOC {
     val baseData = getBaseData(hourInt, date, hour, spark)
 
     // 按ideaid统计数据：pcoc1, pcoc2, jfb
-    val 
+    val calcualteResult = calculateData(baseData, date, hour, spark)
+
+    // 生成结果表：k = 0.9 / (pcoc * jfb)
+    val result = calcualteResult
+      .withColumn("k_ratio2", udfPCOCtoK()(col("pcoc1"), col("jfb")))
+      .withColumn("k_ratio3", udfPCOCtoK()(col("pcoc2"), col("jfb")))
+
+    result.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190212")
 
   }
 
+  def calculateData(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    按ideaid统计数据：pcoc1, pcoc2, jfb
+     */
+    val data = rawData
+      .groupBy("ideaid")
+      .agg(
+        avg(col("precvr")).alias("precvr"),
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr1")).alias("cv1"),
+        sum(col("iscvr2")).alias("cv2"),
+        sum(col("price")).alias("total_price"),
+        sum(col("dynamicbid")).alias("total_bid")
+      )
+      .withColumn("postcvr1", col("cv1") * 1.0 / col("click"))
+      .withColumn("postcvr2", col("cv2") * 1.0 / col("click"))
+      .withColumn("jfb", col("total_price") * 1.0 / col("total_bid"))
+      .withColumn("pcoc1", col("precvr") * 1.0 / col("postcvr1"))
+      .withColumn("pcoc2", col("precvr") * 1.0 / col("postcvr2"))
+
+    val resultDF = data.select("ideaid", "pcoc1", "pcoc2", "jfb")
+    resultDF.show(10)
+    resultDF
+  }
 
 
   def getBaseData(hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
@@ -75,7 +106,7 @@ object OcpcKbyPCOC {
          |  $selectCondition1
          |and media_appsid  in ("80000001", "80000002")
          |and round(ext["adclass"].int_value/1000) != 132101  --去掉互动导流
-         |and isshow = 1
+         |and isclick = 1
          |and ext['antispam'].int_value = 0
          |and ideaid > 0
          |and adsrc = 1
