@@ -42,6 +42,12 @@ object OcpcKbyPCOC {
       .withColumn("k_ratio3", udfPCOCtoK()(col("pcoc2"), col("jfb")))
 
     result.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190212")
+    val resultDF = result
+      .select("ideaid", "k_ratio2", "k_ratio3")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+    resultDF.repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcoc_k_hourly")
 
   }
 
