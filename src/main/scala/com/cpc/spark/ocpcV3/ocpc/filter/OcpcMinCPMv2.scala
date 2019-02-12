@@ -18,20 +18,22 @@ object OcpcMinCPMv2 {
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
+    val dayCnt = 2
 
+    println(s"parameters: date=$date, hour=$hour, dayCnt=$dayCnt")
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcMinCPMv2: $date, $hour").enableHiveSupport().getOrCreate()
 
     // 抽取数据
-    val baseData1 = getBaseData(date, hour, 7, spark)
+    val baseData1 = getBaseData(date, hour, dayCnt, spark)
 
     // 抽取转化数据
-    val cvrData1 = getCvrData("cvr1", date, hour, 7, spark)
-    val cvrData2 = getCvrData("cvr2", date, hour, 7, spark)
-    val cvrData3 = getCvrData("cvr3", date, hour, 7, spark)
+    val cvrData1 = getCvrData("cvr1", date, hour, dayCnt, spark)
+    val cvrData2 = getCvrData("cvr2", date, hour, dayCnt, spark)
+    val cvrData3 = getCvrData("cvr3", date, hour, dayCnt, spark)
 
     // 抽取expctr
-    val expCtrData = getPreCtr(date, hour, 7, spark)
+    val expCtrData = getPreCtr(date, hour, dayCnt, spark)
 
     val baseData = baseData1
       .join(expCtrData, Seq("searchid"), "inner")
