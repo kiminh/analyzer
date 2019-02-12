@@ -87,7 +87,7 @@ object OcpcKexp {
       .join(kv3, Seq("ideaid"), "outer")
       .join(kv4, Seq("ideaid"), "outer")
       .join(expIdeas, Seq("ideaid"), "left_outer")
-      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "k_ratio2_v4", "k_ratio3_v4", "flag", "conversion_goal")
+      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "k_ratio2_v4", "k_ratio3_v4", "flag")
       .withColumn("k_ratio2", col("k_ratio2_v1"))
       .withColumn("k_ratio3", col("k_ratio3_v1"))
       .withColumn("k_ratio2", when(col("flag") === 1, col("k_ratio2_v2")).otherwise(col("k_ratio2")))
@@ -102,14 +102,6 @@ object OcpcKexp {
 
 
 
-//    ideaid  string  NULL
-//    k_ratio2_v1     double  NULL
-//    k_ratio3_v1     double  NULL
-//    k_ratio2_v2     double  NULL
-//    k_ratio3_v2     double  NULL
-//    flag    int     NULL
-//    k_ratio2        double  NULL
-//    k_ratio3        double  NULL
 
 //    test.ocpc_k_exp_middle_hourly
     kvalue
