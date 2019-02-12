@@ -75,7 +75,7 @@ object Antispam_TKID {
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
-      .text("/user/cpc/model_server/data/$date_before3hours/$hour_before3hours")
+      .text(s"/user/cpc/model_server/data/$date_before3hours/$hour_before3hours")
 
     println("antispam tkid done")
 
