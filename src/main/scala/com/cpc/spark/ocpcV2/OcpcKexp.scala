@@ -14,9 +14,9 @@ object OcpcKexp {
 
     val result = selectKbyEXP(date, hour, spark)
     val tableName = "ocpc_regression_k_final"
-//    result.write.mode("overwrite").saveAsTable("test." + tableName)
-    result
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc." + tableName)
+    result.write.mode("overwrite").saveAsTable("test." + tableName)
+//    result
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc." + tableName)
     println(s"save data into table: $tableName")
   }
 
@@ -70,7 +70,7 @@ object OcpcKexp {
       .select("ideaid", "k_ratio2_v4", "k_ratio3_v4")
 
     // 读取实验ideaid列表
-    val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
+    val filename = "/user/cpc/wangjun/ocpc_exp_ideas_test.txt"
     val data = spark.sparkContext.textFile(filename)
     val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     rawRDD.foreach(println)
@@ -86,7 +86,6 @@ object OcpcKexp {
       .join(kv2, Seq("ideaid"), "outer")
       .join(kv3, Seq("ideaid"), "outer")
       .join(kv4, Seq("ideaid"), "outer")
-      .join(ocpcConversionGoal, Seq("ideaid"), "left_outer")
       .join(expIdeas, Seq("ideaid"), "left_outer")
       .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "k_ratio2_v4", "k_ratio3_v4", "flag", "conversion_goal")
       .withColumn("k_ratio2", col("k_ratio2_v1"))
@@ -114,13 +113,14 @@ object OcpcKexp {
 
 //    test.ocpc_k_exp_middle_hourly
     kvalue
-      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "flag", "k_ratio2", "k_ratio3")
+      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "k_ratio2_v4", "k_ratio3_v4", "flag", "k_ratio2", "k_ratio3")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
       .write
       .mode("overwrite")
-      .insertInto("dl_cpc.ocpc_k_exp_middle_hourly")
+      .saveAsTable("test.ocpc_k_exp_middle_hourly20190212")
+//      .insertInto("dl_cpc.ocpc_k_exp_middle_hourly")
 
 
     kvalue.show(10)
