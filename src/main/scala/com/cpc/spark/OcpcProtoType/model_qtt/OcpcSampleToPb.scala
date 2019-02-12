@@ -93,6 +93,7 @@ object OcpcSampleToPb {
     }
     println("size of the dataframe")
     println(dataset.count)
+    println(s"filename: $filename")
     dataset.show(10)
     dataset.printSchema()
     var cnt = 0
