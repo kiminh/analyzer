@@ -3,11 +3,12 @@ package com.cpc.spark.ocpcV3.HotTopicOcpc.model
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpc.OcpcUtils._
 import org.apache.spark.sql.{ DataFrame, SparkSession }
 import org.apache.spark.sql.{ Column,    Dataset, Row, SparkSession }
-import com.cpc.spark.udfs.Udfs_wj._
 import org.apache.spark.sql.functions._
+
+import com.cpc.spark.ocpc.OcpcUtils._
+import com.cpc.spark.udfs.Udfs_wj._
 
 object OcpcPIDwithCPA {
   /*
@@ -37,16 +38,16 @@ object OcpcPIDwithCPA {
       mediaSelection = s"media_appsid = '80002819'"
     }
 
-    val prevTable = spark
+    val prevTable = spark                           //prevTable中的数据为identifier(unitid)对应的cpa_given, k值, 转化数
       .table("test.ocpc_hottopic_prev_pb_hourly" )
       .where(s"version='$version'" )
     val cvrData = getCVR1data( date, hour, spark )  //返回dl_cpc.ml_cvr_feature_v1中在date日，hour时之前24h内label_type!=12且有转化的search_id
 
-    val historyData = getHistory(mediaSelection, date, hour, spark) // 获取ocpc_union_log_hourly中date日，hour时之前24h内searchid, unitid等数据
+    val historyData = getHistory(mediaSelection, date, hour, spark) // 获取ocpc_union_log_hourly中date日，hour时之前24h内,热点段子的每个searchid所对应的广告信息，浏览点击，k值，cpa等相关数据
     val kvalue      = getHistoryK( historyData, prevTable, date, hour, spark ) // 返回每个unitid（identifier）对应的最终kvalue
-    val cpaHistory  = getCPAhistory( historyData, cvrData, 1, date, hour, spark ) //返回identifier, cpa, cvrcnt, cost, avg(cpagiven) as cpagiven, conversion_goal
+    val cpaHistory  = getCPAhistory( historyData, cvrData, 1, date, hour, spark ) //返回identifier, cpa（实际计算出来的，cost/cvrcnt）, cvrcnt, cost, avg(cpagiven) as cpagiven, conversion_goal
     val cpaRatio    = calculateCPAratio(cpaHistory, date, hour, spark) // identifier, cpagiven, cost, cvrcnt, cpa, cpa_ratio, conversion_goal
-    val result      = updateK( kvalue, cpaRatio, date, hour, spark ) //
+    val result      = updateK( kvalue, cpaRatio, date, hour, spark )   //
     val resultDF    = result
       .select("identifier", "k_value", "conversion_goal" )
       .withColumn("date",    lit(date)    )
@@ -245,8 +246,8 @@ object OcpcPIDwithCPA {
       .select("identifier", "cpa_ratio", "conversion_goal", "kvalue")
 
     val resultDF = rawData
-      .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
-      .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
+      .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")) )
+      .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")) )
       .withColumn("k_value",   col("updated_k") )
 
     resultDF

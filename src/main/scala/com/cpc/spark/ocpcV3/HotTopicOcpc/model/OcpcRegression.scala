@@ -33,8 +33,7 @@ object OcpcRegression {
     }
 
     // 中间表
-    val middleData = getMiddleData(mediaSelection, version, hourCnt, date, hour, spark) // 返回ocpc_union_log_hourly中date日，hour时之前hourCnt小时内
-    // 的identifier,k_ratio,cpagiven,cpa, ratio, click_cnt, cvr_cnt
+    val middleData = getMiddleData(mediaSelection, version, hourCnt, date, hour, spark) // 返回热点段子ocpc广告的1,identifier, 2,k_ratio, 3,cpagiven, cpa, ratio(cpa/cpagiven), click_cnt, cvr_cnt
     val tablename = "dl_cpc.ocpc_regression_middle_hourly"
     val result = middleData
       .withColumn("conversion_goal", lit(1))
@@ -46,7 +45,7 @@ object OcpcRegression {
     result.write.mode("overwrite").insertInto( tablename )
 
     // 结果表
-    val kvalue = getKWithRatio( middleData, date, hour, spark ) //返回结果为identifier、k_ratio
+    val kvalue = getKWithRatio( middleData, date, hour, spark ) //返回结果为identifier,k_ratio
     val resultDF = kvalue
       .withColumn("conversion_goal", lit(1) )
       .select("identifier", "k_ratio", "conversion_goal")
@@ -63,10 +62,9 @@ object OcpcRegression {
     /**
       * 返回ocpc_union_log_hourly中date日，hour时之前hourCnt小时内的identifier,k_ratio,cpagiven,cpa, ratio, click_cnt, cvr_cnt
       * */
-    val ctrData = getCtrData(  mediaSelection, hourCnt, date, hour, spark ) //返回ocpc_union_log_hourly中date日，hour时之前hourCnt小时内
-    // searchid, unitid, identifier, isclick, price, cpagiven, kvalue
+    val ctrData = getCtrData(  mediaSelection, hourCnt, date, hour, spark ) //返回ocpc_union_log_hourly中date日，hour时之前hourCnt小时内的searchid, unitid, identifier, isclick, price, cpagiven, kvalue
     val cvrData = getCvr1Data( mediaSelection, hourCnt, date, hour, spark ) //返回ml_cvr_feature_v1中排除应用商城后的search_id及其对应的转化情况label2
-    val rawData = ctrData
+    val rawData = ctrData  // identifier, kvalue, cpagiven, isclick, price, label
       .join( cvrData, Seq("searchid"), "left_outer" )
       .na.fill(0, Seq("label") )
       .select("identifier", "kvalue", "cpagiven", "isclick", "price", "label" )
@@ -92,9 +90,7 @@ object OcpcRegression {
 
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
-
     resultDF
-
   }
 
   def getCtrData(mediaSelection: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
@@ -178,16 +174,16 @@ object OcpcRegression {
 
     val res = baseData  // Array
       .filter(s"ratio is not null")
-      .withColumn("str", concat_ws(" ", col(s"k_ratio"), col("ratio"), col("click_cnt")) )
+      .withColumn("str", concat_ws(" ", col(s"k_ratio"), col("ratio"), col("click_cnt")) ) //concat_ws使用" "做为连接符，将后面3个字段的值连接成一行
       .groupBy("identifier" )
-      .agg( collect_set("str").as("liststr" ) )
+      .agg( collect_set("str").as("liststr" ) ) // 将数据按identifier分组后，对每组中"str"中的值去重后放入一个列表中，并重命名为liststr
       .select("identifier", "liststr").collect()
     //    rawData.write.mode("overwrite").saveAsTable("test.ocpc_check_regression20190103")
 
     //    val res = rawData.collect()
 
     var resList = new mutable.ListBuffer[(String, Double)]()
-    for ( row <- res ){
+    for ( row <- res ){  //每个identifier创建一个线性回归方程
       val identifier = row(0).toString
       val pointList  = row(1).asInstanceOf[scala.collection.mutable.WrappedArray[String]].map( x => {
         val y = x.trim.split("\\s+")
