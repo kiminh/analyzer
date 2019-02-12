@@ -14,9 +14,9 @@ object OcpcKexp {
 
     val result = selectKbyEXP(date, hour, spark)
     val tableName = "ocpc_regression_k_final"
-    result.write.mode("overwrite").saveAsTable("test." + tableName)
-//    result
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc." + tableName)
+//    result.write.mode("overwrite").saveAsTable("test." + tableName)
+    result
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc." + tableName)
     println(s"save data into table: $tableName")
   }
 
@@ -70,7 +70,7 @@ object OcpcKexp {
       .select("ideaid", "k_ratio2_v4", "k_ratio3_v4")
 
     // 读取实验ideaid列表
-    val filename = "/user/cpc/wangjun/ocpc_exp_ideas_test.txt"
+    val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
     val data = spark.sparkContext.textFile(filename)
     val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     rawRDD.foreach(println)
