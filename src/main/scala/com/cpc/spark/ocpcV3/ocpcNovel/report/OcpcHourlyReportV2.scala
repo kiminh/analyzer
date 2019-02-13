@@ -34,13 +34,189 @@ object OcpcHourlyReportV2 {
     val dataIdea = dataIdeaWithAUC
       .join(qttCvrData, Seq("unitid", "conversion_goal"), "left_outer")
       .select("unitid", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "qtt_cvr", "date", "hour")
-
-    dataIdea.write.mode("overwrite").saveAsTable("test.check_ocpc_novel2019021309")
+    dataIdea.write.mode("overwrite").saveAsTable("test.check_ocpc_novel_idea2019021309")
 
     // 分conversion_goal统计数据
-//    val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
-//    val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
-//    val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
+    val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
+    val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
+    val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
+    dataConversion.write.mode("overwrite").saveAsTable("test.check_ocpc_novel_conversion2019021309")
+  }
+
+  def getDataByConversion(rawData: DataFrame, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    1. 获取新增数据如auc
+    2. 计算报表数据
+    3. 数据关联并存储到结果表
+     */
+
+    // 获取新增数据如auc
+    val aucData = spark
+      .table("dl_cpc.ocpc_novel_auc_report_summary_hourly")
+      .where(s"`date`='$date' and `hour`='$hour'")
+      .select("conversion_goal", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+
+    // 计算报表数据
+    val hourInt = hour.toInt
+
+    // 关联数据
+    val resultDF = rawData
+      .join(costData, Seq("conversion_goal"), "left_outer")
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp")
+      .join(aucData, Seq("conversion_goal"), "left_outer")
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+    resultDF
+  }
+
+  def preprocessCostByConversion(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    1. 从adv获取unitid与ideaid的对应list
+    2. 给rawdata增加unitid维度
+    3. 按照unitid维度统计cost
+     */
+    val data = spark
+      .table("dl_cpc.ocpcv3_ctr_data_hourly")
+      .where(s"`date`='$date' and `hour` <= '$hour' and media_appsid in ('80000001', '80000002')")
+      .withColumn("idea_id", col("ideaid"))
+      .withColumn("unit_id", col("unitid"))
+      .select("idea_id", "unit_id")
+      .distinct()
+
+    val baseData = rawData
+      .join(data, Seq("idea_id"), "inner")
+      .select("user_id", "unit_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+      .withColumn("click_cpa_given", col("cpa_given") * col("click"))
+
+    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_report20190128")
+
+    baseData.createOrReplaceTempView("base_data")
+
+    // 计算step2的cost
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  unit_id,
+         |  conversion_goal,
+         |  sum(click_cpa_given) / sum(click) as cpa_given,
+         |  sum(cost) as cost,
+         |  sum(conversion) as conversion
+         |FROM
+         |  base_data
+         |WHERE
+         |  is_step2=1
+         |GROUP BY unit_id, conversion_goal
+       """.stripMargin
+    println(sqlRequest1)
+    val unitidData = spark
+      .sql(sqlRequest1)
+      .withColumn("cost_given", col("cpa_given") * col("conversion") * 1.2 / 0.8)
+      .withColumn("high_cpa_cost", col("cost") - col("cost_given"))
+      .withColumn("high_cpa_cost", when(col("high_cpa_cost") <= 0, 0.0).otherwise(col("high_cpa_cost")))
+    unitidData.createOrReplaceTempView("unitid_data")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  0 as conversion_goal,
+         |  SUM(cost) as step2_cost,
+         |  SUM(high_cpa_cost) as step2_cpa_high_cost
+         |FROM
+         |  unitid_data
+       """.stripMargin
+    println(sqlRequest2)
+    val totalCost = spark.sql(sqlRequest2)
+
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  conversion_goal,
+         |  SUM(cost) as step2_cost,
+         |  SUM(high_cpa_cost) as step2_cpa_high_cost
+         |FROM
+         |  unitid_data
+         |GROUP BY conversion_goal
+       """.stripMargin
+    println(sqlRequest3)
+    val splitCost = spark.sql(sqlRequest3)
+
+    val resultDF = totalCost.union(splitCost).na.fill(0, Seq("step2_cost", "step2_cpa_high_cost"))
+
+    resultDF
+  }
+
+  def preprocessDataByConversion(rawData: DataFrame, date: String, hour: String, spark: SparkSession) ={
+    /*
+    conversion_goal string  NULL
+    total_adnum     bigint  NULL
+    step2_adnum     bigint  NULL
+    low_cpa_adnum   bigint  NULL
+    high_cpa_adnum  bigint  NULL
+    step2_cost      double  NULL
+    step2_cpa_high_cost     double  NULL
+    impression      bigint  NULL
+    click   bigint  NULL
+    conversion      bigint  NULL
+    ctr     double  NULL
+    click_cvr       double  NULL
+    cost    double  NULL
+    acp     double  NULL
+    date    string  NULL
+    hour    string  NULL
+    "searchid", "ideaid", "userid", "isclick", "isshow", "price", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "iscvr1", "iscvr2", "iscvr3", "iscvr"
+     */
+    rawData.createOrReplaceTempView("raw_data")
+
+    val sqlRequest0 =
+      s"""
+         |SELECT
+         |  0 as conversion_goal,
+         |  COUNT(1) as total_adnum,
+         |  SUM(case when is_step2=1 then 1 else 0 end) as step2_adnum,
+         |  SUM(case when is_cpa_ok=1 and is_step2=1 then 1 else 0 end) as low_cpa_adnum,
+         |  SUM(case when is_cpa_ok=0 and is_step2=1 then 1 else 0 end) as high_cpa_adnum,
+         |  SUM(impression) as impression,
+         |  SUM(click) as click,
+         |  SUM(conversion) as conversion,
+         |  SUM(cost) as cost,
+         |  SUM(cost) * 1.0 / SUM(click) as acp
+         |FROM
+         |  raw_data
+       """.stripMargin
+    println(sqlRequest0)
+    val result0 = spark.sql(sqlRequest0)
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  conversion_goal,
+         |  COUNT(1) as total_adnum,
+         |  SUM(case when is_step2=1 then 1 else 0 end) as step2_adnum,
+         |  SUM(case when is_cpa_ok=1 and is_step2=1 then 1 else 0 end) as low_cpa_adnum,
+         |  SUM(case when is_cpa_ok=0 and is_step2=1 then 1 else 0 end) as high_cpa_adnum,
+         |  SUM(impression) as impression,
+         |  SUM(click) as click,
+         |  SUM(conversion) as conversion,
+         |  SUM(cost) as cost,
+         |  SUM(cost) * 1.0 / SUM(click) as acp
+         |FROM
+         |  raw_data
+         |GROUP BY conversion_goal
+       """.stripMargin
+    println(sqlRequest1)
+    val result1 = spark.sql(sqlRequest1)
+
+    val resultDF = result0
+      .union(result1)
+      .withColumn("ctr", col("click") * 1.0 / col("impression"))
+      .withColumn("click_cvr", col("conversion") * 1.0 / col("click"))
+      .withColumn("click_cvr", when(col("click")===0, 1).otherwise(col("click_cvr")))
+      .withColumn("acp", col("cost") * 1.0 / col("click"))
+      .withColumn("acp", when(col("click")===0, 0).otherwise(col("acp")))
+
+    resultDF
   }
 
   def getQTTcvr(date: String, hour: String, spark: SparkSession) = {
@@ -154,7 +330,7 @@ object OcpcHourlyReportV2 {
       .withColumn("step2_click_percent", col("step2_percent"))
       .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
       .withColumn("cpa_ratio", when(col("cvr_cnt").isNull || col("cvr_cnt") === 0, 0.0).otherwise(col("cpa_given") * 1.0 / col("cpa_real")))
-      .withColumn("is_cpa_ok", when(col("cpa_ratio")>=0.8, 1).otherwise(0))
+      .withColumn("is_cpa_ok", when(col("cpa_ratio")>=0.64, 1).otherwise(0))
       .withColumn("impression", col("show_cnt"))
       .withColumn("click", col("ctr_cnt"))
       .withColumn("conversion", col("cvr_cnt"))
