@@ -31,10 +31,11 @@ object OcpcLightBulb{
       .appName(s"OcpcLightBulb: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
-    val tableName = "test.ocpc_qtt_light_control"
+    // todo
+    val tableName = "test.ocpc_qtt_light_control20190213"
 
-    // 清除redis里面的数据
-    cleanRedis(tableName, date, hour, spark)
+//    // 清除redis里面的数据
+//    cleanRedis(tableName, date, hour, spark)
 
 
     // 抽取数据
@@ -49,8 +50,8 @@ object OcpcLightBulb{
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
     data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
 
-    // 存入redis
-    saveDataToRedis(tableName, date, hour, spark)
+//    // 存入redis
+//    saveDataToRedis(tableName, date, hour, spark)
   }
 
   def getOcpcRecord(date: String, hour: String, spark: SparkSession) = {
@@ -183,7 +184,15 @@ object OcpcLightBulb{
   }
 
   def getRecommendationAd(date: String, hour: String, spark: SparkSession) = {
-    val selectCondition = s"`date`='$date' and `hour`='$hour' and version='qtt_demo'"
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
     val sqlRequest =
         s"""
            |select
@@ -204,7 +213,7 @@ object OcpcLightBulb{
            |    (
            |        select distinct unitid, adslot_type
            |        FROM dl_cpc.ocpc_ctr_data_hourly
-           |        where date = '$date'
+           |        where date >= '$date1'
            |    ) as b
            |ON
            |    a.unitid=b.unitid
