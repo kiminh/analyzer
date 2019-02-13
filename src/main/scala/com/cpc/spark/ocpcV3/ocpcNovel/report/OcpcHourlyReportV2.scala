@@ -77,17 +77,9 @@ object OcpcHourlyReportV2 {
     2. 给rawdata增加unitid维度
     3. 按照unitid维度统计cost
      */
-    val data = spark
-      .table("dl_cpc.ocpcv3_ctr_data_hourly")
-      .where(s"`date`='$date' and `hour` <= '$hour' and media_appsid in ('80000001', '80000002')")
-      .withColumn("idea_id", col("ideaid"))
-      .withColumn("unit_id", col("unitid"))
-      .select("idea_id", "unit_id")
-      .distinct()
 
     val baseData = rawData
-      .join(data, Seq("idea_id"), "inner")
-      .select("user_id", "unit_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+      .select("unitid", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
       .withColumn("click_cpa_given", col("cpa_given") * col("click"))
 
     baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_report20190128")
@@ -98,7 +90,7 @@ object OcpcHourlyReportV2 {
     val sqlRequest1 =
       s"""
          |SELECT
-         |  unit_id,
+         |  unitid,
          |  conversion_goal,
          |  sum(click_cpa_given) / sum(click) as cpa_given,
          |  sum(cost) as cost,
@@ -107,7 +99,7 @@ object OcpcHourlyReportV2 {
          |  base_data
          |WHERE
          |  is_step2=1
-         |GROUP BY unit_id, conversion_goal
+         |GROUP BY unitid, conversion_goal
        """.stripMargin
     println(sqlRequest1)
     val unitidData = spark
