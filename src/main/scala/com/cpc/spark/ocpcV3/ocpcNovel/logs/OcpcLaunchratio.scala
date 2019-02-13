@@ -100,7 +100,7 @@ object OcpcLaunchratio {
        """.stripMargin
 
         val data3=spark.sql(sql3)
-        val money_overall=data3.select("money").rdd.map(x => x.getAs[Int]("money")).reduce(_+_).toDouble
+        val money_overall=data3.select("money").rdd.map(x => x.getAs[Long]("money")).reduce(_+_).toDouble
          data3.withColumn("sum_money_ratio",round(col("money")/money_overall,3))
           .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata3")
     //直投暗投ocpc及cpc分析
