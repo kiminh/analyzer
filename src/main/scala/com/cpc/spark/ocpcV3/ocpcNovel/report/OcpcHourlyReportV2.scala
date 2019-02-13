@@ -48,14 +48,12 @@ object OcpcHourlyReportV2 {
 
     // 获取新增数据如auc
     val aucData = spark
-      .table("dl_cpc.ocpc_qtt_auc_report_detail_hourly")
+      .table("dl_cpc.ocpc_novel_auc_report_detail_hourly")
       .where(s"`date`='$date' and `hour`='$hour'")
-      .select("ideaid", "userid", "conversion_goal", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+      .select("unitid", "userid", "conversion_goal", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
 
     // 计算报表数据
     val resultDF = rawData
-      .withColumn("idea_id", col("ideaid"))
-      .withColumn("user_id", col("userid"))
       .withColumn("step2_click_percent", col("step2_percent"))
       .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
       .withColumn("cpa_ratio", when(col("cvr_cnt").isNull || col("cvr_cnt") === 0, 0.0).otherwise(col("cpa_given") * 1.0 / col("cpa_real")))
@@ -73,8 +71,8 @@ object OcpcHourlyReportV2 {
       .withColumn("recent_k", when(col("recent_k").isNull, 0.0).otherwise(col("recent_k")))
       .withColumn("cpa_real", when(col("cpa_real").isNull, 9999999.0).otherwise(col("cpa_real")))
       //      .select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "date", "hour")
-      .join(aucData, Seq("ideaid", "userid", "conversion_goal"), "left_outer")
-      .select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
+      .join(aucData, Seq("unitid", "userid", "conversion_goal"), "left_outer")
+      .select("unitid", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
 
     resultDF.show(10)
 
@@ -89,7 +87,7 @@ object OcpcHourlyReportV2 {
     val sqlRequest =
       s"""
          |SELECT
-         |  ideaid,
+         |  unitid,
          |  userid,
          |  conversion_goal,
          |  sum(case when ocpc_step=2 then 1 else 0 end) * 1.0 / count(1) as step2_percent,
@@ -107,7 +105,7 @@ object OcpcHourlyReportV2 {
          |  sum(case when isclick=1 and hr='$hour' then kvalue else 0 end) * 1.0 / sum(case when hr='$hour' then isclick else 0 end) as recent_k
          |FROM
          |  raw_data
-         |GROUP BY ideaid, userid, conversion_goal
+         |GROUP BY unitid, userid, conversion_goal
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
@@ -125,7 +123,7 @@ object OcpcHourlyReportV2 {
     s"""
        |SELECT
        |  searchid,
-       |  ideaid,
+       |  unitid,
        |  userid,
        |  isclick,
        |  isshow,
@@ -182,7 +180,7 @@ object OcpcHourlyReportV2 {
       .join(cvr2Data, Seq("searchid"), "left_outer")
       .join(cvr3Data, Seq("searchid"), "left_outer")
       .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
-      .select("searchid", "ideaid", "userid", "isclick", "isshow", "price", "exp_cvr", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "hr", "iscvr1", "iscvr2", "iscvr3", "iscvr")
+      .select("searchid", "unitid", "userid", "isclick", "isshow", "price", "exp_cvr", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "hr", "iscvr1", "iscvr2", "iscvr3", "iscvr")
 
     resultDF.show(10)
 
