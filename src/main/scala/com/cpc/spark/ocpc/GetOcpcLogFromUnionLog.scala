@@ -38,7 +38,7 @@ object GetOcpcLogFromUnionLog {
          |  a.exptags,
          |  a.ext_int['bid_ocpc'] as cpa_given,
          |  a.ext_string['ocpc_log'] as ocpc_log,
-         |  b.label2 as iscvr1
+         |  b.label2 as iscvr
          | from
          |      (
          |        select *
