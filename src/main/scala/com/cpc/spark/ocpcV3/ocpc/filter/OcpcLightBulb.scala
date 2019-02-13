@@ -31,10 +31,11 @@ object OcpcLightBulb{
       .appName(s"OcpcLightBulb: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
-    val tableName = "test.ocpc_qtt_light_control"
+    // todo
+    val tableName = "test.ocpc_qtt_light_control20190213"
 
-    // 清除redis里面的数据
-    cleanRedis(tableName, date, hour, spark)
+//    // 清除redis里面的数据
+//    cleanRedis(tableName, date, hour, spark)
 
 
     // 抽取数据
@@ -48,13 +49,13 @@ object OcpcLightBulb{
         .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
     data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
-    data
-      .withColumn("date", lit(date))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
-
-    // 存入redis
-    saveDataToRedis(tableName, date, hour, spark)
+//    data
+//      .withColumn("date", lit(date))
+//      .withColumn("version", lit("qtt_demo"))
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
+//
+//    // 存入redis
+//    saveDataToRedis(tableName, date, hour, spark)
   }
 
   def getOcpcRecord(date: String, hour: String, spark: SparkSession) = {
@@ -211,7 +212,7 @@ object OcpcLightBulb{
            |        date = '$date'
            |    and is_recommend = 1
            |    and version = 'qtt_demo'
-           |    and industry in ('elds')) as a
+           |    and ((industry='elds') or (industry='feedapp' and original_conversion=1))) as a
            |INNER JOIN
            |    (
            |        select distinct unitid, adslot_type
