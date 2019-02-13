@@ -31,7 +31,6 @@ object OcpcLightBulb{
       .appName(s"OcpcLightBulb: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
-    // todo
     val tableName = "test.ocpc_qtt_light_control"
 
     // 清除redis里面的数据
