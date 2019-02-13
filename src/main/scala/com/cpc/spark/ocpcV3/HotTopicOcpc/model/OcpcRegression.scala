@@ -190,7 +190,7 @@ object OcpcRegression {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       } )
       val coffList = fitPoints( pointList.toList )
-      val targetK = 0.95
+      val targetK = 1.1
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
       println("identifier " + identifier, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
