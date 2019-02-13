@@ -53,8 +53,7 @@ object OcpcKexp {
       .withColumn("k_ratio2_v3", col("k_ratio2"))
       .withColumn("k_ratio3_v3", col("k_ratio3"))
       .select("ideaid", "k_ratio2_v3", "k_ratio3_v3")
-
-    // todo
+    
     val kv4Raw = spark
       .table("dl_cpc.ocpc_pcoc_k_hourly")
       .where(selectCondition)
