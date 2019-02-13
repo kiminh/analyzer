@@ -12,7 +12,7 @@ object OcpcLaunchratio {
     val sql1=
       s"""
          |select
-         |  dt as date,
+         |  dt as `date`,
          |  unitid,
          |  usertype,
          |  adclass,
@@ -60,6 +60,7 @@ object OcpcLaunchratio {
          |  sum(if(media=='qtt',money_byunit,0)) as qtt_money,
          |  sum(if(media=='novel',money_byunit,0)) as novel_money
          |  from test.OcpcLaunchdata
+         |  where date='$date'
          |  group by unitid
          |) a
        """.stripMargin
