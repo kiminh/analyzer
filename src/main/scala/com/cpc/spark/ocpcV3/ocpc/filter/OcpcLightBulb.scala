@@ -49,6 +49,10 @@ object OcpcLightBulb{
         .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
     data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
+    data
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
 
 //    // 存入redis
 //    saveDataToRedis(tableName, date, hour, spark)
