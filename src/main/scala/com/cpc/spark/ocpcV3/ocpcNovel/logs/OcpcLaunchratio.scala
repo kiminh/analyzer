@@ -41,7 +41,7 @@ object OcpcLaunchratio {
          |  ELSE "other" END
        """.stripMargin
     println(sql1)
-    spark.sql(sql1).write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata")
+    spark.sql(sql1).repartition(1).write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata")
     //标记直投暗投 choose 1 直投，choose 0 暗投
     val sql2=
       s"""
