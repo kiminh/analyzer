@@ -32,10 +32,10 @@ object OcpcLightBulb{
       .enableHiveSupport().getOrCreate()
 
     // todo
-    val tableName = "test.ocpc_qtt_light_control20190213"
+    val tableName = "test.ocpc_qtt_light_control"
 
-//    // 清除redis里面的数据
-//    cleanRedis(tableName, date, hour, spark)
+    // 清除redis里面的数据
+    cleanRedis(tableName, date, hour, spark)
 
 
     // 抽取数据
@@ -54,8 +54,8 @@ object OcpcLightBulb{
       .withColumn("version", lit("qtt_demo"))
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
 
-//    // 存入redis
-//    saveDataToRedis(tableName, date, hour, spark)
+    // 存入redis
+    saveDataToRedis(tableName, date, hour, spark)
   }
 
   def getOcpcRecord(date: String, hour: String, spark: SparkSession) = {
