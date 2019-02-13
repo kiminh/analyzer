@@ -65,10 +65,10 @@ object OcpcLaunchratio {
          |) a
        """.stripMargin
 
-    val data1=spark.sql(sql2)
-
-      spark.sql("select * from test.OcpcLaunchdata where media = 'novel'").join(data1,Seq("unitid"))
-        .write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata2")
+//    val data1=spark.sql(sql2)
+//
+//      spark.sql("select * from test.OcpcLaunchdata where media = 'novel'").join(data1,Seq("unitid"))
+//        .write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata2")
 
     //直投暗投总体分析
     val sql3=
