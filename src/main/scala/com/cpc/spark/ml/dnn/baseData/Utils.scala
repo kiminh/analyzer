@@ -57,13 +57,13 @@ object Utils {
 
     //保存count文件
     val fileName = "count_" + path.split("/").init.last
-    print("count file name : " + fileName)
+    println("count file name : " + fileName)
     println(s"total num is : ${acc.sum}")
     s"echo ${acc.sum}" #> new File(s"$fileName") !
 
     s"hadoop fs -put $fileName $path/count" !
 
-    val cnt = "cat count" !!
+    val cnt = s"cat $fileName" !!
 
     if (cnt.stripLineEnd == "") {
       println("ERROR : there is no number in count file")
