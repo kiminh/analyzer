@@ -34,13 +34,32 @@ object OcpcHourlyReportV2 {
     val dataIdea = dataIdeaWithAUC
       .join(qttCvrData, Seq("unitid", "conversion_goal"), "left_outer")
       .select("unitid", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "qtt_cvr", "date", "hour")
-    dataIdea.write.mode("overwrite").saveAsTable("test.check_ocpc_novel_idea2019021309")
 
     // 分conversion_goal统计数据
     val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
     val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
     val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
-    dataConversion.write.mode("overwrite").saveAsTable("test.check_ocpc_novel_conversion2019021309")
+
+    // 存储数据到hadoop
+    saveDataToHDFS(dataIdea, dataConversion, "novel_v1", date, hour, spark)
+  }
+
+  def saveDataToHDFS(dataIdea: DataFrame, dataConversion: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    存储unitid级别和conversion_goal级别的报表到hdfs
+     */
+    dataIdea
+        .withColumn("identifier", col("unitid"))
+        .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
+        .withColumn("version", lit(version))
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v3")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v3")
+
+    dataConversion
+      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
+      .withColumn("version", lit(version))
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly_v3")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_summary_report_hourly_v3")
   }
 
   def getDataByConversion(rawData: DataFrame, costData: DataFrame, date: String, hour: String, spark: SparkSession) = {
