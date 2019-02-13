@@ -33,7 +33,7 @@ object Utils {
 
     //str = "table_name/dt=2018-12-08,pt=daily,hour=00,ml_name=adcontent,ml_ver=v7"
     val sql = generateSql(str, "example")
-    print(sql)
+    println(sql)
 
     val path_exists = s"hadoop fs -test -e $path" !
 
@@ -84,7 +84,7 @@ object Utils {
 
     //str = "table_name/dt=2018-12-08,pt=daily,hour=00,ml_name=adcontent,ml_ver=v7"
     val sql = generateSql(str, "gauc_example")
-    print(sql)
+    println(sql)
 
     val path_exists = s"hadoop fs -test -e $path" !
 
