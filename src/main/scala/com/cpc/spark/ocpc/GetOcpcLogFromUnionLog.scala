@@ -65,61 +65,39 @@ object GetOcpcLogFromUnionLog {
     println(sqlRequest)
 
     var df = spark.sql(sqlRequest)
-    df = df.withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-    df.createOrReplaceTempView("ocpc_unionlog")
-    df.show(10)
 
-    val siteFormData = spark
-      .table("dl_cpc.site_form_unionlog")
-      .where(s"`date`='$date' and `hour`='$hour' and ideaid!=0 and searchid is not null")
-      .select("ideaid", "searchid")
-      .withColumn("iscvr2", lit(1))
-      .distinct()
-    siteFormData.createOrReplaceTempView("site_form_data")
-
-    val sqlRequest1 =
-      s"""
-         |SELECT
-         |    a.searchid,
-         |    a.timestamp,
-         |    a.uid,
-         |    a.exp_ctr,
-         |    a.exp_cvr,
-         |    a.ideaid,
-         |    a.price,
-         |    a.userid,
-         |    a.adclass,
-         |    a.isclick,
-         |    a.isshow,
-         |    a.exptags,
-         |    a.cpa_given,
-         |    a.ocpc_log,
-         |    a.ocpc_log_dict,
-         |    a.iscvr1,
-         |    b.iscvr2,
-         |    (case when ocpc_log_dict['conversiongoal']=3 then b.iscvr2 else a.iscvr1 end) as iscvr
-         |FROM
-         |    ocpc_unionlog as a
-         |LEFT JOIN
-         |    site_form_data as b
-         |ON
-         |    a.searchid=b.searchid
-       """.stripMargin
-    println(sqlRequest1)
-    val result = spark.sql(sqlRequest1)
-
-    val resultDF = result
+//    searchid        string  NULL
+//    timestamp       bigint  NULL
+//    uid     string  NULL
+//    exp_ctr float   NULL
+//    exp_cvr float   NULL
+//    ideaid  int     NULL
+//    price   int     NULL
+//    userid  int     NULL
+//    adclass int     NULL
+//    isclick int     NULL
+//    isshow  int     NULL
+//    exptags string  NULL
+//    cpa_given       int     NULL
+//    ocpc_log        string  NULL
+//    iscvr   int     NULL
+//    ocpc_log_dict   map<string,string>      NULL
+//    dt      string  NULL
+//    hour    string  NULL
+    val resultDF = df
+      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
       .select("searchid", "timestamp", "uid", "exp_ctr", "exp_cvr", "ideaid", "price", "userid", "adclass", "isclick", "isshow", "exptags", "cpa_given", "ocpc_log", "iscvr", "ocpc_log_dict")
       .withColumn("dt", lit(date))
       .withColumn("hour", lit(hour))
-    resultDF.printSchema()
-    result.show(10)
+    resultDF.show(10)
+
 
     resultDF
       .repartition(10)
       .write
       .mode("overwrite")
-      .insertInto("dl_cpc.ocpc_unionlog")
+      .saveAsTable("test.ocpc_unionlog20190213")
+//      .insertInto("dl_cpc.ocpc_unionlog")
   }
 
   def getUnionlogV2(date: String, hour: String, spark: SparkSession) = {
