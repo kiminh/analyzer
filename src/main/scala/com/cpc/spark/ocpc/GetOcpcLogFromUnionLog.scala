@@ -96,8 +96,8 @@ object GetOcpcLogFromUnionLog {
       .repartition(10)
       .write
       .mode("overwrite")
-      .saveAsTable("test.ocpc_unionlog20190213")
-//      .insertInto("dl_cpc.ocpc_unionlog")
+//      .saveAsTable("test.ocpc_unionlog20190213")
+      .insertInto("dl_cpc.ocpc_unionlog")
   }
 
   def getUnionlogV2(date: String, hour: String, spark: SparkSession) = {
