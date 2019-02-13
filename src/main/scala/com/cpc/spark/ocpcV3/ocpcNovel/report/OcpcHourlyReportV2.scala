@@ -29,7 +29,11 @@ object OcpcHourlyReportV2 {
 
     // 分ideaid和conversion_goal统计数据
     val rawDataIdea = preprocessDataByIdea(baseData, date, hour, spark)
-    val dataIdea = getDataByIdea(rawDataIdea, date, hour, spark)
+    val dataIdeaWithAUC = getDataByIdea(rawDataIdea, date, hour, spark)
+    val qttCvrData = getQTTcvr(date, hour, spark)
+    val dataIdea = dataIdeaWithAUC
+      .join(qttCvrData, Seq("unitid", "conversion_goal"), "left_outer")
+      .select("unitid", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "qtt_cvr", "date", "hour")
 
     dataIdea.write.mode("overwrite").saveAsTable("test.check_ocpc_novel2019021309")
 
@@ -37,6 +41,99 @@ object OcpcHourlyReportV2 {
 //    val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
 //    val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
 //    val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
+  }
+
+  def getQTTcvr(date: String, hour: String, spark: SparkSession) = {
+    /*
+    使用slim_union_log去关联
+     */
+    val selectCondition1 = s"dt='$date' and `hour` <= '$hour'"
+    val selectCondition2 = s"`date` >= '$date'"
+
+    // 抽取slim_union_log的点击数据
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  isclick,
+         |  price
+         |FROM
+         |  dl_cpc.slim_union_log
+         |WHERE
+         |  $selectCondition1
+         |and media_appsid in ("80000001", "80000002")
+         |and isclick = 1
+         |and antispam = 0
+         |and ideaid > 0
+         |and adsrc = 1
+         |and adslot_type in (1,2,3)
+       """.stripMargin
+    println(sqlRequest1)
+    val clickData = spark.sql(sqlRequest1)
+
+    // cvr1
+    val cvr1Data = spark
+      .table("dl_cpc.ml_cvr_feature_v1")
+      .where(selectCondition2)
+      .filter(s"label2=1")
+      .select("searchid")
+      .withColumn("iscvr1", lit(1))
+      .distinct()
+
+    // cvr2
+    val cvr2Data = spark
+      .table("dl_cpc.ml_cvr_feature_v2")
+      .where(selectCondition2)
+      .filter(s"label=1")
+      .select("searchid")
+      .withColumn("iscvr2", lit(1))
+      .distinct()
+
+    // cvr3
+    val cvr3Data = spark
+      .table("dl_cpc.site_form_unionlog")
+      .where(selectCondition2)
+      .select("searchid")
+      .withColumn("iscvr3", lit(1))
+      .distinct()
+
+    // 数据关联
+    val joinData = clickData
+      .join(cvr1Data, Seq("searchid"), "left_outer")
+      .join(cvr2Data, Seq("searchid"), "left_outer")
+      .join(cvr3Data, Seq("searchid"), "left_outer")
+      .select("searchid", "unitid", "isclick", "price", "iscvr1", "iscvr2", "iscvr3")
+
+    // 分转化目标计算转化率
+    val data = joinData
+      .groupBy("unitid")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("iscvr1")).alias("cv1"),
+        sum(col("iscvr2")).alias("cv2"),
+        sum(col("iscvr3")).alias("cv3")
+      )
+
+    val result1 = data
+      .withColumn("conversion_goal", lit(1))
+      .withColumn("qtt_cvr", col("cv1") * 1.0 / col("click"))
+      .select("unitid", "conversion_goal", "qtt_cvr")
+
+    val result2 = data
+      .withColumn("conversion_goal", lit(2))
+      .withColumn("qtt_cvr", col("cv2") * 1.0 / col("click"))
+      .select("unitid", "conversion_goal", "qtt_cvr")
+
+    val result3 = data
+      .withColumn("conversion_goal", lit(3))
+      .withColumn("qtt_cvr", col("cv3") * 1.0 / col("click"))
+      .select("unitid", "conversion_goal", "qtt_cvr")
+
+    val resultDF = result1.union(result2).union(result3)
+    resultDF.show(10)
+
+    resultDF
   }
 
   def getDataByIdea(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
