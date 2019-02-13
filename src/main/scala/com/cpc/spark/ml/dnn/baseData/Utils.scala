@@ -56,12 +56,12 @@ object Utils {
       .saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)
 
     //保存count文件
+    val fileName = "count_" + path.split("/").init.last
+    print("count file name : " + fileName)
     println(s"total num is : ${acc.sum}")
-    s"echo ${acc.sum}" #> new File("count") !
+    s"echo ${acc.sum}" #> new File(s"$fileName") !
 
-    Thread.sleep(1000)
-
-    s"hadoop fs -put count $path" !
+    s"hadoop fs -put $fileName $path/count" !
 
     val cnt = "cat count" !!
 
