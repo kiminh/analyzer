@@ -12,7 +12,6 @@ object OcpcLaunchratio {
     val sql1=
       s"""
          |select
-         |  dt as `date`,
          |  unitid,
          |  usertype,
          |  adclass,
@@ -22,7 +21,8 @@ object OcpcLaunchratio {
          |  ELSE "other" END as media,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money_byunit,
          |  sum(isclick) as isclick_byunit,
-         |  sum(isshow) as isshow_byunit
+         |  sum(isshow) as isshow_byunit,
+         |  dt as `date`
          |from dl_cpc.slim_union_log
          |where dt= '$date'
          |and isshow = 1
