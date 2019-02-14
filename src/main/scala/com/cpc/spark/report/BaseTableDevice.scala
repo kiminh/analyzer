@@ -81,12 +81,12 @@ object BaseTableDevice {
     spark.createDataFrame(result)
       .write
       .mode(SaveMode.Overwrite)
-      .parquet(s"/warehouse/dl_cpc.db/cpc_basedata_device/day=$day")
+      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_basedata_device/day=$day")
 
     spark.sql(
       s"""
          |ALTER TABLE dl_cpc.cpc_basedata_device add if not exists PARTITION(`day` = "$day")
-         | LOCATION  '/warehouse/dl_cpc.db/cpc_basedata_device/day=$day'
+         | LOCATION  'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_basedata_device/day=$day'
       """.stripMargin)
 
     println("base table device")
