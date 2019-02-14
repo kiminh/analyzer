@@ -48,7 +48,7 @@ object OcpcHotTopicDailyReport {
          |    SUM(case when is_cpa_ok=1 and is_step2=1 then 1    else 0 end) as low_cpa_adnum,
          |    SUM(case when is_cpa_ok=0 and is_step2=1 then 1    else 0 end) as high_cpa_adnum,
          |    SUM(case when                 is_step2=1 then cost else 0 end) as step2_cost,
-         |    SUM(case when is_cpa_ok=0 and is_step2=1 then (cost - cpa_given * conversion * 1) else 0 end) as step2_cpa_high_cost,
+         |    SUM(case when is_cpa_ok=0 and is_step2=1 then (cost - cpa_given * conversion * 1.2) else 0 end) as step2_cpa_high_cost,
          |    SUM(impression) as impression,
          |    SUM(click) as click,
          |    SUM(conversion) as conversion,
