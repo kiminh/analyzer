@@ -151,14 +151,14 @@ object OcpcLaunchratio {
          |  choose
        """.stripMargin
 
-    spark.sql(sql4).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
-      .select("choose","mode","money","sum_money_ratio","cpm","acp","ctr","`date`")
-      .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_ocpc_cpc")
-
-    val table2 = "report2.midu_ocpc_launch_ocpc_cpc"
-    val deleteSql2 = s"delete from $table2 where `date` = '$date'"
-    OperateMySQL.update(deleteSql2)
-    OperateMySQL.insert(data3result,table2)
+//    spark.sql(sql4).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
+//      .select("choose","mode","money","sum_money_ratio","cpm","acp","ctr","`date`")
+//      .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_ocpc_cpc")
+//
+//    val table2 = "report2.midu_ocpc_launch_ocpc_cpc"
+//    val deleteSql2 = s"delete from $table2 where `date` = '$date'"
+//    OperateMySQL.update(deleteSql2)
+//    OperateMySQL.insert(data3result,table2)
 
   //用户类型分析：其他非企正企
   val sql5=
@@ -195,14 +195,14 @@ object OcpcLaunchratio {
        |  ext['usertype'].int_value
          """.stripMargin
 
-        spark.sql(sql5).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
-          .select("choose","usertype","money","sum_money_ratio","cpm","acp","ctr","`date`")
-          .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_usertype")
-
-    val table3 = "report2.midu_ocpc_launch_usertype"
-    val deleteSql3 = s"delete from $table3 where `date` = '$date'"
-    OperateMySQL.update(deleteSql3)
-    OperateMySQL.insert(data3result,table3)
+//        spark.sql(sql5).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
+//          .select("choose","usertype","money","sum_money_ratio","cpm","acp","ctr","`date`")
+//          .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_usertype")
+//
+//    val table3 = "report2.midu_ocpc_launch_usertype"
+//    val deleteSql3 = s"delete from $table3 where `date` = '$date'"
+//    OperateMySQL.update(deleteSql3)
+//    OperateMySQL.insert(data3result,table3)
 
     //用户类型：重点行业
     val sql6=
@@ -242,23 +242,24 @@ object OcpcLaunchratio {
          |  choose
          """.stripMargin
 
-    spark.sql(sql6).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
-      .select("choose","adclass","money","sum_money_ratio","cpm","acp","ctr","`date`")
-      .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_adclass")
-
-    val table4 = "report2.midu_ocpc_launch_adclass"
-    val deleteSql4 = s"delete from $table4 where `date` = '$date'"
-    OperateMySQL.update(deleteSql4)
-    OperateMySQL.insert(data3result,table4)
+//    spark.sql(sql6).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
+//      .select("choose","adclass","money","sum_money_ratio","cpm","acp","ctr","`date`")
+//      .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_adclass")
+//
+//    val table4 = "report2.midu_ocpc_launch_adclass"
+//    val deleteSql4 = s"delete from $table4 where `date` = '$date'"
+//    OperateMySQL.update(deleteSql4)
+//    OperateMySQL.insert(data3result,table4)
 
       //暗投usertype配比分析
         val sql7=
           s"""
              |select
+             |  `date`,
              |  usertype,
-             |  sum(qtt_money_1),
-             |  sum(qtt_money_2),
-             |  sum(novel_money),
+             |  sum(qtt_money_1) sum_qtt_money_1,
+             |  sum(qtt_money_2) sum_qtt_money_2,
+             |  sum(novel_money) sum_novel_money,
              |  round(sum(novel_money)/sum(qtt_money_1),3) as avg_ratio_1,
              |  round(sum(novel_money)/sum(qtt_money_2),3) as avg_ratio_2,
              |  round(sum(if( ratio >= 2,1,0))/sum(1),3) as gt200,
@@ -269,26 +270,39 @@ object OcpcLaunchratio {
              |from
              |(
              |  select
+             |  A.`date`,
              |  A.unitid,
              |  A.usertype,
              |  A.money_byunit as qtt_money_1,
              |  B.qtt_money as qtt_money_2,
              |  novel_money,
              |  round(novel_money/A.money_byunit,3) as ratio
-             |  from test.OcpcLaunchdata A
-             |  left join test.OcpcLaunchdata2 B
-             |  on A.unitid = B.unitid and B.choose = 0
-             |  where A.media = 'qtt' and A.money_byunit > 0
+             |  from dl_cpc.OcpcLaunchdata A
+             |  left join dl_cpc.OcpcLaunchdata2 B
+             |  on A.unitid = B.unitid and B.choose = 0 and B.`date`= '$date'
+             |  where A.media = 'qtt' and A.money_byunit > 0 and A.`date`= '$date'
              |) a
              |group by
+             |  `date`,
              |  usertype
                """.stripMargin
 
-//        spark.sql(sql7).write.mode("overwrite").saveAsTable("test.OcpcLaunchdata7")
+
+    spark.sql(sql7)
+      .select("usertype","sum_qtt_money_1","sum_qtt_money_2","avg_ratio_1","avg_ratio_2"
+        ,"gt200","gt100","gt50","lt50","eq0","`date`")
+      .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_usertype_ratio")
+
+    val table5 = "report2.midu_ocpc_launch_usertype_ratio"
+    val deleteSql5 = s"delete from $table5 where `date` = '$date'"
+    OperateMySQL.update(deleteSql5)
+    OperateMySQL.insert(data3result,table5)
+
 
     val sql8=
       s"""
          |select
+         |  `date`,
          |  case when round(adclass/1000000) == 100 then 'app'
          |  when round(adclass/1000) == 110110 then 'wz'
          |  else 'notag' end as adclass,
@@ -303,10 +317,11 @@ object OcpcLaunchratio {
          |from
          |(
          |  select
+         |  A.`date`,
          |  A.unitid,
          |  A.adclass,
          |  A.money_byunit as qtt_money_1,
-         |
+         |  B.qtt_money as qtt_money_2,
          |  novel_money,
          |  round(novel_money/A.money_byunit,3) as ratio
          |  from test.OcpcLaunchdata A
@@ -315,13 +330,21 @@ object OcpcLaunchratio {
          |  where A.media = 'qtt' and A.money_byunit > 0
          |) a
          |group by
+         |  `date`,
          |  case when round(adclass/1000000) == 100 then 'app'
          |  when round(adclass/1000) == 110110 then 'wz'
          |  else 'notag' end
          """.stripMargin
 
-//        spark.sql(sql8).write.mode("overwrite").saveAsTable("test.OcpcLaunchdata8")
+    spark.sql(sql8)
+      .select("adclass","sum_qtt_money_1","sum_qtt_money_2","avg_ratio_1","avg_ratio_2"
+        ,"gt200","gt100","gt50","lt50","eq0","`date`")
+      .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_adclass_ratio")
 
+    val table6 = "report2.midu_ocpc_launch_usertype_ratio"
+    val deleteSql6 = s"delete from $table6 where `date` = '$date'"
+    OperateMySQL.update(deleteSql6)
+    OperateMySQL.insert(data3result,table6)
 
 
   }
