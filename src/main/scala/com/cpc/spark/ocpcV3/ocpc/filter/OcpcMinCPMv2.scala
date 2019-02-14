@@ -57,7 +57,7 @@ object OcpcMinCPMv2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
 
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid20190212")
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid20190214")
 //
 //    resultDF
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_v2")
@@ -205,9 +205,9 @@ object OcpcMinCPMv2 {
        |  percentile(bid, 0.03) as min_bid,
        |  percentile(cpm, 0.06) as min_cpm,
        |  count(1) as cnt,
-       |  sum(cvr1) * 1000000.0 / (5 * sum(isclick)) as cvr1,
-       |  sum(cvr2) * 1000000.0 / (5 * sum(isclick)) as cvr2,
-       |  sum(cvr3) * 1000000.0 / (5 * sum(isclick)) as cvr3
+       |  sum(cvr1) * 1000000.0 / (1 * sum(isclick)) as cvr1,
+       |  sum(cvr2) * 1000000.0 / (1 * sum(isclick)) as cvr2,
+       |  sum(cvr3) * 1000000.0 / (1 * sum(isclick)) as cvr3
        |FROM
        |  base_data
        |GROUP BY hr, adslot_type, city_level, floor(adclass/1000), ocpc_flag
