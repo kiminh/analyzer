@@ -59,7 +59,7 @@ object OcpcLaunchratio {
          |  sum(money_byunit) as sum_money,
          |  sum(if(media=='qtt',money_byunit,0)) as qtt_money,
          |  sum(if(media=='novel',money_byunit,0)) as novel_money
-         |  from test.OcpcLaunchdata
+         |  from dl_cpc.OcpcLaunchdata
          |  where `date`='$date'
          |  group by unitid
          |) a
@@ -67,7 +67,8 @@ object OcpcLaunchratio {
 
     val data1=spark.sql(sql2)
 
-      spark.sql("select * from dl_cpc.OcpcLaunchdata where media = 'novel'").join(data1,Seq("unitid"))
+      spark.sql(s"select * from dl_cpc.OcpcLaunchdata where media = 'novel' and `date`='$date'")
+        .join(data1,Seq("unitid"))
         .write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata2")
 
     //直投暗投总体分析
