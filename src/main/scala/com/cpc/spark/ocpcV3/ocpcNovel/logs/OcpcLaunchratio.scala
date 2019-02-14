@@ -42,7 +42,7 @@ object OcpcLaunchratio {
          |  ELSE "other" END
        """.stripMargin
     println(sql1)
-    spark.sql(sql1).repartition(1).write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata")
+//    spark.sql(sql1).repartition(1).write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata")
     //标记直投暗投 choose 1 直投，choose 0 暗投
     val sql2=
       s"""
@@ -54,21 +54,23 @@ object OcpcLaunchratio {
          |from
          |(
          |  select
-         |  date,
          |  unitid,
          |  sum(money_byunit) as sum_money,
          |  sum(if(media=='qtt',money_byunit,0)) as qtt_money,
          |  sum(if(media=='novel',money_byunit,0)) as novel_money
          |  from dl_cpc.OcpcLaunchdata
          |  where `date`='$date'
-         |  group by unitid
+         |  group by
+         |  unitid
          |) a
        """.stripMargin
-
+    println(sql2)
     val data1=spark.sql(sql2)
 
       spark.sql(s"select * from dl_cpc.OcpcLaunchdata where media = 'novel' and `date`='$date'")
         .join(data1,Seq("unitid"))
+        .select("unitid","usertype","adclass","media","money_byunit","isclick_byunit",
+        "isshow_byunit","qtt_money","novel_money","choose","`date`")
         .write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata2")
 
     //直投暗投总体分析
