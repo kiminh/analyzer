@@ -13,6 +13,7 @@ object OcpcLaunchratio {
     val sql1=
       s"""
          |select
+         |  dt as `date`,
          |  unitid,
          |  usertype,
          |  adclass,
@@ -22,8 +23,7 @@ object OcpcLaunchratio {
          |  ELSE "other" END as media,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money_byunit,
          |  sum(isclick) as isclick_byunit,
-         |  sum(isshow) as isshow_byunit,
-         |  dt as `date`
+         |  sum(isshow) as isshow_byunit
          |from dl_cpc.slim_union_log
          |where dt= '$date'
          |and isshow = 1
@@ -42,7 +42,9 @@ object OcpcLaunchratio {
          |  ELSE "other" END
        """.stripMargin
     println(sql1)
-    spark.sql(sql1).write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata")
+    spark.sql(sql1) .select("unitid","usertype","adclass","media","money_byunit","isclick_byunit",
+      "isshow_byunit","`date`")
+      .write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata")
     //标记直投暗投 choose 1 直投，choose 0 暗投
     val sql2=
       s"""
