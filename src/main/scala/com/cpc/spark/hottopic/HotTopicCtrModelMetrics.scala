@@ -42,6 +42,8 @@ object HotTopicCtrModelMetrics {
                |and userid > 0
                |AND (ext["charge_type"] is null or ext["charge_type"].int_value=1)
                |and ext['adclass'].int_value != 132102100
+               |and ext_string['ctr_model_name'] is not null
+               |and length(ext_string['ctr_model_name']) > 0
                |group by ext_string['ctr_model_name']
              """.stripMargin
 
@@ -67,7 +69,11 @@ object HotTopicCtrModelMetrics {
                |and userid > 0
                |AND (ext["charge_type"] is null or ext["charge_type"].int_value=1)
                |and ext['adclass'].int_value != 132102100
+               |and ext_string['ctr_model_name'] is not null
+               |and length(ext_string['ctr_model_name']) > 0
              """.stripMargin
+
+        println(sql2)
 
         val union = spark.sql(sql2)
 
@@ -78,6 +84,8 @@ object HotTopicCtrModelMetrics {
           .select("ctr_model_name","show_num","click_num","ctr","exp_ctr","pcoc","click_total_price","cpc_cpm","cpc_arpu","auc","date")
 
         result.show(10)
+        
+        result.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_hot_topic_ctr_model_metrics")
 
     }
 }
