@@ -8,7 +8,7 @@ import org.apache.spark.sql.SparkSession
 object bscvr_exp_report {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
-      .appName("dnn sample")
+      .appName("bscvr exp report")
       .enableHiveSupport()
       .getOrCreate()
     import spark.implicits._
