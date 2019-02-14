@@ -67,22 +67,22 @@ object OcpcLaunchratio {
     println(sql2)
     val data1=spark.sql(sql2)
 
-      spark.sql(s"select * from dl_cpc.OcpcLaunchdata where media = 'novel' and `date`='$date'")
-        .join(data1,Seq("unitid"))
-        .select("unitid","usertype","adclass","media","money_byunit","isclick_byunit",
-        "isshow_byunit","qtt_money","novel_money","choose","`date`")
-        .write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata2")
+//      spark.sql(s"select * from dl_cpc.OcpcLaunchdata where media = 'novel' and `date`='$date'")
+//        .join(data1,Seq("unitid"))
+//        .select("unitid","usertype","adclass","media","money_byunit","isclick_byunit",
+//        "isshow_byunit","qtt_money","novel_money","choose","`date`")
+//        .write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata2")
 
     //直投暗投总体分析
     val sql3=
       s"""
          |select
-         |  `date` as date,
          |  choose,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
          |  round(sum(isclick)*100 / sum(isshow),3) as ctr,
          |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
-         |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3) as acp
+         |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3) as acp,
+         |  a.`date` as `date`
          |from
          |(
          |  select *
@@ -96,19 +96,19 @@ object OcpcLaunchratio {
          |  AND (ext["charge_type"] IS NULL
          |       OR ext["charge_type"].int_value = 1)
          |) a
-         |left join test.OcpcLaunchdata2 b
-         |on a.unitid=b.unitid
+         |left join dl_cpc.OcpcLaunchdata2 b
+         |on a.unitid=b.unitid and b.`date` = '$date'
          |group by
          |  choose
          |order by
          |  choose
        """.stripMargin
 
-//        val data3=spark.sql(sql3)
-//        val money_overall=data3.select("money").rdd.map(x => x.getAs[Long]("money")).reduce(_+_).toDouble
-//         data3.withColumn("sum_money_ratio",round(col("money")/money_overall,3))
-//          .select("choose","money","sum_money_ratio","cpm","acp","ctr","date")
-//          .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata3")
+        val data3=spark.sql(sql3)
+        val money_overall=data3.select("money").rdd.map(x => x.getAs[Long]("money")).reduce(_+_).toDouble
+         data3.withColumn("sum_money_ratio",round(col("money")/money_overall,3))
+          .select("choose","money","sum_money_ratio","cpm","acp","ctr","`date`")
+          .write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata3")
 
 //    val tableName = "report2.OcpcLaunchdata3"
 //    val deleteSql = s"delete from $tableName where `date` = '$date'"
