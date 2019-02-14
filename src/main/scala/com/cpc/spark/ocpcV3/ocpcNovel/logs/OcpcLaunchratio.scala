@@ -290,18 +290,20 @@ object OcpcLaunchratio {
              |group by
              |  `date`,
              |  usertype
+             |order by
+             |  usertype
                """.stripMargin
 
     println(sql7)
-    spark.sql(sql7)
-      .select("usertype","sum_qtt_money_1","sum_qtt_money_2","sum_novel_money","avg_ratio_1","avg_ratio_2"
-        ,"gt200","gt100","gt50","lt50","eq0","`date`")
-      .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_usertype_ratio")
-
-    val table5 = "report2.midu_ocpc_launch_usertype_ratio"
-    val deleteSql5 = s"delete from $table5 where `date` = '$date'"
-    OperateMySQL.update(deleteSql5)
-    OperateMySQL.insert(data3result,table5)
+//    spark.sql(sql7)
+//      .select("usertype","sum_qtt_money_1","sum_qtt_money_2","sum_novel_money","avg_ratio_1","avg_ratio_2"
+//        ,"gt200","gt100","gt50","lt50","eq0","`date`")
+//      .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_usertype_ratio")
+//
+//    val table5 = "report2.midu_ocpc_launch_usertype_ratio"
+//    val deleteSql5 = s"delete from $table5 where `date` = '$date'"
+//    OperateMySQL.update(deleteSql5)
+//    OperateMySQL.insert(data3result,table5)
 
 
     val sql8=
@@ -329,10 +331,10 @@ object OcpcLaunchratio {
          |  B.qtt_money as qtt_money_2,
          |  novel_money,
          |  round(novel_money/A.money_byunit,3) as ratio
-         |  from test.OcpcLaunchdata A
-         |  left join test.OcpcLaunchdata2 B
-         |  on A.unitid = B.unitid and B.choose = 0
-         |  where A.media = 'qtt' and A.money_byunit > 0
+         |  from dl_cpc.OcpcLaunchdata A
+         |  left join dl_cpc.OcpcLaunchdata2 B
+         |  on A.unitid = B.unitid and B.choose = 0 and B.`date`= '$date'
+         |  where A.media = 'qtt' and A.money_byunit > 0 and A.`date`= '$date'
          |) a
          |group by
          |  `date`,
