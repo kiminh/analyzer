@@ -99,6 +99,8 @@ object bscvr_exp_report {
 |         sum(isclick) as click,
 |         sum(if(tc.label > 0, 1, 0)) as iscvr,
 |         exp,
+|         10000 as adslot_type,
+|         'all_industry' as industry,
 |         round(sum(isclick)*100.0 / sum(isshow),3) as ctr,
 |         sum(if(isclick=1,price,0)) as cost,
 |         round(sum(if(isclick=1,price,0))*10.0/sum(isshow),3) as cpm,
