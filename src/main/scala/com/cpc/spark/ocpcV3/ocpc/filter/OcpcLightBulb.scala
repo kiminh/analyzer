@@ -127,6 +127,7 @@ object OcpcLightBulb{
     val auth = conf.getString("adv_redis.auth")
     println(s"host: $host")
     println(s"port: $port")
+    println(s"############## cleaning redis database ##########################")
 
     data.foreachPartition(iterator => {
       val redis = new RedisClient(host, port)
@@ -166,6 +167,7 @@ object OcpcLightBulb{
     val auth = conf.getString("adv_redis.auth")
     println(s"host: $host")
     println(s"port: $port")
+    println(s"############## saving redis database ##########################")
 
 
 //    data.foreachPartition(iterator => {
