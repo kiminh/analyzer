@@ -5,6 +5,7 @@ import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql2
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
+import com.typesafe.config.ConfigFactory
 import org.apache.commons.math3.fitting.{PolynomialCurveFitter, WeightedObservedPoints}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -24,18 +25,22 @@ object OcpcRegression {
     val version = args(4).toString
     val media = args(5).toString
 
+    val conf = ConfigFactory.load("ocpc")
+    // 媒体选择
+    val conf_key1 = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key1)
+
+    // cvr 分区
+    val cvGoal = conversionGoal.toString
+    val conf_key2 = "medias." + media + ".cv_pt." + "cvr" + cvGoal
+    val cvrGoal = conf.getString(conf_key2)
+
     println("parameters:")
     println(s"date=$date, hour=$hour, hourCnt=$hourCnt, conversionGoal=$conversionGoal, version=$version, media=$media")
-    var mediaSelection = ""
-    if (media == "qtt") {
-      mediaSelection = s"media_appsid in ('80000001', '80000002')"
-    } else if (media == "novel") {
-      mediaSelection = s"media_appsid in ('80001098','80001292')"
-    } else {
-      mediaSelection = s"media_appsid = '80002819'"
-    }
+    println(s"mediaSelection=$mediaSelection")
+    println(s"cvrGoal=$cvrGoal")
 
-    val result = calcualteKwithRegression(mediaSelection, conversionGoal, version, hourCnt, date, hour, spark)
+    val result = calcualteKwithRegression(media, conversionGoal, version, hourCnt, date, hour, spark)
 
 //    result.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
 
@@ -47,16 +52,16 @@ object OcpcRegression {
       .withColumn("version", lit(version))
       .withColumn("method", lit("regression"))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_model_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_model_hourly")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_model_hourly")
 
 
   }
 
-  def calcualteKwithRegression(mediaSelection: String, conversionGoal: Int, version: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
+  def calcualteKwithRegression(media: String, conversionGoal: Int, version: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
     // 中间表
-    val middleData = getMiddleData(mediaSelection, conversionGoal, version, hourCnt, date, hour, spark)
+    val middleData = getMiddleData(media, conversionGoal, version, hourCnt, date, hour, spark)
     val tablename = "dl_cpc.ocpc_regression_middle_hourly_v2"
     val result = middleData
       .selectExpr("cast(identifier as string) identifier", "k_ratio", "cpagiven", "cpa", "ratio", "click_cnt", "cvr_cnt", "conversion_goal")
@@ -64,9 +69,9 @@ object OcpcRegression {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-//    result.write.mode("overwrite").saveAsTable(tablename)
-    result
-      .repartition(10).write.mode("overwrite").insertInto(tablename)
+    result.write.mode("overwrite").saveAsTable(tablename)
+//    result
+//      .repartition(10).write.mode("overwrite").insertInto(tablename)
 
     // 结果表
     val kvalue = getKWithRatio(middleData, date, hour, spark)
@@ -78,11 +83,20 @@ object OcpcRegression {
     resultDF
   }
 
-  def getMiddleData(mediaSelection: String, conversionGoal: Int, version: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getMiddleData(media: String, conversionGoal: Int, version: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+    // 媒体选择
+    val conf_key1 = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key1)
+
+    // cvr 分区
+    val cvGoal = conversionGoal.toString
+    val conf_key2 = "medias." + media + ".cv_pt." + "cvr" + cvGoal
+    val cvrGoal = conf.getString(conf_key2)
+
     // 获取并关联数据
     val ctrData = getCtrData(mediaSelection, hourCnt, date, hour, spark)
-    val cvrData = getCvrData(mediaSelection, conversionGoal, hourCnt, date, hour, spark)
-//    val cvrData = getCvr1Data(mediaSelection, hourCnt, date, hour, spark)
+    val cvrData = getCvrData(mediaSelection, cvrGoal, hourCnt, date, hour, spark)
     val rawData = ctrData
       .join(cvrData, Seq("searchid"), "left_outer")
       .na.fill(0, Seq("label"))
@@ -161,17 +175,7 @@ object OcpcRegression {
     resultDF
   }
 
-  def getCvrData(mediaSelection: String, conversionGoal: Int, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
-    // cvr 分区
-    var cvrGoal = ""
-    if (conversionGoal == 1) {
-      cvrGoal = "cvr1"
-    } else if (conversionGoal == 2) {
-      cvrGoal = "cvr2"
-    } else {
-      cvrGoal = "cvr3"
-    }
-
+  def getCvrData(mediaSelection: String, cvrGoal: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
     // 时间分区
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
     val newDate = date + " " + hour
