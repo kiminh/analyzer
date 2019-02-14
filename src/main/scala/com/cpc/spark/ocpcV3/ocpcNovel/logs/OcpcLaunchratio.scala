@@ -164,6 +164,7 @@ object OcpcLaunchratio {
   val sql5=
     s"""
        |select
+       |  a.`date` as `date`,
        |  choose,
        |  ext['usertype'].int_value as usertype,
        |  sum(case WHEN isclick == 1 then price else 0 end) as money,
@@ -183,19 +184,25 @@ object OcpcLaunchratio {
        |  AND (ext["charge_type"] IS NULL
        |       OR ext["charge_type"].int_value = 1)
        |) a
-       |left join test.OcpcLaunchdata2 b
-       |on a.unitid=b.unitid
+       |left join dl_cpc.OcpcLaunchdata2 b
+       |on a.unitid=b.unitid and b.`date` = '$date'
        |group by
+       |  a.`date`,
        |  choose,
        |  ext['usertype'].int_value
        |order by
        |  choose,
        |  ext['usertype'].int_value
          """.stripMargin
-//
-//        spark.sql(sql5).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
-//          .select("choose","usertype","money","sum_money_ratio","cpm","acp","ctr")
-//          .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata5")
+
+        spark.sql(sql5).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
+          .select("choose","usertype","money","sum_money_ratio","cpm","acp","ctr")
+          .write.mode("overwrite").saveAsTable("dl_cpc.midu_ocpc_launch_usertype")
+
+    val table3 = "report2.midu_ocpc_launch_usertype"
+    val deleteSql3 = s"delete from $table3 where `date` = '$date'"
+    OperateMySQL.update(deleteSql3)
+    OperateMySQL.insert(data3result,table3)
 
     //用户类型：重点行业
     val sql6=
