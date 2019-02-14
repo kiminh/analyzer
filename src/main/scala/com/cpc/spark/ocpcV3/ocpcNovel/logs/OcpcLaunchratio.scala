@@ -109,16 +109,17 @@ object OcpcLaunchratio {
         val money_overall=data3.select("money").rdd.map(x => x.getAs[Long]("money")).reduce(_+_).toDouble
         val data3result=data3.withColumn("sum_money_ratio",round(col("money")/money_overall,3))
           .select("choose","money","sum_money_ratio","cpm","acp","ctr","`date`")
-        data3result.write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_overall")
-
-    val table1 = "report2.midu_ocpc_launch_overall"
-    val deleteSql1 = s"delete from $table1 where `date` = '$date'"
-    OperateMySQL.update(deleteSql1)
-    OperateMySQL.insert(data3result,table1)
+//        data3result.write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_overall")
+//
+//    val table1 = "report2.midu_ocpc_launch_overall"
+//    val deleteSql1 = s"delete from $table1 where `date` = '$date'"
+//    OperateMySQL.update(deleteSql1)
+//    OperateMySQL.insert(data3result,table1)
     //直投暗投ocpc及cpc分析
     val sql4=
       s"""
          |select
+         |  a.`date` as `date`,
          |  choose,
          |  case when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
          |  else 'cpc' end as mode,
@@ -142,6 +143,7 @@ object OcpcLaunchratio {
          |left join dl_cpc.OcpcLaunchdata2 b
          |on a.unitid=b.unitid and b.`date` = '$date'
          |group by
+         |  a.`date`,
          |  choose,
          |  case when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
          |  else 'cpc' end
@@ -202,7 +204,7 @@ object OcpcLaunchratio {
          |  choose,
          |  case when round(ext['adclass'].int_value/1000000) == 100 then 'app'
          |  when round(ext['adclass'].int_value/1000) == 110110 then 'wz'
-         |  else 'notag' end as adclass,
+         |  else 'other' end as adclass,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
          |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
          |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3) as acp,
@@ -226,7 +228,7 @@ object OcpcLaunchratio {
          |  choose,
          |  case when round(ext['adclass'].int_value/1000000) == 100 then 'app'
          |  when round(ext['adclass'].int_value/1000) == 110110 then 'wz'
-         |  else 'notag' end
+         |  else 'other' end
          |order by
          |  choose
          """.stripMargin
