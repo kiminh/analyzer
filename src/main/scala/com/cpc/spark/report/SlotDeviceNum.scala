@@ -11,7 +11,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   *   5. uid.length = 36  idfa
   *   6. 其他
   */
-object BaseTableDevice {
+object SlotDeviceNum {
   def main(args: Array[String]): Unit = {
     val day = args(0)
 
@@ -86,12 +86,12 @@ object BaseTableDevice {
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
-      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_basedata_device/day=$day")
+      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/slot_device_num/day=$day")
 
     spark.sql(
       s"""
-         |ALTER TABLE dl_cpc.cpc_basedata_device add if not exists PARTITION(`day` = "$day")
-         | LOCATION  'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_basedata_device/day=$day'
+         |ALTER TABLE dl_cpc.slot_device_num add if not exists PARTITION(`day` = "$day")
+         | LOCATION  'hdfs://emr-cluster2/warehouse/dl_cpc.db/slot_device_num/day=$day'
       """.stripMargin)
 
     println("base table device")
