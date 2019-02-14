@@ -34,8 +34,7 @@ object OcpcLightBulb{
     // todo
     val tableName = "test.ocpc_qtt_light_control20190214"
 
-//    // 清除redis里面的数据
-//    cleanRedis(tableName, date, hour, spark)
+
 
 
     // 抽取数据
@@ -48,14 +47,18 @@ object OcpcLightBulb{
         .join(ocpcRecord, Seq("unitid"), "outer")
         .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
-    data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
     data
       .withColumn("date", lit(date))
       .withColumn("version", lit("qtt_demo"))
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
 
+//    // 清除redis里面的数据
+//    cleanRedis(tableName, date, hour, spark)
+
     // 存入redis
-    saveDataToRedis(tableName, date, hour, spark)
+    saveDataToRedis(date, hour, spark)
+
+    data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
 
   def getOcpcRecord(date: String, hour: String, spark: SparkSession) = {
@@ -141,8 +144,12 @@ object OcpcLightBulb{
     })
   }
 
-  def saveDataToRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
-    val rawData = spark.table(tableName).repartition(2)
+  def saveDataToRedis(date: String, hour: String, spark: SparkSession) = {
+    val rawData = spark
+      .table("dl_cpc.ocpc_qtt_light_control")
+      .where(s"`date`='$date' and version='qtt_demo'")
+      .repartition(2)
+
     val data = rawData
         .withColumn("cpa1", when(col("ocpc_cpa1") === -1, col("cpc_cpa1")).otherwise(col("ocpc_cpa1")))
         .withColumn("cpa2", when(col("ocpc_cpa2") === -1, col("cpc_cpa2")).otherwise(col("ocpc_cpa2")))
