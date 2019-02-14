@@ -313,7 +313,8 @@ object OcpcLaunchratio {
          |  case when round(adclass/1000000) == 100 then 'app'
          |  when round(adclass/1000) == 110110 then 'wz'
          |  else 'notag' end as adclass,
-         |  sum(qtt_money),
+         |  sum(qtt_money_1) sum_qtt_money_1,
+         |  sum(qtt_money_2) sum_qtt_money_2,
          |  sum(novel_money),
          |  round(sum(novel_money)/sum(qtt_money),3) as avg_ratio,
          |  round(sum(if( ratio >= 2,1,0))/sum(1),3) as gt200,
