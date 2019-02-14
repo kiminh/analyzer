@@ -82,7 +82,7 @@ object OcpcLaunchratio {
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
          |  round(sum(isclick)*100 / sum(isshow),3) as ctr,
          |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
-         |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3) as acp,
+         |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3) as acp
          |from
          |(
          |  select *
