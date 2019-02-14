@@ -68,7 +68,7 @@ object bscvr_exp_report {
 |         round(sum(if(isclick=1,price,0))*10.0/sum(isshow),3) as cpm,
 |         round(sum(if(isclick=1,price,0))*1.0/count(distinct uid),3) as arpu,
 |         count(distinct uid) as uv,
-|         round(sum(if(tc.label > 0, 1, 0))*100.0/sum(isclick),3) as cvr，
+|         round(sum(if(tc.label > 0, 1, 0))*100.0/sum(isclick),3) as cvr,
 |         ta.unitid
 |          from
 |         (select searchid, ideaid, isshow, isclick, uid,industry,
