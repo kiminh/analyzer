@@ -111,10 +111,10 @@ object OcpcLaunchratio {
           .select("choose","money","sum_money_ratio","cpm","acp","ctr","`date`")
         data3result.write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_overall")
 
-    val tableName = "report2.midu_ocpc_launch_overall"
-    val deleteSql = s"delete from $tableName where `date` = '$date'"
-    OperateMySQL.update(deleteSql)
-    OperateMySQL.insert(data3result,tableName)
+    val table1 = "report2.midu_ocpc_launch_overall"
+    val deleteSql1 = s"delete from $table1 where `date` = '$date'"
+    OperateMySQL.update(deleteSql1)
+    OperateMySQL.insert(data3result,table1)
     //直投暗投ocpc及cpc分析
     val sql4=
       s"""
@@ -139,8 +139,8 @@ object OcpcLaunchratio {
          |  AND (ext["charge_type"] IS NULL
          |       OR ext["charge_type"].int_value = 1)
          |) a
-         |left join test.OcpcLaunchdata2 b
-         |on a.unitid=b.unitid
+         |left join dl_cpc.OcpcLaunchdata2 b
+         |on a.unitid=b.unitid and b.`date` = '$date'
          |group by
          |  choose,
          |  case when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
@@ -149,9 +149,14 @@ object OcpcLaunchratio {
          |  choose
        """.stripMargin
 
-//    spark.sql(sql4).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
-//      .select("choose","mode","money","sum_money_ratio","cpm","acp","ctr")
-//      .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata4")
+    spark.sql(sql4).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
+      .select("choose","mode","money","sum_money_ratio","cpm","acp","ctr","`date`")
+      .write.mode("overwrite").saveAsTable("dl_cpc.midu_ocpc_launch_ocpc_cpc")
+
+    val table2 = "report2.midu_ocpc_launch_ocpc_cpc"
+    val deleteSql2 = s"delete from $table2 where `date` = '$date'"
+    OperateMySQL.update(deleteSql2)
+    OperateMySQL.insert(data3result,table2)
 
   //用户类型分析：其他非企正企
   val sql5=
