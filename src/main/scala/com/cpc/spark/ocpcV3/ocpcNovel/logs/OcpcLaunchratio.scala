@@ -77,7 +77,7 @@ object OcpcLaunchratio {
     val sql3=
       s"""
          |select
-         |  a.`date` as `date`
+         |  a.`date` as `date`,
          |  choose,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
          |  round(sum(isclick)*100 / sum(isshow),3) as ctr,
