@@ -19,7 +19,6 @@ object BaseTableDevice {
       .appName("base table device")
       .enableHiveSupport()
       .getOrCreate()
-
     val sql =
       s"""
          |select   media_appsid
@@ -35,7 +34,7 @@ object BaseTableDevice {
        """.stripMargin
     println("sql: " + sql)
 
-
+    import spark.implicits._
     val result = spark.sql(sql).repartition(1000)
       .select("media_appsid", "adslot_type", "adslot_id", "uid")
       .rdd
@@ -76,9 +75,12 @@ object BaseTableDevice {
         }
         (x._1._1, x._1._2, x._1._3, empty_num, ip_num, zero_device_num, imei_num, idfa_num, other_num)
       }
+      .toDF("media_appsid", "adslot_type", "adslot_id", "empty_num", "ip_num", "zero_device_num", "imei_num", "idfa_num", "other_num")
+
     println("total: " + result.count())
 
-    spark.createDataFrame(result)
+    result
+      .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
       .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_basedata_device/day=$day")
