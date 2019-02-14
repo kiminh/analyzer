@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.model_novel
+package com.cpc.spark.OcpcProtoType.model_v2
 
 import java.text.SimpleDateFormat
 import java.util.Calendar

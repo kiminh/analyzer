@@ -14,6 +14,9 @@
 ## model目录
 用于计算k值和产出pb文件的代码文件
 
+## model_v2目录
+升级版ocpc通用代码，利用ocpc.conf提高代码封装性与通用性
+
 ## CreateTable目录
 存放用于创建hive表的sql脚本
 

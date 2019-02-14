@@ -1,10 +1,11 @@
-package com.cpc.spark.OcpcProtoType.model_novel
+package com.cpc.spark.OcpcProtoType.model_v2
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj._
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -23,7 +24,7 @@ object OcpcPIDwithCPA {
      */
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
 
-    // bash: 2019-01-02 12 24 1 qtt_demo qtt
+    // bash: 2019-01-02 12 24 1 novel_v2 novel
     val date = args(0).toString
     val hour = args(1).toString
     val hourInt = args(2).toInt
@@ -33,16 +34,10 @@ object OcpcPIDwithCPA {
 
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt=$hourInt, conversionGoal=$conversionGoal, version=$version, media=$media")
-    var mediaSelection = ""
-    if (media == "qtt") {
-      mediaSelection = s"media_appsid in ('80000001', '80000002')"
-    } else if(media == "novel"){
-      mediaSelection = s"media_appsid in ('80001098','80001292')"
-    } else {
-      mediaSelection = s"media_appsid = '80002819'"
-    }
+    val conf_key = "medias." + media + ".media_selection"
+    val conf = ConfigFactory.load("ocpc")
+    val mediaSelection = conf.getString(conf_key)
 
-    // TODO 表名
     val prevTable = spark
       .table("dl_cpc.ocpc_prev_pb_once")
       .where(s"version='$version'")
