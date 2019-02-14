@@ -19,6 +19,9 @@ object BaseTableDevice {
       .appName("base table device")
       .enableHiveSupport()
       .getOrCreate()
+
+    val regex = "^[0-9]*$".r //imei
+
     val sql =
       s"""
          |select   media_appsid
@@ -46,7 +49,7 @@ object BaseTableDevice {
           case u if u == "" => "empty"
           case u if u.contains(".") => "ip"
           case u if u.contains("000000") => "zero_device"
-          case u if (u.length == 15 || u.length == 16 || u.length == 17) => "imei"
+          case u if (u.length == 15 || u.length == 16 || u.length == 17) && (regex.findFirstIn(u) != None) => "imei"
           case u if (u.length == 36) => "idfa"
           case _ => "other"
         }
