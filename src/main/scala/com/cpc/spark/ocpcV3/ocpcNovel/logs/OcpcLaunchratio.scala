@@ -105,6 +105,7 @@ object OcpcLaunchratio {
          |  choose
        """.stripMargin
 
+    println(sql3)
         val data3=spark.sql(sql3)
         val money_overall=data3.select("money").rdd.map(x => x.getAs[Long]("money")).reduce(_+_).toDouble
         val data3result=data3.withColumn("sum_money_ratio",round(col("money")/money_overall,3))
@@ -151,6 +152,7 @@ object OcpcLaunchratio {
          |  choose
        """.stripMargin
 
+    println(sql4)
 //    spark.sql(sql4).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
 //      .select("choose","mode","money","sum_money_ratio","cpm","acp","ctr","`date`")
 //      .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_ocpc_cpc")
@@ -194,6 +196,7 @@ object OcpcLaunchratio {
        |  choose,
        |  ext['usertype'].int_value
          """.stripMargin
+    println(sql5)
 
 //        spark.sql(sql5).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
 //          .select("choose","usertype","money","sum_money_ratio","cpm","acp","ctr","`date`")
@@ -242,6 +245,8 @@ object OcpcLaunchratio {
          |  choose
          """.stripMargin
 
+    println(sql6)
+
 //    spark.sql(sql6).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
 //      .select("choose","adclass","money","sum_money_ratio","cpm","acp","ctr","`date`")
 //      .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_adclass")
@@ -287,9 +292,9 @@ object OcpcLaunchratio {
              |  usertype
                """.stripMargin
 
-
+    println(sql7)
     spark.sql(sql7)
-      .select("usertype","sum_qtt_money_1","sum_qtt_money_2","avg_ratio_1","avg_ratio_2"
+      .select("usertype","sum_qtt_money_1","sum_qtt_money_2","sum_novel_money","avg_ratio_1","avg_ratio_2"
         ,"gt200","gt100","gt50","lt50","eq0","`date`")
       .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_usertype_ratio")
 
@@ -335,9 +340,9 @@ object OcpcLaunchratio {
          |  when round(adclass/1000) == 110110 then 'wz'
          |  else 'notag' end
          """.stripMargin
-
+    println(sql8)
     spark.sql(sql8)
-      .select("adclass","sum_qtt_money_1","sum_qtt_money_2","avg_ratio_1","avg_ratio_2"
+      .select("adclass","sum_qtt_money_1","sum_qtt_money_2","sum_novel_money","avg_ratio_1","avg_ratio_2"
         ,"gt200","gt100","gt50","lt50","eq0","`date`")
       .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_adclass_ratio")
 
