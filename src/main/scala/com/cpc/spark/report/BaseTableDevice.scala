@@ -57,24 +57,24 @@ object BaseTableDevice {
       .map { x => ((x._1._1, x._1._2, x._1._3), Map(x._1._4 -> x._2)) }
       .reduceByKey(_ ++ _)
       .map { x =>
-        var empty = 0
-        var ip = 0
-        var zero_device = 0
-        var imei = 0
-        var idfa = 0
-        var other = 0
+        var empty_num = 0
+        var ip_num = 0
+        var zero_device_num = 0
+        var imei_num = 0
+        var idfa_num = 0
+        var other_num = 0
         x._2.foreach { m =>
           m._1 match {
-            case "empty" => empty = m._2
-            case "ip" => ip = m._2
-            case "zero_device" => zero_device = m._2
-            case "imei" => imei = m._2
-            case "idfa" => idfa = m._2
-            case "other" => other = m._2
+            case "empty" => empty_num = m._2
+            case "ip" => ip_num = m._2
+            case "zero_device" => zero_device_num = m._2
+            case "imei" => imei_num = m._2
+            case "idfa" => idfa_num = m._2
+            case "other" => other_num = m._2
             case _ =>
           }
         }
-        (x._1._1, x._1._2, x._1._3, empty, ip, zero_device, imei, idfa, other)
+        (x._1._1, x._1._2, x._1._3, empty_num, ip_num, zero_device_num, imei_num, idfa_num, other_num)
       }
     println("total: " + result.count())
 
