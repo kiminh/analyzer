@@ -165,9 +165,9 @@ object OcpcLightBulb{
       iterator.foreach{
         record => {
           val identifier = record.getAs[Int]("unitid").toString
-          val cpa1 = record.getAs[Double]("cpa1").toInt
-          val cpa2 = record.getAs[Double]("cpa2").toInt
-          val cpa3 = record.getAs[Double]("cpa3").toInt
+          val cpa1 = record.getAs[Long]("cpa1").toInt
+          val cpa2 = record.getAs[Long]("cpa2").toInt
+          val cpa3 = record.getAs[Long]("cpa3").toInt
           println(s"cpa1:$cpa1, cpa2:$cpa2, cpa3:$cpa3")
           var key = "algorithm_unit_ocpc_" + identifier
           val json = new JSONObject()
