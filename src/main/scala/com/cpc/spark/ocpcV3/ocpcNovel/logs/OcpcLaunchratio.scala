@@ -107,13 +107,14 @@ object OcpcLaunchratio {
 
         val data3=spark.sql(sql3)
         val money_overall=data3.select("money").rdd.map(x => x.getAs[Long]("money")).reduce(_+_).toDouble
-         data3.withColumn("sum_money_ratio",round(col("money")/money_overall,3))
+        val data3result=data3.withColumn("sum_money_ratio",round(col("money")/money_overall,3))
           .select("choose","money","sum_money_ratio","cpm","acp","ctr","`date`")
-          .write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata3")
+        data3result.write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_overall")
 
-//    val tableName = "report2.OcpcLaunchdata3"
-//    val deleteSql = s"delete from $tableName where `date` = '$date'"
-//    OperateMySQL.update(deleteSql)
+    val tableName = "report2.midu_ocpc_launch_overall"
+    val deleteSql = s"delete from $tableName where `date` = '$date'"
+    OperateMySQL.update(deleteSql)
+    OperateMySQL.insert(data3result,tableName)
     //直投暗投ocpc及cpc分析
     val sql4=
       s"""
