@@ -34,8 +34,8 @@ object bscvr_exp_report {
           'exp_unitid' as unitid
           from
          (select searchid, ideaid, isshow, isclick, uid,industry,
-         if(regexp_like(exptags, '.*bscvr:0.3.*'), 'enabled0.3',
-         if(regexp_like(exptags, '.*bscvr:0.5.*'), 'enabled0.5', 'control')) as exp,
+         if(exptags like '%bscvr:0.3%', 'enabled0.3',
+         if(exptags like '%bscvr:0.5%', 'enabled0.5', 'control')) as exp,
          adslot_type, cast(unitid as bigint) as unitid,
          price FROM dl_cpc.slim_union_log
          WHERE dt='$tardate'
@@ -72,8 +72,8 @@ object bscvr_exp_report {
 |         ta.unitid
 |          from
 |         (select searchid, ideaid, isshow, isclick, uid,industry,
-|         if(regexp_like(exptags, '.*bscvr:0.3.*'), 'enabled0.3',
-|         if(regexp_like(exptags, '.*bscvr:0.5.*'), 'enabled0.5', 'control')) as exp,
+|         if(exptags like '%bscvr:0.3%', 'enabled0.3',
+|         if(exptags like '%bscvr:0.5%', 'enabled0.5', 'control')) as exp,
 |         adslot_type, cast(unitid as bigint) as unitid,
 |         price FROM dl_cpc.slim_union_log
 |         WHERE dt='$tardate' and media_appsid  in ('80000001', '80000002') and isshow > 0
@@ -108,8 +108,8 @@ object bscvr_exp_report {
 |         'all' as unitid
 |          from
 |         (select searchid, ideaid, isshow, isclick, uid,industry,
-|         if(regexp_like(exptags, '.*bscvr:0.3.*'), 'enabled0.3',
-|         if(regexp_like(exptags, '.*bscvr:0.5.*'), 'enabled0.5', 'control')) as exp,
+|         if(exptags like '%bscvr:0.3%', 'enabled0.3',
+|         if(exptags like '%bscvr:0.5%', 'enabled0.5', 'control')) as exp,
 |         adslot_type, cast(unitid as bigint) as unitid,
 |         price FROM dl_cpc.slim_union_log
 |         WHERE dt='$tardate'
