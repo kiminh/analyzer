@@ -49,7 +49,7 @@ object BaseTableDevice {
           case u if u == "" => "empty"
           case u if u.contains(".") => "ip"
           case u if u.contains("000000") => "zero_device"
-          case u if (u.length == 15 || u.length == 16 || u.length == 17) && (regex.findFirstIn(u) != None) => "imei"
+          case u if (u.length == 15 || u.length == 16 || u.length == 17) && (regex.findFirstMatchIn(u) != None) => "imei"
           case u if (u.length == 36) => "idfa"
           case _ => "other"
         }
