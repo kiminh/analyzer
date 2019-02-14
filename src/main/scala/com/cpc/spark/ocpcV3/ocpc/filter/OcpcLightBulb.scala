@@ -146,7 +146,7 @@ object OcpcLightBulb{
         .withColumn("cpa1", when(col("ocpc_cpa1") === -1, col("cpc_cpa1")).otherwise(col("ocpc_cpa1")))
         .withColumn("cpa2", when(col("ocpc_cpa2") === -1, col("cpc_cpa2")).otherwise(col("ocpc_cpa2")))
         .withColumn("cpa3", when(col("ocpc_cpa3") === -1, col("cpc_cpa3")).otherwise(col("ocpc_cpa3")))
-        .selectExpr("ceil(cpa1) as cpa1", "ceil(cpa2) as cpa2", "ceil(cpa3) as cpa3")
+        .selectExpr("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3", "ceil(cpa1) as cpa1", "ceil(cpa2) as cpa2", "ceil(cpa3) as cpa3")
     data.write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_data_redis")
     data.show(10)
     val cnt = data.count()
