@@ -2,6 +2,7 @@ package com.cpc.spark.ocpcV3.ocpcNovel.logs
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import com.cpc.spark.tools.OperateMySQL
 
 object OcpcLaunchratio {
   def main(args: Array[String]): Unit = {
@@ -46,7 +47,6 @@ object OcpcLaunchratio {
     val sql2=
       s"""
          |select
-         |  date
          |  unitid,
          |  qtt_money,
          |  novel_money,
@@ -60,15 +60,15 @@ object OcpcLaunchratio {
          |  sum(if(media=='qtt',money_byunit,0)) as qtt_money,
          |  sum(if(media=='novel',money_byunit,0)) as novel_money
          |  from test.OcpcLaunchdata
-         |  where date='$date'
+         |  where `date`='$date'
          |  group by unitid
          |) a
        """.stripMargin
 
-//    val data1=spark.sql(sql2)
-//
-//      spark.sql("select * from test.OcpcLaunchdata where media = 'novel'").join(data1,Seq("unitid"))
-//        .write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata2")
+    val data1=spark.sql(sql2)
+
+      spark.sql("select * from dl_cpc.OcpcLaunchdata where media = 'novel'").join(data1,Seq("unitid"))
+        .write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata2")
 
     //直投暗投总体分析
     val sql3=
@@ -104,8 +104,12 @@ object OcpcLaunchratio {
 //        val data3=spark.sql(sql3)
 //        val money_overall=data3.select("money").rdd.map(x => x.getAs[Long]("money")).reduce(_+_).toDouble
 //         data3.withColumn("sum_money_ratio",round(col("money")/money_overall,3))
-//          .select("choose","money","sum_money_ratio","cpm","acp","ctr")
+//          .select("choose","money","sum_money_ratio","cpm","acp","ctr","date")
 //          .write.mode("overwrite").saveAsTable("test.OcpcLaunchdata3")
+
+//    val tableName = "report2.OcpcLaunchdata3"
+//    val deleteSql = s"delete from $tableName where `date` = '$date'"
+//    OperateMySQL.update(deleteSql)
     //直投暗投ocpc及cpc分析
     val sql4=
       s"""

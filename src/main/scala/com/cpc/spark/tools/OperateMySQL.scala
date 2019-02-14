@@ -53,3 +53,5 @@ object OperateMySQL {
         println(s"insert into $table success!")
     }
 }
+
+
