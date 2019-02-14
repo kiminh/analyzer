@@ -315,12 +315,13 @@ object OcpcLaunchratio {
          |  else 'notag' end as adclass,
          |  sum(qtt_money_1) sum_qtt_money_1,
          |  sum(qtt_money_2) sum_qtt_money_2,
-         |  sum(novel_money),
-         |  round(sum(novel_money)/sum(qtt_money),3) as avg_ratio,
+         |  sum(novel_money) sum_novel_money,
+         |  round(sum(novel_money)/sum(qtt_money_1),3) as avg_ratio_1,
+         |  round(sum(novel_money)/sum(qtt_money_2),3) as avg_ratio_2,
          |  round(sum(if( ratio >= 2,1,0))/sum(1),3) as gt200,
          |  round(sum(if( ratio >= 1 and ratio < 2,1,0))/sum(1),3) as gt100,
          |  round(sum(if( ratio >= 0.5 and ratio < 1,1,0))/sum(1),3) as gt50,
-         |  round(sum(if( ratio > 0 and ratio < 0.5,1,0))/sum(1),3) as lt50,
+         |  round(sum(if( ratio < 0.5,1,0))/sum(1),3) as lt50,
          |  round(sum(if( ratio is null,1,0))/sum(1),3) as eq0
          |from
          |(
