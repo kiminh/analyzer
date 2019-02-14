@@ -47,23 +47,23 @@ object OcpcPIDwithCPA {
     println(s"mediaSelection=$mediaSelection")
     println(s"cvrGoal=$cvrGoal")
 
-//    val prevTable = spark
-//      .table("dl_cpc.ocpc_prev_pb_once")
-//      .where(s"version='$version'")
-//
-//    val historyData = getHistory(mediaSelection, date, hour, spark)
-//    val result = calculateKwithConversionGoal(media, conversionGoal, hourInt, prevTable, historyData, date, hour, spark)
-//
-//    val resultDF = result
-//        .withColumn("kvalue", col("k_value"))
-//        .select("identifier", "kvalue", "conversion_goal")
-//        .withColumn("date", lit(date))
-//        .withColumn("hour", lit(hour))
-//        .withColumn("version", lit(version))
-//        .withColumn("method", lit("pid"))
-//
-////    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
-//
+    val prevTable = spark
+      .table("dl_cpc.ocpc_prev_pb_once")
+      .where(s"version='$version'")
+
+    val historyData = getHistory(mediaSelection, date, hour, spark)
+    val result = calculateKwithConversionGoal(media, conversionGoal, hourInt, prevTable, historyData, date, hour, spark)
+
+    val resultDF = result
+        .withColumn("kvalue", col("k_value"))
+        .select("identifier", "kvalue", "conversion_goal")
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .withColumn("version", lit(version))
+        .withColumn("method", lit("pid"))
+
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+
 //    resultDF
 //      .repartition(10)
 //      .write
