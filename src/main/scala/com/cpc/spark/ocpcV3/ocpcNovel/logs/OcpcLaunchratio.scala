@@ -77,12 +77,12 @@ object OcpcLaunchratio {
     val sql3=
       s"""
          |select
+         |  a.`date` as `date`
          |  choose,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
          |  round(sum(isclick)*100 / sum(isshow),3) as ctr,
          |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
          |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3) as acp,
-         |  a.`date` as `date`
          |from
          |(
          |  select *
@@ -99,6 +99,7 @@ object OcpcLaunchratio {
          |left join dl_cpc.OcpcLaunchdata2 b
          |on a.unitid=b.unitid and b.`date` = '$date'
          |group by
+         |  a.`date`,
          |  choose
          |order by
          |  choose
