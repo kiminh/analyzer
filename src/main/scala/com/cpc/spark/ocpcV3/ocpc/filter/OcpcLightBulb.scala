@@ -52,11 +52,13 @@ object OcpcLightBulb{
       .withColumn("version", lit("qtt_demo"))
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
 
-//    // 清除redis里面的数据
+    // 清除redis里面的数据
+    println(s"############## cleaning redis database ##########################")
 //    cleanRedis(tableName, date, hour, spark)
 
     // 存入redis
     saveDataToRedis(date, hour, spark)
+    println(s"############## saving redis database ##########################")
 
     data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
@@ -127,7 +129,6 @@ object OcpcLightBulb{
     val auth = conf.getString("adv_redis.auth")
     println(s"host: $host")
     println(s"port: $port")
-    println(s"############## cleaning redis database ##########################")
 
     data.foreachPartition(iterator => {
       val redis = new RedisClient(host, port)
@@ -167,8 +168,6 @@ object OcpcLightBulb{
     val auth = conf.getString("adv_redis.auth")
     println(s"host: $host")
     println(s"port: $port")
-    println(s"############## saving redis database ##########################")
-
 
     data.foreachPartition(iterator => {
       val redis = new RedisClient(host, port)
