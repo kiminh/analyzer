@@ -7,7 +7,7 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   *   1. uid=""
   *   2. uid.contains(".")
   *   3. uid.contains("000000")
-  *   4. uid.length in (15, 16, 17)  imei
+  *   4. uid.length in (15, 16, 17)且全为数字  imei
   *   5. uid.length = 36  idfa
   *   6. 其他
   */
