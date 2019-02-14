@@ -196,7 +196,7 @@ object OcpcLaunchratio {
          """.stripMargin
 
         spark.sql(sql5).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
-          .select("choose","usertype","money","sum_money_ratio","cpm","acp","ctr")
+          .select("choose","usertype","money","sum_money_ratio","cpm","acp","ctr","`date`")
           .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_usertype")
 
     val table3 = "report2.midu_ocpc_launch_usertype"
@@ -243,7 +243,7 @@ object OcpcLaunchratio {
          """.stripMargin
 
     spark.sql(sql6).withColumn("sum_money_ratio",round(col("money")/money_overall,3))
-      .select("choose","adclass","money","sum_money_ratio","cpm","acp","ctr")
+      .select("choose","adclass","money","sum_money_ratio","cpm","acp","ctr","`date`")
       .write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_adclass")
 
     val table4 = "report2.midu_ocpc_launch_adclass"
