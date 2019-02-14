@@ -27,7 +27,8 @@ object HotTopicCtrModelMetrics {
                |  round(sum(ext['exp_ctr'].int_value/1000000)/sum(isshow),6)/round(sum(isclick)/sum(isshow),6) as pcoc,
                |  sum(case WHEN isclick = 1 then price else 0 end) as click_total_price,
                |  round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isshow), 6) as cpc_cpm,
-               |  round(sum(case WHEN isclick = 1 then price else 0 end)*10/count(distinct uid), 6) as cpc_arpu
+               |  round(sum(case WHEN isclick = 1 then price else 0 end)*10/count(distinct uid), 6) as cpc_arpu,
+               |  `date`
                |from dl_cpc.cpc_hot_topic_union_log
                |where `date` = '$date'
                |and media_appsid = '80002819'
