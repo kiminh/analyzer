@@ -42,6 +42,8 @@ object OcpcLaunchratio {
          |  ELSE "other" END
        """.stripMargin
     println(sql1)
+    val data0=spark.sql(sql1)
+    data0.printSchema()
     spark.sql(sql1).select("unitid","usertype","adclass","media","money_byunit","isclick_byunit",
       "isshow_byunit","`date`")
       .write.mode("overwrite").insertInto("dl_cpc.OcpcLaunchdata")
