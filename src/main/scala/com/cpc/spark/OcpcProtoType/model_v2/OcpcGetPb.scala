@@ -131,6 +131,8 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("history_ocpc_flag") === 0, col("cpc_k")).otherwise(col("ocpc_k")))
       .withColumn("conversion_goal", lit(conversionGoal))
 
+    finalK.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215")
+
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
 
     resultDF
