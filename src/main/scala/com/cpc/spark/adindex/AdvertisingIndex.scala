@@ -1,6 +1,5 @@
 package com.cpc.spark.adindex
 
-import idxinterface.Idx
 import org.apache.commons.httpclient.HttpClient
 import org.apache.commons.httpclient.methods.GetMethod
 
@@ -14,22 +13,22 @@ object AdvertisingIndex {
 
     println(method.getStatusLine)
 
-    val body = method.getResponseBodyAsString
-    val data = body.substring(16)
-    val idxItems = Idx.IdxItems.parseFrom(data.getBytes)
-    val gitemsCount = idxItems.getGitemsCount
-    val ditemsCount = idxItems.getDitemsCount
-
-    /*
-    for循环
-     */
-    val idx = Seq[Idx]()
-    for (i <- 0 until gitemsCount; j <- 0 until ditemsCount) {
-      val ideaItem = idxItems.getDitems(i)
-      idxItems.getDitemsList
-
-      val unitItem = idxItems.getGitems(i)
-    }
+//    val body = method.getResponseBodyAsString
+//    val data = body.substring(16)
+//    val idxItems = Idx.IdxItems.parseFrom(data.getBytes)
+//    val gitemsCount = idxItems.getGitemsCount
+//    val ditemsCount = idxItems.getDitemsCount
+//
+//    /*
+//    for循环
+//     */
+//    val idx = Seq[Idx]()
+//    for (i <- 0 until gitemsCount; j <- 0 until ditemsCount) {
+//      val ideaItem = idxItems.getDitems(i)
+//      idxItems.getDitemsList
+//
+//      val unitItem = idxItems.getGitems(i)
+//    }
 
 
   }
