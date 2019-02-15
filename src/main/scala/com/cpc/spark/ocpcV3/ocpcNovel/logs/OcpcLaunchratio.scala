@@ -355,7 +355,7 @@ object OcpcLaunchratio {
         ,"gt200","gt100","gt50","lt50","eq0","`date`")
     data8result.repartition(1).write.mode("overwrite").insertInto("dl_cpc.midu_ocpc_launch_adclass_ratio")
 
-    val table6 = "report2.midu_ocpc_launch_usertype_ratio"
+    val table6 = "report2.midu_ocpc_launch_adclass_ratio"
     val deleteSql6 = s"delete from $table6 where `date` = '$date'"
     OperateMySQL.update(deleteSql6)
     OperateMySQL.insert(data8result,table6)
