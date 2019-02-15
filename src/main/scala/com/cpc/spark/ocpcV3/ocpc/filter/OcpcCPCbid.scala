@@ -39,7 +39,7 @@ object OcpcCPCbid {
     var cnt = 0
 
     for (record <- dataset.collect()) {
-      val unit_id = record.getAs[String]("unitid").toInt
+      val unit_id = record.getAs[String]("unitid").toLong
       val min_bid = record.getAs[Long]("min_bid").toDouble
 
       println(s"unit_id:$unit_id, min_bid:$min_bid")

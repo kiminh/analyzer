@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package ocpcCpcBid;
 message SingleOcpcMinBid {
-    int32 unitid = 1;
+    int64 unitid = 1;
     double minBid = 2;
 }
 
