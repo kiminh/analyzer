@@ -1,4 +1,3 @@
-sh test.sh 2019-02-01
 sh test.sh 2019-02-02
 sh test.sh 2019-02-03
 sh test.sh 2019-02-04
