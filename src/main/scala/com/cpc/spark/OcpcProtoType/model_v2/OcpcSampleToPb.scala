@@ -31,7 +31,7 @@ object OcpcSampleToPb {
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
-    // bash: 2019-01-02 12 qtt_demo 1
+    // bash: 2019-01-02 12 novel_v2 1
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
