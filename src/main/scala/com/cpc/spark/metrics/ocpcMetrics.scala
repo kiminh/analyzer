@@ -214,6 +214,46 @@ object ocpcMetrics {
         r4.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_app_api_detail_metrics")
 
         r4.show(10)
+
+        val sql5 =
+            s"""
+               |select count(1) as userid_num,
+               |    sum(if(api_cost>0,1,0)) as api_userid_num,
+               |    round(sum(if(api_cost>0,1,0))/count(*),6) as api_userid_rate,
+               |    sum(cost) as userid_cost,
+               |    sum(api_cost) as api_userid_cost,
+               |    round(sum(api_cost)/sum(cost),6) as api_userid_cost_rate
+               |from
+               |(
+               |  select userid,sum(price) as cost,sum(if(is_api_callback=1,price,0)) as api_cost
+               |  from dl_cpc.slim_union_log
+               |  where dt = '$date'
+               |  and media_appsid in ('80000001', '80000002')
+               |  and isclick=1
+               |  and antispam = 0
+               |  and ideaid > 0
+               |  and adsrc = 1
+               |  and adslot_type in (1,2,3)
+               |  group by userid
+               |) x
+             """.stripMargin
+
+        val t5 = spark.sql(sql5)
+
+        t5.createOrReplaceTempView("t5")
+
+        val sqlt5 =
+            s"""
+               |select 'app' as tag, userid_num as userid_num, 1.0 as userid_rate, userid_cost as userid_cost, 1.0 as userid_cost_rate, '$date' as `date` from t5
+               |union
+               |select 'app api' as tag, api_userid_num as userid_num, api_userid_rate as userid_rate, api_userid_cost as userid_cost, api_userid_cost_rate as userid_cost_rate, '$date' as `date` from t5
+             """.stripMargin
+
+        val r5 = spark.sql(sqlt5)
+
+        r5.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_app_detail_metrics")
+
+        r5.show(10)
     }
 }
 
@@ -254,6 +294,17 @@ create table if not exists dl_cpc.cpc_ocpc_app_api_detail_metrics
     unitid_num_rate double,
     unitid_cost int,
     unitid_cost_rate double
+)
+PARTITIONED BY (`date` string)
+STORED AS PARQUET;
+
+create table if not exists dl_cpc.cpc_ocpc_app_detail_metrics
+(
+    tag string,
+    userid_num int,
+    userid_num_rate double,
+    userid_cost int,
+    userid_cost_rate double
 )
 PARTITIONED BY (`date` string)
 STORED AS PARQUET;
