@@ -218,7 +218,7 @@ object OcpcGetPb {
          |    AND
          |        isclick=1
          |    AND
-         |        media_appsid  in ('80000001', '80000002')
+         |        $mediaSelection
          |    AND antispam = 0
          |    AND ideaid > 0
          |    AND adsrc = 1
