@@ -139,15 +139,15 @@ object ocpcMetrics {
 
         val sqlt3 =
             s"""
-               |select '二类电商总体' as tag,total_unitid_num as unitid_num,1.0 as unitid_num_rate,total_cost as unitid_cost,1.0 as unitid_cost_rate,'$date' from t3
+               |select '二类电商总体' as tag,total_unitid_num as unitid_num,1.0 as unitid_num_rate,total_cost as unitid_cost,1.0 as unitid_cost_rate,'$date' as `date` from t3
                |union
-               |select '可使用ocpc' as tag,ocpc_unitid_num as unitid_num,ocpc_unitid_rate as unitid_num_rate,ocpc_cost as unitid_cost,ocpc_cost_rate as unitid_cost_rate,'$date' from t3
+               |select '可使用ocpc' as tag,ocpc_unitid_num as unitid_num,ocpc_unitid_rate as unitid_num_rate,ocpc_cost as unitid_cost,ocpc_cost_rate as unitid_cost_rate,'$date' as `date` from t3
                |union
-               |select 'cv未达标' as tag,cv_unitid_num as unitid_num,cv_unitid_rate as unitid_num_rate,cv_cost as unitid_cost,cv_cost_rate as unitid_cost_rate,'$date' from t3
+               |select 'cv未达标' as tag,cv_unitid_num as unitid_num,cv_unitid_rate as unitid_num_rate,cv_cost as unitid_cost,cv_cost_rate as unitid_cost_rate,'$date' as `date` from t3
                |union
-               |select 'auc未达标' as tag,auc_unitid_num as unitid_num,auc_unitid_rate as unitid_num_rate,auc_cost as unitid_cost,auc_cost_rate as unitid_cost_rate,'$date' from t3
+               |select 'auc未达标' as tag,auc_unitid_num as unitid_num,auc_unitid_rate as unitid_num_rate,auc_cost as unitid_cost,auc_cost_rate as unitid_cost_rate,'$date' as `date` from t3
                |union
-               |select 'calc未达标' as tag,calc_unitid_num as unitid_num,calc_unitid_rate as unitid_num_rate,calc_cost as unitid_cost,calc_cost_rate as unitid_cost_rate,'$date' from t3
+               |select 'calc未达标' as tag,calc_unitid_num as unitid_num,calc_unitid_rate as unitid_num_rate,calc_cost as unitid_cost,calc_cost_rate as unitid_cost_rate,'$date' as `date` from t3
              """.stripMargin
         val r3 = spark.sql(sqlt3)
 
@@ -199,15 +199,15 @@ object ocpcMetrics {
 
         val sqlt4 =
             s"""
-               |select '二类电商总体' as tag,total_unitid_num as unitid_num,1.0 as unitid_num_rate,total_cost as unitid_cost,1.0 as unitid_cost_rate,'$date' from t3
+               |select 'app api总体' as tag,total_unitid_num as unitid_num,1.0 as unitid_num_rate,total_cost as unitid_cost,1.0 as unitid_cost_rate,'$date' as `date` from t4
                |union
-               |select '可使用ocpc' as tag,ocpc_unitid_num as unitid_num,ocpc_unitid_rate as unitid_num_rate,ocpc_cost as unitid_cost,ocpc_cost_rate as unitid_cost_rate,'$date' from t3
+               |select '可使用ocpc' as tag,ocpc_unitid_num as unitid_num,ocpc_unitid_rate as unitid_num_rate,ocpc_cost as unitid_cost,ocpc_cost_rate as unitid_cost_rate,'$date' as `date` from t4
                |union
-               |select 'cv未达标' as tag,cv_unitid_num as unitid_num,cv_unitid_rate as unitid_num_rate,cv_cost as unitid_cost,cv_cost_rate as unitid_cost_rate,'$date' from t3
+               |select 'cv未达标' as tag,cv_unitid_num as unitid_num,cv_unitid_rate as unitid_num_rate,cv_cost as unitid_cost,cv_cost_rate as unitid_cost_rate,'$date' as `date` from t4
                |union
-               |select 'auc未达标' as tag,auc_unitid_num as unitid_num,auc_unitid_rate as unitid_num_rate,auc_cost as unitid_cost,auc_cost_rate as unitid_cost_rate,'$date' from t3
+               |select 'auc未达标' as tag,auc_unitid_num as unitid_num,auc_unitid_rate as unitid_num_rate,auc_cost as unitid_cost,auc_cost_rate as unitid_cost_rate,'$date' as `date` from t4
                |union
-               |select 'calc未达标' as tag,calc_unitid_num as unitid_num,calc_unitid_rate as unitid_num_rate,calc_cost as unitid_cost,calc_cost_rate as unitid_cost_rate,'$date' from t3
+               |select 'calc未达标' as tag,calc_unitid_num as unitid_num,calc_unitid_rate as unitid_num_rate,calc_cost as unitid_cost,calc_cost_rate as unitid_cost_rate,'$date' as `date` from t4
              """.stripMargin
         val r4 = spark.sql(sqlt4)
 
