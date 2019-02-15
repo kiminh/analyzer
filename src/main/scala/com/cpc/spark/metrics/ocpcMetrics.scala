@@ -51,7 +51,7 @@ object ocpcMetrics {
 
         val r1 = spark.sql(sqlt1)
 
-        //r1.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_elds_metrics")
+        r1.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_elds_metrics")
 
         r1.show(10)
         //app api监控
@@ -90,7 +90,7 @@ object ocpcMetrics {
 
         val r2 = spark.sql(sqlt2)
 
-        //r2.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_app_api_metrics")
+        r2.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_app_api_metrics")
 
         r2.show(10)
 
@@ -151,7 +151,7 @@ object ocpcMetrics {
              """.stripMargin
         val r3 = spark.sql(sqlt3)
 
-        //r3.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_app_api_metrics")
+        r3.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_elds_detail_metrics")
 
         r3.show(10)
 
@@ -211,7 +211,7 @@ object ocpcMetrics {
              """.stripMargin
         val r4 = spark.sql(sqlt4)
 
-        //r4.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_app_api_metrics")
+        r4.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_app_api_detail_metrics")
 
         r4.show(10)
     }
@@ -232,6 +232,28 @@ create table if not exists dl_cpc.cpc_ocpc_app_api_metrics
     tag string,
     userid_num int,
     userid_rate double
+)
+PARTITIONED BY (`date` string)
+STORED AS PARQUET;
+
+create table if not exists dl_cpc.cpc_ocpc_elds_detail_metrics
+(
+    tag string,
+    unitid_num int,
+    unitid_num_rate double,
+    unitid_cost int,
+    unitid_cost_rate double
+)
+PARTITIONED BY (`date` string)
+STORED AS PARQUET;
+
+create table if not exists dl_cpc.cpc_ocpc_app_api_detail_metrics
+(
+    tag string,
+    unitid_num int,
+    unitid_num_rate double,
+    unitid_cost int,
+    unitid_cost_rate double
 )
 PARTITIONED BY (`date` string)
 STORED AS PARQUET;
