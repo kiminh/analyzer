@@ -41,14 +41,20 @@ object OcpcGetPb {
     val conf_key1 = "medias." + media + ".media_selection"
     val mediaSelection = conf.getString(conf_key1)
 
+    // cvr 分区
+    val cvGoal = conversionGoal.toString
+    val conf_key2 = "medias." + media + ".cv_pt." + "cvr" + cvGoal
+    val cvrGoal = conf.getString(conf_key2)
+
     println("parameters:")
     println(s"date=$date, hour=$hour, conversionGoal=$conversionGoal, version=$version, media=$media")
     println(s"mediaSelection=$mediaSelection")
+    println(s"cvrGoal=$cvrGoal")
 
 //    // 明投：可以有重复identifier
 //    dl_cpc.ocpc_pb_result_hourly_v2
 //    dl_cpc.ocpc_prev_pb_once
-    val result = getPbByConversion(mediaSelection, conversionGoal, version, date, hour, spark)
+    val result = getPbByConversion(media, conversionGoal, version, date, hour, spark)
     val resultDF = result
         .withColumn("cpagiven", lit(1))
         .select("identifier", "cpagiven", "cvrcnt", "kvalue", "conversion_goal")
@@ -62,16 +68,16 @@ object OcpcGetPb {
 
   }
 
-  def getPbByConversion(mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getPbByConversion(media: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     计算步骤
     1. 获取base_data
     2. 按照conversiongoal, 计算cvrcnt，数据串联
     3. 计算k
      */
-    val base = getBaseData(mediaSelection, conversionGoal, date, hour, spark)
-    val cvrData = getOcpcCVR(mediaSelection, conversionGoal, date, hour, spark)
-    val kvalue = getKvalue(mediaSelection, conversionGoal, version, date, hour, spark)
+    val base = getBaseData(media, conversionGoal, date, hour, spark)
+    val cvrData = getOcpcCVR(media, conversionGoal, date, hour, spark)
+    val kvalue = getKvalue(media, conversionGoal, version, date, hour, spark)
 
     val resultDF = base
       .join(cvrData, Seq("identifier", "conversion_goal"), "left_outer")
@@ -83,7 +89,7 @@ object OcpcGetPb {
     resultDF
   }
 
-  def getKvalue(mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getKvalue(media: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     4个来源:
       1. regression计算结果
@@ -108,7 +114,7 @@ object OcpcGetPb {
     val ocpcK = calculateKocpc(regressionK, pidK, prevPb, spark)
 
     // cpc投放的k值
-    val cpcK = getCpcK(mediaSelection, conversionGoal, date, hour, spark)
+    val cpcK = getCpcK(media, conversionGoal, date, hour, spark)
 
     // 数据外关联
     val ocpcKfinal = ocpcK
@@ -131,7 +137,7 @@ object OcpcGetPb {
 
   }
 
-  def getCpcK(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getCpcK(media: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     /*
      通过slim_union_log关联的方式获取前72小时中的k值
      1. 以searchid关联的方式关联k值与cvr
@@ -139,15 +145,15 @@ object OcpcGetPb {
      3. 按照实际cvr的2倍过滤过高cvr
       */
     // 对于刚进入ocpc阶段但是有cpc历史数据的广告依据历史转化率给出k的初值
+    val conf = ConfigFactory.load("ocpc")
+    // 媒体选择
+    val conf_key1 = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key1)
+
     // cvr 分区
-    var cvrGoal = ""
-    if (conversionGoal == 1) {
-      cvrGoal = "cvr1"
-    } else if (conversionGoal == 2) {
-      cvrGoal = "cvr2"
-    } else {
-      cvrGoal = "cvr3"
-    }
+    val cvGoal = conversionGoal.toString
+    val conf_key2 = "medias." + media + ".cv_pt." + "cvr" + cvGoal
+    val cvrGoal = conf.getString(conf_key2)
 
     // 取历史数据
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
@@ -385,7 +391,10 @@ object OcpcGetPb {
     resultDF
   }
 
-  def getBaseData(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(media: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -418,19 +427,19 @@ object OcpcGetPb {
   }
 
 
-  def getOcpcCVR(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getOcpcCVR(media: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     /*
     根据ocpc_union_log_hourly关联到正在跑ocpc的广告数据
      */
+    val conf = ConfigFactory.load("ocpc")
+    // 媒体选择
+    val conf_key1 = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key1)
+
     // cvr 分区
-    var cvrGoal = ""
-    if (conversionGoal == 1) {
-      cvrGoal = "cvr1"
-    } else if (conversionGoal == 2) {
-      cvrGoal = "cvr2"
-    } else {
-      cvrGoal = "cvr3"
-    }
+    val cvGoal = conversionGoal.toString
+    val conf_key2 = "medias." + media + ".cv_pt." + "cvr" + cvGoal
+    val cvrGoal = conf.getString(conf_key2)
 
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
