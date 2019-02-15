@@ -120,9 +120,11 @@ object OcpcGetPb {
     val ocpcKfinal = ocpcK
         .withColumn("ocpc_k", col("k_value"))
         .select("identifier", "ocpc_k")
+    ocpcKfinal.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215ocpc")
     val cpcKfinal = cpcK
         .withColumn("cpc_k", col("kvalue"))
         .select("identifier", "cpc_k", "history_ocpc_flag")
+    cpcKfinal.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215cpc")
 
     val finalK = ocpcKfinal
       .join(cpcKfinal, Seq("identifier"), "outer")
