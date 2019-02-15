@@ -165,7 +165,7 @@ object OcpcLaunchratio {
     val table2 = "report2.midu_ocpc_launch_ocpc_cpc"
     val deleteSql2 = s"delete from $table2 where `date` = '$date'"
     OperateMySQL.update(deleteSql2)
-    OperateMySQL.insert(data3result,table2)
+    OperateMySQL.insert(data4result,table2)
 
   //用户类型分析：其他非企正企
   val sql5=
@@ -210,7 +210,7 @@ object OcpcLaunchratio {
     val table3 = "report2.midu_ocpc_launch_usertype"
     val deleteSql3 = s"delete from $table3 where `date` = '$date'"
     OperateMySQL.update(deleteSql3)
-    OperateMySQL.insert(data3result,table3)
+    OperateMySQL.insert(data5result,table3)
 
     //用户类型：重点行业
     val sql6=
@@ -259,7 +259,7 @@ object OcpcLaunchratio {
     val table4 = "report2.midu_ocpc_launch_adclass"
     val deleteSql4 = s"delete from $table4 where `date` = '$date'"
     OperateMySQL.update(deleteSql4)
-    OperateMySQL.insert(data3result,table4)
+    OperateMySQL.insert(data6result,table4)
 
       //暗投usertype配比分析
         val sql7=
@@ -308,7 +308,7 @@ object OcpcLaunchratio {
     val table5 = "report2.midu_ocpc_launch_usertype_ratio"
     val deleteSql5 = s"delete from $table5 where `date` = '$date'"
     OperateMySQL.update(deleteSql5)
-    OperateMySQL.insert(data3result,table5)
+    OperateMySQL.insert(data7result,table5)
 
 
     val sql8=
@@ -358,7 +358,7 @@ object OcpcLaunchratio {
     val table6 = "report2.midu_ocpc_launch_usertype_ratio"
     val deleteSql6 = s"delete from $table6 where `date` = '$date'"
     OperateMySQL.update(deleteSql6)
-    OperateMySQL.insert(data3result,table6)
+    OperateMySQL.insert(data8result,table6)
 
 
   }
