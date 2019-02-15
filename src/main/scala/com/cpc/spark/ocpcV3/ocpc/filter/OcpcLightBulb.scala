@@ -31,10 +31,10 @@ object OcpcLightBulb{
       .appName(s"OcpcLightBulb: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
+
     val tableName = "test.ocpc_qtt_light_control"
 
-    // 清除redis里面的数据
-    cleanRedis(tableName, date, hour, spark)
+
 
 
     // 抽取数据
@@ -47,14 +47,20 @@ object OcpcLightBulb{
         .join(ocpcRecord, Seq("unitid"), "outer")
         .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
-    data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
     data
       .withColumn("date", lit(date))
       .withColumn("version", lit("qtt_demo"))
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
 
+    // 清除redis里面的数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(tableName, date, hour, spark)
+
     // 存入redis
-    saveDataToRedis(tableName, date, hour, spark)
+    saveDataToRedis(date, hour, spark)
+    println(s"############## saving redis database ##########################")
+
+    data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
 
   def getOcpcRecord(date: String, hour: String, spark: SparkSession) = {
@@ -140,14 +146,20 @@ object OcpcLightBulb{
     })
   }
 
-  def saveDataToRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
-    val rawData = spark.table(tableName).repartition(2)
+  def saveDataToRedis(date: String, hour: String, spark: SparkSession) = {
+    val rawData = spark
+      .table("dl_cpc.ocpc_qtt_light_control")
+      .where(s"`date`='$date' and version='qtt_demo'")
+      .repartition(2)
+
     val data = rawData
         .withColumn("cpa1", when(col("ocpc_cpa1") === -1, col("cpc_cpa1")).otherwise(col("ocpc_cpa1")))
         .withColumn("cpa2", when(col("ocpc_cpa2") === -1, col("cpc_cpa2")).otherwise(col("ocpc_cpa2")))
         .withColumn("cpa3", when(col("ocpc_cpa3") === -1, col("cpc_cpa3")).otherwise(col("ocpc_cpa3")))
+        .selectExpr("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3", "cast(round(cpa1, 2) as double) as cpa1", "cast(round(cpa2, 2) as double) as cpa2", "cast(round(cpa3, 2) as double) as cpa3")
     data.write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_data_redis")
     data.show(10)
+    data.printSchema()
     val cnt = data.count()
     println(s"total size of the data is: $cnt")
     val conf = ConfigFactory.load("ocpc")
@@ -157,16 +169,16 @@ object OcpcLightBulb{
     println(s"host: $host")
     println(s"port: $port")
 
-
     data.foreachPartition(iterator => {
       val redis = new RedisClient(host, port)
       redis.auth(auth)
       iterator.foreach{
         record => {
           val identifier = record.getAs[Int]("unitid").toString
-          val cpa1 = record.getAs[Double]("cpa1").toInt
-          val cpa2 = record.getAs[Double]("cpa2").toInt
-          val cpa3 = record.getAs[Double]("cpa3").toInt
+          val cpa1 = record.getAs[Double]("cpa1")
+          val cpa2 = record.getAs[Double]("cpa2")
+          val cpa3 = record.getAs[Double]("cpa3")
+          println(s"cpa1:$cpa1, cpa2:$cpa2, cpa3:$cpa3")
           var key = "algorithm_unit_ocpc_" + identifier
           val json = new JSONObject()
           if (cpa1 > 0) {
