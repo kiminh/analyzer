@@ -11,7 +11,7 @@ import org.apache.spark.storage.StorageLevel
 
 import scala.collection.mutable
 
-object prepareAgeModelSample {
+object prepareAgeModelSample_v2 {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   //multi hot 特征默认hash code

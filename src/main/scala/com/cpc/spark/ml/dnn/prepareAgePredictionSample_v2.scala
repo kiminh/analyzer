@@ -9,7 +9,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions.{array, split, udf}
 import org.apache.spark.storage.StorageLevel
 
-object prepareAgePredictionSample {
+object prepareAgePredictionSample_v2 {
 
   Logger.getRootLogger.setLevel(Level.WARN)
 
