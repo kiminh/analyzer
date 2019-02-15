@@ -69,7 +69,7 @@ object OcpcRegression {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    result.write.mode("overwrite").saveAsTable(tablename)
+    result.write.mode("overwrite").saveAsTable("test.ocpc_regression_middle_hourly_v2")
 //    result
 //      .repartition(10).write.mode("overwrite").insertInto(tablename)
 
