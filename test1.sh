@@ -1,13 +1,11 @@
-sh test2.sh 2018-12-10
-sh test2.sh 2018-12-11
-sh test2.sh 2018-12-09
-sh test2.sh 2018-12-07
-sh test2.sh 2018-12-08
-sh test2.sh 2018-12-12
-sh test2.sh 2018-12-13
-sh test2.sh 2018-12-14
-sh test2.sh 2018-12-15
-sh test2.sh 2018-12-16
-
+sh test.sh 2019-02-02
+sh test.sh 2019-02-03
+sh test.sh 2019-02-04
+sh test.sh 2019-02-05
+sh test.sh 2019-02-06
+sh test.sh 2019-02-07
+sh test.sh 2019-02-08
+sh test.sh 2019-02-09
+sh test.sh 2019-02-10
 
 
