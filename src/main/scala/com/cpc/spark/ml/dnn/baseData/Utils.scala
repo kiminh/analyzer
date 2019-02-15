@@ -49,6 +49,7 @@ object Utils {
     spark.sql(sql)
       .repartition(numPartitions)
       .rdd.map(x => Base64.decodeBase64(x.getString(0)))
+      .filter(_ != null)
       .map(x => {
         acc.add(1L)
         (new BytesWritable(x), NullWritable.get())
@@ -100,6 +101,7 @@ object Utils {
     spark.sql(sql)
       .repartition(numPartitions, $"uid")
       .rdd.map(x => Base64.decodeBase64(x.getString(0)))
+      .filter(_ != null)
       .map(x => {
         acc.add(1L)
         (new BytesWritable(x), NullWritable.get())
