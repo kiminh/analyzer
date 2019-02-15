@@ -62,9 +62,9 @@ object OcpcGetPb {
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
 
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_v2")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_v2")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
@@ -120,11 +120,11 @@ object OcpcGetPb {
     val ocpcKfinal = ocpcK
         .withColumn("ocpc_k", col("k_value"))
         .select("identifier", "ocpc_k")
-    ocpcKfinal.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215ocpc")
+//    ocpcKfinal.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215ocpc")
     val cpcKfinal = cpcK
         .withColumn("cpc_k", col("kvalue"))
         .select("identifier", "cpc_k", "history_ocpc_flag")
-    cpcKfinal.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215cpc")
+//    cpcKfinal.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215cpc")
 
     val finalK = ocpcKfinal
       .join(cpcKfinal, Seq("identifier"), "outer")
@@ -133,7 +133,7 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("history_ocpc_flag") === 0, col("cpc_k")).otherwise(col("ocpc_k")))
       .withColumn("conversion_goal", lit(conversionGoal))
 
-    finalK.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215")
+//    finalK.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215")
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
 
