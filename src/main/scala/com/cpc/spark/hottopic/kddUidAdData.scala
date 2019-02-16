@@ -22,7 +22,11 @@ object kddUidAdData {
                |select title,title_split
                |from dl_cpc.kdd_ad_title_split
              """.stripMargin
+
+
         val title = spark.sql(sql1).cache()
+
+        title.show(10)
 
         val sql2 =
             s"""
