@@ -48,7 +48,7 @@ object OcpcCPCbid {
 
     data.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190216b")
 
-//    savePbPack(data, fileName)
+    savePbPack(data, fileName)
   }
 
   def getConversioGoal(date: String, hour: String, spark: SparkSession) = {
@@ -219,13 +219,15 @@ object OcpcCPCbid {
     for (record <- dataset.collect()) {
       val unit_id = record.getAs[String]("unitid").toLong
       val min_bid = record.getAs[Long]("min_bid").toDouble
+      val post_cvr = record.getAs[Double]("post_cvr")
 
-      println(s"unit_id:$unit_id, min_bid:$min_bid")
+      println(s"unit_id:$unit_id, min_bid:$min_bid, post_cvr:$post_cvr")
 
       cnt += 1
       val currentItem = SingleOcpcMinBid(
         unitid = unit_id,
-        minBid = min_bid
+        minBid = min_bid,
+        postCvr = post_cvr
       )
       list += currentItem
 
