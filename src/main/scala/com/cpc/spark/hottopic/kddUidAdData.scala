@@ -31,7 +31,7 @@ object kddUidAdData {
         val sql2 =
             s"""
                |select *
-               |from from dl_cpc.kdd_ad_log
+               |from dl_cpc.kdd_ad_log
                |where `date` = '$date'
                |and hour = '$hour'
              """.stripMargin
