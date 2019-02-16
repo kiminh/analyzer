@@ -29,7 +29,9 @@ object OcpcCalculateAUCv2 {
     val data = getData(conversionGoal, version, date, hour, spark)
     val tableName = "test.ocpc_auc_raw_conversiongoal_" + conversionGoal
     data
-      .repartition(10).write.mode("overwrite").insertInto(tableName)
+      .repartition(10).write.mode("overwrite").saveAsTable(tableName)
+//    data
+//      .repartition(10).write.mode("overwrite").insertInto(tableName)
 
     // 获取unitid与industry之间的关联表
     val unitidIndustry = getIndustry(date, hour, spark)
