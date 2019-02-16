@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.dnn.baseData
 
-import java.io.File
+import java.io.{File, PrintWriter}
 
 import com.redis.RedisClient
 import com.typesafe.config.ConfigFactory
@@ -13,6 +13,7 @@ import sys.process._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.LongAccumulator
 import redis.clients.jedis.{HostAndPort, JedisCluster}
+
 import scala.util.Random
 
 /**
@@ -61,7 +62,7 @@ object Utils {
     val fileName = "count_" + Random.nextInt(100000)
     println("count file name : " + fileName)
     println(s"total num is : ${acc.sum}")
-    s"echo ${acc.sum}" #> new File(s"$fileName") !
+    writeNum2File(fileName, acc.sum)
 
     s"hadoop fs -put $fileName $path/count" !
 
@@ -113,7 +114,7 @@ object Utils {
     val fileName = "count_" + Random.nextInt(100000)
     println("count file name : " + fileName)
     println(s"total num is : ${acc.sum}")
-    s"echo ${acc.sum}" #> new File(s"$fileName") !
+    writeNum2File(fileName, acc.sum)
 
     s"hadoop fs -put $fileName $path/count" !
 
@@ -207,5 +208,11 @@ object Utils {
     else if (t == "redis") s"select key, dnnmultihot from $table where $condition"
     else if (t == "gauc_example") s"select example, uid from $table where $condition"
     else ""
+  }
+
+  def writeNum2File(file: String, num: Long): Unit = {
+    val writer = new PrintWriter(new File(file))
+    writer.write(num.toString)
+    writer.close()
   }
 }
