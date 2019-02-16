@@ -4,6 +4,7 @@ package ocpcCpcBid;
 message SingleOcpcMinBid {
     int64 unitid = 1;
     double minBid = 2;
+    double postCvr = 3;
 }
 
 message OcpcMinBidList {
