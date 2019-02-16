@@ -14,12 +14,14 @@ object ocpcMetrics {
           .enableHiveSupport()
           .getOrCreate()
         import spark.implicits._
+        //((`date` = '2019-02-12' and hour > '06') or (`date` = '2019-02-15' and hour <= '06') or (`date` > '2019-02-12' and `date` < '2019-02-15'))
+        val ds = s"((dt=date_sub('$date',3) and hour>'06') or (dt='$date' and hour<='06') or (dt>date_sub('$date',3) and dt<'$date'))"
 
         val unionSql =
             s"""
                |select unitid,userid
                |from dl_cpc.slim_union_log
-               |  where dt = '$date'
+               |  where $ds
                |  and media_appsid in ('80000001', '80000002')
                |  and isclick=1
                |  and antispam = 0
@@ -262,7 +264,7 @@ object ocpcMetrics {
                |(
                |  select userid,sum(price) as cost,sum(if(is_api_callback=1,price,0)) as api_cost
                |  from dl_cpc.slim_union_log
-               |  where dt = '$date'
+               |  where $ds
                |  and media_appsid in ('80000001', '80000002')
                |  and isclick=1
                |  and antispam = 0
