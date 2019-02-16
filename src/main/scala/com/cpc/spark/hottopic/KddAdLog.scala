@@ -77,23 +77,23 @@ object KddAdLog {
 
         val sqltitle =
             s"""
-               |select cpc_req_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour'
+               |select cpc_req_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(cpc_req_title) > 0
                |union
-               |select csj_req_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour'
+               |select csj_req_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(csj_req_title) > 0
                |union
-               |select gdt_req_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour'
+               |select gdt_req_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(gdt_req_title) > 0
                |union
-               |select cpc_show_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour'
+               |select cpc_show_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(cpc_show_title) > 0
                |union
-               |select csj_show_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour'
+               |select csj_show_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(csj_show_title) > 0
                |union
-               |select gdt_show_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour'
+               |select gdt_show_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(gdt_show_title) > 0
                |union
-               |select cpc_click_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour'
+               |select cpc_click_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(cpc_click_title) > 0
                |union
-               |select csj_click_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour'
+               |select csj_click_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(csj_click_title) > 0
                |union
-               |select gdt_click_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour'
+               |select gdt_click_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(gdt_click_title) > 0
              """.stripMargin
 
         val title = spark.sql(sqltitle).rdd.map(x => x.getAs[String]("title"))
