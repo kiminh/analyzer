@@ -126,6 +126,7 @@ object OcpcUnionlog {
          |    ext_string['user_city'] as user_city,
          |    ext['city_level'].int_value as city_level,
          |    ext['adclass'].int_value as adclass,
+         |    ext['usertype'].int_value as usertype,
          |    ext['exp_ctr'].int_value as exp_ctr,
          |    ext['exp_cvr'].int_value as exp_cvr
          |from dl_cpc.cpc_union_log
