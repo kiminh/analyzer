@@ -41,6 +41,9 @@ object OcpcCPCbid {
     val data = cpcData
         .join(cvrData, Seq("unitid"), "outer")
         .select("unitid", "min_bid", "cvr1", "cvr2", "cvr3")
+        .withColumn("cvr1", when(col("unitid") === "270", 0.5).otherwise(col("cvr1")))
+        .withColumn("cvr2", when(col("unitid") === "270", 0.5).otherwise(col("cvr2")))
+        .withColumn("cvr3", when(col("unitid") === "270", 0.5).otherwise(col("cvr3")))
         .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3"))
 
     data.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190216b")
