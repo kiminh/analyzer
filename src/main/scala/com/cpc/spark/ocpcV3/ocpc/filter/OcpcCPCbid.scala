@@ -6,7 +6,8 @@ import java.util.Calendar
 
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSql3
 import com.typesafe.config.ConfigFactory
-import ocpcCpcBid.ocpccpcbid.{OcpcMinBidList, SingleOcpcMinBid}
+import ocpcCpcBid.Ocpccpcbid
+import ocpcCpcBid.ocpccpcbid.{OcpcCpcBidList, SingleOcpcCpcBid}
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -31,20 +32,16 @@ object OcpcCPCbid {
     val cpcData = getExpData(expDataPath, date, hour, spark)
     cpcData.show(10)
 
-    val cvrDataRaw = getCvrData(date, hour, spark)
-    cvrDataRaw.show(10)
+    val cvrData = getCvrData(date, hour, spark)
+    cvrData.show(10)
 
-    val conversionGoal = getConversioGoal(date, hour, spark)
-    val cvrData = cvrDataRaw
-      .join(conversionGoal, Seq("unitid"), "left_outer")
-      .select("unitid", "cvr1", "cvr2", "cvr3", "conversion_goal")
-      .withColumn("post_cvr", when(col("conversion_goal") === 1, col("cvr1")).otherwise(when(col("conversion_goal") === 2, col("cvr2")).otherwise(when(col("conversion_goal") === 3, col("cvr3")).otherwise(col("cvr1")))))
 
     cvrData.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190216a")
 
     val data = cpcData
         .join(cvrData, Seq("unitid"), "outer")
-        .select("unitid", "min_bid", "post_cvr")
+        .select("unitid", "min_bid", "cvr1", "cvr2", "cvr3")
+        .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3"))
 
     data.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190216b")
 
@@ -209,7 +206,7 @@ object OcpcCPCbid {
   }
 
   def savePbPack(dataset: DataFrame, filename: String): Unit = {
-    var list = new ListBuffer[SingleOcpcMinBid]
+    var list = new ListBuffer[SingleOcpcCpcBid]
     println("size of the dataframe")
     println(dataset.count)
     dataset.show(10)
@@ -219,22 +216,27 @@ object OcpcCPCbid {
     for (record <- dataset.collect()) {
       val unit_id = record.getAs[String]("unitid").toLong
       val min_bid = record.getAs[Long]("min_bid").toDouble
-      val post_cvr = record.getAs[Double]("post_cvr")
+      val post_cvr1 = record.getAs[Double]("cvr1")
+      val post_cvr2 = record.getAs[Double]("cvr2")
+      val post_cvr3 = record.getAs[Double]("cvr3")
 
-      println(s"unit_id:$unit_id, min_bid:$min_bid, post_cvr:$post_cvr")
+
+      println(s"unit_id:$unit_id, min_bid:$min_bid, post_cvr1:$post_cvr1, post_cvr2:$post_cvr2, post_cvr3:$post_cvr3")
 
       cnt += 1
-      val currentItem = SingleOcpcMinBid(
+      val currentItem = SingleOcpcCpcBid(
         unitid = unit_id,
-        minBid = min_bid,
-        postCvr = post_cvr
+        cpcBid = min_bid,
+        cvGoal1PostCvr = post_cvr1,
+        cvGoal2PostCvr = post_cvr2,
+        cvGoal3PostCvr = post_cvr3
       )
       list += currentItem
 
     }
 
-    val result = list.toArray[SingleOcpcMinBid]
-    val adRecordList = OcpcMinBidList(
+    val result = list.toArray[SingleOcpcCpcBid]
+    val adRecordList = OcpcCpcBidList(
       adrecord = result
     )
 
