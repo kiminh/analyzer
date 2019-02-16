@@ -22,7 +22,7 @@ object OcpcCalculateAUCv2 {
     val version = "qtt_demo"
     val spark = SparkSession
       .builder()
-      .appName(s"ocpc userid auc: $date, $hour, $conversionGoal")
+      .appName(s"ocpc unitid auc: $date, $hour, $conversionGoal")
       .enableHiveSupport().getOrCreate()
 
     // 抽取数据
@@ -36,19 +36,19 @@ object OcpcCalculateAUCv2 {
 
     // 计算auc
     val aucData = getAuc(tableName, conversionGoal, version, date, hour, spark)
-//
-//    val result = aucData
-//      .join(useridIndustry, Seq("userid"), "left_outer")
-//      .select("userid", "auc", "industry")
-//
-//    val resultDF = result
-//      .withColumn("conversion_goal", lit(conversionGoal))
-//      .withColumn("date", lit(date))
-//      .withColumn("version", lit(version))
+
+    val result = aucData
+      .join(unitidIndustry, Seq("unitid"), "left_outer")
+      .select("unitid", "auc", "industry")
+
+    val resultDF = result
+      .withColumn("conversion_goal", lit(conversionGoal))
+      .withColumn("date", lit(date))
+      .withColumn("version", lit(version))
 //    //    test.ocpc_check_auc_data20190104_bak
-//    resultDF
+    resultDF
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_userid_auc_daily_v2")
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_userid_auc_daily_v2")
+        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_userid_auc_daily_v2")
   }
 
   def getIndustry(date: String, hour: String, spark: SparkSession) = {
