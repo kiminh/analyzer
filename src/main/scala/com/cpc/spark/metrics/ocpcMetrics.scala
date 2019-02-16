@@ -269,6 +269,7 @@ object ocpcMetrics {
                |  and ideaid > 0
                |  and adsrc = 1
                |  and adslot_type in (1,2,3)
+               |  and industry = 'feedapp'
                |  group by userid
                |) x
              """.stripMargin
