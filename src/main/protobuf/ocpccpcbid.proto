@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package ocpcCpcBid;
+message SingleOcpcMinBid {
+    int64 unitid = 1;
+    double minBid = 2;
+}
+
+message OcpcMinBidList {
+    repeated SingleOcpcMinBid adrecord = 1;
+}
