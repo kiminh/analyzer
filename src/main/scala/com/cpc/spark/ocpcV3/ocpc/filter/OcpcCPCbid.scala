@@ -35,9 +35,6 @@ object OcpcCPCbid {
     val cvrData = getCvrData(date, hour, spark)
     cvrData.show(10)
 
-
-    cvrData.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190216a")
-
     val data = cpcData
         .join(cvrData, Seq("unitid"), "outer")
         .select("unitid", "min_bid", "cvr1", "cvr2", "cvr3")
@@ -46,7 +43,11 @@ object OcpcCPCbid {
         .withColumn("cvr3", when(col("unitid") === "270", 0.5).otherwise(col("cvr3")))
         .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3"))
 
-    data.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190216b")
+    data
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .withColumn("version", lit("qtt_demo"))
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(data, fileName)
   }
@@ -127,7 +128,6 @@ object OcpcCPCbid {
       .withColumn("cvr3", col("cv3") * 1.0 / col("click"))
 
     data.show(10)
-    data.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190216c")
     data
 
   }
