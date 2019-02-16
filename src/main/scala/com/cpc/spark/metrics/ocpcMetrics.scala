@@ -28,7 +28,7 @@ object ocpcMetrics {
                |  and adslot_type in (1,2,3)
                |  and industry = 'feedapp'
                |  and is_api_callback = 1
-               |  group by userid
+               |  group by unitid,userid
              """.stripMargin
 
         val union = spark.sql(unionSql)
