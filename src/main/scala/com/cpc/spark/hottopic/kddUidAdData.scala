@@ -84,7 +84,7 @@ object kddUidAdData {
 
         title.unpersist()
 
-        title.show(10)
+        union.show(10)
 
 
     }
