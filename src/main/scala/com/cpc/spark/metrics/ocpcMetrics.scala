@@ -14,6 +14,27 @@ object ocpcMetrics {
           .enableHiveSupport()
           .getOrCreate()
         import spark.implicits._
+
+        val unionSql =
+            s"""
+               |select unitid,userid
+               |from dl_cpc.slim_union_log
+               |  where dt = '$date'
+               |  and media_appsid in ('80000001', '80000002')
+               |  and isclick=1
+               |  and antispam = 0
+               |  and ideaid > 0
+               |  and adsrc = 1
+               |  and adslot_type in (1,2,3)
+               |  and industry = 'feedapp'
+               |  and is_api_callback = 1
+               |  group by userid
+             """.stripMargin
+
+        val union = spark.sql(unionSql)
+
+        union.createOrReplaceTempView("union")
+
         //二类电商监控
         val sql1 =
             s"""
@@ -74,6 +95,12 @@ object ocpcMetrics {
                |  and industry = 'feedapp'
                |  group by userid
                |) x
+               |join
+               |(
+               |  select distinct userid
+               |  from union
+               |) y
+               |on x.userid = y.userid
              """.stripMargin
         val t2 = spark.sql(sql2)
 
@@ -93,6 +120,8 @@ object ocpcMetrics {
         r2.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_app_api_metrics")
 
         r2.show(10)
+
+
 
         //二类电商监控
         val sql3 =
@@ -187,11 +216,17 @@ object ocpcMetrics {
                |    round(sum(is_recommend)/count(*),6) as is_recommend,
                |    round(sum(ocpc_flag)/count(*),6) as ocpc_flag
                |  from dl_cpc.ocpc_suggest_cpa_recommend_hourly
-               |  where `date`='2019-02-14'
+               |  where `date`='$date'
                |  and original_conversion = 2
                |  and industry = 'feedapp'
                |  group by unitid
                |) x
+               |join
+               |(
+               |  select distinct unitid
+               |  from union
+               |) y
+               |on x.unitid = y.unitid
              """.stripMargin
 
         val t4 = spark.sql(sql4)
