@@ -15,14 +15,14 @@ object OcpcUnionlog {
     val data = getBaseUnionlog(date, hour, spark)
 
     data
-      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
-//      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
+//      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
-    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
-    ocpcData
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+//    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
+//    ocpcData
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
 //        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
@@ -125,7 +125,9 @@ object OcpcUnionlog {
          |    ext_string['ocpc_log'] as ocpc_log,
          |    ext_string['user_city'] as user_city,
          |    ext['city_level'].int_value as city_level,
-         |    ext['adclass'].int_value as adclass
+         |    ext['adclass'].int_value as adclass,
+         |    ext['exp_ctr'].int_value * 1.0 / 1000000 as exp_ctr,
+         |    ext['exp_cvr'].int_value * 1.0 / 1000000 as exp_cvr
          |from dl_cpc.cpc_union_log
          |where $selectWhere
          |and (isshow>0 or isclick>0)

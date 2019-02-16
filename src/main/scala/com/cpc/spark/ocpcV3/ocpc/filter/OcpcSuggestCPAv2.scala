@@ -19,6 +19,9 @@ object OcpcSuggestCPAv2 {
 
     主要源表：dl_cpc.slim_union_log, dl_cpc.ocpc_label_cvr_hourly
 
+    数据构成分为以下部分:
+    1. 基础数据部分
+
      */
     // 计算日期周期
     val date = args(0).toString
