@@ -42,13 +42,13 @@ object AdvertisingIndex {
 
     var ideaItemMap = Map[Int, Idea]()
     var unitItemMap = Map[Int, Group]()
-    var idx = Seq[Idx]()
+    var idx = Seq[Group]()
 
     for (i <- 0 until gitemsCount) {
-      val ideaItem = idxItems.getDitems(i) //ideaItem
+      val dItem = idxItems.getDitems(i) //ideaItem
 
-      val ideaid = ideaItem.getIdeaid
-      val idea = GetItem.getIdea(ideaItem)
+      val ideaid = dItem.getIdeaid
+      val idea = GetItem.getIdea(dItem)
       ideaItemMap += (ideaid -> idea)
     }
 
