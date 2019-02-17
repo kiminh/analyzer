@@ -1,11 +1,29 @@
 package com.cpc.spark.adindex
 
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import org.apache.commons.httpclient.HttpClient
 import org.apache.commons.httpclient.methods.GetMethod
+import org.apache.spark.sql.SparkSession
 
 object AdvertisingIndex {
   def main(args: Array[String]): Unit = {
     val url = "http://192.168.80.229:9090/reqdumps?filename=index.dump&hostname=dumper&fileMd5=1"
+
+  val spark=SparkSession.builder()
+    .appName(" ad index table to hive")
+    .enableHiveSupport()
+    .getOrCreate()
+
+
+    //获取当前时间
+    val cal = Calendar.getInstance()
+    val timestamp = (cal.getTimeInMillis / 1000).toInt
+    val format = new SimpleDateFormat("yyyy-MM-dd")
+    val date = format.format(cal.getTime)
+    val hour = cal.get(Calendar.HOUR_OF_DAY)
+    val minute = cal.get(Calendar.MINUTE)
 
     val client = new HttpClient
     val method = new GetMethod(url)
@@ -13,23 +31,76 @@ object AdvertisingIndex {
 
     println(method.getStatusLine)
 
-//    val body = method.getResponseBodyAsString
-//    val data = body.substring(16)
-//    val idxItems = Idx.IdxItems.parseFrom(data.getBytes)
-//    val gitemsCount = idxItems.getGitemsCount
-//    val ditemsCount = idxItems.getDitemsCount
-//
-//    /*
-//    for循环
-//     */
-//    val idx = Seq[Idx]()
-//    for (i <- 0 until gitemsCount; j <- 0 until ditemsCount) {
-//      val ideaItem = idxItems.getDitems(i)
-//      idxItems.getDitemsList
-//
-//      val unitItem = idxItems.getGitems(i)
-//    }
+    val body = method.getResponseBodyAsString
+    val data = body.substring(16)
 
+    val idxItems = idxinterface.Idx.IdxItems.parseFrom(data.getBytes)
+
+    val gitemsCount = idxItems.getGitemsCount
+    val ditemsCount = idxItems.getDitemsCount
+
+
+    var ideaItemMap = Map[Int, Idea]()
+    var unitItemMap = Map[Int, Group]()
+    var idx = Seq[Idx]()
+
+    for (i <- 0 until gitemsCount) {
+      val ideaItem = idxItems.getDitems(i) //ideaItem
+
+      val ideaid = ideaItem.getIdeaid
+      val idea = GetItem.getIdea(ideaItem)
+      ideaItemMap += (ideaid -> idea)
+    }
+
+    for (i <- 0 until ditemsCount) {
+      val gItems = idxItems.getGitems(i) //groupItem
+
+      val unitid = GetItem.getGroup(gItems)
+      unitid.foreach { u =>
+        val ideaid = u.ideaid
+        unitItemMap += (ideaid -> u)
+      }
+    }
+
+
+    unitItemMap.foreach { u =>
+      val uIdeaid = u._1
+      val unitItem = u._2
+      ideaItemMap.foreach { i =>
+        val iIdeaid = i._1
+        val ideaItem = i._2
+        if (uIdeaid == iIdeaid) {
+          unitItem.copy(mtype = ideaItem.mtype,
+            width = ideaItem.width,
+            height = ideaItem.height,
+            interaction = ideaItem.interaction,
+            `class` = ideaItem.`class`,
+            material_level = ideaItem.material_level,
+            siteid = ideaItem.siteid,
+            white_user_ad_corner = ideaItem.white_user_ad_corner,
+            date = date,
+            hour = hour.toString,
+            minute = minute.toString,
+            timestamp = timestamp)
+        }
+        idx :+= unitItem
+      }
+    }
+
+    val idxRDD=spark.sparkContext.parallelize(idx)
+    spark.createDataFrame(idx)
+      .repartition(1)
+      .write
+      .mode("overwrite")
+      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute")
+
+    spark.sql(
+      s"""
+         |alter table dl_cpc.xx if not exists add partitions(date = "$date",hour="$hour",minute="$minute")
+         |location 'hhdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute'
+       """.stripMargin)
+
+    println("done.")
 
   }
 
@@ -37,7 +108,7 @@ object AdvertisingIndex {
 }
 
 case class Idx(
-                var timestamp: Int = 0,
+                var timestamp: Long = 0,
                 var date: String = "",
                 var hour: String = "",
                 var minute: String = "",
