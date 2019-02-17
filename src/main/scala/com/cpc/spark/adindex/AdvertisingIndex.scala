@@ -11,10 +11,10 @@ object AdvertisingIndex {
   def main(args: Array[String]): Unit = {
     val url = "http://192.168.80.229:9090/reqdumps?filename=index.dump&hostname=dumper&fileMd5=1"
 
-  val spark=SparkSession.builder()
-    .appName(" ad index table to hive")
-    .enableHiveSupport()
-    .getOrCreate()
+    val spark = SparkSession.builder()
+      .appName(" ad index table to hive")
+      .enableHiveSupport()
+      .getOrCreate()
 
 
     //获取当前时间
@@ -29,15 +29,16 @@ object AdvertisingIndex {
     val method = new GetMethod(url)
     client.executeMethod(method)
 
-    println(method.getStatusLine)
+    println("status:" + method.getStatusLine)
 
     val body = method.getResponseBodyAsString
-    val data = body.substring(16)
+    val data = body.substring(15)
 
     val idxItems = idxinterface.Idx.IdxItems.parseFrom(data.getBytes)
 
     val gitemsCount = idxItems.getGitemsCount
     val ditemsCount = idxItems.getDitemsCount
+    println("count: " + gitemsCount + ", ditemsCount")
 
 
     var ideaItemMap = Map[Int, Idea]()
@@ -61,6 +62,8 @@ object AdvertisingIndex {
         unitItemMap += (ideaid -> u)
       }
     }
+    println("unitItemMap count:  " + unitItemMap.size, "head:" + unitItemMap.head)
+    println("ideaItemMap count:  " + ideaItemMap.size, "head:" + ideaItemMap.head)
 
 
     unitItemMap.foreach { u =>
@@ -86,8 +89,9 @@ object AdvertisingIndex {
         idx :+= unitItem
       }
     }
+    println("idx count:  " + idx.size, "head:" + idx.head)
 
-    val idxRDD=spark.sparkContext.parallelize(idx)
+    val idxRDD = spark.sparkContext.parallelize(idx)
     spark.createDataFrame(idx)
       .repartition(1)
       .write
@@ -97,7 +101,7 @@ object AdvertisingIndex {
     spark.sql(
       s"""
          |alter table dl_cpc.xx if not exists add partitions(date = "$date",hour="$hour",minute="$minute")
-         |location 'hhdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute'
+         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute'
        """.stripMargin)
 
     println("done.")
