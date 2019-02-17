@@ -32,7 +32,8 @@ object AdvertisingIndex {
     println("status:" + method.getStatusLine)
 
     val body = method.getResponseBodyAsString
-    val data = body.substring(15)
+    method.releaseConnection()
+    val data = body.substring(17)
 
     val idxItems = idxinterface.Idx.IdxItems.parseFrom(data.getBytes)
 
@@ -40,7 +41,7 @@ object AdvertisingIndex {
     val ditemsCount = idxItems.getDitemsCount
     println("count: " + gitemsCount + ", ditemsCount")
 
-
+/*
     var ideaItemMap = Map[Int, Idea]()
     var unitItemMap = Map[Int, Group]()
     var idx = Seq[Group]()
@@ -103,7 +104,7 @@ object AdvertisingIndex {
          |alter table dl_cpc.xx if not exists add partitions(date = "$date",hour="$hour",minute="$minute")
          |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute'
        """.stripMargin)
-
+*/
     println("done.")
 
   }
