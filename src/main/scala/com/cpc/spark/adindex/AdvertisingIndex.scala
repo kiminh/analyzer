@@ -93,14 +93,10 @@ object AdvertisingIndex {
           `class` = i.`class`,
           material_level = i.material_level,
           siteid = i.siteid,
-          white_user_ad_corner = i.white_user_ad_corner,
-          timestamp = timestamp)
-
-      } else {
-        unitItem = unitItem.copy(timestamp = timestamp)
-        idx :+= unitItem
+          white_user_ad_corner = i.white_user_ad_corner)
       }
-
+      unitItem = unitItem.copy(timestamp = timestamp)
+      idx :+= unitItem
     }
 
 
