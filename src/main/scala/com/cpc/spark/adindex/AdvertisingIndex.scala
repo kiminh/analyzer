@@ -57,7 +57,7 @@ object AdvertisingIndex {
     println("count: " + gitemsCount + ", ditemsCount: " + ditemsCount)
 
 
-    var ideaItemSeq = Seq[Idea]()
+    var ideaItemMap = Map[Int, Idea]()
     var unitItemSeq = Seq[Group]()
     var idx = Seq[Group]()
 
@@ -65,7 +65,7 @@ object AdvertisingIndex {
       val dItem = idxItems.getDitems(i) //ideaItem
 
       val idea = GetItem.getIdea(dItem)
-      ideaItemSeq :+= idea
+      ideaItemMap += (idea.ideaid -> idea)
     }
 
     for (i <- 0 until gitemsCount) {
@@ -78,27 +78,25 @@ object AdvertisingIndex {
     }
 
     println("unitItemSeq count:  " + unitItemSeq.size, "head:" + unitItemSeq.head)
-    println("ideaItemSeq count:  " + ideaItemSeq.size, "head:" + ideaItemSeq.head)
+    println("ideaItemMap count:  " + ideaItemMap.size, "head:" + ideaItemMap.head)
 
 
     for (u <- unitItemSeq) {
       var unitItem = u
-      for (i <- ideaItemSeq) {
-
-        if (u.ideaid == i.ideaid) {
-          unitItem = unitItem.copy(
-            mtype = i.mtype,
-            width = i.width,
-            height = i.height,
-            interaction = i.interaction,
-            `class` = i.`class`,
-            material_level = i.material_level,
-            siteid = i.siteid,
-            white_user_ad_corner = i.white_user_ad_corner,
-            timestamp = timestamp)
-          idx :+= unitItem
-        }
-
+      val ideaid = u.ideaid
+      if (ideaItemMap.contains(ideaid)) {
+        val ideaItem = ideaItemMap(ideaid)
+        unitItem = unitItem.copy(
+          mtype = ideaItem.mtype,
+          width = ideaItem.width,
+          height = ideaItem.height,
+          interaction = ideaItem.interaction,
+          `class` = ideaItem.`class`,
+          material_level = ideaItem.material_level,
+          siteid = ideaItem.siteid,
+          white_user_ad_corner = ideaItem.white_user_ad_corner,
+          timestamp = timestamp)
+        idx :+= unitItem
       }
     }
 
