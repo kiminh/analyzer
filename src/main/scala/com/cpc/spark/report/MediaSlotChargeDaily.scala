@@ -35,7 +35,7 @@ object MediaSlotChargeDaily {
     val duanzi_media_id = Array[Int](80002819)
 
     val data = spark.sql(sql)
-      .repartition(1000)
+      .repartition(10000)
       .rdd
       .map { x =>
         val is_click = x.getAs[Int]("isclick")
@@ -124,6 +124,7 @@ object MediaSlotChargeDaily {
       .map { r =>
         (r.getAs[Int]("ideaid"), r.getAs[Long]("idea_uids"))
       }
+      .cache()
 
     //count cvr for each ideaid
     val conversion_info_flow_sql =
@@ -151,6 +152,7 @@ object MediaSlotChargeDaily {
         val cvr = (conv / click).toDouble
         (ideaid, cvr)
       }
+      .cache()
 
 
     val resultRDD = data.join(usersRDD).join(cvrRDD)
@@ -162,6 +164,9 @@ object MediaSlotChargeDaily {
         val arpu = (cost / idea_uids).toDouble
         mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
       }
+
+    cvrRDD.unpersist()
+    usersRDD.unpersist()
 
     resultRDD
       .toDF()
