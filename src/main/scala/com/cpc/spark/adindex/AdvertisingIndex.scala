@@ -83,11 +83,9 @@ object AdvertisingIndex {
 
     for (u <- unitItemSeq) {
       var unitItem = u
-      var flag = false
       for (i <- ideaItemSeq) {
 
         if (u.ideaid == i.ideaid) {
-          flag = true
           unitItem = unitItem.copy(
             mtype = i.mtype,
             width = i.width,
@@ -101,9 +99,6 @@ object AdvertisingIndex {
           idx :+= unitItem
         }
 
-      }
-      if (!flag) {
-        idx :+= unitItem
       }
     }
 
