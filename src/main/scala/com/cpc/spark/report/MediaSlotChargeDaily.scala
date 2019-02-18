@@ -163,14 +163,14 @@ object MediaSlotChargeDaily {
     spark.createDataFrame(resultRDD)
       .repartition(10)
       .write
-      .mode(SaveMode.Overwrite)
-      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/")
+      .mode(SaveMode.Append)
+      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/temp/trident_media_charge")
 
-    spark.sql(
+    /*spark.sql(
       s"""
          |alter table dl_cpc.xx if not exists add partitions(day = "$day")
-         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/'
-       """.stripMargin)
+         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/temp/trident_media_charge'
+       """.stripMargin)*/
 
     println("done.")
 
