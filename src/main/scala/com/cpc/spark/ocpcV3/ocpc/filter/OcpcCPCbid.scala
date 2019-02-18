@@ -136,6 +136,7 @@ object OcpcCPCbid {
          |  percentile(cpm, 0.10) as min_cpm2
          |FROM
          |  base_data
+         |GROUP BY unitid
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
