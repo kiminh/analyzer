@@ -49,7 +49,13 @@ object AdvertisingIndex {
     val gitemsCount = idxItems.getGitemsCount
     val ditemsCount = idxItems.getDitemsCount
     println("count: " + gitemsCount + ", ditemsCount: " + ditemsCount)
-    idxItems.getGitemsList.forEach(x=>println("groupid: "+x.getGroupid))
+
+
+    for(i<-0 until gitemsCount){
+      println("groupid: "+idxItems.getGitems(i))
+    }
+
+
 println("---------------------")
 
     var ideaItemSeq = Seq[Idea]()
