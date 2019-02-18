@@ -27,7 +27,7 @@ object MediaSlotChargeDaily {
       s"""
          |select *
          |from dl_cpc.cpc_basedata_union_events
-         |where day='$day' and adslot_id >0
+         |where day='$day' and adslot_id<>"" limit 1000000
        """.stripMargin
 
     val qtt_media_id = Array[Int](80000001, 80000002, 80000006, 80000064, 80000066, 80000062, 80000141, 80002480)
@@ -73,13 +73,13 @@ object MediaSlotChargeDaily {
           media_id = media_id,
           media_type = x.getAs[Int]("media_type"),
           media_name = media_name,
-          adslot_id = x.getAs[Int]("adslot_id"),
+          adslot_id = x.getAs[String]("adslot_id"),
           adslot_type = x.getAs[Int]("adslot_type"),
           idea_id = x.getAs[Int]("idea_id"),
           unit_id = x.getAs[Int]("unit_id"),
           plan_id = x.getAs[Int]("plan_id"),
           user_id = x.getAs[Int]("user_id"),
-          uid = uid,
+          uid = uid, // => remove duplicate -> DAU
           uid_type = uid_type,
           adclass = x.getAs[Int]("adclass"),
           adtype = x.getAs[Int]("adtype"),
