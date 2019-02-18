@@ -96,8 +96,11 @@ object AdvertisingIndex {
           white_user_ad_corner = i.white_user_ad_corner,
           timestamp = timestamp)
 
+      } else {
+        unitItem = unitItem.copy(timestamp = timestamp)
+        idx :+= unitItem
       }
-      idx :+= unitItem
+
     }
 
 
