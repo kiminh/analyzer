@@ -20,9 +20,6 @@ object AdvertisingIndex {
 
     val cal = Calendar.getInstance()
     val timestamp = (cal.getTimeInMillis / 1000).toInt
-    println("1：" + cal.getTimeInMillis)
-    println("1：" + cal.getTimeInMillis / 1000)
-    println("1：" + (cal.getTimeInMillis / 1000).toInt)
     val date_format = new SimpleDateFormat("yyyy-MM-dd")
     val hour_format = new SimpleDateFormat("HH")
     val min_format = new SimpleDateFormat("mm")
@@ -58,10 +55,6 @@ object AdvertisingIndex {
     val gitemsCount = idxItems.getGitemsCount
     val ditemsCount = idxItems.getDitemsCount
     println("count: " + gitemsCount + ", ditemsCount: " + ditemsCount)
-    for(i <- 0 until gitemsCount if i<10){
-      println(idxItems.getGitems(i).getIdeaidsList.toArray.mkString(","))
-    }
-
 
 
     var ideaItemSeq = Seq[Idea]()
@@ -87,17 +80,17 @@ object AdvertisingIndex {
     println("unitItemSeq count:  " + unitItemSeq.size, "head:" + unitItemSeq.head)
     println("ideaItemSeq count:  " + ideaItemSeq.size, "head:" + ideaItemSeq.head)
 
-    for (i<-unitItemSeq){
-      if (i.ideaid!=0){
-        println(i.ideaid,i)
+    for (i <- unitItemSeq) {
+      if (i.ideaid != 0) {
+        println(i.ideaid, i)
       }
     }
 
     for (u <- unitItemSeq;
          i <- ideaItemSeq) {
+      var unitItem = u
       if (u.ideaid == i.ideaid) {
-        println("u:" + u.ideaid + ",i:" + i.ideaid)
-        u.copy(
+        unitItem = unitItem.copy(
           mtype = i.mtype,
           width = i.width,
           height = i.height,
