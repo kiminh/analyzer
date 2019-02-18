@@ -89,8 +89,8 @@ object MediaSlotChargeDaily {
           cvr_model_name = x.getAs[String]("cvr_model_name"),
 
           request = 1,
-          fill = x.getAs[Int]("fill"),
-          impression = x.getAs[Int]("impression"),
+          fill = x.getAs[Int]("isfill"),
+          impression = x.getAs[Int]("isshow"),
           click = is_click + spam_click,
           charged_click = is_click,
           spam_click = spam_click,
