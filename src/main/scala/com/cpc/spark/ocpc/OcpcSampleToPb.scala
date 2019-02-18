@@ -133,9 +133,9 @@ object OcpcSampleToPb {
       .read.format("json").json(expDataPath)
       .groupBy("unitid")
       .agg(
-        min(col("kvalue")).alias("kvalue")
+        min(col("kvalue")).alias("reset_k")
       )
-      .select("unitid", "kvalue")
+      .select("unitid", "reset_k")
 
     // get ocpc ads
     val ocpcUnit = getOCPCads(date, hour, spark)
