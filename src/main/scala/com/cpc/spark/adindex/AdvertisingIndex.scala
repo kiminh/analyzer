@@ -17,12 +17,17 @@ object AdvertisingIndex {
 
 
     //获取当前时间
+
     val cal = Calendar.getInstance()
     val timestamp = (cal.getTimeInMillis / 1000).toInt
+    println("1："+cal.getTimeInMillis)
+    println("1："+cal.getTimeInMillis/1000)
+    println("1："+(cal.getTimeInMillis/1000).toInt)
     val format = new SimpleDateFormat("yyyy-MM-dd")
     val date = format.format(cal.getTime)
     val hour = cal.get(Calendar.HOUR_OF_DAY)
     val min = cal.get(Calendar.MINUTE)
+    println(timestamp, date, hour, min)
 
     //    val client = new HttpClient
     //    val method = new GetMethod(url)
