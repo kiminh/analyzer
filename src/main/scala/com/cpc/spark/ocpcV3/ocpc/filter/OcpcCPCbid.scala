@@ -131,7 +131,7 @@ object OcpcCPCbid {
       .withColumn("cvr2", col("cv2") * 1.0 / col("click"))
       .withColumn("cvr3", col("cv3") * 1.0 / col("click"))
       .withColumn("min_bid2", lit(2))
-      .withColumn("min_cpm", lit(0))
+      .withColumn("min_cpm2", lit(0))
 
     data.show(10)
     data
