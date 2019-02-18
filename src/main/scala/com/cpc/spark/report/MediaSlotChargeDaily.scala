@@ -107,9 +107,9 @@ object MediaSlotChargeDaily {
         val cost = mediaSlotCharge.cost
 
 
-        val ctr = (click / impression).toDouble
-        val cpm = (cost / impression * 1000).toDouble
-        val acp = (cost / click).toDouble
+        val ctr = if (impression==0) 0 else (click / impression).toDouble
+        val cpm = if (impression==0) 0 else (cost / impression * 1000).toDouble
+        val acp = if (click==0) 0 else (cost / click).toDouble
         mediaSlotCharge.copy(ctr = ctr, cpm = cpm, acp = acp)
         (mediaSlotCharge.idea_id, mediaSlotCharge)
       }
