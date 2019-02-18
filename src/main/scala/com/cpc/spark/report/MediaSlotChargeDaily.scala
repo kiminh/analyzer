@@ -2,6 +2,11 @@ package com.cpc.spark.report
 
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
+import com.cpc.spark.common.Utils
+import org.apache.log4j.{Level, Logger}
+import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.functions.{col, expr, row_number}
+import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
 
 /**
   * Created by zhy (refined by fym) on 2019-02-16.
@@ -119,11 +124,11 @@ object MediaSlotChargeDaily {
       .select("ideaid", "uid")
       .groupBy("ideaid")
       .agg(expr("count(distinct uid)").alias("idea_uids"))
-      .rdd
+      // .rdd
       .map { r =>
         (r.getAs[Int]("ideaid"), r.getAs[Long]("idea_uids"))
       }
-      .cache()
+      // .cache()
 
     //count cvr for each ideaid
     val conversion_info_flow_sql =
@@ -143,7 +148,7 @@ object MediaSlotChargeDaily {
        """.stripMargin
 
     val cvrRDD = (spark.sql(conversion_info_flow_sql)).union(spark.sql(conversion_api_sql))
-      .rdd
+      // .rdd
       .map { r =>
         val ideaid = r.getAs[Int]("ideaid")
         val click = r.getAs[Long]("click")
@@ -151,23 +156,22 @@ object MediaSlotChargeDaily {
         val cvr = (conv / click).toDouble
         (ideaid, cvr)
       }
-      .cache()
+      // .cache()
 
-
-    /*val resultRDD = data.join(usersRDD).join(cvrRDD)
-      .map { r =>
+    val resultRDD = data
+      .toDF()
+      .join(usersRDD, Seq("ideaid"))
+      // .join(cvrRDD, Seq("ideaid"))
+      /*.map { r =>
         val mediaSlotCharge = r._2._1._1
         val idea_uids = r._2._1._2
         val cvr = r._2._2
         val cost = mediaSlotCharge.cost
         val arpu = (cost / idea_uids).toDouble
         mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
-      }
+      }*/
 
-    cvrRDD.unpersist()
-    usersRDD.unpersist()*/
-
-    data // resultRDD
+    resultRDD
       .toDF()
       .repartition(10000)
       .write
