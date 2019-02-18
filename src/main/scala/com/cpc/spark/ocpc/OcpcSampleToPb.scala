@@ -63,10 +63,10 @@ object OcpcSampleToPb {
     val resultDF = setPresetK(result4, date, hour, spark)
 
 
-//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
 
     savePbPack(resultDF)
 
@@ -153,7 +153,7 @@ object OcpcSampleToPb {
       .join(joinData, Seq("ideaid", "userid"), "left_outer")
       .withColumn("k_value", when(col("reset_k").isNotNull, col("reset_k")).otherwise(col("prev_k")))
 
-    result.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190218")
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190218")
     val resultDF = result
       .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t", "cpa_suggest", "cpc_bid")
       .withColumn("date", lit(date))
