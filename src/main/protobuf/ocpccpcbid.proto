@@ -7,6 +7,7 @@ message SingleOcpcCpcBid {
     double cvGoal1PostCvr = 3;
     double cvGoal2PostCvr = 4;
     double cvGoal3PostCvr = 5;
+    int64 minCpm = 6;
 }
 
 message OcpcCpcBidList {

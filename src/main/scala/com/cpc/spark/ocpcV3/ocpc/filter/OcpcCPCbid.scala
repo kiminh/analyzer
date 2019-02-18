@@ -4,7 +4,8 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSql3
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
+import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import ocpcCpcBid.Ocpccpcbid
 import ocpcCpcBid.ocpccpcbid.{OcpcCpcBidList, SingleOcpcCpcBid}
@@ -37,17 +38,20 @@ object OcpcCPCbid {
 
     val data = cpcData
         .join(cvrData, Seq("unitid"), "outer")
-        .select("unitid", "min_bid", "cvr1", "cvr2", "cvr3")
+        .select("unitid", "min_bid1", "cvr1", "cvr2", "cvr3", "min_bid2", "min_cpm2")
         .withColumn("cvr1", when(col("unitid") === "270", 0.5).otherwise(col("cvr1")))
         .withColumn("cvr2", when(col("unitid") === "270", 0.5).otherwise(col("cvr2")))
         .withColumn("cvr3", when(col("unitid") === "270", 0.5).otherwise(col("cvr3")))
-        .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3"))
+        .withColumn("min_bid", when(col("min_bid1").isNotNull, col("min_bid1")).otherwise(col("min_bid2")))
+        .withColumn("min_cpm", col("min_cpm2"))
+        .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm"))
 
     data
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit("qtt_demo"))
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190218")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(data, fileName)
   }
@@ -126,6 +130,8 @@ object OcpcCPCbid {
       .withColumn("cvr1", col("cv1") * 1.0 / col("click"))
       .withColumn("cvr2", col("cv2") * 1.0 / col("click"))
       .withColumn("cvr3", col("cv3") * 1.0 / col("click"))
+      .withColumn("min_bid2", lit(2))
+      .withColumn("min_cpm", lit(0))
 
     data.show(10)
     data
@@ -222,9 +228,10 @@ object OcpcCPCbid {
       val post_cvr1 = record.getAs[Double]("cvr1")
       val post_cvr2 = record.getAs[Double]("cvr2")
       val post_cvr3 = record.getAs[Double]("cvr3")
+      val min_cpm = record.getAs[Long]("min_cpm")
 
 
-      println(s"unit_id:$unit_id, min_bid:$min_bid, post_cvr1:$post_cvr1, post_cvr2:$post_cvr2, post_cvr3:$post_cvr3")
+      println(s"unit_id:$unit_id, min_bid:$min_bid, post_cvr1:$post_cvr1, post_cvr2:$post_cvr2, post_cvr3:$post_cvr3, min_cpm:$min_cpm")
 
       cnt += 1
       val currentItem = SingleOcpcCpcBid(
@@ -232,7 +239,8 @@ object OcpcCPCbid {
         cpcBid = min_bid,
         cvGoal1PostCvr = post_cvr1,
         cvGoal2PostCvr = post_cvr2,
-        cvGoal3PostCvr = post_cvr3
+        cvGoal3PostCvr = post_cvr3,
+        minCpm = min_cpm
       )
       list += currentItem
 
@@ -257,9 +265,9 @@ object OcpcCPCbid {
     val resultDF = data
       .groupBy("unitid")
       .agg(
-        min(col("min_bid")).alias("min_bid")
+        min(col("min_bid")).alias("min_bid1")
       )
-      .select("unitid", "min_bid")
+      .select("unitid", "min_bid1")
 
     resultDF
 
