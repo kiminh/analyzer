@@ -34,13 +34,14 @@ object AdvertisingIndex {
     //    val data = body.substring(15)
     val reponse = Http(url)
       .timeout(connTimeoutMs = 2000, readTimeoutMs = 5000)
-      .asString
 
-    println(reponse.code)
-    val data = reponse.body.substring(16)
+
+    println(reponse.asBytes.code)
+    val data = reponse.asBytes.body.drop(16)
+
     println(data.length)
 
-    val idxItems = idxinterface.Idx.IdxItems.parseFrom(data.getBytes)
+    val idxItems = idxinterface.Idx.IdxItems.parseFrom(data)
 
     val gitemsCount = idxItems.getGitemsCount
     val ditemsCount = idxItems.getDitemsCount
