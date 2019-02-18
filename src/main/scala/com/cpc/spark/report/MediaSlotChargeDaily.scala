@@ -167,13 +167,13 @@ object MediaSlotChargeDaily {
     cvrRDD.unpersist()
     usersRDD.unpersist()
 
-    resultRDD
+    /*resultRDD
       .toDF()
       .repartition(10000)
       .write
       .partitionBy("date")
       .mode(SaveMode.Append) // 修改为Append
-      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/temp/trident_media_charge")
+      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/temp/trident_media_charge")*/
 
     /*spark.sql(
       s"""
