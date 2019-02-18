@@ -58,6 +58,10 @@ object AdvertisingIndex {
     val gitemsCount = idxItems.getGitemsCount
     val ditemsCount = idxItems.getDitemsCount
     println("count: " + gitemsCount + ", ditemsCount: " + ditemsCount)
+    for(i <- 0 until gitemsCount if i<10){
+      println(idxItems.getGitems(i).getIdeaidsList.toArray.mkString(","))
+    }
+
 
 
     var ideaItemSeq = Seq[Idea]()
