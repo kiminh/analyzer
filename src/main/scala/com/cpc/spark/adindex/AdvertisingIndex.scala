@@ -22,7 +22,7 @@ object AdvertisingIndex {
     val format = new SimpleDateFormat("yyyy-MM-dd")
     val date = format.format(cal.getTime)
     val hour = cal.get(Calendar.HOUR_OF_DAY)
-    val minute = cal.get(Calendar.MINUTE)
+    val min = cal.get(Calendar.MINUTE)
 
     //    val client = new HttpClient
     //    val method = new GetMethod(url)
@@ -51,13 +51,6 @@ object AdvertisingIndex {
     println("count: " + gitemsCount + ", ditemsCount: " + ditemsCount)
 
 
-    for(i<-0 until gitemsCount){
-      println("groupid: "+idxItems.getGitems(i))
-    }
-
-
-println("---------------------")
-
     var ideaItemSeq = Seq[Idea]()
     var unitItemSeq = Seq[Group]()
     var idx = Seq[Group]()
@@ -79,7 +72,7 @@ println("---------------------")
         unitItemSeq :+= u
       }
     }
-    println(unitItemSeq.foreach(x => println(x.unitid)))
+
     println("unitItemSeq count:  " + unitItemSeq.size, "head:" + unitItemSeq.head)
     println("ideaItemSeq count:  " + ideaItemSeq.size, "head:" + ideaItemSeq.head)
 
@@ -101,7 +94,7 @@ println("---------------------")
             white_user_ad_corner = ideaItem.white_user_ad_corner,
             date = date,
             hour = hour.toString,
-            minute = minute.toString,
+            minute = min.toString,
             timestamp = timestamp)
         }
         idx :+= unitItem
@@ -114,12 +107,12 @@ println("---------------------")
       .repartition(1)
       .write
       .mode("overwrite")
-      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute")
+      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min")
 
     spark.sql(
       s"""
-         |alter table dl_cpc.cpc_ad_index add if not exists partition(date = "$date",hour="$hour",minute="$minute")
-         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute'
+         |alter table dl_cpc.cpc_ad_index add if not exists partition(date = "$date",hour="$hour",minute="$min")
+         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min'
            """.stripMargin)
 
     println("done.")
