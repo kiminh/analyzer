@@ -81,11 +81,13 @@ object AdvertisingIndex {
     println("ideaItemSeq count:  " + ideaItemSeq.size, "head:" + ideaItemSeq.head)
 
 
-    for (u <- unitItemSeq){
-      for(i <- ideaItemSeq) {
+    for (u <- unitItemSeq) {
+      var unitItem = u
+      var flag = false
+      for (i <- ideaItemSeq) {
 
         if (u.ideaid == i.ideaid) {
-          val unitItem = u.copy(
+          unitItem = unitItem.copy(
             mtype = i.mtype,
             width = i.width,
             height = i.height,
@@ -96,36 +98,34 @@ object AdvertisingIndex {
             white_user_ad_corner = i.white_user_ad_corner,
             timestamp = timestamp)
           idx :+= unitItem
-        }else{
-          var un = u.copy(timestamp = timestamp)
-          idx :+= un
         }
 
-
+      }
+      if(!flag){
+        idx :+= unitItem
       }
     }
 
 
+  println("idx count:  " + idx.size, "head:" + idx.head)
 
-    println("idx count:  " + idx.size, "head:" + idx.head)
-
-    val idxRDD = spark.sparkContext.parallelize(idx)
-    spark.createDataFrame(idx)
-      .repartition(1)
-      .write
-      .mode("overwrite")
-      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min")
-    println(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min")
-    spark.sql(
-      s"""
-         |alter table dl_cpc.cpc_ad_index add if not exists partition(date = "$date",hour="$hour",minute="$min")
-         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min'
+  val idxRDD = spark.sparkContext.parallelize(idx)
+  spark.createDataFrame(idx)
+    .repartition(1)
+    .write
+    .mode("overwrite")
+    .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min")
+  println(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min")
+  spark.sql(
+    s"""
+       |alter table dl_cpc.cpc_ad_index add if not exists partition(date = "$date",hour="$hour",minute="$min")
+       |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min'
            """.stripMargin)
-    spark.close()
+  spark.close()
 
-    println("done.")
+  println("done.")
 
-  }
+}
 
 
 }
