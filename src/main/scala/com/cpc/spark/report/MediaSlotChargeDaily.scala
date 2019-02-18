@@ -3,22 +3,32 @@ package com.cpc.spark.report
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
+/**
+  * Created by zhy (refined by fym) on 2019-02-16.
+  *
+  * this is an intermediate-level table, descending from trident (cpc_basedata_union_events).
+  * contents: media charge and miscellaneous indices.
+  *
+  * <TODO> table name and/or columns TBD. 和数据分析同学沟通
+  */
+
 object MediaSlotChargeDaily {
   def main(args: Array[String]): Unit = {
     val day = args(0)
 
     val spark = SparkSession.builder()
-      .appName(" media slot charge hourly")
+      .appName("[trident] media charge and miscellaneous indices daily")
       .enableHiveSupport()
       .getOrCreate()
+
+    import spark.implicits._
 
     val sql =
       s"""
          |select *
          |from dl_cpc.cpc_basedata_union_events
-         |where day='$day' and adslotid >0
+         |where day='$day' and adslot_id >0
        """.stripMargin
-
 
     val qtt_media_id = Array[Int](80000001, 80000002, 80000006, 80000064, 80000066, 80000062, 80000141, 80002480)
     val midu_media_id = Array[Int](80001539, 80002397, 80002477, 80002555, 80003172, 80001098, 80001292)
@@ -28,10 +38,10 @@ object MediaSlotChargeDaily {
       .repartition(1000)
       .rdd
       .map { x =>
-        val isclick = x.getAs[Int]("isclick")
+        val is_click = x.getAs[Int]("isclick")
         val spam_click = x.getAs[Int]("spam_click")
-        val chargeType = x.getAs[Int]("charge_type")
-        var charge_fee = chargeType match {
+        val charge_type = x.getAs[Int]("charge_type")
+        var charge_fee = charge_type match {
           case 1 => x.getAs[Int]("price") //cpc
           case 2 => x.getAs[Int]("price") / 1000 //cpm
           case _ => 0
@@ -81,8 +91,8 @@ object MediaSlotChargeDaily {
           request = 1,
           fill = x.getAs[Int]("fill"),
           impression = x.getAs[Int]("impression"),
-          click = isclick + spam_click,
-          charged_click = isclick,
+          click = is_click + spam_click,
+          charged_click = is_click,
           spam_click = spam_click,
           cost = charge_fee,
           date = day
@@ -152,17 +162,19 @@ object MediaSlotChargeDaily {
         mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
       }
 
-    spark.createDataFrame(resultRDD)
-      .repartition(10)
+    resultRDD
+      .toDF()
+      .repartition(100)
       .write
-      .mode(SaveMode.Overwrite)
-      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/")
+      .partitionBy("date")
+      .mode(SaveMode.Append) // 修改为Append
+      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/temp/trident_media_charge")
 
-    spark.sql(
+    /*spark.sql(
       s"""
          |alter table dl_cpc.xx if not exists add partitions(day = "$day")
-         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/'
-       """.stripMargin)
+         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/temp/trident_media_charge'
+       """.stripMargin)*/
 
     println("done.")
 
