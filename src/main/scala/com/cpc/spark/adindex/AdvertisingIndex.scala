@@ -80,11 +80,6 @@ object AdvertisingIndex {
     println("unitItemSeq count:  " + unitItemSeq.size, "head:" + unitItemSeq.head)
     println("ideaItemSeq count:  " + ideaItemSeq.size, "head:" + ideaItemSeq.head)
 
-    for (i <- unitItemSeq) {
-      if (i.ideaid != 0) {
-        println(i.ideaid, i)
-      }
-    }
 
     for (u <- unitItemSeq;
          i <- ideaItemSeq) {
@@ -101,8 +96,8 @@ object AdvertisingIndex {
           white_user_ad_corner = i.white_user_ad_corner,
           timestamp = timestamp)
 
-        idx :+= u
       }
+      idx :+= unitItem
     }
 
 
