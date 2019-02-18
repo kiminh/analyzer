@@ -37,8 +37,8 @@ object AdvertisingIndex {
       .asBytes
 
     println(reponse.code)
-    var data=Array[Byte]()
-    if (reponse.code==200){
+    var data = Array[Byte]()
+    if (reponse.code == 200) {
       data = reponse.body.drop(16)
     }
 
@@ -48,70 +48,70 @@ object AdvertisingIndex {
 
     val gitemsCount = idxItems.getGitemsCount
     val ditemsCount = idxItems.getDitemsCount
-    println("count: " + gitemsCount + ", ditemsCount" + ditemsCount)
+    println("count: " + gitemsCount + ", ditemsCount: " + ditemsCount)
 
 
-        var ideaItemMap = Map[Int, Idea]()
-        var unitItemMap = Map[Int, Group]()
-        var idx = Seq[Group]()
+    var ideaItemMap = Map[Int, Idea]()
+    var unitItemMap = Map[Int, Group]()
+    var idx = Seq[Group]()
 
-        for (i <- 0 until gitemsCount) {
-          val dItem = idxItems.getDitems(i) //ideaItem
+    for (i <- 0 until ditemsCount) {
+      val dItem = idxItems.getDitems(i) //ideaItem
 
-          val ideaid = dItem.getIdeaid
-          val idea = GetItem.getIdea(dItem)
-          ideaItemMap += (ideaid -> idea)
+      val ideaid = dItem.getIdeaid
+      val idea = GetItem.getIdea(dItem)
+      ideaItemMap += (ideaid -> idea)
+    }
+
+    for (i <- 0 until gitemsCount) {
+      val gItems = idxItems.getGitems(i) //groupItem
+
+      val unitid = GetItem.getGroup(gItems)
+      unitid.foreach { u =>
+        val ideaid = u.ideaid
+        unitItemMap += (ideaid -> u)
+      }
+    }
+    println("unitItemMap count:  " + unitItemMap.size, "head:" + unitItemMap.head)
+    println("ideaItemMap count:  " + ideaItemMap.size, "head:" + ideaItemMap.head)
+
+
+    unitItemMap.foreach { u =>
+      val uIdeaid = u._1
+      val unitItem = u._2
+      ideaItemMap.foreach { i =>
+        val iIdeaid = i._1
+        val ideaItem = i._2
+        if (uIdeaid == iIdeaid) {
+          unitItem.copy(mtype = ideaItem.mtype,
+            width = ideaItem.width,
+            height = ideaItem.height,
+            interaction = ideaItem.interaction,
+            `class` = ideaItem.`class`,
+            material_level = ideaItem.material_level,
+            siteid = ideaItem.siteid,
+            white_user_ad_corner = ideaItem.white_user_ad_corner,
+            date = date,
+            hour = hour.toString,
+            minute = minute.toString,
+            timestamp = timestamp)
         }
+        idx :+= unitItem
+      }
+    }
+    println("idx count:  " + idx.size, "head:" + idx.head)
 
-        for (i <- 0 until ditemsCount) {
-          val gItems = idxItems.getGitems(i) //groupItem
+    val idxRDD = spark.sparkContext.parallelize(idx)
+    spark.createDataFrame(idx)
+      .repartition(1)
+      .write
+      .mode("overwrite")
+      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute")
 
-          val unitid = GetItem.getGroup(gItems)
-          unitid.foreach { u =>
-            val ideaid = u.ideaid
-            unitItemMap += (ideaid -> u)
-          }
-        }
-        println("unitItemMap count:  " + unitItemMap.size, "head:" + unitItemMap.head)
-        println("ideaItemMap count:  " + ideaItemMap.size, "head:" + ideaItemMap.head)
-
-
-        unitItemMap.foreach { u =>
-          val uIdeaid = u._1
-          val unitItem = u._2
-          ideaItemMap.foreach { i =>
-            val iIdeaid = i._1
-            val ideaItem = i._2
-            if (uIdeaid == iIdeaid) {
-              unitItem.copy(mtype = ideaItem.mtype,
-                width = ideaItem.width,
-                height = ideaItem.height,
-                interaction = ideaItem.interaction,
-                `class` = ideaItem.`class`,
-                material_level = ideaItem.material_level,
-                siteid = ideaItem.siteid,
-                white_user_ad_corner = ideaItem.white_user_ad_corner,
-                date = date,
-                hour = hour.toString,
-                minute = minute.toString,
-                timestamp = timestamp)
-            }
-            idx :+= unitItem
-          }
-        }
-        println("idx count:  " + idx.size, "head:" + idx.head)
-
-        val idxRDD = spark.sparkContext.parallelize(idx)
-        spark.createDataFrame(idx)
-          .repartition(1)
-          .write
-          .mode("overwrite")
-          .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute")
-
-        spark.sql(
-          s"""
-             |alter table dl_cpc.xx if not exists add partitions(date = "$date",hour="$hour",minute="$minute")
-             |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute'
+    spark.sql(
+      s"""
+         |alter table dl_cpc.xx if not exists add partitions(date = "$date",hour="$hour",minute="$minute")
+         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute'
            """.stripMargin)
 
     println("done.")
