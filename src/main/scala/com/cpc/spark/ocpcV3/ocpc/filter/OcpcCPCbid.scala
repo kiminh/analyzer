@@ -56,58 +56,58 @@ object OcpcCPCbid {
     savePbPack(data, fileName)
   }
 
-  def getConversioGoal(date: String, hour: String, spark: SparkSession) = {
-    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
-    val user = "adv_live_read"
-    val passwd = "seJzIPUc7xU"
-    val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
-
-    val data = spark.read.format("jdbc")
-      .option("url", url)
-      .option("driver", driver)
-      .option("user", user)
-      .option("password", passwd)
-      .option("dbtable", table)
-      .load()
-
-    val base = data
-      .withColumn("unitid", col("id"))
-      .withColumn("userid", col("user_id"))
-      .select("unitid", "userid", "ideas", "bid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "status")
-
-
-    val ideaTable = base
-      .withColumn("ideaid", explode(split(col("ideas"), "[,]")))
-      .select("unitid", "userid", "ideaid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "status")
-
-    ideaTable.createOrReplaceTempView("ideaid_update_time")
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |    unitid,
-         |    userid,
-         |    ideaid,
-         |    ocpc_bid as cpa_given,
-         |    cast(conversion_goal as int) as conversion_goal,
-         |    ocpc_bid_update_time as update_timestamp,
-         |    from_unixtime(ocpc_bid_update_time) as update_time,
-         |    from_unixtime(ocpc_bid_update_time, 'yyyy-MM-dd') as update_date,
-         |    from_unixtime(ocpc_bid_update_time, 'HH') as update_hour,
-         |    status
-         |FROM
-         |    ideaid_update_time
-       """.stripMargin
-
-    println(sqlRequest)
-
-    val rawData = spark.sql(sqlRequest)
-    val resultDF = rawData.select("unitid", "conversion_goal")
-
-    resultDF.show(10)
-    resultDF
-  }
+//  def getConversioGoal(date: String, hour: String, spark: SparkSession) = {
+//    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+//    val user = "adv_live_read"
+//    val passwd = "seJzIPUc7xU"
+//    val driver = "com.mysql.jdbc.Driver"
+//    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
+//
+//    val data = spark.read.format("jdbc")
+//      .option("url", url)
+//      .option("driver", driver)
+//      .option("user", user)
+//      .option("password", passwd)
+//      .option("dbtable", table)
+//      .load()
+//
+//    val base = data
+//      .withColumn("unitid", col("id"))
+//      .withColumn("userid", col("user_id"))
+//      .select("unitid", "userid", "ideas", "bid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "status")
+//
+//
+//    val ideaTable = base
+//      .withColumn("ideaid", explode(split(col("ideas"), "[,]")))
+//      .select("unitid", "userid", "ideaid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "status")
+//
+//    ideaTable.createOrReplaceTempView("ideaid_update_time")
+//
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |    unitid,
+//         |    userid,
+//         |    ideaid,
+//         |    ocpc_bid as cpa_given,
+//         |    cast(conversion_goal as int) as conversion_goal,
+//         |    ocpc_bid_update_time as update_timestamp,
+//         |    from_unixtime(ocpc_bid_update_time) as update_time,
+//         |    from_unixtime(ocpc_bid_update_time, 'yyyy-MM-dd') as update_date,
+//         |    from_unixtime(ocpc_bid_update_time, 'HH') as update_hour,
+//         |    status
+//         |FROM
+//         |    ideaid_update_time
+//       """.stripMargin
+//
+//    println(sqlRequest)
+//
+//    val rawData = spark.sql(sqlRequest)
+//    val resultDF = rawData.select("unitid", "conversion_goal")
+//
+//    resultDF.show(10)
+//    resultDF
+//  }
 
   def getCvrData(date: String, hour: String, spark: SparkSession) = {
     val clickData = getClickData(date, hour, spark)
@@ -119,22 +119,45 @@ object OcpcCPCbid {
       .join(cvr1Data, Seq("searchid"), "left_outer")
       .join(cvr2Data, Seq("searchid"), "left_outer")
       .join(cvr3Data, Seq("searchid"), "left_outer")
-      .select("searchid", "unitid", "price", "isclick", "iscvr1", "iscvr2", "iscvr3")
-      .groupBy("unitid")
-      .agg(
-        sum(col("isclick")).alias("click"),
-        sum(col("iscvr1")).alias("cv1"),
-        sum(col("iscvr2")).alias("cv2"),
-        sum(col("iscvr3")).alias("cv3")
-      )
-      .withColumn("cvr1", col("cv1") * 1.0 / col("click"))
-      .withColumn("cvr2", col("cv2") * 1.0 / col("click"))
-      .withColumn("cvr3", col("cv3") * 1.0 / col("click"))
-      .withColumn("min_bid2", lit(2))
-      .withColumn("min_cpm2", lit(0))
+      .select("searchid", "unitid", "price", "isclick", "iscvr1", "iscvr2", "iscvr3", "isshow", "bid", "exp_ctr")
+      .withColumn("cpm", col("bid") * col("exp_ctr"))
 
-    data.show(10)
-    data
+    data.createOrReplaceTempView("base_data")
+    data.write.mode("overwrite").saveAsTable("test.check_data_20190218a")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  2 as min_bid2,
+         |  sum(iscvr1) * 1.0 / sum(isclick) as cvr1,
+         |  sum(iscvr2) * 1.0 / sum(isclick) as cvr2,
+         |  sum(iscvr3) * 1.0 / sum(isclick) as cvr3,
+         |  percentile(cpm, 0.10) as min_cpm2
+         |FROM
+         |  base_data
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+    resultDF.write.mode("overwrite").saveAsTable("test.check_data_20190218b")
+
+
+//      .groupBy("unitid")
+//      .agg(
+//        sum(col("isclick")).alias("click"),
+//        sum(col("iscvr1")).alias("cv1"),
+//        sum(col("iscvr2")).alias("cv2"),
+//        sum(col("iscvr3")).alias("cv3"),
+//        sum(col("isshow")).alias("show")
+//      )
+//      .withColumn("cvr1", col("cv1") * 1.0 / col("click"))
+//      .withColumn("cvr2", col("cv2") * 1.0 / col("click"))
+//      .withColumn("cvr3", col("cv3") * 1.0 / col("click"))
+//      .withColumn("min_bid2", lit(2))
+//      .withColumn("min_cpm2", lit(0))
+
+    resultDF.show(10)
+    resultDF
 
   }
 
@@ -182,7 +205,7 @@ object OcpcCPCbid {
     val tmpDateValue = tmpDate.split(" ")
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
 
     val sqlRequest =
       s"""
@@ -190,9 +213,13 @@ object OcpcCPCbid {
          |  searchid,
          |  unitid,
          |  price,
-         |  isclick
+         |  isclick,
+         |  isshow,
+         |  (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as double)
+         |        else original_bid end) as bid,
+         |  exp_ctr * 1000000 as exp_ctr
          |FROM
-         |  dl_cpc.slim_union_log
+         |  dl_cpc.filtered_union_log_exptag_hourly
          |WHERE
          |  $selectCondition
          |AND
@@ -206,7 +233,7 @@ object OcpcCPCbid {
          |AND
          |  round(adclass/1000) != 132101  --去掉互动导流
          |AND
-         |  isclick=1
+         |  isshow=1
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
@@ -269,6 +296,7 @@ object OcpcCPCbid {
       )
       .select("unitid", "min_bid1")
 
+    resultDF.show(10)
     resultDF
 
   }
