@@ -27,20 +27,17 @@ object OcpcMinCPMv2 {
     // 抽取数据
     val baseData1 = getBaseData(date, hour, dayCnt, spark)
 
-    // 抽取转化数据
-    val cvrData1 = getCvrData("cvr1", date, hour, dayCnt, spark)
-    val cvrData2 = getCvrData("cvr2", date, hour, dayCnt, spark)
-    val cvrData3 = getCvrData("cvr3", date, hour, dayCnt, spark)
+//    // 抽取转化数据
+//    val cvrData1 = getCvrData("cvr1", date, hour, dayCnt, spark)
+//    val cvrData2 = getCvrData("cvr2", date, hour, dayCnt, spark)
+//    val cvrData3 = getCvrData("cvr3", date, hour, dayCnt, spark)
 
     // 抽取expctr
-    val expCtrData = getPreCtr(date, hour, dayCnt, spark)
+    val expCtrData = getPreData(date, hour, dayCnt, spark)
 
     val baseData = baseData1
       .join(expCtrData, Seq("searchid"), "inner")
-      .join(cvrData1, Seq("searchid"), "left_outer")
-      .join(cvrData2, Seq("searchid"), "left_outer")
-      .join(cvrData3, Seq("searchid"), "left_outer")
-      .select("searchid", "ideaid", "original_bid", "price", "bid", "ocpc_flag", "is_ocpc", "isshow", "isclick", "ocpc_log", "adslotid", "adslot_type", "user_city", "city_level", "adsrc", "adclass", "hr", "exp_ctr", "cvr1", "cvr2", "cvr3")
+      .select("searchid", "ideaid", "original_bid", "price", "bid", "ocpc_flag", "is_ocpc", "isshow", "isclick", "ocpc_log", "adslotid", "adslot_type", "user_city", "city_level", "adsrc", "adclass", "hr", "exp_ctr", "exp_cvr")
       .withColumn("cpm", col("bid") * col("exp_ctr"))
 
     baseData
@@ -57,7 +54,7 @@ object OcpcMinCPMv2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
 
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid20190212")
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_min_bid20190214")
 //
 //    resultDF
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_min_bid_v2")
@@ -104,7 +101,7 @@ object OcpcMinCPMv2 {
     resultDF
   }
 
-  def getPreCtr(date: String, hour: String, dayInt: Int, spark: SparkSession) = {
+  def getPreData(date: String, hour: String, dayInt: Int, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -118,7 +115,8 @@ object OcpcMinCPMv2 {
       s"""
          |SELECT
          |  searchid,
-         |  exp_ctr
+         |  exp_ctr,
+         |  exp_cvr
          |FROM
          |  dl_cpc.slim_union_log
          |WHERE
@@ -205,15 +203,17 @@ object OcpcMinCPMv2 {
        |  percentile(bid, 0.03) as min_bid,
        |  percentile(cpm, 0.06) as min_cpm,
        |  count(1) as cnt,
-       |  sum(cvr1) * 1000000.0 / (5 * sum(isclick)) as cvr1,
-       |  sum(cvr2) * 1000000.0 / (5 * sum(isclick)) as cvr2,
-       |  sum(cvr3) * 1000000.0 / (5 * sum(isclick)) as cvr3
+       |  percentile(exp_cvr, 0.75) as pcvr
        |FROM
        |  base_data
        |GROUP BY hr, adslot_type, city_level, floor(adclass/1000), ocpc_flag
        """.stripMargin
     println(sqlRequest)
-    val rawData = spark.sql(sqlRequest).na.fill(0, Seq("cvr1", "cvr2", "cvr3"))
+    val rawData = spark
+        .sql(sqlRequest)
+        .withColumn("cvr1", col("pcvr"))
+        .withColumn("cvr2", col("pcvr") * 1.0 / 10)
+        .withColumn("cvr3", col("pcvr") * 1.0 / 10)
     rawData.createOrReplaceTempView("raw_data")
 
     val sqlRequest2 =

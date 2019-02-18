@@ -13,6 +13,7 @@ import sys.process._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.LongAccumulator
 import redis.clients.jedis.{HostAndPort, JedisCluster}
+import scala.util.Random
 
 /**
   *
@@ -49,6 +50,7 @@ object Utils {
     spark.sql(sql)
       .repartition(numPartitions)
       .rdd.map(x => Base64.decodeBase64(x.getString(0)))
+      .filter(_ != null)
       .map(x => {
         acc.add(1L)
         (new BytesWritable(x), NullWritable.get())
@@ -56,7 +58,7 @@ object Utils {
       .saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)
 
     //保存count文件
-    val fileName = "count_" + path.split("/").init.last
+    val fileName = "count_" + Random.nextInt(100000)
     println("count file name : " + fileName)
     println(s"total num is : ${acc.sum}")
     s"echo ${acc.sum}" #> new File(s"$fileName") !
@@ -100,6 +102,7 @@ object Utils {
     spark.sql(sql)
       .repartition(numPartitions, $"uid")
       .rdd.map(x => Base64.decodeBase64(x.getString(0)))
+      .filter(_ != null)
       .map(x => {
         acc.add(1L)
         (new BytesWritable(x), NullWritable.get())
@@ -107,7 +110,7 @@ object Utils {
       .saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)
 
     //保存count文件
-    val fileName = "count_" + path.split("/").init.last
+    val fileName = "count_" + Random.nextInt(100000)
     println("count file name : " + fileName)
     println(s"total num is : ${acc.sum}")
     s"echo ${acc.sum}" #> new File(s"$fileName") !
