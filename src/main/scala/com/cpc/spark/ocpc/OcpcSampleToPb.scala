@@ -129,7 +129,7 @@ object OcpcSampleToPb {
     println(s"fileName is: $tableName")
 
     // get the new k
-    val data = spark
+    val expData = spark
       .read.format("json").json(expDataPath)
       .groupBy("unitid")
       .agg(
@@ -140,7 +140,7 @@ object OcpcSampleToPb {
     // get ocpc ads
     val ocpcUnit = getOCPCads(date, hour, spark)
 
-    val joinData = data
+    val joinData = expData
       .join(ocpcUnit, Seq("unitid"), "inner")
       .select("unitid", "ideaid", "userid", "reset_k")
 
