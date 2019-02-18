@@ -22,7 +22,7 @@ object GetItem {
   def getGroup(groupItem: GroupItem): Seq[Group] = {
     var groups = Seq[Group]()
 
-    val group = Group(
+    var group = Group(
       unitid = groupItem.getGroupid,
       planid = groupItem.getPlanid,
       userid = groupItem.getUserid,

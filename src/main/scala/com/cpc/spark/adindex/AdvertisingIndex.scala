@@ -104,7 +104,7 @@ object AdvertisingIndex {
       }
     }
 
-    
+
     println("idx count:  " + idx.size, "head:" + idx.head)
 
     val idxRDD = spark.sparkContext.parallelize(idx)
