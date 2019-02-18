@@ -81,23 +81,27 @@ object AdvertisingIndex {
     println("ideaItemSeq count:  " + ideaItemSeq.size, "head:" + ideaItemSeq.head)
 
 
-    for (u <- unitItemSeq;
-         i <- ideaItemSeq) {
+    for (u <- unitItemSeq){
       var unitItem = u
-      if (u.ideaid == i.ideaid) {
-        unitItem = unitItem.copy(
-          mtype = i.mtype,
-          width = i.width,
-          height = i.height,
-          interaction = i.interaction,
-          `class` = i.`class`,
-          material_level = i.material_level,
-          siteid = i.siteid,
-          white_user_ad_corner = i.white_user_ad_corner)
+      for(i <- ideaItemSeq) {
+
+        if (u.ideaid == i.ideaid) {
+          unitItem = unitItem.copy(
+            mtype = i.mtype,
+            width = i.width,
+            height = i.height,
+            interaction = i.interaction,
+            `class` = i.`class`,
+            material_level = i.material_level,
+            siteid = i.siteid,
+            white_user_ad_corner = i.white_user_ad_corner,
+            timestamp = timestamp)
+          idx :+= unitItem
+        }
       }
-      unitItem = unitItem.copy(timestamp = timestamp)
-      idx :+= unitItem
+      
     }
+
 
 
     println("idx count:  " + idx.size, "head:" + idx.head)
