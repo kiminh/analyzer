@@ -82,11 +82,10 @@ object AdvertisingIndex {
 
 
     for (u <- unitItemSeq){
-      var unitItem = u
       for(i <- ideaItemSeq) {
 
         if (u.ideaid == i.ideaid) {
-          unitItem = unitItem.copy(
+          val unitItem = u.copy(
             mtype = i.mtype,
             width = i.width,
             height = i.height,
@@ -98,11 +97,12 @@ object AdvertisingIndex {
             timestamp = timestamp)
           idx :+= unitItem
         }else{
-          unitItem = unitItem.copy(timestamp = timestamp)
-          idx :+= unitItem
+          var un = u.copy(timestamp = timestamp)
+          idx :+= un
         }
-      }
 
+
+      }
     }
 
 
