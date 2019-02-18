@@ -118,9 +118,10 @@ object AdvertisingIndex {
                 hour = hour.toString,
                 minute = min.toString,
                 timestamp = timestamp)
+
+              idx :+= unitItem
             }
           }
-          idx :+= unitItem
         }
     println("idx count:  " + idx.size, "head:" + idx.head)
 
