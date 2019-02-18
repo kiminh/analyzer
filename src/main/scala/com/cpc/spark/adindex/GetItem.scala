@@ -89,9 +89,6 @@ case class Idea(
 
 case class Group(
                   var timestamp: Int = 0,
-                  var date: String = "",
-                  var hour: String = "",
-                  var minute: String = "",
                   var ideaid: Int = 0,
                   var unitid: Int = 0,
                   var planid: Int = 0,

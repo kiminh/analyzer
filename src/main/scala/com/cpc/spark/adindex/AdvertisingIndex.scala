@@ -19,7 +19,7 @@ object AdvertisingIndex {
     //获取当前时间
 
     val cal = Calendar.getInstance()
-    val timestamps = (cal.getTimeInMillis / 1000).toInt
+    val timestamp = (cal.getTimeInMillis / 1000).toInt
     println("1：" + cal.getTimeInMillis)
     println("1：" + cal.getTimeInMillis / 1000)
     println("1：" + (cal.getTimeInMillis / 1000).toInt)
@@ -30,7 +30,7 @@ object AdvertisingIndex {
     val hour = hour_format.format(cal.getTime)
     val min = min_format.format(cal.getTime)
 
-    println(timestamps, date, hour, min)
+    println(timestamp, date, hour, min)
 
     //    val client = new HttpClient
     //    val method = new GetMethod(url)
@@ -98,10 +98,7 @@ object AdvertisingIndex {
             material_level = i.material_level,
             siteid = i.siteid,
             white_user_ad_corner = i.white_user_ad_corner,
-            date = date,
-            hour = hour,
-            minute = min,
-            timestamp = timestamps)
+            timestamp = timestamp)
         }
       }
       idx :+= unitItem
