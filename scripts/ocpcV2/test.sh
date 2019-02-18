@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 cur=/data/cpc/dw
 SPARK_HOME=/usr/lib/spark-current
 

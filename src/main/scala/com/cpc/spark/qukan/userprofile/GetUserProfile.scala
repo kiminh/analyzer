@@ -14,6 +14,7 @@ import com.redis.serialization.Parse.Implicits._
 /**
   * Created by Roy on 2017/4/14.
   */
+@deprecated
 object GetUserProfile {
 
   def main(args: Array[String]): Unit = {

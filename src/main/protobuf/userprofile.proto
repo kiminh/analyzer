@@ -23,6 +23,7 @@ message AdFreq {
 	int64 cf_coin_timestamp = 6; //详情页金币样式时间戳
 	int64 auto_coin_timestamp = 7; //自动化金币样式时间戳
 	int64 class_last_show_timestamp = 8; //上次展示class时间戳
+	int64 class_coin_last_show_timestamp = 9; //上次展示金币导流应用商城class的时间戳
 }
 
 message APPPackage {
@@ -36,6 +37,7 @@ message InterestItem {
 	int32 tag = 1; //兴趣标签id
 	int32 score = 2; // 兴趣权值
 }
+
 message UserProfile {
 	string devid = 1; //设备号，没有后缀, 用户的主key
 	int32 age = 2; //年龄 0: 未知 1: 小于18 2:18-23 3:24-30 4:31-40 5:41-50 6: >50
@@ -47,7 +49,7 @@ message UserProfile {
 	int32 incr_coin = 8; // 新增金币数
 	int32 antispam = 9; // 是否命中反作弊人群
 	int32 share_coin = 10; //分享朋友圈获得的积分
-	int32 newUser = 11; //是否是新用户，45天内是新用户，是1，不是0
+	int32 newUser = 11; // 是否是新用户，45天内是新用户，是1，不是0
 	repeated InterestItem interestedWords = 12;  //感兴趣的词汇分类
 	string province = 13; //省份
 	string city = 14; //城市
@@ -55,9 +57,10 @@ message UserProfile {
 	int64 ctrcnt = 16; // uid维度的最近几天点击总次数
 	int64 cvrcnt = 17; // uid维度的最近几天转化总次数
 	string lastDayInCPC = 18; // 最近一次在cpc union log中出现的date，以"yyyy-mm-dd"的格式
-	map<string, double> dspImpressedWords = 19; // 用户在dsp广告曝光中的关键词
-	map<string, double> dspClikedWords = 20; // 用户在dsp广告点击的关键词
 	string ageNew = 21; // dnn年龄模型预测4分段结果
+	int32 ageNew1 = 22; // dnn年龄模型预测4分段结果
+	string recentIP = 23; // 最近常用的ip地址
+	string registeredIP = 24; // 注册时使用的ip地址
 	QttProfile qttProfile = 101;
 }
 
@@ -73,4 +76,60 @@ message QttProfile {
 	repeated QttProfile siblings = 13;  //同师傅用户
 }
 
+message MiDuUserProfile {
+	string uid = 1; // 用户设备号
+	int32 newUser = 2; // 是否是新用户，45天内是新用户，是1，不是0
+	string lastLoginDay = 3;//最后登录时间
+}
 
+message DuanZiUserProfile {
+	string uid = 1; // 用户设备号
+	int32 newUser = 2; // 是否是新用户，45天内是新用户，是1，不是0
+}
+
+message UserSignal {
+	string uid = 1;
+	map<string, string> predictedAgeRange = 2; // key是实验名，默认为default，<18; 18-23; 23-40; >40
+	string birthYear = 3;
+	int32 sex = 4; // 性别 0: 未知 1: 男 2: 女
+	int32 newUser = 5; // 是否是新用户，45天内是新用户，是1，不是0
+	string province = 6;
+	string city = 7;
+	string usercreateTime = 8;
+	string lastDayInCPC = 9; // 最近一次在cpc union log中出现的date，以"yyyy-mm-dd"的格式
+	map<string, double> dspImpressedWords = 10; // 用户在dsp广告曝光中的关键词
+	map<string, double> dspClickedWords = 11; // 用户在dsp广告点击的关键词
+	string os = 12;
+	string network = 13;
+	int32 phonePrice = 14;
+	string brand = 15;
+	int32 cityLevel = 16;
+	repeated Feature user_day_ad_behavior = 17;
+	repeated Feature user_day_rec_behavior = 18;
+	Feature user_installed_app = 19;
+	Feature dy_6_favoCate5 = 20;
+	Feature dy_3_readVideoNum = 21;
+	Feature dy_6_readCate = 22;
+	Feature st_2_birth = 23;
+	map<string, Cvr> recall_cvr = 24;
+	map<string, double> allTagIDs = 25; // 人群包，key为人群包id，value目前不使用
+}
+
+message Cvr {
+	double cvr = 1;
+	double cvrRank = 2;
+}
+
+message Feature {
+	// also serves as hash_prefix
+	string name = 1;
+
+	// str: 1/ int: 2 / float: 3
+	int32 type = 2;
+
+	repeated string str_list = 3;
+	repeated int32 int_list = 4;
+	repeated float float_list = 5;
+
+	repeated int64 int64_list = 6;
+}

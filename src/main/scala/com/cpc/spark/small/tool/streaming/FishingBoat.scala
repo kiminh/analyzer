@@ -35,6 +35,9 @@ object FishingBoat {
                    click: Long = 0,
                    cost: Long = 0,
                    device_total: Long = 0,
+                   exp_ctr: Long = 0,
+                   exp_cvr_show: Long = 0,
+                   exp_cvr_click: Long = 0,
                    date: String = "",
                    create_time: String = ""
                  ) {
@@ -204,6 +207,7 @@ object FishingBoat {
     var broadcastTaskList = spark.sparkContext.broadcast(Map[Int, (Int, String)]())
 
     val base_data = messages
+      .repartition(1000)
       .map {
         case (k, v) =>
           try {
@@ -225,10 +229,11 @@ object FishingBoat {
               null
           }
       }
-      .filter(_ != null)
+      //.filter(_ != null)
       .map {
-        x =>
-          var data = ("", "")
+      x =>
+        var data = ("", "")
+        if (x != null) {
           val s1 = x.field.getOrElse[ExtValue]("cpc_search_new", null) //cpc_search_new
           if (s1 == null) {
             null
@@ -249,11 +254,11 @@ object FishingBoat {
           } else {
             data = ("cpc_click_new", s3.string_type)
           }
+        }
+        if (data == ("", "")) null else data
 
-          if (data == ("", "")) null else data
-
-      }
-      .filter(_ != null)
+    }
+    //.filter(_ != null)
 
     val allData = base_data
       .map { x =>
@@ -261,17 +266,20 @@ object FishingBoat {
           LogParser.parseSearchLog(x._2)
         } else if (x._1 == "cpc_show_new") {
           LogParser.parseShowLog(x._2)
-        } else {
+        } else if (x._1 == "cpc_click_new") {
           LogParser.parseClickLog2(x._2)
+        } else {
+          null
         }
       }
-      .filter {
-        x =>
-          x != null && (x.ext.contains("charge_type") && x.ext.get("charge_type").get.int_value == 1) && x.adsrc == 1
-      }
-      .repartition(50)
+      //      .filter {
+      //        x =>
+      //          x != null && (x.ext.contains("charge_type") && x.ext.get("charge_type").get.int_value == 1) && x.adsrc == 1
+      //      }
+      //.repartition(50)
       .map {
-        x =>
+      x =>
+        if (x != null && (x.ext.contains("charge_type") && x.ext.get("charge_type").get.int_value == 1) && x.adsrc == 1) {
           x.isclick = x.isCharged()
           x.isfill = if (x.isclick == 1) 0 else x.isfill
           x.price = if (x.isclick == 1) x.price else 0
@@ -295,6 +303,18 @@ object FishingBoat {
 
           val hostname = if (x.ext_string.contains("hostname")) x.ext_string.get("hostname").get else ""
           infoMap += ("hostname" -> hostname.toString)
+
+          val ctr_model_name = if (x.ext_string.contains("ctr_model_name")) x.ext_string.get("ctr_model_name").get else ""
+          infoMap += ("ctr_model_name" -> ctr_model_name.toString)
+
+          val cvr_model_name = if (x.ext_string.contains("cvr_model_name")) x.ext_string.get("cvr_model_name").get else ""
+          infoMap += ("cvr_model_name" -> cvr_model_name.toString)
+
+          val exp_ctr = if (x.ext.contains("exp_ctr")) x.ext.get("exp_ctr").get.int_value else 0
+          infoMap += ("exp_ctr" -> exp_ctr.toString)
+
+          val exp_cvr = if (x.ext.contains("exp_cvr")) x.ext.get("exp_cvr").get.int_value else 0
+          infoMap += ("exp_cvr" -> exp_cvr.toString)
 
           if (x.exptags.length > 0) {
             val tmpArr = x.exptags.split(",")
@@ -331,53 +351,60 @@ object FishingBoat {
           }
 
           infoMap
-      }
-      .cache()
+        } else {
+          null
+        }
+    }
+    .cache()
 
     //        allData.filter(x=>x.get("adslotid").get.toString=="").foreachRDD(rdd => rdd.take(10).foreach(println))
     //
     //        println("--------------")
-
-
     for (i <- 1 to taskNum.toInt) {
 
-      val baseAllData = allData
+      //      val baseAllData = allData
+      //        .filter {
+      //          x =>
+      //            x != null && broadcastTaskList.value.contains(i) && getFilter(x, broadcastTaskList.value.get(i).get._2)
+      //        }
+      //        .cache()
+
+      //      val deviceAllData = baseAllData
+      //        //.filter(_.get("isshow").get.toString.toLong > 0)
+      //        .map {
+      //        x =>
+      //          val info = broadcastTaskList.value.get(i).get
+      //          val confJson = info._2
+      //          val isshow = x.get("isshow").get.toString.toLong
+      //          ((getKey(x, confJson), x.get("uid").get), (1))
+      //      }
+      //        .filter(_._1._1.size > 0)
+      //        .reduceByKey {
+      //          (a, b) =>
+      //            a
+      //        }
+      //        .map {
+      //          x =>
+      //            ((x._1._1), 1.toLong)
+      //        }
+      //        .reduceByKey {
+      //          (a, b) =>
+      //            (a + b)
+      //        }
+      //        .map {
+      //          x =>
+      //            val info = broadcastTaskList.value.get(i).get
+      //            ((x._1), (Info(info._1, "", 0, 0, 0, 0, 0, x._2)))
+      //        }
+
+
+      //baseAllData
+      allData
         .filter {
           x =>
-            x != null && broadcastTaskList.value.contains(i) && getFilter(x, broadcastTaskList.value.get(i).get._2)
+            x != null && broadcastTaskList.value.contains(i) && getFilter(x, broadcastTaskList.value.get(i).get._2) && getKey(x, broadcastTaskList.value.get(i).get._2).size > 0
         }
-        .cache()
-
-      val deviceAllData = baseAllData
-        //.filter(_.get("isshow").get.toString.toLong > 0)
-        .map {
-        x =>
-          val info = broadcastTaskList.value.get(i).get
-          val confJson = info._2
-          val isshow = x.get("isshow").get.toString.toLong
-          ((getKey(x, confJson), x.get("uid").get), (1))
-      }
-        .filter(_._1._1.size > 0)
-        .reduceByKey {
-          (a, b) =>
-            a
-        }
-        .map {
-          x =>
-            ((x._1._1), 1.toLong)
-        }
-        .reduceByKey {
-          (a, b) =>
-            (a + b)
-        }
-        .map {
-          x =>
-            val info = broadcastTaskList.value.get(i).get
-            ((x._1), (Info(info._1, "", 0, 0, 0, 0, 0, x._2)))
-        }
-
-
-      baseAllData
+        .repartition(50)
         .map {
           x =>
             val info = broadcastTaskList.value.get(i).get
@@ -387,44 +414,52 @@ object FishingBoat {
             val isshow = x.get("isshow").get.toString.toLong
             val isclick = x.get("isclick").get.toString.toLong
             val price = x.get("price").get.toString.toLong
+            val exp_ctr = if (isshow > 0) x.get("exp_ctr").get.toString.toLong else 0
+            val exp_cvr_show = if (isshow > 0) x.get("exp_cvr").get.toString.toLong else 0
+            val exp_cvr_click = if (isclick > 0) x.get("exp_cvr").get.toString.toLong else 0
             //val bid = x.get("bid").get.toString.toLong
-            ((getKey(x, confJson)), (Info(info._1, "", 0, isfill, isshow, isclick, price)))
+            ((getKey(x, confJson)), (Info(info._1, "", 0, isfill, isshow, isclick, price, 0, exp_ctr, exp_cvr_show, exp_cvr_click)))
         }
-        .union(deviceAllData)
+        //.union(deviceAllData)
         .reduceByKey {
-          (a, b) =>
-            (Info(a.task_id, a.task_key, a.request + b.request, a.served_request + b.served_request, a.impression + b.impression, a.click + b.click, a.cost + b.cost, a.device_total + b.device_total))
-        }
-        .filter {
-          x =>
-            val confJson = broadcastTaskList.value.get(i).get._2
-            x != null && getGroupFilter(x._2, confJson) && x._1.size > 0
-        }
+        (a, b) =>
+          (Info(a.task_id, a.task_key, a.request + b.request, a.served_request + b.served_request, a.impression + b.impression,
+            a.click + b.click, a.cost + b.cost, a.device_total + b.device_total, a.exp_ctr + b.exp_ctr, a.exp_cvr_show + b.exp_cvr_show,
+            a.exp_cvr_click + b.exp_cvr_click))
+      }
+        //        .filter {
+        //          x =>
+        //            //val confJson = broadcastTaskList.value.get(i).get._2
+        //            //x != null && getGroupFilter(x._2, confJson) && x._1.size > 0
+        //            x != null && x._1.size > 0
+        //        }
         .map {
-          x =>
-            val info = x._2
-            val now: Date = new Date()
-            val dateFormat: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm")
-            val date = dateFormat.format(now).substring(0, 10)
-            val dateTimeStr = dateFormat.format(now) + ":00"
-            val gson = new Gson
-            val task_key = gson.toJson(x._1)
-            (info.task_id, task_key, info.served_request, info.served_request, info.impression, info.click, info.cost, info.device_total, date, dateTimeStr)
-        }
+        x =>
+          val info = x._2
+          val now: Date = new Date()
+          val dateFormat: SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm")
+          val date = dateFormat.format(now).substring(0, 10)
+          val dateTimeStr = dateFormat.format(now) + ":00"
+          val gson = new Gson
+          val task_key = gson.toJson(x._1)
+          (info.task_id, task_key, info.served_request, info.served_request, info.impression, info.click, info.cost, info.device_total,
+            info.exp_ctr, info.exp_cvr_show, info.exp_cvr_click, date, dateTimeStr)
+      }
 
         .foreachRDD {
           rdd =>
-            //rdd.take(5).foreach(println)
-            val insertDataFrame = spark
-              .createDataFrame(rdd)
-              .toDF("task_id", "task_key", "request", "served_request", "impression", "click", "cost", "device_total", "date", "create_time") //, "date", "create_time"
-            insertDataFrame.show(5)
+            if (rdd.count() > 0) {
+              val insertDataFrame = spark
+                .createDataFrame(rdd)
+                .toDF("task_id", "task_key", "request", "served_request", "impression", "click", "cost", "device_total",
+                  "exp_ctr", "exp_cvr_show", "exp_cvr_click", "date", "create_time") //, "date", "create_time"
+              //insertDataFrame.show(5)
 
-            insertDataFrame
-              .write
-              .mode(SaveMode.Append)
-              .jdbc(mariaReport2dbUrl, "report2.fishing_boat_task_warehouse", mariaReport2dbProp)
-
+              insertDataFrame
+                .write
+                .mode(SaveMode.Append)
+                .jdbc(mariaReport2dbUrl, "report2.fishing_boat_task_warehouse", mariaReport2dbProp)
+            }
             println("over~", i)
         }
     }
@@ -544,7 +579,9 @@ object FishingBoat {
     infoMap += ("show" -> info.impression)
     infoMap += ("click" -> info.click)
     infoMap += ("price" -> info.cost)
-
+    infoMap += ("exp_ctr" -> info.exp_ctr)
+    infoMap += ("exp_cvr_show" -> info.exp_cvr_show)
+    infoMap += ("exp_cvr_click" -> info.exp_cvr_click)
 
     val fieldValue = infoMap.get(fieldStr).get
 

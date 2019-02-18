@@ -13,6 +13,7 @@ import userprofile.Userprofile.UserProfile
 /**
   * Created by Roy on 2017/5/17.
   */
+@deprecated
 object GetUserIncreaseCoin {
   def main(args: Array[String]): Unit = {
     if (args.length < 1) {

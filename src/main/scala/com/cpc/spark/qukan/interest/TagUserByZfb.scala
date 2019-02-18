@@ -1,25 +1,22 @@
 package com.cpc.spark.qukan.interest
 
-import java.io.{FileWriter, PrintWriter}
-import java.sql.{DriverManager, ResultSet}
 import java.text.SimpleDateFormat
-import java.util.{Calendar, Properties}
-import com.typesafe.config.ConfigFactory
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession, Row}
-import scala.collection.mutable
-import scala.util.Random
-import com.redis.serialization.Parse.Implicits._
-import com.redis.RedisClient
-import userprofile.Userprofile.{InterestItem, UserProfile}
-import scala.util.control._
+import java.util.Calendar
+
 import com.cpc.spark.qukan.userprofile.SetUserProfileTag
+import com.redis.RedisClient
+import com.redis.serialization.Parse.Implicits._
+import com.typesafe.config.ConfigFactory
+import org.apache.spark.sql.SparkSession
+import userprofile.Userprofile.{InterestItem, UserProfile}
+
+import scala.util.control._
 
 /***
   * Create by myt on 19/06/2018
   *
   */
-
+@deprecated
 object TagUserByZfb {
   def main(args: Array[String]): Unit = {
     val days  = args(0).toInt

@@ -3,16 +3,16 @@ package com.cpc.spark.qukan.userprofile
 
 import java.sql.Timestamp
 
-import com.typesafe.config.ConfigFactory
-import org.apache.spark.sql.SparkSession
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
-import userprofile.Userprofile.{InterestItem, QttProfile, UserProfile}
+import org.apache.spark.sql.SparkSession
+import userprofile.Userprofile.{QttProfile, UserProfile}
 
 /**
   * Created by roydong on 12/07/2018.
   */
+@deprecated
 object TeacherStudents {
 
   def main(args: Array[String]): Unit = {
