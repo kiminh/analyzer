@@ -144,6 +144,8 @@ object OcpcSampleToPb {
       .join(ocpcUnit, Seq("unitid"), "inner")
       .select("unitid", "ideaid", "userid", "reset_k")
 
+    joinData.show(10)
+
     // 替换k值
     val result = data
       .withColumn("prev_k", col("k_value"))
