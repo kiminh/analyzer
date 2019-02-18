@@ -63,7 +63,7 @@ object GetItem {
       target_adslot_ids = groupItem.getTargetAdslotIdsList.toArray.mkString(",")
     )
     val ideaidsCount = groupItem.getIdeaidsCount
-    for (i <- 0 to ideaidsCount) {
+    for (i <- 0 until ideaidsCount) {
       val ideaid = groupItem.getIdeaids(i)
       group.copy(ideaid = ideaid)
       groups :+= group
