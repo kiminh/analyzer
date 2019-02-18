@@ -87,6 +87,7 @@ object AdvertisingIndex {
       for (i <- ideaItemSeq) {
 
         if (u.ideaid == i.ideaid) {
+          flag = true
           unitItem = unitItem.copy(
             mtype = i.mtype,
             width = i.width,
@@ -101,31 +102,31 @@ object AdvertisingIndex {
         }
 
       }
-      if(!flag){
+      if (!flag) {
         idx :+= unitItem
       }
     }
 
 
-  println("idx count:  " + idx.size, "head:" + idx.head)
+    println("idx count:  " + idx.size, "head:" + idx.head)
 
-  val idxRDD = spark.sparkContext.parallelize(idx)
-  spark.createDataFrame(idx)
-    .repartition(1)
-    .write
-    .mode("overwrite")
-    .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min")
-  println(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min")
-  spark.sql(
-    s"""
-       |alter table dl_cpc.cpc_ad_index add if not exists partition(date = "$date",hour="$hour",minute="$min")
-       |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min'
+    val idxRDD = spark.sparkContext.parallelize(idx)
+    spark.createDataFrame(idx)
+      .repartition(1)
+      .write
+      .mode("overwrite")
+      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min")
+    println(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min")
+    spark.sql(
+      s"""
+         |alter table dl_cpc.cpc_ad_index add if not exists partition(date = "$date",hour="$hour",minute="$min")
+         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min'
            """.stripMargin)
-  spark.close()
+    spark.close()
 
-  println("done.")
+    println("done.")
 
-}
+  }
 
 
 }
