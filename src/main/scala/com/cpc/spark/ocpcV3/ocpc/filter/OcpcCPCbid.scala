@@ -225,8 +225,6 @@ object OcpcCPCbid {
          |AND
          |  media_appsid in ('80000001', '80000002')
          |AND
-         |  antispam = 0
-         |AND
          |  adslot_type in (1,2,3)
          |AND
          |  adsrc=1
