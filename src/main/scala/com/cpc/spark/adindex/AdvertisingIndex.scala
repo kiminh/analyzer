@@ -20,13 +20,16 @@ object AdvertisingIndex {
 
     val cal = Calendar.getInstance()
     val timestamp = (cal.getTimeInMillis / 1000).toInt
-    println("1："+cal.getTimeInMillis)
-    println("1："+cal.getTimeInMillis/1000)
-    println("1："+(cal.getTimeInMillis/1000).toInt)
-    val format = new SimpleDateFormat("yyyy-MM-dd")
-    val date = format.format(cal.getTime)
-    val hour = cal.get(Calendar.HOUR_OF_DAY)
-    val min = cal.get(Calendar.MINUTE)
+    println("1：" + cal.getTimeInMillis)
+    println("1：" + cal.getTimeInMillis / 1000)
+    println("1：" + (cal.getTimeInMillis / 1000).toInt)
+    val date_format = new SimpleDateFormat("yyyy-MM-dd")
+    val hour_format = new SimpleDateFormat("HH")
+    val min_format = new SimpleDateFormat("mm")
+    val date = date_format.format(cal.getTime)
+    val hour = hour_format.format(cal.getTime)
+    val min = min_format.format(cal.getTime)
+
     println(timestamp, date, hour, min)
 
     //    val client = new HttpClient
