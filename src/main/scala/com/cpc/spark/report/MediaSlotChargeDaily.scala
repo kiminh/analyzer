@@ -50,7 +50,7 @@ object MediaSlotChargeDaily {
           charge_fee = 0
         }
 
-        val media_id = x.getAs[String]("media_id").toInt
+        val media_id = x.getAs[String]("media_appsid").toInt
         val media_name = media_id match {
           case m if qtt_media_id.contains(m) => "qtt"
           case m if midu_media_id.contains(m) => "midu"
@@ -120,6 +120,7 @@ object MediaSlotChargeDaily {
       .groupBy("ideaid")
       .agg(expr("count(distinct uid)").alias("idea_uids"))
       .rdd
+
       .map { r =>
         (r.getAs[Int]("ideaid"), r.getAs[Long]("idea_uids"))
       }
