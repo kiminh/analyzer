@@ -120,7 +120,6 @@ object MediaSlotChargeDaily {
       .groupBy("ideaid")
       .agg(expr("count(distinct uid)").alias("idea_uids"))
       .rdd
-
       .map { r =>
         (r.getAs[Int]("ideaid"), r.getAs[Long]("idea_uids"))
       }
@@ -170,7 +169,7 @@ object MediaSlotChargeDaily {
 
     resultRDD
       .toDF()
-      .repartition(100)
+      .repartition(10000)
       .write
       .partitionBy("date")
       .mode(SaveMode.Append) // 修改为Append
