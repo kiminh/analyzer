@@ -59,16 +59,106 @@ object OcpcSampleToPb {
 //    resultTmp.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129b")
     val result2 = assemblyPB(result1, date, hour, spark)
     val result3 = processCPAsuggest(result2, ocpcSuggest, date, hour, spark)
-    val resultDF = getCPCbid(result3, date, hour, spark)
+    val result4 = getCPCbid(result3, date, hour, spark)
+    val resultDF = setPresetK(result4, date, hour, spark)
 
 
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
 
     savePbPack(resultDF)
 
+  }
+
+  def getOCPCads(date: String, hour: String, spark: SparkSession) = {
+    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+    val user = "adv_live_read"
+    val passwd = "seJzIPUc7xU"
+    val driver = "com.mysql.jdbc.Driver"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val base = data
+      .withColumn("unitid", col("id"))
+      .withColumn("userid", col("user_id"))
+      .select("unitid", "userid", "ideas", "bid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "status")
+
+
+    val ideaTable = base
+      .withColumn("ideaid", explode(split(col("ideas"), "[,]")))
+      .select("unitid", "userid", "ideaid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "status")
+
+    ideaTable.createOrReplaceTempView("ideaid_update_time")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    unitid,
+         |    ideaid,
+         |    userid
+         |FROM
+         |    ideaid_update_time
+       """.stripMargin
+
+    println(sqlRequest)
+
+    val rawData = spark.sql(sqlRequest)
+    val resultDF = rawData.select("unitid", "ideaid", "userid").distinct()
+
+    resultDF.show(10)
+    resultDF
+
+
+  }
+
+  def setPresetK(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+    val expDataPath = conf.getString("ocpc_all.ocpc_set_k.path")
+    val tableName = conf.getString("ocpc_all.ocpc_set_k.tablename")
+    println("parameters in function: setPresetK")
+    println(s"path is: $expDataPath")
+    println(s"fileName is: $tableName")
+
+    // get the new k
+    val data = spark
+      .read.format("json").json(expDataPath)
+      .groupBy("unitid")
+      .agg(
+        min(col("kvalue")).alias("kvalue")
+      )
+      .select("unitid", "kvalue")
+
+    // get ocpc ads
+    val ocpcUnit = getOCPCads(date, hour, spark)
+
+    val joinData = data
+      .join(ocpcUnit, Seq("unitid"), "inner")
+      .select("unitid", "ideaid", "userid", "reset_k")
+
+    // 替换k值
+    val result = data
+      .withColumn("prev_k", col("k_value"))
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "prev_k", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t", "cpa_suggest", "cpc_bid")
+      .join(joinData, Seq("ideaid", "userid"), "left_outer")
+      .withColumn("k_value", when(col("reset_k").isNotNull, col("reset_k")).otherwise(col("prev_k")))
+
+    result.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190218")
+    val resultDF = result
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t", "cpa_suggest", "cpc_bid")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+
+    resultDF
   }
 
   def getCPCbid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
