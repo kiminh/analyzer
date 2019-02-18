@@ -3,12 +3,19 @@ package com.cpc.spark.report
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 
+/**
+  * Created by zhy (refined by fym) on 2019-02-16.
+  *
+  * this is an intermediate-level table, descending from trident (cpc_basedata_union_events).
+  * contents: media charge and miscellaneous indices.
+  */
+
 object MediaSlotChargeDaily {
   def main(args: Array[String]): Unit = {
     val day = args(0)
 
     val spark = SparkSession.builder()
-      .appName(" media slot charge hourly")
+      .appName("[trident] media charge and miscellaneous indices daily")
       .enableHiveSupport()
       .getOrCreate()
 
