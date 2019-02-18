@@ -42,6 +42,7 @@ object AdvertisingIndex {
       data = reponse.body.drop(16)
     }
 
+
     println(data.length)
 
     val idxItems = idxinterface.Idx.IdxItems.parseFrom(data)
@@ -78,13 +79,12 @@ object AdvertisingIndex {
 
 
     unitItemSeq.foreach { u =>
-      val uIdeaid = u.ideaid
-      val unitItem = u
+      var unitItem = u
       ideaItemSeq.foreach { i =>
-        val iIdeaid = i.ideaid
         val ideaItem = i
-        if (uIdeaid == iIdeaid) {
-          unitItem.copy(mtype = ideaItem.mtype,
+        if (u.ideaid == i.ideaid) {
+          unitItem.copy(
+            mtype = ideaItem.mtype,
             width = ideaItem.width,
             height = ideaItem.height,
             interaction = ideaItem.interaction,
@@ -108,12 +108,13 @@ object AdvertisingIndex {
       .write
       .mode("overwrite")
       .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min")
-
+    println(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min")
     spark.sql(
       s"""
          |alter table dl_cpc.cpc_ad_index add if not exists partition(date = "$date",hour="$hour",minute="$min")
          |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$min'
            """.stripMargin)
+    spark.close()
 
     println("done.")
 
