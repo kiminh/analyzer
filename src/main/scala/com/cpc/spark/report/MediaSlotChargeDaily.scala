@@ -173,7 +173,7 @@ object MediaSlotChargeDaily {
 
     resultRDD
       .toDF()
-      .repartition(10000)
+      .repartition(2000)
       .write
       .partitionBy("date")
       .mode(SaveMode.Append) // 修改为Append
