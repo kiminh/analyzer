@@ -1156,7 +1156,7 @@ object SaveFeatures {
 
               trace_type match {
                 case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
-                  || s == "active6" || s == "disactive" || s == "active_href")
+                  || s == "active6" || s == "disactive" || s == "active_href" || s == "active15")
                 => active_map += (s -> 1)
                 case _ =>
               }
@@ -1183,18 +1183,18 @@ object SaveFeatures {
               active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
               active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
               active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
-              active_map.getOrElse("report_user_stayinwx", 0), ""))
+              active_map.getOrElse("report_user_stayinwx", 0), active_map.getOrElse("active15", 0), ""))
 
           } else {
 
-            var list = ListBuffer[(String, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, String)]()
+            var list = ListBuffer[(String, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, String)]()
 
             for (telephone <- active15Seq) {
               val tuple = (x._1._1, x._1._2, convert, convert2, label_type, convert_sdk_dlapp,
                 active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
                 active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
                 active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
-                active_map.getOrElse("report_user_stayinwx", 0), telephone)
+                active_map.getOrElse("report_user_stayinwx", 0), active_map.getOrElse("active15", 0), telephone)
               list += tuple
             }
             list.toSeq
@@ -1202,7 +1202,7 @@ object SaveFeatures {
 
       }
       .toDF("searchid", "ideaid", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
-        "disactive", "active_href", "installed", "report_user_stayinwx", "telephone")
+        "disactive", "active_href", "installed", "report_user_stayinwx", "active15", "telephone")
 
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getAs[Int]("label2") > 0).count())
 
