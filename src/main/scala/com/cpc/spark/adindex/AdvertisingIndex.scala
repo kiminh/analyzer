@@ -34,10 +34,13 @@ object AdvertisingIndex {
     //    val data = body.substring(15)
     val reponse = Http(url)
       .timeout(connTimeoutMs = 2000, readTimeoutMs = 5000)
+      .asBytes
 
-
-    println(reponse.asBytes.code)
-    val data = reponse.asBytes.body.drop(16)
+    println(reponse.code)
+    var data=Array[Byte]()
+    if (reponse.code==200){
+      data = reponse.body.drop(16)
+    }
 
     println(data.length)
 
@@ -45,9 +48,9 @@ object AdvertisingIndex {
 
     val gitemsCount = idxItems.getGitemsCount
     val ditemsCount = idxItems.getDitemsCount
-    println("count: " + gitemsCount + ", ditemsCount")
+    println("count: " + gitemsCount + ", ditemsCount" + ditemsCount)
 
-    /*
+
         var ideaItemMap = Map[Int, Idea]()
         var unitItemMap = Map[Int, Group]()
         var idx = Seq[Group]()
@@ -110,7 +113,7 @@ object AdvertisingIndex {
              |alter table dl_cpc.xx if not exists add partitions(date = "$date",hour="$hour",minute="$minute")
              |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute'
            """.stripMargin)
-    */
+
     println("done.")
 
   }
