@@ -32,7 +32,11 @@ object AdvertisingIndex {
     //    val body = method.getResponseBodyAsString
     //    method.releaseConnection()
     //    val data = body.substring(15)
-    val reponse = Http(url).asString
+    val reponse = Http(url)
+      .timeout(connTimeoutMs = 2000, readTimeoutMs = 5000)
+      .asString
+
+    println(reponse.code)
     val data = reponse.body.substring(16)
     println(data.length)
 
