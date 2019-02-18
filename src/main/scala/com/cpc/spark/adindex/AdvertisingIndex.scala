@@ -77,29 +77,51 @@ object AdvertisingIndex {
     println("unitItemSeq count:  " + unitItemSeq.size, "head:" + unitItemSeq.head)
     println("ideaItemSeq count:  " + ideaItemSeq.size, "head:" + ideaItemSeq.head)
 
+//    for (u <- unitItemSeq) {
+//      var unitItem=u
+//      for (i<-ideaItemSeq){
+//        if(u.ideaid==i.ideaid){
+//          unitItem.copy(
+//                      mtype = i.mtype,
+//                      width = i.width,
+//                      height = i.height,
+//                      interaction = i.interaction,
+//                      `class` = i.`class`,
+//                      material_level = i.material_level,
+//                      siteid = i.siteid,
+//                      white_user_ad_corner = i.white_user_ad_corner,
+//                      date = date,
+//                      hour = hour.toString,
+//                      minute = min.toString,
+//                      timestamp = timestamp)
+//        }
+//      }
+//      idx :+= unitItem
+//
+//    }
 
-    unitItemSeq.foreach { u =>
-      var unitItem = u
-      ideaItemSeq.foreach { i =>
-        val ideaItem = i
-        if (u.ideaid == i.ideaid) {
-          unitItem.copy(
-            mtype = ideaItem.mtype,
-            width = ideaItem.width,
-            height = ideaItem.height,
-            interaction = ideaItem.interaction,
-            `class` = ideaItem.`class`,
-            material_level = ideaItem.material_level,
-            siteid = ideaItem.siteid,
-            white_user_ad_corner = ideaItem.white_user_ad_corner,
-            date = date,
-            hour = hour.toString,
-            minute = min.toString,
-            timestamp = timestamp)
+        unitItemSeq.foreach { u =>
+          var unitItem = u
+          ideaItemSeq.foreach { i =>
+            val ideaItem = i
+            if (u.ideaid == i.ideaid) {
+              unitItem.copy(
+                mtype = ideaItem.mtype,
+                width = ideaItem.width,
+                height = ideaItem.height,
+                interaction = ideaItem.interaction,
+                `class` = ideaItem.`class`,
+                material_level = ideaItem.material_level,
+                siteid = ideaItem.siteid,
+                white_user_ad_corner = ideaItem.white_user_ad_corner,
+                date = date,
+                hour = hour.toString,
+                minute = min.toString,
+                timestamp = timestamp)
+            }
+          }
+          idx :+= unitItem
         }
-        idx :+= unitItem
-      }
-    }
     println("idx count:  " + idx.size, "head:" + idx.head)
 
     val idxRDD = spark.sparkContext.parallelize(idx)
