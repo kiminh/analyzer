@@ -10,6 +10,8 @@ case class MediaSlotCharge(
                             unit_id: Int = 0,
                             plan_id: Int = 0,
                             user_id: Int = 0,
+                            uid: String = "",
+                            uid_type: String = "",
 
                             adclass: Int = 0,
                             adtype: Int = 0,
@@ -29,12 +31,12 @@ case class MediaSlotCharge(
                             ctr: Double = 0.0,
                             cvr: Double = 0.0,
                             cpm: Double = 0.0,
-                            acp:Double=0.0,
-                            arpu:Double=0.0,
+                            acp: Double = 0.0,
+                            arpu: Double = 0.0,
 
                             date: String = ""
                           ) {
-  val key = s"$media_id-$adslot_id-$idea_id-$dsp-$charge_type-$ctr_model_name-$cvr_model_name"
+  val key = s"$media_id-$adslot_id-$idea_id-$uid-$dsp-$charge_type-$ctr_model_name-$cvr_model_name"
 
   def sum(other: MediaSlotCharge): MediaSlotCharge = {
     copy(

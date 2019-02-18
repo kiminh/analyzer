@@ -36,7 +36,7 @@ object MediaSlotChargeDaily {
           case 2 => x.getAs[Int]("price") / 1000 //cpm
           case _ => 0
         }
-        if (charge_fee > 10000 || charge_fee < 0) { //
+        if (charge_fee > 10000 || charge_fee < 0) { //handle dirty data
           charge_fee = 0
         }
 
@@ -45,6 +45,17 @@ object MediaSlotChargeDaily {
           case m if qtt_media_id.contains(m) => "qtt"
           case m if midu_media_id.contains(m) => "midu"
           case m if duanzi_media_id.contains(m) => "duanzi"
+          case _ => "other"
+        }
+
+        val regex = "^[0-9]*$".r
+        val uid = x.getAs[String]("uid")
+        val uid_type = uid match {
+          case u if u == "" => "empty"
+          case u if u.contains(".") => "ip"
+          case u if u.contains("000000") => "zero_device"
+          case u if (u.length == 15 || u.length == 16 || u.length == 17) && (regex.findFirstMatchIn(u) != None) => "imei"
+          case u if (u.length == 36) => "idfa"
           case _ => "other"
         }
 
@@ -58,7 +69,8 @@ object MediaSlotChargeDaily {
           unit_id = x.getAs[Int]("unit_id"),
           plan_id = x.getAs[Int]("plan_id"),
           user_id = x.getAs[Int]("user_id"),
-
+          uid = uid,
+          uid_type = uid_type,
           adclass = x.getAs[Int]("adclass"),
           adtype = x.getAs[Int]("adtype"),
           dsp = x.getAs[Int]("adsrc"),
@@ -107,7 +119,7 @@ object MediaSlotChargeDaily {
       s"""
          |select ideaid, count(*) as click, sum(label2) as conv
          |from dl_cpc.ml_cvr_feature_v1
-         |where date='$day'
+         |where date='$day' and label_type not in (8,9,10,11)
          |group by ideaid
        """.stripMargin
 
