@@ -110,7 +110,7 @@ object AdvertisingIndex {
 
     spark.sql(
       s"""
-         |alter table dl_cpc.xx if not exists add partitions(date = "$date",hour="$hour",minute="$minute")
+         |alter table dl_cpc.cpc_ad_index if not exists add partitions(date = "$date",hour="$hour",minute="$minute")
          |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cpc_ad_index/date=$date/hour=$hour/minute=$minute'
            """.stripMargin)
 
