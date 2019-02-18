@@ -154,7 +154,7 @@ object MediaSlotChargeDaily {
       .cache()
 
 
-    val resultRDD = data.join(usersRDD).join(cvrRDD)
+    /*val resultRDD = data.join(usersRDD).join(cvrRDD)
       .map { r =>
         val mediaSlotCharge = r._2._1._1
         val idea_uids = r._2._1._2
@@ -165,9 +165,9 @@ object MediaSlotChargeDaily {
       }
 
     cvrRDD.unpersist()
-    usersRDD.unpersist()
+    usersRDD.unpersist()*/
 
-    resultRDD
+    data // resultRDD
       .toDF()
       .repartition(10000)
       .write
