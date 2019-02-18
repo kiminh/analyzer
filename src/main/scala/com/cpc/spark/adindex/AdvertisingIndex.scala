@@ -85,27 +85,26 @@ object AdvertisingIndex {
     println("unitItemSeq count:  " + unitItemSeq.size, "head:" + unitItemSeq.head)
     println("ideaItemSeq count:  " + ideaItemSeq.size, "head:" + ideaItemSeq.head)
 
-    for (u <- unitItemSeq) {
-      val unitItem = u
-      for (i <- ideaItemSeq) {
-        if (u.ideaid == i.ideaid) {
-          println("u:" + u.ideaid + ",i:" + i.ideaid)
-          unitItem.copy(
-            mtype = i.mtype,
-            width = i.width,
-            height = i.height,
-            interaction = i.interaction,
-            `class` = i.`class`,
-            material_level = i.material_level,
-            siteid = i.siteid,
-            white_user_ad_corner = i.white_user_ad_corner,
-            timestamp = timestamp)
-        }
-      }
-      idx :+= unitItem
+    for (u <- unitItemSeq;
+         i <- ideaItemSeq) {
+      if (u.ideaid == i.ideaid) {
+        println("u:" + u.ideaid + ",i:" + i.ideaid)
+        u.copy(
+          mtype = i.mtype,
+          width = i.width,
+          height = i.height,
+          interaction = i.interaction,
+          `class` = i.`class`,
+          material_level = i.material_level,
+          siteid = i.siteid,
+          white_user_ad_corner = i.white_user_ad_corner,
+          timestamp = timestamp)
 
+        idx :+= u
+      }
     }
 
+    
     println("idx count:  " + idx.size, "head:" + idx.head)
 
     val idxRDD = spark.sparkContext.parallelize(idx)
