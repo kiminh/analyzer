@@ -51,8 +51,8 @@ object AdvertisingIndex {
     println("count: " + gitemsCount + ", ditemsCount: " + ditemsCount)
 
 
-    var ideaItemMap = Map[Int, Idea]()
-    var unitItemMap = Map[Int, Group]()
+    var ideaItemSeq = Seq[Idea]()
+    var unitItemSeq = Seq[Group]()
     var idx = Seq[Group]()
 
     for (i <- 0 until ditemsCount) {
@@ -60,7 +60,7 @@ object AdvertisingIndex {
 
       val ideaid = dItem.getIdeaid
       val idea = GetItem.getIdea(dItem)
-      ideaItemMap += (ideaid -> idea)
+      ideaItemSeq :+=  idea
     }
 
     for (i <- 0 until gitemsCount) {
@@ -69,19 +69,19 @@ object AdvertisingIndex {
       val unitid = GetItem.getGroup(gItems)
       unitid.foreach { u =>
         val ideaid = u.ideaid
-        unitItemMap += (ideaid -> u)
+        unitItemSeq :+= u
       }
     }
-    println("unitItemMap count:  " + unitItemMap.size, "head:" + unitItemMap.head)
-    println("ideaItemMap count:  " + ideaItemMap.size, "head:" + ideaItemMap.head)
+    println("unitItemSeq count:  " + unitItemSeq.size, "head:" + unitItemSeq.head)
+    println("ideaItemSeq count:  " + ideaItemSeq.size, "head:" + ideaItemSeq.head)
 
 
-    unitItemMap.foreach { u =>
-      val uIdeaid = u._1
-      val unitItem = u._2
-      ideaItemMap.foreach { i =>
-        val iIdeaid = i._1
-        val ideaItem = i._2
+    unitItemSeq.foreach { u =>
+      val uIdeaid = u.ideaid
+      val unitItem = u
+      ideaItemSeq.foreach { i =>
+        val iIdeaid = i.ideaid
+        val ideaItem = i
         if (uIdeaid == iIdeaid) {
           unitItem.copy(mtype = ideaItem.mtype,
             width = ideaItem.width,
