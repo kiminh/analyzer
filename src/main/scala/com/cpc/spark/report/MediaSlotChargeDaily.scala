@@ -27,7 +27,7 @@ object MediaSlotChargeDaily {
       s"""
          |select *
          |from dl_cpc.cpc_basedata_union_events
-         |where day='$day' and adslot_id >0
+         |where day='$day' and hour=3 and adslot_id<>""
        """.stripMargin
 
     val qtt_media_id = Array[Int](80000001, 80000002, 80000006, 80000064, 80000066, 80000062, 80000141, 80002480)
@@ -35,7 +35,7 @@ object MediaSlotChargeDaily {
     val duanzi_media_id = Array[Int](80002819)
 
     val data = spark.sql(sql)
-      .repartition(1000)
+      .repartition(10000)
       .rdd
       .map { x =>
         val is_click = x.getAs[Int]("isclick")
@@ -50,7 +50,7 @@ object MediaSlotChargeDaily {
           charge_fee = 0
         }
 
-        val media_id = x.getAs[String]("media_id").toInt
+        val media_id = x.getAs[String]("media_appsid").toInt
         val media_name = media_id match {
           case m if qtt_media_id.contains(m) => "qtt"
           case m if midu_media_id.contains(m) => "midu"
@@ -73,13 +73,13 @@ object MediaSlotChargeDaily {
           media_id = media_id,
           media_type = x.getAs[Int]("media_type"),
           media_name = media_name,
-          adslot_id = x.getAs[Int]("adslot_id"),
+          adslot_id = x.getAs[String]("adslot_id"),
           adslot_type = x.getAs[Int]("adslot_type"),
-          idea_id = x.getAs[Int]("idea_id"),
-          unit_id = x.getAs[Int]("unit_id"),
-          plan_id = x.getAs[Int]("plan_id"),
-          user_id = x.getAs[Int]("user_id"),
-          uid = uid,
+          idea_id = x.getAs[Int]("ideaid"),
+          unit_id = x.getAs[Int]("unitid"),
+          plan_id = x.getAs[Int]("planid"),
+          user_id = x.getAs[Int]("userid"),
+          uid = uid, // => remove duplicate -> DAU
           uid_type = uid_type,
           adclass = x.getAs[Int]("adclass"),
           adtype = x.getAs[Int]("adtype"),
@@ -89,8 +89,8 @@ object MediaSlotChargeDaily {
           cvr_model_name = x.getAs[String]("cvr_model_name"),
 
           request = 1,
-          fill = x.getAs[Int]("fill"),
-          impression = x.getAs[Int]("impression"),
+          fill = x.getAs[Int]("isfill"),
+          impression = x.getAs[Int]("isshow"),
           click = is_click + spam_click,
           charged_click = is_click,
           spam_click = spam_click,
@@ -107,9 +107,9 @@ object MediaSlotChargeDaily {
         val cost = mediaSlotCharge.cost
 
 
-        val ctr = (click / impression).toDouble
-        val cpm = (cost / impression * 1000).toDouble
-        val acp = (cost / click).toDouble
+        val ctr = if (impression==0) 0 else (click / impression).toDouble
+        val cpm = if (impression==0) 0 else (cost / impression * 1000).toDouble
+        val acp = if (click==0) 0 else (cost / click).toDouble
         mediaSlotCharge.copy(ctr = ctr, cpm = cpm, acp = acp)
         (mediaSlotCharge.idea_id, mediaSlotCharge)
       }
@@ -120,9 +120,11 @@ object MediaSlotChargeDaily {
       .groupBy("ideaid")
       .agg(expr("count(distinct uid)").alias("idea_uids"))
       .rdd
+
       .map { r =>
         (r.getAs[Int]("ideaid"), r.getAs[Long]("idea_uids"))
       }
+      .cache()
 
     //count cvr for each ideaid
     val conversion_info_flow_sql =
@@ -150,6 +152,7 @@ object MediaSlotChargeDaily {
         val cvr = (conv / click).toDouble
         (ideaid, cvr)
       }
+      .cache()
 
 
     val resultRDD = data.join(usersRDD).join(cvrRDD)
@@ -161,6 +164,9 @@ object MediaSlotChargeDaily {
         val arpu = (cost / idea_uids).toDouble
         mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
       }
+
+    cvrRDD.unpersist()
+    usersRDD.unpersist()
 
     resultRDD
       .toDF()
