@@ -21,6 +21,8 @@ object MediaSlotChargeDaily {
       .enableHiveSupport()
       .getOrCreate()
 
+    import spark.implicits._
+
     val sql =
       s"""
          |select *
@@ -160,10 +162,12 @@ object MediaSlotChargeDaily {
         mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
       }
 
-    spark.createDataFrame(resultRDD)
-      .repartition(10)
+    resultRDD
+      .toDF()
+      .repartition(100)
       .write
-      .mode(SaveMode.Append)
+      .partitionBy("date")
+      .mode(SaveMode.Append) // 修改为Append
       .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/temp/trident_media_charge")
 
     /*spark.sql(
