@@ -49,7 +49,8 @@ object AdvertisingIndex {
     val gitemsCount = idxItems.getGitemsCount
     val ditemsCount = idxItems.getDitemsCount
     println("count: " + gitemsCount + ", ditemsCount: " + ditemsCount)
-
+    idxItems.getGitemsList.forEach(x=>println("groupid: "+x.getGroupid))
+println("---------------------")
 
     var ideaItemSeq = Seq[Idea]()
     var unitItemSeq = Seq[Group]()
@@ -60,7 +61,7 @@ object AdvertisingIndex {
 
       val ideaid = dItem.getIdeaid
       val idea = GetItem.getIdea(dItem)
-      ideaItemSeq :+=  idea
+      ideaItemSeq :+= idea
     }
 
     for (i <- 0 until gitemsCount) {
@@ -72,6 +73,7 @@ object AdvertisingIndex {
         unitItemSeq :+= u
       }
     }
+    println(unitItemSeq.foreach(x => println(x.unitid)))
     println("unitItemSeq count:  " + unitItemSeq.size, "head:" + unitItemSeq.head)
     println("ideaItemSeq count:  " + ideaItemSeq.size, "head:" + ideaItemSeq.head)
 
