@@ -65,8 +65,8 @@ object GetItem {
     val ideaidsCount = groupItem.getIdeaidsCount
     for (i <- 0 until ideaidsCount) {
       val ideaid = groupItem.getIdeaids(i)
-      group.copy(ideaid = ideaid)
-      groups :+= group
+      val g = group.copy(ideaid = ideaid)
+      groups :+= g
     }
     groups
 
