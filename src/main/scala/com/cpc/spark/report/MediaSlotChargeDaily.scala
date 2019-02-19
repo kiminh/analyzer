@@ -184,7 +184,7 @@ object MediaSlotChargeDaily {
     println(usersRDD.count())
     println(cvrRDD.count())
 
-    val resultRDD = mediaDataWithoutZero
+    var resultRDD = mediaDataWithoutZero
       .join(usersRDD, numPartitionsForSkewedData)
       .join(cvrRDD, numPartitionsForSkewedData)
       .map { r =>
@@ -219,7 +219,7 @@ object MediaSlotChargeDaily {
           mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
         }
 
-      resultRDD.union(partialJoinResult)
+      resultRDD = resultRDD.union(partialJoinResult)
       println("count %s %s".format(i, resultRDD.count()))
     }
 
