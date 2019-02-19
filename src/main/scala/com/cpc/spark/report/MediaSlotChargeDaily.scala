@@ -19,7 +19,7 @@ object MediaSlotChargeDaily {
   def main(args: Array[String]): Unit = {
     val date = args(0)
 
-    val numPartitionsForSkewedData = 10000
+    val numPartitionsForSkewedData = 1000
 
     val spark = SparkSession.builder()
       .appName("[trident] media charge and miscellaneous indices daily")
@@ -170,7 +170,7 @@ object MediaSlotChargeDaily {
           x._2.idea_id != 0
         })
 
-    val mediaDataWithZero = data
+    var mediaDataWithZero = data
       .filter( x => {
         x._2.idea_id == 0
       })
@@ -237,6 +237,11 @@ object MediaSlotChargeDaily {
       // println("partial %s %s".format(i, partialJoinResult.count()))
 
       resultRDD = resultRDD.union(partialJoinResult)
+
+      mediaDataWithZero = mediaDataWithZero
+        .filter(x => {
+          x._1 != i
+        })
       // println("count %s %s".format(i, resultRDD.count()))
     }
 
