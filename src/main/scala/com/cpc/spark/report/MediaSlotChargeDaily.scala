@@ -209,7 +209,8 @@ object MediaSlotChargeDaily {
         .filter( x => {
           x._1 == i
         })
-      println("partial %s %s".format(i, mediaDataWithIndex.count()))
+      println(i)
+      // println("partial %s %s".format(i, mediaDataWithIndex.count()))
 
       val usersRDDWithIndex = usersRDDWithZero
         .map( x => {
@@ -234,10 +235,10 @@ object MediaSlotChargeDaily {
           mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
         }
 
-      println("partial %s %s".format(i, partialJoinResult.count()))
+      // println("partial %s %s".format(i, partialJoinResult.count()))
 
       resultRDD = resultRDD.union(partialJoinResult)
-      println("count %s %s".format(i, resultRDD.count()))
+      // println("count %s %s".format(i, resultRDD.count()))
     }
 
 
