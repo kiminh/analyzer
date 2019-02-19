@@ -84,8 +84,11 @@ object HotTopicCtrModelMetrics {
           .select("ctr_model_name","show_num","click_num","ctr","exp_ctr","pcoc","click_total_price","cpc_cpm","cpc_arpu","auc","date")
 
         result.show(10)
-        
-        result.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_hot_topic_ctr_model_metrics")
+
+        result.repartition(1)
+          .write
+          .mode("overwrite")
+          .insertInto("dl_cpc.cpc_hot_topic_ctr_model_metrics")
 
     }
 }

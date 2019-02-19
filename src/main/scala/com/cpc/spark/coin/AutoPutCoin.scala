@@ -52,7 +52,8 @@ object AutoPutCoin {
             val d1 = dd.substring(0, 10)
             val h1 = dd.substring(11, 13)
             val datecond = s"`date` = '$d1' and hour = '$h1'"
-            datehourlist += datecond
+            if (!(d1 == "2019-02-18" || d1 == "2019-02-17" || d1== "2019-02-16"))
+                datehourlist += datecond
         }
 
         val datehour = datehourlist.toList.mkString(" or ")
@@ -245,6 +246,39 @@ object AutoPutCoin {
                 sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
               //x(index)
           })
+    }
+    def getThreshold(spark:SparkSession,df:DataFrame): RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
+        val sql =
+            s"""
+               |select ideaid,percentage
+               |from dl_cpc.cpc_auto_coin_idea_percentage
+             """.stripMargin
+
+        val ideaP = spark.sql(sql)
+
+        val r = df.join(ideaP,Seq("ideaid"),"left_outer")
+          .rdd
+          .map(x => (x.getAs[Int]("ideaid"),
+            (List(x.getAs[Int]("exp_cvr")),x.getAs[Double]("percentage"))))
+          .reduceByKey((x,y) => {
+              val t1 = x._1 ::: y._1
+              val t2 = if (x._2 > y._2) x._2 else y._2
+              (t1,t2)
+          })
+          .mapValues(x => {
+              val cvrlist = x._1
+              val p = x._2
+              val sorted = cvrlist.sorted
+              val index = (sorted.length * p).toInt
+              val i5th = (sorted.length * 0.5).toInt
+              val i6th = (sorted.length * 0.6).toInt
+              val i7th = (sorted.length * 0.7).toInt
+              val i8th = (sorted.length * 0.8).toInt
+              val i9th = (sorted.length * 0.9).toInt
+              (sorted(index), sorted(0), sorted(sorted.length - 1), sorted.length,
+                sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
+          })
+        r
     }
 
     case class coin(var ideaid: Int = 0,
