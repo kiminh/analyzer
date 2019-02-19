@@ -32,7 +32,7 @@ object MediaSlotChargeDaily {
       s"""
          |select *
          |from dl_cpc.cpc_basedata_union_events
-         |where day='$date' and hour=3 and adslot_id<>""
+         |where day='$date' and adslot_id<>""
        """.stripMargin
 
     val qtt_media_id = Array[Int](80000001, 80000002, 80000006, 80000064, 80000066, 80000062, 80000141, 80002480)
@@ -136,7 +136,7 @@ object MediaSlotChargeDaily {
       s"""
          |select ideaid, count(*) as click, sum(label2) as conv
          |from dl_cpc.ml_cvr_feature_v1
-         |where `date`='$date' and hour=3 and label_type not in (8,9,10,11)
+         |where `date`='$date' and label_type not in (8,9,10,11)
          |group by ideaid
        """.stripMargin
 
@@ -144,7 +144,7 @@ object MediaSlotChargeDaily {
       s"""
          |select ideaid, count(*) as click, sum(label) as conv
          |from dl_cpc.ml_cvr_feature_v2
-         |where `date`='$date' and hour=3
+         |where `date`='$date'
          |group by ideaid
        """.stripMargin
 
@@ -209,7 +209,6 @@ object MediaSlotChargeDaily {
         .filter( x => {
           x._1 == i
         })
-      println(i)
       // println("partial %s %s".format(i, mediaDataWithIndex.count()))
 
       val usersRDDWithIndex = usersRDDWithZero
