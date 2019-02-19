@@ -1,0 +1,114 @@
+syntax="proto3";
+
+package idxinterface;
+
+enum MaterialType {
+	MATERIAL_UNKNOWN = 0;
+	MATERIAL_ICON_TEXT = 1;
+	MATERIAL_IMAGE = 2;
+	MATERIAL_THIRD_ICON_TEXT = 3;
+	MATERIAL_VIDEO = 4;
+	MATERIAL_GIF = 5;
+	MATERIAL_TEXT = 6;
+	MATERIAL_INTERACT = 7; //互动广告
+	MATERIAL_SPLASH = 8; //开屏广告
+	MATERIAL_BANNER = 9; //横幅广告
+	MATERIAL_MOTIVATE = 10; //激励广告
+	MATERIAL_VERTICAL_VIDEO = 11; //竖屏视频广告
+	MATERIAL_NON_STANDARD = 12; //非标广告（碧桂园要在第一位投视频广告）
+}
+enum MaterialLevel {
+	MATERIAL_LEVEL_UNKNOWN = 0;
+	MATERIAL_LEVEL_1 = 1;//很正规
+	MATERIAL_LEVEL_2 = 2;//无敏感词擦边球
+	MATERIAL_LEVEL_3 = 3;//有少量敏感词
+	MATERIAL_LEVEL_4 = 4;//尺度较大
+}
+enum AdSlotType {
+	SLOT_UNKNOWN = 0;
+	LIST_FEED = 1; //列表页信息流
+	CONTENT_FEED = 2; //详情页信息流
+	INTERACT = 3; //互动广告位
+	SPLASH = 4; //开屏广告位
+	BANNER = 5; //横幅广告位
+	VIDEO = 6; //视频广告位
+	MOTIVATE = 7; //激励广告位
+}
+
+enum Interaction {
+	INTER_UNKNOWN = 0;
+	SURFING = 1;
+	DOWNLOAD = 2;
+}
+
+enum OSType {
+	OS_ALL = 0;
+	ANDROID = 1;
+	IOS = 2;
+	WINDOWS = 3;
+}
+
+enum ChargeType {
+	CPC = 0;
+	CPM = 1;
+	CPS = 2;
+}
+
+message GroupItem {
+	int32 groupid = 1;
+	int32 planid = 2;
+	int32 userid = 3;
+	int32 price = 4; // 单位为分
+	ChargeType chagetype = 5;
+	repeated int32 regionals = 6; //限制地域,不限制为空
+	OSType os = 7; // 限制os
+	repeated int32 ideaids = 8; // 单元下面的创意id
+	AdSlotType adslottype = 9; //
+	repeated int32 timepub = 10; // 从0-6表示周一，周二...周日 从第0位表示0-1点，第1位表示1-2点
+	repeated string blacksid = 11; // 黑名单appsid
+	repeated string whitesid = 12; // 白名单appsid
+	repeated int32 ages = 13; // 年龄定向
+	int32 gender = 14; // 0 全部  1男 2女
+	int32 freq = 15; // 频次控制，0表示不控制
+	int32 userlevel = 16; //用户积分级别. 0默认全选 1第一档用户，积分在0-10分。 2第二档用户，积分在0-1000分。 3第三档用户，积分在0-10000分。4全选
+	int32 userType = 17;//' 黑五类标记 0 非黑五类 1 黑五类'
+	repeated int32 interests=18;//兴趣标签
+	repeated int32 media_class=19;//定向媒体分类
+	repeated int32 phonelevel = 20; // 设备等级，多选 1高端 2中高 3中低 4低端
+	int32 cvr_threshold = 21; //cvr 截断阈值
+	int32 balance = 22; //min(计划所剩余额,账户余额)
+	int32 new_user = 23; // 0全选  2老用户 1新用户
+	int32 user_weight = 24; //广告主权值 0未设置 非0为设置了阈值，单位%
+	repeated int32 network = 25; // 0:unknown 1:wifi  2:2G   3:3G  4:4G
+	repeated string black_install_pkg = 26; // 过滤的安装包信息
+	repeated int32 dislikes = 27; // 不感兴趣标签
+	int32  click_freq = 28; //点击频率上限
+	repeated string white_install_pkg = 29; // 安装包定向
+	int32 student = 30; //职业定向，学生 224，非学生 225 ，全部 0
+	int32 is_ocpc = 31; // 是否启用ocpc
+	repeated int32 content_category = 32;
+	int32 ocpc_price = 33; // 单位为分
+	int32 ocpc_bid_update_time = 34; // ocpc出价最后更新时间，秒级时间戳
+	int32 conversion_goal = 35; // 转化目标，1.安装，2.激活，3.表单，
+	repeated string target_uids = 36; //单元定向的uid
+	int32 delivery_type = 37; //配送方式 0：无配送 1：趣头条配送外媒 2: 趣头条配送给小说
+	string adslot_weight = 38;
+	repeated string target_adslot_ids = 39; //定向广告位id
+}
+
+message IdeaItem {
+	int32 ideaid = 1;
+	MaterialType mtype = 2;
+	int32 width = 3;
+	int32 height = 4;
+	Interaction interaction = 5;
+	int32 class = 6; //广告分类
+	MaterialLevel material_level= 7;//素材级别
+	int32 siteid = 8;//建站id，0：非建站
+	int32 white_user_ad_corner = 9;//白名单用户无广告角标，0：关闭，1：开启
+}
+
+message IdxItems {
+	repeated GroupItem gitems = 1;
+	repeated IdeaItem ditems = 2;
+}

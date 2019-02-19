@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
 import userprofile.Userprofile.UserProfile
-
+@deprecated
 object GetUserLocation {
     def main(args: Array[String]): Unit = {
         Logger.getRootLogger.setLevel(Level.WARN)

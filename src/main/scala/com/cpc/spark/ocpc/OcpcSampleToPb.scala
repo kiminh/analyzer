@@ -59,7 +59,8 @@ object OcpcSampleToPb {
 //    resultTmp.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129b")
     val result2 = assemblyPB(result1, date, hour, spark)
     val result3 = processCPAsuggest(result2, ocpcSuggest, date, hour, spark)
-    val resultDF = getCPCbid(result3, date, hour, spark)
+    val result4 = getCPCbid(result3, date, hour, spark)
+    val resultDF = setPresetK(result4, date, hour, spark)
 
 
     resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
@@ -69,6 +70,97 @@ object OcpcSampleToPb {
 
     savePbPack(resultDF)
 
+  }
+
+  def getOCPCads(date: String, hour: String, spark: SparkSession) = {
+    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+    val user = "adv_live_read"
+    val passwd = "seJzIPUc7xU"
+    val driver = "com.mysql.jdbc.Driver"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val base = data
+      .withColumn("unitid", col("id"))
+      .withColumn("userid", col("user_id"))
+      .select("unitid", "userid", "ideas", "bid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "status")
+
+
+    val ideaTable = base
+      .withColumn("ideaid", explode(split(col("ideas"), "[,]")))
+      .select("unitid", "userid", "ideaid", "ocpc_bid", "ocpc_bid_update_time", "conversion_goal", "status")
+
+    ideaTable.createOrReplaceTempView("ideaid_update_time")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    unitid,
+         |    ideaid,
+         |    userid
+         |FROM
+         |    ideaid_update_time
+       """.stripMargin
+
+    println(sqlRequest)
+
+    val rawData = spark.sql(sqlRequest)
+    val resultDF = rawData.select("unitid", "ideaid", "userid").distinct()
+
+    resultDF.show(10)
+    resultDF
+
+
+  }
+
+  def setPresetK(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+    val expDataPath = conf.getString("ocpc_all.ocpc_set_k.path")
+    val tableName = conf.getString("ocpc_all.ocpc_set_k.tablename")
+    println("parameters in function: setPresetK")
+    println(s"path is: $expDataPath")
+    println(s"fileName is: $tableName")
+
+    // get the new k
+    val expData = spark
+      .read.format("json").json(expDataPath)
+      .groupBy("unitid")
+      .agg(
+        min(col("kvalue")).alias("reset_k")
+      )
+      .select("unitid", "reset_k")
+
+    // get ocpc ads
+    val ocpcUnit = getOCPCads(date, hour, spark)
+
+    val joinData = expData
+      .join(ocpcUnit, Seq("unitid"), "inner")
+      .select("unitid", "ideaid", "userid", "reset_k")
+
+    joinData.show(10)
+
+    // 替换k值
+    val result = data
+      .withColumn("prev_k", col("k_value"))
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "prev_k", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t", "cpa_suggest", "cpc_bid")
+      .join(joinData, Seq("ideaid", "userid"), "left_outer")
+      .withColumn("k_value", when(col("reset_k").isNotNull, col("reset_k")).otherwise(col("prev_k")))
+
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_check_data20190218")
+    val resultDF = result
+      .select("ideaid", "userid", "adclass", "cost", "ctr_cnt", "cvr_cnt", "adclass_cost", "adclass_ctr_cnt", "adclass_cvr_cnt", "k_value", "hpcvr", "cali_value", "cvr3_cali", "cvr3_cnt", "kvalue1", "kvalue2", "t", "cpa_suggest", "cpc_bid")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+
+
+    resultDF
   }
 
   def getCPCbid(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -520,8 +612,8 @@ object OcpcSampleToPb {
       .withColumn("new_k2", when(col("k_ratio2_regression")>0, col("k_ratio2_regression")).otherwise(col("k_ratio2_pid")))
       .withColumn("new_k3", when(col("k_ratio3_regression")>0, col("k_ratio3_regression")).otherwise(col("k_ratio3_pid")))
       .join(prevTable, Seq("ideaid", "adclass"), "left_outer")
-      .withColumn("k_value2_middle", when(col("new_k2").isNotNull && col("prev_k2").isNotNull && col("new_k2")>col("prev_k2"), col("prev_k2") + (col("new_k2") - col("prev_k2")) * 1.0 / 4.0).otherwise(col("new_k2")))
-      .withColumn("k_value3_middle", when(col("new_k3").isNotNull && col("prev_k3").isNotNull && col("new_k3")>col("prev_k3"), col("prev_k3") + (col("new_k3") - col("prev_k3")) * 1.0 / 4.0).otherwise(col("new_k3")))
+      .withColumn("k_value2_middle", when(col("new_k2").isNotNull && col("prev_k2").isNotNull && col("new_k2")>col("prev_k2"), col("prev_k2") + (col("new_k2") - col("prev_k2")) * 1.0 / 3.0).otherwise(col("new_k2")))
+      .withColumn("k_value3_middle", when(col("new_k3").isNotNull && col("prev_k3").isNotNull && col("new_k3")>col("prev_k3"), col("prev_k3") + (col("new_k3") - col("prev_k3")) * 1.0 / 3.0).otherwise(col("new_k3")))
       .withColumn("k_value2", when(col("flag")===0, col("prev_k2")).otherwise(col("k_value2_middle")))
       .withColumn("k_value3", when(col("flag")===0, col("prev_k3")).otherwise(col("k_value3_middle")))
       .select("ideaid", "adclass", "k_ratio2_regression", "k_ratio3_regression", "k_ratio2_pid", "k_ratio3_pid", "new_k2", "new_k3", "prev_k2", "prev_k3", "ctrcnt", "k_value2_middle", "k_value3_middle", "k_value2", "k_value3")

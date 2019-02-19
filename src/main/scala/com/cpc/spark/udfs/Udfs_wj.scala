@@ -205,4 +205,11 @@ object Udfs_wj{
     }
     conversionGoal
   })
+
+  def udfPCOCtoK() = udf((pcoc: Double, jfb: Double) => {
+    var result = 0.9
+    result = result / (pcoc * jfb)
+
+    result
+  })
 }

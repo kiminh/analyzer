@@ -14,6 +14,7 @@ import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 
 /**
   * Created by Roy on 2017/4/26.
+  * refined by fym on 2019/01/16 for integration with new base-data routine.
   */
 object GetHourReport {
 
@@ -25,10 +26,10 @@ object GetHourReport {
   val mariadb_amateur_prop = new Properties()
 
   def main(args: Array[String]): Unit = {
-    if (args.length < 2) {
+    if (args.length < 4) {
       System.err.println(
         s"""
-           |Usage: GetHourReport <hive_table> <date:string> <hour:string>
+           |Usage: GetHourReport <hive_table> <date:string> <hour:string> <databaseToGo:string> [<if_test:int>]
            |
         """.stripMargin)
       System.exit(1)
@@ -37,6 +38,8 @@ object GetHourReport {
     val table = args(0)
     val date = args(1)
     val hour = args(2)
+    val databaseToGo = args(3)
+    val if_test = if (args.length > 4) args(4).toInt else 0
 
     val conf = ConfigFactory.load()
     mariadbUrl = conf.getString("mariadb.url")
@@ -48,60 +51,78 @@ object GetHourReport {
     mariadb_amateur_prop.put("user", conf.getString("mariadb.amateur_write.user"))
     mariadb_amateur_prop.put("password", conf.getString("mariadb.amateur_write.password"))
     mariadb_amateur_prop.put("driver", conf.getString("mariadb.amateur_write.driver"))
-    val ctx = SparkSession.builder()
-      .appName("cpc get hour report from %s %s/%s".format(table, date, hour))
+
+    val spark = SparkSession.builder()
+      .appName("[cpc] get hour report from %s %s/%s"
+        .format(table, date, hour))
       .enableHiveSupport()
       .getOrCreate()
-    import ctx.implicits._
+
+    import spark.implicits._
 
 
-    val unionLog1 = ctx.sql(
+    // fym: modified sql to adapt to new unionlog table structure.
+    // note: replace charge_type_cpm_or_cpc on charge_type to remove ambiguity
+    val unionLog1 = spark.sql(
       s"""
          |select *,
-         |      ext['spam_click'].int_value as spam_click,
-         |      ext['rank_discount'].int_value as rank_discount,
-         |      ext['cvr_threshold'].int_value as cvr_threshold,
-         |      ext['adclass'].int_value as adclass,
-         |      ext['exp_cvr'].int_value as exp_cvr,
-         |      ext['exp_ctr'].int_value as exp_ctr,
-         |      if(ext["charge_type"].int_value=2,"cpm","cpc") as charge_type,
-         |      if(ext["charge_type"].int_value=2,price/1000,price) as charge_fee
-         |from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and isfill = 1 and adslotid > 0 and adsrc <= 1
+         |      spam_click,
+         |      rank_discount,
+         |      cvr_threshold,
+         |      adclass,
+         |      exp_cvr,
+         |      exp_ctr,
+         |      if(charge_type=2,"cpm","cpc") as charge_type_cpm_or_cpc,
+         |      if(charge_type=2,price/1000,price) as charge_fee
+         |from dl_cpc.%s where `day` = "%s" and `hour` = "%s" and isfill = 1 and adslot_id > 0 and adsrc <= 1
        """.stripMargin.format(table, date, hour))
       .rdd
       .cache()
 
-    val unionLog = unionLog1.filter(x => x.getAs[String]("charge_type") == "cpc")
+    println("unionlog1", unionLog1.count())
 
-    //激励广告数据（只加到charge表）
-    val motive_data = ctx.sql(
+    val unionLog = unionLog1.filter(x => x.getAs[String]("charge_type_cpm_or_cpc") == "cpc")
+
+    // 激励广告数据（只加到charge表）
+    val motive_data = spark.sql(
       s"""
-         |select m.unitid,m.planid,m.ideaid,m.userid,
-         |       m.isfill,m.isshow,m.isclick,m.price as charge_fee,
-         |       media_appsid,adslotid,adslot_type,"cpc" as charge_type,
-         |       date,hour,0 as spam_click
-         |from dl_cpc.cpc_union_log
-         |lateral view explode(motivation) b as m
-         |where date='$date' and hour=$hour
-         |   and adslot_type=7
-         |   and m.ideaid>=0
-         |   and adsrc <= 1
-        """.stripMargin)
+         |select unitid,
+         |       planid,
+         |       ideaid,
+         |       userid,
+         |       isfill,
+         |       isshow,
+         |       isclick,
+         |       price as charge_fee,
+         |       media_appsid,
+         |       adslot_id,
+         |       adslot_type,
+         |       "cpc" as charge_type,
+         |       day,
+         |       hour,
+         |       0 as spam_click
+         |from dl_cpc.%s
+         |where `day`="%s" and `hour`="%s" and adslot_type=7 and ideaid>=0 and adsrc <= 1
+        """.stripMargin.format(table, date, hour))
       .map {
         x =>
           var isclick = x.getAs[Int]("isclick")
           var spam_click = x.getAs[Int]("spam_click")
           val chargeType = x.getAs[String]("charge_type")
-          var charge_fee = if (isclick > 0 || chargeType == "cpm")
-            x.getAs[Int]("charge_fee")
-          else 0D
+          var charge_fee = {
+            if (isclick > 0 || chargeType == "cpm") {
+              x.getAs[Int]("charge_fee")
+            }
+            else 0D
+          }
+
           if (charge_fee > 10000 || charge_fee < 0) {
             charge_fee = 0
           }
 
           val charge = MediaChargeReport( //adslotType = x.getAs[Int]("adslot_type")
             media_id = x.getAs[String]("media_appsid").toInt,
-            adslot_id = x.getAs[String]("adslotid").toInt,
+            adslot_id = x.getAs[String]("adslot_id").toInt,
             unit_id = x.getAs[Int]("unitid"),
             idea_id = x.getAs[Int]("ideaid"),
             plan_id = x.getAs[Int]("planid"),
@@ -113,11 +134,15 @@ object GetHourReport {
             click = isclick + spam_click,
             charged_click = isclick,
             spam_click = spam_click,
-            date = x.getAs[String]("date"),
+            date = x.getAs[String]("day"),
             hour = x.getAs[String]("hour").toInt
           )
           (charge.key, (charge, charge_fee))
       }.rdd
+
+    println("motive", motive_data.count())
+
+
 
     val chargeData = unionLog1
       .filter(_.getAs[Int]("adslot_type") != 7)
@@ -125,10 +150,12 @@ object GetHourReport {
         x =>
           var isclick = x.getAs[Int]("isclick")
           var spam_click = x.getAs[Int]("spam_click")
-          val chargeType = x.getAs[String]("charge_type")
-          var charge_fee = if (isclick > 0 || chargeType == "cpm")
-            x.getAs[Double]("charge_fee")
-          else 0D
+          val chargeType = x.getAs[String]("charge_type_cpm_or_cpc")
+          var charge_fee = {
+            if (isclick > 0 || chargeType == "cpm")
+              x.getAs[Double]("charge_fee")
+            else 0D
+          }
 
           if (charge_fee > 10000 || charge_fee < 0) {
             charge_fee = 0
@@ -136,7 +163,7 @@ object GetHourReport {
 
           val charge = MediaChargeReport( //adslotType = x.getAs[Int]("adslot_type")
             media_id = x.getAs[String]("media_appsid").toInt,
-            adslot_id = x.getAs[String]("adslotid").toInt,
+            adslot_id = x.getAs[String]("adslot_id").toInt,
             unit_id = x.getAs[Int]("unitid"),
             idea_id = x.getAs[Int]("ideaid"),
             plan_id = x.getAs[Int]("planid"),
@@ -148,7 +175,7 @@ object GetHourReport {
             click = isclick + spam_click,
             charged_click = isclick,
             spam_click = spam_click,
-            date = x.getAs[String]("date"),
+            date = x.getAs[String]("day"),
             hour = x.getAs[String]("hour").toInt
           )
           (charge.key, (charge, charge_fee))
@@ -159,14 +186,21 @@ object GetHourReport {
 
 
     clearReportHourData("report_media_charge_hourly", date, hour)
-    val chargedata = ctx.createDataFrame(chargeData).persist
+    val chargedata = spark.createDataFrame(chargeData).persist
     chargedata.write
       .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_media_charge_hourly", mariadbProp)
+      .jdbc(
+        mariadbUrl,
+        if (if_test == 1) "%s.test_report_media_charge_hourly".format(databaseToGo)
+        else "%s.report_media_charge_hourly".format(databaseToGo),
+        mariadbProp)
 
-    chargedata.write
+    /*chargedata.write
       .mode(SaveMode.Append)
-      .jdbc(mariadb_amateur_url, "report.report_media_charge_hourly", mariadb_amateur_prop)
+      .jdbc(mariadb_amateur_url,
+        if (if_test == 1) "%s.test_report_media_charge_hourly".format(databaseToGo)
+        else "%s.report_media_charge_hourly".format(databaseToGo),
+        mariadb_amateur_prop)*/
 
     println("charge", chargeData.count())
 
@@ -187,7 +221,7 @@ object GetHourReport {
           }
           val report = MediaGeoReport(
             //media_id = x.media_appsid.toInt,
-            //adslot_id = x.adslotid.toInt,
+            //adslot_id = x.adslot_id.toInt,
             unit_id = x.getAs[Int]("unitid"),
             idea_id = x.getAs[Int]("ideaid"),
             plan_id = x.getAs[Int]("planid"),
@@ -203,7 +237,7 @@ object GetHourReport {
             charged_click = isclick,
             spam_click = spam_click,
             cash_cost = realCost,
-            date = x.getAs[String]("date"),
+            date = x.getAs[String]("day"),
             hour = x.getAs[String]("hour").toInt
           )
           (report.key, report)
@@ -212,10 +246,13 @@ object GetHourReport {
       .map(_._2)
 
     clearReportHourData("report_media_geo_hourly", date, hour)
-    ctx.createDataFrame(geoData)
+    spark.createDataFrame(geoData)
       .write
       .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_media_geo_hourly", mariadbProp)
+      .jdbc(mariadbUrl,
+        if (if_test == 1) "%s.test_report_media_geo_hourly".format(databaseToGo)
+        else "%s.report_media_geo_hourly".format(databaseToGo),
+        mariadbProp)
     println("geo", geoData.count())
 
     val osData = unionLog
@@ -236,7 +273,7 @@ object GetHourReport {
 
           val report = MediaOsReport(
             media_id = x.getAs[String]("media_appsid").toInt,
-            adslot_id = x.getAs[String]("adslotid").toInt,
+            adslot_id = x.getAs[String]("adslot_id").toInt,
             unit_id = x.getAs[Int]("unitid"),
             idea_id = x.getAs[Int]("ideaid"),
             plan_id = x.getAs[Int]("planid"),
@@ -250,7 +287,7 @@ object GetHourReport {
             charged_click = isclick,
             spam_click = spam_click,
             cash_cost = realCost,
-            date = x.getAs[String]("date"),
+            date = x.getAs[String]("day"),
             hour = x.getAs[String]("hour").toInt
           )
           (report.key, report)
@@ -259,19 +296,47 @@ object GetHourReport {
       .map(_._2)
 
     clearReportHourData("report_media_os_hourly", date, hour)
-    ctx.createDataFrame(osData)
+    spark.createDataFrame(osData)
       .write
       .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_media_os_hourly", mariadbProp)
+      .jdbc(mariadbUrl,
+        if (if_test == 1) "%s.test_report_media_os_hourly".format(databaseToGo)
+        else "%s.report_media_os_hourly".format(databaseToGo),
+        mariadbProp)
     println("os", osData.count())
 
-    val dsplog = ctx.sql(
+    val dsplog = spark.sql(
       s"""
-         |select *
-         |from dl_cpc.$table
-         |where date='$date' and hour='$hour'
-      """.stripMargin)
-    //val dsplog = ctx.read.parquet("/warehouse/dl_cpc.db/%s/date=%s/hour=%s".format(table, date, hour))
+         |select
+         |  a.searchid,
+         |  a.isclick,
+         |  a.isfill,
+         |  a.isshow,
+         |  a.price,
+         |  a.media_appsid,
+         |  a.adslot_id,
+         |  a.adslot_type,
+         |  a.adsrc,
+         |  a.dsp_num,
+         |  b.src as dsp_src,
+         |  b.mediaid as dsp_mediaid,
+         |  b.adslotid as dsp_adslot_id,
+         |  b.adnum as dsp_adnum
+         |from dl_cpc.%s a
+         |left join dl_cpc.%s b on a.searchid=b.searchid and b.day="%s" and b.hour="%s"
+         |where a.day="%s" and a.hour="%s"
+      """
+        .format(
+          table,
+          "cpc_basedata_search_dsp",
+          date,
+          hour,
+          date,
+          hour)
+        .stripMargin
+        .trim)
+    println("dsplog", dsplog.count())
+
     val dspdata = dsplog.rdd
       .flatMap {
         x =>
@@ -283,25 +348,31 @@ object GetHourReport {
           if (realCost > 10000 || realCost < 0) {
             realCost = 0
           }
+          val adsrc = x.getAs[Int]("adsrc")
+          val dsp_src = x.getAs[Int]("dsp_src")
 
-          val report = ReqDspReport(
+          Seq(ReqDspReport(
             media_id = x.getAs[String]("media_appsid").toInt,
-            adslot_id = x.getAs[String]("adslotid").toInt,
+            adslot_id = x.getAs[String]("adslot_id").toInt,
             adslot_type = x.getAs[Int]("adslot_type"),
             request = 1,
-            date = "%s %s:00:00".format(date, hour)
-          )
-          val adsrc = x.getAs[Int]("adsrc").toLong
+            date = "%s %s:00:00".format(date, hour),
+            dsp_src = dsp_src,
+            dsp_mediaid = x.getAs[String]("dsp_mediaid"),
+            dsp_adslot_id = x.getAs[String]("dsp_adslot_id"),
+            dsp_adnum = x.getAs[Int]("dsp_adnum"),
+            fill = if (adsrc == dsp_src) x.getAs[Int]("isfill") else 0,
+            shows = if (adsrc == dsp_src) x.getAs[Int]("isshow") else 0,
+            click = if (adsrc == dsp_src) isclick else 0,
+            cash_cost = if (adsrc == dsp_src) realCost else 0
+          ))
 
-          val extInt = x.getAs[Map[String, Long]]("ext_int")
-          val extString = x.getAs[Map[String, String]]("ext_string")
-          val dspnum = extInt.getOrElse("dsp_num", 0L)
-          var rows = Seq[ReqDspReport]()
-          for (i <- 0 until dspnum.toInt) {
-            val src = extInt.getOrElse("dsp_src_" + i, 0L)
+          /*for (i <- 0 until dspnum.toInt) {
+
+            /*val src = extInt.getOrElse("dsp_src_" + i, 0L)
             val mediaid = extString.getOrElse("dsp_mediaid_" + i, "")
-            val adslotid = extString.getOrElse("dsp_adslotid_" + i, "")
-            val adnum = extInt.getOrElse("dsp_adnum_" + i, 0L)
+            val adslot_id = extString.getOrElse("dsp_adslot_id_" + i, "")
+            val adnum = extInt.getOrElse("dsp_adnum_" + i, 0L)*/
 
             val fill = if (src == adsrc) x.getAs[Int]("isfill") else 0
             val shows = if (src == adsrc) x.getAs[Int]("isshow") else 0
@@ -310,45 +381,48 @@ object GetHourReport {
             rows = rows :+ report.copy(
               dsp_src = src.toInt,
               dsp_mediaid = mediaid,
-              dsp_adslotid = adslotid,
+              dsp_adslot_id = adslot_id,
               dsp_adnum = adnum.toInt,
               fill = fill,
               shows = shows,
               click = dsp_click,
               cash_cost = dsp_cash
             )
-          }
-          rows
+          }*/
       }
       .map {
         x =>
-          val key = (x.media_id, x.adslot_id, x.dsp_src, x.dsp_mediaid, x.dsp_adslotid, x.date)
+          val key = (x.media_id, x.adslot_id, x.dsp_src, x.dsp_mediaid, x.dsp_adslot_id, x.date)
           (key, x)
       }
       .reduceByKey((x, y) => x.sum(y), 20)
       .map(x => x._2)
 
     clearReportHourData2("report_req_dsp_hourly", date + " " + hour + ":00:00")
-    ctx.createDataFrame(dspdata)
+    spark.createDataFrame(dspdata)
       .write
       .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_req_dsp_hourly", mariadbProp)
+      .jdbc(mariadbUrl,
+        if (if_test == 1) "%s.test_report_req_dsp_hourly".format(databaseToGo)
+        else "%s.report_req_dsp_hourly".format(databaseToGo),
+        mariadbProp)
     println("dsp", dspdata.count())
 
-    val fillLog = ctx.sql(
+    val fillLog = spark.sql(
       s"""
          |select *,
-         |      ext['spam_click'].int_value as spam_click,
-         |      ext['rank_discount'].int_value as rank_discount,
-         |      ext['cvr_threshold'].int_value as cvr_threshold,
-         |      ext['adclass'].int_value as adclass,
-         |      ext['exp_cvr'].int_value as exp_cvr,
-         |      ext['exp_ctr'].int_value as exp_ctr
-         |      from dl_cpc.%s where `date` = "%s" and `hour` = "%s" and adslotid > 0 and adsrc <= 1
-         |      and (ext["charge_type"].int_value=1 or ext["charge_type"] is null)
+         |      spam_click,
+         |      rank_discount,
+         |      cvr_threshold,
+         |      adclass,
+         |      exp_cvr,
+         |      exp_ctr
+         |      from dl_cpc.%s where `day`="%s" and `hour`="%s" and adslot_id > 0 and adsrc <= 1
+         |      and (charge_type=1 or charge_type is null)
            """.stripMargin.format(table, date, hour))
       //      .as[UnionLog]
       .rdd
+    println("filllog", fillLog.count())
 
     val fillData = fillLog
       .map {
@@ -367,7 +441,7 @@ object GetHourReport {
           }
           val report = MediaFillReport(
             media_id = x.getAs[String]("media_appsid").toInt,
-            adslot_id = x.getAs[String]("adslotid").toInt,
+            adslot_id = x.getAs[String]("adslot_id").toInt,
             adslot_type = x.getAs[Int]("adslot_type"),
             request = 1,
             served_request = x.getAs[Int]("isfill"),
@@ -376,7 +450,7 @@ object GetHourReport {
             charged_click = isclick,
             spam_click = spam_click,
             cash_cost = realCost,
-            date = x.getAs[String]("date"),
+            date = x.getAs[String]("day"),
             hour = x.getAs[String]("hour").toInt
           )
           (report.key, report)
@@ -385,17 +459,20 @@ object GetHourReport {
       .map(_._2)
 
     clearReportHourData("report_media_fill_hourly", date, hour)
-    ctx.createDataFrame(fillData)
+    spark.createDataFrame(fillData)
       .write
       .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_media_fill_hourly", mariadbProp)
+      .jdbc(mariadbUrl,
+        if (if_test == 1) "%s.test_report_media_fill_hourly".format(databaseToGo)
+        else "%s.report_media_fill_hourly".format(databaseToGo),
+        mariadbProp)
     println("fill", fillData.count())
 
 
     val unionLog_tmp = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0).cache()
 
     //取展示top10 的adclass
-    val topAdclass = unionLog_tmp
+    /*val topAdclass = unionLog_tmp
       .map(x => (x.getAs[Int]("adclass"), 1))
       .reduceByKey(_ + _)
       .sortBy(x => x._2, false)
@@ -425,11 +502,11 @@ object GetHourReport {
 
           var adclass = u.getAs[Int]("adclass")
           /*
-          110110100  网赚
-          130104101  男科
-          125100100  彩票
-          100101109  扑克
-          99   其他
+            110110100  网赚
+            130104101  男科
+            125100100  彩票
+            100101109  扑克
+            99   其他
            */
           //val topAdclass = Seq(110110100, 130104101, 125100100, 100101109)
           if (!topAdclass.contains(adclass)) {
@@ -440,7 +517,7 @@ object GetHourReport {
 
           val ctr = CtrReport(
             media_id = u.getAs[String]("media_appsid").toInt,
-            adslot_id = u.getAs[String]("adslotid").toInt,
+            adslot_id = u.getAs[String]("adslot_id").toInt,
             adslot_type = u.getAs[Int]("adslot_type"),
             adclass = adclass,
             exp_tag = exptag,
@@ -450,42 +527,68 @@ object GetHourReport {
             cash_cost = cost,
             click = isclick,
             exp_click = expctr,
-            date = "%s %s:00:00".format(u.getAs[String]("date"), u.getAs[String]("hour"))
+            date = "%s %s:00:00".format(u.getAs[String]("day"), u.getAs[String]("hour"))
           )
           (u.getAs[String]("searchid"), ctr)
       }
     unionLog_tmp.unpersist()
 
-    //get cvr data
-    val cvrlog = ctx.sql(
+    // get cvr data
+    // fym: cpc_userid_test_dim 是按日分区的 有取不到数据的风险
+
+    val calBeforeYesterDay = Calendar.getInstance()
+    val partitionPathFormat = new SimpleDateFormat("yyyy-MM-dd")
+
+    calBeforeYesterDay.set(Calendar.YEAR, date.split("-")(0).toInt)
+    calBeforeYesterDay.set(Calendar.MONTH, date.split("-")(1).toInt - 1)
+    calBeforeYesterDay.set(Calendar.DAY_OF_MONTH, date.split("-")(2).toInt)
+    calBeforeYesterDay.set(Calendar.HOUR_OF_DAY, 0)
+    calBeforeYesterDay.set(Calendar.MINUTE, 0)
+    calBeforeYesterDay.set(Calendar.SECOND, 0)
+    // minus 2 days to get a sure-to-be partition.
+    calBeforeYesterDay.add(Calendar.HOUR_OF_DAY,-48)
+    
+    val cvrlog = spark.sql(
       //      s"""
       //         |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
       //            """.stripMargin.format(date, hour))
-      s"""
+      /*s"""
          |select a.searchid as search_id
          |       ,a.adslot_type
-         |       ,a.ext["client_type"].string_value as client_type
-         |       ,a.ext["adclass"].int_value  as adclass
-         |       ,a.ext_int['siteid'] as siteid
+         |       ,a.client_type as client_type
+         |       ,a.adclass as adclass
+         |       ,a.siteid as siteid
          |       ,a.adsrc
          |       ,a.interaction
          |       ,b.*
-         |from (select * from dl_cpc.cpc_union_log
-         |        where `date` = "%s" and `hour` = "%s" ) a
-         |    left join (select id from bdm.cpc_userid_test_dim where day='%s') t2
+         |from (select * from dl_cpc.%s
+         |        where `day` = "%s" and `hour` = "%s" ) a
+         |    left join (select id from bdm.cpc_userid_test_dim where day="%s") t2
          |         on a.userid = t2.id
          |    left join
          |        (select *
-         |            from dl_cpc.cpc_union_trace_log
-         |            where `date` = "%s" and `hour` = "%s"
+         |            from dl_cpc.cpc_basedata_trace_event
+         |            where `day` = "%s" and `hour` = "%s"
          |         ) b
          |    on a.searchid=b.searchid
          |where b.searchid is not null and t2.id is null
-        """.stripMargin.format(date, hour, date, date, hour))
+        """*/
+        s"""
+         |select * from test.tmp_reporting_600
+        """
+          .stripMargin
+          .format(
+            table,
+            date,
+            hour,
+            partitionPathFormat
+              .format(calBeforeYesterDay.getTime())/*date*/,
+            date,
+            hour))
       .rdd
       .map {
         x =>
-          (x.getAs[String]("searchid"), Seq(x))
+          (x.getAs[String]("search_id"), Seq(x))
       }
       .reduceByKey(_ ++ _)
       .map {
@@ -495,6 +598,8 @@ object GetHourReport {
           (x._1, (convert, convert2))
         //(x._1, convert)
       }
+
+    println("cvrlog", cvrlog.count())
 
     val ctrCvrData = ctrData.leftOuterJoin(cvrlog)
       //.map { x => x._2._1.copy(cvr_num = x._2._2.getOrElse(0)) }
@@ -540,14 +645,17 @@ object GetHourReport {
       }
 
     clearReportHourData("report_ctr_prediction_hourly", "%s %s:00:00".format(date, hour), "0")
-    ctx.createDataFrame(ctrCvrData)
+    spark.createDataFrame(ctrCvrData)
       .write
       .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_ctr_prediction_hourly", mariadbProp)
-    println("ctr", ctrCvrData.count())
+      .jdbc(mariadbUrl,
+        if (if_test == 1) "%s.test_report_ctr_prediction_hourly".format(databaseToGo)
+        else "%s.report_ctr_prediction_hourly".format(databaseToGo),
+        mariadbProp)
+    println("ctr", ctrCvrData.count())*/
 
-    /*
-    val cvrlog = ctx.sql(
+
+    /*val cvrlog = spark.sql(
       s"""
          |select * from dl_cpc.cpc_union_trace_log where `date` = "%s" and hour = "%s"
         """.stripMargin.format(date, hour))
@@ -597,7 +705,7 @@ object GetHourReport {
           }
 
           val mediaid = u.getAs[String]("media_appsid").toInt
-          val adslotid = u.getAs[String]("adslotid").toInt
+          val adslot_id = u.getAs[String]("adslot_id").toInt
           val slottype = u.getAs[Int]("adslot_type")
           val adclass = u.getAs[Int]("adclass")
           val expcvr = u.getAs[Int]("exp_cvr").toDouble / 1e6
@@ -612,7 +720,7 @@ object GetHourReport {
           }
           val cost = realCost
 
-          val k = (mediaid, adslotid, adclass, exptag, cvrthres)
+          val k = (mediaid, adslot_id, adclass, exptag, cvrthres)
           (k, (iscvr, expcvr, isload, 1, cost, slottype))
       }
       .reduceByKey {
@@ -639,8 +747,8 @@ object GetHourReport {
     cvrData.write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_cvr_prediction_hourly", mariadbProp)
-    println("cvr", cvrData.count())
-    */
+    println("cvr", cvrData.count())*/
+
 
     val userCharge = unionLog
       .map {
@@ -659,7 +767,7 @@ object GetHourReport {
           }
           val charge = MediaChargeReport( //adslotType = x.getAs[Int]("adslot_type")
             //media_id = x.getAs[String]("media_appsid").toInt,
-            //adslot_id = x.getAs[String]("adslotid").toInt,
+            //adslot_id = x.getAs[String]("adslot_id").toInt,
             //unit_id = x.getAs[Int]("unitid"),
             //idea_id = x.getAs[Int]("ideaid"),
             //plan_id = x.getAs[Int]("planid"),
@@ -673,7 +781,7 @@ object GetHourReport {
             //charged_click = isclick,
             //spam_click = spam_click,
             cash_cost = realCost,
-            date = x.getAs[String]("date"),
+            date = x.getAs[String]("day"),
             hour = x.getAs[String]("hour").toInt
           )
           ((charge.user_id, charge.adslot_type), charge)
@@ -688,18 +796,21 @@ object GetHourReport {
 
 
     clearReportHourData("report_user_charge_hourly", date, hour)
-    //    val userChargedata = ctx.createDataFrame(userCharge)
+    //    val userChargedata = spark.createDataFrame(userCharge)
     userCharge.write
       .mode(SaveMode.Append)
-      .jdbc(mariadbUrl, "report.report_user_charge_hourly", mariadbProp)
+      .jdbc(mariadbUrl,
+        if (if_test == 1) "%s.test_report_user_charge_hourly".format(databaseToGo)
+        else "%s.report_user_charge_hourly".format(databaseToGo),
+        mariadbProp)
 
     println("userCharge", userCharge.count())
 
 
     unionLog.unpersist()
 
-    ctx.stop()
-    println("GetHourReport_done")
+    spark.stop()
+    println("-- successfully generated hourly report --")
   }
 
 
@@ -717,7 +828,7 @@ object GetHourReport {
         """.stripMargin.format(tbl, date, hour.toInt)
       stmt.executeUpdate(sql)
 
-      if (tbl == "report_media_charge_hourly") {
+      /*if (tbl == "report_media_charge_hourly") {
         val conn_amateur = DriverManager.getConnection(
           mariadb_amateur_url,
           mariadb_amateur_prop.getProperty("user"),
@@ -725,7 +836,7 @@ object GetHourReport {
         )
         val stmt_amateur = conn_amateur.createStatement()
         stmt_amateur.executeUpdate(sql)
-      }
+      }*/
 
     } catch {
       case e: Exception => println("exception caught: " + e);
@@ -781,7 +892,7 @@ object GetHourReport {
                                    adslot_type: Int = 0,
                                    dsp_src: Int = 0,
                                    dsp_mediaid: String = "",
-                                   dsp_adslotid: String = "",
+                                   dsp_adslot_id: String = "",
                                    dsp_adnum: Int = 0,
                                    request: Int = 0,
                                    fill: Int = 0,

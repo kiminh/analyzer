@@ -23,13 +23,17 @@ object OcpcPIDwithCPA {
      */
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
 
-    // bash: 2019-01-02 12 qtt_demo qtt
+    // bash: 2019-01-02 12 24 1 qtt_demo qtt
     val date = args(0).toString
     val hour = args(1).toString
-    val version = args(2).toString
-    val media = args(3).toString
-    var mediaSelection = ""
+    val hourInt = args(2).toInt
+    val conversionGoal = args(3).toInt
+    val version = args(4).toString
+    val media = args(5).toString
 
+    println("parameters:")
+    println(s"date=$date, hour=$hour, hourInt=$hourInt, conversionGoal=$conversionGoal, version=$version, media=$media")
+    var mediaSelection = ""
     if (media == "qtt") {
       mediaSelection = s"media_appsid in ('80000001', '80000002')"
     } else if(media == "novel"){
@@ -44,25 +48,23 @@ object OcpcPIDwithCPA {
       .where(s"version='$version'")
 
     val historyData = getHistory(mediaSelection, date, hour, spark)
-    val result1 = calculateKwithConversionGoal(1, 24, prevTable, historyData, date, hour, spark)
-    result1.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+    val result = calculateKwithConversionGoal(conversionGoal, hourInt, prevTable, historyData, date, hour, spark)
 
-//    val kvalue = getHistoryK(historyData, prevTable, date, hour, spark)
-//    val cpaHistory = getCPAhistory(historyData, cvrData, 1, date, hour, spark)
-//    val cpaRatio = calculateCPAratio(cpaHistory, date, hour, spark)
-//    val result = updateK(kvalue, cpaRatio, date, hour, spark)
-//    val resultDF = result
-//      .select("identifier", "k_value", "conversion_goal")
-//      .withColumn("date", lit(date))
-//      .withColumn("hour", lit(hour))
-//      .withColumn("version", lit(version))
-//
-//    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
-//    resultDF
-//      .repartition(10)
-//      .write
-//      .mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_pid_k_hourly")
+    val resultDF = result
+        .withColumn("kvalue", col("k_value"))
+        .select("identifier", "kvalue", "conversion_goal")
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .withColumn("version", lit(version))
+        .withColumn("method", lit("pid"))
+
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+
+    resultDF
+      .repartition(10)
+      .write
+      .mode("overwrite")
+      .insertInto("dl_cpc.ocpc_k_model_hourly")
 
 
   }
@@ -78,9 +80,11 @@ object OcpcPIDwithCPA {
      */
     val cvrData = getCVRdata(conversionGoal, hourInt, date, hour, spark)
     val kvalue = getHistoryK(historyData, prevTable, conversionGoal, date, hour, spark)
+//    kvalue.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190201a")
     val cpaHistory = getCPAhistory(historyData, cvrData, conversionGoal, date, hour, spark)
     val cpaRatio = calculateCPAratio(cpaHistory, date, hour, spark)
     val result = updateK(kvalue, cpaRatio, date, hour, spark)
+//    result.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190201b")
     val resultDF = result.select("identifier", "k_value", "conversion_goal")
     resultDF
   }
@@ -220,7 +224,7 @@ object OcpcPIDwithCPA {
         .groupBy("identifier")
         .agg(
           sum(col("price")).alias("cost"),
-          sum(col("cpagiven")).alias("cpagiven"),
+          avg(col("cpagiven")).alias("cpagiven"),
           sum(col("iscvr")).alias("cvrcnt")
         )
         .withColumn("cpa", col("cost") * 1.0 / col("cvrcnt"))
@@ -258,15 +262,16 @@ object OcpcPIDwithCPA {
   def updateK(kvalue: DataFrame, cpaRatio: DataFrame, date: String, hour: String, spark: SparkSession) = {
     /**
       * 根据新的K基准值和cpa_ratio来在分段函数中重新定义k值
-      * case1：0.9 <= cpa_ratio <= 1.1，k基准值
-      * case2：0.8 <= cpa_ratio < 0.9，k / 1.1
-      * case2：1.1 < cpa_ratio <= 1.2，k * 1.1
-      * case3：0.6 <= cpa_ratio < 0.8，k / 1.2
-      * case3：1.2 < cpa_ratio <= 1.4，k * 1.2
-      * case4：0.4 <= cpa_ratio < 0.6，k / 1.4
-      * case5：1.4 < cpa_ratio <= 1.6，k * 1.4
-      * case6：cpa_ratio < 0.4，k / 1.6
-      * case7：cpa_ratio > 1.6，k * 1.6
+      * case1: ratio < 0, t1
+      * case2: ratio < 0.4, t2
+      * case3: 0.4 <= ratio < 0.6, t3
+      * case4: 0.6 <= ratio < 0.8, t4
+      * case5: 0.8 <= ratio < 0.9, t5
+      * case6: 0.9 <= ratio <= 1.1, t6
+      * case7: 1.1 < ratio <= 1.2, t7
+      * case8: 1.2 < ratio <= 1.4, t8
+      * case9: 1.4 < ratio <= 1.6, t9
+      * case10: ratio > 1.6, t10
       *
       * 上下限依然是0.2 到1.2
       */
@@ -274,7 +279,7 @@ object OcpcPIDwithCPA {
     // 关联得到基础表
     val rawData = kvalue
       .join(cpaRatio, Seq("identifier"), "outer")
-      .select("identifier", "cpa_ratio", "conversion_goal", "kvalue")
+      .select("identifier", "cpa", "cpagiven", "cpa_ratio", "conversion_goal", "kvalue")
 
     val resultDF = rawData
       .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))

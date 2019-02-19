@@ -14,5 +14,18 @@
 ## model目录
 用于计算k值和产出pb文件的代码文件
 
+## model_v2目录
+升级版ocpc通用代码，利用ocpc.conf提高代码封装性与通用性
+
 ## CreateTable目录
 存放用于创建hive表的sql脚本
+
+## model_qtt目录
+用于存放趣头条的新版ocpc代码
+
+## experiment目录
+1. 新版ab实验代码
+2. 新版cpasuggest代码
+3. 测试阶段k值计算代码
+
+## experiment目录下代码的实验配置（json文件）

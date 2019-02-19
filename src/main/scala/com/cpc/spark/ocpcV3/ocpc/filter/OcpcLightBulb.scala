@@ -19,34 +19,48 @@ object OcpcLightBulb{
     2. mappartition打开redis，并存储数据
      */
     // 计算日期周期
+//    2019-02-02 10 qtt_demo
     val date = args(0).toString
     val hour = args(1).toString
-    val version = "qtt_demo"
+    val version = args(2).toString
+
+    println("parameters:")
+    println(s"date=$date, hour=$hour, version=$version")
     val spark = SparkSession
       .builder()
       .appName(s"OcpcLightBulb: $date, $hour")
       .enableHiveSupport().getOrCreate()
 
+
     val tableName = "test.ocpc_qtt_light_control"
 
-//    // 清除redis里面的数据
-//    cleanRedis(tableName, date, hour, spark)
+
 
 
     // 抽取数据
-//    val cpcData = getRecommendationAd(date, hour, spark)
-//    val ocpcData = getOcpcRecord(date, hour, spark)
-//    val ocpcUnit = getCPAgiven(date, hour, spark)
-//    val ocpcRecord = ocpcData.join(ocpcUnit, Seq("unitid"), "inner").select("unitid", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
-//
-//    val data = cpcData
-//        .join(ocpcRecord, Seq("unitid"), "outer")
-//        .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
-//        .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
-//    data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
+    val cpcData = getRecommendationAd(date, hour, spark)
+    val ocpcData = getOcpcRecord(date, hour, spark)
+    val ocpcUnit = getCPAgiven(date, hour, spark)
+    val ocpcRecord = ocpcData.join(ocpcUnit, Seq("unitid"), "inner").select("unitid", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
+
+    val data = cpcData
+        .join(ocpcRecord, Seq("unitid"), "outer")
+        .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
+        .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
+    data
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
+
+    // 清除redis里面的数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(tableName, date, hour, spark)
 
     // 存入redis
-    saveDataToRedis(tableName, date, hour, spark)
+    saveDataToRedis(date, hour, spark)
+    println(s"############## saving redis database ##########################")
+
+    data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
 
   def getOcpcRecord(date: String, hour: String, spark: SparkSession) = {
@@ -61,7 +75,6 @@ object OcpcLightBulb{
     calendar.add(Calendar.DATE, -7)
     val yesterday = calendar.getTime
     val date1 = dateConverter.format(yesterday)
-//    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
     val selectCondition = s"`date`>='$date1'"
 
     val sqlRequest =
@@ -126,7 +139,6 @@ object OcpcLightBulb{
           var key = "algorithm_unit_ocpc_" + identifier
           val json = new JSONObject()
           val value = json.toString
-//          redis.setex(key, 1 * 24 * 60 * 60, value)
           redis.del(key)
         }
       }
@@ -134,14 +146,20 @@ object OcpcLightBulb{
     })
   }
 
-  def saveDataToRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
-    val rawData = spark.table(tableName).repartition(2)
+  def saveDataToRedis(date: String, hour: String, spark: SparkSession) = {
+    val rawData = spark
+      .table("dl_cpc.ocpc_qtt_light_control")
+      .where(s"`date`='$date' and version='qtt_demo'")
+      .repartition(2)
+
     val data = rawData
         .withColumn("cpa1", when(col("ocpc_cpa1") === -1, col("cpc_cpa1")).otherwise(col("ocpc_cpa1")))
         .withColumn("cpa2", when(col("ocpc_cpa2") === -1, col("cpc_cpa2")).otherwise(col("ocpc_cpa2")))
         .withColumn("cpa3", when(col("ocpc_cpa3") === -1, col("cpc_cpa3")).otherwise(col("ocpc_cpa3")))
+        .selectExpr("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3", "cast(round(cpa1, 2) as double) as cpa1", "cast(round(cpa2, 2) as double) as cpa2", "cast(round(cpa3, 2) as double) as cpa3")
     data.write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_data_redis")
     data.show(10)
+    data.printSchema()
     val cnt = data.count()
     println(s"total size of the data is: $cnt")
     val conf = ConfigFactory.load("ocpc")
@@ -150,54 +168,6 @@ object OcpcLightBulb{
     val auth = conf.getString("adv_redis.auth")
     println(s"host: $host")
     println(s"port: $port")
-//    println(s"auth: $auth")
-//
-//    val redis = new RedisClient(host, port)
-//    redis.auth(auth)
-//    for (t <- 1 to 5) {
-//      val identifier = "000000" + t.toString
-//      val cpa1 = 1.0
-//      val cpa2 = 1.0
-//      val cpa3 = 1.0
-//      var key = "algorithm_unit_ocpc_" + identifier
-//      val json = new JSONObject()
-//      if (cpa1 > 0) {
-//        json.put("download_cpa", cpa1)
-//      }
-//      if (cpa2 > 0) {
-//        json.put("appact_cpa", cpa2)
-//      }
-//      if (cpa3 > 0) {
-//        json.put("formsubmit_cpa", cpa3)
-//      }
-//      val value = json.toString
-//      println(s"key=$key, value=$value")
-//      redis.setex(key, 2 * 24 * 60 * 60, value)
-//    }
-//    redis.disconnect
-
-//    for (record <- data.collect()) {
-//      val identifier = record.getAs[Int]("unitid").toString
-//      val cpa1 = record.getAs[Double]("cpa1")
-//      val cpa2 = record.getAs[Double]("cpa2")
-//      val cpa3 = record.getAs[Double]("cpa3")
-//      var key = "algorithm_unit_ocpc_" + identifier
-//      val json = new JSONObject()
-//      if (cpa1 > 0) {
-//        json.put("download_cpa", cpa1)
-//      }
-//      if (cpa2 > 0) {
-//        json.put("appact_cpa", cpa2)
-//      }
-//      if (cpa3 > 0) {
-//        json.put("formsubmit_cpa", cpa3)
-//      }
-//      val value = json.toString
-//      if (cpa2 > 0 || cpa3 > 0) {
-//        println(s"key=$key, value=$value")
-//      }
-//
-//    }
 
     data.foreachPartition(iterator => {
       val redis = new RedisClient(host, port)
@@ -205,9 +175,10 @@ object OcpcLightBulb{
       iterator.foreach{
         record => {
           val identifier = record.getAs[Int]("unitid").toString
-          val cpa1 = record.getAs[Double]("cpa1").toInt
-          val cpa2 = record.getAs[Double]("cpa2").toInt
-          val cpa3 = record.getAs[Double]("cpa3").toInt
+          val cpa1 = record.getAs[Double]("cpa1")
+          val cpa2 = record.getAs[Double]("cpa2")
+          val cpa3 = record.getAs[Double]("cpa3")
+          println(s"cpa1:$cpa1, cpa2:$cpa2, cpa3:$cpa3")
           var key = "algorithm_unit_ocpc_" + identifier
           val json = new JSONObject()
           if (cpa1 > 0) {
@@ -228,20 +199,15 @@ object OcpcLightBulb{
   }
 
   def getRecommendationAd(date: String, hour: String, spark: SparkSession) = {
-    val selectCondition = s"`date`='$date' and `hour`='$hour' and version='qtt_demo'"
-//    val sqlRequest =
-//      s"""
-//         |SELECT
-//         |  unitid,
-//         |  original_conversion as conversion_goal,
-//         |  cpa * 1.0 / 100 as cpa
-//         |FROM
-//         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
-//         |WHERE
-//         |  $selectCondition
-//         |AND
-//         |  is_recommend=1
-//       """.stripMargin
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -1)
+    val yesterday = calendar.getTime
+    val date1 = dateConverter.format(yesterday)
+
     val sqlRequest =
         s"""
            |select
@@ -257,12 +223,12 @@ object OcpcLightBulb{
            |        date = '$date'
            |    and is_recommend = 1
            |    and version = 'qtt_demo'
-           |    and industry in ('elds')) as a
+           |    and ((industry='elds') or (industry='feedapp' and original_conversion=1))) as a
            |INNER JOIN
            |    (
            |        select distinct unitid, adslot_type
            |        FROM dl_cpc.ocpc_ctr_data_hourly
-           |        where date = '$date'
+           |        where date >= '$date1'
            |    ) as b
            |ON
            |    a.unitid=b.unitid
