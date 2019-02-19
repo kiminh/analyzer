@@ -219,6 +219,8 @@ object MediaSlotChargeDaily {
           mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
         }
 
+      println("partial %s %s".format(i, partialJoinResult.count()))
+
       resultRDD = resultRDD.union(partialJoinResult)
       println("count %s %s".format(i, resultRDD.count()))
     }
