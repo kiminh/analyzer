@@ -179,9 +179,9 @@ object MediaSlotChargeDaily {
       })
       // .persist()
 
-    var resultRDD = mediaDataWithoutZero
-      .join(usersRDD, numPartitionsForSkewedData)
-      .join(cvrRDD, numPartitionsForSkewedData)
+    val resultRDD = mediaDataWithoutZero
+      .join(usersRDD)
+      .join(cvrRDD)
       .map { r =>
         val mediaSlotCharge = r._2._1._1
         val idea_uids = r._2._1._2
@@ -204,7 +204,6 @@ object MediaSlotChargeDaily {
       })
       .persist()
 
-
     for (i <- 0 until numPartitionsForSkewedData) {
       val mediaDataWithIndex = mediaDataWithZero
         .filter( x => {
@@ -221,7 +220,7 @@ object MediaSlotChargeDaily {
         .map( x => {
           (i, x._2)
         })
-      
+
       val partialJoinResult = mediaDataWithIndex
         .join(usersRDDWithIndex)
         .join(cvrRDDWithIndex)
@@ -237,7 +236,7 @@ object MediaSlotChargeDaily {
 
       println("partial %s %s".format(i, partialJoinResult.count()))
 
-      resultRDD = resultRDD.union(partialJoinResult)
+      resultRDD.union(partialJoinResult)
       println("count %s %s".format(i, resultRDD.count()))
     }
 
