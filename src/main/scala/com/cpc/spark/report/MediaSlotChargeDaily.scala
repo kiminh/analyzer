@@ -1,11 +1,7 @@
 package com.cpc.spark.report
 
-import org.apache.spark.sql.{SaveMode, SparkSession}
-import org.apache.spark.sql.functions._
-import com.cpc.spark.common.Utils
-import org.apache.log4j.{Level, Logger}
-import org.apache.spark.Partitioner
-import org.apache.spark.sql.expressions.Window
+import java.util.Calendar
+
 import util.Random
 import org.apache.spark.sql.functions.{col, expr, row_number}
 import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
@@ -163,7 +159,11 @@ object MediaSlotChargeDaily {
       }
       // .persist()
 
+    val cal = Calendar.getInstance()
+    println(cal.getTimeInMillis())
+
     val randomSeed = new Random()
+    randomSeed.setSeed(cal.getTimeInMillis())
 
     val mediaDataWithoutZero = data
         .filter( x => {
@@ -179,7 +179,7 @@ object MediaSlotChargeDaily {
       })
       // .persist()
 
-    val resultRDD = mediaDataWithoutZero
+    var resultRDD = mediaDataWithoutZero
       .join(usersRDD)
       .join(cvrRDD)
       .map { r =>
@@ -236,7 +236,7 @@ object MediaSlotChargeDaily {
 
       println("partial %s %s".format(i, partialJoinResult.count()))
 
-      resultRDD.union(partialJoinResult)
+      resultRDD = resultRDD.union(partialJoinResult)
       println("count %s %s".format(i, resultRDD.count()))
     }
 
