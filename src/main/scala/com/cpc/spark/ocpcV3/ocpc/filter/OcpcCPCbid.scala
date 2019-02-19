@@ -70,8 +70,8 @@ object OcpcCPCbid {
       .select("searchid", "unitid", "price", "isclick", "iscvr1", "iscvr2", "iscvr3", "isshow", "bid", "exp_ctr")
       .withColumn("cpm", col("bid") * col("exp_ctr"))
 
-    data.createOrReplaceTempView("base_data")
-    data.write.mode("overwrite").saveAsTable("test.check_data_20190218a")
+    // data.createOrReplaceTempView("base_data")
+    data.write.mode("overwrite").saveAsTable("test.ocpc_check_data_smooth")
 
     val sqlRequest =
       s"""
@@ -83,12 +83,11 @@ object OcpcCPCbid {
          |  sum(iscvr3) * 1.0 / sum(isclick) as cvr3,
          |  percentile(cpm, 0.10) as min_cpm2
          |FROM
-         |  base_data
+         |  test.ocpc_check_data_smooth
          |GROUP BY unitid
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
-    resultDF.write.mode("overwrite").saveAsTable("test.check_data_20190218b")
 
     resultDF.show(10)
     resultDF
