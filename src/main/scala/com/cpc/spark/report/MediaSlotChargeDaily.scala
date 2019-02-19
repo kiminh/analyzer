@@ -134,6 +134,7 @@ object MediaSlotChargeDaily {
       .map { r =>
         (r.getAs[Int]("ideaid"), r.getAs[Long]("idea_uids"))
       }
+      .persist()
 
     //count cvr for each ideaid
     val conversion_info_flow_sql =
@@ -161,6 +162,7 @@ object MediaSlotChargeDaily {
         val cvr = (conv / click).toDouble
         (ideaid, cvr)
       }
+      .persist()
 
     val randomSeed = new Random()
 
@@ -177,12 +179,6 @@ object MediaSlotChargeDaily {
         (randomSeed.nextInt(numPartitionsForSkewedData), x._2)
       })
       .persist()
-
-
-
-
-    println(usersRDD.count())
-    println(cvrRDD.count())
 
     var resultRDD = mediaDataWithoutZero
       .join(usersRDD, numPartitionsForSkewedData)
