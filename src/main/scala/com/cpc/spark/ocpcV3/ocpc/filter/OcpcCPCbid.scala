@@ -82,7 +82,7 @@ object OcpcCPCbid {
          |  sum(iscvr1) * 1.0 / sum(isclick) as cvr1,
          |  sum(iscvr2) * 1.0 / sum(isclick) as cvr2,
          |  sum(iscvr3) * 1.0 / sum(isclick) as cvr3,
-         |  percentile(cpm, 0.10) as min_cpm2
+         |  percentile(cpm, 0.15) as min_cpm2
          |FROM
          |  test.ocpc_check_data_smooth
          |GROUP BY unitid
