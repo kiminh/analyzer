@@ -181,7 +181,7 @@ object AnalTouchedUV {
 
   val sex = Seq(0, 1, 2)
 
-  val age = Seq(0, 1, 2, 3, 4, 5, 6)
+  val age = Seq(0, 1, 2, 3, 4)
 
   val coin = Seq(0, 1, 2, 3, 4)
 
