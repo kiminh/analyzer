@@ -68,7 +68,7 @@ object KddAdLog {
 
         println("kdd 's num is " + kdd.count())
 
-        kdd.repartition(10)
+        kdd.repartition(100)
           .write
           .mode("overwrite")
           .insertInto("dl_cpc.kdd_ad_log")

@@ -122,7 +122,7 @@ object kddUidAdData {
 
         val result = spark.sql(sql3)
 
-        result.repartition(10)
+        result.repartition(100)
           .write
           .mode("overwrite")
           .insertInto("dl_cpc.kdd_uid_ad_log")
