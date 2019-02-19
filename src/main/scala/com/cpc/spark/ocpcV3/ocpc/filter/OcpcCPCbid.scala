@@ -47,6 +47,7 @@ object OcpcCPCbid {
         .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm"))
 
     data
+        .select("unitid", "min_bid", "cvr1", "cvr2", "cvr3", "min_cpm")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit("qtt_demo"))
