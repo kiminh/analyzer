@@ -4,7 +4,7 @@ case class MediaSlotCharge(
                             media_id: Int = 0,
                             media_type: Int = 0,
                             media_name: String = "",
-                            adslot_id: Int = 0,
+                            adslot_id: String = "",
                             adslot_type: Int = 0,
                             idea_id: Int = 0,
                             unit_id: Int = 0,

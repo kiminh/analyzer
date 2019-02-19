@@ -60,11 +60,11 @@ object AnalTouchedUV {
             var rndAge = x.getAs[Int]("age")
             if (rndAge == 0) {
               val rnd = Random.nextInt(100)
-              if (rnd < 18) {
+              if (rnd <= 18) {
                 rndAge = 1
-              } else if (rnd < 23) {
+              } else if (rnd <= 23) {
                 rndAge = 2
-              } else if (rnd < 41) {
+              } else if (rnd < 40) {
                 rndAge = 3
               } else {
                 rndAge = 4

@@ -11,22 +11,23 @@ object MediaSlotChargeDaily {
       .appName(" media slot charge hourly")
       .enableHiveSupport()
       .getOrCreate()
-import spark.implicits._
+    import spark.implicits._
 
     val sql =
       s"""
          |select *
          |from dl_cpc.cpc_basedata_union_events
-         |where day='$day' and adslotid >0
+         |where day='$day' and adslot_id <> ""
        """.stripMargin
+    println(sql)
 
 
-    val qtt_media_id = Array[Int](80000001, 80000002, 80000006, 80000064, 80000066, 80000062, 80000141, 80002480)
-    val midu_media_id = Array[Int](80001539, 80002397, 80002477, 80002555, 80003172, 80001098, 80001292)
-    val duanzi_media_id = Array[Int](80002819)
+    val qtt_media_id = Vector[String]("80000001", "80000002", "80000006", "80000064", "80000066", "80000062", "80000141", "80002480")
+    val midu_media_id = Vector[String]("80001539", "80002397", "80002477", "80002555", "80003172", "80001098", "80001292")
+    val duanzi_media_id = Vector[String]("80002819")
 
     val data = spark.sql(sql)
-      .repartition(1000)
+      .repartition(2000)
       .rdd
       .map { x =>
         val isclick = x.getAs[Int]("isclick")
@@ -41,7 +42,7 @@ import spark.implicits._
           charge_fee = 0
         }
 
-        val media_id = x.getAs[String]("media_id").toInt
+        val media_id = x.getAs[String]("media_appsid").toInt
         val media_name = media_id match {
           case m if qtt_media_id.contains(m) => "qtt"
           case m if midu_media_id.contains(m) => "midu"
@@ -64,12 +65,12 @@ import spark.implicits._
           media_id = media_id,
           media_type = x.getAs[Int]("media_type"),
           media_name = media_name,
-          adslot_id = x.getAs[Int]("adslot_id"),
+          adslot_id = x.getAs[String]("adslot_id"),
           adslot_type = x.getAs[Int]("adslot_type"),
-          idea_id = x.getAs[Int]("idea_id"),
-          unit_id = x.getAs[Int]("unit_id"),
-          plan_id = x.getAs[Int]("plan_id"),
-          user_id = x.getAs[Int]("user_id"),
+          idea_id = x.getAs[Int]("ideaid"),
+          unit_id = x.getAs[Int]("unitid"),
+          plan_id = x.getAs[Int]("planid"),
+          user_id = x.getAs[Int]("userid"),
           uid = uid,
           uid_type = uid_type,
           adclass = x.getAs[Int]("adclass"),
@@ -80,8 +81,8 @@ import spark.implicits._
           cvr_model_name = x.getAs[String]("cvr_model_name"),
 
           request = 1,
-          fill = x.getAs[Int]("fill"),
-          impression = x.getAs[Int]("impression"),
+          fill = x.getAs[Int]("isfill"),
+          impression = x.getAs[Int]("isshow"),
           click = isclick + spam_click,
           charged_click = isclick,
           spam_click = spam_click,
@@ -90,18 +91,16 @@ import spark.implicits._
         )
         (charge.key, charge)
       }
-      .reduceByKey((x, y) => x.sum(y))
+      .reduceByKey((x, y) => x.sum(y), 1000)
       .map { x =>
-        val mediaSlotCharge = x._2
+        var mediaSlotCharge = x._2
         val click = mediaSlotCharge.click
         val impression = mediaSlotCharge.impression
         val cost = mediaSlotCharge.cost
-
-
         val ctr = (click / impression).toDouble
         val cpm = (cost / impression * 1000).toDouble
         val acp = (cost / click).toDouble
-        mediaSlotCharge.copy(ctr = ctr, cpm = cpm, acp = acp)
+        mediaSlotCharge = mediaSlotCharge.copy(ctr = ctr, cpm = cpm, acp = acp)
         (mediaSlotCharge.idea_id, mediaSlotCharge)
       }
 
@@ -141,6 +140,7 @@ import spark.implicits._
         val cvr = (conv / click).toDouble
         (ideaid, cvr)
       }
+      .cache
 
 
     val resultRDD = data.join(usersRDD).join(cvrRDD)
@@ -153,16 +153,19 @@ import spark.implicits._
         mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
       }
 
+
     resultRDD.toDF()
       .repartition(10)
       .write
       .mode(SaveMode.Overwrite)
       .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/media_slot_charge/day=$day")
 
+    usersRDD.unpersist()
+    cvrRDD.unpersist()
     spark.sql(
       s"""
-         |alter table dl_cpc.media_slot_charge add if not exists partition(day = "$day")
-         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/media_slot_charge/day=$day'
+         |alter table test.media_slot_charge add if not exists partition(day = "$day")
+         |location 'hdfs://emr-cluster2/warehouse/test.db/media_slot_charge/day=$day'
        """.stripMargin)
 
     println("done.")
