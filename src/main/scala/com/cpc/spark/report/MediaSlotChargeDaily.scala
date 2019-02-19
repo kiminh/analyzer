@@ -161,7 +161,7 @@ object MediaSlotChargeDaily {
         val cvr = (conv / click).toDouble
         (ideaid, cvr)
       }
-      .persist()
+      // .persist()
 
     val randomSeed = new Random()
 
@@ -177,7 +177,7 @@ object MediaSlotChargeDaily {
       .map (x => { // partition.
         (randomSeed.nextInt(numPartitionsForSkewedData), x._2)
       })
-      .persist()
+      // .persist()
 
     var resultRDD = mediaDataWithoutZero
       .join(usersRDD, numPartitionsForSkewedData)
@@ -192,18 +192,39 @@ object MediaSlotChargeDaily {
         mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
       }
 
-    println(resultRDD.count())
+    val usersRDDWithZero = usersRDD
+      .filter( x => {
+        x._1 == 0
+      })
+      .persist()
+
+    val cvrRDDWithZero = cvrRDD
+      .filter( x => {
+        x._1 == 0
+      })
+      .persist()
+
 
     for (i <- 0 until numPartitionsForSkewedData) {
-      val mediaDataWithZeroAndIndex = mediaDataWithZero
+      val mediaDataWithIndex = mediaDataWithZero
         .filter( x => {
           x._1 == i
         })
-      println("partial %s %s".format(i, mediaDataWithZeroAndIndex.count()))
+      println("partial %s %s".format(i, mediaDataWithIndex.count()))
 
-      val partialJoinResult = mediaDataWithZeroAndIndex
-        .join(usersRDD)
-        .join(cvrRDD)
+      val usersRDDWithIndex = usersRDDWithZero
+        .map( x => {
+          (i, x._2)
+        })
+
+      val cvrRDDWithIndex = cvrRDDWithZero
+        .map( x => {
+          (i, x._2)
+        })
+      
+      val partialJoinResult = mediaDataWithIndex
+        .join(usersRDDWithIndex)
+        .join(cvrRDDWithIndex)
         .map { r =>
           val mediaSlotCharge = r._2._1._1
           val idea_uids = r._2._1._2
