@@ -9,10 +9,9 @@ import org.apache.spark.sql.SparkSession
 object kddUidAdData {
     def main(args: Array[String]): Unit = {
         val date = args(0)
-        val hour = args(1)
 
         val spark = SparkSession.builder()
-          .appName(s"kddUidAdData date = $date , hour = $hour")
+          .appName(s"kddUidAdData date = $date")
           .enableHiveSupport()
           .getOrCreate()
         import spark.implicits._
@@ -23,17 +22,13 @@ object kddUidAdData {
                |from dl_cpc.kdd_ad_title_split
              """.stripMargin
 
-
         val title = spark.sql(sql1).cache()
-
-        title.show(10)
 
         val sql2 =
             s"""
                |select *
                |from dl_cpc.kdd_ad_log
                |where `date` = '$date'
-               |and hour = '$hour'
              """.stripMargin
 
         val union = spark.sql(sql2)
@@ -82,7 +77,7 @@ object kddUidAdData {
           .drop("title")
           .withColumnRenamed("title_split","gdt_click_title")
 
-        title.unpersist()
+
 
         union.show(10)
 
@@ -120,8 +115,7 @@ object kddUidAdData {
                |    concat_ws("\002","csj_click_title","str",concat_ws("\003", collect_set(csj_click_title))) as csj_click_title,
                |    concat_ws("\002","gdt_click_title","str",concat_ws("\003", collect_set(gdt_click_title))) as gdt_click_title
                |) as origin,
-               |  '$date' as `date`,
-               |  '$hour' as hour
+               |  '$date' as `date`
                |from union
                |group by uid
              """.stripMargin
@@ -132,6 +126,10 @@ object kddUidAdData {
           .write
           .mode("overwrite")
           .insertInto("dl_cpc.kdd_uid_ad_log")
+
+        println("success!")
+
+        title.unpersist()
     }
 }
 
@@ -141,6 +139,6 @@ create table if not exists dl_cpc.kdd_uid_ad_log
     uid string,
     origin string
 )
-PARTITIONED by (`date` string, hour string)
+PARTITIONED by (`date` string)
 STORED as PARQUET;
  */

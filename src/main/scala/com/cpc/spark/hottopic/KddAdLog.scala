@@ -9,10 +9,9 @@ import org.apache.spark.sql.SparkSession
 object KddAdLog {
     def main(args: Array[String]): Unit = {
         val date = args(0)
-        val hour = args(1)
 
         val spark = SparkSession.builder()
-          .appName(s"KddAdLog date = $date , hour = $hour")
+          .appName(s"KddAdLog date = $date")
           .enableHiveSupport()
           .getOrCreate()
         import spark.implicits._
@@ -56,10 +55,9 @@ object KddAdLog {
                |  if (field["cmd"].string_type = "163" and field["from"].string_type = "1", field["title"].string_type, null) as cpc_click_title,
                |  if (field["cmd"].string_type = "163" and field["from"].string_type = "2", field["title"].string_type, null) as csj_click_title,
                |  if (field["cmd"].string_type = "163" and field["from"].string_type = "3", field["title"].string_type, null) as gdt_click_title,
-               |  '$date' as `date`,
-               |  '$hour' as hour
+               |  '$date' as `date`
                |from src_kanduoduo.kanduoduo_client_log
-               |where thedate='$date' and thehour='$hour'
+               |where thedate='$date'
                |and field["cmd"].string_type in  ("160", "161", "162", "163", "165")
                |and field["device"].string_type not like "%.%"
                |and field["device"].string_type not like "%000000%"
@@ -77,30 +75,28 @@ object KddAdLog {
 
         val sqltitle =
             s"""
-               |select cpc_req_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(cpc_req_title) > 0
+               |select cpc_req_title as title from dl_cpc.kdd_ad_log where `date`='$date' and length(cpc_req_title) > 0
                |union
-               |select csj_req_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(csj_req_title) > 0
+               |select csj_req_title as title from dl_cpc.kdd_ad_log where `date`='$date' and length(csj_req_title) > 0
                |union
-               |select gdt_req_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(gdt_req_title) > 0
+               |select gdt_req_title as title from dl_cpc.kdd_ad_log where `date`='$date' and length(gdt_req_title) > 0
                |union
-               |select cpc_show_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(cpc_show_title) > 0
+               |select cpc_show_title as title from dl_cpc.kdd_ad_log where `date`='$date' and length(cpc_show_title) > 0
                |union
-               |select csj_show_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(csj_show_title) > 0
+               |select csj_show_title as title from dl_cpc.kdd_ad_log where `date`='$date' and length(csj_show_title) > 0
                |union
-               |select gdt_show_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(gdt_show_title) > 0
+               |select gdt_show_title as title from dl_cpc.kdd_ad_log where `date`='$date' and length(gdt_show_title) > 0
                |union
-               |select cpc_click_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(cpc_click_title) > 0
+               |select cpc_click_title as title from dl_cpc.kdd_ad_log where `date`='$date' and length(cpc_click_title) > 0
                |union
-               |select csj_click_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(csj_click_title) > 0
+               |select csj_click_title as title from dl_cpc.kdd_ad_log where `date`='$date' and length(csj_click_title) > 0
                |union
-               |select gdt_click_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(gdt_click_title) > 0
+               |select gdt_click_title as title from dl_cpc.kdd_ad_log where `date`='$date' and length(gdt_click_title) > 0
              """.stripMargin
 
         val title = spark.sql(sqltitle).rdd.map(x => x.getAs[String]("title")).distinct()
 
-        val dt = date.replace("-","") + "_" + hour
-
-        val savePath = s"hdfs://emr-cluster/warehouse/kdd_ad_title/$dt"
+        val savePath = s"hdfs://emr-cluster/warehouse/kdd_ad_title/$date"
 
         title.repartition(1).saveAsTextFile(savePath)
     }
@@ -141,6 +137,6 @@ object KddAdLog {
       csj_click_title string comment '穿山甲点击广告标题',
       gdt_click_title string comment '广点通点击广告标题'
   )
-  PARTITIONED by (`date` string, hour string)
+  PARTITIONED by (`date` string)
   STORED as PARQUET;
   */
