@@ -46,6 +46,7 @@ object prepare_bsCvr_dnnPredictSample {
     import spark.implicits._
     val day = getDay(date, 1)
     val dayFeature = getDay(date, 1)
+    val dayCost = getDay(date, 10)
 
     val behavior_data = spark.read.parquet(s"/user/cpc/features/adBehaviorFeature/$dayFeature")
 
@@ -108,11 +109,13 @@ object prepare_bsCvr_dnnPredictSample {
   */
     val adv=
       s"""
-         |(select id as unitid, user_id as userid, plan_id as planid, adslot_type, charge_type from
-         |adv.unit) temp
-          """.stripMargin
+         |(select id as unitid, tb.user_id as userid, plan_id as planid, adslot_type, charge_type from
+         |(SELECT unit_id FROM adv.cost where cost>0 and date>='$dayCost' group by unit_id) ta
+         |join adv.unit tb on ta.unit_id=tb.id) temp
+      """.stripMargin
 
     spark.read.jdbc(jdbcUrl, adv, jdbcProp).createOrReplaceTempView("adv")
+
     val table2=
       s"""
      |select unitid,userid,planid,adslot_type,charge_type from adv
