@@ -11,6 +11,7 @@ object MediaSlotChargeDaily {
       .appName(" media slot charge hourly")
       .enableHiveSupport()
       .getOrCreate()
+import spark.implicits._
 
     val sql =
       s"""
@@ -152,16 +153,16 @@ object MediaSlotChargeDaily {
         mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
       }
 
-    spark.createDataFrame(resultRDD)
+    resultRDD.toDF()
       .repartition(10)
       .write
       .mode(SaveMode.Overwrite)
-      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/")
+      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/media_slot_charge/day=$day")
 
     spark.sql(
       s"""
-         |alter table dl_cpc.xx if not exists add partitions(day = "$day")
-         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/'
+         |alter table dl_cpc.media_slot_charge add if not exists partition(day = "$day")
+         |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/media_slot_charge/day=$day'
        """.stripMargin)
 
     println("done.")

@@ -36,8 +36,8 @@ case class MediaSlotCharge(
 
                             date: String = ""
                           ) {
-  val key = s"$media_id-$adslot_id-$idea_id-$uid-$dsp-$charge_type-$ctr_model_name-$cvr_model_name"
-
+  val key = "%d-%d-%d-%s-%d-%d-%s-%s".format(media_id, adslot_id, idea_id, uid, dsp, charge_type, ctr_model_name, cvr_model_name)
+   
   def sum(other: MediaSlotCharge): MediaSlotCharge = {
     copy(
       request = other.request + request,
