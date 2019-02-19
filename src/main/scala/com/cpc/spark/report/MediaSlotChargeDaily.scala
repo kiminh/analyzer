@@ -40,7 +40,7 @@ object MediaSlotChargeDaily {
     val duanzi_media_id = Array[Int](80002819)
 
     val data = spark.sql(sql)
-      .repartition(10000)
+      .repartition(1000)
       .rdd
       .map { x =>
         val is_click = x.getAs[Int]("isclick")
@@ -162,8 +162,8 @@ object MediaSlotChargeDaily {
     cvrRDD.count()
 
     val resultRDD = data
-      .join(usersRDD)
-      .join(cvrRDD)
+      .join(usersRDD, 500)
+      .join(cvrRDD, 500)
       .map { r =>
         val mediaSlotCharge = r._2._1._1
         val idea_uids = r._2._1._2
@@ -175,7 +175,7 @@ object MediaSlotChargeDaily {
 
     resultRDD
       .toDF()
-      .repartition(2000)
+      .repartition(100)
       .write
       //.partitionBy("day")
       .mode(SaveMode.Append) // 修改为Append
