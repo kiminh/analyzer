@@ -12,14 +12,14 @@ import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
   * this is an intermediate-level table, descending from trident (cpc_basedata_union_events).
   * contents: media charge and miscellaneous indices.
   *
-  * <TODO> table name and/or columns TBD. 和数据分析同学沟通
+  * <TODO> media charge daily. move to trident repo.
   */
 
 object MediaSlotChargeDaily {
   def main(args: Array[String]): Unit = {
     val date = args(0)
 
-    val numPartitionsForSkewedData = 500
+    val numPartitionsForSkewedData = 10000
 
     val spark = SparkSession.builder()
       .appName("[trident] media charge and miscellaneous indices daily")
