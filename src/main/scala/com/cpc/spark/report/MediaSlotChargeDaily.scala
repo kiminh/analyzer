@@ -4,7 +4,9 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
 import com.cpc.spark.common.Utils
 import org.apache.log4j.{Level, Logger}
+import org.apache.spark.Partitioner
 import org.apache.spark.sql.expressions.Window
+import util.Random
 import org.apache.spark.sql.functions.{col, expr, row_number}
 import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
 
@@ -20,6 +22,8 @@ import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
 object MediaSlotChargeDaily {
   def main(args: Array[String]): Unit = {
     val date = args(0)
+
+    val numPartitionsForSkewedData = 500
 
     val spark = SparkSession.builder()
       .appName("[trident] media charge and miscellaneous indices daily")
@@ -115,8 +119,8 @@ object MediaSlotChargeDaily {
         val ctr = if (impression==0) 0 else (click / impression).toDouble
         val cpm = if (impression==0) 0 else (cost / impression * 1000).toDouble
         val acp = if (click==0) 0 else (cost / click).toDouble
-        mediaSlotCharge.copy(ctr = ctr, cpm = cpm, acp = acp)
-        (mediaSlotCharge.idea_id, mediaSlotCharge)
+
+        (mediaSlotCharge.idea_id, mediaSlotCharge.copy(ctr = ctr, cpm = cpm, acp = acp))
       }
 
     //count distinct uid for each ideaid
@@ -158,20 +162,67 @@ object MediaSlotChargeDaily {
         (ideaid, cvr)
       }
 
-    usersRDD.count()
-    cvrRDD.count()
+    val randomSeed = new Random()
 
-    val resultRDD = data
-      .join(usersRDD, 500)
-      .join(cvrRDD, 500)
+    val mediaDataWithoutZero = data
+        .filter( x => {
+          x._2.idea_id != 0
+        })
+
+    val mediaDataWithZero = data
+      .filter( x => {
+        x._2.idea_id == 0
+      })
+      .map (x => { // partition.
+        (randomSeed.nextInt(numPartitionsForSkewedData), x._2)
+      })
+      .persist()
+
+
+
+
+    println(usersRDD.count())
+    println(cvrRDD.count())
+
+    val resultRDD = mediaDataWithoutZero
+      .join(usersRDD, numPartitionsForSkewedData)
+      .join(cvrRDD, numPartitionsForSkewedData)
       .map { r =>
         val mediaSlotCharge = r._2._1._1
         val idea_uids = r._2._1._2
         val cvr = r._2._2
         val cost = mediaSlotCharge.cost
         val arpu = (cost / idea_uids).toDouble
+
         mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
-      }// <TODO> 显式Join.
+      }
+
+    println(resultRDD.count())
+
+    for (i <- 0 until numPartitionsForSkewedData) {
+      val mediaDataWithZeroAndIndex = mediaDataWithZero
+        .filter( x => {
+          x._1 == i
+        })
+      println("partial %s %s".format(i, mediaDataWithZeroAndIndex.count()))
+
+      val partialJoinResult = mediaDataWithZeroAndIndex
+        .join(usersRDD, numPartitionsForSkewedData)
+        .join(cvrRDD, numPartitionsForSkewedData)
+        .map { r =>
+          val mediaSlotCharge = r._2._1._1
+          val idea_uids = r._2._1._2
+          val cvr = r._2._2
+          val cost = mediaSlotCharge.cost
+          val arpu = (cost / idea_uids).toDouble
+
+          mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
+        }
+
+      resultRDD.union(partialJoinResult)
+      println("count %s %s".format(i, resultRDD.count()))
+    }
+
 
     resultRDD
       .toDF()
