@@ -254,7 +254,7 @@ object OcpcCPCbid {
       val post_cvr1 = record.getAs[Double]("cvr1")
       val post_cvr2 = record.getAs[Double]("cvr2")
       val post_cvr3 = record.getAs[Double]("cvr3")
-      val min_cpm = record.getAs[Int]("min_cpm").toLong
+      val min_cpm = record.getAs[Double]("min_cpm").toLong
 
 
       println(s"unit_id:$unit_id, min_bid:$min_bid, post_cvr1:$post_cvr1, post_cvr2:$post_cvr2, post_cvr3:$post_cvr3, min_cpm:$min_cpm")
