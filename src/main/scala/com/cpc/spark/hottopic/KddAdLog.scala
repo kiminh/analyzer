@@ -96,7 +96,7 @@ object KddAdLog {
                |select gdt_click_title as title from dl_cpc.kdd_ad_log where `date`='$date' and hour = '$hour' and length(gdt_click_title) > 0
              """.stripMargin
 
-        val title = spark.sql(sqltitle).rdd.map(x => x.getAs[String]("title"))
+        val title = spark.sql(sqltitle).rdd.map(x => x.getAs[String]("title")).distinct()
 
         val dt = date.replace("-","") + "_" + hour
 
