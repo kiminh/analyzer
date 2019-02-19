@@ -34,7 +34,7 @@ case class MediaSlotCharge(
                             acp: Double = 0.0,
                             arpu: Double = 0.0,
 
-                            date: String = ""
+                            day: String = ""
                           ) {
   val key = s"$media_id-$adslot_id-$idea_id-$uid-$dsp-$charge_type-$ctr_model_name-$cvr_model_name"
 

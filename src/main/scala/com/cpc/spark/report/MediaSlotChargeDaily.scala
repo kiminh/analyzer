@@ -19,7 +19,7 @@ import org.apache.spark.sql.{Dataset, Row, SaveMode, SparkSession}
 
 object MediaSlotChargeDaily {
   def main(args: Array[String]): Unit = {
-    val day = args(0)
+    val date = args(0)
 
     val spark = SparkSession.builder()
       .appName("[trident] media charge and miscellaneous indices daily")
@@ -32,7 +32,7 @@ object MediaSlotChargeDaily {
       s"""
          |select *
          |from dl_cpc.cpc_basedata_union_events
-         |where day='$day' and hour=3 and adslot_id<>""
+         |where day='$date' and hour=3 and adslot_id<>""
        """.stripMargin
 
     val qtt_media_id = Array[Int](80000001, 80000002, 80000006, 80000064, 80000066, 80000062, 80000141, 80002480)
@@ -47,11 +47,11 @@ object MediaSlotChargeDaily {
         val spam_click = x.getAs[Int]("spam_click")
         val charge_type = x.getAs[Int]("charge_type")
         var charge_fee = charge_type match {
-          case 1 => x.getAs[Int]("price") //cpc
-          case 2 => x.getAs[Int]("price") / 1000 //cpm
+          case 1 => x.getAs[Int]("price") // cpc
+          case 2 => x.getAs[Int]("price") / 1000 // cpm
           case _ => 0
         }
-        if (charge_fee > 10000 || charge_fee < 0) { //handle dirty data
+        if (charge_fee > 10000 || charge_fee < 0) { // handle dirty data
           charge_fee = 0
         }
 
@@ -69,7 +69,7 @@ object MediaSlotChargeDaily {
           case u if u == "" => "empty"
           case u if u.contains(".") => "ip"
           case u if u.contains("000000") => "zero_device"
-          case u if (u.length == 15 || u.length == 16 || u.length == 17) && (regex.findFirstMatchIn(u) != None) => "imei"
+          case u if (u.length >= 15 && u.length <= 17) && (regex.findFirstMatchIn(u) != None) => "imei"
           case u if (u.length == 36) => "idfa"
           case _ => "other"
         }
@@ -100,7 +100,7 @@ object MediaSlotChargeDaily {
           charged_click = is_click,
           spam_click = spam_click,
           cost = charge_fee,
-          date = day
+          day = date
         )
         (charge.key, charge)
       }
@@ -121,21 +121,22 @@ object MediaSlotChargeDaily {
 
     //count distinct uid for each ideaid
     val usersRDD = spark.sql(sql)
-      .select("ideaid", "uid")
+      .select(
+        col("ideaid"),
+        col("uid"))
       .groupBy("ideaid")
       .agg(expr("count(distinct uid)").alias("idea_uids"))
-      // .rdd
+      .rdd
       .map { r =>
         (r.getAs[Int]("ideaid"), r.getAs[Long]("idea_uids"))
       }
-      // .cache()
 
     //count cvr for each ideaid
     val conversion_info_flow_sql =
       s"""
          |select ideaid, count(*) as click, sum(label2) as conv
          |from dl_cpc.ml_cvr_feature_v1
-         |where date='$day' and label_type not in (8,9,10,11)
+         |where `date`='$date' and hour=3 and label_type not in (8,9,10,11)
          |group by ideaid
        """.stripMargin
 
@@ -143,12 +144,12 @@ object MediaSlotChargeDaily {
       s"""
          |select ideaid, count(*) as click, sum(label) as conv
          |from dl_cpc.ml_cvr_feature_v2
-         |where date='$day'
+         |where `date`='$date' and hour=3
          |group by ideaid
        """.stripMargin
 
     val cvrRDD = (spark.sql(conversion_info_flow_sql)).union(spark.sql(conversion_api_sql))
-      // .rdd
+      .rdd
       .map { r =>
         val ideaid = r.getAs[Int]("ideaid")
         val click = r.getAs[Long]("click")
@@ -156,32 +157,33 @@ object MediaSlotChargeDaily {
         val cvr = (conv / click).toDouble
         (ideaid, cvr)
       }
-      // .cache()
+
+    usersRDD.count()
+    cvrRDD.count()
 
     val resultRDD = data
-      .toDF()
-      .join(usersRDD, Seq("ideaid"))
-      // .join(cvrRDD, Seq("ideaid"))
-      /*.map { r =>
+      .join(usersRDD)
+      .join(cvrRDD)
+      .map { r =>
         val mediaSlotCharge = r._2._1._1
         val idea_uids = r._2._1._2
         val cvr = r._2._2
         val cost = mediaSlotCharge.cost
         val arpu = (cost / idea_uids).toDouble
         mediaSlotCharge.copy(arpu = arpu, cvr = cvr)
-      }*/
+      }// <TODO> 显式Join.
 
     resultRDD
       .toDF()
       .repartition(2000)
       .write
-      .partitionBy("date")
+      //.partitionBy("day")
       .mode(SaveMode.Append) // 修改为Append
       .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/temp/trident_media_charge")
 
     /*spark.sql(
       s"""
-         |alter table dl_cpc.xx if not exists add partitions(day = "$day")
+         |alter table dl_cpc.xx if not exists add partitions(day = "$date")
          |location 'hdfs://emr-cluster2/warehouse/dl_cpc.db/temp/trident_media_charge'
        """.stripMargin)*/
 
