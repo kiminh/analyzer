@@ -26,28 +26,21 @@ object AdvertisingIndex {
     val date = date_format.format(cal.getTime)
     val hour = hour_format.format(cal.getTime)
     val min = min_format.format(cal.getTime)
-
     println(timestamp, date, hour, min)
 
-    //    val client = new HttpClient
-    //    val method = new GetMethod(url)
-    //    val response=client.executeMethod(method)
-    //    println("status:" + method.getStatusLine.getStatusCode)
-    //
-    //    val body = method.getResponseBodyAsString
-    //    method.releaseConnection()
-    //    val data = body.substring(15)
+
     val reponse = Http(url)
       .timeout(connTimeoutMs = 2000, readTimeoutMs = 5000)
       .asBytes
 
     println(reponse.code)
     var data = Array[Byte]()
-    if (reponse.code == 200) {
-      data = reponse.body.drop(16)
+    if (reponse.code != 200) {
+      println("reponse code != 200, 没有成功下载到文件")
+      System.exit(1)
     }
 
-
+    data = reponse.body.drop(16)
     println(data.length)
 
     val idxItems = idxinterface.Idx.IdxItems.parseFrom(data)
@@ -64,15 +57,15 @@ object AdvertisingIndex {
     for (i <- 0 until ditemsCount) {
       val dItem = idxItems.getDitems(i) //ideaItem
 
-      val idea = GetItem.getIdea(dItem)
-      ideaItemMap += (idea.ideaid -> idea)
+      val ideaItem = GetItem.getIdea(dItem)
+      ideaItemMap += (ideaItem.ideaid -> ideaItem)
     }
 
     for (i <- 0 until gitemsCount) {
       val gItems = idxItems.getGitems(i) //groupItem
 
-      val unitid = GetItem.getGroup(gItems)
-      unitid.foreach { u =>
+      val unitItem = GetItem.getGroup(gItems)
+      unitItem.foreach { u =>
         unitItemSeq :+= u
       }
     }
