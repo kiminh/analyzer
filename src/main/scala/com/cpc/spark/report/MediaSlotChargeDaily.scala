@@ -115,7 +115,6 @@ object MediaSlotChargeDaily {
         val impression = mediaSlotCharge.impression
         val cost = mediaSlotCharge.cost
 
-
         val ctr = if (impression==0) 0 else (click / impression).toDouble
         val cpm = if (impression==0) 0 else (cost / impression * 1000).toDouble
         val acp = if (click==0) 0 else (cost / click).toDouble
@@ -203,8 +202,8 @@ object MediaSlotChargeDaily {
       println("partial %s %s".format(i, mediaDataWithZeroAndIndex.count()))
 
       val partialJoinResult = mediaDataWithZeroAndIndex
-        .join(usersRDD, numPartitionsForSkewedData)
-        .join(cvrRDD, numPartitionsForSkewedData)
+        .join(usersRDD)
+        .join(cvrRDD)
         .map { r =>
           val mediaSlotCharge = r._2._1._1
           val idea_uids = r._2._1._2
