@@ -1,11 +1,15 @@
 syntax = "proto3";
 
 package ocpcCpcBid;
-message SingleOcpcMinBid {
+message SingleOcpcCpcBid {
     int64 unitid = 1;
-    double minBid = 2;
+    double cpcBid = 2;
+    double cvGoal1PostCvr = 3;
+    double cvGoal2PostCvr = 4;
+    double cvGoal3PostCvr = 5;
+    int64 minCpm = 6;
 }
 
-message OcpcMinBidList {
-    repeated SingleOcpcMinBid adrecord = 1;
+message OcpcCpcBidList {
+    repeated SingleOcpcCpcBid adrecord = 1;
 }
