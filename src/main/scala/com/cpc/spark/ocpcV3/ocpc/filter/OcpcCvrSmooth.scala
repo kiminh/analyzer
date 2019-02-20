@@ -33,6 +33,17 @@ object OcpcCvrSmooth {
     val cvrData = getCvrData(date, hour, spark)
     cvrData.show(10)
 
+    val resultDF = cvrData
+      .filter("unitid is not null")
+      .na.fill(0.0, Seq("cvr1", "cvr2", "cvr3"))
+      .withColumn("identifier", col("unitid"))
+      .select("unitid", "cvr1", "cvr2", "cvr3")
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit("qtt_demo"))
+
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pcvr_smooth_hourly")
+
   }
 
 
