@@ -47,7 +47,7 @@ object BiReport {
 //    comment "group by unitid, usertype, adclass, media to sum price|isclick = 1, isshow, isclick"
 //    partitioned by (`date` string);
     val tb1 = "dl_cpc.unit_ect_summary_sjq"
-    spark.sql(sql1).select( "unitid", "usertype", "adclass", "media", "money", "show_cnt", "click_cnt", "'date'" ).write.mode("overwrite").insertInto(tb1)
+    spark.sql(sql1).select( "unitid", "usertype", "adclass", "media", "money", "show_cnt", "click_cnt", "date" ).write.mode("overwrite").insertInto(tb1)
   }
 
 }
