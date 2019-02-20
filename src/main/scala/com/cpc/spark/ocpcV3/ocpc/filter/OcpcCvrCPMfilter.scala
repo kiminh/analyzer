@@ -107,7 +107,7 @@ object OcpcCvrCPMfilter {
          |  isshow=1
        """.stripMargin
     println(sqlRequest)
-    val data = spark.sql(sqlRequest)
+    val data = spark.sql(sqlRequest).withColumn("cpm", col("bid") * col("exp_ctr"))
 
     data
   }
