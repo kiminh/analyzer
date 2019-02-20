@@ -886,7 +886,7 @@ object SaveFeatures {
     val fDate = dateFormat.format(cal.getTime)
     val before1hour = fDate.substring(11, 13)
 
-    //激励下载转化  取有点击的
+    //激励下载  取有点击的
     //    val motivateRDD = spark.sql(
     //      s"""
     //         |select   a.searchid
