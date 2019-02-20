@@ -7,7 +7,7 @@ import com.typesafe.config.ConfigFactory
 
 object BiReport {
   def main(args: Array[String]): Unit ={
-    val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
+    val spark = SparkSession.builder().appName("hottopic_bi_report").enableHiveSupport().getOrCreate()
 
     val date = args(0)
     val sql1 =
