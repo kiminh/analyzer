@@ -89,14 +89,14 @@ object OcpcCPCbid {
  def savePbPack(dataset: DataFrame, filename: String): Unit = {
     var list = new ListBuffer[SingleOcpcCpcBid]
     println("size of the dataframe")
-    val resultData = dataset.selectExpr("unitid", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm")
+    val resultData = dataset.selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm")
     println(resultData.count)
     resultData.show(10)
     resultData.printSchema()
     var cnt = 0
 
     for (record <- resultData.collect()) {
-      val unit_id = record.getAs[String]("unitid").toLong
+      val unit_id = record.getAs[String]("identifier").toLong
       val min_bid = record.getAs[Double]("min_bid")
       val post_cvr1 = record.getAs[Double]("cvr1")
       val post_cvr2 = record.getAs[Double]("cvr2")
