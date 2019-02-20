@@ -1,6 +1,6 @@
 package com.cpc.spark.ml.novel.retrieval
 
-import com.cpc.spark.ml.dnn.retrieval.DssmRetrieval._
+import com.cpc.spark.ml.novel.retrieval.DssmRetrieval._
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.functions.array
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -10,7 +10,7 @@ object DssmUserGen {
 
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
-      .appName("dssm-user-gen-novel")
+      .appName("dssm-user-gen")
       .enableHiveSupport()
       .getOrCreate()
 
@@ -26,7 +26,7 @@ object DssmUserGen {
 
       val keyedUser = userInfo.rdd.map(x => (x.getAs[String]("uid"), x))
 
-      val allUserInfo = spark.read.parquet("/user/cpc/wy/dssm/all-user-info")
+      val allUserInfo = spark.read.parquet("/user/cpc/wy/novel/dssm/all-user-info")
       allUserInfo.rdd.map(x => (x.getAs[String]("uid"), x))
         .cogroup(keyedUser)
         .map {
@@ -65,14 +65,14 @@ object DssmUserGen {
     finalOutput.repartition(100)
       .write
       .mode("overwrite")
-      .parquet("/user/cpc/wy/dssm/all-user-info")
+      .parquet("/user/cpc/wy/novel/dssm/all-user-info")
 
     finalOutput.repartition(100)
       .write
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save("/user/cpc/wy/dssm/user-info-v0/" + date)
+      .save("/user/cpc/wy/novel/dssm/user-info-v0/" + date)
   }
 
   def getData(spark: SparkSession, date: String): DataFrame = {
@@ -96,11 +96,11 @@ object DssmUserGen {
          |  max(ext['city_level'].int_value) as city_level,
          |  max(age) as age,
          |  max(sex) as sex
-         | from dl_cpc.cpc_union_log
+         | from dl_cpc.cpc_novel_union_log
          |  where `date` = '$date'
          |  and isshow = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
-         |  and length(uid) > 1
+         |  and length(uid) in (14, 15, 36)
          |group by uid
       """.stripMargin
     println("--------------------------------")

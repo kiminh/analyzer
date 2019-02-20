@@ -36,3 +36,7 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_base_unionlog
 )
 PARTITIONED by (`date` STRING, `hour` STRING)
 STORED as PARQUET;
+
+--todo
+alter table dl_cpc.ocpc_base_unionlog add columns (exp_ctr int);
+alter table dl_cpc.ocpc_base_unionlog add columns (exp_cvr int);

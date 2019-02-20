@@ -1,16 +1,17 @@
 package com.cpc.spark.qukan.interest
 
-import org.apache.spark.mllib.classification.LogisticRegressionModel
-import org.apache.spark.mllib.linalg.Vectors
-import com.typesafe.config.ConfigFactory
-import org.apache.spark.sql.{Row, SparkSession}
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
-import userprofile.Userprofile.{InterestItem, UserProfile}
+import com.typesafe.config.ConfigFactory
+import org.apache.spark.mllib.classification.LogisticRegressionModel
+import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.sql.{Row, SparkSession}
+import userprofile.Userprofile.UserProfile
 
 /**
   * Created by myt on 18/07/2018.
   */
+@deprecated
 object PredictSex {
 
   val word_num = 44e4

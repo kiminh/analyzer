@@ -48,6 +48,7 @@ object UserBehaviorNovelCvr {
          |inner join
          |  (select searchid, label2 from dl_cpc.ml_cvr_feature_v1
          |  WHERE `date` = '$date' and label2 = 1
+         |  and label_type !=12
          |  ) b on a.searchid = b.searchid
       """.stripMargin
 

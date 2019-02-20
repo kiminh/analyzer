@@ -14,6 +14,7 @@ import userprofile.Userprofile.UserProfile
 /**
   * Created by
   */
+@deprecated
 object GetNewUser {
 
   def main(args: Array[String]): Unit = {

@@ -26,7 +26,7 @@ object Behavior2RedisV3 {
     // user dayily featrues
     saveUserDailyFeatures(spark, date)
 
-//    //ad daily features
+    //ad daily features
 //    saveAdDailyFeatures(spark, date)
 
   }
@@ -74,7 +74,7 @@ object Behavior2RedisV3 {
          |select uid,
          |       interest_ad_words_1 as word1,
          |       interest_ad_words_3 as word3
-         |from dl_cpc.cpc_user_interest_words
+         |from dl_cpc.cpc_user_interest_words_novel
          |where load_date='$date'
     """.stripMargin
 
@@ -82,7 +82,7 @@ object Behavior2RedisV3 {
     val ud_sql3 =
       s"""
          |select uid,book_id,first_category_id,second_category_id,third_category_id
-         |from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
+         |from dl_cpc.miReadTrait where day = '$date'
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and length(uid) in (14, 15, 36)
@@ -107,31 +107,31 @@ object Behavior2RedisV3 {
       .join(spark.sql(ud_sql2), Seq("uid"), "outer")
       .join(spark.sql(ud_sql3), Seq("uid"), "outer")
       .select($"uid",
-        hashSeq("m1", "string")($"pkgs").alias("m1"),
-        hashSeq("m2", "int")($"s_ideaid_1").alias("m2"),
-        hashSeq("m3", "int")($"s_ideaid_2").alias("m3"),
-        hashSeq("m4", "int")($"s_ideaid_3").alias("m4"),
-        hashSeq("m5", "int")($"s_adclass_1").alias("m5"),
-        hashSeq("m6", "int")($"s_adclass_2").alias("m6"),
-        hashSeq("m7", "int")($"s_adclass_3").alias("m7"),
-        hashSeq("m8", "int")($"c_ideaid_1").alias("m8"),
-        hashSeq("m9", "int")($"c_ideaid_2").alias("m9"),
-        hashSeq("m10", "int")($"c_ideaid_3").alias("m10"),
-        hashSeq("m11", "int")($"c_adclass_1").alias("m11"),
-        hashSeq("m12", "int")($"c_adclass_2").alias("m12"),
-        hashSeq("m13", "int")($"c_adclass_3").alias("m13"),
-        hashSeq("m14", "int")($"c_ideaid_4_7").alias("m14"),
-        hashSeq("m15", "int")($"c_adclass_4_7").alias("m15"),
-        hashSeq("m16", "int")($"book_id").alias("m16"),
-        hashSeq("m17", "int")($"first_category_id").alias("m17"),
-        hashSeq("m18", "int")($"second_category_id").alias("m18"),
-        hashSeq("m19", "int")($"third_category_id").alias("m19"),
-        hashSeq("m20", "string")($"word1").alias("m20"),
-        hashSeq("m21", "string")($"word3").alias("m21")
+        hashSeq("f30#", "string")($"pkgs").alias("f30"),
+        hashSeq("ud1#", "int")($"s_ideaid_1").alias("ud1"),
+        hashSeq("ud2#", "int")($"s_ideaid_2").alias("ud2"),
+        hashSeq("ud3#", "int")($"s_ideaid_3").alias("ud3"),
+        hashSeq("ud4#", "int")($"s_adclass_1").alias("ud4"),
+        hashSeq("ud5#", "int")($"s_adclass_2").alias("ud5"),
+        hashSeq("ud6#", "int")($"s_adclass_3").alias("ud6"),
+        hashSeq("ud7#", "int")($"c_ideaid_1").alias("ud7"),
+        hashSeq("ud8#", "int")($"c_ideaid_2").alias("ud8"),
+        hashSeq("ud9#", "int")($"c_ideaid_3").alias("ud9"),
+        hashSeq("ud10#", "int")($"c_adclass_1").alias("ud10"),
+        hashSeq("ud11#", "int")($"c_adclass_2").alias("ud11"),
+        hashSeq("ud12#", "int")($"c_adclass_3").alias("ud12"),
+        hashSeq("ud13#", "int")($"c_ideaid_4_7").alias("ud13"),
+        hashSeq("ud14#", "int")($"c_adclass_4_7").alias("ud14"),
+        hashSeq("ud15#", "int")($"book_id").alias("ud15"),
+        hashSeq("ud16#", "int")($"first_category_id").alias("ud16"),
+        hashSeq("ud17#", "int")($"second_category_id").alias("ud17"),
+        hashSeq("ud18#", "int")($"third_category_id").alias("ud18"),
+        hashSeq("ud19#", "string")($"word1").alias("ud19"),
+        hashSeq("ud20#", "string")($"word3").alias("ud20")
       ).persist()
 
-//    ud_features.coalesce(50).write.mode("overwrite")
-//      .parquet("/user/cpc/wy/novel/features/ud")
+    ud_features.coalesce(50).write.mode("overwrite")
+      .parquet(s"/user/cpc/wy/novel/features/ud")
 
     ud_features.show()
 

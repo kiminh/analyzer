@@ -3,19 +3,19 @@ package com.cpc.spark.qukan.userprofile
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.log.anal.ConditionTouchedUV.redis
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.SparkSession
-import userprofile.Userprofile.{UserProfile, InterestItem}
+import userprofile.Userprofile.UserProfile
 
 import scala.util.control.Breaks
 
 /**
   * Created by
   */
+@deprecated
 object GetNewUser2 {
 
   def main(args: Array[String]): Unit = {

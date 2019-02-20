@@ -44,7 +44,7 @@ object UpdateInstallApp {
       .filter(x => x != null && x.pkgs.length > 0)
       .map(x => (x.devid, x.pkgs.map(_.name)))
       .reduceByKey(_ ++ _)
-      .map(x => (x._1, (Seq[String](), Seq[String](), Seq[String](), x._2.distinct)))
+      .map(x => (x._1, (Seq[String](), Seq[String](), Seq[String](), x._2.distinct, Seq[String]())))
 
     println("origin statistic")
     println(qukanApps.count())
@@ -52,7 +52,8 @@ object UpdateInstallApp {
 
     val stmt =
       """
-        |select trace_op1, trace_op2, trace_op3 from dl_cpc.logparsed_cpc_trace_minute where `thedate` = "%s" and trace_type = "%s"
+        |select trace_op1, trace_op2, trace_op3 from dl_cpc.logparsed_cpc_trace_minute
+        |where `thedate` = "%s" and trace_type = "%s"
       """.stripMargin.format(date, "app_list")
     println(stmt)
     val all_list = spark.sql(stmt).rdd.map {
@@ -62,6 +63,8 @@ object UpdateInstallApp {
         val in_b64 = r.getAs[String](2)
         var in : String = ""
         var apps = Seq[String]()
+        var names = Seq[String]()
+        var name_pkg = Seq[(String, String)]()
         var valid = true
         if (in_b64 != null) {
           val in_gzip = com.cpc.spark.streaming.tools.Encoding.base64Decoder(in_b64).toArray
@@ -71,32 +74,39 @@ object UpdateInstallApp {
           }
           if (in != null) {
             try{
-              apps = for {
+              name_pkg = for {
                 JArray(pkgs) <- parse(in)
                 JObject(pkg) <- pkgs
                 JField("name", JString(name)) <- pkg
                 JField("package_name", JString(package_name)) <- pkg
-                p = (package_name)
+                p = (package_name, name)
               } yield p
             } catch {
               case e: Exception => null
             }
           }
         }
+
+        apps = name_pkg.map{x => x._1}
+        names = name_pkg.map{x => x._1 + "-" + x._2}
+
         if (op_type == "APP_LIST_ADD") {
-          (did, (apps, Seq[String](), Seq[String](), apps.toList))
+          (did, (apps, Seq[String](), Seq[String](), apps.toList, Seq[String]()))
         } else if (op_type == "APP_LIST_REMOVE") {
-          (did, (Seq[String](), apps, Seq[String](), List[String]()))
+          (did, (Seq[String](), apps, Seq[String](), List[String](), Seq[String]()))
         } else if (op_type == "APP_LIST_USE"){
-          (did, (Seq[String](), Seq[String](), apps, List[String]()))
+          (did, (Seq[String](), Seq[String](), apps, List[String](), Seq[String]()))
         } else if (op_type == "APP_LIST_INSTALLED") {
-          (did, (Seq[String](), Seq[String](), Seq[String](), apps.toList))
+          (did, (Seq[String](), Seq[String](), Seq[String](), apps.toList, names))
         } else {
           null
         }
     }.filter(_ != null)
       .union(qukanApps)
-      .reduceByKey((x, y) => ((x._1 ++ y._1).distinct, (x._2 ++ y._2).distinct, (x._3 ++ y._3).distinct, (x._4 ++ y._4).distinct))
+      .reduceByKey{(x, y) =>
+        ((x._1 ++ y._1).distinct, (x._2 ++ y._2).distinct, (x._3 ++ y._3).distinct,
+          (x._4 ++ y._4).distinct, (x._5 ++ y._5).distinct)
+      }
 
 
     var old: RDD[(String, (List[String], Int))] = null
@@ -198,7 +208,9 @@ object UpdateInstallApp {
     println(all_list.filter(x => x._2._4.length > 5).count())
     println(all_list.filter(x => x._2._4.length > 10).count())
     println(all_list.filter(x => x._2._3.size > 0).count())
-    all_list.map(x => (x._1, x._2._4, x._2._1, x._2._2, x._2._3, date)).toDF("uid", "pkgs", "add_pkgs", "remove_pkgs", "used_pkgs", "load_date").coalesce(100).write.mode(SaveMode.Overwrite).parquet("/user/cpc/userInstalledApp/%s".format(date))
+    all_list.map(x => (x._1, x._2._4, x._2._1, x._2._2, x._2._3, x._2._5))
+      .toDF("uid", "pkgs", "add_pkgs", "remove_pkgs", "used_pkgs", "app_name")
+      .coalesce(100).write.mode(SaveMode.Overwrite).parquet("/user/cpc/userInstalledApp/%s".format(date))
 
     val sql =
       """

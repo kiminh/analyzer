@@ -30,7 +30,7 @@ object AdInterestWords {
          |     collect_set(if(load_date='${getDay(date, 1)}',b.tokens,null)) as words1,
          |     collect_set(if(load_date>='${getDay(date, 3)}'
          |                  and load_date<='${getDay(date, 1)}',b.tokens,null)) as words3
-         |from dl_cpc.cpc_user_behaviors a
+         |from dl_cpc.cpc_user_behaviors_novel a
          |join dl_cpc.ideaid_title b
          |  on a.click_ideaid = b.id
          |  and b.tokens is not null
@@ -54,10 +54,10 @@ object AdInterestWords {
     println("total num is : " + data.count)
 
     data.coalesce(5).write.mode("overwrite")
-      .parquet(s"/warehouse/dl_cpc.db/cpc_user_interest_words/load_date=$date")
+      .parquet(s"/warehouse/dl_cpc.db/cpc_user_interest_words_novel/load_date=$date")
 
-    spark.sql(s"alter table dl_cpc.cpc_user_interest_words add partition(load_date='$date')" +
-      s" location '/warehouse/dl_cpc.db/cpc_user_interest_words/load_date=$date'")
+    spark.sql(s"alter table dl_cpc.cpc_user_interest_words_novel add partition(load_date='$date')" +
+      s" location '/warehouse/dl_cpc.db/cpc_user_interest_words_novel/load_date=$date'")
   }
 
   def getDay(startdate: String, day: Int): String = {
