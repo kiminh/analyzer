@@ -51,8 +51,8 @@ object OcpcCvrCPMfilter {
       s"""
          |SELECT
          |  unitid,
-         |  1.5 as min_bid2,
-         |  percentile(cpm, 0.10) as min_cpm2
+         |  1.5 as min_bid,
+         |  percentile(cpm, 0.10) as min_cpm
          |FROM
          |  test.ocpc_check_data_smooth_cpm
          |GROUP BY unitid
