@@ -300,9 +300,9 @@ object ocpcMetrics {
 
         val sqlt5 =
             s"""
-               |select 'app' as tag, userid_num as userid_num, 1.0 as userid_rate, userid_cost as userid_cost, 1.0 as userid_cost_rate, '$date' as `date` from t5
+               |select 'app' as tag, userid_num as userid_num, 1.0 as userid_num_rate, userid_cost as userid_cost, 1.0 as userid_cost_rate, '$date' as `date` from t5
                |union
-               |select 'app api' as tag, api_userid_num as userid_num, api_userid_rate as userid_rate, api_userid_cost as userid_cost, api_userid_cost_rate as userid_cost_rate, '$date' as `date` from t5
+               |select 'app api' as tag, api_userid_num as userid_num, api_userid_rate as userid_num_rate, api_userid_cost as userid_cost, api_userid_cost_rate as userid_cost_rate, '$date' as `date` from t5
              """.stripMargin
 
         val r5 = spark.sql(sqlt5)
