@@ -1,7 +1,7 @@
 package com.cpc.spark.metrics
 
 import org.apache.spark.sql.SparkSession
-
+import com.cpc.spark.tools.OperateMySQL
 /**
   * @author Jinbao
   * @date 2019/2/15 17:57
@@ -77,6 +77,11 @@ object ocpcMetrics {
         r1.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_elds_metrics")
 
         r1.show(10)
+
+        val tableName1 = "report2.cpc_ocpc_elds_metrics"
+        val deleteSql1 = s"delete from $tableName1 where `date` = '$date'"
+        OperateMySQL.update(deleteSql1) //先删除历史数据
+        OperateMySQL.insert(r1,tableName1) //插入到MySQL中的report2库中
         //app api监控
         val sql2 =
             s"""
@@ -123,7 +128,10 @@ object ocpcMetrics {
 
         r2.show(10)
 
-
+        val tableName2 = "report2.cpc_ocpc_app_api_metrics"
+        val deleteSql2 = s"delete from $tableName2 where `date` = '$date'"
+        OperateMySQL.update(deleteSql2) //先删除历史数据
+        OperateMySQL.insert(r2,tableName2) //插入到MySQL中的report2库中
 
         //二类电商监控
         val sql3 =
@@ -185,6 +193,11 @@ object ocpcMetrics {
         r3.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_elds_detail_metrics")
 
         r3.show(10)
+
+        val tableName3 = "report2.cpc_ocpc_elds_detail_metrics"
+        val deleteSql3 = s"delete from $tableName3 where `date` = '$date'"
+        OperateMySQL.update(deleteSql3) //先删除历史数据
+        OperateMySQL.insert(r2,tableName3) //插入到MySQL中的report2库中
 
         val sql4 =
             s"""
@@ -252,6 +265,11 @@ object ocpcMetrics {
 
         r4.show(10)
 
+        val tableName4 = "report2.cpc_ocpc_app_api_detail_metrics"
+        val deleteSql4 = s"delete from $tableName4 where `date` = '$date'"
+        OperateMySQL.update(deleteSql4) //先删除历史数据
+        OperateMySQL.insert(r2,tableName4) //插入到MySQL中的report2库中
+
         val sql5 =
             s"""
                |select count(1) as userid_num,
@@ -292,6 +310,11 @@ object ocpcMetrics {
         r5.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_ocpc_app_detail_metrics")
 
         r5.show(10)
+
+        val tableName5 = "report2.cpc_ocpc_app_detail_metrics"
+        val deleteSql5 = s"delete from $tableName5 where `date` = '$date'"
+        OperateMySQL.update(deleteSql5) //先删除历史数据
+        OperateMySQL.insert(r2,tableName5) //插入到MySQL中的report2库中
     }
 }
 
