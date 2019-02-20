@@ -78,11 +78,11 @@ object OcpcCPCbid {
       s"""
          |SELECT
          |  unitid,
-         |  2 as min_bid2,
+         |  1.5 as min_bid2,
          |  sum(iscvr1) * 1.0 / sum(isclick) as cvr1,
          |  sum(iscvr2) * 1.0 / sum(isclick) as cvr2,
          |  sum(iscvr3) * 1.0 / sum(isclick) as cvr3,
-         |  percentile(cpm, 0.15) as min_cpm2
+         |  percentile(cpm, 0.10) as min_cpm2
          |FROM
          |  test.ocpc_check_data_smooth
          |GROUP BY unitid
@@ -183,7 +183,7 @@ object OcpcCPCbid {
 
     for (record <- dataset.collect()) {
       val unit_id = record.getAs[String]("unitid").toLong
-      val min_bid = record.getAs[Long]("min_bid").toDouble
+      val min_bid = record.getAs[Double]("min_bid")
       val post_cvr1 = record.getAs[Double]("cvr1")
       val post_cvr2 = record.getAs[Double]("cvr2")
       val post_cvr3 = record.getAs[Double]("cvr3")
