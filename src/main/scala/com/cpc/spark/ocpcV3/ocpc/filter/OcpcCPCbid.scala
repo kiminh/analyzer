@@ -50,8 +50,8 @@ object OcpcCPCbid {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit("qtt_demo"))
-        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190218")
-//       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190218")
+       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(data, fileName)
   }
