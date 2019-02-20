@@ -197,7 +197,7 @@ object ocpcMetrics {
         val tableName3 = "report2.cpc_ocpc_elds_detail_metrics"
         val deleteSql3 = s"delete from $tableName3 where `date` = '$date'"
         OperateMySQL.update(deleteSql3) //先删除历史数据
-        OperateMySQL.insert(r2,tableName3) //插入到MySQL中的report2库中
+        OperateMySQL.insert(r3,tableName3) //插入到MySQL中的report2库中
 
         val sql4 =
             s"""
@@ -268,7 +268,7 @@ object ocpcMetrics {
         val tableName4 = "report2.cpc_ocpc_app_api_detail_metrics"
         val deleteSql4 = s"delete from $tableName4 where `date` = '$date'"
         OperateMySQL.update(deleteSql4) //先删除历史数据
-        OperateMySQL.insert(r2,tableName4) //插入到MySQL中的report2库中
+        OperateMySQL.insert(r4,tableName4) //插入到MySQL中的report2库中
 
         val sql5 =
             s"""
@@ -314,7 +314,7 @@ object ocpcMetrics {
         val tableName5 = "report2.cpc_ocpc_app_detail_metrics"
         val deleteSql5 = s"delete from $tableName5 where `date` = '$date'"
         OperateMySQL.update(deleteSql5) //先删除历史数据
-        OperateMySQL.insert(r2,tableName5) //插入到MySQL中的report2库中
+        OperateMySQL.insert(r5,tableName5) //插入到MySQL中的report2库中
     }
 }
 
