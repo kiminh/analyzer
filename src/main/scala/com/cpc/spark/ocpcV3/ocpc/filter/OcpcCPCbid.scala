@@ -33,27 +33,27 @@ object OcpcCPCbid {
     val expData = getExpData(expDataPath, date, hour, spark)
     val cvrData = getCvrData(date, hour, spark)
     val cpmData = getCpmData(date, hour, spark)
-//
-//    val data = expData
-//        .join(cvrData, Seq("unitid"), "outer")
-//      .join(cpmData, Seq())
-//        .select("unitid", "min_bid1", "cvr1", "cvr2", "cvr3", "min_bid2", "min_cpm2")
-//        .withColumn("cvr1", when(col("unitid") === "270", 0.5).otherwise(col("cvr1")))
-//        .withColumn("cvr2", when(col("unitid") === "270", 0.5).otherwise(col("cvr2")))
-//        .withColumn("cvr3", when(col("unitid") === "270", 0.5).otherwise(col("cvr3")))
-//        .withColumn("min_bid", when(col("min_bid1").isNotNull, col("min_bid1")).otherwise(col("min_bid2")))
-//        .withColumn("min_cpm", col("min_cpm2"))
-//        .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm"))
-//
-//    data
-//        .selectExpr("unitid", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm")
-//        .withColumn("date", lit(date))
-//        .withColumn("hour", lit(hour))
-//        .withColumn("version", lit("qtt_demo"))
-//        // .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190218")
-//       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
-//
-//    savePbPack(data, fileName)
+
+    val data = expData
+        .join(cvrData, Seq("identifier"), "outer")
+        .join(cpmData, Seq("identifier"), "outer")
+        .select("identifier", "min_bid1", "cvr1", "cvr2", "cvr3", "min_bid2", "min_cpm2")
+        .withColumn("cvr1", when(col("unitid") === "270", 0.5).otherwise(col("cvr1")))
+        .withColumn("cvr2", when(col("unitid") === "270", 0.5).otherwise(col("cvr2")))
+        .withColumn("cvr3", when(col("unitid") === "270", 0.5).otherwise(col("cvr3")))
+        .withColumn("min_bid", when(col("min_bid1").isNotNull, col("min_bid1")).otherwise(col("min_bid2")))
+        .withColumn("min_cpm", col("min_cpm2"))
+        .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm"))
+
+    data
+        .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm")
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .withColumn("version", lit("qtt_demo"))
+        // .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190218")
+       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+
+    savePbPack(data, fileName)
   }
 
   def getCpmData(date: String, hour: String, spark: SparkSession) = {
@@ -140,7 +140,8 @@ object OcpcCPCbid {
       .agg(
         min(col("min_bid")).alias("min_bid1")
       )
-      .select("unitid", "min_bid1")
+      .withColumn("identifier", col("unitid"))
+      .select("identifier", "min_bid1")
 
     resultDF.show(10)
     resultDF
