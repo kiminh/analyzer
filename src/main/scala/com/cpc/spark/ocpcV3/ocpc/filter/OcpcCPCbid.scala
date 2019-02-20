@@ -67,7 +67,7 @@ object OcpcCPCbid {
 
   def getCvrData(date: String, hour: String, spark: SparkSession) = {
     val selectCondition = s"`date` = '$date' and `hour` = '$hour' and version = 'qtt_demo'"
-    val tableName = "test.ocpc_pcvr_smooth_hourly"
+    val tableName = "dl_cpc.ocpc_pcvr_smooth_hourly"
     val sqlRequest =
       s"""
          |SELECT
