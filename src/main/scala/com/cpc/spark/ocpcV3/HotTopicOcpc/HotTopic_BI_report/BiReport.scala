@@ -48,6 +48,46 @@ object BiReport {
 //    partitioned by (`date` string);
     val tb1 = "dl_cpc.unit_ect_summary_sjq"
     spark.sql(sql1).select( "unitid", "usertype", "adclass", "media", "money", "show_cnt", "click_cnt", "date" ).write.mode("overwrite").insertInto(tb1)
+
+    val sql2 =
+      s"""select
+         | unitid,
+         | --unit_money,
+         | unit_money_qtt,
+         | unit_money_hottopic,
+         | if( unit_money_qtt = 0 and unit_money_hottopic > 0, 1, 0 ) as if_direct
+         |from (
+         |      select
+         |        unitid,
+         |        --sum(money) as unit_money,
+         |        sum(if(media = 'qtt', money, 0)) as unit_money_qtt,
+         |        sum(if(media = 'hottopic', money, 0)) as unit_money_hottopic
+         |      from dl_cpc.unit_ect_summary_sjq
+         |      where `date` = '$date'
+         |      group by unitid
+         |      ) a
+     """.stripMargin
+
+//    create table dl_cpc.hottopic_unit_ect_summary_sjq
+//    ( unitid    bigint,
+//      usertype  bigint,
+//      adclass   bigint,
+//      money     bigint,
+//      show_cnt  bigint,
+//      click_cnt bigint,
+//      unit_money_qtt bigint,
+//      unit_money_hottopic bigint,
+//      if_direct int)
+//    partitioned by (`date` string);
+    val tb2 = "dl_cpc.hottopic_unit_ect_summary_sjq"
+    val unit_direct = spark.sql(sql2).select("unitid", "unit_money_qtt", "unit_money_hottopic", "if_direct" )
+    spark.sql(s"select * from dl_cpc.unit_ect_summary_sjq where `date` = '$date' and media = 'hottopic' ")
+        .join(unit_direct, Seq("unitid"))
+        .select("unitid", "usertype", "adclass", "money", "show_cnt", "click_cnt", "unit_money_qtt", "unit_money_hottopic", "if_direct", "date")
+        .repartition(1).write.mode("overwrite").insertInto(tb2)
   }
+
+
+
 
 }
