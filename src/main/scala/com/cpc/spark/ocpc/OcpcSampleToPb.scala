@@ -758,12 +758,12 @@ object OcpcSampleToPb {
     val end_date = sdf.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(end_date)
-    calendar.add(Calendar.DATE, -3)
+    calendar.add(Calendar.DATE, -1)
     val dt = calendar.getTime
     val date1 = sdf.format(dt)
     val selectCondition = getTimeRangeSql3(date1, hour, date, hour)
 
-    calendar.add(Calendar.DATE, -4)
+    calendar.add(Calendar.DATE, -6)
     val dt2 = calendar.getTime
     val date2 = sdf.format(dt2)
     val selectCondition2 = getTimeRangeSql3(date2, hour, date, hour)
