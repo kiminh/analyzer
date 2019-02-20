@@ -1,21 +1,10 @@
 package com.cpc.spark.ml.novel
 
-import java.io.File
-
 import com.cpc.spark.common.Murmur3Hash
-import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
-import sys.process._
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
-/**
-  * d6数据生成规范化
-  * created time : 2018/11/28 16:36
-  *
-  * @author zhj
-  * @version 1.0
-  *
-  */
-object DNNSampleV3 {
+object DNNSampleCvrV4 {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
       .enableHiveSupport()
@@ -23,14 +12,13 @@ object DNNSampleV3 {
 
     val Array(trdate, trpath, tedate, tepath) = args
 
-    val sample = new DNNSampleV3(spark, trdate, trpath, tedate, tepath)
-    sample.saveTrain()
+    val sample = new DNNSampleCvrV4(spark, trdate, trpath, tedate, tepath)
+    sample.saveTrain(trpath,100)
   }
 }
 
-
-class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
-                  tedate: String = "", tepath: String = "")
+class DNNSampleCvrV4(spark: SparkSession, trdate: String = "", trpath: String = "",
+                   tedate: String = "", tepath: String = "")
   extends DNNSample(spark, trdate, trpath, tedate, tepath) {
 
   /**
@@ -44,39 +32,41 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
     import spark.implicits._
     val as_sql =
       s"""
-         |select if(isclick>0, array(1,0), array(0,1)) as label,
+         |select
+         |  if(iscvr>0, array(1,0), array(0,1)) as label,
          |  media_type, media_appsid as mediaid,
          |  ext['channel'].int_value as channel,
          |  ext['client_type'].string_value as sdk_type,
-         |
          |  adslot_type, adslotid,
-         |
          |  adtype, interaction, bid, ideaid, unitid, planid, userid,
          |  ext_int['is_new_ad'] as is_new_ad, ext['adclass'].int_value as adclass,
          |  ext_int['siteid'] as site_id,
-         |
          |  os, network, ext['phone_price'].int_value as phone_price,
          |  ext['brand_title'].string_value as brand,
-         |
          |  province, city, ext['city_level'].int_value as city_level,
-         |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id,
-         |
-         |  hour
-         |
+         |  a.hour
+         |from
+         |  (select *
          |from dl_cpc.cpc_union_log where `date` = '$date'
-         |  and isshow = 1 and ideaid > 0
+         |  and isclick = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and length(uid) in (14, 15, 36)
+         |  and adslotid in ('7834151','7199174')
+         |) a
+         |inner join
+         |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
+         |  WHERE `date` = '$date'
+         |) b on a.searchid = b.searchid
       """.stripMargin
     println("============= as features ==============")
     println(as_sql)
 
     val data = spark.sql(as_sql).persist()
 
-    data.write.mode("overwrite").parquet(s"/user/cpc/wy/novel/raw_data/$date")
+    data.write.mode("overwrite").parquet(s"/user/cpc/wy/novel/raw_data_cvr/$date")
 
     data
       .select($"label",
@@ -126,32 +116,33 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
     import spark.implicits._
     val as_sql =
       s"""
-         |select if(isclick>0, array(1,0), array(0,1)) as label,
+         |select
+         |  if(iscvr>0, array(1,0), array(0,1)) as label,
          |  media_type, media_appsid as mediaid,
          |  ext['channel'].int_value as channel,
          |  ext['client_type'].string_value as sdk_type,
-         |
          |  adslot_type, adslotid,
-         |
          |  adtype, interaction, bid, ideaid, unitid, planid, userid,
          |  ext_int['is_new_ad'] as is_new_ad, ext['adclass'].int_value as adclass,
          |  ext_int['siteid'] as site_id,
-         |
          |  os, network, ext['phone_price'].int_value as phone_price,
          |  ext['brand_title'].string_value as brand,
-         |
          |  province, city, ext['city_level'].int_value as city_level,
-         |
          |  uid, age, sex, ext_string['dtu_id'] as dtu_id,
-         |
-         |  hour
-         |
+         |  a.hour
+         |from
+         |  (select *
          |from dl_cpc.cpc_union_log where `date` = '$date' and hour=$hour
-         |  and isshow = 1 and ideaid > 0
+         |  and isclick = 1 and ideaid > 0
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and length(uid) in (14, 15, 36)
+         |) a
+         |inner join
+         |(select searchid, label2 as iscvr from dl_cpc.ml_cvr_feature_v1
+         |  WHERE `date` = '$date' and hour=$hour
+         |) b on a.searchid = b.searchid
       """.stripMargin
     println("============= as features ==============")
     println(as_sql)
@@ -225,20 +216,29 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |       collect_set(if(load_date='${getDay(date, 3)}',show_ideaid,null)) as s_ideaid_3,
          |       collect_set(if(load_date='${getDay(date, 3)}',show_adclass,null)) as s_adclass_3,
          |
-         |       collect_list(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
-         |       collect_list(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
-         |
-         |       collect_list(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
-         |       collect_list(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
-         |
-         |       collect_list(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
-         |       collect_list(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3,
-         |
-         |       collect_list(if(load_date>='${getDay(date, 7)}'
+         |       collect_set(if(load_date='${getDay(date, 1)}',click_ideaid,null)) as c_ideaid_1,
+         |       collect_set(if(load_date='${getDay(date, 1)}',click_adclass,null)) as c_adclass_1,
+         |       collect_set(if(load_date='${getDay(date, 2)}',click_ideaid,null)) as c_ideaid_2,
+         |       collect_set(if(load_date='${getDay(date, 2)}',click_adclass,null)) as c_adclass_2,
+         |       collect_set(if(load_date='${getDay(date, 3)}',click_ideaid,null)) as c_ideaid_3,
+         |       collect_set(if(load_date='${getDay(date, 3)}',click_adclass,null)) as c_adclass_3,
+         |       collect_set(if(load_date>='${getDay(date, 7)}'
          |                  and load_date<='${getDay(date, 4)}',click_ideaid,null)) as c_ideaid_4_7,
          |       collect_list(if(load_date>='${getDay(date, 7)}'
-         |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7
-         |from dl_cpc.cpc_user_behaviors_novel
+         |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7,
+         |
+         |       collect_set(if(load_date='${getDay(date, 1)}',cvr_ideaid,null)) as r_ideaid_1,
+         |       collect_set(if(load_date='${getDay(date, 1)}',cvr_adclass,null)) as r_adclass_1,
+         |       collect_set(if(load_date='${getDay(date, 2)}',cvr_ideaid,null)) as r_ideaid_2,
+         |       collect_set(if(load_date='${getDay(date, 2)}',cvr_adclass,null)) as r_adclass_2,
+         |       collect_set(if(load_date='${getDay(date, 3)}',cvr_ideaid,null)) as r_ideaid_3,
+         |       collect_set(if(load_date='${getDay(date, 3)}',cvr_adclass,null)) as r_adclass_3,
+         |       collect_set(if(load_date>='${getDay(date, 7)}'
+         |                  and load_date<='${getDay(date, 4)}',cvr_ideaid,null)) as r_ideaid_4_7,
+         |       collect_list(if(load_date>='${getDay(date, 7)}'
+         |                  and load_date<='${getDay(date, 4)}',cvr_adclass,null)) as r_adclass_4_7
+         |
+         |from dl_cpc.cpc_user_behaviors_novel_cvr
          |where load_date in ('${getDays(date, 1, 7)}')
          |group by uid
       """.stripMargin
@@ -297,17 +297,25 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
         hashSeq("ud12#", "int")($"c_adclass_3").alias("ud12"),
         hashSeq("ud13#", "int")($"c_ideaid_4_7").alias("ud13"),
         hashSeq("ud14#", "int")($"c_adclass_4_7").alias("ud14"),
-        hashSeq("ud15#", "int")($"book_id").alias("ud15"),
-        hashSeq("ud16#", "int")($"first_category_id").alias("ud16"),
-        hashSeq("ud17#", "int")($"second_category_id").alias("ud17"),
-        hashSeq("ud18#", "int")($"third_category_id").alias("ud18"),
-        hashSeq("ud19#", "string")($"word1").alias("ud19"),
-        hashSeq("ud20#", "string")($"word3").alias("ud20")
+        hashSeq("ud15#", "int")($"r_ideaid_1").alias("ud15"),
+        hashSeq("ud16#", "int")($"r_ideaid_2").alias("ud16"),
+        hashSeq("ud17#", "int")($"r_ideaid_3").alias("ud17"),
+        hashSeq("ud18#", "int")($"r_adclass_1").alias("ud18"),
+        hashSeq("ud19#", "int")($"r_adclass_2").alias("ud19"),
+        hashSeq("ud20#", "int")($"r_adclass_3").alias("ud20"),
+        hashSeq("ud21#", "int")($"r_ideaid_4_7").alias("ud21"),
+        hashSeq("ud22#", "int")($"r_adclass_4_7").alias("ud22"),
+        hashSeq("ud23#", "int")($"book_id").alias("ud23"),
+        hashSeq("ud24#", "int")($"first_category_id").alias("ud24"),
+        hashSeq("ud25#", "int")($"second_category_id").alias("ud25"),
+        hashSeq("ud26#", "int")($"third_category_id").alias("ud26"),
+        hashSeq("ud27#", "string")($"word1").alias("ud27"),
+        hashSeq("ud28#", "string")($"word3").alias("ud28")
       )
   }
 
   private def getUdFeature_hourly(date: String): DataFrame = {
-    spark.read.parquet("/user/cpc/wy/novel/features/ud")
+    spark.read.parquet("/user/cpc/wy/novel/features_cvr/ud")
   }
 
   /**
@@ -364,7 +372,8 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
 
     //获取默认hash列表
     val columns = Seq("f30", "ud1", "ud2", "ud3", "ud4", "ud5", "ud6", "ud7", "ud8", "ud9", "ud10",
-      "ud11", "ud12", "ud13", "ud14", "ud15", "ud16", "ud17", "ud18", "ud19", "ud20")
+      "ud11", "ud12", "ud13", "ud14", "ud15", "ud16", "ud17", "ud18", "ud19", "ud20",
+      "ud21", "ud22", "ud23", "ud24", "ud25", "ud26", "ud27", "ud28")
     val default_hash = for (col <- columns.zipWithIndex)
       yield (col._2, 0, Murmur3Hash.stringHash64(col._1 + "#", 0))
 
@@ -376,7 +385,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
         mkSparseFeature(default_hash)(
           array($"f30", $"ud1", $"ud2", $"ud3", $"ud4", $"ud5", $"ud6", $"ud7", $"ud8"
             , $"ud9", $"ud10", $"ud11", $"ud12", $"ud13", $"ud14", $"ud15", $"ud16", $"ud17", $"ud18"
-            , $"ud19", $"ud20")
+            , $"ud19", $"ud20", $"ud21", $"ud22", $"ud23", $"ud24", $"ud25", $"ud26", $"ud27", $"ud28")
         ).alias("sparse")
       )
       .select(

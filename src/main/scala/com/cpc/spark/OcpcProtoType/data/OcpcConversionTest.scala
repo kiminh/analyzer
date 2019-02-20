@@ -39,7 +39,7 @@ object OcpcConversionTest {
          |AND
          |  label_type=6
          |AND
-         |  length(telephone) > 0
+         |  active15=1
          |GROUP BY searchid, label2
        """.stripMargin
     println(sqlRequest)
