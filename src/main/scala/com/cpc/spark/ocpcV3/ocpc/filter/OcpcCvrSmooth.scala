@@ -37,7 +37,7 @@ object OcpcCvrSmooth {
       .filter("unitid is not null")
       .na.fill(0.0, Seq("cvr1", "cvr2", "cvr3"))
       .withColumn("identifier", col("unitid"))
-      .select("unitid", "cvr1", "cvr2", "cvr3")
+      .select("identifier", "cvr1", "cvr2", "cvr3")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
