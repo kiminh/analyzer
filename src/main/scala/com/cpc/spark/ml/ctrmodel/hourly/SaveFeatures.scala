@@ -887,43 +887,43 @@ object SaveFeatures {
     val before1hour = fDate.substring(11, 13)
 
     //激励下载转化  取有点击的
-    val motivateRDD = spark.sql(
-      s"""
-         |select   a.searchid
-         |        ,a.ideaid
-         |        ,b.trace_type
-         |        ,b.trace_op1
-         |from (select * from dl_cpc.cpc_motivation_log
-         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick = 1) a
-         |    join
-         |        (select *
-         |            from dl_cpc.logparsed_cpc_trace_minute
-         |            where `thedate` = "%s" and `thehour` = "%s"
-         |         ) b
-         |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
-        """.stripMargin.format(date, hour, date, hour))
-      .rdd
-      .map {
-        x =>
-          ((x.getAs[String]("searchid"), x.getAs[Int]("ideaid")), Seq(x))
-      }
-      .reduceByKey(_ ++ _)
-      .map { x =>
-        val (convert, label_type) = Utils.cvrPositive_motivate(x._2, version)
-        (x._1._1, x._1._2, convert)
-      }.toDF("searchid", "ideaid", "label")
-    println("motivate: " + motivateRDD.count())
-
-    motivateRDD
-      .repartition(1)
-      .write
-      .mode(SaveMode.Overwrite)
-      .parquet("/user/cpc/lrmodel/cvrdata_motivate/%s/%s".format(date, hour))
-    spark.sql(
-      """
-        |ALTER TABLE dl_cpc.ml_cvr_feature_motivate add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/user/cpc/lrmodel/cvrdata_motivate/%s/%s'
-      """.stripMargin.format(date, hour, date, hour))
+    //    val motivateRDD = spark.sql(
+    //      s"""
+    //         |select   a.searchid
+    //         |        ,a.ideaid
+    //         |        ,b.trace_type
+    //         |        ,b.trace_op1
+    //         |from (select * from dl_cpc.cpc_motivation_log
+    //         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick = 1) a
+    //         |    join
+    //         |        (select *
+    //         |            from dl_cpc.logparsed_cpc_trace_minute
+    //         |            where `thedate` = "%s" and `thehour` = "%s"
+    //         |         ) b
+    //         |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
+    //        """.stripMargin.format(date, hour, date, hour))
+    //      .rdd
+    //      .map {
+    //        x =>
+    //          ((x.getAs[String]("searchid"), x.getAs[Int]("ideaid")), Seq(x))
+    //      }
+    //      .reduceByKey(_ ++ _)
+    //      .map { x =>
+    //        val (convert, label_type) = Utils.cvrPositive_motivate(x._2, version)
+    //        (x._1._1, x._1._2, convert)
+    //      }.toDF("searchid", "ideaid", "label")
+    //    println("motivate: " + motivateRDD.count())
+    //
+    //    motivateRDD
+    //      .repartition(1)
+    //      .write
+    //      .mode(SaveMode.Overwrite)
+    //      .parquet("/user/cpc/lrmodel/cvrdata_motivate/%s/%s".format(date, hour))
+    //    spark.sql(
+    //      """
+    //        |ALTER TABLE dl_cpc.ml_cvr_feature_motivate add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+    //        | LOCATION  '/user/cpc/lrmodel/cvrdata_motivate/%s/%s'
+    //      """.stripMargin.format(date, hour, date, hour))
 
 
     //用户Api回传
@@ -1222,7 +1222,8 @@ object SaveFeatures {
         |       ext['exp_ctr'].int_value as exp_ctr,
         |       ext['exp_cvr'].int_value as exp_cvr,
         |       ext['usertype'].int_value as usertype,
-        |       userid
+        |       userid,
+        |       province
         |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` >= "%s" and `hour` <= "%s" and isclick = 1 and adslot_type <> 7
       """.stripMargin.format(date, before1hour, hour)
     println(sqlStmt)
@@ -1245,7 +1246,8 @@ object SaveFeatures {
         |       ext['exp_ctr'].int_value as exp_ctr,
         |       ext['exp_cvr'].int_value as exp_cvr,
         |       ext['usertype'].int_value as usertype,
-        |       m.userid
+        |       m.userid,
+        |       province
         |from dl_cpc.cpc_union_log
         |lateral view explode(motivation) c as m
         |where `date` = "%s" and `hour` = "%s" and m.isclick = 1 and adslot_type = 7
