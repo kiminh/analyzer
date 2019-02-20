@@ -47,7 +47,7 @@ object OcpcCPCbid {
         .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm"))
 
     data
-        .select("unitid", "min_bid", "cvr1", "cvr2", "cvr3", "min_cpm")
+        .selectExpr("unitid", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit("qtt_demo"))
@@ -176,12 +176,13 @@ object OcpcCPCbid {
   def savePbPack(dataset: DataFrame, filename: String): Unit = {
     var list = new ListBuffer[SingleOcpcCpcBid]
     println("size of the dataframe")
-    println(dataset.count)
-    dataset.show(10)
-    dataset.printSchema()
+    val resultData = dataset.selectExpr("unitid", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm")
+    println(resultData.count)
+    resultData.show(10)
+    resultData.printSchema()
     var cnt = 0
 
-    for (record <- dataset.collect()) {
+    for (record <- resultData.collect()) {
       val unit_id = record.getAs[String]("unitid").toLong
       val min_bid = record.getAs[Double]("min_bid")
       val post_cvr1 = record.getAs[Double]("cvr1")
