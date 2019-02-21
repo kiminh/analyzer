@@ -98,6 +98,7 @@ object BiReport {
          |  10*sum( money )/sum( show_cnt )  as cpm, --单位：元
          |  sum(money)/sum(click_cnt)        as acp, --单位：分
          |  100*sum(click_cnt)/sum(show_cnt) as ctr  --单位：%
+         |  `date`
          |from dl_cpc.hottopic_unit_ect_summary_sjq
          |where `date` = '$date'
          |group by if_direct
@@ -106,10 +107,10 @@ object BiReport {
     val data0 = spark.sql(sql3)
     val total_money = data0.select("money").rdd.map( x => x.getAs[Long]("money")).reduce(_+_).toDouble
     val data1 = data0.withColumn("money_acount", col("money")/total_money)
-      .select("direct", "money", "money_acount", "cpm", "acp", "ctr")
+      .select("direct", "money", "money_acount", "cpm", "acp", "ctr", "`date`")
 
     val report_tb1 = "report2.hottopic_direct_summary"
-    val deletesql1 = s"delete from report2.hottopic_direct_summary where `date` = '$date'"
+    val deletesql1 = s"delete from report2.hottopic_direct_summary where date = '$date'"
     update(deletesql1)
     insert(data1, report_tb1)
 
