@@ -65,7 +65,7 @@ object KddData {
 
         println("kdd 's num is " + kdd.count())
 
-        kdd.repartition(200)
+        kdd.repartition(1000)
           .write
           .mode("overwrite")
           .insertInto("dl_cpc.kdd_uid_data")
