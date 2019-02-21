@@ -41,9 +41,10 @@ object NovelClass {
 
     val data = spark.sql(sql)
 
+    data.show(5)
+
     data.foreachPartition(
       iterator => {
-
       val redis = new RedisClient("r-2zefa26971578ef4.redis.rds.aliyuncs.com", 6379)
       redis.auth("zrC3lReFqP0iKlwemvGDIhYA")
       redis.select(2)
