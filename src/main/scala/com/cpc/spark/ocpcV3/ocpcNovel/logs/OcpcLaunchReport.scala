@@ -174,7 +174,7 @@ object OcpcLaunchReport {
        |  ext['usertype'].int_value as usertype,
        |  sum(case WHEN isclick == 1 then price else 0 end) as money,
        |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
-       |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3) as acp,
+       |  if(sum(isclick)>0,round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isclick),3),0) as acp,
        |  round(sum(isclick)*100 / sum(isshow),3) as ctr
        |from
        |(
