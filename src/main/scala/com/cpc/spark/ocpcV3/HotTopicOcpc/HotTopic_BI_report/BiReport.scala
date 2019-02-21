@@ -208,7 +208,7 @@ object BiReport {
     val data3 = data30.withColumn("money_account", col("money")/total_money)
       .select("direct", "usertype", "money", "money_account", "cpm", "acp", "ctr", "`date`")
     val report_tb3 = "report2.hottopic_direct_usertype_summary"
-    val deletesql3 = s"delete from report2.hottopic_direct_usertype_summary where data = '$date'"
+    val deletesql3 = s"delete from report2.hottopic_direct_usertype_summary where date = '$date'"
     update(deletesql3)
     insert(data3, report_tb3)
 
