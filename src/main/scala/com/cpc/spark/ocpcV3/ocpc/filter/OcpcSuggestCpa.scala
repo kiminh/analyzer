@@ -161,7 +161,7 @@ object OcpcSuggestCpa{
          |AND
          |    media_appsid  in ('80000001', '80000002')
          |AND
-         |    isclick=1
+         |    isshow=1
          |AND antispam = 0
          |AND ideaid > 0
          |AND adsrc = 1
@@ -173,6 +173,7 @@ object OcpcSuggestCpa{
     // 数据关联
     val data = rawData
       .join(suggestData, Seq("unitid"), "inner")
+      .select("searchid", "unitid", "adclass", "original_conversion", "acb", "cpa", "post_cvr", "kvalue", "isclick", "isshow", "exp_cvr", "bid", "price")
       .withColumn("cali_cvr", col("exp_cvr") * (1 - alpha) + col("post_cvr") * alpha)
       .withColumn("dynamicbid", col("cali_cvr") * col("cpa") * col("kvalue") * 1.0 / 0.9)
     data.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_20190221")
