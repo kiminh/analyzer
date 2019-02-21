@@ -185,10 +185,10 @@ object OcpcSuggestCpa{
          |SELECT
          |  unitid,
          |  original_conversion,
-         |  sum(case when dynamicbid < 1 then 1 else 0 end) as zerobid_cnt,
-         |  sum(case when dynamicbid >= 1 and dynamicbid < 0.5 * acb then 1 else 0 end) as bottom_halfbid_cnt,
-         |  sum(case when dynamicbid >= 0.5 * acb and dynamicbid < acb then 1 else 0 end) as top_halfbid_cnt,
-         |  sum(case when dynamicbid >= acb then 1 else 0 end) as largebid_cnt
+         |  sum(case when dynamicbid < 1 then 1 else 0 end) * 1.0 / sum(isshow) as zerobid_percent,
+         |  sum(case when dynamicbid >= 1 and dynamicbid < 0.5 * acb then 1 else 0 end) * 1.0 / sum(isshow) as bottom_halfbid_percent,
+         |  sum(case when dynamicbid >= 0.5 * acb and dynamicbid < acb then 1 else 0 end) * 1.0 / sum(isshow) as top_halfbid_percent,
+         |  sum(case when dynamicbid >= acb then 1 else 0 end) * 1.0 / sum(isshow) as largebid_percent
          |FROM
          |  base_data
          |GROUP BY unitid, original_conversion
@@ -199,7 +199,7 @@ object OcpcSuggestCpa{
     // 数据关联
     val resultDF = suggestData
       .join(result, Seq("unitid", "original_conversion"), "left_outer")
-      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_cnt", "bottom_halfbid_cnt", "top_halfbid_cnt", "largebid_cnt")
+      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_percent", "bottom_halfbid_percent", "top_halfbid_percent", "largebid_percent")
 
     resultDF
 
