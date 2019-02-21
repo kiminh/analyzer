@@ -184,7 +184,7 @@ object OcpcSuggestCpa{
       s"""
          |SELECT
          |  unitid,
-         |  original_converion,
+         |  original_conversion,
          |  sum(case when dynamicbid < 1 then 1 else 0 end) as zerobid_cnt,
          |  sum(case when dynamicbid >= 1 and dynamicbid < 0.5 * acb then 1 else 0 end) as bottom_halfbid_cnt,
          |  sum(case when dynamicbid >= 0.5 * acb and dynamicbid < acb then 1 else 0 end) as top_halfbid_cnt,
