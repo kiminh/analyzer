@@ -71,9 +71,52 @@ object HotTopicIdeaMetrics {
         val result = ideaidCtr.join(ideaidAuc,Seq("ideaid")).join(ideaidTitle,Seq("ideaid"),"left_outer")
             .select("ideaid","ctr","auc","sum","tokens")
 
-        result.show(10)
+        //result.show(10)
 
-        result.repartition(10).write.saveAsTable("test.adlog20190221")
+        //result.repartition(10).write.saveAsTable("test.adlog20190221")
+
+        result.createOrReplaceTempView("result")
+
+        val sql4 =
+            s"""
+               |select cast(ideaid as bigint) as ideaid,
+               |  case when ctr>0.08 then 1
+               |       when ctr>0.05 then 2
+               |       else 0
+               |  end as ctr,
+               |  case when sum>100 and auc>0.78 then 1
+               |       when sum>100 and auc>0.65 then 2
+               |       else 0
+               |  end as auc,
+               |  case when sum>100000 then 1
+               |       when sum>10000  then 2
+               |       when sum>1000   then 3
+               |       when sum>100    then 4
+               |       else 0
+               |  end as show_num,
+               |  tokens,
+               |  '$date' as `date`
+               |from result
+             """.stripMargin
+
+        spark.sql(sql4)
+          .repartition(1)
+          .write
+          .mode("overwrite")
+          .insertInto("dl_cpc.cpc_hot_topic_idea_ad_log")
     }
     case class IdeaidAuc(var ideaid:String,var auc:Double,var sum:Double)
 }
+
+/*
+create table if not exists dl_cpc.cpc_hot_topic_idea_ad_log
+(
+    ideaid bigint,
+    ctr int,
+    auc int,
+    show_num int,
+    tokens string
+)
+PARTITIONED BY (`date` string)
+STORED AS PARQUET;
+ */
