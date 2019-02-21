@@ -8,7 +8,7 @@ import org.apache.spark.sql.functions._
   * @author Jinbao
   * @date 2019/2/21 10:32
   */
-class HotTopicIdeaMetrics {
+object HotTopicIdeaMetrics {
     def main(args: Array[String]): Unit = {
         val date = args(0)
         val spark = SparkSession.builder()
