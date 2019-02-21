@@ -46,11 +46,11 @@ object audienceOrientUnitidWithoutPrecision {
 
     val adv=
       s"""
-         |(select id as unitid, tb.user_id as userid, plan_id as planid, adslot_type, charge_type, cnt from
+         |(select cast(id as CHAR) as unitid from
          |(SELECT unit_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date>='$tardate' group by unit_id) ta
          |join adv.unit tb on ta.unit_id=tb.id
          |where audience_orient>0) temp
       """.stripMargin
-    spark.read.jdbc(jdbcUrl, adv, jdbcProp).select("unitid").distinct().write.text(s"/home/cpc/dgd/data/unitid_$tardate")
+    spark.read.jdbc(jdbcUrl, adv, jdbcProp).select("unitid").distinct().repartition(1).write.text(s"/home/cpc/dgd/data/unitid_$tardate")
 }
 }
