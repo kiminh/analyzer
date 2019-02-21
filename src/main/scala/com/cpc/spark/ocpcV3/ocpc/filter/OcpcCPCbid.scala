@@ -27,27 +27,32 @@ object OcpcCPCbid {
     val conf = ConfigFactory.load("ocpc")
     val expDataPath = conf.getString("ocpc_all.ocpc_cpcbid.path")
     val fileName = conf.getString("ocpc_all.ocpc_cpcbid.pbfile")
+    val smoothDataPath = conf.getString("ocpc_all.ocpc_cpcbid.factor_path")
     println(s"path is: $expDataPath")
     println(s"fileName is: $fileName")
+    println(s"path is $smoothDataPath")
 
     val expData = getExpData(expDataPath, date, hour, spark)
     val cvrData = getCvrData(date, hour, spark)
     val cpmData = getCpmData(date, hour, spark)
+    val cvrAlphaData = getCvrAlphaData(smoothDataPath, date, hour, spark)
 
     val data = expData
         .join(cvrData, Seq("identifier"), "outer")
         .join(cpmData, Seq("identifier"), "outer")
-        .select("identifier", "min_bid1", "cvr1", "cvr2", "cvr3", "min_bid2", "min_cpm2")
+        .join(cvrAlphaData, Seq("identifier"), "left_outer")
+        .select("identifier", "min_bid1", "cvr1", "cvr2", "cvr3", "min_bid2", "min_cpm2", "factor1", "factor2", "factor3")
         .withColumn("cvr1", when(col("identifier") === "270", 0.5).otherwise(col("cvr1")))
         .withColumn("cvr2", when(col("identifier") === "270", 0.5).otherwise(col("cvr2")))
         .withColumn("cvr3", when(col("identifier") === "270", 0.5).otherwise(col("cvr3")))
         .withColumn("min_bid", when(col("min_bid1").isNotNull, col("min_bid1")).otherwise(col("min_bid2")))
         .withColumn("min_cpm", col("min_cpm2"))
         .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm"))
-        .filter(s"identifier in (1918962, 1921432, 1884679, 1929766)")
+        .na.fill(0.1, Seq("factor1", "factor2", "factor3"))
+//        .filter(s"identifier in (1918962, 1921432, 1884679, 1929766)")
 
-    data
-        .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm")
+    val resultDF = data
+        .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "factor1", "factor2", "factor3")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit("qtt_demo"))
@@ -55,6 +60,23 @@ object OcpcCPCbid {
 //       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(data, fileName)
+  }
+
+  def getCvrAlphaData(dataPath: String, date: String, hour: String, spark: SparkSession) = {
+    val data = spark.read.format("json").json(dataPath)
+
+    val resultDF = data
+      .groupBy("unitid")
+      .agg(
+        min(col("factor1")).alias("factor1"),
+        min(col("factor2")).alias("factor2"),
+        min(col("factor3")).alias("factor3")
+      )
+      .withColumn("identifier", col("unitid"))
+      .select("identifier", "factor1", "factor2", "factor3")
+
+    resultDF.show(10)
+    resultDF
   }
 
   def getCpmData(date: String, hour: String, spark: SparkSession) = {
