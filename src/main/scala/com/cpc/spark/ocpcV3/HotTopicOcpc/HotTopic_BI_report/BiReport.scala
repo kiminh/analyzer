@@ -101,7 +101,7 @@ object BiReport {
          |  `date`
          |from dl_cpc.hottopic_unit_ect_summary_sjq
          |where `date` = '$date'
-         |group by if_direct
+         |group by if_direct, `date`
        """.stripMargin
 
     val data0 = spark.sql(sql3)
@@ -113,6 +113,8 @@ object BiReport {
     val deletesql1 = s"delete from report2.hottopic_direct_summary where date = '$date'"
     update(deletesql1)
     insert(data1, report_tb1)
+
+
 
 
 
