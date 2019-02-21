@@ -109,7 +109,7 @@ object BiReport {
       .select("direct", "money", "money_acount", "cpm", "acp", "ctr")
 
     val report_tb1 = "report2.hottopic_direct_summary"
-    val deletesql1 = s"delete from report2.hottopic_direct_summary where date = '$date'"
+    val deletesql1 = s"delete from report2.hottopic_direct_summary where `date` = '$date'"
     update(deletesql1)
     insert(data1, report_tb1)
 
