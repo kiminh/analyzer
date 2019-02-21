@@ -176,7 +176,7 @@ object OcpcSuggestCpa{
       .select("searchid", "unitid", "adclass", "original_conversion", "acb", "cpa", "post_cvr", "kvalue", "isclick", "isshow", "exp_cvr", "bid", "price")
       .withColumn("cali_cvr", col("exp_cvr") * (1 - alpha) + col("post_cvr") * alpha)
       .withColumn("dynamicbid", col("cali_cvr") * col("cpa") * col("kvalue") * 1.0 / 0.9)
-    data.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_20190221")
+//    data.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_20190221")
 
     // 统计dynamicbid的数据分布
     data.createOrReplaceTempView("base_data")
