@@ -42,9 +42,9 @@ object OcpcCvrSmooth {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
 
-    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pcvr_smooth_hourly")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcvr_smooth_hourly")
+//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pcvr_smooth_hourly")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcvr_smooth_hourly")
 
   }
 
