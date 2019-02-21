@@ -13,6 +13,10 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 
 object OcpcSuggestCpa{
   def main(args: Array[String]): Unit = {
+    //TODO
+    // 预估cvr分布，计算进入ocpc之后的展现量
+    // 使用cpa_suggest * kvalue * exp_cvr * exp_ctr 作为ecpm计算分布
+
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
