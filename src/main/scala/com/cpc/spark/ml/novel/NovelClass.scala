@@ -67,6 +67,7 @@ object NovelClass {
             redis.setex(key, 3600 * 24 * 7, book.build().toByteArray)
           } else {
             var book: SingleBookClass.Builder = null
+            book = SingleBookClass.parseFrom(buffer).toBuilder
             book.setFirstCategoryId(first_category_id)
             book.setSecondCategoryId(second_category_id)
             book.setThirdCategoryId(third_category_id)
