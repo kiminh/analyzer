@@ -84,7 +84,7 @@ object OcpcSuggestCpa{
     val modelData = checkModelPCOC(date, hour, spark)
 
 
-    val resultDF = cpaData
+    val result1 = cpaData
       .join(aucData, Seq("userid", "conversion_goal"), "left_outer")
       .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc")
       .withColumn("original_conversion", col("conversion_goal"))
@@ -107,15 +107,100 @@ object OcpcSuggestCpa{
       .join(modelData, Seq("unitid", "userid"), "left_outer")
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2")
       .na.fill(-1, Seq("pcoc1", "pcoc2"))
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+
+    val alpha = 0.1
+    val result2 = predictOcpcBid(result1, alpha, date, hour, spark)
+    val resultDF = result2
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
 //    test.ocpc_suggest_cpa_recommend_hourly20190104
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+
+  }
+
+  def predictOcpcBid(suggestData: DataFrame, alpha: Double, date: String, hour: String, spark: SparkSession) = {
+    /*
+    根据slim unionlog抽取数据,并根据cpa，校准cvr，k值计算dynamicbid分布
+     */
+    // 从slim_union_log抽取数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -24)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  isclick,
+         |  isshow,
+         |  exp_cvr * 1.0 / 1000000 as exp_cvr,
+         |  bid,
+         |  price
+         |FROM
+         |  dl_cpc.slim_union_log
+         |WHERE
+         |  $selectCondition
+         |AND
+         |    media_appsid  in ('80000001', '80000002')
+         |AND
+         |    isclick=1
+         |AND antispam = 0
+         |AND ideaid > 0
+         |AND adsrc = 1
+         |AND adslot_type in (1,2,3)
+       """.stripMargin
+    println(sqlRequest)
+    val rawData = spark.sql(sqlRequest)
+
+    // 数据关联
+    val data = rawData
+      .join(suggestData, Seq("unitid"), "inner")
+      .withColumn("cali_cvr", col("exp_cvr") * (1 - alpha) + col("post_cvr") * alpha)
+      .withColumn("dynamicbid", col("cali_cvr") * col("cpa") * col("kvalue") * 1.0 / 0.9)
+    data.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_20190221")
+
+    // 统计dynamicbid的数据分布
+    data.createOrReplaceTempView("base_data")
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  original_converion,
+         |  sum(case when dynamicbid < 1 then 1 else 0 end) as zerobid_cnt,
+         |  sum(case when dynamicbid >= 1 and dynamicbid < 0.5 * acb then 1 else 0 end) as bottom_halfbid_cnt,
+         |  sum(case when dynamicbid >= 0.5 * acb and dynamicbid < acb then 1 else 0 end) as top_halfbid_cnt,
+         |  sum(case when dynamicbid >= acb then 1 else 0 end) as largebid_cnt
+         |FROM
+         |  base_data
+         |GROUP BY unitid, original_conversion
+       """.stripMargin
+    println(sqlRequest2)
+    val result = spark.sql(sqlRequest2)
+
+    // 数据关联
+    val resultDF = suggestData
+      .join(result, Seq("unitid", "original_conversion"), "left_outer")
+      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_cnt", "bottom_halfbid_cnt", "top_halfbid_cnt", "largebid_cnt")
+
+    resultDF
 
   }
 
