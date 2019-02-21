@@ -42,9 +42,9 @@ object OcpcCvrSmooth {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
 
-//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pcvr_smooth_hourly")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcvr_smooth_hourly")
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pcvr_smooth_hourly")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pcvr_smooth_hourly")
 
   }
 
@@ -122,7 +122,7 @@ object OcpcCvrSmooth {
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -72)
+    calendar.add(Calendar.HOUR, -24)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
