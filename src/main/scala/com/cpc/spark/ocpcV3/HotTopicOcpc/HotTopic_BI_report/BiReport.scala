@@ -165,6 +165,52 @@ object BiReport {
     update(deletesql2)
     insert(data2, report_tb2)
 
+    val sql5 =
+      s"""
+         |select
+         | c.`date`,
+         | c.direct,
+         | c.usertype,
+         | c.money,
+         | 10*c.money/c.shown   as cpm,
+         | if(c.clickn > 0, c.money/c.clickn, -1) as acp,
+         | 100*c.clickn/c.shown as ctr
+         |from (
+         |select
+         |  a.`date`,
+         |  if(b.if_direct is not null, b.if_direct, 2) as direct,
+         |  a.usertype,
+         |  sum(a.money) as money,
+         |  sum(a.show_cnt) as shown,
+         |  sum(a.click_cnt) as clickn
+         |from
+         |(
+         |  select
+         |   *
+         |  from dl_cpc.hottopic_unit_ect_summary_sjq
+         |  where `date` = '$date'
+         |  ) a
+         |left join (
+         |  select
+         |    unitid,
+         |    max(if_direct) as if_direct
+         |  from dl_cpc.hottopic_unit_ect_summary_sjq
+         |  where `date` = '$date'
+         |  group by unitid) b
+         |on a.unitid=b.unitid
+         |group by
+         |  a.`date`,
+         |  if(b.if_direct is not null, b.if_direct, 2),
+         |  a.usertype
+         |) c
+       """.stripMargin
+    val data30 = spark.sql(sql5)
+    val data3 = data30.withColumn("money_account", col("money")/total_money)
+      .select("direct", "usertype", "money", "money_account", "cpm", "acp", "ctr", "`date`")
+    val report_tb3 = "report2.hottopic_direct_usertype_summary"
+    val deletesql3 = s"delete from report2.hottopic_direct_usertype_summary where data = '$date'"
+    update(deletesql3)
+    insert(data3, report_tb3)
 
 
 
