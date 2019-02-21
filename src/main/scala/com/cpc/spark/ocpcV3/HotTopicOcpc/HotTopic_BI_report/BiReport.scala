@@ -313,7 +313,7 @@ object BiReport {
     val data50 = spark.sql(sql7)
     val data5 = data50
       .select(    "usertype","money_qtt", "money_common_unit", "money_hottopic",   "hottopic_to_qtt_ratio",  "hottopic_to_co_uint_ratio",  "unit_ratio_gt200",  "unit_ratio_gt100", "unit_ratio_gt50",
-        "unit_ratio_lt200",
+        "unit_ratio_lt50",
         "unit_ratio_et0",
         "`date`")
     val report_tb5 = "report2.hottopic_indirect_usertype_ratio_distribution"
