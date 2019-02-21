@@ -30,7 +30,7 @@ object NovelClass {
 
     val sql =
       s"""
-         |SELECT book_id,
+         |SELECT hash_id,
          |first_category_id,
          |second_category_id,
          |third_category_id
@@ -50,7 +50,7 @@ object NovelClass {
 
       iterator.foreach (
         record => {
-          val bookid = record.getLong(0)
+          val bookid = record.getString(0)
           var key = "novel_bookid_" + bookid
           val first_category_id = record.getLong(1)
           val second_category_id = record.getLong(2)
