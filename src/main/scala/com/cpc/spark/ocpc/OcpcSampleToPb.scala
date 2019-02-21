@@ -63,10 +63,10 @@ object OcpcSampleToPb {
     val resultDF = setPresetK(result4, date, hour, spark)
 
 
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpc_qtt_prev_pb")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_table_v7")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_qtt_prev_pb20190129")
 
     savePbPack(resultDF)
 
@@ -758,12 +758,12 @@ object OcpcSampleToPb {
     val end_date = sdf.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(end_date)
-    calendar.add(Calendar.DATE, -1)
+    calendar.add(Calendar.DATE, -3)
     val dt = calendar.getTime
     val date1 = sdf.format(dt)
     val selectCondition = getTimeRangeSql3(date1, hour, date, hour)
 
-    calendar.add(Calendar.DATE, -6)
+    calendar.add(Calendar.DATE, -4)
     val dt2 = calendar.getTime
     val date2 = sdf.format(dt2)
     val selectCondition2 = getTimeRangeSql3(date2, hour, date, hour)
