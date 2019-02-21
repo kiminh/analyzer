@@ -319,7 +319,7 @@ object BiReport {
     val report_tb5 = "report2.hottopic_indirect_usertype_ratio_distribution"
     val deletesql5 = s"delete from report2.hottopic_indirect_usertype_ratio_distribution where date = '$date'"
     update(deletesql5)
-    insert(data4, report_tb5)
+    insert(data5, report_tb5)
 
 
 
