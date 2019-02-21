@@ -51,6 +51,6 @@ object audienceOrientUnitidWithoutPrecision {
          |join adv.unit tb on ta.unit_id=tb.id
          |where audience_orient>0) temp
       """.stripMargin
-    spark.read.jdbc(jdbcUrl, adv, jdbcProp).select("unitid").distinct().repartition(1).write.text(s"/home/cpc/dgd/data/unitid_$tardate")
+    spark.read.jdbc(jdbcUrl, adv, jdbcProp).distinct().repartition(1).write.text(s"/home/cpc/dgd/data/unitid_$tardate")
 }
 }
