@@ -2,8 +2,12 @@ package com.cpc.spark.ocpcV3.HotTopicOcpc.HotTopic_BI_report
 
 import java.util.Properties
 import java.sql.{Connection, DriverManager}
-import org.apache.spark.sql.{SparkSession, DataFrame}
+
+import breeze.numerics.round
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import com.typesafe.config.ConfigFactory
+import org.apache.spark.sql._
+import org.apache.spark.sql.functions._
 
 object BiReport {
   def main(args: Array[String]): Unit ={
@@ -85,9 +89,82 @@ object BiReport {
         .join(unit_direct, Seq("unitid"))
         .select("unitid", "usertype", "adclass", "money", "show_cnt", "click_cnt", "unit_money_qtt", "unit_money_hottopic", "if_direct", "date")
         .repartition(1).write.mode("overwrite").insertInto(tb2)
+
+    val sql3 =
+      s"""
+         |select
+         |  if_direct                        as direct,
+         |  sum( money )                     as money,
+         |  10*sum( money )/sum( show_cnt )  as cpm, --单位：元
+         |  sum(money)/sum(click_cnt)        as acp, --单位：分
+         |  100*sum(click_cnt)/sum(show_cnt) as ctr  --单位：%
+         |from dl_cpc.hottopic_unit_ect_summary_sjq
+         |where `date` = '$date'
+         |group by if_direct
+       """.stripMargin
+
+    val data0 = spark.sql(sql3)
+    val total_money = data0.select("money").rdd.map( x => x.getAs[Long]("money")).reduce(_+_).toDouble
+    val data1 = data0.withColumn("money_acount", col("money")/total_money)
+      .select("direct", "money", "money_acount", "cpm", "acp", "ctr")
+
+    val report_tb1 = "report2.hottopic_direct_summary"
+    val deletesql1 = s"delete from report2.hottopic_direct_summary where date = '$date'"
+    update(deletesql1)
+    insert(data1, report_tb1)
+
+
+
+  }
+
+  def update(sql: String): Unit ={
+    val conf = ConfigFactory.load()
+    val url      = conf.getString("mariadb.report2_write.url")
+    val driver   = conf.getString("mariadb.report2_write.driver")
+    val username = conf.getString("mariadb.report2_write.user")
+    val password = conf.getString("mariadb.report2_write.password")
+    var connection: Connection = null
+    try{
+      Class.forName(driver) //动态加载驱动器
+      connection = DriverManager.getConnection(url, username, password)
+      val statement = connection.createStatement
+      val rs = statement.executeUpdate(sql)
+      println(s"execute $sql success!")
+    }
+    catch{
+      case e: Exception => e.printStackTrace
+    }
+    connection.close  //关闭连接，释放资源
+  }
+
+  def insert(data:DataFrame, table: String): Unit ={
+    val conf = ConfigFactory.load()
+    val mariadb_write_prop = new Properties()
+
+    val url      = conf.getString("mariadb.report2_write.url")
+    val driver   = conf.getString("mariadb.report2_write.driver")
+    val username = conf.getString("mariadb.report2_write.user")
+    val password = conf.getString("mariadb.report2_write.password")
+
+    mariadb_write_prop.put("user", username)
+    mariadb_write_prop.put("password", password)
+    mariadb_write_prop.put("driver", driver)
+
+    data.write.mode(SaveMode.Append)
+      .jdbc(url, table, mariadb_write_prop)
+    println(s"insert into $table successfully!")
+
   }
 
 
 
 
 }
+
+
+
+
+
+
+
+
