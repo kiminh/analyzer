@@ -40,7 +40,7 @@ object HotTopicIdeaMetrics {
               val ideaid = x.getAs[String]("name")
               val auc = x.getAs[Double]("auc")
               val sum = x.getAs[Double]("sum")
-              IdeaidAuc(ideaid,auc)
+              IdeaidAuc(ideaid,auc,sum)
               //(ideaid,auc,sum)
           })
           .collect()
@@ -75,5 +75,5 @@ object HotTopicIdeaMetrics {
 
         result.repartition(10).write.saveAsTable("test.adlog20190221")
     }
-    case class IdeaidAuc(var ideaid:String,var auc:Double)
+    case class IdeaidAuc(var ideaid:String,var auc:Double,var sum:Double)
 }
