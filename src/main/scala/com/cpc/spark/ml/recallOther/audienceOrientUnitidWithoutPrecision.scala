@@ -8,7 +8,7 @@ import org.apache.spark.sql.SparkSession
 object audienceOrientUnitidWithoutPrecision {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
-      .appName("dnn bsCvr predictSample exp")
+      .appName("audienceOrientUnitidWithoutPrecision")
       .enableHiveSupport()
       .getOrCreate()
     val cal = Calendar.getInstance()
