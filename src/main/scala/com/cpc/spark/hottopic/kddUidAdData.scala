@@ -78,10 +78,12 @@ object kddUidAdData {
           .withColumnRenamed("title_split","gdt_click_title")
 
 
+        //union.cache()
 
         //union.show(10)
+        union.write.saveAsTable("test.kdd_uid_union_data")
 
-        union.createOrReplaceTempView("union")
+        //union.createOrReplaceTempView("union")
 
         val sql3 =
             s"""
@@ -116,16 +118,19 @@ object kddUidAdData {
                |    concat_ws("\002","gdt_click_title","str",concat_ws("\003", collect_set(gdt_click_title)))
                |) as origin,
                |  '$date' as `date`
-               |from union
+               |from test.kdd_uid_union_data
                |group by uid
              """.stripMargin
 
         val result = spark.sql(sql3)
 
-        result.repartition(200)
+        result.repartition(100)
           .write
           .mode("overwrite")
           .insertInto("dl_cpc.kdd_uid_ad_log")
+
+        val delSql = "drop table test.kdd_uid_union_data"
+        spark.sql(delSql)
 
         println("success!")
 
