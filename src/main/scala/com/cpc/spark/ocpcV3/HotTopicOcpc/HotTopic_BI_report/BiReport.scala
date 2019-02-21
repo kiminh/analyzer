@@ -97,7 +97,7 @@ object BiReport {
          |  sum( money )                     as money,
          |  10*sum( money )/sum( show_cnt )  as cpm, --单位：元
          |  sum(money)/sum(click_cnt)        as acp, --单位：分
-         |  100*sum(click_cnt)/sum(show_cnt) as ctr  --单位：%
+         |  100*sum(click_cnt)/sum(show_cnt) as ctr,  --单位：%
          |  `date`
          |from dl_cpc.hottopic_unit_ect_summary_sjq
          |where `date` = '$date'
