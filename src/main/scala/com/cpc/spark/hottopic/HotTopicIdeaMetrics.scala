@@ -69,9 +69,11 @@ object HotTopicIdeaMetrics {
         val ideaidTitle = spark.sql(sql3)
 
         val result = ideaidCtr.join(ideaidAuc,Seq("ideaid")).join(ideaidTitle,Seq("ideaid"),"left_outer")
-            .select("ideaid","ctr","auc","tokens")
+            .select("ideaid","ctr","auc","sum","tokens")
 
         result.show(10)
+
+        result.repartition(10).write.saveAsTable("test.adlog20190221")
     }
     case class IdeaidAuc(var ideaid:String,var auc:Double)
 }
