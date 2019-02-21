@@ -104,15 +104,66 @@ object BiReport {
          |group by if_direct, `date`
        """.stripMargin
 
-    val data0 = spark.sql(sql3)
-    val total_money = data0.select("money").rdd.map( x => x.getAs[Long]("money")).reduce(_+_).toDouble
-    val data1 = data0.withColumn("money_acount", col("money")/total_money)
+    val data10 = spark.sql(sql3)
+    val total_money = data10.select("money").rdd.map( x => x.getAs[Long]("money")).reduce(_+_).toDouble
+    val data1 = data10.withColumn("money_acount", col("money")/total_money)
       .select("direct", "money", "money_acount", "cpm", "acp", "ctr", "`date`")
 
     val report_tb1 = "report2.hottopic_direct_summary"
     val deletesql1 = s"delete from report2.hottopic_direct_summary where date = '$date'"
     update(deletesql1)
     insert(data1, report_tb1)
+
+    val sql4 =
+      s"""
+         |select
+         |  a.`date` as `date`,
+         |  if(b.if_direct is not null, b.if_direct, 2) as direct ,
+         |  case
+         |    when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
+         |    else 'cpc'
+         |   end as mode,
+         |  sum(case WHEN isclick == 1 then price else 0 end) as money,
+         |  round(sum(isclick)*100 / sum(isshow),3) as ctr,
+         |  round(sum(case WHEN isclick == 1 then price else 0 end)*10/sum(isshow),3) as cpm,
+         |  round(sum(case WHEN isclick == 1 then price else 0 end)/sum(isclick),3) as acp
+         |from
+         |(
+         |  select *
+         |  from dl_cpc.cpc_hot_topic_union_log
+         |  WHERE `date` = '$date'
+         |   and isshow = 1
+         |   and ext['antispam'].int_value = 0
+         |   and adsrc = 1
+         |   and media_appsid = '80002819'
+         |   AND userid > 0
+         |   AND (ext["charge_type"] IS NULL OR ext["charge_type"].int_value = 1)
+         | ) a
+         | left join (
+         |  select
+         |    unitid,
+         |    max(if_direct) as if_direct
+         |  from dl_cpc.hottopic_unit_ect_summary_sjq
+         |  where `date` = '$date'
+         |  group by unitid) b
+         | on a.unitid=b.unitid
+         | group by
+         |   a.`date`,
+         |   if(b.if_direct is not null, b.if_direct, 2),
+         |  case
+         |    when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
+         |    else 'cpc'
+         |   end
+       """.stripMargin
+
+    val data20 = spark.sql(sql4)
+    val data2 = data20.withColumn("money_account", col("money")/total_money)
+      .select("direct", "mode", "money", "money_account", "cpm", "acp", "ctr", "'date'")
+
+    val report_tb2 = "report2.hottopic_direct_mode_summary"
+    val deletesql2 = s"delete from report2.hottopic_direct_mode_summary where date = '$date'"
+    update(deletesql2)
+    insert(data2, report_tb2)
 
 
 
