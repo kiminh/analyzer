@@ -54,9 +54,22 @@ object HotTopicIdeaMetrics {
                |group by ideaid
              """.stripMargin
 
-        val result = spark.sql(sql2)
-          .join(ideaidAuc,Seq("ideaid"))
-          .select("ideaid","ctr","auc")
+        val ideaidCtr = spark.sql(sql2)
+
+//        val result = spark.sql(sql2)
+//          .join(ideaidAuc,Seq("ideaid"))
+//          .select("ideaid","ctr","auc")
+
+        val sql3 =
+            s"""
+               |select cast(id as string) as ideaid, tokens
+               |from dl_cpc.ideaid_title
+             """.stripMargin
+
+        val ideaidTitle = spark.sql(sql3)
+
+        val result = ideaidCtr.join(ideaidAuc,Seq("ideaid")).join(ideaidTitle,Seq("ideaid"),"left_outer")
+            .select("ideaid","ctr","auc","tokens")
 
         result.show(10)
     }
