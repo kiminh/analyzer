@@ -282,7 +282,7 @@ object BiReport {
          |  round(sum(if( ratio >= 2,1,0))/sum(1)*100,3) as unit_ratio_gt200,
          |  round(sum(if( ratio >= 1 and ratio < 2,1,0))/sum(1)*100,3) as unit_ratio_gt100,
          |  round(sum(if( ratio >= 0.5 and ratio < 1,1,0))/sum(1)*100,3) as unit_ratio_gt50,
-         |  round(sum(if( ratio < 0.5,1,0))/sum(1)*100,3) as unit_ratio_lt50,
+         |  round(sum(if( ratio < 0.5,1,0))/sum(1)*100,3) as unit_ratio_lt200,
          |  round(sum(if( ratio is null,1,0))/sum(1)*100,3) as unit_ratio_et0
          |from
          |(
@@ -313,7 +313,7 @@ object BiReport {
     val data50 = spark.sql(sql7)
     val data5 = data50
       .select(    "usertype","money_qtt", "money_common_unit", "money_hottopic",   "hottopic_to_qtt_ratio",  "hottopic_to_co_uint_ratio",  "unit_ratio_gt200",  "unit_ratio_gt100", "unit_ratio_gt50",
-        "unit_ratio_lt50",
+        "unit_ratio_lt200",
         "unit_ratio_et0",
         "`date`")
     val report_tb5 = "report2.hottopic_indirect_usertype_ratio_distribution"
@@ -321,6 +321,58 @@ object BiReport {
     update(deletesql5)
     insert(data5, report_tb5)
 
+    val sql8 =
+      s"""
+         |select
+         | `date`,
+         |  case when round(adclass/1000000) == 100 then 'app'
+         |  when round(adclass/1000) == 110110 then 'wz'
+         |  else 'notag' end as adclass,
+         |  sum(qtt_money_1) money_qtt,
+         |  sum(qtt_money_2) money_common_unit,
+         |  sum(hottopic_money) money_hottopic,
+         |  round(sum(hottopic_money)/sum(qtt_money_1)*100,3) as hottopic_to_qtt_ratio,
+         |  if(sum(qtt_money_2)>0, round(sum(hottopic_money)/sum(qtt_money_2)*100,3), 0) as hottopic_to_co_uint_ratio,
+         |  round(sum(if( ratio >= 2,1,0))/sum(1)*100,3) as unit_ratio_gt200,
+         |  round(sum(if( ratio >= 1 and ratio < 2,1,0))/sum(1)*100,3) as unit_ratio_gt100,
+         |  round(sum(if( ratio >= 0.5 and ratio < 1,1,0))/sum(1)*100,3) as unit_ratio_gt50,
+         |  round(sum(if( ratio < 0.5,1,0))/sum(1)*100,3) as unit_ratio_lt200,
+         |  round(sum(if( ratio is null,1,0))/sum(1)*100,3) as unit_ratio_et0
+         |from
+         |(
+         |  select
+         |    A.`date`,
+         |    A.unitid,
+         |    A.adclass,
+         |    A.money                            as qtt_money_1, --unitid, usertype, adclass对应的qtt_money  大于0
+         |    if(B.unit_money_qtt      is null,0,B.unit_money_qtt     ) as qtt_money_2, --unitid                   对应的qtt_money, 可为0
+         |    if(B.unit_money_hottopic is null,0,B.unit_money_hottopic) as hottopic_money, --可为0
+         |    round(B.unit_money_hottopic/A.money,3)     as ratio
+         |  from      dl_cpc.unit_ect_summary_sjq  A --qtt, money_byunit > 0
+         |  left join dl_cpc.hottopic_unit_ect_summary_sjq B --novel, choose = 0
+         |    on A.unitid = B.unitid
+         |   and B.if_direct = 0
+         |   and B.`date`= '$date'
+         | where A.media = 'qtt'
+         |   and A.money > 0
+         |   and A.`date`= '$date'
+         |) a
+         |group by
+         |  `date`,
+         |  case when round(adclass/1000000) == 100 then 'app'
+         |  when round(adclass/1000) == 110110 then 'wz'
+         |  else 'notag' end
+       """.stripMargin
+    val data60 = spark.sql(sql8)
+    val data6 = data60
+      .select("adclass","money_qtt", "money_common_unit", "money_hottopic",   "hottopic_to_qtt_ratio",  "hottopic_to_co_uint_ratio",  "unit_ratio_gt200",  "unit_ratio_gt100", "unit_ratio_gt50",
+        "unit_ratio_lt200",
+        "unit_ratio_et0",
+        "`date`")
+    val report_tb6 = "report2.hottopic_indirect_adclass_ratio_distribution"
+    val deletesql6 = s"delete from report2.hottopic_indirect_adclass_ratio_distribution where date = '$date'"
+    update(deletesql6)
+    insert(data6, report_tb6)
 
 
 
