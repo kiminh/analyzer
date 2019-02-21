@@ -158,7 +158,7 @@ object BiReport {
 
     val data20 = spark.sql(sql4)
     val data2 = data20.withColumn("money_account", col("money")/total_money)
-      .select("direct", "mode", "money", "money_account", "cpm", "acp", "ctr", "'date'")
+      .select("direct", "mode", "money", "money_account", "cpm", "acp", "ctr", "`date`")
 
     val report_tb2 = "report2.hottopic_direct_mode_summary"
     val deletesql2 = s"delete from report2.hottopic_direct_mode_summary where date = '$date'"
