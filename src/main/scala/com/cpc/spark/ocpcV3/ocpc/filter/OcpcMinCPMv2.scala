@@ -203,7 +203,7 @@ object OcpcMinCPMv2 {
        |  percentile(bid, 0.015) as min_bid,
        |  percentile(cpm, 0.15) as min_cpm,
        |  count(1) as cnt,
-       |  percentile(exp_cvr, 0.98) * 1.5 as pcvr
+       |  percentile(exp_cvr, 0.98) * 1.2 as pcvr
        |FROM
        |  base_data
        |GROUP BY hr, adslot_type, city_level, floor(adclass/1000), ocpc_flag
