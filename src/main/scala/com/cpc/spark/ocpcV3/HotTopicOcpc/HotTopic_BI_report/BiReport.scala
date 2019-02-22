@@ -120,7 +120,7 @@ object BiReport {
          |  a.`date` as `date`,
          |  if(b.if_direct is not null, b.if_direct, 2) as direct ,
          |  case
-         |    when length(ext_string["ocpc_log"]) > 0 and exptags like "%hot_topic%" then 'ocpc'
+         |    when length(ext_string["ocpc_log"]) >= 0 and exptags like "%hot_topic%" then 'ocpc'
          |    else 'cpc'
          |   end as mode,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
@@ -151,7 +151,7 @@ object BiReport {
          |   a.`date`,
          |   if(b.if_direct is not null, b.if_direct, 2),
          |  case
-         |    when length(ext_string["ocpc_log"]) > 0 and exptags like "%hot_topic%" then 'ocpc'
+         |    when length(ext_string["ocpc_log"]) >= 0 and exptags like "%hot_topic%" then 'ocpc'
          |    else 'cpc'
          |   end
        """.stripMargin
