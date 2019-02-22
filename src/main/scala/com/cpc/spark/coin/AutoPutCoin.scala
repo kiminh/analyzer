@@ -76,8 +76,9 @@ object AutoPutCoin {
                |and iscvr = 1
                |and media_appsid in ('80000001','80000002')
                |and ideaid > 0
-               |and adslot_type in (1, 2, 3)
+               |and adslot_type in (1, 2)
                |and round(ext['adclass'].int_value/1000000) != 107 and round(ext['adclass'].int_value/1000000) != 134
+               |and ((adslot_type<>7 and ext['adclass'].int_value like '100%') or (ext['adclass'].int_value in (110110100, 125100100)))
                |and ideaid not in ($ideaBlacklist)
                |and (userid in ($userWhiteList) or ext['usertype'].int_value != 2)
              """.stripMargin
@@ -97,9 +98,10 @@ object AutoPutCoin {
                |        where ($datehour)
                |        and label2 = 1
                |        and media_appsid in ('80000001','80000002')
-               |        and adslot_type in (1, 2, 3)
+               |        and adslot_type in (1, 2)
                |        and ideaid > 0
                |        and round(adclass/1000000) != 107 and round(adclass/1000000) != 134
+               |        and ((adslot_type<>7 and adclass like '100%') or (adclass in (110110100, 125100100)))
                |    ) a left outer join
                |    (
                |        select x.id as ideaid ,x.user_id as userid,y.account_type as account_type
