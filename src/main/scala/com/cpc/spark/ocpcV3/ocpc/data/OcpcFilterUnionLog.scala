@@ -18,20 +18,20 @@ object OcpcFilterUnionLog {
       .repartition(100).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_hourly")
     println("successfully save data into table: dl_cpc.filtered_union_log_hourly")
 
-    // 按需求增加需要进行抽取的数据表
-    // bid
-    val bidData = getBidUnionlog(data, date, hour, spark)
-    bidData
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_bid_hourly")
-
-    // 增加可供ab对比实验的数据表
-    val abData = getAbUnionlog(data, date, hour, spark)
-    abData
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_exptag_hourly")
+//    // 按需求增加需要进行抽取的数据表
+//    // bid
+//    val bidData = getBidUnionlog(data, date, hour, spark)
+//    bidData
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_bid_hourly")
+//
+//    // 增加可供ab对比实验的数据表
+//    val abData = getAbUnionlog(data, date, hour, spark)
+//    abData
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .repartition(50).write.mode("overwrite").insertInto("dl_cpc.filtered_union_log_exptag_hourly")
   }
 
   def getAbUnionlog(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
