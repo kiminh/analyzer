@@ -260,7 +260,6 @@ object prepare_bsCvr_dnnPredictSample {
     }
     re.mkString("','")
   }
-
   /**
     * 获取时间
     *
