@@ -120,6 +120,7 @@ object prepare_bsCvr_dnnPredictSample {
       s"""
      |select unitid,userid,planid,adslot_type,charge_type from adv
      |where unitid in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid group by unitid)
+     |and unitid not in ('1910998')
      |""".stripMargin
 
     spark.sql(table2).select("unitid").createTempView("unitid_table")
