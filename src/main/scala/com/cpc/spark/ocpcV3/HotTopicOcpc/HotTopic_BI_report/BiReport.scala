@@ -120,7 +120,7 @@ object BiReport {
          |  a.`date` as `date`,
          |  if(b.if_direct is not null, b.if_direct, 2) as direct ,
          |  case
-         |    when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
+         |    when length(ext_string["ocpc_log"]) > 0 and exptags like "%hot_topic%" then 'ocpc'
          |    else 'cpc'
          |   end as mode,
          |  sum(case WHEN isclick == 1 then price else 0 end) as money,
@@ -151,7 +151,7 @@ object BiReport {
          |   a.`date`,
          |   if(b.if_direct is not null, b.if_direct, 2),
          |  case
-         |    when length(ext_string["ocpc_log"]) > 0 then 'ocpc'
+         |    when length(ext_string["ocpc_log"]) > 0 and exptags like "%hot_topic%" then 'ocpc'
          |    else 'cpc'
          |   end
        """.stripMargin
@@ -267,8 +267,6 @@ object BiReport {
     update(deletesql4)
     insert(data4, report_tb4)
 
-    `date`
-
     val sql7 =
       s"""
          |select
@@ -282,7 +280,7 @@ object BiReport {
          |  round(sum(if( ratio >= 2,1,0))/sum(1)*100,3) as unit_ratio_gt200,
          |  round(sum(if( ratio >= 1 and ratio < 2,1,0))/sum(1)*100,3) as unit_ratio_gt100,
          |  round(sum(if( ratio >= 0.5 and ratio < 1,1,0))/sum(1)*100,3) as unit_ratio_gt50,
-         |  round(sum(if( ratio < 0.5,1,0))/sum(1)*100,3) as unit_ratio_lt200,
+         |  round(sum(if( ratio < 0.5,1,0))/sum(1)*100,3) as unit_ratio_lt50,
          |  round(sum(if( ratio is null,1,0))/sum(1)*100,3) as unit_ratio_et0
          |from
          |(
@@ -313,7 +311,7 @@ object BiReport {
     val data50 = spark.sql(sql7)
     val data5 = data50
       .select(    "usertype","money_qtt", "money_common_unit", "money_hottopic",   "hottopic_to_qtt_ratio",  "hottopic_to_co_uint_ratio",  "unit_ratio_gt200",  "unit_ratio_gt100", "unit_ratio_gt50",
-        "unit_ratio_lt200",
+        "unit_ratio_lt50",
         "unit_ratio_et0",
         "`date`")
     val report_tb5 = "report2.hottopic_indirect_usertype_ratio_distribution"
@@ -336,7 +334,7 @@ object BiReport {
          |  round(sum(if( ratio >= 2,1,0))/sum(1)*100,3) as unit_ratio_gt200,
          |  round(sum(if( ratio >= 1 and ratio < 2,1,0))/sum(1)*100,3) as unit_ratio_gt100,
          |  round(sum(if( ratio >= 0.5 and ratio < 1,1,0))/sum(1)*100,3) as unit_ratio_gt50,
-         |  round(sum(if( ratio < 0.5,1,0))/sum(1)*100,3) as unit_ratio_lt200,
+         |  round(sum(if( ratio < 0.5,1,0))/sum(1)*100,3) as unit_ratio_lt50,
          |  round(sum(if( ratio is null,1,0))/sum(1)*100,3) as unit_ratio_et0
          |from
          |(
@@ -366,7 +364,7 @@ object BiReport {
     val data60 = spark.sql(sql8)
     val data6 = data60
       .select("adclass","money_qtt", "money_common_unit", "money_hottopic",   "hottopic_to_qtt_ratio",  "hottopic_to_co_uint_ratio",  "unit_ratio_gt200",  "unit_ratio_gt100", "unit_ratio_gt50",
-        "unit_ratio_lt200",
+        "unit_ratio_lt50",
         "unit_ratio_et0",
         "`date`")
     val report_tb6 = "report2.hottopic_indirect_adclass_ratio_distribution"
