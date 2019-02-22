@@ -53,7 +53,7 @@ object OcpcCPCbid {
 //        .filter(s"identifier in (1918962, 1921432, 1884679, 1929766)")
 
     val resultDF = data
-        .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "factor1", "factor2", "factor3")
+        .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit("qtt_demo"))
@@ -126,6 +126,9 @@ object OcpcCPCbid {
       val post_cvr2 = record.getAs[Double]("cvr2")
       val post_cvr3 = record.getAs[Double]("cvr3")
       val min_cpm = record.getAs[Double]("min_cpm").toLong
+      val factor1 = record.getAs[Double]("factor1")
+      val factor2 = record.getAs[Double]("factor2")
+      val factor3 = record.getAs[Double]("factor3")
 
 
       println(s"unit_id:$unit_id, min_bid:$min_bid, post_cvr1:$post_cvr1, post_cvr2:$post_cvr2, post_cvr3:$post_cvr3, min_cpm:$min_cpm")
@@ -137,7 +140,10 @@ object OcpcCPCbid {
         cvGoal1PostCvr = post_cvr1,
         cvGoal2PostCvr = post_cvr2,
         cvGoal3PostCvr = post_cvr3,
-        minCpm = min_cpm
+        minCpm = min_cpm,
+        cvGoal1Smooth = factor1,
+        cvGoal2Smooth = factor2,
+        cvGoal3Smooth = factor3
       )
       list += currentItem
 
