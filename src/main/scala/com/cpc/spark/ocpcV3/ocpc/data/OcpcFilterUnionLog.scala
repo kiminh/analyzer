@@ -150,6 +150,7 @@ object OcpcFilterUnionLog {
          |from dl_cpc.cpc_union_log
          |where $selectWhere
          |and (isshow>0 or isclick>0)
+         |and (ext["charge_type"] IS NULL OR ext["charge_type"].int_value = 1)
       """.stripMargin
     println(sqlRequest)
     val rawData = spark
