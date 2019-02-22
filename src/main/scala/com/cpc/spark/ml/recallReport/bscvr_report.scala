@@ -83,7 +83,7 @@ object bscvr_report {
 |         and (charge_type = 1 or charge_type is null)) ta
 |         join
 |         (select cast(unitid as bigint) as unitid
-|         from dl_cpc.cpc_recall_bsExp_unitid where date>'$startdate' group by unitid) tb on (ta.unitid=tb.unitid)
+|         from dl_cpc.cpc_recall_high_confidence_unitid group by unitid) tb on (ta.unitid=tb.unitid)
 |         left join
 |         (select searchid,ideaid, 1 as label from dl_cpc.dl_conversion_by_industry where dt='$tardate'
 |          and isreport=1 group by searchid,ideaid) tc
