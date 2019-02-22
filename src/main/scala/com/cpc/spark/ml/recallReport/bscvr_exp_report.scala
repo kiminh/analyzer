@@ -34,8 +34,8 @@ object bscvr_exp_report {
           'exp_unitid' as unitid
           from
          (select searchid, ideaid, isshow, isclick, uid,industry,
-         if(exptags like '%bscvr:0.3%', 'enabled0.3',
-         if(exptags like '%bscvr:0.5%', 'enabled0.5', 'control')) as exp,
+         if(exptags like '%expbscvr:0.3%', 'enabled0.3',
+         if(exptags like '%expbscvr:0.5%', 'enabled0.5', 'control')) as exp,
          adslot_type, cast(unitid as bigint) as unitid,
          price FROM dl_cpc.slim_union_log
          WHERE dt='$tardate'
