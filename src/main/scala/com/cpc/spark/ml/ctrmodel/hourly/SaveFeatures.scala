@@ -47,7 +47,7 @@ object SaveFeatures {
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
     //saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
     //saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr，逻辑和saveCvrDataV2一致， 将转化的3张表合并到一张表
-    saveCvrDataV4(spark, date, hour, yesterday, versionV2) //第二版cvr，逻辑和saveCvrDataV2一致， 将应用下载和信息流的转化合并到一张表
+    //saveCvrDataV4(spark, date, hour, yesterday, versionV2) //第二版cvr，逻辑和saveCvrDataV2一致， 将应用下载和信息流的转化合并到一张表
     println("SaveFeatures_done")
   }
 
@@ -876,6 +876,7 @@ object SaveFeatures {
   }
 
   /* 将信息流和应用商城的合成一张表 */
+  @deprecated
   def saveCvrDataV4(spark: SparkSession, date: String, hour: String, yesterday: String, version: String): Unit = {
     import spark.implicits._
 
