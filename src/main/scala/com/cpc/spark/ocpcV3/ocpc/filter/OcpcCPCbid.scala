@@ -48,7 +48,7 @@ object OcpcCPCbid {
         .withColumn("min_bid", when(col("min_bid1").isNotNull, col("min_bid1")).otherwise(col("min_bid2")))
         .withColumn("min_cpm", col("min_cpm2"))
         .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm"))
-        .na.fill(0.1, Seq("factor1", "factor2", "factor3"))
+        .na.fill(0.2, Seq("factor1", "factor2", "factor3"))
         .filter(s"identifier is not ('1854873', '1702796', '1817158', '1875122')")
 //        .filter(s"identifier in (1918962, 1921432, 1884679, 1929766)")
 
