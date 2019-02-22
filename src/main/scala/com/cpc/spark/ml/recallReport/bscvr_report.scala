@@ -8,7 +8,7 @@ import org.apache.spark.sql.SparkSession
 object bscvr_report {
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
-      .appName("bscvr exp report")
+      .appName("bscvr report")
       .enableHiveSupport()
       .getOrCreate()
     val cal1 = Calendar.getInstance()
