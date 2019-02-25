@@ -678,7 +678,9 @@ object OcpcSuggestCpa{
       .where(s"version = 'qtt_demo'")
       .withColumn("unitid", col("kvalue"))
       .withColumn("original_conversion", col("conversion_goal"))
-      .select("unitid", "kvalue", "original_conversion")
+      .selectExpr("cast(unitid as int) unitid", "kvalue", "original_conversion")
+
+    resultDF.write.mode("overwrite").saveAsTable("test.check_cpa_suggest_data20190225")
 
     resultDF
   }
