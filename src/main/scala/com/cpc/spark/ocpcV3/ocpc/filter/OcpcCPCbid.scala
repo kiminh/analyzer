@@ -41,24 +41,22 @@ object OcpcCPCbid {
         .join(cvrData, Seq("identifier"), "outer")
         .join(cpmData, Seq("identifier"), "outer")
         .join(cvrAlphaData, Seq("identifier"), "left_outer")
-        .select("identifier", "min_bid1", "cvr1", "cvr2", "cvr3", "min_bid2", "min_cpm2", "factor1", "factor2", "factor3")
+        .select("identifier", "cpc_bid", "cvr1", "cvr2", "cvr3", "min_bid", "min_cpm", "factor1", "factor2", "factor3")
         .withColumn("cvr1", when(col("identifier") === "270", 0.5).otherwise(col("cvr1")))
         .withColumn("cvr2", when(col("identifier") === "270", 0.5).otherwise(col("cvr2")))
         .withColumn("cvr3", when(col("identifier") === "270", 0.5).otherwise(col("cvr3")))
-        .withColumn("min_bid", when(col("min_bid1").isNotNull, col("min_bid1")).otherwise(col("min_bid2")))
-        .withColumn("min_cpm", col("min_cpm2"))
-        .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm"))
+        .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm", "cpc_bid"))
         .na.fill(0.2, Seq("factor1", "factor2", "factor3"))
         .filter(s"identifier not in ('1854873', '1702796', '1817158', '1875122')")
 //        .filter(s"identifier in (1918962, 1921432, 1884679, 1929766)")
 
     val resultDF = data
-        .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3")
+        .selectExpr("identifier", "cast(cpc_bid as double) cpc_bid", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit("qtt_demo"))
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190218")
-       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190218")
+//       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(data, fileName)
   }
@@ -83,9 +81,7 @@ object OcpcCPCbid {
   def getCpmData(date: String, hour: String, spark: SparkSession) = {
     val data = spark
       .table("test.ocpc_pcvr_smooth_cpm")
-      .withColumn("min_bid2", col("min_bid"))
-      .withColumn("min_cpm2", col("min_cpm"))
-      .select("identifier", "min_bid2", "min_cpm2")
+      .select("identifier", "min_bid", "min_cpm")
     data
   }
 
@@ -113,7 +109,7 @@ object OcpcCPCbid {
  def savePbPack(dataset: DataFrame, filename: String): Unit = {
     var list = new ListBuffer[SingleOcpcCpcBid]
     println("size of the dataframe")
-    val resultData = dataset.selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "factor1", "factor2", "factor3")
+    val resultData = dataset.selectExpr("identifier", "cast(cpc_bid as double) cpc_bid", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "factor1", "factor2", "factor3")
     println(resultData.count)
     resultData.show(10)
     resultData.printSchema()
@@ -121,6 +117,7 @@ object OcpcCPCbid {
 
     for (record <- resultData.collect()) {
       val unit_id = record.getAs[String]("identifier").toLong
+      val cpc_bid = record.getAs[Double]("cpc_bid")
       val min_bid = record.getAs[Double]("min_bid")
       val post_cvr1 = record.getAs[Double]("cvr1")
       val post_cvr2 = record.getAs[Double]("cvr2")
@@ -136,14 +133,15 @@ object OcpcCPCbid {
       cnt += 1
       val currentItem = SingleOcpcCpcBid(
         unitid = unit_id,
-        cpcBid = min_bid,
+        cpcBid = cpc_bid,
         cvGoal1PostCvr = post_cvr1,
         cvGoal2PostCvr = post_cvr2,
         cvGoal3PostCvr = post_cvr3,
         minCpm = min_cpm,
         cvGoal1Smooth = factor1,
         cvGoal2Smooth = factor2,
-        cvGoal3Smooth = factor3
+        cvGoal3Smooth = factor3,
+        minBid = min_bid
       )
       list += currentItem
 
@@ -168,10 +166,10 @@ object OcpcCPCbid {
     val resultDF = data
       .groupBy("unitid")
       .agg(
-        min(col("min_bid")).alias("min_bid1")
+        min(col("cpc_bid")).alias("cpc_bid")
       )
       .withColumn("identifier", col("unitid"))
-      .select("identifier", "min_bid1")
+      .select("identifier", "cpc_bid")
 
     resultDF.show(10)
     resultDF
