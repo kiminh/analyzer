@@ -13,7 +13,7 @@ object bscvr_exp_report {
       .getOrCreate()
     import spark.implicits._
     val cal1 = Calendar.getInstance()
-    cal1.add(Calendar.DATE, -1)
+    cal1.add(Calendar.DATE, -3)
     val tardate = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
     cal1.add(Calendar.DATE, -9)
     val startdate = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
