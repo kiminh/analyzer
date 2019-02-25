@@ -21,6 +21,7 @@ object OcpcABtestSimple {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
+//    scp ocpc_abtest.pb cpc@192.168.80.23:/home/cpc/model_server/data/ocpc_abtest.pb
     val date = args(0).toString
     val hour = args(1).toString
 
