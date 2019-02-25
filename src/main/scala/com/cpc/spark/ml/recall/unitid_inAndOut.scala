@@ -90,7 +90,7 @@ object unitid_inAndOut {
     val data = spark.sql(
       s"""
          |select * from dl_cpc.cpc_recall_high_confidence_unitid where unitid not in (select unitid from undesired)
-         |and unitid not in (select unitid from cost_unitid) and unitid not in ()
+         |and unitid not in (select unitid from cost_unitid)
       """.stripMargin).repartition(1).cache()
     data.show(10)
 
