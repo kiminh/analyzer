@@ -41,7 +41,7 @@ object OcpcSuggestCpa{
 
 
     // 读取k值数据
-    val kvalue = getPbK(date, hour, spark)
+    val kvalue = getPbKv2(date, hour, spark)
 
     // unitid维度的industry
     val unitidIndustry = getIndustry(date, hour, spark)
@@ -91,7 +91,6 @@ object OcpcSuggestCpa{
       .withColumn("conversion_goal", when(col("conversion_goal") === 3, 1).otherwise(col("conversion_goal")))
       .join(kvalue, Seq("unitid", "conversion_goal"), "left_outer")
       .withColumn("cal_bid", col("cpa") * col("pcvr") * col("kvalue") / col("jfb"))
-      .withColumn("kvalue", col("kvalue") * 1.0 / 0.9)
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue")
       .withColumn("is_recommend", when(col("auc").isNotNull && col("auc")>0.65, 1).otherwise(0))
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
@@ -119,9 +118,9 @@ object OcpcSuggestCpa{
       .withColumn("version", lit(version))
 
 //    test.ocpc_suggest_cpa_recommend_hourly20190104
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
@@ -173,9 +172,9 @@ object OcpcSuggestCpa{
     // 数据关联
     val data = rawData
       .join(suggestData, Seq("unitid"), "inner")
-      .select("searchid", "unitid", "adclass", "original_conversion", "acb", "cpa", "post_cvr", "kvalue", "isclick", "isshow", "exp_cvr", "bid", "price")
+      .select("searchid", "unitid", "adclass", "original_conversion", "acb", "cpa", "post_cvr", "kvalue", "isclick", "isshow", "exp_cvr", "bid", "price", "jfb")
       .withColumn("cali_cvr", col("exp_cvr") * (1 - alpha) + col("post_cvr") * alpha)
-      .withColumn("dynamicbid", col("cali_cvr") * col("cpa") * col("kvalue") * 1.0 / 0.9)
+      .withColumn("dynamicbid", col("cali_cvr") * col("cpa") * col("kvalue") * 1.0 / col("jfb"))
 //    data.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_20190221")
 
     // 统计dynamicbid的数据分布
@@ -664,6 +663,23 @@ object OcpcSuggestCpa{
       .withColumn("conversion_goal", lit(3))
 
     val resultDF = auc1Data.union(auc2Data).union(auc3Data)
+    resultDF
+  }
+
+  def getPbKv2(date: String, hour: String, spark: SparkSession) = {
+    /*
+    基于unitid维度的新版k值计算方法，从dl_cpc.ocpc_prev_pb_once中抽取，由于有多个conversion_goal,需要进行关联
+     */
+
+    // 获取kvalue
+    //    ocpc_prev_pb_once
+    val resultDF = spark
+      .table("dl_cpc.ocpc_prev_pb_once")
+      .where(s"version = 'qtt_demo'")
+      .withColumn("unitid", col("kvalue"))
+      .withColumn("original_conversion", col("conversion_goal"))
+      .select("unitid", "kvalue", "original_conversion")
+
     resultDF
   }
 
