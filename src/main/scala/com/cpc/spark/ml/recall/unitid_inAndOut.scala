@@ -82,7 +82,7 @@ object unitid_inAndOut {
     val dayCost = new SimpleDateFormat("yyyy-MM-dd").format(cal2.getTime)
     val adv=
       s"""
-         |SELECT unit_id as unitid FROM adv.cost where cost>0 and date>='$dayCost' group by unit_id
+         |SELECT unit_id FROM adv.cost where cost>0 and date>='$dayCost' group by unit_id
       """.stripMargin
 
     spark.read.jdbc(jdbcUrl, adv, jdbcProp).createOrReplaceTempView("cost_unitid")
@@ -90,7 +90,7 @@ object unitid_inAndOut {
     val data = spark.sql(
       s"""
          |select * from dl_cpc.cpc_recall_high_confidence_unitid where unitid not in (select unitid from undesired)
-         |and unitid not in (select unitid from cost_unitid)
+         |and unitid in (select unit_id from cost_unitid)
       """.stripMargin).repartition(1).cache()
     data.show(10)
 
