@@ -676,7 +676,7 @@ object OcpcSuggestCpa{
     val resultDF = spark
       .table("dl_cpc.ocpc_prev_pb_once")
       .where(s"version = 'qtt_demo'")
-      .withColumn("unitid", col("kvalue"))
+      .withColumn("unitid", col("identifier"))
       .withColumn("original_conversion", col("conversion_goal"))
       .selectExpr("cast(unitid as int) unitid", "kvalue", "original_conversion")
 
