@@ -118,9 +118,9 @@ object OcpcSuggestCpa{
       .withColumn("version", lit(version))
 
 //    test.ocpc_suggest_cpa_recommend_hourly20190104
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
@@ -679,8 +679,6 @@ object OcpcSuggestCpa{
       .withColumn("unitid", col("identifier"))
       .withColumn("original_conversion", col("conversion_goal"))
       .selectExpr("cast(unitid as int) unitid", "kvalue", "original_conversion")
-
-    resultDF.write.mode("overwrite").saveAsTable("test.check_cpa_suggest_data20190225")
 
     resultDF
   }
