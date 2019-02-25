@@ -58,7 +58,7 @@ object OcpcGetPb_v2 {
       .filter("cpa_given is not null and conversion_goal is not null")
     data.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_data")
 
-    val resultDF = data
+    val resultDF0 = data
       .groupBy("identifier", "conversion_goal")
       .agg(avg(col("cpa_given")).alias("cpa_given"))
       .join(cvrData, Seq("identifier", "conversion_goal"), "left_outer")
@@ -72,10 +72,16 @@ object OcpcGetPb_v2 {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
+    val indirectUnit = getIndirectUnit( date, hour, spark )
+
+    val resultDF = resultDF0
+      .join(indirectUnit, Seq("identifier"), "inner")
+      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt", "kvalue", "date", "hour", "version")
+
 //        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_prev_pb")
-      resultDF.repartition(10).write.mode("overwrite").insertInto("test.ocpc_hottopic_prev_pb_hourly")
-      resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
-      resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_pb_result_hourly")
+    resultDF.repartition(10).write.mode("overwrite").insertInto("test.ocpc_hottopic_prev_pb_hourly")
+    resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_hottopic_pb_result_hourly")
 
     savePbPack(resultDF, version)
   }
@@ -228,7 +234,47 @@ object OcpcGetPb_v2 {
 
   }
 
+  def getIndirectUnit( date: String, hour: String, spark: SparkSession) = {
+    /*
+    过滤逻辑：
+    1. 统计最近七天分别在热点段子和趣头条上每个广告单元各自的消费
+    2. 仅保留在最近七天的趣头条上消费数大于0的广告单元
+     */
+    // 计算日期周期
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val end_date = sdf.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(end_date)
+    calendar.add(Calendar.DATE, -7)
+    val start_date = calendar.getTime
+    val date1 = sdf.format(start_date)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  (case when media_appsid = '80002819' then 'hottopic' else 'qtt' end) as media,
+         |  cast(unitid as string) identifier,
+         |  sum(total_price) as cost
+         |FROM
+         |  dl_cpc.ocpcv3_ctr_data_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  media_appsid in ('80002819', '80000001', '80000002')
+         |GROUP BY (case when media_appsid = '80002819' then 'hottopic' else 'qtt' end), unitid
+       """.stripMargin
+    println(sqlRequest1)
+    val rawData = spark.sql(sqlRequest1)
+
+    // 按照media抽取出在趣头条上有消费的广告
+    val resultDF = rawData
+      .filter(s"cost > 0 and media = 'qtt'")
+      .select("identifier")
+      .distinct()
+
+    resultDF
+  }
 
   def savePbPack(dataset: Dataset[Row], version: String): Unit = {
     var list = new ListBuffer[SingleRecord]
