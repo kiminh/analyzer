@@ -20,21 +20,25 @@ object unitid_inAndOut {
     spark.sql(
       s"""
          |select ta.unitid,'bscvr' as experiment,0 as performance from
-         |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bscvr_report where date='$tardate' and exp='control') ta
+         |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bscvr_report where date='$tardate' and exp='control'
+         |and unitid not in ('exp_unitid', 'all')) ta
          |join
-         |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bscvr_report where date='$tardate' and exp='enabled0.3') tb
+         |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bscvr_report where date='$tardate' and exp='enabled0.3'
+         |and unitid not in ('exp_unitid', 'all')) tb
          |on ta.unitid=tb.unitid
-         |where ta.cpm>tb.cpm or ta.cvr>tb.cvr group by unitid
+         |where ta.cpm>tb.cpm or ta.cvr>tb.cvr group by ta.unitid
       """.stripMargin).createOrReplaceTempView("bscvr")
 
     spark.sql(
       s"""
          |select ta.unitid,'bscvrExp' as experiment,1 as performance from
-         |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bsExp_report where date='$tardate' and exp='control') ta
+         |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bsExp_report where date='$tardate' and exp='control'
+         |and unitid not in ('exp_unitid', 'all')) ta
          |join
-         |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bsExp_report where date='$tardate' and exp='enabled0.3') tb
+         |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bsExp_report where date='$tardate' and exp='enabled0.3'
+         |and unitid not in ('exp_unitid', 'all')) tb
          |on ta.unitid=tb.unitid
-         |where ta.cpm>tb.cpm or ta.cvr>tb.cvr group by unitid
+         |where ta.cpm>tb.cpm or ta.cvr>tb.cvr group by ta.unitid
       """.stripMargin).createOrReplaceTempView("bscvrExp")
 
     spark.sql(
@@ -52,19 +56,19 @@ object unitid_inAndOut {
 
     spark.sql(
       s"""
-         |select unitid dl_cpc.cpc_recall_unitid_performance where day>='$startdate' and experiment='bscvrExp'
+         |select unitid from dl_cpc.cpc_recall_unitid_performance where day>='$startdate' and experiment='bscvrExp'
          |group by unitid having count(*)>2
       """.stripMargin).repartition(1).createOrReplaceTempView("desired")
 
     spark.sql(
       s"""
-         |insert overwrite table dl_cpc.cpc_recall_high_confidence_unitid partition (day='$tardate')
+         |insert overwrite table dl_cpc.cpc_recall_high_confidence_unitid partition (date='$tardate')
          |select unitid from desired
       """.stripMargin)
 
     spark.sql(
       s"""
-         |select unitid dl_cpc.cpc_recall_unitid_performance where day>='$startdate' and experiment='bscvr'
+         |select unitid from dl_cpc.cpc_recall_unitid_performance where day>='$startdate' and experiment='bscvr'
          |group by unitid having count(*)>1
       """.stripMargin).repartition(1).createOrReplaceTempView("undesired")
 
@@ -78,7 +82,7 @@ object unitid_inAndOut {
 
     spark.sql(
       s"""
-         |insert overwrite table dl_cpc.cpc_recall_high_confidence_unitid partition (day='$tardate')
+         |insert overwrite table dl_cpc.cpc_recall_high_confidence_unitid partition (date='$tardate')
          |select unitid from confidence_unitid
       """.stripMargin)
   }
