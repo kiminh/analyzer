@@ -58,7 +58,7 @@ object OcpcCPCbidV2 {
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190218")
     //       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
-    savePbPack(data, fileName)
+    savePbPack(data, "ocpc_cpc_bidv2.pb")
   }
 
   def getCvrAlphaData(dataPath: String, date: String, hour: String, spark: SparkSession) = {
@@ -166,7 +166,7 @@ object OcpcCPCbidV2 {
     val resultDF = data
       .groupBy("unitid")
       .agg(
-        min(col("cpc_bid")).alias("cpc_bid")
+        min(col("min_bid")).alias("cpc_bid")
       )
       .withColumn("identifier", col("unitid"))
       .select("identifier", "cpc_bid")
