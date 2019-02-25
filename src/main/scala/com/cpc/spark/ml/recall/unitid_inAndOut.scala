@@ -1,7 +1,7 @@
 package com.cpc.spark.ml.recall
 
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Properties}
 
 import org.apache.spark.sql.SparkSession
 
@@ -71,10 +71,26 @@ object unitid_inAndOut {
          |select unitid from dl_cpc.cpc_recall_unitid_performance where day>='$startdate' and experiment='bscvr'
          |group by unitid having count(*)>1
       """.stripMargin).repartition(1).createOrReplaceTempView("undesired")
+    //剔除15天以内没有活跃的单元
+    val jdbcProp = new Properties()
+    val jdbcUrl = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com"
+    jdbcProp.put("user", "adv_live_read")
+    jdbcProp.put("password", "seJzIPUc7xU")
+    jdbcProp.put("driver", "com.mysql.jdbc.Driver")
+    val cal2 = Calendar.getInstance()
+    cal2.add(Calendar.DATE, -15)
+    val dayCost = new SimpleDateFormat("yyyy-MM-dd").format(cal2.getTime)
+    val adv=
+      s"""
+         |SELECT unit_id as unitid FROM adv.cost where cost>0 and date>='$dayCost' group by unit_id
+      """.stripMargin
+
+    spark.read.jdbc(jdbcUrl, adv, jdbcProp).createOrReplaceTempView("cost_unitid")
 
     val data = spark.sql(
       s"""
          |select * from dl_cpc.cpc_recall_high_confidence_unitid where unitid not in (select unitid from undesired)
+         |and unitid not in (select unitid from cost_unitid) and unitid not in ()
       """.stripMargin).repartition(1).cache()
     data.show(10)
 
