@@ -19,7 +19,7 @@ object unitid_inAndOut {
 
     spark.sql(
       s"""
-         |select unitid,'bscvr' as experiment,0 as performance from
+         |select ta.unitid,'bscvr' as experiment,0 as performance from
          |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bscvr_report where date='$tardate' and exp='control') ta
          |join
          |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bscvr_report where date='$tardate' and exp='enabled0.3') tb
@@ -29,7 +29,7 @@ object unitid_inAndOut {
 
     spark.sql(
       s"""
-         |select unitid,'bscvrExp' as experiment,1 as performance from
+         |select ta.unitid,'bscvrExp' as experiment,1 as performance from
          |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bsExp_report where date='$tardate' and exp='control') ta
          |join
          |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bsExp_report where date='$tardate' and exp='enabled0.3') tb
