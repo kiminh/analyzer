@@ -12,6 +12,7 @@ object unitid_inAndOut {
       .enableHiveSupport()
       .getOrCreate()
     val cal1 = Calendar.getInstance()
+    val today = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
     cal1.add(Calendar.DATE, -1)
     val tardate = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
     cal1.add(Calendar.DATE, -2)
@@ -62,7 +63,7 @@ object unitid_inAndOut {
 
     spark.sql(
       s"""
-         |insert overwrite table dl_cpc.cpc_recall_high_confidence_unitid partition (date='$tardate')
+         |insert into dl_cpc.cpc_recall_high_confidence_unitid partition (date='$tardate')
          |select unitid from desired
       """.stripMargin)
 
@@ -82,7 +83,7 @@ object unitid_inAndOut {
     val dayCost = new SimpleDateFormat("yyyy-MM-dd").format(cal2.getTime)
     val adv=
       s"""
-         |SELECT unit_id FROM adv.cost where cost>0 and date>='$dayCost' group by unit_id
+         |(SELECT unit_id FROM adv.cost where cost>0 and date>='$dayCost' group by unit_id) temp
       """.stripMargin
 
     spark.read.jdbc(jdbcUrl, adv, jdbcProp).createOrReplaceTempView("cost_unitid")
@@ -90,7 +91,7 @@ object unitid_inAndOut {
     val data = spark.sql(
       s"""
          |select * from dl_cpc.cpc_recall_high_confidence_unitid where unitid not in (select unitid from undesired)
-         |and unitid in (select unit_id from cost_unitid)
+         |and unitid in (select unit_id from cost_unitid) and date='$tardate'
       """.stripMargin).repartition(1).cache()
     data.show(10)
 
@@ -98,7 +99,7 @@ object unitid_inAndOut {
 
     spark.sql(
       s"""
-         |insert overwrite table dl_cpc.cpc_recall_high_confidence_unitid partition (date='$tardate')
+         |insert overwrite table dl_cpc.cpc_recall_high_confidence_unitid partition (date='$today')
          |select unitid from confidence_unitid
       """.stripMargin)
   }
