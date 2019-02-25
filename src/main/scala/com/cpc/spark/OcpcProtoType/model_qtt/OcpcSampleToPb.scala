@@ -64,7 +64,8 @@ object OcpcSampleToPb {
          |SELECT
          |  identifier,
          |  conversion_goal,
-         |  kvalue,
+         |  (case when kvalue > 15.0 then 15.0
+         |        else kvalue end) as kvalue,
          |  cpagiven,
          |  cvrcnt
          |FROM
