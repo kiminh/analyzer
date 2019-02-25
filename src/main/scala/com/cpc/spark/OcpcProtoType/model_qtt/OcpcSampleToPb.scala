@@ -44,6 +44,7 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
+//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once")
         .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
@@ -64,8 +65,7 @@ object OcpcSampleToPb {
          |SELECT
          |  identifier,
          |  conversion_goal,
-         |  (case when kvalue > 15.0 then 15.0
-         |        else kvalue end) as kvalue,
+         |  kvalue,
          |  cpagiven,
          |  cvrcnt
          |FROM

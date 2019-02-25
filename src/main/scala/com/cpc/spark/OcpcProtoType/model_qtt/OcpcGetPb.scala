@@ -50,7 +50,7 @@ object OcpcGetPb {
 //    dl_cpc.ocpc_pb_result_hourly_v2
 //    dl_cpc.ocpc_prev_pb_once
     val result = getPbByConversion(mediaSelection, conversionGoal, version, date, hour, spark)
-//    result.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202")
+    result.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202")
     val resultDF = result
         .withColumn("cpagiven", lit(1))
         .select("identifier", "cpagiven", "cvrcnt", "kvalue")
@@ -59,8 +59,8 @@ object OcpcGetPb {
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
 
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
@@ -80,6 +80,7 @@ object OcpcGetPb {
       .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
       .select("identifier", "conversion_goal", "cvrcnt", "kvalue")
       .na.fill(0, Seq("cvrcnt", "kvalue"))
+      .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
 
 
     resultDF
