@@ -7,13 +7,14 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
   *   1. uid=""
   *   2. uid.contains(".")
   *   3. uid.contains("000000")
-  *   4. uid.length in (15, 16, 17)且全为数字  imei
+  *   4. uid.length in (15, 16, 17)  imei
   *   5. uid.length = 36  idfa
   *   6. 其他
   */
 object SlotDeviceNum {
   def main(args: Array[String]): Unit = {
     val day = args(0)
+    val hour = args(1)
 
     val spark = SparkSession.builder()
       .appName("base table device")
@@ -29,7 +30,7 @@ object SlotDeviceNum {
          |        ,adslot_id
          |        ,uid
          |from dl_cpc.cpc_basedata_union_events
-         |where day='$day'
+         |where day='$day' and hour='$hour'
          |group by media_appsid
          |        ,adslot_type
          |        ,adslot_id
@@ -49,7 +50,7 @@ object SlotDeviceNum {
           case u if u == "" => "empty"
           case u if u.contains(".") => "ip"
           case u if u.contains("000000") => "zero_device"
-          case u if (u.length == 15 || u.length == 16 || u.length == 17) && (regex.findFirstMatchIn(u) != None) => "imei"
+          case u if (u.length == 15 || u.length == 16 || u.length == 17) => "imei"
           case u if (u.length == 36) => "idfa"
           case _ => "other"
         }
@@ -86,12 +87,12 @@ object SlotDeviceNum {
       .repartition(1)
       .write
       .mode(SaveMode.Overwrite)
-      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/slot_device_num/day=$day")
+      .parquet(s"hdfs://emr-cluster2/warehouse/dl_cpc.db/slot_device_num/day=$day/hour=$hour")
 
     spark.sql(
       s"""
-         |ALTER TABLE dl_cpc.slot_device_num add if not exists PARTITION(`day` = "$day")
-         | LOCATION  'hdfs://emr-cluster2/warehouse/dl_cpc.db/slot_device_num/day=$day'
+         |ALTER TABLE dl_cpc.slot_device_num add if not exists PARTITION(`day` = "$day",`hour` = "$hour")
+         | LOCATION  'hdfs://emr-cluster2/warehouse/dl_cpc.db/slot_device_num/day=$day/hour=$hour'
       """.stripMargin)
 
     println("base table device")
