@@ -53,8 +53,8 @@ object OcpcHourlyAucReport {
   }
 
   def getOcpcLog(date: String, hour: String, spark: SparkSession) = {
-    val selectCondition1 = s"`dt` = '$date' and `hour` <= '$hour'"
-    val selectCondition2 = s"`date` = '$date' and `hour` <= '$hour'"
+//    val selectCondition1 = s"`dt` = '$date' and `hour` <= '$hour'"
+    val selectCondition = s"`date` = '$date' and `hour` <= '$hour'"
 
     // ctrData
     val sqlRequest =
@@ -73,7 +73,7 @@ object OcpcHourlyAucReport {
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
          |WHERE
-         |  $selectCondition1
+         |  $selectCondition
        """.stripMargin
     println(sqlRequest)
     val ctrData = spark.sql(sqlRequest)
@@ -87,7 +87,7 @@ object OcpcHourlyAucReport {
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  $selectCondition2
+         |  $selectCondition
          |AND
          |  cvr_goal = 'cvr1'
        """.stripMargin
@@ -103,7 +103,7 @@ object OcpcHourlyAucReport {
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  $selectCondition2
+         |  $selectCondition
          |AND
          |  cvr_goal = 'cvr2'
        """.stripMargin
@@ -119,7 +119,7 @@ object OcpcHourlyAucReport {
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  $selectCondition2
+         |  $selectCondition
          |AND
          |  cvr_goal = 'cvr3'
        """.stripMargin
