@@ -151,7 +151,7 @@ object OcpcHourlyAucReport {
     val sqlRequest =
       s"""
          |SELECT
-         |  ideaid,
+         |  unitid,
          |  userid,
          |  conversion_goal,
          |  sum(case when isclick=1 then exp_cvr else 0 end) * 100.0 / sum(isclick) as pre_cvr,
@@ -163,7 +163,7 @@ object OcpcHourlyAucReport {
          |  sum(case when isclick=1 then bid else 0 end) * 1.0 / sum(isclick) as acb
          |FROM
          |  base_data
-         |GROUP BY ideaid, userid, conversion_goal
+         |GROUP BY unitid, userid, conversion_goal
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
