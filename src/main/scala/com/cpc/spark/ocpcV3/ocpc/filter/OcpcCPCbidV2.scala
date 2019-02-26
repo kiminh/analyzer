@@ -22,6 +22,7 @@ object OcpcCPCbidV2 {
     val hour = args(1).toString
 
     // spark app name
+//    scp ocpc_cpc_bid_v2.pb cpc@192.168.80.23:/home/cpc/model_server/data/ocpc_cpc_bid_v2.pb
     val spark = SparkSession.builder().appName(s"OcpcMinBid: $date, $hour").enableHiveSupport().getOrCreate()
 
     val conf = ConfigFactory.load("ocpc")
@@ -55,7 +56,7 @@ object OcpcCPCbidV2 {
     //        .filter(s"identifier in (1918962, 1921432, 1884679, 1929766)")
 
     val resultDF = data
-      .selectExpr("identifier", "cast(cpc_bid as double) cpc_bid", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3")
+      .selectExpr("identifier", "cast(cpc_bid as double) cpc_bid", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3", "cpa_suggest", "param_t")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
