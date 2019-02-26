@@ -73,21 +73,24 @@ object OcpcGetPbV2 {
 
     val mediaCost = getCostByMedia(result, date, hour, spark)
 
+    val FlagDF=getOcpcCpaFlag(date,spark)
+    FlagDF.show(5)
+
     val resultDF = result
       .join(mediaCost, Seq("unitid"), "inner")
-      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "date", "hour")
+      .join(FlagDF,Seq("unitid"),"left")
+      .withColumn("flag",when(col("flag").isNull, '0').otherwise(col("flag")))
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag", "date", "hour")
+
 
 
 //    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
 //    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
 //    resultDF
 //      .repartition(10).write.mode("overwrite").insertInto(tableName)
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
-    val FlagDF=getOcpcCpaFlag(date,spark)
-    FlagDF.show(5)
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
 
-    val resultDF2 = resultDF.join(FlagDF,Seq("unitid"),"left")
-    resultDF2.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
+
 //    savePbPack(resultDF2)
 
   }
