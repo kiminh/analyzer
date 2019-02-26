@@ -79,7 +79,7 @@ object OcpcGetPbV2 {
     val resultDF = result
       .join(mediaCost, Seq("unitid"), "inner")
       .join(FlagDF,Seq("unitid"),"left")
-      .withColumn("flag",when(col("flag").isNull, '0').otherwise(col("flag")))
+      .withColumn("flag",when(col("flag").isNull, 0).otherwise(col("flag")))
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag", "date", "hour")
 
 
