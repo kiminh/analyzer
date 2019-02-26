@@ -303,6 +303,10 @@ object OcpcGetPbV2 {
     过滤逻辑：
     统计昨日cost>1000且cpa超成本的flag为1，正常为0
      */
+//    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+//    val calendar = Calendar.getInstance
+//    calendar.add(Calendar.DATE, -1)
+//    val date1 = sdf.format(calendar.getTime)
 
     val sqlRequest1 =
       s"""
@@ -311,7 +315,7 @@ object OcpcGetPbV2 {
          | case when cpa_ratio < 0.64 and cost >100000 then '1'
          | else '0' end as flag
          | from dl_cpc.ocpc_detail_report_hourly_v3
-         | where `date`= date_add($date , -1) and `hour`= '23'
+         | where `date`= date_add('$date' , -1) and `hour`= '23'
        """.stripMargin
     println(sqlRequest1)
     val resultDF = spark.sql(sqlRequest1)
