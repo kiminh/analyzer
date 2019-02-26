@@ -84,15 +84,14 @@ object OcpcGetPbV2 {
 
 
 
-//    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto(tableName)
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
+    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
 
 
-//    savePbPack(resultDF2)
-
+    savePbPack(resultDF)
   }
 
   def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -306,10 +305,6 @@ object OcpcGetPbV2 {
     过滤逻辑：
     统计昨日cost>1000且cpa超成本的flag为1，正常为0
      */
-//    val sdf = new SimpleDateFormat("yyyy-MM-dd")
-//    val calendar = Calendar.getInstance
-//    calendar.add(Calendar.DATE, -1)
-//    val date1 = sdf.format(calendar.getTime)
 
     val sqlRequest1 =
       s"""
