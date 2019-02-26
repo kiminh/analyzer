@@ -10,6 +10,7 @@ message SingleUnit {
     int64 cvr3Cnt = 5;
     double cpa3History = 6;
     int32 conversiongoal = 7;
+    string flag = 8;
 }
 
 

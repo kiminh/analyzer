@@ -78,13 +78,17 @@ object OcpcGetPbV2 {
       .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "date", "hour")
 
 
-    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto(tableName)
+//    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto(tableName)
 //    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
+    val FlagDF=getOcpcCpaFlag(date,spark)
+    FlagDF.show(5)
 
-    savePbPack(resultDF)
+    val resultDF2 = resultDF.join(FlagDF,Seq("unitid"),"left")
+    resultDF2.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
+//    savePbPack(resultDF2)
 
   }
 
@@ -294,6 +298,28 @@ object OcpcGetPbV2 {
     resultDF
   }
 
+  def getOcpcCpaFlag(date: String, spark: SparkSession) = {
+    /*
+    过滤逻辑：
+    统计昨日cost>1000且cpa超成本的flag为1，正常为0
+     */
+
+    val sqlRequest1 =
+      s"""
+         |select
+         | identifier as unitid,
+         | case when cpa_ratio < 0.64 and cost >100000 then '1'
+         | else '0' end as flag
+         | from dl_cpc.ocpc_detail_report_hourly_v3
+         | where `date`= date_add($date , -1) and `hour`= '23'
+       """.stripMargin
+    println(sqlRequest1)
+    val resultDF = spark.sql(sqlRequest1)
+
+    resultDF
+  }
+
+
   def savePbPack(dataset: Dataset[Row]): Unit = {
     var list = new ListBuffer[SingleUnit]
     val filename = s"OcpcNovel.pb"
@@ -311,9 +337,10 @@ object OcpcGetPbV2 {
       val cvr2cnt = record.getAs[Long]("cvr2cnt")
       val cpa2History = 0.0
       val conversionGoal = record.getAs[Int]("conversion_goal")
+      val flag = record.getAs[String]("flag")
 
       if (cnt % 100 == 0) {
-        println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History, conversionGoal:$conversionGoal")
+        println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History, conversionGoal:$conversionGoal, , flag:$flag")
       }
       cnt += 1
 
@@ -324,7 +351,8 @@ object OcpcGetPbV2 {
         cvr2Cnt = cvr1cnt,
         cvr3Cnt = cvr2cnt,
         cpa3History = cpa2History,
-        conversiongoal = conversionGoal
+        conversiongoal = conversionGoal,
+        flag=flag
       )
       list += currentItem
 
