@@ -7,7 +7,7 @@ import java.util.Calendar
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
-import ocpcCpcBid.Ocpccpcbid
+
 import ocpcCpcBid.ocpccpcbid.{OcpcCpcBidList, SingleOcpcCpcBid}
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.functions._
@@ -25,27 +25,31 @@ object OcpcCPCbidV2 {
     val spark = SparkSession.builder().appName(s"OcpcMinBid: $date, $hour").enableHiveSupport().getOrCreate()
 
     val conf = ConfigFactory.load("ocpc")
-    val expDataPath = conf.getString("ocpc_all.ocpc_cpcbid.path")
-    val fileName = conf.getString("ocpc_all.ocpc_cpcbid.pbfile")
+    val expDataPath = conf.getString("ocpc_all.ocpc_cpcbid.path_v2")
+    val fileName = conf.getString("ocpc_all.ocpc_cpcbid.pbfile_v2")
     val smoothDataPath = conf.getString("ocpc_all.ocpc_cpcbid.factor_path")
-    println(s"path is: $expDataPath")
+    val suggestCpaPath = conf.getString("ocpc_all.ocpc_cpcbid.suggestcpa_path")
+    println(s"cpcBid path is: $expDataPath")
     println(s"fileName is: $fileName")
-    println(s"path is $smoothDataPath")
+    println(s"smooth factor path is $smoothDataPath")
+    println(s"suggest cpa path is $suggestCpaPath")
 
-    val expData = getExpData(expDataPath, date, hour, spark)
+    val expData = getCpcBidData(expDataPath, date, hour, spark)
     val cvrData = getCvrData(date, hour, spark)
     val cpmData = getCpmData(date, hour, spark)
     val cvrAlphaData = getCvrAlphaData(smoothDataPath, date, hour, spark)
+    val suggestCPA = getCPAsuggest(suggestCpaPath, date, hour, spark)
 
     val data = expData
       .join(cvrData, Seq("identifier"), "outer")
       .join(cpmData, Seq("identifier"), "outer")
       .join(cvrAlphaData, Seq("identifier"), "left_outer")
-      .select("identifier", "cpc_bid", "cvr1", "cvr2", "cvr3", "min_bid", "min_cpm", "factor1", "factor2", "factor3")
+      .join(suggestCPA, Seq("identifier"), "left_outer")
+      .select("identifier", "cpc_bid", "cvr1", "cvr2", "cvr3", "min_bid", "min_cpm", "factor1", "factor2", "factor3", "cpa_suggest", "param_t")
       .withColumn("cvr1", when(col("identifier") === "270", 0.5).otherwise(col("cvr1")))
       .withColumn("cvr2", when(col("identifier") === "270", 0.5).otherwise(col("cvr2")))
       .withColumn("cvr3", when(col("identifier") === "270", 0.5).otherwise(col("cvr3")))
-      .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm", "cpc_bid"))
+      .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm", "cpc_bid", "cpa_suggest", "param_t"))
       .na.fill(0.2, Seq("factor1", "factor2", "factor3"))
       .filter(s"identifier not in ('1854873', '1702796', '1817158', '1875122')")
     //        .filter(s"identifier in (1918962, 1921432, 1884679, 1929766)")
@@ -58,7 +62,22 @@ object OcpcCPCbidV2 {
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190218")
     //       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
-    savePbPack(data, "ocpc_cpc_bidv2.pb")
+    savePbPack(data, fileName)
+  }
+
+  def getCPAsuggest(suggestCpaPath: String, date: String, hour: String, spark: SparkSession) = {
+    val data = spark.read.format("json").json(suggestCpaPath)
+
+    val resultDF = data
+      .groupBy("identifier")
+      .agg(
+        min(col("cpa_suggest")).alias("cpa_suggest"),
+        min(col("param_t")).alias("param_t")
+      )
+      .select("identifier", "cpa_suggest", "param_t")
+
+    resultDF.show(10)
+    resultDF
   }
 
   def getCvrAlphaData(dataPath: String, date: String, hour: String, spark: SparkSession) = {
@@ -109,7 +128,7 @@ object OcpcCPCbidV2 {
   def savePbPack(dataset: DataFrame, filename: String): Unit = {
     var list = new ListBuffer[SingleOcpcCpcBid]
     println("size of the dataframe")
-    val resultData = dataset.selectExpr("identifier", "cast(cpc_bid as double) cpc_bid", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "factor1", "factor2", "factor3")
+    val resultData = dataset.selectExpr("identifier", "cast(cpc_bid as double) cpc_bid", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "factor1", "factor2", "factor3", "cast(cpa_suggest as double) cpa_suggest", "cast(param_t as double) param_t")
     println(resultData.count)
     resultData.show(10)
     resultData.printSchema()
@@ -126,9 +145,11 @@ object OcpcCPCbidV2 {
       val factor1 = record.getAs[Double]("factor1")
       val factor2 = record.getAs[Double]("factor2")
       val factor3 = record.getAs[Double]("factor3")
+      val cpa_suggest = record.getAs[Double]("cpa_suggest")
+      val param_t = record.getAs[Double]("param_t")
 
 
-      println(s"unit_id:$unit_id, min_bid:$min_bid, post_cvr1:$post_cvr1, post_cvr2:$post_cvr2, post_cvr3:$post_cvr3, min_cpm:$min_cpm, factor1:$factor1, factor2:$factor2, factor3:$factor3")
+      println(s"unit_id:$unit_id, cpc_bid:$cpc_bid, post_cvr1:$post_cvr1, post_cvr2:$post_cvr2, post_cvr3:$post_cvr3, min_cpm:$min_cpm, factor1:$factor1, factor2:$factor2, factor3:$factor3, min_bid:$min_bid, cpa_suggest:$cpa_suggest, param_t:$param_t")
 
       cnt += 1
       val currentItem = SingleOcpcCpcBid(
@@ -141,7 +162,9 @@ object OcpcCPCbidV2 {
         cvGoal1Smooth = factor1,
         cvGoal2Smooth = factor2,
         cvGoal3Smooth = factor3,
-        minBid = min_bid
+        minBid = min_bid,
+        cpaSuggest = cpa_suggest,
+        paramT = param_t
       )
       list += currentItem
 
@@ -160,15 +183,14 @@ object OcpcCPCbidV2 {
 
   }
 
-  def getExpData(expDataPath: String, date: String, hour: String, spark: SparkSession) = {
+  def getCpcBidData(expDataPath: String, date: String, hour: String, spark: SparkSession) = {
     val data = spark.read.format("json").json(expDataPath)
 
     val resultDF = data
-      .groupBy("unitid")
+      .groupBy("identifier")
       .agg(
-        min(col("min_bid")).alias("cpc_bid")
+        min(col("cpc_bid")).alias("cpc_bid")
       )
-      .withColumn("identifier", col("unitid"))
       .select("identifier", "cpc_bid")
 
     resultDF.show(10)
