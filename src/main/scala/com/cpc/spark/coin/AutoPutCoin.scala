@@ -51,7 +51,7 @@ object AutoPutCoin {
             val dd = sf.format(cal.getTime())
             val d1 = dd.substring(0, 10)
             val h1 = dd.substring(11, 13)
-            val datecond = s"`date` = '$d1' and hour = '$h1'"
+            val datecond = s"(`date` = '$d1' and hour = '$h1')"
             if (!(d1 == "2019-02-18" || d1 == "2019-02-17" || d1== "2019-02-16"))
                 datehourlist += datecond
         }
