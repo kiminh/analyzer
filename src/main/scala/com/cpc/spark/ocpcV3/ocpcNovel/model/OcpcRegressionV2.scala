@@ -178,11 +178,11 @@ object OcpcRegressionV2 {
 
   def getTargetK(unitid: String, cpaSRC: mutable.LinkedHashMap[String, String], date: String, hour: String, spark: SparkSession) = {
     val cpasrc = cpaSRC.getOrElse(unitid, "qtt")
-    var targetK = 1.0
+    var targetK = 0.95
     if (cpasrc == "novel") {
-      targetK = 1.0
+      targetK = 0.95
     } else {
-      targetK = 1.0
+      targetK = 0.95
     }
     targetK
   }
