@@ -364,30 +364,32 @@ object OcpcHourlyReport {
     val sqlRequest =
       s"""
          |SELECT
-         |  searchid,
-         |  unitid,
-         |  userid,
-         |  isclick,
-         |  isshow,
-         |  price,
-         |  exp_cvr,
-         |  exp_ctr,
-         |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
-         |  cast(ocpc_log_dict['dynamicbid'] as double) as bid,
-         |  cast(ocpc_log_dict['kvalue'] as double) as kvalue,
-         |  cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
-         |  cast(ocpc_log_dict['ocpcstep'] as int) as ocpc_step,
-         |  hour as hr
+         |    searchid,
+         |    unitid,
+         |    userid,
+         |    isclick,
+         |    isshow,
+         |    price,
+         |    exp_cvr,
+         |    exp_ctr,
+         |    cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
+         |    cast(ocpc_log_dict['dynamicbid'] as double) as bid,
+         |    cast(ocpc_log_dict['kvalue'] as double) as kvalue,
+         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |    cast(ocpc_log_dict['ocpcstep'] as int) as ocpc_step,
+         |    hour as hr
          |FROM
-         |  dl_cpc.ocpc_filter_unionlog
+         |    dl_cpc.ocpc_filter_unionlog
          |WHERE
-         |  `date`='$date' and `hour` <= '$hour'
-         |AND
-         |    is_ocpc=1
-         |AND
-         |    media_appsid  in ("80000001", "80000002")
-         |AND
-         |    isshow=1
+         |    `date`='$date' and `hour` <= '$hour'
+         |and is_ocpc=1
+         |and media_appsid  in ("80000001", "80000002")
+         |and round(adclass/1000) != 132101  --去掉互动导流
+         |and isshow = 1
+         |and ideaid > 0
+         |and adsrc = 1
+         |and adslot_type in (1,2,3)
+         |and searchid is not null
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)

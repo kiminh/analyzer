@@ -75,12 +75,14 @@ object OcpcHourlyAucReport {
          |    dl_cpc.ocpc_filter_unionlog
          |WHERE
          |    $selectCondition
-         |AND
-         |    is_ocpc=1
-         |AND
-         |    media_appsid  in ("80000001", "80000002")
-         |AND
-         |    isshow=1
+         |and is_ocpc=1
+         |and media_appsid  in ("80000001", "80000002")
+         |and round(adclass/1000) != 132101  --去掉互动导流
+         |and isshow = 1
+         |and ideaid > 0
+         |and adsrc = 1
+         |and adslot_type in (1,2,3)
+         |and searchid is not null
        """.stripMargin
     println(sqlRequest)
     val ctrData = spark.sql(sqlRequest)
