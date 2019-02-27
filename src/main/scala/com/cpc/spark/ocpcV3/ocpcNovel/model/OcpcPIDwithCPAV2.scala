@@ -20,9 +20,9 @@ object OcpcPIDwithCPAV2 {
 
     val result = calculateKv2(date, hour, spark)
     val tableName = "dl_cpc.ocpc_novel_k_value_table_v2"
-//    result
-//      .repartition(10).write.mode("overwrite").insertInto(tableName)
-//    println(s"successfully save data into table: $tableName")
+    result
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
+    println(s"successfully save data into table: $tableName")
 
 
   }
@@ -31,13 +31,13 @@ object OcpcPIDwithCPAV2 {
   def calculateKv2(date: String, hour: String, spark: SparkSession) :DataFrame = {
     /**
       * 计算新版k值
-      * 基于前6个小时的平均k值和那段时间的cpa_ratio，按照更加详细的分段函数对k值进行计算
+      * 基于前24个小时的平均k值和那段时间的cpa_ratio，按照更加详细的分段函数对k值进行计算
       */
 
     val baseData = getBaseTable(date, hour, spark)
     println("################ baseData #################")
     baseData.show(10)
-    val historyData = getHistoryData(date, hour, 6, spark)
+    val historyData = getHistoryData(date, hour, 24, spark)
     println("################# historyData ####################")
     historyData.show(10)
     val avgK = getAvgK(baseData, historyData, date, hour, spark)
@@ -49,7 +49,7 @@ object OcpcPIDwithCPAV2 {
     val newK = updateKv2(baseData, avgK, cpaRatio, date, hour, spark)
     println("################# final result ####################")
     newK.show(10)
-    newK.write.mode("overwrite").saveAsTable("test.wy00")
+//    newK.write.mode("overwrite").saveAsTable("test.wy00")
     newK
   }
 
@@ -83,7 +83,7 @@ object OcpcPIDwithCPAV2 {
       .select("unitid", "new_adclass")
       .distinct()
 
-    baseData.write.mode("overwrite").saveAsTable("test.wy01")
+//    baseData.write.mode("overwrite").saveAsTable("test.wy01")
     baseData
 
   }
@@ -124,7 +124,7 @@ object OcpcPIDwithCPAV2 {
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
-    resultDF.write.mode("overwrite").saveAsTable("test.wy02")
+//    resultDF.write.mode("overwrite").saveAsTable("test.wy02")
     resultDF
   }
 
@@ -132,8 +132,8 @@ object OcpcPIDwithCPAV2 {
   def getAvgK(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
     /**
       * 计算修正前的k基准值
-      * case1：前6个小时有isclick=1的数据，统计这批数据的k均值作为基准值
-      * case2：前6个小时没有isclick=1的数据，将前一个小时的数据作为基准值
+      * case1：前24个小时有isclick=1的数据，统计这批数据的k均值作为基准值
+      * case2：前24个小时没有isclick=1的数据，将前一个小时的数据作为基准值
       */
 
     historyData
@@ -166,7 +166,7 @@ object OcpcPIDwithCPAV2 {
       .agg(avg(col("kvalue")).alias("kvalue1"))
       .select("unitid", "new_adclass", "kvalue1")
 
-    case1.write.mode("overwrite").saveAsTable("test.wy_case1")
+//    case1.write.mode("overwrite").saveAsTable("test.wy_case1")
 
     // case2
     // table name: dl_cpc.ocpcv3_novel_pb_hourly
@@ -185,7 +185,7 @@ object OcpcPIDwithCPAV2 {
     //      .select("unitid", "kvalue2")
     //      .distinct()
 
-    case2.write.mode("overwrite").saveAsTable("test.wy_case2")
+//    case2.write.mode("overwrite").saveAsTable("test.wy_case2")
     // 优先case1，然后case2
     val resultDF = baseData
       .join(case1, Seq("unitid", "new_adclass"), "left_outer")
@@ -195,14 +195,14 @@ object OcpcPIDwithCPAV2 {
       .withColumn("kvalue", when(col("kvalue1").isNull, col("kvalue2")).otherwise(col("kvalue1")))
 
     resultDF.show(10)
-    resultDF.write.mode("overwrite").saveAsTable("test.wy03")
+//    resultDF.write.mode("overwrite").saveAsTable("test.wy03")
     resultDF
 
   }
 
   def getCPAratio(baseData: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) :DataFrame ={
     /**
-      * 计算前6个小时每个广告创意的cpa_given/cpa_real的比值
+      * 计算前24个小时每个广告创意的cpa_given/cpa_real的比值
       * case1：hourly_ctr_cnt<10，可能出价过低，需要提高k值，所以比值应该大于1
       * case2：hourly_ctr_cnt>=10但是没有cvr_cnt，可能出价过高，需要降低k值，所以比值应该小于1
       * case3：hourly_ctr_cnt>=10且有cvr_cnt，按照定义计算比值即可
@@ -217,12 +217,12 @@ object OcpcPIDwithCPAV2 {
       .withColumn("cpa_given", col("cpa_history"))
       .select("unitid", "new_adclass", "cpa_given", "conversion_goal")
 
-    val cvr1Data=getCvr1HistoryData(date, hour, 6, spark)
+    val cvr1Data=getCvr1HistoryData(date, hour, 24, spark)
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .groupBy("unitid", "new_adclass")
       .agg(sum(col("cvr1cnt")).alias("cvr1cnt"))
-    val cvr2Data=getCvr2HistoryData(date, hour, 6, spark)
+    val cvr2Data=getCvr2HistoryData(date, hour, 24, spark)
       .withColumn("new_adclass", col("adclass")/1000)
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .groupBy("unitid", "new_adclass")
@@ -252,7 +252,7 @@ object OcpcPIDwithCPAV2 {
       .filter("cpa_given is not null")
 
     joinData.createOrReplaceTempView("join_table")
-    joinData.write.mode("overwrite").saveAsTable("test.wy_join")
+//    joinData.write.mode("overwrite").saveAsTable("test.wy_join")
 
     val sqlRequest =
       s"""
@@ -272,7 +272,7 @@ object OcpcPIDwithCPAV2 {
        """.stripMargin
     println(sqlRequest)
     val cpaRatio = spark.sql(sqlRequest)
-    cpaRatio.write.mode("overwrite").saveAsTable("test.wy04")
+//    cpaRatio.write.mode("overwrite").saveAsTable("test.wy04")
     cpaRatio
 
   }
@@ -310,7 +310,7 @@ object OcpcPIDwithCPAV2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
 
-    resultDF.write.mode("overwrite").saveAsTable("test.wy05")
+//    resultDF.write.mode("overwrite").saveAsTable("test.wy05")
     resultDF
   }
 
