@@ -380,7 +380,7 @@ object OcpcHourlyReport {
          |  cast(ocpc_log_dict['ocpcstep'] as int) as ocpc_step,
          |  hour as hr
          |FROM
-         |  dl_cpc.ocpc_unionlog
+         |  dl_cpc.ocpc_filter_unionlog
          |WHERE
          |  `dt`='$date' and `hour` <= '$hour'
          |AND
