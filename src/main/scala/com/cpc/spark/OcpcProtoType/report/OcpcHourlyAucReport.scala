@@ -1,6 +1,7 @@
 package com.cpc.spark.OcpcProtoType.report
 
 import com.cpc.spark.ocpcV3.utils
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -13,13 +14,14 @@ object OcpcHourlyAucReport {
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
+    val media = args(3).toString
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version")
+    println(s"date=$date, hour=$hour, version=$version, media=$media")
 
     // spark app name
     val spark = SparkSession.builder().appName(s"OcpcHourlyAucReport: $date, $hour").enableHiveSupport().getOrCreate()
 
-    val rawData = getOcpcLog(date, hour, spark)
+    val rawData = getOcpcLog(media, date, hour, spark)
 
     // 详情表数据
     val unitData1 = calculateByUnitid(rawData, date, hour, spark)
@@ -53,8 +55,10 @@ object OcpcHourlyAucReport {
 
   }
 
-  def getOcpcLog(date: String, hour: String, spark: SparkSession) = {
-//    val selectCondition1 = s"`dt` = '$date' and `hour` <= '$hour'"
+  def getOcpcLog(media: String, date: String, hour: String, spark: SparkSession) = {
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
     val selectCondition = s"`date` = '$date' and `hour` <= '$hour'"
 
     // ctrData
@@ -76,7 +80,7 @@ object OcpcHourlyAucReport {
          |WHERE
          |    $selectCondition
          |and is_ocpc=1
-         |and media_appsid  in ("80000001", "80000002")
+         |and $mediaSelection
          |and round(adclass/1000) != 132101  --去掉互动导流
          |and isshow = 1
          |and ideaid > 0

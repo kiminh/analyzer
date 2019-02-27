@@ -1,6 +1,7 @@
 package com.cpc.spark.OcpcProtoType.report
 
 import com.cpc.spark.tools.OperateMySQL
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
@@ -25,11 +26,12 @@ object OcpcHourlyReport {
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
+    val media = args(3).toString
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version")
+    println(s"date=$date, hour=$hour, version=$version, media=$media")
 
     // 拉取点击、消费、转化等基础数据
-    val baseData = getBaseData(date, hour, spark)
+    val baseData = getBaseData(media, date, hour, spark)
 
     // 分ideaid和conversion_goal统计数据
     val rawDataUnit = preprocessDataByUnit(baseData, date, hour, spark)
@@ -355,10 +357,13 @@ object OcpcHourlyReport {
     resultDF
   }
 
-  def getBaseData(date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(media: String, date: String, hour: String, spark: SparkSession) = {
     /**
       * 重新计算抽取全天截止当前时间的数据日志
       */
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias." + media + ".media_selection"
+    val mediaSelection = conf.getString(conf_key)
 
     // 抽取基础数据：所有跑ocpc的广告主
     val sqlRequest =
@@ -383,7 +388,7 @@ object OcpcHourlyReport {
          |WHERE
          |    `date`='$date' and `hour` <= '$hour'
          |and is_ocpc=1
-         |and media_appsid  in ("80000001", "80000002")
+         |and $mediaSelection
          |and round(adclass/1000) != 132101  --去掉互动导流
          |and isshow = 1
          |and ideaid > 0
