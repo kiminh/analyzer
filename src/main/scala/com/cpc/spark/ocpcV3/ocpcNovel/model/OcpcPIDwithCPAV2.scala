@@ -250,7 +250,7 @@ object OcpcPIDwithCPAV2 {
       .join(rawData, Seq("unitid", "new_adclass"), "left_outer")
       .withColumn("cvr_cnt", when(col("conversion_goal")===2, col("cvr2cnt")).otherwise(col("cvr1cnt")))
       .select("unitid", "new_adclass", "cpa_given", "conversion_goal", "total_cost", "ctr_cnt", "cvr_cnt")
-      .filter("cpa_given is not null and total_cost>0")
+//      .filter("cpa_given is not null and total_cost>0")
 
     joinData.createOrReplaceTempView("join_table")
     joinData.write.mode("overwrite").saveAsTable("test.wy_join")
