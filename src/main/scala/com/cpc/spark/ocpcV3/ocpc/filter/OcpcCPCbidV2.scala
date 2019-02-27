@@ -52,6 +52,7 @@ object OcpcCPCbidV2 {
       .withColumn("cvr3", when(col("identifier") === "270", 0.5).otherwise(col("cvr3")))
       .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm", "cpc_bid", "cpa_suggest", "param_t"))
       .na.fill(0.2, Seq("factor1", "factor2", "factor3"))
+//      .filter(s"identifier not in ('1854873', '1702796', '1817158', '1875122')")
     //        .filter(s"identifier in (1918962, 1921432, 1884679, 1929766)")
 
     val resultDF = data
