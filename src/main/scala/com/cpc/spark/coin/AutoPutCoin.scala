@@ -126,7 +126,9 @@ object AutoPutCoin {
              """.stripMargin
         println(mlFeatureSql)
         val mlFeature = spark.sql(mlFeatureSql)
-        println("mlFeature 's count is " + mlFeature.rdd.count())
+        //println("mlFeature 's count is " + mlFeature.rdd.count())
+
+        mlFeature.filter("ideaid = 2711984").show(100)
 
         val mlFeatureNth = getNth(mlFeature, p)
 
