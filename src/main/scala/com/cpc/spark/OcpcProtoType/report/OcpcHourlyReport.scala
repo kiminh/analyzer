@@ -390,7 +390,11 @@ object OcpcHourlyReport {
          |WHERE
          |  `dt`='$date' and `hour` <= '$hour'
          |AND
-         |  isshow=1
+         |    is_ocpc=1
+         |AND
+         |    media_appsid  in ("80000001", "80000002")
+         |AND
+         |    isshow=1
        """.stripMargin
     println(sqlRequest)
     val rawData = spark.sql(sqlRequest)

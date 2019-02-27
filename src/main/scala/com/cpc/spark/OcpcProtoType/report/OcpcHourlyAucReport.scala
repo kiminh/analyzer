@@ -61,20 +61,26 @@ object OcpcHourlyAucReport {
     val sqlRequest =
       s"""
          |SELECT
-         |  searchid,
-         |  unitid,
-         |  userid,
-         |  isclick,
-         |  isshow,
-         |  exp_cvr,
-         |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
-         |  cast(ocpc_log_dict['dynamicbid'] as double) as bid,
-         |  cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
-         |  price
+         |    searchid,
+         |    unitid,
+         |    userid,
+         |    isclick,
+         |    isshow,
+         |    exp_cvr,
+         |    cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
+         |    cast(ocpc_log_dict['dynamicbid'] as double) as bid,
+         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+         |    price
          |FROM
-         |  dl_cpc.ocpc_filter_unionlog
+         |    dl_cpc.ocpc_filter_unionlog
          |WHERE
-         |  $selectCondition
+         |    $selectCondition
+         |AND
+         |    is_ocpc=1
+         |AND
+         |    media_appsid  in ("80000001", "80000002")
+         |AND
+         |    isshow=1
        """.stripMargin
     println(sqlRequest)
     val ctrData = spark.sql(sqlRequest)
