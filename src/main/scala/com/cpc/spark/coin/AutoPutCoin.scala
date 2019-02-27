@@ -199,7 +199,7 @@ object AutoPutCoin {
                       hour = hour.toString)
               }
           })
-          .filter(x => x.api_num >= 30 || x.label_num >= 30)
+          //.filter(x => x.api_num >= 30 || x.label_num >= 30)
           .toDS()
           .coalesce(1)
 
@@ -249,19 +249,22 @@ object AutoPutCoin {
               //x(index)
           })
     }
-    def getThreshold(spark:SparkSession,df:DataFrame): RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
+    def getThreshold(spark:SparkSession,df:DataFrame,date:String,default_p:Double): RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
         val sql =
             s"""
-               |select ideaid,percentage
-               |from dl_cpc.cpc_auto_coin_idea_percentage
+               |select ideaid,p
+               |from dl_cpc.cpc_auto_coin_idea_threshold
+               |where `date`='$date'
              """.stripMargin
 
         val ideaP = spark.sql(sql)
 
-        val r = df.join(ideaP,Seq("ideaid"),"left_outer")
+        val r = df.join(ideaP,Seq("ideaid"),"left_outer").select("ideaid","exp_cvr","p")
+          .na
+          .fill(default_p,Seq("p"))
           .rdd
           .map(x => (x.getAs[Int]("ideaid"),
-            (List(x.getAs[Int]("exp_cvr")),x.getAs[Double]("percentage"))))
+            (List(x.getAs[Int]("exp_cvr")),x.getAs[Double]("p"))))
           .reduceByKey((x,y) => {
               val t1 = x._1 ::: y._1
               val t2 = if (x._2 > y._2) x._2 else y._2
