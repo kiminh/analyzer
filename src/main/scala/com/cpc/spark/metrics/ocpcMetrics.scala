@@ -29,6 +29,7 @@ object ocpcMetrics {
                |  and adsrc = 1
                |  and adslot_type in (1,2,3)
                |  and industry = 'feedapp'
+               |  and (charge_type is null or charge_type = 1)
                |  and is_api_callback = 1
                |  group by unitid,userid
              """.stripMargin
@@ -290,6 +291,7 @@ object ocpcMetrics {
                |  and adsrc = 1
                |  and adslot_type in (1,2,3)
                |  and industry = 'feedapp'
+               |  and (charge_type is null or charge_type = 1)
                |  group by userid
                |) x
              """.stripMargin
