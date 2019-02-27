@@ -50,7 +50,7 @@ object OcpcPIDwithCPAV2 {
     val newK = updateKv2(baseData, avgK, cpaRatio, date, hour, spark)
     println("################# final result ####################")
     newK.show(10)
-    newK.write.mode("overwrite").saveAsTable("test.wy01")
+    newK.write.mode("overwrite").saveAsTable("test.wy00")
     newK
   }
 
@@ -84,6 +84,7 @@ object OcpcPIDwithCPAV2 {
       .select("unitid", "new_adclass")
       .distinct()
 
+    baseData.write.mode("overwrite").saveAsTable("test.wy01")
     baseData
 
   }
