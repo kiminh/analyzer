@@ -88,7 +88,7 @@ object ReportCoinMetrics {
                |                    and media_appsid in ("80000001", "80000002")
                |                ) final
                |            ) tmp
-               |        where mp.isreport=1
+               |        where tmp.isreport=1
                |    ) b
                |    on a.searchid = b.searchid
              """.stripMargin
