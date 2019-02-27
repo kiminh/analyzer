@@ -264,7 +264,7 @@ object OcpcPIDwithCPAV2 {
          |  total_cost,
          |  ctr_cnt,
          |  cvr_cnt,
-         |  (case when total_cost=0 then 1.0
+         |  (case when total_cost is null then 1.0
          |        when cvr_cnt=0 or cvr_cnt is null then 0.8
          |        else cpa_given * cvr_cnt * 1.0 / total_cost end) as cpa_ratio
          |FROM
