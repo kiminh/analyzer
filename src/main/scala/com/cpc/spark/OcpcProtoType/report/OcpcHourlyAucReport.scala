@@ -66,7 +66,7 @@ object OcpcHourlyAucReport {
          |  userid,
          |  isclick,
          |  isshow,
-         |  cast(ocpc_log_dict['pcvr'] as double) as exp_cvr,
+         |  exp_cvr,
          |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  cast(ocpc_log_dict['dynamicbid'] as double) as bid,
          |  cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
