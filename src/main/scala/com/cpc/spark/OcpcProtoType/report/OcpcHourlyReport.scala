@@ -24,6 +24,9 @@ object OcpcHourlyReport {
 
     val date = args(0).toString
     val hour = args(1).toString
+    val version = args(2).toString
+    println("parameters:")
+    println(s"date=$date, hour=$hour, version=$version")
 
     // 拉取点击、消费、转化等基础数据
     val baseData = getBaseData(date, hour, spark)
