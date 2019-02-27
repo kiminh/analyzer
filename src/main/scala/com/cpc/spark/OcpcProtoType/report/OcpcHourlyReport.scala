@@ -41,7 +41,7 @@ object OcpcHourlyReport {
     val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
 
     // 存储数据到hadoop
-    saveDataToHDFS(dataUnit, dataConversion, "qtt_demo", date, hour, spark)
+    saveDataToHDFS(dataUnit, dataConversion, version, date, hour, spark)
 
 //    // 存储数据到mysql
 //    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
@@ -52,7 +52,7 @@ object OcpcHourlyReport {
     val hourInt = hour.toInt
     // 详情表
     val dataUnitMysql = dataUnit
-      .select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+      .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
       .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
@@ -80,6 +80,8 @@ object OcpcHourlyReport {
     存储ideaid级别和conversion_goal级别的报表到hdfs
      */
     dataUnit
+      .withColumn("identifier", col("unitid"))
+      .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
       .withColumn("version", lit(version))
       .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v3")
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v2")
@@ -293,7 +295,7 @@ object OcpcHourlyReport {
       .withColumn("cpa_real", when(col("cpa_real").isNull, 9999999.0).otherwise(col("cpa_real")))
 //      .select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "date", "hour")
       .join(aucData, Seq("unitid", "userid", "conversion_goal"), "left_outer")
-      .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
+      .select("unitid", "userid", "user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
 
     resultDF.show(10)
 
