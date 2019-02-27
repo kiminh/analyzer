@@ -31,7 +31,7 @@ object ReportCoinMetrics {
                |    isshow,
                |    ext_int,
                |    isclick,
-               |    label2,
+               |    if (b.searchid is null,0,1) as label2,
                |    price,
                |    uid,
                |    userid,
@@ -53,9 +53,42 @@ object ReportCoinMetrics {
                |    ) a
                |    left outer join
                |    (
-               |        select searchid, label2
-               |        from dl_cpc.ml_cvr_feature_v1
-               |        where `date`='$date'
+               |        select tmp.searchid
+               |        from
+               |        (
+               |            select
+               |                final.searchid as searchid,
+               |                final.ideaid as ideaid,
+               |                case
+               |                    when final.src="elds" and final.label_type=6 then 1
+               |                    when final.src="feedapp" and final.label_type in (4, 5) then 1
+               |                    when final.src="yysc" and final.label_type=12 then 1
+               |                    when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
+               |                    when final.src="others" and final.label_type=6 then 1
+               |                    else 0
+               |                end as isreport
+               |            from
+               |            (
+               |                select
+               |                    searchid, media_appsid, uid,
+               |                    planid, unitid, ideaid, adclass,
+               |                    case
+               |                        when (adclass like '134%' or adclass like '107%') then "elds"
+               |                        when (adslot_type<>7 and adclass like '100%') then "feedapp"
+               |                        when (adslot_type=7 and adclass like '100%') then "yysc"
+               |                        when adclass in (110110100, 125100100) then "wzcp"
+               |                        else "others"
+               |                    end as src,
+               |                    label_type
+               |                from
+               |                    dl_cpc.ml_cvr_feature_v1
+               |                where
+               |                    `date`='$date'
+               |                    and label2=1
+               |                    and media_appsid in ("80000001", "80000002")
+               |                ) final
+               |            ) tmp
+               |        where mp.isreport=1
                |    ) b
                |    on a.searchid = b.searchid
              """.stripMargin
@@ -81,7 +114,7 @@ object ReportCoinMetrics {
                |    convert_num,
                |    coin_convert_num,
                |    if (convert_num!=0,round(coin_convert_num/convert_num,6),0) as coin_convert_rate,
-               |    if (click_num!=0,round(convert_num/click_num, 6),0) as cvr,
+               |    if (nocoin_click_num!=0,round(nocoin_convert_num/nocoin_click_num, 6),0) as cvr,
                |    if (coin_click_num!=0,round(coin_convert_num/coin_click_num, 6),0) as coin_cvr,
                |    click_total_price,
                |    coin_click_total_price,
@@ -99,8 +132,10 @@ object ReportCoinMetrics {
                |        sum(if (isshow=1 and ext_int['is_auto_coin'] = 1, 1, 0)) as coin_show_num, --金币展示数
                |        sum(isclick) as click_num, --点击数
                |        sum(if (isclick=1 and ext_int['is_auto_coin'] = 1, 1, 0)) as coin_click_num, --金币点击数
+               |        sum(if (isclick=1 and ext_int['exp_style'] != 510127, 1, 0)) as nocoin_click_num, --无金币点击数
                |        sum(case when label2 = 1 then 1 else 0 end) as convert_num, --转化数
                |        sum(case when label2 = 1 and ext_int['is_auto_coin'] = 1 then 1 else 0 end) as coin_convert_num, --金币样式转化数
+               |        sum(case when label2 = 1 and ext_int['exp_style'] != 510127 then 1 else 0 end ) as nocoin_convert_num, --无金币样式转化数
                |        sum(case WHEN isclick = 1 then price else 0 end) as click_total_price, --点击总价
                |        sum(case WHEN isclick = 1 and ext_int['is_auto_coin'] = 1 then price else 0 end) as coin_click_total_price, --金币点击总价
                |        count(distinct uid) as uid_num --用户数
