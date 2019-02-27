@@ -129,7 +129,8 @@ object OcpcUnionlog {
          |    ext['city_level'].int_value as city_level,
          |    ext['adclass'].int_value as adclass,
          |    cast(ext['exp_ctr'].int_value * 1.0 / 1000000 as double) as exp_ctr,
-         |    cast(ext['exp_cvr'].int_value * 1.0 / 1000000 as double) as exp_cvr
+         |    cast(ext['exp_cvr'].int_value * 1.0 / 1000000 as double) as exp_cvr,
+         |    cast(ext["charge_type"].int_value as int) as charge_type
          |from dl_cpc.cpc_union_log
          |where $selectWhere
          |and (isshow>0 or isclick>0)
