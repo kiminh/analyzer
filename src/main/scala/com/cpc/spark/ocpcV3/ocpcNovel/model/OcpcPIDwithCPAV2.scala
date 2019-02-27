@@ -167,6 +167,8 @@ object OcpcPIDwithCPAV2 {
       .agg(avg(col("kvalue")).alias("kvalue1"))
       .select("unitid", "new_adclass", "kvalue1")
 
+    case1.write.mode("overwrite").saveAsTable("test.wy_case1")
+
     // case2
     // table name: dl_cpc.ocpcv3_novel_pb_hourly
 //    ocpcv3_novel_pb_v2_hourly
@@ -184,6 +186,7 @@ object OcpcPIDwithCPAV2 {
     //      .select("unitid", "kvalue2")
     //      .distinct()
 
+    case2.write.mode("overwrite").saveAsTable("test.wy_case2")
     // 优先case1，然后case2
     val resultDF = baseData
       .join(case1, Seq("unitid", "new_adclass"), "left_outer")
