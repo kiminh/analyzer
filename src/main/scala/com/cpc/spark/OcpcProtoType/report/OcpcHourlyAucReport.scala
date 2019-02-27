@@ -26,14 +26,15 @@ object OcpcHourlyAucReport {
     val unitData2 = calculateAUCbyUnitid(rawData, date, hour, spark)
     val unitData = unitData1
       .join(unitData2, Seq("unitid", "userid", "conversion_goal"), "left_outer")
-      .select("unitid", "userid", "conversion_goal", "pre_cvr", "post_cvr", "q_factor", "cpagiven", "cpareal", "acp", "acb", "auc")
+      .withColumn("identifier", col("unitid"))
+      .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "pre_cvr", "cast(post_cvr as double) post_cvr", "q_factor", "cpagiven", "cast(cpareal as double) cpareal", "cast(acp as double) acp", "acb", "auc")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    unitData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
-//    unitData
-//      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_auc_report_detail_hourly")
+//    unitData.write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly20190226")
+    unitData
+      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_detail_hourly")
 
     // 汇总表数据
     val conversionData1 = calculateByConversionGoal(rawData, date, hour, spark)
@@ -45,9 +46,9 @@ object OcpcHourlyAucReport {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-    conversionData.write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly20190226")
-//    conversionData
-//      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_auc_report_summary_hourly")
+//    conversionData.write.mode("overwrite").saveAsTable("test.ocpc_summary_report_hourly20190226")
+    conversionData
+      .repartition(1).write.mode("overwrite").insertInto("dl_cpc.ocpc_auc_report_summary_hourly")
 
 
   }
