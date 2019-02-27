@@ -60,7 +60,7 @@ object OcpcCPCbid {
         .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190218")
 //       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
-    savePbPack(data, fileName)
+//    savePbPack(data, fileName)
   }
 
   def getCvrAlphaData(dataPath: String, date: String, hour: String, spark: SparkSession) = {
