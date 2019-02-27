@@ -388,7 +388,7 @@ object OcpcHourlyReport {
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
          |WHERE
-         |  `dt`='$date' and `hour` <= '$hour'
+         |  `date`='$date' and `hour` <= '$hour'
          |AND
          |    is_ocpc=1
          |AND
