@@ -48,7 +48,7 @@ object OcpcKsmooth1 {
     val expUnitid = getExpSet(expDataPath, version, date, hour, spark)
 
     // 数据关联
-    val resultDF = assembleData(baseData, kvalue, expUnitid, date, hour, spark)
+//    val resultDF = assembleData(baseData, kvalue, expUnitid, date, hour, spark)
   }
 
   def assembleData(baseData: DataFrame, kvalue: DataFrame, expUnitid: DataFrame, date: String, hour: String, spark: SparkSession) = {
