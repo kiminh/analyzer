@@ -51,12 +51,24 @@ object AutoPutCoin {
             val dd = sf.format(cal.getTime())
             val d1 = dd.substring(0, 10)
             val h1 = dd.substring(11, 13)
-            val datecond = s"(`date` = '$d1' and hour = '$h1')"
+            val datecond = s"`date` = '$d1' and hour = '$h1'"
             if (!(d1 == "2019-02-18" || d1 == "2019-02-17" || d1== "2019-02-16"))
                 datehourlist += datecond
         }
 
         val datehour = datehourlist.toList.mkString(" or ")
+
+        val metricsSql =
+            s"""
+               |select userid
+               |from dl_cpc.cpc_report_coin_userid_metrics
+               |where `date`=date_sub('$date',1)
+               |and auc <= 0.5
+             """.stripMargin
+
+        val useridBlacklist = spark.sql(metricsSql).rdd.map(x => x.getAs[Int]("userid").toString).collect().toList.mkString(",")
+
+        println(useridBlacklist)
 
         val ideaBlacklist =
             """
@@ -80,6 +92,7 @@ object AutoPutCoin {
                |and round(ext['adclass'].int_value/1000000) != 107 and round(ext['adclass'].int_value/1000000) != 134
                |and ((adslot_type<>7 and ext['adclass'].int_value like '100%') or (ext['adclass'].int_value in (110110100, 125100100)))
                |and ideaid not in ($ideaBlacklist)
+               |and userid not in ($useridBlacklist)
                |and (userid in ($userWhiteList) or ext['usertype'].int_value != 2)
              """.stripMargin
         println(apiUnionLogSql)
@@ -122,13 +135,12 @@ object AutoPutCoin {
                |    on a.ideaid = b.ideaid
                |    where
                |    a.ideaid not in ($ideaBlacklist)
+               |    and b.userid not in ($useridBlacklist)
                |    and (b.userid in ($userWhiteList) or b.account_type is null)
              """.stripMargin
         println(mlFeatureSql)
         val mlFeature = spark.sql(mlFeatureSql)
-        //println("mlFeature 's count is " + mlFeature.rdd.count())
-
-        mlFeature.filter("ideaid = 2711984").show(100)
+        println("mlFeature 's count is " + mlFeature.rdd.count())
 
         val mlFeatureNth = getNth(mlFeature, p)
 
@@ -201,7 +213,7 @@ object AutoPutCoin {
                       hour = hour.toString)
               }
           })
-          //.filter(x => x.api_num >= 30 || x.label_num >= 30)
+          .filter(x => x.api_num >= 30 || x.label_num >= 30)
           .toDS()
           .coalesce(1)
 
