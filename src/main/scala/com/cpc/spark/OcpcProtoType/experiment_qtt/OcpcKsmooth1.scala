@@ -47,8 +47,26 @@ object OcpcKsmooth1 {
     // 读取实验配置文件
     val expUnitid = getExpSet(expDataPath, version, date, hour, spark)
 
-//    // 数据关联
-//    val resultDF = assembleData(baseData, kvalue, expUnitid, date, hour, spark)
+    // 数据关联
+    val resultDF = assembleData(baseData, kvalue, expUnitid, date, hour, spark)
+  }
+
+  def assembleData(baseData: DataFrame, kvalue: DataFrame, expUnitid: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    关联以上三步得到的数据记录，过滤仅保留第一步中没有ocpc广告记录的、第二部中is_recommend=1的，以及第三部实验配置文件中配置flag=1的unitid
+     */
+    val data = kvalue
+      .join(baseData, Seq("identifier", "conversion_goal"), "left_outer")
+      .select("identifier", "conversion_goal", "kvalue", "click")
+      .na.fill(0, Seq("click"))
+      .join(expUnitid, Seq("identifier"), "inner")
+      .select("identifier", "conversion_goal", "kvalue", "click", "exp_flag")
+
+    data.show(10)
+    val resultDF = data
+      .filter(s"click > 0 and exp_flag = 1")
+    resultDF.show(10)
+    resultDF
   }
 
   def getExpSet(expDataPath: String, version: String, date: String, hour: String, spark: SparkSession) = {
@@ -119,7 +137,8 @@ object OcpcKsmooth1 {
          |    searchid,
          |    unitid,
          |    userid,
-         |    isclick
+         |    isclick,
+         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
          |WHERE
@@ -136,9 +155,10 @@ object OcpcKsmooth1 {
     println(sqlRequest)
     val resultDF = spark
         .sql(sqlRequest)
-        .groupBy("unitid")
+        .groupBy("unitid", "conversion_goal")
         .agg(sum(col("isclick")).alias("click"))
-        .select("unitid", "click")
+        .withColumn("identifier", col("unitid"))
+        .select("identifier", "conversion_goal", "click")
 
     resultDF.show(10)
     resultDF
