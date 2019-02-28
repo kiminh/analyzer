@@ -106,7 +106,7 @@ object OcpcRegressionV2 {
       .select("unitid", "liststr").collect()
 
 
-    val cpaSrcMap = getCPAsrcMap(date, hour, spark)
+    val adclassMap = getCPAsrcMap(date, hour, spark)
     var resList = new mutable.ListBuffer[(String, Double, String, String)]()
 //    var testList = new mutable.ListBuffer[(String, Double, Double, Double, Double, Double)]()
     for (row <- res) {
@@ -116,8 +116,9 @@ object OcpcRegressionV2 {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
-      // TODO 根据cpa_src决定targetK
-      val targetK = getTargetK(unitid, cpaSrcMap, date, hour, spark)
+      // version1: 根据cpa_src决定targetK
+      //  version2: 根据adclass决定targetK
+      val targetK = getTargetK(unitid, adclassMap, date, hour, spark)
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
       println("unitid " + unitid, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
@@ -170,17 +171,18 @@ object OcpcRegressionV2 {
     var cpaMap = mutable.LinkedHashMap[String, String]()
     for(row <- data.collect()) {
       val unitid = row.getAs[Int]("unitid").toString
-      val cpaSrc = row.getAs[String]("cpa_src")
-      cpaMap += (unitid -> cpaSrc)
+//      val cpaSrc = row.getAs[String]("cpa_src")
+      val adclass = row.getAs[Int]("new_adclass").toString
+      cpaMap += (unitid -> adclass)
     }
     cpaMap
   }
 
   def getTargetK(unitid: String, cpaSRC: mutable.LinkedHashMap[String, String], date: String, hour: String, spark: SparkSession) = {
-    val cpasrc = cpaSRC.getOrElse(unitid, "qtt")
+    val cpasrc = cpaSRC.getOrElse(unitid, "000000")
     var targetK = 0.95
-    if (cpasrc == "novel") {
-      targetK = 0.95
+    if (cpasrc == "110110") {
+      targetK = 0.80
     } else {
       targetK = 0.95
     }
