@@ -28,24 +28,27 @@ object SlotDeviceNum {
          |select   media_appsid
          |        ,adslot_type
          |        ,adslot_id
+         |        ,os
          |        ,uid
          |from dl_cpc.cpc_basedata_union_events
          |where day='$day' and hour='$hour'
          |group by media_appsid
          |        ,adslot_type
          |        ,adslot_id
+         |        ,os
          |        ,uid
        """.stripMargin
     println("sql: " + sql)
 
     import spark.implicits._
     val result = spark.sql(sql).repartition(1000)
-      .select("media_appsid", "adslot_type", "adslot_id", "uid")
+      .select("media_appsid", "adslot_type", "adslot_id", "os", "uid")
       .rdd
       .map { r =>
         val media_appsid = r.getAs[String]("media_appsid")
         val adslot_type = r.getAs[Int]("adslot_type")
         val adslot_id = r.getAs[String]("adslot_id")
+        val os = r.getAs[Int]("os")
         val uid_type = r.getAs[String]("uid") match {
           case u if u == "" => "empty"
           case u if u.contains(".") => "ip"
@@ -54,10 +57,10 @@ object SlotDeviceNum {
           case u if (u.length == 36) => "idfa"
           case _ => "other"
         }
-        ((media_appsid, adslot_type, adslot_id, uid_type), 1)
+        ((media_appsid, adslot_type, adslot_id, os, uid_type), 1)
       }
       .reduceByKey(_ + _)
-      .map { x => ((x._1._1, x._1._2, x._1._3), Map(x._1._4 -> x._2)) }
+      .map { x => ((x._1._1, x._1._2, x._1._3, x._1._4), Map(x._1._5 -> x._2)) }
       .reduceByKey(_ ++ _)
       .map { x =>
         var empty_num = 0
@@ -77,9 +80,9 @@ object SlotDeviceNum {
             case _ =>
           }
         }
-        (x._1._1, x._1._2, x._1._3, empty_num, ip_num, zero_device_num, imei_num, idfa_num, other_num)
+        (x._1._1, x._1._2, x._1._3, x._1._4, empty_num, ip_num, zero_device_num, imei_num, idfa_num, other_num)
       }
-      .toDF("media_appsid", "adslot_type", "adslot_id", "empty_num", "ip_num", "zero_device_num", "imei_num", "idfa_num", "other_num")
+      .toDF("media_appsid", "adslot_type", "adslot_id", "os", "empty_num", "ip_num", "zero_device_num", "imei_num", "idfa_num", "other_num")
 
     println("total: " + result.count())
 
