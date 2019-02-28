@@ -93,16 +93,16 @@ object OcpcGetPb {
   def udfHourDiffToFactor() = udf((hours: Int) => {
     /*
     根据最近两天里面有点击的ocpc投放小时数来计算限制阈值：
-    factor = hours / 6
+    factor = hours / 12
     如果hours >= 6, factor = 1
     factor的作用：限制k值区间
     (1 - factor) * basek <= k <= (1 + factor) * basek
      */
     var result = 0.0
-    if (hours >= 6) {
+    if (hours >= 12) {
       result = 0.0
     } else {
-      result = hours / 6.0
+      result = hours / 12.0
     }
     result
   })
@@ -177,7 +177,7 @@ object OcpcGetPb {
          |GROUP BY identifier
        """.stripMargin
     println(sqlRequest2)
-    val ocpcRecordCnt = spark.sql(sqlRequest2).filter(s"hour_cnt < 6")
+    val ocpcRecordCnt = spark.sql(sqlRequest2).filter(s"hour_cnt < 12")
 
     // 数据关联
     val joinData = ocpcRecordCnt
