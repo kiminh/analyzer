@@ -80,6 +80,7 @@ object OcpcGetPb {
       .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
       .select("identifier", "conversion_goal", "cvrcnt", "kvalue")
       .na.fill(0, Seq("cvrcnt", "kvalue"))
+      .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
 
 
     resultDF

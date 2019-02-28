@@ -8,6 +8,12 @@ message SingleOcpcCpcBid {
     double cvGoal2PostCvr = 4;
     double cvGoal3PostCvr = 5;
     int64 minCpm = 6;
+    double cvGoal1Smooth = 7;
+    double cvGoal2Smooth = 8;
+    double cvGoal3Smooth = 9;
+    double minBid = 10;
+    double cpaSuggest = 11;
+    double paramT = 12;
 }
 
 message OcpcCpcBidList {

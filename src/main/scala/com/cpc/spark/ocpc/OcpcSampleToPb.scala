@@ -684,9 +684,13 @@ object OcpcSampleToPb {
          |  1.0 as cali_value,
          |  1.0 as cvr3_cali,
          |  a.cvr3_cnt,
-         |  (case when a.kvalue1<0 or a.kvalue1 is null then 0.0
+         |  (case when b.conversion_goal=1 and a.kvalue1>15.0 then 15.0
+         |        when b.conversion_goal!=1 and a.kvalue1>15.0 then 15.0
+         |        when b.conversion_goal is null and a.kvalue1>15.0 then 15.0
+         |        when a.kvalue1<0 or a.kvalue1 is null then 0.0
          |        else a.kvalue1 end) as kvalue1,
-         |  (case when a.kvalue2<0 or a.kvalue2 is null then 0.0
+         |  (case when a.kvalue2>15.0 then 15.0
+         |        when a.kvalue2<0 or a.kvalue2 is null then 0.0
          |        else a.kvalue2 end) as kvalue2,
          |  a.is_ocpc_flag,
          |  b.conversion_goal
