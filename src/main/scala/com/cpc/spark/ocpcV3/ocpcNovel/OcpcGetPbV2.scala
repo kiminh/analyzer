@@ -84,13 +84,13 @@ object OcpcGetPbV2 {
 
 
     val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto(tableName)
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
 
 
 
-//    savePbPack(resultDF)
+    savePbPack(resultDF)
   }
 
   def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -293,18 +293,15 @@ object OcpcGetPbV2 {
     val prevk = spark.table("test.ocpcv3_novel_pb_v2_once")
         .withColumn("prevk",col("kvalue"))
         .select("unitid","prevk")
-    prevk.write.mode("overwrite").saveAsTable("test.wy00")
+
+//    prevk.write.mode("overwrite").saveAsTable("test.wy00")
     val resultDF = data.select("unitid", "new_adclass", "kvalue", "conversion_goal")
         .join(prevk,Seq("unitid"),"left")
-
-    resultDF.write.mode("overwrite").saveAsTable("test.wy01")
-
-    val d2=resultDF
-      .withColumn("kvalue",
+       .withColumn("kvalue",
         when(col("kvalue")>col("prevk"),
           (col("kvalue")-col("prevk"))/3 + col("prevk")).
           otherwise(col("kvalue")))
-    d2.write.mode("overwrite").saveAsTable("test.wy02")
+      .select("unitid", "new_adclass", "kvalue", "conversion_goal")
 
     resultDF
   }
