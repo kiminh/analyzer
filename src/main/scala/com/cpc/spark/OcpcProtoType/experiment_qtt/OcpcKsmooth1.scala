@@ -88,6 +88,15 @@ object OcpcKsmooth1 {
          |and searchid is not null
          |and antispam=0
        """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark
+        .sql(sqlRequest)
+        .groupBy("unitid")
+        .agg(sum(col("isclick")).alias("click"))
+        .select("unitid", "click")
+
+    resultDF.show(10)
+    resultDF
   }
 
 

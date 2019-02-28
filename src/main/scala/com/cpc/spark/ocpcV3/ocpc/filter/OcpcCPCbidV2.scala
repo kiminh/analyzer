@@ -99,8 +99,10 @@ object OcpcCPCbidV2 {
 
   def getCpmData(date: String, hour: String, spark: SparkSession) = {
     val data = spark
-      .table("test.ocpc_pcvr_smooth_cpm")
-      .select("identifier", "min_bid", "min_cpm")
+        .table("test.ocpc_pcvr_smooth_cpm")
+        .select("identifier", "min_bid", "min_cpm")
+        .withColumn("min_bid", lit(0))
+        .withColumn("min_cpm", lit(0))
     data
   }
 
