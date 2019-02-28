@@ -90,7 +90,7 @@ object OcpcGetPbV2 {
 
 
 
-    savePbPack(resultDF)
+//    savePbPack(resultDF)
   }
 
   def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
