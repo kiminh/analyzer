@@ -19,7 +19,7 @@ while [ ${d} -le $date2 ]; do
     echo $currentdate
     echo $hour
 
-#    sh $script $currentdate $hour qtt qtt_demo
+    sh $script $currentdate $hour qtt qtt_demo
 
     let d=d+1
 done
