@@ -76,7 +76,7 @@ object OcpcKsmooth1 {
 
     data.show(10)
     val resultDF = data
-      .filter(s"click > 0 and exp_flag = 1")
+      .filter(s"click = 0 and exp_flag = 1")
     resultDF.show(10)
     resultDF
   }
