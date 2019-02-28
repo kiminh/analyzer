@@ -18,8 +18,8 @@ while [ ${d} -le $date2 ]; do
     echo $script
     echo $currentdate
     echo $hour
-    
+
 #    sh $script $currentdate $hour qtt qtt_demo
 
-    let h=h+1
+    let d=d+1
 done
