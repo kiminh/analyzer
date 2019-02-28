@@ -83,6 +83,8 @@ object OcpcCPAsuggest {
          |  `date`='$date'
          |AND
          |  version='$version'
+         |AND
+         |  is_recommend = 1
        """.stripMargin
     println(sqlRequest1)
     val data = spark
