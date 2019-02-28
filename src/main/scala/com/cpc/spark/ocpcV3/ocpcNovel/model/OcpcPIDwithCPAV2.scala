@@ -24,6 +24,9 @@ object OcpcPIDwithCPAV2 {
       .repartition(10).write.mode("overwrite").insertInto(tableName)
     println(s"successfully save data into table: $tableName")
 
+    val prevk = spark.table("dl_cpc.ocpcv3_novel_pb_v2_once")
+    prevk.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once_middle")
+
 
   }
 
