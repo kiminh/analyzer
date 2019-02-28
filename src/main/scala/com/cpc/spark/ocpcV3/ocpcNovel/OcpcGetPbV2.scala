@@ -53,9 +53,8 @@ object OcpcGetPbV2 {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
 
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly_middle")
-    data
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v2_hourly_middle")
+//    data
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v2_hourly_middle")
 
     val result = data
       .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0 and conversion_goal>0")
@@ -85,10 +84,10 @@ object OcpcGetPbV2 {
 
 
     val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto(tableName)
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto(tableName)
+
 
 
     savePbPack(resultDF)
@@ -295,7 +294,7 @@ object OcpcGetPbV2 {
     val resultDF = data.select("unitid", "new_adclass", "kvalue", "conversion_goal")
 
     // TODO 删除临时表
-//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly_v2")
+    data.write.mode("overwrite").saveAsTable("test.wy01")
 
     resultDF
   }
