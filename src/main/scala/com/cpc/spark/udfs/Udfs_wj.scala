@@ -2,10 +2,23 @@ package com.cpc.spark.udfs
 
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions.udf
+import java.text.SimpleDateFormat
+import java.util.Calendar
 
 import scala.collection.mutable
 
 object Udfs_wj{
+  def udfHourDiff(date1: String, hour1: String) = udf((date2: String, hour2: String) => {
+    val df = new SimpleDateFormat("yyyy-MM-dd HH")
+    val beginTime = date2 + " " + hour2
+    val begin =df.parse(beginTime)
+    val endTime = date1 + " " + hour1
+    val end = df.parse(endTime)
+    val between =(end.getTime()-begin.getTime())/1000//转化成秒
+    val hourDiff = between.toFloat/3600
+    hourDiff
+  })
+
   def udfMode1OcpcLogExtractCPA1() = udf((valueLog: String) => {
     val logs = valueLog.split(",")
     val kValue = logs(7).split(":")(1)

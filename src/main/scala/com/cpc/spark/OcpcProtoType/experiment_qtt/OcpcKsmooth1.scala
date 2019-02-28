@@ -48,7 +48,13 @@ object OcpcKsmooth1 {
     val expUnitid = getExpSet(expDataPath, version, date, hour, spark)
 
     // 数据关联
-    val resultDF = assembleData(baseData, kvalue, expUnitid, date, hour, spark)
+    val result = assembleData(baseData, kvalue, expUnitid, date, hour, spark)
+
+    val resultDF = result
+        .select("identifier", "conversion_goal", "kvalue", "update_date", "update_hour")
+        .withColumn("version", lit(version))
+
+    resultDF.repartition(2).write.mode("overwrite").saveAsTable("test.ocpc_k_smooth_v1")
   }
 
   def assembleData(baseData: DataFrame, kvalue: DataFrame, expUnitid: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -135,10 +141,7 @@ object OcpcKsmooth1 {
     calendar.add(Calendar.DATE, -1)
     val yesterday1 = calendar.getTime
     val date1 = dateConverter.format(yesterday1)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday2 = calendar.getTime
-    val date2 = dateConverter.format(yesterday2)
-    val selectCondition = getTimeRangeSql2(date2, hour, date1, hour)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
     // 媒体选择
     val conf = ConfigFactory.load("ocpc")
