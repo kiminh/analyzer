@@ -104,8 +104,8 @@ object OcpcKsmooth1 {
          |  cast(unitid as string) as identifier,
          |  kvalue,
          |  original_conversion as conversion_goal,
-         |  update_date,
-         |  update_hour
+         |  date as update_date,
+         |  hour as update_hour
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
          |WHERE
