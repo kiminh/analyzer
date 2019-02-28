@@ -22,7 +22,7 @@ object GetItem {
   def getGroup(groupItem: GroupItem): Seq[Group] = {
     var groups = Seq[Group]()
 
-    val group = Group(
+    var group = Group(
       unitid = groupItem.getGroupid,
       planid = groupItem.getPlanid,
       userid = groupItem.getUserid,
@@ -63,9 +63,9 @@ object GetItem {
       target_adslot_ids = groupItem.getTargetAdslotIdsList.toArray.mkString(",")
     )
     val ideaidsCount = groupItem.getIdeaidsCount
-    for (i <- 0 to ideaidsCount) {
+    for (i <- 0 until ideaidsCount) {
       val ideaid = groupItem.getIdeaids(i)
-      group.copy(ideaid = ideaid)
+      group = group.copy(ideaid = ideaid)
       groups :+= group
     }
     groups
@@ -89,9 +89,6 @@ case class Idea(
 
 case class Group(
                   var timestamp: Int = 0,
-                  var date: String = "",
-                  var hour: String = "",
-                  var minute: String = "",
                   var ideaid: Int = 0,
                   var unitid: Int = 0,
                   var planid: Int = 0,
@@ -143,44 +140,4 @@ case class Group(
                   var ext_string: collection.Map[String, String] = null
                 )
 
-//case class Group(
-//                  unitid: Int = 0,
-//                  planid: Int = 0,
-//                  userid: Int = 0,
-//                  price: Int = 0, // 单位为分
-//                  chargetype: Int = 0,
-//                  regionals: String = "", //限制地域,不限制为空
-//                  os: Int = 0, // 限制os
-//                  ideaid: Int = 0, // 单元下面的创意id
-//                  adslottype: Int = 0, //
-//                  timepub: String = "", // 从0-6表示周一，周二...周日 从第0位表示0-1点，第1位表示1-2点
-//                  blacksid: String = "", // 黑名单appsid
-//                  whitesid: String = "", // 白名单appsid
-//                  ages: String = "", // 年龄定向
-//                  gender: Int = 0, // 0 全部  1男 2女
-//                  freq: Int = 0, // 频次控制，0表示不控制
-//                  userlevel: Int = 0, //用户积分级别. 0默认全选 1第一档用户，积分在0-10分。 2第二档用户，积分在0-1000分。 3第三档用户，积分在0-10000分。4全选
-//                  userType: Int = 0, //' 黑五类标记 0 非黑五类 1 黑五类'
-//                  interests: String = "", //兴趣标签
-//                  media_class: String = "", //定向媒体分类
-//                  phonelevel: String = "", // 设备等级，多选 1高端 2中高 3中低 4低端
-//                  cvr_threshold: Int = 0, //cvr 截断阈值
-//                  balance: Int = 0, //min(计划所剩余额,账户余额)
-//                  new_user: Int = 0, // 0全选  2老用户 1新用户
-//                  user_weight: Int = 0, //广告主权值 0未设置 非0为设置了阈值，单位%
-//                  network: String = "", // 0:unknown 1:wifi  2:2G   3:3G  4:4G
-//                  black_install_pkg: String = "", // 过滤的安装包信息
-//                  dislikes: String = "", // 不感兴趣标签
-//                  click_freq: Int = 0, //点击频率上限
-//                  white_install_pkg: String = "", // 安装包定向
-//                  student: Int = 0, //职业定向，学生 224，非学生 225 ，全部 0
-//                  is_ocpc: Int = 0, // 是否启用ocpc
-//                  content_category: String = "",
-//                  ocpc_price: Int = 0, // 单位为分
-//                  ocpc_bid_update_time: Int = 0, // ocpc出价最后更新时间，秒级时间戳
-//                  conversion_goal: Int = 0, // 转化目标，1.安装，2.激活，3.表单，
-//                  target_uids: String = "", //单元定向的uid
-//                  delivery_type: Int = 0, //配送方式 0：无配送 1：趣头条配送外媒 2: 趣头条配送给小说
-//                  adslot_weight: String = "",
-//                  target_adslot_ids: String = "" //定向广告位id
-//                )
+
