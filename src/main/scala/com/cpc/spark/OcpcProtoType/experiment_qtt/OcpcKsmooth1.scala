@@ -48,19 +48,31 @@ object OcpcKsmooth1 {
     val expUnitid = getExpSet(expDataPath, version, date, hour, spark)
 
     // 数据关联
-//    val resultDF = assembleData(baseData, kvalue, expUnitid, date, hour, spark)
+    val resultDF = assembleData(baseData, kvalue, expUnitid, date, hour, spark)
   }
 
   def assembleData(baseData: DataFrame, kvalue: DataFrame, expUnitid: DataFrame, date: String, hour: String, spark: SparkSession) = {
     /*
     关联以上三步得到的数据记录，过滤仅保留第一步中没有ocpc广告记录的、第二部中is_recommend=1的，以及第三部实验配置文件中配置flag=1的unitid
+    +----------+------------------+---------------+
+    |   1948108|1.2472075856339033|              1|
+    |   1943987| 1.105644671811455|              1|
+    |   1953382|1.0501097289140464|              1|
+    |   1882529|1.1014911039905588|              1|
+    |   1944200|0.5018119917408486|              1|
+    |   1885790|1.1797902076232976|              1|
+    |   1648536|0.5582096113505398|              1|
+    |   1936006|1.0465440325261897|              1|
+    |   1930837|0.5985529560043646|              1|
+    |   1951627|2.4644311713037594|              1|
+    +----------+------------------+---------------+
      */
     val data = kvalue
       .join(baseData, Seq("identifier", "conversion_goal"), "left_outer")
-      .select("identifier", "conversion_goal", "kvalue", "click")
+      .select("identifier", "conversion_goal", "kvalue", "click", "update_date", "update_hour")
       .na.fill(0, Seq("click"))
       .join(expUnitid, Seq("identifier"), "inner")
-      .select("identifier", "conversion_goal", "kvalue", "click", "exp_flag")
+      .select("identifier", "conversion_goal", "kvalue", "click", "exp_flag", "update_date", "update_hour")
 
     data.show(10)
     val resultDF = data
@@ -91,7 +103,9 @@ object OcpcKsmooth1 {
          |SELECT
          |  cast(unitid as string) as identifier,
          |  kvalue,
-         |  original_conversion as conversion_goal
+         |  original_conversion as conversion_goal,
+         |  update_date,
+         |  update_hour
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
          |WHERE
@@ -104,9 +118,9 @@ object OcpcKsmooth1 {
     println(sqlRequest1)
     val data = spark
       .sql(sqlRequest1)
-      .groupBy("identifier", "conversion_goal")
+      .groupBy("identifier", "conversion_goal", "update_date", "update_hour")
       .agg(avg("kvalue").alias("kvalue"))
-      .select("identifier", "kvalue", "conversion_goal")
+      .select("identifier", "kvalue", "conversion_goal", "update_date", "update_hour")
 
     data.show(10)
     data
