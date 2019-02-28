@@ -32,8 +32,11 @@ object OcpcKsmooth1 {
     val hour = args(1).toString
     val version = args(2).toString
     val media = args(3).toString
+    val conf = ConfigFactory.load("ocpc")
+    val expDataPath = conf.getString("ocpc_all.ocpc_exp_flag")
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version")
+    println(s"date=$date, hour=$hour, version=$version, media=$media")
+    println(s"expDataPath=$expDataPath")
 
     // 抽取前48小时到前24小时是否有ocpc广告记录，生成flag
     val baseData = getOcpcHistoryFlag(media, date, hour, spark)
@@ -41,11 +44,27 @@ object OcpcKsmooth1 {
     // 抽取今天的unitid, original_conversion, kvalue, date, hour
     val kvalue = getSuggestData(version, date, hour, spark)
 
-//    // 读取实验配置文件
-//    val expUnitid = getExpSet(version, date, hour, spark)
-//
+    // 读取实验配置文件
+    val expUnitid = getExpSet(expDataPath, version, date, hour, spark)
+
 //    // 数据关联
 //    val resultDF = assembleData(baseData, kvalue, expUnitid, date, hour, spark)
+  }
+
+  def getExpSet(expDataPath: String, version: String, date: String, hour: String, spark: SparkSession) = {
+    val data = spark.read.format("json").json(expDataPath)
+    data.show(10)
+
+    val resultDF = data
+        .filter(s"version = '$version'")
+        .groupBy("identifier")
+        .agg(
+          min(col("exp_flag")).alias("exp_flag")
+        )
+        .select("identifier", "exp_flag")
+
+    resultDF.show(10)
+    resultDF
   }
 
   def getSuggestData(version: String, date: String, hour: String, spark: SparkSession) = {
