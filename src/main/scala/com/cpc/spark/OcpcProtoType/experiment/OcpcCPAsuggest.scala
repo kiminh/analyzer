@@ -49,7 +49,7 @@ object OcpcCPAsuggest {
     resultDF.repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_cpc_cpa_exp_once")
 
     // 将数据存储到实验配置表中dl_cpc.ocpc_exp_setting
-    saveDataToHive(resultDF, date, version, expTag, spark)
+//    saveDataToHive(resultDF, date, version, expTag, spark)
 
   }
 
