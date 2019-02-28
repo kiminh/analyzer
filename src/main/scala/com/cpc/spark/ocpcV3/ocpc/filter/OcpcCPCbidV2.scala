@@ -101,12 +101,16 @@ object OcpcCPCbidV2 {
 //    val data = spark
 //        .table("test.ocpc_pcvr_smooth_cpm")
 //        .select("identifier", "min_bid", "min_cpm")
+//    1854873
+//    1702796
+//    1875122
+
 
     val sqlRequest =
       s"""
          |SELECT
          |  identifier,
-         |  0 as min_bid,
+         |  (case when idenifier in (1854873, 1702796, 1875122) then 5 else 0 end)  as min_bid,
          |  0 as min_cpm
          |FROM
          |  test.ocpc_pcvr_smooth_cpm
