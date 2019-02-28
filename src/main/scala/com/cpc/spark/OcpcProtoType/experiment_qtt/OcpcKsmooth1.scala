@@ -38,9 +38,9 @@ object OcpcKsmooth1 {
     // 抽取前48小时到前24小时是否有ocpc广告记录，生成flag
     val baseData = getOcpcHistoryFlag(media, date, hour, spark)
 
-//    // 抽取今天的unitid, original_conversion, kvalue, date, hour
-//    val kvalue = getSuggestData(version, date, hour, spark)
-//
+    // 抽取今天的unitid, original_conversion, kvalue, date, hour
+    val kvalue = getSuggestData(version, date, hour, spark)
+
 //    // 读取实验配置文件
 //    val expUnitid = getExpSet(version, date, hour, spark)
 //
@@ -53,7 +53,7 @@ object OcpcKsmooth1 {
       s"""
          |SELECT
          |  cast(unitid as string) as identifier,
-         |  cpa as cpa_suggest,
+         |  kvalue,
          |  original_conversion as conversion_goal
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
@@ -68,8 +68,8 @@ object OcpcKsmooth1 {
     val data = spark
       .sql(sqlRequest1)
       .groupBy("identifier", "conversion_goal")
-      .agg(avg("cpa_suggest").alias("cpa_suggest"))
-      .select("identifier", "cpa_suggest", "conversion_goal")
+      .agg(avg("kvalue").alias("kvalue"))
+      .select("identifier", "kvalue", "conversion_goal")
 
     data.show(10)
     data
