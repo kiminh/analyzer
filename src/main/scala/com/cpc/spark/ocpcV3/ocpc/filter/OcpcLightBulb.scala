@@ -223,7 +223,7 @@ object OcpcLightBulb{
            |        date = '$date'
            |    and is_recommend = 1
            |    and version = 'qtt_demo'
-           |    and ((industry='elds') or (industry='feedapp' and original_conversion=1))) as a
+           |    and industry in ('elds', 'feedapp')) as a
            |INNER JOIN
            |    (
            |        select distinct unitid, adslot_type

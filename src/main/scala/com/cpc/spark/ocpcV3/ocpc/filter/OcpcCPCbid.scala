@@ -27,170 +27,111 @@ object OcpcCPCbid {
     val conf = ConfigFactory.load("ocpc")
     val expDataPath = conf.getString("ocpc_all.ocpc_cpcbid.path")
     val fileName = conf.getString("ocpc_all.ocpc_cpcbid.pbfile")
+    val smoothDataPath = conf.getString("ocpc_all.ocpc_cpcbid.factor_path")
     println(s"path is: $expDataPath")
     println(s"fileName is: $fileName")
+    println(s"path is $smoothDataPath")
 
-    val cpcData = getExpData(expDataPath, date, hour, spark)
-    cpcData.show(10)
-
+    val expData = getExpData(expDataPath, date, hour, spark)
     val cvrData = getCvrData(date, hour, spark)
-    cvrData.show(10)
+    val cpmData = getCpmData(date, hour, spark)
+    val cvrAlphaData = getCvrAlphaData(smoothDataPath, date, hour, spark)
 
-    val data = cpcData
-        .join(cvrData, Seq("unitid"), "outer")
-        .select("unitid", "min_bid1", "cvr1", "cvr2", "cvr3", "min_bid2", "min_cpm2")
-        .withColumn("cvr1", when(col("unitid") === "270", 0.5).otherwise(col("cvr1")))
-        .withColumn("cvr2", when(col("unitid") === "270", 0.5).otherwise(col("cvr2")))
-        .withColumn("cvr3", when(col("unitid") === "270", 0.5).otherwise(col("cvr3")))
+    val data = expData
+        .join(cvrData, Seq("identifier"), "outer")
+        .join(cpmData, Seq("identifier"), "outer")
+        .join(cvrAlphaData, Seq("identifier"), "left_outer")
+        .select("identifier", "min_bid1", "cvr1", "cvr2", "cvr3", "min_bid2", "min_cpm2", "factor1", "factor2", "factor3")
+        .withColumn("cvr1", when(col("identifier") === "270", 0.5).otherwise(col("cvr1")))
+        .withColumn("cvr2", when(col("identifier") === "270", 0.5).otherwise(col("cvr2")))
+        .withColumn("cvr3", when(col("identifier") === "270", 0.5).otherwise(col("cvr3")))
         .withColumn("min_bid", when(col("min_bid1").isNotNull, col("min_bid1")).otherwise(col("min_bid2")))
         .withColumn("min_cpm", col("min_cpm2"))
         .na.fill(0, Seq("min_bid", "cvr1", "cvr2", "cvr3", "min_cpm"))
+        .na.fill(0.2, Seq("factor1", "factor2", "factor3"))
+        .filter(s"identifier not in ('1854873', '1702796', '1817158', '1875122')")
+//        .filter(s"identifier in (1918962, 1921432, 1884679, 1929766)")
 
-    data
-        .select("unitid", "min_bid", "cvr1", "cvr2", "cvr3", "min_cpm")
+    val resultDF = data
+        .selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "cast(factor1 as double) factor1", "cast(factor2 as double) as factor2", "cast(factor3 as double) factor3")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit("qtt_demo"))
-        // .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190218")
-       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190218")
+//       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
-    savePbPack(data, fileName)
+//    savePbPack(data, fileName)
   }
 
+  def getCvrAlphaData(dataPath: String, date: String, hour: String, spark: SparkSession) = {
+    val data = spark.read.format("json").json(dataPath)
 
-  def getCvrData(date: String, hour: String, spark: SparkSession) = {
-    val clickData = getClickData(date, hour, spark)
-    val cvr1Data = getCV("cvr1", date, hour, spark)
-    val cvr2Data = getCV("cvr2", date, hour, spark)
-    val cvr3Data = getCV("cvr3", date, hour, spark)
-
-    val data = clickData
-      .join(cvr1Data, Seq("searchid"), "left_outer")
-      .join(cvr2Data, Seq("searchid"), "left_outer")
-      .join(cvr3Data, Seq("searchid"), "left_outer")
-      .select("searchid", "unitid", "price", "isclick", "iscvr1", "iscvr2", "iscvr3", "isshow", "bid", "exp_ctr")
-      .withColumn("cpm", col("bid") * col("exp_ctr"))
-
-    // data.createOrReplaceTempView("base_data")
-    data.write.mode("overwrite").saveAsTable("test.ocpc_check_data_smooth")
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  unitid,
-         |  2 as min_bid2,
-         |  sum(iscvr1) * 1.0 / sum(isclick) as cvr1,
-         |  sum(iscvr2) * 1.0 / sum(isclick) as cvr2,
-         |  sum(iscvr3) * 1.0 / sum(isclick) as cvr3,
-         |  percentile(cpm, 0.10) as min_cpm2
-         |FROM
-         |  test.ocpc_check_data_smooth
-         |GROUP BY unitid
-       """.stripMargin
-    println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
+    val resultDF = data
+      .groupBy("unitid")
+      .agg(
+        min(col("factor1")).alias("factor1"),
+        min(col("factor2")).alias("factor2"),
+        min(col("factor3")).alias("factor3")
+      )
+      .withColumn("identifier", col("unitid"))
+      .select("identifier", "factor1", "factor2", "factor3")
 
     resultDF.show(10)
     resultDF
-
   }
 
-  def getCV(cvType: String, date: String, hour: String, spark: SparkSession) = {
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -72)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val colName = "is" + cvType
-
-    val sqlRequest =
-      s"""
-         |SELECT
-         |  searchid
-         |FROM
-         |  dl_cpc.ocpc_label_cvr_hourly
-         |WHERE
-         |  `date` >= '$date1'
-         |AND
-         |  cvr_goal = '$cvType'
-       """.stripMargin
-    println(sqlRequest)
-    val data = spark.sql(sqlRequest).withColumn(colName, lit(1)).select("searchid", colName)
+  def getCpmData(date: String, hour: String, spark: SparkSession) = {
+    val data = spark
+      .table("test.ocpc_pcvr_smooth_cpm")
+      .withColumn("min_bid2", col("min_bid"))
+      .withColumn("min_cpm2", col("min_cpm"))
+      .select("identifier", "min_bid2", "min_cpm2")
     data
   }
 
-  def getClickData(date: String, hour: String, spark: SparkSession) = {
-    // 取历史数据
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + hour
-    val today = dateConverter.parse(newDate)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -72)
-    val yesterday = calendar.getTime
-    val tmpDate = dateConverter.format(yesterday)
-    val tmpDateValue = tmpDate.split(" ")
-    val date1 = tmpDateValue(0)
-    val hour1 = tmpDateValue(1)
-    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
-
+  def getCvrData(date: String, hour: String, spark: SparkSession) = {
+    val selectCondition = s"`date` = '$date' and `hour` = '$hour' and version = 'qtt_demo'"
+    val tableName = "dl_cpc.ocpc_pcvr_smooth_hourly"
     val sqlRequest =
       s"""
          |SELECT
-         |  searchid,
-         |  unitid,
-         |  price,
-         |  isclick,
-         |  isshow,
-         |  (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as double)
-         |        else original_bid end) as bid,
-         |  exp_ctr * 1000000 as exp_ctr
+         |  identifier,
+         |  cvr1,
+         |  cvr2,
+         |  cvr3
          |FROM
-         |  dl_cpc.filtered_union_log_exptag_hourly
+         |  $tableName
          |WHERE
          |  $selectCondition
-         |AND
-         |  media_appsid in ('80000001', '80000002')
-         |AND
-         |  adslot_type in (1,2,3)
-         |AND
-         |  adsrc=1
-         |AND
-         |  round(adclass/1000) != 132101  --去掉互动导流
-         |AND
-         |  isshow=1
        """.stripMargin
     println(sqlRequest)
     val data = spark.sql(sqlRequest)
-
     data
+
   }
 
-  def savePbPack(dataset: DataFrame, filename: String): Unit = {
+ def savePbPack(dataset: DataFrame, filename: String): Unit = {
     var list = new ListBuffer[SingleOcpcCpcBid]
     println("size of the dataframe")
-    println(dataset.count)
-    dataset.show(10)
-    dataset.printSchema()
+    val resultData = dataset.selectExpr("identifier", "cast(min_bid as double) min_bid", "cvr1", "cvr2", "cvr3", "cast(min_cpm as double) as min_cpm", "factor1", "factor2", "factor3")
+    println(resultData.count)
+    resultData.show(10)
+    resultData.printSchema()
     var cnt = 0
 
-    for (record <- dataset.collect()) {
-      val unit_id = record.getAs[String]("unitid").toLong
-      val min_bid = record.getAs[Long]("min_bid").toDouble
+    for (record <- resultData.collect()) {
+      val unit_id = record.getAs[String]("identifier").toLong
+      val min_bid = record.getAs[Double]("min_bid")
       val post_cvr1 = record.getAs[Double]("cvr1")
       val post_cvr2 = record.getAs[Double]("cvr2")
       val post_cvr3 = record.getAs[Double]("cvr3")
       val min_cpm = record.getAs[Double]("min_cpm").toLong
+      val factor1 = record.getAs[Double]("factor1")
+      val factor2 = record.getAs[Double]("factor2")
+      val factor3 = record.getAs[Double]("factor3")
 
 
-      println(s"unit_id:$unit_id, min_bid:$min_bid, post_cvr1:$post_cvr1, post_cvr2:$post_cvr2, post_cvr3:$post_cvr3, min_cpm:$min_cpm")
+      println(s"unit_id:$unit_id, min_bid:$min_bid, post_cvr1:$post_cvr1, post_cvr2:$post_cvr2, post_cvr3:$post_cvr3, min_cpm:$min_cpm, factor1:$factor1, factor2:$factor2, factor3:$factor3")
 
       cnt += 1
       val currentItem = SingleOcpcCpcBid(
@@ -199,7 +140,10 @@ object OcpcCPCbid {
         cvGoal1PostCvr = post_cvr1,
         cvGoal2PostCvr = post_cvr2,
         cvGoal3PostCvr = post_cvr3,
-        minCpm = min_cpm
+        minCpm = min_cpm,
+        cvGoal1Smooth = factor1,
+        cvGoal2Smooth = factor2,
+        cvGoal3Smooth = factor3
       )
       list += currentItem
 
@@ -226,7 +170,8 @@ object OcpcCPCbid {
       .agg(
         min(col("min_bid")).alias("min_bid1")
       )
-      .select("unitid", "min_bid1")
+      .withColumn("identifier", col("unitid"))
+      .select("identifier", "min_bid1")
 
     resultDF.show(10)
     resultDF

@@ -4,7 +4,8 @@ import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
-object OcpcUnionlog {
+object OcpcABresult {
+  // todo: 测试数据
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
@@ -12,84 +13,17 @@ object OcpcUnionlog {
     val date = args(0).toString
     val hour = args(1).toString
 
-    val data = getBaseUnionlog(date, hour, spark)
+    val data = getBaseResult(date, hour, spark)
 
     data
       .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
-//      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
+    //      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
-    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
-    ocpcData
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
-    println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
 
-  def getOcpcUnionlog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
-    val baseData = data
-        .filter(s"length(ocpc_log)>0")
-        .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-
-    baseData.createOrReplaceTempView("base_data")
-
-    val sqlRequest =
-      s"""
-         |select
-         |    searchid,
-         |    timestamp,
-         |    network,
-         |    exptags,
-         |    media_type,
-         |    media_appsid,
-         |    adslotid,
-         |    adslot_type,
-         |    adtype,
-         |    adsrc,
-         |    interaction,
-         |    bid,
-         |    price,
-         |    ideaid,
-         |    unitid,
-         |    planid,
-         |    country,
-         |    province,
-         |    city,
-         |    uid,
-         |    ua,
-         |    os,
-         |    sex,
-         |    age,
-         |    isshow,
-         |    isclick,
-         |    duration,
-         |    userid,
-         |    is_ocpc,
-         |    user_city,
-         |    city_level,
-         |    adclass,
-         |    ocpc_log_dict,
-         |    exp_ctr,
-         |    exp_cvr,
-         |    antispam
-         |from
-         |    base_data
-       """.stripMargin
-    println(sqlRequest)
-    val rawData = spark.sql(sqlRequest)
-
-    val resultDF = rawData
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-
-    resultDF.printSchema()
-
-    resultDF
-
-  }
-
-  def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
+  def getBaseResult(date: String, hour: String, spark: SparkSession) = {
     var selectWhere = s"(`date`='$date' and hour = '$hour')"
 
     // 拿到基础数据
