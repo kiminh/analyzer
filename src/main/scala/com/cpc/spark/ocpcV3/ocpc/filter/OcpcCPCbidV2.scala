@@ -59,8 +59,8 @@ object OcpcCPCbidV2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190226")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190226")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(data, fileName)
   }
@@ -98,11 +98,22 @@ object OcpcCPCbidV2 {
   }
 
   def getCpmData(date: String, hour: String, spark: SparkSession) = {
-    val data = spark
-        .table("test.ocpc_pcvr_smooth_cpm")
-        .select("identifier", "min_bid", "min_cpm")
-        .withColumn("min_bid", lit(0))
-        .withColumn("min_cpm", lit(0))
+//    val data = spark
+//        .table("test.ocpc_pcvr_smooth_cpm")
+//        .select("identifier", "min_bid", "min_cpm")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  identifier,
+         |  0 as min_bid,
+         |  0 as min_cpm
+         |FROM
+         |  test.ocpc_pcvr_smooth_cpm
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+
     data
   }
 
