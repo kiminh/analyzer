@@ -290,7 +290,11 @@ object OcpcGetPbV2 {
       .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
 
-    val prevk = spark.table("dl_cpc.ocpcv3_novel_pb_v2_once")
+    val sql=
+      """
+        |select * from dl_cpc.ocpcv3_novel_pb_v2_once
+      """.stripMargin
+    val prevk = spark.sql(sql)
         .withColumn("prevk",col("kvalue"))
         .select("unitid","prevk")
 
