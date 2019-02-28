@@ -110,7 +110,7 @@ object OcpcCPCbidV2 {
       s"""
          |SELECT
          |  identifier,
-         |  (case when idenifier in (1854873, 1702796, 1875122) then 5 else 0 end)  as min_bid,
+         |  (case when identifier in (1854873, 1702796, 1875122) then 5 else 0 end)  as min_bid,
          |  0 as min_cpm
          |FROM
          |  test.ocpc_pcvr_smooth_cpm
