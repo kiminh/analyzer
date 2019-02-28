@@ -113,7 +113,6 @@ object OcpcKsmooth1 {
          |and adsrc = 1
          |and adslot_type in (1,2,3)
          |and searchid is not null
-         |and antispam=0
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark
