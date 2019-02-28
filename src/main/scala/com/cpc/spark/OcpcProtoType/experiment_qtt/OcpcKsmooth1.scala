@@ -38,8 +38,8 @@ object OcpcKsmooth1 {
     // 抽取前48小时到前24小时是否有ocpc广告记录，生成flag
     val baseData = getOcpcHistoryFlag(media, date, hour, spark)
 
-    // 抽取今天的unitid, original_conversion, kvalue, date, hour
-    val kvalue = getSuggestData(version, date, hour, spark)
+//    // 抽取今天的unitid, original_conversion, kvalue, date, hour
+//    val kvalue = getSuggestData(version, date, hour, spark)
 //
 //    // 读取实验配置文件
 //    val expUnitid = getExpSet(version, date, hour, spark)
