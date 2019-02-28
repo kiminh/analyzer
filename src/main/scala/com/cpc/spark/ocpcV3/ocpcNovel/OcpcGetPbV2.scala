@@ -290,7 +290,7 @@ object OcpcGetPbV2 {
       .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
 
-    val prevk = spark.table("dl_cpc.ocpcv3_novel_pb_v2_once")
+    val prevk = spark.table("test.ocpcv3_novel_pb_v2_once")
         .withColumn("prevk",col("kvalue"))
         .select("unitid","prevk")
     prevk.write.mode("overwrite").saveAsTable("test.wy00")
