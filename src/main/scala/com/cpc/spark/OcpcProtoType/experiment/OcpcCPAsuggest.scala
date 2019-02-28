@@ -46,6 +46,7 @@ object OcpcCPAsuggest {
 
 //    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_check_data20190211")
     resultDF.repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_cpc_cpa_exp")
+    resultDF.repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_cpc_cpa_exp_once")
 
     // 将数据存储到实验配置表中dl_cpc.ocpc_exp_setting
     saveDataToHive(resultDF, date, version, expTag, spark)
@@ -81,12 +82,14 @@ object OcpcCPAsuggest {
          |WHERE
          |  `date`='$date'
          |AND
-         |  `hour`='$hour'
-         |AND
          |  version='$version'
        """.stripMargin
     println(sqlRequest1)
-    val data = spark.sql(sqlRequest1)
+    val data = spark
+        .sql(sqlRequest1)
+        .groupBy("identifier", "conversiong_goal")
+        .agg(avg("cpa_suggest").alias("cpa_suggest"))
+        .select("identifier", "cpa_suggest", "conversion_goal")
 
     data
   }
