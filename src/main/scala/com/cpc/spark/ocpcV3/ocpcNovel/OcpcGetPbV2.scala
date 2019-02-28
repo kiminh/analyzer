@@ -170,7 +170,6 @@ object OcpcGetPbV2 {
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .select("unitid", "new_adclass")
       .distinct()
-//    ctrData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_ctr_data_hourly_v2")
 
     // cvr data
     // cvr1 or cvr3 data
@@ -227,7 +226,7 @@ object OcpcGetPbV2 {
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
 
     val resultDF = result.select("unitid", "new_adclass", "cvr1cnt", "cvr2cnt")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly_v2")
+
 
     // 返回结果
     resultDF.show(10)
@@ -291,10 +290,21 @@ object OcpcGetPbV2 {
       .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
 
+    val prevk = spark.table("dl_cpc.ocpcv3_novel_pb_v2_once")
+        .withColumn("prevk",col("kvalue"))
+        .select("unitid","prevk")
+    prevk.write.mode("overwrite").saveAsTable("test.wy00")
     val resultDF = data.select("unitid", "new_adclass", "kvalue", "conversion_goal")
+        .join(prevk,Seq("unitid"),"left")
 
-    // TODO 删除临时表
-    data.write.mode("overwrite").saveAsTable("test.wy01")
+    resultDF.write.mode("overwrite").saveAsTable("test.wy01")
+
+    val d2=resultDF
+      .withColumn("kvalue",
+        when(col("kvalue")>col("prevk"),
+          (col("kvalue")-col("prevk"))/3 + col("prevk")).
+          otherwise(col("kvalue")))
+    d2.write.mode("overwrite").saveAsTable("test.wy02")
 
     resultDF
   }
