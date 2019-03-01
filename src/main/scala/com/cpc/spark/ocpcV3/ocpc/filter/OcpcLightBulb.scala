@@ -24,8 +24,7 @@ object OcpcLightBulb{
     val hour = args(1).toString
     val version = args(2).toString
 
-    println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version")
+
     val spark = SparkSession
       .builder()
       .appName(s"OcpcLightBulb: $date, $hour")
@@ -34,7 +33,8 @@ object OcpcLightBulb{
 
     val tableName = "test.ocpc_qtt_light_control"
 
-
+    println("parameters:")
+    println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
 
     // 抽取数据
