@@ -32,20 +32,75 @@ object OcpcKsmooth1 {
     val hour = args(1).toString
     val version = args(2).toString
     val media = args(3).toString
+    val conf = ConfigFactory.load("ocpc")
+    val expDataPath = conf.getString("ocpc_all.ocpc_exp_flag")
     println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version")
+    println(s"date=$date, hour=$hour, version=$version, media=$media")
+    println(s"expDataPath=$expDataPath")
 
     // 抽取前48小时到前24小时是否有ocpc广告记录，生成flag
     val baseData = getOcpcHistoryFlag(media, date, hour, spark)
 
     // 抽取今天的unitid, original_conversion, kvalue, date, hour
     val kvalue = getSuggestData(version, date, hour, spark)
-//
-//    // 读取实验配置文件
-//    val expUnitid = getExpSet(version, date, hour, spark)
-//
-//    // 数据关联
-//    val resultDF = assembleData(baseData, kvalue, expUnitid, date, hour, spark)
+
+    // 读取实验配置文件
+    val expUnitid = getExpSet(expDataPath, version, date, hour, spark)
+
+    // 数据关联
+    val result = assembleData(baseData, kvalue, expUnitid, date, hour, spark)
+
+    val resultDF = result
+        .select("identifier", "conversion_goal", "kvalue", "update_date", "update_hour")
+        .withColumn("version", lit(version))
+
+    resultDF.repartition(2).write.mode("overwrite").saveAsTable("test.ocpc_k_smooth_v1")
+  }
+
+  def assembleData(baseData: DataFrame, kvalue: DataFrame, expUnitid: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    /*
+    关联以上三步得到的数据记录，过滤仅保留第一步中没有ocpc广告记录的、第二部中is_recommend=1的，以及第三部实验配置文件中配置flag=1的unitid
+    +----------+------------------+---------------+
+    |   1948108|1.2472075856339033|              1|
+    |   1943987| 1.105644671811455|              1|
+    |   1953382|1.0501097289140464|              1|
+    |   1882529|1.1014911039905588|              1|
+    |   1944200|0.5018119917408486|              1|
+    |   1885790|1.1797902076232976|              1|
+    |   1648536|0.5582096113505398|              1|
+    |   1936006|1.0465440325261897|              1|
+    |   1930837|0.5985529560043646|              1|
+    |   1951627|2.4644311713037594|              1|
+    +----------+------------------+---------------+
+     */
+    val data = kvalue
+      .join(baseData, Seq("identifier", "conversion_goal"), "left_outer")
+      .select("identifier", "conversion_goal", "kvalue", "click", "update_date", "update_hour")
+      .na.fill(0, Seq("click"))
+      .join(expUnitid, Seq("identifier"), "inner")
+      .select("identifier", "conversion_goal", "kvalue", "click", "exp_flag", "update_date", "update_hour")
+
+    data.show(10)
+    val resultDF = data
+      .filter(s"click = 0 and exp_flag = 1")
+    resultDF.show(10)
+    resultDF
+  }
+
+  def getExpSet(expDataPath: String, version: String, date: String, hour: String, spark: SparkSession) = {
+    val data = spark.read.format("json").json(expDataPath)
+    data.show(10)
+
+    val resultDF = data
+        .filter(s"version = '$version'")
+        .groupBy("identifier")
+        .agg(
+          min(col("exp_flag")).alias("exp_flag")
+        )
+        .select("identifier", "exp_flag")
+
+    resultDF.show(10)
+    resultDF
   }
 
   def getSuggestData(version: String, date: String, hour: String, spark: SparkSession) = {
@@ -53,8 +108,10 @@ object OcpcKsmooth1 {
       s"""
          |SELECT
          |  cast(unitid as string) as identifier,
-         |  cpa as cpa_suggest,
-         |  original_conversion as conversion_goal
+         |  kvalue,
+         |  original_conversion as conversion_goal,
+         |  date as update_date,
+         |  hour as update_hour
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
          |WHERE
@@ -67,9 +124,9 @@ object OcpcKsmooth1 {
     println(sqlRequest1)
     val data = spark
       .sql(sqlRequest1)
-      .groupBy("identifier", "conversion_goal")
-      .agg(avg("cpa_suggest").alias("cpa_suggest"))
-      .select("identifier", "cpa_suggest", "conversion_goal")
+      .groupBy("identifier", "conversion_goal", "update_date", "update_hour")
+      .agg(avg("kvalue").alias("kvalue"))
+      .select("identifier", "kvalue", "conversion_goal", "update_date", "update_hour")
 
     data.show(10)
     data
@@ -84,10 +141,7 @@ object OcpcKsmooth1 {
     calendar.add(Calendar.DATE, -1)
     val yesterday1 = calendar.getTime
     val date1 = dateConverter.format(yesterday1)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday2 = calendar.getTime
-    val date2 = dateConverter.format(yesterday2)
-    val selectCondition = getTimeRangeSql2(date2, hour, date1, hour)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
     // 媒体选择
     val conf = ConfigFactory.load("ocpc")
@@ -100,7 +154,8 @@ object OcpcKsmooth1 {
          |    searchid,
          |    unitid,
          |    userid,
-         |    isclick
+         |    isclick,
+         |    cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
          |WHERE
@@ -113,14 +168,14 @@ object OcpcKsmooth1 {
          |and adsrc = 1
          |and adslot_type in (1,2,3)
          |and searchid is not null
-         |and antispam=0
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark
         .sql(sqlRequest)
-        .groupBy("unitid")
+        .groupBy("unitid", "conversion_goal")
         .agg(sum(col("isclick")).alias("click"))
-        .select("unitid", "click")
+        .withColumn("identifier", col("unitid"))
+        .select("identifier", "conversion_goal", "click")
 
     resultDF.show(10)
     resultDF
