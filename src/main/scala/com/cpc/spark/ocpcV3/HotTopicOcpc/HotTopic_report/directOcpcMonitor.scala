@@ -1,0 +1,105 @@
+package com.cpc.spark.ocpcV3.HotTopicOcpc.HotTopic_report
+
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
+import org.apache.spark.sql.SparkSession
+
+object directOcpcMonitor {
+  def main(args: Array[String]): Unit ={
+    val spark = SparkSession.builder().appName("directOcpcMonitor").enableHiveSupport().getOrCreate()
+    val date = args(0).toString
+
+    val sdf = new SimpleDateFormat("yyyy-MM--dd")
+    val jdate1 = sdf.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(jdate1)
+    calendar.add( Calendar.DATE, -1 )
+    val jdate0 = calendar.getTime
+    val date0 = sdf.format(jdate0)
+
+//    create table if not exists test.directOcpcMonitor
+//    (
+//      label      STRING COMMENT '直暗投，ocpc/cpc',
+//    show_n     INT    COMMENT '展示量',
+//    ctr        FLOAT  COMMENT '点击率',
+//    click_n    INT    COMMENT '点击数',
+//    click_cvr  FLOAT  COMMENT '转化率',
+//    cvr_n      INT    COMMENT '转化数',
+//    money      FLOAT  COMMENT '收入',
+//    cpa        FLOAT  COMMENT 'cost per action',
+//    cpa_given  FLOAT  COMMENT 'cpa_given',
+//    cpm        FLOAT  COMMENT 'cost per mille',
+//    total_arpu FLOAT  COMMENT 'arpu',
+//    acp        FLOAT  COMMENT 'average click price'
+//    )
+//    COMMENT '热点段子明暗投、ocpc/cpc监控日报'
+//    PARTITIONED BY (`date` STRING);
+
+    val sqlRequest =
+      s"""
+         |  select
+         |   case
+         |     when c.identifier is not NULL and exptags like "%hot_topic%" and length(ext_string['ocpc_log']) > 0  then '暗投ocpc'
+         |     when c.identifier is not NULL and                                length(ext_string['ocpc_log']) = 0  then '暗投cpc'
+         |     else '直投'
+         |    end as label, --这里的ocpc是指付费方式为cpc下面的ocpc
+         |   sum(isshow)                                                                    as show_n,
+         |   round(sum(isclick)*100                                   /sum(isshow),      3) as ctr,       --单位：%
+         |         sum(isclick)                                                             as click_n,
+         |   round(sum(iscvr)*100                                     /sum(isclick),     3) as click_cvr, --单位：%
+         |         sum(iscvr)                                                               as cvr_n,
+         |   round(sum(case WHEN isclick = 1 then price else 0 end)/100, 3)                 as money,
+         |   round(sum(case WHEN isclick = 1 then price else 0 end)   /sum(100*iscvr),   3) as cpa,       --单位：元
+         |   round(sum(isclick*float(substring(ocpc_log, locate("cpagiven:", ocpc_log) + 9, locate("pcvr", ocpc_log) - locate(",cpagiven:", ocpc_log) - 11)))/sum(isclick) ) as cpa_given,
+         |   round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isshow),      3) as cpm,       --cpc下面的cpm，单位：元
+         |   (sum(case WHEN isclick = 1 and (ext["charge_type"].int_value = 1 or ext["charge_type"] IS NULL ) then price else 0 end)/100
+         |  + sum(case when isshow  = 1 and  ext["charge_type"].int_value = 2                                 then price else 0 end)/100000.0 )
+         |   /count(distinct uid)                                                           as total_arpu,
+         |   round(sum(case WHEN isclick = 1 then price else 0 end)/100, 3)/sum(isclick)    as acp,
+         |   '$date'                                                                        as `date`
+         |FROM
+         |     (  select
+         |         ext_string['ocpc_log'] as ocpc_log,
+         |         cast(unitid as string) as identifier,
+         |         *
+         |        from dl_cpc.cpc_hot_topic_union_log
+         |       WHERE `date` = '$date'
+         |         and isshow = 1 --已经展示
+         |         and media_appsid = '80002819'
+         |         and ext['antispam'].int_value = 0  --反作弊标记：1作弊，0未作弊
+         |         AND userid > 0 -- 广告主id
+         |         and adsrc = 1  -- cpc广告（我们这边的广告，非外部广告）
+         |         AND ( ext["charge_type"] IS NULL OR ext["charge_type"].int_value = 1 ) --charge_type: 计费类型
+         |     ) a
+         |left join
+         |     (
+         |       select
+         |        searchid,
+         |        label2 as iscvr --是否转化
+         |       from dl_cpc.ml_cvr_feature_v1
+         |      WHERE `date` = '$date'
+         |     ) b on a.searchid = b.searchid
+         |left join
+         |     (
+         |        select
+         |          identifier
+         |        from
+         |          dl_cpc.ocpc_pb_result_hourly
+         |        where
+         |          ((`date` = '$date0' and hour >= '21') or (`date` = '$date' and hour < '21'))
+         |          and version = 'hottopicv1'
+         |        group by
+         |          identifier
+         |      ) c on a.identifier = c.identifier
+         |GROUP BY
+         |   case
+         |     when c.identifier is not NULL and exptags like "%hot_topic%" and length(ext_string['ocpc_log']) > 0  then '暗投ocpc'
+         |     when c.identifier is not NULL and                                length(ext_string['ocpc_log']) = 0  then '暗投cpc'
+         |     else '直投'
+         |    end
+       """.stripMargin
+
+    spark.sql(sqlRequest).write.mode("overwrite").insertInto("test.directOcpcMonitor")
+  }
+}
