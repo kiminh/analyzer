@@ -20,12 +20,12 @@ object OcpcPIDwithCPAV2 {
 
     val result = calculateKv2(date, hour, spark)
     val tableName = "dl_cpc.ocpc_novel_k_value_table_v2"
-//    result
-//      .repartition(10).write.mode("overwrite").insertInto(tableName)
-//    println(s"successfully save data into table: $tableName")
-//
-//    val prevk = spark.table("dl_cpc.ocpcv3_novel_pb_v2_once")
-//    prevk.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once_middle")
+    result
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
+    println(s"successfully save data into table: $tableName")
+
+    val prevk = spark.table("dl_cpc.ocpcv3_novel_pb_v2_once")
+    prevk.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once_middle")
 
 
   }
