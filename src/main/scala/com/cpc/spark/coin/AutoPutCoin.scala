@@ -64,7 +64,6 @@ object AutoPutCoin {
                |from dl_cpc.cpc_report_coin_userid_metrics
                |where `date`=date_sub('$date',1)
                |and auc <= 0.5
-               |and coin_click_num > 0
              """.stripMargin
 
         val useridBlacklist = spark.sql(metricsSql).rdd.map(x => x.getAs[Int]("userid").toString).collect().toList.mkString(",")
