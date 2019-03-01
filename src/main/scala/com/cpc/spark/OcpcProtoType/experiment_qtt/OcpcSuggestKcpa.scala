@@ -92,7 +92,7 @@ object OcpcSuggestKcpa {
 
   def getCleanData(suggestCPA: DataFrame, ocpcFlag: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val joinData = suggestCPA
-      .join(ocpcFlag, Seq("identifier"), "left_outer")
+      .join(ocpcFlag, Seq("identifier", "conversion_goal"), "left_outer")
       .select("identifier", "cpa_suggest", "kvalue", "conversion_goal", "click", "flag")
       .filter(s"flag is null")
       .filter("cpa_suggest is not null and kvalue is not null")
