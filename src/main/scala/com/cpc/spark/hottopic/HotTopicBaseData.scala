@@ -20,13 +20,13 @@ object HotTopicBaseData {
             s"""
                |select *
                |from dl_cpc.cpc_basedata_union_events
-               |where `date` = '$date' and hour = '$hour'
+               |where day = '$date' and hour = '$hour'
                |and media_appsid in ('80002819')
              """.stripMargin
 
         val result = spark.sql(sql)
         val tableName = "dl_cpc.cpc_hot_topic_basedata_union_events"
         result.repartition(10).write.mode("overwrite").insertInto(tableName)
-        println(s"insert into $tableName at data = $date, hour = $hour success !")
+        println(s"insert into $tableName at date = $date, hour = $hour success !")
     }
 }
