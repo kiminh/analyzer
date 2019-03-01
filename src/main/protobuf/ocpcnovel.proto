@@ -11,9 +11,6 @@ message SingleUnit {
     double cpa3History = 6;
     int32 conversiongoal = 7;
     string flag = 8;
-    double postcvr = 9;
-    double avgbid = 10;
-    double maxbid = 11;
 }
 
 
