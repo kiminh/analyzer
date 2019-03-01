@@ -200,8 +200,8 @@ object OcpcMinCPMv2 {
        |  city_level,
        |  floor(adclass/1000) as ad_second_class,
        |  ocpc_flag,
-       |  percentile(bid, 0.015) as min_bid,
-       |  percentile(cpm, 0.15) as min_cpm,
+       |  percentile(bid, 0.03) as min_bid,
+       |  percentile(cpm, 0.10) as min_cpm,
        |  count(1) as cnt,
        |  percentile(exp_cvr, 0.98) * 1.2 as pcvr
        |FROM
