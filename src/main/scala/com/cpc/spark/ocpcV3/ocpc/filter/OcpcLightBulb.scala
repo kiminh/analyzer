@@ -48,6 +48,7 @@ object OcpcLightBulb{
         .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
         .withColumn("ocpc_cpa2", when(col("unitid") === 1921134, lit(17)).otherwise(col("ocpc_cpa2")))
+        .withColumn("ocpc_cpa2", when(col("unitid") === 1951024, lit(20)).otherwise(col("ocpc_cpa2")))
 //    data
 //      .withColumn("date", lit(date))
 //      .withColumn("version", lit("qtt_demo"))
