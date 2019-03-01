@@ -52,7 +52,7 @@ object bscvr_exp_report {
          (select searchid,ideaid, 1 as label from dl_cpc.dl_conversion_by_industry where dt='$tardate'
           and isreport=1 group by searchid,ideaid) tc
          on (ta.searchid = tc.searchid and ta.ideaid=tc.ideaid)
-         group by ta.exp,ta.adslot_type,industry order by adslot_type,industry,cpm
+         group by ta.exp
 """.stripMargin).repartition(1).createOrReplaceTempView("unitid_total")
 
 
