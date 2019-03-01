@@ -62,8 +62,8 @@ object OcpcGetPb {
         .withColumn("version", lit(version))
 
     resultDF
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190301new")
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190301new")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
@@ -207,7 +207,7 @@ object OcpcGetPb {
       .withColumn("original_k", col("kvalue"))
       .join(kRegion, Seq("identifier"), "left_outer")
       .withColumn("kvalue", when(col("flag") === 1 && col("kvalue") < col("bottom_k"), col("bottom_k")).otherwise(when(col("flag") === 1 && col("kvalue") > col("top_k"), col("top_k")).otherwise(col("kvalue"))))
-    result.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301a")
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301a")
 
     println("k smooth strat1:")
     result.show(10)
@@ -259,7 +259,7 @@ object OcpcGetPb {
       .withColumn("conversion_goal", lit(conversionGoal))
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
 
     resultDF
 
