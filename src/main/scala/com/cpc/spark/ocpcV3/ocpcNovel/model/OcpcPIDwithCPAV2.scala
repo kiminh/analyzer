@@ -304,8 +304,8 @@ object OcpcPIDwithCPAV2 {
       .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
       .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
       rawData.write.mode("overwrite").saveAsTable("test.wy00")
-        val data2=rawData.withColumn("ratio_tag",when(col("new_adclass")===110110,udfSetRatioCase()(col("cpa_ratio")/1.6)
-        .otherwise(col("ratio_tag"))))
+        val data2=rawData.withColumn("ratio_tag",when(col("new_adclass")===110110,udfSetRatioCase()(col("cpa_ratio")/1.6))
+        .otherwise(col("ratio_tag")))
       .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
     data2.write.mode("overwrite").saveAsTable("test.wy01")
 
