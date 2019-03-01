@@ -87,6 +87,7 @@ object OcpcSuggestKcpa {
         .sql(sqlRequest)
         .filter(s"cpa_suggest is not null and kvalue is not null")
 
+    data.show(10)
     data
   }
 
