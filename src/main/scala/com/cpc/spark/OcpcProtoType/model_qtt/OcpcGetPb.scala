@@ -62,8 +62,8 @@ object OcpcGetPb {
         .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190301")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190301new")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
