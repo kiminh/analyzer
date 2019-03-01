@@ -305,6 +305,7 @@ object OcpcRegression {
     val unitidAdclass = spark.sql(sqlRequest1)
 
     unitidAdclass.show(10)
+    unitidAdclass.write.mode("overwrite").saveAsTable("test.sjq_unit_adclass_map")
 
     var adclassMap = mutable.LinkedHashMap[String, Int]()
     for(row <- unitidAdclass.collect()) {
