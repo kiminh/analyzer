@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# sh dataLoop.sh testOcpcSampleHourlyV1.sh 12 28 06
+# sh dataLoop.sh testOcpcSampleHourlyV1.sh 14 28 06
 
 script=$1
 date1=$2

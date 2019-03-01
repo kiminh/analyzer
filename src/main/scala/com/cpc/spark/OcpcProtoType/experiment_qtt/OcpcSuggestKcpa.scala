@@ -225,7 +225,7 @@ object OcpcSuggestKcpa {
       .select("identifier", "conversion_goal", "new_cpa", "prev_cpa", "prev_duration", "new_k", "prev_k")
       .withColumn("is_update", when(col("new_cpa").isNotNull, 1).otherwise(0))
       .withColumn("cpa_suggest", when(col("is_update") === 1, col("new_cpa")).otherwise(col("prev_cpa")))
-      .withColumn("kvalue", when(col("is_update") === 1, col("new_k")).otherwise("prev_k"))
+      .withColumn("kvalue", when(col("is_update") === 1, col("new_k")).otherwise(col("prev_k")))
       .withColumn("duration", when(col("is_update") === 1, 1).otherwise(col("prev_duration") + 1))
 
     result.write.mode("overwrite").saveAsTable("test.check_new_k_data20190301")

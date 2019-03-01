@@ -115,8 +115,8 @@ object OcpcGetPb {
      */
     // 抽取test.ocpc_k_smooth_v1表
     val baseK = spark
-        .table("test.ocpc_k_smooth_v1")
-        .where(s"version = '$version' and conversion_goal = $conversionGoal")
+        .table("dl_cpc.ocpc_suggest_cpa_k_once")
+        .where(s"version = '$version' and conversion_goal = $conversionGoal and duration <= 3")
         .withColumn("base_k", col("kvalue"))
         .select("identifier", "base_k", "update_date", "update_hour")
 
@@ -127,7 +127,7 @@ object OcpcGetPb {
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.DATE, -2)
+    calendar.add(Calendar.DATE, -1)
     val yesterday1 = calendar.getTime
     val date1 = dateConverter.format(yesterday1)
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
