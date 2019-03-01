@@ -119,7 +119,7 @@ object bscvr_exp_report {
 |         and antispam = 0
 |         and adsrc = 1
 |         AND userid > 0
-|         and uid not like '*000000*'
+|         and uid not like '%000000%'
 |         and (charge_type = 1 or charge_type is null)) ta
 |         left join
 |         (select searchid,ideaid, 1 as label from dl_cpc.dl_conversion_by_industry where dt='$tardate'
