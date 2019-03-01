@@ -10,7 +10,7 @@ object directOcpcMonitor {
     val spark = SparkSession.builder().appName("directOcpcMonitor").enableHiveSupport().getOrCreate()
     val date = args(0).toString
 
-    val sdf = new SimpleDateFormat("yyyy-MM--dd")
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
     val jdate1 = sdf.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(jdate1)
