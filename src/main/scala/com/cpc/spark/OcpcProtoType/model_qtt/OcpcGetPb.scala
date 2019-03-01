@@ -209,6 +209,9 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("flag") === 1 && col("kvalue") < col("bottom_k"), col("bottom_k")).otherwise(when(col("flag") === 1 && col("kvalue") > col("top_k"), col("top_k")).otherwise(col("kvalue"))))
 //    result.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301")
 
+    println("k smooth strat1:")
+    result.show(10)
+
     val resultDF = result.select("identifier", "kvalue", "conversion_goal")
     resultDF
   }
