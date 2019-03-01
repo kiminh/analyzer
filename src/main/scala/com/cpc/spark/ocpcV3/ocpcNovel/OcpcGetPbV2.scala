@@ -53,9 +53,8 @@ object OcpcGetPbV2 {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
 
-    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_pb_v2_hourly_middle")
-    data
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v2_hourly_middle")
+//    data
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v2_hourly_middle")
 
     val result = data
       .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0 and conversion_goal>0")
@@ -73,19 +72,25 @@ object OcpcGetPbV2 {
 
     val mediaCost = getCostByMedia(result, date, hour, spark)
 
+    val FlagDF=getOcpcCpaFlag(date,spark)
+    FlagDF.show(5)
+
     val resultDF = result
       .join(mediaCost, Seq("unitid"), "inner")
-      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "date", "hour")
+      .join(FlagDF,Seq("unitid"),"left")
+      .withColumn("flag",when(col("flag").isNull, 0).otherwise(col("flag")))
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag", "date", "hour")
+
 
 
     val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
     resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
     resultDF
       .repartition(10).write.mode("overwrite").insertInto(tableName)
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_check_novel_pb")
+
+
 
     savePbPack(resultDF)
-
   }
 
   def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -165,7 +170,6 @@ object OcpcGetPbV2 {
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .select("unitid", "new_adclass")
       .distinct()
-//    ctrData.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_ctr_data_hourly_v2")
 
     // cvr data
     // cvr1 or cvr3 data
@@ -222,7 +226,7 @@ object OcpcGetPbV2 {
       .withColumn("cvr2cnt", when(col("cvr2cnt").isNull, 0).otherwise(col("cvr2cnt")))
 
     val resultDF = result.select("unitid", "new_adclass", "cvr1cnt", "cvr2cnt")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_cvr_data_hourly_v2")
+
 
     // 返回结果
     resultDF.show(10)
@@ -286,13 +290,44 @@ object OcpcGetPbV2 {
       .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
 
-    val resultDF = data.select("unitid", "new_adclass", "kvalue", "conversion_goal")
 
-    // TODO 删除临时表
-//    data.write.mode("overwrite").saveAsTable("test.ocpcv3_novel_kvalue_data_hourly_v2")
+    val prevk = spark.table("dl_cpc.ocpcv3_novel_pb_v2_once_middle")
+        .withColumn("prevk",col("kvalue"))
+        .select("unitid","prevk")
+
+//    prevk.write.mode("overwrite").saveAsTable("test.wy00")
+    val resultDF = data.select("unitid", "new_adclass", "kvalue", "conversion_goal")
+        .join(prevk,Seq("unitid"),"left")
+       .withColumn("kvalue",
+        when(col("kvalue")>col("prevk"),
+          (col("kvalue")-col("prevk"))/3 + col("prevk")).
+          otherwise(col("kvalue")))
+      .select("unitid", "new_adclass", "kvalue", "conversion_goal")
 
     resultDF
   }
+
+  def getOcpcCpaFlag(date: String, spark: SparkSession) = {
+    /*
+    过滤逻辑：
+    统计昨日cost>1000且cpa超成本的flag为1，正常为0
+     */
+
+    val sqlRequest1 =
+      s"""
+         |select
+         | identifier as unitid,
+         | case when cpa_ratio < 0.64 and cost >100000 then '1'
+         | else '0' end as flag
+         | from dl_cpc.ocpc_detail_report_hourly_v3
+         | where `date`= date_add('$date' , -1) and `hour`= '23'
+       """.stripMargin
+    println(sqlRequest1)
+    val resultDF = spark.sql(sqlRequest1)
+
+    resultDF
+  }
+
 
   def savePbPack(dataset: Dataset[Row]): Unit = {
     var list = new ListBuffer[SingleUnit]
@@ -311,9 +346,10 @@ object OcpcGetPbV2 {
       val cvr2cnt = record.getAs[Long]("cvr2cnt")
       val cpa2History = 0.0
       val conversionGoal = record.getAs[Int]("conversion_goal")
+      val flag = record.getAs[String]("flag")
 
       if (cnt % 100 == 0) {
-        println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History, conversionGoal:$conversionGoal")
+        println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History, conversionGoal:$conversionGoal, , flag:$flag")
       }
       cnt += 1
 
@@ -324,7 +360,8 @@ object OcpcGetPbV2 {
         cvr2Cnt = cvr1cnt,
         cvr3Cnt = cvr2cnt,
         cpa3History = cpa2History,
-        conversiongoal = conversionGoal
+        conversiongoal = conversionGoal,
+        flag=flag
       )
       list += currentItem
 
