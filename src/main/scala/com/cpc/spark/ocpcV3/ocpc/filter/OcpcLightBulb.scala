@@ -32,7 +32,7 @@ object OcpcLightBulb{
       .enableHiveSupport().getOrCreate()
 
 
-    val tableName = "test.ocpc_qtt_light_control_test"
+    val tableName = "test.ocpc_qtt_light_control"
 
 
 
