@@ -121,7 +121,7 @@ object OcpcLightBulb{
          |SELECT
          |  identifier as unitid,
          |  conversion_goal,
-         |  cpa_suggest
+         |  cpa_suggest * 1.0 / 100
          |FROM
          |  dl_cpc.ocpc_suggest_cpa_k_once
        """.stripMargin

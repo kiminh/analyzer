@@ -8,3 +8,6 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_suggest_cpa_k
 )
 PARTITIONED by (`date` string, version string)
 STORED as PARQUET;
+
+
+--spark-sql生成
