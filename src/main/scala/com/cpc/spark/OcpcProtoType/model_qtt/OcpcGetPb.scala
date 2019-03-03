@@ -112,10 +112,12 @@ object OcpcGetPb {
     1. 投放小时数少于24小时且ocpc_suggest_cpa_k_once数据表有数据则按照小时数限制k值变动
     2. 投放小时数大于24小时或ocpc_k_smooth_v1数据表没有关联到数据，则不做限制
      */
-    // 抽取test.ocpc_k_smooth_v1表
+    // 抽取ocpc_suggest_cpa_k_once表
+    // todo
     val baseK = spark
-        .table("dl_cpc.ocpc_suggest_cpa_k_once")
-        .where(s"version = '$version' and conversion_goal = $conversionGoal and duration <= 3")
+//        .table("dl_cpc.ocpc_suggest_cpa_k_once")
+        .table("dl_cpc.ocpc_suggest_cpa_k")
+        .where(s"version = '$version' and conversion_goal = $conversionGoal and duration <= 3 and `date` = '2019-02-26'")
         .withColumn("base_k", col("kvalue"))
         .select("identifier", "base_k")
 
