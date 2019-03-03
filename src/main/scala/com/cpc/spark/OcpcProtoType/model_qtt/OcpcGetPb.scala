@@ -117,7 +117,7 @@ object OcpcGetPb {
         .table("dl_cpc.ocpc_suggest_cpa_k_once")
         .where(s"version = '$version' and conversion_goal = $conversionGoal and duration <= 3")
         .withColumn("base_k", col("kvalue"))
-        .select("identifier", "base_k", "update_date", "update_hour")
+        .select("identifier", "base_k")
 
     baseK.show(10)
 
