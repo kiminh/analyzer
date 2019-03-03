@@ -52,7 +52,6 @@ object OcpcGetPb {
 //    dl_cpc.ocpc_pb_result_hourly_v2
 //    dl_cpc.ocpc_prev_pb_once
     val result = getPbByConversion(mediaSelection, conversionGoal, version, date, hour, spark)
-//    result.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202")
     val resultDF = result
         .withColumn("cpagiven", lit(1))
         .select("identifier", "cpagiven", "cvrcnt", "kvalue")
@@ -62,8 +61,8 @@ object OcpcGetPb {
         .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190301new")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
@@ -76,8 +75,8 @@ object OcpcGetPb {
      */
     val base = getBaseData(mediaSelection, conversionGoal, date, hour, spark)
     val cvrData = getOcpcCVR(mediaSelection, conversionGoal, date, hour, spark)
-    val kvalue = getKvalue(mediaSelection, conversionGoal, version, date, hour, spark)
-//    val kvalue = smoothKvalue(kvalue1, mediaSelection, conversionGoal, version, date, hour, spark)
+    val kvalue1 = getKvalue(mediaSelection, conversionGoal, version, date, hour, spark)
+    val kvalue = smoothKvalue(kvalue1, mediaSelection, conversionGoal, version, date, hour, spark)
 
     val resultDF = base
       .join(cvrData, Seq("identifier", "conversion_goal"), "left_outer")
@@ -109,8 +108,8 @@ object OcpcGetPb {
 
   def smoothKvalue(kvalue: DataFrame, mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
-    计算在投ocpc广告每个广告最近两天的ocpc投放小时数，并与ocpc_k_smooth_v1数据表内关联，
-    1. 投放小时数少于24小时且ocpc_k_smooth_v1数据表有数据则按照小时数限制k值变动
+    计算在投ocpc广告每个广告最近两天的ocpc投放小时数，并与ocpc_suggest_cpa_k_once数据表内关联，
+    1. 投放小时数少于24小时且ocpc_suggest_cpa_k_once数据表有数据则按照小时数限制k值变动
     2. 投放小时数大于24小时或ocpc_k_smooth_v1数据表没有关联到数据，则不做限制
      */
     // 抽取test.ocpc_k_smooth_v1表
@@ -127,7 +126,7 @@ object OcpcGetPb {
     val today = dateConverter.parse(date)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
+    calendar.add(Calendar.DATE, -2)
     val yesterday1 = calendar.getTime
     val date1 = dateConverter.format(yesterday1)
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
@@ -207,7 +206,7 @@ object OcpcGetPb {
       .withColumn("original_k", col("kvalue"))
       .join(kRegion, Seq("identifier"), "left_outer")
       .withColumn("kvalue", when(col("flag") === 1 && col("kvalue") < col("bottom_k"), col("bottom_k")).otherwise(when(col("flag") === 1 && col("kvalue") > col("top_k"), col("top_k")).otherwise(col("kvalue"))))
-//    result.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301a")
+    result.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301a")
 
     println("k smooth strat1:")
     result.show(10)
@@ -259,7 +258,7 @@ object OcpcGetPb {
       .withColumn("conversion_goal", lit(conversionGoal))
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
 
     resultDF
 
@@ -395,9 +394,6 @@ object OcpcGetPb {
       .select("identifier", "kvalue", "pre_cvr", "post_cvr", "click", "conversion", "history_ocpc_flag")
       .na.fill(0, Seq("history_ocpc_flag"))
 
-
-//    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202getcpck")
-
     resultDF
   }
 
@@ -412,8 +408,6 @@ object OcpcGetPb {
       .withColumn("kvalue_middle", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k") > col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 4.0).otherwise(col("new_k")))
       .withColumn("k_value", when(col("flag") === 0, col("prev_k")).otherwise(col("kvalue_middle")))
       .select("identifier", "regression_k", "pid_k", "new_k", "prev_k", "flag", "kvalue_middle", "k_value")
-
-//    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202calculatekocpc")
     resultDF
   }
 
