@@ -115,9 +115,9 @@ object OcpcGetPb {
     // 抽取ocpc_suggest_cpa_k_once表
     // todo
     val baseK = spark
-//        .table("dl_cpc.ocpc_suggest_cpa_k_once")
-        .table("dl_cpc.ocpc_suggest_cpa_k")
-        .where(s"version = '$version' and conversion_goal = $conversionGoal and duration <= 3 and `date` = '2019-02-26'")
+        .table("dl_cpc.ocpc_suggest_cpa_k_once")
+//        .table("dl_cpc.ocpc_suggest_cpa_k")
+        .where(s"version = '$version' and conversion_goal = $conversionGoal and duration <= 3")
         .withColumn("base_k", col("kvalue"))
         .select("identifier", "base_k")
 
