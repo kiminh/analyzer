@@ -77,7 +77,7 @@ object rule {
 
        """.stripMargin
       val  tab=spark.sql(sql).cache
-      tab.repartition(100).write.mode("overwrite").insertIntoTable("dl_cpc.cp_unionevents_appdownload_qbj")
+      tab.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cp_unionevents_appdownload_qbj")
 
   }
 }
