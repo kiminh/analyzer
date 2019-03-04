@@ -53,9 +53,6 @@ object OcpcGetPbV2 {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
 
-//    data
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpcv3_novel_pb_v2_hourly_middle")
-
     val result = data
       .filter(s"kvalue >= 0 and cpa_history > 0 and cvr1cnt >= 0 and cvr2cnt >= 0 and conversion_goal>0")
       .groupBy("unitid")
@@ -227,7 +224,6 @@ object OcpcGetPbV2 {
 
     val resultDF = result.select("unitid", "new_adclass", "cvr1cnt", "cvr2cnt")
 
-
     // 返回结果
     resultDF.show(10)
     resultDF
@@ -326,6 +322,83 @@ object OcpcGetPbV2 {
     val resultDF = spark.sql(sqlRequest1)
 
     resultDF
+  }
+
+  def getPostCvrAndAvgBid(date: String, hour: String, spark: SparkSession) ={
+    /*
+   获得前24h的postcvr和avgbid，maxbid=1.2*avgbid
+    */
+    // 计算日期周期
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val calendar = Calendar.getInstance
+    calendar.add(Calendar.DATE, -1)
+    val start_date = sdf.format(calendar.getTime())
+    val selectCondition = getTimeRangeSql2(start_date, hour, date, hour)
+    // ctr data
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  price,
+         |  isclick
+         |FROM
+         |  dl_cpc.ocpcv3_unionlog_label_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  media_appsid in ('80001098', '80001292')
+       """.stripMargin
+    println(sqlRequest1)
+    val clickdata = spark.sql(sqlRequest1)
+
+    // cvr1：安装类
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  1 as iscvr1
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v1
+         |WHERE
+         |  where $selectCondition
+         |AND
+         |  label2=1
+         |AND
+         |  label_type!=12
+       """.stripMargin
+    println(sqlRequest2)
+    val labelData1 = spark.sql(sqlRequest2).distinct()
+
+    // cvr2: api回传类
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  searchid,
+         |  1 as iscvr2
+         |FROM
+         |  dl_cpc.ml_cvr_feature_v2
+         |WHERE
+         |  where $selectCondition
+         |AND
+         |  label=1
+       """.stripMargin
+    println(sqlRequest3)
+    val labelData2 = spark.sql(sqlRequest3).distinct()
+
+    val resultDF=clickdata.join(labelData1,Seq("searchid"),"left")
+        .join(labelData2,Seq("searchid"),"left")
+        .groupBy("unitid")
+        .agg(avg(col("price")).alias("avgbid"),
+          (sum(col("iscvr1"))/sum(col("isclick"))).alias("postcvr2"),
+          (sum(col("iscvr2"))/sum(col("isclick"))).alias("postcvr3"))
+        .withColumn("maxbid",col("avgbid")*1.2)
+
+    // 返回结果
+    resultDF.show(10)
+    resultDF.write.mode("overwrite").saveAsTable("test.wy01")
+    resultDF
+
   }
 
 
