@@ -38,15 +38,15 @@ object OcpcHourlyReportV2 {
       .select("unitid", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "qtt_cvr", "date", "hour")
 
     // 分conversion_goal统计数据
-//    val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
-//    val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
-//    val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
+    val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
+    val costDataConversion = preprocessCostByConversion(dataIdea, date, hour, spark)
+    val dataConversion = getDataByConversion(rawDataConversion, costDataConversion, date, hour, spark)
 
-//    // 存储数据到hadoop
-//    saveDataToHDFS(dataIdea, dataConversion, "novel_v1", date, hour, spark)
-//
-//    // 存储数据到mysql
-//    saveDataToMysql(dataIdea, dataConversion, date, hour, spark)
+    // 存储数据到hadoop
+    saveDataToHDFS(dataIdea, dataConversion, "novel_v1", date, hour, spark)
+
+    // 存储数据到mysql
+    saveDataToMysql(dataIdea, dataConversion, date, hour, spark)
   }
 
   def saveDataToMysql(dataIdea: DataFrame, dataConversion: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -391,8 +391,7 @@ object OcpcHourlyReportV2 {
       .join(aucData, Seq("unitid", "userid", "conversion_goal"), "left_outer")
       .select("unitid", "userid", "conversion_goal","step2_click_percent", "new_adclass","is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
 
-    resultDF.show(10)
-    resultDF.write.mode("overwrite").saveAsTable("test.wy00")
+//    resultDF.write.mode("overwrite").saveAsTable("test.wy00")
 
     resultDF
 
@@ -504,8 +503,6 @@ object OcpcHourlyReportV2 {
       .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
       .select("searchid", "unitid", "userid","new_adclass", "isclick", "isshow", "price", "exp_cvr", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "hr", "iscvr1", "iscvr2", "iscvr3", "iscvr")
-
-    resultDF.show(10)
 
     resultDF
 
