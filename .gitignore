@@ -1,6 +1,7 @@
 .idea
 target
 META-INF
-/lib/cpc-anal_2.11-1.0.jar
+lib/cpc-anal_2.11-1.0.jar
+lib/hivemall-all-0.5.2-incubating.jar
 /log
 *.iml
