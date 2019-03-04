@@ -114,7 +114,7 @@ object OcpcCPCbidV2 {
       .sql(sqlRequest)
       .filter(s"duration <= 3")
       .withColumn("param_t2", lit(10))
-      .select("identifier", "conversion_goal", "cpa_suggest2", "param_t2")
+      .select("unitid", "conversion_goal", "cpa_suggest2", "param_t2")
 
     val cvGoal = getConversionGoal(date, hour, spark)
     val suggestData = data1
