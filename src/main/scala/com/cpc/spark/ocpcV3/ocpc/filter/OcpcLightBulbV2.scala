@@ -15,8 +15,7 @@ object OcpcLightBulbV2{
   def main(args: Array[String]): Unit = {
     /*
     通过向redis中存储suggest cpa来控制灯泡的亮灯逻辑
-    1. 抽取recommendation数据表
-    2. mappartition打开redis，并存储数据
+    1. 从当天的结果表中抽取
      */
     // 计算日期周期
     //    2019-02-02 10 qtt_demo
