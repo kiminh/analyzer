@@ -71,30 +71,30 @@ object OcpcLightBulbV2{
     println(s"host: $host")
     println(s"port: $port")
 
-    val redis = new RedisClient(host, port)
-    for (record <- data.collect()) {
-      val identifier = record.getAs[Int]("unitid").toString
-      val value = record.getAs[Double]("cpa")
-      var key = "new_algorithm_unit_ocpc_" + identifier
-      println(s"key:$key, value:$value")
-      redis.setex(key, 2 * 24 * 60 * 60, value)
-    }
-    redis.disconnect
+//    val redis = new RedisClient(host, port)
+//    for (record <- data.collect()) {
+//      val identifier = record.getAs[Int]("unitid").toString
+//      val value = record.getAs[Double]("cpa")
+//      var key = "new_algorithm_unit_ocpc_" + identifier
+//      println(s"key:$key, value:$value")
+//      redis.setex(key, 2 * 24 * 60 * 60, value)
+//    }
+//    redis.disconnect
 
-//    data.foreachPartition(iterator => {
-//      val redis = new RedisClient(host, port)
-//      redis.auth(auth)
-//      iterator.foreach{
-//        record => {
-//          val identifier = record.getAs[Int]("unitid").toString
-//          val value = record.getAs[Double]("cpa")
-//          var key = "new_algorithm_unit_ocpc_" + identifier
-//          println(s"key:$key, value:$value")
-//          redis.setex(key, 2 * 24 * 60 * 60, value)
-//        }
-//      }
-//      redis.disconnect
-//    })
+    data.foreachPartition(iterator => {
+      val redis = new RedisClient(host, port)
+      redis.auth(auth)
+      iterator.foreach{
+        record => {
+          val identifier = record.getAs[Int]("unitid").toString
+          val value = record.getAs[Double]("cpa")
+          var key = "new_algorithm_unit_ocpc_" + identifier
+          println(s"key:$key, value:$value")
+          redis.setex(key, 2 * 24 * 60 * 60, value)
+        }
+      }
+      redis.disconnect
+    })
   }
 
   def getCPAsuggest(completeData: DataFrame, conversionGoal: DataFrame, date: String, hour: String, spark: SparkSession) = {
