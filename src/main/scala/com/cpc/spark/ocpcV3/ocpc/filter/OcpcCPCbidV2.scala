@@ -135,14 +135,13 @@ object OcpcCPCbidV2 {
     // 数据关联：优先配置文件
     val data = suggestData
       .join(confData, Seq("identifier"), "outer")
-      .withColumn("unitid", col("identifier"))
-      .selectExpr("identifier", "unitid", "cpa_suggest1", "param_t1", "cpa_suggest2", "param_t2")
+      .selectExpr("identifier", "cpa_suggest1", "param_t1", "cpa_suggest2", "param_t2")
       .withColumn("cpa_suggest", when(col("cpa_suggest2").isNotNull, col("cpa_suggest2")).otherwise(col("cpa_suggest1")))
       .withColumn("param_t", when(col("param_t2").isNotNull, col("param_t2")).otherwise(col("param_t1")))
 
     data.show(10)
 
-    val resultDF = data.select("unitid", "cpa_suggest", "param_t")
+    val resultDF = data.select("identifier", "cpa_suggest", "param_t")
 
     resultDF
   }
