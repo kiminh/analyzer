@@ -5,7 +5,6 @@ import com.cpc.spark.common.{CalcMetrics, Utils}
 import scala.collection.mutable.ListBuffer
 import org.apache.spark.sql.{SQLContext, SaveMode, SparkSession}
 import org.apache.spark.sql.functions._
-import hivemall.evaluation.AUCUDAF
 /*
   by fym on 2019-02-22.
  */
@@ -25,114 +24,7 @@ object CalcCvrAucGaucHourlyWithTrident {
 
     import spark.implicits._
 
-    // spark.udf.register("auc", AUCUDAF)
-    val auc = new hivemall.evaluation.AUCUDAF
-
-    /*val rawDataFromTrident = spark.sql(
-      s"""
-         |select
-         |  cvr_model_name
-         |  , adslot_type
-         |  , auc(exp_cvr, conversion)
-         |  , sum(conversion)
-         |  , count(*)
-         |  , avg(exp_cvr)
-         |  , sum(conversion)/count(*)
-         |from (
-         |  select
-         |    coalesce(b.conversion, 0) as conversion
-         |    , a.raw_cvr/1000000 as exp_cvr
-         |    , a.cvr_model_name
-         |  from dl_cpc.cpc_basedata_union_events a
-         |  left join (
-         |    select
-         |      searchid
-         |      , ideaid
-         |      , case
-         |          when adclass in (110110100, 125100100) then if(label_type in(1,2,3), label2, 0)
-         |          when (adslot_type<>7 and adclass like '100%') then if(label_type in (4, 5), label2, 0)
-         |          when (adslot_type=7 and adclass like '100%') then if(label_type=12, label2, 0)
-         |          else if(label_type=6, label2, 0)
-         |      end as conversion
-         |      , label2 as conversion_for_novel
-         |    from dl_cpc.ml_cvr_feature_v1
-         |    where `date`='$date'
-         |      and hour=$hour
-         |    union
-         |    select
-         |      searchid
-         |      , ideaid
-         |      , label as conversion
-         |      , label as conversion_for_label
-         |    from dl_cpc.ml_cvr_feature_v2
-         |    where date='$date'
-         |      and hour=$hour) b
-         |    on a.searchid=b.searchid
-         |    and a.ideaid=b.ideaid
-         |  where a.day='$date'
-         |    and a.media_appsid in ('80000001', '80000002', '80001098', '80001292')
-         |    and a.hour=$hour
-         |    and a.isclick=1
-         |);
-       """.stripMargin
-    )*/
-
-    val rawDataFromTrident = spark.sql(
-      s"""
-         |select
-         |  a.cvr_model_name
-         |  , a.adslot_type
-         |  , coalesce(b.conversion, 0) as conversion
-         |  , a.raw_cvr/1000000 as exp_cvr
-         |  , a.day
-         |  , a.hour
-         |from dl_cpc.cpc_basedata_union_events a
-         |left join (
-         |  select
-         |    searchid
-         |    , ideaid
-         |    , case
-         |        when adclass in (110110100, 125100100) then if(label_type in(1,2,3), label2, 0)
-         |        when (adslot_type<>7 and adclass like '100%') then if(label_type in (4, 5), label2, 0)
-         |        when (adslot_type=7 and adclass like '100%') then if(label_type=12, label2, 0)
-         |        else if(label_type=6, label2, 0)
-         |    end as conversion
-         |    , label2 as conversion_for_novel
-         |  from dl_cpc.ml_cvr_feature_v1
-         |  where `date`='$date'
-         |    and hour=$hour
-         |  union
-         |  select
-         |    searchid
-         |    , ideaid
-         |    , label as conversion
-         |    , label as conversion_for_label
-         |  from dl_cpc.ml_cvr_feature_v2
-         |  where date='$date'
-         |    and hour=$hour) b
-         |  on a.searchid=b.searchid
-         |  and a.ideaid=b.ideaid
-         |where a.day='$date'
-         |  and a.media_appsid in ('80000001', '80000002', '80001098', '80001292')
-         |  and a.hour=$hour
-         |  and a.isclick=1
-       """.stripMargin
-    )
-
-    val dataToGo = rawDataFromTrident
-      .groupBy(
-        col("cvr_model_name"),
-        col("adslot_type"),
-        col("day"),
-        col("hour")
-      )
-      .agg(
-        expr("auc(exp_cvr, conversion)").alias("auc")
-      )
-      .write
-      .saveAsTable("test.fym_607")
-
-    /*val keyFromDsp = spark.sql(
+    val keyFromDsp = spark.sql(
       s"""
          |select
          |  searchid
@@ -275,7 +167,9 @@ object CalcCvrAucGaucHourlyWithTrident {
           var aucROC = 0.0
 
           if (model.contains("novel")) {
-            aucROC = auc(
+            aucROC = CalcMetrics
+              .getAuc(
+                spark,
                 tridentDataWithCvrFiltered,
                 "label_for_novel"
               )
@@ -347,21 +241,7 @@ object CalcCvrAucGaucHourlyWithTrident {
       .toDF()
       .persist()
 
-    /*val aucGaucFiltered = aucGauc
-      .filter( x => {
-        val model = x.getAs[String]("model")
-        val adslotType = x.getAs[Int]("adslot_type")
-
-        (!whitelist.keys.toArray.contains(model)) || (whitelist.keys.toArray.contains(model) && !whitelist(model).contains(adslotType))
-      })
-      .filter( x => {
-        x.getAs[Double]("auc") < 0.7
-      })*/
-
-    */
-
-    /*rawDataFromTrident
-    //aucGauc
+    aucGauc
       .repartition(1)
       .write
       .partitionBy("day", "hour")
@@ -375,34 +255,6 @@ object CalcCvrAucGaucHourlyWithTrident {
          | LOCATION 'hdfs://emr-cluster2/warehouse/dl_cpc.db/cvr_auc_gauc_hourly/day=$date/hour=$hour'
       """.stripMargin.trim)
     println(" -- successfully generated partition: day=%s/hour=%s -- ")
-*/
-    spark.stop()
-
-    /*aucGaucFiltered
-      .repartition(1)
-      .write
-      .mode(SaveMode.Overwrite)
-      .parquet("hdfs://emr-cluster2/warehouse/dl_cpc.db/cvr_auc_gauc_hourly_togo/")*/
-
-    /*try {
-
-
-
-      println("-- insert into hdfs successfully --")
-    } catch {
-      case e: Exception =>
-        println("-- error(s) occurred while writing row(s) --")
-    } finally {
-      spark.stop()
-    }*/
-
-    // .insertInto("dl_cpc.cpc_qtt_cvr_auc_gauc_hourly")
-    // println("insert into dl_cpc.cpc_qtt_cvr_auc_gauc_hourly success!")
-
-    /*val reportTable = "report2.cpc_qtt_cvr_auc_gauc_hourly"
-    val delSQL = s"delete from $reportTable where `date` = '$date' and hour = '$hour'"
-    OperateMySQL.update(delSQL) //先删除历史数据
-    OperateMySQL.insert(aucGauc, reportTable) //插入数据*/
 
     spark.stop()
   }
