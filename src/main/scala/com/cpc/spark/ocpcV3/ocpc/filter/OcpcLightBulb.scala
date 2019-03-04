@@ -24,8 +24,7 @@ object OcpcLightBulb{
     val hour = args(1).toString
     val version = args(2).toString
 
-    println("parameters:")
-    println(s"date=$date, hour=$hour, version=$version")
+
     val spark = SparkSession
       .builder()
       .appName(s"OcpcLightBulb: $date, $hour")
@@ -34,7 +33,8 @@ object OcpcLightBulb{
 
     val tableName = "test.ocpc_qtt_light_control"
 
-
+    println("parameters:")
+    println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
 
 
     // 抽取数据
@@ -47,6 +47,8 @@ object OcpcLightBulb{
         .join(ocpcRecord, Seq("unitid"), "outer")
         .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
+        .withColumn("ocpc_cpa2", when(col("unitid") === 1921134, lit(17)).otherwise(col("ocpc_cpa2")))
+        .withColumn("ocpc_cpa2", when(col("unitid") === 1951024, lit(20)).otherwise(col("ocpc_cpa2")))
     data
       .withColumn("date", lit(date))
       .withColumn("version", lit("qtt_demo"))
