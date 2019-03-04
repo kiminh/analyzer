@@ -124,15 +124,15 @@ object OcpcUnionlogTest {
          |    isclick,
          |    0 as duration,
          |    userid,
-         |    ext_int['is_ocpc'] as is_ocpc,
-         |    ext_string['ocpc_log'] as ocpc_log,
-         |    ext_string['user_city'] as user_city,
-         |    ext['city_level'].int_value as city_level,
-         |    ext['adclass'].int_value as adclass,
-         |    cast(ext['exp_ctr'].int_value * 1.0 / 1000000 as double) as exp_ctr,
-         |    cast(ext['exp_cvr'].int_value * 1.0 / 1000000 as double) as exp_cvr,
-         |    cast(ext["charge_type"].int_value as int) as charge_type,
-         |    ext['antispam'].int_value as antispam
+         |    cast(is_ocpc as int) as is_ocpc,
+         |    ocpc_log,
+         |    user_city,
+         |    city_level,
+         |    adclass,
+         |    cast(exp_ctr * 1.0 / 1000000 as double) as exp_ctr,
+         |    cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
+         |    charge_type,
+         |    (case when antispam_score=10000 then 0 else 1 end) as antispam
          |from dl_cpc.cpc_basedata_union_events
          |where $selectWhere
          |and (isshow>0 or isclick>0)
