@@ -26,7 +26,7 @@ object HotTopicBaseData {
 
         val result = spark.sql(sql)
         val tableName = "dl_cpc.cpc_hot_topic_basedata_union_events"
-        result.repartition(10).write.mode("overwrite").insertInto(tableName)
+        result.repartition(1).write.mode("overwrite").insertInto(tableName)
         println(s"insert into $tableName at date = $date, hour = $hour success !")
     }
 }
