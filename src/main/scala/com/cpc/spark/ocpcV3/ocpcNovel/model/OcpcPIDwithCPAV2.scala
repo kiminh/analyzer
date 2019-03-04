@@ -179,13 +179,6 @@ object OcpcPIDwithCPAV2 {
       .withColumn("kvalue2", col("kvalue"))
       .select("unitid", "kvalue2")
       .distinct()
-    //    val case2 = spark
-    //      .table("test.ocpcv3_novel_pb_v1_hourly")
-    //      .withColumn("kvalue2", col("kvalue"))
-    //      .groupBy("unitid")
-    //      .agg(avg(col("kvalue2")).alias("kvalue2"))
-    //      .select("unitid", "kvalue2")
-    //      .distinct()
 
 //    case2.write.mode("overwrite").saveAsTable("test.wy_case2")
     // 优先case1，然后case2
