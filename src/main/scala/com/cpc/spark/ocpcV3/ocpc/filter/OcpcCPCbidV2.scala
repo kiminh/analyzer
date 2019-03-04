@@ -133,8 +133,8 @@ object OcpcCPCbidV2 {
       .select("identifier", "cpa_suggest1", "param_t1")
 
     // 数据关联：优先配置文件
-    val data = data1
-      .join(data2, Seq("identifier"), "outer")
+    val data = suggestData
+      .join(confData, Seq("identifier"), "outer")
       .select("identifier", "cpa_suggest1", "param_t1", "cpa_suggest2", "param_t2")
       .withColumn("cpa_suggest", when(col("cpa_suggest2").isNotNull, col("cpa_suggest2")).otherwise(col("cpa_suggest1")))
       .withColumn("param_t", when(col("param_t2").isNotNull, col("param_t2")).otherwise(col("param_t1")))
