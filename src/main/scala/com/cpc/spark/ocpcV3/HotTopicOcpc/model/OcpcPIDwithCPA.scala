@@ -10,6 +10,8 @@ import org.apache.spark.sql.functions._
 import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj._
 
+import scala.collection.mutable
+
 object OcpcPIDwithCPA {
   /*
     用于ocpc明投的相关代码
@@ -54,11 +56,11 @@ object OcpcPIDwithCPA {
       .withColumn("hour",    lit(hour)    )
       .withColumn("version", lit(version) )
 
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
-    resultDF.repartition(10)
-      .write
-      .mode("overwrite" )
-      .insertInto("dl_cpc.ocpc_pid_k_hourly" )
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly0304")
+//    resultDF.repartition(10)
+//      .write
+//      .mode("overwrite" )
+//      .insertInto("dl_cpc.ocpc_pid_k_hourly" )
   }
 
   def getHistory(mediaSelection: String, date: String, hour: String, spark: SparkSession) = {
@@ -245,12 +247,129 @@ object OcpcPIDwithCPA {
       .join(cpaRatio, Seq("identifier"), "outer")
       .select("identifier", "cpa_ratio", "conversion_goal", "kvalue")
 
+    val unitAdclassMap = getAdclassMap(date, hour, spark)
+
     val resultDF = rawData
-      .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")) )
-      .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")) )
-      .withColumn("k_value",   col("updated_k") )
+        .withColumn("adclassInt", getAdclass(unitAdclassMap)(col("identifier")))
+        .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")) )
+        .withColumn("updated_k", udfUpdateK2()(col("ratio_tag"), col("kvalue"), col("adclassInt")) )
+        .withColumn("k_value",   col("updated_k") )
 
     resultDF
 
   }
+
+  def getAdclassMap( date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    /***
+      * 返回ocpc_union_log_hourly中date日，hour时之前hourCnt小时内的searchid,unitid, identifier,isclick, price, cpagiven,kvalue
+      */
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse( newDate )
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -72)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adclass,
+         |  sum(ctr_cnt) as click
+         |FROM
+         |  dl_cpc.ocpc_ctr_data_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  media_appsid in ("80000001", "80000002", "80002819")
+         |GROUP BY unitid, adclass
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+    data.createOrReplaceTempView("base_data")
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  t.unitid,
+         |  t.adclass,
+         |  t.click,
+         |  t.seq
+         |FROM
+         |  (SELECT
+         |      unitid,
+         |      adclass,
+         |      click,
+         |      row_number() over(partition by unitid order by click desc) as seq
+         |   FROM
+         |       base_data) as t
+         |WHERE
+         |  t.seq=1
+       """.stripMargin
+    println(sqlRequest1)
+    val unitidAdclass = spark.sql(sqlRequest1)
+
+    unitidAdclass.show(10)
+    //    unitidAdclass.write.mode("overwrite").saveAsTable("test.sjq_unit_adclass_map")
+
+    var adclassMap = mutable.LinkedHashMap[String, Int]()
+    for(row <- unitidAdclass.collect()) {
+      val unitid = row.getAs[Int]("unitid").toString
+      val adclass = row.getAs[Int]("adclass")
+      adclassMap += (unitid -> adclass)
+    }
+    adclassMap
+
+  }
+
+  def getAdclass(unit_adclass_map: mutable.LinkedHashMap[String, Int]) = udf( (identifier: String ) => {
+    val adclass = unit_adclass_map.getOrElse(identifier, 0)/1000
+    val adclassInt = adclass.toInt
+    adclassInt
+  })
+
+  def udfUpdateK2() = udf(( valueTag: Int, valueK: Double, adclassInt: Int ) => {
+    /**
+      * 根据新的K基准值和cpa_ratio来在分段函数中重新定义k值
+      * t1: k * 1.2 or k
+      * t2: k / 1.6
+      * t3: k / 1.4
+      * t4: k / 1.2
+      * t5: k / 1.1
+      * t6: k
+      * t7: k * 1.05
+      * t8: k * 1.1
+      * t9: k * 1.2
+      * t10: k * 1.3
+      *
+      * 上下限依然是0.2 到1.2
+      */
+    val result = valueTag match {
+      case 1 if valueK >= 1.2 => valueK
+      case 1 if valueK < 1.2 => valueK * 1.1
+      case 2 => valueK / 2.5
+      case 3 => valueK / 2.0
+      case 4 => valueK / 1.8
+      case 5 => valueK / 1.5
+      case 6 => valueK
+      case 7 => valueK * 1.1
+      case 8 => valueK * 1.2
+      case 9 => valueK * 1.4
+      case 10 => valueK * 1.6
+      case _ => valueK
+    }
+    if(adclassInt == 110110){
+      0.6163*result
+    }else{
+      result
+    }
+  })
+
 }
