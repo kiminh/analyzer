@@ -295,7 +295,6 @@ object OcpcPIDwithCPAV2 {
       .join(cpaRatio, Seq("unitid", "new_adclass"), "left_outer")
       .select("unitid", "new_adclass", "kvalue", "cpa_ratio", "conversion_goal")
       .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
-      .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
       .withColumn("ratio_tag",when(col("new_adclass")===110110,udfSetRatioCase()(col("cpa_ratio")/1.6))
         .otherwise(col("ratio_tag")))
       .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
