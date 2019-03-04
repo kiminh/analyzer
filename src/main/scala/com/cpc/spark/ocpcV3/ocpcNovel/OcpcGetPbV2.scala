@@ -72,22 +72,27 @@ object OcpcGetPbV2 {
     val FlagDF=getOcpcCpaFlag(date,spark)
     FlagDF.show(5)
 
+    val PostCvrDF = getPostCvrAndAvgBid(date,hour,spark)
+
     val resultDF = result
       .join(mediaCost, Seq("unitid"), "inner")
       .join(FlagDF,Seq("unitid"),"left")
+      .join(PostCvrDF,Seq("unitid"),"left")
       .withColumn("flag",when(col("flag").isNull, 0).otherwise(col("flag")))
-      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag", "date", "hour")
+      .select("unitid", "cpa_history", "kvalue", "cvr1cnt", "cvr2cnt", "conversion_goal", "flag",
+        "postcvr2","postcvr3","avgbid","maxbid","date", "hour")
+
+    resultDF.write.mode("overwrite").saveAsTable("test.wy02")
 
 
-
-    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto(tableName)
-
-
-
-    savePbPack(resultDF)
+//    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto(tableName)
+//
+//
+//
+//    savePbPack(resultDF)
   }
 
   def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -420,6 +425,11 @@ object OcpcGetPbV2 {
       val cpa2History = 0.0
       val conversionGoal = record.getAs[Int]("conversion_goal")
       val flag = record.getAs[String]("flag")
+      val postcvr2 = record.getAs[Double]("postcvr2");
+      val postcvr3 = record.getAs[Double]("postcvr3");
+      val cvrfactor = 0.5;
+      val avgbid =  record.getAs[Double]("avgbid");
+      val maxbid =  record.getAs[Double]("maxbid");
 
       if (cnt % 100 == 0) {
         println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History, conversionGoal:$conversionGoal, , flag:$flag")
