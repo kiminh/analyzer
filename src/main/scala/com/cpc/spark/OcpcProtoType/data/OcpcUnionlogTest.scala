@@ -122,7 +122,7 @@ object OcpcUnionlogTest {
          |    age,
          |    isshow,
          |    isclick,
-         |    duration,
+         |    0 as duration,
          |    userid,
          |    ext_int['is_ocpc'] as is_ocpc,
          |    ext_string['ocpc_log'] as ocpc_log,
