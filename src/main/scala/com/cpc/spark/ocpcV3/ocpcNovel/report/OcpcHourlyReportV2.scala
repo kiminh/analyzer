@@ -35,7 +35,7 @@ object OcpcHourlyReportV2 {
     val qttCvrData = getQTTcvr(date, hour, spark)
     val dataIdea = dataIdeaWithAUC
       .join(qttCvrData, Seq("unitid", "conversion_goal"), "left_outer")
-      .select("unitid", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "qtt_cvr", "date", "hour")
+      .select("unitid", "userid","new_adclass","conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "qtt_cvr", "date", "hour")
 
     // 分conversion_goal统计数据
     val rawDataConversion = preprocessDataByConversion(dataIdea, date, hour, spark)
