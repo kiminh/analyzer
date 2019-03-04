@@ -71,12 +71,15 @@ object OcpcLightBulbV2{
     println(s"host: $host")
     println(s"port: $port")
 
+    val redis = new RedisClient(host, port)
     for (record <- data.collect()) {
       val identifier = record.getAs[Int]("unitid").toString
-      val cpa = record.getAs[Double]("cpa")
+      val value = record.getAs[Double]("cpa")
       var key = "new_algorithm_unit_ocpc_" + identifier
-      println(s"key:$key, cpa:$cpa")
+      println(s"key:$key, value:$value")
+      redis.setex(key, 2 * 24 * 60 * 60, value)
     }
+    redis.disconnect
 
 //    data.foreachPartition(iterator => {
 //      val redis = new RedisClient(host, port)
@@ -84,9 +87,10 @@ object OcpcLightBulbV2{
 //      iterator.foreach{
 //        record => {
 //          val identifier = record.getAs[Int]("unitid").toString
-//          val cpa = record.getAs[Double]("cpa")
+//          val value = record.getAs[Double]("cpa")
 //          var key = "new_algorithm_unit_ocpc_" + identifier
-//          println(s"key:$key, cpa:$cpa")
+//          println(s"key:$key, value:$value")
+//          redis.setex(key, 2 * 24 * 60 * 60, value)
 //        }
 //      }
 //      redis.disconnect
