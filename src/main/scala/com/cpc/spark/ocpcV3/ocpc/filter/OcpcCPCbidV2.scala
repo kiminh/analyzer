@@ -39,7 +39,7 @@ object OcpcCPCbidV2 {
     val cvrData = getCvrData(date, hour, spark)
     val cpmData = getCpmData(date, hour, spark)
     val cvrAlphaData = getCvrAlphaData(smoothDataPath, date, hour, spark)
-    val suggestCPA = getCPAsuggestV2(suggestCpaPath, date, hour, spark)
+    val suggestCPA = getCPAsuggest(suggestCpaPath, date, hour, spark)
 
     val data = expData
       .join(cvrData, Seq("identifier"), "outer")
