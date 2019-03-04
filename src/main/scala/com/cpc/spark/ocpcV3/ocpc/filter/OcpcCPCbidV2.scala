@@ -127,8 +127,8 @@ object OcpcCPCbidV2 {
     val confData = data2
       .groupBy("identifier")
       .agg(
-        min(col("cpa_suggest")).alias("cpa_suggest"),
-        min(col("param_t")).alias("param_t")
+        min(col("cpa_suggest")).alias("cpa_suggest1"),
+        min(col("param_t")).alias("param_t1")
       )
       .select("identifier", "cpa_suggest1", "param_t1")
 
