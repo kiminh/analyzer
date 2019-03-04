@@ -272,7 +272,7 @@ object OcpcPIDwithCPA {
     val today = dateConverter.parse( newDate )
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -72)
+    calendar.add(Calendar.HOUR, -24)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
@@ -320,7 +320,7 @@ object OcpcPIDwithCPA {
     val unitidAdclass = spark.sql(sqlRequest1)
 
     unitidAdclass.show(10)
-    //    unitidAdclass.write.mode("overwrite").saveAsTable("test.sjq_unit_adclass_map")
+    unitidAdclass.write.mode("overwrite").saveAsTable("test.sjq_unit_adclass_map")
 
     var adclassMap = mutable.LinkedHashMap[String, Int]()
     for(row <- unitidAdclass.collect()) {
