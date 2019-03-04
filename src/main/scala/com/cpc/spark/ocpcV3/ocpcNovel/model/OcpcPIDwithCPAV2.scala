@@ -20,12 +20,12 @@ object OcpcPIDwithCPAV2 {
 
     val result = calculateKv2(date, hour, spark)
     val tableName = "dl_cpc.ocpc_novel_k_value_table_v2"
-//    result
-//      .repartition(10).write.mode("overwrite").insertInto(tableName)
-//    println(s"successfully save data into table: $tableName")
-//
-//    val prevk = spark.table("dl_cpc.ocpcv3_novel_pb_v2_once")
-//    prevk.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once_middle")
+    result
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
+    println(s"successfully save data into table: $tableName")
+
+    val prevk = spark.table("dl_cpc.ocpcv3_novel_pb_v2_once")
+    prevk.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once_middle")
 
 
   }
@@ -179,13 +179,6 @@ object OcpcPIDwithCPAV2 {
       .withColumn("kvalue2", col("kvalue"))
       .select("unitid", "kvalue2")
       .distinct()
-    //    val case2 = spark
-    //      .table("test.ocpcv3_novel_pb_v1_hourly")
-    //      .withColumn("kvalue2", col("kvalue"))
-    //      .groupBy("unitid")
-    //      .agg(avg(col("kvalue2")).alias("kvalue2"))
-    //      .select("unitid", "kvalue2")
-    //      .distinct()
 
 //    case2.write.mode("overwrite").saveAsTable("test.wy_case2")
     // 优先case1，然后case2
@@ -302,7 +295,6 @@ object OcpcPIDwithCPAV2 {
       .join(cpaRatio, Seq("unitid", "new_adclass"), "left_outer")
       .select("unitid", "new_adclass", "kvalue", "cpa_ratio", "conversion_goal")
       .withColumn("ratio_tag", udfSetRatioCase()(col("cpa_ratio")))
-      .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))
       .withColumn("ratio_tag",when(col("new_adclass")===110110,udfSetRatioCase()(col("cpa_ratio")/1.6))
         .otherwise(col("ratio_tag")))
       .withColumn("updated_k", udfUpdateK()(col("ratio_tag"), col("kvalue")))

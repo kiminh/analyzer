@@ -317,7 +317,7 @@ object OcpcGetPbV2 {
       s"""
          |select
          | identifier as unitid,
-         | case when cpa_ratio < 0.64 and cost >100000 then '1'
+         | case when cpa_ratio < 1 and cost >100000 then '1'
          | else '0' end as flag
          | from dl_cpc.ocpc_detail_report_hourly_v3
          | where `date`= date_add('$date' , -1) and `hour`= '23'
