@@ -130,7 +130,7 @@ object OcpcLightBulbV2{
 
   def getLightData(version: String, date: String, hour: String, spark: SparkSession) = {
     val data = spark
-      .sql("test.ocpc_qtt_light_control_data_redis")
+      .table("test.ocpc_qtt_light_control_data_redis")
       .select("unitid", "cpa1", "cpa2", "cpa3")
 
     val data1 = data
