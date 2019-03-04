@@ -42,8 +42,8 @@ object OcpcRegression {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-      result.write.mode("overwrite").saveAsTable("test.ocpc_regression_middle_hourly0301")
-//    result.write.mode("overwrite").insertInto( tablename )
+//      result.write.mode("overwrite").saveAsTable("test.ocpc_regression_middle_hourly0301")
+    result.write.mode("overwrite").insertInto( tablename )
 
     // 结果表
     val kvalue = getKWithRatio( middleData, date, hour, spark ) //返回结果为identifier,k_ratio
@@ -53,8 +53,8 @@ object OcpcRegression {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly20190301")
-//    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
+//        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly20190301")
+    resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
 
   }
 
@@ -246,7 +246,6 @@ object OcpcRegression {
     result
   }
 
-
   def getAdclassMap(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     /***
@@ -305,7 +304,7 @@ object OcpcRegression {
     val unitidAdclass = spark.sql(sqlRequest1)
 
     unitidAdclass.show(10)
-    unitidAdclass.write.mode("overwrite").saveAsTable("test.sjq_unit_adclass_map")
+//    unitidAdclass.write.mode("overwrite").saveAsTable("test.sjq_unit_adclass_map")
 
     var adclassMap = mutable.LinkedHashMap[String, Int]()
     for(row <- unitidAdclass.collect()) {

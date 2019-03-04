@@ -41,11 +41,8 @@ object OcpcPIDwithCPA {
     }
 
     val prevTable = spark                           //prevTable中的数据为identifier(unitid)对应的cpa_given, k值, 转化数
-      .table("dl_cpc.ocpc_pb_result_hourly" )
-      .where(s"version='$version' and `date` = '2019-02-28' and hour = '11'" )
-//    val prevTable = spark                           //prevTable中的数据为identifier(unitid)对应的cpa_given, k值, 转化数
-//      .table("test.ocpc_hottopic_prev_pb_hourly" )
-//      .where(s"version='$version'" )
+      .table("test.ocpc_hottopic_prev_pb_hourly" )
+      .where(s"version='$version'" )
     val cvrData = getCVR1data( date, hour, spark )  //返回dl_cpc.ml_cvr_feature_v1中在date日，hour时之前24h内label_type!=12且有转化的search_id
 
     val historyData = getHistory(mediaSelection, date, hour, spark) // 获取ocpc_union_log_hourly中date日，hour时之前24h内,热点段子的每个searchid所对应的广告信息，浏览点击，k值，cpa等相关数据
@@ -59,11 +56,11 @@ object OcpcPIDwithCPA {
       .withColumn("hour",    lit(hour)    )
       .withColumn("version", lit(version) )
 
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly0304")
-//    resultDF.repartition(10)
-//      .write
-//      .mode("overwrite" )
-//      .insertInto("dl_cpc.ocpc_pid_k_hourly" )
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly0304")
+    resultDF.repartition(10)
+      .write
+      .mode("overwrite" )
+      .insertInto("dl_cpc.ocpc_pid_k_hourly" )
   }
 
   def getHistory(mediaSelection: String, date: String, hour: String, spark: SparkSession) = {
@@ -272,7 +269,7 @@ object OcpcPIDwithCPA {
     val today = dateConverter.parse( newDate )
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -168)
+    calendar.add(Calendar.HOUR, 72)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
