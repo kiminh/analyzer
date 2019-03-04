@@ -102,7 +102,7 @@ object OcpcUnionlogTest {
          |    exptags,
          |    media_type,
          |    media_appsid,
-         |    adslotid,
+         |    adslot_id as adslotid,
          |    adslot_type,
          |    adtype,
          |    adsrc,
