@@ -90,7 +90,7 @@ object OcpcUnionlogTest {
   }
 
   def getBaseUnionlog(date: String, hour: String, spark: SparkSession) = {
-    var selectWhere = s"(`date`='$date' and hour = '$hour')"
+    var selectWhere = s"(`day`='$date' and hour = '$hour')"
 
     // 拿到基础数据
     var sqlRequest =
