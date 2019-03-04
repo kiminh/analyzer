@@ -155,6 +155,7 @@ object OcpcLightBulbV2{
     val resultDF = data1.union(data2).union(data3)
 
     resultDF.show(10)
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_light_new_data20190304a")
 
     resultDF
   }
