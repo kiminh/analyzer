@@ -15,15 +15,15 @@ object OcpcUnionlogTest {
     val data = getBaseUnionlog(date, hour, spark)
 
     data
-//      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog_new")
-      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog_new")
+      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog_new")
+//      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog_new")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog_new")
 
     val ocpcData = getOcpcUnionlog(data, date, hour, spark)
     ocpcData
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog_new")
-      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog_new")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog_new")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog_new")
     println("successfully save data into table: dl_cpc.ocpc_filter_unionlog_new")
   }
 
