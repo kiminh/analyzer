@@ -399,6 +399,7 @@ object OcpcGetPbV2 {
         .agg(avg(col("price")).alias("avgbid"),
           (sum(col("iscvr1"))/sum(col("isclick"))).alias("postcvr2"),
           (sum(col("iscvr2"))/sum(col("isclick"))).alias("postcvr3"))
+        .withColumn("postcvr2",when(col("postcvr3") isNotNull,col("postcvr3")).otherwise(col("postcvr2")))
         .withColumn("maxbid",col("avgbid")*1.2)
 
     // 返回结果
