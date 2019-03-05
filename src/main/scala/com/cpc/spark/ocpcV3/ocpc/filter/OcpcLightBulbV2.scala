@@ -46,13 +46,48 @@ object OcpcLightBulbV2{
 
     // 按照conversion_goal来抽取推荐cpa
     val cpaSuggest = getCPAsuggest(completeData, conversionGoal, date, hour, spark)
-    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_v2")
+//    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_v2")
 
     // 清除redis数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(tableName, date, hour, spark)
 
+    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_v2")
     // 存储redis数据
     saveDataToRedis(date, hour, spark)
+    println(s"############## saving redis database ##########################")
     // 存储结果表
+  }
+
+  def cleanRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    将对应key的值设成空的json字符串
+     */
+    val data = spark.table(tableName).repartition(2)
+    data.show(10)
+    val cnt = data.count()
+    println(s"total size of the data is: $cnt")
+    val conf = ConfigFactory.load("ocpc")
+    val host = conf.getString("adv_redis.host")
+    val port = conf.getInt("adv_redis.port")
+    val auth = conf.getString("adv_redis.auth")
+    println(s"host: $host")
+    println(s"port: $port")
+
+    data.foreachPartition(iterator => {
+      val redis = new RedisClient(host, port)
+      redis.auth(auth)
+      iterator.foreach{
+        record => {
+          val identifier = record.getAs[Int]("unitid").toString
+          var key = "new_algorithm_unit_ocpc_" + identifier
+          val json = new JSONObject()
+          val value = json.toString
+          redis.del(key)
+        }
+      }
+      redis.disconnect
+    })
   }
 
   def saveDataToRedis(date: String, hour: String, spark: SparkSession) = {
