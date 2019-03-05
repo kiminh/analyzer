@@ -57,3 +57,13 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_summary_report_hourly_v2
 )
 PARTITIONED by (`date` STRING, `hour` STRING, version STRING)
 STORED as PARQUET;
+
+
+CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_unitid_auc_daily
+(
+    unitid      string,
+    auc         double,
+    industry    string
+)
+PARTITIONED by (conversion_goal int, `date` STRING, version STRING)
+STORED as PARQUET;

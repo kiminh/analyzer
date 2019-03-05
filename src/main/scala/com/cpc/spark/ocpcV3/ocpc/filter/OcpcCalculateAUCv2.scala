@@ -43,16 +43,16 @@ object OcpcCalculateAUCv2 {
       .join(unitidIndustry, Seq("unitid"), "left_outer")
       .select("unitid", "auc", "industry")
 
+    val conversionGoalInt = conversionGoal.toInt
     val resultDF = result
-      .withColumn("conversion_goal", lit(conversionGoal))
+      .withColumn("conversion_goal", lit(conversionGoalInt))
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
-//    //    test.ocpc_check_auc_data20190104_bak
 
     val finalTableName = "test.ocpc_unitid_auc_daily_" + conversionGoal
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_daily")
-        .write.mode("overwrite").saveAsTable(finalTableName)
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_daily")
+//        .write.mode("overwrite").saveAsTable(finalTableName)
   }
 
   def getIndustry(date: String, hour: String, spark: SparkSession) = {
