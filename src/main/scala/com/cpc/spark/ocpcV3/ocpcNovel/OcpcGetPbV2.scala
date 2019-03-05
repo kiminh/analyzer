@@ -85,14 +85,13 @@ object OcpcGetPbV2 {
     resultDF.write.mode("overwrite").saveAsTable("test.wy02")
 
 
-//    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto(tableName)
-//
-//
-//
-//    savePbPack(resultDF)
+    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
+    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto(tableName)
+
+
+    savePbPack(resultDF)
   }
 
   def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
