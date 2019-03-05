@@ -57,6 +57,11 @@ object OcpcLightBulbV2{
     saveDataToRedis(date, hour, spark)
     println(s"############## saving redis database ##########################")
     // 存储结果表
+    cpaSuggest
+      .selectExpr("cast(unitid as string) unitid", "cast(conversion_goal as int) conversion_goal", "cpa")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
   }
 
   def cleanRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
