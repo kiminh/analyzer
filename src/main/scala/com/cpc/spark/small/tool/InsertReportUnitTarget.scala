@@ -35,7 +35,7 @@ object InsertReportUnitTarget {
       .sql(
         """
           |SELECT searchid,userid,planid,unitid,isshow,isclick,sex,age,os,province,ext['phone_level'].int_value,hour,
-          |network,coin,ext['qukan_new_user'].int_value,adslot_type,media_appsid,interests
+          |network,coin,ext['qukan_new_user'].int_value,adslot_type,media_appsid,interests,adslotid
           |FROM dl_cpc.cpc_union_log
           |WHERE date="%s" AND userid>0 AND unitid>0 AND isshow>0
         """.stripMargin.format(argDay))
@@ -72,13 +72,15 @@ object InsertReportUnitTarget {
           val adslotType = x.getInt(15)
           val mediaId = x.getString(16)
           val interests = x.get(17).toString
-          val isStudent = if(interests.contains("224=")) 1 else if(interests.contains("225=")) 2 else 0
+          val isStudent = if (interests.contains("224=")) 1 else if (interests.contains("225=")) 2 else 0
 
           val load = 0
           val active = 0
 
+          val adslotid = x.get(18).toString.toInt
+
           (searchid, (userid, planid, unitid, isshow, isclick, sex, age, os, province, phone_level, hour,
-            network,user_level,qukan_new_user, load, active,adslotType,mediaId,isStudent))
+            network, user_level, qukan_new_user, load, active, adslotType, mediaId, isStudent, adslotid, 0, 0))
       }
       .cache()
     println("ideaData count", ideaData.count())
@@ -103,7 +105,18 @@ object InsertReportUnitTarget {
             case "disactive" => active -= 1
             case _ =>
           }
-          (searchid, (-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,-1,-1,-1, load, active,-1,"",0))
+
+          var active15 = 0
+          if (trace_type == "active15") {
+            active15 = 1
+          }
+
+          var active_third = 0
+          if (trace_type == "active_third") {
+            active_third = 1
+          }
+
+          (searchid, (-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, load, active, -1, "", 0, 0, active15, active_third))
       }
       .cache()
     println("traceData count", traceData.count())
@@ -145,11 +158,13 @@ object InsertReportUnitTarget {
           }
 
           val adslotType = if (a._17 != -1) a._17 else b._17
-          val mediaId = if (a._18.length >0 ) a._18 else b._18
-          val isStudent = if (a._1 != -1 ) a._19 else b._19
-
-          (userid, planid, unitid, isshow, isclick, sex, age, os, province, phone_level, hour, network,user_level,qukan_new_user,load, active,
-            adslotType,mediaId,isStudent)
+          val mediaId = if (a._18.length > 0) a._18 else b._18
+          val isStudent = if (a._1 != -1) a._19 else b._19
+          val adslotid = if (a._1 != -1) a._20 else b._20
+          val active15 = a._21 + b._21
+          val active_third = a._22 + b._22
+          (userid, planid, unitid, isshow, isclick, sex, age, os, province, phone_level, hour, network, user_level, qukan_new_user, load, active,
+            adslotType, mediaId, isStudent, adslotid, active15, active_third)
       }
       .filter {
         x =>
@@ -160,7 +175,7 @@ object InsertReportUnitTarget {
       .cache()
     println("allData count", allData.count())
 
-    val studentData = allData
+    val inputStudentData = allData
       .map {
         x =>
           val userid = x._2._1
@@ -171,40 +186,15 @@ object InsertReportUnitTarget {
           val isStudent = x._2._19
           val load = x._2._15
           val active = x._2._16
-          ("%d-%d".format(unitid, isStudent), (userid, planid, unitid, isshow, isclick, isStudent, load, active))
+          val active15 = x._2._21
+          val active_third = x._2._22
+          ("%d-%d".format(unitid, isStudent), (userid, planid, unitid, isshow, isclick, isStudent, load, active, active15, active_third))
       }
-      .reduceByKey {
-        (a, b) =>
-          val userid = a._1
-          val planid = a._2
-          val unitid = a._3
-          val isshow = a._4 + b._4
-          val isclick = a._5 + b._5
-          val isStudent = a._6
-          val load = a._7 + b._7
-          val active = a._8 + b._8
-          (userid, planid, unitid, isshow, isclick, isStudent, load, active)
-      }
-      .map {
-        x =>
-          val userid = x._2._1
-          val planid = x._2._2
-          val unitid = x._2._3
-          val isshow = x._2._4
-          val isclick = x._2._5
-          val isStudent = x._2._6
-          val load = x._2._7
-          val active = x._2._8
-          val target_type = "student"
-          var date = argDay
-          (userid, planid, unitid, isshow, isclick, target_type, isStudent, load, active, date)
-      }
-      .repartition(50)
-      .cache()
-    println("studentData count", studentData.count())
+    val studentData = getTargetData(inputStudentData, "student", argDay)
 
+    var insertData = studentData
 
-    val sexData = allData
+    val inputSexData = allData
       .map {
         x =>
           val userid = x._2._1
@@ -215,39 +205,14 @@ object InsertReportUnitTarget {
           val sex = x._2._6
           val load = x._2._15
           val active = x._2._16
-          ("%d-%d".format(unitid, sex), (userid, planid, unitid, isshow, isclick, sex, load, active))
+          val active15 = x._2._21
+          val active_third = x._2._22
+          ("%d-%d".format(unitid, sex), (userid, planid, unitid, isshow, isclick, sex, load, active, active15, active_third))
       }
-      .reduceByKey {
-        (a, b) =>
-          val userid = a._1
-          val planid = a._2
-          val unitid = a._3
-          val isshow = a._4 + b._4
-          val isclick = a._5 + b._5
-          val sex = a._6
-          val load = a._7 + b._7
-          val active = a._8 + b._8
-          (userid, planid, unitid, isshow, isclick, sex, load, active)
-      }
-      .map {
-        x =>
-          val userid = x._2._1
-          val planid = x._2._2
-          val unitid = x._2._3
-          val isshow = x._2._4
-          val isclick = x._2._5
-          val sex = x._2._6
-          val load = x._2._7
-          val active = x._2._8
-          val target_type = "sex"
-          var date = argDay
-          (userid, planid, unitid, isshow, isclick, target_type, sex, load, active, date)
-      }
-      .repartition(50)
-      .cache()
-    println("sexData count", sexData.count())
+    val sexData = getTargetData(inputSexData, "sex", argDay)
+    insertData = insertData.union(sexData)
 
-    val ageData = allData
+    val inputAgeData = allData
       .map {
         x =>
           val userid = x._2._1
@@ -258,39 +223,16 @@ object InsertReportUnitTarget {
           val age = x._2._7
           val load = x._2._15
           val active = x._2._16
-          ("%d-%d".format(unitid, age), (userid, planid, unitid, isshow, isclick, age, load, active))
+          val active15 = x._2._21
+          val active_third = x._2._22
+          ("%d-%d".format(unitid, age), (userid, planid, unitid, isshow, isclick, age, load, active, active15, active_third))
       }
-      .reduceByKey {
-        (a, b) =>
-          val userid = a._1
-          val planid = a._2
-          val unitid = a._3
-          val isshow = a._4 + b._4
-          val isclick = a._5 + b._5
-          val age = a._6
-          val load = a._7 + b._7
-          val active = a._8 + b._8
-          (userid, planid, unitid, isshow, isclick, age, load, active)
-      }
-      .map {
-        x =>
-          val userid = x._2._1
-          val planid = x._2._2
-          val unitid = x._2._3
-          val isshow = x._2._4
-          val isclick = x._2._5
-          val age = x._2._6
-          val load = x._2._7
-          val active = x._2._8
-          val target_type = "age"
-          var date = argDay
-          (userid, planid, unitid, isshow, isclick, target_type, age, load, active, date)
-      }
-      .repartition(50)
-      .cache()
-    println("ageData count", ageData.count())
+    val ageData = getTargetData(inputAgeData, "age", argDay)
+    insertData = insertData.union(ageData)
 
-    val osData = allData
+    println(insertData.count())
+
+    val inputOsData = allData
       .map {
         x =>
           val userid = x._2._1
@@ -301,39 +243,14 @@ object InsertReportUnitTarget {
           val os = x._2._8
           val load = x._2._15
           val active = x._2._16
-          ("%d-%d".format(unitid, os), (userid, planid, unitid, isshow, isclick, os, load, active))
+          val active15 = x._2._21
+          val active_third = x._2._22
+          ("%d-%d".format(unitid, os), (userid, planid, unitid, isshow, isclick, os, load, active, active15, active_third))
       }
-      .reduceByKey {
-        (a, b) =>
-          val userid = a._1
-          val planid = a._2
-          val unitid = a._3
-          val isshow = a._4 + b._4
-          val isclick = a._5 + b._5
-          val os = a._6
-          val load = a._7 + b._7
-          val active = a._8 + b._8
-          (userid, planid, unitid, isshow, isclick, os, load, active)
-      }
-      .map {
-        x =>
-          val userid = x._2._1
-          val planid = x._2._2
-          val unitid = x._2._3
-          val isshow = x._2._4
-          val isclick = x._2._5
-          val os = x._2._6
-          val load = x._2._7
-          val active = x._2._8
-          val target_type = "os"
-          var date = argDay
-          (userid, planid, unitid, isshow, isclick, target_type, os, load, active, date)
-      }
-      .repartition(50)
-      .cache()
-    println("osData count", osData.count())
+    val osData = getTargetData(inputOsData, "os", argDay)
+    insertData = insertData.union(osData)
 
-    val provinceData = allData
+    val inputProvinceData = allData
       .map {
         x =>
           val userid = x._2._1
@@ -344,39 +261,14 @@ object InsertReportUnitTarget {
           val province = x._2._9
           val load = x._2._15
           val active = x._2._16
-          ("%d-%d".format(unitid, province), (userid, planid, unitid, isshow, isclick, province, load, active))
+          val active15 = x._2._21
+          val active_third = x._2._22
+          ("%d-%d".format(unitid, province), (userid, planid, unitid, isshow, isclick, province, load, active, active15, active_third))
       }
-      .reduceByKey {
-        (a, b) =>
-          val userid = a._1
-          val planid = a._2
-          val unitid = a._3
-          val isshow = a._4 + b._4
-          val isclick = a._5 + b._5
-          val province = a._6
-          val load = a._7 + b._7
-          val active = a._8 + b._8
-          (userid, planid, unitid, isshow, isclick, province, load, active)
-      }
-      .map {
-        x =>
-          val userid = x._2._1
-          val planid = x._2._2
-          val unitid = x._2._3
-          val isshow = x._2._4
-          val isclick = x._2._5
-          val province = x._2._6
-          val load = x._2._7
-          val active = x._2._8
-          val target_type = "province"
-          var date = argDay
-          (userid, planid, unitid, isshow, isclick, target_type, province, load, active, date)
-      }
-      .repartition(50)
-      .cache()
-    println("provinceData count", provinceData.count())
+    val provinceData = getTargetData(inputProvinceData, "province", argDay)
+    insertData = insertData.union(provinceData)
 
-    val phoneLevelData = allData
+    val inputPhoneLevelData = allData
       .map {
         x =>
           val userid = x._2._1
@@ -387,39 +279,14 @@ object InsertReportUnitTarget {
           val phone_level = x._2._10
           val load = x._2._15
           val active = x._2._16
-          ("%d-%d".format(unitid, phone_level), (userid, planid, unitid, isshow, isclick, phone_level, load, active))
+          val active15 = x._2._21
+          val active_third = x._2._22
+          ("%d-%d".format(unitid, phone_level), (userid, planid, unitid, isshow, isclick, phone_level, load, active, active15, active_third))
       }
-      .reduceByKey {
-        (a, b) =>
-          val userid = a._1
-          val planid = a._2
-          val unitid = a._3
-          val isshow = a._4 + b._4
-          val isclick = a._5 + b._5
-          val phone_level = a._6
-          val load = a._7 + b._7
-          val active = a._8 + b._8
-          (userid, planid, unitid, isshow, isclick, phone_level, load, active)
-      }
-      .map {
-        x =>
-          val userid = x._2._1
-          val planid = x._2._2
-          val unitid = x._2._3
-          val isshow = x._2._4
-          val isclick = x._2._5
-          val phone_level = x._2._6
-          val load = x._2._7
-          val active = x._2._8
-          val target_type = "phone_level"
-          var date = argDay
-          (userid, planid, unitid, isshow, isclick, target_type, phone_level, load, active, date)
-      }
-      .repartition(50)
-      .cache()
-    println("phoneLevelData count", phoneLevelData.count())
+    val phoneLevelData = getTargetData(inputPhoneLevelData, "phone_level", argDay)
+    insertData = insertData.union(phoneLevelData)
 
-    val hourData = allData
+    val inputHourData = allData
       .map {
         x =>
           val userid = x._2._1
@@ -430,39 +297,16 @@ object InsertReportUnitTarget {
           val hour = x._2._11
           val load = x._2._15
           val active = x._2._16
-          ("%d-%d".format(unitid, hour), (userid, planid, unitid, isshow, isclick, hour, load, active))
+          val active15 = x._2._21
+          val active_third = x._2._22
+          ("%d-%d".format(unitid, hour), (userid, planid, unitid, isshow, isclick, hour, load, active, active15, active_third))
       }
-      .reduceByKey {
-        (a, b) =>
-          val userid = a._1
-          val planid = a._2
-          val unitid = a._3
-          val isshow = a._4 + b._4
-          val isclick = a._5 + b._5
-          val hour = a._6
-          val load = a._7 + b._7
-          val active = a._8 + b._8
-          (userid, planid, unitid, isshow, isclick, hour, load, active)
-      }
-      .map {
-        x =>
-          val userid = x._2._1
-          val planid = x._2._2
-          val unitid = x._2._3
-          val isshow = x._2._4
-          val isclick = x._2._5
-          val hour = x._2._6
-          val load = x._2._7
-          val active = x._2._8
-          val target_type = "hour"
-          var date = argDay
-          (userid, planid, unitid, isshow, isclick, target_type, hour, load, active, date)
-      }
-      .repartition(50)
-      .cache()
-    println("hourData count", hourData.count())
+    val hourData = getTargetData(inputHourData, "hour", argDay)
+    insertData = insertData.union(hourData)
 
-    val networkTypeData = allData
+    println(insertData.count())
+
+    val inputNetworkTypeData = allData
       .map {
         x =>
           val userid = x._2._1
@@ -473,39 +317,15 @@ object InsertReportUnitTarget {
           val networkType = x._2._12
           val load = x._2._15
           val active = x._2._16
-          ("%d-%d".format(unitid, networkType), (userid, planid, unitid, isshow, isclick, networkType, load, active))
+          val active15 = x._2._21
+          val active_third = x._2._22
+          ("%d-%d".format(unitid, networkType), (userid, planid, unitid, isshow, isclick, networkType, load, active, active15, active_third))
       }
-      .reduceByKey {
-        (a, b) =>
-          val userid = a._1
-          val planid = a._2
-          val unitid = a._3
-          val isshow = a._4 + b._4
-          val isclick = a._5 + b._5
-          val networkType = a._6
-          val load = a._7 + b._7
-          val active = a._8 + b._8
-          (userid, planid, unitid, isshow, isclick, networkType, load, active)
-      }
-      .map {
-        x =>
-          val userid = x._2._1
-          val planid = x._2._2
-          val unitid = x._2._3
-          val isshow = x._2._4
-          val isclick = x._2._5
-          val hour = x._2._6
-          val load = x._2._7
-          val active = x._2._8
-          val target_type = "network_type"
-          var date = argDay
-          (userid, planid, unitid, isshow, isclick, target_type, hour, load, active, date)
-      }
-      .repartition(50)
-      .cache()
-    println("networkTypeData count", networkTypeData.count())
+    val networkTypeData = getTargetData(inputNetworkTypeData, "network_type", argDay)
+    insertData = insertData.union(networkTypeData)
 
-      val userLevelData = allData
+    //------------
+    val inputUserLevelData = allData
       .map {
         x =>
           val userid = x._2._1
@@ -513,42 +333,17 @@ object InsertReportUnitTarget {
           val unitid = x._2._3
           val isshow = x._2._4
           val isclick = x._2._5
-          val hour = x._2._13
+          val user_level = x._2._13
           val load = x._2._15
           val active = x._2._16
-          ("%d-%d".format(unitid, hour), (userid, planid, unitid, isshow, isclick, hour, load, active))
+          val active15 = x._2._21
+          val active_third = x._2._22
+          ("%d-%d".format(unitid, user_level), (userid, planid, unitid, isshow, isclick, user_level, load, active, active15, active_third))
       }
-      .reduceByKey {
-        (a, b) =>
-          val userid = a._1
-          val planid = a._2
-          val unitid = a._3
-          val isshow = a._4 + b._4
-          val isclick = a._5 + b._5
-          val hour = a._6
-          val load = a._7 + b._7
-          val active = a._8 + b._8
-          (userid, planid, unitid, isshow, isclick, hour, load, active)
-      }
-      .map {
-        x =>
-          val userid = x._2._1
-          val planid = x._2._2
-          val unitid = x._2._3
-          val isshow = x._2._4
-          val isclick = x._2._5
-          val hour = x._2._6
-          val load = x._2._7
-          val active = x._2._8
-          val target_type = "user_level"
-          var date = argDay
-          (userid, planid, unitid, isshow, isclick, target_type, hour, load, active, date)
-      }
-      .repartition(50)
-      .cache()
-    println("userLevelData count", userLevelData.count())
+    val userLevelData = getTargetData(inputUserLevelData, "user_level", argDay)
+    insertData = insertData.union(userLevelData)
 
-    val qukanNewUserData = allData
+    val inputQukanNewUserData = allData
       .map {
         x =>
           val userid = x._2._1
@@ -559,39 +354,14 @@ object InsertReportUnitTarget {
           val userOrient = x._2._14
           val load = x._2._15
           val active = x._2._16
-          ("%d-%d".format(unitid, userOrient), (userid, planid, unitid, isshow, isclick, userOrient, load, active))
+          val active15 = x._2._21
+          val active_third = x._2._22
+          ("%d-%d".format(unitid, userOrient), (userid, planid, unitid, isshow, isclick, userOrient, load, active, active15, active_third))
       }
-      .reduceByKey {
-        (a, b) =>
-          val userid = a._1
-          val planid = a._2
-          val unitid = a._3
-          val isshow = a._4 + b._4
-          val isclick = a._5 + b._5
-          val userOrient = a._6
-          val load = a._7 + b._7
-          val active = a._8 + b._8
-          (userid, planid, unitid, isshow, isclick, userOrient, load, active)
-      }
-      .map {
-        x =>
-          val userid = x._2._1
-          val planid = x._2._2
-          val unitid = x._2._3
-          val isshow = x._2._4
-          val isclick = x._2._5
-          val userOrient = x._2._6
-          val load = x._2._7
-          val active = x._2._8
-          val target_type = "user_orient"
-          var date = argDay
-          (userid, planid, unitid, isshow, isclick, target_type, userOrient, load, active, date)
-      }
-      .repartition(50)
-      .cache()
-    println("qukanNewUserData count", qukanNewUserData.count())
+    val qukanNewUserData = getTargetData(inputQukanNewUserData, "user_orient", argDay)
+    insertData = insertData.union(qukanNewUserData)
 
-    val adslotTypeData = allData
+    val inputAdslotTypeData = allData
       .map {
         x =>
           val userid = x._2._1
@@ -602,43 +372,19 @@ object InsertReportUnitTarget {
           val adslotType = x._2._17
           val load = x._2._15
           val active = x._2._16
-          ("%d-%d".format(unitid, adslotType), (userid, planid, unitid, isshow, isclick, adslotType, load, active))
+          val active15 = x._2._21
+          val active_third = x._2._22
+          ("%d-%d".format(unitid, adslotType), (userid, planid, unitid, isshow, isclick, adslotType, load, active, active15, active_third))
       }
-      .reduceByKey {
-        (a, b) =>
-          val userid = a._1
-          val planid = a._2
-          val unitid = a._3
-          val isshow = a._4 + b._4
-          val isclick = a._5 + b._5
-          val adslotType = a._6
-          val load = a._7 + b._7
-          val active = a._8 + b._8
-          (userid, planid, unitid, isshow, isclick, adslotType, load, active)
-      }
-      .map {
-        x =>
-          val userid = x._2._1
-          val planid = x._2._2
-          val unitid = x._2._3
-          val isshow = x._2._4
-          val isclick = x._2._5
-          val adslotType = x._2._6
-          val load = x._2._7
-          val active = x._2._8
-          val target_type = "adslot_type"
-          var date = argDay
-          (userid, planid, unitid, isshow, isclick, target_type, adslotType, load, active, date)
-      }
-      .repartition(50)
-      .cache()
-    println("adslotTypeData count", adslotTypeData.count())
+    val adslotTypeData = getTargetData(inputAdslotTypeData, "adslot_type", argDay)
+    insertData = insertData.union(adslotTypeData)
+    println(insertData.count())
 
-    val adslotTypeMediaData = allData
-      .filter{
-        x=>
-        val mediaId =  x._2._18
-        (mediaId == "80000001") || (mediaId == "80000002")
+    val inputAdslotTypeMediaData = allData
+      .filter {
+        x =>
+          val mediaId = x._2._18
+          (mediaId == "80000001") || (mediaId == "80000002")
       }
       .map {
         x =>
@@ -650,20 +396,14 @@ object InsertReportUnitTarget {
           val adslotType = x._2._17
           val load = x._2._15
           val active = x._2._16
-          ("%d-%d".format(unitid, adslotType), (userid, planid, unitid, isshow, isclick, adslotType, load, active))
+          val active15 = x._2._21
+          val active_third = x._2._22
+          ("%d-%d".format(unitid, adslotType), (userid, planid, unitid, isshow, isclick, adslotType, load, active, active15, active_third))
       }
-      .reduceByKey {
-        (a, b) =>
-          val userid = a._1
-          val planid = a._2
-          val unitid = a._3
-          val isshow = a._4 + b._4
-          val isclick = a._5 + b._5
-          val adslotType = a._6
-          val load = a._7 + b._7
-          val active = a._8 + b._8
-          (userid, planid, unitid, isshow, isclick, adslotType, load, active)
-      }
+    val adslotTypeMediaData = getTargetData(inputAdslotTypeMediaData, "adslot_type_media", argDay)
+    insertData = insertData.union(adslotTypeMediaData)
+
+    val inputAdslotIdData = allData
       .map {
         x =>
           val userid = x._2._1
@@ -671,44 +411,79 @@ object InsertReportUnitTarget {
           val unitid = x._2._3
           val isshow = x._2._4
           val isclick = x._2._5
-          val adslotType = x._2._6
-          val load = x._2._7
-          val active = x._2._8
-          val target_type = "adslot_type_media"
-          var date = argDay
-          (userid, planid, unitid, isshow, isclick, target_type, adslotType, load, active, date)
+          val adslotType = x._2._20
+          val load = x._2._15
+          val active = x._2._16
+          val active15 = x._2._21
+          val active_third = x._2._22
+          ("%d-%d".format(unitid, adslotType), (userid, planid, unitid, isshow, isclick, adslotType, load, active, active15, active_third))
       }
-      .repartition(50)
-      .cache()
-    println("adslotTypeMediaData count", adslotTypeMediaData.count())
+    val adslotidData = getTargetData(inputAdslotIdData, "adslotid", argDay)
 
-//    //(userid, planid, unitid, isshow, isclick, sex, age, os, province, phone_level, hour, network,user_level,qukan_new_user,load, active)
-    val insertData = sexData
-      .union(ageData)
-      .union(osData)
-      .union(provinceData)
-      .union(phoneLevelData)
-      .union(hourData)
-      .union(networkTypeData)
-      .union(userLevelData)
-      .union(qukanNewUserData)
-      .union(adslotTypeData)
-      .union(adslotTypeMediaData)
-      .union(studentData)
-      .repartition(50)
-      .cache()
+    insertData = insertData.union(adslotidData).repartition(50)
+
+    //    //(userid, planid, unitid, isshow, isclick, sex, age, os, province, phone_level, hour, network,user_level,qukan_new_user,load, active)
+//    val insertData = sexData
+//      .union(ageData)
+//      .union(osData)
+//      .union(provinceData)
+//      .union(phoneLevelData)
+//      .union(hourData)
+//      .union(networkTypeData)
+//      .union(userLevelData)
+//      .union(qukanNewUserData)
+//      .union(adslotTypeData)
+//      .union(adslotTypeMediaData)
+//      .union(studentData)
+//      .repartition(50)
+//      .cache()
 
     println("insertData count", insertData.count())
 
     var insertDataFrame = ctx.createDataFrame(insertData)
-      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "target_type", "target_value", "load", "active", "date")
+      .toDF("user_id", "plan_id", "unit_id", "impression", "click", "target_type", "target_value", "load", "active",
+        "date", "active15", "active_third")
     insertDataFrame.show(50)
+
     clearReportUnitTarget(argDay)
 
     insertDataFrame
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_unit_target", mariadbProp)
+  }
+
+  def getTargetData(data: RDD[(String, (Int, Int, Int, Int, Int, Int, Int, Int, Int, Int))],
+                    target_type: String, date: String): (RDD[(Int, Int, Int, Int, Int, String, Int, Int, Int, String, Int, Int)]) = {
+    data
+      .reduceByKey {
+        (a, b) =>
+          val userid = a._1
+          val planid = a._2
+          val unitid = a._3
+          val isshow = a._4 + b._4
+          val isclick = a._5 + b._5
+          val target_value = a._6
+          val load = a._7 + b._7
+          val active = a._8 + b._8
+          val active15 = a._9 + b._9
+          val active_third = a._10 + b._10
+          (userid, planid, unitid, isshow, isclick, target_value, load, active, active15, active_third)
+      }
+      .map {
+        x =>
+          val userid = x._2._1
+          val planid = x._2._2
+          val unitid = x._2._3
+          val isshow = x._2._4
+          val isclick = x._2._5
+          val target_value = x._2._6
+          val load = x._2._7
+          val active = x._2._8
+          val active15 = x._2._9
+          val active_third = x._2._10
+          (userid, planid, unitid, isshow, isclick, target_type, target_value, load, active, date, active15, active_third)
+      }
   }
 
   def clearReportUnitTarget(date: String): Unit = {
