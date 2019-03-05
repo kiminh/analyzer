@@ -38,6 +38,12 @@ object GetAppCateFromBaidu {
       x =>
         println("{name: \"%s\", pkg: \"%s\"}".format(x._1, x._2))
     }
+
+    println("name,pkg")
+    pkgs.distinct.foreach {
+      x =>
+        println("%s,%s".format(x._1, x._2))
+    }
   }
 }
 
