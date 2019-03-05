@@ -113,7 +113,7 @@ object OcpcLightBulb{
         .join(data2, Seq("unitid"), "outer")
         .join(data3, Seq("unitid"), "outer")
         .select("unitid", "cpa_given1", "cpa_given2", "cpa_given3")
-        .na.fill(-1, Seq("cpa_given1", "cpa_given2", "cpa_given3"))
+//        .na.fill(-1, Seq("cpa_given1", "cpa_given2", "cpa_given3"))
 
     val sqlRequets1 =
       s"""
@@ -144,11 +144,12 @@ object OcpcLightBulb{
         .join(suggestData2, Seq("unitid"), "outer")
         .join(suggestData3, Seq("unitid"), "outer")
         .select("unitid", "cpa_suggest1", "cpa_suggest2", "cpa_suggest3")
-        .na.fill(-1, Seq("cpa_suggest1", "cpa_suggest2", "cpa_suggest3"))
+//        .na.fill(-1, Seq("cpa_suggest1", "cpa_suggest2", "cpa_suggest3"))
 
     val result = cpaGivenData
         .join(suggestData, Seq("unitid"), "left_outer")
         .select("unitid", "cpa_given1", "cpa_given2", "cpa_given3", "cpa_suggest1", "cpa_suggest2", "cpa_suggest3")
+        .na.fill(-1, Seq("cpa_given1", "cpa_given2", "cpa_given3", "cpa_suggest1", "cpa_suggest2", "cpa_suggest3"))
         .withColumn("ocpc_cpa1", when(col("cpa_given1") === -1, -1).otherwise(when(col("cpa_suggest1") === -1, 0).otherwise(col("cpa_suggest1"))))
         .withColumn("ocpc_cpa2", when(col("cpa_given2") === -1, -1).otherwise(when(col("cpa_suggest2") === -1, 0).otherwise(col("cpa_suggest2"))))
         .withColumn("ocpc_cpa3", when(col("cpa_given3") === -1, -1).otherwise(when(col("cpa_suggest3") === -1, 0).otherwise(col("cpa_suggest3"))))
