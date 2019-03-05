@@ -3,7 +3,12 @@ package com.cpc.spark.ocpcV3.HotTopicOcpc.HotTopic_report
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SparkSession, DataFrame}
+import org.apache.spark.sql.SaveMode
+
+import java.util.Properties
+import java.sql.{Connection, DriverManager}
+import com.typesafe.config.ConfigFactory
 
 object directOcpcMonitor {
   def main(args: Array[String]): Unit ={
@@ -100,6 +105,54 @@ object directOcpcMonitor {
          |    end
        """.stripMargin
 
-    spark.sql(sqlRequest).write.mode("overwrite").insertInto("test.directOcpcMonitor")
+    val df = spark.sql(sqlRequest)
+    df.write.mode("overwrite").insertInto("test.directOcpcMonitor")
+    val df2 = df.select("label", "show_n", "ctr", "click_n", "click_cvr", "cvr_n", "money", "cpa", "cpm", "total_arpu", "acp", "`date`")
+
+    val reportTable = "report2.direct_ocpc_monitor"
+    val deleteSQL = s"delete from $reportTable where date = '$date'"
+    update(deleteSQL)
+    insert(df2, reportTable)
+
   }
+
+  def update(sql: String): Unit ={
+    val conf = ConfigFactory.load()
+    val url      = conf.getString("mariadb.report2_write.url")
+    val driver   = conf.getString("mariadb.report2_write.driver")
+    val username = conf.getString("mariadb.report2_write.user")
+    val password = conf.getString("mariadb.report2_write.password")
+    var connection: Connection = null
+    try{
+      Class.forName(driver) //动态加载驱动器
+      connection = DriverManager.getConnection(url, username, password)
+      val statement = connection.createStatement
+      val rs = statement.executeUpdate(sql)
+      println(s"EXECUTE $sql SUCCESS!")
+    }
+    catch{
+      case e: Exception => e.printStackTrace
+    }
+    connection.close  //关闭连接，释放资源
+  }
+
+  def insert(data:DataFrame, table: String): Unit ={
+    val conf = ConfigFactory.load()
+    val mariadb_write_prop = new Properties()
+
+    val url      = conf.getString("mariadb.report2_write.url")
+    val driver   = conf.getString("mariadb.report2_write.driver")
+    val username = conf.getString("mariadb.report2_write.user")
+    val password = conf.getString("mariadb.report2_write.password")
+
+    mariadb_write_prop.put("user", username)
+    mariadb_write_prop.put("password", password)
+    mariadb_write_prop.put("driver", driver)
+
+    data.write.mode(SaveMode.Append)
+      .jdbc(url, table, mariadb_write_prop)
+    println(s"INSERT INTO $table SUCCESSFULLY!")
+
+  }
+
 }

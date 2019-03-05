@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#sh ocpcHotTopicDailyReport.sh 2019-02-28
+#sh directOcpcMonitor.sh 2019-02-28
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
