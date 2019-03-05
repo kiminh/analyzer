@@ -47,21 +47,21 @@ object OcpcLightBulbV2{
     // 按照conversion_goal来抽取推荐cpa
     val cpaSuggest = getCPAsuggest(completeData, conversionGoal, date, hour, spark)
 //    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_v2")
-
-    // 清除redis数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(tableName, date, hour, spark)
-
-    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_v2")
-    // 存储redis数据
-    saveDataToRedis(date, hour, spark)
-    println(s"############## saving redis database ##########################")
-    // 存储结果表
     cpaSuggest
       .selectExpr("cast(unitid as string) unitid", "cast(conversion_goal as int) conversion_goal", "cpa")
       .withColumn("date", lit(date))
       .withColumn("version", lit("qtt_demo"))
       .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
+
+    // 清除redis数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(tableName, date, hour, spark)
+
+    // 存储redis数据
+    saveDataToRedis(date, hour, spark)
+    println(s"############## saving redis database ##########################")
+    // 存储结果表
+    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_v2")
   }
 
   def cleanRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
@@ -97,7 +97,8 @@ object OcpcLightBulbV2{
 
   def saveDataToRedis(date: String, hour: String, spark: SparkSession) = {
     val data = spark
-      .table("test.ocpc_qtt_light_control_v2")
+      .table("dl_cpc.ocpc_qtt_light_control_v2")
+      .where(s"`date`='$date' and version='qtt_demo'")
       .repartition(2)
 
     data.show(10)
