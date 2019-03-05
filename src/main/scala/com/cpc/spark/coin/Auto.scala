@@ -34,7 +34,7 @@ object Auto {
             s"""
                |select
                |    a.usertype as usertype,
-               |    a.adslot_id as adslot_id,
+               |    a.adslotid as adslotid,
                |    a.userid as userid,
                |    a.ideaid as ideaid,
                |    sum(if(label_5th<=exp_cvr,1,0)) as label_5th_show_num,
@@ -67,7 +67,7 @@ object Auto {
                |from
                |(
                |    select ext['usertype'].int_value as usertype,
-               |        adslot_id,
+               |        adslotid,
                |        userid,
                |        ideaid,
                |        isclick,
@@ -93,7 +93,7 @@ object Auto {
                |    where `date`='$d1' and hour = $h1
                |) b
                |on a.ideaid = b.ideaid
-               |group by a.usertype, a.adslot_id, a.userid, a.ideaid
+               |group by a.usertype, a.adslotid, a.userid, a.ideaid
              """.stripMargin
 
         println(sql)
