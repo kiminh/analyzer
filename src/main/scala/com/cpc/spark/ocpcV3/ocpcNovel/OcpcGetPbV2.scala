@@ -434,7 +434,9 @@ object OcpcGetPbV2 {
       val maxbid =  record.getAs[Double]("maxbid");
 
       if (cnt % 100 == 0) {
-        println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, cvr2cnt:$cvr1cnt, cpa2History:$cpa2History, conversionGoal:$conversionGoal, , flag:$flag")
+        println(s"unitid:$unitid, cpa1History:$cpa1History, kvalue:$kvalue, cvr1cnt:$cvr1cnt, " +
+          s"cvr2cnt:$cvr1cnt, cpa2History:$cpa2History, conversionGoal:$conversionGoal,  flag:$flag," +
+          s" postcvr2:$postcvr2, postcvr3:$postcvr3,cvrfactor:$cvrfactor,avgbid:$avgbid,maxbid:$maxbid")
       }
       cnt += 1
 
