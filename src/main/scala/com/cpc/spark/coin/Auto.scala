@@ -98,7 +98,7 @@ object Auto {
 
         val data = spark.sql(sql)
 
-        data.show(10)
+        //data.show(10)
 
         data.repartition(1).write.mode("overwrite").insertInto("test.coin_tmp_20190305")
 
