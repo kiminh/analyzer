@@ -1,6 +1,5 @@
 package com.cpc.spark.qukan.interest
 
-import com.typesafe.config.ConfigFactory
 import org.json4s._
 import org.json4s.native.JsonMethods._
 
@@ -14,8 +13,9 @@ object GetAppCateFromBaidu {
   def main(args: Array[String]): Unit = {
     val url = "https://appc.baidu.com/as?pn=%d&st=10a001&subsearch=app&tn=appsite&word=%s"
     val word = args(0)
+    val pn = args(1).toInt
     var pkgs = Seq[(String, String)]()
-    for (page <- 1 to 100) {
+    for (page <- 1 to pn) {
       val txt = Source.fromURL(url.format(page, word), "UTF8").mkString
       val names: Seq[(String, String)] = for {
         JObject(obj) <- parse(txt)
@@ -28,6 +28,7 @@ object GetAppCateFromBaidu {
       pkgs = pkgs ++ names
     }
 
+    println(pkgs.length)
     pkgs.distinct.foreach {
       x =>
         println("{name: \"%s\", pkg: \"%s\"}".format(x._1, x._2))
