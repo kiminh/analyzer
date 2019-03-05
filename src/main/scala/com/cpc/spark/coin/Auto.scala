@@ -60,7 +60,7 @@ object Auto {
                |    sum(if(api_8th<=exp_cvr and isclick=1,1,0)) as api_8th_click_num,
                |    sum(if(api_9th<=exp_cvr and isclick=1,1,0)) as api_9th_click_num,
                |
-               |    '$date' as `date`,
+               |    '$date' as date,
                |    '$hour' as hour
                |
                |from
@@ -94,8 +94,12 @@ object Auto {
                |group by a.usertype, a.userid, a.ideaid
              """.stripMargin
 
+        println(sql)
+
         val data = spark.sql(sql)
 
         data.repartition(1).write.mode("overwrite").insertInto("test.coin_tmp_20190305")
+
+        println("insert into done !")
     }
 }
