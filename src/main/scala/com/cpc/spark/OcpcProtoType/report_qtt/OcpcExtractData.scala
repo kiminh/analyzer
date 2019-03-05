@@ -132,7 +132,7 @@ object OcpcExtractData {
         |        searchid is not NULL
         |    GROUP BY searchid) as d
         |ON
-        |    a.searchid=d.searchid;
+        |    a.searchid=d.searchid
       """.stripMargin
     val data = spark.sql(createTableSQL)
     data
@@ -169,7 +169,7 @@ object OcpcExtractData {
         |    `date`,
         |    unitid,
         |    userid,
-        |    (case when exptags not like "%,cpcBid%" and exptags not like "%cpcBid,%" then "ocpc" else "cpc" end);
+        |    (case when exptags not like "%,cpcBid%" and exptags not like "%cpcBid,%" then "ocpc" else "cpc" end)
       """.stripMargin
     val data = spark.sql(getDataSQL)
     data.
@@ -191,7 +191,7 @@ object OcpcExtractData {
         |GROUP BY
             unitid, `hour`
         |ORDER BY
-        |	 unitid, `hour`;
+        |	 unitid, `hour`
       """.stripMargin
     val time = spark.sql(getTimeSQL)
     time.
