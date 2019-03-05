@@ -15,7 +15,7 @@ object GetAppCateFromBaidu {
     val url = "https://appc.baidu.com/as?pn=%d&st=10a001&subsearch=app&tn=appsite&word=%s"
     val word = args(0)
     var pkgs = Seq[(String, String)]()
-    for (page <- 1 to 20) {
+    for (page <- 1 to 100) {
       val txt = Source.fromURL(url.format(page, word), "UTF8").mkString
       val names: Seq[(String, String)] = for {
         JObject(obj) <- parse(txt)
