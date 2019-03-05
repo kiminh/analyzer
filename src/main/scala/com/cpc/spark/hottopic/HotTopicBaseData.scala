@@ -8,10 +8,10 @@ import org.apache.spark.sql.SparkSession
   */
 object HotTopicBaseData {
     def main(args: Array[String]): Unit = {
-        val date = args(0)
+        val day = args(0)
         val hour = args(1)
         val spark = SparkSession.builder()
-          .appName(s"HotTopicBaseData date = $date, hour = $hour")
+          .appName(s"HotTopicBaseData day = $day, hour = $hour")
           .enableHiveSupport()
           .getOrCreate()
         import spark.implicits._
@@ -20,13 +20,13 @@ object HotTopicBaseData {
             s"""
                |select *
                |from dl_cpc.cpc_basedata_union_events
-               |where day = '$date' and hour = '$hour'
+               |where day = '$day' and hour = '$hour'
                |and media_appsid in ('80002819')
              """.stripMargin
 
         val result = spark.sql(sql)
         val tableName = "dl_cpc.cpc_hot_topic_basedata_union_events"
         result.repartition(1).write.mode("overwrite").insertInto(tableName)
-        println(s"insert into $tableName at date = $date, hour = $hour success !")
+        println(s"insert into $tableName at date = $day, hour = $hour success !")
     }
 }
