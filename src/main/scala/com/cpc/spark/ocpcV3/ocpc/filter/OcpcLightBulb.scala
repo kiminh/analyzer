@@ -31,7 +31,7 @@ object OcpcLightBulb{
       .enableHiveSupport().getOrCreate()
 
 
-    val tableName = "test.ocpc_qtt_light_control20190305"
+    val tableName = "test.ocpc_qtt_light_control"
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, tableName=$tableName")
@@ -48,18 +48,18 @@ object OcpcLightBulb{
         .select("unitid", "cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
         .na.fill(-1, Seq("cpc_cpa1", "cpc_cpa2", "cpc_cpa3", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3"))
 
-//    data
-//      .withColumn("date", lit(date))
-//      .withColumn("version", lit("qtt_demo"))
-//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
+    data
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control")
 
-//    // 清除redis里面的数据
-//    println(s"############## cleaning redis database ##########################")
-//    cleanRedis(tableName, date, hour, spark)
-//
-//    // 存入redis
-//    saveDataToRedis(date, hour, spark)
-//    println(s"############## saving redis database ##########################")
+    // 清除redis里面的数据
+    println(s"############## cleaning redis database ##########################")
+    cleanRedis(tableName, date, hour, spark)
+
+    // 存入redis
+    saveDataToRedis(date, hour, spark)
+    println(s"############## saving redis database ##########################")
 
     data.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
@@ -154,7 +154,6 @@ object OcpcLightBulb{
         .withColumn("ocpc_cpa2", when(col("cpa_given2") === -1, -1).otherwise(when(col("cpa_suggest2") === -1, 0).otherwise(col("cpa_suggest2"))))
         .withColumn("ocpc_cpa3", when(col("cpa_given3") === -1, -1).otherwise(when(col("cpa_suggest3") === -1, 0).otherwise(col("cpa_suggest3"))))
 
-    result.write.mode("overwrite").saveAsTable("test.check_data_ocpc_20190305")
     result.show(10)
     val resultDF = result.select("unitid", "ocpc_cpa1", "ocpc_cpa2", "ocpc_cpa3")
 
@@ -227,13 +226,13 @@ object OcpcLightBulb{
           println(s"cpa1:$cpa1, cpa2:$cpa2, cpa3:$cpa3")
           var key = "algorithm_unit_ocpc_" + identifier
           val json = new JSONObject()
-          if (cpa1 > 0) {
+          if (cpa1 >= 0) {
             json.put("download_cpa", cpa1)
           }
-          if (cpa2 > 0) {
+          if (cpa2 >= 0) {
             json.put("appact_cpa", cpa2)
           }
-          if (cpa3 > 0) {
+          if (cpa3 >= 0) {
             json.put("formsubmit_cpa", cpa3)
           }
           val value = json.toString
