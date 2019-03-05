@@ -26,7 +26,7 @@ object Auto {
         val sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
         val dd = sf.format(cal.getTime())
         val d1 = dd.substring(0, 10)
-        val h1 = dd.substring(11, 13)
+        val h1 = dd.substring(11, 13).toInt
 
         println(date,hour,d1,h1)
 
@@ -88,7 +88,7 @@ object Auto {
                |        label_5th, label_6th, label_7th, label_8th, label_9th,
                |        api_5th, api_6th, api_7th, api_8th, api_9th
                |    from test.coin3
-               |    where `date`='$d1' and hour = '$h1'
+               |    where `date`='$d1' and hour = $h1
                |) b
                |on a.ideaid = b.ideaid
                |group by a.usertype, a.userid, a.ideaid
