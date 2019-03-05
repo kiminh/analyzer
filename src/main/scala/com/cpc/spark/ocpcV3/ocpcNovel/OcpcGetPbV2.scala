@@ -446,7 +446,13 @@ object OcpcGetPbV2 {
         cvr3Cnt = cvr2cnt,
         cpa3History = cpa2History,
         conversiongoal = conversionGoal,
-        flag=flag
+        flag=flag,
+        postcvr2 = postcvr2,
+        postcvr3 = postcvr3,
+        cvrfactor = cvrfactor,
+        avgbid =  avgbid,
+        maxbid =  maxbid
+
       )
       list += currentItem
 
