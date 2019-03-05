@@ -16,16 +16,21 @@ object GetAppCateFromBaidu {
     val pn = args(1).toInt
     var pkgs = Seq[(String, String)]()
     for (page <- 1 to pn) {
-      val txt = Source.fromURL(url.format(page, word), "UTF8").mkString
-      val names: Seq[(String, String)] = for {
-        JObject(obj) <- parse(txt)
-        JField("result_data", JArray(arr)) <- obj
-        JObject(v) <- arr
-        JField("package", JString(pkg)) <- v
-        JField("sname", JString(name)) <- v
-      } yield (name, pkg)
+      try {
+        val txt = Source.fromURL(url.format(page, word), "UTF8").mkString
+        val names: Seq[(String, String)] = for {
+          JObject(obj) <- parse(txt)
+          JField("result_data", JArray(arr)) <- obj
+          JObject(v) <- arr
+          JField("package", JString(pkg)) <- v
+          JField("sname", JString(name)) <- v
+        } yield (name, pkg)
 
-      pkgs = pkgs ++ names
+        pkgs = pkgs ++ names
+      } catch {
+        case e: Exception =>
+
+      }
     }
 
     println(pkgs.length)
