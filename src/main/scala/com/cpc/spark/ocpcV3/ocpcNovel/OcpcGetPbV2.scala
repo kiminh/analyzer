@@ -246,7 +246,7 @@ object OcpcGetPbV2 {
     resultDF
   }
 
-  def catgetK(base: DataFrame, cpaHistory: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def getK(base: DataFrame, cpaHistory: DataFrame, date: String, hour: String, spark: SparkSession) = {
     /*
     1. 先从基础表抽取所有unitid，再从cpahistory抽取conversion goal，重新分配conversiongoal
     2. 按照conversion goal分配kvalue
