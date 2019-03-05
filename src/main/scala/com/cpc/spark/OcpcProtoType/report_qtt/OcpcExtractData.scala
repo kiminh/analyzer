@@ -11,10 +11,10 @@ object OcpcExtractData {
 
     val date = args(0).toString
     val spark = SparkSession.builder().appName(name = s"CreateTempTable").enableHiveSupport().getOrCreate()
-    val unitidSelect = getUnitid(spark)
-    //    createTempTable(date, spark)
-//    getData(unitid, spark)
-//    getTime(unitid, date, spark)
+    val unitids = getUnitid(spark)
+    createTempTable(date, spark)
+    getData(unitids, spark)
+    getTime(unitids, date, spark)
   }
 
   // 获取unitid
@@ -25,17 +25,13 @@ object OcpcExtractData {
 
     // 然后解析json文件获得unitid
     val jsonData = spark.read.format("json").json(expDataPath)
-    val unitid = jsonData.select("identifier").distinct()
-    unitid.printSchema()
-
+    val unitidDF = jsonData.select("identifier").distinct().collect()
     var unitidList = new ListBuffer[String]()
-    for (record <- unitid.collect()) {
-      val identifier = record.getAs[String]("identifier")
-      unitidList.append(identifier)
+    for (id <- unitidDF){
+      unitidList.append(id.getAs[String]("identifier"))
     }
-    val unitidSelection = unitidList.mkString(",")
-    println(unitidSelection)
-    unitidSelection
+    val unitids = unitidList.mkString(",")
+    unitids
   }
 
   // 创建临时表
@@ -144,7 +140,7 @@ object OcpcExtractData {
   }
 
   // 抽取数据
-  def getData(unitid: String, spark: SparkSession): Unit = {
+  def getData(unitids: String, spark: SparkSession): Unit = {
     val getDataSQL =
       s"""
         |SELECT
@@ -168,7 +164,7 @@ object OcpcExtractData {
         |FROM
         |    test.wt_temp_ocpc_ab_test
         |WHERE
-        |    unitid in ($unitid)
+        |    unitid in ($unitids)
         |GROUP BY
         |    `date`,
         |    unitid,
@@ -181,7 +177,7 @@ object OcpcExtractData {
   }
 
   // 统计时间
-  def getTime(unitid: String, date: String, spark: SparkSession): Unit = {
+  def getTime(unitids: String, date: String, spark: SparkSession): Unit = {
     val getTimeSQL =
       s"""
         |SELECT
@@ -191,7 +187,7 @@ object OcpcExtractData {
         |WHERE
         |    `date` = '$date'
         |AND
-        |    unitid in ($unitid)
+        |    unitid in ($unitids)
         |GROUP BY
             unitid, `hour`
         |ORDER BY
