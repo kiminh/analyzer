@@ -86,8 +86,6 @@ object OcpcLightBulbV2{
         record => {
           val identifier = record.getAs[Int]("unitid").toString
           var key = "new_algorithm_unit_ocpc_" + identifier
-          val json = new JSONObject()
-          val value = json.toString
           redis.del(key)
         }
       }
@@ -130,8 +128,10 @@ object OcpcLightBulbV2{
           val identifier = record.getAs[Int]("unitid").toString
           val value = record.getAs[Double]("cpa")
           var key = "new_algorithm_unit_ocpc_" + identifier
-          println(s"key:$key, value:$value")
-          redis.setex(key, 2 * 24 * 60 * 60, value)
+          if (value >= 0) {
+            println(s"key:$key, value:$value")
+            redis.setex(key, 2 * 24 * 60 * 60, value)
+          }
         }
       }
       redis.disconnect
