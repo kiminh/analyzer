@@ -39,7 +39,7 @@ object OcpcCPCbidV2 {
     val cvrData = getCvrData(date, hour, spark)
     val cpmData = getCpmData(date, hour, spark)
     val cvrAlphaData = getCvrAlphaData(smoothDataPath, date, hour, spark)
-    val suggestCPA = getCPAsuggest(suggestCpaPath, date, hour, spark)
+    val suggestCPA = getCPAsuggestV2(suggestCpaPath, date, hour, spark)
 
     val data = expData
       .join(cvrData, Seq("identifier"), "outer")
@@ -59,10 +59,91 @@ object OcpcCPCbidV2 {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit("qtt_demo"))
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190226")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_post_cvr_unitid_hourly20190304")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_post_cvr_unitid_hourly")
 
     savePbPack(data, fileName)
+  }
+
+  def getConversionGoal(date: String, hour: String, spark: SparkSession) = {
+    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+    val user = "adv_live_read"
+    val passwd = "seJzIPUc7xU"
+    val driver = "com.mysql.jdbc.Driver"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where ideas is not null) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val resultDF = data
+      .withColumn("unitid", col("id"))
+      .withColumn("userid", col("user_id"))
+      .select("unitid",  "conversion_goal")
+      .distinct()
+
+    resultDF.show(10)
+    resultDF
+  }
+
+  def getCPAsuggestV2(suggestCpaPath: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    两条来源：
+    1. 从mysql读取实时正在跑ocpc的广告单元和对应转化目标，按照unitid和conversion_goal设置对应推荐cpa
+    2. 从配置文件读取推荐cpa
+    3. 数据关联，优先配置文件的推荐cpa
+     */
+
+    // 从推荐cpa表中读取：dl_cpc.ocpc_suggest_cpa_k_once
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(identifier as int) unitid,
+         |  conversion_goal,
+         |  cpa_suggest as cpa_suggest2,
+         |  duration
+         |FROM
+         |  dl_cpc.ocpc_suggest_cpa_k_once
+       """.stripMargin
+    println(sqlRequest)
+    val data1 = spark
+      .sql(sqlRequest)
+      .filter(s"duration <= 3")
+      .withColumn("param_t2", lit(10))
+      .select("unitid", "conversion_goal", "cpa_suggest2", "param_t2")
+
+    val cvGoal = getConversionGoal(date, hour, spark)
+    val suggestData = data1
+      .join(cvGoal, Seq("unitid", "conversion_goal"), "inner")
+      .selectExpr("cast(unitid as string) identifier", "cpa_suggest2", "param_t2")
+
+
+    // 从配置文件读取数据
+    val data2 = spark.read.format("json").json(suggestCpaPath)
+    val confData = data2
+      .groupBy("identifier")
+      .agg(
+        min(col("cpa_suggest")).alias("cpa_suggest1"),
+        min(col("param_t")).alias("param_t1")
+      )
+      .select("identifier", "cpa_suggest1", "param_t1")
+
+    // 数据关联：优先配置文件
+    val data = suggestData
+      .join(confData, Seq("identifier"), "outer")
+      .selectExpr("identifier", "cpa_suggest1", "param_t1", "cpa_suggest2", "param_t2")
+      .withColumn("cpa_suggest", when(col("cpa_suggest2").isNotNull, col("cpa_suggest2")).otherwise(col("cpa_suggest1")))
+      .withColumn("param_t", when(col("param_t2").isNotNull, col("param_t2")).otherwise(col("param_t1")))
+
+    data.show(10)
+
+    val resultDF = data.select("identifier", "cpa_suggest", "param_t")
+
+    resultDF
   }
 
   def getCPAsuggest(suggestCpaPath: String, date: String, hour: String, spark: SparkSession) = {

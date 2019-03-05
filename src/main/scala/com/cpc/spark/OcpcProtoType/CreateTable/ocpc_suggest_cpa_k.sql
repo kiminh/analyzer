@@ -1,7 +1,8 @@
-CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_cpc_cpa_exp
+CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_suggest_cpa_k
 (
     identifier          string,
-    cpc_suggest         double,
+    cpa_suggest         double,
+    kvalue              double,
     conversion_goal     int,
     duration            int
 )
@@ -9,4 +10,4 @@ PARTITIONED by (`date` string, version string)
 STORED as PARQUET;
 
 
-alter table dl_cpc.ocpc_filter_unionlog add columns (antispam int);
+--spark-sql生成

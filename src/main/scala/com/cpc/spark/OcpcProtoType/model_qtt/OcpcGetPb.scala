@@ -52,7 +52,6 @@ object OcpcGetPb {
 //    dl_cpc.ocpc_pb_result_hourly_v2
 //    dl_cpc.ocpc_prev_pb_once
     val result = getPbByConversion(mediaSelection, conversionGoal, version, date, hour, spark)
-//    result.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202")
     val resultDF = result
         .withColumn("cpagiven", lit(1))
         .select("identifier", "cpagiven", "cvrcnt", "kvalue")
@@ -62,7 +61,7 @@ object OcpcGetPb {
         .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190301new")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
@@ -109,16 +108,18 @@ object OcpcGetPb {
 
   def smoothKvalue(kvalue: DataFrame, mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
-    计算在投ocpc广告每个广告最近两天的ocpc投放小时数，并与ocpc_k_smooth_v1数据表内关联，
-    1. 投放小时数少于24小时且ocpc_k_smooth_v1数据表有数据则按照小时数限制k值变动
+    计算在投ocpc广告每个广告最近两天的ocpc投放小时数，并与ocpc_suggest_cpa_k_once数据表内关联，
+    1. 投放小时数少于24小时且ocpc_suggest_cpa_k_once数据表有数据则按照小时数限制k值变动
     2. 投放小时数大于24小时或ocpc_k_smooth_v1数据表没有关联到数据，则不做限制
      */
-    // 抽取test.ocpc_k_smooth_v1表
+    // 抽取ocpc_suggest_cpa_k_once表
+    // todo
     val baseK = spark
-        .table("test.ocpc_k_smooth_v1")
-        .where(s"version = '$version' and conversion_goal = $conversionGoal")
+        .table("dl_cpc.ocpc_suggest_cpa_k_once")
+//        .table("dl_cpc.ocpc_suggest_cpa_k")
+        .where(s"version = '$version' and conversion_goal = $conversionGoal and duration <= 3")
         .withColumn("base_k", col("kvalue"))
-        .select("identifier", "base_k", "update_date", "update_hour")
+        .select("identifier", "base_k")
 
     baseK.show(10)
 
@@ -395,9 +396,6 @@ object OcpcGetPb {
       .select("identifier", "kvalue", "pre_cvr", "post_cvr", "click", "conversion", "history_ocpc_flag")
       .na.fill(0, Seq("history_ocpc_flag"))
 
-
-//    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202getcpck")
-
     resultDF
   }
 
@@ -412,8 +410,6 @@ object OcpcGetPb {
       .withColumn("kvalue_middle", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k") > col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 4.0).otherwise(col("new_k")))
       .withColumn("k_value", when(col("flag") === 0, col("prev_k")).otherwise(col("kvalue_middle")))
       .select("identifier", "regression_k", "pid_k", "new_k", "prev_k", "flag", "kvalue_middle", "k_value")
-
-//    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202calculatekocpc")
     resultDF
   }
 
