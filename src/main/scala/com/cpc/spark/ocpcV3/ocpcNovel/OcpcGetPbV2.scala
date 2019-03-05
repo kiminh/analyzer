@@ -335,10 +335,13 @@ object OcpcGetPbV2 {
     */
     // 计算日期周期
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val end_date = sdf.parse(date)
     val calendar = Calendar.getInstance
+    calendar.setTime(end_date)
     calendar.add(Calendar.DATE, -1)
-    val start_date = sdf.format(calendar.getTime())
-    val selectCondition = getTimeRangeSql2(start_date, hour, date, hour)
+    val start_date = calendar.getTime
+    val date1 = sdf.format(start_date)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
     // ctr data
     val sqlRequest1 =
       s"""
