@@ -38,7 +38,7 @@ object OcpcKexp {
       .withColumn("k3", col("k_ratio2"))
       .withColumn("k_ratio2_v1", col("k2"))
       .withColumn("k_ratio3_v1", col("k3"))
-      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "conversion_goal")
+      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1")
 
     val kv2 = spark
       .table("dl_cpc.ocpc_regression_k")
@@ -53,6 +53,20 @@ object OcpcKexp {
       .withColumn("k_ratio2_v3", col("k_ratio2"))
       .withColumn("k_ratio3_v3", col("k_ratio3"))
       .select("ideaid", "k_ratio2_v3", "k_ratio3_v3")
+    
+    val kv4Raw = spark
+      .table("dl_cpc.ocpc_pcoc_k_hourly")
+      .where(selectCondition)
+      .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3")
+
+    val kv4 = kv4Raw
+      .join(ocpcConversionGoal, Seq("ideaid"), "left_outer")
+      .select("ideaid", "k_ratio1", "k_ratio2", "k_ratio3", "conversion_goal")
+      .withColumn("k2", when(col("conversion_goal").isNotNull && col("conversion_goal")===3, col("k_ratio3")).otherwise(col("k_ratio1")))
+      .withColumn("k3", col("k_ratio2"))
+      .withColumn("k_ratio2_v4", col("k2"))
+      .withColumn("k_ratio3_v4", col("k3"))
+      .select("ideaid", "k_ratio2_v4", "k_ratio3_v4")
 
     // 读取实验ideaid列表
     val filename = "/user/cpc/wangjun/ocpc_exp_ideas.txt"
@@ -66,34 +80,38 @@ object OcpcKexp {
       .distinct()
 
     // 根据实验id列表，替换k值
+    // todo
     val kvalue = kv1
       .join(kv2, Seq("ideaid"), "outer")
       .join(kv3, Seq("ideaid"), "outer")
+      .join(kv4, Seq("ideaid"), "outer")
       .join(expIdeas, Seq("ideaid"), "left_outer")
-      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "flag", "conversion_goal")
-      .withColumn("k_ratio2", when(col("flag") === 1 && col("conversion_goal") < 3, col("k_ratio2_v2")).otherwise(col("k_ratio2_v1")))
-      .withColumn("k_ratio3", when(col("flag") === 1, col("k_ratio3_v2")).otherwise(col("k_ratio3_v1")))
-      .withColumn("k_ratio2", when(col("flag") === 2 && col("conversion_goal") === 1, col("k_ratio2_v3")).otherwise(col("k_ratio2")))
+      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "k_ratio2_v4", "k_ratio3_v4", "flag")
+      .withColumn("k_ratio2", col("k_ratio2_v1"))
+      .withColumn("k_ratio3", col("k_ratio3_v1"))
+      .withColumn("k_ratio2", when(col("flag") === 1, col("k_ratio2_v2")).otherwise(col("k_ratio2")))
+      .withColumn("k_ratio3", when(col("flag") === 1, col("k_ratio3_v2")).otherwise(col("k_ratio3")))
+      .withColumn("k_ratio2", when(col("flag") === 2, col("k_ratio2_v3")).otherwise(col("k_ratio2")))
+      .withColumn("k_ratio3", when(col("flag") === 2, col("k_ratio3_v3")).otherwise(col("k_ratio3")))
+      .withColumn("k_ratio2", when(col("flag") === 3, col("k_ratio2_v4")).otherwise(col("k_ratio2")))
+      .withColumn("k_ratio3", when(col("flag") === 3, col("k_ratio3_v4")).otherwise(col("k_ratio3")))
+//      .withColumn("k_ratio2", when(col("flag") === 1 && col("conversion_goal") < 3, col("k_ratio2_v2")).otherwise(col("k_ratio2_v1")))
+//      .withColumn("k_ratio3", when(col("flag") === 1, col("k_ratio3_v2")).otherwise(col("k_ratio3_v1")))
+//      .withColumn("k_ratio2", when(col("flag") === 2 && col("conversion_goal") === 1, col("k_ratio2_v3")).otherwise(col("k_ratio2")))
 
 
-//    ideaid  string  NULL
-//    k_ratio2_v1     double  NULL
-//    k_ratio3_v1     double  NULL
-//    k_ratio2_v2     double  NULL
-//    k_ratio3_v2     double  NULL
-//    flag    int     NULL
-//    k_ratio2        double  NULL
-//    k_ratio3        double  NULL
+
 
 //    test.ocpc_k_exp_middle_hourly
     kvalue
-      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "flag", "k_ratio2", "k_ratio3")
+      .select("ideaid", "k_ratio2_v1", "k_ratio3_v1", "k_ratio2_v2", "k_ratio3_v2", "k_ratio2_v3", "k_ratio3_v3", "k_ratio2_v4", "k_ratio3_v4", "flag", "k_ratio2", "k_ratio3")
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .repartition(10)
       .write
       .mode("overwrite")
-      .insertInto("dl_cpc.ocpc_k_exp_middle_hourly")
+      .saveAsTable("test.ocpc_k_exp_middle_hourly20190212")
+//      .insertInto("dl_cpc.ocpc_k_exp_middle_hourly")
 
 
     kvalue.show(10)

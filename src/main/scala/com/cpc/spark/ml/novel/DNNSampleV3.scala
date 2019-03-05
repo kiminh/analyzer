@@ -69,6 +69,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
+         |  and length(uid) in (14, 15, 36)
       """.stripMargin
     println("============= as features ==============")
     println(as_sql)
@@ -121,7 +122,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
       ).repartition(1000, $"uid")
   }
 
-  private def getAsFeature_hourly(date: String, hour: Int, adtype: Int = 1): DataFrame = {
+  private def getAsFeature_hourly(date: String, hour: Int): DataFrame = {
     import spark.implicits._
     val as_sql =
       s"""
@@ -146,8 +147,8 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |  hour
          |
          |from dl_cpc.cpc_union_log where `date` = '$date' and hour=$hour
-         |  and isshow = 1 and ideaid > 0 and adslot_type = $adtype
-         |  and media_appsid in ("80000001", "80000002")
+         |  and isshow = 1 and ideaid > 0
+         |  and media_appsid in ("80001098", "80001292")
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and length(uid) in (14, 15, 36)
@@ -210,7 +211,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
     //用户安装app
     val ud_sql0 =
       s"""
-         |select * from dl_cpc.cpc_user_installed_apps where load_date = '${getDay(date, 1)}'
+         |select * from dl_cpc.cpc_user_installed_apps where load_date = '$date'
         """.stripMargin
 
     //用户天级别过去访问广告情况
@@ -237,7 +238,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |                  and load_date<='${getDay(date, 4)}',click_ideaid,null)) as c_ideaid_4_7,
          |       collect_list(if(load_date>='${getDay(date, 7)}'
          |                  and load_date<='${getDay(date, 4)}',click_adclass,null)) as c_adclass_4_7
-         |from dl_cpc.cpc_user_behaviors
+         |from dl_cpc.cpc_user_behaviors_novel
          |where load_date in ('${getDays(date, 1, 7)}')
          |group by uid
       """.stripMargin
@@ -248,7 +249,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
          |select uid,
          |       interest_ad_words_1 as word1,
          |       interest_ad_words_3 as word3
-         |from dl_cpc.cpc_user_interest_words
+         |from dl_cpc.cpc_user_interest_words_novel
          |where load_date='$date'
     """.stripMargin
 
@@ -256,7 +257,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
     val ud_sql3 =
       s"""
          |select uid,book_id,first_category_id,second_category_id,third_category_id
-         |from dl_cpc.miReadTrait where day = '${getDay(date, 1)}'
+         |from dl_cpc.miReadTrait where day = '$date'
          |  and uid not like "%.%"
          |  and uid not like "%000000%"
          |  and length(uid) in (14, 15, 36)
@@ -268,6 +269,8 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
     println(ud_sql1)
     println("-------------------------------------------------")
     println(ud_sql2)
+    println("-------------------------------------------------")
+    println(ud_sql3)
 
 
     spark.sql(ud_sql0).rdd
@@ -277,8 +280,9 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
       .toDF("uid", "pkgs")
       .join(spark.sql(ud_sql1), Seq("uid"), "outer")
       .join(spark.sql(ud_sql2), Seq("uid"), "outer")
+      .join(spark.sql(ud_sql3), Seq("uid"), "outer")
       .select($"uid",
-        hashSeq("ud0#", "string")($"pkgs").alias("ud0"),
+        hashSeq("f30#", "string")($"pkgs").alias("f30"),
         hashSeq("ud1#", "int")($"s_ideaid_1").alias("ud1"),
         hashSeq("ud2#", "int")($"s_ideaid_2").alias("ud2"),
         hashSeq("ud3#", "int")($"s_ideaid_3").alias("ud3"),
@@ -293,8 +297,12 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
         hashSeq("ud12#", "int")($"c_adclass_3").alias("ud12"),
         hashSeq("ud13#", "int")($"c_ideaid_4_7").alias("ud13"),
         hashSeq("ud14#", "int")($"c_adclass_4_7").alias("ud14"),
-        hashSeq("ud15#", "string")($"word1").alias("ud15"),
-        hashSeq("ud16#", "string")($"word3").alias("ud16")
+        hashSeq("ud15#", "int")($"book_id").alias("ud15"),
+        hashSeq("ud16#", "int")($"first_category_id").alias("ud16"),
+        hashSeq("ud17#", "int")($"second_category_id").alias("ud17"),
+        hashSeq("ud18#", "int")($"third_category_id").alias("ud18"),
+        hashSeq("ud19#", "string")($"word1").alias("ud19"),
+        hashSeq("ud20#", "string")($"word3").alias("ud20")
       )
   }
 
@@ -327,7 +335,7 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
   }
 
   private def getAdFeature_hourly(date: String = ""): DataFrame = {
-    spark.read.parquet("/user/cpc/dnn/features/ad")
+    spark.read.parquet("/user/cpc/wy/novel/features/ad")
   }
 
   override def getTrainSample(spark: SparkSession, date: String): DataFrame = {
@@ -338,7 +346,6 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
     if (date.length == 10) {
       data = getAsFeature(date)
         .join(getUdFeature(date), Seq("uid"), "left")
-
     }
     else if (date.length == 13) {
       val dt = date.substring(0, 10)
@@ -356,8 +363,8 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
 
 
     //获取默认hash列表
-    val columns = Seq("ud0", "ud1", "ud2", "ud3", "ud4", "ud5", "ud6", "ud7", "ud8", "ud9", "ud10",
-      "ud11", "ud12", "ud13", "ud14", "ud15", "ud16")
+    val columns = Seq("f30", "ud1", "ud2", "ud3", "ud4", "ud5", "ud6", "ud7", "ud8", "ud9", "ud10",
+      "ud11", "ud12", "ud13", "ud14", "ud15", "ud16", "ud17", "ud18", "ud19", "ud20")
     val default_hash = for (col <- columns.zipWithIndex)
       yield (col._2, 0, Murmur3Hash.stringHash64(col._1 + "#", 0))
 
@@ -367,8 +374,9 @@ class DNNSampleV3(spark: SparkSession, trdate: String = "", trpath: String = "",
         $"uid",
         $"dense",
         mkSparseFeature(default_hash)(
-          array($"ud0", $"ud1", $"ud2", $"ud3", $"ud4", $"ud5", $"ud6", $"ud7", $"ud8"
-            , $"ud9", $"ud10", $"ud11", $"ud12", $"ud13", $"ud14", $"ud15", $"ud16")
+          array($"f30", $"ud1", $"ud2", $"ud3", $"ud4", $"ud5", $"ud6", $"ud7", $"ud8"
+            , $"ud9", $"ud10", $"ud11", $"ud12", $"ud13", $"ud14", $"ud15", $"ud16", $"ud17", $"ud18"
+            , $"ud19", $"ud20")
         ).alias("sparse")
       )
       .select(

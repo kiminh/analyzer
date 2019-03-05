@@ -1,4 +1,2 @@
 //identifier为pb文件唯一键值， cpc_bid为ab实验的cpc出价，cpc_bid=-1表示不提供cpc出价，由系统根据cpc阶段出价自行计算
-{"identifier": "0000000", "cpc_bid": 10}
-{"identifier": "0000001", "cpc_bid": 11}
-{"identifier": "1921347", "cpc_bid": -1}
+{"identifier": "270", "cpc_bid": 10}

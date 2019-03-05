@@ -47,7 +47,7 @@ object SaveFeatures {
     //saveCvrData(spark, date, hour, version)  //第一版 cvr  deprecated
     //saveCvrDataV2(spark, date, hour, yesterday, versionV2) //第二版cvr
     //saveCvrDataV3(spark, date, hour, yesterday, versionV2) //第二版cvr，逻辑和saveCvrDataV2一致， 将转化的3张表合并到一张表
-    saveCvrDataV4(spark, date, hour, yesterday, versionV2) //第二版cvr，逻辑和saveCvrDataV2一致， 将应用下载和信息流的转化合并到一张表
+    //saveCvrDataV4(spark, date, hour, yesterday, versionV2) //第二版cvr，逻辑和saveCvrDataV2一致， 将应用下载和信息流的转化合并到一张表
     println("SaveFeatures_done")
   }
 
@@ -876,6 +876,7 @@ object SaveFeatures {
   }
 
   /* 将信息流和应用商城的合成一张表 */
+  @deprecated
   def saveCvrDataV4(spark: SparkSession, date: String, hour: String, yesterday: String, version: String): Unit = {
     import spark.implicits._
 
@@ -886,44 +887,44 @@ object SaveFeatures {
     val fDate = dateFormat.format(cal.getTime)
     val before1hour = fDate.substring(11, 13)
 
-    //激励下载转化  取有点击的
-    val motivateRDD = spark.sql(
-      s"""
-         |select   a.searchid
-         |        ,a.ideaid
-         |        ,b.trace_type
-         |        ,b.trace_op1
-         |from (select * from dl_cpc.cpc_motivation_log
-         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick = 1) a
-         |    join
-         |        (select *
-         |            from dl_cpc.logparsed_cpc_trace_minute
-         |            where `thedate` = "%s" and `thehour` = "%s"
-         |         ) b
-         |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
-        """.stripMargin.format(date, hour, date, hour))
-      .rdd
-      .map {
-        x =>
-          ((x.getAs[String]("searchid"), x.getAs[Int]("ideaid")), Seq(x))
-      }
-      .reduceByKey(_ ++ _)
-      .map { x =>
-        val (convert, label_type) = Utils.cvrPositive_motivate(x._2, version)
-        (x._1._1, x._1._2, convert)
-      }.toDF("searchid", "ideaid", "label")
-    println("motivate: " + motivateRDD.count())
-
-    motivateRDD
-      .repartition(1)
-      .write
-      .mode(SaveMode.Overwrite)
-      .parquet("/user/cpc/lrmodel/cvrdata_motivate/%s/%s".format(date, hour))
-    spark.sql(
-      """
-        |ALTER TABLE dl_cpc.ml_cvr_feature_motivate add if not exists PARTITION(`date` = "%s", `hour` = "%s")
-        | LOCATION  '/user/cpc/lrmodel/cvrdata_motivate/%s/%s'
-      """.stripMargin.format(date, hour, date, hour))
+    //激励下载  取有点击的
+    //    val motivateRDD = spark.sql(
+    //      s"""
+    //         |select   a.searchid
+    //         |        ,a.ideaid
+    //         |        ,b.trace_type
+    //         |        ,b.trace_op1
+    //         |from (select * from dl_cpc.cpc_motivation_log
+    //         |        where `date` = "%s" and `hour` = "%s" and searchid is not null and searchid != "" and isclick = 1) a
+    //         |    join
+    //         |        (select *
+    //         |            from dl_cpc.logparsed_cpc_trace_minute
+    //         |            where `thedate` = "%s" and `thehour` = "%s"
+    //         |         ) b
+    //         |    on a.searchid=b.searchid and a.ideaid=b.opt['ideaid']
+    //        """.stripMargin.format(date, hour, date, hour))
+    //      .rdd
+    //      .map {
+    //        x =>
+    //          ((x.getAs[String]("searchid"), x.getAs[Int]("ideaid")), Seq(x))
+    //      }
+    //      .reduceByKey(_ ++ _)
+    //      .map { x =>
+    //        val (convert, label_type) = Utils.cvrPositive_motivate(x._2, version)
+    //        (x._1._1, x._1._2, convert)
+    //      }.toDF("searchid", "ideaid", "label")
+    //    println("motivate: " + motivateRDD.count())
+    //
+    //    motivateRDD
+    //      .repartition(1)
+    //      .write
+    //      .mode(SaveMode.Overwrite)
+    //      .parquet("/user/cpc/lrmodel/cvrdata_motivate/%s/%s".format(date, hour))
+    //    spark.sql(
+    //      """
+    //        |ALTER TABLE dl_cpc.ml_cvr_feature_motivate add if not exists PARTITION(`date` = "%s", `hour` = "%s")
+    //        | LOCATION  '/user/cpc/lrmodel/cvrdata_motivate/%s/%s'
+    //      """.stripMargin.format(date, hour, date, hour))
 
 
     //用户Api回传
@@ -1156,7 +1157,7 @@ object SaveFeatures {
 
               trace_type match {
                 case s if (s == "active1" || s == "active2" || s == "active3" || s == "active4" || s == "active5"
-                  || s == "active6" || s == "disactive" || s == "active_href")
+                  || s == "active6" || s == "disactive" || s == "active_href" || s == "active15")
                 => active_map += (s -> 1)
                 case _ =>
               }
@@ -1183,18 +1184,18 @@ object SaveFeatures {
               active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
               active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
               active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
-              active_map.getOrElse("report_user_stayinwx", 0), ""))
+              active_map.getOrElse("report_user_stayinwx", 0), active_map.getOrElse("active15", 0), ""))
 
           } else {
 
-            var list = ListBuffer[(String, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, String)]()
+            var list = ListBuffer[(String, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, Int, String)]()
 
             for (telephone <- active15Seq) {
               val tuple = (x._1._1, x._1._2, convert, convert2, label_type, convert_sdk_dlapp,
                 active_map.getOrElse("active1", 0), active_map.getOrElse("active2", 0), active_map.getOrElse("active3", 0),
                 active_map.getOrElse("active4", 0), active_map.getOrElse("active5", 0), active_map.getOrElse("active6", 0),
                 active_map.getOrElse("disactive", 0), active_map.getOrElse("active_href", 0), active_map.getOrElse("installed", 0),
-                active_map.getOrElse("report_user_stayinwx", 0), telephone)
+                active_map.getOrElse("report_user_stayinwx", 0), active_map.getOrElse("active15", 0), telephone)
               list += tuple
             }
             list.toSeq
@@ -1202,7 +1203,7 @@ object SaveFeatures {
 
       }
       .toDF("searchid", "ideaid", "label", "label2", "label_type", "label_sdk_dlapp", "active1", "active2", "active3", "active4", "active5", "active6",
-        "disactive", "active_href", "installed", "report_user_stayinwx", "telephone")
+        "disactive", "active_href", "installed", "report_user_stayinwx", "active15", "telephone")
 
     println("cvr log", cvrlog.count(), cvrlog.filter(r => r.getAs[Int]("label2") > 0).count())
 
@@ -1222,7 +1223,8 @@ object SaveFeatures {
         |       ext['exp_ctr'].int_value as exp_ctr,
         |       ext['exp_cvr'].int_value as exp_cvr,
         |       ext['usertype'].int_value as usertype,
-        |       userid
+        |       userid,
+        |       province
         |from dl_cpc.cpc_union_log where `date` = "%s" and `hour` >= "%s" and `hour` <= "%s" and isclick = 1 and adslot_type <> 7
       """.stripMargin.format(date, before1hour, hour)
     println(sqlStmt)
@@ -1245,7 +1247,8 @@ object SaveFeatures {
         |       ext['exp_ctr'].int_value as exp_ctr,
         |       ext['exp_cvr'].int_value as exp_cvr,
         |       ext['usertype'].int_value as usertype,
-        |       m.userid
+        |       m.userid,
+        |       province
         |from dl_cpc.cpc_union_log
         |lateral view explode(motivation) c as m
         |where `date` = "%s" and `hour` = "%s" and m.isclick = 1 and adslot_type = 7

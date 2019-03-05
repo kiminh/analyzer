@@ -1,7 +1,8 @@
 package com.cpc.spark.ml.novel.retrieval
 
-import com.cpc.spark.ml.dnn.retrieval.UserEmbeddingToRedis.{hdfsDir => userHDFSDir}
-import com.cpc.spark.ml.dnn.retrieval.AdEmbeddingToFile.{hdfsDir => adHDFSDir}
+import com.cpc.spark.ml.novel.retrieval.UserEmbeddingToRedis.{hdfsDir => userHDFSDir}
+import com.cpc.spark.ml.novel.retrieval.AdEmbeddingToFile.{hdfsDir => adHDFSDir}
+import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql.{DataFrame, SparkSession}
 
 import scala.collection.mutable
@@ -20,7 +21,7 @@ object DssmEvaluate {
     val labels = getLabels(date, spark)
     val userEmbedding = getUserEmbedding(date, spark)
     val adEmbeding = getAdEmbedding(date, spark)
-    labels.join(userEmbedding, Seq("uid"), "left")
+    val df = labels.join(userEmbedding, Seq("uid"), "left")
       .join(adEmbeding, Seq("ideaid"), "left")
       .rdd.map(x => {
       val uid = x.getAs[String]("uid")
@@ -45,15 +46,15 @@ object DssmEvaluate {
       (uid, ideaid, clickCount, score, userisNull, adIsNull, userEmbeddingStr, adEmbeddingStr, date)
     }).toDF("uid", "ideaid", "clickCount", "score", "userNull", "adNull",
       "userEmbeddingStr", "adEmbeddingStr","dt")
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.dssm_eval_raw")
-//      .parquet("/user/cpc/hzh/dssm/eval_raw/dt=" + date)
 
-//    spark.sql(
-//      s"""
-//         |alter table dl_cpc.dssm_eval_raw add partition(dt='$date')
-//         |  location '/user/cpc/hzh/dssm/eval_raw/dt=$date'
-//      """.stripMargin)
+    val metrics = new BinaryClassificationMetrics(
+      df.filter(row => row.getAs[Int]("userNull") == 0 && row.getAs[Int]("adNull") == 0)
+        .rdd.map(row =>
+        (row.getAs[Double]("score"), if (row.getAs[Long]("clickCount") > 0) 1 else 0)))
+    println(s"auc: ${metrics.areaUnderROC()}")
+
+    df.write.mode("overwrite")
+      .insertInto("dl_cpc.dssm_eval_raw_novel")
   }
 
   def getLabels(date: String, spark: SparkSession): DataFrame = {
@@ -64,9 +65,11 @@ object DssmEvaluate {
          |  ideaid as ideaid,
          |  sum(isclick) as click
          |from dl_cpc.cpc_union_log where `date` = '$date' and hour = '20'
-         |  and isshow = 1 and ideaid > 0 and adslot_type = 1
-         |  and media_appsid in ("80000001", "80000002")
-         |  and length(uid) > 1
+         |  and isshow = 1 and ideaid > 0
+         |  and media_appsid in ("80001098", "80001292")
+         |  and uid not like "%.%"
+         |  and uid not like "%000000%"
+         |  and length(uid) in (14, 15, 36)
          |group by uid, ideaid
       """.stripMargin
     println("--------------------------------")

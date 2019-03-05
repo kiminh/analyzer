@@ -3,7 +3,6 @@ package com.cpc.spark.log.anal
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.log.parser.UnionLog
 import com.redis.RedisClient
 import com.redis.serialization.Parse.Implicits._
 import com.typesafe.config.ConfigFactory
@@ -44,7 +43,6 @@ object AnalTouchedUV {
       .appName("anal ad touched uv[%s]".format(date))
       .enableHiveSupport()
       .getOrCreate()
-    import ctx.implicits._
 
     if (args(1).toBoolean) {
       val log = ctx.sql("select * ,ext['phone_level'].int_value as phone_level from dl_cpc.cpc_union_log where `date` = \"%s\" ".format(date))
@@ -62,18 +60,14 @@ object AnalTouchedUV {
             var rndAge = x.getAs[Int]("age")
             if (rndAge == 0) {
               val rnd = Random.nextInt(100)
-              if (rnd < 8) {
+              if (rnd <= 18) {
                 rndAge = 1
-              } else if (rnd < 20) {
+              } else if (rnd <= 23) {
                 rndAge = 2
-              } else if (rnd < 39) {
+              } else if (rnd < 40) {
                 rndAge = 3
-              } else if (rnd < 63) {
-                rndAge = 4
-              } else if (rnd < 84) {
-                rndAge = 5
               } else {
-                rndAge = 6
+                rndAge = 4
               }
             }
 
@@ -187,7 +181,7 @@ object AnalTouchedUV {
 
   val sex = Seq(0, 1, 2)
 
-  val age = Seq(0, 1, 2, 3, 4, 5, 6)
+  val age = Seq(0, 1, 2, 3, 4)
 
   val coin = Seq(0, 1, 2, 3, 4)
 

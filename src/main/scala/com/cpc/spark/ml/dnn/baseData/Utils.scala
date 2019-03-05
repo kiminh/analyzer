@@ -13,6 +13,7 @@ import sys.process._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.util.LongAccumulator
 import redis.clients.jedis.{HostAndPort, JedisCluster}
+import scala.util.Random
 
 /**
   *
@@ -33,7 +34,7 @@ object Utils {
 
     //str = "table_name/dt=2018-12-08,pt=daily,hour=00,ml_name=adcontent,ml_ver=v7"
     val sql = generateSql(str, "example")
-    print(sql)
+    println(sql)
 
     val path_exists = s"hadoop fs -test -e $path" !
 
@@ -49,6 +50,7 @@ object Utils {
     spark.sql(sql)
       .repartition(numPartitions)
       .rdd.map(x => Base64.decodeBase64(x.getString(0)))
+      .filter(_ != null)
       .map(x => {
         acc.add(1L)
         (new BytesWritable(x), NullWritable.get())
@@ -56,15 +58,72 @@ object Utils {
       .saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)
 
     //保存count文件
-    println("total num is :" + acc.sum)
-    s"echo ${acc.sum}" #> new File("count") !
+    val fileName = "count_" + Random.nextInt(100000)
+    println("count file name : " + fileName)
+    println(s"total num is : ${acc.sum}")
+    s"echo ${acc.sum}" #> new File(s"$fileName") !
 
-    Thread.sleep(1000)
+    s"hadoop fs -put $fileName $path/count" !
 
-    s"hadoop fs -put count $path" !
+    val cnt = s"cat $fileName" !!
 
-    if (acc.sum == 0) {
+    if (cnt.stripLineEnd == "") {
+      println("ERROR : there is no number in count file")
       System.exit(1)
+    } else {
+      println(s"the number in count file : ${cnt.stripLineEnd}")
+    }
+  }
+
+  //写RDD[example]针对gauc样本到hdfs
+  def saveGaucExample2Hdfs(str: String, path: String, numPartitions: Int = 100): Unit = {
+
+    val spark = SparkSession.builder()
+      .enableHiveSupport()
+      .getOrCreate()
+
+    import spark.implicits._
+
+    //str = "table_name/dt=2018-12-08,pt=daily,hour=00,ml_name=adcontent,ml_ver=v7"
+    val sql = generateSql(str, "gauc_example")
+    println(sql)
+
+    val path_exists = s"hadoop fs -test -e $path" !
+
+    if (path_exists == 0) {
+
+      s"hadoop fs -rm -r $path" !
+
+    }
+
+    val acc = new LongAccumulator
+    spark.sparkContext.register(acc)
+
+    spark.sql(sql)
+      .repartition(numPartitions, $"uid")
+      .rdd.map(x => Base64.decodeBase64(x.getString(0)))
+      .filter(_ != null)
+      .map(x => {
+        acc.add(1L)
+        (new BytesWritable(x), NullWritable.get())
+      })
+      .saveAsNewAPIHadoopFile[TFRecordFileOutputFormat](path)
+
+    //保存count文件
+    val fileName = "count_" + Random.nextInt(100000)
+    println("count file name : " + fileName)
+    println(s"total num is : ${acc.sum}")
+    s"echo ${acc.sum}" #> new File(s"$fileName") !
+
+    s"hadoop fs -put $fileName $path/count" !
+
+    val cnt = s"cat $fileName" !!
+
+    if (cnt.stripLineEnd == "") {
+      println("ERROR : there is no number in count file")
+      System.exit(1)
+    } else {
+      println(s"the number in count file : ${cnt.stripLineEnd}")
     }
   }
 
@@ -146,6 +205,7 @@ object Utils {
 
     if (t == "example") s"select example from $table where $condition"
     else if (t == "redis") s"select key, dnnmultihot from $table where $condition"
+    else if (t == "gauc_example") s"select example, uid from $table where $condition"
     else ""
   }
 }

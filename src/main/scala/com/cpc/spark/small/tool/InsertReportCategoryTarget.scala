@@ -68,7 +68,7 @@ object InsertReportCategoryTarget {
           |hour,ext["adclass"].int_value,isfill,price,network,coin,ext['qukan_new_user'].int_value,ext['city_level'].int_value,
           |interests
           |FROM dl_cpc.cpc_union_log
-          |WHERE date="%s" AND ext["adclass"].int_value>0 AND (isshow+isclick)>1
+          |WHERE date="%s" AND ext["adclass"].int_value>0 -- AND (isshow+isclick)>1
         """.stripMargin.format(argDay))
       .rdd
       .map {
@@ -162,7 +162,7 @@ object InsertReportCategoryTarget {
           val adslotid = if (a.adslotid.length > 0) a.adslotid else b.adslotid
           val adslot_type = if (a.adslot_type > 0) a.adslot_type else b.adslot_type
           val isshow = a.isshow + b.isshow
-          val isclick = a.isclick + b.isshow
+          val isclick = a.isclick + b.isclick
           val sex = if (a.sex != -1) a.sex else b.sex
           val age = if (a.age != -1) a.age else b.age
           val os = if (a.os != -1) a.os else b.os
@@ -247,6 +247,7 @@ object InsertReportCategoryTarget {
     val adslotData = getTargetData(inputAdslotData, argDay, "adslot")
     //println("adslotData count is", adslotData.count())
     insertData = insertData.union(adslotData)
+    println("1",insertData.count())
 
     val inputAdslotTypeData = allData
       .map {
@@ -301,6 +302,7 @@ object InsertReportCategoryTarget {
     val ageData = getTargetData(inputAgeData, argDay, "age")
     //println("ageData count is", ageData.count())
     insertData = insertData.union(ageData)
+    println("2",insertData.count())
 
     val inputOsData = allData
       .map {
@@ -355,6 +357,7 @@ object InsertReportCategoryTarget {
     val phoneLevelData = getTargetData(inputPhoneLevelData, argDay, "phone_level")
     //println("phoneLevelData count is", phoneLevelData.count())
     insertData = insertData.union(phoneLevelData)
+    println("3",insertData.count())
 
     val inputHourData = allData
       .map {
@@ -409,6 +412,7 @@ object InsertReportCategoryTarget {
     val userLevelData = getTargetData(inputUserLevelData, argDay, "user_level")
     //println("userLevelData count is", userLevelData.count())
     insertData = insertData.union(userLevelData)
+    println("4",insertData.count())
 
     val inputCityLevelData = allData
       .map {
@@ -446,6 +450,7 @@ object InsertReportCategoryTarget {
     val quAdslotTypeData = getTargetData(inputQuAdslotTypeData, argDay, "qu_adslot_type")
     //println("quAdslotTypeData count is", quAdslotTypeData.count())
     insertData = insertData.union(quAdslotTypeData)
+    println("",insertData.count())
 
     val inputExtAdslotTypeData = allData
       .filter(_._2.ext_adslot_type > 0)
@@ -465,25 +470,6 @@ object InsertReportCategoryTarget {
     val extAdslotType = getTargetData(inputExtAdslotTypeData, argDay, "ext_adslot_type")
     //println("extAdslotType count is", extAdslotType.count())
     insertData = insertData.union(extAdslotType)
-    //UnionLogInfo(searchid, mediaid, adslotid, adslot_type, isshow, isclick, sex, age, os, province, phone_level,
-    //  hour, adclass, req, isfull, price, network, user_level, city_level, qu_adslot_type, ext_adslot_type, load, active)
-//    var insertData = mediaData
-//      .union(adslotData)
-//      .union(adslotTypeData)
-//      .union(sexData)
-//      .union(ageData)
-//      .union(osData)
-//      .union(provinceData)
-//      .union(phoneLevelData)
-//      .union(hourData)
-//      .union(networkData)
-//      .union(userLevelData)
-//      .union(cityLevelData)
-//      .union(quAdslotTypeData)
-//      .union(extAdslotType)
-//      .union(studentData)
-//      .repartition(50)
-//      .cache()
 
     println("insertData count", insertData.count())
 
@@ -497,6 +483,7 @@ object InsertReportCategoryTarget {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_category_target", mariadbProp)
+    println("report_category_target done")
   }
 
   def getTargetData(data: RDD[(String, (Int, Int, Int, Int, Int, Int, Int, Int, Int))], argDay: String, targetType: String): RDD[(Int, Int, Int, String, Int, Int, Int, String, Int, Int, Int)] = {

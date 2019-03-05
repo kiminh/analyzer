@@ -1,15 +1,12 @@
 package com.cpc.spark.log.report
 
 import java.sql.DriverManager
-import java.text.SimpleDateFormat
-import java.util.{Calendar, Properties}
+import java.util.Properties
 
-import breeze.linalg.sum
 import com.cpc.spark.ml.common.Utils
 import com.typesafe.config.ConfigFactory
-import eventprotocol.Protocol.ChargeType
 import org.apache.log4j.{Level, Logger}
-import org.apache.spark.sql.{Row, SaveMode, SparkSession}
+import org.apache.spark.sql.{SaveMode, SparkSession}
 
 
 /**

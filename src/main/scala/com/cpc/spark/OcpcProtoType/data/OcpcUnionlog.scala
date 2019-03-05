@@ -69,7 +69,10 @@ object OcpcUnionlog {
          |    user_city,
          |    city_level,
          |    adclass,
-         |    ocpc_log_dict
+         |    ocpc_log_dict,
+         |    exp_ctr,
+         |    exp_cvr,
+         |    antispam
          |from
          |    base_data
        """.stripMargin
@@ -125,7 +128,11 @@ object OcpcUnionlog {
          |    ext_string['ocpc_log'] as ocpc_log,
          |    ext_string['user_city'] as user_city,
          |    ext['city_level'].int_value as city_level,
-         |    ext['adclass'].int_value as adclass
+         |    ext['adclass'].int_value as adclass,
+         |    cast(ext['exp_ctr'].int_value * 1.0 / 1000000 as double) as exp_ctr,
+         |    cast(ext['exp_cvr'].int_value * 1.0 / 1000000 as double) as exp_cvr,
+         |    cast(ext["charge_type"].int_value as int) as charge_type,
+         |    ext['antispam'].int_value as antispam
          |from dl_cpc.cpc_union_log
          |where $selectWhere
          |and (isshow>0 or isclick>0)

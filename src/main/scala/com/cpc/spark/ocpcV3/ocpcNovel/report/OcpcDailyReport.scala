@@ -23,7 +23,7 @@ object OcpcDailyReport {
       .repartition(10).write.mode("overwrite").insertInto(tableName)
 //    summaryReport.write.mode("overwrite").saveAsTable(tableName)
     println(s"successfully save table into $tableName")
-    saveDataToReport(summaryReport, spark)
+//    saveDataToReport(summaryReport, spark)
   }
 
   def getHourlyReport(date: String, hour: String, spark: SparkSession) = {
