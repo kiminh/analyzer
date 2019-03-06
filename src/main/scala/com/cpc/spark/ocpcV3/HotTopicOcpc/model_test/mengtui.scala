@@ -53,7 +53,7 @@ object mengtui {
         .select("ideaid", "score", "label")
       val auc = getAuc(spark, df1)
 
-      val df2 = df.filter(s"ideaid = $ideaid")
+      val df2 = df.filter(s"ideaid = $ideaid and isclick = 1")
         .withColumn("score", col("score_cvr").cast(types.LongType))
         .withColumn("label", col("label_cvr").cast(types.IntegerType))
         .select("ideaid", "score", "label")
