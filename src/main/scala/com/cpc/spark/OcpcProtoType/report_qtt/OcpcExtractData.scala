@@ -13,7 +13,7 @@ object OcpcExtractData {
     val spark = SparkSession.builder().appName(name = s"CreateTempTable").enableHiveSupport().getOrCreate()
     val unitids = getUnitid(spark)
     createTempTable(date, spark)
-    getData(unitids, spark)
+    getData(unitids, date, spark)
     getTime(unitids, date, spark)
   }
 
@@ -59,8 +59,8 @@ object OcpcExtractData {
         |    (case when a.conversion_goal = 1 then b.iscvr1
         |          when a.conversion_goal = 2 then c.iscvr2
         |          else d.iscvr3 end) as iscvr,
-        |    date,
-        |    hour
+        |    date as dt,
+        |    hour as hr
         |FROM
         |    (SELECT
         |        searchid,
@@ -97,7 +97,7 @@ object OcpcExtractData {
         |    FROM
         |        dl_cpc.ml_cvr_feature_v1
         |    WHERE
-        |        `date` = '$date'
+        |        `date` >= '$date'
         |    AND
         |        label2 = 1
         |    AND
@@ -112,7 +112,7 @@ object OcpcExtractData {
         |    FROM
         |        dl_cpc.ml_cvr_feature_v2
         |    WHERE
-        |        `date` = '$date'
+        |        `date` >= '$date'
         |    AND
         |        label=1
         |    GROUP BY searchid, label) as c
@@ -125,7 +125,7 @@ object OcpcExtractData {
         |    FROM
         |        dl_cpc.site_form_unionlog
         |    WHERE
-        |        `date` = '$date'
+        |        `date` >= '$date'
         |    AND
         |        ideaid>0
         |    AND
@@ -136,15 +136,17 @@ object OcpcExtractData {
       """.stripMargin
     val data = spark.sql(createTableSQL)
     data
-      .repartition(10).write.mode("overwrite").saveAsTable("test.wt_temp_ocpc_ab_test")
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_ab_test_temp")
   }
 
   // 抽取数据
-  def getData(unitids: String, spark: SparkSession): Unit = {
+  def getData(unitids: String, date: String, spark: SparkSession): Unit = {
     val getDataSQL =
       s"""
         |SELECT
-        |    `date`,
+        |    dt,
         |    unitid,
         |    userid,
         |    (case when exptags not like "%,cpcBid%" and exptags not like "%cpcBid,%" then "ocpc" else "cpc" end) as ab_group,
@@ -162,18 +164,20 @@ object OcpcExtractData {
         |    sum(isclick) as click,
         |    sum(iscvr) as cv
         |FROM
-        |    test.wt_temp_ocpc_ab_test
+        |    dl_cpc.ocpc_ab_test_temp
         |WHERE
         |    unitid in ($unitids)
         |GROUP BY
-        |    `date`,
+        |    dt,
         |    unitid,
         |    userid,
         |    (case when exptags not like "%,cpcBid%" and exptags not like "%cpcBid,%" then "ocpc" else "cpc" end)
       """.stripMargin
     val data = spark.sql(getDataSQL)
-    data.
-      repartition(10).write.mode("overwrite").saveAsTable("test.wt_temp_ab_test_data")
+    data
+        .withColumn("date", lit(date))
+        .withColumn("version", lit("qtt_demo"))
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ab_test_data")
   }
 
   // 统计时间
@@ -181,21 +185,23 @@ object OcpcExtractData {
     val getTimeSQL =
       s"""
         |SELECT
-        |    unitid, `hour`
+        |    unitid, `hr`
         |FROM
-        |    test.wt_temp_ocpc_ab_test
+        |    dl_cpc.ocpc_ab_test_temp
         |WHERE
         |    `date` = '$date'
         |AND
         |    unitid in ($unitids)
         |GROUP BY
-            unitid, `hour`
+            unitid, `hr`
         |ORDER BY
-        |	 unitid, `hour`
+        |	  unitid, `hr`
       """.stripMargin
     val time = spark.sql(getTimeSQL)
-    time.
-      repartition(2).write.mode("overwrite").saveAsTable("test.wt_temp_ab_test_time")
+    time
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(2).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_ab_test_time")
   }
 
 }
