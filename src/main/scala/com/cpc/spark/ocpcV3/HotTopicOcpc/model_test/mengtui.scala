@@ -69,7 +69,7 @@ object mengtui {
     val auc_ctr = getAuc(spark, df_ctr)
 
 
-    val df_cvr = df
+    val df_cvr = df.filter("isclick = 1")
       .withColumn("score", col("score_cvr").cast(types.LongType))
       .withColumn("label", col("label_cvr").cast(types.IntegerType))
       .select("ideaid", "score", "label")
