@@ -234,7 +234,7 @@ object UpdateInstallApp {
                     userV2.addInstallpkg(pkg)
                 }
                 redisV2.del(key)
-//                redisV2.setex(key.getBytes, 3600 * 24 * 14, userV2.build().toByteArray)
+                redisV2.setex(key.getBytes, 3600 * 24 * 14, userV2.build().toByteArray)
                 n2 += 1
               }
           }
