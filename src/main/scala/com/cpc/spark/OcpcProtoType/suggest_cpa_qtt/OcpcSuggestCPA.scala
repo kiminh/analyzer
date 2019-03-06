@@ -107,7 +107,7 @@ object OcpcSuggestCPA {
     val resultDF = dataPart1
       .join(dataPart2, Seq("unitid"), "left_outer")
       .join(dataPart3, Seq("unitid"), "left_outer")
-      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "industry", "usertype")
+      .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "industry", "usertype")
 
     resultDF
   }
