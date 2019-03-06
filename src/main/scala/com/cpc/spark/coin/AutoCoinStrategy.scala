@@ -19,7 +19,7 @@ object AutoCoinStrategy {
 
         val ml_cvr_feature_v1 = args(1) //"dl_cpc.ml_cvr_feature_v1"
 
-        val coinTable = "test.coin3"    //记录ideaid的cvr阈值
+        val coinTable = "dl_cpc.cpc_auto_coin_idea_threshold_record"    //记录ideaid的cvr阈值
 
         val date = args(2)
 
