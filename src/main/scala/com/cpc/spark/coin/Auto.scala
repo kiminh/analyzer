@@ -21,7 +21,7 @@ object Auto {
 
         val cal = Calendar.getInstance()
         cal.set(date.substring(0, 4).toInt, date.substring(5, 7).toInt - 1, date.substring(8, 10).toInt, hour.toInt, 0)
-        cal.add(Calendar.HOUR, -1)
+        cal.add(Calendar.HOUR, -3)
 
         val sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
         val dd = sf.format(cal.getTime())
@@ -34,7 +34,6 @@ object Auto {
             s"""
                |select
                |    a.usertype as usertype,
-               |    a.adslotid as adslotid,
                |    a.userid as userid,
                |    a.ideaid as ideaid,
                |    sum(if(label_5th<=exp_cvr,1,0)) as label_5th_show_num,
@@ -67,7 +66,7 @@ object Auto {
                |from
                |(
                |    select ext['usertype'].int_value as usertype,
-               |        adslotid,
+               |        adslot_id,
                |        userid,
                |        ideaid,
                |        isclick,
@@ -93,7 +92,7 @@ object Auto {
                |    where `date`='$d1' and hour = $h1
                |) b
                |on a.ideaid = b.ideaid
-               |group by a.usertype, a.adslotid, a.userid, a.ideaid
+               |group by a.usertype, a.userid, a.ideaid
              """.stripMargin
 
         println(sql)
@@ -102,7 +101,7 @@ object Auto {
 
         //data.show(10)
 
-        data.repartition(1).write.mode("overwrite").insertInto("test.coin_tmp_20190305_2")
+        data.repartition(1).write.mode("overwrite").insertInto("test.coin_tmp_20190305")
 
         println("insert into done !")
     }
