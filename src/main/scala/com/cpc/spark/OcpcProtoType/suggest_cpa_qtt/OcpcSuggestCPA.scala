@@ -84,7 +84,7 @@ object OcpcSuggestCPA {
          |    exp_cvr,
          |    exp_ctr,
          |    ocpc_log_dict,
-         |    label,
+         |    iscvr,
          |    (case when length(ocpc_log) > 0 then cast(ocpc_log_dict['dynamicbid'] as double)
          |          else cast(bid as double) end) as real_bid
          |FROM
