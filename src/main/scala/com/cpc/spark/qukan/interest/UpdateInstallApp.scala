@@ -199,11 +199,16 @@ object UpdateInstallApp {
         p =>
           var n1 = 0
           var n2 = 0
+          var n3 = 0
           val redisV2 = new JedisCluster(new HostAndPort("192.168.80.152", 7003))
           val sec = new Date().getTime / 1000
           p.foreach {
             x =>
               val key = x._1 + "_upv2"
+              n3 += 1
+              if (n3 < 11){
+                println("uid="=x._1)
+              }
               val buffer = redisV2.get(key.getBytes)
               println("buffer="+buffer)
               var userV2: UserProfileV2.Builder = null
