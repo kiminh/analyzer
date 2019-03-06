@@ -204,7 +204,8 @@ object UpdateInstallApp {
           p.foreach {
             x =>
               val key = x._1 + "_upv2"
-              val buffer = redisV2.get(key).getBytes
+              val buffer = redisV2.get(key.getBytes)
+              println("buffer="+buffer)
               var userV2: UserProfileV2.Builder = null
               if (buffer == null) {
                 userV2 = UserProfileV2.newBuilder()
