@@ -207,7 +207,7 @@ object UpdateInstallApp {
               val key = x._1 + "_upv2"
               n3 += 1
               if (n3 < 11){
-                println("uid="=x._1)
+                println("uid="+x._1)
               }
               val buffer = redisV2.get(key.getBytes)
               println("buffer="+buffer)
