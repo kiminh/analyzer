@@ -13,12 +13,15 @@ object mengtui {
     val sqlRequest =
       s"""
          |select
-         |  adslot_type,
-         |  unitid,
-         |  ideaid,
-         |  exp_ctr as score_ctr,
-         |  isclick as label_ctr
-         | from  dl_cpc.slim_union_log
+         | adslot_type,
+         | unitid,
+         | ideaid,
+         | exp_ctr as score_ctr,
+         | isclick as label_ctr,
+         | exp_ctr as score_cvr,
+         | iscvr   as label_cvr
+         |from (
+         | select * from  dl_cpc.slim_union_log
          |where dt = '2019-03-03'
          |  and adsrc = 1
          |  and userid >0
@@ -27,19 +30,37 @@ object mengtui {
          |  and (charge_type is NULL or charge_type = 1)
          |  and media_appsid in ('80000001', '80000002') --qtt
          |  and ideaid in (2640880, 2734591, 2734594, 2753214)
+         |   ) t1
+         |left join (
+         |  select
+         |    searchid,
+         |    label2 as iscvr --是否转化
+         |  from dl_cpc.ml_cvr_feature_v1
+         | WHERE `date` = '2019-03-03'
+         |) t2
+         |on t1.searchid = t2.searchid
        """.stripMargin
 
     val df = spark.sql(sqlRequest)
     var result: List[IdeaAcu] = List()
+    var result2: List[IdeaAcu] = List()
     for(ideaid <- List(2640880, 2734591, 2734594, 2753214)){
       val df1 = df.filter(s"ideaid = $ideaid")
         .withColumn("score", col("score_ctr").cast(types.LongType))
         .withColumn("label", col("label_ctr").cast(types.IntegerType))
         .select("ideaid", "score", "label")
       val auc = getAuc(spark, df1)
+
+      val df2 = df.filter(s"ideaid = $ideaid")
+        .withColumn("score", col("score_cvr").cast(types.LongType))
+        .withColumn("label", col("label_cvr").cast(types.IntegerType))
+        .select("ideaid", "score", "label")
+      val auc2 = getAuc(spark, df2)
       result = IdeaAcu(ideaid, "ctr", auc)::result
+      result2 = IdeaAcu(ideaid, "cvr", auc2)::result
     }
     result.toDS().show()
+    result2.toDS().show()
   }
 
   def getAuc(spark:SparkSession, data:DataFrame): Double = {
