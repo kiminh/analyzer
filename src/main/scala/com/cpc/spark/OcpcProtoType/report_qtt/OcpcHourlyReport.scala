@@ -45,8 +45,8 @@ object OcpcHourlyReport {
     // 存储数据到hadoop
     saveDataToHDFS(dataUnit, dataConversion, version, date, hour, spark)
 
-//    // 存储数据到mysql
-//    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
+    // 存储数据到mysql
+    saveDataToMysql(dataUnit, dataConversion, date, hour, spark)
 
   }
 
@@ -58,28 +58,28 @@ object OcpcHourlyReport {
       .na.fill(0, Seq("step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hourInt))
-    val reportTableIdea = "report2.report_ocpc_data_detail"
-    val delSQLidea = s"delete from $reportTableIdea where `date` = '$date' and hour = $hourInt"
+    val reportTableUnit = "report2.report_ocpc_data_detail_v2"
+    val delSQLunit = s"delete from $reportTableUnit where `date` = '$date' and hour = $hourInt"
 
-    OperateMySQL.update(delSQLidea) //先删除历史数据
-    OperateMySQL.insert(dataUnitMysql, reportTableIdea) //插入数据
+    OperateMySQL.update(delSQLunit) //先删除历史数据
+    OperateMySQL.insert(dataUnitMysql, reportTableUnit) //插入数据
 
-    // 汇总表
-    val dataConversionMysql = dataConversion
-      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
-      .na.fill(0, Seq("total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hourInt))
-    val reportTableConversion = "report2.report_ocpc_data_summary_v2"
-    val delSQLconversion = s"delete from $reportTableConversion where `date` = '$date' and hour = $hourInt"
-
-    OperateMySQL.update(delSQLconversion) //先删除历史数据
-    OperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
+//    // 汇总表
+//    val dataConversionMysql = dataConversion
+//      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+//      .na.fill(0, Seq("total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hourInt))
+//    val reportTableConversion = "report2.report_ocpc_data_summary_v2"
+//    val delSQLconversion = s"delete from $reportTableConversion where `date` = '$date' and hour = $hourInt"
+//
+//    OperateMySQL.update(delSQLconversion) //先删除历史数据
+//    OperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
   }
 
   def saveDataToHDFS(dataUnit: DataFrame, dataConversion: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
-    存储ideaid级别和conversion_goal级别的报表到hdfs
+    存储unitid级别和conversion_goal级别的报表到hdfs
      */
     dataUnit
       .withColumn("identifier", col("unitid"))
