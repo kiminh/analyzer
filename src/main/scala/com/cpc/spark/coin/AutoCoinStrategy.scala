@@ -51,6 +51,8 @@ object AutoCoinStrategy {
 
         val lowAucUseridFilter = getLowAucUseridFilter(spark,date)  //根据昨天报表中的auc过滤auc低于0.5的userid
 
+        println(lowAucUseridFilter)
+
         //ideaid黑名单，不出自动金币
         val ideaBlacklist =
             """
@@ -248,7 +250,7 @@ object AutoCoinStrategy {
           .map(x => x.getAs[Int]("userid").toString)
           .collect()
           .toList
-          .+("0")       //增加一个默认值，防止空list
+          //.+("0")       //增加一个默认值，防止空list
           .mkString(",")
 
         lowAucUseridFilter
