@@ -31,6 +31,8 @@ object AutoPutCoin {
 
         val p = args(4).toDouble //0.7
 
+        val p2 = 0.7
+
         val preDay = args(5).toInt //3
 
         val spark = SparkSession.builder()
@@ -55,6 +57,22 @@ object AutoPutCoin {
             if (!(d1 == "2019-02-18" || d1 == "2019-02-17" || d1== "2019-02-16"))
                 datehourlist += datecond
         }
+
+        val useridList =
+            """
+              |
+            """.stripMargin
+
+        val getIdeaidSql =
+            s"""
+               |select id as ideaid
+               |from src_cpc.cpc_idea
+               |where user_id in ($useridList)
+             """.stripMargin
+
+        val ideaidList = spark.sql(getIdeaidSql).rdd.map(_.getAs[Int]("ideaid").toString).collect().toList.mkString(",")
+
+        println(ideaidList)
 
         val datehour = datehourlist.toList.mkString(" or ")
 
@@ -99,7 +117,10 @@ object AutoPutCoin {
         println(apiUnionLogSql)
         val apiUnionLog = spark.sql(apiUnionLogSql)
         println("apiUnionLog 's count is " + apiUnionLog.rdd.count())
-        val apiUnionNth = getNth(apiUnionLog, p)
+
+        val apiUnionLog1 = apiUnionLog.filter(s"ideaid in ($ideaidList)")
+        val apiUnionLog2 = apiUnionLog.filter(s"ideaid not in ($ideaidList)")
+        val apiUnionNth = getNth(apiUnionLog2, p).union(getNth(apiUnionLog1, p2))
 
         println("apiUnionNth 's count is " + apiUnionNth.count())
         val mlFeatureSql =
@@ -142,8 +163,9 @@ object AutoPutCoin {
         println(mlFeatureSql)
         val mlFeature = spark.sql(mlFeatureSql)
         println("mlFeature 's count is " + mlFeature.rdd.count())
-
-        val mlFeatureNth = getNth(mlFeature, p)
+        val mlFeature1 = mlFeature.filter(s"ideaid in ($ideaidList)")
+        val mlFeature2 = mlFeature.filter(s"ideaid not in ($ideaidList)")
+        val mlFeatureNth = getNth(mlFeature2, p).union(getNth(mlFeature1, p2))
 
         println("mlFeatureNth 's count is " + mlFeatureNth.count())
 
@@ -246,6 +268,8 @@ object AutoPutCoin {
         spark.stop()
     }
 
+
+
     def getNth(df: DataFrame, p: Double): RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
         df.rdd.map(x => (x.getAs[Int]("ideaid"), x.getAs[Int]("exp_cvr")))
           .combineByKey(x => List(x),
@@ -264,6 +288,7 @@ object AutoPutCoin {
               //x(index)
           })
     }
+
     def getThreshold(spark:SparkSession,df:DataFrame,date:String,default_p:Double): RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
         val sql =
             s"""
