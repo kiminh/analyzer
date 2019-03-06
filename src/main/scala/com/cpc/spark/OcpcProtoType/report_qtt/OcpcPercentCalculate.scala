@@ -9,7 +9,7 @@ import org.apache.spark.sql.functions._
 object OcpcPercentCalculate {
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
-    val alphas = parseCoefficient("conf")
+    val alphas = parseCoefficient("ocpc")
     val (alpha1, alpha2, alpha3) = alphas
     val spark = SparkSession.builder().appName("calculatePercent").enableHiveSupport().getOrCreate()
     calculatePercent(alpha1, alpha2, alpha3, date, spark)
@@ -17,7 +17,7 @@ object OcpcPercentCalculate {
 
   // 解析conf文件，获得bottom、top、large的系数，其中zero的系数为0
   def parseCoefficient(fileName: String) = {
-    val conf = ConfigFactory.load(s"$fileName")
+    val conf = ConfigFactory.load(fileName)
     val alpha1 = conf.getDouble("predict_alpha.alpha1")
     val alpha2 = conf.getDouble("predict_alpha.alpha2")
     val alpha3 = conf.getDouble("predict_alpha.alpha3")
