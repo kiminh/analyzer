@@ -41,7 +41,7 @@ object AutoThreshold {
                |    if(a.p is null, $default_p, a.p) as p,
                |    case when b.flag = 0 then $default_alpha
                |         when b.flag = 1 then 0-$default_alpha
-               |         else 0 end as alpha
+               |         else 0 end as alpha,
                |    b.flag as flag
                |  from
                |  (
@@ -61,8 +61,27 @@ object AutoThreshold {
                |) final
              """.stripMargin
 
+        println(sql)
+
         val result = spark.sql(sql).repartition(1)
 
         result.write.mode("overwrite").insertInto("dl_cpc.cpc_auto_coin_idea_threshold")
+
+        println("success!")
     }
 }
+
+/*
+
+create table if not exists dl_cpc.cpc_auto_coin_idea_threshold
+(
+    ideaid int,
+    min_p  double,
+    max_p  double,
+    p      double,
+    alpha  double,
+    flag   double
+)
+PARTITIONED BY (`date` string)
+STORED AS PARQUET;
+ */
