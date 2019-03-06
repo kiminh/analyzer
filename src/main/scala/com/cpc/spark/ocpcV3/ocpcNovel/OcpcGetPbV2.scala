@@ -85,13 +85,13 @@ object OcpcGetPbV2 {
 //    resultDF.write.mode("overwrite").saveAsTable("test.wy02")
 
 
-    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
-    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto(tableName)
-
-
-    savePbPack(resultDF)
+//    val tableName = "dl_cpc.ocpcv3_novel_pb_v2_hourly"
+//    resultDF.write.mode("overwrite").saveAsTable("dl_cpc.ocpcv3_novel_pb_v2_once")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto(tableName)
+//
+//
+//    savePbPack(resultDF)
   }
 
   def getCostByMedia(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -297,13 +297,14 @@ object OcpcGetPbV2 {
     val resultDF = data.select("unitid", "new_adclass", "kvalue", "conversion_goal")
         .join(prevk,Seq("unitid"),"left")
        .withColumn("kvalue",
-        when(col("kvalue")>col("prevk"),
+        when(col("kvalue")>col("prevk") and col("prevk") isNotNull,
           (col("kvalue")-col("prevk"))/3 + col("prevk")).
           otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
       .select("unitid", "new_adclass", "kvalue", "conversion_goal")
 
+    resultDF.write.mode("overwrite").saveAsTable("test.wy11")
     resultDF
   }
 
