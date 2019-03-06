@@ -42,7 +42,7 @@ object audienceOrientUnitidWithoutPrecision {
 
     spark.sql(
       s"""
-         |select distinct unitid from precision lateral view explode(split(audience_orient,',')) audience_orient as tag
+         |select distinct cast(unitid as string) from precision lateral view explode(split(audience_orient,',')) audience_orient as tag
          |where tag in (select distinct precition_tag from precision where precition_tag is not null) or tag in ('297')
        """.stripMargin
     ).repartition(1).write.text(s"/home/cpc/dgd/data/unitid_$tardate")//.createOrReplaceTempView("precision_unit")
