@@ -18,7 +18,7 @@ object mengtui {
          | ideaid,
          | exp_ctr as score_ctr,
          | isclick as label_ctr,
-         | exp_ctr as score_cvr,
+         | exp_cvr as score_cvr,
          | iscvr   as label_cvr
          |from (
          | select * from  dl_cpc.slim_union_log
