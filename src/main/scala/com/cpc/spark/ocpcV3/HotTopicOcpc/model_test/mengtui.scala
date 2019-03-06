@@ -57,7 +57,7 @@ object mengtui {
         .select("ideaid", "score", "label")
       val auc2 = getAuc(spark, df2)
       result = IdeaAcu(ideaid, "ctr", auc)::result
-      result2 = IdeaAcu(ideaid, "cvr", auc2)::result
+      result2 = IdeaAcu(ideaid, "cvr", auc2)::result2
     }
     result.toDS().show()
     result2.toDS().show()
