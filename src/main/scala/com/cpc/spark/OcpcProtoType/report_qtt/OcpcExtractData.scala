@@ -138,7 +138,7 @@ object OcpcExtractData {
     data
       .withColumn("date", lit(date))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(10).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_ab_test_temp")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ab_test_temp")
   }
 
   // 抽取数据
@@ -201,7 +201,7 @@ object OcpcExtractData {
     time
       .withColumn("date", lit(date))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(2).write.mode("overwrite").saveAsTable("dl_cpc.ocpc_ab_test_time")
+      .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_ab_test_time")
   }
 
 }
