@@ -12,7 +12,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.json4s._
 import org.json4s.native.JsonMethods._
-import userprofile.Userprofile.{APPPackage, UserProfile}
+import userprofile.Userprofile.{APPPackage, UserProfile,UserProfileV2 }
 
 
 /**
@@ -157,7 +157,6 @@ object UpdateInstallApp {
               n += 1
               val key = x._1 + "_UPDATA"
               val buffer = redis.get[Array[Byte]](key).getOrElse(null)
-
               var user: UserProfile.Builder = null
               if (buffer == null) {
                 user = UserProfile.newBuilder()
@@ -165,7 +164,6 @@ object UpdateInstallApp {
               } else {
                 user = UserProfile.parseFrom(buffer).toBuilder
               }
-
               //判断老数据
               if (user.getInstallpkgCount > 0) {
                 val pkg = user.getInstallpkg(0)
@@ -176,7 +174,6 @@ object UpdateInstallApp {
                   n1 += 1
                 }
               }
-
               if (user.getInstallpkgCount == 0) {
                 x._2.foreach {
                   n =>
@@ -194,6 +191,51 @@ object UpdateInstallApp {
     println("update redis")
     sum.foreach(println)
 
+    //新增数据迁移至新的redis集群
+    val result = added.map(x => (x._1, x._2._1))
+      .repartition(100)
+      .mapPartitions {
+        p =>
+          var n1 = 0
+          var n2 = 0
+          val redisV2 = new RedisClient("192.168.80.152", 7003)
+          val sec = new Date().getTime / 1000
+          p.foreach {
+            x =>
+              val key = x._1 + "_upv2"
+              val buffer = redisV2.get[Array[Byte]](key).getOrElse(null)
+              var userV2: UserProfileV2.Builder = null
+              if (buffer == null) {
+                userV2 = UserProfileV2.newBuilder()
+              } else {
+                userV2 = UserProfileV2.parseFrom(buffer).toBuilder
+              }
+              //判断老数据
+              if (userV2.getInstallpkgCount > 0) {
+                val pkg = userV2.getInstallpkg(0)
+                //更新时间大于一天
+                if (sec > pkg.getLastUpdateTime + 60 * 60 * 24) {
+                  userV2.clearInstallpkg()
+                } else {
+                  n1 += 1
+                }
+              }
+              if (userV2.getInstallpkgCount == 0) {
+                x._2.foreach {
+                  n =>
+                    val pkg = APPPackage.newBuilder().setPackagename(n).setLastUpdateTime(sec)
+                    userV2.addInstallpkg(pkg)
+                }
+                redisV2.setex(key, 3600 * 24 * 7, userV2.build().toByteArray)
+                n2 += 1
+              }
+          }
+          Seq(("new", n1), ("update", n2)).iterator
+      }
+      .reduceByKey(_ + _)
+      .take(10)
+    println("update to new redis:")
+    sum.foreach(println)
 
 
     println(all_list.map(x => (x._2._1.length, x._2._2.length, x._2._3.length, x._2._4.length))
