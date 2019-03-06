@@ -15,16 +15,16 @@ object OcpcUnionlog {
     val data = getBaseUnionlog(date, hour, spark)
 
     data
-      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
-//      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
+//      .repartition(100).write.mode("overwrite").insertInto("dl_cpc.ocpc_base_unionlog")
+      .repartition(100).write.mode("overwrite").saveAsTable("test.ocpc_base_unionlog")
 
     println("successfully save data into table: dl_cpc.ocpc_base_unionlog")
 
-    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
-    ocpcData
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
-    println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
+//    val ocpcData = getOcpcUnionlog(data, date, hour, spark)
+//    ocpcData
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_filter_unionlog")
+////        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_filter_unionlog")
+//    println("successfully save data into table: dl_cpc.ocpc_filter_unionlog")
   }
 
   def getOcpcUnionlog(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
@@ -132,7 +132,8 @@ object OcpcUnionlog {
          |    cast(ext['exp_ctr'].int_value * 1.0 / 1000000 as double) as exp_ctr,
          |    cast(ext['exp_cvr'].int_value * 1.0 / 1000000 as double) as exp_cvr,
          |    cast(ext["charge_type"].int_value as int) as charge_type,
-         |    ext['antispam'].int_value as antispam
+         |    ext['antispam'].int_value as antispam,
+         |    cast(ext['usertype'].int_value as bigint) as usertype
          |from dl_cpc.cpc_union_log
          |where $selectWhere
          |and (isshow>0 or isclick>0)
