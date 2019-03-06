@@ -287,8 +287,6 @@ object OcpcGetPbV2 {
       .withColumn("k_ratio", when(col("conversion_goal") === 2, col("k_ratio2")).otherwise(col("k_ratio1")))
       .withColumn("kvalue", when(col("k_ratio").isNull, col("k_value")).otherwise(col("k_ratio")))
       .filter(s"kvalue > 0 or kvalue is null")
-      .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
-      .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
 
 
     val prevk = spark.table("dl_cpc.ocpcv3_novel_pb_v2_once_middle")
@@ -302,6 +300,8 @@ object OcpcGetPbV2 {
         when(col("kvalue")>col("prevk"),
           (col("kvalue")-col("prevk"))/3 + col("prevk")).
           otherwise(col("kvalue")))
+      .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
+      .withColumn("kvalue", when(col("kvalue") < 0.1, 0.1).otherwise(col("kvalue")))
       .select("unitid", "new_adclass", "kvalue", "conversion_goal")
 
     resultDF
