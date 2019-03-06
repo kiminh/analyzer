@@ -233,7 +233,7 @@ object UpdateInstallApp {
                     val pkg = APPPackage.newBuilder().setPackagename(n).setLastUpdateTime(sec)
                     userV2.addInstallpkg(pkg)
                 }
-                redisV2.setex(key, 3600 * 24 * 7, userV2.build().toByteArray)
+                redisV2.setex(key.getBytes, 3600 * 24 * 7, userV2.build().toByteArray)
                 n2 += 1
               }
           }
