@@ -102,7 +102,7 @@ object Auto {
 
         //data.show(10)
 
-        data.repartition(1).write.mode("overwrite").insertInto("test.coin_tmp_20190305")
+        data.repartition(1).write.mode("overwrite").insertInto("test.coin_tmp_20190305_2")
 
         println("insert into done !")
     }
