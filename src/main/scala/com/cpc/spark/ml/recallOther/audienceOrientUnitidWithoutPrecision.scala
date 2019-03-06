@@ -32,7 +32,10 @@ object audienceOrientUnitidWithoutPrecision {
     val precision=
       s"""
          |(select id as unitid, audience_orient,precition_tag from adv.unit ta
-         |left join (select user_id,look_like_id as precition_tag from adv.look_like where type=2 and status=0 group by user_id) tb on ta.user_id=tb.user_id
+         |left join (select tc.user_id,tc.look_like_id as precition_tag from adv.look_like tc
+         |left join
+         |adv.look_like_package td on tc.look_like_id=td.look_like_id where tc.type=2 and tc.status=0
+         |and td.status in (1,2,3) group by tc.user_id,tc.look_like_id) tb on ta.user_id=tb.user_id
          |where audience_orient>0) temp
       """.stripMargin
     spark.read.jdbc(jdbcUrl, precision, jdbcProp).createOrReplaceTempView("precision")
@@ -42,15 +45,15 @@ object audienceOrientUnitidWithoutPrecision {
          |select distinct unitid from precision lateral view explode(split(audience_orient,',')) audience_orient as tag
          |where tag in (select distinct precition_tag from precision where precition_tag is not null) or tag in ('297')
        """.stripMargin
-    ).createOrReplaceTempView("precision_unit")
+    ).repartition(1).write.text(s"/home/cpc/dgd/data/unitid_$tardate")//.createOrReplaceTempView("precision_unit")
 
-    val adv=
-      s"""
-         |(select cast(id as CHAR) as unitid from
-         |(SELECT unit_id,SUM(cost) as cnt FROM adv.cost where cost>0 and date>='$tardate' group by unit_id) ta
-         |join adv.unit tb on ta.unit_id=tb.id
-         |where audience_orient>0) temp
-      """.stripMargin
+//    val adv=
+//      s"""
+//         |(select cast(id as CHAR) as unitid from
+//         |(SELECT unit_id FROM adv.cost where cost>0 and date>='$tardate' group by unit_id) ta
+//         |join adv.unit tb on ta.unit_id=tb.id
+//         |where audience_orient>0) temp
+//      """.stripMargin
     spark.read.jdbc(jdbcUrl, adv, jdbcProp).distinct().repartition(1).write.text(s"/home/cpc/dgd/data/unitid_$tardate")
 }
 }
