@@ -44,6 +44,8 @@ object mengtui {
     val df = spark.sql(sqlRequest)
     var result: List[IdeaAcu] = List()
     var result2: List[IdeaAcu] = List()
+    var result_comb: List[IdeaAcu] = List()
+
     for(ideaid <- List(2640880, 2734591, 2734594, 2753214)){
       val df1 = df.filter(s"ideaid = $ideaid")
         .withColumn("score", col("score_ctr").cast(types.LongType))
@@ -59,8 +61,25 @@ object mengtui {
       result = IdeaAcu(ideaid, "ctr", auc)::result
       result2 = IdeaAcu(ideaid, "cvr", auc2)::result2
     }
+
+    val df_ctr = df
+        .withColumn("score", col("score_ctr").cast(types.LongType))
+        .withColumn("label", col("label_ctr").cast(types.IntegerType))
+        .select("ideaid", "score", "label")
+    val auc_ctr = getAuc(spark, df_ctr)
+
+
+    val df_cvr = df
+      .withColumn("score", col("score_cvr").cast(types.LongType))
+      .withColumn("label", col("label_cvr").cast(types.IntegerType))
+      .select("ideaid", "score", "label")
+    val auc_cvr = getAuc(spark, df_cvr)
+    result_comb = IdeaAcu(100, "ctr", auc_ctr)::result_comb
+    result_comb = IdeaAcu(100, "cvr", auc_cvr)::result_comb
+
     result.toDS().show()
     result2.toDS().show()
+    result_comb.toDS().show()
   }
 
   def getAuc(spark:SparkSession, data:DataFrame): Double = {
