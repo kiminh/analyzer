@@ -184,14 +184,17 @@ object AutoCoinStrategy {
                |where user_id in ($unKnownUseridList)
              """.stripMargin
 
-        val unKnownIdeaidList = spark.sql(getIdeaidSql)
+        val unKnownIdeaid = spark.sql(getIdeaidSql)
           .rdd
           .map(_.getAs[Int]("ideaid").toString)
           .collect()
           .toList
-          .mkString(",")
 
-        unKnownIdeaidList
+        val l0 = List("0")
+
+        val unKnownIdeaidList = unKnownIdeaid:::l0 //增加一个默认值，防止空list
+
+        unKnownIdeaidList.mkString(",")
     }
 
     /**
@@ -245,15 +248,17 @@ object AutoCoinStrategy {
                |and auc >= 0
              """.stripMargin
 
-        val lowAucUseridFilter = spark.sql(metricsSql)
+        val lowAucUserid = spark.sql(metricsSql)
           .rdd
           .map(x => x.getAs[Int]("userid").toString)
           .collect()
           .toList
-          //.+("0")       //增加一个默认值，防止空list
-          .mkString(",")
+        val l0 = List("0")
 
-        lowAucUseridFilter
+        val lowAucUseridFilter = lowAucUserid:::l0  //增加一个默认值，防止空list
+
+
+        lowAucUseridFilter.mkString(",")
     }
 
     /**
