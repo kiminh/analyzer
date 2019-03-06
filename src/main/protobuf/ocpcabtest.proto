@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package ocpcabtest;
+
+message SingleRecord {
+    string identifier = 1;
+    double cpcBid = 2;
+}
+
+
+message OcpcList {
+    repeated SingleRecord adrecord = 1;
+}

@@ -2,7 +2,7 @@
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
-queue=root.develop.adhoc.cpc
+queue=root.cpc.develop
 #date=`date +"%Y-%m-%d" -d "-1day"`
 day=$1
 hour=$2
@@ -19,10 +19,11 @@ jars=(
 
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
-    --executor-memory 20g --driver-memory 20g \
+    --executor-memory 10g --driver-memory 10g \
     --executor-cores 10 --num-executors 20  \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.ml.novel.Behavior2RedisCvr \
-    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar 2018-12-05
+    --conf "spark.sql.shuffle.partitions=1000" \
+    --class com.cpc.spark.ocpcV3.ocpcNovel.logs.OcpcLaunchReport \
+    /home/cpc/wy/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $day

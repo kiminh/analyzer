@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#sh testOcpcForRegression.sh 2019-01-14 12 24 hottopicv1 hottopic
+#sh testOcpcForRegression.sh 2019-01-14 12 72 hottopicv1 hottopic
 
 cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current

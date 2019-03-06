@@ -62,7 +62,7 @@ object InsertReportAdslotVideoDownload {
           |SELECT media_appsid,adslotid,adslot_type,isfill,isshow,isclick
           |FROM dl_cpc.cpc_union_log cul
           |WHERE cul.isfill>0 AND cul.interaction=2 AND cul.adtype in(8,10) AND adsrc=1
-          |AND cul.date="%s" AND ext["usertype"].int_value=2 AND cul.ext["client_type"].string_value="NATIVESDK"
+          |AND cul.date="%s" AND ext["usertype"].int_value=2 AND cul.ext["client_type"].string_value IN("NATIVESDK","JSSDK")
         """.stripMargin.format(argDay))
       .rdd
       .map {
@@ -92,8 +92,8 @@ object InsertReportAdslotVideoDownload {
           |FROM dl_cpc.cpc_union_trace_log cutl
           |INNER JOIN dl_cpc.cpc_union_log cul ON cul.searchid=cutl.searchid
           |WHERE
-          |cul.isclick>0 AND cul.interaction=2 AND cul.adtype in(8,10) AND adsrc=1 AND cutl.trace_type in("apkdown")
-          |AND cul.date="%s" AND cutl.date="%s" AND ext["usertype"].int_value=2 AND cul.ext["client_type"].string_value="NATIVESDK"
+          |cul.isclick>0 AND cul.interaction=2 AND cul.adtype in(8,10) AND adsrc=1 -- AND cutl.trace_type in("apkdown")
+          |AND cul.date="%s" AND cutl.date="%s" AND ext["usertype"].int_value=2 AND cul.ext["client_type"].string_value IN("NATIVESDK","JSSDK")
         """.stripMargin.format(argDay, argDay))
       .rdd
       .map {
