@@ -132,7 +132,7 @@ object OcpcHourlyReport {
       .select("user_id", "unit_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
       .withColumn("click_cpa_given", col("cpa_given") * col("click"))
 
-    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_report20190128")
+//    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_report20190128")
 
     baseData.createOrReplaceTempView("base_data")
 
