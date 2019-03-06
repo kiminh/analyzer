@@ -413,7 +413,7 @@ object AutoCoinStrategy {
       */
     def getThresholdAdjust(spark:SparkSession,df:DataFrame,date:String, hour:String, p:Double):
         RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
-        val t = getPreTime(date,hour,3) //获取3个小时前的时间
+        val t = getPreTime(date,hour,2) //获取3个小时前的时间
 
         val ideaP = getIdeaidP(spark,t.substring(0, 10))    //获取p值
 
