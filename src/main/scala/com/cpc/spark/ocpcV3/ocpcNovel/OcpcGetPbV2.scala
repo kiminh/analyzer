@@ -356,6 +356,7 @@ object OcpcGetPbV2 {
          |  $selectCondition
          |AND
          |  media_appsid in ('80001098', '80001292')
+         |  and isclick=1
        """.stripMargin
     println(sqlRequest1)
     val clickdata = spark.sql(sqlRequest1)
