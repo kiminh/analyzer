@@ -44,7 +44,7 @@ object OcpcPercentCalculate {
         |FROM
         |	dl_cpc.ocpc_suggest_cpa_recommend_hourly
         |WHERE
-        | `date` = $date
+        | `date` = '$date'
       """.stripMargin
     val dataDF = spark.sql(sqlRequest)
     dataDF
