@@ -297,7 +297,7 @@ object OcpcGetPbV2 {
     val resultDF = data.select("unitid", "new_adclass", "kvalue", "conversion_goal")
         .join(prevk,Seq("unitid"),"left")
        .withColumn("kvalue",
-        when(col("kvalue")>col("prevk"),
+        when(col("kvalue")>col("prevk") and col("prevk") isNotNull,
           (col("kvalue")-col("prevk"))/3 + col("prevk")).
           otherwise(col("kvalue")))
       .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
