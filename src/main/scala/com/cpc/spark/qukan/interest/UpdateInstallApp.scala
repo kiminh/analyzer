@@ -207,8 +207,8 @@ object UpdateInstallApp {
               val key = x._1 + "_upv2"
               n3 += 1
               if (n3 < 11){
-                println("uid="+x._1)
-              }
+              println("uid="+x._1)
+            }
               val buffer = redisV2.get(key.getBytes)
               println("buffer="+buffer)
               var userV2: UserProfileV2.Builder = null
@@ -233,7 +233,8 @@ object UpdateInstallApp {
                     val pkg = APPPackage.newBuilder().setPackagename(n).setLastUpdateTime(sec)
                     userV2.addInstallpkg(pkg)
                 }
-                redisV2.setex(key.getBytes, 3600 * 24 * 7, userV2.build().toByteArray)
+                redisV2.del(key)
+//                redisV2.setex(key.getBytes, 3600 * 24 * 14, userV2.build().toByteArray)toByteArray
                 n2 += 1
               }
           }
