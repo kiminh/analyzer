@@ -141,55 +141,55 @@ object UpdateInstallApp {
     println("new", added.count())
 
     //保存新增数据 redis
-    val sum = added.map(x => (x._1, x._2._1))
-      .repartition(100)
-      .mapPartitions {
-        p =>
-          var n = 0
-          var n1 = 0
-          var n2 = 0
-          var n3 = 0
-          val conf = ConfigFactory.load()
-          val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
-          val sec = new Date().getTime / 1000
-          p.foreach {
-            x =>
-              n += 1
-              val key = x._1 + "_UPDATA"
-              val buffer = redis.get[Array[Byte]](key).getOrElse(null)
-              var user: UserProfile.Builder = null
-              if (buffer == null) {
-                user = UserProfile.newBuilder()
-                n3 = n3 + 1
-              } else {
-                user = UserProfile.parseFrom(buffer).toBuilder
-              }
-              //判断老数据
-              if (user.getInstallpkgCount > 0) {
-                val pkg = user.getInstallpkg(0)
-                //更新时间大于一天
-                if (sec > pkg.getLastUpdateTime + 60 * 60 * 24) {
-                  user.clearInstallpkg()
-                } else {
-                  n1 += 1
-                }
-              }
-              if (user.getInstallpkgCount == 0) {
-                x._2.foreach {
-                  n =>
-                    val pkg = APPPackage.newBuilder().setPackagename(n).setLastUpdateTime(sec)
-                    user.addInstallpkg(pkg)
-                }
-                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
-                n2 += 1
-              }
-          }
-          Seq(("pass", n1), ("update", n2), ("new", n3)).iterator
-      }
-      .reduceByKey(_ + _)
-      .take(10)
-    println("update redis")
-    sum.foreach(println)
+//    val sum = added.map(x => (x._1, x._2._1))
+//      .repartition(100)
+//      .mapPartitions {
+//        p =>
+//          var n = 0
+//          var n1 = 0
+//          var n2 = 0
+//          var n3 = 0
+//          val conf = ConfigFactory.load()
+//          val redis = new RedisClient(conf.getString("redis.host"), conf.getInt("redis.port"))
+//          val sec = new Date().getTime / 1000
+//          p.foreach {
+//            x =>
+//              n += 1
+//              val key = x._1 + "_UPDATA"
+//              val buffer = redis.get[Array[Byte]](key).getOrElse(null)
+//              var user: UserProfile.Builder = null
+//              if (buffer == null) {
+//                user = UserProfile.newBuilder()
+//                n3 = n3 + 1
+//              } else {
+//                user = UserProfile.parseFrom(buffer).toBuilder
+//              }
+//              //判断老数据
+//              if (user.getInstallpkgCount > 0) {
+//                val pkg = user.getInstallpkg(0)
+//                //更新时间大于一天
+//                if (sec > pkg.getLastUpdateTime + 60 * 60 * 24) {
+//                  user.clearInstallpkg()
+//                } else {
+//                  n1 += 1
+//                }
+//              }
+//              if (user.getInstallpkgCount == 0) {
+//                x._2.foreach {
+//                  n =>
+//                    val pkg = APPPackage.newBuilder().setPackagename(n).setLastUpdateTime(sec)
+//                    user.addInstallpkg(pkg)
+//                }
+//                redis.setex(key, 3600 * 24 * 7, user.build().toByteArray)
+//                n2 += 1
+//              }
+//          }
+//          Seq(("pass", n1), ("update", n2), ("new", n3)).iterator
+//      }
+//      .reduceByKey(_ + _)
+//      .take(10)
+//    println("update redis")
+//    sum.foreach(println)
 
     //新增数据迁移至新的redis集群
     val result = added.map(x => (x._1, x._2._1))
@@ -235,7 +235,7 @@ object UpdateInstallApp {
       .reduceByKey(_ + _)
       .take(10)
     println("update to new redis:")
-    sum.foreach(println)
+    result.foreach(println)
 
 
     println(all_list.map(x => (x._2._1.length, x._2._2.length, x._2._3.length, x._2._4.length))
@@ -255,13 +255,13 @@ object UpdateInstallApp {
       .coalesce(100).write.mode(SaveMode.Overwrite)
       .parquet("/user/cpc/userInstalledApp/%s".format(date))
 
-    val sql =
-      """
-        |ALTER TABLE dl_cpc.cpc_user_installed_apps add if not exists PARTITION (load_date = "%s" )  LOCATION
-        |       '/user/cpc/userInstalledApp/%s'
-        |
-                """.stripMargin.format(date, date)
-    spark.sql(sql)
+//    val sql =
+//      """
+//        |ALTER TABLE dl_cpc.cpc_user_installed_apps add if not exists PARTITION (load_date = "%s" )  LOCATION
+//        |       '/user/cpc/userInstalledApp/%s'
+//        |
+//                """.stripMargin.format(date, date)
+//    spark.sql(sql)
 
 //    val yest = spark.read.parquet("/user/cpc/traceInstalledApp/%s".format(yesterday)).rdd.map {
 //      r =>
