@@ -12,7 +12,8 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.json4s._
 import org.json4s.native.JsonMethods._
-import userprofile.Userprofile.{APPPackage, UserProfile,UserProfileV2 }
+import redis.clients.jedis.{HostAndPort, JedisCluster}
+import userprofile.Userprofile.{APPPackage, UserProfile, UserProfileV2}
 
 
 /**
@@ -198,12 +199,12 @@ object UpdateInstallApp {
         p =>
           var n1 = 0
           var n2 = 0
-          val redisV2 = new RedisClient("192.168.80.152", 7003)
+          val redisV2 = new JedisCluster(new HostAndPort("192.168.80.152", 7003))
           val sec = new Date().getTime / 1000
           p.foreach {
             x =>
               val key = x._1 + "_upv2"
-              val buffer = redisV2.get[Array[Byte]](key).getOrElse(null)
+              val buffer = redisV2.get(key).getBytes
               var userV2: UserProfileV2.Builder = null
               if (buffer == null) {
                 userV2 = UserProfileV2.newBuilder()
