@@ -1,7 +1,7 @@
 package com.cpc.spark.OcpcProtoType.report_qtt
 
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.SparkSession
 import com.typesafe.config.ConfigFactory
 import scala.collection.mutable.ListBuffer
 
