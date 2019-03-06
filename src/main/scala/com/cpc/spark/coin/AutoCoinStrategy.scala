@@ -29,7 +29,7 @@ object AutoCoinStrategy {
 
         val p2 = args(5).toDouble       //黑五类的阈值，0.7
 
-        val preDay = args(5).toInt      //根据几天的数据统计，7
+        val preDay = args(6).toInt      //根据几天的数据统计，7
 
         val spark = SparkSession.builder()
           .appName(s"AutoCoin date = $date, hour = $hour")
