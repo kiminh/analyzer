@@ -164,7 +164,7 @@ object shortvideo {
          | """.stripMargin
     var tab2 = spark.sql(sql2).select("userid", "expcvr_threshold").toDF("userid", "exp_cvr")
     println("result tab count:" + tab2.count())
-    tab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_adddown_cvr_threshold")
+    tab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
     //    val tab3= tab2.select("userid","expcvr_threshold").toDF("userid","exp_cvr")
     //   pb写法2
 
