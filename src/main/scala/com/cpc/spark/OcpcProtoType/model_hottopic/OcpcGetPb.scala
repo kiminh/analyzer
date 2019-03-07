@@ -117,14 +117,22 @@ object OcpcGetPb {
     val cpcK = getCpcK(media, conversionGoal, date, hour, spark)
 
     // 数据外关联
+    println("TEST: cpcK")
+    cpcK.show(10)
     val ocpcKfinal = ocpcK
         .withColumn("ocpc_k", col("k_value"))
         .select("identifier", "ocpc_k")
 //    ocpcKfinal.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215ocpc")
+    println("TEST: ocpcKfinal1")
+    ocpcKfinal.show(10)
+
     val cpcKfinal = cpcK
         .withColumn("cpc_k", col("kvalue"))
         .select("identifier", "cpc_k", "history_ocpc_flag")
 //    cpcKfinal.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215cpc")
+
+    println("TEST: cpcKfinal2")
+    cpcKfinal.show(10)
 
     val finalK = ocpcKfinal
       .join(cpcKfinal, Seq("identifier"), "outer")
@@ -133,11 +141,16 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("history_ocpc_flag") === 0, col("cpc_k")).otherwise(col("ocpc_k")))
       .withColumn("conversion_goal", lit(conversionGoal))
 
+    println("TEST: finalK")
+    finalK.show(10)
+
 //    finalK.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215")
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
 
     resultDF
+    println("TEST: resultDF")
+    resultDF.show(10)
 
   }
 
