@@ -60,7 +60,7 @@ object shortvideo {
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
-
+    val selectCondition2 = getTimeRangeSql22(date1, hour1, date, hour)
 
 
 
@@ -146,14 +146,14 @@ object shortvideo {
          | (
          | select dt dt1, userid userid1, exp_cvr, cvr_rank, searchid
          | from dl_cpc.cpc_unionevents_appdownload_mid
-         | where ${selectCondition}
+         | where ${selectCondition2}
          | and adtype in ('8','10')
          | ) rank
          |left join
          |(
          | select dt dt2, userid userid2, max (cvr_rank) as nums
          | from dl_cpc.cpc_unionevents_appdownload_mid
-         | where ${selectCondition}
+         | where ${selectCondition2}
          | and adtype in ('8','10')
          | group by dt, userid
          |) nums
@@ -202,7 +202,14 @@ object shortvideo {
     }
 //  case class adcvr (var userid : String="",
 //                    var exp_cvr : Int=0)
-
+   def getTimeRangeSql22(startDate: String, startHour: String, endDate: String, endHour: String): String = {
+  if (startDate.equals(endDate)) {
+    return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
+  }
+  return s"((dt = '$startDate' and hr > '$startHour') " +
+    s"or (dt = '$endDate' and hr <= '$endHour') " +
+    s"or (dt > '$startDate' and dt < '$endDate'))"
+}
 
 
 }
