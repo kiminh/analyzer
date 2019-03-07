@@ -121,7 +121,7 @@ object shortvideo {
          |and   a.hour2 =view1.hour
          |group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr,cvr_rank,src,label_type,planid,unitid, adclass,adslot_type,label2,uid,usertype
        """.stripMargin
-    val tab = spark.sql(sql).cache
+    val tab = spark.sql(sql)
     tab.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cp_unionevents_appdownload_qbj")
 
     //   生成最终表
