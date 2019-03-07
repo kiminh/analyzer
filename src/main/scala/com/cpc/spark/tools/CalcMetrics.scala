@@ -15,7 +15,7 @@ object CalcMetrics {
         import spark.implicits._
         val scoreAndLable = data.select($"score",$"label")
           .rdd
-          .map(x => (x.getAs[Long]("score").toDouble,
+          .map(x => (x.getAs[Int]("score").toDouble,
             x.getAs[Int]("label").toDouble))
         val metrics = new BinaryClassificationMetrics(scoreAndLable)
         val aucROC = metrics.areaUnderROC
