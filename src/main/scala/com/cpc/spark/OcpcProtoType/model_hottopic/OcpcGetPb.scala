@@ -147,10 +147,9 @@ object OcpcGetPb {
 //    finalK.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215")
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
-
-    resultDF
     println("TEST: resultDF")
     resultDF.show(10)
+    resultDF
 
   }
 
