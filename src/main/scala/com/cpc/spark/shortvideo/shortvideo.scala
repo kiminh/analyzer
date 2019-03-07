@@ -69,7 +69,7 @@ object shortvideo {
          |  select     `date` date1,hour,`timestamp`,searchid as searchid,isshow,isclick,usertype,userid,ideaid,adtype,interaction,adsrc,media_appsid,price,exp_cvr exp_cvr_ori,
          |             case when isclick=1 then exp_cvr *1.0 /1000000 end exp_cvr,charge_type,
          |             row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
-         |  from       dl_cpc.ocpc_base_unionlog   
+         |  from       dl_cpc.ocpc_base_unionlog
          |  where    `timestamp`>='${unixdate72h}'
          |  and      media_appsid in  ("80000001","80000002")
          |  and      interaction=2
@@ -122,7 +122,7 @@ object shortvideo {
          |group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr,cvr_rank,src,label_type,planid,unitid, adclass,adslot_type,label2,uid,usertype
        """.stripMargin
     val tab = spark.sql(sql)
-    tab.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cp_unionevents_appdownload_mid")
+    tab.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_unionevents_appdownload_mid")
 
     //   生成最终表
     val sql2 =
