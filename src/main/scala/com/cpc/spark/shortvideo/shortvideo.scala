@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+import com.cpc.spark.ocpcV3.ocpc.{OcpcUtils}
 import java.time
 import java.io.PrintWriter
 
@@ -14,10 +15,10 @@ import scala.collection.mutable.ListBuffer
 
 object shortvideo {
   def main(args: Array[String]): Unit = {
-    val datetime = args(0)
-    val hour = args(1).toInt
+    val date = args(0)
+    val hour = args(1)
     val spark = SparkSession.builder()
-      .appName(s"""shortvideo_execute +'${datetime}'+'${hour}'""")
+      .appName(s"""shortvideo_execute +'${date}'+'${hour}'""")
       .enableHiveSupport()
       .getOrCreate()
     import org.apache.spark.sql._
@@ -33,20 +34,32 @@ object shortvideo {
 //    val unixdate72h=3600*72
 
 
-    var cala = Calendar.getInstance()
-    val dateConverter=new SimpleDateFormat("yyyy-MM-dd HH")
-    val date= datetime+" "+ hour
-    val today=dateConverter.parse(date)
-    cala.setTime(today)
-    val recordtime=cala.getTime
-    val tmpDate=dateConverter.format(recordtime)
-    val tmpDateValue=tmpDate.split(" ")
-    val date1=tmpDateValue(0)
-    val hour1=tmpDateValue(1)
-    cala.add(Calendar.HOUR,-72)
-    val date3d = new SimpleDateFormat("yyyy-MM-dd HH:00:00").format(cala.getTime)
-    val unixdate72h = tranTimeToLong(date3d)
-
+//    var cala = Calendar.getInstance()
+//    val dateConverter=new SimpleDateFormat("yyyy-MM-dd HH")
+//    val date= datetime+" "+ hour
+//    val today=dateConverter.parse(date)
+//    cala.setTime(today)
+//    val recordtime=cala.getTime
+//    val tmpDate=dateConverter.format(recordtime)
+//    val tmpDateValue=tmpDate.split(" ")
+//    val date1=tmpDateValue(0)
+//    val hour1=tmpDateValue(1)
+//    cala.add(Calendar.HOUR,-72)
+//    val date3d = new SimpleDateFormat("yyyy-MM-dd HH:00:00").format(cala.getTime)
+//    val unixdate72h = tranTimeToLong(date3d)
+//    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -72)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
 
 
 
@@ -63,14 +76,14 @@ object shortvideo {
       s"""
 
          |select   searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr,cvr_rank,src,
-         |         label_type,planid,unitid, adclass,adslot_type,label2,uid,usertype,'${date1}','${hour1}'
+         |         label_type,planid,unitid, adclass,adslot_type,label2,uid,usertype,'${date}','${hour}'
          |from
          |(
          |  select     `date` date1,hour,`timestamp`,searchid as searchid,isshow,isclick,usertype,userid,ideaid,adtype,interaction,adsrc,media_appsid,price,exp_cvr exp_cvr_ori,
          |             case when isclick=1 then exp_cvr *1.0 /1000000 end exp_cvr,charge_type,
          |             row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
          |  from       dl_cpc.ocpc_base_unionlog
-         |  where    `timestamp`>='${unixdate72h}'
+         |  where    ${selectCondition}
          |  and      media_appsid in  ("80000001","80000002")
          |  and      interaction=2
          |  and     adtype in (2,8,10)
@@ -109,7 +122,7 @@ object shortvideo {
          |          from
          |              dl_cpc.ml_cvr_feature_v1
          |          where
-         |              `date`>='${date3d}'
+         |              `date`>='${date1}'
          |              and label2=1
          |             and media_appsid in ("80000001", "80000002")
          |            ) final
@@ -128,19 +141,19 @@ object shortvideo {
     val sql2 =
       s"""
          |
-         | select userid1 userid, exp_cvr expcvr_threshold,'${date1}','${hour1}'
+         | select userid1 userid, exp_cvr expcvr_threshold,'${date}','${hour}'
          | from
          | (
          | select dt dt1, userid userid1, exp_cvr, cvr_rank, searchid
          | from dl_cpc.cpc_unionevents_appdownload_mid
-         | where `timestamp` >= '${unixdate72h}'
+         | where ${selectCondition}
          | and adtype in ('8','10')
          | ) rank
          |left join
          |(
          | select dt dt2, userid userid2, max (cvr_rank) as nums
          | from dl_cpc.cpc_unionevents_appdownload_mid
-         | where `timestamp`>= '${unixdate72h}'
+         | where ${selectCondition}
          | and adtype in ('8','10')
          | group by dt, userid
          |) nums
