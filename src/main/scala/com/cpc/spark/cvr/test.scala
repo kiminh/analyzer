@@ -26,7 +26,7 @@ object test {
                | exp_cvr as score_cvr,
                | iscvr   as label_cvr
                |from (
-               |  select ideaid,exp_ctr,isclick,exp_cvr
+               |  select searchid,ideaid,exp_ctr,isclick,exp_cvr
                |  from  dl_cpc.slim_union_log
                |  where dt = '2019-03-03'
                |  and adsrc = 1
