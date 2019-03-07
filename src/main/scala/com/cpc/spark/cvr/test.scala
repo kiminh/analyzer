@@ -21,9 +21,9 @@ object test {
             s"""
                |select
                | ideaid,
-               | cast(exp_ctr as int) as score_ctr,
+               | exp_ctr as score_ctr,
                | isclick as label_ctr,
-               | cast(exp_cvr as int) as score_cvr,
+               | exp_cvr as score_cvr,
                | iscvr   as label_cvr
                |from (
                |  select searchid,ideaid,exp_ctr,isclick,exp_cvr
