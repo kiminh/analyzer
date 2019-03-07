@@ -121,21 +121,32 @@ object rule {
     println("result tab count:"+tab2.count())
     tab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
 
-    //  写入txt
+    /*  写入txt
     val outputFile= new PrintWriter(s"""shortvideo.txt""")
     tab2.collect().foreach(id => {
       val userid = id.getAs[String]("userid");
       val expcvr_threshold = id.getAs[Long]("expcvr");
       outputFile.println(userid, ",", expcvr_threshold,'\n')
     })
-//    val cvrBuffer=scala.collection.mutable.ListBuffer[]
-//    val cvrBufferArray=cvrBuffer.toArray
-//    println("cvfBufferArray 's num is: " + cvrBufferArray.length)
-    outputFile.close()
+        outputFile.close()
+
+    */
+
+    val shortvideoListBuffer =scala.collection.mutable.ListBuffer[expcvr_threshold]()
+    tab2.collect().foreach(id=>{
+          shortvideoListBuffer+= expcvr_threshold(
+                userid= id.userid,
+                exp_cvr= id.expcvr_threshold)
+    })
+    val cvrBufferArray=shortvideoListBuffer.toArray
+    println("cvfBufferArray 's num is: " + cvrBufferArray.length)
     println("write to shortvideo.txt success")
+    val  shortvideocvr= Ecvr_ts(ecvr_ts=cvrBufferArray)
+    shortvideocvr.writeTo(new FileOutputStream("shortvideo.pb"))
     case class ecvr_ts (var userid: String="",
                         var exp_cvr : Int=9999999)
     spark.stop()
+
 
   }
   //  unixstamp udf
