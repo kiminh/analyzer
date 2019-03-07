@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package shortvideo;
+
+message expcvr_threshold {
+    string userid=1;
+    int64 expcvr_threshold=2;
+}
+
+message  Ecvr_ts {
+    repeated expcvr_threshold  ecvr_ts=1;
+
+}
