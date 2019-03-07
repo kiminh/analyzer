@@ -49,7 +49,7 @@ object test {
 
         val data = spark.sql(sql).cache()
 
-        val ideaid = data.select("ideaid").rdd.map(_.getAs[Int]("ideaid")).collect().toList
+        val ideaid = data.select("ideaid").rdd.map(_.getAs[Long]("ideaid")).collect().toList
 
         for (i <- ideaid) {
             val data1 = data.filter(s"ideaid = $i").cache()
