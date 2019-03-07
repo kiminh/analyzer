@@ -61,15 +61,15 @@ object shortvideo {
     //  生成中间表 appdownload_mid
     val sql =
       s"""
-         |insert overwrite table dl_cpc.cpc_unionevents_appdownload_mid partition ( dt,hr )
+
          |select   searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr,cvr_rank,src,
          |         label_type,planid,unitid, adclass,adslot_type,label2,uid,usertype,'${date1}','${hour1}'
          |from
          |(
-         |  select     day,hour,`timestamp`,searchid as searchid,isshow,isclick,usertype,userid,ideaid,adtype,interaction,adsrc,media_appsid,price,exp_cvr exp_cvr_ori,
+         |  select     `date` date1,hour,`timestamp`,searchid as searchid,isshow,isclick,usertype,userid,ideaid,adtype,interaction,adsrc,media_appsid,price,exp_cvr exp_cvr_ori,
          |             case when isclick=1 then exp_cvr *1.0 /1000000 end exp_cvr,charge_type,
          |             row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
-         |  from       dl_cpc.cpc_basedata_union_events
+         |  from       dl_cpc.ocpc_base_unionlog   --dl_cpc.cpc_basedata_union_events
          |  where    `timestamp`>='${unixdate72h}'
          |  and      media_appsid in  ("80000001","80000002")
          |  and      interaction=2
@@ -117,17 +117,17 @@ object shortvideo {
          |  where   aa.isreport=1
          |) a
          |on  a.searchid2=view1.searchid
-         |and   a.`date`=view1.day
+         |and   a.`date`=view1.date1
          |and   a.hour2 =view1.hour
          |group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr,cvr_rank,src,label_type,planid,unitid, adclass,adslot_type,label2,uid,usertype
        """.stripMargin
     val tab = spark.sql(sql)
-    tab.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cp_unionevents_appdownload_qbj")
+    tab.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cp_unionevents_appdownload_mid")
 
     //   生成最终表
     val sql2 =
       s"""
-         |insert overwrite table dl_cpc.cpc_adddown_cvr_threshold partition (dt,hr)
+         |
          | select userid1 userid, exp_cvr expcvr_threshold,'${date1}','${hour1}'
          | from
          | (
@@ -151,7 +151,7 @@ object shortvideo {
          | """.stripMargin
     var tab2 = spark.sql(sql2).select("userid", "expcvr_threshold").toDF("userid", "exp_cvr")
     println("result tab count:" + tab2.count())
-    tab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
+    tab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_adddown_cvr_threshold")
     //    val tab3= tab2.select("userid","expcvr_threshold").toDF("userid","exp_cvr")
     //   pb写法2
 
