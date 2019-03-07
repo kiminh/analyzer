@@ -61,7 +61,6 @@ object OcpcGetPb {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
-    println("No OF LINES : " + resultDF.count())
 //    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_v2")
     resultDF
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
@@ -117,13 +116,11 @@ object OcpcGetPb {
     val cpcK = getCpcK(media, conversionGoal, date, hour, spark)
 
     // 数据外关联
-    println("TEST: cpcK")
     cpcK.show(10)
     val ocpcKfinal = ocpcK
         .withColumn("ocpc_k", col("k_value"))
         .select("identifier", "ocpc_k")
 //    ocpcKfinal.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215ocpc")
-    println("TEST: ocpcKfinal1")
     ocpcKfinal.show(10)
 
     val cpcKfinal = cpcK
@@ -131,7 +128,6 @@ object OcpcGetPb {
         .select("identifier", "cpc_k", "history_ocpc_flag")
 //    cpcKfinal.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215cpc")
 
-    println("TEST: cpcKfinal2")
     cpcKfinal.show(10)
 
     val finalK = ocpcKfinal
@@ -141,13 +137,11 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("history_ocpc_flag") === 0, col("cpc_k")).otherwise(col("ocpc_k")))
       .withColumn("conversion_goal", lit(conversionGoal))
 
-    println("TEST: finalK")
     finalK.show(10)
 
 //    finalK.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215")
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
-    println("TEST: resultDF")
     resultDF.show(10)
     resultDF
 
@@ -250,7 +244,6 @@ object OcpcGetPb {
        """.stripMargin
     println(sqlRequest2)
     val data = spark.sql(sqlRequest2)
-    println("test1111")
     val cvrData = data
       .na.fill(0, Seq("iscvr"))
       .groupBy("identifier")
@@ -261,14 +254,12 @@ object OcpcGetPb {
       .withColumn("post_cvr", col("conversion") * 1.0 / col("click"))
       .withColumn("post_cvr_cali", col("post_cvr") * 5.0)
       .select("identifier", "post_cvr", "post_cvr_cali")
-    println("test2")
 
     val caliData = data
       .join(cvrData, Seq("identifier"), "left_outer")
       .select("searchid", "identifier", "exp_cvr", "isclick", "iscvr", "post_cvr", "post_cvr_cali")
       .withColumn("pre_cvr", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
       .select("searchid", "identifier", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr", "post_cvr_cali")
-    println("test3")
 
     val resultDF = caliData
       .groupBy("identifier")
@@ -285,7 +276,6 @@ object OcpcGetPb {
       .join(ocpcHistoryData, Seq("identifier"), "left_outer")
       .select("identifier", "kvalue", "pre_cvr", "post_cvr", "click", "conversion", "history_ocpc_flag")
       .na.fill(0, Seq("history_ocpc_flag"))
-    println("test4")
 
     resultDF
   }
