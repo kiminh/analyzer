@@ -141,10 +141,10 @@ object shortvideo {
     val sql2 =
       s"""
          |
-         | select userid1 userid, exp_cvr expcvr_threshold,'${date}','${hour}'
+         | select userid1 userid, exp_cvr  expcvr_threshold,'${date}','${hour}'
          | from
          | (
-         | select userid userid1, exp_cvr, row_number() over (partition by userid order by cvr desc) cvr_rank2
+         | select userid userid1, exp_cvr, row_number() over (partition by userid order by exp_cvr desc) cvr_rank2
          | from dl_cpc.cpc_unionevents_appdownload_mid
          | where ${selectCondition2}
          | and adtype in ('8','10')
