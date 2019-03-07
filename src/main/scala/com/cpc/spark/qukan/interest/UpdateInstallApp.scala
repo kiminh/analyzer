@@ -140,7 +140,7 @@ object UpdateInstallApp {
     }
     val added = pkgs.filter(_._2._2 == 1)
     println("===========new===============", added.count())
-    added.map(x => (x._1, x._2._1)).take(10).foreach(println)
+    added.map(x => (x._1, x._2._1)).take(20).foreach(println)
 
 //    保存新增数据 redis
 //    val sum = added.map(x => (x._1, x._2._1))
@@ -200,13 +200,12 @@ object UpdateInstallApp {
         p =>
           var n1 = 0
           var n2 = 0
-          var n3 = 0
+          var matchedKey = 0
           val redisV2 = new JedisCluster(new HostAndPort("192.168.80.152", 7003))
           val sec = new Date().getTime / 1000
           p.foreach {
             x =>
               val key = x._1 + "_upv2"
-              n3 += 1
               val buffer = redisV2.get(key.getBytes)
               var userV2: UserProfileV2.Builder = null
               try {
@@ -218,7 +217,6 @@ object UpdateInstallApp {
               }catch {
                 case e: Exception => println(e)
               }
-
               //判断老数据
               if (userV2.getInstallpkgCount > 0) {
                 val pkg = userV2.getInstallpkg(0)
@@ -235,14 +233,17 @@ object UpdateInstallApp {
                     val pkg = APPPackage.newBuilder().setPackagename(n).setLastUpdateTime(sec)
                     userV2.addInstallpkg(pkg)
                 }
-                if (n2 <= 5){
-                  redisV2.setex(key.getBytes, 3600 * 24 * 14, userV2.build().toByteArray)
+                 if (userV2.build.getInstallpkgCount() > 0){
+                   matchedKey += 1
+                 }
+                 var result =  redisV2.setex(key.getBytes, 3600 * 24 * 14, userV2.build().toByteArray)
+                if (result.equals("OK")){
+                  n2 += 1
                 }
-                n2 += 1
               }
           }
           redisV2.close()
-          Seq(("new", n1), ("update", n2)).iterator
+          Seq(("new", n1), ("update", n2),("matched", matchedKey)).iterator
       }
       .reduceByKey(_ + _)
       .take(10)
@@ -250,22 +251,22 @@ object UpdateInstallApp {
     result.foreach(println)
 
 
-    println(all_list.map(x => (x._2._1.length, x._2._2.length, x._2._3.length, x._2._4.length))
-        .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)))
-
-    all_list.flatMap(x => x._2._3).map{x => (x, 1)}.reduceByKey(_+_).sortBy(_._2, false)
-        .take(50).foreach(println)
-
-
-    all_list.take(10).foreach(println)
-    println(all_list.count())
-    println(all_list.filter(x => x._2._4.length > 5).count())
-    println(all_list.filter(x => x._2._4.length > 10).count())
-    println(all_list.filter(x => x._2._3.size > 0).count())
-    all_list.map(x => (x._1, x._2._4, x._2._1, x._2._2, x._2._3, x._2._5))
-      .toDF("uid", "pkgs", "add_pkgs", "remove_pkgs", "used_pkgs", "app_name")
-      .coalesce(100).write.mode(SaveMode.Overwrite)
-      .parquet("/user/cpc/userInstalledApp/%s".format(date))
+//    println(all_list.map(x => (x._2._1.length, x._2._2.length, x._2._3.length, x._2._4.length))
+//        .reduce((x, y) => (x._1 + y._1, x._2 + y._2, x._3 + y._3, x._4 + y._4)))
+//
+//    all_list.flatMap(x => x._2._3).map{x => (x, 1)}.reduceByKey(_+_).sortBy(_._2, false)
+//        .take(50).foreach(println)
+//
+//
+//    all_list.take(10).foreach(println)
+//    println(all_list.count())
+//    println(all_list.filter(x => x._2._4.length > 5).count())
+//    println(all_list.filter(x => x._2._4.length > 10).count())
+//    println(all_list.filter(x => x._2._3.size > 0).count())
+//    all_list.map(x => (x._1, x._2._4, x._2._1, x._2._2, x._2._3, x._2._5))
+//      .toDF("uid", "pkgs", "add_pkgs", "remove_pkgs", "used_pkgs", "app_name")
+//      .coalesce(100).write.mode(SaveMode.Overwrite)
+//      .parquet("/user/cpc/userInstalledApp/%s".format(date))
 
 //    val sql =
 //      """
