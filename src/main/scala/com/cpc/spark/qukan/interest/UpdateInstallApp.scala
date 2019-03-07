@@ -139,7 +139,8 @@ object UpdateInstallApp {
         }
     }
     val added = pkgs.filter(_._2._2 == 1)
-    println("new", added.count())
+    println("===========new===============", added.count())
+    added.map(x => (x._1, x._2._1)).take(10)
 
     //保存新增数据 redis
 //    val sum = added.map(x => (x._1, x._2._1))
@@ -206,9 +207,9 @@ object UpdateInstallApp {
             x =>
               val key = x._1 + "_upv2"
               n3 += 1
-              if (n3 < 11){
-              println("uid="+x._1)
-            }
+              if (n3 <= 10) {
+                println("==========key======="+key)
+              }
               val buffer = redisV2.get(key.getBytes)
               println("buffer="+buffer)
               var userV2: UserProfileV2.Builder = null
@@ -233,8 +234,9 @@ object UpdateInstallApp {
                     val pkg = APPPackage.newBuilder().setPackagename(n).setLastUpdateTime(sec)
                     userV2.addInstallpkg(pkg)
                 }
-                redisV2.del(key)
-                redisV2.setex(key.getBytes, 3600 * 24 * 14, userV2.build().toByteArray)
+                if (n2 <= 10){
+                  redisV2.setex(key.getBytes, 3600 * 24 * 14, userV2.build().toByteArray)
+                }
                 n2 += 1
               }
           }
