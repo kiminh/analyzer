@@ -162,7 +162,7 @@ object shortvideo {
          | where cvr_rank * 1.0 / nums = 0.9
          | group by userid1, exp_cvr
          | """.stripMargin
-    var tab2 = spark.sql(sql2).select("userid", "expcvr_threshold").toDF("userid", "exp_cvr")
+    var tab2 = spark.sql(sql2).toDF("userid", "exp_cvr","dt","hr")
     println("result tab count:" + tab2.count())
     tab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
     //    val tab3= tab2.select("userid","expcvr_threshold").toDF("userid","exp_cvr")
@@ -182,12 +182,10 @@ object shortvideo {
       )
       list += Item
     }
-
+    println("cnt:"+cnt)
     val result = list.toArray
     val ecvr_tslist = ThresholdShortVideo(
       svt = result)
-
-
     println("Array length:" + result.length)
     ecvr_tslist.writeTo(new FileOutputStream("shortvideo.pb"))
 
