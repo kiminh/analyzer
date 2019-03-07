@@ -20,7 +20,7 @@ object test {
         val sql =
             s"""
                |select
-               | ideaid,
+               | cast(ideaid as string),
                | exp_ctr as score_ctr,
                | isclick as label_ctr,
                | exp_cvr as score_cvr,
@@ -49,7 +49,7 @@ object test {
 
         val data = spark.sql(sql).cache()
 
-        val ideaid = data.select("ideaid").rdd.map(_.getAs[Long]("ideaid")).collect().toList
+        val ideaid = data.select("ideaid").rdd.map(_.getAs[String]("ideaid")).collect().toList
 
         for (i <- ideaid) {
             val data1 = data.filter(s"ideaid = $i").cache()
