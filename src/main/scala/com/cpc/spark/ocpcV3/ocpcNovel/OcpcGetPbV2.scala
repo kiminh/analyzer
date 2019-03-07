@@ -402,7 +402,7 @@ object OcpcGetPbV2 {
           (sum(col("iscvr1"))/sum(col("isclick"))).alias("postcvr2"),
           (sum(col("iscvr2"))/sum(col("isclick"))).alias("postcvr3"))
         .withColumn("postcvr2",when(col("postcvr3") isNotNull,col("postcvr3")).otherwise(col("postcvr2")))
-        .withColumn("maxbid",col("avgbid")*4)
+        .withColumn("maxbid",col("avgbid")*3)
 
     // 返回结果
     resultDF.show(10)
@@ -432,7 +432,7 @@ object OcpcGetPbV2 {
       val flag = record.getAs[String]("flag")
       val postcvr2 = record.getAs[Double]("postcvr2");
       val postcvr3 = record.getAs[Double]("postcvr3");
-      val cvrfactor = 1.0;
+      val cvrfactor = 0.8;
       val avgbid =  record.getAs[Double]("avgbid");
       val maxbid =  record.getAs[Double]("maxbid");
 
