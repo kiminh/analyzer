@@ -15,24 +15,46 @@ import scala.collection.mutable.ListBuffer
 object shortvideo {
   def main(args: Array[String]): Unit = {
     val datetime = args(0)
-
+    val hour = args(1).toInt
     val spark = SparkSession.builder()
-      .appName(s"shortvideo_execute '${datetime}'")
+      .appName(s"""shortvideo_execute +'${datetime}'+'${hour}'""")
       .enableHiveSupport()
       .getOrCreate()
     import org.apache.spark.sql._
     import spark.implicits._
     import org.apache.spark.sql._
     import scala.collection.mutable.ListBuffer
+//    var cala = Calendar.getInstance()
+//    val date1= datetime+" "+ hour +":00:00"
+////    val date3d = new SimpleDateFormat("yyyy-MM-dd HH:00:00").format(date1)
+////    date3d.add(Calendar.HOUR_OF_DAY,-72)
+////    val date3d2 = new SimpleDateFormat("yyyy-MM-dd").format(date3d)
+//    val unixdate = tranTimeToLong(date1)
+//    val unixdate72h=3600*72
+
+
     var cala = Calendar.getInstance()
-    cala.add(Calendar.HOUR_OF_DAY, -75)
+    val dateConverter=new SimpleDateFormat("yyyy-MM-dd HH")
+    val date= datetime+" "+ hour
+    val today=dateConverter.parse(date)
+    cala.setTime(today)
+    val recordtime=cala.getTime
+    val tmpDate=dateConverter.format(recordtime)
+    val tmpDateValue=tmpDate.split(" ")
+    val date1=tmpDateValue(0)
+    val hour1=tmpDateValue(1)
+    cala.add(Calendar.HOUR,-72)
     val date3d = new SimpleDateFormat("yyyy-MM-dd HH:00:00").format(cala.getTime)
-    val date3d2 = new SimpleDateFormat("yyyy-MM-dd").format(cala.getTime)
-    val date72h = tranTimeToLong(date3d)
-    val calb = Calendar.getInstance()
-    calb.add(Calendar.HOUR_OF_DAY, -3)
-    val datetd = new SimpleDateFormat("yyyy-MM-dd").format(calb.getTime)
-    val hourtd = new SimpleDateFormat("HH").format(calb.getTime)
+    val unixdate72h = tranTimeToLong(date3d)
+
+
+
+
+
+//    val calb = Calendar.getInstance()
+//    calb.add(Calendar.HOUR_OF_DAY)
+//    val datetd = new SimpleDateFormat("yyyy-MM-dd").format(calb.getTime)
+//    val hourtd = new SimpleDateFormat("HH").format(calb.getTime)
 
 
     spark.sql("set hive.exec.dynamic.partition=true")
@@ -41,14 +63,14 @@ object shortvideo {
       s"""
          |insert overwrite table dl_cpc.cpc_unionevents_appdownload_mid partition ( dt,hr )
          |select   searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr,cvr_rank,src,
-         |         label_type,planid,unitid, adclass,adslot_type,label2,uid,usertype,'${datetd}','${hourtd}'
+         |         label_type,planid,unitid, adclass,adslot_type,label2,uid,usertype,'${date1}','${hour1}'
          |from
          |(
          |  select     day,hour,`timestamp`,searchid as searchid,isshow,isclick,usertype,userid,ideaid,adtype,interaction,adsrc,media_appsid,price,exp_cvr exp_cvr_ori,
          |             case when isclick=1 then exp_cvr *1.0 /1000000 end exp_cvr,charge_type,
          |             row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
          |  from       dl_cpc.cpc_basedata_union_events
-         |  where    `timestamp`>='${date72h}'
+         |  where    `timestamp`>='${unixdate72h}'
          |  and      media_appsid in  ("80000001","80000002")
          |  and      interaction=2
          |  and     adtype in (2,8,10)
@@ -87,7 +109,7 @@ object shortvideo {
          |          from
          |              dl_cpc.ml_cvr_feature_v1
          |          where
-         |              `date`>='${date3d2}'
+         |              `date`>='${date3d}'
          |              and label2=1
          |             and media_appsid in ("80000001", "80000002")
          |            ) final
@@ -97,7 +119,7 @@ object shortvideo {
          |on  a.searchid2=view1.searchid
          |and   a.`date`=view1.day
          |and   a.hour2 =view1.hour
-         |group by searchid,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr,cvr_rank,src,label_type,planid,unitid, adclass,adslot_type,label2,uid,usertype
+         |group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr,cvr_rank,src,label_type,planid,unitid, adclass,adslot_type,label2,uid,usertype
        """.stripMargin
     val tab = spark.sql(sql).cache
     tab.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cp_unionevents_appdownload_qbj")
@@ -106,19 +128,19 @@ object shortvideo {
     val sql2 =
       s"""
          |insert overwrite table dl_cpc.cpc_adddown_cvr_threshold partition (dt,hr)
-         | select userid1 userid, exp_cvr expcvr_threshold,'${datetd}','${hourtd}'
+         | select userid1 userid, exp_cvr expcvr_threshold,'${date1}','${hour1}'
          | from
          | (
          | select dt dt1, userid userid1, exp_cvr, cvr_rank, searchid
          | from dl_cpc.cpc_unionevents_appdownload_mid
-         | where `timestamp` >= '${date72h}'
+         | where `timestamp` >= '${unixdate72h}'
          | and adtype in ('8','10')
          | ) rank
          |left join
          |(
          | select dt dt2, userid userid2, max (cvr_rank) as nums
          | from dl_cpc.cpc_unionevents_appdownload_mid
-         | where `timestamp`>= '${date72h}'
+         | where `timestamp`>= '${unixdate72h}'
          | and adtype in ('8','10')
          | group by dt, userid
          |) nums
