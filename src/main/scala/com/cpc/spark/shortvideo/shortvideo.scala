@@ -129,61 +129,31 @@ object shortvideo {
     //    val tab3= tab2.select("userid","expcvr_threshold").toDF("userid","exp_cvr")
     //   pb写法2
 
-        val list = new scala.collection.mutable.ListBuffer[ShortVideoThreshold]()
-        var cnt = 0
-        for (record <- tab2.collect()) {
-          var userid = record.getAs[String]("userid")
-          var exp_cvr = record.getAs[Long]("exp_cvr")
-          println(s"""useridr:$userid, expcvr:${exp_cvr}""")
+    val list = new scala.collection.mutable.ListBuffer[ShortVideoThreshold]()
+    var cnt = 0
+    for (record <- tab2.collect()) {
+      var userid = record.getAs[String]("userid")
+      var exp_cvr = record.getAs[Long]("exp_cvr")
+      println(s"""useridr:$userid, expcvr:${exp_cvr}""")
 
-          cnt += 1
-          val Item = ShortVideoThreshold(
-            userid = userid,
-            threshold = exp_cvr
-          )
-          list += Item
+      cnt += 1
+      val Item = ShortVideoThreshold(
+        userid = userid,
+        threshold = exp_cvr
+      )
+      list += Item
+    }
+
+    val result = list.toArray
+    val ecvr_tslist = ThresholdShortVideo(
+      svt = result)
+
+
+    println("Array length:" + result.length)
+    ecvr_tslist.writeTo(new FileOutputStream("shortvideo.pb"))
+
   }
 
-      val result = list.toArray
-      val ecvr_tslist = ThresholdShortVideo(
-        svt  = result)
-
-
-      println("Array length:"+result.length)
-      ecvr_tslist.writeTo(new FileOutputStream("shortvideo.pb"))
-
-
-  /*  写入txt
-    val outputFile= new PrintWriter(s"""shortvideo.txt""")
-    tab2.collect().foreach(id => {
-      val userid = id.getAs[String]("userid");
-      val expcvr_threshold = id.getAs[Long]("expcvr");
-      outputFile.println(userid, ",", expcvr_threshold,'\n')
-    })
-        outputFile.close()
-
-    */
-  /*
-    val shortvideoListBuffer =scala.collection.mutable.ListBuffer[adcvr]()
-
-    tab2.collect().foreach(adcvr=>{
-          shortvideoListBuffer+= shortvideo(
-                userid= adcvr.userid+",",
-                exp_cvr= adcvr.exp_cvr+"\n"
-                 )
-    })
-
-    val cvrBufferArray   =shortvideoListBuffer.toArray
-    println("cvfBufferArray 's num is: " + cvrBufferArray.length)
-    val  shortvideocvr=  shortvideo( adcvr = cvrBufferArray)
-    shortvideocvr.writeTo(new FileOutputStream("shortvideo.pb"))
-    println("write to shortvideo.txt success")
-*/
-  //    spark.stop()
-
-
-
-  //  unixstamp udf
   def tranTimeToLong(tm:String) :Long= {
       val fm = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
       val dt = fm.parse(tm)
