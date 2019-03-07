@@ -27,12 +27,12 @@ object test {
                | iscvr   as label_cvr
                |from (
                |  select searchid,ideaid,exp_ctr,isclick,exp_cvr
-               |  from  dl_cpc.slim_union_log
-               |  where dt = '2019-03-03'
+               |  from  dl_cpc.cpc_basedata_union_events
+               |  where day = '2019-03-03'
                |  and adsrc = 1
                |  and userid >0
                |  and isshow = 1
-               |  and antispam = 0
+               |  and antispam_score = 10000
                |  and (charge_type is NULL or charge_type = 1)
                |  and media_appsid in ('80000001', '80000002') --qtt
                |  and ideaid in (2640880, 2734591, 2734594, 2753214)
