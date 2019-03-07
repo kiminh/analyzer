@@ -1,14 +1,18 @@
 package com.cpc.spark.shortvideo
 
 import java.io.FileOutputStream
-
+import shortvideothreshold.shortvideothreshold._
 import org.apache.spark.sql.SparkSession
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import java.time
 import java.io.PrintWriter
 
-object rule {
+import scala.collection.mutable.ListBuffer
+
+object shortvideo {
   def main(args: Array[String]): Unit = {
     val date = args(0)
     val spark = SparkSession.builder()
@@ -17,16 +21,18 @@ object rule {
       .getOrCreate()
     import org.apache.spark.sql._
     import spark.implicits._
-    var  cala = Calendar.getInstance()
+    import org.apache.spark.sql.types
+    import scala.collection.mutable.ListBuffer
+    var cala = Calendar.getInstance()
     cala.add(Calendar.HOUR_OF_DAY, -72)
     val date3d = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(cala.getTime)
-    val date3d2 =new SimpleDateFormat("yyyy-MM-dd").format(cala.getTime)
-    val  date72h = tranTimeToLong(date3d)
-    val  calb= Calendar.getInstance()
+    val date3d2 = new SimpleDateFormat("yyyy-MM-dd").format(cala.getTime)
+    val date72h = tranTimeToLong(date3d)
+    val calb = Calendar.getInstance()
     val datetd = new SimpleDateFormat("yyyy-MM-dd").format(calb.getTime)
     val hourtd = new SimpleDateFormat("HH").format(calb.getTime)
     spark.sql("set hive.exec.dynamic.partition=true")
-//  生成中间表 appdownload_mid
+    //  生成中间表 appdownload_mid
     val sql =
       s"""
          |insert overwrite table dl_cpc.cpc_unionevents_appdownload_mid partition ( dt,hr )
@@ -95,33 +101,59 @@ object rule {
     //   生成最终表
     val sql2 =
       s"""
-        |insert overwrite table dl_cpc.cpc_adddown_cvr_threshold partition (dt,hr)
-        | select userid1 userid, exp_cvr expcvr_threshold,'${datetd}','${hourtd}'
-        | from
-        | (
-        | select dt dt1, userid userid1, exp_cvr, cvr_rank, searchid
-        | from dl_cpc.cpc_unionevents_appdownload_mid
-        | where `timestamp` >= '${date72h}'
-        | and adtype in ('8','10')
-        | ) rank
-        |left join
-        |(
-        | select dt dt2, userid userid2, max (cvr_rank) as nums
-        | from dl_cpc.cpc_unionevents_appdownload_mid
-        | where `timestamp`>= '${date72h}'
-        | and adtype in ('8','10')
-        | group by dt, userid
-        |) nums
-        | on rank.dt1 = nums.dt2
-        | and rank.userid1 = nums.userid2
-        | where cvr_rank * 1.0 / nums = 0.9
-        | group by userid1, exp_cvr
-        | """.stripMargin
-    val tab2 = spark.sql(sql2).cache
-    println("result tab count:"+tab2.count())
+         |insert overwrite table dl_cpc.cpc_adddown_cvr_threshold partition (dt,hr)
+         | select userid1 userid, exp_cvr expcvr_threshold,'${datetd}','${hourtd}'
+         | from
+         | (
+         | select dt dt1, userid userid1, exp_cvr, cvr_rank, searchid
+         | from dl_cpc.cpc_unionevents_appdownload_mid
+         | where `timestamp` >= '${date72h}'
+         | and adtype in ('8','10')
+         | ) rank
+         |left join
+         |(
+         | select dt dt2, userid userid2, max (cvr_rank) as nums
+         | from dl_cpc.cpc_unionevents_appdownload_mid
+         | where `timestamp`>= '${date72h}'
+         | and adtype in ('8','10')
+         | group by dt, userid
+         |) nums
+         | on rank.dt1 = nums.dt2
+         | and rank.userid1 = nums.userid2
+         | where cvr_rank * 1.0 / nums = 0.9
+         | group by userid1, exp_cvr
+         | """.stripMargin
+    var tab2 = spark.sql(sql2).select("userid", "expcvr_threshold").toDF("userid", "exp_cvr")
+    println("result tab count:" + tab2.count())
     tab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
+    //    val tab3= tab2.select("userid","expcvr_threshold").toDF("userid","exp_cvr")
+    //   pb写法2
 
-    /*  写入txt
+        val list = new scala.collection.mutable.ListBuffer[ShortVideoThreshold]()
+        var cnt = 0
+        for (record <- tab2.collect()) {
+          var userid = record.getAs[String]("userid")
+          var exp_cvr = record.getAs[Long]("exp_cvr")
+          println(s"""useridr:$userid, expcvr:${exp_cvr}""")
+
+          cnt += 1
+          val Item = ShortVideoThreshold(
+            userid = userid,
+            threshold = exp_cvr
+          )
+          list += Item
+  }
+
+      val result = list.toArray
+      val ecvr_tslist = ThresholdShortVideo(
+        svt  = result)
+
+
+      println("Array length:"+result.length)
+      ecvr_tslist.writeTo(new FileOutputStream("shortvideo.pb"))
+
+
+  /*  写入txt
     val outputFile= new PrintWriter(s"""shortvideo.txt""")
     tab2.collect().foreach(id => {
       val userid = id.getAs[String]("userid");
@@ -131,24 +163,26 @@ object rule {
         outputFile.close()
 
     */
+  /*
+    val shortvideoListBuffer =scala.collection.mutable.ListBuffer[adcvr]()
 
-    val shortvideoListBuffer =scala.collection.mutable.ListBuffer[expcvr_threshold]()
-    tab2.collect().foreach(id=>{
-          shortvideoListBuffer+= expcvr_threshold(
-                userid= id.userid,
-                exp_cvr= id.expcvr_threshold)
+    tab2.collect().foreach(adcvr=>{
+          shortvideoListBuffer+= shortvideo(
+                userid= adcvr.userid+",",
+                exp_cvr= adcvr.exp_cvr+"\n"
+                 )
     })
-    val cvrBufferArray=shortvideoListBuffer.toArray
+
+    val cvrBufferArray   =shortvideoListBuffer.toArray
     println("cvfBufferArray 's num is: " + cvrBufferArray.length)
-    println("write to shortvideo.txt success")
-    val  shortvideocvr= Ecvr_ts(ecvr_ts=cvrBufferArray)
+    val  shortvideocvr=  shortvideo( adcvr = cvrBufferArray)
     shortvideocvr.writeTo(new FileOutputStream("shortvideo.pb"))
-    case class ecvr_ts (var userid: String="",
-                        var exp_cvr : Int=9999999)
-    spark.stop()
+    println("write to shortvideo.txt success")
+*/
+  //    spark.stop()
 
 
-  }
+
   //  unixstamp udf
   def tranTimeToLong(tm:String) :Long= {
       val fm = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
@@ -157,8 +191,12 @@ object rule {
       val tim: Long = dt.getTime()
       tim
     }
+//  case class adcvr (var userid : String="",
+//                    var exp_cvr : Int=0)
 
-  }
+
+
+}
 
 /*
 中间表 mid
