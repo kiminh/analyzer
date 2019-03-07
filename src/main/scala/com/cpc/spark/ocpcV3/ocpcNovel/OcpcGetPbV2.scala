@@ -432,7 +432,7 @@ object OcpcGetPbV2 {
       val flag = record.getAs[String]("flag")
       val postcvr2 = record.getAs[Double]("postcvr2");
       val postcvr3 = record.getAs[Double]("postcvr3");
-      val cvrfactor = 0.8;
+      val cvrfactor = 1.0;
       val avgbid =  record.getAs[Double]("avgbid");
       val maxbid =  record.getAs[Double]("maxbid");
 
