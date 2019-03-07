@@ -145,9 +145,12 @@ object GetAddAge {
 
     val unknownAge = ctx.sql(
       """
-        |SELECT DISTINCT uid
-        |FROM dl_cpc.cpc_union_log
-        |WHERE `date`="%s" AND age=0 AND media_appsid in ("80000001","80000002")
+        |SELECT
+        |  DISTINCT uid
+        |FROM dl_cpc.cpc_basedata_union_events
+        |WHERE day="%s"
+        |  AND age=0
+        |  AND media_appsid in ("80000001","80000002")
       """.stripMargin.format(dayBefore))
       .rdd
       .map {
