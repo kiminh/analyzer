@@ -250,6 +250,7 @@ object OcpcGetPb {
        """.stripMargin
     println(sqlRequest2)
     val data = spark.sql(sqlRequest2)
+    println("test1")
     val cvrData = data
       .na.fill(0, Seq("iscvr"))
       .groupBy("identifier")
@@ -260,12 +261,14 @@ object OcpcGetPb {
       .withColumn("post_cvr", col("conversion") * 1.0 / col("click"))
       .withColumn("post_cvr_cali", col("post_cvr") * 5.0)
       .select("identifier", "post_cvr", "post_cvr_cali")
+    println("test2")
 
     val caliData = data
       .join(cvrData, Seq("identifier"), "left_outer")
       .select("searchid", "identifier", "exp_cvr", "isclick", "iscvr", "post_cvr", "post_cvr_cali")
       .withColumn("pre_cvr", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
       .select("searchid", "identifier", "exp_cvr", "isclick", "iscvr", "post_cvr", "pre_cvr", "post_cvr_cali")
+    println("test3")
 
     val resultDF = caliData
       .groupBy("identifier")
@@ -282,6 +285,7 @@ object OcpcGetPb {
       .join(ocpcHistoryData, Seq("identifier"), "left_outer")
       .select("identifier", "kvalue", "pre_cvr", "post_cvr", "click", "conversion", "history_ocpc_flag")
       .na.fill(0, Seq("history_ocpc_flag"))
+    println("test4")
 
     resultDF
   }
