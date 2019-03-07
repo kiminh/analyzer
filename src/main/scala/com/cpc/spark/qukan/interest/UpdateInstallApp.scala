@@ -207,18 +207,18 @@ object UpdateInstallApp {
             x =>
               val key = x._1 + "_upv2"
               n3 += 1
-              if (n3 <= 10) {
-                println("==========key=======",key)
-              }
-              var key2 = "867918022978311_upv2"
-              val buffer = redisV2.get(key2.getBytes)
-              println("buffer=",buffer)
+              val buffer = redisV2.get(key.getBytes)
               var userV2: UserProfileV2.Builder = null
-              if (buffer == null) {
-                userV2 = UserProfileV2.newBuilder()
-              } else {
-                userV2 = UserProfileV2.parseFrom(buffer).toBuilder
+              try {
+                if (buffer == null) {
+                  userV2 = UserProfileV2.newBuilder()
+                } else {
+                  userV2 = UserProfileV2.parseFrom(buffer).toBuilder
+                }
+              }catch {
+                case e: Exception => println(e)
               }
+
               //判断老数据
               if (userV2.getInstallpkgCount > 0) {
                 val pkg = userV2.getInstallpkg(0)
@@ -235,12 +235,13 @@ object UpdateInstallApp {
                     val pkg = APPPackage.newBuilder().setPackagename(n).setLastUpdateTime(sec)
                     userV2.addInstallpkg(pkg)
                 }
-//                if (n2 <= 10){
-//                  redisV2.setex(key.getBytes, 3600 * 24 * 14, userV2.build().toByteArray)
-//                }
+                if (n2 <= 5){
+                  redisV2.setex(key.getBytes, 3600 * 24 * 14, userV2.build().toByteArray)
+                }
                 n2 += 1
               }
           }
+          redisV2.close()
           Seq(("new", n1), ("update", n2)).iterator
       }
       .reduceByKey(_ + _)
