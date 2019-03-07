@@ -250,7 +250,7 @@ object OcpcGetPb {
        """.stripMargin
     println(sqlRequest2)
     val data = spark.sql(sqlRequest2)
-    println("test1")
+    println("test1111")
     val cvrData = data
       .na.fill(0, Seq("iscvr"))
       .groupBy("identifier")
