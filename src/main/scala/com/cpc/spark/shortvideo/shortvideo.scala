@@ -7,7 +7,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
-import com.cpc.spark.ocpcV3.ocpc.{OcpcUtils}
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import java.time
 import java.io.PrintWriter
 
