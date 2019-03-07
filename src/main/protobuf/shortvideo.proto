@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package shortvideo;
 
-message expcvr_threshold {
+message Shortvideo {
     string userid=1;
-    int64 expcvr_threshold=2;
+    int64 exp_cvr=2;
 }
 
-message  Ecvr_ts {
-    repeated expcvr_threshold  ecvr_ts=1;
+message  ecvr_ts {
+    repeated Shortvideo  adcvr = 1;
 
 }
