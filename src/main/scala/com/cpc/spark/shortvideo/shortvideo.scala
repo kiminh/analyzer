@@ -144,22 +144,21 @@ object shortvideo {
          | select userid1 userid, exp_cvr expcvr_threshold,'${date}','${hour}'
          | from
          | (
-         | select dt dt1, userid userid1, exp_cvr, cvr_rank, searchid
+         | select userid userid1, exp_cvr, row_number() over (partition by userid order by cvr desc) cvr_rank2
          | from dl_cpc.cpc_unionevents_appdownload_mid
          | where ${selectCondition2}
          | and adtype in ('8','10')
          | ) rank
          |left join
          |(
-         | select dt dt2, userid userid2, max (cvr_rank) as nums
+         | select userid userid2, count(cvr_rank) as nums
          | from dl_cpc.cpc_unionevents_appdownload_mid
          | where ${selectCondition2}
          | and adtype in ('8','10')
-         | group by dt, userid
+         | group by userid
          |) nums
-         | on rank.dt1 = nums.dt2
-         | and rank.userid1 = nums.userid2
-         | where cvr_rank * 1.0 / nums = 0.9
+         | on  rank.userid1 = nums.userid2
+         | where cvr_rank2 * 1.0 / nums = 0.9
          | group by userid1, exp_cvr
          | """.stripMargin
     var tab2 = spark.sql(sql2).toDF("userid", "exp_cvr","dt","hr")
