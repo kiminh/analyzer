@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package hiddenTest;
+message SingleItem {
+    int64 userid = 1;
+    int64 planid = 2;   // 是否会有变动
+    int64 unitid = 3;
+    string expTag = 4;
+    int64 budget = 5;
+    int64 consume = 6;
+    int32 isOpen = 7;
+
+}
+
+message hiddenTestList {
+    repeated SingleItem adrecord = 1;
+}
