@@ -14,7 +14,7 @@ import scala.collection.mutable.ListBuffer
 
 object shortvideo {
   def main(args: Array[String]): Unit = {
-    val date = args(0)
+    val datetime = args(0)
     val spark = SparkSession.builder()
       .appName(s"shortvideo_rules '${date}'")
       .enableHiveSupport()
@@ -24,13 +24,17 @@ object shortvideo {
     import org.apache.spark.sql.types
     import scala.collection.mutable.ListBuffer
     var cala = Calendar.getInstance()
+    cala.set(datetime)
     cala.add(Calendar.HOUR_OF_DAY, -72)
     val date3d = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(cala.getTime)
     val date3d2 = new SimpleDateFormat("yyyy-MM-dd").format(cala.getTime)
     val date72h = tranTimeToLong(date3d)
     val calb = Calendar.getInstance()
+    calb.set(datetime)
     val datetd = new SimpleDateFormat("yyyy-MM-dd").format(calb.getTime)
     val hourtd = new SimpleDateFormat("HH").format(calb.getTime)
+
+    println("******** current time:"+)
     spark.sql("set hive.exec.dynamic.partition=true")
     //  生成中间表 appdownload_mid
     val sql =
