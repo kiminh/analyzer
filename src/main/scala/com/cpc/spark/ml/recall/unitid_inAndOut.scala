@@ -12,6 +12,7 @@ object unitid_inAndOut {
       .enableHiveSupport()
       .getOrCreate()
     val cal1 = Calendar.getInstance()
+    cal1.add(Calendar.DATE, -1)
     val today = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
     cal1.add(Calendar.DATE, -1)
     val tardate = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
