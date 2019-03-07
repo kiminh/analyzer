@@ -165,14 +165,14 @@ object shortvideo {
     var tab2 = spark.sql(sql2).toDF("userid", "exp_cvr","dt","hr")
     println("result tab count:" + tab2.count())
     tab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
-    //    val tab3= tab2.select("userid","expcvr_threshold").toDF("userid","exp_cvr")
+
     //   pb写法2
 
     val list = new scala.collection.mutable.ListBuffer[ShortVideoThreshold]()
     var cnt = 0
     for (record <- tab2.collect()) {
       var userid = record.getAs[String]("userid")
-      var exp_cvr = record.getAs[Long]("exp_cvr")
+      var exp_cvr = record.getAs[Int]("exp_cvr")
       println(s"""useridr:$userid, expcvr:${exp_cvr}""")
 
       cnt += 1
