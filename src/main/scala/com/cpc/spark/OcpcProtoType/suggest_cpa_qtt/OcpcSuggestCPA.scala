@@ -6,7 +6,7 @@ import java.util.Calendar
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions.{col, lit, sum, when}
+import org.apache.spark.sql.functions._
 
 
 object OcpcSuggestCPA {
@@ -42,14 +42,222 @@ object OcpcSuggestCPA {
 
     // 取基础数据部分
     val baseData = getBaseData(media, cvrGoal, date, hour, spark)
-    baseData.write.mode("overwrite").saveAsTable("test.check_ocpc_suggest_data20190306a")
+
+    // ocpc部分：kvalue
+    val kvalue = getKvalue(version, cvrGoal, spark)
 
     // 模型部分
-
+    val aucData = getAucData(version, cvrGoal, date, spark)
 
     // 实时查询ocpc标记（从mysql抽取）
+    val ocpcFlag = getOcpcFlag(cvrGoal, spark)
 
     // 历史推荐cpa的pcoc数据
+    val prevData = getPrevSugggestData(version, cvrGoal, date, hour, spark)
+
+    // 数据组装
+    val result = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, spark)
+    result.write.mode("overwrite").saveAsTable("test.check_suggest_data20190307a")
+  }
+
+  def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcFlag: DataFrame, prevData: DataFrame, spark: SparkSession) = {
+    /*
+    assemlby the data together
+     */
+    val result = baseData
+      .join(kvalue, Seq("unitid"), "left_outer")
+      .join(aucData, Seq("unitid"), "left_outer")
+      .join(ocpcFlag, Seq("unitid"), "left_outer")
+      .join(prevData, Seq("unitid"), "left_outer")
+      .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "industry", "usertype", "kvalue", "auc", "is_ocpc", "pcoc1", "pcoc2")
+      .withColumn("ocpc_flag", when(col("is_ocpc") === 1 && col("is_ocpc").isNotNull, 1).otherwise(0))
+      .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2")
+
+    result
+  }
+
+  def getPrevSugggestData(version: String, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    从dl_cpc.ocpc_suggest_cpa_recommend_hourly表的前两天数据中抽取pcoc
+     */
+    var conversionGoal = 1
+    if (cvrGoal == "cvr1") {
+      conversionGoal = 1
+    } else if (cvrGoal == "cvr2") {
+      conversionGoal = 2
+    } else {
+      conversionGoal = 3
+    }
+    // 时间区间选择
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val endDayTime = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(endDayTime)
+    calendar.add(Calendar.DATE, -1)
+    val startDateTime1 = calendar.getTime
+    val date1 = dateConverter.format(startDateTime1)
+    calendar.add(Calendar.DATE, -1)
+    val startDateTime2 = calendar.getTime
+    val date2 = dateConverter.format(startDateTime2)
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  original_conversion as conversion_goal,
+         |  pcoc as pcoc1
+         |FROM
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |WHERE
+         |  `date` = '$date1'
+         |AND
+         |  version = '$version'
+         |AND
+         |  original_conversion = $conversionGoal
+       """.stripMargin
+    println(sqlRequest1)
+    val data1 = spark
+      .sql(sqlRequest1)
+      .groupBy("unitid")
+      .agg(avg(col("pcoc1")).alias("pcoc1"))
+      .select("unitid", "pcoc1")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  original_conversion as conversion_goal,
+         |  pcoc as pcoc2
+         |FROM
+         |  dl_cpc.ocpc_suggest_cpa_recommend_hourly
+         |WHERE
+         |  `date` = '$date2'
+         |AND
+         |  version = '$version'
+         |AND
+         |  original_conversion = $conversionGoal
+       """.stripMargin
+    println(sqlRequest2)
+    val data2 = spark
+      .sql(sqlRequest2)
+      .groupBy("unitid")
+      .agg(avg(col("pcoc2")).alias("pcoc2"))
+      .select("unitid", "pcoc2")
+
+    val resultDF = data1
+      .join(data2, Seq("unitid"), "outer")
+      .select("unitid", "pcoc1", "pcoc2")
+
+    resultDF
+  }
+
+  def getOcpcFlag(cvrGoal: String, spark: SparkSession) = {
+    var conversionGoal = 1
+    if (cvrGoal == "cvr1") {
+      conversionGoal = 1
+    } else if (cvrGoal == "cvr2") {
+      conversionGoal = 2
+    } else {
+      conversionGoal = 3
+    }
+
+    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
+    val user = "adv_live_read"
+    val passwd = "seJzIPUc7xU"
+    val driver = "com.mysql.jdbc.Driver"
+    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
+
+    val data = spark.read.format("jdbc")
+      .option("url", url)
+      .option("driver", driver)
+      .option("user", user)
+      .option("password", passwd)
+      .option("dbtable", table)
+      .load()
+
+    val base = data
+      .withColumn("unitid", col("id"))
+      .withColumn("userid", col("user_id"))
+      .selectExpr("unitid", "is_ocpc", "cast(conversion_goal as int) conversion_goal")
+
+    base.createOrReplaceTempView("base_data")
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  is_ocpc
+         |FROM
+         |  base_data
+         |WHERE
+         |  conversion_goal = $conversionGoal
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+
+    resultDF.show(10)
+    resultDF
+  }
+
+  def getAucData(version: String, cvrGoal: String, date: String, spark: SparkSession) = {
+    /*
+    从dl_cpc.ocpc_unitid_auc_daily根据version和conversion_goal来抽取对应unitid的auc
+     */
+    var conversionGoal = 1
+    if (cvrGoal == "cvr1") {
+      conversionGoal = 1
+    } else if (cvrGoal == "cvr2") {
+      conversionGoal = 2
+    } else {
+      conversionGoal = 3
+    }
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  auc
+         |FROM
+         |  dl_cpc.ocpc_unitid_auc_daily
+         |WHERE
+         |  version = '$version'
+         |AND
+         |  conversion_goal = $conversionGoal
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark.sql(sqlRequest)
+    resultDF
+  }
+
+  def getKvalue(version: String, cvrGoal: String, spark: SparkSession) = {
+    var conversionGoal = 1
+    if (cvrGoal == "cvr1") {
+      conversionGoal = 1
+    } else if (cvrGoal == "cvr2") {
+      conversionGoal = 2
+    } else {
+      conversionGoal = 3
+    }
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(identifier as int) as unitid,
+         |  kvalue
+         |FROM
+         |  dl_cpc.ocpc_prev_pb_once
+         |WHERE
+         |  version = '$version'
+         |AND
+         |  conversion_goal = $conversionGoal
+       """.stripMargin
+    println(sqlRequest)
+    val resultDF = spark
+      .sql(sqlRequest)
+      .groupBy("unitid")
+      .agg(min(col("kvalue")).alias("kvalue"))
+      .select("unitid", "kvalue")
+
+    resultDF
   }
 
   def getBaseData(media: String, cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
