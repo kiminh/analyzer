@@ -217,29 +217,32 @@ object UpdateInstallApp {
                 case e: Exception => println(e)
               }
               //判断老数据
-              if (userV2.getInstallpkgCount > 0) {
-                val pkg = userV2.getInstallpkg(0)
-                //更新时间大于一天
-                if (sec > pkg.getLastUpdateTime + 60 * 60 * 24) {
-                  userV2.clearInstallpkg()
-                } else {
-                  n1 += 1
+              if (userV2 != null){
+                if (userV2.getInstallpkgCount > 0) {
+                  val pkg = userV2.getInstallpkg(0)
+                  //更新时间大于一天
+                  if (sec > pkg.getLastUpdateTime + 60 * 60 * 24) {
+                    userV2.clearInstallpkg()
+                  } else {
+                    n1 += 1
+                  }
+                }
+                if (userV2.getInstallpkgCount == 0) {
+                  x._2.foreach {
+                    n =>
+                      val pkg = APPPackage.newBuilder().setPackagename(n).setLastUpdateTime(sec)
+                      userV2.addInstallpkg(pkg)
+                  }
+                  if (userV2.build.getInstallpkgCount() > 0){
+                    matchedKey += 1
+                  }
+                  var result =  redisV2.setex(key.getBytes, 3600 * 24 * 14, userV2.build().toByteArray)
+                  if (result.equals("OK")){
+                    n2 += 1
+                  }
                 }
               }
-              if (userV2.getInstallpkgCount == 0) {
-                x._2.foreach {
-                  n =>
-                    val pkg = APPPackage.newBuilder().setPackagename(n).setLastUpdateTime(sec)
-                    userV2.addInstallpkg(pkg)
-                }
-                 if (userV2.build.getInstallpkgCount() > 0){
-                   matchedKey += 1
-                 }
-                 var result =  redisV2.setex(key.getBytes, 3600 * 24 * 14, userV2.build().toByteArray)
-                if (result.equals("OK")){
-                  n2 += 1
-                }
-              }
+
           }
           redisV2.close()
           Seq(("new", n1), ("update", n2),("matched", matchedKey)).iterator
