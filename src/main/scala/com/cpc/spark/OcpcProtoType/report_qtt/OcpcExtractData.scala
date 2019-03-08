@@ -10,11 +10,12 @@ object OcpcExtractData {
   def main(args: Array[String]): Unit = {
 
     val date = args(0).toString
+    val tag = args(1).toString
     val spark = SparkSession.builder().appName(name = s"CreateTempTable").enableHiveSupport().getOrCreate()
     val unitids = getUnitid(spark)
-    createTempTable(date, spark)
-    getData(unitids, date, spark)
-    getTime(unitids, date, spark)
+    createTempTable(tag, date, spark)
+    getData(tag, unitids, date, spark)
+    getTime(tag, unitids, date, spark)
   }
 
   // 获取unitid
@@ -35,7 +36,7 @@ object OcpcExtractData {
   }
 
   // 创建临时表
-  def createTempTable(date: String, spark: SparkSession): Unit = {
+  def createTempTable(tag: String, date: String, spark: SparkSession): Unit = {
     val createTableSQL =
       s"""
         |SELECT
@@ -137,12 +138,13 @@ object OcpcExtractData {
     val data = spark.sql(createTableSQL)
     data
       .withColumn("date", lit(date))
+      .withColumn("tag", lit(tag))
       .withColumn("version", lit("qtt_demo"))
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ab_test_temp")
   }
 
   // 抽取数据
-  def getData(unitids: String, date: String, spark: SparkSession): Unit = {
+  def getData(tag: String, unitids: String, date: String, spark: SparkSession): Unit = {
     val getDataSQL =
       s"""
         |SELECT
@@ -176,12 +178,13 @@ object OcpcExtractData {
     val data = spark.sql(getDataSQL)
     data
         .withColumn("date", lit(date))
+        .withColumn("tag", lit(tag))
         .withColumn("version", lit("qtt_demo"))
         .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ab_test_data")
   }
 
   // 统计时间
-  def getTime(unitids: String, date: String, spark: SparkSession): Unit = {
+  def getTime(tag: String, unitids: String, date: String, spark: SparkSession): Unit = {
     val getTimeSQL =
       s"""
         |SELECT
@@ -200,6 +203,7 @@ object OcpcExtractData {
     val time = spark.sql(getTimeSQL)
     time
       .withColumn("date", lit(date))
+      .withColumn("tag", lit(tag))
       .withColumn("version", lit("qtt_demo"))
       .repartition(2).write.mode("overwrite").insertInto("dl_cpc.ocpc_ab_test_time")
   }
