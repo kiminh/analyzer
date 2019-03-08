@@ -80,7 +80,7 @@ object shortvideo {
          |from
          |(
          |  select     `date` date1,hour,`timestamp`,searchid as searchid,isshow,isclick,usertype,userid,ideaid,adtype,interaction,adsrc,media_appsid,price,exp_cvr exp_cvr_ori,
-         |             case when isclick=1 then exp_cvr *1.0 /1000000 end exp_cvr,charge_type,
+         |             case when isclick=1 then exp_cvr *1000000 end exp_cvr,charge_type,
          |             row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
          |  from       dl_cpc.ocpc_base_unionlog
          |  where    ${selectCondition}
@@ -140,16 +140,17 @@ object shortvideo {
     //   生成最终表
     val sql2 =
       s"""
-         |
-         | select userid1 userid, exp_cvr  expcvr_threshold,'${date}','${hour}'
-         | from
-         | (
-         | select userid userid1, exp_cvr, row_number() over (partition by userid order by exp_cvr desc) cvr_rank2
-         | from dl_cpc.cpc_unionevents_appdownload_mid
-         | where ${selectCondition2}
-         | and adtype in ('8','10')
-         | ) rank
-         |left join
+         |select   userid,min(expcvr_d) as threshreshold,dt,hr
+         |from
+         |(
+         |select userid,expcvr_d, round(ranking*1.0/nums,2) as cate,count(*) cnts
+         |from
+         |(select userid,expcvr_d,row_number() over (partition by userid order by exp_cvr desc) ranking
+         |from   dl_cpc.cpc_unionevents_appdownload_mid
+         |where  ${selectCondition2}
+         |  and adtype in ('8','10')
+         |)  view1
+         |JOIN
          |(
          | select userid userid2, count(cvr_rank) as nums
          | from dl_cpc.cpc_unionevents_appdownload_mid
@@ -157,19 +158,21 @@ object shortvideo {
          | and adtype in ('8','10')
          | group by userid
          |) nums
-         | on  rank.userid1 = nums.userid2
-         | where cvr_rank2 * 1.0 / nums = 0.9
-         | group by userid1, exp_cvr
+         |on  view1.userid = nums.userid2
+         |group by userid,expcvr_d, round(ranking*1.0/nums,2)
+         |)  viewtotal
+         |where  cate=0.90
+         |group by userid
          | """.stripMargin
     var tab2 = spark.sql(sql2).toDF("userid", "exp_cvr","dt","hr")
     println("result tab count:" + tab2.count())
     tab2.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
-
+   val tab3=tab2.selectExpr("userid","exp_cvr")
     //   pb写法2
 
     val list = new scala.collection.mutable.ListBuffer[ShortVideoThreshold]()
     var cnt = 0
-    for (record <- tab2.collect()) {
+    for (record <- tab3.collect()) {
       var userid = record.getAs[String]("userid")
       var exp_cvr = record.getAs[Int]("exp_cvr")
       println(s"""useridr:$userid, expcvr:${exp_cvr}""")
@@ -222,8 +225,8 @@ create table if not exists dl_cpc.cpc_unionevents_appdownload_mid
     ideaid   int,
     isclick  int,
     isreport int,
-    exp_cvr  int,
-    expcvr_d double,
+    exp_cvr  double,
+    expcvr_d int,
     cvr_rank bigint,
     src      string,
     label_type int,
