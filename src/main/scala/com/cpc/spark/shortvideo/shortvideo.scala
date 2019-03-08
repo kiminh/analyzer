@@ -143,7 +143,7 @@ object shortvideo {
          |select   userid,min(expcvr_d) as threshreshold,'${date}','${hour}'
          |from
          |(
-         |select userid,expcvr_d, round(ranking*1.0/nums,2) as cate,count(*) cnts
+         |select userid,expcvr_d, round(ranking*1.0/nums,3) as cate,count(*) cnts
          |from
          |(select userid,expcvr_d,row_number() over (partition by userid order by exp_cvr desc) ranking
          |from   dl_cpc.cpc_unionevents_appdownload_mid
@@ -159,9 +159,9 @@ object shortvideo {
          | group by userid
          |) nums
          |on  view1.userid = nums.userid2
-         |group by userid,expcvr_d, round(ranking*1.0/nums,2)
+         |group by userid,expcvr_d, round(ranking*1.0/nums,3)
          |)  viewtotal
-         |where  cate=0.90
+         |where  cate=0.97
          |group by userid
          | """.stripMargin
     var tab2 = spark.sql(sql2).toDF("userid", "exp_cvr","dt","hr")
