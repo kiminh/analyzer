@@ -140,7 +140,7 @@ object shortvideo {
     //   生成最终表
     val sql2 =
       s"""
-         |select   userid,min(expcvr_d) as threshreshold,'${date}','${hour}'
+         |select   userid,min(expcvr_d)-1 as threshreshold,'${date}','${hour}'
          |from
          |(
          |select userid,expcvr_d, round(ranking*1.0/nums,3) as cate,count(*) cnts
