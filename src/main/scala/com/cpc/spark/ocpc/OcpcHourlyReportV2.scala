@@ -59,17 +59,17 @@ object OcpcHourlyReportV2 {
     OperateMySQL.update(delSQLidea) //先删除历史数据
     OperateMySQL.insert(dataIdeaMysql, reportTableIdea) //插入数据
 
-    // 汇总表
-    val dataConversionMysql = dataConversion
-      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
-      .na.fill(0, Seq("total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hourInt))
-    val reportTableConversion = "report2.report_ocpc_data_summary_v2"
-    val delSQLconversion = s"delete from $reportTableConversion where `date` = '$date' and hour = $hourInt"
-
-    OperateMySQL.update(delSQLconversion) //先删除历史数据
-    OperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
+//    // 汇总表
+//    val dataConversionMysql = dataConversion
+//      .select("conversion_goal", "total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc")
+//      .na.fill(0, Seq("total_adnum", "step2_adnum", "low_cpa_adnum", "high_cpa_adnum", "step2_cost", "step2_cpa_high_cost", "impression", "click", "conversion", "ctr", "click_cvr", "cost", "acp", "pre_cvr", "post_cvr", "q_factor", "acb", "auc"))
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hourInt))
+//    val reportTableConversion = "report2.report_ocpc_data_summary_v2"
+//    val delSQLconversion = s"delete from $reportTableConversion where `date` = '$date' and hour = $hourInt"
+//
+//    OperateMySQL.update(delSQLconversion) //先删除历史数据
+//    OperateMySQL.insert(dataConversionMysql, reportTableConversion) //插入数据
   }
 
   def saveDataToHDFS(dataIdea: DataFrame, dataConversion: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {

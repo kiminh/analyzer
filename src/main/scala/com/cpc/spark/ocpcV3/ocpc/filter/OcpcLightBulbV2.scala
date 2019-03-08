@@ -46,7 +46,7 @@ object OcpcLightBulbV2{
 
     // 按照conversion_goal来抽取推荐cpa
     val cpaSuggest = getCPAsuggest(completeData, conversionGoal, date, hour, spark)
-//    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_v2")
+//    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_20190305new")
     cpaSuggest
       .selectExpr("cast(unitid as string) unitid", "cast(conversion_goal as int) conversion_goal", "cpa")
       .withColumn("date", lit(date))
@@ -86,8 +86,6 @@ object OcpcLightBulbV2{
         record => {
           val identifier = record.getAs[Int]("unitid").toString
           var key = "new_algorithm_unit_ocpc_" + identifier
-          val json = new JSONObject()
-          val value = json.toString
           redis.del(key)
         }
       }
@@ -130,8 +128,10 @@ object OcpcLightBulbV2{
           val identifier = record.getAs[Int]("unitid").toString
           val value = record.getAs[Double]("cpa")
           var key = "new_algorithm_unit_ocpc_" + identifier
-          println(s"key:$key, value:$value")
-          redis.setex(key, 2 * 24 * 60 * 60, value)
+          if (value >= 0) {
+            println(s"key:$key, value:$value")
+            redis.setex(key, 2 * 24 * 60 * 60, value)
+          }
         }
       }
       redis.disconnect
