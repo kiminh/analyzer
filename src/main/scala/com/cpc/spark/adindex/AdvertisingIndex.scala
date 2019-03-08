@@ -6,8 +6,6 @@ import java.util.Calendar
 import org.apache.spark.sql.SparkSession
 import scalaj.http.Http
 
-import scala.collection.mutable
-
 object AdvertisingIndex {
   def main(args: Array[String]): Unit = {
     val url = "http://192.168.80.229:9090/reqdumps?filename=index.dump&hostname=dumper&fileMd5=1"
@@ -81,8 +79,8 @@ object AdvertisingIndex {
       val ideaid = u.ideaid
       if (ideaItemMap.contains(ideaid)) {
         val ideaItem = ideaItemMap(ideaid)
-        val extInt = mutable.Map[String, Int]()
-        extInt.update("is_api_callback", ideaItem.is_api_callback)
+        var extInt = unitItem.ext_int
+        extInt = extInt.updated("is_api_callback", ideaItem.is_api_callback)
 
         unitItem = unitItem.copy(
           mtype = ideaItem.mtype,
