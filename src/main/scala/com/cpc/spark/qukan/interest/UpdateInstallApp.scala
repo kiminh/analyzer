@@ -242,6 +242,7 @@ object UpdateInstallApp {
                   }
                 }
               }
+
           }
           redisV2.close()
           Seq(("new", n1), ("update", n2),("matched", matchedKey)).iterator
