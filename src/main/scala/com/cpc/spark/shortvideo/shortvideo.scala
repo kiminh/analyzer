@@ -159,9 +159,9 @@ object shortvideo {
          | group by userid
          |) nums
          |on  view1.userid = nums.userid2
-         |group by userid,expcvr_d, round(ranking*1.0/nums,3)
+         |group by userid,expcvr_d, round(ranking*1.0/nums,4)
          |)  viewtotal
-         |where  cate=0.97
+         |where  cate=0.99
          |group by userid
          | """.stripMargin
     var tab2 = spark.sql(sql2).toDF("userid", "exp_cvr","dt","hr")
