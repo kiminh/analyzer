@@ -14,7 +14,7 @@ object NovelUnionEvents {
         val date = args(0)
         val hour = args(1)
         val spark = SparkSession.builder()
-          .appName(s"NovelUnionLog date = $date")
+          .appName(s"NovelUnionLog date = $date and hour = $hour")
           .enableHiveSupport()
           .getOrCreate()
         val sql =
