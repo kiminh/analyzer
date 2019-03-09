@@ -140,28 +140,28 @@ object shortvideo {
     //   生成最终表
     val sql2 =
       s"""
-         |select   userid,min(expcvr_d)  as threshreshold,'${date}','${hour}'
+         |select   userid,max(expcvr_d)  as threshreshold,'${date}','${hour}'
          |from
          |(
-         |select userid,expcvr_d, round(ranking*1.0/nums,3) as cate,count(*) cnts
-         |from
-         |(select userid,expcvr_d,row_number() over (partition by userid order by exp_cvr desc) ranking
-         |from   dl_cpc.cpc_unionevents_appdownload_mid
-         |where  ${selectCondition2}
-         |  and adtype in ('8','10')
-         |)  view1
-         |JOIN
-         |(
-         | select userid userid2, count(cvr_rank) as nums
-         | from dl_cpc.cpc_unionevents_appdownload_mid
-         | where ${selectCondition2}
-         | and adtype in ('8','10')
-         | group by userid
-         |) nums
-         |on  view1.userid = nums.userid2
-         |group by userid,expcvr_d, round(ranking*1.0/nums,3)
-         |)  viewtotal
-         |where  cate=0.99
+         |      select userid,expcvr_d, ranking,nums,round(ranking*1.0/nums,3) as cate
+         |      from
+         |       (
+         |         select userid,expcvr_d,row_number() over (partition by userid order by exp_cvr desc) ranking
+         |         from   dl_cpc.cpc_unionevents_appdownload_mid
+         |         where  ${selectCondition2}
+         |         and adtype in ('8','10')
+         |        )  view1
+         |      JOIN
+         |       (
+         |         select userid userid2, count(cvr_rank) as nums
+         |         from dl_cpc.cpc_unionevents_appdownload_mid
+         |         where ${selectCondition2}
+         |         and adtype in ('8','10')
+         |         group by userid
+         |       ) nums
+         |       on  view1.userid = nums.userid2
+         |       where  round(ranking*1.0/nums,3)=0.990 or ranking=nums
+         |)  total
          |group by userid
          | """.stripMargin
     var tab2 = spark.sql(sql2).toDF("userid", "exp_cvr","dt","hr")
