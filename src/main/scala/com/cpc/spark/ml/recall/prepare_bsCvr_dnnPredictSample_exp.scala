@@ -6,10 +6,10 @@ import java.util.{Calendar, Properties}
 import com.cpc.spark.common.Murmur3Hash
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions._
+import org.apache.spark.sql.functions.{array, broadcast, udf}
 import org.apache.spark.storage.StorageLevel
 
-object prepare_bsCvr_dnnPredictSample {
+object prepare_bsCvr_dnnPredictSample_exp {
   Logger.getRootLogger.setLevel(Level.WARN)
 
   //multi hot 特征默认hash code
@@ -17,7 +17,7 @@ object prepare_bsCvr_dnnPredictSample {
 
   def main(args: Array[String]): Unit = {
     val spark = SparkSession.builder()
-      .appName("dnn bsCvr predictSample")
+      .appName("dnn bsCvr predictSample exp")
       .enableHiveSupport()
       .getOrCreate()
     val date = args(0)
@@ -35,7 +35,7 @@ object prepare_bsCvr_dnnPredictSample {
       .mode("overwrite")
       .format("tfrecords")
       .option("recordType", "Example")
-      .save(s"/user/cpc/sample/recall/dnn_recall_cvr_v1/dnnprediction-$sampleDay")
+      .save(s"/user/cpc/sample/recall/dnn_recall_cvr_v1/dnnprediction_exp-$sampleDay")
 
     //train.take(10).foreach(println)
 
@@ -46,7 +46,6 @@ object prepare_bsCvr_dnnPredictSample {
     import spark.implicits._
     val day = getDay(date, 1)
     val dayFeature = getDay(date, 1)
-    val dayCost = getDay(date, 10)
 
     val behavior_data = spark.read.parquet(s"/user/cpc/features/adBehaviorFeature/$dayFeature")
 
@@ -73,8 +72,7 @@ object prepare_bsCvr_dnnPredictSample {
     idea.printSchema()
 
     idea.show(5)
-    */
-/**
+      */
     val precision=
       s"""
         |(select id as unitid, audience_orient,precition_tag from adv.unit ta
@@ -102,30 +100,16 @@ object prepare_bsCvr_dnnPredictSample {
     val table2=
       s"""
          |select ta.unitid,ta.userid,ta.planid,ta.adslot_type,ta.charge_type from (select * from adv where unitid
-         |not in (select unitid from precision_unit)) ta join
+         |not in (select unitid from precision_unit) and unitid not in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid where date='$day' group by unitid)) ta join
          |(select id as unitid from dl_cpc.cpc_id_bscvr_auc where tag='unitid' and day='$day' and auc>0.8 group by id) tb
-         |on ta.unitid=tb.unitid order by ta.cnt desc limit 200
+         |on ta.unitid=tb.unitid order by ta.cnt desc limit 150
          |""".stripMargin
-  */
-    val adv=
-      s"""
-         |(select id as unitid, user_id as userid, plan_id as planid, adslot_type, charge_type from
-         |adv.unit) temp
-      """.stripMargin
 
-    spark.read.jdbc(jdbcUrl, adv, jdbcProp).createOrReplaceTempView("adv")
-
-    val table2=
-      s"""
-     |select unitid,userid,planid,adslot_type,charge_type from adv
-     |where unitid in (select unitid from dl_cpc.cpc_recall_high_confidence_unitid where date='$day' group by unitid)
-     |and unitid not in ('1910998')
-     |""".stripMargin
 
     spark.sql(table2).select("unitid").createTempView("unitid_table")
 
     val table3=
-      s"""insert overwrite table dl_cpc.cpc_recall_bsExp_unitid partition (`date`='$day')
+      s"""insert overwrite table dl_cpc.cpc_recall_bsExp_unitid_exp partition (`date`='$day')
          |select unitid from unitid_table
       """.stripMargin
     spark.sql(table3)
@@ -169,51 +153,51 @@ object prepare_bsCvr_dnnPredictSample {
     println("--------------------------------")
 
     val result_temp =
-    spark.sql(sql)
-      .join(profileData, Seq("uid"), "leftouter")
-      .join(uidRequest, Seq("uid"), "leftouter")
-      .join(behavior_data, Seq("uid"), "leftouter")
-      .select(
-        //hash("f1")($"media_type").alias("f1"),
-        //hash("f2")($"mediaid").alias("f2"),
-        //hash("f3")($"channel").alias("f3"),
-        //hash("f4")($"sdk_type").alias("f4"),
-        //hash("f1")($"adslot_type").alias("f1"),
-        //hash("f6")($"adslotid").alias("f6"),
-        hash("f2")($"sex").alias("f2"),
-        //hash("f8")($"dtu_id").alias("f8"),
-        //hash("f3")($"adtype").alias("f3"),
-        //hash("f10")($"interaction").alias("f10"),
-        //hash("f11")($"bid").alias("f11"),
-        //hash("f4")($"ideaid").alias("f4"),
-        //hash("f5")($"unitid").alias("f5"),
-        //hash("f6")($"planid").alias("f6"),
-        //hash("f7")($"userid").alias("f7"),
-        //hash("f16")($"is_new_ad").alias("f16"),
-        //hash("f8")($"adclass").alias("f8"),
-        //hash("f9")($"site_id").alias("f9"),
-        hash("f7")($"os").alias("f7"),
-        hash("f8")($"phone_price").alias("f8"),
-        //hash("f20")($"network").alias("f20"),
-        hash("f9")($"brand").alias("f9"),
-        hash("f10")($"province").alias("f10"),
-        hash("f11")($"city").alias("f11"),
-        hash("f12")($"city_level").alias("f12"),
-        hash("f13")($"uid").alias("f13"),
-        hash("f14")($"age").alias("f14"),
-        //hash("f28")($"hour").alias("f28"),
+      spark.sql(sql)
+        .join(profileData, Seq("uid"), "leftouter")
+        .join(uidRequest, Seq("uid"), "leftouter")
+        .join(behavior_data, Seq("uid"), "leftouter")
+        .select(
+          //hash("f1")($"media_type").alias("f1"),
+          //hash("f2")($"mediaid").alias("f2"),
+          //hash("f3")($"channel").alias("f3"),
+          //hash("f4")($"sdk_type").alias("f4"),
+          //hash("f1")($"adslot_type").alias("f1"),
+          //hash("f6")($"adslotid").alias("f6"),
+          hash("f2")($"sex").alias("f2"),
+          //hash("f8")($"dtu_id").alias("f8"),
+          //hash("f3")($"adtype").alias("f3"),
+          //hash("f10")($"interaction").alias("f10"),
+          //hash("f11")($"bid").alias("f11"),
+          //hash("f4")($"ideaid").alias("f4"),
+          //hash("f5")($"unitid").alias("f5"),
+          //hash("f6")($"planid").alias("f6"),
+          //hash("f7")($"userid").alias("f7"),
+          //hash("f16")($"is_new_ad").alias("f16"),
+          //hash("f8")($"adclass").alias("f8"),
+          //hash("f9")($"site_id").alias("f9"),
+          hash("f7")($"os").alias("f7"),
+          hash("f8")($"phone_price").alias("f8"),
+          //hash("f20")($"network").alias("f20"),
+          hash("f9")($"brand").alias("f9"),
+          hash("f10")($"province").alias("f10"),
+          hash("f11")($"city").alias("f11"),
+          hash("f12")($"city_level").alias("f12"),
+          hash("f13")($"uid").alias("f13"),
+          hash("f14")($"age").alias("f14"),
+          //hash("f28")($"hour").alias("f28"),
 
-        mkSparseFeature_m(array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
-          $"m11", $"m12", $"m13", $"m14", $"m15",$"m16", $"m17", $"m18", $"m19", $"m20",$"m21", $"m22",$"m23", $"m24",$"m25",$"m26"))
-          .alias("sparse"), $"uid"
-      ).select(
-      $"f2", $"f7", $"f8", $"f9", $"f10", $"f11", $"f12", $"f13", $"f14",
-      $"sparse".getField("_1").alias("idx0"),
-      $"sparse".getField("_2").alias("idx1"),
-      $"sparse".getField("_3").alias("idx2"),
-      $"sparse".getField("_4").alias("id_arr"),
-      $"uid"
-    ).repartition(8000).persist(StorageLevel.DISK_ONLY)
+          mkSparseFeature_m(array($"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9", $"m10",
+            $"m11", $"m12", $"m13", $"m14", $"m15",$"m16", $"m17", $"m18", $"m19", $"m20",$"m21", $"m22",$"m23", $"m24",$"m25",$"m26"))
+            .alias("sparse"), $"uid"
+        ).select(
+        $"f2", $"f7", $"f8", $"f9", $"f10", $"f11", $"f12", $"f13", $"f14",
+        $"sparse".getField("_1").alias("idx0"),
+        $"sparse".getField("_2").alias("idx1"),
+        $"sparse".getField("_3").alias("idx2"),
+        $"sparse".getField("_4").alias("id_arr"),
+        $"uid"
+      ).repartition(8000).persist(StorageLevel.DISK_ONLY)
 
     result_temp.show(10)
 
@@ -221,15 +205,15 @@ object prepare_bsCvr_dnnPredictSample {
     bunit_hash.show(10)
 
     val result_temp1 = result_temp.crossJoin(bunit_hash).select(array($"f1", $"f2", $"f3", $"f4", $"f5", $"f6", $"f7", $"f8", $"f9",
-        $"f10", $"f11", $"f12", $"f13", $"f14").alias("dense"),
-        //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
-        //mkSparseFeature1($"m1").alias("sparse"), $"label"
-        $"idx0",
-        $"idx1",
-        $"idx2",
-        $"id_arr",
-        $"uid", $"unitid"
-      )//.persist(StorageLevel.DISK_ONLY)
+      $"f10", $"f11", $"f12", $"f13", $"f14").alias("dense"),
+      //mkSparseFeature($"apps", $"ideaids").alias("sparse"), $"label"
+      //mkSparseFeature1($"m1").alias("sparse"), $"label"
+      $"idx0",
+      $"idx1",
+      $"idx2",
+      $"id_arr",
+      $"uid", $"unitid"
+    )//.persist(StorageLevel.DISK_ONLY)
 
     //result_temp1.show(10)
 
@@ -259,6 +243,7 @@ object prepare_bsCvr_dnnPredictSample {
     }
     re.mkString("','")
   }
+
   /**
     * 获取时间
     *

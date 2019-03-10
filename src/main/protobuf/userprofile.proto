@@ -64,7 +64,7 @@ message UserProfile {
 	int64 cvrcnt = 17; // uid维度的最近几天转化总次数
 	string lastDayInCPC = 18; // 最近一次在cpc union log中出现的date，以"yyyy-mm-dd"的格式
 	string ageNew = 21; // dnn年龄模型预测4分段结果
-	int32 ageNew1 = 22; // dnn年龄模型预测4分段结果
+	int32 ageNew1 = 22; // dnn年龄模型预测4分段结果，0: 未知 1: 小于18 2:18-22 3:23-40 4: >40
 	string recentIP = 23; // 最近常用的ip地址
 	string registeredIP = 24; // 注册时使用的ip地址
     repeated int32 installedUserIDList = 25; // 通过应用商城最近安装过的广告主id列表
