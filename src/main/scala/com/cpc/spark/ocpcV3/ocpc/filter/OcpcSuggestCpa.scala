@@ -118,9 +118,9 @@ object OcpcSuggestCpa{
       .withColumn("version", lit(version))
 
 //    test.ocpc_suggest_cpa_recommend_hourly20190104
-    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
-//    resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_recommend_hourly20190104")
+    resultDF
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
 
   }
@@ -393,7 +393,7 @@ object OcpcSuggestCpa{
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -72)
+    calendar.add(Calendar.HOUR, -24)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
@@ -674,10 +674,10 @@ object OcpcSuggestCpa{
     // 获取kvalue
     //    ocpc_prev_pb_once
     val resultDF = spark
-//      .table("dl_cpc.ocpc_prev_pb_once")
-      .table("dl_cpc.ocpc_pb_result_hourly_v2")
-      .where(s"`date` = '2019-03-08' and `hour` = '06' and version = 'qtt_demo' and kvalue > 0")
-//      .where(s"version = 'qtt_demo'")
+      .table("dl_cpc.ocpc_prev_pb_once")
+//      .table("dl_cpc.ocpc_pb_result_hourly_v2")
+//      .where(s"`date` = '2019-03-08' and `hour` = '06' and version = 'qtt_demo' and kvalue > 0")
+      .where(s"version = 'qtt_demo'")
       .withColumn("unitid", col("identifier"))
       .withColumn("original_conversion", col("conversion_goal"))
       .selectExpr("cast(unitid as int) unitid", "kvalue", "original_conversion")
