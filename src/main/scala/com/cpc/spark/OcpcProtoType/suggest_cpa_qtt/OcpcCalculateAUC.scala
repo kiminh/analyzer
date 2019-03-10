@@ -1,19 +1,15 @@
-package com.cpc.spark.ocpcV3.ocpc.filter
+package com.cpc.spark.OcpcProtoType.suggest_cpa_qtt
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
-import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.{getTimeRangeSql2, getTimeRangeSql3}
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils.getTimeRangeSql3
 import com.cpc.spark.ocpcV3.utils
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.mllib.evaluation.BinaryClassificationMetrics
 import org.apache.spark.sql._
 import org.apache.spark.sql.functions._
 
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-
-object OcpcCalculateAUCv2 {
+object OcpcCalculateAUC {
   def main(args: Array[String]): Unit = {
     // 计算日期周期
     val date = args(0).toString

@@ -20,5 +20,5 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_ab_test_temp(
     dt                      string,
     hr                      string
 )
-PARTITIONED BY (`date` string, version string)
+PARTITIONED BY (`date` string, tag string, version string)
 STORED AS PARQUET;
