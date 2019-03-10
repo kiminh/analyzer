@@ -8,6 +8,7 @@ import java.util.Calendar
 
 import com.cpc.spark.common.Utils.getTimeRangeSql
 import com.cpc.spark.ocpc.OcpcUtils.{getTimeRangeSql2, getTimeRangeSql3}
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import ocpc.ocpc.{OcpcList, SingleRecord}
@@ -44,8 +45,8 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once")
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
   }
@@ -57,7 +58,10 @@ object OcpcSampleToPb {
     double kvalue = 3;
     double cpagiven = 4;
     int64 cvrcnt = 5;
+    1. 从dl_cpc.ocpc_pb_result_hourly_v2中抽取数据
+    2. 按照实验配置文件给出cpagiven
      */
+    // 从dl_cpc.ocpc_pb_result_hourly_v2中抽取数据
     val selectCondition = s"`date`='$date' and `hour`='$hour' and version='$version'"
 
     val sqlRequest =
@@ -66,7 +70,7 @@ object OcpcSampleToPb {
          |  identifier,
          |  conversion_goal,
          |  kvalue,
-         |  cpagiven,
+         |  cpagiven as cpagiven1,
          |  cvrcnt
          |FROM
          |  dl_cpc.ocpc_pb_result_hourly_v2
@@ -76,10 +80,36 @@ object OcpcSampleToPb {
          |  kvalue > 0
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
+    val data = spark.sql(sqlRequest)
 
-    resultDF.printSchema()
-    resultDF.show(10)
+    // 按照实验配置文件给出cpagiven
+    val cpaGiven = getCPAgiven(spark)
+
+    // 数据关联
+    val result = data
+        .join(cpaGiven, Seq("identifier"), "left_outer")
+        .withColumn("cpagiven", when(col("cpagiven2").isNotNull, col("cpagiven2")).otherwise(col("cpagiven1")))
+
+    result.printSchema()
+    result.show(10)
+
+    val resultDF = result
+        .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
+
+    resultDF
+  }
+
+  def getCPAgiven(spark: SparkSession) = {
+    // 从实验配置文件读取配置的CPAgiven
+    val conf = ConfigFactory.load("ocpc")
+    val expDataPath = conf.getString("ocpc_all.ocpc_abtest.cpagiven_path")
+    val data = spark.read.format("json").json(expDataPath)
+
+    val resultDF = data
+      .select("identifier", "cpa_given")
+      .groupBy("identifier")
+      .agg(avg(col("cpa_given")).alias("cpagiven2"))
+      .select("identifier", "cpagiven2")
 
     resultDF
   }
