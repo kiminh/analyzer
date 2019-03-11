@@ -45,8 +45,8 @@ object OcpcSampleToPb {
     resultDF
         .withColumn("version", lit(version))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
-//        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
+        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_prev_pb_once20190310")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_prev_pb_once")
 
     savePbPack(resultDF, version, isKnown)
   }
@@ -86,17 +86,11 @@ object OcpcSampleToPb {
     val cpaGiven = getCPAgiven(spark)
 
     // 数据关联
-    val result1 = data
-        .join(cpaGiven, Seq("identifier", "conversion_goal"), "left_outer")
+    val result = data
+        .join(cpaGiven, Seq("identifier"), "left_outer")
         .withColumn("cpagiven", when(col("cpagiven2").isNotNull, col("cpagiven2")).otherwise(col("cpagiven1")))
         .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
 
-    // 数据关联
-    val result2 = result1.filter("cpagiven2 is not null")
-        .withColumn("conversion_goal", lit(0))
-        .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
-
-    val result = result1.union(result2)
     result.printSchema()
     result.show(10)
     val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
@@ -108,14 +102,14 @@ object OcpcSampleToPb {
   def getCPAgiven(spark: SparkSession) = {
     // 从实验配置文件读取配置的CPAgiven
     val conf = ConfigFactory.load("ocpc")
-    val expDataPath = conf.getString("ocpc_all.ocpc_abtest.cpagiven_path")
+    val expDataPath = conf.getString("ocpc_wz.suggest_k_path")
     val data = spark.read.format("json").json(expDataPath)
 
     val resultDF = data
-      .select("identifier", "cpa_given", "conversion_goal")
-      .groupBy("identifier", "conversion_goal")
+      .select("identifier", "cpa_given")
+      .groupBy("identifier")
       .agg(avg(col("cpa_given")).alias("cpagiven2"))
-      .select("identifier", "conversion_goal", "cpagiven2")
+      .select("identifier", "cpagiven2")
 
     resultDF
   }
