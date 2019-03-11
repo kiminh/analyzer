@@ -4,6 +4,8 @@ import org.apache.spark.sql.SparkSession
 import com.cpc.spark.streaming.tools.Encoding
 import org.apache.spark.sql.functions._
 import com.cpc.spark.streaming.tools.Gzip.decompress
+import java.io.{ByteArrayOutputStream, ByteArrayInputStream}
+import java.util.zip.{GZIPOutputStream, GZIPInputStream}
 /**
   * @author WangYao
   * @date 2019/03/11
@@ -53,8 +55,16 @@ object MiduTouTiaolog {
             if (x != null) Encoding.base64Decoder(x).toArray else null
     }
 
-    def unzip = udf {
+    def unzip1 = udf {
         (x:Array[Byte]) =>
             if (x != null) decompress(x) else null
+    }
+    def unzip = udf {
+        (x: Array[Byte])=>
+        {
+            val inputStream = new GZIPInputStream(new ByteArrayInputStream(x))
+            val output = scala.io.Source.fromInputStream(inputStream).mkString
+            output
+        }
     }
 }
