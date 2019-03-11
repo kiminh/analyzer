@@ -52,7 +52,7 @@ object MiduTouTiaolog {
 
     def decode = udf {
         (x: String) =>
-            if (x != null) Encoding.base64Decoder(x).toArray else null
+            if (x != null) Encoding.base64Decoder(x).toArray[Byte] else null
     }
 
     def unzip1 = udf {
