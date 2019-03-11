@@ -152,7 +152,6 @@ object OcpcPIDwithCPA {
          |  isshow,
          |  isclick,
          |  price,
-         |  ocpc_log,
          |  ocpc_log_dict,
          |  ocpc_log_dict['kvalue'] as kvalue,
          |  ocpc_log_dict['cpagiven'] as cpagiven,
