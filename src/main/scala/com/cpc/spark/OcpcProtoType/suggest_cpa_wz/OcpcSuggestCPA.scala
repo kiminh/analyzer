@@ -42,27 +42,26 @@ object OcpcSuggestCPA {
 
     // 取基础数据部分
     val baseData = getBaseData(media, cvrGoal, date, hour, spark)
-    baseData.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311a")
 
     // ocpc部分：kvalue
     val kvalue = getKvalue(version, cvrGoal, spark)
-    kvalue.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311b")
+//    kvalue.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311b")
 
     // 模型部分
     val aucData = getAucData(version, cvrGoal, date, spark)
-    aucData.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311c")
+//    aucData.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311c")
 
     // 实时查询ocpc标记（从mysql抽取）
     val ocpcFlag = getOcpcFlag(cvrGoal, date, hour, spark)
-    ocpcFlag.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311d")
+//    ocpcFlag.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311d")
 
     // 历史推荐cpa的pcoc数据
     val prevData = getPrevSugggestData(version, cvrGoal, date, hour, spark)
-    prevData.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311e")
+//    prevData.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311e")
 
     // 数据组装
     val result = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, spark)
-    result.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311e")
+    result.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311")
   }
 
   def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcFlag: DataFrame, prevData: DataFrame, spark: SparkSession) = {
@@ -255,6 +254,7 @@ object OcpcSuggestCPA {
      */
     // 按照转化目标抽取基础数据表
     val baseLog = getBaseLog(media, cvrGoal, date, hour, spark)
+    baseLog.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311a")
 
     // 统计数据
     val resultDF = calculateLog(baseLog, date, hour, spark)
@@ -294,12 +294,15 @@ object OcpcSuggestCPA {
     // 数据统计: unitid, userid, adclass, original_conversion, conversion_goal, show, click, cvrcnt, cost, post_ctr, acp, acb, jfb, cpa, pcvr, post_cvr, pcoc, industry, usertype
     // 统计指标：unitid, userid, show, click, cvrcnt, cost, post_ctr, acp, acb, jfb, cpa
     val dataPart1 = calculateDataPart1(rawData, date, hour, spark)
+    dataPart1.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311b")
 
     // 统计指标：unitid, pcvr, post_cvr, pcoc
     val dataPart2 = calculateDataPart2(rawData, date, hour, spark)
+    dataPart2.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311c")
 
     // 统计指标：unitid, userid, adclass, industry, usertype
     val dataPart3 = calculateDataPart3(rawData, date, hour, spark)
+    dataPart3.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311d")
 
     // 数据关联
     val resultDF = dataPart1
