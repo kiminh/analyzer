@@ -33,7 +33,7 @@ object OcpcAaExpertiment {
         |from
         |	dl_cpc.ocpc_filter_unionlog
         |where
-        |	`date` = from_unixtime(unix_timestamp($date)-24*60*60, 'yyyy-MM-dd')
+        |	`date` = from_unixtime(unix_timestamp('$date')-24*60*60, 'yyyy-MM-dd')
       """.stripMargin
     val data = spark.sql(getInfoSQL)
     data
@@ -65,9 +65,9 @@ object OcpcAaExpertiment {
         |on
         |	a.unitid = b.unitid
         |where
-        |	b.`date` >= from_unixtime(unix_timestamp($date) - 7*24*60*60, 'yyyy-MM-dd')
+        |	b.`date` >= from_unixtime(unix_timestamp('$date') - 7*24*60*60, 'yyyy-MM-dd')
         |and
-        |	b.`date` <= from_unixtime(unix_timestamp($date) - 24*60*60, 'yyyy-MM-dd')
+        |	b.`date` <= from_unixtime(unix_timestamp('$date') - 24*60*60, 'yyyy-MM-dd')
       """.stripMargin
     val data = spark.sql(joinSQL)
     data
@@ -109,9 +109,9 @@ object OcpcAaExpertiment {
         |    from
         |        dl_cpc.ml_cvr_feature_v1
         |    where
-        |        `date` >= from_unixtime(unix_timestamp($date) - 7*24*60*60, 'yyyy-MM-dd')
+        |        `date` >= from_unixtime(unix_timestamp('$date') - 7*24*60*60, 'yyyy-MM-dd')
         |    and
-        |    	`date` <= from_unixtime(unix_timestamp($date) - 24*60*60, 'yyyy-MM-dd')
+        |    	`date` <= from_unixtime(unix_timestamp('$date') - 24*60*60, 'yyyy-MM-dd')
         |    and
         |        label2 = 1
         |    and
@@ -124,9 +124,9 @@ object OcpcAaExpertiment {
         |    from
         |        dl_cpc.ml_cvr_feature_v2
         |    where
-        |        `date` >= from_unixtime(unix_timestamp($date) - 7*24*60*60, 'yyyy-MM-dd')
+        |        `date` >= from_unixtime(unix_timestamp('$date') - 7*24*60*60, 'yyyy-MM-dd')
         |    and
-        |    	`date` <= from_unixtime(unix_timestamp($date) - 24*60*60, 'yyyy-MM-dd')
+        |    	`date` <= from_unixtime(unix_timestamp('$date') - 24*60*60, 'yyyy-MM-dd')
         |    and
         |        label = 1) as c
         |on
@@ -137,9 +137,9 @@ object OcpcAaExpertiment {
         |    from
         |        dl_cpc.site_form_unionlog
         |    where
-        |        `date` >= from_unixtime(unix_timestamp($date) - 7*24*60*60, 'yyyy-MM-dd')
+        |        `date` >= from_unixtime(unix_timestamp('$date') - 7*24*60*60, 'yyyy-MM-dd')
         |    and
-        |    	`date` <= from_unixtime(unix_timestamp($date) - 24*60*60, 'yyyy-MM-dd')
+        |    	`date` <= from_unixtime(unix_timestamp('$date') - 24*60*60, 'yyyy-MM-dd')
         |    and
         |        ideaid > 0
         |    and
