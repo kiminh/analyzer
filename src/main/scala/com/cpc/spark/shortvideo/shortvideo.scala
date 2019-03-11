@@ -238,7 +238,7 @@ object shortvideo {
          |        where   typecate='video' and typerank=2
          |      )  ranklow
          |     on  ranklow.userid_f=view1.userid
-         |     where  round(ranking*1.0/nums,3)=0.990 or ranking=nums
+         |     where  round(ranking*1.0/nums,3)=0.950 or ranking=nums
          |)  total
          |group by userid
          | """.stripMargin
