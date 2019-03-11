@@ -37,7 +37,7 @@ object OcpcAaExpertiment {
       """.stripMargin
     val data = spark.sql(getInfoSQL)
     data
-      .withColumn("dt", lit(data))
+      .withColumn("dt", lit(date))
       .withColumn("version", lit("qtt_demo"))
       .repartition(5)
       .write.mode("overwrite")
