@@ -59,13 +59,13 @@ object OcpcPIDwithCPA {
         .withColumn("version", lit(version))
         .withColumn("method", lit("pid"))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
-
-    resultDF
-      .repartition(10)
-      .write
-      .mode("overwrite")
-      .insertInto("dl_cpc.ocpc_k_model_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+//
+//    resultDF
+//      .repartition(10)
+//      .write
+//      .mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_k_model_hourly")
 
 
   }
@@ -81,7 +81,6 @@ object OcpcPIDwithCPA {
      */
     val cvrData = getCVRdata(conversionGoal, hourInt, date, hour, spark)
     val kvalue = getHistoryK(historyData, prevTable, conversionGoal, date, hour, spark)
-//    kvalue.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190201a")
     val cpaHistory = getCPAhistory(historyData, cvrData, conversionGoal, date, hour, spark)
     val cpaRatio = calculateCPAratio(cpaHistory, date, hour, spark)
     val result = updateK(kvalue, cpaRatio, date, hour, spark)
@@ -92,14 +91,7 @@ object OcpcPIDwithCPA {
 
   def getCVRdata(conversionGoal: Int, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // cvr 分区
-    var cvrGoal = ""
-    if (conversionGoal == 1) {
-      cvrGoal = "cvr1"
-    } else if (conversionGoal == 2) {
-      cvrGoal = "cvr2"
-    } else {
-      cvrGoal = "cvr3"
-    }
+    var cvrGoal = "wz"
 
     // 时间分区
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -156,7 +148,7 @@ object OcpcPIDwithCPA {
          |  searchid,
          |  unitid,
          |  cast(unitid as string) identifier,
-         |  ext['adclass'].int_value as adclass,
+         |  adclass,
          |  isshow,
          |  isclick,
          |  price,
@@ -166,13 +158,15 @@ object OcpcPIDwithCPA {
          |  ocpc_log_dict['cpagiven'] as cpagiven,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_union_log_hourly
+         |  dl_cpc.ocpc_filter_unionlog
          |WHERE
          |  $selectCondition
          |AND
          |  $mediaSelection
          |AND
-         |  ext_int['is_ocpc'] = 1
+         |  is_ocpc = 1
+         |AND
+         |  adclass = 110110100
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
