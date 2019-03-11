@@ -429,6 +429,7 @@ object OcpcSuggestCPA {
 
   def calculateDataPart2(rawData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val data = rawData
+      .filter(s"isclick = 1")
       .groupBy("unitid")
       .agg(
         sum(col("isclick")).alias("click"),
@@ -439,6 +440,7 @@ object OcpcSuggestCPA {
       .select("unitid", "post_cvr", "post_cvr_cali")
 
     val caliData = rawData
+      .filter(s"isclick = 1")
       .join(data, Seq("unitid"), "left_outer")
       .select("searchid", "unitid", "exp_cvr", "isclick", "iscvr", "post_cvr", "post_cvr_cali")
       .withColumn("pre_cvr", when(col("exp_cvr")> col("post_cvr_cali"), col("post_cvr_cali")).otherwise(col("exp_cvr")))
