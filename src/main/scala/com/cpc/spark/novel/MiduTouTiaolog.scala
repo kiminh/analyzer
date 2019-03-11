@@ -72,7 +72,8 @@ object MiduTouTiaolog {
     def unzip2 = udf {
         (x:String)=>
         {
-            val inputStream = new GZIPInputStream(this.getClass.getClassLoader.getResourceAsStream(x))
+            val s =new String(x)
+            val inputStream = new GZIPInputStream(this.getClass.getClassLoader.getResourceAsStream(s))
             val output = scala.io.Source.fromInputStream(inputStream).mkString
             output
         }
