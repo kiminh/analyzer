@@ -45,7 +45,7 @@ object OcpcCalculateAUC {
       .withColumn("date", lit(date))
       .withColumn("version", lit(version))
 
-    val finalTableName = "test.ocpc_unitid_auc_daily_" + conversionGoal
+    val finalTableName = "test.ocpc_unitid_auc_daily20190311_" + conversionGoal
     resultDF
 //      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_auc_daily")
         .write.mode("overwrite").saveAsTable(finalTableName)
@@ -139,11 +139,6 @@ object OcpcCalculateAUC {
     val scoreData = spark.sql(sqlRequest)
 
     // 取历史区间: cvr数据
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias.qtt.cv_pt.cvr" + conversionGoal
-    val cvrGoal = conf.getString(conf_key)
-    println(s"conf key is: $conf_key")
-    println(s"cvr partition is: $cvrGoal")
     val selectCondition2 = s"`date`>='$date1'"
     // 根据conversionGoal选择cv的sql脚本
     // 抽取数据
