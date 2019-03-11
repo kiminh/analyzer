@@ -142,105 +142,105 @@ object shortvideo {
     val sql2 =
       s"""
          select   userid,max(expcvr_d)  as threshreshold,'${date}','${hour}'
-         |from
-         |(
-         |      select userid,expcvr_d, ranking,nums,round(ranking*1.0/nums,3) as cate
-         |      from
-         |       (
-         |         select userid,expcvr_d,row_number() over (partition by userid order by exp_cvr desc) ranking
-         |         from   dl_cpc.cpc_unionevents_appdownload_mid
-         |         where  dt='${date}' and hr='${hour}'
-         |         and adtype in ('8','10')
-         |        )  view1
-         |      JOIN
-         |       (
-         |         select userid userid2, count(cvr_rank) as nums
-         |         from dl_cpc.cpc_unionevents_appdownload_mid
-         |         where dt='${date}' and hr='${hour}'
-         |         and adtype in ('8','10')
-         |         group by userid
-         |       ) nums
-         |       on  view1.userid = nums.userid2
-         |        join
-         |      (
-         |         select   userid_f,typecate,cvr_ratio,typerank
-         |         from
-         |         (
-         |             select    userid_f,typecate,cvr_ratio,row_number() over (partition by userid_f order by cvr_ratio desc)  typerank
-         |             from
-         |             (
-         |            select    userid_f,typecate
-         |            ,count( searchid3) cnts
-         |            ,sum(isclick) as click_n
-         |        ,(sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end)
-         |      + sum(case when isshow  = 1 and  charge_type = 2   then price else 0 end)/1000.0)/100.0    as  expense
-         |        ,(sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end)
-         |      + sum(case when isshow  = 1 and  charge_type = 2   then price else 0 end)/1000.0)/100.0*1.0/sum(isclick)*1000 cpm
-         |        ,sum(case when isreport=1 then 1 end ) cvr_n
-         |        ,sum(case when isreport=1 then 1 end ) / sum(case when isclick=1 then 1 end)  cvr_ratio
-         |               from
-         |               (
-         |             select     userid userid_f,searchid as searchid3,isshow,isclick,charge_type,price,exptags,
-         |             case when isclick=1 then exp_cvr *1000000 else 0 end exp_cvr,
-         |             case when adtype in (8,10)  then   'video'
-         |                  when adtype  in (2)   then   'bigpic'  end  as typecate,
-         |             row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
-         |             from       dl_cpc.slim_union_log
-         |             where     ${selectCondition3}
-         |             and       media_appsid in  ("80000001")
-         |             and       interaction=2
-         |             and       adtype in (2,8,10)
-         |             and       usertype in (0,1,2)
-         |                )  v2
-         |         left join
-         |           (
-         |           select   `date`,aa.searchid as searchid4,isreport, src,label_type,uid,planid,unitid, adclass,adslot_type,label2
-         |           FROM
-         |             (
-         |              select          `date`,
-         |                     final.searchid as searchid,src,label_type,uid,planid,unitid, adclass,adslot_type,label2,
-         |                     final.ideaid as ideaid,
-         |                     case
-         |          when final.src="elds" and final.label_type=6 then 1
-         |          when final.src="feedapp" and final.label_type in (4, 5) then 1
-         |          when final.src="yysc" and final.label_type=12 then 1
-         |          when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
-         |          when final.src="others" and final.label_type=6 then 1
-         |          else 0     end as isreport
-         |          from
-         |                 (
-         |          select  distinct
-         |              `date`,searchid, media_appsid, uid,
-         |              planid, unitid, ideaid, adclass,adslot_type,label2,
-         |              case
-         |                  when (adclass like '134%' or adclass like '107%') then "elds"
-         |                  when (adslot_type<>7 and adclass like '100%') then "feedapp"
-         |                  when (adslot_type=7 and adclass like '100%') then "yysc"
-         |                  when adclass in (110110100, 125100100) then "wzcp"
-         |                  else "others"
-         |              end as src,
-         |              label_type
-         |          from
-         |              dl_cpc.ml_cvr_feature_v1
-         |          where
-         |              `date`>='${date1}'
-         |               and label2=1
-         |             and media_appsid in ("80000001")
-         |                   ) final
-         |           ) aa
-         |        where   aa.isreport=1
-         |        ) a
-         |      on    v2.searchid3=a.searchid4
-         |
-         |     group by userid_f,typecate
-         |           )  aa
-         |        )  aaa
-         |        where   typecate='video' and typerank=2
-         |      )  ranklow
-         |     on  ranklow.userid_f=view1.userid
-         |     where  round(ranking*1.0/nums,3)=0.950 or ranking=nums
-         |)  total
-         |group by userid
+         |         |from
+         |         |(
+         |         |      select userid,expcvr_d, ranking,nums,round(ranking*1.0/nums,3) as cate
+         |         |      from
+         |         |       (
+         |         |         select userid,expcvr_d,row_number() over (partition by userid order by exp_cvr desc) ranking
+         |         |         from   dl_cpc.cpc_unionevents_appdownload_mid
+         |         |         where  dt='${date}' and hr='${hour}'
+         |         |         and adtype in ('8','10')
+         |         |        )  view1
+         |         |      JOIN
+         |         |       (
+         |         |         select userid userid2, count(cvr_rank) as nums
+         |         |         from dl_cpc.cpc_unionevents_appdownload_mid
+         |         |         where dt='${date}' and hr='${hour}'
+         |         |         and adtype in ('8','10')
+         |         |         group by userid
+         |         |       ) nums
+         |         |       on  view1.userid = nums.userid2
+         |         |        join
+         |         |      (
+         |         |         select   userid_f,typecate,cvr_ratio,typerank
+         |         |         from
+         |         |         (
+         |         |             select    userid_f,typecate,cvr_ratio,row_number() over (partition by userid_f order by cvr_ratio desc)  typerank
+         |         |             from
+         |         |             (
+         |         |            select    userid_f,typecate
+         |         |            ,count( searchid3) cnts
+         |         |            ,sum(isclick) as click_n
+         |         |        ,(sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end)
+         |         |      + sum(case when isshow  = 1 and  charge_type = 2   then price else 0 end)/1000.0)/100.0    as  expense
+         |         |        ,(sum(case WHEN isclick = 1 and (charge_type = 1 or charge_type IS NULL)  then price else 0 end)
+         |         |      + sum(case when isshow  = 1 and  charge_type = 2   then price else 0 end)/1000.0)/100.0*1.0/sum(isclick)*1000 cpm
+         |         |        ,sum(case when isreport=1 then 1 end ) cvr_n
+         |         |        ,sum(case when isreport=1 then 1 end ) / sum(case when isclick=1 then 1 end)  cvr_ratio
+         |         |               from
+         |         |               (
+         |         |             select     userid userid_f,searchid as searchid3,isshow,isclick,charge_type,price,exptags,
+         |         |             case when isclick=1 then exp_cvr *1000000 else 0 end exp_cvr,
+         |         |             case when adtype in (8,10)  then   'video'
+         |         |                  when adtype  in (2)   then   'bigpic'  end  as typecate,
+         |         |             row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
+         |         |             from       dl_cpc.slim_union_log
+         |         |             where     ${selectCondition3}
+         |         |             and       media_appsid in  ("80000001")
+         |         |             and       interaction=2
+         |         |             and       adtype in (2,8,10)
+         |         |             and       usertype in (0,1,2)
+         |         |                )  v2
+         |         |         left join
+         |         |           (
+         |         |           select   `date`,aa.searchid as searchid4,isreport, src,label_type,uid,planid,unitid, adclass,adslot_type,label2
+         |         |           FROM
+         |         |             (
+         |         |              select          `date`,
+         |         |                     final.searchid as searchid,src,label_type,uid,planid,unitid, adclass,adslot_type,label2,
+         |         |                     final.ideaid as ideaid,
+         |         |                     case
+         |         |          when final.src="elds" and final.label_type=6 then 1
+         |         |          when final.src="feedapp" and final.label_type in (4, 5) then 1
+         |         |          when final.src="yysc" and final.label_type=12 then 1
+         |         |          when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
+         |         |          when final.src="others" and final.label_type=6 then 1
+         |         |          else 0     end as isreport
+         |         |          from
+         |         |                 (
+         |         |          select  distinct
+         |         |              `date`,searchid, media_appsid, uid,
+         |         |              planid, unitid, ideaid, adclass,adslot_type,label2,
+         |         |              case
+         |         |                  when (adclass like '134%' or adclass like '107%') then "elds"
+         |         |                  when (adslot_type<>7 and adclass like '100%') then "feedapp"
+         |         |                  when (adslot_type=7 and adclass like '100%') then "yysc"
+         |         |                  when adclass in (110110100, 125100100) then "wzcp"
+         |         |                  else "others"
+         |         |              end as src,
+         |         |              label_type
+         |         |          from
+         |         |              dl_cpc.ml_cvr_feature_v1
+         |         |          where
+         |         |              `date`>='${date1}'
+         |         |               and label2=1
+         |         |             and media_appsid in ("80000001")
+         |         |                   ) final
+         |         |           ) aa
+         |         |        where   aa.isreport=1
+         |         |        ) a
+         |         |      on    v2.searchid3=a.searchid4
+         |         |
+         |         |     group by userid_f,typecate
+         |         |           )  aa
+         |         |        )  aaa
+         |         |        where   typecate='video' and typerank=2
+         |         |      )  ranklow
+         |         |     on  ranklow.userid_f=view1.userid
+         |         |     where  round(ranking*1.0/nums,3)=0.900 or ranking=nums
+         |         |)  total
+         |         |group by userid
          | """.stripMargin
     var tab2 = spark.sql(sql2).toDF("userid", "exp_cvr","dt","hr")
     println("result tab count:" + tab2.count())
