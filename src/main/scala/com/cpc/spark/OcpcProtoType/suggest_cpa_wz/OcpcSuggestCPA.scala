@@ -50,7 +50,7 @@ object OcpcSuggestCPA {
     val aucData = getAucData(version, cvrGoal, date, spark)
 
     // 实时查询ocpc标记（从mysql抽取）
-    val ocpcFlag = getOcpcFlag(cvrGoal, spark)
+    val ocpcFlag = getOcpcFlag(cvrGoal, date, hour, spark)
 
     // 历史推荐cpa的pcoc数据
     val prevData = getPrevSugggestData(version, cvrGoal, date, hour, spark)
@@ -86,14 +86,6 @@ object OcpcSuggestCPA {
     /*
     从dl_cpc.ocpc_suggest_cpa_recommend_hourly表的前两天数据中抽取pcoc
      */
-    var conversionGoal = 1
-    if (cvrGoal == "cvr1") {
-      conversionGoal = 1
-    } else if (cvrGoal == "cvr2") {
-      conversionGoal = 2
-    } else {
-      conversionGoal = 3
-    }
     // 时间区间选择
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val endDayTime = dateConverter.parse(date)
@@ -119,7 +111,7 @@ object OcpcSuggestCPA {
          |AND
          |  version = '$version'
          |AND
-         |  original_conversion = $conversionGoal
+         |  original_conversion = 1
        """.stripMargin
     println(sqlRequest1)
     val data1 = spark
@@ -141,7 +133,7 @@ object OcpcSuggestCPA {
          |AND
          |  version = '$version'
          |AND
-         |  original_conversion = $conversionGoal
+         |  original_conversion = 1
        """.stripMargin
     println(sqlRequest2)
     val data2 = spark
@@ -157,48 +149,52 @@ object OcpcSuggestCPA {
     resultDF
   }
 
-  def getOcpcFlag(cvrGoal: String, spark: SparkSession) = {
-    var conversionGoal = 1
-    if (cvrGoal == "cvr1") {
-      conversionGoal = 1
-    } else if (cvrGoal == "cvr2") {
-      conversionGoal = 2
-    } else {
-      conversionGoal = 3
-    }
+  def getOcpcFlag(cvrGoal: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    观察是否有ocpc投放记录
+     */
+    // 媒体选择
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "medias.qtt.media_selection"
+    val mediaSelection = conf.getString(conf_key)
 
-    val url = "jdbc:mysql://rr-2zehhy0xn8833n2u5.mysql.rds.aliyuncs.com:3306/adv?useUnicode=true&characterEncoding=utf-8"
-    val user = "adv_live_read"
-    val passwd = "seJzIPUc7xU"
-    val driver = "com.mysql.jdbc.Driver"
-    val table = "(select id, user_id, ideas, bid, ocpc_bid, ocpc_bid_update_time, cast(conversion_goal as char) as conversion_goal, status, is_ocpc from adv.unit where is_ocpc=1 and ideas is not null) as tmp"
+    // 时间区间选择
+    val hourCnt = 72
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val endDay = date + " " + hour
+    val endDayTime = dateConverter.parse(endDay)
+    val calendar = Calendar.getInstance
+    calendar.setTime(endDayTime)
+    calendar.add(Calendar.HOUR, -hourCnt)
+    val startDateTime = calendar.getTime
+    val startDateStr = dateConverter.format(startDateTime)
+    val date1 = startDateStr.split(" ")(0)
+    val hour1 = startDateStr.split(" ")(1)
+    val timeSelection = getTimeRangeSql(date1, hour1, date, hour)
 
-    val data = spark.read.format("jdbc")
-      .option("url", url)
-      .option("driver", driver)
-      .option("user", user)
-      .option("password", passwd)
-      .option("dbtable", table)
-      .load()
-
-    val base = data
-      .withColumn("unitid", col("id"))
-      .withColumn("userid", col("user_id"))
-      .selectExpr("unitid", "is_ocpc", "cast(conversion_goal as int) conversion_goal")
-
-    base.createOrReplaceTempView("base_data")
     val sqlRequest =
       s"""
          |SELECT
+         |  searchid,
          |  unitid,
-         |  is_ocpc
+         |  is_ocpc,
+         |  adclass
          |FROM
-         |  base_data
+         |  dl_cpc.ocpc_filter_unionlog
          |WHERE
-         |  conversion_goal = $conversionGoal
+         |  $timeSelection
+         |AND
+         |  $mediaSelection
+         |AND
+         |  is_ocpc = 1
+         |AND
+         |  adclass = 110110100
        """.stripMargin
     println(sqlRequest)
-    val resultDF = spark.sql(sqlRequest)
+    val resultDF = spark
+        .sql(sqlRequest)
+        .select("unitid", "is_ocpc")
+        .distinct()
 
     resultDF.show(10)
     resultDF
@@ -208,15 +204,6 @@ object OcpcSuggestCPA {
     /*
     从dl_cpc.ocpc_unitid_auc_daily根据version和conversion_goal来抽取对应unitid的auc
      */
-    var conversionGoal = 1
-    if (cvrGoal == "cvr1") {
-      conversionGoal = 1
-    } else if (cvrGoal == "cvr2") {
-      conversionGoal = 2
-    } else {
-      conversionGoal = 3
-    }
-
     val sqlRequest =
       s"""
          |SELECT
@@ -227,7 +214,7 @@ object OcpcSuggestCPA {
          |WHERE
          |  version = '$version'
          |AND
-         |  conversion_goal = $conversionGoal
+         |  conversion_goal = 1
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
@@ -235,15 +222,6 @@ object OcpcSuggestCPA {
   }
 
   def getKvalue(version: String, cvrGoal: String, spark: SparkSession) = {
-    var conversionGoal = 1
-    if (cvrGoal == "cvr1") {
-      conversionGoal = 1
-    } else if (cvrGoal == "cvr2") {
-      conversionGoal = 2
-    } else {
-      conversionGoal = 3
-    }
-
     val sqlRequest =
       s"""
          |SELECT
@@ -254,7 +232,7 @@ object OcpcSuggestCPA {
          |WHERE
          |  version = '$version'
          |AND
-         |  conversion_goal = $conversionGoal
+         |  conversion_goal = 1
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark
@@ -543,6 +521,8 @@ object OcpcSuggestCPA {
          |    adsrc = 1
          |AND
          |    (charge_type is null or charge_type = 1)
+         |AND
+         |    adclass = 110110100
        """.stripMargin
     println(sqlRequest1)
     val ctrData = spark.sql(sqlRequest1).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
@@ -571,21 +551,6 @@ object OcpcSuggestCPA {
     data
   }
 
-//  def getTimeRangeSqlCondition(endDate: String, endHour: String, hourCnt: Int): String = {
-//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-//    val endDay = endDate + " " + endHour
-//    val endDayTime = dateConverter.parse(endDay)
-//    val calendar = Calendar.getInstance
-//    calendar.setTime(endDayTime)
-//    calendar.add(Calendar.HOUR, -hourCnt)
-//    val startDateTime = calendar.getTime
-//    val startDateStr = dateConverter.format(startDateTime)
-//    val startDate = startDateStr.split(" ")(0)
-//    val startHour = startDateStr.split(" ")(1)
-//    val timeSelection = getTimeRangeSql(startDate, startHour, endDate, endHour)
-//    println(s"time selection is: $timeSelection")
-//    return timeSelection
-//  }
 
   def getTimeRangeSql(startDate: String, startHour: String, endDate: String, endHour: String): String = {
     if (startDate.equals(endDate)) {
