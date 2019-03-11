@@ -7,8 +7,10 @@ import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 object OcpcAaExpertiment {
 
   def main(args: Array[String]): Unit = {
-    val date = args(0).toString
+    var date = args(0).toString
+    date += " 00:00:00"
     val spark = SparkSession.builder().appName("AaExperitment").enableHiveSupport().getOrCreate()
+    println("date：" + date)
     getYesterdayAdInfo(date, spark)
     println("has got yesterday's ad info")
     getBaseUnionlogData(date, spark)
