@@ -51,6 +51,7 @@ object OcpcAaExpertiment {
         |select
         | b.`date`,
         |	a.unitid,
+        | a.userid,
         |	a.conversion_goal,
         | b.searchid,
         |	b.isclick,
