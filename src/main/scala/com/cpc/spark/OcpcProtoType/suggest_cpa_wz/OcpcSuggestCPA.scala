@@ -29,8 +29,8 @@ object OcpcSuggestCPA {
     val date = args(0).toString
     val hour = args(1).toString
     val media = args(2).toString
-    val cvrGoal = "cvr1"
-    val version = "qtt_demo"
+    val cvrGoal = "wz"
+    val version = "wz"
     val spark = SparkSession
       .builder()
       .appName(s"ocpc suggest cpa v2: $date, $hour")
