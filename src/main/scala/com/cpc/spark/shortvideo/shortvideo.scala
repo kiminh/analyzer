@@ -61,6 +61,7 @@ object shortvideo {
     val hour1 = tmpDateValue(1)
     val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
     val selectCondition2 = getTimeRangeSql22(date1, hour1, date, hour)
+    val selectCondition3 = getTimeRangeSql23(date1, hour1, date, hour)
 
 
 
@@ -185,7 +186,7 @@ object shortvideo {
          |                  when adtype  in (2)   then   'bigpic'  end  as typecate,
          |             row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
          |             from       dl_cpc.slim_union_log
-         |             where     dt>='2019-03-08'  and  dt<='2019-03-10'
+         |             where     ${selectCondition3}
          |             and       media_appsid in  ("80000001")
          |             and       interaction=2
          |             and       adtype in (2,8,10)
@@ -222,7 +223,7 @@ object shortvideo {
          |          from
          |              dl_cpc.ml_cvr_feature_v1
          |          where
-         |              `date`='2019-03-10'
+         |              `date`='${date1}'
          |               and label2=1
          |             and media_appsid in ("80000001")
          |                   ) final
@@ -286,7 +287,14 @@ object shortvideo {
     s"or (dt = '$endDate' and hr <= '$endHour') " +
     s"or (dt > '$startDate' and dt < '$endDate'))"
 }
-
+  def getTimeRangeSql23(startDate: String, startHour: String, endDate: String, endHour: String): String = {
+    if (startDate.equals(endDate)) {
+      return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
+    }
+    return s"((dt = '$startDate' and hour > '$startHour') " +
+      s"or (dt = '$endDate' and hour <= '$endHour') " +
+      s"or (dt > '$startDate' and dt < '$endDate'))"
+  }
 
 }
 
