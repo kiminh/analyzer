@@ -42,7 +42,7 @@ object OcpcConversionV2 {
          |AND
          |  label2=1
          |AND
-         |  label_type in (1, 2)
+         |  label_type in (1, 2, 3)
          |GROUP BY searchid, label2
        """.stripMargin
     println(sqlRequest)
