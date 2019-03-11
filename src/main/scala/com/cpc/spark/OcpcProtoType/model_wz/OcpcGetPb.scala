@@ -292,7 +292,7 @@ object OcpcGetPb {
     calendar.add(Calendar.DATE, -3)
     val dt = calendar.getTime
     val date1 = sdf.format(dt)
-    val selectCondition = getTimeRangeSql3(date1, hour, date, hour)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
     calendar.add(Calendar.DATE, -4)
     val dt2 = calendar.getTime
