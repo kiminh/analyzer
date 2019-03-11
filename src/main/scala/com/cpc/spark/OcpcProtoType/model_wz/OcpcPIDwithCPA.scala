@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.model_v3
+package com.cpc.spark.OcpcProtoType.model_wz
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -23,7 +23,7 @@ object OcpcPIDwithCPA {
      */
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
 
-    // bash: 2019-01-02 12 24 1 qtt_demo qtt
+    // bash: 2019-01-02 12 24 1 wz qtt
     val date = args(0).toString
     val hour = args(1).toString
     val hourInt = args(2).toInt

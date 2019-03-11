@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.model_v3
+package com.cpc.spark.OcpcProtoType.model_wz
 
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat

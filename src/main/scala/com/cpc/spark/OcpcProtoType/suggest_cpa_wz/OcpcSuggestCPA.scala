@@ -3,6 +3,7 @@ package com.cpc.spark.OcpcProtoType.suggest_cpa_wz
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
+import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -56,8 +57,34 @@ object OcpcSuggestCPA {
     val prevData = getPrevSugggestData(version, cvrGoal, date, hour, spark)
 
     // 数据组装
-    val result = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, spark)
-    result.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311")
+    val result1 = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, spark)
+
+    // 预估数据
+    val alpha = 0.1
+    val result2 = predictOcpcBid(result1, alpha, date, hour, spark)
+    val resultDF = result2
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("version", lit(version))
+
+    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311")
+  }
+
+  def predictOcpcBid(suggestData: DataFrame, alpha: Double, date: String, hour: String, spark: SparkSession) = {
+    /*
+    根据slim unionlog抽取数据,并根据cpa，校准cvr，k值计算dynamicbid分布
+     */
+    val resultDF = suggestData
+      .withColumn("original_conversion", lit(1))
+      .withColumn("conversion_goal", lit(1))
+      .withColumn("zerobid_percent", lit(0.0))
+      .withColumn("bottom_halfbid_percent", lit(0.0))
+      .withColumn("top_halfbid_percent", lit(0.0))
+      .withColumn("largebid_percent", lit(0.0))
+      .selectExpr("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "zerobid_percent", "bottom_halfbid_percent", "top_halfbid_percent", "largebid_percent")
+
+    resultDF
+
   }
 
   def assemblyData(baseData: DataFrame, kvalue: DataFrame, aucData: DataFrame, ocpcFlag: DataFrame, prevData: DataFrame, spark: SparkSession) = {
