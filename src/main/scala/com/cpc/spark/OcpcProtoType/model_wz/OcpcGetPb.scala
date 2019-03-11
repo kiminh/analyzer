@@ -30,7 +30,7 @@ object OcpcGetPb {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
-    // bash: 2019-01-02 12 1 qtt_demo qtt
+    // bash: 2019-01-02 12 1 wz qtt
     val date = args(0).toString
     val hour = args(1).toString
     val conversionGoal = args(2).toInt
@@ -61,8 +61,8 @@ object OcpcGetPb {
         .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
@@ -113,11 +113,11 @@ object OcpcGetPb {
     2. 投放小时数大于24小时或ocpc_k_smooth_v1数据表没有关联到数据，则不做限制
      */
     // 抽取ocpc_suggest_cpa_k_once表
-    // todo
-    val baseK = spark
-        .table("dl_cpc.ocpc_suggest_cpa_k_once")
-//        .table("dl_cpc.ocpc_suggest_cpa_k")
-        .where(s"version = '$version' and conversion_goal = $conversionGoal and duration <= 3")
+    val conf = ConfigFactory.load("ocpc")
+    val conf_key = "ocpc_wz.suggest_k_path"
+    val expDataPath = conf.getString(conf_key)
+    val data = spark.read.format("json").json(expDataPath)
+    val baseK = data
         .withColumn("base_k", col("kvalue"))
         .select("identifier", "base_k")
 
@@ -155,6 +155,7 @@ object OcpcGetPb {
          |and adslot_type in (1,2,3)
          |and searchid is not null
          |and cast(ocpc_log_dict['conversiongoal'] as int) = $conversionGoal
+         |and adclass = 110110100
        """.stripMargin
     println(sqlRequest)
     val ocpcRecord = spark
@@ -281,14 +282,7 @@ object OcpcGetPb {
       */
     // 对于刚进入ocpc阶段但是有cpc历史数据的广告依据历史转化率给出k的初值
     // cvr 分区
-    var cvrGoal = ""
-    if (conversionGoal == 1) {
-      cvrGoal = "cvr1"
-    } else if (conversionGoal == 2) {
-      cvrGoal = "cvr2"
-    } else {
-      cvrGoal = "cvr3"
-    }
+    var cvrGoal = "wz"
 
     // 取历史数据
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
@@ -340,10 +334,10 @@ object OcpcGetPb {
          |    (SELECT
          |        searchid,
          |        unitid,
-         |        exp_cvr * 1.0 / 1000000 as exp_cvr,
+         |        exp_cvr,
          |        isclick
          |    FROM
-         |        dl_cpc.slim_union_log
+         |        dl_cpc.ocpc_base_unionlog
          |    WHERE
          |        $selectCondition
          |    AND
@@ -353,7 +347,8 @@ object OcpcGetPb {
          |    AND antispam = 0
          |    AND ideaid > 0
          |    AND adsrc = 1
-         |    AND adslot_type in (1,2,3)) as a
+         |    AND adslot_type in (1,2,3)
+         |    AND adclass = 110110100) as a
          |LEFT JOIN
          |    (SELECT
          |        searchid,
@@ -546,6 +541,8 @@ object OcpcGetPb {
          |  $selectCondition
          |AND
          |  $mediaSelection
+         |AND
+         |  adclass = 110110100
        """.stripMargin
 
     println(sqlRequest)
@@ -563,14 +560,7 @@ object OcpcGetPb {
     根据ocpc_union_log_hourly关联到正在跑ocpc的广告数据
      */
     // cvr 分区
-    var cvrGoal = ""
-    if (conversionGoal == 1) {
-      cvrGoal = "cvr1"
-    } else if (conversionGoal == 2) {
-      cvrGoal = "cvr2"
-    } else {
-      cvrGoal = "cvr3"
-    }
+    var cvrGoal = "wz"
 
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
@@ -583,10 +573,11 @@ object OcpcGetPb {
     val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
 
     val ocpcUnionlog = spark
-      .table("dl_cpc.ocpc_union_log_hourly")
+      .table("dl_cpc.ocpc_filter_unionlog")
       .where(selectCondition)
       .filter(mediaSelection)
-      .filter(s"ext_int['is_ocpc'] = 1")
+      .filter(s"adclass = 110110100")
+      .filter(s"is_ocpc = 1")
       .withColumn("identifier", col("unitid"))
       .filter("isclick=1")
       .selectExpr("searchid", "cast(identifier as string) identifier")
