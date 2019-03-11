@@ -85,8 +85,8 @@ object OcpcPIDwithCPA {
     val cvrData = getCVRdata(media, conversionGoal, hourInt, date, hour, spark)
     val kvalue = getHistoryK(historyData, prevTable, conversionGoal, date, hour, spark)
 //    kvalue.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190201a")
-    val cpaHistory = getCPAhistory(historyData, cvrData, conversionGoal, date, hour, spark)
-    val cpaRatio = calculateCPAratio(cpaHistory, date, hour, spark)
+    val cpaHistory = getCPAhistory(historyData, cvrData, conversionGoal)
+    val cpaRatio = calculateCPAratio(cpaHistory, spark)
     val result = updateK(kvalue, cpaRatio, date, hour, spark)
 //    result.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190201b")
     val resultDF = result.select("identifier", "k_value", "conversion_goal")
@@ -207,7 +207,7 @@ object OcpcPIDwithCPA {
     resultDF
   }
 
-  def getCPAhistory(historyData: DataFrame, cvrRaw: DataFrame, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getCPAhistory(historyData: DataFrame, cvrRaw: DataFrame, conversionGoal: Int) = {
     /*
     计算cpa_history，分为cvr2和cvr3
     1. 数据关联
@@ -234,7 +234,7 @@ object OcpcPIDwithCPA {
     resultDF
   }
 
-  def calculateCPAratio(cpaHistory: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def calculateCPAratio(cpaHistory: DataFrame, spark: SparkSession) = {
     cpaHistory.createOrReplaceTempView("raw_table")
 
     val sqlRequest =

@@ -22,7 +22,7 @@ object BiReport {
          |  adclass,
          |  case
          |    when media_appsid = '80002819' then 'hottopic'
-         |    else 'qtt'
+         |    else 'others'
          |    end as media,
          |  sum(if( isclick = 1, price, 0)) as money,
          |  sum(isshow)  as show_cnt,
@@ -35,14 +35,14 @@ object BiReport {
          |  and isshow = 1
          |  and antispam = 0
          |  and (charge_type is NULL or charge_type = 1)
-         |  and media_appsid in ('80000001', '80000002', '80002819')
+         |  --and media_appsid in ('80000001', '80000002', '80002819')
          |group by
          |  unitid,
          |  usertype,
          |  adclass,
          |  case
          |    when media_appsid = '80002819' then 'hottopic'
-         |    else 'qtt'
+         |    else 'others'
          |    end,
          |  dt
        """.stripMargin
@@ -64,7 +64,7 @@ object BiReport {
          |      select
          |        unitid,
          |        --sum(money) as unit_money,
-         |        sum(if(media = 'qtt', money, 0)) as unit_money_qtt,
+         |        sum(if(media = 'others',   money, 0)) as unit_money_qtt,
          |        sum(if(media = 'hottopic', money, 0)) as unit_money_hottopic
          |      from dl_cpc.unit_ect_summary_sjq
          |      where `date` = '$date'

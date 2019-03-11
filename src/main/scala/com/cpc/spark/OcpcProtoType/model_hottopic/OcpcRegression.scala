@@ -40,7 +40,7 @@ object OcpcRegression {
     println(s"mediaSelection=$mediaSelection")
     println(s"cvrGoal=$cvrGoal")
 
-    val result = calcualteKwithRegression(media, conversionGoal, version, hourCnt, date, hour, spark)
+    val result = calculateKwithRegression(media, conversionGoal, version, hourCnt, date, hour, spark)
 
 //    result.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
 
@@ -59,7 +59,7 @@ object OcpcRegression {
 
   }
 
-  def calcualteKwithRegression(media: String, conversionGoal: Int, version: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
+  def calculateKwithRegression(media: String, conversionGoal: Int, version: String, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
     // 中间表
     val middleData = getMiddleData(media, conversionGoal, version, hourCnt, date, hour, spark)
     val tablename = "dl_cpc.ocpc_regression_middle_hourly_v2"
