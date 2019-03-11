@@ -5,10 +5,11 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils.{getTimeRangeSql2, getTimeRangeSql3}
-import com.typesafe.config.ConfigFactory
 import ocpc.ocpc.{OcpcList, SingleRecord}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+import com.cpc.spark.udfs.Udfs_wj._
+import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable.ListBuffer
 
@@ -29,67 +30,200 @@ object OcpcGetPb {
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
     // 计算日期周期
-    // bash: 2019-01-02 12 1 novel_v2 novel
+    // bash: 2019-01-02 12 1 qtt_demo qtt
     val date = args(0).toString
     val hour = args(1).toString
     val conversionGoal = args(2).toInt
     val version = args(3).toString
     val media = args(4).toString
 
-    val conf = ConfigFactory.load("ocpc")
-    // 媒体选择
-    val conf_key1 = "medias." + media + ".media_selection"
-    val mediaSelection = conf.getString(conf_key1)
-
-    // cvr 分区
-    val cvGoal = conversionGoal.toString
-    val conf_key2 = "medias." + media + ".cv_pt." + "cvr" + cvGoal
-    val cvrGoal = conf.getString(conf_key2)
-
     println("parameters:")
     println(s"date=$date, hour=$hour, conversionGoal=$conversionGoal, version=$version, media=$media")
-    println(s"mediaSelection=$mediaSelection")
-    println(s"cvrGoal=$cvrGoal")
+    var mediaSelection = s"media_appsid in ('80000001', '80000002')"
+    if (media == "qtt") {
+      mediaSelection = s"media_appsid in ('80000001', '80000002')"
+    } else if (media == "novel") {
+      mediaSelection = s"media_appsid in ('80001098','80001292')"
+    } else {
+      mediaSelection = s"media_appsid = '80002819'"
+    }
 
 //    // 明投：可以有重复identifier
 //    dl_cpc.ocpc_pb_result_hourly_v2
 //    dl_cpc.ocpc_prev_pb_once
-    val result = getPbByConversion(media, conversionGoal, version, date, hour, spark)
+    val result = getPbByConversion(mediaSelection, conversionGoal, version, date, hour, spark)
     val resultDF = result
         .withColumn("cpagiven", lit(1))
-        .select("identifier", "cpagiven", "cvrcnt", "kvalue", "conversion_goal")
+        .select("identifier", "cpagiven", "cvrcnt", "kvalue")
+        .withColumn("conversion_goal", lit(conversionGoal))
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
 
-//    resultDF.repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_v2")
     resultDF
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
 
-  def getPbByConversion(media: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+  def getPbByConversion(mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     计算步骤
     1. 获取base_data
     2. 按照conversiongoal, 计算cvrcnt，数据串联
     3. 计算k
      */
-    val base = getBaseData(media, conversionGoal, date, hour, spark)
-    val cvrData = getOcpcCVR(media, conversionGoal, date, hour, spark)
-    val kvalue = getKvalue(media, conversionGoal, version, date, hour, spark)
+    val base = getBaseData(mediaSelection, conversionGoal, date, hour, spark)
+    val cvrData = getOcpcCVR(mediaSelection, conversionGoal, date, hour, spark)
+    val kvalue1 = getKvalue(mediaSelection, conversionGoal, version, date, hour, spark)
+    val kvalue = smoothKvalue(kvalue1, mediaSelection, conversionGoal, version, date, hour, spark)
 
     val resultDF = base
       .join(cvrData, Seq("identifier", "conversion_goal"), "left_outer")
       .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
       .select("identifier", "conversion_goal", "cvrcnt", "kvalue")
       .na.fill(0, Seq("cvrcnt", "kvalue"))
+      .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
 
 
     resultDF
   }
 
-  def getKvalue(media: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+  def udfHourDiffToFactor() = udf((hours: Int) => {
+    /*
+    根据最近两天里面有点击的ocpc投放小时数来计算限制阈值：
+    factor = hours / 12
+    如果hours >= 6, factor = 1
+    factor的作用：限制k值区间
+    (1 - factor) * basek <= k <= (1 + factor) * basek
+     */
+    var result = 0.0
+    if (hours >= 12) {
+      result = 0.0
+    } else {
+      result = hours / 12.0
+    }
+    result
+  })
+
+  def smoothKvalue(kvalue: DataFrame, mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    计算在投ocpc广告每个广告最近两天的ocpc投放小时数，并与ocpc_suggest_cpa_k_once数据表内关联，
+    1. 投放小时数少于24小时且ocpc_suggest_cpa_k_once数据表有数据则按照小时数限制k值变动
+    2. 投放小时数大于24小时或ocpc_k_smooth_v1数据表没有关联到数据，则不做限制
+     */
+    // 抽取ocpc_suggest_cpa_k_once表
+    // todo
+    val baseK = spark
+        .table("dl_cpc.ocpc_suggest_cpa_k_once")
+//        .table("dl_cpc.ocpc_suggest_cpa_k")
+        .where(s"version = '$version' and conversion_goal = $conversionGoal and duration <= 3")
+        .withColumn("base_k", col("kvalue"))
+        .select("identifier", "base_k")
+
+    baseK.show(10)
+
+    // 抽取所有投放ocpc的广告单元当前有点击的ocpc投放小时数
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -2)
+    val yesterday1 = calendar.getTime
+    val date1 = dateConverter.format(yesterday1)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    searchid,
+         |    unitid,
+         |    userid,
+         |    isclick,
+         |    date,
+         |    hour
+         |FROM
+         |    dl_cpc.ocpc_filter_unionlog
+         |WHERE
+         |    $selectCondition
+         |and is_ocpc=1
+         |and $mediaSelection
+         |and round(adclass/1000) != 132101  --去掉互动导流
+         |and isclick = 1
+         |and ideaid > 0
+         |and adsrc = 1
+         |and adslot_type in (1,2,3)
+         |and searchid is not null
+         |and cast(ocpc_log_dict['conversiongoal'] as int) = $conversionGoal
+       """.stripMargin
+    println(sqlRequest)
+    val ocpcRecord = spark
+      .sql(sqlRequest)
+      .groupBy("unitid", "date", "hour")
+      .agg(sum(col("isclick")).alias("click"))
+      .withColumn("identifier", col("unitid"))
+      .select("identifier", "click", "date", "hour")
+      .filter(s"click>0")
+
+    ocpcRecord.show(10)
+    ocpcRecord.createOrReplaceTempView("ocpc_record")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  identifier,
+         |  count(1) as hour_cnt
+         |FROM
+         |  ocpc_record
+         |GROUP BY identifier
+       """.stripMargin
+    println(sqlRequest2)
+    val ocpcRecordCnt = spark.sql(sqlRequest2).filter(s"hour_cnt < 12")
+
+    // 数据关联
+    val joinData = ocpcRecordCnt
+      .join(baseK, Seq("identifier"), "inner")
+      .select("identifier", "base_k", "hour_cnt")
+      .withColumn("factor", udfHourDiffToFactor()(col("hour_cnt")))
+
+    joinData.createOrReplaceTempView("join_data")
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  identifier,
+         |  base_k,
+         |  hour_cnt,
+         |  factor,
+         |  (1 - factor) * base_k as bottom_k,
+         |  (1 + factor) * base_k as top_k,
+         |  1 as flag
+         |FROM
+         |  join_data
+       """.stripMargin
+    println(sqlRequest3)
+    val kRegion = spark.sql(sqlRequest3)
+
+    // 重新计算k值
+    val result = kvalue
+      .withColumn("original_k", col("kvalue"))
+      .join(kRegion, Seq("identifier"), "left_outer")
+      .withColumn("kvalue", when(col("flag") === 1 && col("kvalue") < col("bottom_k"), col("bottom_k")).otherwise(when(col("flag") === 1 && col("kvalue") > col("top_k"), col("top_k")).otherwise(col("kvalue"))))
+
+    result
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .withColumn("version", lit(version))
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_smooth_k")
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301a")
+
+    println("k smooth strat1:")
+    result.show(10)
+
+    val resultDF = result.select("identifier", "kvalue", "conversion_goal")
+    resultDF
+  }
+
+  def getKvalue(mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
     /*
     4个来源:
       1. regression计算结果
@@ -114,17 +248,15 @@ object OcpcGetPb {
     val ocpcK = calculateKocpc(regressionK, pidK, prevPb, spark)
 
     // cpc投放的k值
-    val cpcK = getCpcK(media, conversionGoal, date, hour, spark)
+    val cpcK = getCpcK(mediaSelection, conversionGoal, date, hour, spark)
 
     // 数据外关联
     val ocpcKfinal = ocpcK
         .withColumn("ocpc_k", col("k_value"))
         .select("identifier", "ocpc_k")
-//    ocpcKfinal.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215ocpc")
     val cpcKfinal = cpcK
         .withColumn("cpc_k", col("kvalue"))
         .select("identifier", "cpc_k", "history_ocpc_flag")
-//    cpcKfinal.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215cpc")
 
     val finalK = ocpcKfinal
       .join(cpcKfinal, Seq("identifier"), "outer")
@@ -133,15 +265,14 @@ object OcpcGetPb {
       .withColumn("kvalue", when(col("history_ocpc_flag") === 0, col("cpc_k")).otherwise(col("ocpc_k")))
       .withColumn("conversion_goal", lit(conversionGoal))
 
-//    finalK.write.mode("overwrite").saveAsTable("test.check_data_ocpc20190215")
-
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
 
     resultDF
 
   }
 
-  def getCpcK(media: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getCpcK(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     /*
      通过slim_union_log关联的方式获取前72小时中的k值
      1. 以searchid关联的方式关联k值与cvr
@@ -149,15 +280,15 @@ object OcpcGetPb {
      3. 按照实际cvr的2倍过滤过高cvr
       */
     // 对于刚进入ocpc阶段但是有cpc历史数据的广告依据历史转化率给出k的初值
-    val conf = ConfigFactory.load("ocpc")
-    // 媒体选择
-    val conf_key1 = "medias." + media + ".media_selection"
-    val mediaSelection = conf.getString(conf_key1)
-
     // cvr 分区
-    val cvGoal = conversionGoal.toString
-    val conf_key2 = "medias." + media + ".cv_pt." + "cvr" + cvGoal
-    val cvrGoal = conf.getString(conf_key2)
+    var cvrGoal = ""
+    if (conversionGoal == 1) {
+      cvrGoal = "cvr1"
+    } else if (conversionGoal == 2) {
+      cvrGoal = "cvr2"
+    } else {
+      cvrGoal = "cvr3"
+    }
 
     // 取历史数据
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
@@ -218,7 +349,7 @@ object OcpcGetPb {
          |    AND
          |        isclick=1
          |    AND
-         |        $mediaSelection
+         |        media_appsid  in ('80000001', '80000002')
          |    AND antispam = 0
          |    AND ideaid > 0
          |    AND adsrc = 1
@@ -285,7 +416,6 @@ object OcpcGetPb {
       .withColumn("kvalue_middle", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k") > col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 4.0).otherwise(col("new_k")))
       .withColumn("k_value", when(col("flag") === 0, col("prev_k")).otherwise(col("kvalue_middle")))
       .select("identifier", "regression_k", "pid_k", "new_k", "prev_k", "flag", "kvalue_middle", "k_value")
-
     resultDF
   }
 
@@ -395,10 +525,7 @@ object OcpcGetPb {
     resultDF
   }
 
-  def getBaseData(media: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "medias." + media + ".media_selection"
-    val mediaSelection = conf.getString(conf_key)
+  def getBaseData(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
     val today = dateConverter.parse(date)
@@ -431,19 +558,19 @@ object OcpcGetPb {
   }
 
 
-  def getOcpcCVR(media: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getOcpcCVR(mediaSelection: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
     /*
     根据ocpc_union_log_hourly关联到正在跑ocpc的广告数据
      */
-    val conf = ConfigFactory.load("ocpc")
-    // 媒体选择
-    val conf_key1 = "medias." + media + ".media_selection"
-    val mediaSelection = conf.getString(conf_key1)
-
     // cvr 分区
-    val cvGoal = conversionGoal.toString
-    val conf_key2 = "medias." + media + ".cv_pt." + "cvr" + cvGoal
-    val cvrGoal = conf.getString(conf_key2)
+    var cvrGoal = ""
+    if (conversionGoal == 1) {
+      cvrGoal = "cvr1"
+    } else if (conversionGoal == 2) {
+      cvrGoal = "cvr2"
+    } else {
+      cvrGoal = "cvr3"
+    }
 
     // 取历史数据
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
@@ -492,6 +619,128 @@ object OcpcGetPb {
 
     resultDF
   }
+
+
+
+//  def getOcpcFlag(mediaSelection: String, date: String, hour: String, spark: SparkSession) = {
+//    /*
+//    根据历史记录判断某个identifer是否有ocpc记录：
+//    如果有，ocpc_flag=1
+//    否则，ocpc_flag=0
+//     */
+//    // 取历史数据
+//    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+//    val today = dateConverter.parse(date)
+//    val calendar = Calendar.getInstance
+//    calendar.setTime(today)
+//    calendar.add(Calendar.HOUR, -7)
+//    val startdate = calendar.getTime
+//    val date1 = dateConverter.format(startdate)
+//    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
+//
+//    val sqlRequest =
+//      s"""
+//         |SELECT
+//         |  cast(unitid as string) as identifier
+//         |FROM
+//         |  dl_cpc.ocpc_union_log_hourly
+//         |WHERE
+//         |  $selectCondition
+//         |AND
+//         |  $mediaSelection
+//       """.stripMargin
+//    println(sqlRequest)
+//    val resultDF = spark
+//      .sql(sqlRequest)
+//      .distinct()
+//      .withColumn("ocpc_flag", lit(1))
+//      .select("identifier", "ocpc_flag")
+//
+//    resultDF
+//  }
+//
+//  //  base, cvrData, cvrCompleteData, cpaGiven, kvalue, version, date, hour, spark
+//  def assemblyPBknown(mediaSelection: String, base: DataFrame, cvrData: DataFrame, initK: DataFrame, kvalue: DataFrame, version: String, date: String, hour: String, spark: SparkSession) = {
+//    val ocpc_flag = getOcpcFlag(mediaSelection, date, hour, spark)
+//
+//    val data = base
+//      .join(cvrData, Seq("identifier"), "left_outer")
+//      .withColumn("cpa_given", lit(1))
+//      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt")
+//      .join(ocpc_flag, Seq("identifier"), "left_outer")
+//      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt", "ocpc_flag")
+//      .join(initK, Seq("identifier", "conversion_goal"), "left_outer")
+//      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt", "ocpc_flag", "init_k")
+//      .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
+//      .select("identifier", "conversion_goal", "cpa_given", "cvrcnt", "ocpc_flag", "init_k", "kvalue")
+//      .withColumn("cvrcnt", when(col("cvrcnt").isNull, 0).otherwise(col("cvrcnt")))
+//
+//    val resultDF = data
+//      .withColumn("kvalue", when(col("ocpc_flag")===1, col("init_k")).otherwise(col("kvalue")))
+//      .selectExpr("cast(identifier as string) identifier", "conversion_goal", "cpa_given", "cast(cvrcnt as bigint) cvrcnt", "cast(kvalue as double) kvalue")
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+//
+//    resultDF
+//  }
+//
+//
+//
+//  def savePbPack(dataset: Dataset[Row], version: String, isKnown: Int): Unit = {
+//    var list = new ListBuffer[SingleRecord]
+//    var filename = ""
+//    if (isKnown == 1) {
+//      filename = s"Ocpc_" + version + "_known.pb"
+//    } else {
+//      filename = s"Ocpc_" + version + "_unknown.pb"
+//    }
+//    println("size of the dataframe")
+//    println(dataset.count)
+//    dataset.show(10)
+//    dataset.printSchema()
+//    var cnt = 0
+//
+//    for (record <- dataset.collect()) {
+//      val identifier = record.getAs[String]("identifier")
+//      val cpaGiven = record.getAs[Double]("cpa_given")
+//      val kvalue = record.getAs[Double]("kvalue")
+//      val cvrCnt = record.getAs[Long]("cvrcnt")
+//      val conversionGoal = record.getAs[Int]("conversion_goal")
+//
+//      if (cnt % 100 == 0) {
+//        println(s"identifier:$identifier, conversionGoal:$conversionGoal, cpaGiven:$cpaGiven, kvalue:$kvalue, cvrCnt:$cvrCnt")
+//      }
+//      cnt += 1
+//
+//      //      string identifier = 1;
+//      //      int32 conversiongoal = 2;
+//      //      double kvalue = 3;
+//      //      double cpagiven = 4;
+//      //      int64 cvrcnt = 5;
+//
+//      val currentItem = SingleRecord(
+//        identifier = identifier,
+//        conversiongoal = conversionGoal,
+//        kvalue = kvalue,
+//        cpagiven = cpaGiven,
+//        cvrcnt = cvrCnt
+//      )
+//      list += currentItem
+//
+//    }
+//    val result = list.toArray[SingleRecord]
+//    val adRecordList = OcpcList(
+//      adrecord = result
+//    )
+//
+//    println("length of the array")
+//    println(result.length)
+//    adRecordList.writeTo(new FileOutputStream(filename))
+//
+//    println("complete save data into protobuffer")
+//
+//  }
 
 }
 

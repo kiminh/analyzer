@@ -5,7 +5,6 @@ import java.util.Calendar
 
 import com.cpc.spark.ocpc.OcpcUtils._
 import com.cpc.spark.udfs.Udfs_wj._
-import com.typesafe.config.ConfigFactory
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
 
@@ -24,7 +23,7 @@ object OcpcPIDwithCPA {
      */
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
 
-    // bash: 2019-01-02 12 24 1 novel_v2 novel
+    // bash: 2019-01-02 12 24 1 qtt_demo qtt
     val date = args(0).toString
     val hour = args(1).toString
     val hourInt = args(2).toInt
@@ -32,37 +31,35 @@ object OcpcPIDwithCPA {
     val version = args(4).toString
     val media = args(5).toString
 
-    val conf = ConfigFactory.load("ocpc")
-    // 媒体选择
-    val conf_key1 = "medias." + media + ".media_selection"
-    val mediaSelection = conf.getString(conf_key1)
-
-    // cvr 分区
-    val cvGoal = conversionGoal.toString
-    val conf_key2 = "medias." + media + ".cv_pt." + "cvr" + cvGoal
-    val cvrGoal = conf.getString(conf_key2)
-
     println("parameters:")
     println(s"date=$date, hour=$hour, hourInt=$hourInt, conversionGoal=$conversionGoal, version=$version, media=$media")
-    println(s"mediaSelection=$mediaSelection")
-    println(s"cvrGoal=$cvrGoal")
+    var mediaSelection = ""
+    if (media == "qtt") {
+      mediaSelection = s"media_appsid in ('80000001', '80000002')"
+    } else if(media == "novel"){
+      mediaSelection = s"media_appsid in ('80001098','80001292')"
+    } else {
+      mediaSelection = s"media_appsid = '80002819'"
+    }
 
+    // TODO 表名
     val prevTable = spark
       .table("dl_cpc.ocpc_prev_pb_once")
       .where(s"version='$version'")
 
     val historyData = getHistory(mediaSelection, date, hour, spark)
-    val result = calculateKwithConversionGoal(media, conversionGoal, hourInt, prevTable, historyData, date, hour, spark)
+    val result = calculateKwithConversionGoal(conversionGoal, hourInt, prevTable, historyData, date, hour, spark)
 
     val resultDF = result
         .withColumn("kvalue", col("k_value"))
-        .select("identifier", "kvalue", "conversion_goal")
+        .select("identifier", "kvalue")
+        .withColumn("conversion_goal", lit(conversionGoal))
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit(version))
         .withColumn("method", lit("pid"))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_model_hourly")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
 
     resultDF
       .repartition(10)
@@ -73,7 +70,7 @@ object OcpcPIDwithCPA {
 
   }
 
-  def calculateKwithConversionGoal(media: String, conversionGoal: Int, hourInt: Int, prevTable: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) = {
+  def calculateKwithConversionGoal(conversionGoal: Int, hourInt: Int, prevTable: DataFrame, historyData: DataFrame, date: String, hour: String, spark: SparkSession) = {
     /*
     按照给定的conversion_goal, hourInt，历史数据计算该conversion_goal下各个identifier最新的k值
     1. 获取cvr记录
@@ -82,7 +79,7 @@ object OcpcPIDwithCPA {
     4. 计算cpa_ratio
     5. 根据cpa_ratio调整k值
      */
-    val cvrData = getCVRdata(media, conversionGoal, hourInt, date, hour, spark)
+    val cvrData = getCVRdata(conversionGoal, hourInt, date, hour, spark)
     val kvalue = getHistoryK(historyData, prevTable, conversionGoal, date, hour, spark)
 //    kvalue.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190201a")
     val cpaHistory = getCPAhistory(historyData, cvrData, conversionGoal, date, hour, spark)
@@ -93,12 +90,16 @@ object OcpcPIDwithCPA {
     resultDF
   }
 
-  def getCVRdata(media: String, conversionGoal: Int, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
+  def getCVRdata(conversionGoal: Int, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // cvr 分区
-    val cvGoal = conversionGoal.toString
-    val conf_key = "medias." + media + ".cv_pt." + "cvr" + cvGoal
-    val conf = ConfigFactory.load("ocpc")
-    val cvrGoal = conf.getString(conf_key)
+    var cvrGoal = ""
+    if (conversionGoal == 1) {
+      cvrGoal = "cvr1"
+    } else if (conversionGoal == 2) {
+      cvrGoal = "cvr2"
+    } else {
+      cvrGoal = "cvr3"
+    }
 
     // 时间分区
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
