@@ -38,6 +38,7 @@ object MiduTouTiaolog {
 
         val data2 =data1.withColumn("data1",decode(col("data")))
         data2.show(1)
+        data2.printSchema()
        data2.write.mode("overwrite").saveAsTable("test.wy02")
 
         val data3 =data2.withColumn("data2",unzip(col("data1")))
