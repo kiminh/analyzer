@@ -29,8 +29,7 @@ object MiduTouTiaolog {
                     s"""
                        |select 'E8xHlllllllllWaJBeYWRTBM/eYa_4+z3GR-E30TQnDinLc5FXV9rtd1STET-rDwRZdusqupZHH1aGDRMLbre7PG/VkITEqQIJb79KNagzHlBZG4fABPr1+QxvYTO_DJA3_NBmpZ181trAO4W8WkErQdC_rwlqVTcRENc1LVlN_bpK4Pbq5O-RTywZO9DTWIFN+l4ykgs95rQk8JbrTpkOrgim1Gkxgce7u-Zz1HwVQf/RV9sABHxwH99i8/2xFV1JIz9/Q2nNRXg-LDmqFB9_LEFCZvXkyr3-qyD7q/ETPb+/s07OF/hzOU2/dZXB52G8pZZSdBbKwmbhyPpMWAA5flzQiB_VeX_Ha1e9K7udWQcz_gIehBkCRGldByY09SJpi/-K4_RedVAsFM5OXG1Ii7oskIxFNplRll'
                        | as data
-                       |from dl_cpc.cpc_union_trace_log
-                       |where `date`='2019-03-10' and trace_type ='inform' and opt["chan"] = "midunov"
+                       |from test.wy00
                      """.stripMargin
 
       val data1 = spark.sql(sql)
