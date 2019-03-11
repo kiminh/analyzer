@@ -73,6 +73,8 @@ object MiduTouTiaolog {
         (x:String)=>
         {
             val s =new String(x)
+          println(x)
+          println(s)
             val inputStream = new GZIPInputStream(this.getClass.getClassLoader.getResourceAsStream(s))
             val output = scala.io.Source.fromInputStream(inputStream).mkString
             output
