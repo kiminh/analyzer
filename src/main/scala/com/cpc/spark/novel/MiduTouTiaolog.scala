@@ -52,15 +52,16 @@ object MiduTouTiaolog {
 
     def decode = udf {
         (x: String) =>
-            if (x != null) Encoding.base64Decoder(x).toArray[Byte] else null
+            if (x != null) Encoding.base64Decoder(x).toArray else null
     }
 
     def unzip1 = udf {
         (x:Array[Byte]) =>
             if (x != null) decompress(x) else null
     }
+
     def unzip = udf {
-        (x: Array[Byte])=>
+        (x:Array[Byte])=>
         {
             val inputStream = new GZIPInputStream(new ByteArrayInputStream(x))
             val output = scala.io.Source.fromInputStream(inputStream).mkString
