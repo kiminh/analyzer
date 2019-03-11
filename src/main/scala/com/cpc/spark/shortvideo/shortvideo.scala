@@ -123,7 +123,7 @@ object shortvideo {
          |          from
          |              dl_cpc.ml_cvr_feature_v1
          |          where
-         |              `date`='${date}'  and hour='${hour}'
+         |             ${selectCondition}
          |              and label2=1
          |             and media_appsid in ("80000001", "80000002")
          |            ) final
@@ -223,7 +223,7 @@ object shortvideo {
          |          from
          |              dl_cpc.ml_cvr_feature_v1
          |          where
-         |              `date`='${date}'   and hour='${hour}'
+         |              `date`>='${date1}'
          |               and label2=1
          |             and media_appsid in ("80000001")
          |                   ) final
@@ -231,6 +231,7 @@ object shortvideo {
          |        where   aa.isreport=1
          |        ) a
          |      on    v2.searchid3=a.searchid4
+         |
          |     group by userid_f,typecate
          |           )  aa
          |        )  aaa
