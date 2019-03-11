@@ -106,9 +106,9 @@ object OcpcSampleToPb {
     val data = spark.read.format("json").json(expDataPath)
 
     val resultDF = data
-      .select("identifier", "cpa_given")
+      .select("identifier", "cpa_suggest")
       .groupBy("identifier")
-      .agg(avg(col("cpa_given")).alias("cpagiven2"))
+      .agg(avg(col("cpa_suggest")).alias("cpagiven2"))
       .select("identifier", "cpagiven2")
 
     resultDF
