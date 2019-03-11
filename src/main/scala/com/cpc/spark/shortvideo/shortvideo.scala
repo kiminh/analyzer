@@ -123,7 +123,7 @@ object shortvideo {
          |          from
          |              dl_cpc.ml_cvr_feature_v1
          |          where
-         |              `date`>='${date1}'
+         |              `date`='${date}'  and hour='${hour}'
          |              and label2=1
          |             and media_appsid in ("80000001", "80000002")
          |            ) final
@@ -149,14 +149,14 @@ object shortvideo {
          |       (
          |         select userid,expcvr_d,row_number() over (partition by userid order by exp_cvr desc) ranking
          |         from   dl_cpc.cpc_unionevents_appdownload_mid
-         |         where  ${selectCondition2}
+         |         where  dt='${date}' and hr='${hour}'
          |         and adtype in ('8','10')
          |        )  view1
          |      JOIN
          |       (
          |         select userid userid2, count(cvr_rank) as nums
          |         from dl_cpc.cpc_unionevents_appdownload_mid
-         |         where ${selectCondition2}
+         |         where dt='${date}' and hr='${hour}'
          |         and adtype in ('8','10')
          |         group by userid
          |       ) nums
@@ -223,7 +223,7 @@ object shortvideo {
          |          from
          |              dl_cpc.ml_cvr_feature_v1
          |          where
-         |              `date`='${date1}'   and hour='${hour1}'
+         |              `date`='${date}'   and hour='${hour}'
          |               and label2=1
          |             and media_appsid in ("80000001")
          |                   ) final
