@@ -223,7 +223,7 @@ object shortvideo {
          |          from
          |              dl_cpc.ml_cvr_feature_v1
          |          where
-         |              `date`='${date1}'
+         |              `date`='${date1}'   and hour='${hour1}'
          |               and label2=1
          |             and media_appsid in ("80000001")
          |                   ) final
