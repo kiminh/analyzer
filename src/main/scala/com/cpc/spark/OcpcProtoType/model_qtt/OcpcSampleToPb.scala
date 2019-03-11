@@ -86,15 +86,21 @@ object OcpcSampleToPb {
     val cpaGiven = getCPAgiven(spark)
 
     // 数据关联
-    val result = data
-        .join(cpaGiven, Seq("identifier"), "left_outer")
+    val result1 = data
+        .join(cpaGiven, Seq("identifier", "conversion_goal"), "left_outer")
         .withColumn("cpagiven", when(col("cpagiven2").isNotNull, col("cpagiven2")).otherwise(col("cpagiven1")))
+        .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
 
+    // 数据关联
+    val result2 = result1.filter("cpagiven2 is not null")
+        .withColumn("conversion_goal", lit(0))
+        .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
+
+    val result = result1.union(result2)
     result.printSchema()
     result.show(10)
+    val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
 
-    val resultDF = result
-        .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
 
     resultDF
   }
@@ -106,10 +112,10 @@ object OcpcSampleToPb {
     val data = spark.read.format("json").json(expDataPath)
 
     val resultDF = data
-      .select("identifier", "cpa_given")
-      .groupBy("identifier")
+      .select("identifier", "cpa_given", "conversion_goal")
+      .groupBy("identifier", "conversion_goal")
       .agg(avg(col("cpa_given")).alias("cpagiven2"))
-      .select("identifier", "cpagiven2")
+      .select("identifier", "conversion_goal", "cpagiven2")
 
     resultDF
   }
