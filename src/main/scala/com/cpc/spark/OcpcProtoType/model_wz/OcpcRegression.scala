@@ -48,9 +48,9 @@ object OcpcRegression {
       .withColumn("version", lit(version))
       .withColumn("method", lit("regression"))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_model_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_k_model_hourly")
 
 
   }
@@ -138,17 +138,16 @@ object OcpcRegression {
          |  searchid,
          |  unitid,
          |  cast(unitid as string) identifier,
-         |  ext['adclass'].int_value as adclass,
+         |  adclass,
          |  isshow,
          |  isclick,
          |  price,
-         |  ocpc_log,
          |  ocpc_log_dict,
          |  ocpc_log_dict['kvalue'] as kvalue,
          |  ocpc_log_dict['cpagiven'] as cpagiven,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_union_log_hourly
+         |  dl_cpc.ocpc_filter_unionlog
          |WHERE
          |  $selectCondition
          |AND
@@ -157,6 +156,8 @@ object OcpcRegression {
          |  ext_int['is_ocpc'] = 1
          |AND
          |  (ocpc_log_dict['cpcBid']=0 or exptags not like "%cpcBid%")
+         |AND
+         |  adclass = 110110100
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
@@ -166,14 +167,7 @@ object OcpcRegression {
 
   def getCvrData(mediaSelection: String, conversionGoal: Int, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
     // cvr 分区
-    var cvrGoal = ""
-    if (conversionGoal == 1) {
-      cvrGoal = "cvr1"
-    } else if (conversionGoal == 2) {
-      cvrGoal = "cvr2"
-    } else {
-      cvrGoal = "cvr3"
-    }
+    val cvrGoal = "wz"
 
     // 时间分区
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
