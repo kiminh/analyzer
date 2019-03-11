@@ -43,7 +43,7 @@ object MiduTouTiaolog {
         data2.printSchema()
        data2.write.mode("overwrite").saveAsTable("test.wy02")
 
-        val data3 =data2.withColumn("data2",unzip2(col("data1")))
+        val data3 =data2.withColumn("data2",unzip(col("data1")))
         data3.show(1)
         data3.write.mode("overwrite").saveAsTable("test.wy03")
 //        spark.sql(sql).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
@@ -61,9 +61,10 @@ object MiduTouTiaolog {
     }
 
     def unzip = udf {
-        (x:Array[Byte])=>
+        (x:Byte)=>
         {
-            val inputStream = new GZIPInputStream(new ByteArrayInputStream(x))
+            val s = new Array[Byte](x)
+            val inputStream = new GZIPInputStream(new ByteArrayInputStream(s))
             val output = scala.io.Source.fromInputStream(inputStream).mkString
             output
         }
