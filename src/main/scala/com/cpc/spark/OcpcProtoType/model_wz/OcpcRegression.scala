@@ -153,7 +153,7 @@ object OcpcRegression {
          |AND
          |  $mediaSelection
          |AND
-         |  ext_int['is_ocpc'] = 1
+         |  is_ocpc = 1
          |AND
          |  (ocpc_log_dict['cpcBid']=0 or exptags not like "%cpcBid%")
          |AND
