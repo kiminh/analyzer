@@ -14,8 +14,8 @@ object OcpcAaExpertiment {
     val spark = SparkSession.builder().appName("OcpcAdExpertiment").enableHiveSupport().getOrCreate()
 //    joinBaseIsCvr(date, spark)
 //    println("base and ml_cvr_feature_v1 joined success")
-//    convStr2Num(date, spark)
-//    println("str conv to num success")
+    convStr2Num(date, spark)
+    println("str conv to num success")
     calculateIndexValue(date, spark)
     println("has got index value")
     getPreAdInfo(date, spark)
@@ -117,24 +117,23 @@ object OcpcAaExpertiment {
     val preDate = getPreDate(date, 1)
     val sql =
       s"""
-        |select
-        |	`date`,
+        |`date`
         |	unitid,
         |	userid,
         |	searchid,
-        |	isclick,
-        |	isshow,
-        |	price,
-        |	`uid`,
-        |	cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
-        | cast(ocpc_log_dict['kvalue'] as double) as kvalue,
-        | cast(ocpc_log_dict['pcvr'] as double) as pcvr,
-        | cast(ocpc_log_dict['dynamicbidmax'] as double) as dynamicbidmax,
-        | cast(ocpc_log_dict['dynamicbid'] as double) as dynamicbid,
-        | cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
-        | iscvr1,
-        | iscvr2,
-        | iscvr3
+        |	(case when isclick is null then 0 else isclick end) as isclick,
+        |	(case when isshow is null then 0 else isshow end) as isshow,
+        |	(case when price is null then 0 else price end) as price,
+        |	uid,
+        |	(case when ocpc_log_dict['cpagiven'] is null then 0 else cast(ocpc_log_dict['cpagiven'] as double) end) as cpagiven,
+        | (case when ocpc_log_dict['kvalue'] is null then 0 else cast(ocpc_log_dict['kvalue'] as double) end) as kvalue,
+        | (case when ocpc_log_dict['pcvr'] is null then 0 else cast(ocpc_log_dict['pcvr'] as double) end) as pcvr,
+        | (case when ocpc_log_dict['dynamicbidmax'] is null then 0 else cast(ocpc_log_dict['dynamicbidmax'] as double) end) as dynamicbidmax,
+        | (case when ocpc_log_dict['dynamicbid'] is null then 0 else cast(ocpc_log_dict['dynamicbid'] as double) end) as dynamicbid,
+        | (case when ocpc_log_dict['conversiongoal'] is null then 0 else cast(ocpc_log_dict['conversiongoal'] as int) end) as conversion_goal,
+        | (case when iscvr1 is null then 0 else iscvr1 end) as iscvr1,
+        | (case when iscvr2 is null then 0 else iscvr2 end) as iscvr2,
+        | (case when iscvr3 is null then 0 else iscvr3 end) as iscvr3
         |from
         |	dl_cpc.ocpc_aa_join_base_iscvr
         |where
