@@ -12,8 +12,8 @@ object OcpcAaExpertiment {
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
     val spark = SparkSession.builder().appName("OcpcAdExpertiment").enableHiveSupport().getOrCreate()
-//    joinBaseIsCvr(date, spark)
-//    println("base and ml_cvr_feature_v1 joined success")
+    joinBaseIsCvr(date, spark)
+    println("base and ml_cvr_feature_v1 joined success")
     convStr2Num(date, spark)
     println("str conv to num success")
     calculateIndexValue(date, spark)
@@ -38,6 +38,7 @@ object OcpcAaExpertiment {
         |	a.isshow,
         |	a.price,
         | a.uid,
+        | a.bid,
         |	b.iscvr1,
         |	c.iscvr2,
         |	d.iscvr3,
@@ -126,6 +127,7 @@ object OcpcAaExpertiment {
         |	isshow,
         |	price,
         |	uid,
+        | bid,
         |	cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
         | cast(ocpc_log_dict['kvalue'] as double) as kvalue,
         | cast(ocpc_log_dict['pcvr'] as double) as pcvr,
@@ -175,7 +177,7 @@ object OcpcAaExpertiment {
         |    sum(iscvr2) * 1.0 / sum(isclick) as post_cvr2,
         |    sum(iscvr3) * 1.0 / sum(isclick) as post_cvr3,
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick) as acp,
-        |    sum(case when isclick = 1 then dynamicbid else 0 end) * 0.01
+        |    sum(case when isclick = 1 and dynamicbid is not null then dynamicbid else bid end) * 0.01
         |    / sum(case when isclick = 1 and dynamicbid is not null then 1 else 0 end) as acb,
         |    sum(case when isclick = 1 then kvalue else 0 end) * 1.0
         |    / sum(case when isclick = 1 and kvalue is not null then 1 else 0 end) as kvalue,

@@ -7,6 +7,7 @@ create table if not exists dl_cpc.ocpc_aa_join_base_iscvr(
     isshow              int,
     price               int,
     uid                 string,
+    bid                 int,
     iscvr1              int,
     iscvr2              int,
     iscvr3              int,

@@ -7,6 +7,7 @@ create table if not exists dl_cpc.ocpc_aa_base_index(
     isshow                  int,
     price                   int,
     uid                     string,
+    bid                     int,
     cpagiven                double,
     kvalue                  double,
     pcvr                    double,
