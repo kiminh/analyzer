@@ -141,9 +141,11 @@ object OcpcAaExpertiment {
         |	`date` = '$preDate'
       """.stripMargin
     val data = spark.sql(sql)
-    data
       .withColumn("dt", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
+    data.printSchema()
+
+    data
       .repartition(200)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_base_index")
