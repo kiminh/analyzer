@@ -1,8 +1,7 @@
-create table if not exists dl_cpc.ocpc_aa_expertiment_data(
+create table if not exists dl_cpc.ocpc_aa_base_index_value(
     `date`                  string,
     unitid                  int,
     userid                  int,
-    conversion_goal         int,
     cpagiven                double,
     cpareal1                double,
     cpareal2                double,
