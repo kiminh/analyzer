@@ -3,6 +3,10 @@ package com.cpc.spark.novel
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import com.cpc.spark.streaming.tools.Gzip.decompress
+import com.alibaba.fastjson.{JSON, JSONArray, JSONObject}
+
+import scala.collection.mutable
+
 /**
   * @author WangYao
   * @date 2019/03/11
@@ -18,21 +22,21 @@ object MiduTouTiaolog {
 
         val sql =
             s"""
-               |select opt["data"] as data
+               |select
+               |  searchid, opt["data"] as opt,day,hour
                |from dl_cpc.cpc_basedata_trace_event
-               |where day='2019-03-12' and trace_type ='inform' and opt["chan"] = "midunov"
+               |where day='2019-03-12' and hour = '10' and trace_type ='inform' and opt["chan"] = "midunov"
              """.stripMargin
 
         println(sql)
-
       val data = spark.sql(sql)
+        .withColumn("opt",decode(col("opt")))
+        .withColumn("opt",unzip(col("opt")))
+        .withColumn("opt_map",strToMap(col("opt")))
+
 
         data.show(5)
-      val data2=data
-        .withColumn("data1",decode(col("data")))
-        .withColumn("data1",unzip(col("data1")))
-        data2.show(1)
-        data2.write.mode("overwrite").saveAsTable("test.wy03")
+        data.write.mode("overwrite").saveAsTable("test.wy03")
 //        spark.sql(sql).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
 
     }
@@ -52,12 +56,7 @@ object MiduTouTiaolog {
             if (x != null) decompress(x) else null
     }
 
-//    def unzip = udf {
-//        (x:String)=>
-//        {
-//            val inputStream = new GZIPInputStream(this.getClass.getClassLoader.getResourceAsStream(x))
-//            val output = scala.io.Source.fromInputStream(inputStream).mkString
-//            output
-//        }
-//    }
+    def strToMap= udf{
+        (str: String)=>JSON.parseObject(str)
+    }
 }
