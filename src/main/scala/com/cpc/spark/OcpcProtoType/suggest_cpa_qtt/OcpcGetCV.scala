@@ -17,20 +17,19 @@ object OcpcGetCV {
     // sh test.sh 2019-03-12 12 qtt 1
     // 计算日期周期
     val date = args(0).toString
-    val hour = args(1).toString
-    val media = args(2).toString
-    val conversionGoal = args(3).toInt
+    val media = args(1).toString
+    val conversionGoal = args(2).toInt
     val version = "qtt_demo"
     val spark = SparkSession
       .builder()
-      .appName(s"ocpc get cv: $date, $hour")
+      .appName(s"ocpc get cv: $date")
       .enableHiveSupport().getOrCreate()
 
     println("parameters:")
-    println(s"date=$date, hour=$hour, media=$media, conversionGoal=$conversionGoal, version=$version")
+    println(s"date=$date, media=$media, conversionGoal=$conversionGoal, version=$version")
 
     // 计算
-    val data = getBaseData(media, conversionGoal, date, hour, spark)
+    val data = getBaseData(media, conversionGoal, date, spark)
 
     // 增加分区字段
     val resultDF = data
@@ -43,7 +42,7 @@ object OcpcGetCV {
 
   }
 
-  def getBaseData(media: String, conversionGoal: Int, date: String, hour: String, spark: SparkSession) = {
+  def getBaseData(media: String, conversionGoal: Int, date: String, spark: SparkSession) = {
     // 媒体选择
     val conf = ConfigFactory.load("ocpc")
     val conf_key = "medias." + media + ".media_selection"
