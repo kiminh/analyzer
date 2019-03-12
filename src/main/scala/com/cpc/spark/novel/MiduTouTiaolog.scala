@@ -66,6 +66,7 @@ object MiduTouTiaolog {
           for (k <- json.keySet()) {
             map += (k -> json.getString(k))
           }
+          map
         }
     }
 }
