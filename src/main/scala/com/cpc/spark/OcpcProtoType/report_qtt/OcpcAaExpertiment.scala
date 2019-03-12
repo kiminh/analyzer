@@ -95,7 +95,7 @@ object OcpcAaExpertiment {
       .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
       .withColumn("dt", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(100)
+      .repartition(200)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_join_base_iscvr")
   }
@@ -132,7 +132,7 @@ object OcpcAaExpertiment {
     data
       .withColumn("dt", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(100)
+      .repartition(200)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_base_index")
   }
@@ -176,7 +176,7 @@ object OcpcAaExpertiment {
     data
       .withColumn("dt", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(100)
+      .repartition(200)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_base_index_value")
   }
@@ -200,7 +200,7 @@ object OcpcAaExpertiment {
     data
       .withColumn("dt", lit(date))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(100)
+      .repartition(10)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_pre_ad_info")
   }
@@ -276,7 +276,7 @@ object OcpcAaExpertiment {
     data
       .withColumn("dt", lit(endDate))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(100)
+      .repartition(200)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_expertiment_data")
   }
