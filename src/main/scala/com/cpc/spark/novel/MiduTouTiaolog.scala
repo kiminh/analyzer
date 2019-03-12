@@ -23,7 +23,7 @@ object MiduTouTiaolog {
         val sql =
             s"""
                |select
-               |  searchid, opt["data"] as opt,day,hour,minute
+               |  opt["imei"] as imei, opt["data"] as opt,day,hour,minute
                |from dl_cpc.cpc_basedata_trace_event
                |where day='$date' and hour = '$hour' and trace_type ='inform' and opt["chan"] = "midunov"
              """.stripMargin
@@ -47,7 +47,7 @@ object MiduTouTiaolog {
            |  opt_map["Source"] as source,
            |  opt_map["Title"] as title,
            |  opt_map["imageList"] as imagelist,
-           |  minute,day,hour
+           |  minute,imei,day,hour
            |  from tmp
              """.stripMargin
       val data2 = spark.sql(sql2)

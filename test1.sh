@@ -1,3 +1,4 @@
+sh test.sh 2019-03-12 00
 sh test.sh 2019-03-12 01
 sh test.sh 2019-03-12 02
 sh test.sh 2019-03-12 03
