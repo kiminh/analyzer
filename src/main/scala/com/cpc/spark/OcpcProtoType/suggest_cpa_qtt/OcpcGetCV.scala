@@ -38,8 +38,8 @@ object OcpcGetCV {
       .withColumn("version", lit(version))
 
     resultDF
-//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_cv")
-      .repartition(10).write.mode("overwrite").saveAsTable("test.check_unitid_cv_data")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_identifier_cv_daily")
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.check_unitid_cv_data")
 
   }
 
