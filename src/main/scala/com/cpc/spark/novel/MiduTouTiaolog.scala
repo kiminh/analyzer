@@ -33,6 +33,7 @@ object MiduTouTiaolog {
         .withColumn("opt",decode(col("opt")))
         .withColumn("opt",unzip(col("opt")))
         .withColumn("opt_map",strToMap(col("opt")))
+        .withColumn("AppScore",col("opt_map['AppScore']"))
 
 
         data.show(5)
