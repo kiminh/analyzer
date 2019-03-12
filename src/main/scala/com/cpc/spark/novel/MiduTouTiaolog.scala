@@ -23,9 +23,9 @@ object MiduTouTiaolog {
         val sql =
             s"""
                |select
-               |  searchid, opt["data"] as opt,day,hour
+               |  searchid, opt["data"] as opt,day,hour,minute
                |from dl_cpc.cpc_basedata_trace_event
-               |where day='2019-03-12' and hour = '10' and trace_type ='inform' and opt["chan"] = "midunov"
+               |where day='$date' and hour = '$hour' and trace_type ='inform' and opt["chan"] = "midunov"
              """.stripMargin
 
         println(sql)
@@ -39,20 +39,20 @@ object MiduTouTiaolog {
         s"""
            |select
            |  searchid, opt_map,opt_map["appscore"] as appscore,
-           |  opt_map["ButtonText"] as ButtonText,
-           |  opt_map["CommentNum"] as CommentNum,
-           |  opt_map["ImageMode"] as ImageMode,
-           |  opt_map["InteractionType"] as InteractionType,
-           |  opt_map["Source"] as Source,
-           |  opt_map["Title"] as Title,
-           |  opt_map["imageList"] as imageList
+           |  opt_map["ButtonText"] as buttontext,
+           |  opt_map["CommentNum"] as commentnum,
+           |  opt_map["Description"] as description,
+           |  opt_map["ImageMode"] as Imagemode,
+           |  opt_map["InteractionType"] as interactiontype,
+           |  opt_map["Source"] as source,
+           |  opt_map["Title"] as title,
+           |  opt_map["imageList"] as imagelist,
+           |  minute,day,hour
            |  from tmp
              """.stripMargin
       val data2 = spark.sql(sql2)
         data2.show(5)
-        data2.write.mode("overwrite").saveAsTable("test.wy03")
-//        spark.sql(sql).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
-
+        data2.write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
     }
 
     def decode = udf {
@@ -69,7 +69,6 @@ object MiduTouTiaolog {
         (x:Array[Byte]) =>
             if (x != null) decompress(x) else null
     }
-
 
     def strToMap= udf{
         (str: String)=>{
