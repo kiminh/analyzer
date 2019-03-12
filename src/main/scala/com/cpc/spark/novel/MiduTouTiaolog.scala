@@ -1,15 +1,8 @@
 package com.cpc.spark.novel
 
 import org.apache.spark.sql.SparkSession
-import com.cpc.spark.streaming.tools.Encoding
 import org.apache.spark.sql.functions._
 import com.cpc.spark.streaming.tools.Gzip.decompress
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import java.util.zip.{GZIPInputStream, GZIPOutputStream}
-import com.cpc.spark.novel.CryptBase64Utils
-import com.cpc.spark.novel.GnuZip
-
-import com.mysql.jdbc.util.Base64Decoder
 /**
   * @author WangYao
   * @date 2019/03/11
@@ -26,8 +19,8 @@ object MiduTouTiaolog {
         val sql =
             s"""
                |select opt["data"] as data
-               |from dl_cpc.cpc_union_trace_log
-               |where `date`='2019-03-12' and trace_type ='inform' and opt["chan"] = "midunov"
+               |from dl_cpc.cpc_basedata_trace_event
+               |where day='2019-03-12' and trace_type ='inform' and opt["chan"] = "midunov"
              """.stripMargin
 
         println(sql)
