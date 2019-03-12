@@ -38,6 +38,7 @@ object OcpcGetCV {
       .withColumn("version", lit(version))
 
     resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_unitid_cv")
       .repartition(10).write.mode("overwrite").saveAsTable("test.check_unitid_cv_data")
 
   }
@@ -66,7 +67,7 @@ object OcpcGetCV {
       s"""
          |SELECT
          |    searchid,
-         |    unitid,
+         |    cast(unitid as string) as identifier,
          |    isclick,
          |    isshow
          |FROM
@@ -110,9 +111,10 @@ object OcpcGetCV {
 
     // 数据统计
     val resultDF = data
-      .groupBy("unitid")
+      .groupBy("identifier")
       .agg(sum(col("iscvr")).alias("cv"))
-      .select("unitid", "cv")
+      .na.fill(0, Seq("cv"))
+      .select("identifier", "cv")
 
     resultDF.show(10)
     resultDF
