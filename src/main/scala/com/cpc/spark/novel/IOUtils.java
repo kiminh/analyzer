@@ -1,4 +1,4 @@
-package noveltoutiao;
+package com.cpc.spark.novel;
 
 
 import java.io.IOException;

@@ -8,7 +8,6 @@ package com.cpc.spark.novel;
  * This file contains the name of "GNU" but it's not rules under GPL license LOL
  */
 
-import noveltoutiao.IOUtils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

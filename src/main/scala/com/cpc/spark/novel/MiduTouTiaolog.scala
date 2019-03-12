@@ -7,6 +7,7 @@ import com.cpc.spark.streaming.tools.Gzip.decompress
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}
 import com.cpc.spark.novel.CryptBase64Utils
+import com.cpc.spark.novel.GnuZip
 
 import com.mysql.jdbc.util.Base64Decoder
 /**
@@ -47,7 +48,7 @@ object MiduTouTiaolog {
         data2.printSchema()
        data2.write.mode("overwrite").saveAsTable("test.wy02")
 
-        val data3 =data2.withColumn("data2",unzip(col("data1")))
+        val data3 =data2.withColumn("data2",unzip1(col("data1")))
         data3.show(1)
         data3.write.mode("overwrite").saveAsTable("test.wy03")
 //        spark.sql(sql).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
@@ -72,10 +73,7 @@ object MiduTouTiaolog {
     def unzip = udf {
         (x:String)=>
         {
-            val s =new String(x)
-          println(x)
-          println(s)
-            val inputStream = new GZIPInputStream(this.getClass.getClassLoader.getResourceAsStream(s))
+            val inputStream = new GZIPInputStream(this.getClass.getClassLoader.getResourceAsStream(x))
             val output = scala.io.Source.fromInputStream(inputStream).mkString
             output
         }
