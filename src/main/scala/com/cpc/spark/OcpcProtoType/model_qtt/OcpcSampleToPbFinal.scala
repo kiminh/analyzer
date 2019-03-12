@@ -40,7 +40,12 @@ object OcpcSampleToPbFinal {
 
     val resultDF = result1.union(result2)
     resultDF
-        .repartition(2).write.mode("overwrite").saveAsTable("test.check_data_pb_20190312")
+        .select("identifier", "cpagiven", "cvrcnt", "kvalue", "conversion_goal")
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .withColumn("version", lit("qtt_v1"))
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+//        .repartition(2).write.mode("overwrite").saveAsTable("test.check_data_pb_20190312")
 
 
     savePbPack(resultDF, version, isKnown)
