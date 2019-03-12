@@ -55,7 +55,7 @@ object AutoThreshold {
                |    select ideaid,if(coin_cvr<cvr, 0, 1) as flag
                |    from dl_cpc.cpc_report_coin_ideaid_metrics
                |    where `date` = date_sub('$date', 1)
-               |    and coin_click_num > 50
+               |    and coin_click_num > 10
                |  ) b
                |  on a.ideaid = b.ideaid
                |) final
