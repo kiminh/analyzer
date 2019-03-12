@@ -117,7 +117,8 @@ object OcpcAaExpertiment {
     val preDate = getPreDate(date, 1)
     val sql =
       s"""
-        |`date`,
+        |select
+        | `date`,
         |	unitid,
         |	userid,
         |	searchid,
