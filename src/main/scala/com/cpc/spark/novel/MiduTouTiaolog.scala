@@ -52,7 +52,7 @@ object MiduTouTiaolog {
              """.stripMargin
       val data2 = spark.sql(sql2)
         data2.show(5)
-        data2.write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
+        data2.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
     }
 
     def decode = udf {
