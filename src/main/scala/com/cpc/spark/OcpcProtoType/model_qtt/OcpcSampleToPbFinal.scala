@@ -22,7 +22,7 @@ object OcpcSampleToPbFinal {
     int64 cvrcnt = 5;
     对于明投广告，cpagiven=1， cvrcnt使用ocpc广告记录进行关联，k需要进行计算
 
-    
+
      */
     val spark = SparkSession.builder().enableHiveSupport().getOrCreate()
 
@@ -30,7 +30,7 @@ object OcpcSampleToPbFinal {
     val date = args(0).toString
     val hour = args(1).toString
     val version = args(2).toString
-    val isKnown = args(2).toInt
+    val isKnown = args(3).toInt
 
     println("parameters:")
     println(s"date=$date, hour=$hour, version=$version, isKnown:$isKnown")
