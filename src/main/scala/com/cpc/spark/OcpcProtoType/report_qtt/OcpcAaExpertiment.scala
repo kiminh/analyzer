@@ -169,7 +169,8 @@ object OcpcAaExpertiment {
         |    sum(iscvr1) as cv1,
         |    sum(iscvr2) as cv2,
         |    sum(iscvr3) as cv3,
-        |    sum(case when isclick = 1 then pcvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
+        |    sum(case when isclick = 1 then pcvr else 0 end) * 1.0
+        |    / sum(case when isclick = 1 and pcvr is not null then 1 else 0 end) as pre_cvr,
         |    sum(iscvr1) * 1.0 / sum(isclick) as post_cvr1,
         |    sum(iscvr2) * 1.0 / sum(isclick) as post_cvr2,
         |    sum(iscvr3) * 1.0 / sum(isclick) as post_cvr3,
