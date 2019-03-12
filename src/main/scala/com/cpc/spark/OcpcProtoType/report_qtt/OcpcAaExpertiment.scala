@@ -12,8 +12,8 @@ object OcpcAaExpertiment {
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
     val spark = SparkSession.builder().appName("OcpcAdExpertiment").enableHiveSupport().getOrCreate()
-    joinBaseIsCvr(date, spark)
-    println("base and ml_cvr_feature_v1 joined success")
+//    joinBaseIsCvr(date, spark)
+//    println("base and ml_cvr_feature_v1 joined success")
     convStr2Num(date, spark)
     println("str conv to num success")
     calculateIndexValue(date, spark)
@@ -118,7 +118,7 @@ object OcpcAaExpertiment {
     val sql =
       s"""
         |select
-        |	`date`
+        |	`date`,
         |	unitid,
         |	userid,
         |	searchid,
@@ -143,9 +143,6 @@ object OcpcAaExpertiment {
     val data = spark.sql(sql)
       .withColumn("dt", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
-    data.printSchema()
-
-    data
       .repartition(200)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_base_index")
