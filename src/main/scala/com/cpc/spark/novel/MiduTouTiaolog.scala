@@ -4,8 +4,11 @@ import org.apache.spark.sql.SparkSession
 import com.cpc.spark.streaming.tools.Encoding
 import org.apache.spark.sql.functions._
 import com.cpc.spark.streaming.tools.Gzip.decompress
-import java.io.{ByteArrayOutputStream, ByteArrayInputStream}
-import java.util.zip.{GZIPOutputStream, GZIPInputStream}
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.util.zip.{GZIPInputStream, GZIPOutputStream}
+import com.cpc.spark.novel.CryptBase64Utils
+
+import com.mysql.jdbc.util.Base64Decoder
 /**
   * @author WangYao
   * @date 2019/03/11
@@ -38,6 +41,7 @@ object MiduTouTiaolog {
         data1.write.mode("overwrite").saveAsTable("test.wy01")
         data1.show(1)
 
+
         val data2 =data1.withColumn("data1",decode(col("data")))
         data2.show(1)
         data2.printSchema()
@@ -51,8 +55,13 @@ object MiduTouTiaolog {
     }
 
     def decode = udf {
-        (x: String) =>
-            if (x != null) Encoding.base64Decoder(x).toArray[Byte] else null
+        (x: Array[Byte]) => {
+          if (x != null)  {
+            CryptBase64Utils.cryptBase64ToByteArray(x)
+          }
+          else
+            null
+        }
     }
 
     def unzip1 = udf {
@@ -61,9 +70,21 @@ object MiduTouTiaolog {
     }
 
     def unzip = udf {
-        (x:Array[Byte])=>
+        (x:String)=>
         {
-          Utils.uncompressToString(x,"UTF-8")
+            val s =new String(x)
+          println(x)
+          println(s)
+            val inputStream = new GZIPInputStream(this.getClass.getClassLoader.getResourceAsStream(s))
+            val output = scala.io.Source.fromInputStream(inputStream).mkString
+            output
         }
     }
+
+    def unzip3 = udf {
+      (x:Array[Byte])=>
+      {
+      Utils.uncompressToString(x,"UTF-8")
+    }
+  }
 }
