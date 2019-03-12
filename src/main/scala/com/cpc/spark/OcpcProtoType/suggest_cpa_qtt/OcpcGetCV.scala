@@ -52,16 +52,6 @@ object OcpcGetCV {
     // 转化标签的cv_pt分区选择
     var cvrGoal = "cvr" + conversionGoal.toString
 
-    // 日期
-    // 时间分区
-    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
-    val today = dateConverter.parse(date)
-    val calendar = Calendar.getInstance
-    calendar.setTime(today)
-    calendar.add(Calendar.DATE, -1)
-    val yesterday = calendar.getTime
-    val date1 = dateConverter.format(yesterday)
-
     // 抽取点击数据表
     val sqlRequest1 =
       s"""
@@ -73,7 +63,7 @@ object OcpcGetCV {
          |FROM
          |    dl_cpc.ocpc_base_unionlog
          |WHERE
-         |    `date` = '$date1'
+         |    `date` = '$date'
          |AND
          |    $mediaSelection
          |AND
@@ -99,7 +89,7 @@ object OcpcGetCV {
          |FROM
          |  dl_cpc.ocpc_label_cvr_hourly
          |WHERE
-         |  `date` >= '$date1'
+         |  `date` >= '$date'
          |AND
          |  cvr_goal = '$cvrGoal'
        """.stripMargin
