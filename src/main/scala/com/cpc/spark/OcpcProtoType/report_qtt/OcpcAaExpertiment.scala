@@ -14,8 +14,8 @@ object OcpcAaExpertiment {
     val spark = SparkSession.builder().appName("OcpcAdExpertiment").enableHiveSupport().getOrCreate()
 //    joinBaseIsCvr(date, spark)
 //    println("base and ml_cvr_feature_v1 joined success")
-    convStr2Num(date, spark)
-    println("str conv to num success")
+//    convStr2Num(date, spark)
+//    println("str conv to num success")
     calculateIndexValue(date, spark)
     println("has got index value")
     getPreAdInfo(date, spark)
@@ -175,13 +175,13 @@ object OcpcAaExpertiment {
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick) as acp,
         |    sum(case when isclick = 1 then dynamicbid else 0 end) * 0.01 / sum(isclick) as acb,
         |    sum(case when isclick = 1 then kvalue else 0 end) * 1.0 / sum(isclick) as kvalue,
-        |    round(sum(case when ocpc_log_dict is not null then 1 else 0 end) * 1.0 / count(unitid), 3) as ratio
+        |    round(sum(case when cpagiven is not null then 1 else 0 end) * 1.0 / count(unitid), 3) as ratio
         |from
         |    dl_cpc.ocpc_aa_base_index
         |group by
         |    `date`,
         |    unitid,
-        |    userid;
+        |    userid
       """.stripMargin
     val data = spark.sql(sql)
     data
