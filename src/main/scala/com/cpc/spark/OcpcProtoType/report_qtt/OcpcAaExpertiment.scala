@@ -179,7 +179,7 @@ object OcpcAaExpertiment {
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick) as acp,
         |    sum(case when isclick = 1 and dynamicbid is not null then dynamicbid
         |             when isclick = 1 and dynamicbid is null then bid
-        |             else 0 end) * 0.01 / sum(case when isclick = 1 then 1 else 0) as acb,
+        |             else 0 end) * 0.01 / sum(case when isclick = 1 then 1 else 0 end) as acb,
         |    sum(case when isclick = 1 then kvalue else 0 end) * 1.0
         |    / sum(case when isclick = 1 and kvalue is not null then 1 else 0 end) as kvalue,
         |    round(sum(case when cpagiven is null then 0 else 1 end) * 1.0 / count(unitid), 3) as ratio
