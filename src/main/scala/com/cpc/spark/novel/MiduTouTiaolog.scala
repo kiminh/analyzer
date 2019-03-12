@@ -56,13 +56,15 @@ object MiduTouTiaolog {
             if (x != null) decompress(x) else null
     }
 
+
     def strToMap= udf{
         (str: String)=>{
+
           val json = JSON.parseObject(str)
-          var map = mutable.LinkedHashMap[String,String]()
+          var map = mutable.LinkedHashMap[Any,String]()
 
           for (k <- json.keySet()) {
-            map.put(k,json.getString(k))
+            map += (k -> json.getString(k))
           }
         }
     }
