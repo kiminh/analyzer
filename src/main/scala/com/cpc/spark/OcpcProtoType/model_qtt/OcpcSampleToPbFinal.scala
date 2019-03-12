@@ -51,7 +51,7 @@ object OcpcSampleToPbFinal {
       .table("dl_cpc.ocpc_prev_pb_once")
       .where(s"version = 'wz' and cpagiven > 0")
       .withColumn("conversion_goal", lit(0))
-      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
+      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
 
     data.show(10)
     data
@@ -61,7 +61,7 @@ object OcpcSampleToPbFinal {
     val data = spark
       .table("dl_cpc.ocpc_prev_pb_once")
       .where(s"version = 'qtt_demo'")
-      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue")
+      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
 
     data.show(10)
     data
