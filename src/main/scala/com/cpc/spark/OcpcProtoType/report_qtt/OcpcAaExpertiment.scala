@@ -14,14 +14,14 @@ object OcpcAaExpertiment {
     val spark = SparkSession.builder().appName("OcpcAdExpertiment").enableHiveSupport().getOrCreate()
     joinBaseIsCvr(date, spark)
     println("base and ml_cvr_feature_v1 joined success")
-    convStr2Num(date, spark)
-    println("str conv to num success")
-    calculateIndexValue(date, spark)
-    println("has got index value")
-    getPreAdInfo(date, spark)
-    println("has got yesterday's ad info")
-    getData(date, spark)
-    println("has got need data")
+//    convStr2Num(date, spark)
+//    println("str conv to num success")
+//    calculateIndexValue(date, spark)
+//    println("has got index value")
+//    getPreAdInfo(date, spark)
+//    println("has got yesterday's ad info")
+//    getData(date, spark)
+//    println("has got need data")
   }
 
   // 将base表和ml_cvr_feature_v1等表关联起来
@@ -89,6 +89,18 @@ object OcpcAaExpertiment {
         |    a.searchid = d.searchid
         |where
         |    a.`date` = '$preDate'
+        |and
+        |    a.media_appsid  in ("80000001", "80000002")
+        |and
+        |    a.isshow = 1
+        |and
+        |    a.antispam = 0
+        |and
+        |    a.adslot_type in (1,2,3)
+        |and
+        |    a.adsrc = 1
+        |and
+        |    (a.charge_type is null or a.charge_type = 1)
       """.stripMargin
     val data = spark.sql(sql)
     data
@@ -113,7 +125,7 @@ object OcpcAaExpertiment {
         |	isclick,
         |	isshow,
         |	price,
-        |	uid,
+        |	`uid`,
         |	cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
         | cast(ocpc_log_dict['kvalue'] as double) as kvalue,
         | cast(ocpc_log_dict['pcvr'] as double) as pcvr,
