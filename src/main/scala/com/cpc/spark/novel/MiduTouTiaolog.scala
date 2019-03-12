@@ -36,8 +36,8 @@ object MiduTouTiaolog {
 
 
         data.show(5)
-        data.write.mode("overwrite").saveAsTable("test.wy03")
-//        spark.sql(sql).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
+//        data.write.mode("overwrite").saveAsTable("test.wy03")
+        spark.sql(sql).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
 
     }
 
@@ -57,6 +57,13 @@ object MiduTouTiaolog {
     }
 
     def strToMap= udf{
-        (str: String)=>JSON.parseObject(str)
+        (str: String)=>{
+          val json = JSON.parseObject(str)
+          var map = mutable.LinkedHashMap[String,String]()
+
+          for (k <- json.keySet()) {
+            map.put(k,json.getString(k))
+          }
+        }
     }
 }
