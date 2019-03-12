@@ -2,7 +2,7 @@ create table if not exists dl_cpc.ocpc_aa_base_index(
     `date`                  string,
     unitid                  int,
     userid                  int,
-    searchid                int,
+    searchid                string,
     isclick                 int,
     isshow                  int,
     price                   int,

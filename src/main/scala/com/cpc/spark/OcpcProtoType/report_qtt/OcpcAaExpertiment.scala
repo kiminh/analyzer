@@ -14,14 +14,14 @@ object OcpcAaExpertiment {
     val spark = SparkSession.builder().appName("OcpcAdExpertiment").enableHiveSupport().getOrCreate()
     joinBaseIsCvr(date, spark)
     println("base and ml_cvr_feature_v1 joined success")
-//    convStr2Num(date, spark)
-//    println("str conv to num success")
-//    calculateIndexValue(date, spark)
-//    println("has got index value")
-//    getPreAdInfo(date, spark)
-//    println("has got yesterday's ad info")
-//    getData(date, spark)
-//    println("has got need data")
+    convStr2Num(date, spark)
+    println("str conv to num success")
+    calculateIndexValue(date, spark)
+    println("has got index value")
+    getPreAdInfo(date, spark)
+    println("has got yesterday's ad info")
+    getData(date, spark)
+    println("has got need data")
   }
 
   // 将base表和ml_cvr_feature_v1等表关联起来
