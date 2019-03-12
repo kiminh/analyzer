@@ -33,11 +33,24 @@ object MiduTouTiaolog {
         .withColumn("opt",decode(col("opt")))
         .withColumn("opt",unzip(col("opt")))
         .withColumn("opt_map",strToMap(col("opt")))
-        .withColumn("AppScore",col("opt_map['AppScore']"))
 
-
-        data.show(5)
-        data.write.mode("overwrite").saveAsTable("test.wy03")
+      data.createOrReplaceTempView("tmp")
+      val sql2 =
+        s"""
+           |select
+           |  searchid, opt_map,opt_map["appscore"] as appscore,
+           |  opt_map["ButtonText"] as ButtonText,
+           |  opt_map["CommentNum"] as CommentNum,
+           |  opt_map["ImageMode"] as ImageMode,
+           |  opt_map["InteractionType"] as InteractionType,
+           |  opt_map["Source"] as Source,
+           |  opt_map["Title"] as Title,
+           |  opt_map["imageList"] as imageList
+           |  from tmp
+             """.stripMargin
+      val data2 = spark.sql(sql2)
+        data2.show(5)
+        data2.write.mode("overwrite").saveAsTable("test.wy03")
 //        spark.sql(sql).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
 
     }
