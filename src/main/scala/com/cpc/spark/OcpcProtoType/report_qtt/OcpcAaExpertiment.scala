@@ -12,8 +12,8 @@ object OcpcAaExpertiment {
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
     val spark = SparkSession.builder().appName("OcpcAdExpertiment").enableHiveSupport().getOrCreate()
-    joinBaseIsCvr(date, spark)
-    println("base and ml_cvr_feature_v1 joined success")
+//    joinBaseIsCvr(date, spark)
+//    println("base and ml_cvr_feature_v1 joined success")
     convStr2Num(date, spark)
     println("str conv to num success")
     calculateIndexValue(date, spark)
@@ -177,8 +177,9 @@ object OcpcAaExpertiment {
         |    sum(iscvr2) * 1.0 / sum(isclick) as post_cvr2,
         |    sum(iscvr3) * 1.0 / sum(isclick) as post_cvr3,
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick) as acp,
-        |    sum(case when isclick = 1 and dynamicbid is not null then dynamicbid else bid end) * 0.01
-        |    / sum(case when isclick = 1 and dynamicbid is not null then 1 else 0 end) as acb,
+        |    sum(case when isclick = 1 and dynamicbid is not null then dynamicbid
+        |             when isclick = 1 and dynamicbid is null then bid
+        |             else 0 end) * 0.01 / sum(case when isclick = 1 then 1 else 0) as acb,
         |    sum(case when isclick = 1 then kvalue else 0 end) * 1.0
         |    / sum(case when isclick = 1 and kvalue is not null then 1 else 0 end) as kvalue,
         |    round(sum(case when cpagiven is null then 0 else 1 end) * 1.0 / count(unitid), 3) as ratio
