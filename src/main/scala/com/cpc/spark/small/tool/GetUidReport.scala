@@ -15,11 +15,19 @@ object GetUidReport {
       .enableHiveSupport()
       .getOrCreate()
     val sql1 = " SELECT field[\"device\"].string_type ,day from dl_lechuan.qukan_daily_new_user_p"
-   val sql2 =  """
-            SELECT uid,sum(isclick),sum(isshow)  from dl_cpc.cpc_union_log where
-            `date` in (%s) and isfill > 0 and  media_appsid in("80000001","80000002")
-             GROUP BY uid
-           """.stripMargin.format(dateDay)
+    val sql2 =
+      s"""
+         |SELECT
+         |  uid
+         |  , sum(isclick)
+         |  , sum(isshow)
+         |from dl_cpc.cpc_basedata_union_evnets
+         |where day='$dateDay'
+         |  and isfill>0
+         |  and media_appsid in ("80000001","80000002")
+         |GROUP BY uid
+       """.stripMargin
+
     println("sql:"+sql1)
     println("sq2:"+sql2)
 
