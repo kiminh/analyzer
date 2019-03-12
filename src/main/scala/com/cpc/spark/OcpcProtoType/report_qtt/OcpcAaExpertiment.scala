@@ -175,7 +175,7 @@ object OcpcAaExpertiment {
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick) as acp,
         |    sum(case when isclick = 1 then dynamicbid else 0 end) * 0.01 / sum(isclick) as acb,
         |    sum(case when isclick = 1 then kvalue else 0 end) * 1.0 / sum(isclick) as kvalue,
-        |    round(sum(case when cpagiven is not null then 1 else 0 end) * 1.0 / count(unitid), 3) as ratio
+        |    round(sum(case when cpagiven = 0 then 0 else 1 end) * 1.0 / count(unitid), 3) as ratio
         |from
         |    dl_cpc.ocpc_aa_base_index
         |group by
