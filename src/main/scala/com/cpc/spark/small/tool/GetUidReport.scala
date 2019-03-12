@@ -14,14 +14,14 @@ object GetUidReport {
       .appName("device analy ")
       .enableHiveSupport()
       .getOrCreate()
-    val sql1 = " SELECT field[\"device\"].string_type ,day from dl_lechuan.qukan_daily_new_user_p"
+    val sql1 = " SELECT field[\"device\"].string_type ,day from dl_lechuan.qukan_daily_new_user_p
     val sql2 =
       s"""
          |SELECT
          |  uid
          |  , sum(isclick)
          |  , sum(isshow)
-         |from dl_cpc.cpc_basedata_union_evnets
+         |from dl_cpc.cpc_basedata_union_events
          |where day='$dateDay'
          |  and isfill>0
          |  and media_appsid in ("80000001","80000002")
@@ -51,9 +51,9 @@ object GetUidReport {
       }.reduceByKey((x,y) => (x._1+ y._1, x._2+ y._2)).collect().foreach(x =>println(x + "ctr"+ x._2._1.toDouble/ x._2._2.toDouble*100))
     val all = rdd2.join(rdd1)
     val dev05 = rdd2.join(rdd1.filter(x => x._2 < "2017-06-01"))
-    val dev06 =  rdd2.join(rdd1.filter(x => x._2 < "2017-07-01" && x._2 >= "2017-06-01"))
-    val dev07 =  rdd2.join(rdd1.filter(x => x._2 < "2017-08-01" && x._2 >= "2017-07-01"))
-    val dev08 =  rdd2.join(rdd1.filter(x => x._2 < "2017-09-01" && x._2 >= "2017-08-01"))
+    val dev06 = rdd2.join(rdd1.filter(x => x._2 < "2017-07-01" && x._2 >= "2017-06-01"))
+    val dev07 = rdd2.join(rdd1.filter(x => x._2 < "2017-08-01" && x._2 >= "2017-07-01"))
+    val dev08 = rdd2.join(rdd1.filter(x => x._2 < "2017-09-01" && x._2 >= "2017-08-01"))
     val dev09 = rdd2.join(rdd1.filter(x => x._2 < "2017-09-10" && x._2 >= "2017-09-01"))
     println("all:"+ all.count())
     println("~06-01:"+ dev05.count())
