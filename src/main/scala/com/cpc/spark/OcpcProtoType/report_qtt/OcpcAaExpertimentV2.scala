@@ -3,18 +3,19 @@ package com.cpc.spark.OcpcProtoType.report_qtt
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.functions._
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
+import org.apache.spark.sql.{DataFrameReader, SparkSession}
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame}
 
-object OcpcAaExpertiment {
+object OcpcAaExpertimentV2 {
 
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
     val spark = SparkSession.builder().appName("OcpcAdExpertiment").enableHiveSupport().getOrCreate()
-    joinBaseIsCvr(date, spark)
+    val data = joinBaseIsCvr(date, spark)
     println("base and ml_cvr_feature_v1 joined success")
-    convStr2Num(date, spark)
+    convStr2Num(data, date, spark)
     println("str conv to num success")
     calculateIndexValue(date, spark)
     println("has got index value")
@@ -25,7 +26,7 @@ object OcpcAaExpertiment {
   }
 
   // 将base表和ml_cvr_feature_v1等表关联起来
-  def joinBaseIsCvr(date: String, spark: SparkSession): Unit ={
+  def joinBaseIsCvr(date: String, spark: SparkSession) ={
     val preDate = getPreDate(date, 1)
     val sql =
       s"""
@@ -91,18 +92,21 @@ object OcpcAaExpertiment {
         |    a.`date` = '$preDate'
       """.stripMargin
     val data = spark.sql(sql)
-    data
+    val resultDF = data
       .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-      .withColumn("dt", lit(preDate))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(100)
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_aa_join_base_iscvr")
+//      .withColumn("dt", lit(preDate))
+//      .withColumn("version", lit("qtt_demo"))
+//      .repartition(10)
+//      .write.mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_aa_join_base_iscvr")
+
+    resultDF
   }
 
   // 将ocpc_log_dict中的字符转化成数字
-  def convStr2Num(date: String, spark: SparkSession): Unit ={
+  def convStr2Num(data: DataFrame, date: String, spark: SparkSession): Unit ={
     val preDate = getPreDate(date, 1)
+    //data.createOrReplaceTempView("base_data")
     val sql =
       s"""
         |select
@@ -124,15 +128,13 @@ object OcpcAaExpertiment {
         | iscvr2,
         | iscvr3
         |from
-        |	dl_cpc.ocpc_aa_join_base_iscvr
-        |where
-        |	`date` = '$preDate'
+        |	base_data
       """.stripMargin
     val data = spark.sql(sql)
     data
       .withColumn("dt", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(100)
+      .repartition(10)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_base_index")
   }
@@ -176,7 +178,7 @@ object OcpcAaExpertiment {
     data
       .withColumn("dt", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(100)
+      .repartition(10)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_base_index_value")
   }
@@ -200,7 +202,7 @@ object OcpcAaExpertiment {
     data
       .withColumn("dt", lit(date))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(100)
+      .repartition(10)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_pre_ad_info")
   }
@@ -276,7 +278,7 @@ object OcpcAaExpertiment {
     data
       .withColumn("dt", lit(endDate))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(100)
+      .repartition(10)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_expertiment_data")
   }
