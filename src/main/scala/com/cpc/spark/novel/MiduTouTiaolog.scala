@@ -36,8 +36,8 @@ object MiduTouTiaolog {
 
 
         data.show(5)
-//        data.write.mode("overwrite").saveAsTable("test.wy03")
-        spark.sql(sql).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
+        data.write.mode("overwrite").saveAsTable("test.wy03")
+//        spark.sql(sql).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
 
     }
 
