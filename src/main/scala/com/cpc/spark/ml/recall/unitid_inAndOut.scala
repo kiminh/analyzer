@@ -39,7 +39,7 @@ object unitid_inAndOut {
          |(select unitid,cpm,cvr from dl_cpc.cpc_recall_bsExp_report where date='$tardate' and exp='enabled0.3'
          |and unitid not in ('exp_unitid', 'all')) tb
          |on ta.unitid=tb.unitid
-         |where ta.cpm<tb.cpm and ta.cvr=<tb.cvr group by ta.unitid
+         |where ta.cpm<tb.cpm and ta.cvr<tb.cvr group by ta.unitid
       """.stripMargin).createOrReplaceTempView("bscvrExp")
 
     spark.sql(
