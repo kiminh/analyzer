@@ -38,7 +38,7 @@ object MiduTouTiaolog {
       val sql2 =
         s"""
            |select
-           |  searchid, opt_map,opt_map["appscore"] as appscore,
+           |  opt_map,opt_map["appscore"] as appscore,
            |  opt_map["ButtonText"] as buttontext,
            |  opt_map["CommentNum"] as commentnum,
            |  opt_map["Description"] as description,
