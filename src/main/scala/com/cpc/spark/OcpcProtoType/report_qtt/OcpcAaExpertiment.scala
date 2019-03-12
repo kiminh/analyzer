@@ -40,7 +40,7 @@ object OcpcAaExpertiment {
         | a.uid,
         |	b.iscvr1,
         |	c.iscvr2,
-        |	d.iscvr3
+        |	d.iscvr3,
         | a.ocpc_log
         |from
         |	dl_cpc.ocpc_base_unionlog a
