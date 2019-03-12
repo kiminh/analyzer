@@ -122,19 +122,19 @@ object OcpcAaExpertiment {
         |	unitid,
         |	userid,
         |	searchid,
-        |	(case when isclick is null then 0 else isclick end) as isclick,
-        |	(case when isshow is null then 0 else isshow end) as isshow,
-        |	(case when price is null then 0 else price end) as price,
+        |	isclick,
+        |	isshow,
+        |	price,
         |	uid,
-        |	(case when ocpc_log_dict['cpagiven'] is null then 0 else cast(ocpc_log_dict['cpagiven'] as double) end) as cpagiven,
-        | (case when ocpc_log_dict['kvalue'] is null then 0 else cast(ocpc_log_dict['kvalue'] as double) end) as kvalue,
-        | (case when ocpc_log_dict['pcvr'] is null then 0 else cast(ocpc_log_dict['pcvr'] as double) end) as pcvr,
-        | (case when ocpc_log_dict['dynamicbidmax'] is null then 0 else cast(ocpc_log_dict['dynamicbidmax'] as double) end) as dynamicbidmax,
-        | (case when ocpc_log_dict['dynamicbid'] is null then 0 else cast(ocpc_log_dict['dynamicbid'] as double) end) as dynamicbid,
-        | (case when ocpc_log_dict['conversiongoal'] is null then 0 else cast(ocpc_log_dict['conversiongoal'] as int) end) as conversion_goal,
-        | (case when iscvr1 is null then 0 else iscvr1 end) as iscvr1,
-        | (case when iscvr2 is null then 0 else iscvr2 end) as iscvr2,
-        | (case when iscvr3 is null then 0 else iscvr3 end) as iscvr3
+        |	cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
+        | cast(ocpc_log_dict['kvalue'] as double) as kvalue,
+        | cast(ocpc_log_dict['pcvr'] as double) as pcvr,
+        | cast(ocpc_log_dict['dynamicbidmax'] as double) as dynamicbidmax,
+        | cast(ocpc_log_dict['dynamicbid'] as double) as dynamicbid,
+        | cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
+        | iscvr1,
+        | iscvr2,
+        | iscvr3
         |from
         |	dl_cpc.ocpc_aa_join_base_iscvr
         |where
@@ -157,7 +157,8 @@ object OcpcAaExpertiment {
         |    `date`,
         |    unitid,
         |    userid,
-        |    sum(case when isclick = 1 then cpagiven else 0 end) * 0.01 / sum(isclick) as cpagiven,
+        |    sum(case when isclick = 1 then cpagiven else 0 end) * 0.01
+        |    / sum(case when isclick = 1 and cpagiven is not null then 1 else 0 end) as cpagiven,
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr1) as cpareal1,
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr2) as cpareal2,
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr3) as cpareal3,
@@ -173,9 +174,10 @@ object OcpcAaExpertiment {
         |    sum(iscvr2) * 1.0 / sum(isclick) as post_cvr2,
         |    sum(iscvr3) * 1.0 / sum(isclick) as post_cvr3,
         |    sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick) as acp,
-        |    sum(case when isclick = 1 then dynamicbid else 0 end) * 0.01 / sum(isclick) as acb,
+        |    sum(case when isclick = 1 then dynamicbid else 0 end) * 0.01
+        |    / sum(case when isclick = 1 and dynamicbid is not null then 1 else 0 end) as acb,
         |    sum(case when isclick = 1 then kvalue else 0 end) * 1.0 / sum(isclick) as kvalue,
-        |    round(sum(case when cpagiven = 0 then 0 else 1 end) * 1.0 / count(unitid), 3) as ratio
+        |    round(sum(case when cpagiven is null then 0 else 1 end) * 1.0 / count(unitid), 3) as ratio
         |from
         |    dl_cpc.ocpc_aa_base_index
         |group by
