@@ -97,6 +97,7 @@ object videoPromotion {
       .withColumn("ctr", col("click_n")*100/col("show_n"))
       .withColumn("cvr", col("cvr_n")*100/col("click_n"))
       .withColumn("cpm", col("total_cost")*10/col("show_n"))
+      .withColumn("cpa", col("total_cost")/col("cvr_n")/100)
       .withColumn("arpu", col("total_cost")/col("uidn")/100)
       .withColumn("acp", col("total_cost")/col("click_n")/100)
       .select("test_tag", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "arpu", "acp")
