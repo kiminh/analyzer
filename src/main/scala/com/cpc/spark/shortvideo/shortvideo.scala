@@ -131,10 +131,10 @@ object shortvideo {
     val tab0 = spark.sql(sql).selectExpr(
       "searchid","`timestamp` as timestamp","adtype","userid","ideaid","isclick","isreport","exp_cvr",
       "expcvr_d","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
-      "usertype","adslotid","isshow",s"""'${date}' as dt""",s"""'${hour}' as dt""").toDF
+      "usertype","adslotid","isshow",s"""'${date}' as dt""",s"""'${hour}' as hr""").toDF
     (    "searchid","timestamp","adtype","userid","ideaid","isclick","isreport","exp_cvr",
       "expcvr_d","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
-      "usertype","adslotid","isshow",s"""'${date}' as dt""",s"""'${hour}' as dt"""
+      "usertype","adslotid","isshow","dt","hr"
     )
     tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_unionevents_appdownload_mid")
      println("dl_cpc.cpc_unionevents_appdownload_mid insert success!")
