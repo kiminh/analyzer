@@ -45,8 +45,8 @@ object OcpcSampleToPbFinal {
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit("qtt_v1"))
-//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
-        .repartition(2).write.mode("overwrite").saveAsTable("test.check_data_pb_20190312")
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+//        .repartition(2).write.mode("overwrite").saveAsTable("test.check_data_pb_20190312")
 
 
     savePbPack(resultDF, version, isKnown)
@@ -61,7 +61,7 @@ object OcpcSampleToPbFinal {
       .withColumn("kvalue", when(col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
       .withColumn("version", when(col("version2").isNotNull, col("version2")).otherwise(col("version1")))
 
-    data.write.mode("overwrite").saveAsTable("test.check_data_pb_20190313")
+//    data.write.mode("overwrite").saveAsTable("test.check_data_pb_20190313")
 
     data
   }
