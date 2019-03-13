@@ -113,14 +113,24 @@ object OcpcGetPb {
     2. 投放小时数大于24小时或ocpc_k_smooth_v1数据表没有关联到数据，则不做限制
      */
     // 抽取ocpc_suggest_cpa_k_once表
-    val conf = ConfigFactory.load("ocpc")
-    val conf_key = "ocpc_wz.suggest_k_path"
-    val expDataPath = conf.getString(conf_key)
-    val data = spark.read.format("json").json(expDataPath)
-    val baseK = data
-        .filter(s"duration <= 3")
-        .withColumn("base_k", col("kvalue"))
-        .select("identifier", "base_k")
+//    val conf = ConfigFactory.load("ocpc")
+//    val conf_key = "ocpc_wz.suggest_k_path"
+//    val expDataPath = conf.getString(conf_key)
+//    val data = spark.read.format("json").json(expDataPath)
+//    val baseK = data
+//        .filter(s"duration <= 3")
+//        .withColumn("base_k", col("kvalue"))
+//        .select("identifier", "base_k")
+    val sqlRequestBase =
+      s"""
+         |SELECT
+         |  cast(unitid as string) as identifier,
+         |  kvalue as base_k
+         |FROM
+         |  test.ocpc_suggest_cpa_recommend_hourly_wz
+       """.stripMargin
+    println(sqlRequestBase)
+    val baseK = spark.sql(sqlRequestBase)
 
     baseK.show(10)
 

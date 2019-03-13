@@ -83,7 +83,7 @@ object OcpcSampleToPb {
     val data = spark.sql(sqlRequest)
 
     // 按照实验配置文件给出cpagiven
-    val cpaGiven = getCPAgiven(spark)
+    val cpaGiven = getCPAgivenV2(spark)
 
     // 数据关联
     val result = data
@@ -97,6 +97,21 @@ object OcpcSampleToPb {
 
 
     resultDF
+  }
+
+  def getCPAgivenV2(spark: SparkSession) = {
+    // 从实验配置文件读取配置的CPAgiven
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) identifier,
+         |  cpa as cpagiven
+         |FROM
+         |  test.ocpc_suggest_cpa_recommend_hourly_wz
+       """.stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest)
+    result
   }
 
   def getCPAgiven(spark: SparkSession) = {
