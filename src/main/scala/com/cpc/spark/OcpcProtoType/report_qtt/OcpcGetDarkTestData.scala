@@ -165,13 +165,13 @@ object OcpcGetDarkTestData {
         |             else iscvr3 end) as cv
         |from
         |    all_index
-        |where
-        |    `hour` >= '18'
         |group by
         |    unitid,
         |    userid,
         |    (case when is_ocpc = 1 then "ocpc" else "cpc" end)
       """.stripMargin
+    //where
+    //    `hour` >= '18'
     val data = spark.sql(sql)
     data
       .withColumn("date", lit(date))
