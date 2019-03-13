@@ -65,11 +65,15 @@ object videoPromotion {
 
     val baseData = spark.sql(sql1)
 
-    val videoUser = baseData
+    val userAdTypeNo = baseData
         .select("userid", "adtype1", "ideaid")
-      .distinct()
       .groupBy("userid", "adtype1" )
-      .agg(count("ideaid").alias("ad_num"))
+      .agg(countDistinct("ideaid").alias("ad_num"))
+
+    val pivot_table = userAdTypeNo.groupBy("userid").pivot("adtype1").agg(sum("ad_num"))
+    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
+
+    val videoUser = userAdTypeNo
       .filter("adtype1 = 'video' and ad_num > 0 ")
         .select("userid")
 
@@ -91,7 +95,7 @@ object videoPromotion {
       .agg(
           sum("shown").alias("show_n"),
           sum("clickn").alias("click_n"),
-          sum("clickn").alias("cvr_n"),
+          sum("cvrn").alias("cvr_n"),
           sum("cost").alias("total_cost")
     ).join(uidn_ab, Seq("test_tag"), "inner")
       .withColumn("ctr", col("click_n")*100/col("show_n"))
@@ -101,6 +105,7 @@ object videoPromotion {
       .withColumn("arpu", col("total_cost")/col("uidn")/100)
       .withColumn("acp", col("total_cost")/col("click_n")/100)
       .select("test_tag", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "arpu", "acp")
+
 
 
 
