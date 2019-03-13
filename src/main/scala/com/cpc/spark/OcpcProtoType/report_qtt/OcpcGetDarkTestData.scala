@@ -167,6 +167,7 @@ object OcpcGetDarkTestData {
         |    unitid,
         |    userid,
         |    (case when is_ocpc=1 then "ocpc" else "cpc" end)
+        |    cpa_given
       """.stripMargin
     val data = spark.sql(sql)
     data
