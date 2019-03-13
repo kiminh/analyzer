@@ -167,7 +167,7 @@ object GetHourReport {
 
     println("charge", chargeData.count())
 
-    val geoData = unionLog
+    /*val geoData = unionLog
       .map {
         x =>
           var isclick = x.getAs[Int]("isclick")
@@ -213,9 +213,9 @@ object GetHourReport {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_geo_hourly", mariadbProp)
-    println("geo", geoData.count())
+    println("geo", geoData.count())*/
 
-    val osData = unionLog
+    /*val osData = unionLog
       .map {
         x =>
           var isclick = x.getAs[Int]("isclick")
@@ -260,9 +260,9 @@ object GetHourReport {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_os_hourly", mariadbProp)
-    println("os", osData.count())
+    println("os", osData.count())*/
 
-    val dsplog = ctx.sql(
+    /*val dsplog = ctx.sql(
       s"""
          |select *
          |from dl_cpc.$table
@@ -330,9 +330,9 @@ object GetHourReport {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_req_dsp_hourly", mariadbProp)
-    println("dsp", dspdata.count())
+    println("dsp", dspdata.count())*/
 
-    val fillLog = ctx.sql(
+    /*val fillLog = ctx.sql(
       s"""
          |select *,
          |      ext['spam_click'].int_value as spam_click,
@@ -386,10 +386,10 @@ object GetHourReport {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_media_fill_hourly", mariadbProp)
-    println("fill", fillData.count())
+    println("fill", fillData.count())*/
 
 
-    val unionLog_tmp = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0).cache()
+    /*val unionLog_tmp = unionLog.filter(x => x.getAs[Int]("ideaid") > 0 && x.getAs[Int]("isshow") > 0).cache()
 
     //取展示top10 的adclass
     val topAdclass = unionLog_tmp
@@ -541,7 +541,7 @@ object GetHourReport {
       .write
       .mode(SaveMode.Append)
       .jdbc(mariadbUrl, "report.report_ctr_prediction_hourly", mariadbProp)
-    println("ctr", ctrCvrData.count())
+    println("ctr", ctrCvrData.count())*/
 
     /*
     val cvrlog = ctx.sql(
