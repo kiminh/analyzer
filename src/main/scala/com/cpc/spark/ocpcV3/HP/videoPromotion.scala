@@ -73,22 +73,34 @@ object videoPromotion {
       .filter("adtype1 = 'video' and ad_num > 0 ")
         .select("userid")
 
-    val result = baseData
-        .join(videoUser, Seq("userid"), "inner")
+    val summary = baseData
+        .join(videoUser, Seq("userid"), "inner")  //去掉没有视频的userid
         .withColumn("price1", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
-        .groupBy("userid", "test_tag")
+        .groupBy("userid", "test_tag", "adtype1", "adclass")
         .agg(sum("isshow").alias("shown"),
           sum("isclick").alias("clickn"),
           sum("iscvr").alias("cvrn"),
-          sum("price1").alias("cost"),
-          countDistinct("uid").alias("uidn")
+          sum("price1").alias("cost")
         )
-//      .withColumn("ctr", col("clickn")*100/col("shown"))
-//      .withColumn("cvr", col("cvrn")*100/col("clickn"))
-//      .withColumn("cpm", col("cost")*10/col("show"))
-//      .withColumn("arpu", col("cost")/col("uidn")/100)
-//      .withColumn("acp", col("cost")/col("clickn")/100)
-//      .select("userid", "test_tag", "shown", "ctr", "clickn", "cvr", "cvrn", "cost", "cpm", "cpa", "arpu", "acp")
+
+    val uidn_ab = baseData.groupBy("test_tag")
+      .agg(countDistinct("uid").alias("uidn"))
+
+    val result = summary
+      .groupBy("test_tag")
+      .agg(
+          sum("shown").alias("show_n"),
+          sum("clickn").alias("click_n"),
+          sum("clickn").alias("cvr_n"),
+          sum("cost").alias("total_cost")
+    ).join(uidn_ab, Seq("test_tag"), "inner")
+      .withColumn("ctr", col("click_n")*100/col("show_n"))
+      .withColumn("cvr", col("cvr_n")*100/col("click_n"))
+      .withColumn("cpm", col("total_cost")*10/col("show_n"))
+      .withColumn("arpu", col("total_cost")/col("uidn")/100)
+      .withColumn("acp", col("total_cost")/col("click_n")/100)
+      .select("test_tag", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "arpu", "acp")
+
 
 
 
