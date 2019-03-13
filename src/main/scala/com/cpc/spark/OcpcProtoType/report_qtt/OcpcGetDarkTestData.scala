@@ -178,7 +178,7 @@ object OcpcGetDarkTestData {
       .withColumn("version", lit("qtt_demo"))
       .repartition(100)
       .write.mode("overwrite")
-      .insertInto("dl_cpc.i")
+      .insertInto("dl_cpc.ocpc_dark_test_data")
   }
 
   // 获得每天的投放时间区间
