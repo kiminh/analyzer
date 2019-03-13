@@ -14,7 +14,7 @@ object GetUidReport {
       .appName("device analy ")
       .enableHiveSupport()
       .getOrCreate()
-    val sql1 = " SELECT field[\"device\"].string_type ,day from dl_lechuan.qukan_daily_new_user_p
+    val sql1 = " SELECT field[\"device\"].string_type ,day from dl_lechuan.qukan_daily_new_user_p"
     val sql2 =
       s"""
          |SELECT
