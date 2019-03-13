@@ -105,7 +105,7 @@ object OcpcSampleToPb {
       s"""
          |SELECT
          |  cast(unitid as string) identifier,
-         |  cpa as cpagiven
+         |  cpa as cpagiven2
          |FROM
          |  test.ocpc_suggest_cpa_recommend_hourly_wz
        """.stripMargin
