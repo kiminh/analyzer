@@ -4,6 +4,7 @@ create table if not exists dl_cpc.ocpc_dark_test_data(
     ab_group                string,
     acp                     double,
     cpm                     double,
+    cpagiven                double,
     cpareal                 double,
     pre_cvr                 double,
     post_cvr                double,
