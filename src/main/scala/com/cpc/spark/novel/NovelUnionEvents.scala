@@ -29,7 +29,5 @@ object NovelUnionEvents {
 
         spark.sql(sql).write.mode("overwrite").insertInto("dl_cpc.cpc_novel_union_events")
 
-
-
     }
 }
