@@ -65,7 +65,7 @@ object videoPromotion {
 
     val baseData = spark.sql(sql1)
 
-    val userAdType = baseData
+    val videoUser = baseData
         .select("userid", "adtype1", "ideaid")
       .distinct()
       .groupBy("userid", "adtype1" )
@@ -73,11 +73,22 @@ object videoPromotion {
       .filter("adtype1 = 'video' and ad_num > 0 ")
         .select("userid")
 
+    val result = baseData
+        .join(videoUser, Seq("userid"), "inner")
+        .withColumn("price1", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
+        .groupBy("userid", "test_tag")
+        .agg(sum("isshow").alias("shown"),
+          sum("isclick").alias("clickn"),
+          sum("price1").alias("cost"),
+          countDistinct("uid").alias("uidn")
+        )
 
 
 
 
-    userAdType.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq")
+
+
+    result.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq")
 
 
   }
