@@ -150,7 +150,7 @@ object videoPromotion {
 
     val userCvr2 = userCvr
       .join( userAdclassCvr, Seq("userid"), "left" )
-      .withColumn("bigimange2", when(col("bigimage").isNull, col("cvr")).otherwise(col("bigimage")))
+      .withColumn("bigimage2", when(col("bigimage").isNull, col("cvr")).otherwise(col("bigimage")))
       .select("test_tag", "userid", "video", "bigimage2")
       .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)) )
 
@@ -162,7 +162,7 @@ object videoPromotion {
       ).withColumn("account", col("video_outstand_usern")/col("usern"))
 
     result.write.mode("overwrite").saveAsTable("test.video_outstand_user_account")
-    
+
   }
 
 }
