@@ -77,8 +77,8 @@ object videoPromotion {
 //    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
 
     val summary = baseData
-        .join(pivot_table, Seq("userid"), "left")  //去掉没有视频的userid
-        .filter("video > 0")
+        .join(pivot_table, Seq("userid"), "left")
+        .filter("video > 0") //去掉没有视频的userid
         .withColumn("price1", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
         .groupBy("userid", "test_tag", "adtype1", "adclass")
         .agg(sum("isshow").alias("shown"),
@@ -114,6 +114,10 @@ object videoPromotion {
       .agg((sum("cvrn")/sum("clickn") ).alias("cvr"))
       .select("adclass", "cvr")
 
+    val userAdclassCvr = userAdclass
+      .join( adclassCvr, Seq("adclass"), "inner" )
+      .select("userid", "adclass", "cvr" )
+
     val uidn_ab = baseData.groupBy("test_tag")
       .agg(countDistinct("uid").alias("uidn"))
       .select("test_tag", "uidn")
@@ -144,13 +148,21 @@ object videoPromotion {
 
     userCvr.write.mode("overwrite").saveAsTable("test.userCvr_sjq")
 
+    val userCvr2 = userCvr
+      .join( userAdclassCvr, Seq("userid"), "left" )
+      .withColumn("bigimange2", when(col("bigimage").isNull, col("cvr")).otherwise(col("bigimage")))
+      .select("test_tag", "userid", "video", "bigimage2")
+      .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)) )
 
+    val reult = userCvr2
+      .groupBy("test_tag")
+      .agg(
+        count("userid").alias("usern"),
+        sum("flag").alias("video_outstand_usern")
+      ).withColumn("account", col("video_outstand_usern")/col("usern"))
 
-
-
-
-
-
+    result.write.mode("overwrite").saveAsTable("test.video_outstand_user_account")
+    
   }
 
 }
