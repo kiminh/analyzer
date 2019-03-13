@@ -2,7 +2,7 @@ package com.cpc.spark.ocpcV3.ocpcNovel.report
 
 import com.cpc.spark.tools.OperateMySQL
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions._
+import org.apache.spark.sql.functions.{col, _}
 import org.apache.spark.sql.types.IntegerType
 
 
@@ -373,8 +373,8 @@ object OcpcHourlyReportV2 {
       .withColumn("step2_click_percent", col("step2_percent"))
       .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
       .withColumn("cpa_ratio", when(col("cvr_cnt").isNull || col("cvr_cnt") === 0, 0.0).otherwise(col("cpa_given") * 1.0 / col("cpa_real")))
-      .withColumn("is_cpa_ok", when(col("cpa_ratio")>=1, 1).otherwise(0))
-      .withColumn("is_cpa_ok", when(col("new_adclass")===110110 and col("cpa_ratio")<2,0).otherwise(col("is_cpa_ok")))
+      .withColumn("is_cpa_ok", when(col("cpa_ratio")>=0.8 and col("cpa_ratio")<=1.2, 1).otherwise(0))
+      .withColumn("is_cpa_ok", when(col("new_adclass")===110110 and (col("cpa_ratio")>2.4 or col("cpa_ratio")<1.6),0).otherwise(col("is_cpa_ok")))
       .withColumn("impression", col("show_cnt"))
       .withColumn("click", col("ctr_cnt"))
       .withColumn("conversion", col("cvr_cnt"))
