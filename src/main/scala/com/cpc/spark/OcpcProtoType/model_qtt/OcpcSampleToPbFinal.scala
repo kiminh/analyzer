@@ -38,8 +38,8 @@ object OcpcSampleToPbFinal {
     val result1 = getPbData1(date, hour, spark)
     val result2 = getPbData2(date, hour, spark)
 
-    val resultDF = result1.union(result2)
-    resultDF.write.mode("overwrite").saveAsTable("test.check_data_pb_20190313")
+    val resultDF = assemblyResult(result1, result2)
+
     resultDF
         .select("identifier", "cpagiven", "cvrcnt", "kvalue", "conversion_goal")
         .withColumn("date", lit(date))
@@ -50,6 +50,20 @@ object OcpcSampleToPbFinal {
 
 
     savePbPack(resultDF, version, isKnown)
+  }
+
+  def assemblyResult(data1: DataFrame, data2: DataFrame) = {
+    val data = data1
+      .join(data2, Seq("identifier", "conversion_goal"), "outer")
+      .select("identifier", "conversion_goal", "cpagiven1", "cvrcnt1", "kvalue1", "version1", "cpagiven2", "cvrcnt2", "kvalue2", "version2")
+      .withColumn("cpagiven", when(col("cpagiven2").isNotNull, col("cpagiven2")).otherwise(col("cpagiven1")))
+      .withColumn("cvrcnt", when(col("cvrcnt2").isNotNull, col("cvrcnt2")).otherwise(col("cvrcnt1")))
+      .withColumn("kvalue", when(col("kvalue2").isNotNull, col("kvalue2")).otherwise(col("kvalue1")))
+      .withColumn("version", when(col("version2").isNotNull, col("version2")).otherwise(col("version1")))
+
+    data.write.mode("overwrite").saveAsTable("test.check_data_pb_20190313")
+
+    data
   }
 
   def getPbData2(date: String, hour: String, spark: SparkSession) = {
@@ -63,7 +77,13 @@ object OcpcSampleToPbFinal {
         .withColumn("conversion_goal", lit(1))
         .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
 
-    val data = data1.union(data2)
+    val data = data1
+      .union(data2)
+      .withColumn("cpagiven2", col("cpagiven"))
+      .withColumn("cvrcnt2", col("cvrcnt"))
+      .withColumn("kvalue2", col("kvalue"))
+      .withColumn("version2", col("version"))
+      .select("identifier", "conversion_goal", "cpagiven2", "cvrcnt2", "kvalue2", "version2")
 
     data.show(10)
     data
@@ -73,7 +93,11 @@ object OcpcSampleToPbFinal {
     val data = spark
       .table("dl_cpc.ocpc_prev_pb_once")
       .where(s"version = 'qtt_demo'")
-      .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
+      .withColumn("cpagiven1", col("cpagiven"))
+      .withColumn("cvrcnt1", col("cvrcnt"))
+      .withColumn("kvalue1", col("kvalue"))
+      .withColumn("version1", col("version"))
+      .select("identifier", "conversion_goal", "cpagiven1", "cvrcnt1", "kvalue1", "version1")
 
     data.show(10)
     data
