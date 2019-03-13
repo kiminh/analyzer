@@ -21,7 +21,7 @@ object NovelUnionEvents {
             s"""
                |select *
                |from dl_cpc.cpc_basedata_union_events
-               |where media_appsid in ('80001098','80001292')
+               |where media_appsid in ('80001098','80001292','80001011','80001539','80002480')
                |      and day= '$date' and hour = '$hour'
              """.stripMargin
 
