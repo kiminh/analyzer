@@ -37,6 +37,9 @@ object shortvideo {
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
+    val yesday=calendar.add(Calendar.DATE,-1)
+    val yesdatetime=dateConverter.format(yesday)
+    val yesdate=yesdatetime.split(" ")(0)
     calendar.add(Calendar.HOUR, -72)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
@@ -173,14 +176,14 @@ group by searchid,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr ,cvr
     val sql4=
       s"""
          |select
-         |    userid,adtype_cate,
+         |    userid,adtype_cate,adclass,
          |    sum(isshow) as show_num,
          |    sum(isclick) as click_num,
          |    round(sum(isclick)/sum(isshow),6) as ctr,
          |    round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isshow), 6) as cpm,
          |    sum(if(b.searchid is null,0,1)) as convert_num,
-         |    sum(case when isreport=1 then 1   end ) cvr_n,
-         |    round(sum(if(b.searchid is null,0,1))/sum(isclick),6) as cvr,
+         |    sum(case when isreport=1 then 1  else 0 end ) cvr_n,
+         |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as cvr,
          |    round(sum(exp_cvr)/sum(isshow),6) as exp_cvr,
          |    dt,hr
          |from
@@ -248,24 +251,49 @@ group by searchid,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr ,cvr
          |                            tmp.isreport=1
          |) b
          |on a.searchid = b.searchid
-         |group by userid,adtype_cate,a.dt,a.hr
+         |group by userid,adtype_cate,adclass,a.dt,a.hr
        """.stripMargin
     val  cvrcomparetab = spark.sql(sql4).selectExpr("userid","adtype_cate adtype","show_num","click_num",
     "ctr","cpm","convert_num","cvr_n","cvr","exp_cvr")
     cvrcomparetab.repartition(100).write.mode("overwrite").
       insertInto("dl_cpc.cpc_bigpicvideo_cvr")
     println("compare video bigpic act cvr midtab  success")
+
+    /*######增加该userid没有大图，用所在行业实际cvr来衡量的条件##################################*/
+     val sql3=
+       s"""
+          |select   adclass,
+          |    sum(isshow) as show_num,
+          |    sum(isclick) as click_num,
+          |    round(sum(isclick)/sum(isshow),6) as ctr,
+          |    round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isshow), 6) as cpm,
+          |    sum(if(b.searchid is null,0,1)) as convert_num,
+          |    sum(case when isreport=1 then 1  else 0  end ) cvr_n,
+          |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as act_cvr
+          |    dt,hr
+          |from    ${tab0}
+          |where  ${selectCondition3}
+          |and  adtype=2
+          |group by adclass
+          |)
+          |
+          |
+        """.stripMan
+
+    val  cvrcomparetab2 = spark.sql(sql3).selectExpr("adclass","act_cvr")
+
     val sql5=
       s"""
-         |select video.userid,video.video_act_cvr1,bigpic.bigpic_act_cvr,bigpic.bigpic_expcvr
+         |select video.userid,video.video_act_cvr1,bigpic.bigpic_act_cvr,bigpic.bigpic_expcvr,
+         |       adclass.adclass_act_cvr
          |from
          |(
-         |select userid,adtype,cvr video_act_cvr1
+         |select userid,adtype,cvr video_act_cvr1,adclass
          |from  dl_cpc.cpc_bigpicvideo_cvr
          |where  ${selectCondition3}
          |and   adtype='video'
          |)   video
-         |join
+         |left join
          |(
          |  select  userid,adtype,cvr  bigpic_act_cvr,exp_cvr bigpic_expcvr
          |  from  dl_cpc.cpc_bigpicvideo_cvr
@@ -273,16 +301,22 @@ group by searchid,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr ,cvr
          |  and   adtype='bigpic'
          |) bigpic
          |on  bigpic.userid=video.userid
-         |where   video_act_cvr1<bigpic_act_cvr
+         |left join
+         |(
+         |  select  adclass,act_cvr adclass_act_cvr
+         |  from   ${cvrcomparetab2}
+         |) adclass
+         |on  adclass.adclass=video.adclass
+         |where  ( video_act_cvr1<bigpic_act_cvr or video_act_cvr1<adclass_act_cvr )
       """.stripMargin
 
-    val bigpiccvr=spark.sql(sql5).selectExpr("userid as userid_b","bigpic_act_cvr","video_act_cvr1")
-    println(" video_act_cvr1<bigpic_act_cvr  userid tab success!")
+    val bigpiccvr=spark.sql(sql5).selectExpr("userid as userid_b","bigpic_act_cvr","video_act_cvr1","adclass_act_cvr")
+    println(" video_act_cvr1<bigpic_act_cvr  or video_act_cvr1<adclass_act_cvr  userid tab success!")
 
     //过滤大图cvr<短视频cvr的userid,待计算剩下的userid 的cvr
     val tab1=tab0.join(bigpiccvr,tab0("userid")===bigpiccvr("userid_b"),"inner").
       selectExpr("userid","isshow","isclick","price","isreport","exp_cvr","video_act_cvr1",
-        "bigpic_act_cvr","bigpic_expcvr","dt","hr")
+        "bigpic_act_cvr","bigpic_expcvr","adclass_act_cvr","dt","hr")
     println(" join tab0 success!")
     //计算短视频cvr
     val taba = spark.sql(
@@ -359,13 +393,20 @@ group by searchid,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr ,cvr
      val tabfinal=spark.sql(sqlfinal).selectExpr("userid","max_expcvr as expcvr",s"${date} as dt",s"${hour} as hr")
      tabfinal.write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
      println("dl_cpc.cpc_appdown_cvr_threshold  insert success!")
+
+     val comtabfinal= spark.read("dl_cpc.dl_cpc.cpc_appdown_cvr_threshold").filter(s"""dt='${yesdate}'""").
+       selectExpr("userid as userid_yes","expcvr expcvr_yes")
+    val tabf= comtabfinal.join(tabfinal, comtabfinal("userid_yes") === tabfinal("userid"), "left").
+      selectExpr("userid","case when expcvr<=expcvr_yes then expcvr else expcvr_yes end as expcvr")
+
+
     val tabfinal2=tabfinal.selectExpr("userid","expcvr")
     /*#########################################################################*/
     //   pb写法2
 
     val list = new scala.collection.mutable.ListBuffer[ShortVideoThreshold]()
     var cnt = 0
-    for (record <- tabfinal2.collect()) {
+    for (record <- tabf.collect()) {
       var userid = record.getAs[String]("userid")
       var exp_cvr = record.getAs[Int]("expcvr")
       println(s"""useridr:$userid, expcvr:${exp_cvr}""")
@@ -384,6 +425,8 @@ group by searchid,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr ,cvr
     println("Array length:" + result.length)
     ecvr_tslist.writeTo(new FileOutputStream("shortvideo.pb"))
     println("shortvideo.pb insert success!")
+
+
 
     /*#################################################################################*/
 
