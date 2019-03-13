@@ -143,7 +143,7 @@ object OcpcGetDarkTestData {
         |    userid,
         |    (case when is_ocpc=1 then "ocpc" else "cpc" end) as ab_group,
         |    sum(case when isclick=1 then price else 0 end) * 0.01 / sum(isclick) as acp,
-        |    round(sum(case when isclick=1 then price else 0 end)*0.1 / sum(isshow), ) as cpm,
+        |    round(sum(case when isclick=1 then price else 0 end)*0.1 / sum(isshow), 3) as cpm,
         |    sum(case when isclick=1 then price else 0 end) * 0.01 / sum(iscvr) as cpareal,
         |    sum(case when isclick=1 then exp_cvr else 0 end) * 1.0 / sum(isclick) as pre_cvr,
         |    sum(case when conversion_goal = 1 then iscvr1
