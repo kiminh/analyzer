@@ -60,11 +60,13 @@ object shortvideo {
 
     spark.sql("set hive.exec.dynamic.partition=true")
     //  生成中间表 appdownload_mid
-    val sql =
+     spark.sql(
       s"""
-
-         |sselect   searchid,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori as  exp_cvr,exp_cvr expcvr_d,cvr_rank,src,
-         label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,usertype,view1.adslotid,isshow,'2019-03-13','11'
+         |insert overwrite table dl_cpc.cpc_unionevents_appdownload_mid  partition (dt,hr)
+         |select   searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori as  exp_cvr,
+         |         exp_cvr expcvr_d,cvr_rank,src,
+         |          label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,
+         |          usertype,view1.adslotid,isshow,'${date}' as dt,'${hour}' as hr
 from
 (
   select     day,hour,searchid,`timestamp`,isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid,adslot_id as adslotid,
@@ -128,15 +130,17 @@ left JOIN
 on  a.searchid2=view1.searchid
 and   a.`date`=view1.day
 and   a.hour2 =view1.hour
-group by searchid,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr ,cvr_rank,src,
-         label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,usertype,view1.adslotid,isshow
-         |""".stripMargin
-    val tab0 = spark.sql(sql).selectExpr(
+group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr ,cvr_rank,src,
+         label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,usertype,view1.adslotid,isshow,
+         '${date}'.'${hour}'
+         |""".stripMargin)
+    val tab0 = spark.read.table("dl_cpc.cpc_unionevents_appdownload_mid").filter(s"dt='${date}' and hr='${hour}'")
+      selectExpr(
       "searchid","`timestamp` as timestamp","adtype","userid","ideaid","isclick","isreport","exp_cvr",
       "expcvr_d","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
-      "usertype","adslotid","isshow",s"""'${date}' as dt""",s"""'${hour}' as hr""")
-    tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_unionevents_appdownload_mid2")
-     println("dl_cpc.cpc_unionevents_appdownload_mid insert success!")
+      "usertype","adslotid","isshow","dt","hr")
+//     tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_unionevents_appdownload_mid ")
+     println("dl_cpc.cpc_unionevents_appdownload_mid2 insert success!")
       //  动态取threshold,计算每个短视频userid下面所有的exp_cvr，进行排序
      //   RDD方法,获得短视频userid阈值
     val tabb = tab0.rdd.map(row => (row.getAs[String]("userid") ->
@@ -487,7 +491,7 @@ create table if not exists dl_cpc.cpc_unionevents_appdownload_mid
     label2   int,
     uid      string,
     usertype  int,
-    adslot_type string,
+    adslot_id string,
     isshow   int
 )
 partitioned by (dt string,hr string)
