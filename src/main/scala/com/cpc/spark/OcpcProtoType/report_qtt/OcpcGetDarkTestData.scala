@@ -18,6 +18,8 @@ object OcpcGetDarkTestData {
     println("has got index")
     getData(indexDF, jsonDF, date, spark)
     println("has got all dark test data")
+    getTimeInterval(indexDF, date, spark)
+    println("has got time interval")
   }
 
   // 首先获取统计数据需要的基本字段
@@ -176,6 +178,32 @@ object OcpcGetDarkTestData {
       .repartition(100)
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_dark_test_data")
+  }
+
+  // 获得每天的投放时间区间
+  def getTimeInterval(indexDF: DataFrame, date: String, spark: SparkSession): Unit ={
+    indexDF.createOrReplaceTempView("temp_view")
+    val sql =
+      s"""
+        |select
+        |	unitid,
+        |	hour
+        |from
+        |	temp_view
+        |group by
+        |	unitid,
+        |	hour
+        |order by
+        |	unitid,
+        |	hour
+      """.stripMargin
+    val data = spark.sql(sql)
+    data
+      .withColumn("date", lit(date))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(2)
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_dark_test_time")
   }
 
 }
