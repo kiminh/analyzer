@@ -18,7 +18,7 @@ object bscvr_report {
     val startdate = new SimpleDateFormat("yyyy-MM-dd").format(cal1.getTime)
 
     val cal2 = Calendar.getInstance()
-    cal2.add(Calendar.DATE, -2)
+    cal2.add(Calendar.DATE, -3)
     val thedate = new SimpleDateFormat("yyyy-MM-dd").format(cal2.getTime)
 
     spark.sql(s"""SELECT
