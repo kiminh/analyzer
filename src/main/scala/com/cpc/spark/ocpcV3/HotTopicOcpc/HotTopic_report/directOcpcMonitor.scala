@@ -90,7 +90,7 @@ object directOcpcMonitor {
          |        select
          |          identifier
          |        from
-         |          dl_cpc.ocpc_pb_result_hourly
+         |          dl_cpc.ocpc_pb_result_hourly  --该表中的identifier已经去直投了
          |        where
          |          ((`date` = '$date0' and hour >= '21') or (`date` = '$date' and hour < '21'))
          |          and version = 'hottopicv1'
