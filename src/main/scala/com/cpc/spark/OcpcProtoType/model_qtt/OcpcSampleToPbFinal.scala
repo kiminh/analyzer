@@ -39,24 +39,31 @@ object OcpcSampleToPbFinal {
     val result2 = getPbData2(date, hour, spark)
 
     val resultDF = result1.union(result2)
+    resultDF.write.mode("overwrite").saveAsTable("test.check_data_pb_20190313")
     resultDF
         .select("identifier", "cpagiven", "cvrcnt", "kvalue", "conversion_goal")
         .withColumn("date", lit(date))
         .withColumn("hour", lit(hour))
         .withColumn("version", lit("qtt_v1"))
-        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
-//        .repartition(2).write.mode("overwrite").saveAsTable("test.check_data_pb_20190312")
+//        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
+        .repartition(2).write.mode("overwrite").saveAsTable("test.check_data_pb_20190312")
 
 
     savePbPack(resultDF, version, isKnown)
   }
 
   def getPbData2(date: String, hour: String, spark: SparkSession) = {
-    val data = spark
+    val data1 = spark
       .table("dl_cpc.ocpc_prev_pb_once")
       .where(s"version = 'wz' and cpagiven > 0")
       .withColumn("conversion_goal", lit(0))
       .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
+
+    val data2 = data1
+        .withColumn("conversion_goal", lit(1))
+        .select("identifier", "conversion_goal", "cpagiven", "cvrcnt", "kvalue", "version")
+
+    val data = data1.union(data2)
 
     data.show(10)
     data
