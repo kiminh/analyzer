@@ -42,3 +42,4 @@ STORED as PARQUET;
 --alter table dl_cpc.ocpc_base_unionlog add columns (charge_type int);
 --alter table dl_cpc.ocpc_base_unionlog add columns (antispam int);
 --alter table dl_cpc.ocpc_base_unionlog add columns (usertype bigint);
+alter table dl_cpc.ocpc_base_unionlog add columns (conversion_goal int);
