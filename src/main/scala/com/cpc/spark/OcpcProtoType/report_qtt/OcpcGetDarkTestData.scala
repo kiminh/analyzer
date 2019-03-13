@@ -113,7 +113,7 @@ object OcpcGetDarkTestData {
         |        searchid is not null
         |    group by searchid) as d
         |on
-        |    a.searchid = d.searchid;
+        |    a.searchid = d.searchid
       """.stripMargin
     val indexDF = spark.sql(sql)
     indexDF
