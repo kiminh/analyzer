@@ -1,5 +1,5 @@
 create table if not exists dl_cpc.ocpc_aa_base_index_value(
-    `date`                  string,
+    `dt`                    string,
     unitid                  int,
     userid                  int,
     cpagiven                double,
@@ -22,5 +22,5 @@ create table if not exists dl_cpc.ocpc_aa_base_index_value(
     kvalue                  double,
     ratio                   double
 )
-partitioned by (dt string, version string)
+partitioned by (`date` string, version string)
 stored as parquet;

@@ -12,8 +12,8 @@ object OcpcAaExpertiment {
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
     val spark = SparkSession.builder().appName("OcpcAdExpertiment").enableHiveSupport().getOrCreate()
-//    joinBaseIsCvr(date, spark)
-//    println("base and ml_cvr_feature_v1 joined success")
+    joinBaseIsCvr(date, spark)
+    println("base and ml_cvr_feature_v1 joined success")
     convStr2Num(date, spark)
     println("str conv to num success")
     calculateIndexValue(date, spark)
@@ -30,7 +30,6 @@ object OcpcAaExpertiment {
     val sql =
       s"""
         |select
-        |	a.`date`,
         |	a.unitid,
         |	a.userid,
         |	a.searchid,
@@ -89,7 +88,7 @@ object OcpcAaExpertiment {
         |on
         |    a.searchid = d.searchid
         |where
-        |    a.`date` = '$preDate'
+        |    `date` = '$preDate'
         |and
         |    a.media_appsid  in ("80000001", "80000002")
         |and
@@ -106,7 +105,7 @@ object OcpcAaExpertiment {
     val data = spark.sql(sql)
     data
       .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-      .withColumn("dt", lit(preDate))
+      .withColumn("date", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
       .repartition(200)
       .write.mode("overwrite")
@@ -119,7 +118,6 @@ object OcpcAaExpertiment {
     val sql =
       s"""
         |select
-        | `date`,
         |	unitid,
         |	userid,
         |	searchid,
@@ -143,7 +141,7 @@ object OcpcAaExpertiment {
         |	`date` = '$preDate'
       """.stripMargin
     val data = spark.sql(sql)
-      .withColumn("dt", lit(preDate))
+      .withColumn("date", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
       .repartition(200)
       .write.mode("overwrite")
@@ -156,7 +154,7 @@ object OcpcAaExpertiment {
     val sql =
       s"""
         |select
-        |    `date`,
+        |    `date` as dt,
         |    unitid,
         |    userid,
         |    sum(case when isclick = 1 then cpagiven else 0 end) * 0.01
@@ -192,7 +190,7 @@ object OcpcAaExpertiment {
       """.stripMargin
     val data = spark.sql(sql)
     data
-      .withColumn("dt", lit(preDate))
+      .withColumn("date", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
       .repartition(200)
       .write.mode("overwrite")
@@ -205,18 +203,19 @@ object OcpcAaExpertiment {
     val sql =
       s"""
         |select
-        |	distinct unitid as unitid,
+        |	unitid,
         |	userid,
-        |	ocpc_log_dict['conversiongoal'] as conversion_goal,
-        |	`date`
+        |	ocpc_log_dict['conversiongoal'] as conversion_goal
         |from
         |	dl_cpc.ocpc_filter_unionlog
         |where
         |	`date` = '$preDate'
+        |group by
+        |	unitid, userid, ocpc_log_dict['conversiongoal']
       """.stripMargin
     val data = spark.sql(sql)
     data
-      .withColumn("dt", lit(date))
+      .withColumn("date", lit(preDate))
       .withColumn("version", lit("qtt_demo"))
       .repartition(10)
       .write.mode("overwrite")
@@ -230,25 +229,25 @@ object OcpcAaExpertiment {
     val sql =
       s"""
         |select
-        |	b.`date`,
+        |	b.`date` as dt,
         | b.unitid,
         | b.userid,
         | a.conversion_goal,
         | b.cpagiven,
-        | b.cpareal1,
-        | b.cpareal2,
-        | b.cpareal3,
-        | b.cpm,
-        | b.arpu,
-        | b.show,
-        | b.click,
-        | b.cv1,
-        | b.cv2,
-        | b.cv3,
+        | (case when a.conversion_goal = 1 then b.cpareal1
+        |    	  when a.conversion_goal = 2 then b.cpareal2
+        |    	  else b.cpareal3 end) as cpareal,
+        |  b.cpm,
+        |  b.arpu,
+        |  b.show,
+        |  b.click,
+        | (case when a.conversion_goal = 1 then b.cv1
+        |    	  when a.conversion_goal = 2 then b.cv2
+        |    	  else b.cv3 end) as cv,
         | b.pre_cvr,
-        | b.post_cvr1,
-        | b.post_cvr2,
-        | b.post_cvr3,
+        | (case when a.conversion_goal = 1 then b.post_cvr1
+        |    	  when a.conversion_goal = 2 then b.post_cvr2
+        |    	  else b.post_cvr3 end) as cvr,
         | b.acp,
         | b.acb,
         | b.kvalue,
@@ -282,9 +281,7 @@ object OcpcAaExpertiment {
         |	from
         |		dl_cpc.ocpc_aa_base_index_value
         |	where
-        |		`date` >= '$startDate'
-        |	and
-        |		`date` <= '$endDate') as b
+        |   `date` between '$startDate' and '$endDate') as b
         |on
         |	a.unitid = b.unitid
         |where
@@ -292,7 +289,7 @@ object OcpcAaExpertiment {
       """.stripMargin
     val data = spark.sql(sql)
     data
-      .withColumn("dt", lit(endDate))
+      .withColumn("date", lit(endDate))
       .withColumn("version", lit("qtt_demo"))
       .repartition(200)
       .write.mode("overwrite")
