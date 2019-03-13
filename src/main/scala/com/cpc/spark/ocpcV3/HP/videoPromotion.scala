@@ -16,7 +16,7 @@ object videoPromotion {
     val sql1 =
       s"""
          |  select
-         |   searchid,
+         |   t1.searchid,
          |   uid,
          |   adclass,
          |   userid,
