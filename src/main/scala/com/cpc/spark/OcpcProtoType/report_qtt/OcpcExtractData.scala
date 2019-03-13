@@ -85,7 +85,7 @@ object OcpcExtractData {
         |    WHERE
         |        `date` = '$date'
         |    AND
-        |        is_ocpc=1
+        |        is_ocpc = 1
         |    AND
         |        media_appsid  in ("80000001", "80000002")
         |    AND
@@ -105,7 +105,7 @@ object OcpcExtractData {
         |        label_type in (1, 2, 3, 4, 5)
         |    GROUP BY searchid, label2) as b
         |ON
-        |    a.searchid=b.searchid
+        |    a.searchid = b.searchid
         |LEFT JOIN
         |    (SELECT
         |        searchid,
@@ -115,10 +115,10 @@ object OcpcExtractData {
         |    WHERE
         |        `date` >= '$date'
         |    AND
-        |        label=1
+        |        label = 1
         |    GROUP BY searchid, label) as c
         |ON
-        |    a.searchid=c.searchid
+        |    a.searchid = c.searchid
         |LEFT JOIN
         |    (SELECT
         |        searchid,
@@ -133,14 +133,14 @@ object OcpcExtractData {
         |        searchid is not NULL
         |    GROUP BY searchid) as d
         |ON
-        |    a.searchid=d.searchid
+        |    a.searchid = d.searchid
       """.stripMargin
     val data = spark.sql(createTableSQL)
     data
       .withColumn("date", lit(date))
       .withColumn("tag", lit(tag))
       .withColumn("version", lit("qtt_demo"))
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ab_test_temp")
+      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_ab_test_temp.sql")
   }
 
   // 抽取数据
@@ -166,7 +166,7 @@ object OcpcExtractData {
         |    sum(isclick) as click,
         |    sum(iscvr) as cv
         |FROM
-        |    dl_cpc.ocpc_ab_test_temp
+        |    dl_cpc.ocpc_ab_test_temp.sql
         |WHERE
         |    unitid in ($unitids)
         |GROUP BY
@@ -190,7 +190,7 @@ object OcpcExtractData {
         |SELECT
         |    unitid, `hr`
         |FROM
-        |    dl_cpc.ocpc_ab_test_temp
+        |    dl_cpc.ocpc_ab_test_temp.sql
         |WHERE
         |    `date` = '$date'
         |AND

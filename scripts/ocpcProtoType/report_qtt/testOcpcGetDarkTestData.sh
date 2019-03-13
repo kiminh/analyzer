@@ -11,7 +11,6 @@ jars=(
 )
 dt=$1
 
-#sh testOcpcExtractData.sh 2019-03-08 yesterday
 $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.port.maxRetries=100' \
     --executor-memory 20g --driver-memory 4g \
@@ -19,5 +18,5 @@ $SPARK_HOME/bin/spark-submit --master yarn --queue $queue \
     --conf 'spark.yarn.executor.memoryOverhead=4g'\
     --conf 'spark.dynamicAllocation.maxExecutors=50'\
     --jars $( IFS=$','; echo "${jars[*]}" ) \
-    --class com.cpc.spark.OcpcProtoType.report_qtt.OcpcRatioInMarket \
+    -- com.cpc.spark.OcpcProtoType.report_qtt.OcpcGetDarkTestData \
     /home/cpc/wt/analyzer/target/scala-2.11/cpc-anal_2.11-0.1.jar $dt
