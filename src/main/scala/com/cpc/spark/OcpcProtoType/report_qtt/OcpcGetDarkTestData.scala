@@ -146,7 +146,7 @@ object OcpcGetDarkTestData {
         |    (case when is_ocpc = 1 then "ocpc" else "cpc" end) as ab_group,
         |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick), 4) as acp,
         |    round(sum(case when isclick = 1 then price else 0 end) * 0.1 / sum(isshow), 4) as cpm,
-        |    cpa_given * 0.01 as cpagiven,
+        |    sum(cpa_given) * 0.01 as cpagiven,
         |    round(sum(case when isclick = 1 then price else 0 end) * 0.01
         |    / sum(case when isclick = 1 and conversion_goal = 1 then iscvr1
         |               when isclick = 1 and conversion_goal = 2 then iscvr2
@@ -170,8 +170,7 @@ object OcpcGetDarkTestData {
         |group by
         |    unitid,
         |    userid,
-        |    (case when is_ocpc = 1 then "ocpc" else "cpc" end),
-        |    cpa_given
+        |    (case when is_ocpc = 1 then "ocpc" else "cpc" end)
       """.stripMargin
     val data = spark.sql(sql)
     data
@@ -179,7 +178,7 @@ object OcpcGetDarkTestData {
       .withColumn("version", lit("qtt_demo"))
       .repartition(100)
       .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_dark_test_data")
+      .insertInto("dl_cpc.i")
   }
 
   // 获得每天的投放时间区间
