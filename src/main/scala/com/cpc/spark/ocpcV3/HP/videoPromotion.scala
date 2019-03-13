@@ -82,12 +82,13 @@ object videoPromotion {
           sum("iscvr").alias("cvrn"),
           sum("price1").alias("cost"),
           countDistinct("uid").alias("uidn")
-        ).withColumn("ctr", col("clickn")*100/col("shown"))
-      .withColumn("cvr", col("cvrn")*100/col("clickn"))
-      .withColumn("cpm", col("cost")*10/col("show"))
-      .withColumn("arpu", col("cost")/col("uidn")/100)
-      .withColumn("acp", col("cost")/col("clickn")/100)
-      .select("userid", "test_tag", "shown", "ctr", "clickn", "cvr", "cvrn", "cost", "cpm", "cpa", "arpu", "acp")
+        )
+//      .withColumn("ctr", col("clickn")*100/col("shown"))
+//      .withColumn("cvr", col("cvrn")*100/col("clickn"))
+//      .withColumn("cpm", col("cost")*10/col("show"))
+//      .withColumn("arpu", col("cost")/col("uidn")/100)
+//      .withColumn("acp", col("cost")/col("clickn")/100)
+//      .select("userid", "test_tag", "shown", "ctr", "clickn", "cvr", "cvrn", "cost", "cpm", "cpa", "arpu", "acp")
 
 
 
