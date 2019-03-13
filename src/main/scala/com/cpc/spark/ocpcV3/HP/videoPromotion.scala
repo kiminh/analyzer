@@ -25,7 +25,7 @@ object videoPromotion {
          |   adclass,
          |   userid,
          |   case
-         |     when adtype = 2 then 'bigImage'
+         |     when adtype = 2 then 'bigimage'
          |     else 'video'
          |    end as adtype1,
          |   ideaid,
@@ -65,30 +65,58 @@ object videoPromotion {
 
     val baseData = spark.sql(sql1)
 
-    val userAdTypeNo = baseData
+    val pivot_table = baseData
         .select("userid", "adtype1", "ideaid")
       .groupBy("userid", "adtype1" )
       .agg(countDistinct("ideaid").alias("ad_num"))
+      .groupBy("userid").pivot("adtype1").agg(sum("ad_num"))
+        .na.fill(0, Seq("video", "bigimage"))
 
-    val pivot_table = userAdTypeNo.groupBy("userid").pivot("adtype1").agg(sum("ad_num"))
-    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
+    pivot_table.show(10)
 
-    val videoUser = userAdTypeNo
-      .filter("adtype1 = 'video' and ad_num > 0 ")
-        .select("userid")
+//    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
 
     val summary = baseData
-        .join(videoUser, Seq("userid"), "inner")  //去掉没有视频的userid
+        .join(pivot_table, Seq("userid"), "left")  //去掉没有视频的userid
+        .filter("video > 0")
         .withColumn("price1", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
         .groupBy("userid", "test_tag", "adtype1", "adclass")
         .agg(sum("isshow").alias("shown"),
           sum("isclick").alias("clickn"),
           sum("iscvr").alias("cvrn"),
           sum("price1").alias("cost")
-        )
+        ).select("userid", "test_tag", "adtype1", "adclass", "shown", "clickn", "cvrn", "cost")
+
+    summary.groupBy("userid", "adclass")
+      .agg(sum("shown").alias("shown2"))
+      .createOrReplaceTempView("baseSummary")
+
+    val sql2 =
+      s"""
+         |select
+         | userid,
+         | adclass
+         |from (
+         |select
+         |  userid,
+         |  adclass,
+         |  rank()over(partition by userid, adclass order by shown2 desc ) rk
+         |from baseSummary
+         |) where rk = 1
+       """.stripMargin
+
+    val userAdclass = spark.sql(sql2)
+
+    userAdclass.show(10)
+
+    val adclassCvr = summary
+      .groupBy("adclass")
+      .agg((sum("cvrn")/sum("clickn") ).alias("cvr"))
+      .select("adclass", "cvr")
 
     val uidn_ab = baseData.groupBy("test_tag")
       .agg(countDistinct("uid").alias("uidn"))
+      .select("test_tag", "uidn")
 
     val result = summary
       .groupBy("test_tag")
@@ -97,7 +125,7 @@ object videoPromotion {
           sum("clickn").alias("click_n"),
           sum("cvrn").alias("cvr_n"),
           sum("cost").alias("total_cost")
-    ).join(uidn_ab, Seq("test_tag"), "inner")
+           ).join(uidn_ab, Seq("test_tag"), "inner")
       .withColumn("ctr", col("click_n")*100/col("show_n"))
       .withColumn("cvr", col("cvr_n")*100/col("click_n"))
       .withColumn("cpm", col("total_cost")*10/col("show_n"))
@@ -106,14 +134,21 @@ object videoPromotion {
       .withColumn("acp", col("total_cost")/col("click_n")/100)
       .select("test_tag", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "arpu", "acp")
 
-
-
-
-
-
-
-
     result.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq")
+
+
+    val userCvr = summary
+      .groupBy("test_tag", "userid", "adtype1")
+      .agg(( sum("cvrn")/sum("clickn") ).alias("cvr"))
+      .groupBy("test_tag", "userid").pivot("adtype1").agg(sum("cvr"))
+
+    userCvr.write.mode("overwrite").saveAsTable("test.userCvr_sjq")
+
+
+
+
+
+
 
 
   }
