@@ -60,73 +60,73 @@ object shortvideo {
     val sql =
       s"""
 
-         |select   searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori as  exp_cvr,exp_cvr expcvr_d,cvr_rank,src,
-         |         label_type,planid,unitid, adclass,adslot_type,label2,uid,usertype,adslotid,isshow,'${date}','${hour}'
-         |from
-         |(
-         |  select     day,hour,searchid,`timestamp`,isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid,adslot_id as adslotid,
-         |             charge_type,
-         |             row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
-         |  from       dl_cpc.ocpc_basedata_union_events
-         |  where    ${selectCondition}
-         |  and      media_appsid in  ("80000001")
-         |  and      interaction=2
-         |  and     adtype in (8,10)
-         |  and     userid>0
-         |  and     usertype in (0,1,2)
-         |  and     isclick=1
-         |  and     adslot_type = 1
-         |  and     adsrc = 1
-         |  and     isshow = 1
-         |  and     ideaid > 0
-         |  and      (charge_type is null or charge_type=1)
-         |  and     uid not like "%.%"
-         |  and     uid not like "%000000%"
-         |  and     length(uid) in (14, 15, 36)
-         |) view1
-         |left JOIN
-         |(
-         |  select   `date`,hour hour2,aa.searchid as searchid2,isreport, src,label_type,uid,planid,unitid, adclass,adslot_type,label2
-         |  FROM
-         |  (
-         |    select          `date`,hour,
-         |                     final.searchid as searchid,src,label_type,uid,planid,unitid, adclass,adslot_type,label2,
-         |                     final.ideaid as ideaid,
-         |                     case
-         |          when final.src="elds" and final.label_type=6 then 1
-         |          when final.src="feedapp" and final.label_type in (4, 5) then 1
-         |          when final.src="yysc" and final.label_type=12 then 1
-         |          when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
-         |          when final.src="others" and final.label_type=6 then 1
-         |          else 0     end as isreport
-         |          from
-         |          (
-         |          select  distinct
-         |              `date`,hour,searchid, media_appsid, uid,
-         |              planid, unitid, ideaid, adclass,adslot_type,label2,
-         |              case
-         |                  when (adclass like '134%' or adclass like '107%') then "elds"
-         |                  when (adslot_type<>7 and adclass like '100%') then "feedapp"
-         |                  when (adslot_type=7 and adclass like '100%') then "yysc"
-         |                  when adclass in (110110100, 125100100) then "wzcp"
-         |                  else "others"
-         |              end as src,
-         |              label_type
-         |          from
-         |              dl_cpc.ml_cvr_feature_v1
-         |          where
-         |             ${selectCondition2}
-         |              and label2=1
-         |             and media_appsid in ("80000001")
-         |            ) final
-         |       ) aa
-         |  where   aa.isreport=1
-         |) a
-         |on  a.searchid2=view1.searchid
-         |and   a.`date`=view1.date1
-         |and   a.hour2 =view1.hour
-         |group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori ,exp_cvr ,cvr_rank,src,
-         |         label_type,planid,unitid, adclass,adslot_type,label2,uid,usertype,adslotid,isshow,'${date}','${hour}'
+         |sselect   searchid,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori as  exp_cvr,exp_cvr expcvr_d,cvr_rank,src,
+         label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,usertype,view1.adslotid,isshow,'2019-03-13','11'
+from
+(
+  select     day,hour,searchid,`timestamp`,isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid,adslot_id as adslotid,
+             charge_type,adtype,ideaid,usertype,adslot_type,
+             row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
+  from       dl_cpc.cpc_basedata_union_events
+  where    ${selectCondition}
+  and      media_appsid in  ("80000001")
+  and      interaction=2
+  and     adtype in (2,8,10)
+  and     userid>0
+  and     usertype in (0,1,2)
+  and     isclick=1
+  and     adslot_type = 1
+  and     adsrc = 1
+  and     isshow = 1
+  and     ideaid > 0
+  and      (charge_type is null or charge_type=1)
+  and     uid not like "%.%"
+  and     uid not like "%000000%"
+  and     length(uid) in (14, 15, 36)
+) view1
+left JOIN
+(
+  select   `date`,hour hour2,aa.searchid as searchid2,isreport, src,label_type,uid,planid,unitid, adclass,adslot_type,label2
+  FROM
+  (
+    select          `date`,hour,
+                     final.searchid as searchid,src,label_type,uid,planid,unitid, adclass,adslot_type,label2,
+                     final.ideaid as ideaid,
+                     case
+          when final.src="elds" and final.label_type=6 then 1
+          when final.src="feedapp" and final.label_type in (4, 5) then 1
+          when final.src="yysc" and final.label_type=12 then 1
+          when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
+          when final.src="others" and final.label_type=6 then 1
+          else 0     end as isreport
+          from
+          (
+          select  distinct
+              `date`,hour,searchid, media_appsid, uid,
+              planid, unitid, ideaid, adclass,adslot_type,label2,
+              case
+                  when (adclass like '134%' or adclass like '107%') then "elds"
+                  when (adslot_type<>7 and adclass like '100%') then "feedapp"
+                  when (adslot_type=7 and adclass like '100%') then "yysc"
+                  when adclass in (110110100, 125100100) then "wzcp"
+                  else "others"
+              end as src,
+              label_type
+          from
+              dl_cpc.ml_cvr_feature_v1
+          where
+              ${selectCondition2}
+              and label2=1
+             and media_appsid in ("80000001")
+            ) final
+       ) aa
+  where   aa.isreport=1
+) a
+on  a.searchid2=view1.searchid
+and   a.`date`=view1.day
+and   a.hour2 =view1.hour
+group by searchid,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr ,cvr_rank,src,
+         label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,usertype,view1.adslotid,isshow
          |""".stripMargin
     val tab0 = spark.sql(sql).selectExpr(
       "searchid","`timestamp` as timestamp","adtype","userid","ideaid","isclick","isreport","exp_cvr",
@@ -136,7 +136,7 @@ object shortvideo {
       "expcvr_d","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
       "usertype","adslotid","isshow","dt","hr"
     )
-    tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_unionevents_appdownload_mid")
+    tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_unionevents_appdownload_mid2")
      println("dl_cpc.cpc_unionevents_appdownload_mid insert success!")
       //  动态取threshold,计算每个短视频userid下面所有的exp_cvr，进行排序
      //   RDD方法,获得短视频userid阈值
@@ -204,7 +204,6 @@ object shortvideo {
          |        and uid not like "%.%"
          |        and uid not like "%000000%"
          |        and length(uid) in (14, 15, 36)
-         |        and userid in (1579004,1581037,1572423,1568275,1582101,1570426,1568244,1586132,1548568,1524884,1575350,1579007)
          |        and (charge_type is null or charge_type=1)
          |) a
          |left join
@@ -404,7 +403,7 @@ object shortvideo {
     }
     return s"((day = '$startDate' and hour > '$startHour') " +
       s"or (day = '$endDate' and hour <= '$endHour') " +
-      s"or (day > '$startDate' and dt < '$endDate'))"
+      s"or (day > '$startDate' and day < '$endDate'))"
   }
 
    def getTimeRangeSql22(startDate: String, startHour: String, endDate: String, endHour: String): String = {
@@ -413,7 +412,7 @@ object shortvideo {
   }
   return s"((`date` = '$startDate' and hour > '$startHour') " +
     s"or (`date` = '$endDate' and hour <= '$endHour') " +
-    s"or (`date` > '$startDate' and dt < '$endDate'))"
+    s"or (`date` > '$startDate' and `date` < '$endDate'))"
 }
   def getTimeRangeSql23(startDate: String, startHour: String, endDate: String, endHour: String): String = {
     if (startDate.equals(endDate)) {
@@ -448,7 +447,9 @@ create table if not exists dl_cpc.cpc_unionevents_appdownload_mid
     adslot_type  int,
     label2   int,
     uid      string,
-    usertype  int
+    usertype  int,
+    adslot_type string,
+    isshow   int
 )
 partitioned by (dt string,hr string)
 row format delimited fields terminated by '\t' lines terminated by '\n';
