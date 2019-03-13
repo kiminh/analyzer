@@ -22,7 +22,7 @@ object shortvideo {
   def main(args: Array[String]): Unit = {
     val date = args(0)
     val hour = args(1)
-    val traffic = 0
+    val traffic = 0.3
     val spark = SparkSession.builder()
       .appName(s"""shortvideo_execute +'${date}'+'${hour}'""")
       .enableHiveSupport()
@@ -134,11 +134,7 @@ group by searchid,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr ,cvr
     val tab0 = spark.sql(sql).selectExpr(
       "searchid","`timestamp` as timestamp","adtype","userid","ideaid","isclick","isreport","exp_cvr",
       "expcvr_d","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
-      "usertype","adslotid","isshow",s"""'${date}' as dt""",s"""'${hour}' as hr""").toDF
-    (    "searchid","timestamp","adtype","userid","ideaid","isclick","isreport","exp_cvr",
-      "expcvr_d","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
-      "usertype","adslotid","isshow","dt","hr"
-    )
+      "usertype","adslotid","isshow",s"""'${date}' as dt""",s"""'${hour}' as hr""")
     tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_unionevents_appdownload_mid2")
      println("dl_cpc.cpc_unionevents_appdownload_mid insert success!")
       //  动态取threshold,计算每个短视频userid下面所有的exp_cvr，进行排序
