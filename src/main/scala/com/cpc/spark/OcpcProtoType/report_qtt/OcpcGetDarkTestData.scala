@@ -146,7 +146,7 @@ object OcpcGetDarkTestData {
         |    (case when is_ocpc = 1 then "ocpc" else "cpc" end) as ab_group,
         |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick), 4) as acp,
         |    round(sum(case when isclick = 1 then price else 0 end) * 0.1 / sum(isshow), 4) as cpm,
-        |    sum(cpa_given) * 0.01 as cpagiven,
+        |    avg(cpa_given) * 0.01 as cpagiven,
         |    round(sum(case when isclick = 1 then price else 0 end) * 0.01
         |    / sum(case when isclick = 1 and conversion_goal = 1 then iscvr1
         |               when isclick = 1 and conversion_goal = 2 then iscvr2
