@@ -130,7 +130,7 @@ object shortvideo {
          |""".stripMargin
     val tab0 = spark.sql(sql)
     tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_unionevents_appdownload_mid")
-
+     println("dl_cpc.cpc_unionevents_appdownload_mid insert success!")
       //  动态取threshold,计算每个短视频userid下面所有的exp_cvr，进行排序
      //   RDD方法,获得短视频userid阈值
     val tabb = tab0.rdd.map(row => (row.getAs[String]("userid") ->
@@ -147,7 +147,7 @@ object shortvideo {
         val th6 = sorted((sorted.length * 0.3).toInt)
         (th0, th1, th2, th3, th4, th5, th6)
       }).collect()
-
+    println("spark 7 threshold success!")
     val tabc = spark.createDataFrame(tabb)
     val tabd = tabc.rdd.map(r => {
       val userid = r.getAs[String](0)
@@ -161,7 +161,7 @@ object shortvideo {
       (userid,rank0per, rank5per, rank10per, rank15per, rank20per, rank25per, rank30per)
     }).map(s => (s._1, s._2, s._3, s._4, s._5, s._6, s._7,s._8)).
       toDF("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
-
+    println("spark 7 threshold tab success!")
     //计算大图和短视频实际cvr
     val sql4=
       s"""
@@ -248,7 +248,7 @@ object shortvideo {
     "ctr","cpm","convert_num","cvr_n","cvr","exp_cvr")
     cvrcomparetab.repartition(100).write.mode("overwrite").
       insertInto("dl_cpc.cpc_bigpicvideo_cvr")
-
+    println("compare video bigpic act cvr midtab  success")
     val sql5=
       s"""
          |select video.userid,video.video_act_cvr1,bigpic.bigpic_act_cvr,bigpic.bigpic_expcvr
@@ -271,42 +271,26 @@ object shortvideo {
       """.stripMargin
 
     val bigpiccvr=spark.sql(sql5).selectExpr("userid as userid_b","bigpic_act_cvr","video_act_cvr1")
-
+    println(" video_act_cvr1<bigpic_act_cvr  userid tab success!")
 
     //过滤大图cvr<短视频cvr的userid,待计算剩下的userid 的cvr
     val tab1=tab0.join(bigpiccvr,tab0("userid")===bigpiccvr("userid_b"),"inner").
       selectExpr("userid","isshow","isclick","price","isreport","exp_cvr","video_act_cvr1",
         "bigpic_act_cvr","bigpic_expcvr","dt","hr")
-
+    println(" join tab0 success!")
     //计算短视频cvr
     val taba = spark.sql(
       s"""
-         |select    userid,
-         |case when  traffic_0per_expcvr>=traffic_5per_expcvr then traffic_0per_expcvr
-         |    else (
-         |         case  when traffic_5per_expcvr>=traffic_10per_expcvr then traffic_5per_expcvr
-         |               else (
-         |                     case when traffic_10per_expcvr>=traffic_15per_expcvr then traffic_10per_expcvr
-         |                     else (
-         |                          case when case when traffic_15per_expcvr>=traffic_20per_expcvr then traffic_15per_expcvr
-         |                          else (
-         |                               case when traffic_20per_expcvr>=traffic_25per_expcvr then traffic_20per_expcvr
-         |                               else (
-         |                                    case when traffic_25per_expcvr>=traffic_30per_expcvr then traffic_25per_expcvr
-         |                                    else
-         |                                         traffic_30per_expcvr
-         |                                    end  )))))  as max_expcvr
-         |from
-         |(
-         |select     userid,
+         |select     distinct
+         |           userid,expcvr_0per, expcvr_5per, expcvr_10per, expcvr_15per, expcvr_20per, expcvr_25per, expcvr_30per,
+         |           round(sum(if(isreport =1 and ${traffic}=0,1,0))/sum(isclick),6) as traffic_0per_expcvr,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_5per and ${traffic}<=0.05,1,0))/sum(isclick),6) as traffic_5per_expcvr,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_10per and ${traffic}<=0.10,1,0))/sum(isclick),6) as traffic_10per_expcvr,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_15per and ${traffic}<=0.15,1,0))/sum(isclick),6) as traffic_15per_expcvr,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_20per and ${traffic}<=0.20,1,0))/sum(isclick),6) as traffic_20per_expcvr,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_25per and ${traffic}<=0.25,1,0))/sum(isclick),6) as traffic_25per_expcvr,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_30per and ${traffic}<=0.30,1,0))/sum(isclick),6) as traffic_30per_expcvr,
-         |           round(sum(if(isreport =1 and ${traffic}=0,1,0))/sum(isclick),6) as traffic_0per_expcvr
-         |           else 0 end  traffic_expcvr
+         |           ${date},${hour}
          | from
          | (   select userid,exp_cvr,cvr_rank,isshow,isclick,isreport,searchid,bigpic_expcvr
          |    from   ${tab1}
@@ -319,20 +303,65 @@ object shortvideo {
          |     from    ${tabd}
          | )   threshold
          |on    view.userid=threshold.userid_d
-         |group by userid
-         |) view
+         |
          |""".stripMargin).
-      selectExpr("userid", "max_expcvr","dt","hr").distinct()
-    taba.write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
-
+      selectExpr("userid","expcvr_0per","expcvr_5per","expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per",
+        "traffic_0per_expcvr","traffic_5per_expcvr","traffic_10per_expcvr","traffic_15per_expcvr","traffic_20per_expcvr","traffic_25per_expcvr","traffic_30per_expcvr"
+        ,"dt","hr").distinct()
+      taba.write.mode("overwrite").insertInto("dl_cpc.video_trafficcut_threshold_mid")
+      println("dl_cpc.video_trafficcut_threshold_mid  insert success!")
+     val sqlfinal=
+       s"""
+          |select   userid, case
+          |         when traffic_0per_expcvr=max_expcvr then expcvr_threshold0per
+          |         when traffic_5per_expcvr=max_expcvr then expcvr_threshold5per
+          |         when traffic_10per_expcvr=max_expcvr then expcvr_threshold10per
+          |         when traffic_15per_expcvr=max_expcvr then expcvr_threshold15per
+          |         when traffic_20per_expcvr=max_expcvr then expcvr_threshold20per
+          |         when traffic_25per_expcvr=max_expcvr then expcvr_threshold25per
+          |         when traffic_30per_expcvr=max_expcvr then expcvr_threshold30per
+          |         end  max_expcvr,
+          |         ${date},${hour}
+          |(
+          |select    userid userid2,
+          |case when  traffic_0per_expcvr>=traffic_5per_expcvr then traffic_0per_expcvr
+          |    else (
+          |         case  when traffic_5per_expcvr>=traffic_10per_expcvr then traffic_5per_expcvr
+          |               else (
+          |                     case when traffic_10per_expcvr>=traffic_15per_expcvr then traffic_10per_expcvr
+          |                     else (
+          |                          case when case when traffic_15per_expcvr>=traffic_20per_expcvr then traffic_15per_expcvr
+          |                          else (
+          |                               case when traffic_20per_expcvr>=traffic_25per_expcvr then traffic_20per_expcvr
+          |                               else (
+          |                                    case when traffic_25per_expcvr>=traffic_30per_expcvr then traffic_25per_expcvr
+          |                                    else
+          |                                         traffic_30per_expcvr
+          |                                    end  )))))  as max_expcvr
+          |from   ${taba}
+          |where   ${selectCondition3}
+          |)  maxexpcvr
+          |join
+          |(
+          |   select   *
+          |   from    ${taba}
+              where   ${selectCondition3}
+          |)  threshold_mid
+          |on  maxexpcvr.userid2=threshold_mid.useid
+          |
+        """.stripMargin
+     val tabfinal=spark.sql(sqlfinal).selectExpr("userid","max_expcvr as expcvr",s"${date} as dt",s"${hour} as hr")
+     tabfinal.write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
+     println("dl_cpc.cpc_appdown_cvr_threshold  insert success!")
+    val tabfinal2=tabfinal.selectExpr("userid","expcvr")
     /*#########################################################################*/
     //   pb写法2
 
     val list = new scala.collection.mutable.ListBuffer[ShortVideoThreshold]()
     var cnt = 0
-    for (record <- taba.collect()) {
+    for (record <- tabfinal2.collect()) {
       var userid = record.getAs[String]("userid")
-      var exp_cvr = record.getAs[Int]("max_expcvr")
+      var exp_cvr = record.getAs[Int]("expcvr")
       println(s"""useridr:$userid, expcvr:${exp_cvr}""")
 
       cnt += 1
@@ -342,12 +371,13 @@ object shortvideo {
       )
       list += Item
     }
-    println("cnt:" + cnt)
+    println("finla userid cnt:" + cnt)
     val result = list.toArray
     val ecvr_tslist = ThresholdShortVideo(
       svt = result)
     println("Array length:" + result.length)
     ecvr_tslist.writeTo(new FileOutputStream("shortvideo.pb"))
+    println("shortvideo.pb insert success!")
 
     /*#################################################################################*/
 
@@ -432,6 +462,31 @@ create table if not exists test.cpc_bigpicvideo_cvr
 )
 partitioned by (dt string,hr string)
 row format delimited fields terminated by '\t' lines terminated by '\n';
+
+---不同流量切分等级的expcvr阈值和expcvr效果
+create table if not exists dl_cpc.video_trafficcut_threshold_mid
+(
+   userid string,
+   expcvr_threshold0per  bigint,
+   expcvr_threshold5per  bigint,
+   expcvr_threshold10per  bigint,
+   expcvr_threshold15per  bigint,
+   expcvr_threshold20per  bigint,
+   expcvr_threshold25per  bigint,
+   expcvr_threshold30per  bigint,
+   traffic_0per_expcvr    double,
+   traffic_5per_expcvr    double,
+   traffic_10per_expcvr    double,
+   traffic_15per_expcvr    double,
+   traffic_20per_expcvr    double,
+   traffic_25per_expcvr    double,
+   traffic_30per_expcvr    double
+
+)
+partitioned by (dt string, hr string)
+row format delimited fields terminated by '\t' lines terminated by '\n';
+
+
 
 pb文件的表结构
 create table  if not exists dl_cpc.cpc_appdown_cvr_threshold
