@@ -274,7 +274,7 @@ group by searchid,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr ,cvr
           |)
           |
           |
-        """.stripMan
+        """.stripMargin
 
     val  cvrcomparetab2 = spark.sql(sql3).selectExpr("adclass","act_cvr")
 
@@ -390,7 +390,7 @@ group by searchid,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr ,cvr
      tabfinal.write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
      println("dl_cpc.cpc_appdown_cvr_threshold  insert success!")
 
-     val comtabfinal= spark.read("dl_cpc.dl_cpc.cpc_appdown_cvr_threshold").filter(s"""dt='${yesdate}'""").
+     val comtabfinal= spark.read.table("dl_cpc.dl_cpc.cpc_appdown_cvr_threshold").filter(s"""dt='${yesdate}'""").
        selectExpr("userid as userid_yes","expcvr expcvr_yes")
     val tabf= comtabfinal.join(tabfinal, comtabfinal("userid_yes") === tabfinal("userid"), "left").
       selectExpr("userid","case when expcvr<=expcvr_yes then expcvr else expcvr_yes end as expcvr")
