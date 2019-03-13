@@ -128,7 +128,14 @@ object shortvideo {
          |group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori ,exp_cvr ,cvr_rank,src,
          |         label_type,planid,unitid, adclass,adslot_type,label2,uid,usertype,adslotid,isshow,'${date}','${hour}'
          |""".stripMargin
-    val tab0 = spark.sql(sql)
+    val tab0 = spark.sql(sql).selectExpr(
+      "searchid","`timestamp` as timestamp","adtype","userid","ideaid","isclick","isreport","exp_cvr",
+      "expcvr_d","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
+      "usertype","adslotid","isshow",s"""'${date}' as dt""",s"""'${hour}' as dt""").toDF
+    (    "searchid","timestamp","adtype","userid","ideaid","isclick","isreport","exp_cvr",
+      "expcvr_d","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
+      "usertype","adslotid","isshow",s"""'${date}' as dt""",s"""'${hour}' as dt"""
+    )
     tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_unionevents_appdownload_mid")
      println("dl_cpc.cpc_unionevents_appdownload_mid insert success!")
       //  动态取threshold,计算每个短视频userid下面所有的exp_cvr，进行排序
