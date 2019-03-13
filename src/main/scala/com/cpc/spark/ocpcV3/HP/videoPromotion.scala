@@ -16,6 +16,10 @@ object videoPromotion {
     val sql1 =
       s"""
          |  select
+         |   case
+         |     when exptags like '%use_strategy%' then 'A'
+         |     else 'B'
+         |    end as test_tag,
          |   t1.searchid,
          |   uid,
          |   adclass,
@@ -65,7 +69,13 @@ object videoPromotion {
         .select("userid", "adtype1", "ideaid")
       .distinct()
       .groupBy("userid", "adtype1" )
-      .count()
+      .agg(count("ideaid").alias("ad_num"))
+      .filter("adtype1 = 'video' and ad_num > 0 ")
+        .select("userid")
+
+
+
+
 
     userAdType.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq")
 
