@@ -39,7 +39,7 @@ object OcpcExtractData {
   def createTempTable(tag: String, date: String, spark: SparkSession): Unit = {
     val createTableSQL =
       s"""
-        |SELECT
+        |select
         |    a.searchid,
         |    a.exptags,
         |    a.unitid,
@@ -62,8 +62,8 @@ object OcpcExtractData {
         |          else d.iscvr3 end) as iscvr,
         |    date as dt,
         |    hour as hr
-        |FROM
-        |    (SELECT
+        |from
+        |    (select
         |        searchid,
         |        exptags,
         |        ideaid,
@@ -80,33 +80,33 @@ object OcpcExtractData {
         |        cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
         |        date,
         |        hour
-        |    FROM
+        |    from
         |        dl_cpc.ocpc_filter_unionlog
-        |    WHERE
+        |    where
         |        `date` = '$date'
-        |    AND
+        |    and
         |        is_ocpc = 1
-        |    AND
+        |    and
         |        media_appsid  in ("80000001", "80000002")
-        |    AND
+        |    and
         |        isshow=1
         |    ) as a
-        |LEFT JOIN
-        |    (SELECT
+        |left join
+        |    (select
         |        searchid,
         |        label2 as iscvr1
-        |    FROM
+        |    from
         |        dl_cpc.ml_cvr_feature_v1
-        |    WHERE
+        |    where
         |        `date` >= '$date'
-        |    AND
+        |    and
         |        label2 = 1
-        |    AND
+        |    and
         |        label_type in (1, 2, 3, 4, 5)
-        |    GROUP BY searchid, label2) as b
-        |ON
+        |    group by searchid, label2) as b
+        |on
         |    a.searchid = b.searchid
-        |LEFT JOIN
+        |left join
         |    (SELECT
         |        searchid,
         |        label as iscvr2

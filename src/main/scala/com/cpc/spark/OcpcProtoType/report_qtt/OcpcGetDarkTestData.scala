@@ -67,7 +67,7 @@ object OcpcGetDarkTestData {
         |    and
         |        antispam = 0
         |    and
-        |        adslot_type in (1,2,3)
+        |        adslot_type in (1, 2, 3)
         |    and
         |        adsrc = 1
         |    and
@@ -170,8 +170,6 @@ object OcpcGetDarkTestData {
         |    userid,
         |    (case when is_ocpc = 1 then "ocpc" else "cpc" end)
       """.stripMargin
-    //where
-    //    `hour` >= '18'
     val data = spark.sql(sql)
     data
       .withColumn("date", lit(date))
