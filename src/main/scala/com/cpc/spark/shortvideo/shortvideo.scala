@@ -166,6 +166,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 //      .toDF("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
     println("spark 7 threshold success!")
     val tabd=tabb.selectExpr("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
+    tabd.write.mode("overwrite").insertInto("dl_cpc.userid_expcvr_lastpercent")
     tabd.show(10,false)
 
 //    val tabc = spark.createDataFrame(tabb)
@@ -211,14 +212,15 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     /*######增加该userid没有大图，用所在行业实际cvr来衡量的条件##################################*/
     val  cvrcomparetab2 = spark.sql(
        s"""
-          |select   adclass,dt,hr,
+          |select   adclass,
           |    sum(isshow) as show_num,
           |    sum(isclick) as click_num,
           |    round(sum(isclick)/sum(isshow),6) as ctr,
           |    round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isshow), 6) as cpm,
           |    sum(if(isreport=1,1,0)) as convert_num,
           |    sum(case when isreport=1 then 1  else 0  end ) cvr_n,
-          |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as act_cvr
+          |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as act_cvr,
+          |    dt,hr
           |
           |from    dl_cpc.cpc_union_events_video_mid
           |where  dt='${date}' and hr='${hour}'
@@ -226,10 +228,15 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |group by adclass,dt,hr
          """.stripMargin).selectExpr("adclass","act_cvr")
     cvrcomparetab2.show(10,false)
+    cvrcomparetab2.write.mode("overwrite").insertInto("dl_cpc.bigpic_adclass_actcvr_mid")
+
 //  合并视频 vs 大图实际cvr vs 行业实际cvr
     val bigpiccvr=spark.sql(
       s"""
-         |select video.userid,video.video_act_cvr1,bigpic.bigpic_act_cvr,bigpic.bigpic_expcvr,
+         |select video.userid,
+         |       video.video_act_cvr1,
+         |       bigpic.bigpic_act_cvr,
+         |       bigpic.bigpic_expcvr,
          |       adclass.adclass_act_cvr
          |from
          |(
@@ -248,8 +255,10 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |on  bigpic.userid=video.userid
          |left join
          |(
-         |  select  adclass,act_cvr adclass_act_cvr
-         |  from   ${cvrcomparetab2}
+         |  select  adclass ,act_cvr adclass_act_cvr
+         |  from dl_cpc.bigpic_adclass_actcvr_mid
+         |  where  ${selectCondition3}
+         |
          |) adclass
          |on  adclass.adclass=video.adclass
          |where  ( video_act_cvr1<bigpic_act_cvr or video_act_cvr1<adclass_act_cvr )
@@ -261,6 +270,8 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     val tab1=tab0.join(bigpiccvr,tab0("userid")===bigpiccvr("userid_b"),"inner").
       selectExpr("userid","isshow","isclick","price","isreport","exp_cvr","video_act_cvr1",
         "bigpic_act_cvr","bigpic_expcvr","adclass_act_cvr","dt","hr")
+    tab1.write.mode("overwrite").insertInto("dl_cpc.bigpic_adclass_ls_actcvr_userid")
+    tab1.show(10,false)
     println(" join tab0 success!")
     //计算短视频cvr
     val taba = spark.sql(
@@ -277,14 +288,15 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |           '${date}' as dt,'${hour}' as hr
          | from
          | (   select userid,exp_cvr,cvr_rank,isshow,isclick,isreport,searchid,bigpic_expcvr
-         |    from   ${tab1}
+         |    from   dl_cpc.bigpic_adclass_ls_actcvr_userid
          |    where  ${selectCondition3}
          |    and  adtype in (8,10)
          | ) view
          | join
          | (
          |     select  userid_d, expcvr_0per, expcvr_5per, expcvr_10per, expcvr_15per, expcvr_20per, expcvr_25per, expcvr_30per
-         |     from    ${tabd}
+         |     from    dl_cpc.userid_expcvr_lastpercent
+         |     where   ${selectCondition3}
          | )   threshold
          |on    view.userid=threshold.userid_d
          |
