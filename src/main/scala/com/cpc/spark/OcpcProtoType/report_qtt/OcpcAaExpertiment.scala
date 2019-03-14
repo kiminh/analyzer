@@ -221,74 +221,74 @@ object OcpcAaExpertiment {
       .write.mode("overwrite")
       .insertInto("dl_cpc.ocpc_aa_base_index_value")
 
-    val sql =
-      s"""
-        |select
-        |	b.`date` as dt,
-        | b.unitid,
-        | b.userid,
-        | a.conversion_goal,
-        | b.cpagiven,
-        | (case when a.conversion_goal = 1 then b.cpareal1
-        |    	  when a.conversion_goal = 2 then b.cpareal2
-        |    	  else b.cpareal3 end) as cpareal,
-        |  b.cpm,
-        |  b.arpu,
-        |  b.show,
-        |  b.click,
-        | (case when a.conversion_goal = 1 then b.cv1
-        |    	  when a.conversion_goal = 2 then b.cv2
-        |    	  else b.cv3 end) as cv,
-        | b.pre_cvr,
-        | (case when a.conversion_goal = 1 then b.post_cvr1
-        |    	  when a.conversion_goal = 2 then b.post_cvr2
-        |    	  else b.post_cvr3 end) as cvr,
-        | b.acp,
-        | b.acb,
-        | b.kvalue,
-        | b.ratio
-        |from
-        |	pre_ad_info a
-        |left join
-        |	(select
-        |		`date`,
-        |	  unitid,
-        |	  userid,
-        |	  cpagiven,
-        |	  cpareal1,
-        |	  cpareal2,
-        |	  cpareal3,
-        |	  cpm,
-        |	  arpu,
-        |	  show,
-        |	  click,
-        |	  cv1,
-        |	  cv2,
-        |	  cv3,
-        |	  pre_cvr,
-        |	  post_cvr1,
-        |	  post_cvr2,
-        |	  post_cvr3,
-        |	  acp,
-        |	  acb,
-        |	  kvalue,
-        |	  ratio
-        |	from
-        |		comprehensive_index_value
-        |	where
-        |   `date` between '$startDate' and '$endDate') as b
-        |on
-        |	a.unitid = b.unitid
-        |where
-        | a.`date` = '$endDate'
-      """.stripMargin
-    val data = spark.sql(sql)
-    data
-      .withColumn("date", lit(endDate))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(200)
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_aa_expertiment_data")
+//    val sql =
+//      s"""
+//        |select
+//        |	b.`date` as dt,
+//        | b.unitid,
+//        | b.userid,
+//        | a.conversion_goal,
+//        | b.cpagiven,
+//        | (case when a.conversion_goal = 1 then b.cpareal1
+//        |    	  when a.conversion_goal = 2 then b.cpareal2
+//        |    	  else b.cpareal3 end) as cpareal,
+//        |  b.cpm,
+//        |  b.arpu,
+//        |  b.show,
+//        |  b.click,
+//        | (case when a.conversion_goal = 1 then b.cv1
+//        |    	  when a.conversion_goal = 2 then b.cv2
+//        |    	  else b.cv3 end) as cv,
+//        | b.pre_cvr,
+//        | (case when a.conversion_goal = 1 then b.post_cvr1
+//        |    	  when a.conversion_goal = 2 then b.post_cvr2
+//        |    	  else b.post_cvr3 end) as cvr,
+//        | b.acp,
+//        | b.acb,
+//        | b.kvalue,
+//        | b.ratio
+//        |from
+//        |	pre_ad_info a
+//        |left join
+//        |	(select
+//        |		`date`,
+//        |	  unitid,
+//        |	  userid,
+//        |	  cpagiven,
+//        |	  cpareal1,
+//        |	  cpareal2,
+//        |	  cpareal3,
+//        |	  cpm,
+//        |	  arpu,
+//        |	  show,
+//        |	  click,
+//        |	  cv1,
+//        |	  cv2,
+//        |	  cv3,
+//        |	  pre_cvr,
+//        |	  post_cvr1,
+//        |	  post_cvr2,
+//        |	  post_cvr3,
+//        |	  acp,
+//        |	  acb,
+//        |	  kvalue,
+//        |	  ratio
+//        |	from
+//        |		comprehensive_index_value
+//        |	where
+//        |   `date` between '$startDate' and '$endDate') as b
+//        |on
+//        |	a.unitid = b.unitid
+//        |where
+//        | a.`date` = '$endDate'
+//      """.stripMargin
+//    val data = spark.sql(sql)
+//    data
+//      .withColumn("date", lit(endDate))
+//      .withColumn("version", lit("qtt_demo"))
+//      .repartition(200)
+//      .write.mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_aa_expertiment_data")
   }
 
   // 获得当前时间的前n天
