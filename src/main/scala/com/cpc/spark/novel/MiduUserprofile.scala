@@ -1,0 +1,57 @@
+package com.cpc.spark.novel
+
+import com.alibaba.fastjson.JSON
+import com.cpc.spark.streaming.tools.Gzip.decompress
+
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.functions._
+
+import scala.collection.JavaConversions._
+import scala.collection.mutable
+
+/**
+  * @author WangYao
+  * @date 2019/03/14
+  */
+object MiduUserprofile {
+    def main(args: Array[String]): Unit = {
+
+        val date = args(0)
+        val hour = args(1)
+        val spark = SparkSession.builder()
+          .appName(s"midu_userprofile")
+          .enableHiveSupport()
+          .getOrCreate()
+
+        val title= spark.read.csv("/home/cpc/wy/title_adclass.csv").toDF("title","adclass","cate_1","cate_2")
+        title.show(5)
+        val sql =
+            s"""
+               |select
+               |  imei,title
+               |from dl_cpc.cpc_midu_toutiao_log
+               |where day='$date' and hour = '$hour'
+             """.stripMargin
+
+        println(sql)
+      val data2 = spark.sql(sql)
+          .join(title,Seq("title"),"left")
+      val youxi=data2
+        .filter("cate_2='游戏类'")
+        .select("imei")
+        .filter("imei is not null").distinct()
+
+      val youxinum= data2.count()
+      println("youxi is %d".format(youxinum))
+
+      val meirong=data2
+        .filter("cate_1='美容化妆'")
+        .select("imei")
+        .filter("imei is not null").distinct()
+
+      val meirongnum= data2.count()
+      println("meirong is %d".format(meirongnum))
+
+//        data2.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
+    }
+}
