@@ -400,8 +400,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |				              and  traffic_20per_expcvr>=traffic_30per_expcvr)   then traffic_20per_expcvr
           |                 when    traffic_25per_expcvr>=traffic_25per_expcvr    then traffic_25per_expcvr
           |				     else   traffic_30per_expcvr
-          |                 end as max_expcvr,
-          |   dt,hr
+          |                 end as max_expcvr
           |from   dl_cpc.video_trafficcut_threshold_mid
           |where   hr='21'
           | )  maxexpcvr
