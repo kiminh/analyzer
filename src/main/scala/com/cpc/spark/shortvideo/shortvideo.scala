@@ -172,17 +172,16 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |    sum(isclick) as click_num,
          |    round(sum(isclick)/sum(isshow),6) as ctr,
          |    round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isshow), 6) as cpm,
-         |    sum(if(b.searchid is null,0,1)) as convert_num,
          |    sum(case when isreport=1 then 1  else 0 end ) cvr_n,
          |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as cvr,
          |    round(sum(exp_cvr)/sum(isshow),6) as exp_cvr,
          |    dt,hr
          |from
          |${tab0}
-         |group by userid,case when adtype in (8,10) then 'video' when adtype =2 then 'bigpic'  ,adclass,dt,hr
+         |group by userid,case when adtype in (8,10) then 'video' when adtype =2 then 'bigpic' end ,adclass,dt,hr
        """.stripMargin
-    val  cvrcomparetab = spark.sql(sql4).selectExpr("userid","adtype_cate adtype","show_num","click_num",
-    "ctr","cpm","convert_num","cvr_n","cvr","exp_cvr")
+    val  cvrcomparetab = spark.sql(sql4).selectExpr("userid","adtype_cate ","adclass","show_num","click_num",
+    "ctr","cpm","cvr_n","cvr","exp_cvr","dt","hr")
     cvrcomparetab.repartition(100).write.mode("overwrite").
       insertInto("dl_cpc.cpc_bigpicvideo_cvr")
     println("compare video bigpic act cvr midtab  success")
@@ -440,12 +439,12 @@ row format delimited fields terminated by '\t' lines terminated by '\n';
 create table if not exists test.cpc_bigpicvideo_cvr
 (
    userid    string,
-   adtype    string,   --区分是2-大图的，还是8，10-短视频的
+   adtype_cate    string,   --区分是2-大图的，还是8，10-短视频的
+   adclass   string,
    show_num  bigint,
    click_num bigint,
    ctr       double,
    cpm       double,
-   convert_num  bigint,
    cvr_n     bigint,
    cvr       double,
    exp_cvr   double
