@@ -242,17 +242,17 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |       video.dt,video.hr
          |from
          |(
-         |select userid,adtype,cvr video_act_cvr1,adclass
+         |select userid,adtype_cate,cvr video_act_cvr1,adclass
          |from  dl_cpc.cpc_bigpicvideo_cvr
          |where  ${selectCondition3}
          |and   adtype='video'
          |)   video
          |left join
          |(
-         |  select  userid,adtype,cvr  bigpic_act_cvr,exp_cvr bigpic_expcvr
+         |  select  userid,adtype_cate,cvr  bigpic_act_cvr,exp_cvr bigpic_expcvr
          |  from  dl_cpc.cpc_bigpicvideo_cvr
          |  where  ${selectCondition3}
-         |  and   adtype='bigpic'
+         |  and   adtype_cate='bigpic'
          |) bigpic
          |on  bigpic.userid=video.userid
          |left join
@@ -355,18 +355,21 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 
      val tabfinal2= spark.sql(
        s"""
-          |select  userid_yes userid,case when expcvr>expcvr_yes then expcvr else expcvr_yes end expcvr
+          |select  userid,expcvr
+          |(
+          |select  userid_yes userid,row_number() over (partition by userid_yes order by expcvr desc) expcvr_rank
           |from
           |(
-          |select  userid userid_yes,expcvr expcvr_yes
+          |select  userid ,expcvr
           |from    dl_cpc.cpc_appdown_cvr_threshold
           |where   dt='2019-03-13'  and hr='06'
           |union all
-          |select  userid userid_today,expcvr expcvr_today
+          |select  userid ,expcvr
           |from  dl_cpc.cpc_appdown_cvr_threshold
           |where  dt='${date}' and hr='${hour}'
           |)  view
-          |
+          |) view2
+          |where  expcvr_rank=1
 
         """.stripMargin).
        selectExpr("userid ","expcvr ")
