@@ -390,12 +390,13 @@ object AutoCoinStrategy {
               (x: List[Int], y: List[Int]) => x ::: y)
           .mapValues(x => {
               val sorted = x.sorted
-              val index = if( p==1 ) sorted.length - 1 else (sorted.length * p).toInt
-              val i5th = (sorted.length * 0.5).toInt
-              val i6th = (sorted.length * 0.6).toInt
-              val i7th = (sorted.length * 0.7).toInt
-              val i8th = (sorted.length * 0.8).toInt
-              val i9th = (sorted.length * 0.9).toInt
+              val length = sorted.length - 1
+              val index = (length * p).toInt
+              val i5th = (length * 0.5).toInt
+              val i6th = (length * 0.6).toInt
+              val i7th = (length * 0.7).toInt
+              val i8th = (length * 0.8).toInt
+              val i9th = (length * 0.9).toInt
               (sorted(index), sorted(0), sorted(sorted.length - 1), sorted.length,
                 sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
               //x(index)
@@ -432,12 +433,13 @@ object AutoCoinStrategy {
               val cvrlist = x._1
               val p = x._2
               val sorted = cvrlist.sorted
-              val index = if( p==1 ) sorted.length - 1 else (sorted.length * p).toInt
-              val i5th = (sorted.length * 0.5).toInt
-              val i6th = (sorted.length * 0.6).toInt
-              val i7th = (sorted.length * 0.7).toInt
-              val i8th = (sorted.length * 0.8).toInt
-              val i9th = (sorted.length * 0.9).toInt
+              val length = sorted.length - 1
+              val index = (length * p).toInt
+              val i5th = (length * 0.5).toInt
+              val i6th = (length * 0.6).toInt
+              val i7th = (length * 0.7).toInt
+              val i8th = (length * 0.8).toInt
+              val i9th = (length * 0.9).toInt
               (sorted(index), sorted(0), sorted(sorted.length - 1), sorted.length,
                 sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
           })
