@@ -45,7 +45,7 @@ object videoPromotion {
          |  and adsrc = 1
          |  and userid >0
          |  and isshow = 1
-         |  and antispam = 0
+         |  --and antispam = 0
          |  and (charge_type is NULL or charge_type = 1)
          |  and interaction=2 --下载
          |  and uid not like "%.%"
