@@ -31,10 +31,8 @@ object videoPromotion {
          |   ideaid,
          |   isshow,
          |   isclick,
-         |   charge_type,
          |   price,
-         |   t2.iscvr,
-         |   exp_cvr
+         |   t2.iscvr
          |   from (
          |    select *
          |    from dl_cpc.slim_union_log
@@ -65,6 +63,8 @@ object videoPromotion {
 
     val baseData = spark.sql(sql1)
     baseData.persist()
+
+    baseData.write.mode("overwrite").saveAsTable("test.baseData_sjq")
     println("========================baseData=======================")
     baseData.show(20)
 
@@ -74,14 +74,15 @@ object videoPromotion {
       .agg(countDistinct("ideaid").alias("ad_num"))
       .groupBy("userid").pivot("adtype1").agg(sum("ad_num"))
         .na.fill(0, Seq("video", "bigimage"))
+
+    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
+
     println("========================pivot_table=====================")
     pivot_table.show(20)
 
 //    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
 
-    val summary = baseData
-        .join(pivot_table, Seq("userid"), "left")
-        .filter("video > 0") //去掉没有视频的userid
+    val summary = baseData //同时含视频和大图的数据
         .withColumn("price1", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
         .groupBy("userid", "test_tag", "adtype1", "adclass")
         .agg(sum("isshow").alias("shown"),
@@ -90,7 +91,10 @@ object videoPromotion {
           sum("price1").alias("cost")
         ).select("userid", "test_tag", "adtype1", "adclass", "shown", "clickn", "cvrn", "cost")
     println("========================summary=========================")
-    summary.show(20)
+
+    summary.persist()
+
+    summary.write.mode("overwrite").saveAsTable("test.summary_sjq")
 
     summary.groupBy("userid", "adclass")
       .agg(sum("shown").alias("shown2"))
@@ -115,56 +119,55 @@ object videoPromotion {
     userAdclass.show(10)
 
     val adclassCvr = summary
-        .filter("adtype1 = 'bigimage'")
+        .filter("adtype1 = 'bigimage'") // 行业大图转化率
       .groupBy("adclass")
       .agg((sum("cvrn")/sum("clickn") ).alias("cvr"))
       .select("adclass", "cvr")
 
     val userAdclassCvr = userAdclass
       .join( adclassCvr, Seq("adclass"), "inner" )
-      .select("userid", "adclass", "cvr" )
+      .select("userid", "adclass", "cvr" ) //userid为大图userid,
 
     val uidn_ab = baseData
-        .filter("adtype1 = 'video'")
-      .groupBy("test_tag")
+        //.filter("adtype1 = 'video'")
+      .groupBy("test_tag", "adtype1")
       .agg(countDistinct("uid").alias("uidn"))
-      .select("test_tag", "uidn")
+      .select("test_tag", "adtype1", "uidn")
 
     val result0 = summary
       // .filter("adtype1 = 'video'")
-      .groupBy("test_tag", "adtype1", "userid")
+      .groupBy( "userid","adtype1", "test_tag")
       .agg(
         sum("shown").alias("show_n"),
         sum("clickn").alias("click_n"),
         sum("cvrn").alias("cvr_n"),
         sum("cost").alias("total_cost")
-      ).join(uidn_ab, Seq("test_tag"), "inner")
+      )
       .withColumn("ctr", col("click_n")*100/col("show_n"))
       .withColumn("cvr", col("cvr_n")*100/col("click_n"))
       .withColumn("cpm", col("total_cost")*10/col("show_n"))
       .withColumn("cpa", col("total_cost")/col("cvr_n")/100)
-      .withColumn("arpu", col("total_cost")/col("uidn")/100)
       .withColumn("acp", col("total_cost")/col("click_n")/100)
-      .select("test_tag", "adtype1", "userid", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "arpu", "acp")
+      .select("userid","adtype1", "test_tag", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "acp")
 
     result0.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq0")
 
     val result = summary
        // .filter("adtype1 = 'video'")
-      .groupBy("test_tag", "adtype1")
+      .groupBy("adtype1", "test_tag" )
       .agg(
           sum("shown").alias("show_n"),
           sum("clickn").alias("click_n"),
           sum("cvrn").alias("cvr_n"),
           sum("cost").alias("total_cost")
-           ).join(uidn_ab, Seq("test_tag"), "inner")
+           ).join(uidn_ab, Seq("adtype1", "test_tag"), "inner")
       .withColumn("ctr", col("click_n")*100/col("show_n"))
       .withColumn("cvr", col("cvr_n")*100/col("click_n"))
       .withColumn("cpm", col("total_cost")*10/col("show_n"))
       .withColumn("cpa", col("total_cost")/col("cvr_n")/100)
       .withColumn("arpu", col("total_cost")/col("uidn")/100)
       .withColumn("acp", col("total_cost")/col("click_n")/100)
-      .select("test_tag", "adtype1", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "arpu", "acp")
+      .select("adtype1", "test_tag", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "arpu", "acp")
 
     result.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq")
 
@@ -179,7 +182,7 @@ object videoPromotion {
     val userCvr2 = userCvr
       .join( userAdclassCvr, Seq("userid"), "left" )
       .withColumn("bigimage2", when(col("bigimage").isNull, col("cvr")).otherwise(col("bigimage")))
-      .select("test_tag", "userid", "video", "bigimage","bigimage2")
+      .select("test_tag", "userid","adclass", "video", "bigimage","bigimage2")
       .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)) )
 
 
