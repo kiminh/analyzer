@@ -60,16 +60,16 @@ object shortvideo {
      spark.sql(
       s"""
          |insert overwrite table dl_cpc.cpc_union_events_video_mid  partition (dt,hr)
-select   searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori as  exp_cvr,
-         exp_cvr expcvr_d,cvr_rank,src,
+select   searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
+         exp_cvr,cvr_rank,src,
           label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,
-          usertype,view1.adslotid,isshow,'${date}' as dt,'${hour}' as hr
+          usertype,view1.adslotid,isshow,'2019-03-13' as dt,'22' as hr
 from
 (
-  select     day,hour,searchid,`timestamp`,isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid,adslot_id as adslotid,
+  select     dt as day,hour,searchid, isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid, adslotid,
              charge_type,adtype,ideaid,usertype,adslot_type,
              row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
-  from       dl_cpc.cpc_basedata_union_events
+  from       dl_cpc.slim_union_log
   where    ${selectCondition}
   and      media_appsid in  ("80000001")
   and      interaction=2
@@ -117,7 +117,7 @@ left JOIN
           from
               dl_cpc.ml_cvr_feature_v1
           where
-             ${selectCondition2}
+              ${selectCondition2}
               and label2=1
              and media_appsid in ("80000001")
             ) final
@@ -127,14 +127,15 @@ left JOIN
 on  a.searchid2=view1.searchid
 and   a.`date`=view1.day
 and   a.hour2 =view1.hour
-group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr ,cvr_rank,src,
-         label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,usertype,view1.adslotid,isshow,
-         '${date}','${hour}'
+group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
+         exp_cvr,cvr_rank,src,
+          label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,
+          usertype, adslotid,isshow,'${date}' ,'${hour}'
          |""".stripMargin)
     val tab0 = spark.read.table("dl_cpc.cpc_union_events_video_mid").filter(s"dt='${date}' and hr='${hour}'").
       selectExpr(
-      "searchid","`timestamp` as timestamp","adtype","userid","ideaid","isclick","isreport","exp_cvr",
-      "expcvr_d","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
+      "searchid", "adtype","userid","ideaid","isclick","isreport","expcvr_d",
+      "exp_cvr","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
       "usertype","adslotid","isshow","dt","hr")
 //     tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_union_events_video_mid ")
      println("dl_cpc.cpc_union_events_video_mid insert success!")
@@ -173,7 +174,7 @@ group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     val sql4=
       s"""
          |select
-         |    userid,adtype_cate,adclass,
+         |    userid,case when adtype in (8,10) then 'video' when adtype =2 then 'bigpic' end adtype_cate,adclass,
          |    sum(isshow) as show_num,
          |    sum(isclick) as click_num,
          |    round(sum(isclick)/sum(isshow),6) as ctr,
@@ -184,71 +185,8 @@ group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |    round(sum(exp_cvr)/sum(isshow),6) as exp_cvr,
          |    dt,hr
          |from
-         |(
-         |    select
-         |        searchid,isshow, exp_cvr,isclick,price,cvr_model_name,uid,userid,adslot_id as adslotid,
-         |       case when adtype in (8,10) then 'video' when adtype =2 then 'bigpic' end adtype_cate,
-         |       day dt,hour hr
-         |    from
-         |        ${tab0}
-         |    where
-         |        ${selectCondition}
-         |        and media_appsid in ('80000001')
-         |        and adslot_type = 1
-         |        and adtype in (2,8,10)
-         |         and adsrc = 1   --我们自己的广告
-         |         and isshow = 1
-         |        and ideaid > 0
-         |        and  interaction=2
-         |        and userid > 0
-         |        and uid not like "%.%"
-         |        and uid not like "%000000%"
-         |        and length(uid) in (14, 15, 36)
-         |        and (charge_type is null or charge_type=1)
-         |) a
-         |left join
-         |(
-         |    select
-         |    tmp.*
-         |                        from
-         |                            (
-         |                                select
-         |                                    final.searchid as searchid,
-         |                                    final.ideaid as ideaid,
-         |                                    case
-         |                                        when final.src="elds" and final.label_type=6 then 1
-         |                                        when final.src="feedapp" and final.label_type in (4, 5) then 1
-         |                                        when final.src="yysc" and final.label_type=12 then 1
-         |                                        when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
-         |                                        when final.src="others" and final.label_type=6 then 1
-         |                                        else 0
-         |                                    end as isreport
-         |                                from
-         |                                    (
-         |                                        select
-         |                                            searchid, media_appsid, uid,
-         |                                            planid, unitid, ideaid, adclass,
-         |                                            case
-         |                                                when (adclass like '134%' or adclass like '107%') then "elds"
-         |                                                when (adslot_type<>7 and adclass like '100%') then "feedapp"
-         |                                                when (adslot_type=7 and adclass like '100%') then "yysc"
-         |                                                when adclass in (110110100, 125100100) then "wzcp"
-         |                                                else "others"
-         |                                            end as src,
-         |                                            label_type
-         |                                        from
-         |                                            dl_cpc.ml_cvr_feature_v1
-         |                                        where
-         |                                            `date`='${selectCondition2}'
-         |                                            and label2=1
-         |                                            and media_appsid in ("80000001" )
-         |                                    ) final
-         |                            ) tmp
-         |                        where
-         |                            tmp.isreport=1
-         |) b
-         |on a.searchid = b.searchid
-         |group by userid,adtype_cate,adclass,a.dt,a.hr
+         |${tab0}
+         |group by userid,case when adtype in (8,10) then 'video' when adtype =2 then 'bigpic'  ,adclass,dt,hr
        """.stripMargin
     val  cvrcomparetab = spark.sql(sql4).selectExpr("userid","adtype_cate adtype","show_num","click_num",
     "ctr","cpm","convert_num","cvr_n","cvr","exp_cvr")
@@ -406,7 +344,7 @@ group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |where  dt='${date}' and hr='${hour}'
           |)  today
           |on  yes.userid_yes=today.userid_today
-          |
+
         """.stripMargin).
        selectExpr("userid ","expcvr ")
 
@@ -453,9 +391,9 @@ group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     if (startDate.equals(endDate)) {
       return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
     }
-    return s"((day = '$startDate' and hour > '$startHour') " +
-      s"or (day = '$endDate' and hour <= '$endHour') " +
-      s"or (day > '$startDate' and day < '$endDate'))"
+    return s"((dt = '$startDate' and hour > '$startHour') " +
+      s"or (dt = '$endDate' and hour <= '$endHour') " +
+      s"or (dt > '$startDate' and dt < '$endDate'))"
   }
 
    def getTimeRangeSql22(startDate: String, startHour: String, endDate: String, endHour: String): String = {
@@ -482,14 +420,13 @@ group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 create table if not exists dl_cpc.cpc_union_events_video_mid
 (
     searchid string,
-    timestamp     int,
     adtype   string,
     userid   string,
     ideaid   int,
     isclick  int,
     isreport int,
-    exp_cvr  double,
-    expcvr_d int,
+    expcvr_d  double,
+    exp_cvr int,
     cvr_rank bigint,
     src      string,
     label_type int,
