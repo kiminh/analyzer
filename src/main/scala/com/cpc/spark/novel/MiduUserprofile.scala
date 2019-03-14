@@ -42,7 +42,7 @@ object MiduUserprofile {
       val data2 = spark.sql(sql)
           .join(title,Seq("title"),"left")
 
-      data2.
+      data2.write.mode("overwrite").saveAsTable("test.wy00")
       val youxi=data2
         .filter("cate_2='游戏类'")
         .select("imei")
