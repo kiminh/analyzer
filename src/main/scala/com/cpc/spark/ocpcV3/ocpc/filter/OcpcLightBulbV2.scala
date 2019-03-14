@@ -150,6 +150,7 @@ object OcpcLightBulbV2{
   def getCPAsuggest(completeData: DataFrame, conversionGoal: DataFrame, date: String, hour: String, spark: SparkSession) = {
     val result = conversionGoal
       .join(completeData, Seq("unitid", "conversion_goal"), "left_outer")
+      .filter(s"cpa is not null")
       .select("unitid", "conversion_goal", "cpa")
 
     result.write.mode("overwrite").saveAsTable("test.ocpc_light_new_data20190304")
