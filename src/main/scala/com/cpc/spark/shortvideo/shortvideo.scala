@@ -414,6 +414,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |
         """.stripMargin
      val tabfinal=spark.sql(sqlfinal).selectExpr("userid","max_expcvr as expcvr","dt","hr")
+    tabfinal.show(10,false)
      tabfinal.write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
      println("dl_cpc.cpc_appdown_cvr_threshold  insert success!")
 
@@ -437,7 +438,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 
         """.stripMargin).
        selectExpr("userid ","expcvr ")
-
+     tabfinal2.show(10,false)
     /*#########################################################################*/
     //   pb写法2
 
