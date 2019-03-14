@@ -8,13 +8,15 @@ import org.apache.spark.sql.functions
 import org.apache.spark.sql.types.{StructField, StructType}
 import java.text.SimpleDateFormat
 import java.util.Calendar
-
+import shortvideothreshold.shortvideothreshold.ShortVideoThreshold
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import java.time
 import java.io.PrintWriter
 
 import org.apache.spark.sql.functions
+import shortvideothreshold.Shortvideothreshold
+import shortvideothreshold.shortvideothreshold.ThresholdShortVideo
 
 import scala.collection.mutable.ListBuffer
 
@@ -134,8 +136,16 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
      println("dl_cpc.cpc_union_events_video_mid insert success!")
       //  动态取threshold,计算每个短视频userid下面所有的exp_cvr，进行排序
      //   RDD方法,获得短视频userid阈值
-    val tabb = tab0.rdd.map(row => (row.getAs[String]("userid") ->
-                                     List(row.getAs[Int]("exp_cvr")))).
+      case class tabrank (val  userid_d: String =" ",
+                          val  expcvr_0per: Int=0,
+                          val  expcvr_5per: Int=0,
+                          val  expcvr_10per: Int=0,
+                          val  expcvr_15per: Int=0,
+                          val  expcvr_20per: Int=0,
+                          val  expcvr_25per: Int=0,
+                          val  expcvr_30per: Int=0 )
+
+    val tabb = tab0.rdd.map(row => (row.getAs[String]("userid") ->List(row.getAs[Int]("exp_cvr")))).
       reduceByKey((x, y) => x ::: y).
       mapValues(x => {
         val sorted = x.sorted
@@ -147,17 +157,18 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
         val th5 = sorted((sorted.length * 0.25).toInt)
         val th6 = sorted((sorted.length * 0.3).toInt)
         (th0, th1, th2, th3, th4, th5, th6)
-      }).map(x=>{tabrank(
-                  userid=x._1,
-                  rank0per=x._2._1,
-                  rank5per=x._2._2,
-                  rank10per=x._2._3,
-                  rank15per=x._2._4,
-                  rank20per=x._2._5,
-                  rank25per=x._2._6
-                  rank30per=x._2._7
-         )
-     }).toDS()
+      }).map(x=>
+       tabrank(
+         userid_d = x._1,
+         expcvr_0per = x._2._1,
+         expcvr_5per = x._2._2,
+         expcvr_10per = x._2._3,
+         expcvr_15per = x._2._4,
+         expcvr_20per = x._2._5,
+         expcvr_25per = x._2._6,
+         expcvr_30per = x._2._7
+       )
+     ).toDS()
     println("spark 7 threshold success!")
     val tabd=tabb.selectExpr("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
     tabd.show(10,false)
@@ -380,15 +391,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 
 
     /*#################################################################################*/
-  case class tabrank(val  userid: String =' ',
-                     val  th0: Int=0,
-                     val  th1: Int=0,
-                     val  th2: Int=0,
-                     val  th3: Int=0,
-                     val  th4: Int=0,
-                     val  th5: Int=0,
-                     val  th6: Int=0
-    )
+
   }
 
 //  def tranTimeToLong(tm:String) :Long= {
