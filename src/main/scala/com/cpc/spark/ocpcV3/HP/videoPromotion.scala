@@ -21,6 +21,7 @@ object videoPromotion {
          |     else 'B'
          |    end as test_tag,
          |   t1.searchid,
+         |   antispam,
          |   uid,
          |   adclass,
          |   userid,
