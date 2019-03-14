@@ -61,7 +61,7 @@ object OcpcCollectSuggestData {
     result.show(10)
 
     val resultDF = result
-      .select("unitid", "userid", "planid", "cpa", "kvalue", "convesion_goal", "budget", "exp_tag")
+      .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag")
 
     resultDF
 
