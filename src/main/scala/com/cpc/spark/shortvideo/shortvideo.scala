@@ -366,20 +366,20 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 
   }
 
-  def tranTimeToLong(tm:String) :Long= {
-      val fm = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-      val dt = fm.parse(tm)
-      val aa = fm.format(dt)
-      val tim: Long = dt.getTime()
-      tim
-    }
+//  def tranTimeToLong(tm:String) :Long= {
+//      val fm = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+//      val dt = fm.parse(tm)
+//      val aa = fm.format(dt)
+//      val tim: Long = dt.getTime()
+//      tim
+//    }
 
   def getTimeRangeSql21(startDate: String, startHour: String, endDate: String, endHour: String): String = {
     if (startDate.equals(endDate)) {
       return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
     }
     return s"((dt = '$startDate' and hour > '$startHour') " +
-      s"or (dt = '$endDate' and hour <= '$endHour') " +
+      s"or (dt = '$endDate' and hour <= '11') " +
       s"or (dt > '$startDate' and dt < '$endDate'))"
   }
 
@@ -388,7 +388,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
   }
   return s"((`date` = '$startDate' and hour > '$startHour') " +
-    s"or (`date` = '$endDate' and hour <= '$endHour') " +
+    s"or (`date` = '$endDate' and hour <= '11') " +
     s"or (`date` > '$startDate' and `date` < '$endDate'))"
 }
   def getTimeRangeSql23(startDate: String, startHour: String, endDate: String, endHour: String): String = {
@@ -396,7 +396,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
       return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
     }
     return s"((dt = '$startDate' and hr > '$startHour') " +
-      s"or (dt = '$endDate' and hr <= '$endHour') " +
+      s"or (dt = '$endDate' and hr <= '11') " +
       s"or (dt > '$startDate' and dt < '$endDate'))"
   }
 
