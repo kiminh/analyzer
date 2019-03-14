@@ -47,27 +47,19 @@ object shortvideo {
     val selectCondition2 = getTimeRangeSql22(date1, hour1, date, hour)
     val selectCondition3 = getTimeRangeSql23(date1, hour1, date, hour)
 
-
-
-    //    val calb = Calendar.getInstance()
-    //    calb.add(Calendar.HOUR_OF_DAY)
-    //    val datetd = new SimpleDateFormat("yyyy-MM-dd").format(calb.getTime)
-    //    val hourtd = new SimpleDateFormat("HH").format(calb.getTime)
-
-
     spark.sql("set hive.exec.dynamic.partition=true")
-    //  生成中间表 appdownload_mid
+    //  生成中间表 video_mid
      spark.sql(
       s"""
          |insert overwrite table dl_cpc.cpc_union_events_video_mid  partition (dt,hr)
 select   searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          exp_cvr,cvr_rank,src,
           label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,
-          usertype,view1.adslotid,isshow,'2019-03-13' as dt,'22' as hr
+          usertype,view1.adslotid,isshow,'${date}' as dt,'${hour}' as hr
 from
 (
   select     dt as day,hour,searchid, isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid, adslotid,
-             charge_type,adtype,ideaid,usertype,adslot_type,
+             charge_type,adtype,ideaid,usertype,adslot_type,adclass, planid,unitid,
              row_number() over (partition by userid  order by exp_cvr desc ) cvr_rank
   from       dl_cpc.slim_union_log
   where    ${selectCondition}
@@ -88,7 +80,7 @@ from
 ) view1
 left JOIN
 (
-  select   `date`,hour hour2,aa.searchid as searchid2,isreport, src,label_type,uid,planid,unitid, adclass,adslot_type,label2
+  select   `date`,hour hour2,aa.searchid as searchid2,isreport,  label_type,  label2
   FROM
   (
     select          `date`,hour,
@@ -136,7 +128,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
       selectExpr(
       "searchid", "adtype","userid","ideaid","isclick","isreport","expcvr_d",
       "exp_cvr","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
-      "usertype","adslotid","isshow","dt","hr")
+      "usertype","adslot_id","isshow","dt","hr")
 //     tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_union_events_video_mid ")
      println("dl_cpc.cpc_union_events_video_mid insert success!")
       //  动态取threshold,计算每个短视频userid下面所有的exp_cvr，进行排序
