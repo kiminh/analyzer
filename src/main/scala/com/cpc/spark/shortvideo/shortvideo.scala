@@ -245,7 +245,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |select userid,adtype_cate,cvr video_act_cvr1,adclass
          |from  dl_cpc.cpc_bigpicvideo_cvr
          |where  ${selectCondition3}
-         |and   adtype='video'
+         |and   adtype_cate='video'
          |)   video
          |left join
          |(
