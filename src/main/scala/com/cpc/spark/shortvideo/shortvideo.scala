@@ -129,7 +129,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |""".stripMargin)
     val tab0 = spark.read.table("dl_cpc.cpc_union_events_video_mid").filter(s"dt='${date}' and hr='${hour}'").
       selectExpr(
-      "searchid", "adtype_cate","userid","ideaid","isclick","isreport","expcvr_d",
+      "searchid", "adtype ","userid","ideaid","isclick","isreport","expcvr_d",
       "exp_cvr","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
       "usertype","adslot_id","isshow","price","dt","hr")
 //     tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_union_events_video_mid ")
@@ -268,7 +268,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     bigpiccvr.show(10,false)
     println(" video_act_cvr1<bigpic_act_cvr  or video_act_cvr1<adclass_act_cvr  userid tab success!")
 
-    //过滤大图cvr<短视频或行业cvr的userid,待计算剩下的userid 的cvr
+    //过滤大图cvr<短视频或行业actcvr的userid,待计算剩下的userid 的cvr
     val tab1=tab0.join(bigpiccvr,tab0("userid")===bigpiccvr("userid_b"),"inner").
       selectExpr("userid","isshow","isclick","price","isreport","exp_cvr","video_act_cvr1",
         "bigpic_act_cvr","bigpic_expcvr","adclass_act_cvr",s"""'${date}' as dt""",s"""'${hour}' as hr""")
@@ -292,7 +292,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          | (   select userid,exp_cvr,cvr_rank,isshow,isclick,isreport,searchid,bigpic_expcvr
          |    from   dl_cpc.bigpic_adclass_ls_actcvr_userid
          |    where  ${selectCondition3}
-         |    and  adtype in (8,10)
+         |
          | ) view
          | join
          | (
