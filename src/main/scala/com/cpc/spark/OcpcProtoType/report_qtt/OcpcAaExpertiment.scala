@@ -147,7 +147,7 @@ object OcpcAaExpertiment {
     val sql =
       s"""
         |select
-        |    `date`,
+        |    `date` as dt,
         |    unitid,
         |    userid,
         |    round(sum(case when isclick = 1 then cpagiven else 0 end) * 0.01
@@ -213,6 +213,7 @@ object OcpcAaExpertiment {
     preAdInfoDF.createOrReplaceTempView("pre_ad_info")
     compIndexValueDF.createOrReplaceTempView("comprehensive_index_value")
 
+    compIndexValueDF.printSchema()
     // 首先将acp、acb等指标值存到分区表中
     compIndexValueDF
       .withColumn("date", lit(endDate))
