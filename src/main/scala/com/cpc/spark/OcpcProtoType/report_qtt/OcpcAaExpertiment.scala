@@ -104,8 +104,7 @@ object OcpcAaExpertiment {
         |and
         |    (a.charge_type is null or a.charge_type = 1)
       """.stripMargin
-    val dataDF = spark.sql(sql)
-    dataDF.withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+    val dataDF = spark.sql(sql).withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
     dataDF
   }
 
@@ -113,7 +112,6 @@ object OcpcAaExpertiment {
   def convStr2Num(date: String, dataDF: DataFrame, spark: SparkSession): DataFrame ={
     val preDate = getPreDate(date, 1)
     dataDF.createOrReplaceTempView("temp_index")
-    println(dataDF.schema)
     val sql =
       s"""
         |select
