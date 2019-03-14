@@ -242,7 +242,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |       video.dt,video.hr
          |from
          |(
-         |select userid,adtype_cate,cvr video_act_cvr1,adclass
+         |select userid,adtype_cate,cvr video_act_cvr1,adclass,dt,hr
          |from  dl_cpc.cpc_bigpicvideo_cvr
          |where  ${selectCondition3}
          |and   adtype_cate='video'
