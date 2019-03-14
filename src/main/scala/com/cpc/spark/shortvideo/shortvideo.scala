@@ -185,7 +185,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     /*######增加该userid没有大图，用所在行业实际cvr来衡量的条件##################################*/
     val  cvrcomparetab2 = spark.sql(
        s"""
-          |select   adclass,
+          |select   adclass,dt,hr,
           |    sum(isshow) as show_num,
           |    sum(isclick) as click_num,
           |    round(sum(isclick)/sum(isshow),6) as ctr,
@@ -193,7 +193,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |    sum(if(b.searchid is null,0,1)) as convert_num,
           |    sum(case when isreport=1 then 1  else 0  end ) cvr_n,
           |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as act_cvr
-          |    dt,hr
+          |
           |from    dl_cpc.cpc_union_events_video_mid
           |where  dt='${date}' and hr='${hour}'
           |and  adtype=2
