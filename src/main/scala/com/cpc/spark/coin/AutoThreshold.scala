@@ -65,7 +65,7 @@ object AutoThreshold {
 
         val result = spark.sql(sql).repartition(1)
 
-        result.write.mode("overwrite").insertInto("dl_cpc.cpc_auto_coin_idea_threshold")
+        result.write.mode("overwrite").insertInto("dl_cpc.cpc_auto_coin_idea_threshold2")
 
         println("success!")
     }
