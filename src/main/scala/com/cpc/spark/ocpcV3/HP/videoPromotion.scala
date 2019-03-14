@@ -64,6 +64,8 @@ object videoPromotion {
        """.stripMargin
 
     val baseData = spark.sql(sql1)
+    println("========================baseData=======================")
+    baseData.show(20)
 
     val pivot_table = baseData
         .select("userid", "adtype1", "ideaid")
@@ -71,8 +73,8 @@ object videoPromotion {
       .agg(countDistinct("ideaid").alias("ad_num"))
       .groupBy("userid").pivot("adtype1").agg(sum("ad_num"))
         .na.fill(0, Seq("video", "bigimage"))
-
-    pivot_table.show(10)
+    println("========================pivot_table=====================")
+    pivot_table.show(20)
 
 //    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
 
@@ -86,6 +88,8 @@ object videoPromotion {
           sum("iscvr").alias("cvrn"),
           sum("price1").alias("cost")
         ).select("userid", "test_tag", "adtype1", "adclass", "shown", "clickn", "cvrn", "cost")
+    println("========================summary=========================")
+    summary.show(20)
 
     summary.groupBy("userid", "adclass")
       .agg(sum("shown").alias("shown2"))
@@ -106,7 +110,7 @@ object videoPromotion {
        """.stripMargin
 
     val userAdclass = spark.sql(sql2)
-
+    println("=====================userAdclass====================")
     userAdclass.show(10)
 
     val adclassCvr = summary
@@ -146,7 +150,7 @@ object videoPromotion {
       .agg(( sum("cvrn")/sum("clickn") ).alias("cvr"))
       .groupBy("test_tag", "userid").pivot("adtype1").agg(sum("cvr"))
 
-    userCvr.write.mode("overwrite").saveAsTable("test.userCvr_sjq")
+//    userCvr.write.mode("overwrite").saveAsTable("test.userCvr_sjq")
 
     val userCvr2 = userCvr
       .join( userAdclassCvr, Seq("userid"), "left" )
@@ -154,14 +158,14 @@ object videoPromotion {
       .select("test_tag", "userid", "video", "bigimage2")
       .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)) )
 
-    val reult = userCvr2
+    val result2 = userCvr2
       .groupBy("test_tag")
       .agg(
         count("userid").alias("usern"),
         sum("flag").alias("video_outstand_usern")
       ).withColumn("account", col("video_outstand_usern")/col("usern"))
 
-    result.write.mode("overwrite").saveAsTable("test.video_outstand_user_account")
+    result2.write.mode("overwrite").saveAsTable("test.video_outstand_user_account")
 
   }
 
