@@ -221,7 +221,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |    sum(if(isreport=1,1,0)) as convert_num,
           |    sum(case when isreport=1 then 1  else 0  end ) cvr_n,
           |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as act_cvr,
-          |    dt,hr
+          |    '${date}' as dt,'${hour}' as hr
           |
           |from     dl_cpc.slim_union_log
           |where  ${selectCondition}
