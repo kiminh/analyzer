@@ -80,7 +80,7 @@ from
 ) view1
 left JOIN
 (
-  select   `date`,hour hour2,aa.searchid as searchid2,isreport,  label_type,  label2
+  select   `date`,hour hour2,aa.searchid as searchid2,isreport,src,label_type,  label2
   FROM
   (
     select          `date`,hour,
