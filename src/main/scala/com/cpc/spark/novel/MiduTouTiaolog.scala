@@ -32,7 +32,7 @@ object MiduTouTiaolog {
       val data = spark.sql(sql)
         .withColumn("opt",decode(col("opt")))
         .withColumn("opt",unzip(col("opt")))
-        .filter("opt not null")
+        .filter("opt is not null")
         .withColumn("opt_map",strToMap(col("opt")))
 
       data.createOrReplaceTempView("tmp")
