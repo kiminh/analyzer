@@ -120,7 +120,7 @@ object unitid_inAndOut {
          |'1937267',
          |'1937268',
          |'1962865',
-         |'1962866')         |)
+         |'1962866')
       """.stripMargin).repartition(1).cache()
     data.show(10)
 
