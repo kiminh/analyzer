@@ -165,7 +165,8 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 
 //      .toDF("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
     println("spark 7 threshold success!")
-    val tabd=tabb.selectExpr("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per","dt","hr")
+    val tabd=tabb.selectExpr("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per",
+      s"""${date} as dt""",s"""${hour} as hr""")
     tabd.write.mode("overwrite").insertInto("dl_cpc.userid_expcvr_lastpercent")
     tabd.show(10,false)
 
@@ -237,7 +238,8 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |       video.video_act_cvr1,
          |       bigpic.bigpic_act_cvr,
          |       bigpic.bigpic_expcvr,
-         |       adclass.adclass_act_cvr
+         |       adclass.adclass_act_cvr,
+         |       video.dt,video.hr
          |from
          |(
          |select userid,adtype,cvr video_act_cvr1,adclass
@@ -269,7 +271,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     //过滤大图cvr<短视频或行业cvr的userid,待计算剩下的userid 的cvr
     val tab1=tab0.join(bigpiccvr,tab0("userid")===bigpiccvr("userid_b"),"inner").
       selectExpr("userid","isshow","isclick","price","isreport","exp_cvr","video_act_cvr1",
-        "bigpic_act_cvr","bigpic_expcvr","adclass_act_cvr","dt","hr")
+        "bigpic_act_cvr","bigpic_expcvr","adclass_act_cvr",s"""${date} as dt""",s"""${hour} as hr""")
     tab1.write.mode("overwrite").insertInto("dl_cpc.bigpic_adclass_ls_actcvr_userid")
     tab1.show(10,false)
     println(" join tab0 success!")
