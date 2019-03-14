@@ -213,16 +213,17 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     /*######增加该userid没有大图，用所在行业实际cvr来衡量的条件##################################*/
     val  cvrcomparetab2 = spark.sql(
        s"""
-          |select   adclass,
+          |select   m.adclass,
           |    sum(isshow) as show_num,
           |    sum(isclick) as click_num,
           |    round(sum(isclick)/sum(isshow),6) as ctr,
           |    round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isshow), 6) as cpm,
           |    sum(if(isreport=1,1,0)) as convert_num,
           |    sum(case when isreport=1 then 1  else 0  end ) cvr_n,
-          |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as act_cvr,
-          |    '${date}' as dt,'${hour}' as hr
-          |
+          |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as act_cvr
+          |from
+          |(
+          |select  adclass,isshow,isclick,price,searchid
           |from     dl_cpc.slim_union_log
           |where  ${selectCondition}
           |and   adsrc=1
@@ -231,8 +232,51 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |and   media_appsid in  ("80000001")
           |and   interaction=2
           |and  adtype=2
-          |group by adclass,'${date}','${hour}'
-         """.stripMargin).selectExpr("adclass","show_num","click_num","ctr","cpm","convert_num","cvr_n","act_cvr","dt","hr")
+          |)   m
+          |left join
+          |(
+          |  select   `date`,hour hour2,aa.searchid as searchid2,isreport,src,adclass,
+          |             label_type,  label2
+          |  FROM
+          |  (
+          |    select          `date`,hour,
+          |                     final.searchid as searchid,src,label_type,uid,planid,unitid, adclass,adslot_type,label2,
+          |                     final.ideaid as ideaid,
+          |                     case
+          |          when final.src="elds" and final.label_type=6 then 1
+          |          when final.src="feedapp" and final.label_type in (4, 5) then 1
+          |          when final.src="yysc" and final.label_type=12 then 1
+          |          when final.src="wzcp" and final.label_type in (1, 2, 3) then 1
+          |          when final.src="others" and final.label_type=6 then 1
+          |          else 0     end as isreport
+          |          from
+          |          (
+          |          select  distinct
+          |              `date`,hour,searchid, media_appsid, uid,
+          |              planid, unitid, ideaid, adclass,adslot_type,label2,
+          |              case
+          |                  when (adclass like '134%' or adclass like '107%') then "elds"
+          |                  when (adslot_type<>7 and adclass like '100%') then "feedapp"
+          |                  when (adslot_type=7 and adclass like '100%') then "yysc"
+          |                  when adclass in (110110100, 125100100) then "wzcp"
+          |                  else "others"
+          |              end as src,
+          |              label_type
+          |          from
+          |              dl_cpc.ml_cvr_feature_v1
+          |          where
+          |              ${selectCondition2}
+          |              and label2=1
+          |             and media_appsid in ("80000001")
+          |            ) final
+          |       ) aa
+          |  where   aa.isreport=1
+          |) a
+          |on  a.adclass =m.adclass
+          |and  a.searchid2 =m.searchid
+          |group by m.adclass
+         """.stripMargin).selectExpr("adclass","show_num","click_num","ctr","cpm","convert_num","cvr_n","act_cvr",
+                s"""${date} as dt""",s"""${hour} as hr""")
     cvrcomparetab2.show(10,false)
     cvrcomparetab2.write.mode("overwrite").insertInto("dl_cpc.bigpic_adclass_actcvr_mid")
 
