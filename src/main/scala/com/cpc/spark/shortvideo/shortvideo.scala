@@ -80,7 +80,8 @@ from
 ) view1
 left JOIN
 (
-  select   `date`,hour hour2,aa.searchid as searchid2,isreport,src,label_type,  label2
+  select   `date`,hour hour2,aa.searchid as searchid2,isreport,src,
+label_type,  label2
   FROM
   (
     select          `date`,hour,
@@ -134,7 +135,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
       //  动态取threshold,计算每个短视频userid下面所有的exp_cvr，进行排序
      //   RDD方法,获得短视频userid阈值
     val tabb = tab0.rdd.map(row => (row.getAs[String]("userid") ->
-                                     List(row.getAs[Double]("exp_cvr")))).
+                                     List(row.getAs[Long]("exp_cvr")))).
       reduceByKey((x, y) => x ::: y).
       mapValues(x => {
         val sorted = x.sorted
@@ -151,13 +152,13 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     val tabc = spark.createDataFrame(tabb)
     val tabd = tabc.rdd.map(r => {
       val userid = r.getAs[String](0)
-      val rank0per = r.getAs[Array[Double]](1)(0)
-      val rank5per = r.getAs[Array[Double]](1)(1)
-      val rank10per = r.getAs[Array[Double]](1)(2)
-      val rank15per = r.getAs[Array[Double]](1)(3)
-      val rank20per = r.getAs[Array[Double]](1)(4)
-      val rank25per = r.getAs[Array[Double]](1)(5)
-      val rank30per = r.getAs[Array[Double]](1)(6)
+      val rank0per = r.getAs[Array[Long]](1)(0)
+      val rank5per = r.getAs[Array[Long]](1)(1)
+      val rank10per = r.getAs[Array[Long]](1)(2)
+      val rank15per = r.getAs[Array[Long]](1)(3)
+      val rank20per = r.getAs[Array[Long]](1)(4)
+      val rank25per = r.getAs[Array[Long]](1)(5)
+      val rank30per = r.getAs[Array[Long]](1)(6)
       (userid,rank0per, rank5per, rank10per, rank15per, rank20per, rank25per, rank30per)
     }).map(s => (s._1, s._2, s._3, s._4, s._5, s._6, s._7,s._8)).
       toDF("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
