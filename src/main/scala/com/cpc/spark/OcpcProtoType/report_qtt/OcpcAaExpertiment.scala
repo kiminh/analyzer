@@ -5,6 +5,7 @@ import java.util.Date
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame}
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
 
 object OcpcAaExpertiment {
@@ -12,20 +13,20 @@ object OcpcAaExpertiment {
   def main(args: Array[String]): Unit = {
     val date = args(0).toString
     val spark = SparkSession.builder().appName("OcpcAdExpertiment").enableHiveSupport().getOrCreate()
-    joinBaseIsCvr(date, spark)
+    val dataDF = joinBaseIsCvr(date, spark)
     println("base and ml_cvr_feature_v1 joined success")
-    convStr2Num(date, spark)
+   val baseIndexDF =  convStr2Num(date, dataDF, spark)
     println("str conv to num success")
-    calculateIndexValue(date, spark)
+    val compIndexValueDF = calculateIndexValue(date, baseIndexDF, spark)
     println("has got index value")
-    getPreAdInfo(date, spark)
+    val preAdInfoDF = getPreAdInfo(date, spark)
     println("has got yesterday's ad info")
-    getData(date, spark)
-    println("has got need data")
+//    getData(date, preAdInfoDF, compIndexValueDF, spark)
+//    println("has got need data")
   }
 
   // 将base表和ml_cvr_feature_v1等表关联起来
-  def joinBaseIsCvr(date: String, spark: SparkSession): Unit ={
+  def joinBaseIsCvr(date: String, spark: SparkSession): DataFrame ={
     val preDate = getPreDate(date, 1)
     val sql =
       s"""
@@ -68,7 +69,7 @@ object OcpcAaExpertiment {
         |    where
         |        `date` = '$preDate'
         |    and
-        |        label=1
+        |        label = 1
         |    ) as c
         |on
         |    a.searchid = c.searchid
@@ -96,25 +97,21 @@ object OcpcAaExpertiment {
         |and
         |    a.antispam = 0
         |and
-        |    a.adslot_type in (1,2,3)
+        |    a.adslot_type in (1, 2, 3)
         |and
         |    a.adsrc = 1
         |and
         |    (a.charge_type is null or a.charge_type = 1)
       """.stripMargin
-    val data = spark.sql(sql)
-    data
-      .withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
-      .withColumn("date", lit(preDate))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(200)
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_aa_join_base_iscvr")
+    val dataDF = spark.sql(sql)
+    dataDF.withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
+    dataDF
   }
 
   // 将ocpc_log_dict中的字符转化成数字
-  def convStr2Num(date: String, spark: SparkSession): Unit ={
+  def convStr2Num(date: String, dataDF: DataFrame, spark: SparkSession): DataFrame ={
     val preDate = getPreDate(date, 1)
+    dataDF.createOrReplaceTempView("temp_index")
     val sql =
       s"""
         |select
@@ -136,69 +133,61 @@ object OcpcAaExpertiment {
         | iscvr2,
         | iscvr3
         |from
-        |	dl_cpc.ocpc_aa_join_base_iscvr
+        |	temp_index
         |where
         |	`date` = '$preDate'
       """.stripMargin
-    val data = spark.sql(sql)
-      .withColumn("date", lit(preDate))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(200)
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_aa_base_index")
+    val baseIndexDF = spark.sql(sql)
+    baseIndexDF
   }
 
   // 计算acp、acb、cpa等指标值
-  def calculateIndexValue(date: String, spark: SparkSession): Unit ={
+  def calculateIndexValue(date: String, baseIndexDF: DataFrame, spark: SparkSession): DataFrame ={
     val preDate = getPreDate(date, 1)
+    baseIndexDF.createOrReplaceTempView("base_index")
     val sql =
       s"""
         |select
-        |    `date` as dt,
+        |    `date`,
         |    unitid,
         |    userid,
-        |    sum(case when isclick = 1 then cpagiven else 0 end) * 0.01
-        |    / sum(case when isclick = 1 and cpagiven is not null then 1 else 0 end) as cpagiven,
-        |    sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr1) as cpareal1,
-        |    sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr2) as cpareal2,
-        |    sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr3) as cpareal3,
-        |    round(sum(case when isclick = 1 then price else 0 end) * 0.1 / sum(isshow), 3) as cpm,
-        |    round(sum(case when isclick = 1 then price else 0 end) * 10 / count(distinct uid), 3) as arpu,
+        |    round(sum(case when isclick = 1 then cpagiven else 0 end) * 0.01
+        |    / sum(case when isclick = 1 and cpagiven is not null then 1 else 0 end), 4) as cpagiven,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr1), 4) as cpareal1,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr2), 4) as cpareal2,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr3), 4) as cpareal3,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 0.1 / sum(isshow), 4) as cpm,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 10 / count(distinct uid), 4) as arpu,
         |    sum(isshow) as show,
         |    sum(isclick) as click,
         |    sum(iscvr1) as cv1,
         |    sum(iscvr2) as cv2,
         |    sum(iscvr3) as cv3,
-        |    sum(case when isclick = 1 then pcvr else 0 end) * 1.0
-        |    / sum(case when isclick = 1 and pcvr is not null then 1 else 0 end) as pre_cvr,
-        |    sum(iscvr1) * 1.0 / sum(isclick) as post_cvr1,
-        |    sum(iscvr2) * 1.0 / sum(isclick) as post_cvr2,
-        |    sum(iscvr3) * 1.0 / sum(isclick) as post_cvr3,
-        |    sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick) as acp,
-        |    sum(case when isclick = 1 and dynamicbid is not null then dynamicbid
+        |    round(sum(case when isclick = 1 then pcvr else 0 end) * 1.0
+        |    / sum(case when isclick = 1 and pcvr is not null then 1 else 0 end), 4) as pre_cvr,
+        |    round(sum(iscvr1) * 1.0 / sum(isclick), 4) as post_cvr1,
+        |    round(sum(iscvr2) * 1.0 / sum(isclick), 4) as post_cvr2,
+        |    round(sum(iscvr3) * 1.0 / sum(isclick), 4) as post_cvr3,
+        |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick), 4) as acp,
+        |    round(sum(case when isclick = 1 and dynamicbid is not null then dynamicbid
         |             when isclick = 1 and dynamicbid is null then bid
-        |             else 0 end) * 0.01 / sum(case when isclick = 1 then 1 else 0 end) as acb,
-        |    sum(case when isclick = 1 then kvalue else 0 end) * 1.0
-        |    / sum(case when isclick = 1 and kvalue is not null then 1 else 0 end) as kvalue,
-        |    round(sum(case when cpagiven is null then 0 else 1 end) * 1.0 / count(unitid), 3) as ratio
+        |             else 0 end) * 0.01 / sum(case when isclick = 1 then 1 else 0 end), 4) as acb,
+        |    round(sum(case when isclick = 1 then kvalue else 0 end) * 1.0
+        |    / sum(case when isclick = 1 and kvalue is not null then 1 else 0 end), 4) as kvalue,
+        |    round(sum(case when cpagiven is null then 0 else 1 end) * 1.0 / count(unitid), 4) as ratio
         |from
-        |    dl_cpc.ocpc_aa_base_index
+        |    base_index
         |group by
         |    `date`,
         |    unitid,
         |    userid
       """.stripMargin
-    val data = spark.sql(sql)
-    data
-      .withColumn("date", lit(preDate))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(200)
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_aa_base_index_value")
+    val compIndexValueDF = spark.sql(sql)
+    compIndexValueDF
   }
 
   // 从filter表中筛选前一天的广告信息
-  def getPreAdInfo(date: String, spark: SparkSession): Unit ={
+  def getPreAdInfo(date: String, spark: SparkSession): DataFrame ={
     val preDate = getPreDate(date, 1)
     val sql =
       s"""
@@ -213,19 +202,26 @@ object OcpcAaExpertiment {
         |group by
         |	unitid, userid, ocpc_log_dict['conversiongoal']
       """.stripMargin
-    val data = spark.sql(sql)
-    data
-      .withColumn("date", lit(preDate))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(10)
-      .write.mode("overwrite")
-      .insertInto("dl_cpc.ocpc_aa_pre_ad_info")
+    val preAdInfoDF = spark.sql(sql)
+    preAdInfoDF
   }
 
   // 获得统计结果
-  def getData(date: String, spark: SparkSession){
+  def getData(date: String, preAdInfoDF: DataFrame, compIndexValueDF: DataFrame,spark: SparkSession){
     val startDate = getPreDate(date, 7)
     val endDate = getPreDate(date, 1)
+
+    preAdInfoDF.createOrReplaceTempView("pre_ad_info")
+    compIndexValueDF.createOrReplaceTempView("comprehensive_index_value")
+
+    // 首先将acp、acb等指标值存到分区表中
+    compIndexValueDF
+      .withColumn("date", lit(endDate))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(200)
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_aa_base_index_value")
+
     val sql =
       s"""
         |select
@@ -253,7 +249,7 @@ object OcpcAaExpertiment {
         | b.kvalue,
         | b.ratio
         |from
-        |	dl_cpc.ocpc_aa_pre_ad_info a
+        |	pre_ad_info a
         |left join
         |	(select
         |		`date`,
@@ -279,7 +275,7 @@ object OcpcAaExpertiment {
         |	  kvalue,
         |	  ratio
         |	from
-        |		dl_cpc.ocpc_aa_base_index_value
+        |		comprehensive_index_value
         |	where
         |   `date` between '$startDate' and '$endDate') as b
         |on
