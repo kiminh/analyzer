@@ -327,7 +327,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     //计算短视频cvr
     val taba = spark.sql(
       s"""
-         |select     distinct
+         |select
          |           userid,expcvr_0per, expcvr_5per, expcvr_10per, expcvr_15per, expcvr_20per, expcvr_25per, expcvr_30per,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_0per and ${traffic}=0,1,0))/sum(isclick),6) as traffic_0per_expcvr,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_5per and ${traffic}<=0.05,1,0))/sum(isclick),6) as traffic_5per_expcvr,
@@ -353,7 +353,8 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |     where   ${selectCondition3}
          | )   threshold
          |on    view.userid=threshold.userid_d
-         |
+         |group by userid,expcvr_0per, expcvr_5per, expcvr_10per, expcvr_15per, expcvr_20per, expcvr_25per, expcvr_30per,
+         |      video_act_cvr1,bigpic_act_cvr,adclass_act_cvr
          |""".stripMargin).
       selectExpr("userid","expcvr_0per","expcvr_5per","expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per",
         "traffic_0per_expcvr","traffic_5per_expcvr","traffic_10per_expcvr","traffic_15per_expcvr","traffic_20per_expcvr",
