@@ -223,8 +223,13 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as act_cvr,
           |    dt,hr
           |
-          |from    dl_cpc.cpc_union_events_video_mid
-          |where  dt='${date}' and hr='${hour}'
+          |from     dl_cpc.slim_union_log
+          |where  ${selectCondition}
+          |and   adsrc=1
+          |and   isshow=1
+          |and   isclick=1
+          |and   media_appsid in  ("80000001")
+          |and   interaction=2
           |and  adtype=2
           |group by adclass,dt,hr
          """.stripMargin).selectExpr("adclass","show_num","click_num","ctr","cpm","convert_num","cvr_n","act_cvr","dt","hr")
@@ -291,7 +296,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |           bigpic_act_cvr,adclass_act_cvr,
          |           '${date}' as dt,'${hour}' as hr
          | from
-         | (   select userid,exp_cvr,isshow,isclick,isreport,searchid,price,
+         | (   select userid,exp_cvr,isshow,isclick,isreport,price,exp_cvr,
          |            bigpic_act_cvr,adclass_act_cvr,video_act_cvr1
          |    from   dl_cpc.bigpic_adclass_ls_actcvr_userid
          |    where  ${selectCondition3}
