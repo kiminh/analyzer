@@ -42,7 +42,8 @@ object OcpcAaExpertiment {
         |	b.iscvr1,
         |	c.iscvr2,
         |	d.iscvr3,
-        | a.ocpc_log
+        | a.ocpc_log,
+        | a.`date`
         |from
         |	dl_cpc.ocpc_base_unionlog a
         |left join
@@ -131,11 +132,10 @@ object OcpcAaExpertiment {
         | cast(ocpc_log_dict['conversiongoal'] as int) as conversion_goal,
         | iscvr1,
         | iscvr2,
-        | iscvr3
+        | iscvr3,
+        | `date`
         |from
         |	temp_index
-        |where
-        |	`date` = '$preDate'
       """.stripMargin
     val baseIndexDF = spark.sql(sql)
     baseIndexDF
