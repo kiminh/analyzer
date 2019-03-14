@@ -165,7 +165,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 
 //      .toDF("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
     println("spark 7 threshold success!")
-    val tabd=tabb.selectExpr("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
+    val tabd=tabb.selectExpr("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per","dt","hr")
     tabd.write.mode("overwrite").insertInto("dl_cpc.userid_expcvr_lastpercent")
     tabd.show(10,false)
 
@@ -226,7 +226,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |where  dt='${date}' and hr='${hour}'
           |and  adtype=2
           |group by adclass,dt,hr
-         """.stripMargin).selectExpr("adclass","act_cvr")
+         """.stripMargin).selectExpr("adclass","act_cvr","dt","hr")
     cvrcomparetab2.show(10,false)
     cvrcomparetab2.write.mode("overwrite").insertInto("dl_cpc.bigpic_adclass_actcvr_mid")
 
@@ -358,8 +358,9 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |(
           |select  userid userid_yes,expcvr expcvr_yes
           |from    dl_cpc.cpc_appdown_cvr_threshold
-          |where   dt=date_sub('${date}',-1)  and hr='${hour}'
+          |where   dt='2019-03-13'  and hr='06'
           |)  yes
+          |left join
           |(
           |select  userid userid_today,expcvr expcvr_today
           |from  dl_cpc.cpc_appdown_cvr_threshold
