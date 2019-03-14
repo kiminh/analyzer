@@ -55,7 +55,7 @@ object shortvideo {
 select   searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          exp_cvr,cvr_rank,src,
           label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,
-          usertype,view1.adslotid,isshow,'${date}' as dt,'${hour}' as hr
+          usertype,view1.adslotid,isshow,price,'${date}' as dt,'${hour}' as hr
 from
 (
   select     dt as day,hour,searchid, isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid, adslotid,
@@ -123,13 +123,13 @@ and   a.hour2 =view1.hour
 group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          exp_cvr,cvr_rank,src,
           label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,
-          usertype, adslotid,isshow,'${date}' ,'${hour}'
+          usertype, adslotid,isshow,price,'${date}' ,'${hour}'
          |""".stripMargin)
     val tab0 = spark.read.table("dl_cpc.cpc_union_events_video_mid").filter(s"dt='${date}' and hr='${hour}'").
       selectExpr(
       "searchid", "adtype","userid","ideaid","isclick","isreport","expcvr_d",
       "exp_cvr","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
-      "usertype","adslot_id","isshow","dt","hr")
+      "usertype","adslot_id","isshow","price","dt","hr")
 //     tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_union_events_video_mid ")
      println("dl_cpc.cpc_union_events_video_mid insert success!")
       //  动态取threshold,计算每个短视频userid下面所有的exp_cvr，进行排序
@@ -430,7 +430,8 @@ create table if not exists dl_cpc.cpc_union_events_video_mid
     uid      string,
     usertype  int,
     adslot_id string,
-    isshow   int
+    isshow   int,
+    price    bigint
 )
 partitioned by (dt string,hr string)
 row format delimited fields terminated by '\t' lines terminated by '\n';
