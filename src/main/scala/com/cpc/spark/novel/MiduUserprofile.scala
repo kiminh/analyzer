@@ -28,7 +28,7 @@ object MiduUserprofile {
         val path = s"/user/cpc/wy/title_adclass.csv"
         val movefiletohdfs = s"hadoop fs -put -f ${filename} ${path}"
           movefiletohdfs !
-        val title= spark.read.csv(path).toDF("title","adclass","cate_1","cate_2")
+        val title= spark.read.format("csv").load(path).toDF("title","adclass","cate_1","cate_2")
         title.show(5)
         val sql =
             s"""
@@ -41,6 +41,8 @@ object MiduUserprofile {
         println(sql)
       val data2 = spark.sql(sql)
           .join(title,Seq("title"),"left")
+
+      data2.
       val youxi=data2
         .filter("cate_2='游戏类'")
         .select("imei")
