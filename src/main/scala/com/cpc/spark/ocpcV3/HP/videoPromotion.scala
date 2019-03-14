@@ -131,8 +131,8 @@ object videoPromotion {
       .select("test_tag", "uidn")
 
     val result = summary
-        .filter("adtype1 = 'video'")
-      .groupBy("test_tag")
+       // .filter("adtype1 = 'video'")
+      .groupBy("test_tag", "adtype1")
       .agg(
           sum("shown").alias("show_n"),
           sum("clickn").alias("click_n"),
@@ -145,7 +145,7 @@ object videoPromotion {
       .withColumn("cpa", col("total_cost")/col("cvr_n")/100)
       .withColumn("arpu", col("total_cost")/col("uidn")/100)
       .withColumn("acp", col("total_cost")/col("click_n")/100)
-      .select("test_tag", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "arpu", "acp")
+      .select("test_tag", "adtype1", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "arpu", "acp")
 
     result.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq")
 
