@@ -422,7 +422,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |select  userid,expcvr
           |from
           |(
-          |select  userid,row_number() over (partition by userid order by expcvr desc) expcvr_rank
+          |select  userid,expcvr,row_number() over (partition by userid order by expcvr desc) expcvr_rank
           |from
           |(
           |select  userid ,expcvr
