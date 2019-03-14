@@ -271,7 +271,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     //过滤大图cvr<短视频或行业actcvr的userid,待计算剩下的userid 的cvr
     val tab1=tab0.join(bigpiccvr,tab0("userid")===bigpiccvr("userid_b"),"inner").
       selectExpr("userid","isshow","isclick","price","isreport","exp_cvr","video_act_cvr1",
-        "bigpic_act_cvr","bigpic_expcvr","adclass_act_cvr",s"""'${date}' as dt""",s"""'${hour}' as hr""")
+        "bigpic_act_cvr","adclass_act_cvr",s"""'${date}' as dt""",s"""'${hour}' as hr""")
     tab1.write.mode("overwrite").insertInto("dl_cpc.bigpic_adclass_ls_actcvr_userid")
     tab1.show(10,false)
     println(" join tab0 success!")
