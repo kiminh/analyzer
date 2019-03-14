@@ -341,7 +341,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |           dt,hr
          | from
          | (   select userid,exp_cvr,isshow,isclick,isreport,price,exp_cvr,
-         |            bigpic_act_cvr,adclass_act_cvr,video_act_cvr1
+         |            bigpic_act_cvr,adclass_act_cvr,video_act_cvr1,dt,hr
          |    from   dl_cpc.bigpic_adclass_ls_actcvr_userid
          |    where  ${selectCondition3}
          | ) view
