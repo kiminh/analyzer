@@ -327,24 +327,23 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     //计算短视频cvr
     val taba = spark.sql(
       s"""
-         |select
+         |sselect
          |           userid,expcvr_0per, expcvr_5per, expcvr_10per, expcvr_15per, expcvr_20per, expcvr_25per, expcvr_30per,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_0per and 0.2>=0,1,0))/sum(isclick),6) as traffic_0per_expcvr,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_5per and 0.2>=0.05,1,0))/sum(isclick),6) as traffic_5per_expcvr,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_10per and 0.2>=0.10,1,0))/sum(isclick),6) as traffic_10per_expcvr,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_15per and 0.2>=0.15,1,0))/sum(isclick),6) as traffic_15per_expcvr,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_20per and 0.2>=0.20,1,0))/sum(isclick),6) as traffic_20per_expcvr,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_25per and 0.2>=0.25,1,0))/sum(isclick),6) as traffic_25per_expcvr,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_30per and 0.2>=0.30,1,0))/sum(isclick),6) as traffic_30per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_0per and  0.3>=0,1,0))/sum(isclick),6) as traffic_0per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_5per and 0.3>=0.05,1,0))/sum(isclick),6) as traffic_5per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_10per and 0.3>=0.10,1,0))/sum(isclick),6) as traffic_10per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_15per and 0.3>=0.15,1,0))/sum(isclick),6) as traffic_15per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_20per and 0.3>=0.20,1,0))/sum(isclick),6) as traffic_20per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_25per and 0.3>=0.25,1,0))/sum(isclick),6) as traffic_25per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_30per and 0.3>=0.30,1,0))/sum(isclick),6) as traffic_30per_expcvr,
          |           video_act_cvr1 as video_act_cvr,
          |           bigpic_act_cvr,adclass_act_cvr,
          |           dt,hr
          | from
          | (   select userid,exp_cvr,isshow,isclick,isreport,price,exp_cvr,
-         |            bigpic_act_cvr,adclass_act_cvr,video_act_cvr1,dt,hr
+         |            bigpic_act_cvr,adclass_act_cvr,video_act_cvr1
          |    from   dl_cpc.bigpic_adclass_ls_actcvr_userid
          |    where  ${selectCondition3}
-         |
          | ) view
          | join
          | (
@@ -421,6 +420,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
      val tabfinal2= spark.sql(
        s"""
           |select  userid,expcvr
+          |from    
           |(
           |select  userid,row_number() over (partition by userid_yes order by expcvr desc) expcvr_rank
           |from
