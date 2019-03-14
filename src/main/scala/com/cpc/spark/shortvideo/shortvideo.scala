@@ -134,7 +134,7 @@ group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,usertype,view1.adslotid,isshow,
          '${date}','${hour}'
          |""".stripMargin)
-    val tab0 = spark.read.table("dl_cpc.cpc_union_events_video_mid").filter(s"dt='${date}' and hr='${hour}'")
+    val tab0 = spark.read.table("dl_cpc.cpc_union_events_video_mid").filter(s"dt='${date}' and hr='${hour}'").
       selectExpr(
       "searchid","`timestamp` as timestamp","adtype","userid","ideaid","isclick","isreport","exp_cvr",
       "expcvr_d","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
