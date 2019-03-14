@@ -329,13 +329,13 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
       s"""
          |select
          |           userid,expcvr_0per, expcvr_5per, expcvr_10per, expcvr_15per, expcvr_20per, expcvr_25per, expcvr_30per,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_0per and ${traffic}>=0,1,0))/sum(isclick),6) as traffic_0per_expcvr,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_5per and ${traffic}>=0.05,1,0))/sum(isclick),6) as traffic_5per_expcvr,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_10per and ${traffic}>=0.10,1,0))/sum(isclick),6) as traffic_10per_expcvr,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_15per and ${traffic}>=0.15,1,0))/sum(isclick),6) as traffic_15per_expcvr,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_20per and ${traffic}>=0.20,1,0))/sum(isclick),6) as traffic_20per_expcvr,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_25per and ${traffic}>=0.25,1,0))/sum(isclick),6) as traffic_25per_expcvr,
-         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_30per and ${traffic}>=0.30,1,0))/sum(isclick),6) as traffic_30per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_0per and cast('${traffic}' as double)>=0,1,0))/sum(isclick),6) as traffic_0per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_5per and cast('${traffic}' as double)>=0.05,1,0))/sum(isclick),6) as traffic_5per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_10per and cast('${traffic}' as double)>=0.10,1,0))/sum(isclick),6) as traffic_10per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_15per and cast('${traffic}' as double)>=0.15,1,0))/sum(isclick),6) as traffic_15per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_20per and cast('${traffic}' as double)>=0.20,1,0))/sum(isclick),6) as traffic_20per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_25per and cast('${traffic}' as double)>=0.25,1,0))/sum(isclick),6) as traffic_25per_expcvr,
+         |           round(sum(if(isreport =1 and exp_cvr>=expcvr_30per and cast('${traffic}' as double)>=0.30,1,0))/sum(isclick),6) as traffic_30per_expcvr,
          |           video_act_cvr1 as video_act_cvr,
          |           bigpic_act_cvr,adclass_act_cvr,
          |           dt,hr
@@ -391,8 +391,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |                                    case when traffic_25per_expcvr>=traffic_30per_expcvr then traffic_25per_expcvr
           |                                    else
           |                                         traffic_30per_expcvr
-          |                                    end  ) end) end )end ) end )  end as max_expcvr,
-          |                                    dt,ht
+          |                                    end  ) end) end )end ) end )  end as max_expcvr
           |from   dl_cpc.video_trafficcut_threshold_mid
           |where   ${selectCondition3}
           |)  maxexpcvr
