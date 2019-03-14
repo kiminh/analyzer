@@ -407,7 +407,7 @@ group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |)  today
           |on  yes.userid_yes=today.userid_today
           |
-        """.stripMargin)
+        """.stripMargin).
        selectExpr("userid ","expcvr ")
 
     /*#########################################################################*/
