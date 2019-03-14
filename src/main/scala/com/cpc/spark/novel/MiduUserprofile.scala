@@ -28,7 +28,8 @@ object MiduUserprofile {
         val path = s"/user/cpc/wy/title_adclass.csv"
         val movefiletohdfs = s"hadoop fs -put -f ${filename} ${path}"
           movefiletohdfs !
-        val title= spark.read.format("csv").load(path).toDF("title","adclass","cate_1","cate_2")
+        val title= spark.read.format("csv")
+          .option("delimiter",",").load(path).toDF("title","adclass","cate_1","cate_2")
         title.show(5)
         val sql =
             s"""
