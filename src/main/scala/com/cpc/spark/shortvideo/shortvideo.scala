@@ -216,7 +216,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |    sum(isclick) as click_num,
           |    round(sum(isclick)/sum(isshow),6) as ctr,
           |    round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isshow), 6) as cpm,
-          |    sum(if(b.searchid is null,0,1)) as convert_num,
+          |    sum(if(isreport=1,1,0)) as convert_num,
           |    sum(case when isreport=1 then 1  else 0  end ) cvr_n,
           |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as act_cvr
           |
