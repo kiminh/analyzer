@@ -21,8 +21,8 @@ object OcpcAaExpertiment {
     println("has got index value")
     val preAdInfoDF = getPreAdInfo(date, spark)
     println("has got yesterday's ad info")
-//    getData(date, preAdInfoDF, compIndexValueDF, spark)
-//    println("has got need data")
+    getData(date, preAdInfoDF, compIndexValueDF, spark)
+    println("has got need data")
   }
 
   // 将base表和ml_cvr_feature_v1等表关联起来
