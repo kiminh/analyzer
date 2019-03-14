@@ -231,7 +231,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |and   media_appsid in  ("80000001")
           |and   interaction=2
           |and  adtype=2
-          |group by adclass,dt,hr
+          |group by adclass,'${date}','${hour}'
          """.stripMargin).selectExpr("adclass","show_num","click_num","ctr","cpm","convert_num","cvr_n","act_cvr","dt","hr")
     cvrcomparetab2.show(10,false)
     cvrcomparetab2.write.mode("overwrite").insertInto("dl_cpc.bigpic_adclass_actcvr_mid")
