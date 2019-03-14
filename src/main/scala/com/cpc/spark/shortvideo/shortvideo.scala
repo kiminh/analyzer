@@ -446,7 +446,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     var cnt = 0
     for (record <- tabfinal2.collect()) {
       var userid = record.getAs[String]("userid")
-      var exp_cvr = record.getAs[Int]("expcvr")
+      var exp_cvr = record.getAs[Long]("expcvr")
       println(s"""useridr:$userid, expcvr:${exp_cvr}""")
 
       cnt += 1
