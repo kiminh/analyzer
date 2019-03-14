@@ -53,11 +53,50 @@ object videoPromotion {
          |  and ideaid > 0
          |      	) t1
          |   left join (
-         |   	   select
-         |        searchid,
-         |        label2 as iscvr --是否转化
-         |       from dl_cpc.ml_cvr_feature_v1
-         |      WHERE `date` = '$date'
+         |      select
+         |     tmp.searchid
+         |     1 as iscvr
+         |    from
+         |        (
+         |            select
+         |                final.searchid as searchid,
+         |                final.ideaid   as ideaid,
+         |                case
+         |                    when final.src="elds"    and final.label_type=6            then 1
+         |                    when final.src="feedapp" and final.label_type in (4, 5)    then 1
+         |                    when final.src="yysc"    and final.label_type=12           then 1
+         |                    when final.src="wzcp"    and final.label_type in (1, 2, 3) then 1
+         |                    when final.src="others"  and final.label_type=6            then 1
+         |                    else 0
+         |                end as isreport
+         |            from
+         |            (
+         |                select
+         |                    searchid,
+         |                    media_appsid,
+         |                    uid,
+         |                    planid,
+         |                    unitid,
+         |                    ideaid,
+         |                    adclass,
+         |                    case
+         |                        when (adclass like '134%' or adclass like '107%') then "elds"  -- 二类电商
+         |                        when (adslot_type<>7 and adclass like '100%') then "feedapp"
+         |                        when (adslot_type=7  and adclass like '100%') then "yysc"      --应用商场
+         |                        when adclass in (110110100, 125100100) then "wzcp"             --网赚彩票（110110100：网赚, 125100100：彩票）
+         |                        else "others"
+         |                    end as src,
+         |                    label_type
+         |                from
+         |                    dl_cpc.ml_cvr_feature_v1
+         |                where
+         |                    `date`='$date'
+         |          and hour in ('10', '11', '12', '13', '14')
+         |                    and label2=1
+         |                    and media_appsid in ("80000001", "80000002")
+         |            ) final
+         |        ) tmp
+         |        where tmp.isreport=1
          |      ) t2
          |   on t1.searchid = t2.searchid
        """.stripMargin
