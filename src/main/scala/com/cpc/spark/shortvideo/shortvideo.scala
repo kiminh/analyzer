@@ -354,7 +354,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          | )   threshold
          |on    view.userid=threshold.userid_d
          |group by userid,expcvr_0per, expcvr_5per, expcvr_10per, expcvr_15per, expcvr_20per, expcvr_25per, expcvr_30per,
-         |      video_act_cvr1,bigpic_act_cvr,adclass_act_cvr
+         |      video_act_cvr1,bigpic_act_cvr,adclass_act_cvr,dt,hr
          |""".stripMargin).
       selectExpr("userid","expcvr_0per","expcvr_5per","expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per",
         "traffic_0per_expcvr","traffic_5per_expcvr","traffic_10per_expcvr","traffic_15per_expcvr","traffic_20per_expcvr",
