@@ -371,6 +371,8 @@ object AutoCoinStrategy {
                |where `date`='$date'
              """.stripMargin
 
+        println(sql)
+        
         val ideaP = spark.sql(sql)
 
         ideaP
