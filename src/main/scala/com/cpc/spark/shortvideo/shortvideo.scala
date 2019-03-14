@@ -227,7 +227,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |where  dt='${date}' and hr='${hour}'
           |and  adtype=2
           |group by adclass,dt,hr
-         """.stripMargin).selectExpr("adclass","act_cvr","dt","hr")
+         """.stripMargin).selectExpr("adclass","show_num","click_num","ctr","cpm","convert_num","cvr_n","act_cvr","dt","hr")
     cvrcomparetab2.show(10,false)
     cvrcomparetab2.write.mode("overwrite").insertInto("dl_cpc.bigpic_adclass_actcvr_mid")
 
@@ -361,14 +361,12 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |select  userid userid_yes,expcvr expcvr_yes
           |from    dl_cpc.cpc_appdown_cvr_threshold
           |where   dt='2019-03-13'  and hr='06'
-          |)  yes
-          |left join
-          |(
+          |union all
           |select  userid userid_today,expcvr expcvr_today
           |from  dl_cpc.cpc_appdown_cvr_threshold
           |where  dt='${date}' and hr='${hour}'
-          |)  today
-          |on  yes.userid_yes=today.userid_today
+          |)  view
+          |
 
         """.stripMargin).
        selectExpr("userid ","expcvr ")
