@@ -402,13 +402,13 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |				     else   traffic_30per_expcvr
           |                 end as max_expcvr
           |from   dl_cpc.video_trafficcut_threshold_mid
-          |where   hr='21'
+          |where  ${selectCondition3}
           | )  maxexpcvr
           | join
           | (
           |   select   *
           |   from    dl_cpc.video_trafficcut_threshold_mid
-          |              where   hr='21'
+          |   where   ${selectCondition3}
           | )  threshold_mid
           |on  maxexpcvr.userid=threshold_mid.userid
           |
