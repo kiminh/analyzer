@@ -15,13 +15,13 @@ object OcpcAaExpertiment {
     val spark = SparkSession.builder().appName("OcpcAdExpertiment").enableHiveSupport().getOrCreate()
     val dataDF = joinBaseIsCvr(date, spark)
     println("base and ml_cvr_feature_v1 joined success")
-   val baseIndexDF =  convStr2Num(date, dataDF, spark)
+    val baseIndexDF =  convStr2Num(date, dataDF, spark)
     println("str conv to num success")
-    val compIndexValueDF = calculateIndexValue(date, baseIndexDF, spark)
+    calculateIndexValue(date, baseIndexDF, spark)
     println("has got index value")
     val preAdInfoDF = getPreAdInfo(date, spark)
     println("has got yesterday's ad info")
-    getData(date, preAdInfoDF, compIndexValueDF, spark)
+    getData(date, preAdInfoDF, spark)
     println("has got need data")
   }
 
@@ -141,7 +141,7 @@ object OcpcAaExpertiment {
   }
 
   // 计算acp、acb、cpa等指标值
-  def calculateIndexValue(date: String, baseIndexDF: DataFrame, spark: SparkSession): DataFrame ={
+  def calculateIndexValue(date: String, baseIndexDF: DataFrame, spark: SparkSession): Unit ={
     val preDate = getPreDate(date, 1)
     baseIndexDF.createOrReplaceTempView("base_index")
     val sql =
@@ -183,6 +183,11 @@ object OcpcAaExpertiment {
       """.stripMargin
     val compIndexValueDF = spark.sql(sql)
     compIndexValueDF
+      .withColumn("date", lit(preDate))
+      .withColumn("version", lit("qtt_demo"))
+      .repartition(200)
+      .write.mode("overwrite")
+      .insertInto("dl_cpc.ocpc_aa_base_index_value")
   }
 
   // 从filter表中筛选前一天的广告信息
@@ -206,23 +211,10 @@ object OcpcAaExpertiment {
   }
 
   // 获得统计结果
-  def getData(date: String, preAdInfoDF: DataFrame, compIndexValueDF: DataFrame,spark: SparkSession){
+  def getData(date: String, preAdInfoDF: DataFrame, spark: SparkSession){
     val startDate = getPreDate(date, 7)
     val endDate = getPreDate(date, 1)
-
     preAdInfoDF.createOrReplaceTempView("pre_ad_info")
-    compIndexValueDF.createOrReplaceTempView("comprehensive_index_value")
-
-    compIndexValueDF.printSchema()
-    // 首先将acp、acb等指标值存到分区表中
-//    compIndexValueDF
-//      .withColumn("date", lit(endDate))
-//      .withColumn("version", lit("qtt_demo"))
-//      .repartition(200)
-//      .write.mode("overwrite")
-//      .insertInto("dl_cpc.ocpc_aa_base_index_value")
-//
-//    println("insert into base index value")
 
     val sql =
       s"""
@@ -277,7 +269,7 @@ object OcpcAaExpertiment {
         |	  kvalue,
         |	  ratio
         |	from
-        |		comprehensive_index_value
+        |		dl_cpc.ocpc_aa_base_index_value
         |	where
         |   `dt` between '$startDate' and '$endDate'
         | and
