@@ -371,8 +371,6 @@ object AutoCoinStrategy {
                |where `date`='$date'
              """.stripMargin
 
-        println(sql)
-        
         val ideaP = spark.sql(sql)
 
         ideaP
@@ -440,7 +438,7 @@ object AutoCoinStrategy {
               val i7th = (sorted.length * 0.7).toInt
               val i8th = (sorted.length * 0.8).toInt
               val i9th = (sorted.length * 0.9).toInt
-              (sorted(index), sorted(0), sorted(sorted.length - 1), sorted.length,
+              (index, sorted(0), sorted(sorted.length - 1), sorted.length,
                 sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
           })
     }
