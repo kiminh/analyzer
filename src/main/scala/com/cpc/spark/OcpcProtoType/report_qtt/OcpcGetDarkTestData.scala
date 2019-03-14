@@ -144,6 +144,7 @@ object OcpcGetDarkTestData {
         |    unitid,
         |    userid,
         |    (case when is_ocpc = 1 then "ocpc" else "cpc" end) as ab_group,
+        |    conversion_goal,
         |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(isclick), 4) as acp,
         |    round(sum(case when isclick = 1 then price else 0 end) * 0.1 / sum(isshow), 4) as cpm,
         |    avg(cpa_given) * 0.01 as cpagiven,
@@ -168,7 +169,8 @@ object OcpcGetDarkTestData {
         |group by
         |    unitid,
         |    userid,
-        |    (case when is_ocpc = 1 then "ocpc" else "cpc" end)
+        |    (case when is_ocpc = 1 then "ocpc" else "cpc" end),
+        |    conversion_goal
       """.stripMargin
     val data = spark.sql(sql)
     data
@@ -189,6 +191,8 @@ object OcpcGetDarkTestData {
         |	hour
         |from
         |	temp_view
+        |where
+        | is_ocpc = 1
         |group by
         |	unitid,
         |	hour

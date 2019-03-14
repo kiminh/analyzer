@@ -108,6 +108,11 @@ object OcpcAaExpertiment {
     dataDF
   }
 
+  // 从base表中获得is_hidden等指标
+  def getIsHiddenEtcIndex(date: String, spark: SparkSession): Unit ={
+
+  }
+
   // 将ocpc_log_dict中的字符转化成数字
   def convStr2Num(date: String, dataDF: DataFrame, spark: SparkSession): DataFrame ={
     val preDate = getPreDate(date, 1)
