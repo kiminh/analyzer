@@ -375,6 +375,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |         when traffic_30per_expcvr=max_expcvr then expcvr_threshold30per
           |         end  max_expcvr,
           |         '${date}' as dt,'${hour}' as hr
+          | from
           |(
           |select    userid userid2,
           |case when  traffic_0per_expcvr>=traffic_5per_expcvr then traffic_0per_expcvr
