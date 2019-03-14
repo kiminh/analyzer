@@ -62,11 +62,11 @@ object shortvideo {
     //  生成中间表 appdownload_mid
      spark.sql(
       s"""
-         |insert overwrite table dl_cpc.cpc_unionevents_appdownload_mid  partition (dt,hr)
-         |select   searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori as  exp_cvr,
-         |         exp_cvr expcvr_d,cvr_rank,src,
-         |          label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,
-         |          usertype,view1.adslotid,isshow,'${date}' as dt,'${hour}' as hr
+         |insert overwrite table dl_cpc.cpc_union_events_video_mid  partition (dt,hr)
+select   searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori as  exp_cvr,
+         exp_cvr expcvr_d,cvr_rank,src,
+          label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,
+          usertype,view1.adslotid,isshow,'${date}' as dt,'${hour}' as hr
 from
 (
   select     day,hour,searchid,`timestamp`,isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid,adslot_id as adslotid,
@@ -120,7 +120,7 @@ left JOIN
           from
               dl_cpc.ml_cvr_feature_v1
           where
-              ${selectCondition2}
+             ${selectCondition2}
               and label2=1
              and media_appsid in ("80000001")
             ) final
@@ -132,15 +132,15 @@ and   a.`date`=view1.day
 and   a.hour2 =view1.hour
 group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,exp_cvr ,cvr_rank,src,
          label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,usertype,view1.adslotid,isshow,
-         '${date}'.'${hour}'
+         '${date}','${hour}'
          |""".stripMargin)
-    val tab0 = spark.read.table("dl_cpc.cpc_unionevents_appdownload_mid").filter(s"dt='${date}' and hr='${hour}'")
+    val tab0 = spark.read.table("dl_cpc.cpc_union_events_video_mid").filter(s"dt='${date}' and hr='${hour}'")
       selectExpr(
       "searchid","`timestamp` as timestamp","adtype","userid","ideaid","isclick","isreport","exp_cvr",
       "expcvr_d","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
       "usertype","adslotid","isshow","dt","hr")
-//     tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_unionevents_appdownload_mid ")
-     println("dl_cpc.cpc_unionevents_appdownload_mid2 insert success!")
+//     tab0.repartition(100).write.mode("overwrite").insertInto("dl_cpc.cpc_union_events_video_mid ")
+     println("dl_cpc.cpc_union_events_video_mid insert success!")
       //  动态取threshold,计算每个短视频userid下面所有的exp_cvr，进行排序
      //   RDD方法,获得短视频userid阈值
     val tabb = tab0.rdd.map(row => (row.getAs[String]("userid") ->
@@ -189,11 +189,11 @@ group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |from
          |(
          |    select
-         |        searchid,isshow,exp_cvr/1000000 as exp_cvr,isclick,price,cvr_model_name,uid,userid,adslot_id as adslotid,
+         |        searchid,isshow, exp_cvr,isclick,price,cvr_model_name,uid,userid,adslot_id as adslotid,
          |       case when adtype in (8,10) then 'video' when adtype =2 then 'bigpic' end adtype_cate,
          |       day dt,hour hr
          |    from
-         |        dl_cpc.cpc_basedata_union_events
+         |        ${tab0}
          |    where
          |        ${selectCondition}
          |        and media_appsid in ('80000001')
@@ -470,7 +470,7 @@ group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 
 /*
 中间表 mid
-create table if not exists dl_cpc.cpc_unionevents_appdownload_mid
+create table if not exists dl_cpc.cpc_union_events_video_mid
 (
     searchid string,
     timestamp     int,
