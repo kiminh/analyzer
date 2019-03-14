@@ -174,8 +174,9 @@ object videoPromotion {
 
 
     val userCvr = summary
-      .filter("adtype1 = 'video'")
-      .groupBy("test_tag", "userid" )
+        .join( pivot_table, Seq("userid"), "left")
+      .filter("video > 0")  //排除没有视频的userid
+      .groupBy("test_tag", "userid", "adtype1")
       .agg(( sum("cvrn")/sum("clickn") ).alias("cvr"))
       .groupBy("test_tag", "userid").pivot("adtype1").agg(sum("cvr"))
       .select("test_tag", "userid", "video", "bigimage")
