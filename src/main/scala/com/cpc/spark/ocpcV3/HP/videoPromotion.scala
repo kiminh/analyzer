@@ -67,6 +67,7 @@ object videoPromotion {
     baseData.write.mode("overwrite").saveAsTable("test.baseData_sjq")
     println("========================baseData=======================")
     baseData.show(20)
+    println( "baseData has " + baseData.count() + "logs" )
 
     val pivot_table = baseData
         .select("userid", "adtype1", "ideaid")
@@ -173,11 +174,13 @@ object videoPromotion {
 
 
     val userCvr = summary
-      .groupBy("test_tag", "userid", "adtype1")
+      .filter("adtype1 = 'video'")
+      .groupBy("test_tag", "userid" )
       .agg(( sum("cvrn")/sum("clickn") ).alias("cvr"))
       .groupBy("test_tag", "userid").pivot("adtype1").agg(sum("cvr"))
+      .select("test_tag", "userid", "video", "bigimage")
 
-//    userCvr.write.mode("overwrite").saveAsTable("test.userCvr_sjq")
+    userCvr.write.mode("overwrite").saveAsTable("test.userCvr_sjq")
 
     val userCvr2 = userCvr
       .join( userAdclassCvr, Seq("userid"), "left" )
@@ -185,13 +188,12 @@ object videoPromotion {
       .select("test_tag", "userid","adclass", "video", "bigimage","bigimage2")
       .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)) )
 
-
-    userCvr2.show()
+    userCvr2.write.mode("overwrite").saveAsTable("test.userCvr2_sjq")
 
     val result2 = userCvr2
       .groupBy("test_tag")
       .agg(
-        count("userid").alias("usern"),
+        countDistinct("userid").alias("usern"),
         sum("flag").alias("video_outstand_usern")
       ).withColumn("account", col("video_outstand_usern")/col("usern"))
 
