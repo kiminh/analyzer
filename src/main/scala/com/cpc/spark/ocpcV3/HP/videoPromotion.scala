@@ -54,7 +54,7 @@ object videoPromotion {
          |      	) t1
          |   left join (
          |      select
-         |     tmp.searchid
+         |     tmp.searchid,
          |     1 as iscvr
          |    from
          |        (
