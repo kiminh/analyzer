@@ -113,13 +113,14 @@ object OcpcLightBulbV2{
 
     for (record <- data.collect()) {
       val identifier = record.getAs[Int]("unitid").toString
-      var value = record.getAs[Double]("cpa")
+      val valueDouble = record.getAs[Double]("cpa")
       var key = "new_algorithm_unit_ocpc_" + identifier
-      if (value >= 0) {
-        if  (value == 0) {
-          value = 0
+      if (valueDouble >= 0) {
+        var valueString = valueDouble.toString
+        if (valueString == "0.0") {
+          valueString = "0"
         }
-        println(s"key:$key, value:$value")
+        println(s"key:$key, value:$valueString")
       }
     }
 
