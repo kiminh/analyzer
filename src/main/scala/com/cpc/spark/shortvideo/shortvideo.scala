@@ -287,9 +287,12 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_20per and ${traffic}<=0.20,1,0))/sum(isclick),6) as traffic_20per_expcvr,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_25per and ${traffic}<=0.25,1,0))/sum(isclick),6) as traffic_25per_expcvr,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_30per and ${traffic}<=0.30,1,0))/sum(isclick),6) as traffic_30per_expcvr,
+         |           video_act_cvr1 as video_act_cvr,
+         |           bigpic_act_cvr,adclass_act_cvr
          |           '${date}' as dt,'${hour}' as hr
          | from
-         | (   select userid,exp_cvr,cvr_rank,isshow,isclick,isreport,searchid,bigpic_expcvr
+         | (   select userid,exp_cvr,isshow,isclick,isreport,searchid,price,
+         |            bigpic_act_cvr,adclass_act_cvr,video_act_cvr1
          |    from   dl_cpc.bigpic_adclass_ls_actcvr_userid
          |    where  ${selectCondition3}
          |
@@ -304,7 +307,8 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |
          |""".stripMargin).
       selectExpr("userid","expcvr_0per","expcvr_5per","expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per",
-        "traffic_0per_expcvr","traffic_5per_expcvr","traffic_10per_expcvr","traffic_15per_expcvr","traffic_20per_expcvr","traffic_25per_expcvr","traffic_30per_expcvr"
+        "traffic_0per_expcvr","traffic_5per_expcvr","traffic_10per_expcvr","traffic_15per_expcvr","traffic_20per_expcvr",
+        "traffic_25per_expcvr","traffic_30per_expcvr","video_act_cvr","bigpic_act_cvr","adclass_act_cvr"
         ,"dt","hr").distinct()
       taba.show(10,false)
       taba.write.mode("overwrite").insertInto("dl_cpc.video_trafficcut_threshold_mid")
@@ -512,7 +516,10 @@ create table if not exists dl_cpc.video_trafficcut_threshold_mid
    traffic_15per_expcvr    double,
    traffic_20per_expcvr    double,
    traffic_25per_expcvr    double,
-   traffic_30per_expcvr    double
+   traffic_30per_expcvr    double,
+   video_act_cvr           double,
+   bigpic_act_cvr          double,
+   adclass_act_cvr         double
 
 )
 partitioned by (dt string, hr string)
