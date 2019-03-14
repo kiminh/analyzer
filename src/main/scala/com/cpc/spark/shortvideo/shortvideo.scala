@@ -1,13 +1,10 @@
 package com.cpc.spark.shortvideo
-
 import java.io.FileOutputStream
-
 import com.google.protobuf.struct.Struct
 import shortvideo._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions
 import org.apache.spark.sql.types.StructField
-//import shortvideothreshold.Shortvideothreshold.ShortVideoThreshold
 import shortvideothreshold.shortvideothreshold.{ShortVideoThreshold,ThresholdShortVideo}
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -164,30 +161,29 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
       toDF("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
     println("spark 7 threshold tab success!")
     //计算大图和短视频实际cvr
-    val sql4=
+    val  cvrcomparetab = spark.sql(
       s"""
-         |select
-         |    userid,case when adtype in (8,10) then 'video' when adtype =2 then 'bigpic' end adtype_cate,adclass,
-         |    sum(isshow) as show_num,
-         |    sum(isclick) as click_num,
-         |    round(sum(isclick)/sum(isshow),6) as ctr,
-         |    round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isshow), 6) as cpm,
-         |    sum(case when isreport=1 then 1  else 0 end ) cvr_n,
-         |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as cvr,
-         |    round(sum(exp_cvr)/sum(isshow),6) as exp_cvr,
-         |    dt,hr
-         |from
-         |${tab0}
-         |group by userid,case when adtype in (8,10) then 'video' when adtype =2 then 'bigpic' end ,adclass,dt,hr
-       """.stripMargin
-    val  cvrcomparetab = spark.sql(sql4).selectExpr("userid","adtype_cate ","adclass","show_num","click_num",
+           |select
+           |    userid,case when adtype in (8,10) then 'video' when adtype =2 then 'bigpic' end adtype_cate,adclass,
+           |    sum(isshow) as show_num,
+           |    sum(isclick) as click_num,
+           |    round(sum(isclick)/sum(isshow),6) as ctr,
+           |    round(sum(case WHEN isclick = 1 then price else 0 end)*10/sum(isshow), 6) as cpm,
+           |    sum(case when isreport=1 then 1  else 0 end ) cvr_n,
+           |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as cvr,
+           |    round(sum(exp_cvr)/sum(isshow),6) as exp_cvr,
+           |    dt,hr
+           |from   dl_cpc.cpc_union_events_video_mid
+           |where  dt='${date}' and hr='${hour}'
+           |group by userid,case when adtype in (8,10) then 'video' when adtype =2 then 'bigpic' end ,adclass,dt,hr
+       """.stripMargin).selectExpr("userid","adtype_cate","adclass","show_num","click_num",
     "ctr","cpm","cvr_n","cvr","exp_cvr","dt","hr")
     cvrcomparetab.repartition(100).write.mode("overwrite").
       insertInto("dl_cpc.cpc_bigpicvideo_cvr")
     println("compare video bigpic act cvr midtab  success")
 
     /*######增加该userid没有大图，用所在行业实际cvr来衡量的条件##################################*/
-     val sql3=
+    val  cvrcomparetab2 = spark.sql(
        s"""
           |select   adclass,
           |    sum(isshow) as show_num,
@@ -198,18 +194,13 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |    sum(case when isreport=1 then 1  else 0  end ) cvr_n,
           |    round(sum(if(isreport=1,1,0))/sum(isclick),6) as act_cvr
           |    dt,hr
-          |from    ${tab0}
-          |where  ${selectCondition3}
+          |from    dl_cpc.cpc_union_events_video_mid
+          |where  dt='${date}' and hr='${hour}'
           |and  adtype=2
           |group by adclass
-          |)
-          |
-          |
-        """.stripMargin
+         """.stripMargin).selectExpr("adclass","act_cvr")
 
-    val  cvrcomparetab2 = spark.sql(sql3).selectExpr("adclass","act_cvr")
-
-    val sql5=
+    val bigpiccvr=spark.sql(
       s"""
          |select video.userid,video.video_act_cvr1,bigpic.bigpic_act_cvr,bigpic.bigpic_expcvr,
          |       adclass.adclass_act_cvr
@@ -235,9 +226,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |) adclass
          |on  adclass.adclass=video.adclass
          |where  ( video_act_cvr1<bigpic_act_cvr or video_act_cvr1<adclass_act_cvr )
-      """.stripMargin
-
-    val bigpiccvr=spark.sql(sql5).selectExpr("userid as userid_b","bigpic_act_cvr","video_act_cvr1","adclass_act_cvr")
+      """.stripMargin).selectExpr("userid as userid_b","bigpic_act_cvr","video_act_cvr1","adclass_act_cvr")
     println(" video_act_cvr1<bigpic_act_cvr  or video_act_cvr1<adclass_act_cvr  userid tab success!")
 
     //过滤大图cvr<短视频cvr的userid,待计算剩下的userid 的cvr
@@ -305,16 +294,16 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |                                    else
           |                                         traffic_30per_expcvr
           |                                    end  )))))  as max_expcvr
-          |from   ${taba}
+          |from   dl_cpc.video_trafficcut_threshold_mid
           |where   ${selectCondition3}
           |)  maxexpcvr
           |join
           |(
           |   select   *
-          |   from    ${taba}
+          |   from    dl_cpc.video_trafficcut_threshold_mid
               where   ${selectCondition3}
           |)  threshold_mid
-          |on  maxexpcvr.userid2=threshold_mid.useid
+          |on  maxexpcvr.userid2=threshold_mid.userid
           |
         """.stripMargin
      val tabfinal=spark.sql(sqlfinal).selectExpr("userid","max_expcvr as expcvr",s"${date} as dt",s"${hour} as hr")
