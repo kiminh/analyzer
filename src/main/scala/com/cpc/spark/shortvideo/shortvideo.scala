@@ -197,7 +197,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |from    dl_cpc.cpc_union_events_video_mid
           |where  dt='${date}' and hr='${hour}'
           |and  adtype=2
-          |group by adclass
+          |group by adclass,dt,hr
          """.stripMargin).selectExpr("adclass","act_cvr")
 
     val bigpiccvr=spark.sql(
@@ -426,7 +426,7 @@ partitioned by (dt string,hr string)
 row format delimited fields terminated by '\t' lines terminated by '\n';
 
 --大图和短视频的实际cvr table
-create table if not exists test.cpc_bigpicvideo_cvr
+create table if not exists dl_cpc.cpc_bigpicvideo_cvr
 (
    userid    string,
    adtype_cate    string,   --区分是2-大图的，还是8，10-短视频的
