@@ -37,9 +37,6 @@ object shortvideo {
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    val yesday=calendar.add(Calendar.DATE,-1)
-    val yesdatetime=dateConverter.format(yesday)
-    val yesdate=yesdatetime.split(" ")(0)
     calendar.add(Calendar.HOUR, -72)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
@@ -394,19 +391,31 @@ group by searchid,`timestamp`,adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
      tabfinal.write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
      println("dl_cpc.cpc_appdown_cvr_threshold  insert success!")
 
-     val comtabfinal= spark.read.table("dl_cpc.dl_cpc.cpc_appdown_cvr_threshold").filter(s"""dt='${yesdate}'""").
-       selectExpr("userid as userid_yes","expcvr expcvr_yes")
-    val tabf= comtabfinal.join(tabfinal, comtabfinal("userid_yes") === tabfinal("userid"), "left").
-      selectExpr("userid","case when expcvr<=expcvr_yes then expcvr else expcvr_yes end as expcvr")
+     val tabfinal2= spark.sql(
+       s"""
+          |select  userid_yes userid,case when expcvr>expcvr_yes then expcvr else expcvr_yes end expcvr
+          |from
+          |(
+          |select  userid userid_yes,expcvr expcvr_yes
+          |from    dl_cpc.cpc_appdown_cvr_threshold
+          |where   dt=date_sub('${date}',-1)  and hr='${hour}'
+          |)  yes
+          |(
+          |select  userid userid_today,expcvr expcvr_today
+          |from  dl_cpc.cpc_appdown_cvr_threshold
+          |where  dt='${date}' and hr='${hour}'
+          |)  today
+          |on  yes.userid_yes=today.userid_today
+          |
+        """.stripMargin)
+       selectExpr("userid ","expcvr ")
 
-
-    val tabfinal2=tabfinal.selectExpr("userid","expcvr")
     /*#########################################################################*/
     //   pb写法2
 
     val list = new scala.collection.mutable.ListBuffer[ShortVideoThreshold]()
     var cnt = 0
-    for (record <- tabf.collect()) {
+    for (record <- tabfinal2.collect()) {
       var userid = record.getAs[String]("userid")
       var exp_cvr = record.getAs[Int]("expcvr")
       println(s"""useridr:$userid, expcvr:${exp_cvr}""")
