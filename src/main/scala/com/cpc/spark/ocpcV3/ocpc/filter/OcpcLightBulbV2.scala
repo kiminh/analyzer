@@ -48,21 +48,21 @@ object OcpcLightBulbV2{
     // 按照conversion_goal来抽取推荐cpa
     val cpaSuggest = getCPAsuggest(completeData, conversionGoal, date, hour, spark)
 //    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable("test.ocpc_qtt_light_control_20190305new")
-    cpaSuggest
-      .selectExpr("cast(unitid as string) unitid", "cast(conversion_goal as int) conversion_goal", "cpa")
-      .withColumn("date", lit(date))
-      .withColumn("version", lit("qtt_demo"))
-      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
-
-    // 清除redis数据
-    println(s"############## cleaning redis database ##########################")
-    cleanRedis(tableName, date, hour, spark)
-
-    // 存储redis数据
-    saveDataToRedis(date, hour, spark)
-    println(s"############## saving redis database ##########################")
-    // 存储结果表
-    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable(tableName)
+//    cpaSuggest
+//      .selectExpr("cast(unitid as string) unitid", "cast(conversion_goal as int) conversion_goal", "cpa")
+//      .withColumn("date", lit(date))
+//      .withColumn("version", lit("qtt_demo"))
+//      .repartition(5).write.mode("overwrite").insertInto("dl_cpc.ocpc_qtt_light_control_v2")
+//
+//    // 清除redis数据
+//    println(s"############## cleaning redis database ##########################")
+//    cleanRedis(tableName, date, hour, spark)
+//
+//    // 存储redis数据
+//    saveDataToRedis(date, hour, spark)
+//    println(s"############## saving redis database ##########################")
+//    // 存储结果表
+//    cpaSuggest.repartition(5).write.mode("overwrite").saveAsTable(tableName)
   }
 
   def cleanRedis(tableName: String, date: String, hour: String, spark: SparkSession) = {
@@ -202,7 +202,10 @@ object OcpcLightBulbV2{
       .withColumn("conversion_goal", lit(3))
       .select("unitid", "conversion_goal", "cpa")
 
-    val resultDF = data1.union(data2).union(data3)
+    val resultDF = data1
+      .union(data2)
+      .union(data3)
+      .filter(s"conversion_goal != 2")
 
     resultDF.show(10)
     resultDF.write.mode("overwrite").saveAsTable("test.ocpc_light_new_data20190304a")
