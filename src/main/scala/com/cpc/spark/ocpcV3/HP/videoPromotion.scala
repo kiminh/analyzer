@@ -114,6 +114,7 @@ object videoPromotion {
     userAdclass.show(10)
 
     val adclassCvr = summary
+        .filter("adtype1 = 'bigimage'")
       .groupBy("adclass")
       .agg((sum("cvrn")/sum("clickn") ).alias("cvr"))
       .select("adclass", "cvr")
@@ -122,11 +123,14 @@ object videoPromotion {
       .join( adclassCvr, Seq("adclass"), "inner" )
       .select("userid", "adclass", "cvr" )
 
-    val uidn_ab = baseData.groupBy("test_tag")
+    val uidn_ab = baseData
+        .filter("adtype1 = 'video'")
+      .groupBy("test_tag")
       .agg(countDistinct("uid").alias("uidn"))
       .select("test_tag", "uidn")
 
     val result = summary
+        .filter("adtype1 = 'video'")
       .groupBy("test_tag")
       .agg(
           sum("shown").alias("show_n"),
@@ -157,6 +161,8 @@ object videoPromotion {
       .withColumn("bigimage2", when(col("bigimage").isNull, col("cvr")).otherwise(col("bigimage")))
       .select("test_tag", "userid", "video", "bigimage2")
       .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)) )
+
+    userCvr2.show()
 
     val result2 = userCvr2
       .groupBy("test_tag")
