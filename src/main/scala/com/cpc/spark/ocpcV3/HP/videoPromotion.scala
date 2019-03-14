@@ -45,7 +45,7 @@ object videoPromotion {
          |  and adsrc = 1
          |  and userid >0
          |  and isshow = 1
-         |  --and antispam = 0
+         |  and antispam = 0
          |  and (charge_type is NULL or charge_type = 1)
          |  and interaction=2 --下载
          |  and uid not like "%.%"
@@ -64,6 +64,7 @@ object videoPromotion {
        """.stripMargin
 
     val baseData = spark.sql(sql1)
+    baseData.persist()
     println("========================baseData=======================")
     baseData.show(20)
 
@@ -159,8 +160,9 @@ object videoPromotion {
     val userCvr2 = userCvr
       .join( userAdclassCvr, Seq("userid"), "left" )
       .withColumn("bigimage2", when(col("bigimage").isNull, col("cvr")).otherwise(col("bigimage")))
-      .select("test_tag", "userid", "video", "bigimage2")
+      .select("test_tag", "userid", "video", "bigimage","bigimage2")
       .withColumn("flag", when(col("video") > col("bigimage2"), lit(1)).otherwise(lit(0)) )
+
 
     userCvr2.show()
 
