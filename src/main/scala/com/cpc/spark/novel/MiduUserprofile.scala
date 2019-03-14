@@ -2,6 +2,7 @@ package com.cpc.spark.novel
 
 import com.alibaba.fastjson.JSON
 import com.cpc.spark.streaming.tools.Gzip.decompress
+import sys.process._
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
@@ -23,7 +24,11 @@ object MiduUserprofile {
           .enableHiveSupport()
           .getOrCreate()
 
-        val title= spark.read.csv("/home/cpc/wy/title_adclass.csv").toDF("title","adclass","cate_1","cate_2")
+        val filename = "/home/cpc/wy/title_adclass.csv"
+        val path = s"/user/cpc/wy/title_adclass.csv"
+        val movefiletohdfs = s"hadoop fs -put -f ${filename} ${path}"
+          movefiletohdfs !
+        val title= spark.read.csv(path).toDF("title","adclass","cate_1","cate_2")
         title.show(5)
         val sql =
             s"""
