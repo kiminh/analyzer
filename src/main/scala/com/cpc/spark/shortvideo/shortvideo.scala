@@ -288,7 +288,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_25per and ${traffic}<=0.25,1,0))/sum(isclick),6) as traffic_25per_expcvr,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_30per and ${traffic}<=0.30,1,0))/sum(isclick),6) as traffic_30per_expcvr,
          |           video_act_cvr1 as video_act_cvr,
-         |           bigpic_act_cvr,adclass_act_cvr
+         |           bigpic_act_cvr,adclass_act_cvr,
          |           '${date}' as dt,'${hour}' as hr
          | from
          | (   select userid,exp_cvr,isshow,isclick,isreport,searchid,price,
