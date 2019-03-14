@@ -225,7 +225,7 @@ object OcpcAaExpertiment {
     val sql =
       s"""
         |select
-        |	b.`date` as dt,
+        |	b.dt,
         | b.unitid,
         | b.userid,
         | a.conversion_goal,
@@ -252,7 +252,7 @@ object OcpcAaExpertiment {
         |	pre_ad_info a
         |left join
         |	(select
-        |		`date`,
+        |		`dt`,
         |	  unitid,
         |	  userid,
         |	  cpagiven,
@@ -277,11 +277,9 @@ object OcpcAaExpertiment {
         |	from
         |		comprehensive_index_value
         |	where
-        |   `date` between '$startDate' and '$endDate') as b
+        |   `dt` between '$startDate' and '$endDate') as b
         |on
         |	a.unitid = b.unitid
-        |where
-        | a.`date` = '$endDate'
       """.stripMargin
     val data = spark.sql(sql)
     data
