@@ -348,7 +348,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          | ) view
          | join
          | (
-         |     select  userid_d, expcvr_0per, expcvr_5per, expcvr_10per, expcvr_15per, expcvr_20per, expcvr_25per, expcvr_30per
+         |     select  userid userid_d, expcvr_0per, expcvr_5per, expcvr_10per, expcvr_15per, expcvr_20per, expcvr_25per, expcvr_30per
          |     from    dl_cpc.userid_expcvr_lastpercent
          |     where   ${selectCondition3}
          | )   threshold
