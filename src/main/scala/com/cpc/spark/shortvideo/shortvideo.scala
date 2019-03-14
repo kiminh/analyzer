@@ -276,7 +276,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |and  a.searchid2 =m.searchid
           |group by m.adclass
          """.stripMargin).selectExpr("adclass","show_num","click_num","ctr","cpm","convert_num","cvr_n","act_cvr",
-                s"""${date} as dt""",s"""${hour} as hr""")
+                s"""'${date}' as dt""",s"""'${hour}' as hr""")
     cvrcomparetab2.show(10,false)
     cvrcomparetab2.write.mode("overwrite").insertInto("dl_cpc.bigpic_adclass_actcvr_mid")
 
@@ -338,10 +338,10 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_30per and ${traffic}>=0.30,1,0))/sum(isclick),6) as traffic_30per_expcvr,
          |           video_act_cvr1 as video_act_cvr,
          |           bigpic_act_cvr,adclass_act_cvr,
-         |           '${date}' as dt,'${hour}' as hr
+         |           dt,hr
          | from
          | (   select userid,exp_cvr,isshow,isclick,isreport,price,exp_cvr,
-         |            bigpic_act_cvr,adclass_act_cvr,video_act_cvr1
+         |            bigpic_act_cvr,adclass_act_cvr,video_act_cvr1,dt,hr
          |    from   dl_cpc.bigpic_adclass_ls_actcvr_userid
          |    where  ${selectCondition3}
          |
@@ -374,7 +374,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |         when traffic_25per_expcvr=max_expcvr then expcvr_threshold25per
           |         when traffic_30per_expcvr=max_expcvr then expcvr_threshold30per
           |         end  max_expcvr,
-          |         '${date}' as dt,'${hour}' as hr
+          |          dt, hr
           | from
           |(
           |select    userid userid2,
@@ -391,7 +391,8 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |                                    case when traffic_25per_expcvr>=traffic_30per_expcvr then traffic_25per_expcvr
           |                                    else
           |                                         traffic_30per_expcvr
-          |                                    end  ) end) end )end ) end )  end as max_expcvr
+          |                                    end  ) end) end )end ) end )  end as max_expcvr,
+          |                                    dt,ht
           |from   dl_cpc.video_trafficcut_threshold_mid
           |where   ${selectCondition3}
           |)  maxexpcvr
