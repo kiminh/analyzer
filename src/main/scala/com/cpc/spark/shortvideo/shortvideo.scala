@@ -159,7 +159,9 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
       (userid,rank0per, rank5per, rank10per, rank15per, rank20per, rank25per, rank30per)
     }).map(s => (s._1, s._2, s._3, s._4, s._5, s._6, s._7,s._8)).
       toDF("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
+    tabd.show(false)
     println("spark 7 threshold tab success!")
+
     //计算大图和短视频实际cvr
     val  cvrcomparetab = spark.sql(
       s"""
@@ -178,6 +180,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
            |group by userid,case when adtype in (8,10) then 'video' when adtype =2 then 'bigpic' end ,adclass,dt,hr
        """.stripMargin).selectExpr("userid","adtype_cate","adclass","show_num","click_num",
     "ctr","cpm","cvr_n","cvr","exp_cvr","dt","hr")
+    cvrcomparetab.show(10,false)
     cvrcomparetab.repartition(100).write.mode("overwrite").
       insertInto("dl_cpc.cpc_bigpicvideo_cvr")
     println("compare video bigpic act cvr midtab  success")
@@ -199,7 +202,8 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |and  adtype=2
           |group by adclass,dt,hr
          """.stripMargin).selectExpr("adclass","act_cvr")
-
+    cvrcomparetab2.show(10,false)
+//  合并视频 vs 大图实际cvr vs 行业实际cvr
     val bigpiccvr=spark.sql(
       s"""
          |select video.userid,video.video_act_cvr1,bigpic.bigpic_act_cvr,bigpic.bigpic_expcvr,
@@ -227,9 +231,10 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |on  adclass.adclass=video.adclass
          |where  ( video_act_cvr1<bigpic_act_cvr or video_act_cvr1<adclass_act_cvr )
       """.stripMargin).selectExpr("userid as userid_b","bigpic_act_cvr","video_act_cvr1","adclass_act_cvr")
+    bigpiccvr.show(10,false)
     println(" video_act_cvr1<bigpic_act_cvr  or video_act_cvr1<adclass_act_cvr  userid tab success!")
 
-    //过滤大图cvr<短视频cvr的userid,待计算剩下的userid 的cvr
+    //过滤大图cvr<短视频或行业cvr的userid,待计算剩下的userid 的cvr
     val tab1=tab0.join(bigpiccvr,tab0("userid")===bigpiccvr("userid_b"),"inner").
       selectExpr("userid","isshow","isclick","price","isreport","exp_cvr","video_act_cvr1",
         "bigpic_act_cvr","bigpic_expcvr","adclass_act_cvr","dt","hr")
@@ -246,7 +251,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_20per and ${traffic}<=0.20,1,0))/sum(isclick),6) as traffic_20per_expcvr,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_25per and ${traffic}<=0.25,1,0))/sum(isclick),6) as traffic_25per_expcvr,
          |           round(sum(if(isreport =1 and exp_cvr>=expcvr_30per and ${traffic}<=0.30,1,0))/sum(isclick),6) as traffic_30per_expcvr,
-         |           ${date},${hour}
+         |           '${date}' as dt,'${hour}' as hr
          | from
          | (   select userid,exp_cvr,cvr_rank,isshow,isclick,isreport,searchid,bigpic_expcvr
          |    from   ${tab1}
@@ -264,6 +269,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
       selectExpr("userid","expcvr_0per","expcvr_5per","expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per",
         "traffic_0per_expcvr","traffic_5per_expcvr","traffic_10per_expcvr","traffic_15per_expcvr","traffic_20per_expcvr","traffic_25per_expcvr","traffic_30per_expcvr"
         ,"dt","hr").distinct()
+      taba.show(10,false)
       taba.write.mode("overwrite").insertInto("dl_cpc.video_trafficcut_threshold_mid")
       println("dl_cpc.video_trafficcut_threshold_mid  insert success!")
      val sqlfinal=
@@ -277,7 +283,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |         when traffic_25per_expcvr=max_expcvr then expcvr_threshold25per
           |         when traffic_30per_expcvr=max_expcvr then expcvr_threshold30per
           |         end  max_expcvr,
-          |         ${date},${hour}
+          |         '${date}' as dt,'${hour}' as hr
           |(
           |select    userid userid2,
           |case when  traffic_0per_expcvr>=traffic_5per_expcvr then traffic_0per_expcvr
@@ -306,7 +312,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |on  maxexpcvr.userid2=threshold_mid.userid
           |
         """.stripMargin
-     val tabfinal=spark.sql(sqlfinal).selectExpr("userid","max_expcvr as expcvr",s"${date} as dt",s"${hour} as hr")
+     val tabfinal=spark.sql(sqlfinal).selectExpr("userid","max_expcvr as expcvr","dt","hr")
      tabfinal.write.mode("overwrite").insertInto("dl_cpc.cpc_appdown_cvr_threshold")
      println("dl_cpc.cpc_appdown_cvr_threshold  insert success!")
 
