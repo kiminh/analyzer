@@ -161,7 +161,6 @@ object OcpcSuggestCpa{
          |    media_appsid  in ('80000001', '80000002')
          |AND
          |    isshow=1
-         |AND antispam = 0
          |AND ideaid > 0
          |AND adsrc = 1
          |AND adslot_type in (1,2,3)
@@ -236,7 +235,6 @@ object OcpcSuggestCpa{
          |    media_appsid  in ('80000001', '80000002')
          |AND
          |    isclick=1
-         |AND antispam = 0
          |AND ideaid > 0
          |AND adsrc = 1
          |AND adslot_type in (1,2,3)
@@ -418,7 +416,6 @@ object OcpcSuggestCpa{
          |    media_appsid  in ('80000001', '80000002')
          |AND
          |    isclick=1
-         |AND antispam = 0
          |AND ideaid > 0
          |AND adsrc = 1
          |AND adslot_type in (1,2,3)
