@@ -1,18 +1,21 @@
 package com.cpc.spark.shortvideo
 import java.io.FileOutputStream
+
 import com.google.protobuf.struct.Struct
 import shortvideo._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions
-import org.apache.spark.sql.types.StructField
-import shortvideothreshold.shortvideothreshold.{ShortVideoThreshold,ThresholdShortVideo}
+import org.apache.spark.sql.types.{StructField, StructType}
 import java.text.SimpleDateFormat
 import java.util.Calendar
+
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import com.cpc.spark.ocpcV3.ocpc.OcpcUtils._
 import java.time
 import java.io.PrintWriter
+
 import org.apache.spark.sql.functions
+
 import scala.collection.mutable.ListBuffer
 
 object shortvideo {
@@ -144,22 +147,36 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
         val th5 = sorted((sorted.length * 0.25).toInt)
         val th6 = sorted((sorted.length * 0.3).toInt)
         (th0, th1, th2, th3, th4, th5, th6)
-      }).collect()
+      }).map(x=>{tabrank(
+                  userid=x._1,
+                  rank0per=x._2._1,
+                  rank5per=x._2._2,
+                  rank10per=x._2._3,
+                  rank15per=x._2._4,
+                  rank20per=x._2._5,
+                  rank25per=x._2._6
+                  rank30per=x._2._7
+         )
+     }).toDS()
     println("spark 7 threshold success!")
-    val tabc = spark.createDataFrame(tabb)
-    val tabd = tabc.rdd.map(r => {
-      val userid = r.getAs[String](0)
-      val rank0per = r.getAs[Array[Int]](1)(0)
-      val rank5per = r.getAs[Array[Int]](1)(1)
-      val rank10per = r.getAs[Array[Int]](1)(2)
-      val rank15per = r.getAs[Array[Int]](1)(3)
-      val rank20per = r.getAs[Array[Int]](1)(4)
-      val rank25per = r.getAs[Array[Int]](1)(5)
-      val rank30per = r.getAs[Array[Int]](1)(6)
-      (userid,rank0per, rank5per, rank10per, rank15per, rank20per, rank25per, rank30per)
-    }).map(s => (s._1, s._2, s._3, s._4, s._5, s._6, s._7,s._8)).
-      toDF("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
-    tabd.show(false)
+    val tabd=tabb.selectExpr("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
+    tabd.show(10,false)
+
+//    val tabc = spark.createDataFrame(tabb)
+//    val tabd = tabc.rdd.map(r => {
+//      val userid = r.getAs[String](0)
+//      userid
+//      val rank0per = r.getAs[Int](1)(0).toInt
+//       val rank5per = r.getAs[Int](1)(1)
+//      val rank10per = r.getAs[Int](1)(2)
+//      val rank15per = r.getAs[Int](1)(3)
+//      val rank20per = r.getAs[Array[Int]](1)(4)
+//      val rank25per = r.getAs[Array[Int]](1)(5)
+//      val rank30per = r.getAs[Array[Int]](1)(6)
+//      (userid,rank0per, rank5per, rank10per, rank15per, rank20per, rank25per, rank30per)
+//    }).map(s => (s._1, s._2, s._3, s._4, s._5, s._6, s._7,s._8)).
+//      toDF("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
+//    tabd.show(false)
     println("spark 7 threshold tab success!")
 
     //计算大图和短视频实际cvr
@@ -183,7 +200,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     cvrcomparetab.show(10,false)
     cvrcomparetab.repartition(100).write.mode("overwrite").
       insertInto("dl_cpc.cpc_bigpicvideo_cvr")
-    println("compare video bigpic act cvr midtab  success")
+      println("compare video bigpic act cvr midtab  success")
 
     /*######增加该userid没有大图，用所在行业实际cvr来衡量的条件##################################*/
     val  cvrcomparetab2 = spark.sql(
@@ -363,7 +380,15 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 
 
     /*#################################################################################*/
-
+  case class tabrank(val  userid: String =' ',
+                     val  th0: Int=0,
+                     val  th1: Int=0,
+                     val  th2: Int=0,
+                     val  th3: Int=0,
+                     val  th4: Int=0,
+                     val  th5: Int=0,
+                     val  th6: Int=0
+    )
   }
 
 //  def tranTimeToLong(tm:String) :Long= {
