@@ -130,6 +130,25 @@ object videoPromotion {
       .agg(countDistinct("uid").alias("uidn"))
       .select("test_tag", "uidn")
 
+    val result0 = summary
+      // .filter("adtype1 = 'video'")
+      .groupBy("test_tag", "adtype1", "userid")
+      .agg(
+        sum("shown").alias("show_n"),
+        sum("clickn").alias("click_n"),
+        sum("cvrn").alias("cvr_n"),
+        sum("cost").alias("total_cost")
+      ).join(uidn_ab, Seq("test_tag"), "inner")
+      .withColumn("ctr", col("click_n")*100/col("show_n"))
+      .withColumn("cvr", col("cvr_n")*100/col("click_n"))
+      .withColumn("cpm", col("total_cost")*10/col("show_n"))
+      .withColumn("cpa", col("total_cost")/col("cvr_n")/100)
+      .withColumn("arpu", col("total_cost")/col("uidn")/100)
+      .withColumn("acp", col("total_cost")/col("click_n")/100)
+      .select("test_tag", "adtype1", "userid", "show_n", "ctr", "click_n", "cvr", "cvr_n", "total_cost", "cpm", "cpa", "arpu", "acp")
+
+    result0.write.mode("overwrite").saveAsTable("test.user_ad_type_sjq0")
+
     val result = summary
        // .filter("adtype1 = 'video'")
       .groupBy("test_tag", "adtype1")
