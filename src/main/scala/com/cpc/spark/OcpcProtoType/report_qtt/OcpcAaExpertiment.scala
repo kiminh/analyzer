@@ -113,6 +113,7 @@ object OcpcAaExpertiment {
   def convStr2Num(date: String, dataDF: DataFrame, spark: SparkSession): DataFrame ={
     val preDate = getPreDate(date, 1)
     dataDF.createOrReplaceTempView("temp_index")
+    println(dataDF.schema)
     val sql =
       s"""
         |select
