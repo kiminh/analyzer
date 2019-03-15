@@ -30,7 +30,8 @@ object videoPromotion {
          |  isclick,
          |  charge_type,
          |  price,
-         |  t2.iscvr
+         |  t2.iscvr,
+         |  exp_cvr
          |from
          |  (
          |    select
@@ -47,7 +48,8 @@ object videoPromotion {
          |      isshow,
          |      isclick,
          |      charge_type,
-         |      price
+         |      price,
+         |      exp_cvr
          |    from
          |      dl_cpc.cpc_basedata_union_events
          |    where
