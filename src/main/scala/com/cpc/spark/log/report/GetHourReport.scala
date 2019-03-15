@@ -11,7 +11,10 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
   * Created by Roy on 2017/4/26.
+  * deprecated by fym on 19/03/15.
   */
+
+@deprecated
 object GetHourReport {
 
   var mariadbUrl = ""
