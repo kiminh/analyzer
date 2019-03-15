@@ -64,7 +64,7 @@ object MiduUserprofile {
         .select("imei")
         .filter("imei is not null").distinct()
 
-      val youxinum= data2.count()
+      val youxinum= youxi.count()
       println("youxi is %d".format(youxinum))
 
       val meirong=data2
@@ -72,7 +72,7 @@ object MiduUserprofile {
         .select("imei")
         .filter("imei is not null").distinct()
 
-      val meirongnum= data2.count()
+      val meirongnum= meirong.count()
       println("meirong is %d".format(meirongnum))
 
 //        data2.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
