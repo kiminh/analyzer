@@ -35,8 +35,8 @@ object MiduUserprofile {
         val path = s"/user/cpc/wy/title_adclass.txt"
         val movefiletohdfs = s"hadoop fs -put -f ${filename} ${path}"
           movefiletohdfs !
-        val title= spark.sparkContext.textFile(path,4)
-          .map(x=>x.split("\t")).map(x=> Row(x(0),x(1).toInt,x(2),x(3)))
+        val title= spark.sparkContext.textFile(path)
+          .map(x=>x.split(",")).map(x=> Row(x(0),x(1).toInt,x(2),x(3)))
 
         val schema: StructType = (new StructType)
           .add("title", StringType)
