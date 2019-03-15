@@ -41,11 +41,13 @@ object AutoCoinStrategy {
         //黑五类userid名单
         val unKnownUseridList =
             """
-              |0
+              |1
             """.stripMargin
 
 
-        val unKnownIdeaidList = getUnKnownIdeaidList(spark,unKnownUseridList) //黑五类ideaid名单
+        //val unKnownIdeaidList = getUnKnownIdeaidList(spark,unKnownUseridList) //黑五类ideaid名单
+
+        val unKnownIdeaidList = "0"
 
         val dateHourFilter = getDateHourFilter(date,hour,preDay)    //获取时间过滤条件
 
