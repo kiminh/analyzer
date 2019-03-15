@@ -24,6 +24,7 @@ object videoPromotion {
          |  uid,
          |  adclass,
          |  userid,
+         |  usertype,
          |  adtype1,
          |  ideaid,
          |  isshow,
@@ -40,6 +41,7 @@ object videoPromotion {
          |      uid,
          |      adclass,
          |      userid,
+         |      usertype,
          |      case
          |        when adtype = 2 then 'bigimage'
          |        else 'video'
@@ -61,7 +63,7 @@ object videoPromotion {
          |      and adtype in (2, 8, 10) --and    userid>0
          |      and usertype in (0, 1, 2)
          |      and adslot_type = 1
-         |      --and (charge_type is NULL or charge_type = 1)
+         |      and (charge_type is NULL or charge_type = 1)
          |      and ideaid > 0
          |      and  interaction=2
          |      and userid > 0
