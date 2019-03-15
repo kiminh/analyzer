@@ -49,7 +49,7 @@ object OcpcCollectSuggestData {
 
     data
       .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_auto_dark_test20190315")
+      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_test20190315")
   }
 
   def getOcpcData(date: String, hour: String, spark: SparkSession) = {
@@ -206,6 +206,8 @@ object OcpcCollectSuggestData {
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm")
       .join(ocpcData, Seq("unitid", "industry"), "left_outer")
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm")
+
+    data.write.mode("overwrite").saveAsTable("test.ocpc_check_auot_budget20190315")
 
     data.createOrReplaceTempView("base_data")
     val sqlRequest =
