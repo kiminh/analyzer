@@ -236,9 +236,7 @@ object OcpcCollectSuggestData {
       .join(costData, Seq("unitid"), "inner")
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm")
       .join(ocpcData, Seq("unitid", "industry"), "left_outer")
-      .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm")
-
-    data.write.mode("overwrite").saveAsTable("test.ocpc_check_auot_budget20190315")
+      .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm")
 
     data.createOrReplaceTempView("base_data")
     val sqlRequest =
@@ -253,6 +251,9 @@ object OcpcCollectSuggestData {
          |  exp_tag,
          |  max_budget,
          |  daily_cost,
+         |  cpa_flag,
+         |  cpc_cpm,
+         |  ocpc_cpm,
          |  (case when cpa_flag = 1 and cpc_cpm < ocpc_cpm then 0.1
          |        else 0.05 end) as percent
          |FROM
@@ -264,6 +265,7 @@ object OcpcCollectSuggestData {
       .withColumn("budget_mid", col("daily_cost") * col("percent"))
       .withColumn("budget", when(col("budget_mid") < col("max_budget"), col("budget_mid")).otherwise(col("max_budget")))
     result.show(10)
+    result.write.mode("overwrite").saveAsTable("test.check_data_percent20190315")
 
     val resultDF = result
       .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag")
