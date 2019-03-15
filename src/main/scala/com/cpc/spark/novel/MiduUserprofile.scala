@@ -51,7 +51,7 @@ object MiduUserprofile {
                |select
                |  imei,title
                |from dl_cpc.cpc_midu_toutiao_log
-               |where date='$date' and hour = '$hour'
+               |where date= '$date' and hour = '$hour'
              """.stripMargin
 
         println(sql)
