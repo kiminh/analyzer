@@ -156,13 +156,13 @@ object OcpcPIDwithCPA {
          |  searchid,
          |  unitid,
          |  cast(unitid as string) identifier,
-         |  ext['adclass'].int_value as adclass,
+         |  adclass,
          |  isshow,
          |  isclick,
          |  price,
          |  ocpc_log_dict,
-         |  ocpc_log_dict['kvalue'] as kvalue,
-         |  ocpc_log_dict['cpagiven'] as cpagiven,
+         |  cast(ocpc_log_dict['kvalue'] as double) as kvalue,
+         |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  hour
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
