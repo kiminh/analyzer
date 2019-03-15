@@ -13,6 +13,10 @@ import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 
 object OcpcSuggestCpa{
   def main(args: Array[String]): Unit = {
+    //TODO
+    // 预估cvr分布，计算进入ocpc之后的展现量
+    // 使用cpa_suggest * kvalue * exp_cvr * exp_ctr 作为ecpm计算分布
+
     // 计算日期周期
     val date = args(0).toString
     val hour = args(1).toString
@@ -37,7 +41,7 @@ object OcpcSuggestCpa{
 
 
     // 读取k值数据
-    val kvalue = getPbK(date, hour, spark)
+    val kvalue = getPbKv2(date, hour, spark)
 
     // unitid维度的industry
     val unitidIndustry = getIndustry(date, hour, spark)
@@ -80,14 +84,13 @@ object OcpcSuggestCpa{
     val modelData = checkModelPCOC(date, hour, spark)
 
 
-    val resultDF = cpaData
+    val result1 = cpaData
       .join(aucData, Seq("userid", "conversion_goal"), "left_outer")
       .select("unitid", "userid", "adclass", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc")
       .withColumn("original_conversion", col("conversion_goal"))
       .withColumn("conversion_goal", when(col("conversion_goal") === 3, 1).otherwise(col("conversion_goal")))
-      .join(kvalue, Seq("unitid", "conversion_goal"), "left_outer")
+      .join(kvalue, Seq("unitid", "original_conversion"), "left_outer")
       .withColumn("cal_bid", col("cpa") * col("pcvr") * col("kvalue") / col("jfb"))
-      .withColumn("kvalue", col("kvalue") * 1.0 / 0.9)
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue")
       .withColumn("is_recommend", when(col("auc").isNotNull && col("auc")>0.65, 1).otherwise(0))
       .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
@@ -103,6 +106,13 @@ object OcpcSuggestCpa{
       .join(modelData, Seq("unitid", "userid"), "left_outer")
       .select("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2")
       .na.fill(-1, Seq("pcoc1", "pcoc2"))
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("version", lit(version))
+
+    val alpha = 0.1
+    val result2 = predictOcpcBid(result1, alpha, date, hour, spark)
+    val resultDF = result2
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
@@ -112,6 +122,85 @@ object OcpcSuggestCpa{
     resultDF
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+
+  }
+
+  def predictOcpcBid(suggestData: DataFrame, alpha: Double, date: String, hour: String, spark: SparkSession) = {
+    /*
+    根据slim unionlog抽取数据,并根据cpa，校准cvr，k值计算dynamicbid分布
+     */
+    // 从slim_union_log抽取数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -24)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql3(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  searchid,
+         |  unitid,
+         |  isclick,
+         |  isshow,
+         |  exp_cvr * 1.0 / 1000000 as exp_cvr,
+         |  bid,
+         |  price
+         |FROM
+         |  dl_cpc.slim_union_log
+         |WHERE
+         |  $selectCondition
+         |AND
+         |    media_appsid  in ('80000001', '80000002')
+         |AND
+         |    isshow=1
+         |AND antispam = 0
+         |AND ideaid > 0
+         |AND adsrc = 1
+         |AND adslot_type in (1,2,3)
+       """.stripMargin
+    println(sqlRequest)
+    val rawData = spark.sql(sqlRequest)
+
+    // 数据关联
+    val data = rawData
+      .join(suggestData, Seq("unitid"), "inner")
+      .select("searchid", "unitid", "adclass", "original_conversion", "acb", "cpa", "post_cvr", "kvalue", "isclick", "isshow", "exp_cvr", "bid", "price", "jfb")
+      .withColumn("cali_cvr", col("exp_cvr") * (1 - alpha) + col("post_cvr") * alpha)
+      .withColumn("dynamicbid", col("cali_cvr") * col("cpa") * col("kvalue") * 1.0 / col("jfb"))
+//    data.write.mode("overwrite").saveAsTable("test.ocpc_suggest_cpa_20190221")
+
+    // 统计dynamicbid的数据分布
+    data.createOrReplaceTempView("base_data")
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  unitid,
+         |  original_conversion,
+         |  sum(case when dynamicbid < 1 then 1 else 0 end) * 1.0 / sum(isshow) as zerobid_percent,
+         |  sum(case when dynamicbid >= 1 and dynamicbid < 0.5 * acb then 1 else 0 end) * 1.0 / sum(isshow) as bottom_halfbid_percent,
+         |  sum(case when dynamicbid >= 0.5 * acb and dynamicbid < acb then 1 else 0 end) * 1.0 / sum(isshow) as top_halfbid_percent,
+         |  sum(case when dynamicbid >= acb then 1 else 0 end) * 1.0 / sum(isshow) as largebid_percent
+         |FROM
+         |  base_data
+         |GROUP BY unitid, original_conversion
+       """.stripMargin
+    println(sqlRequest2)
+    val result = spark.sql(sqlRequest2)
+
+    // 数据关联
+    val resultDF = suggestData
+      .join(result, Seq("unitid", "original_conversion"), "left_outer")
+      .selectExpr("unitid", "userid", "adclass", "original_conversion", "conversion_goal", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2", "cast(zerobid_percent as double) zerobid_percent", "cast(bottom_halfbid_percent as double) bottom_halfbid_percent", "cast(top_halfbid_percent as double) top_halfbid_percent", "cast(largebid_percent as double) largebid_percent")
+
+    resultDF
 
   }
 
@@ -304,7 +393,7 @@ object OcpcSuggestCpa{
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
-    calendar.add(Calendar.HOUR, -72)
+    calendar.add(Calendar.HOUR, -24)
     val yesterday = calendar.getTime
     val tmpDate = dateConverter.format(yesterday)
     val tmpDateValue = tmpDate.split(" ")
@@ -574,6 +663,23 @@ object OcpcSuggestCpa{
       .withColumn("conversion_goal", lit(3))
 
     val resultDF = auc1Data.union(auc2Data).union(auc3Data)
+    resultDF
+  }
+
+  def getPbKv2(date: String, hour: String, spark: SparkSession) = {
+    /*
+    基于unitid维度的新版k值计算方法，从dl_cpc.ocpc_prev_pb_once中抽取，由于有多个conversion_goal,需要进行关联
+     */
+
+    // 获取kvalue
+    //    ocpc_prev_pb_once
+    val resultDF = spark
+      .table("dl_cpc.ocpc_prev_pb_once")
+      .where(s"version = 'qtt_demo'")
+      .withColumn("unitid", col("identifier"))
+      .withColumn("original_conversion", col("conversion_goal"))
+      .selectExpr("cast(unitid as int) unitid", "kvalue", "original_conversion")
+
     resultDF
   }
 

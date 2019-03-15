@@ -9,6 +9,7 @@ import com.typesafe.config.ConfigFactory
 import org.apache.commons.math3.fitting.{ PolynomialCurveFitter, WeightedObservedPoints }
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{Dataset, Row, SparkSession, DataFrame}
+import com.cpc.spark.ocpc.OcpcUtils.getTimeRangeSql3
 
 import scala.collection.mutable
 
@@ -41,7 +42,7 @@ object OcpcRegression {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-    //    result.write.mode("overwrite").saveAsTable(tablename)
+//      result.write.mode("overwrite").saveAsTable("test.ocpc_regression_middle_hourly0301")
     result.write.mode("overwrite").insertInto( tablename )
 
     // 结果表
@@ -52,7 +53,7 @@ object OcpcRegression {
       .withColumn("date", lit(date))
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
-    //    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly")
+//        resultDF.write.mode("overwrite").saveAsTable("test.ocpc_k_regression_hourly20190301")
     resultDF.write.mode("overwrite").insertInto("dl_cpc.ocpc_k_regression_hourly")
 
   }
@@ -181,7 +182,7 @@ object OcpcRegression {
     //    rawData.write.mode("overwrite").saveAsTable("test.ocpc_check_regression20190103")
 
     //    val res = rawData.collect()
-
+    val adclassMap = getAdclassMap(baseData, date, hour, spark)
     var resList = new mutable.ListBuffer[(String, Double)]()
     for ( row <- res ){  //每个identifier创建一个线性回归方程
       val identifier = row(0).toString
@@ -190,7 +191,8 @@ object OcpcRegression {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       } )
       val coffList = fitPoints( pointList.toList )
-      val targetK = 0.95
+//      val targetK = 1.1
+      val targetK = getTargetK(adclassMap, identifier)
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
       println("identifier " + identifier, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
@@ -228,6 +230,91 @@ object OcpcRegression {
       res.append(c)
     }
     res.toList
+  }
+
+  def getTargetK(adclassMap: mutable.LinkedHashMap[String, Int], unitid: String) = {
+    val adclass = adclassMap.getOrElse(unitid, 0) / 1000
+    val adclassInt = adclass.toInt
+
+    var result = 1.1
+    if (adclassInt == 110110) {
+      result = 0.7
+    } else {
+      result = 1.1
+    }
+
+    result
+  }
+
+  def getAdclassMap(data: DataFrame, date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    /***
+      * 返回ocpc_union_log_hourly中date日，hour时之前hourCnt小时内的searchid,unitid, identifier,isclick, price, cpagiven,kvalue
+      */
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse( newDate )
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -72)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
+    val selectCondition = getTimeRangeSql2(date1, hour1, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  adclass,
+         |  sum(ctr_cnt) as click
+         |FROM
+         |  dl_cpc.ocpc_ctr_data_hourly
+         |WHERE
+         |  $selectCondition
+         |AND
+         |  media_appsid in ("80000001", "80000002", "80002819")
+         |GROUP BY unitid, adclass
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+    data.createOrReplaceTempView("base_data")
+
+    val sqlRequest1 =
+      s"""
+         |SELECT
+         |  t.unitid,
+         |  t.adclass,
+         |  t.click,
+         |  t.seq
+         |FROM
+         |  (SELECT
+         |      unitid,
+         |      adclass,
+         |      click,
+         |      row_number() over(partition by unitid order by click desc) as seq
+         |   FROM
+         |       base_data) as t
+         |WHERE
+         |  t.seq=1
+       """.stripMargin
+    println(sqlRequest1)
+    val unitidAdclass = spark.sql(sqlRequest1)
+
+    unitidAdclass.show(10)
+//    unitidAdclass.write.mode("overwrite").saveAsTable("test.sjq_unit_adclass_map")
+
+    var adclassMap = mutable.LinkedHashMap[String, Int]()
+    for(row <- unitidAdclass.collect()) {
+      val unitid = row.getAs[Int]("unitid").toString
+      val adclass = row.getAs[Int]("adclass")
+      adclassMap += (unitid -> adclass)
+    }
+    adclassMap
+
+
   }
 
 }

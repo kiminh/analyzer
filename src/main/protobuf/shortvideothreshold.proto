@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package shortvideothreshold;
+
+message ShortVideoThreshold {
+    string userid=1;
+    int64  threshold=2;
+}
+
+message  ThresholdShortVideo  {
+    repeated ShortVideoThreshold  svt = 1;
+}

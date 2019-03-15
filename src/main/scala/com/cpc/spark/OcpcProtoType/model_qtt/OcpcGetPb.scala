@@ -8,6 +8,8 @@ import com.cpc.spark.ocpc.OcpcUtils.{getTimeRangeSql2, getTimeRangeSql3}
 import ocpc.ocpc.{OcpcList, SingleRecord}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+import com.cpc.spark.udfs.Udfs_wj._
+import com.typesafe.config.ConfigFactory
 
 import scala.collection.mutable.ListBuffer
 
@@ -50,7 +52,6 @@ object OcpcGetPb {
 //    dl_cpc.ocpc_pb_result_hourly_v2
 //    dl_cpc.ocpc_prev_pb_once
     val result = getPbByConversion(mediaSelection, conversionGoal, version, date, hour, spark)
-//    result.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202")
     val resultDF = result
         .withColumn("cpagiven", lit(1))
         .select("identifier", "cpagiven", "cvrcnt", "kvalue")
@@ -60,6 +61,7 @@ object OcpcGetPb {
         .withColumn("version", lit(version))
 
     resultDF
+//      .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_pb_result_hourly_20190303")
       .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_pb_result_hourly_v2")
 
   }
@@ -73,15 +75,151 @@ object OcpcGetPb {
      */
     val base = getBaseData(mediaSelection, conversionGoal, date, hour, spark)
     val cvrData = getOcpcCVR(mediaSelection, conversionGoal, date, hour, spark)
-    val kvalue = getKvalue(mediaSelection, conversionGoal, version, date, hour, spark)
+    val kvalue1 = getKvalue(mediaSelection, conversionGoal, version, date, hour, spark)
+    val kvalue = smoothKvalue(kvalue1, mediaSelection, conversionGoal, version, date, hour, spark)
 
     val resultDF = base
       .join(cvrData, Seq("identifier", "conversion_goal"), "left_outer")
       .join(kvalue, Seq("identifier", "conversion_goal"), "left_outer")
       .select("identifier", "conversion_goal", "cvrcnt", "kvalue")
       .na.fill(0, Seq("cvrcnt", "kvalue"))
+      .withColumn("kvalue", when(col("kvalue") > 15.0, 15.0).otherwise(col("kvalue")))
 
 
+    resultDF
+  }
+
+  def udfHourDiffToFactor() = udf((hours: Int) => {
+    /*
+    根据最近两天里面有点击的ocpc投放小时数来计算限制阈值：
+    factor = hours / 12
+    如果hours >= 6, factor = 1
+    factor的作用：限制k值区间
+    (1 - factor) * basek <= k <= (1 + factor) * basek
+     */
+    var result = 0.0
+    if (hours >= 12) {
+      result = 0.0
+    } else {
+      result = hours / 12.0
+    }
+    result
+  })
+
+  def smoothKvalue(kvalue: DataFrame, mediaSelection: String, conversionGoal: Int, version: String, date: String, hour: String, spark: SparkSession) = {
+    /*
+    计算在投ocpc广告每个广告最近两天的ocpc投放小时数，并与ocpc_suggest_cpa_k_once数据表内关联，
+    1. 投放小时数少于24小时且ocpc_suggest_cpa_k_once数据表有数据则按照小时数限制k值变动
+    2. 投放小时数大于24小时或ocpc_k_smooth_v1数据表没有关联到数据，则不做限制
+     */
+    // 抽取ocpc_suggest_cpa_k_once表
+    // todo
+    val baseK = spark
+        .table("dl_cpc.ocpc_suggest_cpa_k_once")
+//        .table("dl_cpc.ocpc_suggest_cpa_k")
+        .where(s"version = '$version' and conversion_goal = $conversionGoal and duration <= 3")
+        .withColumn("base_k", col("kvalue"))
+        .select("identifier", "base_k")
+
+    baseK.show(10)
+
+    // 抽取所有投放ocpc的广告单元当前有点击的ocpc投放小时数
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd")
+    val today = dateConverter.parse(date)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.DATE, -2)
+    val yesterday1 = calendar.getTime
+    val date1 = dateConverter.format(yesterday1)
+    val selectCondition = getTimeRangeSql2(date1, hour, date, hour)
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |    searchid,
+         |    unitid,
+         |    userid,
+         |    isclick,
+         |    date,
+         |    hour
+         |FROM
+         |    dl_cpc.ocpc_filter_unionlog
+         |WHERE
+         |    $selectCondition
+         |and is_ocpc=1
+         |and $mediaSelection
+         |and round(adclass/1000) != 132101  --去掉互动导流
+         |and isclick = 1
+         |and ideaid > 0
+         |and adsrc = 1
+         |and adslot_type in (1,2,3)
+         |and searchid is not null
+         |and cast(ocpc_log_dict['conversiongoal'] as int) = $conversionGoal
+       """.stripMargin
+    println(sqlRequest)
+    val ocpcRecord = spark
+      .sql(sqlRequest)
+      .groupBy("unitid", "date", "hour")
+      .agg(sum(col("isclick")).alias("click"))
+      .withColumn("identifier", col("unitid"))
+      .select("identifier", "click", "date", "hour")
+      .filter(s"click>0")
+
+    ocpcRecord.show(10)
+    ocpcRecord.createOrReplaceTempView("ocpc_record")
+
+    val sqlRequest2 =
+      s"""
+         |SELECT
+         |  identifier,
+         |  count(1) as hour_cnt
+         |FROM
+         |  ocpc_record
+         |GROUP BY identifier
+       """.stripMargin
+    println(sqlRequest2)
+    val ocpcRecordCnt = spark.sql(sqlRequest2).filter(s"hour_cnt < 12")
+
+    // 数据关联
+    val joinData = ocpcRecordCnt
+      .join(baseK, Seq("identifier"), "inner")
+      .select("identifier", "base_k", "hour_cnt")
+      .withColumn("factor", udfHourDiffToFactor()(col("hour_cnt")))
+
+    joinData.createOrReplaceTempView("join_data")
+    val sqlRequest3 =
+      s"""
+         |SELECT
+         |  identifier,
+         |  base_k,
+         |  hour_cnt,
+         |  factor,
+         |  (1 - factor) * base_k as bottom_k,
+         |  (1 + factor) * base_k as top_k,
+         |  1 as flag
+         |FROM
+         |  join_data
+       """.stripMargin
+    println(sqlRequest3)
+    val kRegion = spark.sql(sqlRequest3)
+
+    // 重新计算k值
+    val result = kvalue
+      .withColumn("original_k", col("kvalue"))
+      .join(kRegion, Seq("identifier"), "left_outer")
+      .withColumn("kvalue", when(col("flag") === 1 && col("kvalue") < col("bottom_k"), col("bottom_k")).otherwise(when(col("flag") === 1 && col("kvalue") > col("top_k"), col("top_k")).otherwise(col("kvalue"))))
+
+    result
+        .withColumn("date", lit(date))
+        .withColumn("hour", lit(hour))
+        .withColumn("version", lit(version))
+        .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_check_smooth_k")
+//    result.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301a")
+
+    println("k smooth strat1:")
+    result.show(10)
+
+    val resultDF = result.select("identifier", "kvalue", "conversion_goal")
     resultDF
   }
 
@@ -128,6 +266,7 @@ object OcpcGetPb {
       .withColumn("conversion_goal", lit(conversionGoal))
 
     val resultDF = finalK.select("identifier", "kvalue", "conversion_goal")
+//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_check_smooth_k20190301b")
 
     resultDF
 
@@ -263,9 +402,6 @@ object OcpcGetPb {
       .select("identifier", "kvalue", "pre_cvr", "post_cvr", "click", "conversion", "history_ocpc_flag")
       .na.fill(0, Seq("history_ocpc_flag"))
 
-
-//    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202getcpck")
-
     resultDF
   }
 
@@ -280,8 +416,6 @@ object OcpcGetPb {
       .withColumn("kvalue_middle", when(col("new_k").isNotNull && col("prev_k").isNotNull && col("new_k") > col("prev_k"), col("prev_k") + (col("new_k") - col("prev_k")) * 1.0 / 4.0).otherwise(col("new_k")))
       .withColumn("k_value", when(col("flag") === 0, col("prev_k")).otherwise(col("kvalue_middle")))
       .select("identifier", "regression_k", "pid_k", "new_k", "prev_k", "flag", "kvalue_middle", "k_value")
-
-//    resultDF.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190202calculatekocpc")
     resultDF
   }
 

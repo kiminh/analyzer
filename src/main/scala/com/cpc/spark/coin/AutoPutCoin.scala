@@ -31,6 +31,8 @@ object AutoPutCoin {
 
         val p = args(4).toDouble //0.7
 
+        val p2 = 0.7
+
         val preDay = args(5).toInt //3
 
         val spark = SparkSession.builder()
@@ -52,10 +54,40 @@ object AutoPutCoin {
             val d1 = dd.substring(0, 10)
             val h1 = dd.substring(11, 13)
             val datecond = s"`date` = '$d1' and hour = '$h1'"
-            datehourlist += datecond
+            if (!(d1 == "2019-02-18" || d1 == "2019-02-17" || d1== "2019-02-16"))
+                datehourlist += datecond
         }
 
+        val useridList =
+            """
+              |
+            """.stripMargin
+
+        val getIdeaidSql =
+            s"""
+               |select id as ideaid
+               |from src_cpc.cpc_idea
+               |where user_id in ($useridList)
+             """.stripMargin
+
+        val ideaidList = spark.sql(getIdeaidSql).rdd.map(_.getAs[Int]("ideaid").toString).collect().toList.mkString(",")
+
+        println(ideaidList)
+
         val datehour = datehourlist.toList.mkString(" or ")
+
+        val metricsSql =
+            s"""
+               |select userid
+               |from dl_cpc.cpc_report_coin_userid_metrics
+               |where `date`=date_sub('$date',1)
+               |and auc <= 0.5
+               |and auc >= 0
+             """.stripMargin
+
+        val useridBlacklist = spark.sql(metricsSql).rdd.map(x => x.getAs[Int]("userid").toString).collect().toList.mkString(",")
+
+        println(useridBlacklist)
 
         val ideaBlacklist =
             """
@@ -75,15 +107,20 @@ object AutoPutCoin {
                |and iscvr = 1
                |and media_appsid in ('80000001','80000002')
                |and ideaid > 0
-               |and adslot_type in (1, 2, 3)
+               |and adslot_type in (1, 2)
                |and round(ext['adclass'].int_value/1000000) != 107 and round(ext['adclass'].int_value/1000000) != 134
+               |and ((adslot_type<>7 and ext['adclass'].int_value like '100%') or (ext['adclass'].int_value in (110110100, 125100100)))
                |and ideaid not in ($ideaBlacklist)
+               |and userid not in ($useridBlacklist)
                |and (userid in ($userWhiteList) or ext['usertype'].int_value != 2)
              """.stripMargin
         println(apiUnionLogSql)
         val apiUnionLog = spark.sql(apiUnionLogSql)
         println("apiUnionLog 's count is " + apiUnionLog.rdd.count())
-        val apiUnionNth = getNth(apiUnionLog, p)
+
+        val apiUnionLog1 = apiUnionLog.filter(s"ideaid in ($ideaidList)")
+        val apiUnionLog2 = apiUnionLog.filter(s"ideaid not in ($ideaidList)")
+        val apiUnionNth = getNth(apiUnionLog2, p).union(getNth(apiUnionLog1, p2))
 
         println("apiUnionNth 's count is " + apiUnionNth.count())
         val mlFeatureSql =
@@ -96,9 +133,10 @@ object AutoPutCoin {
                |        where ($datehour)
                |        and label2 = 1
                |        and media_appsid in ('80000001','80000002')
-               |        and adslot_type in (1, 2, 3)
+               |        and adslot_type in (1, 2)
                |        and ideaid > 0
                |        and round(adclass/1000000) != 107 and round(adclass/1000000) != 134
+               |        and ((adslot_type<>7 and adclass like '100%') or (adclass in (110110100, 125100100)))
                |    ) a left outer join
                |    (
                |        select x.id as ideaid ,x.user_id as userid,y.account_type as account_type
@@ -119,13 +157,15 @@ object AutoPutCoin {
                |    on a.ideaid = b.ideaid
                |    where
                |    a.ideaid not in ($ideaBlacklist)
+               |    and b.userid not in ($useridBlacklist)
                |    and (b.userid in ($userWhiteList) or b.account_type is null)
              """.stripMargin
         println(mlFeatureSql)
         val mlFeature = spark.sql(mlFeatureSql)
         println("mlFeature 's count is " + mlFeature.rdd.count())
-
-        val mlFeatureNth = getNth(mlFeature, p)
+        val mlFeature1 = mlFeature.filter(s"ideaid in ($ideaidList)")
+        val mlFeature2 = mlFeature.filter(s"ideaid not in ($ideaidList)")
+        val mlFeatureNth = getNth(mlFeature2, p).union(getNth(mlFeature1, p2))
 
         println("mlFeatureNth 's count is " + mlFeatureNth.count())
 
@@ -228,6 +268,8 @@ object AutoPutCoin {
         spark.stop()
     }
 
+
+
     def getNth(df: DataFrame, p: Double): RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
         df.rdd.map(x => (x.getAs[Int]("ideaid"), x.getAs[Int]("exp_cvr")))
           .combineByKey(x => List(x),
@@ -245,6 +287,43 @@ object AutoPutCoin {
                 sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
               //x(index)
           })
+    }
+
+    def getThreshold(spark:SparkSession,df:DataFrame,date:String,default_p:Double): RDD[(Int, (Int, Int, Int, Int, Int, Int, Int, Int, Int))] = {
+        val sql =
+            s"""
+               |select ideaid,p
+               |from dl_cpc.cpc_auto_coin_idea_threshold
+               |where `date`='$date'
+             """.stripMargin
+
+        val ideaP = spark.sql(sql)
+
+        val r = df.join(ideaP,Seq("ideaid"),"left_outer").select("ideaid","exp_cvr","p")
+          .na
+          .fill(default_p,Seq("p"))
+          .rdd
+          .map(x => (x.getAs[Int]("ideaid"),
+            (List(x.getAs[Int]("exp_cvr")),x.getAs[Double]("p"))))
+          .reduceByKey((x,y) => {
+              val t1 = x._1 ::: y._1
+              val t2 = if (x._2 > y._2) x._2 else y._2
+              (t1,t2)
+          })
+          .mapValues(x => {
+              val cvrlist = x._1
+              val p = x._2
+              val sorted = cvrlist.sorted
+              val index = (sorted.length * p).toInt
+              val i5th = (sorted.length * 0.5).toInt
+              val i6th = (sorted.length * 0.6).toInt
+              val i7th = (sorted.length * 0.7).toInt
+              val i8th = (sorted.length * 0.8).toInt
+              val i9th = (sorted.length * 0.9).toInt
+              (sorted(index), sorted(0), sorted(sorted.length - 1), sorted.length,
+                sorted(i5th), sorted(i6th), sorted(i7th), sorted(i8th), sorted(i9th))
+          })
+        r
     }
 
     case class coin(var ideaid: Int = 0,

@@ -3,6 +3,7 @@ package com.cpc.spark.ocpcV3.ocpcNovel.report
 import com.cpc.spark.tools.OperateMySQL
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types.IntegerType
 
 
 object OcpcHourlyReportV2 {
@@ -81,7 +82,7 @@ object OcpcHourlyReportV2 {
      */
     dataIdea
         .withColumn("identifier", col("unitid"))
-        .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
+        .selectExpr("cast(identifier as string) identifier", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "new_adclass","date", "hour")
         .withColumn("version", lit(version))
 //        .repartition(10).write.mode("overwrite").saveAsTable("test.ocpc_detail_report_hourly_v3")
         .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_detail_report_hourly_v3")
@@ -372,7 +373,8 @@ object OcpcHourlyReportV2 {
       .withColumn("step2_click_percent", col("step2_percent"))
       .withColumn("is_step2", when(col("step2_percent")===1, 1).otherwise(0))
       .withColumn("cpa_ratio", when(col("cvr_cnt").isNull || col("cvr_cnt") === 0, 0.0).otherwise(col("cpa_given") * 1.0 / col("cpa_real")))
-      .withColumn("is_cpa_ok", when(col("cpa_ratio")>=0.64, 1).otherwise(0))
+      .withColumn("is_cpa_ok", when(col("cpa_ratio")>=1, 1).otherwise(0))
+      .withColumn("is_cpa_ok", when(col("new_adclass")===110110 and col("cpa_ratio")<2,0).otherwise(col("is_cpa_ok")))
       .withColumn("impression", col("show_cnt"))
       .withColumn("click", col("ctr_cnt"))
       .withColumn("conversion", col("cvr_cnt"))
@@ -387,9 +389,9 @@ object OcpcHourlyReportV2 {
       .withColumn("cpa_real", when(col("cpa_real").isNull, 9999999.0).otherwise(col("cpa_real")))
       //      .select("user_id", "idea_id", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "date", "hour")
       .join(aucData, Seq("unitid", "userid", "conversion_goal"), "left_outer")
-      .select("unitid", "userid", "conversion_goal", "step2_click_percent", "is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
+      .select("unitid", "userid", "conversion_goal","step2_click_percent", "new_adclass","is_step2", "cpa_given", "cpa_real", "cpa_ratio", "is_cpa_ok", "impression", "click", "conversion", "ctr", "click_cvr", "show_cvr", "cost", "acp", "avg_k", "recent_k", "pre_cvr", "post_cvr", "q_factor", "acb", "auc", "date", "hour")
 
-    resultDF.show(10)
+//    resultDF.write.mode("overwrite").saveAsTable("test.wy00")
 
     resultDF
 
@@ -404,6 +406,7 @@ object OcpcHourlyReportV2 {
          |SELECT
          |  unitid,
          |  userid,
+         |  new_adclass,
          |  conversion_goal,
          |  sum(case when ocpc_step=2 then 1 else 0 end) * 1.0 / count(1) as step2_percent,
          |  sum(case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpa_given,
@@ -420,11 +423,12 @@ object OcpcHourlyReportV2 {
          |  sum(case when isclick=1 and hr='$hour' then kvalue else 0 end) * 1.0 / sum(case when hr='$hour' then isclick else 0 end) as recent_k
          |FROM
          |  raw_data
-         |GROUP BY unitid, userid, conversion_goal
+         |GROUP BY unitid, userid, new_adclass, conversion_goal
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
 
+    resultDF.show(5)
     resultDF
   }
 
@@ -440,6 +444,7 @@ object OcpcHourlyReportV2 {
        |  searchid,
        |  unitid,
        |  userid,
+       |  adclass,
        |  isclick,
        |  isshow,
        |  price,
@@ -494,10 +499,10 @@ object OcpcHourlyReportV2 {
       .join(cvr1Data, Seq("searchid"), "left_outer")
       .join(cvr2Data, Seq("searchid"), "left_outer")
       .join(cvr3Data, Seq("searchid"), "left_outer")
+      .withColumn("new_adclass", col("adclass")/1000)
+      .withColumn("new_adclass", col("new_adclass").cast(IntegerType))
       .withColumn("iscvr", when(col("conversion_goal") === 1, col("iscvr1")).otherwise(when(col("conversion_goal") === 2, col("iscvr2")).otherwise(col("iscvr3"))))
-      .select("searchid", "unitid", "userid", "isclick", "isshow", "price", "exp_cvr", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "hr", "iscvr1", "iscvr2", "iscvr3", "iscvr")
-
-    resultDF.show(10)
+      .select("searchid", "unitid", "userid","new_adclass", "isclick", "isshow", "price", "exp_cvr", "cpagiven", "bid", "kvalue", "conversion_goal", "ocpc_step", "hr", "iscvr1", "iscvr2", "iscvr3", "iscvr")
 
     resultDF
 
