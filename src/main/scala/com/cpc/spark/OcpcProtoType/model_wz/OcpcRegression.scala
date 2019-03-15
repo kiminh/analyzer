@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.model_qtt
+package com.cpc.spark.OcpcProtoType.model_wz
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -138,25 +138,26 @@ object OcpcRegression {
          |  searchid,
          |  unitid,
          |  cast(unitid as string) identifier,
-         |  ext['adclass'].int_value as adclass,
+         |  adclass,
          |  isshow,
          |  isclick,
          |  price,
-         |  ocpc_log,
          |  ocpc_log_dict,
          |  ocpc_log_dict['kvalue'] as kvalue,
          |  ocpc_log_dict['cpagiven'] as cpagiven,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_union_log_hourly
+         |  dl_cpc.ocpc_filter_unionlog
          |WHERE
          |  $selectCondition
          |AND
          |  $mediaSelection
          |AND
-         |  ext_int['is_ocpc'] = 1
+         |  is_ocpc = 1
          |AND
          |  (ocpc_log_dict['cpcBid']=0 or exptags not like "%cpcBid%")
+         |AND
+         |  adclass = 110110100
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
@@ -166,14 +167,7 @@ object OcpcRegression {
 
   def getCvrData(mediaSelection: String, conversionGoal: Int, hourCnt: Int, date: String, hour: String, spark: SparkSession) = {
     // cvr 分区
-    var cvrGoal = ""
-    if (conversionGoal == 1) {
-      cvrGoal = "cvr1"
-    } else if (conversionGoal == 2) {
-      cvrGoal = "cvr2"
-    } else {
-      cvrGoal = "cvr3"
-    }
+    val cvrGoal = "wz"
 
     // 时间分区
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -265,8 +259,7 @@ object OcpcRegression {
         (y(0).toDouble, y(1).toDouble, y(2).toInt)
       })
       val coffList = fitPoints(pointList.toList)
-      // todo
-      val targetK = 0.98
+      val targetK = 0.95
       val k = (targetK - coffList(0)) / coffList(1)
       val realk: Double = k * 5.0 / 100.0
       println("identifier " + identifier, "coff " + coffList, "target k: " + k, "realk: " + realk, "targetK: " + targetK)
