@@ -53,9 +53,19 @@ object videoPromotion {
          |      --and hour in ('11', '12')
          |      and adsrc = 1
          |      and isclick = 1
+         |      and isshow = 1
          |      and media_appsid in ("80000001")
          |      and adtype in (2, 8, 10) --and    userid>0
          |      and usertype in (0, 1, 2)
+         |      and adslot_type = 1
+         |
+         |        and ideaid > 0
+         |        and  interaction=2
+         |        and userid > 0
+         |        and uid not like "%.%"
+         |        and uid not like "%000000%"
+         |        and length(uid) in (14, 15, 36)
+         |
          |  ) t1
          |  left join (
          |    select
