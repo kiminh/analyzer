@@ -524,7 +524,7 @@ object OcpcSampleToRedis {
   def readInnocence(spark: SparkSession) ={
     import spark.implicits._
 
-    val filename = "/user/cpc/wangjun/ocpc_ideaid.txt"
+    val filename = "hdfs://emr-cluster/user/cpc/wangjun/ocpc_ideaid.txt"
     val data = spark.sparkContext.textFile(filename)
 
     val dataRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))

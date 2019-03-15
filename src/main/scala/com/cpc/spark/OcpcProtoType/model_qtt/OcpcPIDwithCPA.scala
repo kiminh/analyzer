@@ -156,23 +156,22 @@ object OcpcPIDwithCPA {
          |  searchid,
          |  unitid,
          |  cast(unitid as string) identifier,
-         |  ext['adclass'].int_value as adclass,
+         |  adclass,
          |  isshow,
          |  isclick,
          |  price,
-         |  ocpc_log,
          |  ocpc_log_dict,
-         |  ocpc_log_dict['kvalue'] as kvalue,
-         |  ocpc_log_dict['cpagiven'] as cpagiven,
+         |  cast(ocpc_log_dict['kvalue'] as double) as kvalue,
+         |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_union_log_hourly
+         |  dl_cpc.ocpc_filter_unionlog
          |WHERE
          |  $selectCondition
          |AND
          |  $mediaSelection
          |AND
-         |  ext_int['is_ocpc'] = 1
+         |  is_ocpc = 1
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)

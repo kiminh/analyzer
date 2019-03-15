@@ -109,6 +109,7 @@ object OcpcSampleToPb {
     // 从实验配置文件读取配置的CPAgiven
     val conf = ConfigFactory.load("ocpc")
     val expDataPath = conf.getString("ocpc_all.ocpc_abtest.cpagiven_path")
+    println(expDataPath)
     val data = spark.read.format("json").json(expDataPath)
 
     val resultDF = data
