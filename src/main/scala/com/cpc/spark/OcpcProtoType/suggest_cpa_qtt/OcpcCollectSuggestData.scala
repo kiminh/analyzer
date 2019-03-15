@@ -167,6 +167,7 @@ object OcpcCollectSuggestData {
          |  (case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr3) as cpa3
          |FROM
          |  base_table
+         |GROUP BY unitid
        """.stripMargin
     println(sqlRequest5)
     val result = spark.sql(sqlRequest5)
