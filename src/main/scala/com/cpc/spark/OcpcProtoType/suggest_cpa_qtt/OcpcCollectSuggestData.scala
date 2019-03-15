@@ -48,8 +48,15 @@ object OcpcCollectSuggestData {
     val data = joinData(cpaData, cpcData, ocpcData, spark)
 
     data
-      .repartition(10)
-      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_test20190315")
+      .repartition(5)
+      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
+
+    data
+      .withColumn("date", lit(date))
+      .withColumn("hour", lit(hour))
+      .withColumn("verion", lit("qtt_demo"))
+      .repartition(5)
+      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
   }
 
   def getOcpcData(date: String, hour: String, spark: SparkSession) = {
@@ -248,6 +255,7 @@ object OcpcCollectSuggestData {
          |  cpa,
          |  kvalue,
          |  conversion_goal,
+         |  industry,
          |  exp_tag,
          |  max_budget,
          |  daily_cost,
@@ -265,7 +273,7 @@ object OcpcCollectSuggestData {
       .withColumn("budget_mid", col("daily_cost") * col("percent"))
       .withColumn("budget", when(col("budget_mid") < col("max_budget"), col("budget_mid")).otherwise(col("max_budget")))
     result.show(10)
-    result.write.mode("overwrite").saveAsTable("test.check_data_percent20190315")
+//    result.write.mode("overwrite").saveAsTable("test.check_data_percent20190315")
 
     val resultDF = result
       .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag")
