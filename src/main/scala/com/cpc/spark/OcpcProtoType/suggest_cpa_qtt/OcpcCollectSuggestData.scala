@@ -43,7 +43,7 @@ object OcpcCollectSuggestData {
     val costData = getCost(date, hour, spark)
 
     // 数据关联，并计算预算
-    val data = joinData(cpaData, costData, 0.2, spark)
+    val data = joinData(cpaData, costData, 0.1, spark)
 
     data
       .repartition(10)
