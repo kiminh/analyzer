@@ -53,7 +53,7 @@ object bscvr_early_warning {
     spark.sql(
       s"""
          |insert overwrite table dl_cpc.cpc_recall_bscvr_early_warning partition (date='$oneday')
-         |select ta.unit_id, ta.user_id, tb.cost, (coalesce(tb.cost,0)-coalesce(ta.cost,0))*1.0/coalesce(ta.cost,1) as percent
+         |select ta.unit_id, ta.user_id, tb.cost, (coalesce(tb.cost,0)-coalesce(ta.cost,0))*1.0/coalesce(ta.cost,1) as percent from
          |(select * from unitid_cost_table where date='$twodays' and unit_id in (select unitid from unitid_table)) ta
          |left join
          |(select * from unitid_cost_table where date='$oneday' and unit_id in (select unitid from unitid_table)) tb
