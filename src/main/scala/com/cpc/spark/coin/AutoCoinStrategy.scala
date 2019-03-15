@@ -41,13 +41,11 @@ object AutoCoinStrategy {
         //黑五类userid名单
         val unKnownUseridList =
             """
-              |1
+              |0
             """.stripMargin
 
 
-        //val unKnownIdeaidList = getUnKnownIdeaidList(spark,unKnownUseridList) //黑五类ideaid名单
-
-        val unKnownIdeaidList = "0"
+        val unKnownIdeaidList = getUnKnownIdeaidList(spark,unKnownUseridList) //黑五类ideaid名单
 
         val dateHourFilter = getDateHourFilter(date,hour,preDay)    //获取时间过滤条件
 
@@ -340,6 +338,7 @@ object AutoCoinStrategy {
                |            select id, account_type
                |            from src_cpc.cpc_user_p
                |            where account_type = 2
+               |            and day > '2019-01-01'
                |            group by id, account_type
                |         ) y
                |         on x.user_id = y.id
