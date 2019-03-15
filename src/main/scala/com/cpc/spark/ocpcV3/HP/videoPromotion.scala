@@ -52,13 +52,13 @@ object videoPromotion {
          |      day = '$date'
          |      --and hour in ('11', '12')
          |      and adsrc = 1
-         |      and isclick = 1
-         |      and isshow = 1
+         |      --and isclick = 1
+         |      --and isshow = 1
          |      and media_appsid in ("80000001")
          |      and adtype in (2, 8, 10) --and    userid>0
          |      and usertype in (0, 1, 2)
          |      and adslot_type = 1
-         |      and (charge_type is NULL or charge_type = 1)
+         |      --and (charge_type is NULL or charge_type = 1)
          |        and ideaid > 0
          |        and  interaction=2
          |        and userid > 0
