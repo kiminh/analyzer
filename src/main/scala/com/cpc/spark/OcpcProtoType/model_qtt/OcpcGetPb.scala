@@ -541,16 +541,11 @@ object OcpcGetPb {
          |SELECT
          |  cast(unitid as string) as identifier
          |FROM
-         |  dl_cpc.ocpc_base_unionlog
+         |  dl_cpc.ocpc_ctr_data_hourly
          |WHERE
          |  $selectCondition
          |AND
          |  $mediaSelection
-         |and isshow = 1
-         |and antispam = 0
-         |and ideaid > 0
-         |and adsrc = 1
-         |and adslot_type in (1,2,3)
        """.stripMargin
 
     println(sqlRequest)
