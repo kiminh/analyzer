@@ -48,7 +48,7 @@ object MiduTouTiaolog {
            |  opt_map["Source"] as source,
            |  opt_map["Title"] as title,
            |  opt_map["imageList"] as imagelist,
-           |  minute,imei,day,hour
+           |  minute,imei,day as date,hour
            |  from tmp
              """.stripMargin
       val data2 = spark.sql(sql2)
