@@ -52,6 +52,7 @@ object videoPromotion {
          |      day = '$date'
          |      --and hour in ('11', '12')
          |      and adsrc = 1
+         |      and isclick = 1
          |      and media_appsid in ("80000001")
          |      and adtype in (2, 8, 10) --and    userid>0
          |      and usertype in (0, 1, 2)
