@@ -3,12 +3,18 @@ package com.cpc.spark.novel
 import com.alibaba.fastjson.JSON
 import com.cpc.spark.streaming.tools.Gzip.decompress
 import sys.process._
-
+import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.SparkSession
+import org.apache.spark._
 import org.apache.spark.sql.functions._
-
+import java.net.URL
+import java.io.File
 import scala.collection.JavaConversions._
 import scala.collection.mutable
+import org.apache.spark.SparkContext
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 
 /**
   * @author WangYao
@@ -23,14 +29,23 @@ object MiduUserprofile {
           .appName(s"midu_userprofile")
           .enableHiveSupport()
           .getOrCreate()
+        import spark.implicits._
 
-        val filename = "/home/cpc/wy/title_adclass.csv"
-        val path = s"/user/cpc/wy/title_adclass.csv"
+        val filename = "/home/cpc/wy/title_adclass.txt"
+        val path = s"/user/cpc/wy/title_adclass.txt"
         val movefiletohdfs = s"hadoop fs -put -f ${filename} ${path}"
           movefiletohdfs !
-        val title= spark.read.format("csv")
-          .option("delimiter",",").load(path).toDF("title","adclass","cate_1","cate_2")
-        title.show(5)
+        val title= spark.sparkContext.textFile(path,4)
+          .map(x=>x.split("\t")).map(x=> Row(x(0),x(1).toInt,x(2),x(3)))
+
+        val schema: StructType = (new StructType)
+          .add("title", StringType)
+          .add("adclass", IntegerType)
+          .add("cate_1", StringType)
+          .add("cate_2", StringType)
+        //根据rdd和schema信息创建DataFrame
+        val titleDF: DataFrame = spark.createDataFrame(title, schema)
+          titleDF.show(5)
         val sql =
             s"""
                |select
@@ -41,7 +56,7 @@ object MiduUserprofile {
 
         println(sql)
       val data2 = spark.sql(sql)
-          .join(title,Seq("title"),"left")
+          .join(titleDF,Seq("title"),"left")
 
       data2.write.mode("overwrite").saveAsTable("test.wy00")
       val youxi=data2
