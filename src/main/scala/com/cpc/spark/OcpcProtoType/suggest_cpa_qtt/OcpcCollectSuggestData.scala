@@ -42,12 +42,21 @@ object OcpcCollectSuggestData {
     // 整理每个广告单元最近24小时的消费
     val costData = getCost(date, hour, spark)
 
+    // 整理每个网赚广告单元最近24小时ocpc消费的成本
+    val historyCPA = getHistoryCPA(date, hour, spark)
+
     // 数据关联，并计算预算
     val data = joinData(cpaData, costData, 0.1, spark)
 
     data
       .repartition(10)
       .write.mode("overwrite").saveAsTable("test.ocpc_auto_dark_test20190315")
+  }
+
+  def getHistoryCPA(date: String, hour: String, spark: SparkSession) = {
+    /*
+    抽取二类电商暗投数据，并计算cpa_ratio
+     */
   }
 
   def joinData(cpaData: DataFrame, costData: DataFrame, percent: Double, session: SparkSession) ={

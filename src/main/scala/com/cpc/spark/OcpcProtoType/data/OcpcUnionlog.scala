@@ -184,7 +184,7 @@ object OcpcUnionlog {
          |    cast(exp_ctr * 1.0 / 1000000 as double) as exp_ctr,
          |    cast(exp_cvr * 1.0 / 1000000 as double) as exp_cvr,
          |    charge_type,
-         |    (case when antispam_score=10000 then 0 else 1 end) as antispam,
+         |    (case when antispam_score<10000 and isclick=1 then 1 else 0 end) as antispam,
          |    usertype,
          |    conversion_goal
          |from dl_cpc.cpc_basedata_union_events
