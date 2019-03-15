@@ -149,7 +149,7 @@ object GetOcpcLogFromUnionLog {
     df = df.withColumn("ocpc_log_dict", udfStringToMap()(col("ocpc_log")))
 
     // regression models
-    val filename = "/user/cpc/wangjun/ocpc_linearregression_k.txt"
+    val filename = "hdfs://emr-cluster/user/cpc/wangjun/ocpc_linearregression_k.txt"
     val data = spark.sparkContext.textFile(filename)
     val rawRDD = data.map(x => (x.split(",")(0).toInt, x.split(",")(1).toInt))
     rawRDD.foreach(println)
