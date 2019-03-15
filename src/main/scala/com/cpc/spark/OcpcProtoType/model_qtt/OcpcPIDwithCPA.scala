@@ -59,13 +59,13 @@ object OcpcPIDwithCPA {
         .withColumn("version", lit(version))
         .withColumn("method", lit("pid"))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
-
-    resultDF
-      .repartition(10)
-      .write
-      .mode("overwrite")
-      .insertInto("dl_cpc.ocpc_k_model_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.ocpc_pid_k_hourly")
+//
+//    resultDF
+//      .repartition(10)
+//      .write
+//      .mode("overwrite")
+//      .insertInto("dl_cpc.ocpc_k_model_hourly")
 
 
   }
@@ -160,19 +160,18 @@ object OcpcPIDwithCPA {
          |  isshow,
          |  isclick,
          |  price,
-         |  ocpc_log,
          |  ocpc_log_dict,
          |  ocpc_log_dict['kvalue'] as kvalue,
          |  ocpc_log_dict['cpagiven'] as cpagiven,
          |  hour
          |FROM
-         |  dl_cpc.ocpc_union_log_hourly
+         |  dl_cpc.ocpc_filter_unionlog
          |WHERE
          |  $selectCondition
          |AND
          |  $mediaSelection
          |AND
-         |  ext_int['is_ocpc'] = 1
+         |  id_ocpc = 1
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
