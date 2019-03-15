@@ -24,7 +24,6 @@ object MiduUserprofile {
     def main(args: Array[String]): Unit = {
 
         val date = args(0)
-        val hour = args(1)
         val spark = SparkSession.builder()
           .appName(s"midu_userprofile")
           .enableHiveSupport()
@@ -59,6 +58,7 @@ object MiduUserprofile {
           .join(titleDF,Seq("title"),"left")
 
       data2.write.mode("overwrite").saveAsTable("test.wy00")
+
       val youxi=data2
         .filter("cate_2='游戏类'")
         .select("imei")
