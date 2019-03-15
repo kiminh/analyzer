@@ -28,6 +28,7 @@ object videoPromotion {
          |  ideaid,
          |  isshow,
          |  isclick,
+         |  charge_type,
          |  price,
          |  t2.iscvr
          |from
@@ -45,12 +46,12 @@ object videoPromotion {
          |      ideaid,
          |      isshow,
          |      isclick,
+         |      charge_type,
          |      price
          |    from
          |      dl_cpc.cpc_basedata_union_events
          |    where
          |      day = '$date'
-         |      --and hour in ('11', '12')
          |      and adsrc = 1
          |      --and isclick = 1
          |      --and isshow = 1
@@ -59,12 +60,12 @@ object videoPromotion {
          |      and usertype in (0, 1, 2)
          |      and adslot_type = 1
          |      --and (charge_type is NULL or charge_type = 1)
-         |        and ideaid > 0
-         |        and  interaction=2
-         |        and userid > 0
-         |        and uid not like "%.%"
-         |        and uid not like "%000000%"
-         |        and length(uid) in (14, 15, 36)
+         |      and ideaid > 0
+         |      and  interaction=2
+         |      and userid > 0
+         |      --  and uid not like "%.%"
+         |      --  and uid not like "%000000%"
+         |      --  and length(uid) in (14, 15, 36)
          |
          |  ) t1
          |  left join (
@@ -152,7 +153,8 @@ object videoPromotion {
 //    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
 
     val summary = baseData //同时含视频和大图的数据
-        .withColumn("price1", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
+        .withColumn("price0", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
+        .withColumn("price1", when(col("charge_type") === 2, col("price0")/1000).otherwise( col("price0") ))
         .groupBy("userid", "test_tag", "adtype1", "adclass")
         .agg(sum("isshow").alias("shown"),
           sum("isclick").alias("clickn"),
