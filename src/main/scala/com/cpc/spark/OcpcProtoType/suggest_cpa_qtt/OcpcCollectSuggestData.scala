@@ -155,6 +155,7 @@ object OcpcCollectSuggestData {
       .join(cvrDataElds, Seq("searchid"), "left_outer")
       .select("searchid", "unitid", "isclick", "isshow", "price", "cpagiven", "iscvr1", "iscvr2", "iscvr3")
 
+    data.write.mode("overwrite").saveAsTable("test.ocpc_check_base_table20190315")
     data.createOrReplaceTempView("base_table")
     val sqlRequest5 =
       s"""
