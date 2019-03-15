@@ -49,8 +49,8 @@ object videoPromotion {
          |    from
          |      dl_cpc.cpc_basedata_union_events
          |    where
-         |      day = '2019-03-13'
-         |      and hour in ('11', '12')
+         |      day = '$date'
+         |      --and hour in ('11', '12')
          |      and adsrc = 1
          |      and media_appsid in ("80000001")
          |      and adtype in (2, 8, 10) --and    userid>0
@@ -108,7 +108,7 @@ object videoPromotion {
          |            from
          |              dl_cpc.ml_cvr_feature_v1
          |            where
-         |              `date` = '2019-03-13'
+         |              `date` = '$date'
          |              and label2 = 1
          |              and media_appsid in ("80000001", "80000002")
          |          ) final
