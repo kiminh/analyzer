@@ -184,6 +184,8 @@ object AutoCoinStrategy {
                |where user_id in ($unKnownUseridList)
              """.stripMargin
 
+        println(getIdeaidSql)
+
         val unKnownIdeaid = spark.sql(getIdeaidSql)
           .rdd
           .map(_.getAs[Int]("ideaid").toString)
