@@ -347,7 +347,7 @@ object AutoCoinStrategy {
                |    and (b.userid in ($userWhiteList) or b.account_type is null)
              """.stripMargin
         println(mlFeatureSql)
-        val mlFeature = spark.sql(mlFeatureSql)
+        val mlFeature = spark.sql(mlFeatureSql).cache()
 
         val mlFeature1 = mlFeature.filter(s"ideaid not in ($unKnownIdeaidList)")    //非黑五类ideaid
         val mlFeature2 = mlFeature.filter(s"ideaid in ($unKnownIdeaidList)")        //黑五类ideaid
@@ -371,7 +371,7 @@ object AutoCoinStrategy {
                |where `date`='$date'
              """.stripMargin
 
-        val ideaP = spark.sql(sql)
+        val ideaP = spark.sql(sql).cache()
 
         ideaP
     }
