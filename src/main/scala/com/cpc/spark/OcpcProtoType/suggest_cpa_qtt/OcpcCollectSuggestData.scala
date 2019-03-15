@@ -80,7 +80,7 @@ object OcpcCollectSuggestData {
          |    isshow,
          |    price,
          |    cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
-         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden,
+         |    cast(ocpc_log_dict['IsHiddenOcpc'] as int) as is_hidden
          |FROM
          |    dl_cpc.ocpc_filter_unionlog
          |WHERE
