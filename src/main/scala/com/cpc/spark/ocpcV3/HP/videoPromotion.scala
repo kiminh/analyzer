@@ -15,90 +15,107 @@ object videoPromotion {
 
     val sql1 =
       s"""
-         |  select
-         |   case
-         |     when exptags like '%use_strategy%' then 'A'
-         |     else 'B'
-         |    end as test_tag,
-         |   t1.searchid,
-         |   antispam,
-         |   uid,
-         |   adclass,
-         |   userid,
-         |   case
-         |     when adtype = 2 then 'bigimage'
-         |     else 'video'
-         |    end as adtype1,
-         |   ideaid,
-         |   isshow,
-         |   isclick,
-         |   price,
-         |   t2.iscvr
-         |   from (
-         |    select *
-         |    from dl_cpc.slim_union_log
-         |where dt = '$date'
-         |  and adtype in (2, 8, 10)
-         |  and media_appsid = '80000001'
-         |  and adslot_type = 1 --列表页
-         |  and adsrc = 1
-         |  and userid >0
-         |  and isshow = 1
-         |  --and antispam = 0
-         |  and (charge_type is NULL or charge_type = 1)
-         |  and interaction=2 --下载
-         |  and uid not like "%.%"
-         |  and uid not like "%000000%"
-         |  and length(uid) in (14, 15, 36)
-         |  and ideaid > 0
-         |      	) t1
-         |   left join (
-         |      select
-         |     tmp.searchid,
-         |     1 as iscvr
+         |select
+         |  case
+         |    when exptags like '%use_strategy%' then 'A'
+         |    else 'B'
+         |  end as test_tag,
+         |  t1.searchid,
+         |  uid,
+         |  adclass,
+         |  userid,
+         |  adtype1,
+         |  ideaid,
+         |  isshow,
+         |  isclick,
+         |  price,
+         |  t2.iscvr
+         |from
+         |  (
+         |    select
+         |      searchid,
+         |      concat_ws(',', exptags) as exptags,
+         |      uid,
+         |      adclass,
+         |      userid,
+         |      case
+         |        when adtype = 2 then 'bigimage'
+         |        else 'video'
+         |      end as adtype1,
+         |      ideaid,
+         |      isshow,
+         |      isclick,
+         |      price
          |    from
-         |        (
+         |      dl_cpc.cpc_basedata_union_events
+         |    where
+         |      day = '2019-03-13'
+         |      and hour in ('11', '12')
+         |      and adsrc = 1
+         |      and media_appsid in ("80000001")
+         |      and adtype in (2, 8, 10) --and    userid>0
+         |      and usertype in (0, 1, 2)
+         |  ) t1
+         |  left join (
+         |    select
+         |      tmp.searchid,
+         |      1 as iscvr
+         |    from
+         |      (
+         |        select
+         |          final.searchid as searchid,
+         |          final.ideaid as ideaid,
+         |          case
+         |            when final.src = "elds"
+         |            and final.label_type = 6 then 1
+         |            when final.src = "feedapp"
+         |            and final.label_type in (4, 5) then 1
+         |            when final.src = "yysc"
+         |            and final.label_type = 12 then 1
+         |            when final.src = "wzcp"
+         |            and final.label_type in (1, 2, 3) then 1
+         |            when final.src = "others"
+         |            and final.label_type = 6 then 1
+         |            else 0
+         |          end as isreport
+         |        from
+         |          (
          |            select
-         |                final.searchid as searchid,
-         |                final.ideaid   as ideaid,
-         |                case
-         |                    when final.src="elds"    and final.label_type=6            then 1
-         |                    when final.src="feedapp" and final.label_type in (4, 5)    then 1
-         |                    when final.src="yysc"    and final.label_type=12           then 1
-         |                    when final.src="wzcp"    and final.label_type in (1, 2, 3) then 1
-         |                    when final.src="others"  and final.label_type=6            then 1
-         |                    else 0
-         |                end as isreport
+         |              searchid,
+         |              media_appsid,
+         |              uid,
+         |              planid,
+         |              unitid,
+         |              ideaid,
+         |              adclass,
+         |              case
+         |                when (
+         |                  adclass like '134%'
+         |                  or adclass like '107%'
+         |                ) then "elds" -- 二类电商
+         |                when (
+         |                  adslot_type <> 7
+         |                  and adclass like '100%'
+         |                ) then "feedapp"
+         |                when (
+         |                  adslot_type = 7
+         |                  and adclass like '100%'
+         |                ) then "yysc" --应用商场
+         |                when adclass in (110110100, 125100100) then "wzcp" --网赚彩票（110110100：网赚, 125100100：彩票）
+         |                else "others"
+         |              end as src,
+         |              label_type
          |            from
-         |            (
-         |                select
-         |                    searchid,
-         |                    media_appsid,
-         |                    uid,
-         |                    planid,
-         |                    unitid,
-         |                    ideaid,
-         |                    adclass,
-         |                    case
-         |                        when (adclass like '134%' or adclass like '107%') then "elds"  -- 二类电商
-         |                        when (adslot_type<>7 and adclass like '100%') then "feedapp"
-         |                        when (adslot_type=7  and adclass like '100%') then "yysc"      --应用商场
-         |                        when adclass in (110110100, 125100100) then "wzcp"             --网赚彩票（110110100：网赚, 125100100：彩票）
-         |                        else "others"
-         |                    end as src,
-         |                    label_type
-         |                from
-         |                    dl_cpc.ml_cvr_feature_v1
-         |                where
-         |                    `date`='$date'
-         |          and hour in ('10', '11', '12', '13', '14')
-         |                    and label2=1
-         |                    and media_appsid in ("80000001", "80000002")
-         |            ) final
-         |        ) tmp
-         |        where tmp.isreport=1
-         |      ) t2
-         |   on t1.searchid = t2.searchid
+         |              dl_cpc.ml_cvr_feature_v1
+         |            where
+         |              `date` = '2019-03-13'
+         |              and label2 = 1
+         |              and media_appsid in ("80000001", "80000002")
+         |          ) final
+         |      ) tmp
+         |    where
+         |      tmp.isreport = 1
+         |  ) t2 on t1.searchid = t2.searchid
        """.stripMargin
 
     val baseData = spark.sql(sql1)
