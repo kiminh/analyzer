@@ -155,23 +155,52 @@ object OcpcCollectSuggestData {
       .join(cvrDataElds, Seq("searchid"), "left_outer")
       .select("searchid", "unitid", "isclick", "isshow", "price", "cpagiven", "iscvr1", "iscvr2", "iscvr3")
 
-    data.write.mode("overwrite").saveAsTable("test.ocpc_check_base_table20190315")
-    data.createOrReplaceTempView("base_table")
-    val sqlRequest5 =
-      s"""
-         |SELECT
-         |  unitid,
-         |  round(sum(case WHEN isclick=1 then price else 0 end)*10.0/sum(isshow),3) as ocpc_cpm,
-         |  (case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven,
-         |  (case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr1) as cpa1,
-         |  (case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr2) as cpa2,
-         |  (case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr3) as cpa3
-         |FROM
-         |  base_table
-         |GROUP BY unitid
-       """.stripMargin
-    println(sqlRequest5)
-    val result = spark.sql(sqlRequest5)
+//    data.write.mode("overwrite").saveAsTable("test.ocpc_check_base_table20190315")
+//    data.createOrReplaceTempView("base_table")
+//    val sqlRequest5 =
+//      s"""
+//         |SELECT
+//         |  unitid,
+//         |  sum(case when isclick=1 then price else 0 end) * 10.0/sum(isshow) as ocpc_cpm,
+//         |  (case when isclick=1 then cpagiven else 0 end) * 1.0 / sum(isclick) as cpagiven,
+//         |  (case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr1) as cpa1,
+//         |  (case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr2) as cpa2,
+//         |  (case when isclick=1 then price else 0 end) * 1.0 / sum(iscvr3) as cpa3
+//         |FROM
+//         |  base_table
+//         |GROUP BY unitid
+//       """.stripMargin
+//    println(sqlRequest5)
+//    val result = spark.sql(sqlRequest5)
+
+    val data1 = data
+      .filter(s"isclick=1")
+      .groupBy("unitid")
+      .agg(
+        sum(col("isclick")).alias("click"),
+        sum(col("cpagiven")).alias("cpagiven"),
+        sum(col("price")).alias("cost"),
+        sum(col("iscvr1")).alias("cv1"),
+        sum(col("iscvr2")).alias("cv2"),
+        sum(col("iscvr3")).alias("cv3")
+      )
+      .select("unitid", "click", "cpagiven", "cost", "cv1", "cv2", "cv3")
+
+    val data2 = data
+      .groupBy("unitid")
+      .agg(sum(col("isshow")).alias("show"))
+      .select("unitid", "show")
+
+
+    val result = data1
+      .join(data2, Seq("unitid"), "left_outer")
+      .select("unitid", "click", "cpagiven", "cost", "show", "cv1", "cv2", "cv3")
+      .withColumn("ocpc_cpm", col("cost") * 10.0 / col("show"))
+      .withColumn("cpagiven", col("cpagiven") * 1.0 / col("click"))
+      .withColumn("cpa1", col("cost") * 1.0 / col("cv1"))
+      .withColumn("cpa2", col("cost") * 1.0 / col("cv2"))
+      .withColumn("cpa3", col("cost") * 1.0 / col("cv3"))
+      .select("unitid", "ocpc_cpm", "cpagiven", "cpa1", "cpa2", "cpa3")
 
     val result1 = result
       .withColumn("cpareal", col("cpa1"))
