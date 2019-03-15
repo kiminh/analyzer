@@ -171,7 +171,7 @@ object OcpcPIDwithCPA {
          |AND
          |  $mediaSelection
          |AND
-         |  id_ocpc = 1
+         |  is_ocpc = 1
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)
