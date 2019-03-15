@@ -44,7 +44,7 @@ object bscvr_early_warning {
       s"""
          |(select unit_id, user_id, date, cost from
          |(select unit_id, date, sum(cost) as cost from adv.cost where (date between '$twodays' and '$oneday')
-         |and unit_id in (select unitid from unitid_table) group by unit_id, date) ta
+         |and cost>0 group by unit_id, date) ta
          |left join (select id, user_id from adv.unit group by id, user_id) tb
          |on ta.unit_id=tb.id) temp
       """.stripMargin
@@ -54,9 +54,9 @@ object bscvr_early_warning {
       s"""
          |insert overwrite table dl_cpc.cpc_recall_bscvr_early_warning partition (date='$oneday')
          |select ta.unit_id, ta.user_id, tb.cost, (coalesce(tb.cost,0)-coalesce(ta.cost,0))*1.0/coalesce(ta.cost,1) as percent
-         |(select * from unitid_cost_table where date='$twodays') ta
+         |(select * from unitid_cost_table where date='$twodays' and unit_id in (select unitid from unitid_table)) ta
          |left join
-         |(select * from unitid_cost_table where date='$oneday') tb
+         |(select * from unitid_cost_table where date='$oneday' and unit_id in (select unitid from unitid_table)) tb
          |on ta.unit_id=tb.unit_id
        """.stripMargin
     )
