@@ -57,7 +57,7 @@ object MiduUserprofile {
       val data2 = spark.sql(sql)
           .join(titleDF,Seq("title"),"left")
 
-      val sum= data2.filter("imei is not null").distinct().count()
+      val sum= data2.select("imei").filter("imei is not null").distinct().count()
       println("sum is %d".format(sum))
       data2.write.mode("overwrite").saveAsTable("test.wy00")
 
@@ -83,7 +83,7 @@ object MiduUserprofile {
         .filter("imei is not null").distinct()
 
       val tongchengnum= tongchengyue.count()
-      println("meirong is %d".format(tongchengnum))
+      println("tongchengyue is %d".format(tongchengnum))
 
 //        data2.repartition(1).write.mode("overwrite").insertInto("dl_cpc.cpc_midu_toutiao_log")
     }
