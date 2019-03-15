@@ -36,7 +36,6 @@ object ReportAutoCoinIdeaidMetrics {
                |    where day = '$date'
                |    and media_appsid in ("80000001", "80000002")
                |    and isshow = 1
-               |    and antispam_score = 10000
                |    and ideaid > 0
                |    and adsrc = 1
                |    and city_level != 1
