@@ -427,7 +427,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |(
           |select  userid ,expcvr
           |from    dl_cpc.cpc_appdown_cvr_threshold
-          |where   dt=date_add('${date}',-1) and hr='00'
+          |where   dt=date_add('${date}',-1) and hr='08'
           |union all
           |select  userid ,expcvr
           |from  dl_cpc.cpc_appdown_cvr_threshold
