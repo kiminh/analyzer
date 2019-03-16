@@ -159,6 +159,13 @@ object videoPromotion {
 
 //    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
 
+    val summary0 = baseData //同时含视频和大图的数据
+      .groupBy("userid", "test_tag", "adtype1", "adclass")
+      .agg(
+        sum("isclick").alias("clickn"),
+        sum("iscvr").alias("cvrn")
+      ).select("userid", "test_tag", "adtype1", "adclass",  "clickn", "cvrn")
+
     val summary = baseData //同时含视频和大图的数据
         .filter("if_use_strategy = 1")
         .withColumn("price0", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
@@ -197,7 +204,7 @@ object videoPromotion {
     println("=====================userAdclass====================")
     userAdclass.show(10)
 
-    val adclassCvr = summary
+    val adclassCvr = summary0
         .filter("adtype1 = 'bigimage'") // 行业大图转化率
       .groupBy("adclass")
       .agg((sum("cvrn")/sum("clickn") ).alias("cvr"))
