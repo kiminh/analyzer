@@ -44,19 +44,27 @@ object OcpcCollectSuggestData {
     // 整理每个广告单元最近24小时的消费
     val cpcData = getCpcData(date, hour, spark)
 
+    // 关联前一天的自动预算数据表
+    val autoBudget = getPrevAutoBudget(date, hour, spark)
+
     // 数据关联，并计算预算
     val data = joinData(cpaData, cpcData, ocpcData, spark)
 
     data
       .repartition(5)
-      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
+      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
+//      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
 
-    data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("verion", lit("qtt_demo"))
-      .repartition(5)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
+//    data
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("verion", lit("qtt_demo"))
+//      .repartition(5)
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
+  }
+
+  def getPrevAutoBudget(date: String, hour: String, spark: SparkSession) = {
+
   }
 
   def getOcpcData(date: String, hour: String, spark: SparkSession) = {
@@ -276,7 +284,7 @@ object OcpcCollectSuggestData {
 //    result.write.mode("overwrite").saveAsTable("test.check_data_percent20190315")
 
     val resultDF = result
-      .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag")
+      .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag", "industry")
 
     resultDF
 
