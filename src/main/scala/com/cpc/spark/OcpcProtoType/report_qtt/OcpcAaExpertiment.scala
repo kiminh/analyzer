@@ -188,7 +188,7 @@ object OcpcAaExpertiment {
         |	a.userid,
         |	1 as conversion_goal,
         |	a.exp_cvr,
-        |	b.iscvr1
+        |	b.iscvr1 as iscvr
         |from
         |	dl_cpc.ocpc_base_unionlog a
         |left join
@@ -230,7 +230,7 @@ object OcpcAaExpertiment {
         |	a.userid,
         |	2 as conversion_goal,
         |	a.exp_cvr,
-        |	c.iscvr2
+        |	c.iscvr2 as iscvr
         |from
         |	dl_cpc.ocpc_base_unionlog a
         |left join
@@ -270,7 +270,7 @@ object OcpcAaExpertiment {
         |	a.userid,
         |	3 as conversion_goal,
         |	a.exp_cvr,
-        |	d.iscvr3
+        |	d.iscvr3 as iscvr
         |from
         |	dl_cpc.ocpc_base_unionlog a
         |left join
