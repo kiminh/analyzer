@@ -22,7 +22,6 @@ object OcpcAaExpertiment {
     println("has got is hidden etc index")
     val suggestCpaDF = getSuggestCpa(date, spark)
     println("has got suggest cpa")
-    println("------------------------")
     val aucDF = getAuc(date, spark)
     println("has got auc")
     calculateIndexValue(date, baseIndexDF, isHiddenEtcIndexDF, suggestCpaDF, aucDF, spark)
@@ -306,7 +305,19 @@ object OcpcAaExpertiment {
       """.stripMargin
     val dataFrame3 = spark.sql(sql3)
 
+    println("dateFrame1:")
+    dataFrame1.printSchema()
+    println("------------------")
+    println("dateFrame2:")
+    dataFrame2.printSchema()
+    println("------------------")
+    println("dateFrame3:")
+    dataFrame3.printSchema()
+
     val dataFrame = dataFrame1.union(dataFrame2).union(dataFrame3)
+    println("-----------------")
+    println("dateFrame4:")
+    dataFrame.printSchema()
     val hour = "16"
     val aucDF = OcpcHourlyAucReport.calculateAUCbyUnitid(dataFrame, date, hour, spark)
     aucDF
