@@ -141,8 +141,8 @@ message UserProfileV2 {
 	repeated int32 installedUserIDList = 9;
 	string recentIP = 10;
 	string registeredIP = 11;
-	repeated InterestItem interests = 12; // 人群标签
-	repeated InterestItem interestedWords = 13;  //感兴趣的词汇分类
+	repeated InterestItem interests = 12; // 人群标签，已废弃，不再使用
+	repeated InterestItem interestedWords = 13;  //感兴趣的词汇分类，人群包标签
 	repeated APPPackage installpkg = 14; // 已安装列表
 	QttProfile qttProfile = 101;
 }
