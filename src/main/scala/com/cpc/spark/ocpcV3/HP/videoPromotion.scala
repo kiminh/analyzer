@@ -24,6 +24,7 @@ object videoPromotion {
          |  uid,
          |  adclass,
          |  t1.userid,
+         |  case when tt.userid is not NULL then 1 else 0 end as if_use_strategy,
          |  usertype,
          |  adtype1,
          |  ideaid,
@@ -72,7 +73,7 @@ object videoPromotion {
          |      --  and length(uid) in (14, 15, 36)
          |
          |  ) t1
-         |  join (  select userid from dl_cpc.cpc_appdown_cvr_threshold  where dt = '$date' group by userid ) tt
+         |  left join (  select userid from dl_cpc.cpc_appdown_cvr_threshold  where dt = '$date' group by userid ) tt
          |    on t1.userid = tt.userid
          |  left join (
          |    select
@@ -159,6 +160,7 @@ object videoPromotion {
 //    pivot_table.write.mode("overwrite").saveAsTable("test.pivot_table_sjq")
 
     val summary = baseData //同时含视频和大图的数据
+        .filter("if_use_strategy = 1")
         .withColumn("price0", when(col("isclick") === 1, col("price")).otherwise(lit(0)))
         .withColumn("price1", when(col("charge_type") === 2, col("price0")/1000).otherwise( col("price0") ))
         .groupBy("userid", "test_tag", "adtype1", "adclass")
@@ -173,8 +175,8 @@ object videoPromotion {
 
     summary.write.mode("overwrite").saveAsTable("test.summary_sjq")
 
-    summary.groupBy("userid", "adclass")
-      .agg(sum("shown").alias("shown2"))
+    baseData.groupBy("userid", "adclass")
+      .agg(sum("isshow").alias("shown2"))
       .createOrReplaceTempView("baseSummary")
 
     val sql2 =
