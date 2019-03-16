@@ -22,6 +22,7 @@ object OcpcAaExpertiment {
     println("has got is hidden etc index")
     val suggestCpaDF = getSuggestCpa(date, spark)
     println("has got suggest cpa")
+    println("------------------------")
     val aucDF = getAuc(date, spark)
     println("has got auc")
     calculateIndexValue(date, baseIndexDF, isHiddenEtcIndexDF, suggestCpaDF, aucDF, spark)
