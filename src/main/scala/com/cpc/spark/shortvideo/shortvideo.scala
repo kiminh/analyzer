@@ -427,11 +427,11 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |(
           |select  userid ,expcvr
           |from    dl_cpc.cpc_appdown_cvr_threshold
-          |where   dt=date_add('${date}',-1) and hr='${hour}'
+          |where   dt=date_add('${date}',-1)
           |union all
           |select  userid ,expcvr
           |from  dl_cpc.cpc_appdown_cvr_threshold
-          |where dt='${date}' and hr='${hour}'
+          |where dt='${date}'
           |)  view
           |) view2
           |where  expcvr_rank=1
