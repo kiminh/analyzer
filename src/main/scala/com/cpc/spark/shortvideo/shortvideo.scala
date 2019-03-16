@@ -23,9 +23,10 @@ import scala.collection.mutable.ListBuffer
 object shortvideo {
   def main(args: Array[String]): Unit = {
     val date = args(0)
-    val traffic = args(1)
+    val hour =args (1)
+    val traffic = args(2)
     val spark = SparkSession.builder()
-      .appName(s"""shortvideo_execute +'${date}' """)
+      .appName(s"""shortvideo_execute +'${date}'+'${hour}' """)
       .enableHiveSupport()
       .getOrCreate()
     import org.apache.spark.sql._
@@ -34,7 +35,7 @@ object shortvideo {
     import scala.collection.mutable.ListBuffer
 
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + "09"
+    val newDate = date + " " + "${hour}"
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
@@ -56,7 +57,7 @@ object shortvideo {
 select   searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          exp_cvr,cvr_rank,src,
           label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,
-          usertype,view1.adslotid,isshow,price,'${date}' as dt,'09' as hr
+          usertype,view1.adslotid,isshow,price,'${date}' as dt,'${hour}' as hr
 from
 (
   select     dt as day,hour,searchid, isshow,exp_cvr/1000000 as exp_cvr_ori,exp_cvr,isclick,price,cvr_model_name,uid,userid, adslotid,
@@ -124,9 +125,9 @@ and   a.hour2 =view1.hour
 group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          exp_cvr,cvr_rank,src,
           label_type,planid,unitid, adclass,view1.adslot_type,label2,view1.uid,
-          usertype, adslotid,isshow,price,'${date}' ,'09'
+          usertype, adslotid,isshow,price,'${date}' ,'${hour}'
          |""".stripMargin)
-    val tab0 = spark.read.table("dl_cpc.cpc_union_events_video_mid").filter(s"dt='${date}' and hr='09'").
+    val tab0 = spark.read.table("dl_cpc.cpc_union_events_video_mid").filter(s"dt='${date}' and hr='${hour}'").
       selectExpr(
       "searchid", "adtype ","userid","ideaid","isclick","isreport","expcvr_d",
       "exp_cvr","cvr_rank","src","label_type","planid","unitid","adclass","adslot_type","label2","uid",
@@ -165,7 +166,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
 //      .toDF("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per")
     println("spark 7 threshold success!")
     val tabd=tabb.selectExpr("userid_d", "expcvr_0per", "expcvr_5per", "expcvr_10per", "expcvr_15per", "expcvr_20per", "expcvr_25per", "expcvr_30per",
-      s"""'${date}' as dt""",s"""'09' as hr""")
+      s"""'${date}' as dt""",s"""'${hour}' as hr""")
     tabd.write.mode("overwrite").insertInto("dl_cpc.userid_expcvr_lastpercent")
     tabd.show(10,false)
 
@@ -200,7 +201,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
            |    round(sum(exp_cvr)/sum(isshow),6) as exp_cvr,
            |    dt,hr
            |from   dl_cpc.cpc_union_events_video_mid
-           |where  dt='${date}' and hr='09'
+           |where  dt='${date}' and hr='${hour}'
            |group by userid,case when adtype in (8,10) then 'video' when adtype =2 then 'bigpic' end ,adclass,dt,hr
        """.stripMargin).selectExpr("userid","adtype_cate","adclass","show_num","click_num",
     "ctr","cpm","cvr_n","cvr","exp_cvr","dt","hr")
@@ -275,7 +276,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |and  a.searchid2 =m.searchid
           |group by m.adclass
          """.stripMargin).selectExpr("adclass","show_num","click_num","ctr","cpm","convert_num","cvr_n","act_cvr",
-                s"""'${date}' as dt""",s"""'09' as hr""")
+                s"""'${date}' as dt""",s"""'${hour}' as hr""")
     cvrcomparetab2.show(10,false)
     cvrcomparetab2.write.mode("overwrite").insertInto("dl_cpc.bigpic_adclass_actcvr_mid")
 
@@ -292,14 +293,14 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |(
          |select userid,adtype_cate,cvr video_act_cvr1,adclass,dt,hr
          |from  dl_cpc.cpc_bigpicvideo_cvr
-         |where  dt='${date}' and hr='09'
+         |where  dt='${date}' and hr='${hour}'
          |and   adtype_cate='video'
          |)   video
          |left join
          |(
          |  select  userid,adtype_cate,cvr  bigpic_act_cvr,exp_cvr bigpic_expcvr
          |  from  dl_cpc.cpc_bigpicvideo_cvr
-         |  where  dt='${date}' and hr='09'
+         |  where  dt='${date}' and hr='${hour}'
          |  and   adtype_cate='bigpic'
          |) bigpic
          |on  bigpic.userid=video.userid
@@ -307,7 +308,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |(
          |  select  adclass ,act_cvr adclass_act_cvr
          |  from dl_cpc.bigpic_adclass_actcvr_mid
-         |  where  dt='${date}' and hr='09'
+         |  where  dt='${date}' and hr='${hour}'
          |
          |) adclass
          |on  adclass.adclass=video.adclass
@@ -319,7 +320,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     //过滤大图cvr<短视频或行业actcvr的userid,待计算剩下的userid 的cvr
     val tab1=tab0.join(bigpiccvr,tab0("userid")===bigpiccvr("userid_b"),"inner").
       selectExpr("userid","isshow","isclick","price","isreport","exp_cvr","video_act_cvr1",
-        "bigpic_act_cvr","adclass_act_cvr",s"""'${date}' as dt""",s"""'09' as hr""")
+        "bigpic_act_cvr","adclass_act_cvr",s"""'${date}' as dt""",s"""'${hour}' as hr""")
     tab1.write.mode("overwrite").insertInto("dl_cpc.bigpic_adclass_ls_actcvr_userid")
     tab1.show(10,false)
     println(" join tab0 success!")
@@ -342,13 +343,13 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          | (   select userid,exp_cvr,isshow,isclick,isreport,price,exp_cvr,
          |            bigpic_act_cvr,adclass_act_cvr,video_act_cvr1,dt,hr
          |    from   dl_cpc.bigpic_adclass_ls_actcvr_userid
-         |    where  dt='${date}' and hr='09'
+         |    where  dt='${date}' and hr='${hour}'
          | ) view
          | join
          | (
          |     select  userid userid_d, expcvr_0per, expcvr_5per, expcvr_10per, expcvr_15per, expcvr_20per, expcvr_25per, expcvr_30per
          |     from    dl_cpc.userid_expcvr_lastpercent
-         |     where  dt='${date}' and hr='09'
+         |     where  dt='${date}' and hr='${hour}'
          | )   threshold
          |on    view.userid=threshold.userid_d
          |group by userid,expcvr_0per, expcvr_5per, expcvr_10per, expcvr_15per, expcvr_20per, expcvr_25per, expcvr_30per,
@@ -400,13 +401,13 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |				     else   traffic_30per_expcvr
           |                 end as max_expcvr
           |from   dl_cpc.video_trafficcut_threshold_mid
-          |where  dt='${date}' and hr='09'
+          |where  dt='${date}' and hr='${hour}'
           | )  maxexpcvr
           | join
           | (
           |   select   *
           |   from    dl_cpc.video_trafficcut_threshold_mid
-          |   where   dt='${date}' and hr='09'
+          |   where   dt='${date}' and hr='${hour}'
           | )  threshold_mid
           |on  maxexpcvr.userid=threshold_mid.userid
           |
@@ -426,11 +427,11 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |(
           |select  userid ,expcvr
           |from    dl_cpc.cpc_appdown_cvr_threshold
-          |where   dt=date_add('${date}',-1) and hr='09'
+          |where   dt=date_add('${date}',-1) and hr='${hour}'
           |union all
           |select  userid ,expcvr
           |from  dl_cpc.cpc_appdown_cvr_threshold
-          |where dt='${date}' and hr='09'
+          |where dt='${date}' and hr='${hour}'
           |)  view
           |) view2
           |where  expcvr_rank=1
