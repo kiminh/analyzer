@@ -319,7 +319,7 @@ object OcpcCollectSuggestData {
     val result = spark.sql(sqlRequest)
       .withColumn("budget_mid", col("daily_cost") * col("percent"))
       .withColumn("budget", when(col("budget_mid") < col("max_budget"), col("budget_mid")).otherwise(col("max_budget")))
-      .withColumn("budget_percent", col("percent"))
+      .withColumn("budget_percent", when(col("percent") > 0.2, 0.2).otherwise(col("percent")))
     result.show(10)
     result.write.mode("overwrite").saveAsTable("test.check_data_percent20190315")
 
