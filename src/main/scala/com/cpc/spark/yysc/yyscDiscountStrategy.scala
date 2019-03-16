@@ -76,6 +76,7 @@ object yyscDiscountStrategy {
                |         else if (a.click_num > b.click_num, a.create_date, b.create_date)
                |    end as create_date,
                |    '$date' as `date`
+               |from
                |(
                |    select uid, click_num, price_discount, coin_discount, create_date
                |    from dl_cpc.cpc_yysc_discount_record
