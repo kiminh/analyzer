@@ -586,7 +586,37 @@ create table if not exists dl_cpc.video_trafficcut_threshold_mid
 partitioned by (dt string, hr string)
 row format delimited fields terminated by '\t' lines terminated by '\n';
 
+--计算useri的降序分位数expcvr表
+create table if not exists dl_cpc.userid_expcvr_lastpercent
+(
+userid   string,
+expcvr_0per  bigint,
+expcvr_5per  bigint,
+expcvr_10per bigint,
+expcvr_15per  bigint,
+expcvr_20per  bigint,
+expcvr_25per  bigint,
+expcvr_30per  bigint
+)
+partitioned by (dt string,hr string)
+row format delimited fields terminated by '\t' lines terminated by '\n';
 
+--计算userid 的视频实际cvr小于大图实际cvr或行业实际cvr
+create table if not exists dl_cpc.bigpic_adclass_ls_actcvr_userid
+(
+userid  string,
+isshow  bigint,
+isclick bigint,
+price   double,
+isreport  int,
+exp_cvr  bigint,
+video_act_cvr1  double,
+bigpic_act_cvr   double,
+adclass_act_cvr  double
+
+)
+partitioned by (dt string,hr string)
+row format delimited fields terminated by '\t' lines terminated by '\n';
 
 pb文件的表结构
 create table  if not exists dl_cpc.cpc_appdown_cvr_threshold
