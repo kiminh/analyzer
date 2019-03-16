@@ -7,6 +7,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.DataFrame
 import com.cpc.spark.udfs.Udfs_wj.udfStringToMap
+import com.cpc.spark.OcpcProtoType.report_qtt.OcpcHourlyAucReport
 
 object OcpcAaExpertiment {
 
