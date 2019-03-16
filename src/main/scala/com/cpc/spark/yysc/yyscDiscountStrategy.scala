@@ -85,7 +85,7 @@ object yyscDiscountStrategy {
                |) a
                |full outer join
                |(
-               |    select uid, click_num, price_discount, coin_discount, creat_date
+               |    select uid, click_num, price_discount, coin_discount, create_date
                |    from tmp_data
                |) b
                |on a.uid = b.uid
