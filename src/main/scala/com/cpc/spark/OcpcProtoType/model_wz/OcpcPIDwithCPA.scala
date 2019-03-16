@@ -1,4 +1,4 @@
-package com.cpc.spark.OcpcProtoType.model_qtt
+package com.cpc.spark.OcpcProtoType.model_wz
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -23,7 +23,7 @@ object OcpcPIDwithCPA {
      */
     val spark = SparkSession.builder().appName("OcpcPIDwithCPA").enableHiveSupport().getOrCreate()
 
-    // bash: 2019-01-02 12 24 1 qtt_demo qtt
+    // bash: 2019-01-02 12 24 1 wz qtt
     val date = args(0).toString
     val hour = args(1).toString
     val hourInt = args(2).toInt
@@ -81,7 +81,6 @@ object OcpcPIDwithCPA {
      */
     val cvrData = getCVRdata(conversionGoal, hourInt, date, hour, spark)
     val kvalue = getHistoryK(historyData, prevTable, conversionGoal, date, hour, spark)
-//    kvalue.write.mode("overwrite").saveAsTable("test.check_ocpc_data20190201a")
     val cpaHistory = getCPAhistory(historyData, cvrData, conversionGoal, date, hour, spark)
     val cpaRatio = calculateCPAratio(cpaHistory, date, hour, spark)
     val result = updateK(kvalue, cpaRatio, date, hour, spark)
@@ -92,14 +91,7 @@ object OcpcPIDwithCPA {
 
   def getCVRdata(conversionGoal: Int, hourInt: Int, date: String, hour: String, spark: SparkSession) = {
     // cvr 分区
-    var cvrGoal = ""
-    if (conversionGoal == 1) {
-      cvrGoal = "cvr1"
-    } else if (conversionGoal == 2) {
-      cvrGoal = "cvr2"
-    } else {
-      cvrGoal = "cvr3"
-    }
+    var cvrGoal = "wz"
 
     // 时间分区
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
@@ -161,8 +153,8 @@ object OcpcPIDwithCPA {
          |  isclick,
          |  price,
          |  ocpc_log_dict,
-         |  cast(ocpc_log_dict['kvalue'] as double) as kvalue,
-         |  cast(ocpc_log_dict['cpagiven'] as double) as cpagiven,
+         |  ocpc_log_dict['kvalue'] as kvalue,
+         |  ocpc_log_dict['cpagiven'] as cpagiven,
          |  hour
          |FROM
          |  dl_cpc.ocpc_filter_unionlog
@@ -172,6 +164,8 @@ object OcpcPIDwithCPA {
          |  $mediaSelection
          |AND
          |  is_ocpc = 1
+         |AND
+         |  adclass = 110110100
        """.stripMargin
     println(sqlRequest)
     val resultDF = spark.sql(sqlRequest)

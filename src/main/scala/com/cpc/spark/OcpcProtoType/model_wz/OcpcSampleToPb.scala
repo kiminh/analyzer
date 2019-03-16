@@ -1,6 +1,6 @@
 
 
-package com.cpc.spark.OcpcProtoType.model_qtt
+package com.cpc.spark.OcpcProtoType.model_wz
 
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -83,20 +83,14 @@ object OcpcSampleToPb {
     val data = spark.sql(sqlRequest)
 
     // 按照实验配置文件给出cpagiven
-    val cpaGiven = getCPAgiven(spark)
+    val cpaGiven = getCPAgivenV2(spark)
 
     // 数据关联
-    val result1 = data
-        .join(cpaGiven, Seq("identifier", "conversion_goal"), "left_outer")
+    val result = data
+        .join(cpaGiven, Seq("identifier"), "left_outer")
         .withColumn("cpagiven", when(col("cpagiven2").isNotNull, col("cpagiven2")).otherwise(col("cpagiven1")))
         .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
 
-    // 数据关联
-    val result2 = result1.filter("cpagiven2 is not null")
-        .withColumn("conversion_goal", lit(0))
-        .select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt", "cpagiven1", "cpagiven2")
-
-    val result = result1.union(result2)
     result.printSchema()
     result.show(10)
     val resultDF = result.select("identifier", "conversion_goal", "kvalue", "cpagiven", "cvrcnt")
@@ -105,18 +99,32 @@ object OcpcSampleToPb {
     resultDF
   }
 
+  def getCPAgivenV2(spark: SparkSession) = {
+    // 从实验配置文件读取配置的CPAgiven
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  cast(unitid as string) identifier,
+         |  cpa as cpagiven2
+         |FROM
+         |  test.ocpc_suggest_cpa_recommend_hourly_wz
+       """.stripMargin
+    println(sqlRequest)
+    val result = spark.sql(sqlRequest)
+    result
+  }
+
   def getCPAgiven(spark: SparkSession) = {
     // 从实验配置文件读取配置的CPAgiven
     val conf = ConfigFactory.load("ocpc")
-    val expDataPath = conf.getString("ocpc_all.ocpc_abtest.cpagiven_path")
-    println(expDataPath)
+    val expDataPath = conf.getString("ocpc_wz.suggest_k_path")
     val data = spark.read.format("json").json(expDataPath)
 
     val resultDF = data
-      .select("identifier", "cpa_given", "conversion_goal")
-      .groupBy("identifier", "conversion_goal")
-      .agg(avg(col("cpa_given")).alias("cpagiven2"))
-      .select("identifier", "conversion_goal", "cpagiven2")
+      .select("identifier", "cpa_suggest")
+      .groupBy("identifier")
+      .agg(avg(col("cpa_suggest")).alias("cpagiven2"))
+      .select("identifier", "cpagiven2")
 
     resultDF
   }

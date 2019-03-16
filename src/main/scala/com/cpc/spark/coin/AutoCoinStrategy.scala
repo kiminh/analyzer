@@ -390,7 +390,7 @@ object AutoCoinStrategy {
               (x: List[Int], y: List[Int]) => x ::: y)
           .mapValues(x => {
               val sorted = x.sorted
-              val index = (sorted.length * p).toInt
+              val index = if( p==1 ) sorted.length - 1 else (sorted.length * p).toInt
               val i5th = (sorted.length * 0.5).toInt
               val i6th = (sorted.length * 0.6).toInt
               val i7th = (sorted.length * 0.7).toInt
@@ -432,7 +432,7 @@ object AutoCoinStrategy {
               val cvrlist = x._1
               val p = x._2
               val sorted = cvrlist.sorted
-              val index = (sorted.length * p).toInt
+              val index = if( p==1 ) sorted.length - 1 else (sorted.length * p).toInt
               val i5th = (sorted.length * 0.5).toInt
               val i6th = (sorted.length * 0.6).toInt
               val i7th = (sorted.length * 0.7).toInt

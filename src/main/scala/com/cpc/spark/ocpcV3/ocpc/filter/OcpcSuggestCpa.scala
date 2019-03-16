@@ -675,6 +675,8 @@ object OcpcSuggestCpa{
     //    ocpc_prev_pb_once
     val resultDF = spark
       .table("dl_cpc.ocpc_prev_pb_once")
+//      .table("dl_cpc.ocpc_pb_result_hourly_v2")
+//      .where(s"`date` = '2019-03-08' and `hour` = '06' and version = 'qtt_demo' and kvalue > 0")
       .where(s"version = 'qtt_demo'")
       .withColumn("unitid", col("identifier"))
       .withColumn("original_conversion", col("conversion_goal"))
