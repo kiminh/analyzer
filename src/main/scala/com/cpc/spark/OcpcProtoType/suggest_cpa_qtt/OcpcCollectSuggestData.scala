@@ -307,6 +307,7 @@ object OcpcCollectSuggestData {
          |  cpa_flag,
          |  cpc_cpm,
          |  ocpc_cpm,
+         |  prev_percent,
          |  (case when prev_percent is not null and cpa_flag = 1 then prev_percent + 0.05
          |        when prev_percent is null or cpa_flag is null then 0.05
          |        else prev_percent end) as percent
