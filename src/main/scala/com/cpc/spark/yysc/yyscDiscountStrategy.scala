@@ -50,6 +50,8 @@ object yyscDiscountStrategy {
                |where click_num > 15
              """.stripMargin
 
+        println(sql)
+
         val uidData = spark.sql(sql)
 
         uidData.createOrReplaceTempView("tmp_data")
@@ -87,6 +89,8 @@ object yyscDiscountStrategy {
                |) b
                |on a.uid = b.uid
              """.stripMargin
+
+        println(unionSql)
 
         val union = spark.sql(unionSql).cache()
 
