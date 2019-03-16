@@ -35,7 +35,7 @@ object shortvideo {
     import scala.collection.mutable.ListBuffer
 
     val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
-    val newDate = date + " " + "${hour}"
+    val newDate = date + " " + hour
     val today = dateConverter.parse(newDate)
     val calendar = Calendar.getInstance
     calendar.setTime(today)
