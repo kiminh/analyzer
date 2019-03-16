@@ -45,7 +45,7 @@ object OcpcCollectSuggestData {
     val cpcData = getCpcData(date, hour, spark)
 
     // 关联前一天的自动预算数据表
-    val autoBudget = getPrevAutoBudget(date, hour, spark)
+//    val autoBudget = getPrevAutoBudget(date, hour, spark)
 
     // 数据关联，并计算预算
     val data = joinData(cpaData, cpcData, ocpcData, spark)
@@ -64,7 +64,22 @@ object OcpcCollectSuggestData {
   }
 
   def getPrevAutoBudget(date: String, hour: String, spark: SparkSession) = {
+    // 取历史数据
+    val dateConverter = new SimpleDateFormat("yyyy-MM-dd HH")
+    val newDate = date + " " + hour
+    val today = dateConverter.parse(newDate)
+    val calendar = Calendar.getInstance
+    calendar.setTime(today)
+    calendar.add(Calendar.HOUR, -24)
+    val yesterday = calendar.getTime
+    val tmpDate = dateConverter.format(yesterday)
+    val tmpDateValue = tmpDate.split(" ")
+    val date1 = tmpDateValue(0)
+    val hour1 = tmpDateValue(1)
 
+    val prevData = spark
+      .table("dl_cpc.ocpc_auto_budget_hourly")
+      .where(s"`date` = '$date1' and `hour` = '$hour1' and version = 'qtt_demo'")
   }
 
   def getOcpcData(date: String, hour: String, spark: SparkSession) = {
@@ -284,7 +299,7 @@ object OcpcCollectSuggestData {
 //    result.write.mode("overwrite").saveAsTable("test.check_data_percent20190315")
 
     val resultDF = result
-      .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag", "industry")
+      .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag", "industry", "percent")
 
     resultDF
 

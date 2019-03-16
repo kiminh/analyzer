@@ -12,4 +12,4 @@ CREATE TABLE IF NOT EXISTS dl_cpc.ocpc_auto_budget_hourly
 PARTITIONED by (`date` string, `hour` string, version string)
 STORED as PARQUET;
 
-alter table dl_cpc.ocpc_auto_budget_hourly add columns (conversion_goal int);
+alter table dl_cpc.ocpc_auto_budget_hourly add columns (industry string);
