@@ -186,7 +186,7 @@ object OcpcAaExpertiment {
         |select
         |	a.unitid,
         |	a.userid,
-        |	1,
+        |	1 as conversion_goal,
         |	a.exp_cvr,
         |	b.iscvr1
         |from
@@ -228,7 +228,7 @@ object OcpcAaExpertiment {
         |select
         |	a.unitid,
         |	a.userid,
-        |	2,
+        |	2 as conversion_goal,
         |	a.exp_cvr,
         |	c.iscvr2
         |from
@@ -268,7 +268,7 @@ object OcpcAaExpertiment {
         |select
         |	a.unitid,
         |	a.userid,
-        |	3,
+        |	3 as conversion_goal,
         |	a.exp_cvr,
         |	d.iscvr3
         |from
@@ -316,7 +316,7 @@ object OcpcAaExpertiment {
 
     val dataFrame = dataFrame1.union(dataFrame2).union(dataFrame3)
     println("-----------------")
-    println("dateFrame4:")
+    println("dateFrame:")
     dataFrame.printSchema()
     val hour = "16"
     val aucDF = OcpcHourlyAucReport.calculateAUCbyUnitid(dataFrame, date, hour, spark)
