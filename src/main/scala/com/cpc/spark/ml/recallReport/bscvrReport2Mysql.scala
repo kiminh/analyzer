@@ -37,7 +37,7 @@ object bscvrReport2Mysql {
          |cast(coalesce(arpu,0) as double) as arpu,
          |cast(coalesce(uv,0) as int) as uv,
          |cast(coalesce(cvr,0) as double) as cvr,
-         |unitid as unitidAndAll,
+         |unitid as unitid_all,
          |to_date('$date') as date
          |from
          |dl_cpc.cpc_recall_bsCvr_report where date='$date'
@@ -59,7 +59,7 @@ object bscvrReport2Mysql {
          |cast(coalesce(arpu,0) as double) as arpu,
          |cast(coalesce(uv,0) as int) as uv,
          |cast(coalesce(cvr,0) as double) as cvr,
-         |unitid as unitidAndAll,
+         |unitid as unitid_all,
          |to_date('$date') as date
          |from
          |dl_cpc.cpc_recall_bsexp_report where date='$date'
