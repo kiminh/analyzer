@@ -18,9 +18,15 @@ create table if not exists dl_cpc.ocpc_aa_base_index_value(
     post_cvr2               double,
     post_cvr3               double,
     acp                     double,
+    bid                     int,
     acb                     double,
     kvalue                  double,
-    ratio                   double
+    is_hidden               int,
+    adslot_type             int,
+    cv_goal                 int,
+    charge                  int,
+    suggest_cpa             double,
+    auc                     double
 )
 partitioned by (`date` string, version string)
 stored as parquet;
