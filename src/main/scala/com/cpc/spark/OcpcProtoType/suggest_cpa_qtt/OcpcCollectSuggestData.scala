@@ -308,8 +308,8 @@ object OcpcCollectSuggestData {
          |  cpc_cpm,
          |  ocpc_cpm,
          |  (case when prev_percent is not null and cpa_flag = 1 then prev_percent + 0.05
-         |        when prev_percent is null then 0.05
-         |        ) as percent
+         |        when prev_percent is null or cpa_flag is null then 0.05
+         |        else prev_percent end) as percent
          |FROM
          |  base_data
        """.stripMargin
@@ -320,7 +320,7 @@ object OcpcCollectSuggestData {
       .withColumn("budget", when(col("budget_mid") < col("max_budget"), col("budget_mid")).otherwise(col("max_budget")))
       .withColumn("budget_percent", col("percent"))
     result.show(10)
-//    result.write.mode("overwrite").saveAsTable("test.check_data_percent20190315")
+    result.write.mode("overwrite").saveAsTable("test.check_data_percent20190315")
 
     val resultDF = result
       .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag", "industry", "budget_percent")
