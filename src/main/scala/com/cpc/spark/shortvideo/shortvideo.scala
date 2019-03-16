@@ -312,7 +312,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |
          |) adclass
          |on  adclass.adclass=video.adclass
-         |where  ( video_act_cvr1<bigpic_act_cvr or （bigpic_act_cvr is null and video_act_cvr1<adclass_act_cvr ))
+         |where  ( video_act_cvr1<bigpic_act_cvr or (bigpic_act_cvr is null and video_act_cvr1<adclass_act_cvr ))
       """.stripMargin).selectExpr("userid as userid_b","bigpic_act_cvr","video_act_cvr1","adclass_act_cvr")
     bigpiccvr.show(10,false)
     println(" video_act_cvr1<bigpic_act_cvr  or video_act_cvr1<adclass_act_cvr  userid tab success!")
