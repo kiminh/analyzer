@@ -23,7 +23,7 @@ object videoPromotion {
          |  t1.searchid,
          |  uid,
          |  adclass,
-         |  userid,
+         |  t1.userid,
          |  usertype,
          |  adtype1,
          |  ideaid,
