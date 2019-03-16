@@ -45,10 +45,10 @@ object OcpcCollectSuggestData {
     val cpcData = getCpcData(date, hour, spark)
 
     // 关联前一天的自动预算数据表
-//    val autoBudget = getPrevAutoBudget(date, hour, spark)
+    val prevBudget = getPrevAutoBudget(date, hour, spark)
 
     // 数据关联，并计算预算
-    val data = joinData(cpaData, cpcData, ocpcData, spark)
+    val data = joinData(cpaData, cpcData, ocpcData, prevBudget, spark)
 
     data
       .repartition(5)
@@ -77,9 +77,29 @@ object OcpcCollectSuggestData {
     val date1 = tmpDateValue(0)
     val hour1 = tmpDateValue(1)
 
-    val prevData = spark
-      .table("dl_cpc.ocpc_auto_budget_hourly")
-      .where(s"`date` = '$date1' and `hour` = '$hour1' and version = 'qtt_demo'")
+//    val prevData = spark
+//      .table("dl_cpc.ocpc_auto_budget_hourly")
+//      .where(s"`date` = '$date1' and `hour` = '$hour1' and version = 'qtt_demo'")
+
+    val sqlRequest =
+      s"""
+         |SELECT
+         |  unitid,
+         |  industry,
+         |  conversion_goal,
+         |  budget_percent as prev_percent
+         |FROM
+         |  dl_cpc.ocpc_auto_budget_hourly
+         |WHERE
+         |  `date` = '$date1'
+         |AND
+         |  `hour` = '$hour1'
+         |AND
+         |  version = 'qtt_demo'
+       """.stripMargin
+    println(sqlRequest)
+    val data = spark.sql(sqlRequest)
+    data
   }
 
   def getOcpcData(date: String, hour: String, spark: SparkSession) = {
@@ -261,12 +281,14 @@ object OcpcCollectSuggestData {
     resultDF
   }
 
-  def joinData(cpaData: DataFrame, costData: DataFrame, ocpcData: DataFrame, spark: SparkSession) ={
+  def joinData(cpaData: DataFrame, costData: DataFrame, ocpcData: DataFrame, prevBudget: DataFrame, spark: SparkSession) ={
     val data = cpaData
       .join(costData, Seq("unitid"), "inner")
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm")
       .join(ocpcData, Seq("unitid", "industry"), "left_outer")
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm")
+      .join(prevBudget, Seq("unitid", "industry", "conversion_goal"), "left_outer")
+      .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "prev_percent")
 
     data.createOrReplaceTempView("base_data")
     val sqlRequest =
@@ -285,8 +307,9 @@ object OcpcCollectSuggestData {
          |  cpa_flag,
          |  cpc_cpm,
          |  ocpc_cpm,
-         |  (case when cpa_flag = 1 and cpc_cpm < ocpc_cpm then 0.1
-         |        else 0.05 end) as percent
+         |  (case when prev_percent is not null and cpa_flag = 1 then prev_percent + 0.05
+         |        when prev_percent is null then 0.05
+         |        ) as percent
          |FROM
          |  base_data
        """.stripMargin
@@ -295,11 +318,12 @@ object OcpcCollectSuggestData {
     val result = spark.sql(sqlRequest)
       .withColumn("budget_mid", col("daily_cost") * col("percent"))
       .withColumn("budget", when(col("budget_mid") < col("max_budget"), col("budget_mid")).otherwise(col("max_budget")))
+      .withColumn("budget_percent", col("percent"))
     result.show(10)
 //    result.write.mode("overwrite").saveAsTable("test.check_data_percent20190315")
 
     val resultDF = result
-      .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag", "industry", "percent")
+      .select("unitid", "userid", "planid", "cpa", "kvalue", "conversion_goal", "budget", "exp_tag", "industry", "budget_percent")
 
     resultDF
 
