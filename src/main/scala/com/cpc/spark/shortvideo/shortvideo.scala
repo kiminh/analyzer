@@ -24,7 +24,7 @@ object shortvideo {
   def main(args: Array[String]): Unit = {
     val date = args(0)
     val hour = args(1)
-    val traffic = 0.3
+    val traffic = args(2)
     val spark = SparkSession.builder()
       .appName(s"""shortvideo_execute +'${date}'+'${hour}'""")
       .enableHiveSupport()
