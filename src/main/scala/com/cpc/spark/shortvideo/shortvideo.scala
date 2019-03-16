@@ -312,7 +312,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
          |
          |) adclass
          |on  adclass.adclass=video.adclass
-         |where  ( video_act_cvr1<bigpic_act_cvr or video_act_cvr1<adclass_act_cvr )
+         |where  ( video_act_cvr1<bigpic_act_cvr or （bigpic_act_cvr is null and video_act_cvr1<adclass_act_cvr ))
       """.stripMargin).selectExpr("userid as userid_b","bigpic_act_cvr","video_act_cvr1","adclass_act_cvr")
     bigpiccvr.show(10,false)
     println(" video_act_cvr1<bigpic_act_cvr  or video_act_cvr1<adclass_act_cvr  userid tab success!")
@@ -329,13 +329,13 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
       s"""
          |select
          |     userid,expcvr_0per, expcvr_5per, expcvr_10per, expcvr_15per, expcvr_20per, expcvr_25per, expcvr_30per,
-         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_0per and  0.2>=0,1,0))/sum(if(exp_cvr>=expcvr_0per and isclick=1,1,0)),6) as traffic_0per_expcvr,
-         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_5per and 0.2>=0.05,1,0))/sum(if(exp_cvr>=expcvr_5per and isclick=1,1,0)),6) as traffic_5per_expcvr,
-         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_10per and 0.2>=0.10,1,0))/sum(if(exp_cvr>=expcvr_10per and isclick=1,1,0)),6) as traffic_10per_expcvr,
-         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_15per and 0.2>=0.15,1,0))/sum(if(exp_cvr>=expcvr_15per and isclick=1,1,0)),6) as traffic_15per_expcvr,
-         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_20per and 0.2>=0.20,1,0))/sum(if(exp_cvr>=expcvr_20per and isclick=1,1,0)),6) as traffic_20per_expcvr,
-         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_25per and 0.2>=0.25,1,0))/sum(if(exp_cvr>=expcvr_25per and isclick=1,1,0)),6) as traffic_25per_expcvr,
-         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_30per and 0.2>=0.30,1,0))/sum(if(exp_cvr>=expcvr_30per and isclick=1,1,0)),6) as traffic_30per_expcvr,
+         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_0per and  ${traffic}>=0,1,0))/sum(if(exp_cvr>=expcvr_0per and isclick=1,1,0)),6) as traffic_0per_expcvr,
+         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_5per and ${traffic}>=0.05,1,0))/sum(if(exp_cvr>=expcvr_5per and isclick=1,1,0)),6) as traffic_5per_expcvr,
+         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_10per and ${traffic}>=0.10,1,0))/sum(if(exp_cvr>=expcvr_10per and isclick=1,1,0)),6) as traffic_10per_expcvr,
+         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_15per and ${traffic}>=0.15,1,0))/sum(if(exp_cvr>=expcvr_15per and isclick=1,1,0)),6) as traffic_15per_expcvr,
+         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_20per and ${traffic}>=0.20,1,0))/sum(if(exp_cvr>=expcvr_20per and isclick=1,1,0)),6) as traffic_20per_expcvr,
+         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_25per and ${traffic}>=0.25,1,0))/sum(if(exp_cvr>=expcvr_25per and isclick=1,1,0)),6) as traffic_25per_expcvr,
+         |     round(sum(if(isreport =1 and exp_cvr>=expcvr_30per and ${traffic}>=0.30,1,0))/sum(if(exp_cvr>=expcvr_30per and isclick=1,1,0)),6) as traffic_30per_expcvr,
          |           video_act_cvr1 as video_act_cvr,
          |           bigpic_act_cvr,adclass_act_cvr,
          |           dt,hr
@@ -427,7 +427,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
           |(
           |select  userid ,expcvr
           |from    dl_cpc.cpc_appdown_cvr_threshold
-          |where   dt='${date}' and hr='${hour}'
+          |where   dt=date_add('${date}',-1) and hr='00'
           |union all
           |select  userid ,expcvr
           |from  dl_cpc.cpc_appdown_cvr_threshold
@@ -483,7 +483,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
       return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
     }
     return s"((dt = '$startDate' and hour >='$startHour') " +
-      s"or (dt = '$endDate' and hour <'12') " +
+      s"or (dt = '$endDate' and hour <'$endHour') " +
       s"or (dt > '$startDate' and dt < '$endDate'))"
   }
 
@@ -492,7 +492,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
     return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
   }
   return s"((`date` = '$startDate' and hour >= '$startHour') " +
-    s"or (`date` = '$endDate' and hour < '12') " +
+    s"or (`date` = '$endDate' and hour < '$endHour') " +
     s"or (`date` > '$startDate' and `date` < '$endDate'))"
 }
   def getTimeRangeSql23(startDate: String, startHour: String, endDate: String, endHour: String): String = {
@@ -500,7 +500,7 @@ group by searchid, adtype,userid,ideaid,isclick,isreport,exp_cvr_ori,
       return s"(`date` = '$startDate' and hour <= '$endHour' and hour > '$startHour')"
     }
     return s"((dt = '$startDate' and hr >= '$startHour') " +
-      s"or (dt = '$endDate' and hr < '12') " +
+      s"or (dt = '$endDate' and hr < '$endHour') " +
       s"or (dt > '$startDate' and dt < '$endDate'))"
   }
   case class tabrank (val  userid_d: String =" ",
