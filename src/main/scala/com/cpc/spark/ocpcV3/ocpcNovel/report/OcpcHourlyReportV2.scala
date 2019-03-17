@@ -47,6 +47,7 @@ object OcpcHourlyReportV2 {
 
     // 存储数据到mysql
     saveDataToMysql(dataIdea, dataConversion, date, hour, spark)
+
   }
 
   def saveDataToMysql(dataIdea: DataFrame, dataConversion: DataFrame, date: String, hour: String, spark: SparkSession) = {
