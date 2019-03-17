@@ -225,6 +225,8 @@ object OcpcSuggestCPA {
          |FROM
          |  dl_cpc.ocpc_unitid_auc_daily
          |WHERE
+         |  `date` = '$date'
+         |AND
          |  version = '$version'
          |AND
          |  conversion_goal = $conversionGoal
