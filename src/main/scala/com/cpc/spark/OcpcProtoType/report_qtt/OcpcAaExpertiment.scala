@@ -517,7 +517,7 @@ object OcpcAaExpertiment {
         | b.auc,
         | b.kvalue,
         | b.cpm,
-        | b.arpu,
+        | b.arpu
         |from
         |	pre_ad_info a
         |left join
