@@ -67,9 +67,9 @@ object OcpcSuggestCPA {
       .withColumn("hour", lit(hour))
       .withColumn("version", lit(version))
 
-//    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311")
-    resultDF
-      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
+    resultDF.write.mode("overwrite").saveAsTable("test.check_suggest_data20190311")
+//    resultDF
+//      .repartition(10).write.mode("overwrite").insertInto("dl_cpc.ocpc_suggest_cpa_recommend_hourly")
     println("successfully save data into table: dl_cpc.ocpc_suggest_cpa_recommend_hourly")
   }
 
@@ -103,10 +103,10 @@ object OcpcSuggestCPA {
       .withColumn("ocpc_flag", when(col("is_ocpc") === 1 && col("is_ocpc").isNotNull, 1).otherwise(0))
       .withColumn("cal_bid", col("cpa") * col("pcvr") * col("kvalue") / col("jfb"))
       .withColumn("is_recommend", when(col("auc").isNotNull && col("cal_bid").isNotNull && col("cvrcnt").isNotNull, 1).otherwise(0))
-      .withColumn("is_recommend", when(col("auc") <= 0.65, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 1.3, 0).otherwise(col("is_recommend")))
-      .withColumn("is_recommend", when(col("cvrcnt") < 60, 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("auc") <= 0.5, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") < 0.7, 0).otherwise(col("is_recommend")))
+//      .withColumn("is_recommend", when(col("cal_bid") * 1.0 / col("acb") > 2.0, 0).otherwise(col("is_recommend")))
+      .withColumn("is_recommend", when(col("cvrcnt") < 10, 0).otherwise(col("is_recommend")))
       .select("unitid", "userid", "adclass", "show", "click", "cvrcnt", "cost", "post_ctr", "acp", "acb", "jfb", "cpa", "pcvr", "post_cvr", "pcoc", "cal_bid", "auc", "kvalue", "industry", "is_recommend", "ocpc_flag", "usertype", "pcoc1", "pcoc2")
 
     result
