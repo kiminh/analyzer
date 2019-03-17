@@ -27,11 +27,11 @@ object OcpcCollectSuggestData {
 //    val feedapp = feedapp1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
     // 二类电商
-    val elds1 = getSuggestData("qtt_demo", "elds", 3, 30000, date, hour, spark)
+    val elds1 = getSuggestData("qtt_demo", "elds", 3, 300000, date, hour, spark)
     val elds = elds1.withColumn("exp_tag", lit("OcpcHiddenAdv"))
 
     // 从网赚推荐cpa抽取数据
-    val wz1 = getSuggestData("wz", "wzcp", 1, 50000, date, hour, spark)
+    val wz1 = getSuggestData("wz", "wzcp", 1, 5000000, date, hour, spark)
     val wz = wz1.withColumn("exp_tag", lit("OcpcHiddenClassAdv"))
 
     // 数据串联
