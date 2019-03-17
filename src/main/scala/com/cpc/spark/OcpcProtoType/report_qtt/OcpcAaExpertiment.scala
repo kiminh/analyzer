@@ -425,7 +425,7 @@ object OcpcAaExpertiment {
         |	a.post_cvr3,
         |	a.acp,
         |	a.acb,
-        |	a.kvale,
+        |	a.kvalue,
         |	b.is_hidden,
         |	b.adslot_type,
         |	b.cv_goal,
