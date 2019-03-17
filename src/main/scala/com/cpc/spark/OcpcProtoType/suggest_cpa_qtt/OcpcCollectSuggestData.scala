@@ -52,15 +52,15 @@ object OcpcCollectSuggestData {
 
     data
       .repartition(5)
-//      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
-      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
-
-    data
-      .withColumn("date", lit(date))
-      .withColumn("hour", lit(hour))
-      .withColumn("verion", lit("qtt_demo"))
-      .repartition(5)
-      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
+      .write.mode("overwrite").saveAsTable("test.ocpc_auto_budget_once")
+//      .write.mode("overwrite").saveAsTable("dl_cpc.ocpc_auto_budget_once")
+//
+//    data
+//      .withColumn("date", lit(date))
+//      .withColumn("hour", lit(hour))
+//      .withColumn("verion", lit("qtt_demo"))
+//      .repartition(5)
+//      .write.mode("overwrite").insertInto("dl_cpc.ocpc_auto_budget_hourly")
   }
 
   def getPrevAutoBudget(date: String, hour: String, spark: SparkSession) = {
@@ -289,6 +289,8 @@ object OcpcCollectSuggestData {
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm")
       .join(prevBudget, Seq("unitid", "industry", "conversion_goal"), "left_outer")
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "prev_percent")
+      .withColumn("top_percent", when(col("industry") === "wz", 0.6).otherwise(0.2))
+      .withColumn("bottom_percent", when(col("industry") === "wz", 0.3).otherwise(0.05))
 
     data.createOrReplaceTempView("base_data")
     val sqlRequest =
@@ -308,8 +310,10 @@ object OcpcCollectSuggestData {
          |  cpc_cpm,
          |  ocpc_cpm,
          |  prev_percent,
+         |  top_percent,
+         |  bottom_percent,
          |  (case when prev_percent is not null and cpa_flag = 1 then prev_percent + 0.05
-         |        when prev_percent is null or cpa_flag is null then 0.3
+         |        when prev_percent is null or cpa_flag is null then bottom_percent
          |        else prev_percent end) as percent
          |FROM
          |  base_data
@@ -317,8 +321,8 @@ object OcpcCollectSuggestData {
     println(sqlRequest)
 
     val result = spark.sql(sqlRequest)
-      .withColumn("budget_percent", when(col("percent") > 0.6, 0.6).otherwise(col("percent")))
-      .withColumn("budget_percent", when(col("budget_percent") < 0.3, 0.3).otherwise(col("budget_percent")))
+      .withColumn("budget_percent", when(col("percent") > col("top_percent"), col("top_percent")).otherwise(col("percent")))
+      .withColumn("budget_percent", when(col("budget_percent") < col("bottom_percent"), col("bottom_percent")).otherwise(col("budget_percent")))
       .withColumn("budget", col("daily_cost") * col("budget_percent"))
 
     result.show(10)
