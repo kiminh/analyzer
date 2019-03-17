@@ -365,6 +365,7 @@ object OcpcAaExpertiment {
         |    `date` as dt,
         |    unitid,
         |    userid,
+        |    conversion_goal,
         |    round(sum(case when isclick = 1 then cpagiven else 0 end) * 0.01
         |    / sum(case when isclick = 1 and cpagiven is not null then 1 else 0 end), 4) as cpagiven,
         |    round(sum(case when isclick = 1 then price else 0 end) * 0.01 / sum(iscvr1), 4) as cpareal1,
@@ -393,7 +394,8 @@ object OcpcAaExpertiment {
         |group by
         |    `date`,
         |    unitid,
-        |    userid
+        |    userid,
+        |    conversion_goal
       """.stripMargin
     val temp_compIndexValueDF = spark.sql(sql)
 
@@ -408,6 +410,7 @@ object OcpcAaExpertiment {
         |	a.dt,
         |	a.unitid,
         |	a.userid,
+        | a.conversion_goal,
         |	a.cpagiven,
         |	a.cpareal1,
         |	a.cpareal2,
