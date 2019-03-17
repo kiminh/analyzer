@@ -424,7 +424,6 @@ object OcpcAaExpertiment {
         |	a.post_cvr2,
         |	a.post_cvr3,
         |	a.acp,
-        |	a.bid,
         |	a.acb,
         |	a.kvale,
         |	b.is_hidden,

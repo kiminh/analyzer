@@ -18,7 +18,6 @@ create table if not exists dl_cpc.ocpc_aa_base_index_value(
     post_cvr2               double,
     post_cvr3               double,
     acp                     double,
-    bid                     int,
     acb                     double,
     kvalue                  double,
     is_hidden               int,
