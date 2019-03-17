@@ -43,27 +43,21 @@ object OcpcSuggestCPA {
 
     // 取基础数据部分
     val baseData = getBaseData(media, cvrGoal, date, hour, spark)
-    baseData.write.mode("overwrite").saveAsTable("test.ocpc_suggest_wz20190317a")
 
     // ocpc部分：kvalue
     val kvalue = getKvalue(version, cvrGoal, spark)
-    kvalue.write.mode("overwrite").saveAsTable("test.ocpc_suggest_wz20190317b")
 
     // 模型部分
     val aucData = getAucData(version, cvrGoal, date, spark)
-    aucData.write.mode("overwrite").saveAsTable("test.ocpc_suggest_wz20190317c")
 
     // 实时查询ocpc标记（从mysql抽取）
     val ocpcFlag = getOcpcFlag(cvrGoal, date, hour, spark)
-    ocpcFlag.write.mode("overwrite").saveAsTable("test.ocpc_suggest_wz20190317d")
 
     // 历史推荐cpa的pcoc数据
     val prevData = getPrevSugggestData(version, cvrGoal, date, hour, spark)
-    prevData.write.mode("overwrite").saveAsTable("test.ocpc_suggest_wz20190317e")
 
     // 数据组装
     val result1 = assemblyData(baseData, kvalue, aucData, ocpcFlag, prevData, spark)
-    result1.write.mode("overwrite").saveAsTable("test.ocpc_suggest_wz20190317f")
 
     // 预估数据
     val alpha = 0.1
