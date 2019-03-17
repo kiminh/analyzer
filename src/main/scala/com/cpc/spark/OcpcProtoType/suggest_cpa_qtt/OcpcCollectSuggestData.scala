@@ -309,7 +309,7 @@ object OcpcCollectSuggestData {
          |  ocpc_cpm,
          |  prev_percent,
          |  (case when prev_percent is not null and cpa_flag = 1 then prev_percent + 0.05
-         |        when prev_percent is null or cpa_flag is null then 0.05
+         |        when prev_percent is null or cpa_flag is null then 0.3
          |        else prev_percent end) as percent
          |FROM
          |  base_data
@@ -317,9 +317,10 @@ object OcpcCollectSuggestData {
     println(sqlRequest)
 
     val result = spark.sql(sqlRequest)
-      .withColumn("budget_mid", col("daily_cost") * col("percent"))
-      .withColumn("budget", when(col("budget_mid") < col("max_budget"), col("budget_mid")).otherwise(col("max_budget")))
-      .withColumn("budget_percent", when(col("percent") > 0.2, 0.2).otherwise(col("percent")))
+      .withColumn("budget_percent", when(col("percent") > 0.6, 0.6).otherwise(col("percent")))
+      .withColumn("budget_percent", when(col("budget_percent") < 0.3, 0.3).otherwise(col("budget_percent")))
+      .withColumn("budget", col("daily_cost") * col("budget_percent"))
+
     result.show(10)
     result.write.mode("overwrite").saveAsTable("test.check_data_percent20190315")
 
