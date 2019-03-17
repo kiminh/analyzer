@@ -289,8 +289,8 @@ object OcpcCollectSuggestData {
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm")
       .join(prevBudget, Seq("unitid", "industry", "conversion_goal"), "left_outer")
       .select("unitid", "cpa", "kvalue", "cost", "conversion_goal", "max_budget", "industry", "exp_tag", "userid", "planid", "daily_cost", "cpc_cpm", "cpagiven", "cpareal", "cpa_flag", "ocpc_cpm", "prev_percent")
-      .withColumn("top_percent", when(col("industry") === "wz", 0.6).otherwise(0.2))
-      .withColumn("bottom_percent", when(col("industry") === "wz", 0.3).otherwise(0.05))
+      .withColumn("top_percent", when(col("industry") === "wzcp", 0.6).otherwise(0.2))
+      .withColumn("bottom_percent", when(col("industry") === "wzcp", 0.3).otherwise(0.05))
 
     data.createOrReplaceTempView("base_data")
     val sqlRequest =
