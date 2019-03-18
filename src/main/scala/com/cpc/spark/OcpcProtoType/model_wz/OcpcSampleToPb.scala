@@ -116,7 +116,6 @@ object OcpcSampleToPb {
       s"""
          |SELECT
          |  cast(unitid as string) identifier,
-         |  conversion_goal,
          |  cpa as cpagiven2
          |FROM
          |  dl_cpc.ocpc_auto_budget_hourly
