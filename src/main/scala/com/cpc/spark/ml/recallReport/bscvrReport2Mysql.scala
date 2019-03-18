@@ -27,7 +27,7 @@ object bscvrReport2Mysql {
          |select
          |cast(coalesce(imp,0) as int) as imp,
          |cast(coalesce(click,0) as int) as click,
-         |cast(coalesce(iscvr, '0) as int) as iscvr,
+         |cast(coalesce(iscvr, 0) as int) as iscvr,
          |exp,
          |cast(coalesce(adslot_type,0) as int) as adslot_type,
          |industry,
@@ -49,7 +49,7 @@ object bscvrReport2Mysql {
          |select
          |cast(coalesce(imp,0) as int) as imp,
          |cast(coalesce(click,0) as int) as click,
-         |cast(coalesce(iscvr, '0) as int) as iscvr,
+         |cast(coalesce(iscvr, 0) as int) as iscvr,
          |exp,
          |cast(coalesce(adslot_type,0) as int) as adslot_type,
          |industry,
