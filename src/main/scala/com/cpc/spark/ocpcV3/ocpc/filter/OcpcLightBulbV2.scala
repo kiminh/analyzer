@@ -232,10 +232,10 @@ object OcpcLightBulbV2{
     val rawData = spark.read.format("json").json(expDataPath)
     val data = rawData
       .filter(s"kvalue > 0")
-      .select("identifier", "conversion_goal", "cpa")
-      .groupBy("identifier", "conversion_goal")
+      .selectExpr("cast(identifier as int) unitid", "conversion_goal", "cpa")
+      .groupBy("unitid", "conversion_goal")
       .agg(min(col("cpa")).alias("cpa2"))
-      .select("identifier", "conversion_goal", "cpa2")
+      .select("unitid", "conversion_goal", "cpa2")
     data.show(10)
     data
   }
