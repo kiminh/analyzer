@@ -123,10 +123,10 @@ object OcpcAaExpertiment {
         |select
         |	unitid,
         |	userid,
-        |    (case when ocpc_log like '%IsHiddenOcpc:1%' then 1 else 0 end) as is_hidden,
-        |    max(adslot_type) as adslot_type,
-        |    max(conversion_goal) as cv_goal,
-        |    sum(case when isclick > 0 then price  else 0 end) as charge
+        | (case when ocpc_log like '%IsHiddenOcpc:1%' then 1 else 0 end) as is_hidden,
+        | max(adslot_type) as adslot_type,
+        | max(conversion_goal) as cv_goal,
+        | sum(case when isclick > 0 then price  else 0 end) as charge
         |from
         |	dl_cpc.ocpc_base_unionlog
         |where
@@ -170,7 +170,9 @@ object OcpcAaExpertiment {
         |	from
         |		dl_cpc.ocpc_suggest_cpa_recommend_hourly
         |	where
-        |		`date` = '$preDate') a
+        |		`date` = '$preDate'
+        | and
+        |   version = 'qtt_demo') a
         |where
         |	a.row_num = 1
       """.stripMargin
@@ -515,12 +517,15 @@ object OcpcAaExpertiment {
         | b.acb,
         | (case when a.conversion_goal = 1 then b.cpareal1
         |    	  when a.conversion_goal = 2 then b.cpareal2
-        |    	  else b.cpareal3 end) as cpareal,
-        | b.cpagiven,
+        |    	  else b.cpareal3 end) as cpa_real,
+        | b.cpa_given,
+        | b.suggest_cpa,
         | b.auc,
         | b.kvalue,
-        | b.cpm,
-        | b.arpu
+        | round(b.pre_cvr / (case when a.conversion_goal = 1 then b.post_cvr1
+        |    	  when a.conversion_goal = 2 then b.post_cvr2
+        |    	  else b.post_cvr3 end), 4) as pcoc,
+        | b.cpm
         |from
         |	pre_ad_info a
         |left join

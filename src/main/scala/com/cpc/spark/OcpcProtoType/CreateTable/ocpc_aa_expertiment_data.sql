@@ -14,11 +14,12 @@ create table if not exists dl_cpc.ocpc_aa_expertiment_data(
     post_cvr                double,
     acp                     double,
     acb                     double,
-    cpareal                 double,
-    cpagiven                double,
+    cpa_real                 double,
+    cpa_given                double,
     suggest_cpa             double,
     auc                     double,
     kvalue                  double,
+    pcoc                    double,
     cpm                     double
 )
 partitioned by (`date` string, version string)
