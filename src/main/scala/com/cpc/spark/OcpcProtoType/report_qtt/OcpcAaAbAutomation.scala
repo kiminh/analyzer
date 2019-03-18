@@ -66,7 +66,10 @@ object OcpcAaAbAutomation {
       // 判断前后两条数据是不是相同的unitid和userid
       val isCpc = "cpc".equals(preList.getAs[String](3))
       val isOcpc = "ocpc".equals(nextList.getAs[String](3))
-      val isSame = preList.getAs[String](1).equals(nextList.getAs[String](1)) && preList.getAs[String](2).equals(nextList.getAs[String](2))
+      println(preList)
+      println(nextList)
+      println(preList(1) + "  " + preList(2) + "  " + preList(3))
+      val isSame = preList(1).equals(nextList(1)) && preList(2).equals(nextList(2))
       if(isCpc && isOcpc && isSame){
         // 然后添加ocpc的实验组数据
         var nextBuffer: ListBuffer[String] = new ListBuffer
