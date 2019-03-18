@@ -99,16 +99,19 @@ object ReportCoinTotalMetrics {
     total.persist()
     total.createOrReplaceTempView("total")
     total.show(10)
+    println("total rows are"+ total.count())
 
     val tagAucListSql =
       s"""
          |select tag , exp_cvr as score,label2 as label
          |from total
-                 """.stripMargin
-
+        """.stripMargin
+    println(tagAucListSql)
     val tagAucList = spark.sql(tagAucListSql)
+    println("sql")
     val uAuc = CalcMetrics.getGauc(spark, tagAucList, "tag")
       .select("name", "auc")
+    println("auc success!")
     val testTotalTable = s"test.uauc_total_$tmpDate"
     uAuc.show(10)
 
