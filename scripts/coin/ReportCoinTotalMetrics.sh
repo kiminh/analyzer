@@ -6,7 +6,8 @@ cur=/data/cpc/anal
 SPARK_HOME=/usr/lib/spark-current
 queue=root.cpc.develop
 
-date=$1
+cur_time=$1
+date=`date -d"${cur_time} 1 day ago" +"%Y-%m-%d"`
 
 
 jars=(

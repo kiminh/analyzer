@@ -41,7 +41,7 @@ object ReportCoinTotalMetrics {
          |from
          |    (
          |        select searchid,isshow,isclick,price,uid,exp_style,is_auto_coin,exp_cvr,
-         |        case when concat_ws(',',exptags) like  '%needautocoin%'  then  '95%'  else '5%' end as tag
+         |        case when concat_ws(',',exptags) like  '%needautocoin%'  then  '实验组'  else '对照组' end as tag
          |        from dl_cpc.cpc_basedata_union_events
          |        where day='$date'
          |        and media_appsid  in ("80000001", "80000002")  -- 趣头条
@@ -96,6 +96,7 @@ object ReportCoinTotalMetrics {
              """.stripMargin
     println(totalSql)
     val total = spark.sql(totalSql)
+    total.persist()
     total.createOrReplaceTempView("total")
     total.show(10)
 
@@ -117,6 +118,7 @@ object ReportCoinTotalMetrics {
       s"""
          |select
          |    a.tag,
+         |    uid_num,
          |    show_num,
          |    coin_show_num,
          |    if (show_num!=0,round(coin_show_num/show_num, 6),0) as coin_show_rate,
@@ -132,10 +134,9 @@ object ReportCoinTotalMetrics {
          |    if (coin_click_num!=0,round(coin_convert_num/coin_click_num, 6),0) as coin_cvr,
          |    click_total_price,
          |    coin_click_total_price,
-         |    uid_num,
          |    if (show_num!=0,round(click_total_price*10/show_num,6),0) as cpm,
-         |    if (click_num!=0,round(click_total_price*10/click_num,6),0) as acp,
-         |    if (uid_num!=0,round(click_total_price*10/uid_num,6),0) as arpu,
+         |    if (click_num!=0,round(click_total_price/click_num/100,6),0) as acp,
+         |    if (uid_num!=0,round(click_total_price/uid_num/100,6),0) as arpu,
          |    if (uid_num!=0,round(show_num/uid_num,6),0) as aspu,
          |    if (uid_num!=0,round(convert_num*100/uid_num,6),0) as acpu, --*100是用作百分比
          |    b.auc as auc,
