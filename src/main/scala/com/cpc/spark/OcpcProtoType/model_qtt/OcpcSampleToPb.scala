@@ -83,7 +83,7 @@ object OcpcSampleToPb {
     val data = spark.sql(sqlRequest)
 
     // 按照实验配置文件给出cpagiven
-    val cpaGiven = getCPAgivenV3(spark)
+    val cpaGiven = getCPAgivenV3(date, spark)
 
     // 数据关联
     val result1 = data
