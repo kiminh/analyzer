@@ -190,7 +190,7 @@ object OcpcAbExpertiment {
     indexValueDF.createOrReplaceTempView("temp_index_value")
     val getTimeSQL =
       s"""
-        |selct
+        |select
         |    unitid,
         |    `hr`
         |from

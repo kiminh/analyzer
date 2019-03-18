@@ -1,5 +1,4 @@
-create table if not exists dl_cpc.ocpc_ab_test_data
-(
+create table if not exists dl_cpc.ocpc_ab_test_data(
     dt                      string,
     unitid                  int,
     userid                  int,
